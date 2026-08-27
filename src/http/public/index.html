@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TRACECON — Análise de Mercado</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>TRACECON</h1>
+    <span class="tag">análise · não é corretora</span>
+    <div class="conn" id="conn">
+      <span class="dot" id="connDot"></span>
+      <span id="connText">—</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="controls card">
+      <label>Ativo
+        <select id="symbol">
+          <option value="BTCUSDT">BTC/USDT</option>
+          <option value="ETHUSDT">ETH/USDT</option>
+          <option value="SOLUSDT">SOL/USDT</option>
+          <option value="BNBUSDT">BNB/USDT</option>
+          <option value="XRPUSDT">XRP/USDT</option>
+        </select>
+      </label>
+      <label>Timeframe
+        <select id="timeframe">
+          <option>1m</option><option>3m</option><option>5m</option>
+          <option>15m</option><option>1h</option><option>4h</option><option>1d</option>
+        </select>
+      </label>
+      <label>Direção
+        <select id="direction"><option value="up">Alta</option><option value="down">Baixa</option></select>
+      </label>
+      <label>Horizonte (candles)
+        <input type="number" id="horizon" value="12" min="1" max="200" />
+      </label>
+      <button id="analyze">Analisar</button>
+      <button id="refresh" class="sec">Atualizar mercado</button>
+    </section>
+
+    <div class="grid">
+      <section class="card" id="marketCard">
+        <h2>Mercado</h2>
+        <div class="big" id="price">—</div>
+        <div class="sub">
+          <div>Qualidade: <b id="quality">—</b></div>
+          <div>Frescor: <b id="freshness">—</b></div>
+          <div>Último fechado: <b id="lastClose">—</b></div>
+          <div>Volume: <b id="volume">—</b></div>
+          <div>Fonte: <b id="source">—</b></div>
+        </div>
+        <div class="notice" id="noData" style="display:none">
+          Dados reais indisponíveis — nenhum número é estimado.
+        </div>
+      </section>
+
+      <section class="card" id="quantCard">
+        <h2>Técnico</h2>
+        <div class="sub" id="quantBody">Coletando…</div>
+      </section>
+
+      <section class="card" id="newsCard">
+        <h2>Notícias</h2>
+        <div class="sub" id="newsBody">—</div>
+      </section>
+
+      <section class="card" id="decisionCard">
+        <h2>Decisão analítica</h2>
+        <div class="big" id="decision">—</div>
+        <div class="sub" id="rationale">—</div>
+        <div class="notice" id="decisionNote" style="display:none"></div>
+      </section>
+    </div>
+
+    <section class="card" id="factorsCard">
+      <h2>Fusão de evidências</h2>
+      <div class="cols">
+        <div><h3>Favoráveis</h3><ul id="fav"></ul></div>
+        <div><h3>Contrários</h3><ul id="con"></ul></div>
+        <div><h3>Invalidariam</h3><ul id="inv"></ul></div>
+      </div>
+    </section>
+
+    <section class="card" id="historyCard">
+      <h2>Histórico de analises</h2>
+      <div class="sub" id="historyBody">—</div>
+    </section>
+  </main>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

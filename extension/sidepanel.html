@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>TRACECON</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <header>
+    <h1>TRACECON</h1>
+    <div id="conn" class="conn"><span class="dot" id="connDot"></span><span id="connText">—</span></div>
+  </header>
+
+  <section class="controls">
+    <label>Símbolo <input id="symbol" placeholder="BTCUSDT" /></label>
+    <label>Timeframe
+      <select id="timeframe">
+        <option>1m</option><option>3m</option><option>5m</option><option>15m</option><option>1h</option><option>4h</option><option>1d</option>
+      </select>
+    </label>
+    <label>Direção
+      <select id="direction"><option value="up">Alta</option><option value="down">Baixa</option></select>
+    </label>
+    <label>Horizonte <input type="number" id="horizon" value="12" min="1" max="200" /></label>
+    <button id="analyze">Analisar</button>
+    <button id="detect" class="sec">Detectar (aba)</button>
+  </section>
+
+  <div id="market" class="card">
+    <h2>Mercado</h2>
+    <div class="big" id="price">—</div>
+    <div class="sub" id="marketSub">—</div>
+    <div class="notice" id="noData" style="display:none">Dados reais indisponíveis — nada é estimado.</div>
+  </div>
+
+  <div id="quant" class="card">
+    <h2>Técnico</h2>
+    <div class="sub" id="quantBody">—</div>
+  </div>
+
+  <div id="news" class="card">
+    <h2>Notícias</h2>
+    <div class="sub" id="newsBody">—</div>
+  </div>
+
+  <div id="decision" class="card">
+    <h2>Decisão</h2>
+    <div class="big" id="decisionOut">—</div>
+    <div class="sub" id="rationale">—</div>
+  </div>
+
+  <div id="factors" class="card">
+    <h2>Fusão</h2>
+    <div><b>Favoráveis</b><ul id="fav"></ul></div>
+    <div><b>Contrários</b><ul id="con"></ul></div>
+    <div><b>Invalidariam</b><ul id="inv"></ul></div>
+  </div>
+
+  <button id="openOptions" class="sec">Configurar API</button>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Environment / secrets - NUNCA commitar
+.env
+.env.*
+!.env.example
+
+# SQLite
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel/
+
+# Supabase
+supabase/.env
+
+# Railway
+.railway/
+
+# Runtime data (SQLite cold store)
+data/*.db
+data/*.db-*

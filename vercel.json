@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/http.ts": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/http.ts" },
+    { "source": "/(.*)", "destination": "/dist/http/public/index.html" }
+  ]
+}

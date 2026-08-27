@@ -1,0 +1,36 @@
+{
+  "name": "tracecon",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TRACECON - Sistema de inteligência e análise de mercado",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/postbuild.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "agent:dry": "tsx src/cli/agent.ts",
+    "market": "tsx src/cli/market.ts",
+    "market:ui": "tsx src/cli/market.ts --ui",
+    "market:live": "tsx src/cli/market.ts --live",
+    "quant": "tsx src/cli/quant.ts",
+    "backtest": "tsx src/cli/backtest.ts",
+    "decide": "tsx src/cli/decide.ts",
+    "news": "tsx src/cli/news.ts",
+    "serve": "tsx src/cli/serve.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "groq-sdk": "^0.10.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
+  }
+}

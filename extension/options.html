@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8" /><title>TRACECON — Configuração</title>
+<link rel="stylesheet" href="options.css" /></head>
+<body>
+<h1>TRACECON — Configuração</h1>
+<p>Configure a URL da API TRACECON (o servidor rodando localmente) e, se habilitado, o token de acesso.</p>
+
+<form id="form">
+  <label>URL da API
+    <input type="text" id="apiBase" placeholder="http://127.0.0.1:8788" />
+  </label>
+  <label>Token de API (opcional)
+    <input type="password" id="token" placeholder="deixe vazio se não usar token" />
+  </label>
+  <button type="submit">Salvar</button>
+  <div id="status"></div>
+</form>
+
+<p class="note">O token fica apenas no chrome.storage.local da sua extensão e é enviado como <code>Authorization: Bearer</code> à sua própria API. Nunca é logado.</p>
+<script src="options.js"></script>
+</body></html>

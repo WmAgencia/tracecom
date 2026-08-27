@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "TRACECON — Análise de Mercado",
+  "version": "0.1.0",
+  "description": "Inteligência e análise de mercado ao lado da sua corretora. NÃO executa ordens; não é corretora.",
+  "permissions": ["sidePanel", "storage", "tabs"],
+  "host_permissions": ["http://127.0.0.1:*/*", "http://localhost:*/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "TRACECON",
+    "default_popup": "popup.html"
+  },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "content_scripts": [
+    {
+      "matches": ["https://*.tradingview.com/*", "https://www.binance.com/*", "https://*.binance.com/*", "https://app.exodus.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_ui": { "page": "options.html", "open_in_tab": false }
+}
