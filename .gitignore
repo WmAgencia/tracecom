@@ -38,3 +38,6 @@ supabase/.env
 # Runtime data (SQLite cold store)
 data/*.db
 data/*.db-*
+
+.vercel
+.env*
