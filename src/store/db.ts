@@ -7,7 +7,7 @@
  * (coluna trail) — com migração para destrinchar o trail em tabelas próprias
  * quando o volume exigir.
  */
-import { DatabaseSync } from "./sqlite";
+import { openDatabaseSync } from "./sqlite";
 import type { SqliteDatabaseSync } from "./sqlite";
 import type { Logger } from "../observability/logger";
 
@@ -18,16 +18,24 @@ export interface SqliteOptions {
 
 export class Datastore {
   readonly db: SqliteDatabaseSync;
+  /** false quando node:sqlite indisponível (ex.: alguns ambientes serverless). */
+  readonly available: boolean;
 
   constructor(opts: SqliteOptions) {
-    if (opts.path === ":memory:") {
-      this.db = new DatabaseSync(":memory:");
-    } else {
-      this.db = new DatabaseSync(opts.path);
+    let db: SqliteDatabaseSync;
+    try {
+      const DatabaseSync = openDatabaseSync();
+      db = opts.path === ":memory:" ? new DatabaseSync(":memory:") : new DatabaseSync(opts.path);
+      db.exec("PRAGMA journal_mode = WAL;");
+      db.exec("PRAGMA foreign_keys = ON;");
+      this.available = true;
+    } catch {
+      // Sem persistência disponível (não inventa dados; apenas não persiste).
+      this.available = false;
+      db = openMemoryNoop();
     }
-    this.db.exec("PRAGMA journal_mode = WAL;");
-    this.db.exec("PRAGMA foreign_keys = ON;");
-    this.migrate();
+    this.db = db;
+    if (this.available) this.migrate();
   }
 
   private migrate(): void {
@@ -121,6 +129,16 @@ export class Datastore {
   }
 
   close(): void {
-    this.db.close();
+    try { this.db.close(); } catch { /* noop */ }
   }
+}
+
+/** Noop DatabaseSync para ambientes sem node:sqlite — lança apenas se usado. */
+function openMemoryNoop(): SqliteDatabaseSync {
+  const noop = {
+    exec(_sql: string): void { throw new Error("SQL indisponível (node:sqlite ausente)"); },
+    prepare(_sql: string): never { throw new Error("SQL indisponível (node:sqlite ausente)"); },
+    close(): void { /* noop */ },
+  };
+  return noop as unknown as SqliteDatabaseSync;
 }
