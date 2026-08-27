@@ -26,7 +26,8 @@ const publicDir = resolvePublicDir();
 
 async function main(): Promise<void> {
   const config = loadConfig();
-  const port = Number(process.env.HTTP_PORT ?? 8788);
+  // PaaS (Railway/Vercel) injetam PORT; usamos HTTP_PORT com fallback em PORT.
+  const port = Number(process.env.PORT ?? process.env.HTTP_PORT ?? 8788);
 
   const rt = createMarketRuntime(config, {
     symbols: [
