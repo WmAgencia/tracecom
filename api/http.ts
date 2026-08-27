@@ -67,6 +67,15 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     res.end(JSON.stringify(body));
   };
 
+  // Binance bloqueia alguns IPs de nuvem (HTTP 451). Retornamos disponível:false.
+  const safeKlines = async (): Promise<Candle[] | string> => {
+    try {
+      return await binanceKlines(symbol, timeframe, 200);
+    } catch (e) {
+      return e instanceof Error ? e.message : "erro";
+    }
+  };
+
   try {
     const path = url.pathname;
     if (path === "/health" || path === "/api/health") {
@@ -79,15 +88,31 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
+    if (path === "/api/catalog") {
+      json(200, { assets: [
+        { id: "binance:BTCUSDT", symbol: "BTCUSDT", name: "Bitcoin", market: "crypto", provider: "binance", baseAsset: "BTC", quoteAsset: "USDT", status: "active", metadata: {} },
+        { id: "binance:ETHUSDT", symbol: "ETHUSDT", name: "Ethereum", market: "crypto", provider: "binance", baseAsset: "ETH", quoteAsset: "USDT", status: "active", metadata: {} },
+        { id: "binance:SOLUSDT", symbol: "SOLUSDT", name: "Solana", market: "crypto", provider: "binance", baseAsset: "SOL", quoteAsset: "USDT", status: "active", metadata: {} },
+      ]});
+      return;
+    }
+
     if (path.endsWith("/context") || path.endsWith("/market")) {
-      const candles = await binanceKlines(symbol, timeframe, 200);
-      if (candles.length === 0) { json(200, { symbol, timeframe, available: false, note: "sem dados" }); return; }
+      const k = await safeKlines();
+      if (typeof k === "string") {
+        json(200, { provider: "binance", symbol, timeframe, available: false, currentPrice: null, dataQuality: "unknown", note: `provedor de mercado indisponível (${k})` });
+        return;
+      }
+      if (k.length === 0) { json(200, { symbol, timeframe, available: false, note: "sem dados" }); return; }
+      const candles = k;
       const closes = candles.map((c) => c.close);
       const last = candles[candles.length - 1]!;
       const prev = candles[candles.length - 2]!.close;
       const rsi = rsiLast(closes);
+      const sma20 = sma(closes, 20);
       const volPct = Math.abs((last.close - prev) / prev) * 100;
-      const regime = rsi === null ? null : rsi > 60 ? "high_volatility_bull" : rsi < 40 ? "range_bear" : "range";
+      const regime = rsi === null ? null : rsi > 60 ? "uptrend" : rsi < 40 ? "downtrend" : "range";
+      const sd = stdev(closes);
       json(200, {
         provider: "binance", symbol, timeframe, available: true,
         currentPrice: last.close,
@@ -95,33 +120,38 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         volume: candles.reduce((s, c) => s + c.volume, 0),
         dataQuality: "high",
         quant: {
-          technicalScore: closes.length > 20 ? Math.max(-1, Math.min(1, ((last.close - sma(closes, 20)!) / (sma(closes, 20)!)) * 20)) : null,
+          technicalScore: sma20 !== null ? Math.max(-1, Math.min(1, ((last.close - sma20) / sma20) * 20)) : null,
           rsi,
           marketRegime: regime,
           structureTrend: last.close >= prev ? "up" : "down",
-          atrPct: null, volatilityAnnualized: stdev(closes) !== 0 ? stdev(closes) * 1.732 : null,
+          atrPct: null,
+          volatilityAnnualized: sd !== 0 ? sd * 1.732 : null,
           supports: candles.slice(-20).map((c) => c.low), resistances: candles.slice(-20).map((c) => c.high),
           sampleSize: closes.length,
+          note: `volatilidade ${volPct.toFixed(2)}% no último candle`,
         },
       });
       return;
     }
 
     if (path.endsWith("/analyze")) {
-      const candles = await binanceKlines(symbol, timeframe, 300);
-      if (candles.length < 30) { json(200, { decision: "WAIT", dataSufficient: false, rationale: "dados insuficientes" }); return; }
-      const closes = candles.map((c) => c.close);
+      const k = await binanceKlinesSafe(symbol, timeframe, 300);
+      if (typeof k === "string") {
+        json(200, { decision: "WAIT", dataSufficient: false, rationale: `provedor indisponível (${k})`, note: "use Railway p/ backend completo" });
+        return;
+      }
+      if (k.length < 30) { json(200, { decision: "WAIT", dataSufficient: false, rationale: "dados insuficientes" }); return; }
+      const closes = k.map((c) => c.close);
       const last = closes[closes.length - 1]!;
       const avg20 = sma(closes, 20)!;
       const tech = Math.max(-1, Math.min(1, ((last - avg20) / avg20) * 20));
-      const suff = true;
       const counter = Math.abs(tech) < 0.18;
-      const decision = toDecision(tech, suff, counter);
+      const decision = toDecision(tech, true, counter);
       json(200, {
         decision, direction: decision === "WAIT" ? null : (q.get("direction") ?? "up"),
         score: tech, confidence: Math.min(0.9, 0.4 + Math.abs(tech)),
-        dataSufficient: suff, blockedByCounterEvidence: counter,
-        rationale: `${decision === "WAIT" ? "Dados/contraponto insuficientes" : "Direcionamento"} — técnico ${tech.toFixed(2)}. Provedor Binance (snapshot).`,
+        dataSufficient: true, blockedByCounterEvidence: counter,
+        rationale: `${decision === "WAIT" ? "Contraponto insuficiente" : "Direcionamento"} — técnico ${tech.toFixed(2)}. Provedor Binance (snapshot).`,
         factors: { favorable: [], counter: counter ? [{ text: `Score técnico ${tech.toFixed(2)} < limite` }] : [], invalidators: ["edge histórico não avaliado em serverless"] },
       });
       return;
@@ -143,5 +173,13 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     json(404, { error: "not_found", path });
   } catch (e) {
     json(500, { error: e instanceof Error ? e.message : "erro", note: "use Railway p/ backend completo" });
+  }
+}
+
+async function binanceKlinesSafe(symbol: string, timeframe: string, limit: number): Promise<Candle[] | string> {
+  try {
+    return await binanceKlines(symbol, timeframe, limit);
+  } catch (e) {
+    return e instanceof Error ? e.message : "erro";
   }
 }
