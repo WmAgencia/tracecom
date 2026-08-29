@@ -170,6 +170,27 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
+    // Extensão: metadados do zip empacotado (não serve o binário no serverless).
+    if (path === "/extension/info") {
+      json(200, {
+        available: false,
+        url: "/extension/download",
+        filename: "tracecon-extension-v0.1.0.zip",
+        sizeBytes: null,
+        note:
+          "Em serverless (Vercel) o zip binário não pode ser servido. Use o repo (dist/tracecon-extension-v0.1.0.zip) ou o backend Railway/Node local (npm run serve → /extension/download).",
+      });
+      return;
+    }
+    if (path === "/extension/download") {
+      json(503, {
+        error: "extension_zip_unsupported_in_serverless",
+        message:
+          "O zip binário não pode ser servido via Vercel Functions. Faça download direto do release do GitHub ou rode o backend local.",
+      });
+      return;
+    }
+
     json(404, { error: "not_found", path });
   } catch (e) {
     json(500, { error: e instanceof Error ? e.message : "erro", note: "use Railway p/ backend completo" });

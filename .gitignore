@@ -5,6 +5,9 @@ node_modules/
 dist/
 .vercel/
 
+# Static assets (gerado pelo build a partir de src/http/public/)
+public/
+
 # Environment / secrets — NUNCA commitar
 .env
 .env.*
@@ -45,3 +48,5 @@ start-server.sh
 # IDE
 .vscode/
 .idea/
+.vercel
+.env*

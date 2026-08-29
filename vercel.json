@@ -8,8 +8,9 @@
     }
   },
   "rewrites": [
-    { "source": "/health", "destination": "/api/http.ts" },
     { "source": "/api/(.*)", "destination": "/api/http.ts" },
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/health", "destination": "/api/http.ts" },
+    { "source": "/extension/(.*)", "destination": "/api/http.ts" },
+    { "source": "/(.*)", "destination": "/api/http.ts" }
   ]
 }
