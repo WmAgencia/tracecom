@@ -1,5 +1,5 @@
 /**
- * Ferramentas de Backtest / Probabilidade Empírica para o agente (Groq).
+ * Ferramentas de Backtest / Probabilidade Empírica para o agente (Anthropic).
  *
  * A IA orquestra; o motor calcula. Nenhuma probabilidade é inventada pela LLM:
  * sempre derivada de favoráveis/amostra observados.

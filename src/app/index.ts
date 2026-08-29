@@ -51,8 +51,13 @@ export function createApp(env: NodeJS.ProcessEnv = process.env): TraceconApp {
   registerMarketDataTools(tools, provider, resolveInstrument);
 
   const ai = createAiClient({
-    apiKey: config.groq.apiKey,
-    model: config.groq.model,
+    apiKey: config.anthropic.apiKey,
+    baseUrl: config.anthropic.baseUrl,
+    model: config.anthropic.model,
+    maxTokens: config.anthropic.maxTokens,
+    extendedOutput: config.anthropic.extendedOutput,
+    thinkingEnabled: config.anthropic.thinkingEnabled,
+    thinkingBudget: config.anthropic.thinkingBudget,
     logger,
   });
 
@@ -61,7 +66,7 @@ export function createApp(env: NodeJS.ProcessEnv = process.env): TraceconApp {
     ai,
     tools,
     logger,
-    model: config.groq.model,
+    model: config.anthropic.model,
   });
 
   const store = new Datastore({ path: config.database.path, logger });

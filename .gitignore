@@ -1,10 +1,11 @@
 # Dependencies
 node_modules/
 
-# Build
+# Build artifacts
 dist/
+.vercel/
 
-# Environment / secrets - NUNCA commitar
+# Environment / secrets — NUNCA commitar
 .env
 .env.*
 !.env.example
@@ -14,6 +15,8 @@ dist/
 *.db-journal
 *.db-wal
 *.db-shm
+data/*.db
+data/*.db-*
 
 # Logs
 *.log
@@ -26,18 +29,19 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# Vercel
-.vercel/
-
-# Supabase
-supabase/.env
-
-# Railway
+# Runtime
 .railway/
+*.local
 
-# Runtime data (SQLite cold store)
-data/*.db
-data/*.db-*
+# Local Claude / MCP state (sessão local, não versionado)
+.claude/
 
-.vercel
-.env*
+# mcp local (secrets/config local)
+mcp/
+
+# Script local (secrets)
+start-server.sh
+
+# IDE
+.vscode/
+.idea/

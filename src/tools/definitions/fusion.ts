@@ -1,5 +1,5 @@
 /**
- * Ferramenta de Fusão de Evidências (Etapa 5) para o agente (Groq).
+ * Ferramenta de Fusão de Evidências (Etapa 5) para o agente (Anthropic).
  *
  * A IA nunca decide sozinha: esta tool executa o FusionService (quant + backtest
  * + risco + contraponto) e devolve uma decisão analítica. A IA pode então

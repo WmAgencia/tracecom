@@ -83,8 +83,8 @@ describe("createAiClient", () => {
     const ai = createAiClient({ apiKey: null, model: "m", logger });
     expect(ai.mode).toBe("static");
   });
-  it("com chave retorna GroqAiClient", () => {
+  it("com chave retorna AnthropicAiClient", () => {
     const ai = createAiClient({ apiKey: "sk-fake", model: "m", logger });
-    expect(ai.mode).toBe("groq");
+    expect(ai.mode).toBe("anthropic");
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Ferramentas do Quant Engine para o agente (Groq).
+ * Ferramentas do Quant Engine para o agente (Anthropic).
  *
  * Estas tools NÃO deixam a IA calcular: apenas expõem resultados determinísticos
  * do `QuantEngine`. A IA orquestra; o motor faz a matemática.

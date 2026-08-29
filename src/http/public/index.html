@@ -90,6 +90,31 @@
       <h2>Histórico de analises</h2>
       <div class="sub" id="historyBody">—</div>
     </section>
+
+    <section class="card" id="extensionCard">
+      <h2>Extensão</h2>
+      <p class="sub">
+        A TRACECON tem uma extensão de navegador (MV3) que abre um
+        <strong>Side Panel</strong> ao lado da sua corretora (TradingView,
+        Binance, Exodus). Ela consome esta mesma API em
+        <code>http://127.0.0.1:8788</code>.
+      </p>
+      <p>
+        <a class="btn primary" href="/extension/download" download>Baixar extensão (.zip)</a>
+        <span class="sub" id="extInfo">—</span>
+      </p>
+      <ol class="install-steps">
+        <li>Baixe o <code>.zip</code> acima e descompacte em qualquer pasta.</li>
+        <li>Abra <code>chrome://extensions</code> (ou equivalente no seu navegador).</li>
+        <li>Ative o <strong>Modo do desenvolvedor</strong> (canto superior direito).</li>
+        <li>Clique em <strong>Carregar sem compactação</strong> e selecione a pasta descompactada.</li>
+        <li>Com este backend rodando (<code>npm run serve</code>), clique no ícone da TRACECON → <strong>Side Panel</strong>.</li>
+      </ol>
+      <p class="sub warn">
+        A extensão só funciona contra um servidor TRACECON rodando localmente.
+        Permissões solicitadas: <code>sidePanel</code>, <code>storage</code>, <code>tabs</code>.
+      </p>
+    </section>
   </main>
 
   <script type="module" src="/app.js"></script>

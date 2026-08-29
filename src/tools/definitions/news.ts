@@ -1,5 +1,5 @@
 /**
- * Ferramenta de busca de notícias / contexto (Etapa 6) para o agente (Groq).
+ * Ferramenta de busca de notícias / contexto (Etapa 6) para o agente (Anthropic).
  *
  * Retorna notícias reais verificadas (com fonte, timestamp, credibilidade) e um
  * viés léxico derivado. Se a fonte não estiver configurada, retorna

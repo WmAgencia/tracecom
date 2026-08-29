@@ -39,7 +39,7 @@ interface RegisteredTool {
  * Na prática, ferramentas são registradas direto no `ToolRegistry.register`,
  * que infere a tipagem do schema e do handler.
  */
-/** Converte zod → JSON Schema para consumo pelo Groq/tool calling. */
+/** Converte zod → JSON Schema para consumo pelo Anthropic/tool calling. */
 function zodToJson(schema: AnyArgs): unknown {
   if (schema instanceof z.ZodString) return { type: "string" };
   if (schema instanceof z.ZodNumber) return { type: "number" };
@@ -111,7 +111,7 @@ export class ToolRegistry {
     return Array.from(this.tools.keys());
   }
 
-  /** Lista de definições em formato consumível pelo Groq (tool calling). */
+  /** Lista de definições em formato consumível pelo Anthropic (tool calling). */
   listForModel(): ToolRecord[] {
     return Array.from(this.tools.values()).map((t) => ({
       name: t.name,

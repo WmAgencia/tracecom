@@ -4,7 +4,7 @@
  * Uso:
  *   npm run agent:dry -- "Analise BTCUSDT no 1m para os próximos 5 candles"
  *
- * Sem GROQ_API_KEY no .env, roda em modo estático (dry-run): exercita o
+ * Sem ANTHROPIC_API_KEY no .env, roda em modo estático (dry-run): exercita o
  * pipeline com ferramentas reais, mas NUNCA inventa dados — em modo noop os
  * dados retornam UNAVAILABLE e a conclusão é WAIT/incomplete.
  */

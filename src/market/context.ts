@@ -1,5 +1,5 @@
 /**
- * MarketContext — contexto estruturado entregue ao agente (Groq).
+ * MarketContext — contexto estruturado entregue ao agente (Anthropic).
  *
  * A IA NÃO recebe o stream bruto. Recebe um snapshot relevante e enxuto,
  * já enriquecido com features calculadas pelo Quant Engine (indicadores,

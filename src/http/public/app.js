@@ -107,6 +107,22 @@ function fmt(n) {
 
 async function refreshAll() { await connect(); await loadMarket(); await loadQuant(); await loadNews(); }
 
+async function loadExtensionInfo() {
+  const el = $("extInfo");
+  if (!el) return;
+  try {
+    const info = await api("/extension/info");
+    if (info.available && info.sizeBytes) {
+      const kb = (info.sizeBytes / 1024).toFixed(1);
+      el.textContent = `(${kb} KB · pronta pra baixar)`;
+    } else {
+      el.textContent = "(zip não gerado ainda — veja README para build)";
+    }
+  } catch {
+    el.textContent = "(não foi possível checar)";
+  }
+}
+
 function bind() {
   $("analyze").addEventListener("click", analyze);
   $("refresh").addEventListener("click", refreshAll);
@@ -117,5 +133,6 @@ function bind() {
 }
 
 bind();
+loadExtensionInfo();
 refreshAll().then(() => analyze());
 setInterval(() => { loadMarket(); }, 10000);

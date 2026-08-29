@@ -34,20 +34,32 @@ Node ≥ 20 (usa `node:sqlite`, `fetch` e `WebSocket` nativos — sem builds nat
 ```bash
 npm install
 
-# 1) Dados reais (Binance, sem chave) + API + web app:
-#    configure o ambiente
+# 1) Dados reais (Binance, sem chave) + IA (Anthropic ou gateway
+#    compatível, ex.: nexxus-pro) + API + web app:
 copy .env.example .env
 
-# defina MARKET_DATA_MODE=binance (dados reais) e, opcional, TRACECON_API_TOKEN
+# Defina ANTHROPIC_API_KEY + ANTHROPIC_BASE_URL + ANTHROPIC_MODEL
+# (modelo default: claude-opus-5). Alternativas no gateway nexxus-pro:
+#   claude-fable-5, claude-sonnet-5, claude-opus-4-8, claude-opus-4-7,
+#   claude-sonnet-4-6, claude-haiku-4-5.
+# Defina MARKET_DATA_MODE=binance (dados reais) e, opcional, TRACECON_API_TOKEN.
 npm run build
 npm run serve        # http://localhost:8788
 ```
 
-### Sem dados reais?
+### Sem chave de IA?
 
-Se `MARKET_DATA_MODE=noop`, a Tracecon retorna `DATA_UNAVAILABLE` /
-`PROVIDER_NOT_CONFIGURED` e as decisões tendem a **WAIT** — exatamente o
-comportamento correto quando não há fonte confiável. Nada é estimado.
+Sem `ANTHROPIC_API_KEY` o agente roda em modo estático (dry-run): exercita
+o pipeline com ferramentas reais mas **não inventa dados** — em modo noop
+as leituras voltam `DATA_UNAVAILABLE` e a conclusão tende a **WAIT**, que é
+o comportamento correto quando não há fonte confiável.
+
+### Gateways compatíveis
+
+O cliente usa o protocolo Anthropic Messages API (`POST /v1/messages`),
+via `fetch` nativo. Qualquer gateway que exponha esse contrato funciona —
+basta apontar `ANTHROPIC_BASE_URL`. Os modelos do seu gateway podem ser
+descobertos em `GET {ANTHROPIC_BASE_URL}/v1/models`.
 
 ## CLI
 

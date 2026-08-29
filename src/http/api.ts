@@ -100,6 +100,14 @@ export class TraceconHttpApi {
       return { status: 200, html: this.homePage() };
     }
 
+    // Rota pública para baixar a extensão do navegador empacotada.
+    if (path === "/extension/download" && method === "GET") {
+      return this.extensionDownload();
+    }
+    if (path === "/extension/info" && method === "GET") {
+      return { status: 200, json: this.extensionInfo() };
+    }
+
     // Rotas públicas (sem token): health e status.
     if (path === "/health" && method === "GET") {
       return { status: 200, json: { ok: true, ts: Date.now() } };
@@ -113,6 +121,69 @@ export class TraceconHttpApi {
     }
 
     return this.apiRoute(method, path, q);
+  }
+
+  /**
+   * Resolve o caminho do zip da extensão empacotada. Procura em
+   * `dist/` (build), `../dist/` (a partir de src/http) e `../../dist/`.
+   * Se não existir, retorna erro 503 com instrução de build.
+   */
+  private resolveExtensionZip(): { path: string; size: number } | null {
+    const candidates = [
+      join(process.cwd(), "dist", "tracecon-extension-v0.1.0.zip"),
+      join(process.cwd(), "..", "dist", "tracecon-extension-v0.1.0.zip"),
+    ];
+    for (const p of candidates) {
+      try {
+        if (existsSync(p) && statSync(p).isFile()) {
+          const size = statSync(p).size;
+          return { path: p, size };
+        }
+      } catch {
+        // ignora
+      }
+    }
+    return null;
+  }
+
+  private extensionInfo(): unknown {
+    const zip = this.resolveExtensionZip();
+    return {
+      available: zip !== null,
+      url: "/extension/download",
+      filename: "tracecon-extension-v0.1.0.zip",
+      sizeBytes: zip?.size ?? null,
+      note: zip
+        ? "Empacotada em dist/tracecon-extension-v0.1.0.zip. Carregue em chrome://extensions com Modo do desenvolvedor."
+        : "Zip não encontrado. Rode: (cd extension && powershell Compress-Archive -Path * -DestinationPath ../dist/tracecon-extension-v0.1.0.zip) — ou use o caminho local.",
+    };
+  }
+
+  private extensionDownload(): HttpResponse {
+    const zip = this.resolveExtensionZip();
+    if (!zip) {
+      return {
+        status: 503,
+        json: {
+          error: "extension_zip_not_found",
+          message:
+            "O .zip da extensão não foi encontrado em dist/. Rode o build da extensão para disponibilizar o download.",
+        },
+      };
+    }
+    try {
+      const body = readFileSync(zip.path);
+      return {
+        status: 200,
+        body,
+        contentType: "application/zip",
+      };
+    } catch (err) {
+      return {
+        status: 500,
+        json: { error: "extension_read_failed", message: err instanceof Error ? err.message : String(err) },
+      };
+    }
   }
 
   /** true = autorizado (sem token configurado => sempre autorizado). */
@@ -227,6 +298,8 @@ code{background:#161b24;padding:2px 6px;border-radius:4px;color:#79c0ff}a{color:
 <li><code>/api/catalog</code></li>
 <li><code>/api/analytics/stats?symbol=BTCUSDT&amp;timeframe=1h</code></li>
 <li><code>/api/analytics/record?symbol=...&amp;decision=BUY&amp;direction=up&amp;horizon=12&amp;entryPrice=...</code></li>
+<li><code>/extension/info</code> — metadados do zip da extensão</li>
+<li><code>/extension/download</code> — baixa <code>tracecon-extension-v0.1.0.zip</code></li>
 </ul>
 <p style="color:#7a8494">Se <code>TRACECON_API_TOKEN</code> estiver setado, envie <code>Authorization: Bearer &lt;token&gt;</code> em /api/*.</p>
 </body></html>`;

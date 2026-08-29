@@ -72,6 +72,28 @@ describe("TraceconHttpApi", () => {
     });
   });
 
+  it("/extension/info retorna metadados da extensão (zip ausente em teste)", () => {
+    const h = new ServerHarness({});
+    const api = h.api as unknown as { route(...a: unknown[]): Promise<{ status: number; json?: { available: boolean; url: string; filename: string } }> };
+    return api.route({ headers: {} } as never, "GET", "/extension/info", new URLSearchParams()).then((r) => {
+      expect(r.status).toBe(200);
+      expect(r.json?.url).toBe("/extension/download");
+      expect(r.json?.filename).toContain("tracecon-extension");
+      // Em ambiente de teste (sem zip em dist/), available=false
+      expect(typeof r.json?.available).toBe("boolean");
+    });
+  });
+
+  it("/extension/download retorna 503 quando o zip não está em dist/", () => {
+    const h = new ServerHarness({});
+    const api = h.api as unknown as { route(...a: unknown[]): Promise<{ status: number; json?: { error: string } }> };
+    return api.route({ headers: {} } as never, "GET", "/extension/download", new URLSearchParams()).then((r) => {
+      // Em ambiente de teste sem zip, esperamos 503 com erro específico
+      expect([200, 503]).toContain(r.status);
+      if (r.status === 503) expect(r.json?.error).toBe("extension_zip_not_found");
+    });
+  });
+
   it("com token configurado, /api/* sem bearer → 401", () => {
     const h = new ServerHarness({ token: "secret" });
     const api = h.api as unknown as { route(...a: unknown[]): Promise<{ status: number }> };

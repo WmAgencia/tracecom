@@ -5,7 +5,7 @@
  *   1. Recebe a solicitação do usuário (ativo, timeframe, horizonte).
  *   2. Monta o prompt de sistema com as regras do produto (não inventar dados,
  *      buscar contraponto, poder responder WAIT).
- *   3. Loop de tool calling: a IA (Groq) decide a próxima ferramenta; o engine
+ *   3. Loop de tool calling: a IA (Anthropic) decide a próxima ferramenta; o engine
  *      valida (registry), executa e devolve o resultado, com limites de
  *      segurança que impedem loop excessivo.
  *   4. Consolida o resultado em uma `Analysis` com rastro de auditoria completo.
@@ -112,7 +112,7 @@ export class AgentEngine {
     let rounds = 0;
     let toolCalls = 0;
 
-    // Em modo estático (sem chave Groq), a IA não chama ferramentas por conta
+    // Em modo estático (sem chave Anthropic), a IA não chama ferramentas por conta
     // própria. Para o pipeline ainda ser exercitado (e NÃO inventar dados),
     // executamos um conjunto mínimo e determinístico de leituras defensivas.
     const useStaticProbe = this.#ai.mode === "static";

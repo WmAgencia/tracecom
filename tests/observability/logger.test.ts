@@ -5,7 +5,7 @@ describe("redact", () => {
   it("remove chaves/segredos", () => {
     const out = redact({
       apiKey: "secret",
-      GROQ_API_KEY: "secret",
+      ANTHROPIC_API_KEY: "secret",
       token: "t",
       data: { plain: 1, token2: "x" },
     }) as Record<string, unknown>;
