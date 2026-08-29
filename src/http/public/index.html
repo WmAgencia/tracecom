@@ -3,119 +3,230 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TRACECON — Análise de Mercado</title>
+  <title>TRACE/CON — inteligência de mercado</title>
+  <meta name="description" content="Análise técnica fundamentada. Não é corretora. Pode responder WAIT." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <header>
-    <h1>TRACECON</h1>
-    <span class="tag">análise · não é corretora</span>
-    <div class="conn" id="conn">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">◐</span>
+      <span class="brand-name">TRACE<span class="brand-slash">/</span>CON</span>
+      <span class="brand-version">v0.1.0</span>
+    </div>
+
+    <div class="tape" id="tape" aria-label="Tape de preço">
+      <span class="tape-bars" id="tapeBars">▁▂▃</span>
+      <span class="tape-price" id="tapePrice">—</span>
+      <span class="tape-delta" id="tapeDelta">—</span>
+      <span class="tape-vol" id="tapeVol">—</span>
+      <span class="tape-meta" id="tapeMeta">—</span>
+    </div>
+
+    <div class="conn" id="conn" aria-live="polite">
       <span class="dot" id="connDot"></span>
       <span id="connText">—</span>
     </div>
   </header>
 
-  <main>
-    <section class="controls card">
-      <label>Ativo
-        <select id="symbol">
-          <option value="BTCUSDT">BTC/USDT</option>
-          <option value="ETHUSDT">ETH/USDT</option>
-          <option value="SOLUSDT">SOL/USDT</option>
-          <option value="BNBUSDT">BNB/USDT</option>
-          <option value="XRPUSDT">XRP/USDT</option>
-        </select>
-      </label>
-      <label>Timeframe
-        <select id="timeframe">
-          <option>1m</option><option>3m</option><option>5m</option>
-          <option>15m</option><option>1h</option><option>4h</option><option>1d</option>
-        </select>
-      </label>
-      <label>Direção
-        <select id="direction"><option value="up">Alta</option><option value="down">Baixa</option></select>
-      </label>
-      <label>Horizonte (candles)
-        <input type="number" id="horizon" value="12" min="1" max="200" />
-      </label>
-      <button id="analyze">Analisar</button>
-      <button id="refresh" class="sec">Atualizar mercado</button>
-    </section>
+  <main class="grid">
+    <!-- COLUNA ESQUERDA: CONTROLE + ESTADO ATUAL -->
+    <section class="col col-left">
+      <section class="panel">
+        <header class="panel-head">
+          <span class="eyebrow">controle</span>
+          <span class="panel-title">Análise</span>
+        </header>
 
-    <div class="grid">
-      <section class="card" id="marketCard">
-        <h2>Mercado</h2>
-        <div class="big" id="price">—</div>
-        <div class="sub">
-          <div>Qualidade: <b id="quality">—</b></div>
-          <div>Frescor: <b id="freshness">—</b></div>
-          <div>Último fechado: <b id="lastClose">—</b></div>
-          <div>Volume: <b id="volume">—</b></div>
-          <div>Fonte: <b id="source">—</b></div>
+        <div class="form">
+          <label class="field">
+            <span class="field-label">Ativo</span>
+            <select id="symbol">
+              <option value="BTCUSDT">BTC / USDT</option>
+              <option value="ETHUSDT">ETH / USDT</option>
+              <option value="SOLUSDT">SOL / USDT</option>
+              <option value="BNBUSDT">BNB / USDT</option>
+              <option value="XRPUSDT">XRP / USDT</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Timeframe</span>
+            <select id="timeframe">
+              <option>1m</option><option>3m</option><option>5m</option>
+              <option>15m</option><option selected>1h</option><option>4h</option><option>1d</option>
+            </select>
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">Direção</span>
+              <select id="direction">
+                <option value="up">Alta</option>
+                <option value="down">Baixa</option>
+              </select>
+            </label>
+
+            <label class="field field-narrow">
+              <span class="field-label">Horizonte</span>
+              <input type="number" id="horizon" value="12" min="1" max="200" />
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="analyze" class="btn btn-primary">Analisar</button>
+            <button id="refresh" class="btn btn-ghost">Atualizar</button>
+          </div>
         </div>
-        <div class="notice" id="noData" style="display:none">
-          Dados reais indisponíveis — nenhum número é estimado.
+      </section>
+
+      <section class="panel panel-market">
+        <header class="panel-head">
+          <span class="eyebrow">estado atual</span>
+          <span class="panel-title">Mercado</span>
+        </header>
+        <div class="price-block">
+          <div class="price" id="price">—</div>
+          <div class="price-sub">
+            <span id="quote">USDT</span>
+            <span class="sep">·</span>
+            <span id="source">—</span>
+          </div>
+        </div>
+        <dl class="metrics">
+          <div><dt>qualidade</dt><dd id="quality">—</dd></div>
+          <div><dt>freshness</dt><dd id="freshness">—</dd></div>
+          <div><dt>último close</dt><dd id="lastClose">—</dd></div>
+          <div><dt>volume</dt><dd id="volume">—</dd></div>
+        </dl>
+        <div id="noData" class="empty" hidden>
+          Sem dados no momento. O motor só fala quando há fonte.
         </div>
       </section>
 
-      <section class="card" id="quantCard">
-        <h2>Técnico</h2>
-        <div class="sub" id="quantBody">Coletando…</div>
+      <section class="panel panel-tech">
+        <header class="panel-head">
+          <span class="eyebrow">técnico</span>
+          <span class="panel-title">Indicadores</span>
+        </header>
+        <dl class="metrics metrics-mono" id="quantMetrics">
+          <div><dt>RSI</dt><dd id="rsi">—</dd></div>
+          <div><dt>MACD hist</dt><dd id="macdHist">—</dd></div>
+          <div><dt>ATR %</dt><dd id="atrPct">—</dd></div>
+          <div><dt>vol anu.</dt><dd id="volAnn">—</dd></div>
+          <div><dt>regime</dt><dd id="regime">—</dd></div>
+          <div><dt>estrutura</dt><dd id="structure">—</dd></div>
+        </dl>
+        <div class="levels">
+          <div>
+            <span class="levels-label">suportes</span>
+            <span class="levels-vals" id="supports">—</span>
+          </div>
+          <div>
+            <span class="levels-label">resistências</span>
+            <span class="levels-vals" id="resistances">—</span>
+          </div>
+        </div>
       </section>
-
-      <section class="card" id="newsCard">
-        <h2>Notícias</h2>
-        <div class="sub" id="newsBody">—</div>
-      </section>
-
-      <section class="card" id="decisionCard">
-        <h2>Decisão analítica</h2>
-        <div class="big" id="decision">—</div>
-        <div class="sub" id="rationale">—</div>
-        <div class="notice" id="decisionNote" style="display:none"></div>
-      </section>
-    </div>
-
-    <section class="card" id="factorsCard">
-      <h2>Fusão de evidências</h2>
-      <div class="cols">
-        <div><h3>Favoráveis</h3><ul id="fav"></ul></div>
-        <div><h3>Contrários</h3><ul id="con"></ul></div>
-        <div><h3>Invalidariam</h3><ul id="inv"></ul></div>
-      </div>
     </section>
 
-    <section class="card" id="historyCard">
-      <h2>Histórico de analises</h2>
-      <div class="sub" id="historyBody">—</div>
-    </section>
+    <!-- COLUNA DIREITA: DECISÃO + EVIDÊNCIA + HISTÓRICO -->
+    <section class="col col-right">
+      <section class="panel panel-decision">
+        <header class="panel-head">
+          <span class="eyebrow">decisão analítica</span>
+          <span class="panel-title">Agora</span>
+        </header>
 
-    <section class="card" id="extensionCard">
-      <h2>Extensão</h2>
-      <p class="sub">
-        A TRACECON tem uma extensão de navegador (MV3) que abre um
-        <strong>Side Panel</strong> ao lado da sua corretora (TradingView,
-        Binance, Exodus). Ela consome esta mesma API em
-        <code>http://127.0.0.1:8788</code>.
-      </p>
-      <p>
-        <a class="btn primary" href="/extension/download" download>Baixar extensão (.zip)</a>
-        <span class="sub" id="extInfo">—</span>
-      </p>
-      <ol class="install-steps">
-        <li>Baixe o <code>.zip</code> acima e descompacte em qualquer pasta.</li>
-        <li>Abra <code>chrome://extensions</code> (ou equivalente no seu navegador).</li>
-        <li>Ative o <strong>Modo do desenvolvedor</strong> (canto superior direito).</li>
-        <li>Clique em <strong>Carregar sem compactação</strong> e selecione a pasta descompactada.</li>
-        <li>Com este backend rodando (<code>npm run serve</code>), clique no ícone da TRACECON → <strong>Side Panel</strong>.</li>
-      </ol>
-      <p class="sub warn">
-        A extensão só funciona contra um servidor TRACECON rodando localmente.
-        Permissões solicitadas: <code>sidePanel</code>, <code>storage</code>, <code>tabs</code>.
-      </p>
+        <div class="decision-head">
+          <div class="decision-tag" id="decisionTag">
+            <span class="decision-pulse"></span>
+            <span id="decision">WAIT</span>
+          </div>
+          <div class="decision-meta">
+            <span><span class="meta-key">score</span><span class="meta-val" id="dScore">—</span></span>
+            <span><span class="meta-key">conf.</span><span class="meta-val" id="dConf">—</span></span>
+            <span><span class="meta-key">prob. empírica</span><span class="meta-val" id="dProb">—</span></span>
+          </div>
+        </div>
+
+        <p class="rationale" id="rationale">Aguardando análise. Selecione ativo e horizonte, e clique em Analisar.</p>
+
+        <div class="factors">
+          <article class="factor factor-fav">
+            <header><span class="factor-tag">+</span><span class="factor-name">Favoráveis</span></header>
+            <ul id="fav"><li class="muted">nenhum</li></ul>
+          </article>
+          <article class="factor factor-con">
+            <header><span class="factor-tag">−</span><span class="factor-name">Contrários</span></header>
+            <ul id="con"><li class="muted">nenhum</li></ul>
+          </article>
+          <article class="factor factor-inv">
+            <header><span class="factor-tag">!</span><span class="factor-name">Invalidariam</span></header>
+            <ul id="inv"><li class="muted">nenhum</li></ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel panel-spark">
+        <header class="panel-head">
+          <span class="eyebrow">preço</span>
+          <span class="panel-title">Últimos candles</span>
+          <span class="panel-meta" id="sparkMeta">—</span>
+        </header>
+        <div class="spark-wrap">
+          <canvas id="spark" aria-label="Sparkline de preço"></canvas>
+        </div>
+      </section>
+
+      <section class="panel panel-history">
+        <header class="panel-head">
+          <span class="eyebrow">histórico</span>
+          <span class="panel-title">Análises</span>
+        </header>
+        <div id="historyBody" class="history-empty">Sem análises anteriores nesta sessão.</div>
+      </section>
+
+      <section class="panel panel-extension">
+        <header class="panel-head">
+          <span class="eyebrow">distribuição</span>
+          <span class="panel-title">Extensão do navegador</span>
+        </header>
+        <p class="lede">
+          Um Side Panel que abre ao lado da sua corretora (TradingView, Binance, Exodus),
+          consumindo esta mesma API em <code>http://127.0.0.1:8788</code>.
+        </p>
+        <div class="ext-actions">
+          <a class="btn btn-primary" href="/extension/download" download>Baixar extensão (.zip)</a>
+          <span class="ext-info" id="extInfo">—</span>
+        </div>
+        <ol class="ext-steps">
+          <li>Baixe o <code>.zip</code> acima e descompacte em qualquer pasta.</li>
+          <li>Abra <code>chrome://extensions</code> (ou equivalente no seu navegador).</li>
+          <li>Ative o <strong>Modo do desenvolvedor</strong> (canto superior direito).</li>
+          <li>Clique em <strong>Carregar sem compactação</strong> e selecione a pasta descompactada.</li>
+          <li>Com o backend local rodando (<code>npm run serve</code>), clique no ícone → <strong>Side Panel</strong>.</li>
+        </ol>
+        <p class="ext-note">
+          A extensão só funciona contra um servidor TRACECON local.
+          Permissões: <code>sidePanel</code>, <code>storage</code>, <code>tabs</code>.
+        </p>
+      </section>
     </section>
   </main>
+
+  <footer class="footer">
+    <span>TRACE/CON</span>
+    <span class="footer-sep">·</span>
+    <span>análise de mercado</span>
+    <span class="footer-sep">·</span>
+    <span>não é corretora</span>
+    <span class="footer-sep">·</span>
+    <span id="footerMeta">—</span>
+  </footer>
 
   <script type="module" src="/app.js"></script>
 </body>
