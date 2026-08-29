@@ -32,7 +32,9 @@ async function main(): Promise<void> {
   const rt = createMarketRuntime(config, {
     symbols: [
       { symbol: "BTCUSDT", timeframe: "1m", native: true },
+      { symbol: "BTCUSDT", timeframe: "15m", native: true },
       { symbol: "BTCUSDT", timeframe: "1h", native: true },
+      { symbol: "BTCUSDT", timeframe: "4h", native: true },
       { symbol: "ETHUSDT", timeframe: "1h", native: true },
     ],
   });

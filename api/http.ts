@@ -11,6 +11,11 @@
  * (processo long-running: `npm run serve`).
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { wilsonLowerBound, isActionable, expectedValue } from "../src/fusion/calibration";
+import { analyzeConfluence } from "../src/fusion/confluence";
+import { evaluateGuards, freshGuardState } from "../src/fusion/guards";
+import type { Direction, EmpiricalProbability } from "../src/backtest/types";
+import type { TFSnapshot, Timeframe } from "../src/fusion/confluence";
 
 const CC = "https://cryptocurrency.cv/api";
 const BINANCE = "https://api.binance.com/api/v3";
@@ -135,24 +140,122 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
 
     if (path.endsWith("/analyze")) {
+      const now = Date.now();
+      const rawDirection = (q.get("direction") ?? "up").toLowerCase();
+      const direction: Direction = rawDirection === "down" ? "down" : "up";
+      const horizon = Number(q.get("horizon") ?? DEFAULT_HORIZON);
+
+      // Candles do TF operacional (maior amostra p/ probability + técnico).
       const k = await binanceKlinesSafe(symbol, timeframe, 300);
       if (typeof k === "string") {
-        json(200, { decision: "WAIT", dataSufficient: false, rationale: `provedor indisponível (${k})`, note: "use Railway p/ backend completo" });
+        json(200, {
+          decision: "WAIT", dataSufficient: false,
+          rationale: `provedor indisponível (${k})`,
+          note: "use Railway p/ backend completo",
+          calibration: null,
+          guards: { allowed: false, reason: "provedor indisponível" },
+          confluence: null,
+        });
         return;
       }
-      if (k.length < 30) { json(200, { decision: "WAIT", dataSufficient: false, rationale: "dados insuficientes" }); return; }
+      if (k.length < 30) {
+        json(200, {
+          decision: "WAIT", dataSufficient: false, rationale: "dados insuficientes",
+          calibration: null,
+          guards: { allowed: true, reason: null },
+          confluence: null,
+        });
+        return;
+      }
+
+      // --- Técnico (camada clássica) ---
       const closes = k.map((c) => c.close);
       const last = closes[closes.length - 1]!;
       const avg20 = sma(closes, 20)!;
       const tech = Math.max(-1, Math.min(1, ((last - avg20) / avg20) * 20));
       const counter = Math.abs(tech) < 0.18;
-      const decision = toDecision(tech, true, counter);
+      const baseDecision = toDecision(tech, true, counter);
+
+      // --- 3 TFs para confluência ---
+      let confluence: { direction: "up" | "down" | "neutral"; agreementScore: number; confidenceBoost: number; reason: string } | null = null;
+      try {
+        const perTf = await fetchCandlesMultiTf(symbol);
+        const { snapshots, direction: confDir } = buildConfluenceSnapshots(perTf, direction);
+        if (snapshots.length >= 2 && confDir !== null) {
+          const r = analyzeConfluence({ perTf: snapshots, direction });
+          confluence = {
+            direction: r.direction,
+            agreementScore: r.agreementScore,
+            confidenceBoost: r.confidenceBoost,
+            reason: r.reason,
+          };
+        }
+      } catch {
+        confluence = null;
+      }
+
+      // --- Probabilidade empírica (in-memory, sem persistência) ---
+      const probability = quickEmpiricalProbability(k, direction, horizon, DEFAULT_MIN_MOVE_PCT);
+
+      // --- Calibração Wilson ---
+      let calibration: { calibratedProb: number; ciLower: number; ciUpper: number; baseline: number; expectedValue: number; actionable: boolean } | null = null;
+      if (probability.sampleSize >= MIN_PROB_SAMPLE) {
+        const p = probability.probability;
+        const base = probability.baseline ?? 0.5;
+        const ciLower = probability.confidenceInterval?.lower ?? wilsonLowerBound(probability.favorable, probability.sampleSize);
+        const ciUpper = probability.confidenceInterval?.upper ?? (1 - ciLower);
+        calibration = {
+          calibratedProb: p,
+          ciLower,
+          ciUpper,
+          baseline: base,
+          expectedValue: expectedValue({ probability: p, gain: 1, loss: 1 }),
+          actionable: isActionable({ probability: p, ciLower, baseline: base }),
+        };
+      }
+
+      // --- Guards (estado fresh — serverless não persiste) ---
+      const guardState = freshGuardState(now);
+      const sd = stdev(closes);
+      // Vol anualizada como proxy p/ atrPct (em %); se volatilidade baixa, sem bloqueio.
+      const atrPct = sd !== 0 ? sd * 1.732 / Math.max(last, 1e-9) * 100 : null;
+      const age = lastCandleAgeMs(k, now, timeframe);
+      const guardDecision = evaluateGuards({ state: guardState, atrPct, lastCandleAgeMs: age, now });
+      const guards = { allowed: guardDecision.allow, reason: guardDecision.reason ?? null };
+
+      // --- Combinação final: qualquer camada bloqueando → WAIT ---
+      const blockedReasons: string[] = [];
+      if (!guards.allowed) blockedReasons.push(guards.reason ?? "guards bloqueou");
+      if (confluence && confluence.direction === "neutral") {
+        blockedReasons.push(`confluência insuficiente (${confluence.reason})`);
+      }
+      if (calibration && !calibration.actionable && baseDecision !== "WAIT") {
+        blockedReasons.push(
+          `calibração não acionável (ci_lower ${(calibration.ciLower * 100).toFixed(1)}% ≤ baseline ${(calibration.baseline * 100).toFixed(1)}% + margem)`,
+        );
+      }
+      const decision: "BUY" | "SELL" | "WAIT" = blockedReasons.length > 0 ? "WAIT" : baseDecision;
+      const rationale = blockedReasons.length > 0
+        ? `Bloqueado por: ${blockedReasons.join("; ")}. Técnico ${tech.toFixed(2)}. Provedor Binance (snapshot serverless).`
+        : `${decision === "WAIT" ? "Contraponto insuficiente" : "Direcionamento"} — técnico ${tech.toFixed(2)}. Provedor Binance (snapshot).`;
+
       json(200, {
-        decision, direction: decision === "WAIT" ? null : (q.get("direction") ?? "up"),
-        score: tech, confidence: Math.min(0.9, 0.4 + Math.abs(tech)),
-        dataSufficient: true, blockedByCounterEvidence: counter,
-        rationale: `${decision === "WAIT" ? "Contraponto insuficiente" : "Direcionamento"} — técnico ${tech.toFixed(2)}. Provedor Binance (snapshot).`,
-        factors: { favorable: [], counter: counter ? [{ text: `Score técnico ${tech.toFixed(2)} < limite` }] : [], invalidators: ["edge histórico não avaliado em serverless"] },
+        decision,
+        direction: decision === "WAIT" ? null : direction,
+        score: tech,
+        confidence: Math.min(0.9, 0.4 + Math.abs(tech)),
+        dataSufficient: true,
+        blockedByCounterEvidence: counter,
+        rationale,
+        factors: {
+          favorable: [],
+          counter: counter ? [{ text: `Score técnico ${tech.toFixed(2)} < limite` }] : [],
+          invalidators: ["edge histórico não avaliado em serverless"],
+        },
+        calibration,
+        guards,
+        confluence,
+        sampleSize: probability.sampleSize,
       });
       return;
     }
@@ -221,4 +324,102 @@ async function binanceKlinesSafe(symbol: string, timeframe: string, limit: numbe
   } catch (e) {
     return e instanceof Error ? e.message : "erro";
   }
+}
+
+/**
+ * Probabilidade empírica derivada em memória, sem persistência.
+ * Conta quantas janelas rolling (entryIndex → entryIndex+horizon) produziram
+ * retorno na direção solicitada acima de `minMovePct`%.
+ *
+ * Não inventa dados: se a amostra for insuficiente (< MIN_SAMPLE), o caller
+ * deve tratar `probability.sampleSize < 30` como ausência de calibração.
+ */
+const MIN_PROB_SAMPLE = 30;
+const DEFAULT_HORIZON = 12;
+const DEFAULT_MIN_MOVE_PCT = 0.3;
+
+function quickEmpiricalProbability(
+  candles: readonly Candle[],
+  direction: Direction,
+  horizon: number = DEFAULT_HORIZON,
+  minMovePct: number = DEFAULT_MIN_MOVE_PCT,
+): EmpiricalProbability {
+  const closes = candles.map((c) => c.close);
+  const n = closes.length;
+  const periodStart = n > 0 ? candles[0]!.timestamp : 0;
+  const periodEnd = n > 0 ? candles[n - 1]!.timestamp : 0;
+
+  let favorable = 0;
+  let sampleSize = 0;
+  for (let i = 0; i + horizon < n; i++) {
+    const entry = closes[i]!;
+    const exit = closes[i + horizon]!;
+    if (entry === 0) continue;
+    const pct = ((exit - entry) / entry) * 100;
+    if (Math.abs(pct) < minMovePct) continue; // flat — exclui
+    sampleSize++;
+    if (direction === "up" ? pct > 0 : pct < 0) favorable++;
+  }
+
+  const prob = sampleSize > 0 ? favorable / sampleSize : 0;
+  return {
+    probability: prob,
+    sampleSize,
+    favorable,
+    periodStart,
+    periodEnd,
+    similarityCriteria: "rolling-window-direction",
+    horizon: `${horizon} candles`,
+    methodology: "contagem direta em candles Binance (snapshot, sem similaridade)",
+    confidenceInterval: sampleSize > 0
+      ? {
+          lower: wilsonLowerBound(favorable, sampleSize),
+          upper: 1 - wilsonLowerBound(sampleSize - favorable, sampleSize),
+          method: "wilson",
+          level: 0.95,
+        }
+      : null,
+    outOfSample: false,
+    baseline: 0.5,
+    limitations: [
+      "amostra in-sample (sem split OOS)",
+      "snapshot serverless: sem cold store",
+      "sem filtro de similaridade",
+    ],
+  };
+}
+
+const CONFLUENCE_TFS: ReadonlyArray<Timeframe> = ["15m", "1h", "4h"];
+
+async function fetchCandlesMultiTf(symbol: string): Promise<Record<Timeframe, Candle[]>> {
+  const entries = await Promise.all(
+    CONFLUENCE_TFS.map(async (tf) => {
+      const k = await binanceKlinesSafe(symbol, tf, 120);
+      const candles = typeof k === "string" ? [] : k;
+      return [tf, candles] as const;
+    }),
+  );
+  return Object.fromEntries(entries) as Record<Timeframe, Candle[]>;
+}
+
+function buildConfluenceSnapshots(
+  perTf: Record<Timeframe, Candle[]>,
+  direction: Direction,
+): { snapshots: TFSnapshot[]; direction: "up" | "down" | "neutral" | null } {
+  // Só calcula se ao menos 2 TFs têm 30+ candles (regra da fusão clássica).
+  const eligible = CONFLUENCE_TFS.filter((tf) => perTf[tf] && perTf[tf]!.length >= 30);
+  if (eligible.length < 2) return { snapshots: [], direction: null };
+  const snapshots: TFSnapshot[] = eligible.map((tf) => ({
+    tf,
+    candles: perTf[tf]!.map((c) => ({ close: c.close, high: c.high, low: c.low })),
+  }));
+  return { snapshots, direction };
+}
+
+function lastCandleAgeMs(candles: readonly Candle[], now: number, timeframe: string): number | null {
+  if (candles.length === 0) return null;
+  const tfMs = TF_MS[timeframe];
+  if (!tfMs) return null;
+  const lastClose = candles[candles.length - 1]!.timestamp + tfMs;
+  return Math.max(0, now - lastClose);
 }

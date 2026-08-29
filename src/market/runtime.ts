@@ -25,6 +25,35 @@ import { FreeCryptoNewsProvider } from "../context/provider";
 import type { NewsResult } from "../context/types";
 import { AnalyticsService } from "../analytics/service";
 import { DecisionRepository } from "../store/repositories/decisionRepository";
+import { GuardRepository } from "../store/repositories/guardRepository";
+import { freshGuardState, type GuardState } from "../fusion/guards";
+
+/**
+ * Constrói um provider de candles multi-TF a partir do pipeline.
+ * Garante retorno de array mesmo quando não há backfill (camada vazia).
+ */
+function makeMultiTfCandlesProvider(
+  pipeline: MarketPipeline,
+): (symbol: string) => { readonly "15m": readonly import("./model").MarketCandle[]; readonly "1h": readonly import("./model").MarketCandle[]; readonly "4h": readonly import("./model").MarketCandle[] } {
+  return (symbol: string) => ({
+    "15m": pipeline.state.getCandles(symbol, "15m"),
+    "1h": pipeline.state.getCandles(symbol, "1h"),
+    "4h": pipeline.state.getCandles(symbol, "4h"),
+  });
+}
+
+/**
+ * Idade do último candle de 1m de BTCUSDT (ou null se sem dados).
+ * Usado pelo guard de staleness do FusionService.
+ */
+function makeLastCandleAgeProvider(
+  pipeline: MarketPipeline,
+): () => number | null {
+  return () => {
+    const last = pipeline.state.getCandles("BTCUSDT", "1m").slice(-1)[0];
+    return last ? Date.now() - last.timestamp : null;
+  };
+}
 
 export interface MarketRuntimeOptions {
   readonly symbols: readonly PipelineSymbolConfig[];
@@ -43,6 +72,12 @@ export interface MarketRuntime {
   readonly fusion: FusionService;
   readonly news: NewsService;
   readonly analytics: AnalyticsService;
+  readonly guardRepo?: GuardRepository;
+  readonly getGuardState: () => GuardState;
+  /** Persiste o estado atual dos guards no SQLite. */
+  persistGuards(state: GuardState): void;
+  /** Reseta o circuit breaker no SQLite (intervenção manual). */
+  resetBreaker(): void;
   start(): Promise<void>;
   stop(): void;
   /** Monta o MarketContext enriquecido com features do Quant Engine. */
@@ -60,6 +95,10 @@ export function createMarketRuntime(
   const candleRepo = new CandleRepository(store, provider?.id ?? "none");
   const backtester = new Backtester();
   const decisionRepo = new DecisionRepository(store);
+  // Repositório de guards — só existe se o SQLite estiver disponível no ambiente.
+  const guardRepo: GuardRepository | undefined = store.available
+    ? new GuardRepository(store)
+    : undefined;
 
   if (!provider) {
     // Sem provedor ⇒ SERVICE devolve PROVIDER_NOT_CONFIGURED; pipeline null.
@@ -67,6 +106,8 @@ export function createMarketRuntime(
     const fusion = makeStubFusion();
     const news = new NewsService({ provider: null });
     const analytics = new AnalyticsService(decisionRepo, () => []);
+    // Estado de guard: carrega do SQLite se houver persistência; senão fresco.
+    let runtimeGuardState: GuardState = guardRepo?.load() ?? freshGuardState(Date.now());
     return {
       provider: null,
       pipeline: null,
@@ -79,6 +120,16 @@ export function createMarketRuntime(
       fusion,
       news,
       analytics,
+      guardRepo,
+      getGuardState: () => runtimeGuardState,
+      persistGuards: (s) => {
+        runtimeGuardState = s;
+        guardRepo?.save(s);
+      },
+      resetBreaker: () => {
+        guardRepo?.reset();
+        runtimeGuardState = freshGuardState(Date.now());
+      },
       configured: false,
       start: async () => void 0,
       stop: () => store.close(),
@@ -102,11 +153,21 @@ export function createMarketRuntime(
   const service = new MarketDataService({ provider, pipeline });
   const prov: MarketDataProvider = provider; // não-nulo deste ponto em diante
     const news = new NewsService({ provider: new FreeCryptoNewsProvider() });
+    // Estado de guard: carrega do SQLite se houver persistência; senão fresco.
+    let runtimeGuardState: GuardState = guardRepo?.load() ?? freshGuardState(Date.now());
     const fusion = new FusionService({
       quant,
       backtester,
       historySource: candleRepo.source(),
       currentCandles: (symbol, timeframe) => pipeline.state.getCandles(symbol, timeframe),
+      // CAMADA 1 — Confluência multi-TF (15m + 1h + 4h)
+      currentCandlesMultiTf: makeMultiTfCandlesProvider(pipeline),
+      // CAMADA 3 — Guards: estado vem do SQLite (carregado na inicialização).
+      // Mutações devem usar runtime.persistGuards(newState) para que reinícios
+      // do servidor NÃO percam cooldown/circuit breaker/drawdown diário.
+      guardStateProvider: () => runtimeGuardState,
+      // Idade do último candle 1m para checagem de staleness
+      lastCandleAgeMs: makeLastCandleAgeProvider(pipeline),
       getNewsBias: async (asset) => {
         const res = await news.searchNews({ query: asset, asset, limit: 8 });
         if (!res.available) return null;
@@ -118,6 +179,16 @@ export function createMarketRuntime(
       decisionRepo,
       (symbol, timeframe) => pipeline.state.getCandles(symbol, timeframe),
     );
+
+  function persistGuards(state: GuardState): void {
+    runtimeGuardState = state;
+    guardRepo?.save(state);
+  }
+
+  function resetBreaker(): void {
+    guardRepo?.reset();
+    runtimeGuardState = freshGuardState(Date.now());
+  }
 
   async function buildContext(symbol: string, timeframe: Timeframe): Promise<MarketContext> {
     const md = await service.getMarketData({ symbol, timeframe });
@@ -165,6 +236,10 @@ export function createMarketRuntime(
     fusion,
     news,
     analytics,
+    guardRepo,
+    getGuardState: () => runtimeGuardState,
+    persistGuards,
+    resetBreaker,
     configured: true,
     start: async () => {
       if (!pipeline) return;

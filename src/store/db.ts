@@ -125,6 +125,21 @@ export class Datastore {
       );
       CREATE INDEX IF NOT EXISTS idx_decisions_symbol_tf ON decision_records(symbol, timeframe);
       CREATE INDEX IF NOT EXISTS idx_decisions_outcome ON decision_records(outcome);
+
+      -- Estado dos guards (circuit breaker + cooldown + drawdown diário).
+      -- Singleton (id=1). Persiste entre reinícios do servidor para que
+      -- cooldown e circuit breaker NÃO resetem ao subir o processo.
+      CREATE TABLE IF NOT EXISTS guard_state (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        consecutive_losses INTEGER NOT NULL DEFAULT 0,
+        cooldown_until INTEGER,
+        daily_loss_pct REAL NOT NULL DEFAULT 0,
+        last_loss_at INTEGER,
+        circuit_tripped_at INTEGER,
+        last_updated_day TEXT NOT NULL,
+        state_json TEXT NOT NULL DEFAULT '{}'
+      );
+      INSERT OR IGNORE INTO guard_state (id, last_updated_day) VALUES (1, '');
     `);
   }
 
