@@ -126,6 +126,30 @@ export class Datastore {
       CREATE INDEX IF NOT EXISTS idx_decisions_symbol_tf ON decision_records(symbol, timeframe);
       CREATE INDEX IF NOT EXISTS idx_decisions_outcome ON decision_records(outcome);
 
+      -- Shadow trades (paper trading): log do que TERIA acontecido se o sinal
+      -- BUY/SELL fosse executado no momento do sinal. Avaliação posterior com
+      -- candles futuros reais (causalidade preservada — nunca inventado).
+      CREATE TABLE IF NOT EXISTS shadow_trades (
+        id          TEXT PRIMARY KEY,
+        symbol      TEXT NOT NULL,
+        timeframe   TEXT NOT NULL,
+        direction   TEXT NOT NULL,
+        decision    TEXT NOT NULL,
+        entry_time  INTEGER NOT NULL,
+        entry_price REAL,
+        exit_time   INTEGER,
+        exit_price  REAL,
+        outcome     TEXT NOT NULL DEFAULT 'pending',
+        return_pct  REAL,
+        confidence  REAL,
+        probability REAL,
+        created_at  INTEGER NOT NULL,
+        evaluated_at INTEGER
+      );
+      CREATE INDEX IF NOT EXISTS idx_shadow_created_at ON shadow_trades(created_at);
+      CREATE INDEX IF NOT EXISTS idx_shadow_outcome ON shadow_trades(outcome);
+      CREATE INDEX IF NOT EXISTS idx_shadow_symbol_tf ON shadow_trades(symbol, timeframe);
+
       -- Estado dos guards (circuit breaker + cooldown + drawdown diário).
       -- Singleton (id=1). Persiste entre reinícios do servidor para que
       -- cooldown e circuit breaker NÃO resetem ao subir o processo.

@@ -145,3 +145,60 @@ async function loadCalibration() {
 loadExtensionInfo();
 loadCalibration();
 setInterval(loadCalibration, 60_000);
+
+/* ===================== SHADOW TRADING ===================== */
+
+async function loadShadowTrades() {
+  try {
+    const data = await api('/api/analytics/shadow');
+    renderShadow(data);
+  } catch {
+    // endpoint ainda não existe em serverless — fallback silencioso
+  }
+}
+
+function renderShadow(data) {
+  const stats = data?.stats ?? { total: 0, evaluated: 0, wins: 0, winRate: 0, netReturn: 0, avgReturn: 0 };
+  $('shadowTotal').textContent = String(stats.total);
+  $('shadowTotalSub').textContent = `${stats.evaluated} avaliados`;
+  $('shadowWinRate').textContent = stats.evaluated > 0 ? (stats.winRate * 100).toFixed(1) + '%' : '—';
+  $('shadowWinRateSub').textContent = `${stats.wins} acertos`;
+
+  const netEl = $('shadowNetReturn');
+  netEl.textContent = stats.netReturn != null ? (stats.netReturn > 0 ? '+' : '') + stats.netReturn.toFixed(2) + '%' : '—';
+  netEl.classList.remove('is-good', 'is-bad', 'is-warn');
+  if (stats.netReturn > 0) netEl.classList.add('is-good');
+  else if (stats.netReturn < 0) netEl.classList.add('is-bad');
+  else netEl.classList.add('is-warn');
+  $('shadowNetReturnSub').textContent = 'líquido após wins/losses';
+
+  $('shadowSharpe').textContent = '—';  // TODO: sharpe
+  $('shadowSharpeSub').textContent = 'em breve';
+
+  // tabela
+  const tbody = $('shadowTableBody');
+  if (!data?.trades || data.trades.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="shadow-empty">sem shadow trades registrados ainda</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.trades.slice(0, 20).map((t) => {
+    const signalCls = t.decision === 'BUY' ? 'signal-buy' : t.decision === 'SELL' ? 'signal-sell' : 'signal-wait';
+    const retCls = t.returnPct > 0 ? 'return-pos' : t.returnPct < 0 ? 'return-neg' : '';
+    const outCls = `outcome-${t.outcome}`;
+    const opened = new Date(t.entryTime).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+    const ret = t.returnPct != null ? (t.returnPct > 0 ? '+' : '') + t.returnPct.toFixed(2) + '%' : '—';
+    return `<tr>
+      <td>${opened}</td>
+      <td>${t.symbol}</td>
+      <td>${t.timeframe}</td>
+      <td class="${signalCls}">${t.decision}</td>
+      <td>${t.entryPrice != null ? t.entryPrice.toFixed(2) : '—'}</td>
+      <td>${t.exitPrice != null ? t.exitPrice.toFixed(2) : '—'}</td>
+      <td class="${retCls}">${ret}</td>
+      <td class="${outCls}">${t.outcome}</td>
+    </tr>`;
+  }).join('');
+}
+
+loadShadowTrades();
+setInterval(loadShadowTrades, 30_000);

@@ -24,6 +24,7 @@
     <a href="#planos">Planos</a>
     <a href="#instalar">Instalar</a>
     <a href="#calibracao">Calibração</a>
+    <a href="#shadow">Shadow trading</a>
     <a class="nav-cta" href="/extension/download" download>Baixar extensão</a>
   </nav>
 </header>
@@ -288,6 +289,67 @@ npm run serve</code></pre>
         <span class="calib-meta" id="calibSnapshot"></span>
       </div>
     </div>
+  </section>
+
+  <!-- ============================== SHADOW TRADING ============================== -->
+  <section id="shadow" class="section">
+    <header class="section-head">
+      <span class="eyebrow">shadow trading</span>
+      <h2>O que teria acontecido se você clicasse?</h2>
+      <p class="section-lede">Paper trading — registramos BUY/SELL hipotéticos a cada sinal e medimos o retorno real depois. Você vê se o motor teria ganhado dinheiro.</p>
+    </header>
+
+    <!-- Stats cards (4 métricas grandes) -->
+    <div class="shadow-stats">
+      <div class="stat-card">
+        <span class="stat-label">Total de trades</span>
+        <span class="stat-value" id="shadowTotal">—</span>
+        <span class="stat-sub" id="shadowTotalSub">aguardando dados</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Win rate</span>
+        <span class="stat-value" id="shadowWinRate">—</span>
+        <span class="stat-sub" id="shadowWinRateSub">—</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Retorno líquido</span>
+        <span class="stat-value" id="shadowNetReturn">—</span>
+        <span class="stat-sub" id="shadowNetReturnSub">—</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Sharpe estimado</span>
+        <span class="stat-value" id="shadowSharpe">—</span>
+        <span class="stat-sub" id="shadowSharpeSub">—</span>
+      </div>
+    </div>
+
+    <!-- Tabela detalhada dos últimos trades -->
+    <div class="shadow-table-wrap">
+      <table class="shadow-table">
+        <thead>
+          <tr>
+            <th>aberto em</th>
+            <th>ativo</th>
+            <th>tf</th>
+            <th>sinal</th>
+            <th>entrada</th>
+            <th>saída</th>
+            <th>retorno</th>
+            <th>status</th>
+          </tr>
+        </thead>
+        <tbody id="shadowTableBody">
+          <tr><td colspan="8" class="shadow-empty">sem shadow trades registrados ainda</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Disclaimer -->
+    <p class="shadow-disclaimer">
+      <strong>Importante:</strong> shadow trading é simulado. Os retornos mostrados aqui
+      NÃO são dinheiro real. O shadow trade abre automaticamente quando a down-bar
+      recebe um sinal BUY ou SELL, e fecha quando o sinal muda ou o horizonte expira.
+    </p>
   </section>
 
   <!-- ============================== FAQ ============================== -->

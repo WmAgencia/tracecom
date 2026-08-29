@@ -387,6 +387,17 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
+    if (path.endsWith("/analytics/shadow")) {
+      // Serverless: SQLite não está disponível. Devolve zeros honestos.
+      json(200, {
+        available: false,
+        note: "shadow trades requerem backend Node local (npm run serve)",
+        stats: { total: 0, evaluated: 0, wins: 0, winRate: 0, netReturn: 0, avgReturn: 0 },
+        trades: [],
+      });
+      return;
+    }
+
     if (path.endsWith("/analytics/perf-snapshot")) {
       json(200, {
         pnlTotal: 0, pnlPct: 0, sharpe: 0, maxDrawdown: 0,

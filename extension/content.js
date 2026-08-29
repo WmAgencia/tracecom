@@ -128,6 +128,8 @@
         <span class="tc-prob" id="tcCi" style="display:none">IC95: <b id="tcCiLower">—</b></span>
         <span class="tc-prob" id="tcEv" style="display:none">EV: <b id="tcEvVal">—</b></span>
         <span id="tcPrice" style="color:#6B7280"></span>
+        <span id="tcShadowBadge" class="tc-shadow-badge" style="display:none">SHADOW ON</span>
+        <span id="tcShadowPnl" class="tc-shadow-pnl" style="display:none">P&amp;L: <b id="tcShadowPnlVal">—</b></span>
         <span id="tcReason" style="color:#F5A524; font-size:11px"></span>
       </div>
       <button class="tc-refresh" id="tcRefresh" type="button">Atualizar</button>
@@ -154,6 +156,9 @@
   const evValEl = root.querySelector("#tcEvVal");
   const reasonEl = root.querySelector("#tcReason");
   const priceEl = root.querySelector("#tcPrice");
+  const shadowBadgeEl = root.querySelector("#tcShadowBadge");
+  const shadowPnlEl = root.querySelector("#tcShadowPnl");
+  const shadowPnlValEl = root.querySelector("#tcShadowPnlVal");
   const refreshBtn = root.querySelector("#tcRefresh");
   const autoLabel = root.querySelector("#tcAutoLabel");
   const minBtn = root.querySelector("#tcMin");
@@ -164,11 +169,12 @@
   let autoOn = false;
 
   // restore state from storage
-  chrome.storage.local.get(["tcAuto", "tcCollapsed"], (s) => {
+  chrome.storage.local.get(["tcAuto", "tcCollapsed", "tcShadow", "tcShadowOn"], (s) => {
     autoOn = !!s.tcAuto;
     collapsed = !!s.tcCollapsed;
     applyAuto();
     applyCollapsed();
+    applyShadowBadge();
   });
 
   function applyAuto() {
@@ -179,6 +185,93 @@
     bar.classList.toggle("is-collapsed", collapsed);
     minBtn.textContent = collapsed ? "+" : "─";
     chrome.storage.local.set({ tcCollapsed: collapsed });
+  }
+
+  // ------------------------------------------------------------
+  // Shadow trading (paper trading) — observa o que TERIA acontecido
+  // se o usuário clicasse BUY/SELL quando o sinal apareceu.
+  // NÃO executa nada. Apenas registra e mostra P&L atual.
+  // ------------------------------------------------------------
+  function readShadowEnabled(cb) {
+    chrome.storage.local.get(["tcShadowEnabled"], (s) => {
+      cb(!!s.tcShadowEnabled);
+    });
+  }
+  function applyShadowBadge() {
+    chrome.storage.local.get(["tcShadowOn", "tcShadow"], (s) => {
+      const open = s.tcShadowOn;
+      const t = s.tcShadow;
+      if (open && t) {
+        shadowBadgeEl.style.display = "";
+        shadowBadgeEl.textContent = `SHADOW ${t.decision} ON`;
+      } else {
+        shadowBadgeEl.style.display = "none";
+        shadowBadgeEl.textContent = "SHADOW ON";
+      }
+      updateShadowPnlUI(t);
+    });
+  }
+  function updateShadowPnlUI(t) {
+    if (!t || !t.entryPrice || t.currentPrice == null) {
+      shadowPnlEl.style.display = "none";
+      shadowPnlValEl.textContent = "—";
+      return;
+    }
+    const pct = ((t.currentPrice - t.entryPrice) / t.entryPrice) * 100;
+    // P&L assinado pela direção: BUY quer pct>0, SELL quer pct<0
+    let signed;
+    if (t.decision === "BUY") signed = pct;
+    else if (t.decision === "SELL") signed = -pct;
+    else signed = pct;
+    const sign = signed >= 0 ? "+" : "−";
+    shadowPnlValEl.textContent = `${sign}${Math.abs(signed).toFixed(2)}%`;
+    shadowPnlEl.style.display = "";
+    shadowPnlValEl.style.color = signed >= 0 ? "#4ADE80" : "#F87171";
+  }
+  function openShadowTrade(decision, payload) {
+    const entryPrice = payload?.currentPrice;
+    if (entryPrice == null || !Number.isFinite(entryPrice)) return;
+    const trade = {
+      symbol: payload.symbol || symbolEl.textContent || null,
+      timeframe: tfEl.textContent || null,
+      direction: payload.direction || "up",
+      decision,
+      entryTime: Date.now(),
+      entryPrice,
+      currentPrice: entryPrice,
+      confidence: payload?.confidence ?? null,
+      probability: payload?.probability?.probability ?? payload?.calibration?.calibratedProb ?? null,
+    };
+    chrome.storage.local.set({ tcShadowOn: trade, tcShadow: trade }, () => {
+      applyShadowBadge();
+    });
+  }
+  function closeShadowTrade(reason, currentPrice) {
+    chrome.storage.local.get(["tcShadowOn"], (s) => {
+      const t = s.tcShadowOn;
+      if (!t) return;
+      const closed = {
+        ...t,
+        exitTime: Date.now(),
+        exitPrice: currentPrice ?? t.currentPrice ?? null,
+        closeReason: reason,
+      };
+      // empurra pro histórico e limpa o aberto
+      chrome.storage.local.get(["tcShadowHistory"], (h) => {
+        const history = Array.isArray(h.tcShadowHistory) ? h.tcShadowHistory : [];
+        history.push(closed);
+        // mantém últimos 50
+        while (history.length > 50) history.shift();
+        chrome.storage.local.set(
+          { tcShadowOn: null, tcShadow: null, tcShadowHistory: history },
+          () => {
+            applyShadowBadge();
+            // pede pro background enviar pro backend
+            chrome.runtime.sendMessage({ type: "tc.shadowClose", payload: closed });
+          },
+        );
+      });
+    });
   }
 
   function setSignal(decision, payload) {
@@ -238,6 +331,69 @@
         { duration: 400, iterations: 2 },
       );
     }
+
+    // shadow trading: abre / atualiza / fecha conforme o sinal
+    readShadowEnabled((shadowEnabled) => {
+      const symbol = payload?.symbol || symbolEl.textContent;
+      const timeframe = tfEl.textContent;
+      const currentPrice = payload?.currentPrice;
+      chrome.storage.local.get(["tcShadowOn"], (s) => {
+        const open = s.tcShadowOn;
+        const isDirectional = d === "BUY" || d === "SELL";
+        if (!shadowEnabled) {
+          // shadow off: se sobrou trade aberto de antes, limpa silenciosamente
+          if (open) {
+            chrome.storage.local.set({ tcShadowOn: null, tcShadow: null }, () => {
+              applyShadowBadge();
+            });
+          }
+          return;
+        }
+        // sinal BUY/SELL: abre shadow se não há trade aberto (ou se é outro símbolo/TF)
+        if (isDirectional) {
+          if (!open) {
+            openShadowTrade(d, {
+              symbol,
+              timeframe,
+              direction: payload?.direction || "up",
+              currentPrice,
+              confidence: payload?.confidence,
+              probability: payload?.probability,
+              calibration: payload?.calibration,
+            });
+          } else {
+            // já existe: atualiza currentPrice e verifica se mudou de direção/símbolo/TF
+            const changed =
+              open.decision !== d ||
+              open.symbol !== symbol ||
+              open.timeframe !== timeframe;
+            if (changed) {
+              closeShadowTrade("signal_change", currentPrice);
+              // abre o novo imediatamente se ainda for BUY/SELL
+              openShadowTrade(d, {
+                symbol,
+                timeframe,
+                direction: payload?.direction || "up",
+                currentPrice,
+                confidence: payload?.confidence,
+                probability: payload?.probability,
+                calibration: payload?.calibration,
+              });
+            } else if (currentPrice != null) {
+              // mesma direção/símbolo/TF: só atualiza P&L
+              const updated = { ...open, currentPrice };
+              chrome.storage.local.set({ tcShadowOn: updated, tcShadow: updated }, () => {
+                applyShadowBadge();
+              });
+            }
+          }
+        } else if (open && !isDirectional) {
+          // sinal virou WAIT ou OFF: fecha trade aberto
+          closeShadowTrade("signal_wait", currentPrice);
+        }
+      });
+    });
+
     lastSignal = d;
     errorEl.hidden = true;
     errorEl.textContent = "";

@@ -11,6 +11,8 @@ import { TIMEFRAME_MS, Timeframe } from "../market/model";
 import type { MarketCandle } from "../market/model";
 import { getCalibrationReport, type CalibrationReport } from "./calibration";
 import { buildPerfSnapshotFromRecords, type PerfSnapshot } from "./pnl-snapshot";
+import { openShadowTrade, evaluateShadowTrade, type ShadowTrade, type ShadowOutcome } from "./shadow";
+import type { ShadowRepository, ShadowStats, ShadowFilter } from "../store/repositories/shadowRepository";
 
 export const DEFAULT_VALIDATION: ValidationConfig = { minMovePct: 0.5, lookback: 1000 };
 
@@ -41,6 +43,7 @@ export class AnalyticsService {
     },
     private readonly candles: (symbol: string, timeframe: Timeframe) => readonly MarketCandle[],
     private readonly cfg: ValidationConfig = DEFAULT_VALIDATION,
+    private readonly shadowRepo?: ShadowRepository,
   ) {}
 
   /** Registra uma decisão saída da fusão. */
@@ -131,6 +134,85 @@ export class AnalyticsService {
     let rows = all;
     if (opts.signalFilter) rows = rows.filter((r) => r.decision === opts.signalFilter);
     return buildPerfSnapshotFromRecords(rows);
+  }
+
+  /** Stats + lista de shadow trades para a vitrine. */
+  async shadowStats(filter?: { sinceMs?: number; signal?: "BUY" | "SELL" | null }): Promise<{
+    stats: { total: number; evaluated: number; wins: number; misses: number; winRate: number; netReturn: number; avgReturn: number };
+    trades: ReturnType<ShadowRepository["list"]>;
+  } | null> {
+    if (!this.shadowRepo) return null;
+    const trades = this.shadowRepo.list(filter);
+    const stats = this.shadowRepo.stats(filter);
+    return { stats, trades: trades.slice(0, 50) };
+  }
+
+  /**
+   * Shadow trading (paper trading) — registra o que TERIA acontecido se o
+   * usuário tivesse clicado BUY/SELL no momento do sinal. Avalia contra
+   * candles futuros reais quando o horizonte decorre.
+   *
+   * Só funciona se `shadowRepo` foi injetado no constructor (parâmetro opcional).
+   */
+  async recordShadowTrade(input: {
+    symbol: string;
+    timeframe: string;
+    direction: "up" | "down";
+    decision: "BUY" | "SELL" | "WAIT";
+    entryTime: number;
+    entryPrice: number;
+    confidence?: number;
+    probability?: number;
+  }): Promise<ShadowTrade | null> {
+    if (!this.shadowRepo) return null;
+    const trade = openShadowTrade(input);
+    this.shadowRepo.save(trade);
+    return trade;
+  }
+
+  /**
+   * Avalia shadow trades pendentes cujo horizonte JÁ decorreu.
+   * Retorna contagem por outcome. Causalidade: só consulta candles futuros
+   * depois do horizonte passar (não inventa dados).
+   * Retorna null se shadowRepo não foi injetado.
+   */
+  async evaluatePendingShadows(horizon: number): Promise<{ evaluated: number; outcomes: Record<ShadowOutcome, number> } | null> {
+    if (!this.shadowRepo) return null;
+    const now = Date.now();
+    // janela "horizonte já decorrido": limitamos por entry_time <= now - horizon*step
+    // Para cada timeframe distinto dos pendentes, calculamos o limite correto.
+    const pending = this.shadowRepo.list();
+    let evaluated = 0;
+    const outcomes: Record<ShadowOutcome, number> = {
+      pending: 0, hit: 0, miss: 0, flat: 0, insufficient: 0,
+    };
+
+    for (const trade of pending) {
+      if (trade.outcome !== "pending") continue;
+      const tf = trade.timeframe as Timeframe;
+      const step = TIMEFRAME_MS[tf];
+      if (!step) continue;
+      const exitTime = trade.entryTime + horizon * step;
+      if (exitTime > now) continue; // horizonte ainda não decorreu
+
+      const candles = this.candles(trade.symbol, tf);
+      const futureCandles = candles
+        .filter((c) => c.timestamp >= trade.entryTime)
+        .map((c) => ({ timestamp: c.timestamp, close: c.close }));
+      const evaluatedTrade = evaluateShadowTrade(trade, futureCandles, horizon, this.cfg.minMovePct);
+      if (evaluatedTrade.outcome === "pending") continue; // não deveria acontecer
+
+      this.shadowRepo.update(trade.id, {
+        exitTime: evaluatedTrade.exitTime,
+        exitPrice: evaluatedTrade.exitPrice,
+        outcome: evaluatedTrade.outcome,
+        returnPct: evaluatedTrade.returnPct,
+        evaluatedAt: evaluatedTrade.evaluatedAt,
+      });
+      outcomes[evaluatedTrade.outcome]++;
+      evaluated++;
+    }
+    return { evaluated, outcomes };
   }
 
   private outcomeOf(rec: DecisionRecord, entry: number, exit: number): Outcome {

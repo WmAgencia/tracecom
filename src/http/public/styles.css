@@ -567,6 +567,104 @@ pre code {
   .calib-grid { grid-template-columns: 1fr; }
 }
 
+/* ===================== SHADOW TRADING ===================== */
+.shadow-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.stat-value.is-good { color: var(--ok); }
+.stat-value.is-bad { color: var(--bad); }
+.stat-value.is-warn { color: var(--warn); }
+.stat-sub {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.shadow-table-wrap {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+.shadow-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.shadow-table th, .shadow-table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.shadow-table th {
+  font-weight: 500;
+  color: var(--ink-3);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--bg-inset);
+}
+.shadow-table tbody tr:hover { background: rgba(94, 230, 255, 0.04); }
+.shadow-table td.signal-buy { color: var(--ok); font-weight: 700; }
+.shadow-table td.signal-sell { color: var(--bad); font-weight: 700; }
+.shadow-table td.signal-wait { color: var(--accent); }
+.shadow-table td.return-pos { color: var(--ok); font-weight: 600; }
+.shadow-table td.return-neg { color: var(--bad); font-weight: 600; }
+.shadow-table td.outcome-pending { color: var(--warn); }
+.shadow-table td.outcome-hit { color: var(--ok); }
+.shadow-table td.outcome-miss { color: var(--bad); }
+.shadow-table td.outcome-flat { color: var(--ink-3); }
+.shadow-empty {
+  text-align: center;
+  color: var(--ink-3);
+  font-style: italic;
+  padding: 24px !important;
+}
+
+.shadow-disclaimer {
+  font-size: 13px;
+  color: var(--ink-2);
+  padding: 14px 18px;
+  background: rgba(245, 165, 36, 0.06);
+  border-left: 2px solid var(--warn);
+  border-radius: 2px;
+  margin-top: 16px;
+}
+.shadow-disclaimer strong { color: var(--warn); }
+
+@media (max-width: 720px) {
+  .shadow-stats { grid-template-columns: 1fr 1fr; }
+}
+
 /* ===================== FAQ ===================== */
 .faq { display: flex; flex-direction: column; gap: 10px; }
 .faq details {

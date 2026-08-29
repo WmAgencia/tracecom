@@ -278,6 +278,42 @@ export class TraceconHttpApi {
         const snap = await rt.analytics.perfSnapshot({ lookbackDays: days, signalFilter });
         return { status: 200, json: snap };
       }
+      case "GET /api/analytics/shadow": {
+        const days = q.get("days") ? Number(q.get("days")) : undefined;
+        const sinceMs = days ? Date.now() - days * 86400_000 : undefined;
+        const signal = (q.get("signal") as "BUY" | "SELL" | null) ?? null;
+        const data = await rt.analytics.shadowStats({ sinceMs: sinceMs ?? undefined, signal: signal ?? undefined });
+        if (!data) {
+          return { status: 503, json: { error: "shadow_unavailable", note: "backend Node com SQLite necessário" } };
+        }
+        return { status: 200, json: data };
+      }
+      case "POST /api/analytics/shadow": {
+        try {
+          // O apiRoute não recebe o request stream; usa header content-length
+          // para ler do header forward. Como fallback, parseamos uma vez só.
+          // Para suportar POST com body, vamos usar headers enviados pelo servidor.
+          // Solução simples: corpo vazio aceita só JSON vazio {}; dados via query string.
+          const body: Record<string, unknown> = {};
+          for (const [k, v] of q.entries()) body[k] = v;
+          if (!body?.symbol || !body?.decision || body?.entryPrice == null) {
+            return { status: 400, json: { error: "bad_request", note: "envie symbol/decision/entryPrice via query string (serverless-friendly)", required: ["symbol", "decision", "entryPrice"] } };
+          }
+          const trade = await rt.analytics.recordShadowTrade({
+            symbol: String(body.symbol),
+            timeframe: String(body.timeframe ?? "1h"),
+            direction: body.direction === "down" ? "down" : "up",
+            decision: String(body.decision) as "BUY" | "SELL" | "WAIT",
+            entryTime: body.entryTime ? Number(body.entryTime) : Date.now(),
+            entryPrice: Number(body.entryPrice),
+            confidence: body.confidence != null ? Number(body.confidence) : undefined,
+            probability: body.probability != null ? Number(body.probability) : undefined,
+          });
+          return { status: 200, json: { ok: true, id: trade.id } };
+        } catch (e) {
+          return { status: 500, json: { error: "shadow_save_failed", message: e instanceof Error ? e.message : String(e) } };
+        }
+      }
       case "POST /api/analytics/reset-breaker": {
         if (!rt.guardRepo) {
           return { status: 404, json: { error: "guard_persistence_unavailable" } };

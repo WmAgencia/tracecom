@@ -32,6 +32,20 @@
     </section>
 
     <section>
+      <h2>Shadow trading (paper trading)</h2>
+      <label class="row">
+        <input type="checkbox" id="shadow" />
+        <span>Registrar automaticamente o que teria acontecido se eu tivesse clicado BUY/SELL</span>
+      </label>
+      <p class="hint">
+        Shadow trading <strong>não executa ordens</strong>. Apenas observa: registra a entrada
+        no momento do sinal e calcula P&amp;L em tempo real contra o preço atual.
+        Trades abertos são fechados automaticamente após 24h ou quando o sinal muda,
+        e o resultado é enviado ao backend para análise estatística.
+      </p>
+    </section>
+
+    <section>
       <h2>Parâmetros de análise</h2>
       <div class="grid-2">
         <label>

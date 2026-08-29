@@ -203,3 +203,42 @@
   border-top: 1px solid #F5A524;
   pointer-events: auto;
 }
+
+/* shadow trading (paper trading) */
+.tc-shadow-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #4ADE80;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  border-radius: 3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tc-shadow-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ADE80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
+  animation: tc-pulse 1.5s ease-in-out infinite;
+}
+.tc-shadow-pnl {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: #A8B1C0;
+  white-space: nowrap;
+  padding: 2px 6px;
+  border-left: 1px solid #1E242E;
+}
+.tc-shadow-pnl b {
+  color: #E6EAF2;
+  font-weight: 600;
+}

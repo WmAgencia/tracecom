@@ -10,8 +10,86 @@
  */
 
 const ALARM_NAME = "tcTick";
+const SHADOW_ALARM = "tcShadowTick";
 const TICK_MS = 30; // production: 30 seconds
 const TICK_MS_MIN = 2; // dev
+const SHADOW_TICK_MIN = 5; // verifica shadow a cada 5 min
+const SHADOW_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h fecha trade aberto
+
+// ------------------------------------------------------------
+// Shadow trading helpers
+// ------------------------------------------------------------
+async function readShadowOpen() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["tcShadowOn"], (s) => {
+      resolve(s.tcShadowOn || null);
+    });
+  });
+}
+async function postShadowToBackend(trade, opts) {
+  if (!trade) return { ok: false, error: "no_trade" };
+  const backend = (opts.backend || "http://127.0.0.1:8788").replace(/\/$/, "");
+  // Tenta primeiro POST /api/analytics/shadow (rota dedicada, se existir).
+  // Fallback: usa GET /api/analytics/record (rota existente no backend).
+  const params = new URLSearchParams({
+    symbol: trade.symbol || "",
+    timeframe: trade.timeframe || "1h",
+    direction: trade.direction || "up",
+    decision: trade.decision || "WAIT",
+    horizon: "12",
+    entryTime: String(trade.entryTime || Date.now()),
+    entryPrice: trade.entryPrice != null ? String(trade.entryPrice) : "",
+    score: trade.score != null ? String(trade.score) : "0",
+    confidence: trade.confidence != null ? String(trade.confidence) : "0",
+    probability: trade.probability != null ? String(trade.probability) : "",
+    sampleSize: "0",
+    regime: "",
+    rationale: trade.closeReason ? `shadow:${trade.closeReason}` : "shadow",
+  });
+  if (trade.exitTime != null) params.set("exitTime", String(trade.exitTime));
+  if (trade.exitPrice != null) params.set("exitPrice", String(trade.exitPrice));
+  // tenta POST primeiro
+  try {
+    const r = await fetch(`${backend}/api/analytics/shadow`, {
+      method: "POST",
+      headers: { "accept": "application/json", "content-type": "application/json" },
+      body: JSON.stringify(trade),
+    });
+    if (r.ok) return { ok: true, route: "shadow", data: await r.json().catch(() => null) };
+  } catch (e) { /* cai no fallback */ }
+  // fallback: GET /api/analytics/record
+  try {
+    const r = await fetch(`${backend}/api/analytics/record?${params.toString()}`, {
+      method: "GET",
+      headers: { "accept": "application/json" },
+    });
+    if (r.ok) return { ok: true, route: "record", data: await r.json().catch(() => null) };
+    return { ok: false, error: `HTTP ${r.status}` };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+}
+async function closeShadowIfStale() {
+  const open = await readShadowOpen();
+  if (!open) return;
+  const age = Date.now() - (open.entryTime || Date.now());
+  if (age < SHADOW_MAX_AGE_MS) return;
+  const closed = {
+    ...open,
+    exitTime: Date.now(),
+    exitPrice: open.currentPrice ?? open.entryPrice ?? null,
+    closeReason: "auto_24h",
+  };
+  // limpa storage local
+  await new Promise((resolve) => {
+    chrome.storage.local.set({ tcShadowOn: null, tcShadow: null }, resolve);
+  });
+  // envia pro backend
+  const opts = await getOpts();
+  await postShadowToBackend(closed, opts);
+  // notifica tabs para atualizarem badge
+  await broadcast({ type: "tc.shadowClosed", payload: closed });
+}
 
 // ------------------------------------------------------------
 // storage helpers
@@ -101,6 +179,14 @@ async function runTick(triggeredByTimer) {
         ts: Date.now(),
       };
       await writeStore(store);
+      // atualiza currentPrice no shadow aberto se símbolo/TF baterem
+      const open = await readShadowOpen();
+      if (open && open.symbol === symbol && open.timeframe === opts.timeframe && data.currentPrice != null) {
+        const updated = { ...open, currentPrice: data.currentPrice };
+        await new Promise((resolve) => {
+          chrome.storage.local.set({ tcShadowOn: updated, tcShadow: updated }, resolve);
+        });
+      }
       // notifica mudança se o sinal mudou
       if (!prev || prev.decision !== data.decision) {
         await broadcast({ type: "tc.notifySignal", payload: { ...store[key], symbol } });
@@ -125,6 +211,11 @@ async function ensureAlarm() {
     chrome.alarms.clear(ALARM_NAME);
     chrome.alarms.create(ALARM_NAME, { periodInMinutes: TICK_MS_MIN, delayInMinutes: 0 });
   }
+  // alarm do shadow: sempre roda para auto-fechar trades >24h
+  const shadowExisting = await chrome.alarms.get(SHADOW_ALARM);
+  if (!shadowExisting) {
+    chrome.alarms.create(SHADOW_ALARM, { periodInMinutes: SHADOW_TICK_MIN, delayInMinutes: 0 });
+  }
 }
 
 chrome.runtime.onInstalled.addListener(ensureAlarm);
@@ -132,6 +223,7 @@ chrome.runtime.onStartup.addListener(ensureAlarm);
 
 chrome.alarms.onAlarm.addListener((a) => {
   if (a.name === ALARM_NAME) runTick(true);
+  if (a.name === SHADOW_ALARM) closeShadowIfStale();
 });
 
 // ------------------------------------------------------------
@@ -168,6 +260,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
     if (msg.type === "tc.getStore") {
       sendResponse({ ok: true, data: await readStore() });
+      return;
+    }
+    if (msg.type === "tc.shadowClose") {
+      const trade = msg.payload;
+      const opts = await getOpts();
+      const result = await postShadowToBackend(trade, opts);
+      sendResponse(result);
       return;
     }
     sendResponse({ ok: false, error: "tipo desconhecido" });

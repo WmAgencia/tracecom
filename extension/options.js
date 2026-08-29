@@ -4,10 +4,11 @@ const $ = (id) => document.getElementById(id);
 
 function load() {
   chrome.storage.local.get(
-    ["tcBackend", "tcAuto", "tcSymbols", "tcTimeframe", "tcDirection", "tcHorizon"],
+    ["tcBackend", "tcAuto", "tcShadowEnabled", "tcSymbols", "tcTimeframe", "tcDirection", "tcHorizon"],
     (s) => {
       $("backend").value = s.tcBackend || "http://127.0.0.1:8788";
       $("auto").checked = !!s.tcAuto;
+      $("shadow").checked = !!s.tcShadowEnabled;
       $("symbols").value = (s.tcSymbols || ["BTCUSDT", "ETHUSDT", "SOLUSDT"]).join("\n");
       $("timeframe").value = s.tcTimeframe || "1h";
       $("direction").value = s.tcDirection || "up";
@@ -20,6 +21,7 @@ function save() {
   const opts = {
     tcBackend: $("backend").value.trim().replace(/\/$/, "") || "http://127.0.0.1:8788",
     tcAuto: $("auto").checked,
+    tcShadowEnabled: $("shadow").checked,
     tcSymbols: $("symbols").value
       .split(/\r?\n/)
       .map((s) => s.trim().toUpperCase())

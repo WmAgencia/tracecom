@@ -26,6 +26,7 @@ import type { NewsResult } from "../context/types";
 import { AnalyticsService } from "../analytics/service";
 import { DecisionRepository } from "../store/repositories/decisionRepository";
 import { GuardRepository } from "../store/repositories/guardRepository";
+import { ShadowRepository } from "../store/repositories/shadowRepository";
 import { freshGuardState, type GuardState } from "../fusion/guards";
 
 /**
@@ -73,6 +74,7 @@ export interface MarketRuntime {
   readonly news: NewsService;
   readonly analytics: AnalyticsService;
   readonly guardRepo?: GuardRepository;
+  readonly shadowRepo?: ShadowRepository;
   readonly getGuardState: () => GuardState;
   /** Persiste o estado atual dos guards no SQLite. */
   persistGuards(state: GuardState): void;
@@ -99,13 +101,17 @@ export function createMarketRuntime(
   const guardRepo: GuardRepository | undefined = store.available
     ? new GuardRepository(store)
     : undefined;
+  // Repositório de shadow trading (paper trading).
+  const shadowRepo: ShadowRepository | undefined = store.available
+    ? new ShadowRepository(store)
+    : undefined;
 
   if (!provider) {
     // Sem provedor ⇒ SERVICE devolve PROVIDER_NOT_CONFIGURED; pipeline null.
     const service = new MarketDataService({ provider: null, pipeline: null });
     const fusion = makeStubFusion();
     const news = new NewsService({ provider: null });
-    const analytics = new AnalyticsService(decisionRepo, () => []);
+    const analytics = new AnalyticsService(decisionRepo, () => [], undefined, shadowRepo);
     // Estado de guard: carrega do SQLite se houver persistência; senão fresco.
     let runtimeGuardState: GuardState = guardRepo?.load() ?? freshGuardState(Date.now());
     return {
@@ -178,6 +184,8 @@ export function createMarketRuntime(
     const analytics = new AnalyticsService(
       decisionRepo,
       (symbol, timeframe) => pipeline.state.getCandles(symbol, timeframe),
+      undefined,
+      shadowRepo,
     );
 
   function persistGuards(state: GuardState): void {
