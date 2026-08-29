@@ -175,10 +175,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       json(200, {
         available: false,
         url: "/extension/download",
-        filename: "tracecon-extension-v0.1.0.zip",
+        filename: "tracecon-extension-v0.2.0.zip",
         sizeBytes: null,
         note:
-          "Em serverless (Vercel) o zip binário não pode ser servido. Use o repo (dist/tracecon-extension-v0.1.0.zip) ou o backend Railway/Node local (npm run serve → /extension/download).",
+          "Em serverless (Vercel) o zip binário não pode ser servido. Use o release do GitHub ou o backend Railway/Node local (npm run serve → /extension/download).",
       });
       return;
     }

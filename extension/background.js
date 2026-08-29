@@ -1,91 +1,176 @@
-/* TRACECON extension — background service worker (MV3).
+/* TRACE/CON — service worker (background).
  *
- * Responsabilidades:
- *  - manter/configuração (API URL + token) em chrome.storage;
- *  - rotear mensagens do side panel → API local da Tracecon;
- *  - NUNCA armazenar segredos de terceiros; apenas o token opcional da própria
- *    API (armazenado em chrome.storage.local, nunca logado).
+ * Funções:
+ *   - chama o backend TRACECON em http://127.0.0.1:8788/api/analyze
+ *   - agenda alarm a cada 30s quando auto-update está on
+ *   - armazena último sinal por ativo (signalStore)
+ *   - notifica todas as abas com o resultado
+ *
+ * NÃO executa ordens. NÃO clica em nada. Apenas atualiza o sinal.
  */
 
-const DEFAULTS = {
-  apiBase: "http://127.0.0.1:8788",
-  token: "",
-};
+const ALARM_NAME = "tcTick";
+const TICK_MS = 30; // production: 30 seconds
+const TICK_MS_MIN = 2; // dev
 
-chrome.runtime.onInstalled.addListener(async () => {
-  const cur = await chrome.storage.local.get(["apiBase", "token"]);
-  await chrome.storage.local.set({
-    apiBase: cur.apiBase ?? DEFAULTS.apiBase,
-    token: cur.token ?? "",
+// ------------------------------------------------------------
+// storage helpers
+// ------------------------------------------------------------
+async function getOpts() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(
+      ["tcBackend", "tcAuto", "tcSymbols", "tcTimeframe", "tcDirection", "tcHorizon"],
+      (s) => {
+        resolve({
+          backend: s.tcBackend || "http://127.0.0.1:8788",
+          auto: !!s.tcAuto,
+          symbols: Array.isArray(s.tcSymbols) && s.tcSymbols.length ? s.tcSymbols : ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+          timeframe: s.tcTimeframe || "1h",
+          direction: s.tcDirection || "up",
+          horizon: s.tcHorizon || 12,
+        });
+      },
+    );
   });
-  // Abre o side panel na primeira instalação (melhor descoberta).
-  try {
-    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
-  } catch (e) {
-    console.warn("setPanelBehavior indisponível:", e);
+}
+
+async function setOpt(key, value) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ [key]: value }, resolve);
+  });
+}
+
+// ------------------------------------------------------------
+// API client
+// ------------------------------------------------------------
+async function callAnalyze(symbol, timeframe, direction, horizon, backend) {
+  const url = `${backend.replace(/\/$/, "")}/api/analyze?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}&direction=${encodeURIComponent(direction)}&horizon=${encodeURIComponent(horizon)}`;
+  const r = await fetch(url, { method: "GET", headers: { "accept": "application/json" } });
+  if (!r.ok) {
+    const t = await r.text().catch(() => "");
+    throw new Error(`HTTP ${r.status}: ${t.slice(0, 120)}`);
   }
-});
+  return r.json();
+}
 
-chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: true }).catch(() => {});
+// ------------------------------------------------------------
+// signal store
+// ------------------------------------------------------------
+async function readStore() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["tcStore"], (s) => {
+      resolve(s.tcStore || {});
+    });
+  });
+}
+async function writeStore(store) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ tcStore: store }, resolve);
+  });
+}
 
-/** Busca na API local. Retorna {ok, status, data|error}. */
-async function callApi(base, token, path) {
-  const headers = {};
-  if (token) headers["Authorization"] = "Bearer " + token;
-  try {
-    const res = await fetch(base.replace(/\/$/, "") + path, { headers });
-    const text = res.status === 200 ? await res.text() : "";
-    let data = null;
-    if (text) {
-      try { data = JSON.parse(text); } catch { data = text; }
-    }
-    return { ok: res.ok, status: res.status, data };
-  } catch (e) {
-    return { ok: false, status: 0, data: null, error: String(e) };
+async function broadcast(msg) {
+  const tabs = await chrome.tabs.query({});
+  for (const t of tabs) {
+    if (!t.id) continue;
+    try { chrome.tabs.sendMessage(t.id, msg); } catch {}
   }
 }
 
+async function runTick(triggeredByTimer) {
+  const opts = await getOpts();
+  if (!opts.auto && !triggeredByTimer === false) return; // manual só se triggeredByTimer false
+  // Manual (não timer): ignora o auto e roda sempre que o content pedir
+  if (!triggeredByTimer && !opts.auto) {
+    // ok, manual
+  }
+  if (triggeredByTimer && !opts.auto) return; // timer só se auto=on
+
+  for (const symbol of opts.symbols) {
+    try {
+      const data = await callAnalyze(symbol, opts.timeframe, opts.direction, opts.horizon, opts.backend);
+      const key = `${symbol}-${opts.timeframe}`;
+      const store = await readStore();
+      const prev = store[key];
+      store[key] = {
+        decision: data.decision,
+        score: data.score,
+        confidence: data.confidence,
+        probability: data.probability,
+        currentPrice: data.currentPrice,
+        ts: Date.now(),
+      };
+      await writeStore(store);
+      // notifica mudança se o sinal mudou
+      if (!prev || prev.decision !== data.decision) {
+        await broadcast({ type: "tc.notifySignal", payload: { ...store[key], symbol } });
+      }
+    } catch (e) {
+      await broadcast({ type: "tc.error", payload: { symbol, error: String(e?.message || e) } });
+    }
+  }
+}
+
+// ------------------------------------------------------------
+// alarm lifecycle
+// ------------------------------------------------------------
+async function ensureAlarm() {
+  const opts = await getOpts();
+  const existing = await chrome.alarms.get(ALARM_NAME);
+  if (opts.auto && !existing) {
+    chrome.alarms.create(ALARM_NAME, { periodInMinutes: TICK_MS_MIN, delayInMinutes: 0 });
+  } else if (!opts.auto && existing) {
+    chrome.alarms.clear(ALARM_NAME);
+  } else if (opts.auto && existing) {
+    chrome.alarms.clear(ALARM_NAME);
+    chrome.alarms.create(ALARM_NAME, { periodInMinutes: TICK_MS_MIN, delayInMinutes: 0 });
+  }
+}
+
+chrome.runtime.onInstalled.addListener(ensureAlarm);
+chrome.runtime.onStartup.addListener(ensureAlarm);
+
+chrome.alarms.onAlarm.addListener((a) => {
+  if (a.name === ALARM_NAME) runTick(true);
+});
+
+// ------------------------------------------------------------
+// messages from content
+// ------------------------------------------------------------
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
-    if (!msg || typeof msg !== "object") { sendResponse({ ok: false, error: "msg inválido" }); return; }
-    const { apiBase, token } = await chrome.storage.local.get(["apiBase", "token"]);
-    const base = apiBase || DEFAULTS.apiBase;
-    const t = token || "";
-
-    switch (msg.type) {
-      case "TRACECON_HEALTH": {
-        const r = await callApi(base, t, "/health");
-        sendResponse({ ok: r.ok, status: r.status, data: r.data ?? { error: r.error } });
-        return;
+    if (msg.type === "tc.analyze") {
+      const opts = await getOpts();
+      const { symbol, timeframe } = msg.payload || {};
+      try {
+        const data = await callAnalyze(symbol, timeframe || opts.timeframe, opts.direction, opts.horizon, opts.backend);
+        sendResponse({ ok: true, data });
+      } catch (e) {
+        sendResponse({ ok: false, error: String(e?.message || e) });
       }
-      case "TRACECON_STATUS": {
-        const r = await callApi(base, t, "/api/status");
-        sendResponse({ ok: r.ok, status: r.status, data: r.data ?? { error: r.error } });
-        return;
-      }
-      case "TRACECON_ANALYZE": {
-        const q = `symbol=${encodeURIComponent(msg.symbol)}&timeframe=${encodeURIComponent(msg.timeframe)}&direction=${encodeURIComponent(msg.direction)}&horizon=${encodeURIComponent(msg.horizon)}`;
-        const r = await callApi(base, t, "/api/analyze?" + q);
-        sendResponse({ ok: r.ok, status: r.status, data: r.data ?? { error: r.error } });
-        return;
-      }
-      case "TRACECON_CONTEXT": {
-        const q = `symbol=${encodeURIComponent(msg.symbol)}&timeframe=${encodeURIComponent(msg.timeframe)}`;
-        const r = await callApi(base, t, "/api/market/context?" + q);
-        sendResponse({ ok: r.ok, status: r.status, data: r.data ?? { error: r.error } });
-        return;
-      }
-      case "TRACECON_NEWS": {
-        const asset = (msg.symbol || "BTC").replace(/USDT$/, "");
-        const q = `asset=${encodeURIComponent(asset)}`;
-        const r = await callApi(base, t, "/api/news?" + q);
-        sendResponse({ ok: r.ok, status: r.status, data: r.data ?? { error: r.error } });
-        return;
-      }
-      default:
-        sendResponse({ ok: false, error: "tipo desconhecido: " + msg.type });
-        return;
+      return;
     }
+    if (msg.type === "tc.setAuto") {
+      await setOpt("tcAuto", !!msg.payload?.auto);
+      await ensureAlarm();
+      sendResponse({ ok: true });
+      return;
+    }
+    if (msg.type === "tc.setOpts") {
+      for (const k of ["backend", "auto", "symbols", "timeframe", "direction", "horizon"]) {
+        if (k in (msg.payload || {})) {
+          await setOpt("tc" + k[0].toUpperCase() + k.slice(1), msg.payload[k]);
+        }
+      }
+      await ensureAlarm();
+      sendResponse({ ok: true });
+      return;
+    }
+    if (msg.type === "tc.getStore") {
+      sendResponse({ ok: true, data: await readStore() });
+      return;
+    }
+    sendResponse({ ok: false, error: "tipo desconhecido" });
   })();
-  return true; // async sendResponse
+  return true; // async
 });

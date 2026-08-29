@@ -130,7 +130,9 @@ export class TraceconHttpApi {
    */
   private resolveExtensionZip(): { path: string; size: number } | null {
     const candidates = [
+      join(process.cwd(), "dist", "tracecon-extension-v0.2.0.zip"),
       join(process.cwd(), "dist", "tracecon-extension-v0.1.0.zip"),
+      join(process.cwd(), "..", "dist", "tracecon-extension-v0.2.0.zip"),
       join(process.cwd(), "..", "dist", "tracecon-extension-v0.1.0.zip"),
     ];
     for (const p of candidates) {
@@ -151,11 +153,11 @@ export class TraceconHttpApi {
     return {
       available: zip !== null,
       url: "/extension/download",
-      filename: "tracecon-extension-v0.1.0.zip",
+      filename: zip ? zip.path.split(/[\\/]/).pop() : "tracecon-extension-v0.2.0.zip",
       sizeBytes: zip?.size ?? null,
       note: zip
-        ? "Empacotada em dist/tracecon-extension-v0.1.0.zip. Carregue em chrome://extensions com Modo do desenvolvedor."
-        : "Zip não encontrado. Rode: (cd extension && powershell Compress-Archive -Path * -DestinationPath ../dist/tracecon-extension-v0.1.0.zip) — ou use o caminho local.",
+        ? `Empacotada em ${zip.path}. Carregue em chrome://extensions com Modo do desenvolvedor.`
+        : "Zip não encontrado. Rode: (cd extension && powershell Compress-Archive -Path * -DestinationPath ../dist/tracecon-extension-v0.2.0.zip) — ou use o caminho local.",
     };
   }
 

@@ -3,231 +3,296 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TRACE/CON — inteligência de mercado</title>
-  <meta name="description" content="Análise técnica fundamentada. Não é corretora. Pode responder WAIT." />
+  <title>TRACE/CON — Inteligência de mercado</title>
+  <meta name="description" content="Análise técnica fundamentada em tempo real. Não é corretora. Pode responder WAIT." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark">◐</span>
-      <span class="brand-name">TRACE<span class="brand-slash">/</span>CON</span>
-      <span class="brand-version">v0.1.0</span>
+
+<!-- ============================== TOPO ============================== -->
+<header class="topbar">
+  <a class="brand" href="#top">
+    <span class="brand-mark">◐</span>
+    <span class="brand-name">TRACE<span class="brand-slash">/</span>CON</span>
+    <span class="brand-version">v0.2.0</span>
+  </a>
+  <nav class="nav">
+    <a href="#como">Como funciona</a>
+    <a href="#planos">Planos</a>
+    <a href="#instalar">Instalar</a>
+    <a class="nav-cta" href="/extension/download" download>Baixar extensão</a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <!-- ============================== HERO ============================== -->
+  <section class="hero">
+    <div class="hero-text">
+      <span class="eyebrow">análise · não é corretora</span>
+      <h1>
+        O sinal certo ao lado da sua corretora.<br/>
+        <span class="hero-accent">WAIT quando não há edge.</span>
+      </h1>
+      <p class="lede">
+        TRACE/CON lê dados reais da Binance, calcula indicadores quantitativos
+        e gera um sinal analítico (<b>BUY · SELL · WAIT</b>) com a probabilidade
+        de acerto. Uma down-bar discreta aparece na sua corretora. Você decide.
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="/extension/download" download>Baixar extensão (.zip)</a>
+        <a class="btn btn-ghost" href="#instalar">Como instalar</a>
+      </div>
+      <ul class="hero-meta">
+        <li><b>Dados reais</b> · Binance REST/WebSocket</li>
+        <li><b>Motor quântico</b> · RSI, MACD, ATR, regime, estrutura</li>
+        <li><b>Backtest OOS</b> · sem look-ahead</li>
+        <li><b>Zero execução</b> · você clica na corretora</li>
+      </ul>
     </div>
 
-    <div class="tape" id="tape" aria-label="Tape de preço">
-      <span class="tape-bars" id="tapeBars">▁▂▃</span>
-      <span class="tape-price" id="tapePrice">—</span>
-      <span class="tape-delta" id="tapeDelta">—</span>
-      <span class="tape-vol" id="tapeVol">—</span>
-      <span class="tape-meta" id="tapeMeta">—</span>
+    <aside class="hero-demo">
+      <div class="demo-frame">
+        <div class="demo-titlebar">
+          <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
+          <span class="demo-url">www.binance.com/trade/BTC_USDT</span>
+        </div>
+        <div class="demo-content">
+          <div class="demo-chart">
+            <div class="demo-spark">
+              <svg viewBox="0 0 240 80" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#5EE6FF" stop-opacity="0.35"/>
+                    <stop offset="100%" stop-color="#5EE6FF" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,60 L20,58 L40,62 L60,55 L80,52 L100,40 L120,42 L140,30 L160,32 L180,22 L200,28 L220,20 L240,25 L240,80 L0,80 Z" fill="url(#g)"/>
+                <path d="M0,60 L20,58 L40,62 L60,55 L80,52 L100,40 L120,42 L140,30 L160,32 L180,22 L200,28 L220,20 L240,25" fill="none" stroke="#5EE6FF" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <div class="demo-price">77,650.52 <span>+1.4%</span></div>
+          </div>
+
+          <!-- down-bar visualizada -->
+          <div class="demo-downbar">
+            <div class="db-signal is-buy">
+              <span class="db-pulse"></span>
+              <span>BUY</span>
+            </div>
+            <div class="db-info">
+              <span><b>BTCUSDT</b></span>
+              <span>1h</span>
+              <span>prob: <b>72.4%</b></span>
+            </div>
+            <button class="db-btn">Atualizar</button>
+            <button class="db-min">─</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ============================== COMO FUNCIONA ============================== -->
+  <section id="como" class="section">
+    <header class="section-head">
+      <span class="eyebrow">como funciona</span>
+      <h2>Quatro camadas. Zero invenção.</h2>
+    </header>
+
+    <ol class="steps">
+      <li>
+        <span class="step-num">01</span>
+        <div>
+          <h3>Dados reais</h3>
+          <p>Candles, volume e ordem de book direto da Binance. Nada estimado, nada simulado.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">02</span>
+        <div>
+          <h3>Motor quantitativo</h3>
+          <p>RSI, MACD, ATR, Bollinger, ADX, VWAP, volatilidade anualizada, regime, market structure.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">03</span>
+        <div>
+          <h3>Fusão de evidências</h3>
+          <p>Similaridade histórica (backtest OOS, sem look-ahead), contraponto e invalidadores. Resultado: BUY, SELL ou WAIT.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">04</span>
+        <div>
+          <h3>Sinal na sua corretora</h3>
+          <p>A down-bar aparece no rodapé do navegador. Você vê o sinal, vê a probabilidade e clica o botão na corretora.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ============================== PLANOS ============================== -->
+  <section id="planos" class="section">
+    <header class="section-head">
+      <span class="eyebrow">planos</span>
+      <h2>Escolha como rodar.</h2>
+      <p class="section-lede">Você pode usar o backend local (Free) ou hospedado por nós (Pro). Sem cobrança automática — você decide.</p>
+    </header>
+
+    <div class="plans">
+      <article class="plan">
+        <header>
+          <span class="plan-tag">Free</span>
+          <h3>Local</h3>
+        </header>
+        <div class="plan-price">
+          <b>R$ 0</b><span>/mês</span>
+        </div>
+        <ul class="plan-features">
+          <li>Você roda o backend no seu PC (<code>npm run serve</code>)</li>
+          <li>Análise ilimitada, sem cota diária</li>
+          <li>Todos os ativos Binance</li>
+          <li>Sua chave de IA (Anthropic) — você controla</li>
+          <li>Down-bar com sinal + probabilidade</li>
+        </ul>
+        <a class="btn btn-ghost btn-block" href="/extension/download" download>Baixar extensão</a>
+        <p class="plan-foot">Requer Node 22+ instalado e <code>ANTHROPIC_API_KEY</code> próprio.</p>
+      </article>
+
+      <article class="plan plan-featured">
+        <header>
+          <span class="plan-tag">Pro</span>
+          <h3>Hospedado</h3>
+        </header>
+        <div class="plan-price">
+          <b>R$ 89</b><span>/mês</span>
+        </div>
+        <ul class="plan-features">
+          <li>Backend gerenciado por nós, sempre online</li>
+          <li>Atualização automática de sinal a cada 30s</li>
+          <li>Suporte prioritário via WhatsApp</li>
+          <li>Inclui chave de IA compartilhada</li>
+          <li>Histórico de análises + calibração</li>
+          <li>Detecção automática em TradingView/Binance/Exodus</li>
+        </ul>
+        <a class="btn btn-primary btn-block" href="https://wa.me/?text=Quero%20o%20plano%20Pro%20do%20TRACE/CON" target="_blank" rel="noopener">Assinar Pro</a>
+        <p class="plan-foot">Cobrança mensal via Pix ou cartão. Cancele quando quiser.</p>
+      </article>
     </div>
+  </section>
 
-    <div class="conn" id="conn" aria-live="polite">
-      <span class="dot" id="connDot"></span>
-      <span id="connText">—</span>
-    </div>
-  </header>
+  <!-- ============================== INSTALAR ============================== -->
+  <section id="instalar" class="section">
+    <header class="section-head">
+      <span class="eyebrow">instalação</span>
+      <h2>Em 5 minutos você está operando com sinal.</h2>
+    </header>
 
-  <main class="grid">
-    <!-- COLUNA ESQUERDA: CONTROLE + ESTADO ATUAL -->
-    <section class="col col-left">
-      <section class="panel">
-        <header class="panel-head">
-          <span class="eyebrow">controle</span>
-          <span class="panel-title">Análise</span>
-        </header>
-
-        <div class="form">
-          <label class="field">
-            <span class="field-label">Ativo</span>
-            <select id="symbol">
-              <option value="BTCUSDT">BTC / USDT</option>
-              <option value="ETHUSDT">ETH / USDT</option>
-              <option value="SOLUSDT">SOL / USDT</option>
-              <option value="BNBUSDT">BNB / USDT</option>
-              <option value="XRPUSDT">XRP / USDT</option>
-            </select>
-          </label>
-
-          <label class="field">
-            <span class="field-label">Timeframe</span>
-            <select id="timeframe">
-              <option>1m</option><option>3m</option><option>5m</option>
-              <option>15m</option><option selected>1h</option><option>4h</option><option>1d</option>
-            </select>
-          </label>
-
-          <div class="field-row">
-            <label class="field">
-              <span class="field-label">Direção</span>
-              <select id="direction">
-                <option value="up">Alta</option>
-                <option value="down">Baixa</option>
-              </select>
-            </label>
-
-            <label class="field field-narrow">
-              <span class="field-label">Horizonte</span>
-              <input type="number" id="horizon" value="12" min="1" max="200" />
-            </label>
-          </div>
-
-          <div class="actions">
-            <button id="analyze" class="btn btn-primary">Analisar</button>
-            <button id="refresh" class="btn btn-ghost">Atualizar</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel panel-market">
-        <header class="panel-head">
-          <span class="eyebrow">estado atual</span>
-          <span class="panel-title">Mercado</span>
-        </header>
-        <div class="price-block">
-          <div class="price" id="price">—</div>
-          <div class="price-sub">
-            <span id="quote">USDT</span>
-            <span class="sep">·</span>
-            <span id="source">—</span>
-          </div>
-        </div>
-        <dl class="metrics">
-          <div><dt>qualidade</dt><dd id="quality">—</dd></div>
-          <div><dt>freshness</dt><dd id="freshness">—</dd></div>
-          <div><dt>último close</dt><dd id="lastClose">—</dd></div>
-          <div><dt>volume</dt><dd id="volume">—</dd></div>
-        </dl>
-        <div id="noData" class="empty" hidden>
-          Sem dados no momento. O motor só fala quando há fonte.
-        </div>
-      </section>
-
-      <section class="panel panel-tech">
-        <header class="panel-head">
-          <span class="eyebrow">técnico</span>
-          <span class="panel-title">Indicadores</span>
-        </header>
-        <dl class="metrics metrics-mono" id="quantMetrics">
-          <div><dt>RSI</dt><dd id="rsi">—</dd></div>
-          <div><dt>MACD hist</dt><dd id="macdHist">—</dd></div>
-          <div><dt>ATR %</dt><dd id="atrPct">—</dd></div>
-          <div><dt>vol anu.</dt><dd id="volAnn">—</dd></div>
-          <div><dt>regime</dt><dd id="regime">—</dd></div>
-          <div><dt>estrutura</dt><dd id="structure">—</dd></div>
-        </dl>
-        <div class="levels">
-          <div>
-            <span class="levels-label">suportes</span>
-            <span class="levels-vals" id="supports">—</span>
-          </div>
-          <div>
-            <span class="levels-label">resistências</span>
-            <span class="levels-vals" id="resistances">—</span>
-          </div>
-        </div>
-      </section>
-    </section>
-
-    <!-- COLUNA DIREITA: DECISÃO + EVIDÊNCIA + HISTÓRICO -->
-    <section class="col col-right">
-      <section class="panel panel-decision">
-        <header class="panel-head">
-          <span class="eyebrow">decisão analítica</span>
-          <span class="panel-title">Agora</span>
-        </header>
-
-        <div class="decision-head">
-          <div class="decision-tag" id="decisionTag">
-            <span class="decision-pulse"></span>
-            <span id="decision">WAIT</span>
-          </div>
-          <div class="decision-meta">
-            <span><span class="meta-key">score</span><span class="meta-val" id="dScore">—</span></span>
-            <span><span class="meta-key">conf.</span><span class="meta-val" id="dConf">—</span></span>
-            <span><span class="meta-key">prob. empírica</span><span class="meta-val" id="dProb">—</span></span>
-          </div>
-        </div>
-
-        <p class="rationale" id="rationale">Aguardando análise. Selecione ativo e horizonte, e clique em Analisar.</p>
-
-        <div class="factors">
-          <article class="factor factor-fav">
-            <header><span class="factor-tag">+</span><span class="factor-name">Favoráveis</span></header>
-            <ul id="fav"><li class="muted">nenhum</li></ul>
-          </article>
-          <article class="factor factor-con">
-            <header><span class="factor-tag">−</span><span class="factor-name">Contrários</span></header>
-            <ul id="con"><li class="muted">nenhum</li></ul>
-          </article>
-          <article class="factor factor-inv">
-            <header><span class="factor-tag">!</span><span class="factor-name">Invalidariam</span></header>
-            <ul id="inv"><li class="muted">nenhum</li></ul>
-          </article>
-        </div>
-      </section>
-
-      <section class="panel panel-spark">
-        <header class="panel-head">
-          <span class="eyebrow">preço</span>
-          <span class="panel-title">Últimos candles</span>
-          <span class="panel-meta" id="sparkMeta">—</span>
-        </header>
-        <div class="spark-wrap">
-          <canvas id="spark" aria-label="Sparkline de preço"></canvas>
-        </div>
-      </section>
-
-      <section class="panel panel-history">
-        <header class="panel-head">
-          <span class="eyebrow">histórico</span>
-          <span class="panel-title">Análises</span>
-        </header>
-        <div id="historyBody" class="history-empty">Sem análises anteriores nesta sessão.</div>
-      </section>
-
-      <section class="panel panel-extension">
-        <header class="panel-head">
-          <span class="eyebrow">distribuição</span>
-          <span class="panel-title">Extensão do navegador</span>
-        </header>
-        <p class="lede">
-          Um Side Panel que abre ao lado da sua corretora (TradingView, Binance, Exodus),
-          consumindo esta mesma API em <code>http://127.0.0.1:8788</code>.
-        </p>
-        <div class="ext-actions">
+    <ol class="install-steps">
+      <li>
+        <span class="step-num">01</span>
+        <div>
+          <h3>Baixe a extensão</h3>
+          <p>Clique no botão abaixo para baixar o <code>.zip</code>. Depois descompacte em qualquer pasta do seu PC.</p>
           <a class="btn btn-primary" href="/extension/download" download>Baixar extensão (.zip)</a>
           <span class="ext-info" id="extInfo">—</span>
         </div>
-        <ol class="ext-steps">
-          <li>Baixe o <code>.zip</code> acima e descompacte em qualquer pasta.</li>
-          <li>Abra <code>chrome://extensions</code> (ou equivalente no seu navegador).</li>
-          <li>Ative o <strong>Modo do desenvolvedor</strong> (canto superior direito).</li>
-          <li>Clique em <strong>Carregar sem compactação</strong> e selecione a pasta descompactada.</li>
-          <li>Com o backend local rodando (<code>npm run serve</code>), clique no ícone → <strong>Side Panel</strong>.</li>
-        </ol>
-        <p class="ext-note">
-          A extensão só funciona contra um servidor TRACECON local.
-          Permissões: <code>sidePanel</code>, <code>storage</code>, <code>tabs</code>.
-        </p>
-      </section>
-    </section>
-  </main>
+      </li>
+      <li>
+        <span class="step-num">02</span>
+        <div>
+          <h3>Suba o backend TRACECON</h3>
+          <p>O backend local processa os dados e gera o sinal. Em outra janela de terminal:</p>
+<pre><code>git clone https://github.com/WmAgencia/tracecom.git
+cd tracecom
+cp .env.example .env
+# edite .env e preencha ANTHROPIC_API_KEY + MARKET_DATA_MODE=binance
+npm install
+npm run serve</code></pre>
+          <p>Ele sobe em <code>http://127.0.0.1:8788</code>. Mantenha essa janela aberta enquanto usa a extensão.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">03</span>
+        <div>
+          <h3>Carregue a extensão no Chrome</h3>
+          <p>Abra <code>chrome://extensions</code> → ative o <b>Modo do desenvolvedor</b> (canto superior direito) → <b>Carregar sem compactação</b> → selecione a pasta descompactada.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">04</span>
+        <div>
+          <h3>Abra sua corretora</h3>
+          <p>Acesse <b>TradingView</b>, <b>Binance</b> ou <b>Exodus</b> e abra um gráfico específico (não a home). A down-bar aparece automaticamente no rodapé com o sinal.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">05</span>
+        <div>
+          <h3>Configure o auto-update (opcional)</h3>
+          <p>Clique no ícone da extensão → <b>Opções</b>. Defina o backend (<code>http://127.0.0.1:8788</code>), os ativos que você opera e ative <b>Auto-atualizar</b> para receber sinal novo a cada 30 segundos.</p>
+        </div>
+      </li>
+    </ol>
 
-  <footer class="footer">
-    <span>TRACE/CON</span>
-    <span class="footer-sep">·</span>
-    <span>análise de mercado</span>
-    <span class="footer-sep">·</span>
-    <span>não é corretora</span>
-    <span class="footer-sep">·</span>
-    <span id="footerMeta">—</span>
-  </footer>
+    <div class="cta-final">
+      <h3>Pronto.</h3>
+      <p>Você opera com sinal ao lado da corretora, sem sair dela, sem execução automática, sem perda de controle.</p>
+      <a class="btn btn-primary btn-large" href="/extension/download" download>Baixar TRACE/CON</a>
+    </div>
+  </section>
 
-  <script type="module" src="/app.js"></script>
+  <!-- ============================== FAQ ============================== -->
+  <section class="section">
+    <header class="section-head">
+      <span class="eyebrow">FAQ</span>
+      <h2>Perguntas frequentes</h2>
+    </header>
+
+    <div class="faq">
+      <details>
+        <summary>A extensão executa ordens automaticamente?</summary>
+        <p><b>Não.</b> A TRACE/CON mostra o sinal e a probabilidade. Quem clica BUY ou SELL é você, na sua corretora. O modo "automático" só atualiza o sinal a cada 30s — não toca em nada na corretora.</p>
+      </details>
+      <details>
+        <summary>Preciso de chave de IA?</summary>
+        <p>No plano <b>Free</b>, sim: você usa sua própria chave da Anthropic (a que você tem). No plano <b>Pro</b>, nós fornecemos a chave compartilhada.</p>
+      </details>
+      <details>
+        <summary>Funciona em qual corretora?</summary>
+        <p>TradingView, Binance e Exodus são detectadas automaticamente. Para outras corretoras, basta abrir um gráfico com o par no formato <code>BASEQUOTE</code> (ex.: <code>BTCUSDT</code>) — a extensão lê da URL ou do título da página.</p>
+      </details>
+      <details>
+        <summary>Os dados são reais?</summary>
+        <p>Sim. Candles, volume e book vêm direto da Binance REST/WebSocket público. Nada é simulado, estimado ou fabricado. Se a Binance cair, a extensão mostra "offline" — não inventa.</p>
+      </details>
+      <details>
+        <summary>Posso confiar na probabilidade?</summary>
+        <p>A probabilidade vem do backtest com split out-of-sample e intervalo de confiança Wilson. Ela reflete a taxa histórica de setups parecidos que foram favoráveis. Não é uma promessa de retorno futuro — é calibração empírica.</p>
+      </details>
+      <details>
+        <summary>O que significa WAIT?</summary>
+        <p>WAIT é uma decisão válida. Significa que o motor encontrou evidências conflitantes ou que o edge histórico é insuficiente. A maioria dos melhores traders passa a maior parte do tempo em WAIT.</p>
+      </details>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <span>TRACE/CON</span>
+  <span class="footer-sep">·</span>
+  <span>inteligência de mercado</span>
+  <span class="footer-sep">·</span>
+  <span>não é corretora</span>
+  <span class="footer-sep">·</span>
+  <a href="https://github.com/WmAgencia/tracecom" target="_blank" rel="noopener">código aberto</a>
+</footer>
+
+<script type="module" src="/app.js"></script>
 </body>
 </html>

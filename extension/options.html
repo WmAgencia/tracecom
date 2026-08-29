@@ -1,22 +1,82 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8" /><title>TRACECON — Configuração</title>
-<link rel="stylesheet" href="options.css" /></head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TRACE/CON — configurações</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
 <body>
-<h1>TRACECON — Configuração</h1>
-<p>Configure a URL da API TRACECON (o servidor rodando localmente) e, se habilitado, o token de acesso.</p>
+  <header>
+    <h1>TRACE/CON</h1>
+    <p class="lede">configurações da extensão</p>
+  </header>
 
-<form id="form">
-  <label>URL da API
-    <input type="text" id="apiBase" placeholder="http://127.0.0.1:8788" />
-  </label>
-  <label>Token de API (opcional)
-    <input type="password" id="token" placeholder="deixe vazio se não usar token" />
-  </label>
-  <button type="submit">Salvar</button>
-  <div id="status"></div>
-</form>
+  <main>
+    <section>
+      <h2>Backend</h2>
+      <label>
+        URL do servidor TRACECON (deve estar rodando local)
+        <input type="text" id="backend" placeholder="http://127.0.0.1:8788" />
+      </label>
+      <p class="hint">Rode <code>npm run serve</code> no projeto TRACECON. A extensão só funciona contra esse backend local.</p>
+    </section>
 
-<p class="note">O token fica apenas no chrome.storage.local da sua extensão e é enviado como <code>Authorization: Bearer</code> à sua própria API. Nunca é logado.</p>
-<script src="options.js"></script>
-</body></html>
+    <section>
+      <h2>Sinais automáticos</h2>
+      <label class="row">
+        <input type="checkbox" id="auto" />
+        <span>Atualizar sinal a cada 30 segundos quando uma corretora estiver aberta</span>
+      </label>
+      <p class="hint">Auto-atualizar <strong>não opera</strong>. Apenas atualiza o sinal na down-bar. Você decide.</p>
+    </section>
+
+    <section>
+      <h2>Parâmetros de análise</h2>
+      <div class="grid-2">
+        <label>
+          Ativos (um por linha)
+          <textarea id="symbols" rows="4"></textarea>
+        </label>
+        <div>
+          <label>
+            Timeframe padrão
+            <select id="timeframe">
+              <option>1m</option><option>3m</option><option>5m</option>
+              <option>15m</option><option selected>1h</option>
+              <option>4h</option><option>1d</option>
+            </select>
+          </label>
+          <label>
+            Direção padrão
+            <select id="direction">
+              <option value="up">Alta</option>
+              <option value="down">Baixa</option>
+            </select>
+          </label>
+          <label>
+            Horizonte (candles)
+            <input type="number" id="horizon" min="1" max="200" />
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Sobre</h2>
+      <p class="hint">
+        TRACE/CON é uma ferramenta de <strong>análise</strong>, não é corretora e não executa ordens.
+        A extensão lê o sinal do backend TRACECON local e mostra na down-bar.
+        <strong>Você clica o botão BUY/SELL na corretora</strong> quando decidir.
+      </p>
+    </section>
+
+    <div class="actions">
+      <button id="save">Salvar</button>
+      <span id="status"></span>
+    </div>
+  </main>
+
+  <script src="options.js"></script>
+</body>
+</html>
