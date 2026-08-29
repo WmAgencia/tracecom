@@ -125,7 +125,10 @@
         <span><b id="tcSymbol">—</b><span id="tcSymbolSource"></span></span>
         <span><b id="tcTimeframe">1h</b></span>
         <span class="tc-prob">prob: <b id="tcProb">—</b></span>
+        <span class="tc-prob" id="tcCi" style="display:none">IC95: <b id="tcCiLower">—</b></span>
+        <span class="tc-prob" id="tcEv" style="display:none">EV: <b id="tcEvVal">—</b></span>
         <span id="tcPrice" style="color:#6B7280"></span>
+        <span id="tcReason" style="color:#F5A524; font-size:11px"></span>
       </div>
       <button class="tc-refresh" id="tcRefresh" type="button">Atualizar</button>
       <label class="tc-auto" id="tcAutoLabel" title="Auto-atualizar: só atualiza o sinal; não opera">
@@ -145,6 +148,11 @@
   const symbolSourceEl = root.querySelector("#tcSymbolSource");
   const tfEl = root.querySelector("#tcTimeframe");
   const probEl = root.querySelector("#tcProb");
+  const ciEl = root.querySelector("#tcCi");
+  const ciLowerEl = root.querySelector("#tcCiLower");
+  const evEl = root.querySelector("#tcEv");
+  const evValEl = root.querySelector("#tcEvVal");
+  const reasonEl = root.querySelector("#tcReason");
   const priceEl = root.querySelector("#tcPrice");
   const refreshBtn = root.querySelector("#tcRefresh");
   const autoLabel = root.querySelector("#tcAutoLabel");
@@ -178,12 +186,43 @@
     signalEl.className = "tc-signal is-" + d.toLowerCase();
     signalText.textContent = d;
     bar.className = "tracecon-bar is-" + d.toLowerCase() + (collapsed ? " is-collapsed" : "");
-    if (payload?.probability?.probability != null) {
+    if (payload?.calibration?.calibratedProb != null) {
+      probEl.textContent = (payload.calibration.calibratedProb * 100).toFixed(1) + "%";
+    } else if (payload?.probability?.probability != null) {
       probEl.textContent = (payload.probability.probability * 100).toFixed(1) + "%";
     } else if (payload?.confidence != null) {
       probEl.textContent = (payload.confidence * 100).toFixed(1) + "%";
     } else {
       probEl.textContent = "—";
+    }
+    // IC95 inferior (calibração Wilson) — mostra quando houver
+    if (payload?.calibration?.ciLower != null) {
+      ciEl.style.display = "";
+      ciLowerEl.textContent = (payload.calibration.ciLower * 100).toFixed(0) + "%";
+    } else {
+      ciEl.style.display = "none";
+    }
+    // Expected value
+    if (payload?.calibration?.expectedValue != null) {
+      evEl.style.display = "";
+      const ev = payload.calibration.expectedValue;
+      const sign = ev >= 0 ? "+" : "−";
+      evValEl.textContent = `${sign}${Math.abs(ev * 100).toFixed(1)}%`;
+      evValEl.style.color = ev >= 0 ? "var(--ok)" : "var(--bad)";
+    } else {
+      evEl.style.display = "none";
+    }
+    // Razão (por que WAIT?)
+    const blockers = [];
+    if (!payload?.guards?.allowed && payload?.guards?.reason) blockers.push(payload.guards.reason);
+    if (payload?.confluence?.direction === "neutral" && payload?.confluence?.reason) blockers.push(payload.confluence.reason);
+    if (d === "WAIT" && payload?.calibration && !payload.calibration.actionable) {
+      blockers.push(`IC95 ${(payload.calibration.ciLower * 100).toFixed(0)}% ≤ baseline`);
+    }
+    if (blockers.length > 0) {
+      reasonEl.textContent = "⚠ " + blockers[0];
+    } else {
+      reasonEl.textContent = "";
     }
     if (payload?.currentPrice != null) {
       priceEl.textContent = "@ " + Number(payload.currentPrice).toLocaleString("en-US", { maximumFractionDigits: 2 });

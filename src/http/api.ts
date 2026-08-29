@@ -267,6 +267,17 @@ export class TraceconHttpApi {
         const record = await rt.analytics.recordDecision(input);
         return { status: 200, json: record };
       }
+      case "GET /api/analytics/calibration": {
+        const days = q.get("days") ? Number(q.get("days")) : undefined;
+        const report = await rt.analytics.calibration(days ? { days } : undefined);
+        return { status: 200, json: report };
+      }
+      case "GET /api/analytics/perf-snapshot": {
+        const days = Number(q.get("days") ?? 30);
+        const signalFilter = (q.get("signal") as "BUY" | "SELL" | null) ?? null;
+        const snap = await rt.analytics.perfSnapshot({ lookbackDays: days, signalFilter });
+        return { status: 200, json: snap };
+      }
       default:
         return { status: 404, json: { error: "not_found", path } };
     }
@@ -300,6 +311,8 @@ code{background:#161b24;padding:2px 6px;border-radius:4px;color:#79c0ff}a{color:
 <li><code>/api/catalog</code></li>
 <li><code>/api/analytics/stats?symbol=BTCUSDT&amp;timeframe=1h</code></li>
 <li><code>/api/analytics/record?symbol=...&amp;decision=BUY&amp;direction=up&amp;horizon=12&amp;entryPrice=...</code></li>
+<li><code>/api/analytics/calibration?days=30</code> — relatório de calibração do motor</li>
+<li><code>/api/analytics/perf-snapshot?days=30</code> — PnL observado no período</li>
 <li><code>/extension/info</code> — metadados do zip da extensão</li>
 <li><code>/extension/download</code> — baixa <code>tracecon-extension-v0.1.0.zip</code></li>
 </ul>

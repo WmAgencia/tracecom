@@ -23,6 +23,7 @@
     <a href="#como">Como funciona</a>
     <a href="#planos">Planos</a>
     <a href="#instalar">Instalar</a>
+    <a href="#calibracao">Calibração</a>
     <a class="nav-cta" href="/extension/download" download>Baixar extensão</a>
   </nav>
 </header>
@@ -243,6 +244,49 @@ npm run serve</code></pre>
       <h3>Pronto.</h3>
       <p>Você opera com sinal ao lado da corretora, sem sair dela, sem execução automática, sem perda de controle.</p>
       <a class="btn btn-primary btn-large" href="/extension/download" download>Baixar TRACE/CON</a>
+    </div>
+  </section>
+
+  <!-- ============================== CALIBRAÇÃO ============================== -->
+  <section id="calibracao" class="section">
+    <header class="section-head">
+      <span class="eyebrow">honestidade da calibração</span>
+      <h2>Os números reais, sem maquiagem.</h2>
+      <p class="section-lede">
+        O TRACECON registra cada decisão e mede o resultado depois — sem inventar
+        taxa de acerto. Esta seção mostra o que foi observado até agora. Se
+        ainda não temos dados suficientes, dizemos "calibrando".
+      </p>
+    </header>
+
+    <div class="calibration-panel" id="calibrationPanel">
+      <div class="calib-status" id="calibStatus">carregando…</div>
+      <div class="calib-grid">
+        <div class="calib-tile">
+          <span class="calib-label">win rate geral</span>
+          <span class="calib-value" id="calibWinRate">—</span>
+          <span class="calib-sub" id="calibWinRateSub">aguardando dados</span>
+        </div>
+        <div class="calib-tile">
+          <span class="calib-label">total de decisões avaliadas</span>
+          <span class="calib-value" id="calibTotal">—</span>
+          <span class="calib-sub" id="calibTotalSub">horizonte decorrido</span>
+        </div>
+        <div class="calib-tile">
+          <span class="calib-label">drawdown observado</span>
+          <span class="calib-value" id="calibDrawdown">—</span>
+          <span class="calib-sub" id="calibDrawdownSub">limite 5%</span>
+        </div>
+        <div class="calib-tile">
+          <span class="calib-label">circuit breaker</span>
+          <span class="calib-value" id="calibCircuit">—</span>
+          <span class="calib-sub" id="calibCircuitSub">guard de risco</span>
+        </div>
+      </div>
+      <div class="calib-foot">
+        <span class="calib-meta">atualizado a cada 60s · fonte: <code>/api/analytics/calibration</code></span>
+        <span class="calib-meta" id="calibSnapshot"></span>
+      </div>
     </div>
   </section>
 

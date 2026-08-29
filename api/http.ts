@@ -170,24 +170,42 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    // Extensão: metadados do zip empacotado (não serve o binário no serverless).
+    if (path.endsWith("/analytics/calibration")) {
+      // Serverless: SQLite não está disponível. Devolve zeros honestos.
+      json(200, {
+        totalDecisions: 0, evaluated: 0, wins: 0, misses: 0, winRate: 0,
+        brierScore: 0, ece: 0,
+        perSignal: { BUY: { n: 0, wins: 0, winRate: 0, avgReturn: null }, SELL: { n: 0, wins: 0, winRate: 0, avgReturn: null }, WAIT: { n: 0, wins: 0, winRate: 0, avgReturn: null } },
+        perTimeframe: {}, topSetups: [],
+        drawdownObserved: 0, drawdownMax: 5,
+        guardStatus: { circuitBreaker: "ok", dailyLossPct: 0, lastLossAt: null },
+        snapshotAt: new Date().toISOString(),
+        note: "em serverless a calibração real requer o backend Node local (npm run serve)",
+      });
+      return;
+    }
+
+    if (path.endsWith("/analytics/perf-snapshot")) {
+      json(200, {
+        pnlTotal: 0, pnlPct: 0, sharpe: 0, maxDrawdown: 0,
+        nTrades: 0, winRate: 0, periodStart: null, periodEnd: null,
+        note: "em serverless a PnL real requer o backend Node local",
+      });
+      return;
+    }
+
     if (path === "/extension/info") {
       json(200, {
         available: false,
         url: "/extension/download",
         filename: "tracecon-extension-v0.2.0.zip",
         sizeBytes: null,
-        note:
-          "Em serverless (Vercel) o zip binário não pode ser servido. Use o release do GitHub ou o backend Railway/Node local (npm run serve → /extension/download).",
+        note: "em serverless o zip binário não pode ser servido; use o release do GitHub",
       });
       return;
     }
     if (path === "/extension/download") {
-      json(503, {
-        error: "extension_zip_unsupported_in_serverless",
-        message:
-          "O zip binário não pode ser servido via Vercel Functions. Faça download direto do release do GitHub ou rode o backend local.",
-      });
+      json(503, { error: "extension_zip_unsupported_in_serverless" });
       return;
     }
 

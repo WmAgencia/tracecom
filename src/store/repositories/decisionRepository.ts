@@ -70,6 +70,20 @@ export class DecisionRepository {
     return rows.map(rowToRecord);
   }
 
+  /** Lista TODAS as decisões (avaliadas + pendentes), com filtro opcional por janela temporal. */
+  async listAll(filter: { sinceMs?: number } = {}): Promise<DecisionRecord[]> {
+    const params: (string | number)[] = [];
+    let where = "";
+    if (filter.sinceMs !== undefined) {
+      where = "WHERE created_at >= ?";
+      params.push(filter.sinceMs);
+    }
+    const rows = this.store.db.prepare(
+      `SELECT * FROM decision_records ${where} ORDER BY created_at ASC`,
+    ).all(...params) as unknown as Row[];
+    return rows.map(rowToRecord);
+  }
+
   async stats(filter: { symbol?: string; timeframe?: string } = {}): Promise<DecisionStats> {
     const whereParts: string[] = [];
     const params: (string | number)[] = [];

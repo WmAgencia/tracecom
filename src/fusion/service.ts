@@ -2,12 +2,21 @@
  * FusionService — conecta QuantEngine + Backtester + RiskEngine + FusionEngine
  * a partir dos dados de mercado atuais, produzindo uma decisão analítica
  * completa. Ponto de entrada para o agente/UI.
+ *
+ * Camadas adicionadas (série de robustez):
+ *   - Guards (circuit breaker + cooldown + drawdown + volatility + staleness)
+ *   - Confluência multi-TF (15m + 1h + 4h precisam concordar)
+ *   - Calibração Wilson (ci_lower > baseline + margem para ser acionável)
+ *   - Expected Value (EV) por decisão
  */
 import { QuantEngine } from "../quant/engine";
 import { Backtester, DEFAULT_CRITERIA } from "../backtest/backtest";
 import { QuantFeatureExtractor } from "../backtest/similarity";
 import { assessRisk } from "./risk";
 import { FusionEngine } from "./fusion";
+import { evaluateGuards, freshGuardState, type GuardState, type GuardDecision } from "./guards";
+import { analyzeConfluence, type ConfluenceResult } from "./confluence";
+import { isActionable, expectedValue, wilsonLowerBound } from "./calibration";
 import type { FusionInput, FusionResult } from "./types";
 import type { Direction } from "../backtest/types";
 import type { CandleHistorySource, EmpiricalProbability } from "../backtest/types";
@@ -18,6 +27,12 @@ export interface FusionServiceDeps {
   readonly backtester: Backtester;
   readonly historySource: CandleHistorySource;
   readonly currentCandles: (symbol: string, timeframe: Timeframe) => readonly MarketCandle[];
+  /** Opcional: candles multi-TF (15m, 1h, 4h) para confluência. Se ausente, sem confluência. */
+  readonly currentCandlesMultiTf?: (symbol: string) => Partial<Record<Timeframe, readonly MarketCandle[]>>;
+  /** Opcional: estado atual dos guards (persistido externamente). */
+  readonly guardStateProvider?: () => GuardState;
+  /** Opcional: idade do último candle em ms. */
+  readonly lastCandleAgeMs?: () => number | null;
   /** Opcional: fonte de notícias reais p/ derivar viés de contexto (Direção). */
   readonly getNewsBias?: (asset: string) => Promise<"up" | "down" | "neutral" | null>;
 }
@@ -43,6 +58,18 @@ export class FusionService {
 
   async analyze(req: AnalyzeRequest): Promise<FusionResult> {
     const candles = Array.from(this.deps.currentCandles(req.symbol, req.timeframe));
+
+    // 0) GUARDS — primeiro gate. Se bloqueado, WAIT imediato com motivo.
+    const guardState = this.deps.guardStateProvider?.() ?? freshGuardState(Date.now());
+    const atrPct = candles.length > 0 && this.deps.quant
+      ? null // quant já roda abaixo; aqui só usamos o resumo
+      : null;
+    const guardDecision: GuardDecision = evaluateGuards({
+      state: guardState,
+      atrPct: atrPct,
+      lastCandleAgeMs: this.deps.lastCandleAgeMs?.() ?? null,
+      now: Date.now(),
+    });
 
     // 1) Quant
     const summary = candles.length > 0
@@ -74,6 +101,39 @@ export class FusionService {
       }
     }
 
+    // 2b) CONFLUÊNCIA multi-TF — se provider disponível
+    let confluence: ConfluenceResult | undefined;
+    if (this.deps.currentCandlesMultiTf) {
+      try {
+        const perTfRaw = this.deps.currentCandlesMultiTf(req.symbol);
+        const perTf = (['15m', '1h', '4h'] as const)
+          .map((tf) => ({ tf, candles: perTfRaw[tf] ?? [] }))
+          .filter((x) => x.candles.length >= 30) as Array<{ tf: '15m' | '1h' | '4h'; candles: readonly { close: number; high: number; low: number; }[] }>;
+        if (perTf.length >= 2) {
+          confluence = analyzeConfluence({ perTf, direction: req.direction });
+        }
+      } catch {
+        confluence = undefined;
+      }
+    }
+
+    // 2c) CALIBRAÇÃO Wilson CI — probabilidade calibrada + EV
+    let calibration: { calibratedProb: number; ciLower: number; ciUpper: number; baseline: number; expectedValue: number; actionable: boolean } | undefined;
+    if (probability && probability.sampleSize >= 30) {
+      const p = probability.probability;
+      const base = probability.baseline ?? 0.5;
+      const ciLower = probability.confidenceInterval?.lower ?? wilsonLowerBound(probability.favorable, probability.sampleSize);
+      const ciUpper = probability.confidenceInterval?.upper ?? (1 - ciLower); // upper aproximado
+      calibration = {
+        calibratedProb: p,
+        ciLower,
+        ciUpper,
+        baseline: base,
+        expectedValue: expectedValue({ probability: p, gain: 1, loss: 1 }),
+        actionable: isActionable({ probability: p, ciLower, baseline: base }),
+      };
+    }
+
     // 3) Risco
     const risk = assessRisk({
       regime: summary?.regime.regime ?? null,
@@ -96,7 +156,7 @@ export class FusionService {
       }
     }
 
-    // 5) Fusão
+    // 5) Fusão (camada clássica)
     const input: FusionInput = {
       symbol: req.symbol,
       timeframe: req.timeframe,
@@ -113,8 +173,63 @@ export class FusionService {
       dataQuality: candles.length > 0 ? "high" : "unknown",
     };
 
-    return this.fusion.fuse(input);
+    const baseResult = this.fusion.fuse(input);
+
+    // 6) Combinador final: aplica guards + confluência + calibração
+    const finalDecision = applyRobustnessLayers(baseResult, {
+      guards: { allowed: guardDecision.allow, reason: guardDecision.reason ?? null },
+      confluence,
+      calibration,
+    });
+
+    return finalDecision;
   }
+}
+
+/**
+ * Combina o resultado clássico da fusão com as 3 camadas de robustez.
+ * Cada camada pode degradar a decisão para WAIT; se passar todas, retorna
+ * a decisão original com os campos extras anexados.
+ */
+function applyRobustnessLayers(
+  base: FusionResult,
+  layers: {
+    guards: { allowed: boolean; reason: string | null };
+    confluence: ConfluenceResult | undefined;
+    calibration: { calibratedProb: number; ciLower: number; ciUpper: number; baseline: number; expectedValue: number; actionable: boolean } | undefined;
+  },
+): FusionResult {
+  const { guards, confluence, calibration } = layers;
+  const blocked: string[] = [];
+  if (!guards.allowed) blocked.push(guards.reason ?? "guards bloqueou");
+  if (confluence && confluence.direction === "neutral") blocked.push(`confluência insuficiente (${confluence.reason})`);
+  if (calibration && !calibration.actionable && base.decision !== "WAIT") {
+    blocked.push(`calibração não acionável (ci_lower ${(calibration.ciLower * 100).toFixed(1)}% ≤ baseline ${(calibration.baseline * 100).toFixed(1)}% + margem)`);
+  }
+
+  const newDecision: FusionResult["decision"] = blocked.length > 0 ? "WAIT" : base.decision;
+  const newRationale = blocked.length > 0
+    ? `${base.rationale} Bloqueado por: ${blocked.join("; ")}.`
+    : base.rationale;
+
+  return {
+    ...base,
+    decision: newDecision,
+    direction: newDecision === "WAIT" ? null : base.direction,
+    rationale: newRationale,
+    factors: {
+      ...base.factors,
+      invalidators: Array.from(new Set([...base.factors.invalidators, ...blocked])),
+    },
+    confluence: confluence ? {
+      direction: confluence.direction,
+      agreementScore: confluence.agreementScore,
+      confidenceBoost: confluence.confidenceBoost,
+      reason: confluence.reason,
+    } : undefined,
+    calibration,
+    guards: { allowed: guards.allowed, reason: guards.reason },
+  };
 }
 
 function lastNonNull(series: readonly (number | null)[]): number | null {

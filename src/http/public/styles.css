@@ -475,6 +475,98 @@ pre code {
   font-size: 14px;
 }
 
+/* ===================== CALIBRAÇÃO ===================== */
+.calibration-panel {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.calib-status {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 8px 14px;
+  background: var(--bg-inset);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  display: inline-block;
+  align-self: flex-start;
+}
+.calib-status.is-calibrating { color: var(--warn); border-color: var(--warn); }
+.calib-status.is-ready { color: var(--ok); border-color: var(--ok); }
+.calib-status.is-error { color: var(--bad); border-color: var(--bad); }
+.calib-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.calib-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  background: var(--bg-inset);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  transition: border-color 0.15s ease;
+}
+.calib-tile:hover { border-color: var(--line-strong); }
+.calib-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.calib-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 32px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.calib-value.is-good { color: var(--ok); }
+.calib-value.is-bad { color: var(--bad); }
+.calib-value.is-warn { color: var(--warn); }
+.calib-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.calib-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.calib-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+.calib-meta code {
+  font-size: 11px;
+  padding: 1px 4px;
+}
+
+@media (max-width: 980px) {
+  .calib-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .calib-grid { grid-template-columns: 1fr; }
+}
+
 /* ===================== FAQ ===================== */
 .faq { display: flex; flex-direction: column; gap: 10px; }
 .faq details {

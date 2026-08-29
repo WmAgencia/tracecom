@@ -87,4 +87,25 @@ export interface FusionResult {
   readonly dataSufficient: boolean;
   readonly rationale: string;
   readonly generatedAt: number;
+  /** Camada de robustez: confluência multi-TF (se calculado) */
+  readonly confluence?: {
+    readonly direction: Direction | "neutral";
+    readonly agreementScore: number;
+    readonly confidenceBoost: number;
+    readonly reason: string;
+  };
+  /** Camada de robustez: calibração Wilson CI + EV */
+  readonly calibration?: {
+    readonly calibratedProb: number;
+    readonly ciLower: number;
+    readonly ciUpper: number;
+    readonly baseline: number;
+    readonly expectedValue: number;
+    readonly actionable: boolean;
+  };
+  /** Camada de robustez: status dos guards */
+  readonly guards?: {
+    readonly allowed: boolean;
+    readonly reason: string | null;
+  };
 }

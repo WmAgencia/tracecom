@@ -9,6 +9,8 @@
 import type { DecisionRecord, DecisionStats, Outcome, ValidationConfig } from "./types";
 import { TIMEFRAME_MS, Timeframe } from "../market/model";
 import type { MarketCandle } from "../market/model";
+import { getCalibrationReport, type CalibrationReport } from "./calibration";
+import { buildPerfSnapshotFromRecords, type PerfSnapshot } from "./pnl-snapshot";
 
 export const DEFAULT_VALIDATION: ValidationConfig = { minMovePct: 0.5, lookback: 1000 };
 
@@ -105,6 +107,30 @@ export class AnalyticsService {
   /** Estatística agregada e calibração. */
   stats(filter: { symbol?: string; timeframe?: string } = {}): Promise<DecisionStats> {
     return this.persist.stats(filter);
+  }
+
+  /** Relatório completo de calibração (Brier, ECE, win rate por sinal/TF, drawdown, guard status). */
+  async calibration(opts: { days?: number } = {}): Promise<CalibrationReport> {
+    const store = {
+      listEvaluatedDecisions: async (o: { days?: number } = {}) => {
+        const sinceMs = o.days ? Date.now() - o.days * 24 * 60 * 60 * 1000 : undefined;
+        return (this.persist as unknown as {
+          listAll: (f: { sinceMs?: number }) => Promise<DecisionRecord[]>;
+        }).listAll({ sinceMs });
+      },
+    };
+    return getCalibrationReport(store, opts);
+  }
+
+  /** Snapshot de PnL e métricas históricas. */
+  async perfSnapshot(opts: { lookbackDays?: number; signalFilter?: "BUY" | "SELL" | null } = {}): Promise<PerfSnapshot> {
+    const sinceMs = opts.lookbackDays ? Date.now() - opts.lookbackDays * 24 * 60 * 60 * 1000 : undefined;
+    const all = await (this.persist as unknown as {
+      listAll: (f: { sinceMs?: number }) => Promise<DecisionRecord[]>;
+    }).listAll({ sinceMs });
+    let rows = all;
+    if (opts.signalFilter) rows = rows.filter((r) => r.decision === opts.signalFilter);
+    return buildPerfSnapshotFromRecords(rows);
   }
 
   private outcomeOf(rec: DecisionRecord, entry: number, exit: number): Outcome {
