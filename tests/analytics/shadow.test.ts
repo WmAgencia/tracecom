@@ -108,41 +108,63 @@ describe("evaluateShadowTrade", () => {
     return prices.map((p, i) => ({ timestamp: T0 + i * M, close: p }));
   }
 
-  it("BUY com candles futuros subindo → outcome='hit', returnPct > 0", () => {
+  it("BUY com candles futuros subindo → outcome='hit', returnPct líquido (gross - 0.3 PP)", () => {
     const trade = tradeAt(100, "BUY");
     const candles = candleSeries([100, 101, 102, 103, 104, 110]);
     const result = evaluateShadowTrade(trade, candles, 5, 0.5);
     expect(result.outcome).toBe("hit");
     expect(result.exitTime).toBe(T0 + 5 * M);
     expect(result.exitPrice).toBe(110);
+    // returnPct agora é LÍQUIDO (gross 10 PP - 0.3 PP custo = 9.7 PP).
     expect(result.returnPct).toBeGreaterThan(0);
-    expect(result.returnPct).toBeCloseTo(10, 5);
+    expect(result.returnPct).toBeCloseTo(9.7, 5);
+    // grossReturnPct guarda o bruto para audit.
+    expect(result.grossReturnPct).toBeCloseTo(10, 5);
     expect(result.evaluatedAt).not.toBeNull();
   });
 
-  it("BUY com candles futuros caindo → outcome='miss', returnPct < 0", () => {
-    const trade = tradeAt(100, "BUY");
-    const candles = candleSeries([100, 95, 92, 90, 88, 85]);
+  it("BUY com candles futuros caindo → outcome='miss' (sem stop, retorno líquido)", () => {
+    // stopLossPct=1 (100%) desabilita o stop-loss; assim a queda maior só no
+    // candle de saída não dispara stopped.
+    const trade = openShadowTrade({
+      symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "BUY",
+      entryTime: T0, entryPrice: 100, stopLossPct: 1,
+    });
+    const candles = candleSeries([100, 99.5, 99, 98.5, 98, 95]);
     const result = evaluateShadowTrade(trade, candles, 5, 0.5);
     expect(result.outcome).toBe("miss");
     expect(result.returnPct).toBeLessThan(0);
-    expect(result.returnPct).toBeCloseTo(-15, 5);
+    expect(result.returnPct).toBeCloseTo(-5.3, 5);
+    expect(result.grossReturnPct).toBeCloseTo(-5, 5);
   });
 
   it("SELL com candles futuros caindo → outcome='hit'", () => {
-    const trade = tradeAt(100, "SELL");
-    const candles = candleSeries([100, 95, 92, 90, 88, 85]);
+    // stopLossPct=1 (100%) desabilita o stop-loss.
+    const trade = openShadowTrade({
+      symbol: "BTCUSDT", timeframe: "1h", direction: "down", decision: "SELL",
+      entryTime: T0, entryPrice: 100, stopLossPct: 1,
+    });
+    const candles = candleSeries([100, 99.5, 99, 98.5, 98, 95]);
     const result = evaluateShadowTrade(trade, candles, 5, 0.5);
     expect(result.outcome).toBe("hit");
-    expect(result.returnPct).toBeLessThan(0); // bruto: preço caiu
+    expect(result.returnPct).toBeLessThan(0); // líquido: preço caiu
+    // Para SELL, gross=-5, líquido=-5.3.
+    expect(result.returnPct).toBeCloseTo(-5.3, 5);
+    expect(result.grossReturnPct).toBeCloseTo(-5, 5);
   });
 
-  it("SELL com candles futuros subindo → outcome='miss'", () => {
-    const trade = tradeAt(100, "SELL");
-    const candles = candleSeries([100, 101, 102, 103, 104, 110]);
+  it("SELL com candles futuros subindo → outcome='miss' (sem stop, líquido)", () => {
+    // stopLossPct=1 (100%) desabilita o stop-loss.
+    const trade = openShadowTrade({
+      symbol: "BTCUSDT", timeframe: "1h", direction: "down", decision: "SELL",
+      entryTime: T0, entryPrice: 100, stopLossPct: 1,
+    });
+    const candles = candleSeries([100, 100.5, 101, 101.5, 102, 105]);
     const result = evaluateShadowTrade(trade, candles, 5, 0.5);
     expect(result.outcome).toBe("miss");
     expect(result.returnPct).toBeGreaterThan(0);
+    expect(result.returnPct).toBeCloseTo(4.7, 5);
+    expect(result.grossReturnPct).toBeCloseTo(5, 5);
   });
 
   it("WAIT → outcome='flat' mesmo com movimento direcional", () => {
@@ -150,7 +172,8 @@ describe("evaluateShadowTrade", () => {
     const candles = candleSeries([100, 101, 102, 103, 104, 110]);
     const result = evaluateShadowTrade(trade, candles, 5, 0.5);
     expect(result.outcome).toBe("flat");
-    expect(result.returnPct).toBeCloseTo(10, 5);
+    expect(result.returnPct).toBeCloseTo(9.7, 5);
+    expect(result.grossReturnPct).toBeCloseTo(10, 5);
     expect(result.exitPrice).toBe(110);
   });
 
@@ -179,6 +202,84 @@ describe("evaluateShadowTrade", () => {
     const first = evaluateShadowTrade(trade, candles, 5, 0.5);
     const second = evaluateShadowTrade(first, candles, 5, 0.5);
     expect(second).toEqual(first);
+  });
+
+  // ===== Stop-loss por candle =====
+
+  it("BUY com candles caindo > 1.5% no meio da janela → outcome='stopped' e stopLossTriggeredAt setado", () => {
+    const trade = tradeAt(100, "BUY");
+    // entry 100, candle 2 (T0+2h) cai para 98 → -2% > 1.5% → stop
+    const candles = candleSeries([100, 99, 98, 99, 102, 105]);
+    const result = evaluateShadowTrade(trade, candles, 5, 0.5);
+    expect(result.outcome).toBe("stopped");
+    expect(result.stopLossTriggeredAt).toBe(T0 + 2 * M);
+    expect(result.exitTime).toBe(T0 + 2 * M);
+    expect(result.exitPrice).toBe(98);
+    // returnPct é líquido após custos (~-2% - 0.3 PP ≈ -2.3)
+    expect(result.returnPct).toBeCloseTo(-2.3, 1);
+    expect(result.grossReturnPct).toBeCloseTo(-2, 5);
+    expect(result.evaluatedAt).not.toBeNull();
+  });
+
+  it("SELL com candles subindo > 1.5% no meio da janela → outcome='stopped'", () => {
+    const trade = tradeAt(100, "SELL");
+    // entry 100, candle 3 (T0+3h) sobe para 102 → +2% > 1.5% → stop
+    const candles = candleSeries([100, 100.5, 101, 102, 103, 104]);
+    const result = evaluateShadowTrade(trade, candles, 5, 0.5);
+    expect(result.outcome).toBe("stopped");
+    expect(result.stopLossTriggeredAt).toBe(T0 + 3 * M);
+    expect(result.exitPrice).toBe(102);
+    expect(result.returnPct).toBeCloseTo(1.7, 1);
+    expect(result.grossReturnPct).toBeCloseTo(2, 5);
+  });
+
+  it("BUY com candles caindo 0.5% (dentro do stop) → outcome normal hit/miss", () => {
+    // Cai 0.5% no meio da janela (dentro do stop 1.5%), termina subindo → hit
+    const trade = tradeAt(100, "BUY");
+    const candles = candleSeries([100, 99.5, 99.7, 100.5, 101.5, 105]);
+    const result = evaluateShadowTrade(trade, candles, 5, 0.5);
+    expect(result.outcome).toBe("hit");
+    expect(result.stopLossTriggeredAt).toBeNull();
+    // gross 5%, líquido ≈ 4.7
+    expect(result.returnPct).toBeCloseTo(4.7, 1);
+    expect(result.grossReturnPct).toBeCloseTo(5, 5);
+  });
+
+  it("BUY sem stopLossPct usa default 1.5% — stop dispara a -2%", () => {
+    const trade = tradeAt(100, "BUY"); // sem stopLossPct → default 0.015
+    const candles = candleSeries([100, 99, 98, 99, 102, 105]);
+    const result = evaluateShadowTrade(trade, candles, 5, 0.5);
+    expect(result.outcome).toBe("stopped");
+    expect(result.stopLossTriggeredAt).toBe(T0 + 2 * M);
+  });
+
+  it("SELL sem stopLossPct usa default 1.5% — stop dispara a +2%", () => {
+    const trade = tradeAt(100, "SELL");
+    const candles = candleSeries([100, 100.5, 101, 102, 103, 104]);
+    const result = evaluateShadowTrade(trade, candles, 5, 0.5);
+    expect(result.outcome).toBe("stopped");
+    expect(result.stopLossTriggeredAt).toBe(T0 + 3 * M);
+  });
+
+  it("BUY com stopLossPct custom 5% — candle -4% NÃO dispara stop, candle -6% sim", () => {
+    const trade = openShadowTrade({
+      symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "BUY",
+      entryTime: T0, entryPrice: 100, stopLossPct: 0.05,
+    });
+    const candles = candleSeries([100, 99, 96, 94, 95, 105]);
+    const result = evaluateShadowTrade(trade, candles, 5, 0.5);
+    // candle 1 (99, -1%) e 2 (96, -4%) dentro do stop 5%, candle 3 (94, -6%) dispara
+    expect(result.outcome).toBe("stopped");
+    expect(result.stopLossTriggeredAt).toBe(T0 + 3 * M);
+    expect(result.exitPrice).toBe(94);
+  });
+
+  it("WAIT ignora stop-loss — outcome segue flat", () => {
+    const trade = tradeAt(100, "WAIT");
+    const candles = candleSeries([100, 90, 80, 95, 105, 110]);
+    const result = evaluateShadowTrade(trade, candles, 5, 0.5);
+    expect(result.outcome).toBe("flat");
+    expect(result.stopLossTriggeredAt).toBeNull();
   });
 });
 
@@ -356,6 +457,121 @@ describe("AnalyticsService.evaluatePendingShadows", () => {
       const r2 = await svc.evaluatePendingShadows(12);
       expect(r2).toBeNull();
       await expect(svc.shadowStats()).resolves.toBeNull();
+    } finally {
+      store.close();
+    }
+  });
+
+  // ===== Cooldown entre trades =====
+
+  it("recordShadowTrade rejeita novo BUY no mesmo symbol+direction se último foi há < 4h", async () => {
+    const store = new Datastore({ path: ":memory:" });
+    try {
+      const decisionRepo = new DecisionRepository(store);
+      const shadowRepo = new ShadowRepository(store);
+      const svc = new AnalyticsService(decisionRepo, candleSource([]), { minMovePct: 0.5, lookback: 100 }, shadowRepo);
+
+      const t0Entry = Date.parse("2023-01-01T00:00:00Z");
+      const t1Entry = t0Entry + 60 * 60 * 1000; // 1h depois → dentro do cooldown de 4h
+
+      const first = await svc.recordShadowTrade({
+        symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "BUY",
+        entryTime: t0Entry, entryPrice: 100,
+      });
+      expect(first).not.toBeNull();
+
+      const second = await svc.recordShadowTrade({
+        symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "BUY",
+        entryTime: t1Entry, entryPrice: 105,
+      });
+      expect(second).toBeNull();
+
+      // Apenas o primeiro está persistido
+      const all = shadowRepo.list({ symbol: "BTCUSDT", signal: "BUY" });
+      expect(all.length).toBe(1);
+      expect(all[0]!.id).toBe(first!.id);
+    } finally {
+      store.close();
+    }
+  });
+
+  it("recordShadowTrade aceita novo BUY se último do mesmo symbol+direction foi há > 4h", async () => {
+    const store = new Datastore({ path: ":memory:" });
+    try {
+      const decisionRepo = new DecisionRepository(store);
+      const shadowRepo = new ShadowRepository(store);
+      const svc = new AnalyticsService(decisionRepo, candleSource([]), { minMovePct: 0.5, lookback: 100 }, shadowRepo);
+
+      const t0Entry = Date.parse("2023-01-01T00:00:00Z");
+      const t1Entry = t0Entry + 5 * 60 * 60 * 1000; // 5h depois → fora do cooldown
+
+      const first = await svc.recordShadowTrade({
+        symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "BUY",
+        entryTime: t0Entry, entryPrice: 100,
+      });
+      expect(first).not.toBeNull();
+
+      const second = await svc.recordShadowTrade({
+        symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "BUY",
+        entryTime: t1Entry, entryPrice: 105,
+      });
+      expect(second).not.toBeNull();
+      expect(second!.id).not.toBe(first!.id);
+
+      const all = shadowRepo.list({ symbol: "BTCUSDT", signal: "BUY" });
+      expect(all.length).toBe(2);
+    } finally {
+      store.close();
+    }
+  });
+
+  it("cooldown respeita direção: SELL não bloqueia novo BUY (mesmo symbol)", async () => {
+    const store = new Datastore({ path: ":memory:" });
+    try {
+      const decisionRepo = new DecisionRepository(store);
+      const shadowRepo = new ShadowRepository(store);
+      const svc = new AnalyticsService(decisionRepo, candleSource([]), { minMovePct: 0.5, lookback: 100 }, shadowRepo);
+
+      const t0Entry = Date.parse("2023-01-01T00:00:00Z");
+      const t1Entry = t0Entry + 60 * 60 * 1000; // 1h depois
+
+      const first = await svc.recordShadowTrade({
+        symbol: "BTCUSDT", timeframe: "1h", direction: "down", decision: "SELL",
+        entryTime: t0Entry, entryPrice: 100,
+      });
+      expect(first).not.toBeNull();
+
+      // direction diferente (up vs down) → não bloqueia
+      const second = await svc.recordShadowTrade({
+        symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "BUY",
+        entryTime: t1Entry, entryPrice: 105,
+      });
+      expect(second).not.toBeNull();
+    } finally {
+      store.close();
+    }
+  });
+
+  it("WAIT ignora cooldown (pode empilhar sinais WAIT)", async () => {
+    const store = new Datastore({ path: ":memory:" });
+    try {
+      const decisionRepo = new DecisionRepository(store);
+      const shadowRepo = new ShadowRepository(store);
+      const svc = new AnalyticsService(decisionRepo, candleSource([]), { minMovePct: 0.5, lookback: 100 }, shadowRepo);
+
+      const t0Entry = Date.parse("2023-01-01T00:00:00Z");
+      const t1Entry = t0Entry + 60 * 60 * 1000;
+
+      const first = await svc.recordShadowTrade({
+        symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "WAIT",
+        entryTime: t0Entry, entryPrice: 100,
+      });
+      const second = await svc.recordShadowTrade({
+        symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "WAIT",
+        entryTime: t1Entry, entryPrice: 100,
+      });
+      expect(first).not.toBeNull();
+      expect(second).not.toBeNull();
     } finally {
       store.close();
     }

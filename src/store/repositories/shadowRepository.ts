@@ -24,6 +24,9 @@ interface Row {
   probability: number | null;
   created_at: number;
   evaluated_at: number | null;
+  stop_loss_pct: number | null;
+  cooldown_minutes: number | null;
+  stop_loss_triggered_at: number | null;
 }
 
 export interface ShadowFilter {
@@ -52,13 +55,15 @@ export class ShadowRepository {
         id, symbol, timeframe, direction, decision,
         entry_time, entry_price, exit_time, exit_price,
         outcome, return_pct, confidence, probability,
-        created_at, evaluated_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        created_at, evaluated_at,
+        stop_loss_pct, cooldown_minutes, stop_loss_triggered_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `).run(
       trade.id, trade.symbol, trade.timeframe, trade.direction, trade.decision,
       trade.entryTime, trade.entryPrice, trade.exitTime, trade.exitPrice,
       trade.outcome, trade.returnPct, trade.confidence, trade.probability,
       trade.createdAt, trade.evaluatedAt,
+      trade.stopLossPct ?? null, trade.cooldownMinutes ?? null, trade.stopLossTriggeredAt ?? null,
     );
   }
 
@@ -70,6 +75,7 @@ export class ShadowRepository {
     if (updates.outcome !== undefined) { fields.push("outcome = ?"); params.push(updates.outcome); }
     if (updates.returnPct !== undefined) { fields.push("return_pct = ?"); params.push(updates.returnPct); }
     if (updates.evaluatedAt !== undefined) { fields.push("evaluated_at = ?"); params.push(updates.evaluatedAt); }
+    if (updates.stopLossTriggeredAt !== undefined) { fields.push("stop_loss_triggered_at = ?"); params.push(updates.stopLossTriggeredAt); }
     if (fields.length === 0) return;
     params.push(id);
     this.store.db.prepare(`UPDATE shadow_trades SET ${fields.join(", ")} WHERE id = ?`).run(...params);
@@ -197,5 +203,8 @@ function rowToTrade(r: Row): ShadowTrade {
     probability: r.probability,
     createdAt: r.created_at,
     evaluatedAt: r.evaluated_at,
+    stopLossPct: r.stop_loss_pct,
+    cooldownMinutes: r.cooldown_minutes,
+    stopLossTriggeredAt: r.stop_loss_triggered_at,
   };
 }

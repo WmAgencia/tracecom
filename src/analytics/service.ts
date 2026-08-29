@@ -11,7 +11,7 @@ import { TIMEFRAME_MS, Timeframe } from "../market/model";
 import type { MarketCandle } from "../market/model";
 import { getCalibrationReport, type CalibrationReport } from "./calibration";
 import { buildPerfSnapshotFromRecords, type PerfSnapshot } from "./pnl-snapshot";
-import { openShadowTrade, evaluateShadowTrade, type ShadowTrade, type ShadowOutcome } from "./shadow";
+import { openShadowTrade, evaluateShadowTrade, DEFAULT_COOLDOWN_MINUTES, type ShadowTrade, type ShadowOutcome } from "./shadow";
 import type { ShadowRepository, ShadowStats, ShadowFilter } from "../store/repositories/shadowRepository";
 
 export const DEFAULT_VALIDATION: ValidationConfig = { minMovePct: 0.5, lookback: 1000 };
@@ -163,8 +163,33 @@ export class AnalyticsService {
     entryPrice: number;
     confidence?: number;
     probability?: number;
+    stopLossPct?: number;
+    cooldownMinutes?: number;
   }): Promise<ShadowTrade | null> {
     if (!this.shadowRepo) return null;
+
+    // Cooldown entre trades do mesmo symbol+decision: se o último foi aberto
+    // há menos de `cooldownMinutes` (default 4h), rejeita o novo trade.
+    // WAIT nunca respeita cooldown (não tem exposição direcional).
+    const cooldownMinutes = input.cooldownMinutes ?? DEFAULT_COOLDOWN_MINUTES;
+    if (input.decision !== "WAIT" && Number.isFinite(cooldownMinutes) && cooldownMinutes > 0) {
+      const cooldownMs = cooldownMinutes * 60 * 1000;
+      const sinceMs = input.entryTime - cooldownMs;
+      const recent = this.shadowRepo.list({
+        symbol: input.symbol,
+        signal: input.decision,
+        sinceMs,
+      });
+      // Filtra: mesmo direction (up/down) e entryTime > sinceMs (i.e. dentro da janela)
+      const recentSameDir = recent.filter(
+        (t) => t.direction === input.direction && t.entryTime >= sinceMs && t.entryTime < input.entryTime,
+      );
+      if (recentSameDir.length > 0) {
+        // Cooldown ativo: rejeita novo trade (não salva).
+        return null;
+      }
+    }
+
     const trade = openShadowTrade(input);
     this.shadowRepo.save(trade);
     return trade;
@@ -184,7 +209,7 @@ export class AnalyticsService {
     const pending = this.shadowRepo.list();
     let evaluated = 0;
     const outcomes: Record<ShadowOutcome, number> = {
-      pending: 0, hit: 0, miss: 0, flat: 0, insufficient: 0,
+      pending: 0, hit: 0, miss: 0, flat: 0, insufficient: 0, stopped: 0,
     };
 
     for (const trade of pending) {
@@ -208,6 +233,7 @@ export class AnalyticsService {
         outcome: evaluatedTrade.outcome,
         returnPct: evaluatedTrade.returnPct,
         evaluatedAt: evaluatedTrade.evaluatedAt,
+        stopLossTriggeredAt: evaluatedTrade.stopLossTriggeredAt ?? null,
       });
       outcomes[evaluatedTrade.outcome]++;
       evaluated++;

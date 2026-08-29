@@ -150,6 +150,13 @@ export class Datastore {
       CREATE INDEX IF NOT EXISTS idx_shadow_outcome ON shadow_trades(outcome);
       CREATE INDEX IF NOT EXISTS idx_shadow_symbol_tf ON shadow_trades(symbol, timeframe);
 
+      -- Migração: colunas opcionais para stop-loss e cooldown.
+      -- Usamos ALTER TABLE ADD COLUMN com fallback silencioso (try/catch) caso
+      -- a coluna já exista em bases legadas.
+      ALTER TABLE shadow_trades ADD COLUMN stop_loss_pct REAL;
+      ALTER TABLE shadow_trades ADD COLUMN cooldown_minutes INTEGER;
+      ALTER TABLE shadow_trades ADD COLUMN stop_loss_triggered_at INTEGER;
+
       -- Estado dos guards (circuit breaker + cooldown + drawdown diário).
       -- Singleton (id=1). Persiste entre reinícios do servidor para que
       -- cooldown e circuit breaker NÃO resetem ao subir o processo.
