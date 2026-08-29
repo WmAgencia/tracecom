@@ -4,6 +4,7 @@ import {
   wilsonUpperBound,
   wilsonInterval,
   isActionable,
+  effectiveMargin,
   expectedValue,
   calibrate,
   type CalibrationPoint,
@@ -110,6 +111,152 @@ describe("isActionable", () => {
         minMargin: 0.04,
       }),
     ).toBe(true);
+  });
+
+  it("[adaptativo] vol baixa (0.01): margem 0.02 → ciLower 0.53 > 0.52? SIM", () => {
+    // Reinterpretando o spec original: com margem 0.02, o ciLower precisa
+    // ser > baseline+0.02 = 0.52. ciLower=0.53 satisfaz → true.
+    expect(
+      isActionable({
+        probability: 0.55,
+        ciLower: 0.53,
+        baseline: 0.5,
+        volatility: 0.01,
+      }),
+    ).toBe(true);
+  });
+
+  it("[adaptativo] vol média (0.03): margem 0.05 → ciLower 0.53 > 0.55? NÃO → usa prob 0.55 (edge 0.05) sem histórico → false", () => {
+    // prob-baseline = 0.05 ≥ 0.03, mas nRecentTrades ausente → exceção NÃO dispara.
+    // ciLower 0.53 vs baseline+margem 0.55 → 0.53 > 0.55? NÃO → false.
+    expect(
+      isActionable({
+        probability: 0.55,
+        ciLower: 0.53,
+        baseline: 0.5,
+        volatility: 0.03,
+      }),
+    ).toBe(false);
+  });
+
+  it("[adaptativo] vol média + histórico suficiente: exceção libera o sinal", () => {
+    // ciLower 0.53 > 0.55? NÃO. Mas nRecentTrades=50 ≥ 30 e edge 0.05 ≥ 0.03 → exceção → true.
+    expect(
+      isActionable({
+        probability: 0.55,
+        ciLower: 0.53,
+        baseline: 0.5,
+        volatility: 0.03,
+        nRecentTrades: 50,
+      }),
+    ).toBe(true);
+  });
+
+  it("[adaptativo] vol alta (0.06): margem 0.08 → ciLower 0.53 > 0.58? NÃO → false", () => {
+    // nRecentTrades ausente → exceção não dispara.
+    expect(
+      isActionable({
+        probability: 0.55,
+        ciLower: 0.53,
+        baseline: 0.5,
+        volatility: 0.06,
+      }),
+    ).toBe(false);
+  });
+
+  it("[adaptativo] vol alta + histórico: exceção libera mesmo com ciLower curto", () => {
+    expect(
+      isActionable({
+        probability: 0.55,
+        ciLower: 0.51,
+        baseline: 0.5,
+        volatility: 0.06,
+        nRecentTrades: 50,
+      }),
+    ).toBe(true);
+  });
+
+  it("[adaptativo] vol baixa mas ciLower == baseline: nenhuma folga → false", () => {
+    expect(
+      isActionable({
+        probability: 0.55,
+        ciLower: 0.5,
+        baseline: 0.5,
+        volatility: 0.01,
+      }),
+    ).toBe(false);
+  });
+
+  it("[adaptativo] sem vol e sem histórico: fallback conservador 0.05", () => {
+    // ciLower 0.54 > 0.55? NÃO → false.
+    expect(
+      isActionable({
+        probability: 0.55,
+        ciLower: 0.54,
+        baseline: 0.5,
+      }),
+    ).toBe(false);
+    // ciLower 0.56 > 0.55? SIM → true.
+    expect(
+      isActionable({
+        probability: 0.55,
+        ciLower: 0.56,
+        baseline: 0.5,
+      }),
+    ).toBe(true);
+  });
+
+  it("[adaptativo] nRecentTrades < 30 + ciLower insuficiente: exceção NÃO dispara", () => {
+    expect(
+      isActionable({
+        probability: 0.55,
+        ciLower: 0.51,
+        baseline: 0.5,
+        volatility: 0.06,
+        nRecentTrades: 20,
+      }),
+    ).toBe(false);
+  });
+
+  it("[adaptativo] minMargin explícita sobrescreve a adaptativa", () => {
+    // vol=0.01 → adaptativa seria 0.02, mas minMargin=0.08 força.
+    // ciLower 0.55 > 0.58? NÃO → false.
+    expect(
+      isActionable({
+        probability: 0.55,
+        ciLower: 0.55,
+        baseline: 0.5,
+        volatility: 0.01,
+        minMargin: 0.08,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("effectiveMargin", () => {
+  it("vol < 0.02 → 0.02", () => {
+    expect(effectiveMargin(0.01)).toBe(0.02);
+    expect(effectiveMargin(0)).toBe(0.02);
+  });
+
+  it("0.02 <= vol < 0.05 → 0.05", () => {
+    expect(effectiveMargin(0.02)).toBe(0.05);
+    expect(effectiveMargin(0.04)).toBe(0.05);
+  });
+
+  it("vol >= 0.05 → 0.08", () => {
+    expect(effectiveMargin(0.05)).toBe(0.08);
+    expect(effectiveMargin(0.10)).toBe(0.08);
+  });
+
+  it("sem vol e nRecentTrades < 10 → fallback 0.05", () => {
+    expect(effectiveMargin(undefined)).toBe(0.05);
+    expect(effectiveMargin(undefined, 5)).toBe(0.05);
+  });
+
+  it("sem vol mas nRecentTrades >= 10 → fallback 0.05 (vol ainda domina)", () => {
+    // Sem volatilidade, a função recai no DEFAULT_MIN_MARGIN.
+    expect(effectiveMargin(undefined, 50)).toBe(0.05);
   });
 });
 

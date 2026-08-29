@@ -28,7 +28,12 @@ export interface ActionableParams {
   readonly probability: number;
   readonly ciLower: number;
   readonly baseline: number;
+  /** Margem mínima fixa (opcional). Se fornecida, sobrescreve a margem adaptativa. */
   readonly minMargin?: number;
+  /** # de trades recentes avaliados (opcional). Libera exceção histórica se >= 30. */
+  readonly nRecentTrades?: number;
+  /** ATR% atual (opcional). 0–1+. Usado para escalonar a margem adaptativa. */
+  readonly volatility?: number;
 }
 
 export interface EVParams {
@@ -61,6 +66,13 @@ const DEFAULT_MIN_MARGIN = 0.05;
 const DEFAULT_GAIN = 1;
 const DEFAULT_LOSS = 1;
 const ECE_BINS = 10;
+
+/** Faixas de volatilidade (ATR%) e margem adaptativa correspondente. */
+const VOL_CALM_THRESHOLD = 0.02;
+const VOL_NORMAL_THRESHOLD = 0.05;
+const MIN_RECENT_TRADES_FOR_EXCEPTION = 30;
+const HISTORICAL_EDGE_THRESHOLD = 0.03;
+const LOW_HISTORY_THRESHOLD = 10;
 
 /**
  * Wilson score interval — limite INFERIOR.
@@ -111,20 +123,58 @@ export function wilsonInterval(successes: number, total: number, z: number = DEF
 }
 
 /**
- * Um sinal só é "actionable" se o limite inferior do IC Wilson
- * exceder o baseline por uma margem mínima (default 5 pontos percentuais).
+ * Margem adaptativa baseada em volatilidade (ATR%) e histórico recente.
  *
- * A probabilidade pontual é IGNORADA — usamos o ciLower, porque é
- * o que reflete significância estatística.
+ *   vol < 0.02         → 0.02  (mercado calmo, permite mais sinais)
+ *   0.02 <= vol < 0.05 → 0.05  (regime normal)
+ *   vol >= 0.05        → 0.08  (mercado volátil, exige mais edge)
  *
- *   ciLower > baseline + minMargin   → actionable = true
+ * Se `nRecentTrades < 10` E volatilidade ausente → fallback conservador 0.05.
+ * Se `minMargin` for explicitamente fornecida, ela vence a adaptativa.
+ */
+export function effectiveMargin(volatility: number | undefined, nRecentTrades?: number): number {
+  if (volatility === undefined && (nRecentTrades === undefined || nRecentTrades < LOW_HISTORY_THRESHOLD)) {
+    return DEFAULT_MIN_MARGIN;
+  }
+  if (volatility !== undefined) {
+    if (volatility < VOL_CALM_THRESHOLD) return 0.02;
+    if (volatility < VOL_NORMAL_THRESHOLD) return DEFAULT_MIN_MARGIN;
+    return 0.08;
+  }
+  return DEFAULT_MIN_MARGIN;
+}
+
+/**
+ * Um sinal é "actionable" se o limite inferior do IC Wilson exceder
+ * o baseline por uma margem que ADAPTA ao contexto.
  *
- * Requer `>` estrito (não `>=`) para evitar que 0.50 = 0.50 + 0 seja
- * tratado como ação.
+ *   ciLower > baseline + effectiveMargin   → actionable = true
+ *
+ * OU, se houver histórico empírico suficiente:
+ *
+ *   nRecentTrades >= 30 && (probability − baseline) >= 0.03
+ *
+ * (confia no edge acumulado, ignora o ciLower nesta exceção).
+ *
+ * Se `minMargin` for explicitamente fornecida, sobrescreve a adaptativa.
+ *
+ * Requer `>` estrito (não `>=`) para evitar que `ciLower == baseline + m`
+ * seja tratado como ação.
  */
 export function isActionable(p: ActionableParams): boolean {
-  const margin = p.minMargin ?? DEFAULT_MIN_MARGIN;
-  return p.ciLower > p.baseline + margin;
+  const margin = p.minMargin ?? effectiveMargin(p.volatility, p.nRecentTrades);
+  if (p.ciLower > p.baseline + margin) return true;
+
+  // Exceção histórica: dados empíricos suficientes + edge consistente.
+  if (
+    p.nRecentTrades !== undefined &&
+    p.nRecentTrades >= MIN_RECENT_TRADES_FOR_EXCEPTION &&
+    p.probability - p.baseline >= HISTORICAL_EDGE_THRESHOLD
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
