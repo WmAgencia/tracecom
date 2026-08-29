@@ -50,3 +50,5 @@ start-server.sh
 .idea/
 .vercel
 .env*
+
+.vercel

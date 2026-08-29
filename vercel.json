@@ -10,7 +10,6 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/http.ts" },
     { "source": "/health", "destination": "/api/http.ts" },
-    { "source": "/extension/(.*)", "destination": "/api/http.ts" },
-    { "source": "/(.*)", "destination": "/api/http.ts" }
+    { "source": "/extension/(.*)", "destination": "/api/http.ts" }
   ]
 }

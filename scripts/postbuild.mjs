@@ -1,5 +1,7 @@
-/* Copia os assets estáticos da web app para dist/http/public (backend Node) e
- * para ./public (Vercel serve ./public como estático automaticamente). */
+/* Copia os assets estáticos da web app para:
+ *   - dist/http/public (backend Node local: `npm run serve`)
+ *   - dist/ raiz (Vercel: serve como estático automático com outputDirectory=dist)
+ */
 import { cpSync, mkdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,7 +14,8 @@ if (!existsSync(src)) {
   process.exit(0);
 }
 
-for (const rel of ["dist/http/public", "public"]) {
+const targets = ["dist/http/public", "dist"];
+for (const rel of targets) {
   const dst = join(here, "..", rel);
   mkdirSync(dst, { recursive: true });
   cpSync(src, dst, { recursive: true });
