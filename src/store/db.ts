@@ -164,6 +164,49 @@ export class Datastore {
         state_json TEXT NOT NULL DEFAULT '{}'
       );
       INSERT OR IGNORE INTO guard_state (id, last_updated_day) VALUES (1, '');
+
+      -- Pesos adaptativos do ensemble (singleton).
+      CREATE TABLE IF NOT EXISTS ensemble_weights (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        weights_json TEXT NOT NULL,
+        baseline_brier_json TEXT NOT NULL,
+        trained_at INTEGER NOT NULL,
+        sample_size INTEGER NOT NULL,
+        holdout_brier REAL
+      );
+
+      -- Historico de re-treinos (auto e rollback).
+      CREATE TABLE IF NOT EXISTS retrain_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        trained_at INTEGER NOT NULL,
+        trigger TEXT NOT NULL,
+        weights_json TEXT NOT NULL,
+        holdout_brier REAL,
+        deployed INTEGER NOT NULL DEFAULT 1
+      );
+      CREATE INDEX IF NOT EXISTS idx_retrain_trained_at ON retrain_history(trained_at);
+
+      -- Metricas diarias por modelo (drift detection).
+      CREATE TABLE IF NOT EXISTS model_daily_metrics (
+        date TEXT NOT NULL,
+        model TEXT NOT NULL,
+        brier REAL,
+        win_rate REAL,
+        n_trades INTEGER,
+        PRIMARY KEY (date, model)
+      );
+      CREATE INDEX IF NOT EXISTS idx_metrics_date ON model_daily_metrics(date);
+
+      -- Alertas de drift.
+      CREATE TABLE IF NOT EXISTS drift_alerts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        detected_at INTEGER NOT NULL,
+        model TEXT NOT NULL,
+        severity TEXT NOT NULL,
+        action_taken TEXT NOT NULL,
+        details_json TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_drift_detected_at ON drift_alerts(detected_at);
     `);
   }
 
