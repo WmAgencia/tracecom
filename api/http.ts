@@ -11,11 +11,110 @@
  * (processo long-running: `npm run serve`).
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { wilsonLowerBound, isActionable, expectedValue } from "../src/fusion/calibration";
-import { analyzeConfluence } from "../src/fusion/confluence";
-import { evaluateGuards, freshGuardState } from "../src/fusion/guards";
-import type { Direction, EmpiricalProbability } from "../src/backtest/types";
-import type { TFSnapshot, Timeframe } from "../src/fusion/confluence";
+
+/* ============================================================
+   Tipos e primitivas inline (serverless bundle não inclui src/)
+   ============================================================ */
+type Direction = "up" | "down";
+type Timeframe = "1m" | "3m" | "5m" | "15m" | "1h" | "4h" | "1d";
+type TFSnapshot = { tf: Timeframe; candles: ReadonlyArray<{ close: number; high: number; low: number }> };
+interface EmpiricalProbability {
+  probability: number;
+  sampleSize: number;
+  favorable: number;
+  baseline?: number;
+  confidenceInterval?: { lower: number; upper: number; method?: string; level?: number };
+}
+
+// Wilson CI para IC95% (z=1.96)
+function wilsonLowerBound(successes: number, total: number, z = 1.96): number {
+  if (total === 0) return 0;
+  const p = successes / total;
+  const denom = 1 + (z * z) / total;
+  const center = p + (z * z) / (2 * total);
+  const margin = z * Math.sqrt((p * (1 - p)) / total + (z * z) / (4 * total * total));
+  return Math.max(0, (center - margin) / denom);
+}
+function wilsonUpperBound(successes: number, total: number, z = 1.96): number {
+  if (total === 0) return 0;
+  const p = successes / total;
+  const denom = 1 + (z * z) / total;
+  const center = p + (z * z) / (2 * total);
+  const margin = z * Math.sqrt((p * (1 - p)) / total + (z * z) / (4 * total * total));
+  return Math.min(1, (center + margin) / denom);
+}
+function isActionable(p: number, ciLower: number, baseline: number, minMargin = 0.05): boolean {
+  return ciLower > baseline + minMargin;
+}
+function expectedValue(prob: number, gain = 1, loss = 1): number {
+  return prob * gain - (1 - prob) * loss;
+}
+function localRSI(closes: number[], p = 14): number | null {
+  if (closes.length < p + 1) return null;
+  let g = 0, l = 0;
+  for (let i = closes.length - p; i < closes.length; i++) {
+    const d = closes[i]! - closes[i - 1]!;
+    if (d >= 0) g += d; else l -= d;
+  }
+  const al = l / p;
+  if (al === 0) return 100;
+  const ag = g / p;
+  return 100 - 100 / (1 + ag / al);
+}
+
+const TF_WEIGHTS: Record<string, number> = { "15m": 0.7, "1h": 1.0, "4h": 0.9 };
+function analyzeConfluenceLocal(snapshots: TFSnapshot[], direction: Direction): {
+  direction: Direction | "neutral";
+  agreementScore: number;
+  confidenceBoost: number;
+  reason: string;
+} {
+  if (snapshots.length < 2) {
+    return { direction: "neutral", agreementScore: 0, confidenceBoost: 0, reason: "menos de 2 TFs elegíveis" };
+  }
+  let totalWeight = 0, alignedWeight = 0, alignedCount = 0, perTfCount = 0;
+  for (const s of snapshots) {
+    const w = TF_WEIGHTS[s.tf] ?? 0.8;
+    totalWeight += w;
+    const closes = s.candles.map((c) => c.close);
+    if (closes.length < 30) continue;
+    perTfCount++;
+    let sma = 0;
+    for (let i = closes.length - 20; i < closes.length; i++) sma += closes[i]!;
+    sma /= 20;
+    const tech = closes[closes.length - 1]! - sma;
+    const rsi = localRSI(closes);
+    const aligned = rsi !== null && rsi > 30 && rsi < 70 && Math.sign(tech) === (direction === "up" ? 1 : -1);
+    if (aligned) { alignedWeight += w; alignedCount++; }
+  }
+  const agreement = totalWeight > 0 ? alignedWeight / totalWeight : 0;
+  if (agreement < 0.5 || alignedCount < 2) {
+    return { direction: "neutral", agreementScore: agreement, confidenceBoost: 0, reason: `confluência insuficiente: ${alignedCount}/${perTfCount} TFs alinhados, agreement=${agreement.toFixed(3)}` };
+  }
+  return {
+    direction,
+    agreementScore: agreement,
+    confidenceBoost: agreement * 0.3,
+    reason: `confluência ${direction} confirmada: ${alignedCount}/${perTfCount} TFs alinhados, agreement=${agreement.toFixed(3)}`,
+  };
+}
+
+interface GuardState {
+  consecutiveLosses: number; cooldownUntil: number | null; dailyLossPct: number;
+  lastLossAt: number | null; circuitTrippedAt: number | null; lastUpdatedDay: string;
+}
+function freshGuardState(now: number): GuardState {
+  return {
+    consecutiveLosses: 0, cooldownUntil: null, dailyLossPct: 0,
+    lastLossAt: null, circuitTrippedAt: null,
+    lastUpdatedDay: new Date(now).toISOString().slice(0, 10),
+  };
+}
+function evaluateGuardsLocal(input: { atrPct: number | null; lastCandleAgeMs: number | null; now: number }): { allow: boolean; reason?: string } {
+  if (input.atrPct !== null && input.atrPct > 8) return { allow: false, reason: `volatilidade extrema (ATR%=${input.atrPct.toFixed(2)})` };
+  if (input.lastCandleAgeMs !== null && input.lastCandleAgeMs > 5 * 60 * 1000) return { allow: false, reason: "dados stale (>5min)" };
+  return { allow: true };
+}
 
 const CC = "https://cryptocurrency.cv/api";
 const BINANCE = "https://api.binance.com/api/v3";
@@ -182,7 +281,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         const perTf = await fetchCandlesMultiTf(symbol);
         const { snapshots, direction: confDir } = buildConfluenceSnapshots(perTf, direction);
         if (snapshots.length >= 2 && confDir !== null) {
-          const r = analyzeConfluence({ perTf: snapshots, direction });
+          const r = analyzeConfluenceLocal(snapshots, direction);
           confluence = {
             direction: r.direction,
             agreementScore: r.agreementScore,
