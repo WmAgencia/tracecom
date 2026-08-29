@@ -43,7 +43,7 @@ export interface CalibrationReport {
   brierScore: number;
   /** Expected Calibration Error (10 bins). */
   ece: number;
-  perSignal: Record<DecisionSignal, { n: number; wins: number; winRate: number; avgReturn: number | null }>;
+  perSignal: Record<DecisionSignal, { n: number; wins: number; winRate: number; avgReturn: number | null; avgNetReturnPct: number | null }>;
   perTimeframe: Record<string, { n: number; wins: number; winRate: number }>;
   topSetups: Array<{ setup: string; n: number; wins: number; winRate: number }>;
   drawdownObserved: number;
@@ -176,11 +176,11 @@ function deriveGuardStatus(rows: readonly DecisionRecord[]): {
 
 /** Per-sinal: BUY/SELL/WAIT. WAIT normalmente não tem hit/miss. */
 function computePerSignal(rows: readonly DecisionRecord[]): CalibrationReport["perSignal"] {
-  const empty = { n: 0, wins: 0, winRate: 0, avgReturn: null as number | null };
-  const buckets: Record<DecisionSignal, { n: number; wins: number; misses: number; sumRet: number; retN: number }> = {
-    BUY: { n: 0, wins: 0, misses: 0, sumRet: 0, retN: 0 },
-    SELL: { n: 0, wins: 0, misses: 0, sumRet: 0, retN: 0 },
-    WAIT: { n: 0, wins: 0, misses: 0, sumRet: 0, retN: 0 },
+  const empty = { n: 0, wins: 0, winRate: 0, avgReturn: null as number | null, avgNetReturnPct: null as number | null };
+  const buckets: Record<DecisionSignal, { n: number; wins: number; misses: number; sumRet: number; retN: number; sumNetRet: number; netRetN: number }> = {
+    BUY: { n: 0, wins: 0, misses: 0, sumRet: 0, retN: 0, sumNetRet: 0, netRetN: 0 },
+    SELL: { n: 0, wins: 0, misses: 0, sumRet: 0, retN: 0, sumNetRet: 0, netRetN: 0 },
+    WAIT: { n: 0, wins: 0, misses: 0, sumRet: 0, retN: 0, sumNetRet: 0, netRetN: 0 },
   };
   for (const r of rows) {
     const sig = String(r.decision).toUpperCase() as DecisionSignal;
@@ -192,15 +192,19 @@ function computePerSignal(rows: readonly DecisionRecord[]): CalibrationReport["p
     if (typeof r.returnPct === "number") {
       b.sumRet += r.returnPct;
       b.retN++;
+      // avgNetReturnPct: média de returnPct líquido (já descontado no shadow.ts).
+      b.sumNetRet += r.returnPct;
+      b.netRetN++;
     }
   }
-  const fmt = (b: { n: number; wins: number; misses: number; sumRet: number; retN: number }) => {
+  const fmt = (b: { n: number; wins: number; misses: number; sumRet: number; retN: number; sumNetRet: number; netRetN: number }) => {
     const directional = b.wins + b.misses;
     return {
       n: b.n,
       wins: b.wins,
       winRate: directional > 0 ? b.wins / directional : 0,
       avgReturn: b.retN > 0 ? b.sumRet / b.retN : null,
+      avgNetReturnPct: b.netRetN > 0 ? b.sumNetRet / b.netRetN : null,
     };
   };
   return {
