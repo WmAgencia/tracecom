@@ -331,8 +331,9 @@ describe("AnalyticsService.evaluatePendingShadows", () => {
 
       const result = await svc.evaluatePendingShadows(horizon);
       // Apenas o trade antigo deve ser avaliado
-      expect(result.evaluated).toBe(1);
-      expect(result.outcomes.hit).toBe(1);
+      expect(result).not.toBeNull();
+      expect(result!.evaluated).toBe(1);
+      expect(result!.outcomes.hit).toBe(1);
 
       // O trade recente segue pendente
       const pending = shadowRepo.list({ signal: "BUY" }).filter((t) => t.outcome === "pending");

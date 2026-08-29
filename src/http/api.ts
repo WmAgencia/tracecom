@@ -309,6 +309,9 @@ export class TraceconHttpApi {
             confidence: body.confidence != null ? Number(body.confidence) : undefined,
             probability: body.probability != null ? Number(body.probability) : undefined,
           });
+          if (!trade) {
+            return { status: 503, json: { error: "shadow_unavailable" } };
+          }
           return { status: 200, json: { ok: true, id: trade.id } };
         } catch (e) {
           return { status: 500, json: { error: "shadow_save_failed", message: e instanceof Error ? e.message : String(e) } };
