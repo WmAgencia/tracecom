@@ -1,0 +1,47 @@
+[
+  {
+    "oosRatio": 0.25,
+    "inSampleCandles": 1620,
+    "queries": 100,
+    "meanSamples": 1035.25,
+    "meanProb": 0.39716294924675466,
+    "meanBaseline": 0.49055705271012906,
+    "meanCiLower": 0.36460784700249765,
+    "edgeMean": -0.0933941034633748,
+    "profitableQueries": 0,
+    "totalSamples": 103525,
+    "totalFavorable": 41542,
+    "baselineSample": 82721,
+    "baselineFavorable": 41542
+  },
+  {
+    "oosRatio": 0.5,
+    "inSampleCandles": 1080,
+    "queries": 100,
+    "meanSamples": 731.35,
+    "meanProb": 0.4110918935841106,
+    "meanBaseline": 0.5014828038697486,
+    "meanCiLower": 0.3746006673698845,
+    "edgeMean": -0.09039091028563831,
+    "profitableQueries": 0,
+    "totalSamples": 73135,
+    "totalFavorable": 30504,
+    "baselineSample": 59687,
+    "baselineFavorable": 30504
+  },
+  {
+    "oosRatio": 0.75,
+    "inSampleCandles": 540,
+    "queries": 100,
+    "meanSamples": 486.04,
+    "meanProb": 0.3662605669747772,
+    "meanBaseline": 0.44125013343708963,
+    "meanCiLower": 0.32434282581145935,
+    "edgeMean": -0.07498956646231172,
+    "profitableQueries": 0,
+    "totalSamples": 48604,
+    "totalFavorable": 17765,
+    "baselineSample": 40251,
+    "baselineFavorable": 17765
+  }
+]
