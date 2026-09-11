@@ -151,7 +151,7 @@ P-I a P-W, P-X a P-AM
 | Provider honesty | 1 | PASS | OANDA was attempted only when environment credentials exist; current run records `OANDA_API_KEY/OANDA_ACCOUNT_ID ausentes` and explicitly falls back to real Binance data | Configure OANDA practice credentials for Forex validation; no credentials were written to the repository |
 | Upstream sync | 1 | PASS | Remote `origin/main` inspected at `d0a8a68`; local tree preserved all remote tracked files, added local improvements, and recorded remote as a merge parent without force overwrite | Push integrated `main` after final gates |
 | Shadow artifacts | 1 | PASS | `diagnostic-results/shadow-validation-latest.json` and `.md` versioned; timestamped reruns ignored; report is reproducible through the npm script | Keep latest report refreshed after provider changes |
-| GitHub publication gate | 2 | PASS_WITH_EXTERNAL_LIMIT | Published tree is live at `origin/main` commit `c871f8f`; it contains the complete application, provider and reports. GitHub's OAuth scope restriction required omitting only `.github/workflows/ci.yml`; the workflow remains in local history for later publication after `workflow` authorization | Add the workflow in a later authenticated push |
+| GitHub publication gate | 2 | PASS_WITH_EXTERNAL_LIMIT | Published tree is live at `origin/main`; it contains the complete application, provider and reports. GitHub's OAuth scope restriction required omitting only `.github/workflows/ci.yml`; the workflow remains in local history for later publication after `workflow` authorization | Add the workflow in a later authenticated push |
 
 ## Forex provider, causal OOS and edge-audit wave (2026-09-11)
 
@@ -169,7 +169,7 @@ P-I a P-W, P-X a P-AM
 
 | item | iter | verdict | evidence | next action |
 | --- | --- | --- | --- | --- |
-| Remote artifact | 1 | PASS | `git ls-remote origin main` = `c871f8f`; remote report and provider files read back successfully | Keep remote tree immutable until next evidence window |
+| Remote artifact | 1 | PASS | `git ls-remote origin main` verified after publication; remote report and provider files read back successfully | Keep remote tree immutable until next evidence window |
 | Forex sample | 1 | PASS | Yahoo Forex real OHLC, seven liquid pairs, 2026-09-04 to 2026-09-11, 1m horizon 5 candles; 980 total / 849 actionable / 849 evaluated | Collect another disjoint TEST B before model changes |
 | Honest result | 1 | PASS | Win rate 46.61%; BUY 46.09%; SELL 47.10%; net EV -0.144160; realized return -0.090284; profit factor 0.3021; drawdown 0.090284 | Verdict: NO STATISTICAL EDGE FOUND in this window |
 | Calibration | 1 | PASS | Brier 0.255573; ECE 0.060932; MCE 0.299568; 0.75–0.85 band n=15, 95% CI 0.2321–0.7086; 0.78–0.82 band n=5 | Do not interpret small high-probability bands as certification |
