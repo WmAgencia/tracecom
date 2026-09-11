@@ -8,14 +8,14 @@ import type { EnvConfig } from "../config/env";
 import { resolveProvider } from "./registryV2";
 import { MarketPipeline } from "./pipeline";
 import { MarketDataService } from "./service";
-import { StaticAssetCatalog, DEFAULT_CRYPTO_CATALOG } from "./catalog";
+import { StaticAssetCatalog, DEFAULT_CRYPTO_CATALOG, DEFAULT_FOREX_CATALOG } from "./catalog";
 import type { AssetCatalog } from "./catalog";
 import type { MarketDataProvider } from "./providerV2";
 import type { PipelineSymbolConfig } from "./pipeline";
 import { QuantEngine, DEFAULT_CONFIG } from "../quant/engine";
 import { buildMarketContext } from "./context";
 import type { MarketContext, MarketQuantFeatures } from "./context";
-import type { Timeframe } from "./model";
+import { TIMEFRAME_MS, type Timeframe } from "./model";
 import { Datastore } from "../store/db";
 import { CandleRepository } from "../store/repositories/candleRepository";
 import { Backtester } from "../backtest/backtest";
@@ -40,8 +40,9 @@ import { freshGuardState, type GuardState } from "../fusion/guards";
  */
 function makeMultiTfCandlesProvider(
   pipeline: MarketPipeline,
-): (symbol: string) => { readonly "15m": readonly import("./model").MarketCandle[]; readonly "1h": readonly import("./model").MarketCandle[]; readonly "4h": readonly import("./model").MarketCandle[] } {
+): (symbol: string) => Partial<Record<Timeframe, readonly import("./model").MarketCandle[]>> {
   return (symbol: string) => ({
+    "5m": pipeline.state.getCandles(symbol, "5m"),
     "15m": pipeline.state.getCandles(symbol, "15m"),
     "1h": pipeline.state.getCandles(symbol, "1h"),
     "4h": pipeline.state.getCandles(symbol, "4h"),
@@ -49,15 +50,15 @@ function makeMultiTfCandlesProvider(
 }
 
 /**
- * Idade do último candle de 1m de BTCUSDT (ou null se sem dados).
+ * Idade do último candle do ativo/timeframe solicitado (ou null se sem dados).
  * Usado pelo guard de staleness do FusionService.
  */
 function makeLastCandleAgeProvider(
   pipeline: MarketPipeline,
-): () => number | null {
-  return () => {
-    const last = pipeline.state.getCandles("BTCUSDT", "1m").slice(-1)[0];
-    return last ? Date.now() - last.timestamp : null;
+): (symbol?: string, timeframe?: Timeframe) => number | null {
+  return (symbol = "BTCUSDT", timeframe = "1m") => {
+    const last = pipeline.state.getCandles(symbol, timeframe).at(-1);
+    return last ? Math.max(0, Date.now() - (last.timestamp + TIMEFRAME_MS[timeframe])) : null;
   };
 }
 
@@ -103,7 +104,11 @@ export function createMarketRuntime(
   opts: MarketRuntimeOptions,
 ): MarketRuntime {
   const provider = resolveProvider(config);
-  const catalog = new StaticAssetCatalog(DEFAULT_CRYPTO_CATALOG);
+  const catalog = new StaticAssetCatalog(
+    config.marketDataMode === "forex" || config.marketDataMode === "auto"
+      ? DEFAULT_FOREX_CATALOG
+      : DEFAULT_CRYPTO_CATALOG,
+  );
   const quant = new QuantEngine(DEFAULT_CONFIG);
   const store = new Datastore({ path: config.database.path });
   const candleRepo = new CandleRepository(store, provider?.id ?? "none");
@@ -196,7 +201,9 @@ export function createMarketRuntime(
         runtimeGuardState = freshGuardState(Date.now());
       },
       configured: false,
-      start: async () => void 0,
+      start: async () => {
+        await hydrateCalibration(decisionRepo, calibrationEngine);
+      },
       stop: () => store.close(),
       buildContext: async (_s, _tf) =>
         buildMarketContext({
@@ -225,14 +232,14 @@ export function createMarketRuntime(
       backtester,
       historySource: candleRepo.source(),
       currentCandles: (symbol, timeframe) => pipeline.state.getCandles(symbol, timeframe),
-      // CAMADA 1 — Confluência multi-TF (15m + 1h + 4h)
+      // CAMADA 1 — Confluência multi-TF (5m + 15m + 1h + 4h quando disponível)
       currentCandlesMultiTf: makeMultiTfCandlesProvider(pipeline),
       // CAMADA 3 — Guards: estado vem do SQLite (carregado na inicialização).
       // Mutações devem usar runtime.persistGuards(newState) para que reinícios
       // do servidor NÃO percam cooldown/circuit breaker/drawdown diário.
       guardStateProvider: () => runtimeGuardState,
       // Idade do último candle 1m para checagem de staleness
-      lastCandleAgeMs: makeLastCandleAgeProvider(pipeline),
+      lastCandleAgeMs: (symbol, timeframe) => makeLastCandleAgeProvider(pipeline)(symbol, timeframe),
       getNewsBias: async (asset) => {
         const res = await news.searchNews({ query: asset, asset, limit: 8 });
         if (!res.available) return null;
@@ -333,7 +340,7 @@ export function createMarketRuntime(
     resetBreaker,
     configured: true,
     start: async () => {
-      if (!pipeline) return;
+      await hydrateCalibration(decisionRepo, calibrationEngine);
       await pipeline.start([...opts.symbols]);
       // Persiste os candles fechados recém-coletados no cold store (dado real).
       for (const c of opts.symbols) {
@@ -347,6 +354,22 @@ export function createMarketRuntime(
     },
     buildContext,
   };
+}
+
+/** Rehydrates causal calibration state after a process restart. */
+async function hydrateCalibration(
+  decisionRepo: DecisionRepository,
+  calibrationEngine: CalibrationEngine,
+): Promise<void> {
+  const records = await decisionRepo.listAll({ sinceMs: Date.now() - 45 * 86_400_000 });
+  if (records.length === 0) return;
+  calibrationEngine.pushHistory(records);
+  const keys = new Map<string, { symbol: string; timeframe: string; regime: string }>();
+  for (const record of records) {
+    const key = { symbol: record.symbol, timeframe: record.timeframe, regime: record.regime ?? "unknown" };
+    keys.set(`${key.symbol}|${key.timeframe}|${key.regime}`, key);
+  }
+  for (const key of keys.values()) calibrationEngine.fitForKey(key);
 }
 
 function lastNonNull(series: readonly (number | null)[]): number | null {

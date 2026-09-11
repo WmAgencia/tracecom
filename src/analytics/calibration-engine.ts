@@ -218,6 +218,11 @@ export function decideStatus(
     reasons.push("INSUFFICIENT_SAMPLE: sem janela OOS");
     return { status: "INSUFFICIENT_SAMPLE", reasonCodes: reasons };
   }
+  const oosSamples = oos.bins.reduce((sum, bin) => sum + bin.n, 0);
+  if (oosSamples === 0) {
+    reasons.push("INSUFFICIENT_SAMPLE: janela OOS sem resultados avaliados");
+    return { status: "INSUFFICIENT_SAMPLE", reasonCodes: reasons };
+  }
   // Platt degenerado (A fora de range). Isotonic é fallback automático, sempre válido.
   if (fit.params.method === "platt") {
     if (fit.params.A < 0.1 || fit.params.A > 5.0) {
@@ -299,7 +304,10 @@ export class CalibrationEngine {
       (r) => (r.evaluatedAt ?? r.createdAt) >= trainFrom && (r.evaluatedAt ?? r.createdAt) < trainTo,
     );
     const oosRows = rows.filter(
-      (r) => (r.evaluatedAt ?? r.createdAt) >= trainTo,
+      (r) => {
+        const ts = r.evaluatedAt ?? r.createdAt;
+        return ts >= trainTo && ts < now;
+      },
     );
     const trainSamples = extractPlattSamples(trainRows);
     const oosSamples = extractPlattSamples(oosRows);
@@ -421,7 +429,10 @@ export class CalibrationEngine {
       rows: DecisionRecord[];
     };
     const buckets = new Map<string, Bucket>();
+    const now = Date.now();
     for (const r of records) {
+      const ts = r.evaluatedAt ?? r.createdAt;
+      if (ts > now) continue;
       const key: CalibrationKey = {
         symbol: r.symbol,
         timeframe: r.timeframe,

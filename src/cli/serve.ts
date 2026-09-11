@@ -32,11 +32,11 @@ async function main(): Promise<void> {
   // P-R: intervalo do scheduler configurável por env (default 30s).
   const schedulerMs = Number(process.env.TRACECON_SCHEDULER_MS ?? 30_000);
   const symbols = config.marketDataMode === "forex" || config.marketDataMode === "auto"
-    ? ["EUR/USD", "GBP/USD", "USD/JPY"].flatMap((symbol) => [
+    ? ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD", "USD/CHF", "NZD/USD"].flatMap((symbol) => [
       { symbol, timeframe: "1m" as const, native: true },
+      { symbol, timeframe: "5m" as const, native: true },
       { symbol, timeframe: "15m" as const, native: true },
       { symbol, timeframe: "1h" as const, native: true },
-      { symbol, timeframe: "4h" as const, native: true },
     ])
     : [
       { symbol: "BTCUSDT", timeframe: "1m" as const, native: true },

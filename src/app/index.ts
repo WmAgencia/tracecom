@@ -40,7 +40,8 @@ export interface TraceconApp {
 export function createApp(env: NodeJS.ProcessEnv = process.env): TraceconApp {
   const config = loadConfig(env);
   const logger = createLogger(config);
-  // P-AN: usar registry V2 quando disponível (Binance real). Fallback ao
+  // P-AN: usar registry V2 quando disponível (Forex/crypto real conforme o
+  // modo). Fallback ao
   // legado se V2 não resolver. Interfaces V1 e V2 têm shapes diferentes;
   // o resto do pipeline ainda depende de V1 — por isso o cast explícito
   // com log para diagnosticar.

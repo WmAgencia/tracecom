@@ -17,6 +17,8 @@ export interface YahooForexOptions {
   readonly baseUrl?: string;
   readonly fetchImpl?: typeof fetch;
   readonly timeoutMs?: number;
+  /** Polling interval used by the read-only subscription adapter. */
+  readonly pollIntervalMs?: number;
 }
 
 type ChartPayload = {
@@ -31,22 +33,32 @@ type ChartPayload = {
 };
 
 const yahooSymbol = (symbol: string): string => `${symbol.replace("/", "")}=X`;
-const yahooInterval = (timeframe: Timeframe): string => ({ "1m": "1m", "3m": "5m", "5m": "5m", "15m": "15m", "1h": "1h", "4h": "1h", "1d": "1d" })[timeframe];
-const yahooRange = (timeframe: Timeframe): string => timeframe === "1m" || timeframe === "3m" || timeframe === "5m" || timeframe === "15m" ? "7d" : "1y";
+const yahooInterval = (timeframe: Timeframe): string => ({ "1m": "1m", "3m": "1m", "5m": "5m", "15m": "15m", "1h": "1h", "4h": "1h", "1d": "1d" })[timeframe];
+/** Yahoo does not expose every canonical TraceCon timeframe. These two are
+ * built only from smaller real candles; no bucket is emitted when there is a
+ * source gap, so aggregation never fabricates OHLC. */
+const yahooSourceTimeframe = (timeframe: Timeframe): Timeframe => timeframe === "3m" ? "1m" : timeframe === "4h" ? "1h" : timeframe;
+const yahooRange = (timeframe: Timeframe): string => {
+  const source = yahooSourceTimeframe(timeframe);
+  return source === "1m" || source === "3m" || source === "5m" || source === "15m" ? "7d" : "1y";
+};
 
 export class YahooForexProvider implements MarketDataProvider {
   readonly id = "yahoo-forex";
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
+  private readonly pollIntervalMs: number;
   private stateValue: MarketDataProvider["state"] = "disconnected";
   private connectedAtValue: number | null = null;
   private readonly listeners = new Set<MarketListener>();
+  private readonly timers = new Set<ReturnType<typeof setInterval>>();
 
   constructor(options: YahooForexOptions = {}) {
     this.baseUrl = (options.baseUrl ?? CHART_URL).replace(/\/$/, "");
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.timeoutMs = options.timeoutMs ?? 15_000;
+    this.pollIntervalMs = Math.max(15_000, options.pollIntervalMs ?? 60_000);
   }
 
   get state(): MarketDataProvider["state"] { return this.stateValue; }
@@ -71,17 +83,53 @@ export class YahooForexProvider implements MarketDataProvider {
   }
 
   disconnect(): void {
+    for (const timer of this.timers) clearInterval(timer);
+    this.timers.clear();
     this.stateValue = "disconnected";
     this.connectedAtValue = null;
-    this.listeners.clear();
     this.emit({ type: "status", state: "disconnected" });
+    this.listeners.clear();
   }
 
   async subscribe(opts: SubscribeOptions, listener: MarketListener): Promise<() => void> {
     this.assertSymbol(opts.symbol);
     if (this.stateValue !== "connected") await this.connect();
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    const timeframes = opts.timeframes?.length ? opts.timeframes : ["1m" as const];
+    let active = true;
+    const poll = async (): Promise<void> => {
+      if (!active) return;
+      try {
+        const end = Date.now();
+        for (const timeframe of timeframes) {
+          const step = TIMEFRAME_MS[timeframe];
+          const result = await this.getCandles({
+            symbol: opts.symbol,
+            timeframe,
+            start: end - step * 3,
+            end,
+            limit: 3,
+          });
+          for (const candle of result.candles) listener({ type: "candle", candle });
+        }
+        if (this.stateValue !== "connected") {
+          this.stateValue = "connected";
+          listener({ type: "status", state: "connected" });
+        }
+      } catch (error) {
+        this.stateValue = "reconnecting";
+        listener({ type: "status", state: "reconnecting", error: String(error instanceof Error ? error.message : error) });
+      }
+    };
+    const timer = setInterval(() => void poll(), this.pollIntervalMs);
+    this.timers.add(timer);
+    void poll();
+    return () => {
+      active = false;
+      clearInterval(timer);
+      this.timers.delete(timer);
+      this.listeners.delete(listener);
+    };
   }
 
   async getTicker(symbol: string) {
@@ -96,6 +144,10 @@ export class YahooForexProvider implements MarketDataProvider {
     this.assertSymbol(params.symbol);
     const end = params.end ?? Date.now();
     const interval = yahooInterval(params.timeframe);
+    const sourceTimeframe = yahooSourceTimeframe(params.timeframe);
+    const sourceStep = TIMEFRAME_MS[sourceTimeframe];
+    const targetStep = TIMEFRAME_MS[params.timeframe];
+    const requestStart = params.timeframe === sourceTimeframe ? params.start : params.start - (targetStep - sourceStep);
     const url = `${this.baseUrl}/${encodeURIComponent(yahooSymbol(params.symbol))}?interval=${interval}&range=${yahooRange(params.timeframe)}&includePrePost=false&events=div%2Csplits`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -107,21 +159,24 @@ export class YahooForexProvider implements MarketDataProvider {
       const quote = result?.indicators?.quote?.[0];
       if (!result?.timestamp || !quote) throw new Error("Yahoo Forex schema sem quote");
       const receivedAt = Date.now();
-      const step = TIMEFRAME_MS[params.timeframe];
       const out: MarketCandle[] = [];
       for (let i = 0; i < result.timestamp.length; i++) {
         const timestamp = Number(result.timestamp[i]) * 1000;
         const open = quote.open?.[i]; const high = quote.high?.[i]; const low = quote.low?.[i]; const close = quote.close?.[i];
         if (![timestamp, open, high, low, close].every((v) => typeof v === "number" && Number.isFinite(v))) continue;
-        if (timestamp < params.start || timestamp >= end) continue;
-        const isClosed = timestamp + step <= receivedAt;
+        if (timestamp < requestStart || timestamp >= end) continue;
+        const isClosed = timestamp + sourceStep <= receivedAt;
         if (!isClosed) continue;
         if ((high as number) < Math.max(open as number, close as number) || (low as number) > Math.min(open as number, close as number)) continue;
-        out.push({ provider: this.id, symbol: params.symbol, timeframe: params.timeframe, open: open as number, high: high as number, low: low as number, close: close as number, volume: Number(quote.volume?.[i] ?? 0), timestamp, receivedAt, isClosed: true, source: "rest:yahoo-chart", quality: "high", estimatedDelayMs: Math.max(0, receivedAt - (timestamp + step)) });
+        out.push({ provider: this.id, symbol: params.symbol, timeframe: sourceTimeframe, open: open as number, high: high as number, low: low as number, close: close as number, volume: Number(quote.volume?.[i] ?? 0), timestamp, receivedAt, isClosed: true, source: "rest:yahoo-chart", quality: "high", estimatedDelayMs: Math.max(0, receivedAt - (timestamp + sourceStep)) });
       }
       out.sort((a, b) => a.timestamp - b.timestamp);
       const dedup = Array.from(new Map(out.map((c) => [c.timestamp, c])).values());
-      return { candles: dedup.slice(-(params.limit ?? dedup.length)), source: "rest:yahoo-chart", quality: dedup.length ? "high" as const : "unknown" as const };
+      const normalized = sourceTimeframe === params.timeframe
+        ? dedup.map((c) => ({ ...c, timeframe: params.timeframe }))
+        : aggregateCandles(dedup, params.symbol, params.timeframe, sourceStep, targetStep);
+      const filtered = normalized.filter((c) => c.timestamp >= params.start && c.timestamp < end);
+      return { candles: filtered.slice(-(params.limit ?? filtered.length)), source: "rest:yahoo-chart", quality: filtered.length ? "high" as const : "unknown" as const };
     } finally {
       clearTimeout(timer);
     }
@@ -152,4 +207,47 @@ export class YahooForexProvider implements MarketDataProvider {
 
   private assertSymbol(symbol: string): void { if (!SYMBOLS.has(symbol.toUpperCase())) throw new Error(`Yahoo Forex símbolo não suportado: ${symbol}`); }
   private emit(event: Parameters<MarketListener>[0]): void { for (const listener of this.listeners) listener(event); }
+}
+
+function aggregateCandles(
+  source: readonly MarketCandle[],
+  symbol: string,
+  timeframe: Timeframe,
+  sourceStep: number,
+  targetStep: number,
+): MarketCandle[] {
+  const buckets = new Map<number, MarketCandle[]>();
+  for (const candle of source) {
+    const bucket = Math.floor(candle.timestamp / targetStep) * targetStep;
+    const rows = buckets.get(bucket) ?? [];
+    rows.push(candle);
+    buckets.set(bucket, rows);
+  }
+  const expected = targetStep / sourceStep;
+  const out: MarketCandle[] = [];
+  for (const [timestamp, rows] of buckets) {
+    rows.sort((a, b) => a.timestamp - b.timestamp);
+    if (rows.length !== expected) continue;
+    if (rows.some((c, index) => c.timestamp !== timestamp + index * sourceStep)) continue;
+    const first = rows[0]!;
+    const last = rows[rows.length - 1]!;
+    const receivedAt = Math.max(...rows.map((c) => c.receivedAt));
+    out.push({
+      provider: first.provider,
+      symbol,
+      timeframe,
+      open: first.open,
+      high: Math.max(...rows.map((c) => c.high)),
+      low: Math.min(...rows.map((c) => c.low)),
+      close: last.close,
+      volume: rows.reduce((sum, c) => sum + c.volume, 0),
+      timestamp,
+      receivedAt,
+      isClosed: true,
+      source: "rest:yahoo-chart:aggregate",
+      quality: "high",
+      estimatedDelayMs: Math.max(0, receivedAt - (timestamp + targetStep)),
+    });
+  }
+  return out.sort((a, b) => a.timestamp - b.timestamp);
 }

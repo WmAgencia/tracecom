@@ -11,7 +11,7 @@
  * para refletir fielmente o P&L hipotético de uma posição BUY/SELL.
  */
 import { TIMEFRAME_MS, type Timeframe } from "../market/model";
-import { netReturnAfterCosts, ROUND_TRIP_COST_PP } from "../risk/fees";
+import { executionCostPct, netReturnAfterCosts, type ExecutionMarket } from "../risk/fees";
 
 /** Default stop-loss como % fracional (1.5%). */
 export const DEFAULT_STOP_LOSS_PCT = 0.015;
@@ -47,6 +47,7 @@ export interface ShadowTrade {
   readonly costPct?: number | null;
   readonly confidence: number | null;
   readonly probability: number | null;
+  /** Provider snapshot used to select the cost model (crypto/Forex/binary). */
   readonly stopLossPct?: number | null;
   readonly cooldownMinutes?: number | null;
   readonly stopLossTriggeredAt?: number | null;
@@ -70,6 +71,7 @@ export interface OpenShadowInput {
   readonly probability?: number;
   readonly stopLossPct?: number;
   readonly cooldownMinutes?: number;
+  readonly providerId?: string | null;
 }
 
 /** Cria um shadow trade a partir de uma decisão + preço de entrada. */
@@ -89,6 +91,7 @@ export function openShadowTrade(input: OpenShadowInput): ShadowTrade {
     grossReturnPct: null,
     confidence: input.confidence ?? null,
     probability: input.probability ?? null,
+    providerId: input.providerId ?? null,
     stopLossPct: input.stopLossPct ?? null,
     cooldownMinutes: input.cooldownMinutes ?? null,
     stopLossTriggeredAt: null,
@@ -165,6 +168,9 @@ export function evaluateShadowTrade(
     };
   }
 
+  const market = marketForProvider(trade.providerId);
+  const costPct = market === "binary" ? 0 : executionCostPct({ market });
+
   // Stop-loss check: percorre cada candle da janela (incluindo o exit).
   // Aplica apenas para BUY/SELL (WAIT não tem exposição direcional).
   const stopLossPct = trade.stopLossPct ?? DEFAULT_STOP_LOSS_PCT;
@@ -184,8 +190,8 @@ export function evaluateShadowTrade(
           exitTime: c.timestamp,
           exitPrice: c.close,
           outcome: "stopped",
-          returnPct: netReturnAfterCosts(grossPct),
-          costPct: ROUND_TRIP_COST_PP,
+          returnPct: netReturnAfterCosts(grossPct, costPct),
+          costPct,
           grossReturnPct: grossPct,
           stopLossTriggeredAt: c.timestamp,
           evaluatedAt: Date.now(),
@@ -198,8 +204,8 @@ export function evaluateShadowTrade(
           exitTime: c.timestamp,
           exitPrice: c.close,
           outcome: "stopped",
-          returnPct: netReturnAfterCosts(grossPct),
-          costPct: ROUND_TRIP_COST_PP,
+          returnPct: netReturnAfterCosts(grossPct, costPct),
+          costPct,
           grossReturnPct: grossPct,
           stopLossTriggeredAt: c.timestamp,
           evaluatedAt: Date.now(),
@@ -228,9 +234,16 @@ export function evaluateShadowTrade(
     exitTime,
     exitPrice: exitCandle.close,
     outcome,
-    returnPct: netReturnAfterCosts(grossPct),
-    costPct: ROUND_TRIP_COST_PP,
+    returnPct: netReturnAfterCosts(grossPct, costPct),
+    costPct,
     grossReturnPct: grossPct,
     evaluatedAt: Date.now(),
   };
+}
+
+function marketForProvider(providerId: string | null | undefined): ExecutionMarket {
+  const id = (providerId ?? "").toLowerCase();
+  if (id.includes("iqoption") || id.includes("binary")) return "binary";
+  if (id.includes("forex") || id.includes("oanda") || id.includes("yahoo")) return "forex";
+  return "crypto";
 }

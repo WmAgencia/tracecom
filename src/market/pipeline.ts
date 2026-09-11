@@ -44,6 +44,7 @@ export class MarketPipeline {
   private readonly aggregators = new Map<string, CandleAggregator>();
   private readonly subscribers = new Set<(ev: PipelineEvent) => void>();
   private readonly configs: PipelineSymbolConfig[] = [];
+  private readonly unsubscriptions: Array<() => void> = [];
   private readonly log?: PipelineOptions["logger"];
   private started = false;
 
@@ -60,22 +61,35 @@ export class MarketPipeline {
     if (configs.length === 0) throw new Error("MarketPipeline requer ao menos um símbolo configurado");
     try {
       await this.provider.connect();
-    // Backfill inicial de candles FEICHADOS via REST (dado real, nunca inventado).
-    // O quant engine precisa de histórico suficiente; o WS só traz o corrente.
-    await this.backfill(configs);
-    const firstSymbol = configs[0]!.symbol;
-    const timeframes = Array.from(new Set(configs.filter((c) => c.symbol === firstSymbol).map((c) => c.timeframe)));
-    await this.provider.subscribe(
-      {
-        symbol: firstSymbol,
-        topics: ["klines", "trades"],
-        timeframes,
-      },
-      (ev) => this.onProviderEvent(ev),
-      );
+      // Backfill inicial de candles FEICHADOS via REST (dado real, nunca inventado).
+      // O quant engine precisa de histórico suficiente; o WS só traz o corrente.
+      await this.backfill(configs);
+      const bySymbol = new Map<string, Set<Timeframe>>();
+      for (const cfg of configs) {
+        const timeframes = bySymbol.get(cfg.symbol) ?? new Set<Timeframe>();
+        timeframes.add(cfg.timeframe);
+        bySymbol.set(cfg.symbol, timeframes);
+      }
+      for (const [symbol, timeframes] of bySymbol) {
+        const unsubscribe = await this.provider.subscribe(
+          { symbol, topics: ["klines", "trades"], timeframes: [...timeframes] },
+          (ev) => {
+            // Providers such as Binance multiplex symbols and broadcast every
+            // event to all listeners. Keep each pipeline subscription isolated
+            // so a multi-symbol runtime cannot ingest the same candle several
+            // times or leak one pair into another pair's state.
+            if (ev.type === "candle" && ev.candle.symbol !== symbol) return;
+            if (ev.type === "tick" && ev.tick.symbol !== symbol) return;
+            if (ev.type === "book" && ev.book.symbol !== symbol) return;
+            this.onProviderEvent(ev);
+          },
+        );
+        this.unsubscriptions.push(unsubscribe);
+      }
       this.configs.push(...configs);
       this.started = true;
     } catch (error) {
+      for (const unsubscribe of this.unsubscriptions.splice(0)) unsubscribe();
       this.provider.disconnect();
       this.configs.length = 0;
       this.started = false;
@@ -107,6 +121,7 @@ export class MarketPipeline {
 
   stop(): void {
     this.started = false;
+    for (const unsubscribe of this.unsubscriptions.splice(0)) unsubscribe();
     this.provider.disconnect();
   }
 

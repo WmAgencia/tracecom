@@ -52,3 +52,26 @@ export const DEFAULT_CRYPTO_CATALOG: Asset[] = [
   { id: "binance:BTCUSDC", symbol: "BTCUSDC", name: "Bitcoin", market: "crypto", provider: "binance", baseAsset: "BTC", quoteAsset: "USDC", status: "active", metadata: {} },
   { id: "binance:ETHBTC", symbol: "ETHBTC", name: "Ethereum", market: "crypto", provider: "binance", baseAsset: "ETH", quoteAsset: "BTC", status: "active", metadata: {} },
 ];
+
+/** Liquid Forex universe used by the real read-only providers. */
+const FOREX_CATALOG_ENTRIES = [
+  ["EUR/USD", "Euro / US Dollar", "EUR", "USD"],
+  ["GBP/USD", "British Pound / US Dollar", "GBP", "USD"],
+  ["USD/JPY", "US Dollar / Japanese Yen", "USD", "JPY"],
+  ["AUD/USD", "Australian Dollar / US Dollar", "AUD", "USD"],
+  ["USD/CAD", "US Dollar / Canadian Dollar", "USD", "CAD"],
+  ["USD/CHF", "US Dollar / Swiss Franc", "USD", "CHF"],
+  ["NZD/USD", "New Zealand Dollar / US Dollar", "NZD", "USD"],
+] as const;
+
+export const DEFAULT_FOREX_CATALOG: Asset[] = FOREX_CATALOG_ENTRIES.map(([symbol, name, baseAsset, quoteAsset]) => ({
+  id: `forex:${symbol}`,
+  symbol,
+  name,
+  market: "forex" as const,
+  provider: "auto-forex",
+  baseAsset,
+  quoteAsset,
+  status: "active" as const,
+  metadata: { feed: "real-forex" },
+}));

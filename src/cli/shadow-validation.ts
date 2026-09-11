@@ -64,6 +64,12 @@ function featureAblation(records: ShadowSignalRecord[]): string {
     ["NO_LOW_VOLATILITY", "session/regime gate removes LOW_VOLATILITY", test.filter((r) => r.regime !== "LOW_VOLATILITY")],
     ["TREND_AND_BREAKOUT_ONLY", "only TREND_* and BREAKOUT_* regimes", test.filter((r) => r.regime.startsWith("TREND_") || r.regime.startsWith("BREAKOUT_"))],
     ["LONDON_NY_ONLY", "session gate", test.filter((r) => r.session === "LONDON" || r.session === "NEW_YORK" || r.session === "LONDON_NEW_YORK_OVERLAP")],
+    ["MTF_CONFIRMATION_FILTER", "causal 5m + 15m context agrees with direction (diagnostic; not retrofitted into the signal)", test.filter((r) => {
+      const context = r.multiTimeframe;
+      if (!context || (r.direction !== "BUY" && r.direction !== "SELL")) return false;
+      const wanted = r.direction === "BUY" ? "UP" : "DOWN";
+      return context["5m"] === wanted && context["15m"] === wanted;
+    })],
   ];
   const lines = ["variant,description,n,wins,losses,win_rate,net_return,net_ev,coverage,status"];
   for (const [variant, description, rows] of variants) { const s = stats(rows); lines.push([variant, description, s.n, s.wins, s.losses, s.winRate ?? "", s.netReturn.toFixed(8), s.netEv.toFixed(8), s.coverage.toFixed(6), "TEST_B"].map(csv).join(",")); }
@@ -78,6 +84,32 @@ function errorAnalysis(records: ShadowSignalRecord[]): string {
   return `${lines.join("\n")}\n`;
 }
 
+interface FinalVerdict {
+  label: "READY FOR EXTENDED FOREX SHADOW" | "NEEDS RECALIBRATION" | "NEEDS MODEL IMPROVEMENT" | "NO STATISTICAL EDGE FOUND" | "PROVIDER BLOCKED";
+  reason: string;
+}
+
+function finalVerdict(report: Report, bestThreshold: number | null): FinalVerdict {
+  if (!report.provider || report.provider === "unknown") {
+    return { label: "PROVIDER BLOCKED", reason: "Nenhum provider Forex real entregou dados suficientes." };
+  }
+  if (bestThreshold === null || report.metrics.netExpectedValue <= 0) {
+    return { label: "NO STATISTICAL EDGE FOUND", reason: "O net EV não é positivo e nenhum threshold passou os gates TRAIN/TEST de amostra e EV." };
+  }
+  if ((report.metrics.ece ?? 1) > 0.10) {
+    return { label: "NEEDS RECALIBRATION", reason: "O EV passou o gate, mas o ECE ainda excede 0,10." };
+  }
+  if (report.metrics.evaluatedSignals < 1_000) {
+    return { label: "NEEDS MODEL IMPROVEMENT", reason: "Há sinal positivo, mas a amostra ainda não atingiu 1.000 avaliações OOS." };
+  }
+  return { label: "READY FOR EXTENDED FOREX SHADOW", reason: "EV positivo, calibração razoável e amostra OOS suficiente para ampliar somente o shadow." };
+}
+
+function addVerdictSection(markdownReport: string, verdict: FinalVerdict): string {
+  const section = `## Veredito\n\n- **${verdict.label}**\n- ${verdict.reason}\n- Estado de capital: **NÃO PRONTO — SHADOW_ONLY; nenhuma ordem financeira foi executada**\n\n`;
+  return markdownReport.replace("## Reliability bins", `${section}## Reliability bins`);
+}
+
 function markdown(report: Report, bestThreshold: number | null): string {
   const m = report.metrics;
   const rows = m.bins.map((b) => `| ${b.lo.toFixed(1)}-${b.hi.toFixed(1)} | ${b.n} | ${b.predictedMean.toFixed(4)} | ${b.observedWinRate.toFixed(4)} | ${b.gap.toFixed(4)} | ${b.confidence80 ? `${b.confidence80.lo.toFixed(4)}–${b.confidence80.hi.toFixed(4)}` : "—"} |`).join("\n");
@@ -90,9 +122,10 @@ await mkdir(outDir, { recursive: true });
 try {
   const report = await runShadowValidation();
   const threshold = thresholdCsv(report.records);
+  const verdict = finalVerdict(report, threshold.best);
   const stamp = report.generatedAt.replace(/[:.]/g, "-");
-  const reportJson = JSON.stringify(report, null, 2);
-  const reportMarkdown = markdown(report, threshold.best);
+  const reportJson = JSON.stringify({ ...report, finalVerdict: verdict.label, finalVerdictReason: verdict.reason, capitalReadiness: "NOT_READY_SHADOW_ONLY" }, null, 2);
+  const reportMarkdown = addVerdictSection(markdown(report, threshold.best), verdict);
   await writeFile(`${outDir}/shadow-validation-${stamp}.json`, reportJson, "utf8");
   await writeFile(`${outDir}/shadow-validation-${stamp}.md`, reportMarkdown, "utf8");
   await writeFile(`${outDir}/shadow-validation-latest.json`, reportJson, "utf8");
@@ -105,7 +138,7 @@ try {
   await writeFile(`${outDir}/forex-session-analysis.csv`, groupCsv(report.records, "session", (row) => row.session), "utf8");
   await writeFile(`${outDir}/forex-regime-analysis.csv`, groupCsv(report.records, "regime", (row) => row.regime), "utf8");
   await writeFile(`${outDir}/forex-error-analysis.md`, errorAnalysis(report.records), "utf8");
-  console.log(JSON.stringify({ ok: true, provider: report.provider, fallback: report.providerFallbackReason, total: report.metrics.totalSignals, actionable: report.metrics.actionableSignals, evaluated: report.metrics.evaluatedSignals, winRate: report.metrics.winRate, netExpectedValue: report.metrics.netExpectedValue, brier: report.metrics.brier, ece: report.metrics.ece, bestTrainThreshold: threshold.best, report: `${outDir}/forex-shadow-validation-latest.md` }, null, 2));
+  console.log(JSON.stringify({ ok: true, provider: report.provider, fallback: report.providerFallbackReason, total: report.metrics.totalSignals, actionable: report.metrics.actionableSignals, evaluated: report.metrics.evaluatedSignals, winRate: report.metrics.winRate, netExpectedValue: report.metrics.netExpectedValue, brier: report.metrics.brier, ece: report.metrics.ece, bestTrainThreshold: threshold.best, finalVerdict: verdict.label, report: `${outDir}/forex-shadow-validation-latest.md` }, null, 2));
 } catch (error) {
   console.error(`shadow-validation falhou: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;

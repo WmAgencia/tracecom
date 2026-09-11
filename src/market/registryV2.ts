@@ -30,9 +30,9 @@ export interface ProviderRegistryOptions {
  * `PROVIDER_NOT_CONFIGURED`).
  *
  * Reconhecemos `MARKET_DATA_MODE=binance` para habilitar explicitamente a
- * Binance (REST público, sem credencial). `MARKET_DATA_MODE=forex` instancia
- * o adapter Dukascopy/Exchange Rates API (keyless, com fallback sintético).
- * Qualquer outro modo na v2 devolve null (PROVIDER_NOT_CONFIGURED).
+ * Binance (REST público, sem credencial). `MARKET_DATA_MODE=forex` exige
+ * OANDA configurado; `MARKET_DATA_MODE=auto` tenta OANDA e depois Yahoo
+ * Forex público. Nenhum desses caminhos fabrica ou converte dados de cripto.
  */
 export function resolveProvider(
   config: Pick<EnvConfig, "marketDataMode" | "nodeEnv"> & Partial<Pick<EnvConfig, "oanda">>,

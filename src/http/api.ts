@@ -231,6 +231,7 @@ export class TraceconHttpApi {
             decision: ready.decision, entryTime: now, entryPrice,
             confidence: q.get("confidence") ? Number(q.get("confidence")) : undefined,
             probability: q.get("calibratedProbability") ? Number(q.get("calibratedProbability")) : undefined,
+            providerId: rt.provider?.id ?? null,
           });
           if (!trade) return { status: 503, json: { error: "paper_executor_unavailable" } };
           next = executePaperSignal(ready, executionKey, trade.id, now);
@@ -482,6 +483,7 @@ export class TraceconHttpApi {
             entryPrice: Number(body.entryPrice),
             confidence: body.confidence != null ? Number(body.confidence) : undefined,
             probability: body.probability != null ? Number(body.probability) : undefined,
+            providerId: rt.provider?.id ?? null,
           });
           if (!trade) {
             return { status: 503, json: { error: "shadow_unavailable" } };

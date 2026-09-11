@@ -174,3 +174,13 @@ P-I a P-W, P-X a P-AM
 | Honest result | 1 | PASS | Win rate 46.61%; BUY 46.09%; SELL 47.10%; net EV -0.144160; realized return -0.090284; profit factor 0.3021; drawdown 0.090284 | Verdict: NO STATISTICAL EDGE FOUND in this window |
 | Calibration | 1 | PASS | Brier 0.255573; ECE 0.060932; MCE 0.299568; 0.75–0.85 band n=15, 95% CI 0.2321–0.7086; 0.78–0.82 band n=5 | Do not interpret small high-probability bands as certification |
 | Thresholds and ablation | 1 | PASS | No threshold reached the minimum 30 TEST samples; all candidate threshold rows are `OVERFIT_RISK`; TEST_B ablations remain negative net EV | Leave extension on EV/WAIT gate |
+
+## Autonomous continuation wave (2026-09-11)
+
+| item | iter | verdict | evidence | next action |
+| --- | --- | --- | --- | --- |
+| Forex OOS refresh | 1 | PASS | Fresh Yahoo Forex run: 980 total, 848 actionable, 848 evaluated, 0 unknown; win rate 51.94%, BUY 53.76% / SELL 50.26%, net EV -0.089360, Brier 0.264917, ECE 0.097947; seven liquid pairs, 1m signal and five-candle horizon | Keep capital state `NOT_READY_SHADOW_ONLY` |
+| MTF causal context | 1 | PASS | 5m/15m/1h context is derived only from complete 1m buckets closed before each signal; the MTF confirmation ablation is present in `forex-feature-ablation.csv` and is diagnostic-only | Do not promote MTF weights without a disjoint OOS window |
+| Data integrity | 1 | PASS | Yahoo 3m/4h requests aggregate only contiguous real source candles; gaps are discarded; multiplex provider events are isolated per symbol; pipeline regression test added | Preserve fail-closed behavior |
+| Honest verdict | 1 | PASS | Report now records `NO STATISTICAL EDGE FOUND`, explicit reason, and `NOT_READY_SHADOW_ONLY`; no orders or capital execution | Improve model only after new evidence |
+| Regression gates | 1 | PASS | 64 test files passed / 1 skipped; 490 tests passed / 3 skipped; typecheck, build, extension static checks and npm audit (0 vulnerabilities) pass | Re-run before each publication |

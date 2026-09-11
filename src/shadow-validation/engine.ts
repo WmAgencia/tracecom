@@ -1,10 +1,13 @@
 import { OandaMarketDataProvider } from "../market/providers/forex/oanda";
 import { YahooForexProvider } from "../market/providers/forex/yahoo";
 import { TIMEFRAME_MS } from "../market/model";
+import { executionCostPct } from "../risk/fees";
 import type { MarketCandle, Timeframe } from "../market/model";
 
 export type ShadowDirection = "BUY" | "SELL" | "WAIT";
 export type ShadowOutcome = "WIN" | "LOSS" | "DRAW" | "UNKNOWN";
+export type MtfBias = "UP" | "DOWN" | "RANGE" | "UNAVAILABLE";
+export type MultiTimeframeContext = Readonly<Record<"5m" | "15m" | "1h", MtfBias>>;
 
 export interface ShadowSignalRecord {
   signalId: string;
@@ -50,6 +53,8 @@ export interface ShadowSignalRecord {
   evaluationTimestamp: string | null;
   evaluationMethod: string | null;
   dataCompleteness: "COMPLETE" | "UNKNOWN";
+  /** Contexto derivado somente de candles superiores já fechados. */
+  multiTimeframe?: MultiTimeframeContext;
 }
 
 export interface CalibrationBin {
@@ -148,6 +153,52 @@ function regime(candles: readonly MarketCandle[], i: number): string {
   return "RANGE";
 }
 
+function closedContextMap(candles: readonly MarketCandle[], targetTimeframe: "5m" | "15m" | "1h"): Map<number, number> {
+  const sourceStep = TIMEFRAME_MS["1m"];
+  const targetStep = TIMEFRAME_MS[targetTimeframe];
+  const expected = targetStep / sourceStep;
+  const buckets = new Map<number, MarketCandle[]>();
+  for (const candle of candles) {
+    const bucket = Math.floor(candle.timestamp / targetStep) * targetStep;
+    const rows = buckets.get(bucket) ?? [];
+    rows.push(candle);
+    buckets.set(bucket, rows);
+  }
+  const closes = new Map<number, number>();
+  for (const [bucket, rows] of buckets) {
+    rows.sort((a, b) => a.timestamp - b.timestamp);
+    if (rows.length !== expected) continue;
+    if (rows.some((candle, index) => candle.timestamp !== bucket + index * sourceStep)) continue;
+    closes.set(bucket, rows[rows.length - 1]!.close);
+  }
+  return closes;
+}
+
+function contextBiasAt(closes: Map<number, number>, targetTimeframe: "5m" | "15m" | "1h", signalTime: number): MtfBias {
+  const targetStep = TIMEFRAME_MS[targetTimeframe];
+  // The candle containing the signal is available only at its close. The
+  // latest higher-TF bucket must therefore end at or before signalTime.
+  const latestBucket = Math.floor((signalTime - targetStep) / targetStep) * targetStep;
+  const latest = closes.get(latestBucket);
+  const prior = closes.get(latestBucket - 3 * targetStep);
+  if (latest === undefined || prior === undefined) return "UNAVAILABLE";
+  const drift = pct(latest, prior);
+  if (drift > 0.0002) return "UP";
+  if (drift < -0.0002) return "DOWN";
+  return "RANGE";
+}
+
+function multiTimeframeContext(
+  signalTime: number,
+  maps: Readonly<Record<"5m" | "15m" | "1h", Map<number, number>>>,
+): MultiTimeframeContext {
+  return {
+    "5m": contextBiasAt(maps["5m"], "5m", signalTime),
+    "15m": contextBiasAt(maps["15m"], "15m", signalTime),
+    "1h": contextBiasAt(maps["1h"], "1h", signalTime),
+  };
+}
+
 function zonedHour(timestamp: number, timeZone: string): number {
   const part = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", hourCycle: "h23" })
     .formatToParts(new Date(timestamp)).find((value) => value.type === "hour");
@@ -217,7 +268,7 @@ async function fetchSeries(now: number, timeframe: Timeframe, symbols: string[])
       return fetchYahoo(now, timeframe, symbols, reason);
     }
   }
-  return fetchBinance(now, timeframe, "OANDA não configurado (OANDA_API_KEY/OANDA_ACCOUNT_ID ausentes)");
+  return fetchYahoo(now, timeframe, symbols, "OANDA não configurado (OANDA_API_KEY/OANDA_ACCOUNT_ID ausentes)");
 }
 
 async function fetchYahoo(now: number, timeframe: Timeframe, symbols: string[], reason: string): Promise<Series[]> {
@@ -232,12 +283,6 @@ async function fetchYahoo(now: number, timeframe: Timeframe, symbols: string[], 
     rows.push({ candles, provider: "yahoo-forex", fallbackReason: reason });
   }
   return rows;
-}
-
-// Compatibilidade com a chamada legada abaixo: apesar do nome histórico, a
-// validação Forex nunca consulta Binance; ela delega somente ao feed Forex.
-async function fetchBinance(now: number, timeframe: Timeframe, reason: string): Promise<Series[]> {
-  return fetchYahoo(now, timeframe, ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD", "USD/CHF", "NZD/USD"], reason);
 }
 
 function metricsOf(records: ShadowSignalRecord[]): ShadowMetrics {
@@ -287,6 +332,7 @@ interface ShadowCandidate {
   candle: MarketCandle;
   future: MarketCandle;
   raw: { direction: ShadowDirection; p: number; reasonCodes: string[] };
+  mtf: MultiTimeframeContext;
   signedGross: number;
   actionable: boolean;
   win: boolean;
@@ -307,12 +353,22 @@ export async function runShadowValidation(options: { timeframe?: Timeframe; symb
     const candles = row.candles
       .filter((c, i) => i === 0 || c.timestamp > row.candles[i - 1]!.timestamp)
       .sort((a, b) => a.timestamp - b.timestamp);
+    const mtfMaps = timeframe === "1m"
+      ? {
+        "5m": closedContextMap(candles, "5m"),
+        "15m": closedContextMap(candles, "15m"),
+        "1h": closedContextMap(candles, "1h"),
+      }
+      : null;
     for (let i = lookback; i < candles.length - horizon; i++) {
       const candle = candles[i]!;
       const future = candles[i + horizon]!;
       const raw = rawSignal(candles, i);
+      const mtf = mtfMaps
+        ? multiTimeframeContext(candle.timestamp + step, mtfMaps)
+        : { "5m": "UNAVAILABLE" as const, "15m": "UNAVAILABLE" as const, "1h": "UNAVAILABLE" as const };
       const signedGross = raw.direction === "BUY" ? pct(future.close, candle.close) : raw.direction === "SELL" ? pct(candle.close, future.close) : 0;
-      candidates.push({ row, candles, index: i, candle, future, raw, signedGross, actionable: raw.direction !== "WAIT", win: signedGross > 0 });
+      candidates.push({ row, candles, index: i, candle, future, raw, mtf, signedGross, actionable: raw.direction !== "WAIT", win: signedGross > 0 });
     }
   }
   // Keep at most 140 timestamps per pair, evenly spread over the available
@@ -338,7 +394,9 @@ export async function runShadowValidation(options: { timeframe?: Timeframe; symb
       }
     }
     const cal = calibrate(candidate.raw.p, completed);
-    const cost = candidate.actionable ? 0.0001 : 0;
+    // Yahoo has no historical bid/ask; use the conservative Forex execution
+    // proxy from the shared cost model and keep the spread field null.
+    const cost = candidate.actionable ? executionCostPct({ market: "forex" }) / 100 : 0;
     const payout = 1;
     const expectedValue = cal.p * payout - (1 - cal.p);
     const evaluationTimestamp = candidate.future.timestamp + step;
@@ -370,13 +428,16 @@ export async function runShadowValidation(options: { timeframe?: Timeframe; symb
       recommendedStake: 0,
       riskState: "SHADOW_ONLY",
       modelVersion: "shadow-momentum-v1",
-      featureVersion: "ohlcv-momentum-vol-v1",
+      featureVersion: "ohlcv-momentum-vol-mtf-context-v1",
       ensembleVersion: "single-causal-model-v1",
       calibrationVersion: "expanding-bin-laplace-walk-forward-v2",
       dataQuality: candidate.candle.quality,
       staleDataStatus: "FRESH",
       decision: candidate.raw.direction,
-      reasonCodes: candidate.raw.reasonCodes,
+      reasonCodes: [
+        ...candidate.raw.reasonCodes,
+        ...Object.entries(candidate.mtf).map(([tf, bias]) => `MTF_${tf.toUpperCase()}_${bias}`),
+      ],
       entryPrice: candidate.candle.close,
       exitPrice: candidate.future.close,
       grossReturn: candidate.actionable ? candidate.signedGross : 0,
@@ -386,6 +447,7 @@ export async function runShadowValidation(options: { timeframe?: Timeframe; symb
       evaluationTimestamp: new Date(evaluationTimestamp).toISOString(),
       evaluationMethod: "closed-candle close-to-close horizon; labels released after expiry close; no lookahead",
       dataCompleteness: "COMPLETE",
+      multiTimeframe: candidate.mtf,
     });
     if (candidate.actionable) pending.push({ availableAt: evaluationTimestamp, raw: candidate.raw.p, win: candidate.win });
   }
@@ -417,7 +479,7 @@ async function runShadowValidationLegacy(options: { timeframe?: Timeframe; symbo
       const actionable = direction !== "WAIT"; const win = signedGross > 0; if (actionable) completed.push({ raw: raw.p, win });
       // Yahoo fornece OHLC, mas não bid/ask histórico. O custo é um proxy
       // conservador documentado; o spread permanece null, nunca inventado.
-      const cost = actionable ? 0.0001 : 0; const payout = 1; const expectedValue = cal.p * payout - (1 - cal.p);
+      const cost = actionable ? executionCostPct({ market: "forex" }) / 100 : 0; const payout = 1; const expectedValue = cal.p * payout - (1 - cal.p);
       records.push({ signalId: `shadow-${row.provider}-${candle.symbol}-${candle.timestamp}-${i}`, createdAt: new Date(candle.timestamp).toISOString(), analysisTimestamp: new Date(candle.timestamp).toISOString(), intendedEntryTimestamp: new Date(candle.timestamp).toISOString(), expiryTimestamp: new Date(future.timestamp).toISOString(), symbol: candle.symbol, timeframe, session: forexSessionLabel(candle.timestamp), regime: regime(candles, i), provider: row.provider, providerTimestamp: new Date(candle.receivedAt).toISOString(), marketTimestamp: new Date(candle.timestamp).toISOString(), clockSkewMs: candle.receivedAt - (candle.timestamp + 60_000), direction, rawProbability: raw.p, calibratedProbability: cal.p, calibrationStatus: cal.status, expectedEdge: cal.p - 0.5, expectedValue, spread: null, spreadSource: "UNAVAILABLE", estimatedSlippage: actionable ? 0.00002 : 0, totalCost: cost, payout, recommendedStake: 0, riskState: "SHADOW_ONLY", modelVersion: "shadow-momentum-v1", featureVersion: "ohlcv-momentum-vol-v1", ensembleVersion: "single-causal-model-v1", calibrationVersion: "expanding-bin-laplace-v1", dataQuality: candle.quality, staleDataStatus: "FRESH", decision: direction, reasonCodes: raw.reasonCodes, entryPrice: candle.close, exitPrice: future.close, grossReturn: actionable ? signedGross : 0, costs: actionable ? cost : 0, netReturn: actionable ? signedGross - cost : 0, outcome: !actionable ? "UNKNOWN" : win ? "WIN" : signedGross === 0 ? "DRAW" : "LOSS", evaluationTimestamp: new Date(future.timestamp).toISOString(), evaluationMethod: "closed-candle close-to-close horizon; no lookahead", dataCompleteness: "COMPLETE" });
     }
   }

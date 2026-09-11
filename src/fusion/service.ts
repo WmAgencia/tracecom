@@ -5,7 +5,7 @@
  *
  * Camadas adicionadas (série de robustez):
  *   - Guards (circuit breaker + cooldown + drawdown + volatility + staleness)
- *   - Confluência multi-TF (15m + 1h + 4h precisam concordar)
+ *   - Confluência multi-TF (5m + 15m + 1h + 4h quando disponíveis)
  *   - Calibração Wilson (ci_lower > baseline + margem para ser acionável)
  *   - Expected Value (EV) por decisão
  */
@@ -29,12 +29,12 @@ export interface FusionServiceDeps {
   readonly backtester: Backtester;
   readonly historySource: CandleHistorySource;
   readonly currentCandles: (symbol: string, timeframe: Timeframe) => readonly MarketCandle[];
-  /** Opcional: candles multi-TF (15m, 1h, 4h) para confluência. Se ausente, sem confluência. */
+  /** Opcional: candles multi-TF (5m, 15m, 1h, 4h) para confluência. Se ausente, sem confluência. */
   readonly currentCandlesMultiTf?: (symbol: string) => Partial<Record<Timeframe, readonly MarketCandle[]>>;
   /** Opcional: estado atual dos guards (persistido externamente). */
   readonly guardStateProvider?: () => GuardState;
   /** Opcional: idade do último candle em ms. */
-  readonly lastCandleAgeMs?: () => number | null;
+  readonly lastCandleAgeMs?: (symbol?: string, timeframe?: Timeframe) => number | null;
   /** Opcional: fonte de notícias reais p/ derivar viés de contexto (Direção). */
   readonly getNewsBias?: (asset: string) => Promise<"up" | "down" | "neutral" | null>;
   /** Opcional: provedor de calendário macro (CPI/NFP/FOMC/...). Default: noop. */
@@ -66,22 +66,21 @@ export class FusionService {
   async analyze(req: AnalyzeRequest): Promise<FusionResult> {
     const candles = Array.from(this.deps.currentCandles(req.symbol, req.timeframe));
 
-    // 0) GUARDS — primeiro gate. Se bloqueado, WAIT imediato com motivo.
-    const guardState = this.deps.guardStateProvider?.() ?? freshGuardState(Date.now());
-    const atrPct = candles.length > 0 && this.deps.quant
-      ? null // quant já roda abaixo; aqui só usamos o resumo
-      : null;
-    const guardDecision: GuardDecision = evaluateGuards({
-      state: guardState,
-      atrPct: atrPct,
-      lastCandleAgeMs: this.deps.lastCandleAgeMs?.() ?? null,
-      now: Date.now(),
-    });
-
-    // 1) Quant
+    // Compute quant features before guards so volatility and freshness checks
+    // use the active asset/timeframe rather than a hard-coded default.
     const summary = candles.length > 0
       ? this.deps.quant.analyze({ candles, symbol: req.symbol, timeframe: req.timeframe })
       : null;
+
+    // 0) GUARDS — primeiro gate. Se bloqueado, WAIT imediato com motivo.
+    const guardState = this.deps.guardStateProvider?.() ?? freshGuardState(Date.now());
+    const atrPct = summary?.volatility.atrPct == null ? null : summary.volatility.atrPct / 100;
+    const guardDecision: GuardDecision = evaluateGuards({
+      state: guardState,
+      atrPct: atrPct,
+      lastCandleAgeMs: this.deps.lastCandleAgeMs?.(req.symbol, req.timeframe) ?? null,
+      now: Date.now(),
+    });
 
     const technical = {
       score: summary?.technicalScore ?? null,
@@ -113,9 +112,9 @@ export class FusionService {
     if (this.deps.currentCandlesMultiTf) {
       try {
         const perTfRaw = this.deps.currentCandlesMultiTf(req.symbol);
-        const perTf = (['15m', '1h', '4h'] as const)
+        const perTf = (['5m', '15m', '1h', '4h'] as const)
           .map((tf) => ({ tf, candles: perTfRaw[tf] ?? [] }))
-          .filter((x) => x.candles.length >= 30) as Array<{ tf: '15m' | '1h' | '4h'; candles: readonly { close: number; high: number; low: number; }[] }>;
+          .filter((x) => x.candles.length >= 30) as Array<{ tf: '5m' | '15m' | '1h' | '4h'; candles: readonly { close: number; high: number; low: number; }[] }>;
         if (perTf.length >= 2) {
           confluence = analyzeConfluence({ perTf, direction: req.direction });
         }

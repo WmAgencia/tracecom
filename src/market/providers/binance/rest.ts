@@ -144,6 +144,8 @@ export class BinanceProvider implements MarketDataProvider {
   private _connectedAt: number | null = null;
   private stream: BinanceStream | null = null;
   private readonly listeners = new Set<MarketListener>();
+  private readonly subscriptions = new Map<string, SubscribeOptions>();
+  private subscriptionSequence = 0;
   readonly historical: HistoricalSource;
 
   constructor(private readonly rest: BinanceRestClient = new BinanceRestClient()) {
@@ -180,6 +182,7 @@ export class BinanceProvider implements MarketDataProvider {
     this._connectedAt = null;
     this.stream?.stop();
     this.stream = null;
+    this.subscriptions.clear();
     this.emit({ type: "status", state: "disconnected" });
   }
 
@@ -189,20 +192,19 @@ export class BinanceProvider implements MarketDataProvider {
 
   async subscribe(opts: SubscribeOptions, listener: MarketListener): Promise<() => void> {
     this.listeners.add(listener);
+    const key = `${opts.symbol}|${[...(opts.timeframes ?? ["1m"])].sort().join(",")}|${++this.subscriptionSequence}`;
+    this.subscriptions.set(key, opts);
     if (this._state !== "connected") await this.connect();
-    // O stream WS cobre kl+aggTrade. Configuramos um stream por assinatura.
-    const stream = new BinanceStream({
-      onEvent: (ev) => this.dispatch(ev),
-      onState: (s) => {
-        this._state = s;
-        this.emit({ type: "status", state: s });
-      },
-    });
-    this.stream = stream;
-    stream.start([{ symbol: opts.symbol, timeframes: opts.timeframes?.length ? opts.timeframes : ["1m"] }]);
+    this.restartStream();
     return () => {
       this.listeners.delete(listener);
-      if (this.listeners.size === 0) this.stream?.stop();
+      this.subscriptions.delete(key);
+      if (this.subscriptions.size === 0) {
+        this.stream?.stop();
+        this.stream = null;
+      } else {
+        this.restartStream();
+      }
     };
   }
 
@@ -234,5 +236,23 @@ export class BinanceProvider implements MarketDataProvider {
   }
   private emit(ev: Parameters<MarketListener>[0]): void {
     for (const l of this.listeners) l(ev);
+  }
+
+  /** Rebuild the single multiplexed stream after a subscription changes. */
+  private restartStream(): void {
+    if (this._state !== "connected" || this.subscriptions.size === 0) return;
+    this.stream?.stop();
+    const stream = new BinanceStream({
+      onEvent: (ev) => this.dispatch(ev),
+      onState: (s) => {
+        this._state = s;
+        this.emit({ type: "status", state: s });
+      },
+    });
+    this.stream = stream;
+    stream.start(Array.from(this.subscriptions.values()).map((opts) => ({
+      symbol: opts.symbol,
+      timeframes: opts.timeframes?.length ? opts.timeframes : ["1m"],
+    })));
   }
 }

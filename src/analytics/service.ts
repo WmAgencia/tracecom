@@ -189,7 +189,7 @@ export class AnalyticsService {
       const rawReturnPct = ((exit.close - entry.close) / (entry.close || 1)) * 100;
       const grossReturnPct = rec.direction === "down" ? -rawReturnPct : rawReturnPct;
       const hasExposure = rec.decision === "BUY" || rec.decision === "SELL";
-      const market = rec.providerId === "oanda" ? "forex" : rec.providerId === "iqoption" ? "binary" : "crypto";
+      const market = marketForProvider(rec.providerId);
       const costPct = executionCostPct({ market });
       const netReturnPct = hasExposure ? netReturnAfterCosts(grossReturnPct, costPct) : null;
       await this.persist.updateOutcome(rec.id, {
@@ -355,32 +355,32 @@ export class AnalyticsService {
         console.warn("[analytics] recordDailyMetric falhou:", String(e));
       }
 
-      // (4) drift_alerts — quando ECE atual > média móvel 7d × (1 + threshold).
+      // (4) drift_alerts — quando o Brier OOS atual > média móvel 7d ×
+      // (1 + threshold). A tabela diária persiste Brier (não ECE), portanto
+      // comparamos a mesma métrica em ambos os lados.
       try {
         const avg = repo.dailyMetricAvg({ model: key, days: 7 });
         const latest = repo.latestDailyMetric(key);
-        // Usamos a ECE do snapshot OOS (não da métrica diária) para detectar
-        // drift de calibração imediato. Comparação só faz sentido se houver
-        // histórico de 7 dias (avg.n >= MIN_DAILY_SAMPLES_FOR_DRIFT).
+        const currentBrier = snap?.oos?.brierScore ?? null;
+        // Comparação só faz sentido se houver histórico de 7 dias
+        // (avg.n >= MIN_DAILY_SAMPLES_FOR_DRIFT).
         const MIN_DAILY_SAMPLES_FOR_DRIFT = 20;
-        if (avg && avg.n >= MIN_DAILY_SAMPLES_FOR_DRIFT && ece > 0) {
-          const baselineEce = avg.avgBrier; // usamos Brier como proxy da média móvel de ECE (schema só tem Brier agregado).
-          // Nota: schema não tem coluna ECE em model_daily_metrics — usamos
-          // Brier como sinal de degradação. Quando brier sobe, calibr. degrada.
+        if (avg && avg.n >= MIN_DAILY_SAMPLES_FOR_DRIFT && currentBrier !== null && currentBrier > 0) {
+          const baselineBrier = avg.avgBrier;
           if (
-            baselineEce > 0 &&
-            ece > baselineEce * (1 + driftThreshold) &&
+            baselineBrier > 0 &&
+            currentBrier > baselineBrier * (1 + driftThreshold) &&
             (!latest || latest.date !== today)
           ) {
             repo.recordDriftAlert({
               key,
-              alertType: "ece_drift",
-              severity: ece > baselineEce * (1 + driftThreshold * 2) ? "critical" : "warning",
-              message: `ECE ${ece.toFixed(4)} > média 7d ${baselineEce.toFixed(4)} (+${(driftThreshold * 100).toFixed(0)}%)`,
+              alertType: "brier_drift",
+              severity: currentBrier > baselineBrier * (1 + driftThreshold * 2) ? "critical" : "warning",
+              message: `Brier OOS ${currentBrier.toFixed(4)} > média 7d ${baselineBrier.toFixed(4)} (+${(driftThreshold * 100).toFixed(0)}%)`,
               detectedAt: Date.now(),
               snapshot: {
-                currentEce: ece,
-                baselineEce,
+                currentBrier,
+                baselineBrier,
                 threshold: driftThreshold,
                 n: avg.n,
               },
@@ -489,6 +489,7 @@ export class AnalyticsService {
     probability?: number;
     stopLossPct?: number;
     cooldownMinutes?: number;
+    providerId?: string | null;
   }): Promise<ShadowTrade | null> {
     if (!this.shadowRepo) return null;
 
@@ -581,4 +582,11 @@ export class AnalyticsService {
     if (expectedUp) return pct > 0 ? "hit" : "miss";
     return pct < 0 ? "hit" : "miss";
   }
+}
+
+function marketForProvider(providerId: string | null | undefined): "crypto" | "forex" | "binary" {
+  const id = (providerId ?? "").toLowerCase();
+  if (id.includes("iqoption") || id.includes("binary")) return "binary";
+  if (id.includes("forex") || id.includes("oanda") || id.includes("yahoo")) return "forex";
+  return "crypto";
 }

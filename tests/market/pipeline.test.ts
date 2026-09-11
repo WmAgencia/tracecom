@@ -3,9 +3,9 @@ import { MarketPipeline } from "../../src/market/pipeline";
 import type { MarketDataProvider, ProviderEvent } from "../../src/market/providerV2";
 import type { MarketCandle, MarketTick } from "../../src/market/model";
 
-function mkCandle(ts: number, isClosed = true): MarketCandle {
+function mkCandle(ts: number, isClosed = true, symbol = "BTCUSDT"): MarketCandle {
   return {
-    provider: "fake", symbol: "BTCUSDT", timeframe: "1m",
+    provider: "fake", symbol, timeframe: "1m",
     open: 100, high: 105, low: 99, close: 104, volume: 10,
     timestamp: ts, receivedAt: ts + 1_000, isClosed, source: "ws", quality: "high",
   };
@@ -90,6 +90,23 @@ describe("MarketPipeline: integridade temporal e múltiplos consumidores", () =>
     });
     expect(quant).toBe(1);
     expect(ui).toBe(1);
+  });
+
+  it("isola eventos por símbolo quando o provider transmite um multiplex", async () => {
+    const provider = new FakeProvider();
+    const pipeline = new MarketPipeline({ provider, logger: silentLog });
+    await pipeline.start([
+      { symbol: "BTCUSDT", timeframe: "1m", native: true },
+      { symbol: "ETHUSDT", timeframe: "1m", native: true },
+    ]);
+
+    // FakeProvider deliberadamente transmite o evento para todos os listeners,
+    // como ocorre no multiplex real. Cada candle deve chegar somente ao seu par.
+    provider.emit({ type: "candle", candle: mkCandle(Date.parse("2023-01-01T00:00:00Z"), true, "BTCUSDT") });
+    provider.emit({ type: "candle", candle: mkCandle(Date.parse("2023-01-01T00:01:00Z"), true, "ETHUSDT") });
+
+    expect(pipeline.state.getCandles("BTCUSDT", "1m")).toHaveLength(1);
+    expect(pipeline.state.getCandles("ETHUSDT", "1m")).toHaveLength(1);
   });
 
   it("rejeita tick com preço inválido (não chega ao estado)", async () => {

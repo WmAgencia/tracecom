@@ -26,7 +26,7 @@
  *   - caso contrário, devolve a direção solicitada
  */
 
-export type Timeframe = '15m' | '1h' | '4h';
+export type Timeframe = '5m' | '15m' | '1h' | '4h';
 
 export interface TFCandle {
   readonly close: number;
@@ -62,6 +62,7 @@ export interface ConfluenceResult {
 }
 
 const TF_WEIGHTS: Readonly<Record<Timeframe, number>> = {
+  '5m': 0.4,
   '1h': 1.0,
   '4h': 0.9,
   '15m': 0.7,

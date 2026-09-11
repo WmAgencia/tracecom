@@ -4,7 +4,7 @@ Sistema de **inteligência e análise de mercado** — não é corretora. Não e
 ordens, não custodia dinheiro, não fabrica dados. Investiga um cenário antes de
 concluir e pode responder **WAIT** quando não há evidências suficientes.
 
-- **Dados reais** de mercado (Binance REST/WebSocket, verificados) — nunca inventados.
+- **Dados reais** de mercado (Forex auto via OANDA/Yahoo ou Binance para cripto) — nunca inventados.
 - **Motor quantitativo** determinístico (SMA/EMA/RSI/MACD/ATR/Bollinger/ADX/VWAP,
   volatilidade, suporte/resistência, market structure, regime detection).
 - **Backtest + probabilidade empírica** (favoráveis/amostra, CI, out-of-sample,
@@ -27,14 +27,14 @@ concluir e pode responder **WAIT** quando não há evidências suficientes.
 
 ## Requisitos
 
-Node ≥ 20 (usa `node:sqlite`, `fetch` e `WebSocket` nativos — sem builds nativos).
+Node ≥ 22 (usa `node:sqlite`, `fetch` e `WebSocket` nativos — sem builds nativos).
 
 ## Rodar
 
 ```bash
 npm install
 
-# 1) Dados reais (Binance, sem chave) + IA (Anthropic ou gateway
+# 1) Dados reais (Forex auto ou Binance cripto, sem chave) + IA (Anthropic ou gateway
 #    compatível, ex.: nexxus-pro) + API + web app:
 copy .env.example .env
 
