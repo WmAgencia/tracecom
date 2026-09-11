@@ -1,0 +1,79 @@
+- EXP-60S: mh-v2; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-60S: mh-v3; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-60S: mh-v4; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-60S: mh-v5; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-60S: mh-v6; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-60S: mh-v7; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-60S: mh-v8; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-60S: mh-v8; LOCKED_HOLDOUT: features, threshold, expanding calibration snapshot and strategy frozen before trade 801.
+- EXP-120S: mh-v2; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-120S: mh-v3; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-120S: mh-v4; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-120S: mh-v5; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-120S: mh-v6; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v7; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v8; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v9; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v10; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v11; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v12; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v13; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v14; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v15; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v16; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v17; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v18; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v19; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v20; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v21; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v22; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v23; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v24; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v25; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v26; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v27; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v28; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v29; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v30; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v31; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v32; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v33; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v34; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v35; prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+- EXP-120S: mh-v36; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-120S: mh-v37; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-120S: mh-v37; LOCKED_HOLDOUT: features, threshold, expanding calibration snapshot and strategy frozen before trade 801.
+- EXP-180S: mh-v2; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-180S: mh-v3; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-180S: mh-v4; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-180S: mh-v5; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-180S: mh-v6; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v7; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v8; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v9; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v10; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v11; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v12; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v13; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v14; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v15; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v16; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v17; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v18; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v19; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v20; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v21; prequential selection: LONDON_TREND had n=56 and prior net mean=-0.000137
+- EXP-180S: mh-v22; prequential selection: LONDON_TREND had n=154 and prior net mean=-0.000198
+- EXP-180S: mh-v23; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-180S: mh-v23; LOCKED_HOLDOUT: features, threshold, expanding calibration snapshot and strategy frozen before trade 801.
+- EXP-300S: mh-v2; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-300S: mh-v3; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-300S: mh-v4; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-300S: mh-v5; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-300S: mh-v6; prequential selection: LONDON_TREND had n=62 and prior net mean=-0.000148
+- EXP-300S: mh-v7; prequential selection: LONDON_TREND had n=63 and prior net mean=-0.000148
+- EXP-300S: mh-v8; prequential selection: LONDON_TREND had n=63 and prior net mean=-0.000148
+- EXP-300S: mh-v9; prequential selection: LONDON_TREND had n=63 and prior net mean=-0.000148
+- EXP-300S: mh-v10; prequential selection: LONDON_TREND had n=158 and prior net mean=-0.000195
+- EXP-300S: mh-v11; prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+- EXP-300S: mh-v11; LOCKED_HOLDOUT: features, threshold, expanding calibration snapshot and strategy frozen before trade 801.

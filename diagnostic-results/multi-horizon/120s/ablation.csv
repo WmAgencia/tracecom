@@ -1,0 +1,5 @@
+feature_group,status,note
+price_momentum,TESTED,causal momentum baseline
+trend_session,TESTED,pre-registered filter
+microstructure,NOT_AVAILABLE,Yahoo OHLC has no L1/L2 quote/order-book history
+smc,NOT_AVAILABLE,not retrofitted after outcomes

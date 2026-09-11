@@ -1,0 +1,12 @@
+# TraceCon multi-horizon comparison
+
+| horizon | status | raw N | effective N | holdout N | win rate | holdout net EV | total net EV | PF | DD | Brier | ECE | PBO / DSR | verdict |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| 30s | PROVIDER_LIMITATION | 0 | 0 | 0 | — | — | — | — | 0 | — | — | NOT_ESTIMATED / NOT_ESTIMATED | PROVIDER_LIMITATION |
+| 45s | PROVIDER_LIMITATION | 0 | 0 | 0 | — | — | — | — | 0 | — | — | NOT_ESTIMATED / NOT_ESTIMATED | PROVIDER_LIMITATION |
+| 60s | COMPLETED | 1000 | 1000 | 200 | 0.352 | -0.0002489223219737921 | -0.00023596905024014005 | 0.010386272722146733 | 0.23596905024014006 | 0.24293549838613313 | 0.04633063441297758 | NOT_ESTIMATED / NOT_ESTIMATED | NO_ROBUST_EDGE_FOUND |
+| 120s | COMPLETED | 1000 | 1000 | 200 | 0.401 | -0.0002493483707303847 | -0.00023154512408334908 | 0.05107959154466092 | 0.2315451240833491 | 0.25172023832290497 | 0.02312470080591711 | NOT_ESTIMATED / NOT_ESTIMATED | NO_ROBUST_EDGE_FOUND |
+| 180s | COMPLETED | 1000 | 1000 | 200 | 0.433 | -0.00022284440446718138 | -0.00021908737972327092 | 0.10928276872545868 | 0.21908737972327091 | 0.25403784885972547 | 0.013214854392857633 | NOT_ESTIMATED / NOT_ESTIMATED | NO_ROBUST_EDGE_FOUND |
+| 300s | COMPLETED | 1000 | 1000 | 200 | 0.424 | -0.00024586224271416226 | -0.0002310710300028396 | 0.13945392809573384 | 0.2310710300028396 | 0.25397279920732574 | 0.00028704538312190886 | NOT_ESTIMATED / NOT_ESTIMATED | NO_ROBUST_EDGE_FOUND |
+
+30s and 45s are explicitly blocked because the configured real provider only supplies native 1m bars. PBO and DSR are intentionally not fabricated: this phase has a small pre-registered strategy catalogue and proxy returns without a defensible CSCV/return-distribution design.

@@ -1,0 +1,12 @@
+batch,actionable,model_version,strategy,reason
+1,100,mh-v2,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+2,200,mh-v3,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+3,300,mh-v4,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+4,400,mh-v5,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+5,500,mh-v6,LONDON_TREND,prequential selection: LONDON_TREND had n=62 and prior net mean=-0.000148
+6,500,mh-v7,LONDON_TREND,prequential selection: LONDON_TREND had n=63 and prior net mean=-0.000148
+7,500,mh-v8,LONDON_TREND,prequential selection: LONDON_TREND had n=63 and prior net mean=-0.000148
+8,500,mh-v9,LONDON_TREND,prequential selection: LONDON_TREND had n=63 and prior net mean=-0.000148
+9,600,mh-v10,LONDON_TREND,prequential selection: LONDON_TREND had n=158 and prior net mean=-0.000195
+10,700,mh-v11,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+11,800,mh-v11,BASELINE,"LOCKED_HOLDOUT: features, threshold, expanding calibration snapshot and strategy frozen before trade 801."

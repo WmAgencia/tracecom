@@ -1,0 +1,26 @@
+{
+  "horizonSeconds": 30,
+  "status": "PROVIDER_LIMITATION",
+  "reason": "Provider yahoo-forex native resolution is 60s; it cannot certify 30s outcomes without interpolation.",
+  "provider": "yahoo-forex",
+  "providerMinimumResolutionSeconds": 60,
+  "maxActionable": 1000,
+  "trades": [],
+  "learningHistory": [],
+  "holdoutFrozenAt": null,
+  "rawN": 0,
+  "effectiveN": 0,
+  "uniqueness": 0,
+  "metrics": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "winRate": null,
+    "netEv": null,
+    "netReturn": 0,
+    "profitFactor": null,
+    "maxDrawdown": 0,
+    "brier": null,
+    "ece": null
+  }
+}

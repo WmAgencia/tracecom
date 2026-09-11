@@ -21,6 +21,7 @@
     "quant": "tsx src/cli/quant.ts",
     "backtest": "tsx src/cli/backtest.ts",
     "shadow-validation": "tsx src/cli/shadow-validation.ts",
+    "research:multi-horizon": "tsx src/cli/multi-horizon-research.ts",
     "decide": "tsx src/cli/decide.ts",
     "news": "tsx src/cli/news.ts",
     "serve": "tsx src/cli/serve.ts"

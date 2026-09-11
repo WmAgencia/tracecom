@@ -1,0 +1,2 @@
+trade_id,ordinal,phase,model_version,strategy,symbol,timestamp,expiry,horizon_seconds,direction,probability,outcome,gross_return,net_return,cost,session,regime,data_quality_score,reasons
+

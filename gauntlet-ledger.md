@@ -184,3 +184,9 @@ P-I a P-W, P-X a P-AM
 | Data integrity | 1 | PASS | Yahoo 3m/4h requests aggregate only contiguous real source candles; gaps are discarded; multiplex provider events are isolated per symbol; pipeline regression test added | Preserve fail-closed behavior |
 | Honest verdict | 1 | PASS | Report now records `NO STATISTICAL EDGE FOUND`, explicit reason, and `NOT_READY_SHADOW_ONLY`; no orders or capital execution | Improve model only after new evidence |
 | Regression gates | 1 | PASS | 64 test files passed / 1 skipped; 490 tests passed / 3 skipped; typecheck, build, extension static checks and npm audit (0 vulnerabilities) pass | Re-run before each publication |
+| item | iter | veredito | evidência | próxima ação |
+| --- | --- | --- | --- | --- |
+| Wave 1 — literatura/metodologia | 1 | PASS | `research/literature/trading-research.md`; fontes primárias e limites explícitos | manter catálogo de trials |
+| Wave 2/3 — resolução de feed | 1 | PASS | Yahoo só entrega OHLC 1m; 30s/45s bloqueados pelo motor | integrar quote/tick provider antes de reabrir |
+| Wave 4/9 — prequential 60–300s | 1 | PASS | `runPrequentialExperiment`, versões por trade, holdout congelado | executar testes e auditoria final |
+| Wave 6 — adversarial leak barrier | 1 | PASS | labels liberados após expiry e embargo por par igual ao horizonte | preservar nas próximas estratégias |

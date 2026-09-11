@@ -1,0 +1,9 @@
+batch,actionable,model_version,strategy,reason
+1,100,mh-v2,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+2,200,mh-v3,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+3,300,mh-v4,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+4,400,mh-v5,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+5,500,mh-v6,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+6,600,mh-v7,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+7,700,mh-v8,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+8,800,mh-v8,BASELINE,"LOCKED_HOLDOUT: features, threshold, expanding calibration snapshot and strategy frozen before trade 801."

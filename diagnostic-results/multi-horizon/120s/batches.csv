@@ -1,0 +1,38 @@
+batch,actionable,model_version,strategy,reason
+1,100,mh-v2,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+2,200,mh-v3,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+3,300,mh-v4,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+4,400,mh-v5,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+5,500,mh-v6,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+6,500,mh-v7,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+7,500,mh-v8,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+8,500,mh-v9,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+9,500,mh-v10,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+10,500,mh-v11,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+11,500,mh-v12,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+12,500,mh-v13,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+13,500,mh-v14,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+14,500,mh-v15,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+15,500,mh-v16,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+16,500,mh-v17,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+17,500,mh-v18,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+18,500,mh-v19,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+19,500,mh-v20,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+20,500,mh-v21,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+21,500,mh-v22,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+22,500,mh-v23,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+23,500,mh-v24,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+24,500,mh-v25,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+25,500,mh-v26,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+26,500,mh-v27,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+27,500,mh-v28,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+28,500,mh-v29,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+29,500,mh-v30,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+30,500,mh-v31,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+31,500,mh-v32,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+32,500,mh-v33,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+33,500,mh-v34,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+34,500,mh-v35,LONDON_TREND,prequential selection: LONDON_TREND had n=61 and prior net mean=-0.000190
+35,600,mh-v36,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+36,700,mh-v37,BASELINE,prequential selection retained baseline: no alternative exceeded pre-registered support and net-EV gate
+37,800,mh-v37,BASELINE,"LOCKED_HOLDOUT: features, threshold, expanding calibration snapshot and strategy frozen before trade 801."
