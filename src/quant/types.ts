@@ -9,6 +9,8 @@
  * amostra; nunca é a LLM que fabrica um número.
  */
 import type { MarketCandle } from "../market/model";
+import type { LiquidityResult } from "./liquidity";
+import type { SmcResult } from "./smc";
 
 /** Resultado de uma série indicadora (indexado por posição, pode ser null). */
 export type Series = ReadonlyArray<number | null>;
@@ -89,6 +91,8 @@ export interface QuantSummary {
   readonly regime: { readonly regime: MarketRegime; readonly confidence: number; readonly reasons: readonly string[] };
   readonly structure: MarketStructure;
   readonly levels: { readonly supports: readonly PriceLevel[]; readonly resistances: readonly PriceLevel[] };
+  readonly liquidity: LiquidityResult;
+  readonly smc: SmcResult;
   readonly technicalScore: number; // -1..1 derivado de dados
   readonly sampleSize: number;
 }

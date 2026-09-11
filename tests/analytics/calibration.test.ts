@@ -46,14 +46,23 @@ function mkRow(p: Partial<DecisionRecord>): DecisionRecord {
     score: p.score ?? 0.5,
     confidence: p.confidence ?? 0.7,
     probability: p.probability ?? 0.6,
+    probabilityCalibrated: p.probabilityCalibrated ?? null,
     sampleSize: p.sampleSize ?? 50,
     regime: p.regime ?? "uptrend",
     rationale: p.rationale ?? "test",
+    providerId: p.providerId ?? "binance",
+    modelVersion: p.modelVersion ?? "test",
+    featureVersion: p.featureVersion ?? "test",
     outcome: p.outcome ?? "hit",
     exitTime: p.exitTime ?? T0 + HOUR,
     exitPrice: p.exitPrice ?? 110,
     returnPct: p.returnPct ?? 1.0,
+    grossReturnPct: p.grossReturnPct ?? null,
+    costPct: p.costPct ?? null,
     evaluatedAt: p.evaluatedAt ?? T0 + HOUR,
+    evaluationAttempts: p.evaluationAttempts ?? 1,
+    lastEvaluationError: p.lastEvaluationError ?? null,
+    evaluationLocked: p.evaluationLocked ?? false,
     createdAt: p.createdAt ?? T0,
   };
 }
@@ -227,7 +236,7 @@ describe("CAMADA 4 — Calibration report", () => {
       mkCandle(T0 + 4 * HOUR, 108),
       mkCandle(T0 + 5 * HOUR, 112), // exit
     ];
-    const svc = new AnalyticsService(repo, () => candles, { minMovePct: 0.5, lookback: 100 });
+    const svc = new AnalyticsService({ persist: repo, candles: () => candles, cfg: { minMovePct: 0.5, lookback: 100 } });
     await svc.recordDecision({
       symbol: "BTCUSDT",
       timeframe: "1h",

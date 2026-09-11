@@ -16,6 +16,8 @@ import type { MarketRuntime } from "../market/runtime";
 import type { Direction } from "../backtest/types";
 import type { Timeframe } from "../market/model";
 import type { FusedDecisionInput } from "../analytics/service";
+import { recommendPaperPosition } from "../risk/bankroll";
+import { advanceSignal, cancelSignal, createPaperSignal, evaluatePaperSignal, executePaperSignal, scheduleSignal, type SignalState } from "../signals/lifecycle";
 
 export interface HttpApiOptions {
   readonly runtime: MarketRuntime;
@@ -75,7 +77,8 @@ export class TraceconHttpApi {
   private async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", `http://${this.host}`);
     try {
-      const resp = await this.route(req, req.method ?? "GET", url.pathname, url.searchParams);
+      const body = await readJsonBody(req);
+      const resp = await this.route(req, req.method ?? "GET", url.pathname, url.searchParams, body);
       this.write(res, resp);
     } catch (err) {
       this.log?.error("http.error", { path: url.pathname, error: err instanceof Error ? err.message : String(err) });
@@ -83,7 +86,7 @@ export class TraceconHttpApi {
     }
   }
 
-  private async route(req: IncomingMessage, method: string, path: string, q: URLSearchParams): Promise<HttpResponse> {
+  private async route(req: IncomingMessage, method: string, path: string, q: URLSearchParams, body: unknown = null): Promise<HttpResponse> {
     // Assets estáticos da web app (públicos, sem token).
     if (this.publicDir && method === "GET") {
       const asset = this.asset(path);
@@ -120,7 +123,7 @@ export class TraceconHttpApi {
       }
     }
 
-    return this.apiRoute(method, path, q);
+    return this.apiRoute(method, path, q, body);
   }
 
   /**
@@ -196,10 +199,48 @@ export class TraceconHttpApi {
     return timedSafeEqual(provided, this.token);
   }
 
-  private async apiRoute(method: string, path: string, q: URLSearchParams): Promise<HttpResponse> {
+  private async apiRoute(method: string, path: string, q: URLSearchParams, body: unknown = null): Promise<HttpResponse> {
     const rt = this.runtime;
     const symbol = q.get("symbol") ?? "BTCUSDT";
     const timeframe = (q.get("timeframe") ?? "1h") as Timeframe;
+
+    // Transições de lifecycle usam rota dinâmica, mas continuam somente paper.
+    const signalAction = path.match(/^\/api\/signals\/([^/]+)\/(advance|cancel|invalidate|execute|evaluate)$/);
+    if (method === "POST" && signalAction) {
+      if (!rt.signalRepo) return { status: 503, json: { error: "signal_persistence_unavailable" } };
+      const [, id, action] = signalAction;
+      const current = rt.signalRepo.find(id!);
+      if (!current) return { status: 404, json: { error: "signal_not_found" } };
+      const now = Date.now();
+      try {
+        let next;
+        if (action === "advance") next = advanceSignal(current, now);
+        else if (action === "cancel") next = cancelSignal(current, q.get("reason") ?? "", now);
+        else if (action === "invalidate") next = advanceSignal(current, now, q.get("reason") ?? "STRUCTURE_INVALIDATED");
+        else if (action === "evaluate") next = evaluatePaperSignal(current, now);
+        else {
+          const executionKey = q.get("idempotencyKey") ?? "";
+          if (current.state === "executed" && current.executionKey === executionKey) return { status: 200, json: { signal: current, idempotent: true } };
+          const ready = advanceSignal(current, now);
+          const entryPrice = Number(q.get("entryPrice"));
+          if (!Number.isFinite(entryPrice) || entryPrice <= 0) {
+            return { status: 400, json: { error: "bad_request", note: "entryPrice positivo é obrigatório para executar paper trade." } };
+          }
+          const trade = await rt.analytics.recordShadowTrade({
+            symbol: ready.symbol, timeframe: ready.timeframe, direction: ready.direction,
+            decision: ready.decision, entryTime: now, entryPrice,
+            confidence: q.get("confidence") ? Number(q.get("confidence")) : undefined,
+            probability: q.get("calibratedProbability") ? Number(q.get("calibratedProbability")) : undefined,
+          });
+          if (!trade) return { status: 503, json: { error: "paper_executor_unavailable" } };
+          next = executePaperSignal(ready, executionKey, trade.id, now);
+        }
+        rt.signalRepo.save(next);
+        return { status: 200, json: { signal: next } };
+      } catch (error) {
+        return { status: 409, json: { error: "invalid_signal_transition", message: error instanceof Error ? error.message : String(error) } };
+      }
+    }
 
     switch (`${method} ${path}`) {
       case "GET /api/status":
@@ -240,6 +281,80 @@ export class TraceconHttpApi {
       case "GET /api/catalog": {
         return { status: 200, json: { assets: rt.catalog.list() } };
       }
+      case "GET /api/forex/scan": {
+        if (!rt.forexScanner) {
+          return {
+            status: 503,
+            json: {
+              error: "forex_provider_not_configured",
+              note: "Defina OANDA_API_KEY e OANDA_ACCOUNT_ID no servidor; nenhum dado sintético é usado.",
+            },
+          };
+        }
+        const snapshots = await rt.forexScanner.runOnce();
+        return { status: 200, json: { provider: "oanda", scannedAt: Date.now(), snapshots } };
+      }
+      case "POST /api/iq-option/ingest": {
+        // The server never sees IQ credentials, cookies, SSID or raw protocol
+        // frames. Only a normalized read-only market frame is accepted.
+        if (rt.provider?.id !== "iqoption") return { status: 503, json: { error: "iqoption_provider_not_active", note: "Use MARKET_DATA_MODE=iqoption and the read-only extension bridge." } };
+        const iq = rt.provider as typeof rt.provider & { ingest?: (frame: unknown) => boolean };
+        if (typeof iq.ingest !== "function") return { status: 503, json: { error: "iqoption_ingest_unavailable" } };
+        const accepted = iq.ingest(body);
+        return accepted ? { status: 202, json: { accepted: true } } : { status: 400, json: { error: "invalid_iqoption_market_frame" } };
+      }
+      case "GET /api/signals": {
+        if (!rt.signalRepo) return { status: 503, json: { error: "signal_persistence_unavailable" } };
+        const state = q.get("state");
+        const states: readonly SignalState[] = ["created", "scheduled", "countdown", "ready", "executed", "expired", "cancelled", "invalidated", "evaluated"];
+        if (state !== null && !states.includes(state as SignalState)) return { status: 400, json: { error: "bad_request", note: "state inválido" } };
+        const signals = rt.signalRepo.list({ ...(state ? { state: state as SignalState } : {}), ...(q.get("symbol") ? { symbol: q.get("symbol")! } : {}) });
+        return { status: 200, json: { count: signals.length, signals } };
+      }
+      case "POST /api/signals": {
+        if (!rt.signalRepo) return { status: 503, json: { error: "signal_persistence_unavailable" } };
+        const now = Date.now();
+        const entryAt = Number(q.get("entryAt"));
+        const expiresAt = Number(q.get("expiresAt"));
+        try {
+          const signal = scheduleSignal(createPaperSignal({
+            symbol: q.get("symbol") ?? "",
+            timeframe: q.get("timeframe") ?? "1m",
+            direction: q.get("direction") === "down" ? "down" : "up",
+            decision: q.get("decision") === "SELL" ? "SELL" : "BUY",
+            countdownAt: q.get("countdownAt") ? Number(q.get("countdownAt")) : entryAt - 60_000,
+            entryAt,
+            expiresAt,
+            now,
+          }), now);
+          rt.signalRepo.save(signal);
+          return { status: 201, json: { signal } };
+        } catch (error) {
+          return { status: 400, json: { error: "bad_request", message: error instanceof Error ? error.message : String(error) } };
+        }
+      }
+      case "GET /api/risk/sizing": {
+        // Endpoint puro de paper sizing. Não cria trade, não envia ordem e
+        // exige probabilidade explicitamente identificada como calibrada.
+        const probabilityRaw = q.get("calibratedProbability") ?? q.get("probability");
+        if (probabilityRaw === null) {
+          return { status: 400, json: { error: "bad_request", note: "calibratedProbability é obrigatória; probabilidade não calibrada não deve dimensionar risco." } };
+        }
+        const result = recommendPaperPosition({
+          balance: Number(q.get("balance")),
+          calibratedProbability: Number(probabilityRaw),
+          sampleSize: Number(q.get("sampleSize")),
+          payoutRatio: Number(q.get("payoutRatio")),
+          stopDistancePct: Number(q.get("stopDistancePct")),
+          state: {
+            realizedDailyLossPct: Number(q.get("realizedDailyLossPct") ?? 0),
+            currentDrawdownPct: Number(q.get("currentDrawdownPct") ?? 0),
+            openPositions: Number(q.get("openPositions") ?? 0),
+            killSwitch: q.get("killSwitch") === "true",
+          },
+        });
+        return { status: result.status === "invalid_input" ? 400 : 200, json: result };
+      }
       case "GET /api/analytics/stats": {
         const sym = q.get("symbol") ?? undefined;
         const tf = q.get("timeframe") ?? undefined;
@@ -248,21 +363,63 @@ export class TraceconHttpApi {
         const stats = await rt.analytics.stats({ symbol: sym, timeframe: tf });
         return { status: 200, json: stats };
       }
-      case "GET /api/analytics/record": {
+      case "GET /api/decisions": {
+        // B2: lista todas as decisões registradas, incluindo `probabilityCalibrated`
+        // (Platt-scaled) propagado end-to-end. Filtros opcionais por symbol/timeframe
+        // e janela temporal (sinceMs). Implementação simples: usa o repositório
+        // interno do `AnalyticsService` (mesmo de `/api/analytics/stats`).
+        const sym = q.get("symbol") ?? undefined;
+        const tf = q.get("timeframe") ?? undefined;
+        const sinceMsQ = q.get("sinceMs");
+        const sinceMs = sinceMsQ ? Number(sinceMsQ) : undefined;
+        // Garante que os pendentes foram avaliados antes de devolver a lista.
+        await rt.analytics.evaluatePending({ symbol: sym, timeframe: tf });
+        const all = await (rt.analytics as unknown as {
+          persist: { listAll(filter: { sinceMs?: number }): Promise<import("../analytics/types").DecisionRecord[]> };
+        }).persist.listAll({ sinceMs });
+        const filtered = (sym || tf)
+          ? all.filter((r) =>
+            (!sym || r.symbol === sym) &&
+            (!tf || r.timeframe === tf))
+          : all;
+        return { status: 200, json: { count: filtered.length, decisions: filtered } };
+      }
+      case "POST /api/analytics/record": {
+        const decision = q.get("decision") ?? "WAIT";
+        const direction = q.get("direction") ?? "up";
+        const horizonValue = Number(q.get("horizon") ?? 12);
+        const entryTimeValue = Number(q.get("entryTime") ?? Date.now());
+        const entryPriceValue = q.get("entryPrice") ? Number(q.get("entryPrice")) : null;
+        const confidenceValue = Number(q.get("confidence") ?? 0);
+        const probabilityValue = q.get("probability") ? Number(q.get("probability")) : null;
+        if (
+          !["BUY", "SELL", "WAIT"].includes(decision) ||
+          !["up", "down"].includes(direction) ||
+          !Number.isInteger(horizonValue) || horizonValue < 1 || horizonValue > 10_000 ||
+          !Number.isFinite(entryTimeValue) ||
+          (entryPriceValue !== null && (!Number.isFinite(entryPriceValue) || entryPriceValue <= 0)) ||
+          !Number.isFinite(confidenceValue) || confidenceValue < 0 || confidenceValue > 1 ||
+          (probabilityValue !== null && (!Number.isFinite(probabilityValue) || probabilityValue < 0 || probabilityValue > 1))
+        ) {
+          return { status: 400, json: { error: "bad_request", note: "campos de decisão inválidos" } };
+        }
         const input: FusedDecisionInput = {
           symbol: symbol,
           timeframe,
-          direction: q.get("direction") ?? "up",
-          decision: (q.get("decision") ?? "WAIT") as FusedDecisionInput["decision"],
-          horizon: Number(q.get("horizon") ?? 12),
-          entryTime: Number(q.get("entryTime") ?? Date.now()),
-          entryPrice: q.get("entryPrice") ? Number(q.get("entryPrice")) : null,
+          direction,
+          decision: decision as FusedDecisionInput["decision"],
+          horizon: horizonValue,
+          entryTime: entryTimeValue,
+          entryPrice: entryPriceValue,
           score: Number(q.get("score") ?? 0),
-          confidence: Number(q.get("confidence") ?? 0),
-          probability: q.get("probability") ? Number(q.get("probability")) : null,
+          confidence: confidenceValue,
+          probability: probabilityValue,
           sampleSize: Number(q.get("sampleSize") ?? 0),
           regime: q.get("regime") ?? null,
           rationale: q.get("rationale") ?? "",
+          providerId: q.get("providerId") ?? rt.provider?.id ?? null,
+          modelVersion: q.get("modelVersion") ?? null,
+          featureVersion: q.get("featureVersion") ?? null,
         };
         const record = await rt.analytics.recordDecision(input);
         return { status: 200, json: record };
@@ -271,6 +428,23 @@ export class TraceconHttpApi {
         const days = q.get("days") ? Number(q.get("days")) : undefined;
         const report = await rt.analytics.calibration(days ? { days } : undefined);
         return { status: 200, json: report };
+      }
+      case "GET /api/analytics/calibration/bins": {
+        // B-R: reliability diagram (10 bins) derivado do mesmo store do
+        // /api/analytics/calibration. Retorna apenas `reliabilityDiagram`
+        // para clientes que precisam do histograma sem o report completo.
+        const days = q.get("days") ? Number(q.get("days")) : undefined;
+        const report = await rt.analytics.calibration(days ? { days } : undefined);
+        return {
+          status: 200,
+          json: {
+            ece: report.ece,
+            brierScore: report.brierScore,
+            reliabilityDiagram: report.reliabilityDiagram ?? { bins: [], ece: 0 },
+            windowDays: days ?? null,
+            snapshotAt: report.snapshotAt,
+          },
+        };
       }
       case "GET /api/analytics/perf-snapshot": {
         const days = Number(q.get("days") ?? 30);
@@ -324,6 +498,41 @@ export class TraceconHttpApi {
         rt.resetBreaker();
         return { status: 200, json: { ok: true, resetAt: new Date().toISOString() } };
       }
+      case "GET /api/analytics/drift": {
+        // B7: lista alertas de drift desde `sinceMs` (ms epoch). Default: últimos 7 dias.
+        if (!rt.adaptiveRepo) {
+          return { status: 503, json: { error: "adaptive_repo_unavailable" } };
+        }
+        const sinceQuery = q.get("sinceMs");
+        const sinceMs = sinceQuery
+          ? Number(sinceQuery)
+          : Date.now() - 7 * 86_400_000;
+        if (!Number.isFinite(sinceMs)) {
+          return { status: 400, json: { error: "bad_request", note: "sinceMs inválido" } };
+        }
+        const alerts = rt.adaptiveRepo.listDriftAlerts({ sinceMs });
+        return {
+          status: 200,
+          json: {
+            alerts,
+            sinceMs,
+            count: alerts.length,
+            snapshotAt: new Date().toISOString(),
+          },
+        };
+      }
+      case "GET /api/analytics/ensemble": {
+        // B7: snapshot atual do ensemble_weights (singleton). Aceita ?key=
+        if (!rt.adaptiveRepo) {
+          return { status: 503, json: { error: "adaptive_repo_unavailable" } };
+        }
+        const keyFilter = q.get("key") ?? undefined;
+        const row = rt.adaptiveRepo.getEnsembleWeights(keyFilter);
+        if (!row) {
+          return { status: 404, json: { error: "not_found" } };
+        }
+        return { status: 200, json: row };
+      }
       default:
         return { status: 404, json: { error: "not_found", path } };
     }
@@ -355,9 +564,14 @@ code{background:#161b24;padding:2px 6px;border-radius:4px;color:#79c0ff}a{color:
 <li><code>/api/backtest?symbol=...&amp;timeframe=...&amp;direction=up&amp;horizon=12</code></li>
 <li><code>/api/news?asset=BTC</code></li>
 <li><code>/api/catalog</code></li>
+<li><code>/api/forex/scan</code> — scanner multi-par real (requer OANDA_API_KEY + OANDA_ACCOUNT_ID)</li>
+<li><code>/api/risk/sizing?balance=...&amp;calibratedProbability=...&amp;sampleSize=...&amp;payoutRatio=...&amp;stopDistancePct=...</code> — sizing paper, sem enviar ordens</li>
+<li><code>POST /api/signals</code> e <code>POST /api/signals/:id/(advance|cancel|invalidate|execute|evaluate)</code> — lifecycle paper persistido</li>
 <li><code>/api/analytics/stats?symbol=BTCUSDT&amp;timeframe=1h</code></li>
-<li><code>/api/analytics/record?symbol=...&amp;decision=BUY&amp;direction=up&amp;horizon=12&amp;entryPrice=...</code></li>
+<li><code>/api/decisions?symbol=BTCUSDT&amp;sinceMs=...</code> — lista decisões registradas (inclui <code>probabilityCalibrated</code> Platt)</li>
+<li><code>POST /api/analytics/record?symbol=...&amp;decision=BUY&amp;direction=up&amp;horizon=12&amp;entryPrice=...</code></li>
 <li><code>/api/analytics/calibration?days=30</code> — relatório de calibração do motor</li>
+<li><code>/api/analytics/calibration/bins?days=30</code> — apenas reliability diagram (10 bins + ECE)</li>
 <li><code>/api/analytics/perf-snapshot?days=30</code> — PnL observado no período</li>
 <li><code>POST /api/analytics/reset-breaker</code> — zera manualmente o circuit breaker persistido</li>
 <li><code>/extension/info</code> — metadados do zip da extensão</li>
@@ -418,6 +632,25 @@ function contentTypeFor(path: string): string {
     case "svg": return "image/svg+xml";
     case "ico": return "image/x-icon";
     default: return "text/plain; charset=utf-8";
+  }
+}
+
+/** Bounded JSON parser for local extension ingest; never logs request bodies. */
+async function readJsonBody(req: IncomingMessage): Promise<unknown> {
+  if (req.method === "GET" || req.method === "HEAD") return null;
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of req) {
+    const data = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    size += data.length;
+    if (size > 64 * 1024) throw new Error("request body exceeds 64KB");
+    chunks.push(data);
+  }
+  if (size === 0) return null;
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
+  } catch {
+    throw new Error("invalid JSON request body");
   }
 }
 

@@ -23,7 +23,7 @@ import type {
 import type { Logger } from "../observability/logger";
 import { ToolRegistry } from "../tools/registry";
 import { AnalysisBuilder, VERSION } from "../analysis/model";
-import { canContinue, DEFAULT_SAFETY_LIMITS } from "./safety";
+import { canContinue, DEFAULT_SAFETY_LIMITS, hasProhibitedAction } from "./safety";
 import type { SafetyLimits } from "./safety";
 
 export interface AgentRequest {
@@ -159,7 +159,16 @@ export class AgentEngine {
     return this.#finalize(builder, start);
   }
 
-  /** Executa uma ferramenta, registra auditoria e devolve o resultado ao modelo. */
+  /**
+   * Executa uma ferramenta, registra auditoria e devolve o resultado ao modelo.
+   *
+   * Antes de invocar o tool subjacente, aplica um safety gate (hasProhibitedAction)
+   * sobre os argumentos serializados: se o modelo tentou executar uma ação
+   * proibida (buy, sell, place_order, execute_trade, submit_order, order_execution),
+   * o tool NÃO é invocado; em vez disso, empurramos uma mensagem `tool` com
+   * `is_error: true` para o modelo e marcamos o passo no trail como
+   * `blocked_tool`. A TRACECON nunca executa ordens reais.
+   */
   async #invokeTool(
     builder: AnalysisBuilder,
     messages: Parameters<AiClient["chat"]>[0],
@@ -173,6 +182,55 @@ export class AgentEngine {
       } catch {
         parsedArgs = {};
       }
+    }
+
+    // Safety gate: bloqueia tools que tentem executar ordens reais.
+    // Fail-closed: se o guard lançar, tratamos como bloqueado.
+    let blocked = false;
+    try {
+      if (hasProhibitedAction(call.name) || hasProhibitedAction(JSON.stringify(parsedArgs))) {
+        blocked = true;
+      }
+    } catch (err) {
+      this.#logger?.warn("agent.safety.prohibited_action", { tool: call.name }, {
+        args: parsedArgs,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      blocked = true;
+    }
+
+    if (blocked) {
+      this.#logger?.warn("agent.safety.prohibited_action", { tool: call.name }, { args: parsedArgs });
+      builder.addStep("blocked_tool");
+      builder.recordToolCall({
+        tool: call.name,
+        arguments: parsedArgs,
+        startedAt: t0,
+        finishedAt: Date.now(),
+        availability: "UNAVAILABLE",
+        error: JSON.stringify({
+          error: "PROHIBITED_ACTION",
+          message: `Tool "${call.name}" foi bloqueado pelo guard de segurança. TRACECON NÃO executa ordens.`,
+          code: "SAFETY_BLOCKED",
+        }),
+      });
+      messages.push(
+        {
+          role: "assistant",
+          content: null,
+          tool_calls: [{ id: call.id, name: call.name, arguments: call.arguments }],
+        },
+        {
+          role: "tool",
+          content: JSON.stringify({
+            error: "PROHIBITED_ACTION",
+            message: `Tool "${call.name}" foi bloqueado pelo guard de segurança. TRACECON NÃO executa ordens.`,
+            code: "SAFETY_BLOCKED",
+          }),
+          tool_call_id: call.id,
+        },
+      );
+      return;
     }
 
     let availability: DataAvailability = "UNAVAILABLE";

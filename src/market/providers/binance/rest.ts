@@ -100,6 +100,17 @@ export class BinanceRestClient {
     };
   }
 
+  async serverTime(): Promise<number> {
+    // GET /api/v3/time — endpoint público, sem auth, devolve { serverTime: ms }.
+    const url = `${this.baseUrl}/time`;
+    const res = await fetch(url, { headers: { "User-Agent": "tracecon/0.1" } });
+    if (!res.ok) {
+      throw new Error(`Binance REST ${res.status} ${res.statusText} para /time`);
+    }
+    const raw = (await res.json()) as { serverTime: number };
+    return Number(raw.serverTime);
+  }
+
   async marketInfo(symbol: string): Promise<MarketSymbol> {
     const p = parseSymbol(symbol);
     return { symbol, provider: "binance", baseAsset: p.baseAsset, quoteAsset: p.quoteAsset, market: p.market };

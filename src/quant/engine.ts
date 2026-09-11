@@ -8,11 +8,13 @@
  */
 import type { MarketCandle } from "../market/model";
 import type { ComputedIndicators, IndicatorConfig, QuantInput, QuantSummary, MarketRegime } from "./types";
-import { smaFn } from "./math";
+import { smaFn, ema } from "./math";
 import { macd as macdFn, adx as adxFn } from "./trend";
 import { rsi, momentum, roc, atr, bollinger, volatilitySeries, summarizeVolatility } from "./momentum";
 import { vwap, levelsFromCandles, marketStructure } from "./structure";
 import { detectRegime } from "./regime";
+import { detectLiquidity } from "./liquidity";
+import { analyzeSmc } from "./smc";
 
 export const DEFAULT_CONFIG: IndicatorConfig = {
   smaPeriod: 20,
@@ -49,8 +51,9 @@ export class QuantEngine {
     const line = macdFn(closes, this.cfg.macdFast, this.cfg.macdSlow, this.cfg.macdSignal);
     const bb = bollinger(closes, this.cfg.bollingerPeriod, this.cfg.bollingerStdDev);
     return {
+      // EMA (não SMA) — bug fix B4; auditar via tests/quant/engine.ema-bug.test.ts
       sma: smaFn(closes, this.cfg.smaPeriod),
-      ema: smaFn(closes, this.cfg.emaPeriod),
+      ema: ema(closes, this.cfg.emaPeriod),
       rsi: rsi(closes, this.cfg.rsiPeriod),
       macd: line,
       atr: atr(highs, lows, closes, this.cfg.atrPeriod),
@@ -92,9 +95,13 @@ export class QuantEngine {
     // Estrutura e níveis
     const structure = marketStructure(candles, 3);
     const levels = levelsFromCandles(candles, 5);
+    const liquidity = detectLiquidity(candles, structure.swings);
+    const smc = analyzeSmc(candles, structure);
 
     // technicalScore derivado de dados (−1..1)
-    const technicalScore = computeTechnicalScore(indicators, structure.trend, lastClose, lastSma);
+    const technicalScore = Math.max(-1, Math.min(1,
+      computeTechnicalScore(indicators, structure.trend, lastClose, lastSma) + smc.biasScore * 0.15,
+    ));
 
     return {
       indicators,
@@ -102,6 +109,8 @@ export class QuantEngine {
       regime: regimeOut,
       structure,
       levels,
+      liquidity,
+      smc,
       technicalScore,
       sampleSize: candles.length,
     };

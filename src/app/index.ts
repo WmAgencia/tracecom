@@ -12,7 +12,10 @@ import { AgentEngine } from "../agent/engine";
 import { loadConfig } from "../config/env";
 import type { EnvConfig } from "../config/env";
 import type { Instrument } from "../domain/types";
-import { providerFromConfig } from "../market/registry";
+import { resolveProvider as resolveV2Provider } from "../market/registryV2";
+import { providerFromConfig as resolveLegacyProvider } from "../market/registry";
+import type { MarketDataProvider as LegacyProvider } from "../market/provider";
+import type { MarketDataProvider as V2Provider } from "../market/providerV2";
 import type { MarketDataProvider } from "../market/provider";
 import { createLogger } from "../observability/logger";
 import type { Logger } from "../observability/logger";
@@ -37,7 +40,19 @@ export interface TraceconApp {
 export function createApp(env: NodeJS.ProcessEnv = process.env): TraceconApp {
   const config = loadConfig(env);
   const logger = createLogger(config);
-  const provider = providerFromConfig(config);
+  // P-AN: usar registry V2 quando disponível (Binance real). Fallback ao
+  // legado se V2 não resolver. Interfaces V1 e V2 têm shapes diferentes;
+  // o resto do pipeline ainda depende de V1 — por isso o cast explícito
+  // com log para diagnosticar.
+  const v2Raw = resolveV2Provider(config);
+  const v2 = v2Raw as V2Provider | null;
+  const v1 = v2 ? null : resolveLegacyProvider(config);
+  const provider = (v1 ?? v2) as LegacyProvider;
+  if (v2) {
+    logger.info("market.provider.v2.active", undefined, { id: (v2 as unknown as { id: string }).id });
+  } else {
+    logger.warn("market.provider.legacy.active", undefined, { reason: "v2 returned null" });
+  }
   const tools = new ToolRegistry({ maxConcurrentTools: 4, maxToolCalls: 12 });
 
   const resolveInstrument = (symbol: string): Instrument => ({

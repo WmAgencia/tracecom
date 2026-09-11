@@ -11,29 +11,54 @@
 import type { DecisionDirection as FusionDirection } from "../fusion/types";
 
 export type DecisionDirection = FusionDirection;
-export type Outcome = "hit" | "miss" | "flat" | "pending";
+export type Outcome = "hit" | "miss" | "flat" | "stalled" | "error" | "pending";
 
+/**
+ * Estados semânticos distintos:
+ *  - "pending": registrada mas horizonte ainda não decorreu (ou nunca tentado).
+ *  - "hit"/"miss"/"flat": resultado observado dentro do horizonte, válido.
+ *  - "stalled": scheduler tentou avaliar, mas candles futuros indisponíveis
+ *     (provider offline, gap, dados atrasados). Distinto de pending para que
+ *     a calibração não confunda "nunca tentou" com "tentou mas falhou".
+ *  - "error": erro operacional durante avaliação (ex.: exception).
+ *     NÃO entrar em calibração win/loss.
+ */
 export interface DecisionRecord {
   readonly id: string;
   readonly symbol: string;
   readonly timeframe: string;
-  readonly direction: string; // "up" | "down"
-  readonly decision: DecisionDirection; // BUY/SELL/WAIT
-  readonly horizon: number; // candles
-  readonly entryTime: number; // ms
+  readonly direction: string;
+  readonly decision: DecisionDirection;
+  readonly horizon: number;
+  readonly entryTime: number;
   readonly entryPrice: number | null;
   readonly score: number;
   readonly confidence: number;
   readonly probability: number | null;
+  /** P-A: Platt-scaled probability learnt from `(symbol, timeframe, regime)`. Null se n<30. */
+  readonly probabilityCalibrated?: number | null;
   readonly sampleSize: number;
   readonly regime: string | null;
   readonly rationale: string;
+  /** Provider/clock/versão no momento do registro (snapshots p/ auditoria). */
+  readonly providerId: string | null;
+  readonly modelVersion: string | null;
+  readonly featureVersion: string | null;
   /** preenchido quando o resultado posterior é avaliado. */
   readonly outcome: Outcome;
   readonly exitTime: number | null;
   readonly exitPrice: number | null;
+  /** P-T: retorno líquido em pontos percentuais (descontados fees + slippage). */
   readonly returnPct: number | null;
+  /** P-T: retorno bruto em PP (antes dos custos). Usado para auditoria de sensibilidade. */
+  readonly grossReturnPct: number | null;
+  /** P-T: custo total descontado em PP (ROUND_TRIP_COST_PP por padrão). */
+  readonly costPct: number | null;
   readonly evaluatedAt: number | null;
+  /** P-R: rastreabilidade do scheduler. */
+  readonly evaluationAttempts: number;
+  readonly lastEvaluationError: string | null;
+  readonly evaluationLocked: boolean;
   readonly createdAt: number;
 }
 

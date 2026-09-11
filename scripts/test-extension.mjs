@@ -1,0 +1,24 @@
+import assert from "node:assert/strict";
+import { readFile, access } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const extension = path.join(root, "extension");
+const manifest = JSON.parse(await readFile(path.join(extension, "manifest.json"), "utf8"));
+assert.equal(manifest.manifest_version, 3);
+assert.equal(manifest.background.service_worker, "background.js");
+assert.equal(manifest.action.default_popup, "popup.html");
+assert.ok(manifest.host_permissions.includes("https://iqoption.com/*"));
+assert.ok(!manifest.host_permissions.includes("<all_urls>"));
+assert.ok(!manifest.permissions.includes("scripting"));
+for (const name of ["popup.html", "popup.css", "popup.js", "content.js", "background.js", "iq-page-bridge.js", "iq-bootstrap.js", "downbar.css"]) await access(path.join(extension, name));
+const bridge = await readFile(path.join(extension, "iq-page-bridge.js"), "utf8");
+for (const forbidden of ["document.cookie", "localStorage", "sessionStorage", "ssid", "password", "send(", "WebSocket.prototype.send"]) assert.ok(!bridge.toLowerCase().includes(forbidden.toLowerCase()), `Bridge contains forbidden token: ${forbidden}`);
+assert.match(bridge, /candle-generated/);
+const background = await readFile(path.join(extension, "background.js"), "utf8");
+assert.match(background, /api\/iq-option\/ingest/);
+assert.match(background, /tc\.diagnostics/);
+const popup = await readFile(path.join(extension, "popup.html"), "utf8");
+for (const label of ["Backend", "IQ Option", "Market Feed", "Abrir IQ Option", "Testar conexão", "Downbar", "Diagnóstico"]) assert.ok(popup.includes(label), `Popup sem ${label}`);
+console.log("Extension static checks: PASS");

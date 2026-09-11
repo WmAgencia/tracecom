@@ -31,6 +31,14 @@ export interface BacktestOptions {
   /** fração (0..1) da série reservada para out-of-sample (do fim). */
   readonly oosRatio?: number;
   readonly source: CandleHistorySource;
+  /**
+   * Se true, executa walk-forward: para cada step dentro da região OOS,
+   * recalcula o query no instante `inSampleEnd - 1 + step` e mede outcomes
+   * nos próximos `horizon` candles. Default false (modo single-query, legado).
+   */
+  readonly walkForward?: boolean;
+  /** Tamanho do step (em candles) do walk-forward. Default 5. */
+  readonly walkForwardStep?: number;
 }
 
 export class Backtester {
@@ -97,6 +105,15 @@ export class Backtester {
 
   /** Rodada completa de backtest com split OOS. */
   async run(opts: BacktestOptions): Promise<BacktestResult> {
+    if (opts.walkForward) return this.walkForwardRun(opts);
+    return this.singleQueryRun(opts);
+  }
+
+  /**
+   * Modo legado (single-query): usa o setup do fim do treino como referência
+   * e mede matches em toda a série (in + OOS). Mantido para backward-compat.
+   */
+  private async singleQueryRun(opts: BacktestOptions): Promise<BacktestResult> {
     const candles = await opts.source.getCandles({
       symbol: opts.symbol, timeframe: opts.timeframe, start: 0, end: Date.now(),
     });
@@ -129,7 +146,7 @@ export class Backtester {
         setup: m.features,
         similarity: m.similarity,
         outcome,
-        returnPct: ((exit.close - entry.close) / (entry.close || 1)) * 100,
+        returnPct: directionalReturnPct(entry.close, exit.close, opts.target.direction),
         exitTime: exit.timestamp,
         exitPrice: exit.close,
       });
@@ -137,6 +154,83 @@ export class Backtester {
 
     const inSteps = steps.filter((s) => s.entryTime < oosStartTime);
     const oosSteps = steps.filter((s) => s.entryTime >= oosStartTime);
+
+    return {
+      symbol: opts.symbol,
+      timeframe: opts.timeframe,
+      target: opts.target,
+      criteria,
+      steps,
+      metrics: metricsOf(inSteps),
+      periodStart: candles[0]?.timestamp ?? 0,
+      periodEnd: candles[candles.length - 1]?.timestamp ?? 0,
+      split: { oosStartTime, oosRatio },
+      outOfSampleMetrics: metricsOf(oosSteps),
+      generatedAt: Date.now(),
+    };
+  }
+
+  /**
+   * Walk-forward: para cada step dentro da região OOS, recalcula o query no
+   * instante `inSampleEnd - 1 + step` e mede os outcomes nos próximos
+   * `horizon` candles. O search em `findSimilar` é truncado em `queryIdx`
+   * (sem olhar o futuro do query). Cada step gera seu próprio conjunto de
+   * steps, todos acumulados no array final — todos com `entryTime >= oosStartTime`.
+   */
+  private async walkForwardRun(opts: BacktestOptions): Promise<BacktestResult> {
+    const candles = await opts.source.getCandles({
+      symbol: opts.symbol, timeframe: opts.timeframe, start: 0, end: Date.now(),
+    });
+    const criteria: SimilarityCriteria = { ...DEFAULT_CRITERIA, ...opts.criteria };
+    const oosRatio = opts.oosRatio ?? 0.25;
+    const stepSize = opts.walkForwardStep ?? 5;
+    const inSampleEnd = Math.floor(candles.length * (1 - oosRatio));
+    const oosStartTime = candles[inSampleEnd]?.timestamp ?? (candles[candles.length - 1]?.timestamp ?? 0);
+    const oosCount = candles.length - inSampleEnd;
+    // Limite superior do range: o último step precisa de `horizon` candles
+    // após o queryIdx para avaliar outcome, então encurtamos o range.
+    const horizon = opts.target.horizon;
+    const lastValidStart = candles.length - horizon;
+    const walkEnd = Math.min(inSampleEnd + oosCount, lastValidStart);
+    const numSteps = Math.max(0, Math.floor((walkEnd - inSampleEnd) / stepSize));
+
+    const extractor = new QuantFeatureExtractor();
+    const vectors = extractor.extractAll(candles);
+    const steps: BacktestStep[] = [];
+
+    for (let s = 0; s < numSteps; s++) {
+      const queryIdx = inSampleEnd - 1 + (s + 1) * stepSize;
+      if (queryIdx >= lastValidStart) break;
+      const query = { timestamp: candles[queryIdx]!.timestamp, features: vectors[queryIdx]! };
+      // searchEndIndex = queryIdx: causalidade — só candles <= queryIdx.
+      const { matches } = findSimilar(query, candles, extractor, criteria, {
+        includeAfterQuery: false,
+        searchEndIndex: queryIdx,
+      });
+      for (const m of matches) {
+        const idx = candles.findIndex((c) => c.timestamp === m.timestamp);
+        if (idx < 0) continue;
+        if (idx + horizon >= candles.length) continue;
+        const outcome = evaluateOutcome(candles, idx, opts.target);
+        if (outcome === "insufficient") continue;
+        const entry = candles[idx]!;
+        const exit = candles[idx + horizon] ?? entry;
+        steps.push({
+          entryTime: entry.timestamp,
+          entryPrice: entry.close,
+          setup: m.features,
+          similarity: m.similarity,
+          outcome,
+          returnPct: directionalReturnPct(entry.close, exit.close, opts.target.direction),
+          exitTime: exit.timestamp,
+          exitPrice: exit.close,
+        });
+      }
+    }
+
+    // Walk-forward gera apenas steps no OOS (entrada >= oosStartTime).
+    const oosSteps = steps.filter((s) => s.entryTime >= oosStartTime);
+    const inSteps = steps.filter((s) => s.entryTime < oosStartTime);
 
     return {
       symbol: opts.symbol,
@@ -198,4 +292,9 @@ function metricsOf(steps: readonly BacktestStep[]): BacktestMetrics {
     maxDrawdown: mdd,
     baselineWinRate: null,
   };
+}
+
+function directionalReturnPct(entry: number, exit: number, direction: "up" | "down"): number {
+  const raw = ((exit - entry) / (entry || 1)) * 100;
+  return direction === "down" ? -raw : raw;
 }

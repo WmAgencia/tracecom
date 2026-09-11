@@ -31,6 +31,8 @@ export function createMarketDataProvider(
 
 export function providerFromConfig(config: Pick<EnvConfig, "marketDataMode">): MarketDataProvider {
   // A v1 só suporta noop/mocked; binance é resolvido na registryV2.
-  const mode = config.marketDataMode === "binance" ? "noop" : config.marketDataMode;
+  const mode = config.marketDataMode === "binance" || config.marketDataMode === "iqoption" || config.marketDataMode === "auto"
+    ? "noop"
+    : config.marketDataMode;
   return createMarketDataProvider(mode);
 }

@@ -11,7 +11,7 @@
  * para refletir fielmente o P&L hipotético de uma posição BUY/SELL.
  */
 import { TIMEFRAME_MS, type Timeframe } from "../market/model";
-import { netReturnAfterCosts } from "../risk/fees";
+import { netReturnAfterCosts, ROUND_TRIP_COST_PP } from "../risk/fees";
 
 /** Default stop-loss como % fracional (1.5%). */
 export const DEFAULT_STOP_LOSS_PCT = 0.015;
@@ -24,7 +24,9 @@ export type ShadowOutcome =
   | "miss"
   | "flat"
   | "insufficient"
-  | "stopped";
+  | "stopped"
+  | "stalled"
+  | "error";
 
 export interface ShadowTrade {
   readonly id: string;
@@ -41,11 +43,18 @@ export interface ShadowTrade {
   readonly returnPct: number | null;
   /** % de retorno BRUTO pré-custos — guardado para audit. */
   readonly grossReturnPct?: number | null;
+  /** Custo descontado em PP (P-T: auditoria de sensibilidade). */
+  readonly costPct?: number | null;
   readonly confidence: number | null;
   readonly probability: number | null;
-  readonly stopLossPct?: number | null;     // default 0.015 (1.5%) — usado por evaluateShadowTrade
-  readonly cooldownMinutes?: number | null; // default 240 — usado por recordShadowTrade
+  readonly stopLossPct?: number | null;
+  readonly cooldownMinutes?: number | null;
   readonly stopLossTriggeredAt?: number | null;
+  /** P-R: snapshots do provider e idempotência do scheduler. */
+  readonly providerId?: string | null;
+  readonly evaluationAttempts?: number;
+  readonly lastEvaluationError?: string | null;
+  readonly evaluationLocked?: boolean;
   readonly createdAt: number;
   readonly evaluatedAt: number | null;
 }
@@ -91,6 +100,8 @@ export function openShadowTrade(input: OpenShadowInput): ShadowTrade {
 export interface FutureCandle {
   readonly timestamp: number;
   readonly close: number;
+  readonly high?: number;
+  readonly low?: number;
 }
 
 /**
@@ -161,10 +172,12 @@ export function evaluateShadowTrade(
     for (const c of futureCandles) {
       if (c.timestamp < trade.entryTime) continue;
       if (c.timestamp > exitTime) break;
-      const changePct = Math.abs((c.close - entry) / entry);
+      const high = Number.isFinite(c.high) ? c.high! : c.close;
+      const low = Number.isFinite(c.low) ? c.low! : c.close;
+      const adversePct = trade.decision === "BUY" ? (entry - low) / entry : (high - entry) / entry;
       // BUY: caiu mais que stopLossPct → stop.
       // SELL: subiu mais que stopLossPct → stop.
-      if (trade.decision === "BUY" && c.close < entry && changePct >= stopLossPct) {
+      if (trade.decision === "BUY" && adversePct >= stopLossPct) {
         const grossPct = ((c.close - entry) / entry) * 100;
         return {
           ...trade,
@@ -172,19 +185,21 @@ export function evaluateShadowTrade(
           exitPrice: c.close,
           outcome: "stopped",
           returnPct: netReturnAfterCosts(grossPct),
+          costPct: ROUND_TRIP_COST_PP,
           grossReturnPct: grossPct,
           stopLossTriggeredAt: c.timestamp,
           evaluatedAt: Date.now(),
         };
       }
-      if (trade.decision === "SELL" && c.close > entry && changePct >= stopLossPct) {
-        const grossPct = ((c.close - entry) / entry) * 100;
+      if (trade.decision === "SELL" && adversePct >= stopLossPct) {
+        const grossPct = ((entry - c.close) / entry) * 100;
         return {
           ...trade,
           exitTime: c.timestamp,
           exitPrice: c.close,
           outcome: "stopped",
           returnPct: netReturnAfterCosts(grossPct),
+          costPct: ROUND_TRIP_COST_PP,
           grossReturnPct: grossPct,
           stopLossTriggeredAt: c.timestamp,
           evaluatedAt: Date.now(),
@@ -193,7 +208,9 @@ export function evaluateShadowTrade(
     }
   }
 
-  const grossPct = ((exitCandle.close - entry) / entry) * 100;
+  const grossPct = trade.decision === "SELL"
+    ? ((entry - exitCandle.close) / entry) * 100
+    : ((exitCandle.close - entry) / entry) * 100;
   let outcome: ShadowOutcome;
   if (trade.decision === "WAIT") {
     outcome = "flat";
@@ -203,7 +220,7 @@ export function evaluateShadowTrade(
     outcome = grossPct > 0 ? "hit" : "miss";
   } else {
     // SELL
-    outcome = grossPct < 0 ? "hit" : "miss";
+    outcome = grossPct > 0 ? "hit" : "miss";
   }
 
   return {
@@ -212,6 +229,7 @@ export function evaluateShadowTrade(
     exitPrice: exitCandle.close,
     outcome,
     returnPct: netReturnAfterCosts(grossPct),
+    costPct: ROUND_TRIP_COST_PP,
     grossReturnPct: grossPct,
     evaluatedAt: Date.now(),
   };

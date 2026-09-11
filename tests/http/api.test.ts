@@ -2,6 +2,7 @@ import { describe, expect, it, afterEach } from "vitest";
 import { TraceconHttpApi } from "../../src/http/api";
 import { Datastore } from "../../src/store/db";
 import { MarketDataService } from "../../src/market/service";
+import { SignalRepository } from "../../src/store/repositories/signalRepository";
 
 /**
  * Teste da API HTTP com um runtime stub (sem rede). Valida roteamento, auth e
@@ -12,6 +13,7 @@ import { MarketDataService } from "../../src/market/service";
 function makeRuntime() {
   const store = new Datastore({ path: ":memory:" });
   const service = new MarketDataService({ provider: null, pipeline: null });
+  const signalRepo = new SignalRepository(store);
   return {
     service, store,
     provider: null,
@@ -23,6 +25,7 @@ function makeRuntime() {
     backtester: null as never,
     fusion: null as never,
     news: null as never,
+    signalRepo,
     buildContext: async (_s: string, _tf: string) => ({ provider: "none", symbol: _s, timeframe: _tf, currentPrice: null, latestClosedCandle: null, recentCandles: [], volume: null, volatility: null, providerState: "disconnected", dataQuality: "unknown", freshness: "unavailable", timestamp: Date.now(), available: false }),
     start: async () => void 0,
     stop: () => store.close(),
@@ -117,5 +120,37 @@ describe("TraceconHttpApi", () => {
     return api.route({ headers: { authorization: "Bearer wrong" } } as never, "GET", "/api/status", new URLSearchParams()).then((r) => {
       expect(r.status).toBe(401);
     });
+  });
+
+  it("Forex sem credenciais retorna indisponibilidade explícita, não dados fictícios", () => {
+    const h = new ServerHarness({});
+    const api = h.api as unknown as { route(...a: unknown[]): Promise<{ status: number; json?: { error?: string } }> };
+    return api.route({ headers: {} } as never, "GET", "/api/forex/scan", new URLSearchParams()).then((r) => {
+      expect(r.status).toBe(503);
+      expect(r.json?.error).toBe("forex_provider_not_configured");
+    });
+  });
+
+  it("sizing exige probabilidade calibrada e nunca cria ordem", async () => {
+    const h = new ServerHarness({});
+    const api = h.api as unknown as { route(...a: unknown[]): Promise<{ status: number; json?: { status?: string; positionNotional?: number; error?: string } }> };
+    const missing = await api.route({ headers: {} } as never, "GET", "/api/risk/sizing", new URLSearchParams("balance=1000"));
+    expect(missing.status).toBe(400);
+    const response = await api.route({ headers: {} } as never, "GET", "/api/risk/sizing", new URLSearchParams("balance=10000&calibratedProbability=0.6&sampleSize=80&payoutRatio=1.5&stopDistancePct=0.01"));
+    expect(response.status).toBe(200);
+    expect(response.json?.status).toBe("approved");
+    expect(response.json?.positionNotional).toBeGreaterThan(0);
+  });
+
+  it("cria e lista signal paper persistido", async () => {
+    const h = new ServerHarness({});
+    const api = h.api as unknown as { route(...a: unknown[]): Promise<{ status: number; json?: { signal?: { state: string }; count?: number } }> };
+    const now = Date.now();
+    const create = await api.route({ headers: {} } as never, "POST", "/api/signals", new URLSearchParams({ symbol: "EUR/USD", timeframe: "1m", direction: "up", decision: "BUY", entryAt: String(now + 60_000), expiresAt: String(now + 120_000) }));
+    expect(create.status).toBe(201);
+    expect(create.json?.signal?.state).toBe("scheduled");
+    const list = await api.route({ headers: {} } as never, "GET", "/api/signals", new URLSearchParams("symbol=EUR/USD"));
+    expect(list.status).toBe(200);
+    expect(list.json?.count).toBe(1);
   });
 });

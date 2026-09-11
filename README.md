@@ -42,7 +42,7 @@ copy .env.example .env
 # (modelo default: claude-opus-5). Alternativas no gateway nexxus-pro:
 #   claude-fable-5, claude-sonnet-5, claude-opus-4-8, claude-opus-4-7,
 #   claude-sonnet-4-6, claude-haiku-4-5.
-# Defina MARKET_DATA_MODE=binance (dados reais) e, opcional, TRACECON_API_TOKEN.
+# Defina MARKET_DATA_MODE=auto para Forex real (OANDA se configurado, Yahoo Forex público como fallback) ou binance para cripto; opcionalmente TRACECON_API_TOKEN.
 npm run build
 npm run serve        # http://localhost:8788
 ```
@@ -67,6 +67,7 @@ descobertos em `GET {ANTHROPIC_BASE_URL}/v1/models`.
 npm run market:ui      UI técnica do pipeline de dados
 npm run quant          features quantitativas (indicadores/regime/estrutura)
 npm run backtest       backtest + prob. empírica (split OOS)
+npm run shadow-validation  validação shadow causal com dados reais (500–1.000 sinais)
 npm run decide         fusão de evidências → decisão (registra + valida)
 npm run news           notícias reais + viés léxico
 npm run serve          API HTTP + web app (http://localhost:8788)

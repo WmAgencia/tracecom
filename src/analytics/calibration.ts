@@ -32,6 +32,35 @@ export interface CalibrationDecisionRow {
   readonly createdAt: number;
 }
 
+/** Um bin do reliability diagram (10 bins uniformes em [0, 1]). */
+export interface ReliabilityBin {
+  /** Limite inferior do bin (inclusivo). ex.: 0.0 */
+  lo: number;
+  /** Limite superior do bin (exclusivo, exceto o último). ex.: 0.1 */
+  hi: number;
+  /** Quantas decisões cairam neste bin. */
+  count: number;
+  /** Média das probabilidades previstas no bin, ou null se count === 0. */
+  predictedMean: number | null;
+  /** Taxa de acerto observada no bin (hits/count), ou null se count === 0. */
+  actualMean: number | null;
+  /** |predictedMean - actualMean|; 0 quando count === 0. */
+  gap: number;
+}
+
+/** Subconjunto do reliability diagram retornado no relatório. */
+export interface ReliabilityDiagram {
+  bins: ReliabilityBin[];
+  ece: number;
+}
+
+/** Resultado da função interna de Brier + ECE + bins. */
+export interface BrierAndEceResult {
+  brier: number;
+  ece: number;
+  bins: ReliabilityBin[];
+}
+
 export interface CalibrationReport {
   totalDecisions: number;
   evaluated: number;
@@ -43,6 +72,22 @@ export interface CalibrationReport {
   brierScore: number;
   /** Expected Calibration Error (10 bins). */
   ece: number;
+  /** B-R: reliability diagram (bins + ECE agregado). Opcional para retrocompat. */
+  reliabilityDiagram?: ReliabilityDiagram;
+  /** B2: sumário de Platt-scaled probabilities. Mostra quantas decisões têm
+   * probabilidade calibrada preenchida e a média das calibradas vs raw. */
+  probabilityCalibrated?: {
+    /** Quantas decisões avaliadas têm `probabilityCalibrated != null`. */
+    withCalibrated: number;
+    /** Quantas decisões avaliadas no total (com ou sem `probability`). */
+    totalEvaluated: number;
+    /** Média das probabilidades calibradas (null se `withCalibrated === 0`). */
+    meanCalibrated: number | null;
+    /** Média das probabilidades raw correspondentes (mesma chave de agregação). */
+    meanRaw: number | null;
+    /** Diferença absoluta `|meanCalibrated - meanRaw|` como sinal de viés. */
+    meanShift: number | null;
+  };
   perSignal: Record<DecisionSignal, { n: number; wins: number; winRate: number; avgReturn: number | null; avgNetReturnPct: number | null }>;
   perTimeframe: Record<string, { n: number; wins: number; winRate: number }>;
   topSetups: Array<{ setup: string; n: number; wins: number; winRate: number }>;
@@ -83,7 +128,7 @@ function filterByDays(rows: readonly DecisionRecord[], days?: number): DecisionR
 /** Bins para ECE (10 bins uniformes em [0, 1]). */
 const ECE_BINS = 10;
 
-function computeBrierAndEce(rows: readonly DecisionRecord[]): { brier: number; ece: number } {
+function computeBrierAndEce(rows: readonly DecisionRecord[]): BrierAndEceResult {
   // Considera apenas decisões direcionais avaliadas com probability preenchida.
   const directional = rows.filter(
     (r) =>
@@ -92,20 +137,33 @@ function computeBrierAndEce(rows: readonly DecisionRecord[]): { brier: number; e
       r.probability >= 0 &&
       r.probability <= 1,
   );
-  if (directional.length === 0) return { brier: 0, ece: 0 };
 
-  let brierSum = 0;
-  const bins: Array<{ count: number; probSum: number; outcomeSum: number }> = Array.from(
+  // Bins sempre presentes (10 elementos), mesmo quando store é vazio: facilita
+  // consumidores do reliability diagram (UI/endpoint) que esperam shape fixa.
+  const raw: Array<{ count: number; probSum: number; outcomeSum: number }> = Array.from(
     { length: ECE_BINS },
     () => ({ count: 0, probSum: 0, outcomeSum: 0 }),
   );
 
+  if (directional.length === 0) {
+    const emptyBins: ReliabilityBin[] = Array.from({ length: ECE_BINS }, (_, i) => ({
+      lo: i / ECE_BINS,
+      hi: (i + 1) / ECE_BINS,
+      count: 0,
+      predictedMean: null,
+      actualMean: null,
+      gap: 0,
+    }));
+    return { brier: 0, ece: 0, bins: emptyBins };
+  }
+
+  let brierSum = 0;
   for (const r of directional) {
     const p = r.probability as number;
     const y = r.outcome === "hit" ? 1 : 0;
     brierSum += (p - y) ** 2;
     const idx = Math.min(ECE_BINS - 1, Math.max(0, Math.floor(p * ECE_BINS)));
-    const bin = bins[idx]!;
+    const bin = raw[idx]!;
     bin.count++;
     bin.probSum += p;
     bin.outcomeSum += y;
@@ -113,13 +171,25 @@ function computeBrierAndEce(rows: readonly DecisionRecord[]): { brier: number; e
 
   const brier = brierSum / directional.length;
   let ece = 0;
-  for (const bin of bins) {
-    if (bin.count === 0) continue;
-    const acc = bin.outcomeSum / bin.count;
-    const conf = bin.probSum / bin.count;
-    ece += (bin.count / directional.length) * Math.abs(acc - conf);
-  }
-  return { brier, ece };
+  const bins: ReliabilityBin[] = raw.map((b, i) => {
+    const lo = i / ECE_BINS;
+    const hi = (i + 1) / ECE_BINS;
+    if (b.count === 0) {
+      return { lo, hi, count: 0, predictedMean: null, actualMean: null, gap: 0 };
+    }
+    const predictedMean = b.probSum / b.count;
+    const actualMean = b.outcomeSum / b.count;
+    ece += (b.count / directional.length) * Math.abs(actualMean - predictedMean);
+    return {
+      lo,
+      hi,
+      count: b.count,
+      predictedMean,
+      actualMean,
+      gap: Math.abs(predictedMean - actualMean),
+    };
+  });
+  return { brier, ece, bins };
 }
 
 /** Drawdown máximo observado: agrupa perdas por dia UTC e pega o maior soma. */
@@ -267,7 +337,7 @@ export async function getCalibrationReport(
   }
   const directional = wins + misses;
 
-  const { brier, ece } = computeBrierAndEce(rows);
+  const { brier, ece, bins } = computeBrierAndEce(rows);
   const perSignal = computePerSignal(rows);
   const perTimeframe = computePerTimeframe(rows);
   const topSetups = computeTopSetups(rows);
@@ -282,6 +352,7 @@ export async function getCalibrationReport(
     winRate: directional > 0 ? wins / directional : 0,
     brierScore: brier,
     ece,
+    reliabilityDiagram: { bins, ece },
     perSignal,
     perTimeframe,
     topSetups,

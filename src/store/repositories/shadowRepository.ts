@@ -20,6 +20,8 @@ interface Row {
   exit_price: number | null;
   outcome: string;
   return_pct: number | null;
+  gross_return_pct: number | null;
+  cost_pct: number | null;
   confidence: number | null;
   probability: number | null;
   created_at: number;
@@ -27,6 +29,10 @@ interface Row {
   stop_loss_pct: number | null;
   cooldown_minutes: number | null;
   stop_loss_triggered_at: number | null;
+  evaluation_attempts: number | null;
+  last_evaluation_error: string | null;
+  evaluation_locked: number | null;
+  provider_id: string | null;
 }
 
 export interface ShadowFilter {
@@ -54,16 +60,22 @@ export class ShadowRepository {
       INSERT OR REPLACE INTO shadow_trades (
         id, symbol, timeframe, direction, decision,
         entry_time, entry_price, exit_time, exit_price,
-        outcome, return_pct, confidence, probability,
+        outcome, return_pct, gross_return_pct, cost_pct,
+        confidence, probability,
         created_at, evaluated_at,
-        stop_loss_pct, cooldown_minutes, stop_loss_triggered_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        stop_loss_pct, cooldown_minutes, stop_loss_triggered_at,
+        evaluation_attempts, last_evaluation_error, evaluation_locked,
+        provider_id
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `).run(
       trade.id, trade.symbol, trade.timeframe, trade.direction, trade.decision,
       trade.entryTime, trade.entryPrice, trade.exitTime, trade.exitPrice,
-      trade.outcome, trade.returnPct, trade.confidence, trade.probability,
+      trade.outcome, trade.returnPct, trade.grossReturnPct ?? null, trade.costPct ?? null,
+      trade.confidence, trade.probability,
       trade.createdAt, trade.evaluatedAt,
       trade.stopLossPct ?? null, trade.cooldownMinutes ?? null, trade.stopLossTriggeredAt ?? null,
+      trade.evaluationAttempts ?? 0, trade.lastEvaluationError ?? null, trade.evaluationLocked ? 1 : 0,
+      trade.providerId ?? null,
     );
   }
 
@@ -74,6 +86,8 @@ export class ShadowRepository {
     if (updates.exitPrice !== undefined) { fields.push("exit_price = ?"); params.push(updates.exitPrice); }
     if (updates.outcome !== undefined) { fields.push("outcome = ?"); params.push(updates.outcome); }
     if (updates.returnPct !== undefined) { fields.push("return_pct = ?"); params.push(updates.returnPct); }
+    if (updates.grossReturnPct !== undefined) { fields.push("gross_return_pct = ?"); params.push(updates.grossReturnPct); }
+    if (updates.costPct !== undefined) { fields.push("cost_pct = ?"); params.push(updates.costPct); }
     if (updates.evaluatedAt !== undefined) { fields.push("evaluated_at = ?"); params.push(updates.evaluatedAt); }
     if (updates.stopLossTriggeredAt !== undefined) { fields.push("stop_loss_triggered_at = ?"); params.push(updates.stopLossTriggeredAt); }
     if (fields.length === 0) return;
@@ -199,6 +213,8 @@ function rowToTrade(r: Row): ShadowTrade {
     exitPrice: r.exit_price,
     outcome: r.outcome as ShadowOutcome,
     returnPct: r.return_pct,
+    grossReturnPct: r.gross_return_pct,
+    costPct: r.cost_pct,
     confidence: r.confidence,
     probability: r.probability,
     createdAt: r.created_at,
@@ -206,5 +222,9 @@ function rowToTrade(r: Row): ShadowTrade {
     stopLossPct: r.stop_loss_pct,
     cooldownMinutes: r.cooldown_minutes,
     stopLossTriggeredAt: r.stop_loss_triggered_at,
+    evaluationAttempts: r.evaluation_attempts ?? 0,
+    lastEvaluationError: r.last_evaluation_error,
+    evaluationLocked: r.evaluation_locked === 1,
+    providerId: r.provider_id,
   };
 }

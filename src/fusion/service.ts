@@ -17,6 +17,8 @@ import { FusionEngine } from "./fusion";
 import { evaluateGuards, freshGuardState, type GuardState, type GuardDecision } from "./guards";
 import { analyzeConfluence, type ConfluenceResult } from "./confluence";
 import { isActionable, expectedValue, wilsonLowerBound } from "./calibration";
+import { deriveMacroBias } from "./macro";
+import { noopMacroProvider, type MacroProvider } from "../context/macro/calendar-provider";
 import type { FusionInput, FusionResult } from "./types";
 import type { Direction } from "../backtest/types";
 import type { CandleHistorySource, EmpiricalProbability } from "../backtest/types";
@@ -35,6 +37,8 @@ export interface FusionServiceDeps {
   readonly lastCandleAgeMs?: () => number | null;
   /** Opcional: fonte de notícias reais p/ derivar viés de contexto (Direção). */
   readonly getNewsBias?: (asset: string) => Promise<"up" | "down" | "neutral" | null>;
+  /** Opcional: provedor de calendário macro (CPI/NFP/FOMC/...). Default: noop. */
+  readonly macroProvider?: MacroProvider;
 }
 
 export interface AnalyzeRequest {
@@ -53,8 +57,11 @@ export interface AnalyzeRequest {
 export class FusionService {
   private readonly fusion = new FusionEngine();
   private readonly extractor = new QuantFeatureExtractor();
+  private readonly macroProvider: MacroProvider;
 
-  constructor(private readonly deps: FusionServiceDeps) {}
+  constructor(private readonly deps: FusionServiceDeps) {
+    this.macroProvider = deps.macroProvider ?? noopMacroProvider();
+  }
 
   async analyze(req: AnalyzeRequest): Promise<FusionResult> {
     const candles = Array.from(this.deps.currentCandles(req.symbol, req.timeframe));
@@ -124,13 +131,15 @@ export class FusionService {
       const base = probability.baseline ?? 0.5;
       const ciLower = probability.confidenceInterval?.lower ?? wilsonLowerBound(probability.favorable, probability.sampleSize);
       const ciUpper = probability.confidenceInterval?.upper ?? (1 - ciLower); // upper aproximado
+      const ev = expectedValue({ probability: p, gain: 1, loss: 1 });
       calibration = {
         calibratedProb: p,
         ciLower,
         ciUpper,
         baseline: base,
-        expectedValue: expectedValue({ probability: p, gain: 1, loss: 1 }),
-        actionable: isActionable({ probability: p, ciLower, baseline: base }),
+        expectedValue: ev,
+        // Statistical confidence cannot turn a non-positive payoff into edge.
+        actionable: ev > 0 && isActionable({ probability: p, ciLower, baseline: base }),
       };
     }
 
@@ -156,6 +165,27 @@ export class FusionService {
       }
     }
 
+    // 4b) Macro calendar (CPI/NFP/FOMC/...) — se o caller não passou
+    // `req.context.macroBias`, derivamos do provider configurado.
+    let macroBias: Direction | "neutral" | null = req.context?.macroBias ?? null;
+    let macroCalendar = null as Awaited<ReturnType<MacroProvider["fetchUpcoming"]>> | null;
+    if (macroBias === null) {
+      try {
+        macroCalendar = await this.macroProvider.fetchUpcoming(7);
+        macroBias = deriveMacroBias(macroCalendar, req.symbol);
+        // Evento nas próximas 24h eleva o eventRisk (conservador).
+        if (!eventRisk && macroCalendar.next) {
+          const dt = macroCalendar.next.scheduledAt - Date.now();
+          if (dt >= 0 && dt <= 24 * 60 * 60 * 1000 && macroCalendar.next.importance === "high") {
+            eventRisk = true;
+          }
+        }
+      } catch {
+        macroCalendar = null;
+        macroBias = null;
+      }
+    }
+
     // 5) Fusão (camada clássica)
     const input: FusionInput = {
       symbol: req.symbol,
@@ -167,7 +197,7 @@ export class FusionService {
       risk,
       context: {
         newsBias,
-        macroBias: req.context?.macroBias ?? null,
+        macroBias,
         eventRisk,
       },
       dataQuality: candles.length > 0 ? "high" : "unknown",
@@ -203,7 +233,9 @@ function applyRobustnessLayers(
   const blocked: string[] = [];
   if (!guards.allowed) blocked.push(guards.reason ?? "guards bloqueou");
   if (confluence && confluence.direction === "neutral") blocked.push(`confluência insuficiente (${confluence.reason})`);
-  if (calibration && !calibration.actionable && base.decision !== "WAIT") {
+  if (calibration && calibration.expectedValue <= 0 && base.decision !== "WAIT") {
+    blocked.push(`EV nÃ£o positivo (${calibration.expectedValue.toFixed(3)})`);
+  } else if (calibration && !calibration.actionable && base.decision !== "WAIT") {
     blocked.push(`calibração não acionável (ci_lower ${(calibration.ciLower * 100).toFixed(1)}% ≤ baseline ${(calibration.baseline * 100).toFixed(1)}% + margem)`);
   }
 

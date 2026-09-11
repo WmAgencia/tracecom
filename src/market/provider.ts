@@ -62,4 +62,4 @@ export interface MarketDataProvider {
 }
 
 /** Modo do mercado: determina qual provider é instanciado (ver registry). */
-export type MarketDataMode = "noop" | "mocked";
+export type MarketDataMode = "noop" | "mocked" | "forex" | "auto";

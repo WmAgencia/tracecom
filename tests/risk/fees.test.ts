@@ -19,6 +19,8 @@ import {
   netReturnAfterCosts,
   isEdgeViable,
   roundTripCost,
+  executionCostPct,
+  binaryContractReturnPct,
 } from "../../src/risk/fees";
 
 describe("constantes de custo", () => {
@@ -44,8 +46,7 @@ describe("roundTripCost(notionalUsd)", () => {
     expect(cb.slippage).toBeCloseTo(0.05, 6);
     // perTrade = ROUND_TRIP_COST_PP declarado (0.3 PP).
     expect(cb.perTrade).toBeCloseTo(0.3, 6);
-    // totalRoundTrip é o custo derivado (com buffer 1.5x) — 0.45 PP.
-    expect(cb.totalRoundTrip).toBeCloseTo(0.45, 6);
+    expect(cb.totalRoundTrip).toBeCloseTo(cb.perTrade, 6);
   });
 });
 
@@ -106,5 +107,20 @@ describe("isEdgeViable(winPct, winRate, baseline)", () => {
     expect(isEdgeViable(2.0, -0.1, 1.0)).toBe(false);
     expect(isEdgeViable(2.0, 1.5, 1.0)).toBe(false);
     expect(isEdgeViable(2.0, 0.5, -1.0)).toBe(false);
+  });
+});
+
+describe("custos por mercado", () => {
+  it("não aplica taxa spot universal a Forex e binary", () => {
+    expect(executionCostPct({ market: "crypto" })).toBeCloseTo(0.3);
+    expect(executionCostPct({ market: "forex" })).toBeCloseTo(0.022);
+    expect(executionCostPct({ market: "binary" })).toBe(0);
+  });
+
+  it("modela payout binário assimétrico", () => {
+    expect(binaryContractReturnPct("hit", 0.8)).toBe(80);
+    expect(binaryContractReturnPct("miss", 0.8)).toBe(-100);
+    expect(binaryContractReturnPct("flat", 0.8)).toBe(0);
+    expect(binaryContractReturnPct("hit", 2)).toBeNull();
   });
 });

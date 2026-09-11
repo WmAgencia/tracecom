@@ -9,7 +9,7 @@
 import "dotenv/config";
 import { z } from "zod";
 
-const MODES = ["noop", "mocked", "binance"] as const;
+const MODES = ["noop", "mocked", "binance", "forex", "auto", "iqoption"] as const;
 
 const envSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
@@ -38,6 +38,12 @@ const envSchema = z.object({
     .transform((v) => v === "true" || v === "1"),
   ANTHROPIC_THINKING_BUDGET: z.coerce.number().int().positive().default(8000),
   // ----------------------------------------------------------------------
+  // --- OANDA Forex v20 ---------------------------------------------------
+  // Ambos são obrigatórios para ativar scans Forex reais. Se ausentes, a
+  // camada fica explicitamente indisponível em vez de gerar dados de exemplo.
+  OANDA_API_KEY: z.string().optional(),
+  OANDA_ACCOUNT_ID: z.string().optional(),
+  OANDA_BASE_URL: z.string().url().default("https://api-fxpractice.oanda.com/v3"),
   DATABASE_PATH: z.string().default("tracecon.db"),
   MARKET_DATA_MODE: z.enum(MODES).default("noop"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -56,6 +62,7 @@ export interface EnvConfig {
     readonly thinkingBudget: number;
   };
   readonly database: { readonly path: string };
+  readonly oanda: { readonly apiKey: string | null; readonly accountId: string | null; readonly baseUrl: string };
   readonly marketDataMode: (typeof MODES)[number];
   readonly nodeEnv: "development" | "test" | "production";
   /** Token opcional de API (server-side) exigido em /api/*. */
@@ -79,6 +86,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): EnvConfig {
     ANTHROPIC_EXTENDED_OUTPUT: env.ANTHROPIC_EXTENDED_OUTPUT,
     ANTHROPIC_THINKING_ENABLED: env.ANTHROPIC_THINKING_ENABLED,
     ANTHROPIC_THINKING_BUDGET: env.ANTHROPIC_THINKING_BUDGET,
+    OANDA_API_KEY: env.OANDA_API_KEY,
+    OANDA_ACCOUNT_ID: env.OANDA_ACCOUNT_ID,
+    OANDA_BASE_URL: env.OANDA_BASE_URL,
     DATABASE_PATH: env.DATABASE_PATH,
     MARKET_DATA_MODE: env.MARKET_DATA_MODE,
     NODE_ENV: env.NODE_ENV,
@@ -100,6 +110,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): EnvConfig {
       thinkingBudget: raw.ANTHROPIC_THINKING_BUDGET,
     },
     database: { path: raw.DATABASE_PATH },
+    oanda: {
+      apiKey: raw.OANDA_API_KEY?.trim() || null,
+      accountId: raw.OANDA_ACCOUNT_ID?.trim() || null,
+      baseUrl: raw.OANDA_BASE_URL.replace(/\/$/, ""),
+    },
     marketDataMode: raw.MARKET_DATA_MODE,
     nodeEnv: raw.NODE_ENV,
     apiToken: raw.TRACECON_API_TOKEN?.trim() || null,

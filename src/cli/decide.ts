@@ -58,6 +58,10 @@ async function main(): Promise<void> {
     sampleSize: result.sampleSize,
     regime: result.regime ?? null,
     rationale: result.rationale,
+    // P-R: snapshots de auditoria.
+    providerId: rt.provider?.id ?? null,
+    modelVersion: "tracecon.v1",
+    featureVersion: "v6-rsi-pctFromSma-slope-atrPct-volatility-macdHistNorm",
   });
   const evaled = await rt.analytics.evaluatePending();
   const stats = await rt.analytics.stats();

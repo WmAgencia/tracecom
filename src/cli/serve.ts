@@ -7,6 +7,7 @@
 import { loadConfig } from "../config/env";
 import { createMarketRuntime } from "../market/runtime";
 import { TraceconHttpApi } from "../http/api";
+import { createOutcomeScheduler } from "../analytics/scheduler";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { existsSync } from "node:fs";
@@ -28,20 +29,31 @@ async function main(): Promise<void> {
   const config = loadConfig();
   // PaaS (Railway/Vercel) injetam PORT; usamos HTTP_PORT com fallback em PORT.
   const port = Number(process.env.PORT ?? process.env.HTTP_PORT ?? 8788);
+  // P-R: intervalo do scheduler configurável por env (default 30s).
+  const schedulerMs = Number(process.env.TRACECON_SCHEDULER_MS ?? 30_000);
+  const symbols = config.marketDataMode === "forex" || config.marketDataMode === "auto"
+    ? ["EUR/USD", "GBP/USD", "USD/JPY"].flatMap((symbol) => [
+      { symbol, timeframe: "1m" as const, native: true },
+      { symbol, timeframe: "15m" as const, native: true },
+      { symbol, timeframe: "1h" as const, native: true },
+      { symbol, timeframe: "4h" as const, native: true },
+    ])
+    : [
+      { symbol: "BTCUSDT", timeframe: "1m" as const, native: true },
+      { symbol: "BTCUSDT", timeframe: "15m" as const, native: true },
+      { symbol: "BTCUSDT", timeframe: "1h" as const, native: true },
+      { symbol: "BTCUSDT", timeframe: "4h" as const, native: true },
+      { symbol: "ETHUSDT", timeframe: "1h" as const, native: true },
+    ];
 
   const rt = createMarketRuntime(config, {
-    symbols: [
-      { symbol: "BTCUSDT", timeframe: "1m", native: true },
-      { symbol: "BTCUSDT", timeframe: "15m", native: true },
-      { symbol: "BTCUSDT", timeframe: "1h", native: true },
-      { symbol: "BTCUSDT", timeframe: "4h", native: true },
-      { symbol: "ETHUSDT", timeframe: "1h", native: true },
-    ],
+    symbols,
   });
 
   const api = new TraceconHttpApi({
     runtime: rt,
     port,
+    host: process.env.HOST ?? (config.nodeEnv === "production" || process.env.PORT ? "0.0.0.0" : "127.0.0.1"),
     apiToken: config.apiToken,
     publicDir,
     logger: {
@@ -53,15 +65,38 @@ async function main(): Promise<void> {
   if (rt.configured) await rt.start();
   api.listen();
 
+  // P-R: iniciar scheduler de outcomes que avalia pending periodicamente.
+  // Sem scheduler, decisões nunca são avaliadas em produção silente.
+  const scheduler = createOutcomeScheduler(rt.analytics, {
+    intervalMs: schedulerMs,
+    providerId: rt.provider?.id ?? null,
+    logger: {
+      info: (m, meta) => console.log(JSON.stringify({ event: m, ...(meta as object) })),
+      warn: (m, meta) => console.error(JSON.stringify({ event: m, level: "warn", ...(meta as object) })),
+      error: (m, meta) => console.error(JSON.stringify({ event: m, level: "error", ...(meta as object) })),
+    },
+  });
+  scheduler.start();
+
   console.log(`TRACECON HTTP API → http://127.0.0.1:${port}`);
+  console.log(`TRACECON outcome scheduler → every ${schedulerMs}ms`);
   if (config.apiToken) console.log("Token de API habilitado (/api/* exige Authorization: Bearer <token>).");
   else console.log("Sem TRACECON_API_TOKEN: /api/* aberto (somente dev).");
 
-  process.on("SIGINT", () => {
+  let shuttingDown = false;
+  async function shutdown(signal: string): Promise<void> {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(JSON.stringify({ event: "shutdown.start", signal }));
+    await scheduler.stop();
     api.close();
     rt.stop();
+    console.log(JSON.stringify({ event: "shutdown.done" }));
     process.exit(0);
-  });
+  }
+
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
 }
 
 main().catch((e) => {

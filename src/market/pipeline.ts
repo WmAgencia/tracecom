@@ -57,21 +57,30 @@ export class MarketPipeline {
   /** Configura os símbolos de interesse e sobe o stream (uma conexão). */
   async start(configs: PipelineSymbolConfig[]): Promise<void> {
     if (this.started) return; // idempotente: evita reconectar/backfill duplicado
-    this.started = true;
-    this.configs.push(...configs);
-    await this.provider.connect();
+    if (configs.length === 0) throw new Error("MarketPipeline requer ao menos um símbolo configurado");
+    try {
+      await this.provider.connect();
     // Backfill inicial de candles FEICHADOS via REST (dado real, nunca inventado).
     // O quant engine precisa de histórico suficiente; o WS só traz o corrente.
     await this.backfill(configs);
-    const timeframes = Array.from(new Set(configs.map((c) => c.timeframe)));
+    const firstSymbol = configs[0]!.symbol;
+    const timeframes = Array.from(new Set(configs.filter((c) => c.symbol === firstSymbol).map((c) => c.timeframe)));
     await this.provider.subscribe(
       {
-        symbol: configs[0]?.symbol ?? "",
+        symbol: firstSymbol,
         topics: ["klines", "trades"],
         timeframes,
       },
       (ev) => this.onProviderEvent(ev),
-    );
+      );
+      this.configs.push(...configs);
+      this.started = true;
+    } catch (error) {
+      this.provider.disconnect();
+      this.configs.length = 0;
+      this.started = false;
+      throw error;
+    }
   }
 
   /** Busca candles recentes via REST para cada par configurado e os injeta no estado. */

@@ -74,4 +74,11 @@ describe("loadConfig", () => {
   it("rejeita MARKET_DATA_MODE inválido", () => {
     expect(() => loadConfig({ MARKET_DATA_MODE: "foo" })).toThrow();
   });
+
+  it("mantém Forex indisponível sem as duas credenciais OANDA", () => {
+    const cfg = loadConfig({ OANDA_API_KEY: " key ", NODE_ENV: "test" });
+    expect(cfg.oanda.apiKey).toBe("key");
+    expect(cfg.oanda.accountId).toBeNull();
+    expect(cfg.oanda.baseUrl).toBe("https://api-fxpractice.oanda.com/v3");
+  });
 });

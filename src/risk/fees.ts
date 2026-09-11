@@ -53,7 +53,7 @@ export function roundTripCost(_notionalUsd: number): CostBreakdown {
   // O spec declara ROUND_TRIP_COST_PCT = 0.003 (= 0.3 PP) — usamos o
   // valor declarado para o total. Aqui reportamos o breakdown derivado
   // (0.45 PP com buffer 1.5x) para auditoria de sensibilidade.
-  const totalRoundTrip = (feePerLeg + slipPerLeg) * 2 * 1.5; // 0.45 PP
+  const totalRoundTrip = (feePerLeg + slipPerLeg) * 2; // 0.30 PP
   return {
     fee: feePerLeg,
     slippage: slipPerLeg,
@@ -68,8 +68,34 @@ export function roundTripCost(_notionalUsd: number): CostBreakdown {
  * @param grossReturnPct retorno bruto em pontos percentuais (ex.: 2.5 = +2.5%).
  * @returns `grossReturnPct - ROUND_TRIP_COST_PP` (líquido).
  */
-export function netReturnAfterCosts(grossReturnPct: number): number {
-  return grossReturnPct - ROUND_TRIP_COST_PP;
+export function netReturnAfterCosts(grossReturnPct: number, costPct: number = ROUND_TRIP_COST_PP): number {
+  return grossReturnPct - costPct;
+}
+
+export type ExecutionMarket = "crypto" | "forex" | "binary";
+
+/** Estimativa explícita por mercado, em pontos percentuais do notional. */
+export function executionCostPct(input: {
+  readonly market: ExecutionMarket;
+  readonly spreadPct?: number;
+  readonly feePerLegPct?: number;
+  readonly slippagePerLegPct?: number;
+}): number {
+  if (input.market === "binary") return 0;
+  const fee = input.feePerLegPct ?? (input.market === "crypto" ? BINANCE_FEE_PCT : 0);
+  const slippage = input.slippagePerLegPct ?? (input.market === "crypto" ? SLIPPAGE_PCT : 0.00005);
+  const spread = input.spreadPct ?? (input.market === "forex" ? 0.00012 : 0);
+  if (![fee, slippage, spread].every((v) => Number.isFinite(v) && v >= 0)) return Number.NaN;
+  return (fee * 2 + slippage * 2 + spread) * 100;
+}
+
+/** Retorno de contrato binário/digital sobre a stake, sem PnL simétrico falso. */
+export function binaryContractReturnPct(
+  outcome: "hit" | "miss" | "flat",
+  payoutRatio: number,
+): number | null {
+  if (!Number.isFinite(payoutRatio) || payoutRatio <= 0 || payoutRatio > 1) return null;
+  return outcome === "hit" ? payoutRatio * 100 : outcome === "miss" ? -100 : 0;
 }
 
 /**

@@ -6,7 +6,7 @@ dist/
 .vercel/
 
 # Static assets (gerado pelo build a partir de src/http/public/)
-public/
+/public/
 
 # Environment / secrets — NUNCA commitar
 .env
@@ -36,6 +36,12 @@ Thumbs.db
 .railway/
 *.local
 
+# Generated shadow-validation runs (the latest signed-off report is versioned)
+diagnostic-results/shadow-validation-*.json
+diagnostic-results/shadow-validation-*.md
+!diagnostic-results/shadow-validation-latest.json
+!diagnostic-results/shadow-validation-latest.md
+
 # Local Claude / MCP state (sessão local, não versionado)
 .claude/
 
@@ -50,5 +56,6 @@ start-server.sh
 .idea/
 .vercel
 .env*
+!.env.example
 
 .vercel

@@ -24,9 +24,14 @@ import { NewsService } from "../context/service";
 import { FreeCryptoNewsProvider } from "../context/provider";
 import type { NewsResult } from "../context/types";
 import { AnalyticsService } from "../analytics/service";
+import { CalibrationEngine, calibrationKeyToString } from "../analytics/calibration-engine";
 import { DecisionRepository } from "../store/repositories/decisionRepository";
 import { GuardRepository } from "../store/repositories/guardRepository";
 import { ShadowRepository } from "../store/repositories/shadowRepository";
+import { SignalRepository } from "../store/repositories/signalRepository";
+import { AdaptiveRepository } from "../store/repositories/adaptiveRepository";
+import { OandaForexProvider } from "./forex/oanda-provider";
+import { ForexMarketScanner } from "./forex/scanner";
 import { freshGuardState, type GuardState } from "../fusion/guards";
 
 /**
@@ -73,8 +78,15 @@ export interface MarketRuntime {
   readonly fusion: FusionService;
   readonly news: NewsService;
   readonly analytics: AnalyticsService;
+  readonly calibrationEngine: CalibrationEngine;
+  /** Persistência adaptativa de ensemble, retraining, métricas e drift. */
+  readonly adaptiveRepo?: AdaptiveRepository;
+  /** Scanner real de Forex, apenas quando as credenciais OANDA existem. */
+  readonly forexScanner?: ForexMarketScanner;
   readonly guardRepo?: GuardRepository;
   readonly shadowRepo?: ShadowRepository;
+  /** Sinais paper persistidos e sua trilha de transições. */
+  readonly signalRepo?: SignalRepository;
   readonly getGuardState: () => GuardState;
   /** Persiste o estado atual dos guards no SQLite. */
   persistGuards(state: GuardState): void;
@@ -87,7 +99,7 @@ export interface MarketRuntime {
 }
 
 export function createMarketRuntime(
-  config: Pick<EnvConfig, "marketDataMode" | "nodeEnv" | "database">,
+  config: Pick<EnvConfig, "marketDataMode" | "nodeEnv" | "database"> & Partial<Pick<EnvConfig, "oanda">>,
   opts: MarketRuntimeOptions,
 ): MarketRuntime {
   const provider = resolveProvider(config);
@@ -105,13 +117,56 @@ export function createMarketRuntime(
   const shadowRepo: ShadowRepository | undefined = store.available
     ? new ShadowRepository(store)
     : undefined;
+  const signalRepo: SignalRepository | undefined = store.available
+    ? new SignalRepository(store)
+    : undefined;
+  // B7: writers adaptativos (ensemble_weights, retrain_history,
+  // model_daily_metrics, drift_alerts). Só existe com SQLite disponível.
+  const adaptiveRepo: AdaptiveRepository | undefined = store.available
+    ? new AdaptiveRepository(store)
+    : undefined;
+  const forexScanner = config.oanda?.apiKey && config.oanda.accountId
+    ? new ForexMarketScanner({
+      provider: new OandaForexProvider({
+        apiKey: config.oanda.apiKey,
+        accountId: config.oanda.accountId,
+        baseUrl: config.oanda.baseUrl,
+      }),
+      timeframe: "1m",
+      candleWindow: 120,
+    })
+    : undefined;
 
   if (!provider) {
     // Sem provedor ⇒ SERVICE devolve PROVIDER_NOT_CONFIGURED; pipeline null.
     const service = new MarketDataService({ provider: null, pipeline: null });
     const fusion = makeStubFusion();
     const news = new NewsService({ provider: null });
-    const analytics = new AnalyticsService(decisionRepo, () => [], undefined, shadowRepo);
+    // P-A: CalibrationEngine inicializado vazio; histórico é alimentado pelo scheduler.
+    const calibrationEngine = new CalibrationEngine();
+    // B7: hook fitForKey → AdaptiveRepository.upsertEnsembleWeights.
+    if (adaptiveRepo) {
+      calibrationEngine.setOnFit((snap) => {
+        const key = calibrationKeyToString(snap.key);
+        adaptiveRepo.upsertEnsembleWeights({
+          key,
+          A: snap.fit.params.A,
+          B: snap.fit.params.B,
+          status: snap.status,
+          nSamples: snap.fit.nSamples,
+          ece: snap.oos?.ece ?? 0,
+          updatedAt: snap.updatedAt,
+          holdoutBrier: snap.oos?.brierScore ?? null,
+        });
+      });
+    }
+    const analytics = new AnalyticsService({
+      persist: decisionRepo,
+      candles: () => [],
+      ...(shadowRepo ? { shadowRepo } : {}),
+      ...(adaptiveRepo ? { adaptiveRepo } : {}),
+      calibrationEngine,
+    });
     // Estado de guard: carrega do SQLite se houver persistência; senão fresco.
     let runtimeGuardState: GuardState = guardRepo?.load() ?? freshGuardState(Date.now());
     return {
@@ -126,6 +181,10 @@ export function createMarketRuntime(
       fusion,
       news,
       analytics,
+      calibrationEngine,
+      adaptiveRepo,
+      signalRepo,
+      forexScanner,
       guardRepo,
       getGuardState: () => runtimeGuardState,
       persistGuards: (s) => {
@@ -181,12 +240,32 @@ export function createMarketRuntime(
         return b === "bullish" ? "up" : b === "bearish" ? "down" : "neutral";
       },
     });
-    const analytics = new AnalyticsService(
-      decisionRepo,
-      (symbol, timeframe) => pipeline.state.getCandles(symbol, timeframe),
-      undefined,
+    // P-A: CalibrationEngine instanciado no caminho provider-configured.
+    // Criado ANTES do AnalyticsService para que o service receba a referência.
+    const calibrationEngine = new CalibrationEngine();
+    // B7: hook fitForKey → AdaptiveRepository.upsertEnsembleWeights.
+    if (adaptiveRepo) {
+      calibrationEngine.setOnFit((snap) => {
+        const key = calibrationKeyToString(snap.key);
+        adaptiveRepo.upsertEnsembleWeights({
+          key,
+          A: snap.fit.params.A,
+          B: snap.fit.params.B,
+          status: snap.status,
+          nSamples: snap.fit.nSamples,
+          ece: snap.oos?.ece ?? 0,
+          updatedAt: snap.updatedAt,
+          holdoutBrier: snap.oos?.brierScore ?? null,
+        });
+      });
+    }
+    const analytics = new AnalyticsService({
+      persist: decisionRepo,
+      candles: (symbol, timeframe) => pipeline.state.getCandles(symbol, timeframe),
       shadowRepo,
-    );
+      ...(adaptiveRepo ? { adaptiveRepo } : {}),
+      calibrationEngine,
+    });
 
   function persistGuards(state: GuardState): void {
     runtimeGuardState = state;
@@ -244,6 +323,10 @@ export function createMarketRuntime(
     fusion,
     news,
     analytics,
+    calibrationEngine,
+    adaptiveRepo,
+    signalRepo,
+    forexScanner,
     guardRepo,
     getGuardState: () => runtimeGuardState,
     persistGuards,

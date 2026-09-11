@@ -116,11 +116,22 @@ export class Datastore {
         sample_size INTEGER,
         regime      TEXT,
         rationale   TEXT NOT NULL,
+        -- Provider/clock snapshots do momento da decisão (para auditoria).
+        provider_id TEXT,
+        model_version TEXT,
+        feature_version TEXT,
         outcome     TEXT NOT NULL DEFAULT 'pending',
         exit_time   INTEGER,
         exit_price  REAL,
         return_pct  REAL,
         evaluated_at INTEGER,
+        -- Idempotência + diagnóstico do scheduler (P-R).
+        evaluation_attempts INTEGER NOT NULL DEFAULT 0,
+        last_evaluation_error TEXT,
+        evaluation_locked    INTEGER NOT NULL DEFAULT 0,
+        -- P-T: custos reais descontados em produção.
+        gross_return_pct REAL,
+        cost_pct          REAL,
         created_at  INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_decisions_symbol_tf ON decision_records(symbol, timeframe);
@@ -144,11 +155,47 @@ export class Datastore {
         confidence  REAL,
         probability REAL,
         created_at  INTEGER NOT NULL,
-        evaluated_at INTEGER
+        evaluated_at INTEGER,
+        evaluation_attempts INTEGER NOT NULL DEFAULT 0,
+        last_evaluation_error TEXT,
+        evaluation_locked    INTEGER NOT NULL DEFAULT 0,
+        gross_return_pct REAL,
+        cost_pct          REAL
       );
       CREATE INDEX IF NOT EXISTS idx_shadow_created_at ON shadow_trades(created_at);
       CREATE INDEX IF NOT EXISTS idx_shadow_outcome ON shadow_trades(outcome);
       CREATE INDEX IF NOT EXISTS idx_shadow_symbol_tf ON shadow_trades(symbol, timeframe);
+
+      -- Sinais paper com máquina de estados explícita. A tabela de eventos é
+      -- append-only e permite auditar cancelamento, invalidação e execução.
+      CREATE TABLE IF NOT EXISTS paper_signals (
+        id TEXT PRIMARY KEY,
+        symbol TEXT NOT NULL,
+        timeframe TEXT NOT NULL,
+        direction TEXT NOT NULL,
+        decision TEXT NOT NULL,
+        countdown_at INTEGER NOT NULL,
+        entry_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        state TEXT NOT NULL,
+        invalidation_reason TEXT,
+        execution_key TEXT UNIQUE,
+        paper_trade_id TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_paper_signals_state ON paper_signals(state, entry_at);
+      CREATE INDEX IF NOT EXISTS idx_paper_signals_symbol ON paper_signals(symbol, created_at);
+      CREATE TABLE IF NOT EXISTS paper_signal_events (
+        signal_id TEXT NOT NULL,
+        event_index INTEGER NOT NULL,
+        at INTEGER NOT NULL,
+        previous_state TEXT,
+        new_state TEXT NOT NULL,
+        reason TEXT,
+        PRIMARY KEY(signal_id, event_index),
+        FOREIGN KEY(signal_id) REFERENCES paper_signals(id) ON DELETE CASCADE
+      );
 
       -- Migração: colunas opcionais para stop-loss e cooldown aplicadas
       -- DEPOIS do db.exec principal com try/catch (SQLite < 3.35 não tem
@@ -219,6 +266,24 @@ export class Datastore {
     try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN stop_loss_pct REAL"); } catch { /* coluna já existe */ }
     try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN cooldown_minutes INTEGER"); } catch { /* coluna já existe */ }
     try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN stop_loss_triggered_at INTEGER"); } catch { /* coluna já existe */ }
+
+    // P-R: colunas para rastreabilidade e idempotência do scheduler de outcomes.
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN provider_id TEXT"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN model_version TEXT"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN feature_version TEXT"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN evaluation_attempts INTEGER NOT NULL DEFAULT 0"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN last_evaluation_error TEXT"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN evaluation_locked INTEGER NOT NULL DEFAULT 0"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN gross_return_pct REAL"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN cost_pct REAL"); } catch { /* já existe */ }
+    // P-A (B2): Platt-scaled probability aprendida por (symbol, timeframe, regime).
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN probability_calibrated REAL"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN provider_id TEXT"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN evaluation_attempts INTEGER NOT NULL DEFAULT 0"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN last_evaluation_error TEXT"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN evaluation_locked INTEGER NOT NULL DEFAULT 0"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN gross_return_pct REAL"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN cost_pct REAL"); } catch { /* já existe */ }
   }
 
   close(): void {

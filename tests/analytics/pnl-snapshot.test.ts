@@ -94,7 +94,7 @@ describe("getPerfSnapshot — sequências de wins", () => {
     // 10 decisões BUY, cada uma ganha +1%
     for (let i = 0; i < 10; i++) {
       const candles = buildCandles(t0 + i * 100 * M, 100, 101, 5);
-      const svc = new AnalyticsService(repo, () => candles, { minMovePct: 0.5, lookback: 100 });
+      const svc = new AnalyticsService({ persist: repo, candles: () => candles, cfg: { minMovePct: 0.5, lookback: 100 } });
       await svc.recordDecision({
         symbol: "BTCUSDT",
         timeframe: "1h",
@@ -116,7 +116,8 @@ describe("getPerfSnapshot — sequências de wins", () => {
     const snap = getPerfSnapshot(store);
     expect(snap.nTrades).toBe(10);
     expect(snap.pnlTotal).toBeGreaterThan(0);
-    expect(snap.pnlTotal).toBeCloseTo(10 * 1, 0); // ~10%
+    // P-T: 10 trades × (1% bruto − 0.3% custo) = 10 × 0.7 = 7 %
+    expect(snap.pnlTotal).toBeCloseTo(10 * 0.7, 0);
     expect(snap.maxDrawdown).toBe(0); // sem losses, nunca cai
     expect(snap.winRate).toBe(1);
     expect(snap.periodStart).not.toBeNull();
@@ -146,7 +147,7 @@ describe("getPerfSnapshot — sequência mista (wins + losses)", () => {
     for (let i = 0; i < sequence.length; i++) {
       const { ret, decision } = sequence[i]!;
       const candles = buildCandles(t0 + i * 100 * M, 100, 100 * (1 + ret / 100), 5);
-      const svc = new AnalyticsService(repo, () => candles, { minMovePct: 0.5, lookback: 100 });
+      const svc = new AnalyticsService({ persist: repo, candles: () => candles, cfg: { minMovePct: 0.5, lookback: 100 } });
       await svc.recordDecision({
         symbol: "BTCUSDT",
         timeframe: "1h",
@@ -168,10 +169,10 @@ describe("getPerfSnapshot — sequência mista (wins + losses)", () => {
     const snap = getPerfSnapshot(store);
     expect(snap.nTrades).toBe(8);
     expect(snap.winRate).toBe(5 / 8);
-    // PnL: 5*(+2) + 3*(-2) = +4
-    expect(snap.pnlTotal).toBeCloseTo(4, 1);
-    // Cura: 2,4,6,8,10,8,6,4 → pico=10 → drawdown = 4-10 = -6
-    expect(snap.maxDrawdown).toBeCloseTo(-6, 1);
+    // P-T: 5 wins × (2% - 0.3%) + 3 losses × (-2% - 0.3%) = 5 × 1.7 + 3 × (-2.3) = 8.5 - 6.9 = 1.6
+    expect(snap.pnlTotal).toBeCloseTo(1.6, 1);
+    // Cura líquida: 1.7, 3.4, 5.1, 6.8, 8.5, 6.2, 3.9, 1.6 → pico=8.5 → DD = 1.6-8.5 = -6.9
+    expect(snap.maxDrawdown).toBeCloseTo(-6.9, 1);
     store.close();
   });
 });
@@ -253,7 +254,7 @@ describe("getPerfSnapshot — filtros", () => {
     // 3 BUY + 2 SELL
     for (let i = 0; i < 3; i++) {
       const candles = buildCandles(t0 + i * 100 * M, 100, 101, 5);
-      const svc = new AnalyticsService(repo, () => candles, { minMovePct: 0.5, lookback: 100 });
+      const svc = new AnalyticsService({ persist: repo, candles: () => candles, cfg: { minMovePct: 0.5, lookback: 100 } });
       await svc.recordDecision({
         symbol: "BTCUSDT",
         timeframe: "1h",
@@ -273,7 +274,7 @@ describe("getPerfSnapshot — filtros", () => {
     }
     for (let i = 0; i < 2; i++) {
       const candles = buildCandles(t0 + (i + 3) * 100 * M, 100, 99, 5);
-      const svc = new AnalyticsService(repo, () => candles, { minMovePct: 0.5, lookback: 100 });
+      const svc = new AnalyticsService({ persist: repo, candles: () => candles, cfg: { minMovePct: 0.5, lookback: 100 } });
       await svc.recordDecision({
         symbol: "BTCUSDT",
         timeframe: "1h",
@@ -299,12 +300,14 @@ describe("getPerfSnapshot — filtros", () => {
     // signalFilter='BUY' → 3 trades (só BUY)
     const onlyBuy = getPerfSnapshot(store, { signalFilter: "BUY" });
     expect(onlyBuy.nTrades).toBe(3);
-    expect(onlyBuy.pnlTotal).toBeCloseTo(3, 1); // 3 wins de +1%
+    // P-T: 3 wins × (1% - 0.3%) = 2.1
+    expect(onlyBuy.pnlTotal).toBeCloseTo(2.1, 1);
 
     // signalFilter='SELL' → 2 trades (só SELL)
     const onlySell = getPerfSnapshot(store, { signalFilter: "SELL" });
     expect(onlySell.nTrades).toBe(2);
-    expect(onlySell.pnlTotal).toBeCloseTo(-2, 1); // 2 wins de -1%
+    // SELL vencedor em queda: +1% bruto - 0.3 PP por operação.
+    expect(onlySell.pnlTotal).toBeCloseTo(1.4, 1);
     store.close();
   });
 });
@@ -319,9 +322,10 @@ describe("buildPerfSnapshotFromRecords — helper puro", () => {
     ];
     const snap = buildPerfSnapshotFromRecords(records);
     expect(snap.nTrades).toBe(3);
-    expect(snap.pnlTotal).toBe(0);
-    // Cura: 1, 2, 0 → pico=2 → DD = 0-2 = -2
-    expect(snap.maxDrawdown).toBeCloseTo(-2, 5);
+    // P-T: (1-0.3) + (1-0.3) + (-2-0.3) = -0.9
+    expect(snap.pnlTotal).toBeCloseTo(-0.9, 5);
+    // Cura: 0.7, 1.4, -0.9 → pico=1.4 → DD = -0.9-1.4 = -2.3
+    expect(snap.maxDrawdown).toBeCloseTo(-2.3, 5);
     // 2 hit + 1 miss → winRate = 2/3
     expect(snap.winRate).toBeCloseTo(2 / 3, 5);
     expect(snap.periodStart).toBe(new Date(t0).toISOString());
@@ -359,11 +363,20 @@ function mkRecord(
     sampleSize: 50,
     regime: "uptrend",
     rationale: "x",
+    providerId: "binance",
+    modelVersion: "test",
+    featureVersion: "test",
     outcome,
     exitTime: createdAt + 5 * M,
     exitPrice: 100 * (1 + (returnPct ?? 0) / 100),
-    returnPct,
+    // P-T: testes injetam valor bruto — refletimos no líquido descontando 0.3 PP.
+    returnPct: returnPct === null ? null : returnPct - 0.3,
+    grossReturnPct: returnPct,
+    costPct: 0.3,
     evaluatedAt: createdAt + 5 * M,
+    evaluationAttempts: 1,
+    lastEvaluationError: null,
+    evaluationLocked: false,
     createdAt,
   };
 }

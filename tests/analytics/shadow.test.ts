@@ -147,10 +147,9 @@ describe("evaluateShadowTrade", () => {
     const candles = candleSeries([100, 99.5, 99, 98.5, 98, 95]);
     const result = evaluateShadowTrade(trade, candles, 5, 0.5);
     expect(result.outcome).toBe("hit");
-    expect(result.returnPct).toBeLessThan(0); // líquido: preço caiu
-    // Para SELL, gross=-5, líquido=-5.3.
-    expect(result.returnPct).toBeCloseTo(-5.3, 5);
-    expect(result.grossReturnPct).toBeCloseTo(-5, 5);
+    expect(result.returnPct).toBeGreaterThan(0); // SELL lucra quando o preço cai
+    expect(result.returnPct).toBeCloseTo(4.7, 5);
+    expect(result.grossReturnPct).toBeCloseTo(5, 5);
   });
 
   it("SELL com candles futuros subindo → outcome='miss' (sem stop, líquido)", () => {
@@ -162,9 +161,9 @@ describe("evaluateShadowTrade", () => {
     const candles = candleSeries([100, 100.5, 101, 101.5, 102, 105]);
     const result = evaluateShadowTrade(trade, candles, 5, 0.5);
     expect(result.outcome).toBe("miss");
-    expect(result.returnPct).toBeGreaterThan(0);
-    expect(result.returnPct).toBeCloseTo(4.7, 5);
-    expect(result.grossReturnPct).toBeCloseTo(5, 5);
+    expect(result.returnPct).toBeLessThan(0);
+    expect(result.returnPct).toBeCloseTo(-5.3, 5);
+    expect(result.grossReturnPct).toBeCloseTo(-5, 5);
   });
 
   it("WAIT → outcome='flat' mesmo com movimento direcional", () => {
@@ -229,8 +228,8 @@ describe("evaluateShadowTrade", () => {
     expect(result.outcome).toBe("stopped");
     expect(result.stopLossTriggeredAt).toBe(T0 + 3 * M);
     expect(result.exitPrice).toBe(102);
-    expect(result.returnPct).toBeCloseTo(1.7, 1);
-    expect(result.grossReturnPct).toBeCloseTo(2, 5);
+    expect(result.returnPct).toBeCloseTo(-2.3, 1);
+    expect(result.grossReturnPct).toBeCloseTo(-2, 5);
   });
 
   it("BUY com candles caindo 0.5% (dentro do stop) → outcome normal hit/miss", () => {
@@ -416,7 +415,7 @@ describe("AnalyticsService.evaluatePendingShadows", () => {
         mkCandle(T0 + 4 * M, 108),
         mkCandle(T0 + 5 * M, 110),
       ];
-      const svc = new AnalyticsService(decisionRepo, candleSource(candlesOld), { minMovePct: 0.5, lookback: 100 }, shadowRepo);
+      const svc = new AnalyticsService({ persist: decisionRepo, candles: candleSource(candlesOld), cfg: { minMovePct: 0.5, lookback: 100 }, shadowRepo });
 
       await svc.recordShadowTrade({
         symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "BUY",
@@ -448,7 +447,7 @@ describe("AnalyticsService.evaluatePendingShadows", () => {
     const store = new Datastore({ path: ":memory:" });
     try {
       const decisionRepo = new DecisionRepository(store);
-      const svc = new AnalyticsService(decisionRepo, candleSource([]));
+      const svc = new AnalyticsService({ persist: decisionRepo, candles: candleSource([]) });
       const r = await svc.recordShadowTrade({
         symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "BUY",
         entryTime: T0, entryPrice: 100,
@@ -469,7 +468,7 @@ describe("AnalyticsService.evaluatePendingShadows", () => {
     try {
       const decisionRepo = new DecisionRepository(store);
       const shadowRepo = new ShadowRepository(store);
-      const svc = new AnalyticsService(decisionRepo, candleSource([]), { minMovePct: 0.5, lookback: 100 }, shadowRepo);
+      const svc = new AnalyticsService({ persist: decisionRepo, candles: candleSource([]), cfg: { minMovePct: 0.5, lookback: 100 }, shadowRepo });
 
       const t0Entry = Date.parse("2023-01-01T00:00:00Z");
       const t1Entry = t0Entry + 60 * 60 * 1000; // 1h depois → dentro do cooldown de 4h
@@ -500,7 +499,7 @@ describe("AnalyticsService.evaluatePendingShadows", () => {
     try {
       const decisionRepo = new DecisionRepository(store);
       const shadowRepo = new ShadowRepository(store);
-      const svc = new AnalyticsService(decisionRepo, candleSource([]), { minMovePct: 0.5, lookback: 100 }, shadowRepo);
+      const svc = new AnalyticsService({ persist: decisionRepo, candles: candleSource([]), cfg: { minMovePct: 0.5, lookback: 100 }, shadowRepo });
 
       const t0Entry = Date.parse("2023-01-01T00:00:00Z");
       const t1Entry = t0Entry + 5 * 60 * 60 * 1000; // 5h depois → fora do cooldown
@@ -530,7 +529,7 @@ describe("AnalyticsService.evaluatePendingShadows", () => {
     try {
       const decisionRepo = new DecisionRepository(store);
       const shadowRepo = new ShadowRepository(store);
-      const svc = new AnalyticsService(decisionRepo, candleSource([]), { minMovePct: 0.5, lookback: 100 }, shadowRepo);
+      const svc = new AnalyticsService({ persist: decisionRepo, candles: candleSource([]), cfg: { minMovePct: 0.5, lookback: 100 }, shadowRepo });
 
       const t0Entry = Date.parse("2023-01-01T00:00:00Z");
       const t1Entry = t0Entry + 60 * 60 * 1000; // 1h depois
@@ -557,7 +556,7 @@ describe("AnalyticsService.evaluatePendingShadows", () => {
     try {
       const decisionRepo = new DecisionRepository(store);
       const shadowRepo = new ShadowRepository(store);
-      const svc = new AnalyticsService(decisionRepo, candleSource([]), { minMovePct: 0.5, lookback: 100 }, shadowRepo);
+      const svc = new AnalyticsService({ persist: decisionRepo, candles: candleSource([]), cfg: { minMovePct: 0.5, lookback: 100 }, shadowRepo });
 
       const t0Entry = Date.parse("2023-01-01T00:00:00Z");
       const t1Entry = t0Entry + 60 * 60 * 1000;
