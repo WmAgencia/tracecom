@@ -151,7 +151,7 @@ P-I a P-W, P-X a P-AM
 | Provider honesty | 1 | PASS | OANDA was attempted only when environment credentials exist; current run records `OANDA_API_KEY/OANDA_ACCOUNT_ID ausentes` and explicitly falls back to real Binance data | Configure OANDA practice credentials for Forex validation; no credentials were written to the repository |
 | Upstream sync | 1 | PASS | Remote `origin/main` inspected at `d0a8a68`; local tree preserved all remote tracked files, added local improvements, and recorded remote as a merge parent without force overwrite | Push integrated `main` after final gates |
 | Shadow artifacts | 1 | PASS | `diagnostic-results/shadow-validation-latest.json` and `.md` versioned; timestamped reruns ignored; report is reproducible through the npm script | Keep latest report refreshed after provider changes |
-| GitHub publication gate | 1 | BLOCKED | Local `main` is committed and includes remote `d0a8a68` as an ancestry parent, but GitHub rejected the first push because the active OAuth token lacks the `workflow` scope; SSH fallback also has no authorized key | Authorize `workflow` for the `WmAgencia` GitHub session, then run `git push -u origin main` |
+| GitHub publication gate | 2 | PASS_WITH_EXTERNAL_LIMIT | Published tree is live at `origin/main` commit `c871f8f`; it contains the complete application, provider and reports. GitHub's OAuth scope restriction required omitting only `.github/workflows/ci.yml`; the workflow remains in local history for later publication after `workflow` authorization | Add the workflow in a later authenticated push |
 
 ## Forex provider, causal OOS and edge-audit wave (2026-09-11)
 
@@ -163,4 +163,14 @@ P-I a P-W, P-X a P-AM
 | Edge diagnosis | 1 | PASS | 49.87% win rate, BUY 50.92%, SELL 48.83%, net EV -0.087535; session/regime/symbol/threshold CSVs and loss analysis generated | Do not claim a trading edge; investigate with a longer multi-window sample |
 | Threshold/ablation audit | 1 | PASS | TRAIN/TEST threshold sweep found no threshold with >=30 TEST samples; 0.55/0.60 had too-small TEST coverage and are marked `OVERFIT_RISK`; measured gates plus unavailable-feature rows are explicit | No threshold promotion to the extension |
 | EV safety gate | 1 | PASS | Fusion calibration requires positive binary EV in addition to statistical actionability; extension forces negative/non-positive EV directional payloads to WAIT; paper bankroll already returns zero stake for non-positive Kelly | Keep risk state SHADOW_ONLY until stable positive net EV exists |
-| Regression gates | 1 | PASS | 64 test files passed / 3 conditional live tests skipped; 488 tests passed; typecheck, build, extension static checks and npm audit (0 vulnerabilities) pass | Publish after GitHub workflow authorization |
+| Regression gates | 1 | PASS | 64 test files passed / 3 conditional live tests skipped; 488 tests passed; typecheck, build, extension static checks and npm audit (0 vulnerabilities) pass | Keep CI workflow pending scope authorization |
+
+## Published Forex evidence snapshot (2026-09-11)
+
+| item | iter | verdict | evidence | next action |
+| --- | --- | --- | --- | --- |
+| Remote artifact | 1 | PASS | `git ls-remote origin main` = `c871f8f`; remote report and provider files read back successfully | Keep remote tree immutable until next evidence window |
+| Forex sample | 1 | PASS | Yahoo Forex real OHLC, seven liquid pairs, 2026-09-04 to 2026-09-11, 1m horizon 5 candles; 980 total / 849 actionable / 849 evaluated | Collect another disjoint TEST B before model changes |
+| Honest result | 1 | PASS | Win rate 46.61%; BUY 46.09%; SELL 47.10%; net EV -0.144160; realized return -0.090284; profit factor 0.3021; drawdown 0.090284 | Verdict: NO STATISTICAL EDGE FOUND in this window |
+| Calibration | 1 | PASS | Brier 0.255573; ECE 0.060932; MCE 0.299568; 0.75–0.85 band n=15, 95% CI 0.2321–0.7086; 0.78–0.82 band n=5 | Do not interpret small high-probability bands as certification |
+| Thresholds and ablation | 1 | PASS | No threshold reached the minimum 30 TEST samples; all candidate threshold rows are `OVERFIT_RISK`; TEST_B ablations remain negative net EV | Leave extension on EV/WAIT gate |
