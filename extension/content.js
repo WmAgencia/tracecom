@@ -20,9 +20,9 @@
   if (window.__traceconInjected) return;
   window.__traceconInjected = true;
 
-  // IQ Option uses an isolated content world. The bridge below is injected in
-  // the page world solely to observe whitelisted inbound candle frames; it
-  // never reads cookies, localStorage, outgoing frames, SSID or credentials.
+  // IQ Option uses an isolated content world. The read-only bridge is loaded
+  // in MAIN at document_start and posts only whitelisted inbound frames; this
+  // script never reads credentials, cookies, storage or outgoing messages.
   if (/(^|\.)iqoption\.com$/i.test(location.hostname)) {
     window.addEventListener("message", (event) => {
       if (event.source !== window || event.origin !== location.origin) return;
@@ -51,6 +51,17 @@
     if (/(^|\.)iqoption\.com$/i.test(host)) {
       const iq = document.title.match(/([A-Z]{3})\s*\/?\s*([A-Z]{3})(\s*[-_]?\s*OTC)?/i);
       if (iq) return { symbol: `${iq[1]}${iq[2]}${iq[3] ? "-OTC" : ""}`.toUpperCase(), source: "iqoption-title" };
+      const selectorCandidates = [
+        "[data-testid*='asset' i]", "[data-testid*='instrument' i]", "[class*='asset-name' i]", "[class*='instrument-name' i]",
+      ];
+      for (const selector of selectorCandidates) {
+        const text = document.querySelector(selector)?.textContent?.trim() || "";
+        const match = text.match(/([A-Z]{3})\s*\/?\s*([A-Z]{3})(\s*[-_]?\s*OTC)?/i);
+        if (match) return { symbol: `${match[1]}${match[2]}${match[3] ? "-OTC" : ""}`.toUpperCase(), source: "iqoption-dom" };
+      }
+      const visible = (document.body?.innerText || "").slice(0, 20_000);
+      const bodyMatch = visible.match(/\b([A-Z]{3})\s*\/\s*([A-Z]{3})(\s*[-_]?\s*OTC)?\b/i);
+      if (bodyMatch) return { symbol: `${bodyMatch[1]}${bodyMatch[2]}${bodyMatch[3] ? "-OTC" : ""}`.toUpperCase(), source: "iqoption-visible-dom" };
     }
 
     // TradingView: chart URL contains /symbols/<EXCHANGE>-<PAIR>/
@@ -331,8 +342,9 @@
     if (!showCountdown) countdownEl.textContent = "00:00";
     else if (Number.isFinite(plannedEntryAt) && plannedEntryAt > Date.now()) beginCountdown(plannedEntryAt);
     else countdownEl.textContent = "00:00";
-    feedEl.dataset.state = "synced";
-    feedTextEl.textContent = "SYNCED";
+    const localOnly = payload?.backend === "UNREACHABLE" || payload?.backend === "HTTP_ERROR";
+    feedEl.dataset.state = localOnly ? "offline" : "synced";
+    feedTextEl.textContent = localOnly ? "LOCAL SHADOW" : "SYNCED";
     if (payload?.calibration?.calibratedProb != null) {
       probEl.textContent = (payload.calibration.calibratedProb * 100).toFixed(1) + "%";
     } else if (payload?.probability?.probability != null) {
@@ -364,6 +376,7 @@
     if (d === "WAIT" && rawDecision !== "WAIT" && Number.isFinite(ev) && ev <= 0) blockers.push(`EV não positivo (${ev.toFixed(3)})`);
     if (!payload?.guards?.allowed && payload?.guards?.reason) blockers.push(payload.guards.reason);
     if (payload?.confluence?.direction === "neutral" && payload?.confluence?.reason) blockers.push(payload.confluence.reason);
+    if (payload?.diagnostic?.errorClass) blockers.push(`${payload.diagnostic.errorClass}: ${payload.diagnostic.message}`);
     if (d === "WAIT" && payload?.calibration && !payload.calibration.actionable) {
       blockers.push(`IC95 ${(payload.calibration.ciLower * 100).toFixed(0)}% ≤ baseline`);
     }

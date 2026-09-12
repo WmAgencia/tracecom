@@ -24,6 +24,65 @@ const apiHeaders = (opts, extra = {}) => ({
   ...(opts?.apiToken ? { Authorization: `Bearer ${opts.apiToken}` } : {}),
   ...extra,
 });
+const TRACE_PREFIX = "[TRACE_CON]";
+const IQ_MARKET_KEY = "tcIqMarketStore";
+
+function traceLog(scope, message, meta = {}) {
+  console.info(`${TRACE_PREFIX}[${scope}] ${message}`, meta);
+}
+
+function traceError(scope, operation, error, extra = {}) {
+  const message = String(error?.message || error || "unknown error");
+  const result = { component: scope, operation, errorClass: "NETWORK_ERROR", message, timestamp: Date.now(), ...extra };
+  console.warn(`${TRACE_PREFIX}[${scope}] ${operation} failed`, result);
+  return result;
+}
+
+async function readLocalMarket() {
+  return new Promise((resolve) => chrome.storage.local.get([IQ_MARKET_KEY], (s) => resolve(s[IQ_MARKET_KEY] || {})));
+}
+async function writeLocalMarket(store) {
+  return new Promise((resolve) => chrome.storage.local.set({ [IQ_MARKET_KEY]: store }, resolve));
+}
+async function persistIqFrame(frame) {
+  if (!frame?.symbol || !["candle", "tick"].includes(frame.kind)) return;
+  const store = await readLocalMarket();
+  const key = String(frame.symbol).toUpperCase();
+  const item = store[key] || { symbol: key, candles: [], ticks: [], lastFrameAt: null, source: "iqoption:browser-session" };
+  if (frame.kind === "candle") {
+    const existing = item.candles.findIndex((c) => c.timestamp === frame.timestamp && c.timeframe === frame.timeframe);
+    if (existing >= 0) item.candles[existing] = { ...frame };
+    else item.candles.push({ ...frame });
+    item.candles.sort((a, b) => a.timestamp - b.timestamp);
+    item.candles = item.candles.slice(-240);
+  } else {
+    item.ticks.push({ ...frame });
+    item.ticks = item.ticks.slice(-500);
+  }
+  item.lastFrameAt = Number(frame.receivedAt) || Date.now();
+  item.lastPrice = frame.kind === "tick" ? frame.price : frame.close;
+  item.lastPriceTimestamp = Number(frame.timestamp) || item.lastFrameAt;
+  store[key] = item;
+  await writeLocalMarket(store);
+  return item;
+}
+
+async function localAnalyze(symbol) {
+  const store = await readLocalMarket();
+  const item = store[String(symbol || "").toUpperCase()];
+  const candles = (item?.candles || []).filter((c) => c.timeframe === TRACE_1M_TIMEFRAME && c.isClosed !== false);
+  const currentPrice = item?.lastPrice ?? candles.at(-1)?.close ?? null;
+  const ageMs = item?.lastFrameAt ? Date.now() - item.lastFrameAt : Infinity;
+  const base = { symbol, timeframe: TRACE_1M_TIMEFRAME, currentPrice, source: "iqoption:local-shadow", provider: "iqoption", feed: { state: ageMs <= 15_000 ? "LIVE" : "DEGRADED", lastPrice: currentPrice, lastPriceTimestamp: item?.lastPriceTimestamp ?? null, ageMs, candleCount: candles.length } };
+  if (!item || candles.length < 12) return { ...base, decision: "WAIT", confidence: 0, rationale: "IQ_DATA_INSUFFICIENT_HISTORY", productionDecision: "WAIT", shadowEligible: false };
+  const recent = candles.slice(-5);
+  const first = recent[0].close;
+  const last = recent.at(-1).close;
+  const delta = (last - first) / Math.max(Math.abs(first), Number.EPSILON);
+  const confidence = Math.min(0.69, 0.5 + Math.min(0.19, Math.abs(delta) * 100));
+  const decision = delta > 0.00015 ? "BUY" : delta < -0.00015 ? "SELL" : "WAIT";
+  return { ...base, decision, confidence, score: delta, rationale: decision === "WAIT" ? "NO_EDGE" : "LOCAL_1M_MOMENTUM_SHADOW", productionDecision: "WAIT", shadowEligible: decision !== "WAIT", candlesUsed: recent.length, generatedAt: Date.now() };
+}
 
 // ------------------------------------------------------------
 // Shadow trading helpers
@@ -133,22 +192,39 @@ async function setOpt(key, value) {
 // ------------------------------------------------------------
 async function callAnalyze(symbol, timeframe, direction, horizon, backend, opts) {
   const url = `${backend.replace(/\/$/, "")}/api/analyze?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}&direction=${encodeURIComponent(direction)}&horizon=${encodeURIComponent(horizon)}`;
-  const r = await fetch(url, { method: "GET", headers: apiHeaders(opts) });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8_000);
+  let r;
+  try {
+    r = await fetch(url, { method: "GET", headers: apiHeaders(opts), signal: ctrl.signal });
+  } catch (error) {
+    const diagnostic = traceError("NETWORK", "analyze", error, { url, errorClass: error?.name === "AbortError" ? "TIMEOUT" : "TRACE_API_UNREACHABLE" });
+    return { ...(await localAnalyze(symbol)), diagnostic, backend: "UNREACHABLE" };
+  } finally { clearTimeout(timer); }
   if (!r.ok) {
     const t = await r.text().catch(() => "");
-    throw new Error(`HTTP ${r.status}: ${t.slice(0, 120)}`);
+    return { ...(await localAnalyze(symbol)), diagnostic: { component: "NETWORK", operation: "analyze", errorClass: "INVALID_RESPONSE", message: t.slice(0, 120), httpStatus: r.status, url, timestamp: Date.now() }, backend: "HTTP_ERROR" };
   }
-  return r.json();
+  try { return await r.json(); }
+  catch (error) { return { ...(await localAnalyze(symbol)), diagnostic: traceError("NETWORK", "analyze-response", error, { errorClass: "INVALID_RESPONSE", url }), backend: "HTTP_ERROR" }; }
 }
 
 async function forwardIqMarket(frame, tabId, backend, opts) {
   // Frame is already whitelisted/normalized by the bridge. Do not forward raw
   // page messages, cookies, credentials, SSID, account or trade information.
   const body = { ...frame, tabId, receivedAt: Number(frame.receivedAt) || Date.now() };
-  const r = await fetch(`${backend.replace(/\/$/, "")}/api/iq-option/ingest`, {
-    method: "POST", headers: apiHeaders(opts, { "content-type": "application/json" }), body: JSON.stringify(body),
-  });
-  if (!r.ok) throw new Error(`IQ market ingest HTTP ${r.status}`);
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5_000);
+    const r = await fetch(`${backend.replace(/\/$/, "")}/api/iq-option/ingest`, {
+      method: "POST", headers: apiHeaders(opts, { "content-type": "application/json" }), body: JSON.stringify(body), signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!r.ok) return { ok: false, diagnostic: { component: "NETWORK", operation: "iq-option/ingest", errorClass: "TRACE_API_UNREACHABLE", message: `HTTP ${r.status}`, httpStatus: r.status, timestamp: Date.now() } };
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, diagnostic: traceError("NETWORK", "iq-option/ingest", error, { errorClass: error?.name === "AbortError" ? "TIMEOUT" : "TRACE_API_UNREACHABLE" }) };
+  }
 }
 
 // Diagnostics contain only extension transport state. They intentionally never
@@ -164,7 +240,10 @@ async function patchIqDiagnostics(tabId, patch) {
 }
 async function backendHealth(backend) {
   try {
-    const response = await fetch(`${backend.replace(/\/$/, "")}/health`, { headers: { accept: "application/json" } });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 2_000);
+    const response = await fetch(`${backend.replace(/\/$/, "")}/health`, { headers: { accept: "application/json" }, signal: ctrl.signal });
+    clearTimeout(timer);
     return { online: response.ok };
   } catch { return { online: false }; }
 }
@@ -288,9 +367,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const { symbol, timeframe } = msg.payload || {};
       try {
         const data = await callAnalyze(symbol, timeframe || opts.timeframe, opts.direction, opts.horizon, opts.backend, opts);
+        if (sender.tab?.id && data) await patchIqDiagnostics(sender.tab.id, { lastShadowDecision: data.decision || "WAIT", lastError: data.diagnostic?.message || null });
         sendResponse({ ok: true, data });
       } catch (e) {
-        sendResponse({ ok: false, error: String(e?.message || e) });
+        sendResponse({ ok: true, data: { decision: "WAIT", symbol, timeframe: TRACE_1M_TIMEFRAME, confidence: 0, rationale: "TRACE_EXTENSION_ERROR", diagnostic: traceError("SERVICE_WORKER", "analyze", e) } });
       }
       return;
     }
@@ -301,13 +381,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
       try {
         const opts = await getOpts();
-        await forwardIqMarket(msg.payload, sender.tab.id, opts.backend, opts);
-        await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: true, lastIngestError: null });
+        await persistIqFrame(msg.payload);
+        const upstream = await forwardIqMarket(msg.payload, sender.tab.id, opts.backend, opts);
+        await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: true, lastIngestError: upstream.ok ? null : upstream.diagnostic?.message || "backend unavailable", networkStatus: upstream.ok ? "BACKEND_SYNCED" : "LOCAL_FALLBACK" });
         await chrome.tabs.sendMessage(sender.tab.id, { type: "tc.iq.marketAccepted", payload: { symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null } }).catch(() => null);
         sendResponse({ ok: true });
       } catch (e) {
-        await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: false, lastIngestError: String(e?.message || e).slice(0, 80) });
-        sendResponse({ ok: false, error: String(e?.message || e) });
+        const diagnostic = traceError("IQ_ADAPTER", "persist-frame", e, { errorClass: "DATA_ADAPTER_ERROR" });
+        await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: true, lastIngestError: diagnostic.message, networkStatus: "LOCAL_ONLY" });
+        sendResponse({ ok: true, localOnly: true, diagnostic });
       }
       return;
     }

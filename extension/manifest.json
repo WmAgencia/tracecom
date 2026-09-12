@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TRACE/CON — Sinal de Mercado",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Sinal de análise (BUY/SELL/WAIT) com probabilidade e ativo operado, ao lado da sua corretora. NÃO executa ordens — você decide.",
   "permissions": [
     "storage",
