@@ -15,6 +15,10 @@ const TICK_MS = 30; // production: 30 seconds
 const TICK_MS_MIN = 2; // dev
 const SHADOW_TICK_MIN = 5; // verifica shadow a cada 5 min
 const SHADOW_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h fecha trade aberto
+// TRACE_1M is a contract, not a tab preference. A chart on another interval
+// must not silently change the prediction or expiry the user sees.
+const TRACE_1M_TIMEFRAME = "1m";
+const TRACE_1M_HORIZON = 1;
 const apiHeaders = (opts, extra = {}) => ({
   accept: "application/json",
   ...(opts?.apiToken ? { Authorization: `Bearer ${opts.apiToken}` } : {}),
@@ -38,10 +42,10 @@ async function postShadowToBackend(trade, opts) {
   // Fallback: usa POST /api/analytics/record.
   const params = new URLSearchParams({
     symbol: trade.symbol || "",
-    timeframe: trade.timeframe || "1h",
+    timeframe: TRACE_1M_TIMEFRAME,
     direction: trade.direction || "up",
     decision: trade.decision || "WAIT",
-    horizon: "12",
+    horizon: String(TRACE_1M_HORIZON),
     entryTime: String(trade.entryTime || Date.now()),
     entryPrice: trade.entryPrice != null ? String(trade.entryPrice) : "",
     score: trade.score != null ? String(trade.score) : "0",
@@ -102,16 +106,16 @@ async function closeShadowIfStale() {
 async function getOpts() {
   return new Promise((resolve) => {
     chrome.storage.local.get(
-      ["tcBackend", "tcApiToken", "tcAuto", "tcSymbols", "tcTimeframe", "tcDirection", "tcHorizon"],
+      ["tcBackend", "tcApiToken", "tcAuto", "tcSymbols", "tcDirection"],
       (s) => {
         resolve({
           backend: s.tcBackend || "http://127.0.0.1:8788",
           apiToken: s.tcApiToken || "",
           auto: !!s.tcAuto,
-          symbols: Array.isArray(s.tcSymbols) && s.tcSymbols.length ? s.tcSymbols : ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
-          timeframe: s.tcTimeframe || "1h",
+          symbols: Array.isArray(s.tcSymbols) && s.tcSymbols.length ? s.tcSymbols : ["EURUSD", "GBPUSD", "USDJPY"],
+          timeframe: TRACE_1M_TIMEFRAME,
           direction: s.tcDirection || "up",
-          horizon: s.tcHorizon || 12,
+          horizon: TRACE_1M_HORIZON,
         });
       },
     );
@@ -339,7 +343,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return;
     }
     if (msg.type === "tc.setOpts") {
-      for (const k of ["backend", "apiToken", "auto", "symbols", "timeframe", "direction", "horizon"]) {
+      for (const k of ["backend", "apiToken", "auto", "symbols", "direction"]) {
         if (k in (msg.payload || {})) {
           await setOpt("tc" + k[0].toUpperCase() + k.slice(1), msg.payload[k]);
         }

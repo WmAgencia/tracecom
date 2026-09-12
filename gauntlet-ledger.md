@@ -1,3 +1,13 @@
+## TRACE_1M repository and extension wave (2026-09-11)
+
+| item | iter | verdict | evidence | next action |
+| --- | --- | --- | --- | --- |
+| GitHub research | 1 | PASS | `research/github-quant-research.md` audits eight relevant repositories with license and leakage boundaries | Revisit provider choices only with verified quote/tick access |
+| TRACE_1M contract | 1 | PASS | Active research is 60 seconds; extension fixes backend calls, shadow records and expiry to `1m` / one candle | Keep older artifacts historical only |
+| Gate and leakage | 1 | PASS | Production 70 gate remains fail-closed; current 1m Yahoo holdout has negative EV | WAIT until genuinely sufficient OOS evidence exists |
+| Extension usability | 1 | PASS | v0.3.0 shows asset, 1 MIN, decision, calibrated confidence and WAIT countdown reset | Browser E2E on live chart is external |
+| Release gates | 1 | PASS | typecheck, full 496-pass suite, extension checks, build and ZIP passed; independent agents unavailable due quota | Commit, push, publish asset and read back |
+
 # TRACECON — Gauntlet Ledger
 
 **Modo**: autônomo

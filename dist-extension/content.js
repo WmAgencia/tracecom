@@ -82,23 +82,9 @@
   }
 
   function detectTimeframe() {
-    // TradingView: interval in URL or local storage
-    let m = location.href.match(/interval[\/=]([0-9]+[mhd]?)/i);
-    if (m) return normalizeTimeframe(m[1]);
-    const ls = localStorage.getItem("tradingview.chart.lastUsedInterval") ||
-               localStorage.getItem("chart-settings");
-    if (ls) {
-      m = ls.match(/["']interval["']\s*:\s*["']?([0-9]+[mhd]?)["']?/i);
-      if (m) return normalizeTimeframe(m[1]);
-    }
-    return "1h";
-  }
-
-  function normalizeTimeframe(raw) {
-    const s = String(raw).toLowerCase();
-    if (/^\d+$/.test(s)) return s + "m"; // TradingView sometimes uses "60" for 1h
-    if (/^\d+[mhd]$/.test(s)) return s;
-    return "1h";
+    // TRACE_1M intentionally does not mirror the broker chart interval. The
+    // backend contract and the visible expiry both remain one minute.
+    return "1m";
   }
 
   // ------------------------------------------------------------
@@ -179,6 +165,7 @@
   // legacy ids off-screen because the market/shadow code below still owns them.
   root.querySelector("#tcBar").innerHTML = `
     <div class="tc-identity"><span>Ativo</span><b id="tcSymbol">—</b><i id="tcSymbolSource"></i></div>
+    <div class="tc-timeframe"><span>Janela</span><b>1 MIN</b></div>
     <div class="tc-entry"><span>Entrada</span><b>—</b></div>
     <div class="tc-countdown"><span>Janela</span><strong id="tcCountdown">00:00</strong></div>
     <div class="tc-decision"><div class="tc-signal is-wait" id="tcSignal"><em class="tc-signal-pulse"></em><b id="tcSignalText">WAIT</b></div><small id="tcReason">Analisando mercado</small></div>
@@ -525,7 +512,7 @@
     try {
       const resp = await chrome.runtime.sendMessage({
         type: "tc.analyze",
-        payload: { symbol: detected.symbol, timeframe, direction: "up", horizon: 12, triggeredByTimer },
+        payload: { symbol: detected.symbol, timeframe, direction: "up", horizon: 1, triggeredByTimer },
       });
       if (!resp?.ok) throw new Error(resp?.error || "sem resposta do background");
       setSignal(resp.data.decision, resp.data);

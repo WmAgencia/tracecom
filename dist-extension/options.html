@@ -59,11 +59,7 @@
         <div>
           <label>
             Timeframe padrão
-            <select id="timeframe">
-              <option>1m</option><option>3m</option><option>5m</option>
-              <option>15m</option><option selected>1h</option>
-              <option>4h</option><option>1d</option>
-            </select>
+            <span class="hint"><strong>TRACE_1M:</strong> fixo em 1 minuto.</span>
           </label>
           <label>
             Direção padrão
@@ -73,8 +69,7 @@
             </select>
           </label>
           <label>
-            Horizonte (candles)
-            <input type="number" id="horizon" min="1" max="200" />
+            Horizonte fixo: 1 candle / 60 segundos
           </label>
         </div>
       </div>

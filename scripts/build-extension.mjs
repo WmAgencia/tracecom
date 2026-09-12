@@ -7,9 +7,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const source = path.join(root, "extension");
 const destination = path.join(root, "dist-extension");
 const artifactDir = path.join(root, "dist");
-const zipPath = path.join(artifactDir, "tracecon-extension-v0.2.0.zip");
 const manifestPath = path.join(source, "manifest.json");
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+const zipPath = path.join(artifactDir, `tracecon-extension-v${manifest.version}.zip`);
 
 if (manifest.manifest_version !== 3) throw new Error("A extensão deve usar Manifest V3.");
 if (!manifest.background?.service_worker || !manifest.action?.default_popup) throw new Error("Manifest sem service worker ou popup.");

@@ -9,8 +9,13 @@
 import type { MarketCandle } from "../market/model";
 import { executionCostPct } from "../risk/fees";
 
-export const RESEARCH_HORIZONS_SECONDS = [30, 45, 60, 120, 180, 300] as const;
-export type ResearchHorizonSeconds = typeof RESEARCH_HORIZONS_SECONDS[number];
+/** TRACE_1M is the only active research target. Older horizon artifacts remain
+ * historical evidence, but no new sub-/multi-minute study starts from here. */
+export const TRACE_1M_HORIZON_SECONDS = 60 as const;
+export const RESEARCH_HORIZONS_SECONDS = [TRACE_1M_HORIZON_SECONDS] as const;
+/** Accepted only to preserve provider-limit tests and historical artifact
+ * parsing; the active runner above schedules TRACE_1M alone. */
+export type ResearchHorizonSeconds = 30 | 45 | 60 | 120 | 180 | 300;
 export type ResearchStatus = "COMPLETED" | "PROVIDER_LIMITATION" | "INSUFFICIENT_DATA";
 export type ResearchDirection = "BUY" | "SELL" | "WAIT";
 

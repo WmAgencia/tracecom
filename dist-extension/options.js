@@ -4,16 +4,14 @@ const $ = (id) => document.getElementById(id);
 
 function load() {
   chrome.storage.local.get(
-    ["tcBackend", "tcApiToken", "tcAuto", "tcShadowEnabled", "tcSymbols", "tcTimeframe", "tcDirection", "tcHorizon"],
+    ["tcBackend", "tcApiToken", "tcAuto", "tcShadowEnabled", "tcSymbols", "tcDirection"],
     (s) => {
       $("backend").value = s.tcBackend || "http://127.0.0.1:8788";
       $("apiToken").value = s.tcApiToken || "";
       $("auto").checked = !!s.tcAuto;
       $("shadow").checked = !!s.tcShadowEnabled;
-      $("symbols").value = (s.tcSymbols || ["BTCUSDT", "ETHUSDT", "SOLUSDT"]).join("\n");
-      $("timeframe").value = s.tcTimeframe || "1h";
+      $("symbols").value = (s.tcSymbols || ["EURUSD", "GBPUSD", "USDJPY"]).join("\n");
       $("direction").value = s.tcDirection || "up";
-      $("horizon").value = s.tcHorizon || 12;
     },
   );
 }
@@ -28,9 +26,7 @@ function save() {
       .split(/\r?\n/)
       .map((s) => s.trim().toUpperCase())
       .filter(Boolean),
-    tcTimeframe: $("timeframe").value,
     tcDirection: $("direction").value,
-    tcHorizon: Number($("horizon").value) || 12,
   };
   chrome.storage.local.set(opts, () => {
     chrome.runtime.sendMessage({ type: "tc.setOpts", payload: opts });
