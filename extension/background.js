@@ -1,7 +1,7 @@
 /* TRACE/CON — service worker (background).
  *
  * Funções:
- *   - chama o backend TRACECON em http://127.0.0.1:8788/api/analyze
+ *   - executa TRACE_1M localmente; sync remoto é opcional e nunca participa do sinal
  *   - agenda alarm a cada 30s quando auto-update está on
  *   - armazena último sinal por ativo (signalStore)
  *   - notifica todas as abas com o resultado
@@ -28,6 +28,7 @@ const apiHeaders = (opts, extra = {}) => ({
 });
 const TRACE_PREFIX = "[TRACE_CON]";
 const IQ_MARKET_KEY = "tcIqMarketStore";
+const REMOTE_STATE_KEY = "tcRemoteApiState";
 
 function traceLog(scope, message, meta = {}) {
   console.info(`${TRACE_PREFIX}[${scope}] ${message}`, meta);
@@ -38,6 +39,34 @@ function traceError(scope, operation, error, extra = {}) {
   const result = { component: scope, operation, errorClass: "NETWORK_ERROR", message, timestamp: Date.now(), ...extra };
   console.warn(`${TRACE_PREFIX}[${scope}] ${operation} failed`, result);
   return result;
+}
+
+function remoteErrorClass(error) {
+  const message = String(error?.message || error || "");
+  return /cors/i.test(message) ? "REMOTE_API_CORS_ERROR" : "REMOTE_API_OFFLINE";
+}
+async function remoteState(patch = {}) {
+  const prior = await new Promise((resolve) => chrome.storage.local.get([REMOTE_STATE_KEY], (s) => resolve(s[REMOTE_STATE_KEY] || { status: "REMOTE_API_DISABLED", enabled: false })));
+  const next = { ...prior, ...patch, updatedAt: Date.now() };
+  await new Promise((resolve) => chrome.storage.local.set({ [REMOTE_STATE_KEY]: next }, resolve));
+  return next;
+}
+async function remoteFetch(opts, caller, url, init) {
+  if (!opts.remoteApiEnabled || !opts.backend) return { ok: false, disabled: true, state: await remoteState({ enabled: false, status: "REMOTE_API_DISABLED", url: null, error: null }) };
+  const timeoutMs = init.timeoutMs || 5_000;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  traceLog("REMOTE_API", "request", { method: init.method || "GET", url, caller, timestamp: Date.now(), timeoutMs });
+  try {
+    const response = await fetch(url, { ...init, signal: ctrl.signal });
+    const state = await remoteState({ enabled: true, status: response.ok ? "REMOTE_API_ONLINE" : "REMOTE_API_OFFLINE", url, error: response.ok ? null : `HTTP ${response.status}`, httpStatus: response.status, caller });
+    return { ok: response.ok, response, state };
+  } catch (error) {
+    const errorClass = error?.name === "AbortError" ? "REMOTE_API_TIMEOUT" : remoteErrorClass(error);
+    const detail = { url, caller, errorClass, name: error?.name || "Error", message: String(error?.message || error), stack: error?.stack || null, timestamp: Date.now() };
+    console.warn(`${TRACE_PREFIX}[REMOTE_API][ERROR]`, detail);
+    return { ok: false, error, state: await remoteState({ enabled: true, status: "REMOTE_API_OFFLINE", url, error: `${detail.name}: ${detail.message}`, errorClass, caller }) };
+  } finally { clearTimeout(timer); }
 }
 
 async function readLocalMarket() {
@@ -86,7 +115,8 @@ async function readShadowOpen() {
 }
 async function postShadowToBackend(trade, opts) {
   if (!trade) return { ok: false, error: "no_trade" };
-  const backend = (opts.backend || "http://127.0.0.1:8788").replace(/\/$/, "");
+  if (!opts.remoteApiEnabled || !opts.backend) return { ok: false, disabled: true, remoteApi: "REMOTE_API_DISABLED" };
+  const backend = opts.backend.replace(/\/$/, "");
   // Tenta primeiro POST /api/analytics/shadow (rota dedicada, se existir).
   // Fallback: usa POST /api/analytics/record.
   const params = new URLSearchParams({
@@ -108,21 +138,23 @@ async function postShadowToBackend(trade, opts) {
   if (trade.exitPrice != null) params.set("exitPrice", String(trade.exitPrice));
   // tenta POST primeiro
   try {
-    const r = await fetch(`${backend}/api/analytics/shadow`, {
+    const request = await remoteFetch(opts, "shadow-sync", `${backend}/api/analytics/shadow`, {
       method: "POST",
       headers: apiHeaders(opts, { "content-type": "application/json" }),
       body: JSON.stringify(trade),
+      timeoutMs: 5_000,
     });
-    if (r.ok) return { ok: true, route: "shadow", data: await r.json().catch(() => null) };
+    if (request.ok) return { ok: true, route: "shadow", data: await request.response.json().catch(() => null) };
   } catch (e) { /* cai no fallback */ }
   // fallback: POST /api/analytics/record
   try {
-    const r = await fetch(`${backend}/api/analytics/record?${params.toString()}`, {
+    const request = await remoteFetch(opts, "shadow-record-sync", `${backend}/api/analytics/record?${params.toString()}`, {
       method: "POST",
       headers: apiHeaders(opts),
+      timeoutMs: 5_000,
     });
-    if (r.ok) return { ok: true, route: "record", data: await r.json().catch(() => null) };
-    return { ok: false, error: `HTTP ${r.status}` };
+    if (request.ok) return { ok: true, route: "record", data: await request.response.json().catch(() => null) };
+    return { ok: false, error: request.state?.error || "remote sync unavailable" };
   } catch (e) {
     return { ok: false, error: String(e?.message || e) };
   }
@@ -142,9 +174,9 @@ async function closeShadowIfStale() {
   await new Promise((resolve) => {
     chrome.storage.local.set({ tcShadowOn: null, tcShadow: null }, resolve);
   });
-  // envia pro backend
+  // Sync remoto é estritamente secundário; o histórico local já foi preservado.
   const opts = await getOpts();
-  await postShadowToBackend(closed, opts);
+  postShadowToBackend(closed, opts).catch(() => null);
   // notifica tabs para atualizarem badge
   await broadcast({ type: "tc.shadowClosed", payload: closed });
 }
@@ -155,10 +187,11 @@ async function closeShadowIfStale() {
 async function getOpts() {
   return new Promise((resolve) => {
     chrome.storage.local.get(
-      ["tcBackend", "tcApiToken", "tcAuto", "tcSymbols", "tcDirection"],
+      ["tcBackend", "tcApiToken", "tcAuto", "tcSymbols", "tcDirection", "tcRemoteApiEnabled"],
       (s) => {
         resolve({
-          backend: s.tcBackend || "http://127.0.0.1:8788",
+          backend: typeof s.tcBackend === "string" && s.tcBackend.trim() ? s.tcBackend.trim().replace(/\/$/, "") : null,
+          remoteApiEnabled: s.tcRemoteApiEnabled === true && typeof s.tcBackend === "string" && /^https?:\/\//i.test(s.tcBackend),
           apiToken: s.tcApiToken || "",
           auto: !!s.tcAuto,
           symbols: Array.isArray(s.tcSymbols) && s.tcSymbols.length ? s.tcSymbols : ["EURUSD", "GBPUSD", "USDJPY"],
@@ -178,42 +211,26 @@ async function setOpt(key, value) {
 }
 
 // ------------------------------------------------------------
-// API client
+// Local signal path — deliberately zero HTTP.
 // ------------------------------------------------------------
-async function callAnalyze(symbol, timeframe, direction, horizon, backend, opts) {
-  const url = `${backend.replace(/\/$/, "")}/api/analyze?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}&direction=${encodeURIComponent(direction)}&horizon=${encodeURIComponent(horizon)}`;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 8_000);
-  let r;
-  try {
-    r = await fetch(url, { method: "GET", headers: apiHeaders(opts), signal: ctrl.signal });
-  } catch (error) {
-    const diagnostic = traceError("NETWORK", "analyze", error, { url, errorClass: error?.name === "AbortError" ? "TIMEOUT" : "TRACE_API_UNREACHABLE" });
-    return { ...(await localAnalyze(symbol)), diagnostic, backend: "UNREACHABLE" };
-  } finally { clearTimeout(timer); }
-  if (!r.ok) {
-    const t = await r.text().catch(() => "");
-    return { ...(await localAnalyze(symbol)), diagnostic: { component: "NETWORK", operation: "analyze", errorClass: "INVALID_RESPONSE", message: t.slice(0, 120), httpStatus: r.status, url, timestamp: Date.now() }, backend: "HTTP_ERROR" };
-  }
-  try { return await r.json(); }
-  catch (error) { return { ...(await localAnalyze(symbol)), diagnostic: traceError("NETWORK", "analyze-response", error, { errorClass: "INVALID_RESPONSE", url }), backend: "HTTP_ERROR" }; }
+async function callAnalyze(symbol) {
+  return { ...(await localAnalyze(symbol)), backend: "LOCAL", remoteApi: await remoteState() };
 }
 
 async function forwardIqMarket(frame, tabId, backend, opts) {
+  if (!opts.remoteApiEnabled || !backend) return { ok: false, disabled: true, state: await remoteState({ enabled: false, status: "REMOTE_API_DISABLED", url: null, error: null }) };
   // Frame is already whitelisted/normalized by the bridge. Do not forward raw
   // page messages, cookies, credentials, SSID, account or trade information.
   const body = { ...frame, tabId, receivedAt: Number(frame.receivedAt) || Date.now() };
   try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 5_000);
-    const r = await fetch(`${backend.replace(/\/$/, "")}/api/iq-option/ingest`, {
-      method: "POST", headers: apiHeaders(opts, { "content-type": "application/json" }), body: JSON.stringify(body), signal: ctrl.signal,
+    const request = await remoteFetch(opts, "iq-market-sync", `${backend.replace(/\/$/, "")}/api/iq-option/ingest`, {
+      method: "POST", headers: apiHeaders(opts, { "content-type": "application/json" }), body: JSON.stringify(body),
+      timeoutMs: 5_000,
     });
-    clearTimeout(timer);
-    if (!r.ok) return { ok: false, diagnostic: { component: "NETWORK", operation: "iq-option/ingest", errorClass: "TRACE_API_UNREACHABLE", message: `HTTP ${r.status}`, httpStatus: r.status, timestamp: Date.now() } };
+    if (!request.ok) return { ok: false, diagnostic: { component: "REMOTE_API", operation: "iq-option/ingest", errorClass: request.state?.errorClass || "REMOTE_API_OFFLINE", message: request.state?.error || "remote sync unavailable", url: request.state?.url || null, timestamp: Date.now() } };
     return { ok: true };
   } catch (error) {
-    return { ok: false, diagnostic: traceError("NETWORK", "iq-option/ingest", error, { errorClass: error?.name === "AbortError" ? "TIMEOUT" : "TRACE_API_UNREACHABLE" }) };
+    return { ok: false, diagnostic: traceError("REMOTE_API", "iq-option/ingest", error, { errorClass: remoteErrorClass(error) }) };
   }
 }
 
@@ -228,20 +245,13 @@ async function patchIqDiagnostics(tabId, patch) {
   await new Promise((resolve) => chrome.storage.local.set({ tcIqDiagnostics: tabs }, resolve));
   return tabs[String(tabId)];
 }
-async function backendHealth(backend) {
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 2_000);
-    const response = await fetch(`${backend.replace(/\/$/, "")}/health`, { headers: { accept: "application/json" }, signal: ctrl.signal });
-    clearTimeout(timer);
-    return { online: response.ok };
-  } catch { return { online: false }; }
-}
 async function extensionDiagnostics() {
-  const opts = await getOpts();
   const current = await readIqDiagnostics();
   const tabs = Object.values(current.tabs).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-  return { ...(tabs[0] || {}), downbarEnabled: current.downbarEnabled, backend: await backendHealth(opts.backend) };
+  const remoteApi = await remoteState();
+  const local = await readLocalMarket();
+  const activeMarket = Object.values(local).sort((a, b) => (b.lastFrameAt || 0) - (a.lastFrameAt || 0))[0] || null;
+  return { ...(tabs[0] || {}), downbarEnabled: current.downbarEnabled, remoteApi, backend: { online: remoteApi.status === "REMOTE_API_ONLINE" }, states: { iqAdapter: tabs[0]?.bridgeActive ? "LIVE" : "WAITING", marketData: activeMarket ? "LIVE" : "WAITING", localEngine: "READY", shadowEngine: "ACTIVE", history: "READY", remoteApi: remoteApi.status }, market: activeMarket ? { price: activeMarket.lastPrice ?? null, candles: activeMarket.candles?.length || 0, ticks: activeMarket.ticks?.length || 0 } : { price: null, candles: 0, ticks: 0 } };
 }
 
 // ------------------------------------------------------------
@@ -376,9 +386,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const localItem = await readLocalMarket();
         const experimentItem = localItem[String(msg.payload?.symbol || "").toUpperCase()];
         if (experimentItem) await ProgressiveExperimentRunner.ingest(experimentItem, sender.tab.id);
-        await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: true, lastIngestError: null, networkStatus: "LOCAL_FALLBACK" });
+        await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: true, lastIngestError: null, networkStatus: "LOCAL_SHADOW_ACTIVE" });
         // Remote ingestion is observational and must never delay local shadow.
-        forwardIqMarket(msg.payload, sender.tab.id, opts.backend, opts).then((upstream) => patchIqDiagnostics(sender.tab.id, { lastIngestError: upstream.ok ? null : upstream.diagnostic?.message || "backend unavailable", networkStatus: upstream.ok ? "BACKEND_SYNCED" : "LOCAL_FALLBACK" })).catch(() => null);
+        if (opts.remoteApiEnabled) forwardIqMarket(msg.payload, sender.tab.id, opts.backend, opts).then((upstream) => patchIqDiagnostics(sender.tab.id, { remoteSync: upstream.ok ? "SYNCED" : "OFFLINE" })).catch(() => null);
         await chrome.tabs.sendMessage(sender.tab.id, { type: "tc.iq.marketAccepted", payload: { symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null } }).catch(() => null);
         sendResponse({ ok: true });
       } catch (e) {
@@ -421,7 +431,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return;
     }
     if (msg.type === "tc.setOpts") {
-      for (const k of ["backend", "apiToken", "auto", "symbols", "direction"]) {
+      for (const k of ["backend", "apiToken", "auto", "symbols", "direction", "remoteApiEnabled"]) {
         if (k in (msg.payload || {})) {
           await setOpt("tc" + k[0].toUpperCase() + k.slice(1), msg.payload[k]);
         }
@@ -437,11 +447,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === "tc.shadowOpen") {
       const trade = msg.payload;
       const opts = await getOpts();
-      const result = await postShadowToBackend(trade, opts);
-      sendResponse(result);
+      if (opts.remoteApiEnabled) postShadowToBackend(trade, opts).catch(() => null);
+      sendResponse({ ok: true, localOnly: true, remoteApi: opts.remoteApiEnabled ? "QUEUED" : "REMOTE_API_DISABLED" });
       return;
     }
-    if (msg.type === "tc.experiment.start") { sendResponse({ ok: true, data: await ProgressiveExperimentRunner.start() }); return; }
+    if (msg.type === "tc.experiment.start") {
+      const diagnostics = await extensionDiagnostics();
+      if (diagnostics.states.iqAdapter !== "LIVE" || diagnostics.states.marketData !== "LIVE") {
+        sendResponse({ ok: false, error: "IQ_MARKET_NOT_READY", data: diagnostics });
+        return;
+      }
+      sendResponse({ ok: true, data: await ProgressiveExperimentRunner.start() });
+      return;
+    }
     if (msg.type === "tc.experiment.pause") { sendResponse({ ok: true, data: await ProgressiveExperimentRunner.pause() }); return; }
     if (msg.type === "tc.experiment.resume") { sendResponse({ ok: true, data: await ProgressiveExperimentRunner.resume() }); return; }
     if (msg.type === "tc.experiment.stop") { sendResponse({ ok: true, data: await ProgressiveExperimentRunner.stop() }); return; }

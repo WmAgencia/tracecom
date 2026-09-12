@@ -2,14 +2,17 @@ const $ = (id) => document.getElementById(id);
 const set = (id, text, tone = "muted") => { const el = $(id); if (el) { el.textContent = text; el.dataset.tone = tone; } };
 const ago = (timestamp) => timestamp ? `${Math.max(0, Math.round((Date.now() - timestamp) / 1000))}s atrás` : "sem eventos";
 function renderDiagnostics(diag) {
-  const backend = diag.backend || { online: false };
-  set("backendStatus", backend.online ? "CONECTADO" : "OFFLINE", backend.online ? "good" : "bad");
+  const remote = diag.remoteApi || { status: "REMOTE_API_DISABLED", enabled: false };
+  const remoteLabel = remote.status === "REMOTE_API_ONLINE" ? "ONLINE" : remote.status === "REMOTE_API_DISABLED" ? "DISABLED" : "OFFLINE";
+  set("backendStatus", remoteLabel, remoteLabel === "ONLINE" ? "good" : remoteLabel === "DISABLED" ? "muted" : "warn");
+  set("localEngineStatus", diag.states?.localEngine || "READY", "good");
+  set("shadowStatus", diag.states?.shadowEngine || "ACTIVE", "good");
   set("iqStatus", diag.pageDetected ? "DETECTADA" : "NÃO DETECTADA", diag.pageDetected ? "good" : "muted");
   const age = diag.lastIngestAt ? Date.now() - diag.lastIngestAt : Infinity;
-  const feed = diag.networkStatus === "LOCAL_FALLBACK" ? "LOCAL SHADOW" : !diag.pageDetected ? "OFFLINE" : !diag.lastIngestAt ? "WAITING" : age <= 45000 && diag.lastIngestOk ? "HEALTHY" : "STALE";
+  const feed = diag.networkStatus === "LOCAL_SHADOW_ACTIVE" || diag.networkStatus === "LOCAL_FALLBACK" ? "LOCAL SHADOW" : !diag.pageDetected ? "OFFLINE" : !diag.lastIngestAt ? "WAITING" : age <= 45000 && diag.lastIngestOk ? "HEALTHY" : "STALE";
   set("feedStatus", feed, feed === "HEALTHY" ? "good" : feed.includes("LOCAL") || feed === "WAITING" || feed === "STALE" ? "warn" : "bad");
   set("symbolStatus", diag.symbol || "—"); set("timeframeStatus", diag.timeframe || "—");
-  const steps = [`PAGE DETECTED: ${diag.pageDetected ? "OK" : "aguardando"}`, `BRIDGE: ${diag.bridgeActive ? "CONNECTED" : "DISCONNECTED"}`, `ASSET: ${diag.symbol || "aguardando"}`, `FRAME: ${diag.lastFrameAt ? ago(diag.lastFrameAt) : "aguardando"}`, `REMOTE API: ${diag.networkStatus || "aguardando"}`, `LAST ERROR: ${diag.lastIngestError || "none"}`];
+  const steps = [`IQ PAGE: ${diag.pageDetected ? "DETECTED" : "WAITING"}`, `BRIDGE: ${diag.bridgeActive ? "CONNECTED" : "DISCONNECTED"}`, `ASSET: ${diag.symbol || "NOT_AVAILABLE"}`, `PRICE: ${diag.market?.price ?? "NOT_AVAILABLE"}`, `CANDLES: ${diag.market?.candles ?? 0}`, `IQ DATA: ${diag.states?.marketData || "WAITING"}`, `LOCAL ENGINE: ${diag.states?.localEngine || "READY"}`, `SHADOW: ${diag.states?.shadowEngine || "ACTIVE"}`, `REMOTE API: ${remoteLabel}${remote.url ? ` (${remote.url})` : ""}`, `REMOTE API ERROR: ${remote.error || "none"}`];
   $("diagnosticList").replaceChildren(...steps.map((step) => { const item = document.createElement("li"); item.textContent = step; return item; }));
 }
 function renderExperiment(state) {

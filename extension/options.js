@@ -4,9 +4,10 @@ const $ = (id) => document.getElementById(id);
 
 function load() {
   chrome.storage.local.get(
-    ["tcBackend", "tcApiToken", "tcAuto", "tcShadowEnabled", "tcSymbols", "tcDirection"],
+    ["tcBackend", "tcApiToken", "tcAuto", "tcShadowEnabled", "tcSymbols", "tcDirection", "tcRemoteApiEnabled"],
     (s) => {
-      $("backend").value = s.tcBackend || "http://127.0.0.1:8788";
+      $("backend").value = s.tcBackend || "";
+      $("remoteApiEnabled").checked = s.tcRemoteApiEnabled === true;
       $("apiToken").value = s.tcApiToken || "";
       $("auto").checked = !!s.tcAuto;
       $("shadow").checked = s.tcShadowEnabled !== false;
@@ -18,7 +19,8 @@ function load() {
 
 function save() {
   const opts = {
-    tcBackend: $("backend").value.trim().replace(/\/$/, "") || "http://127.0.0.1:8788",
+    tcBackend: $("backend").value.trim().replace(/\/$/, ""),
+    tcRemoteApiEnabled: $("remoteApiEnabled").checked,
     tcApiToken: $("apiToken").value.trim(),
     tcAuto: $("auto").checked,
     tcShadowEnabled: $("shadow").checked,

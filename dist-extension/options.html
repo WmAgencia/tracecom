@@ -14,16 +14,20 @@
 
   <main>
     <section>
-      <h2>Backend</h2>
+      <h2>Sincronização remota opcional</h2>
+      <label class="row">
+        <input type="checkbox" id="remoteApiEnabled" />
+        <span>Ativar sync remoto de diagnóstico e histórico</span>
+      </label>
       <label>
-        URL do servidor TRACECON (deve estar rodando local)
-        <input type="text" id="backend" placeholder="http://127.0.0.1:8788" />
+        URL remota explícita (opcional)
+        <input type="text" id="backend" placeholder="https://seu-servidor.example" />
       </label>
       <label>
         Token da API (opcional)
         <input type="password" id="apiToken" autocomplete="off" placeholder="TRACECON_API_TOKEN" />
       </label>
-      <p class="hint">Rode <code>npm run serve</code> no projeto TRACECON. A extensão só funciona contra esse backend local.</p>
+      <p class="hint">Desligado por padrão. A IQ Option, o motor local, os sinais Shadow e o experimento funcionam sem servidor, localhost ou API.</p>
     </section>
 
     <section>
@@ -44,8 +48,8 @@
       <p class="hint">
         Shadow trading <strong>não executa ordens</strong>. Apenas observa: registra a entrada
         no momento do sinal e calcula P&amp;L em tempo real contra o preço atual.
-        Cada entrada é registrada imediatamente no backend e avaliada após 60 segundos
-        usando somente candles recebidos da sessão da IQ Option.
+        Cada entrada é persistida localmente e avaliada após 60 segundos usando somente
+        candles recebidos da sessão da IQ Option.
       </p>
     </section>
 
@@ -79,7 +83,7 @@
       <h2>Sobre</h2>
       <p class="hint">
         TRACE/CON é uma ferramenta de <strong>análise</strong>, não é corretora e não executa ordens.
-        A extensão lê o sinal do backend TRACECON local e mostra na down-bar.
+        A extensão calcula o sinal TRACE_1M localmente e mostra na down-bar.
         <strong>Você clica o botão BUY/SELL na corretora</strong> quando decidir.
       </p>
     </section>
