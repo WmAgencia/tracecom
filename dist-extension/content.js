@@ -310,6 +310,12 @@
         exitPrice: currentPrice ?? t.currentPrice ?? null,
         closeReason: reason,
       };
+      const entry = Number(closed.entryPrice);
+      const exit = Number(closed.exitPrice);
+      const rawReturn = Number.isFinite(entry) && entry > 0 && Number.isFinite(exit) ? (exit - entry) / entry : null;
+      const signedReturn = rawReturn === null ? null : closed.decision === "SELL" ? -rawReturn : rawReturn;
+      closed.outcome = signedReturn === null ? "UNKNOWN" : Math.abs(signedReturn) < 0.00001 ? "DRAW" : signedReturn > 0 ? "WIN" : "LOSS";
+      closed.returnPct = signedReturn === null ? null : signedReturn * 100;
       // empurra pro histórico e limpa o aberto
       chrome.storage.local.get(["tcShadowHistory"], (h) => {
         const history = Array.isArray(h.tcShadowHistory) ? h.tcShadowHistory : [];

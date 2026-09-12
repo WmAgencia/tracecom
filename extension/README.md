@@ -19,7 +19,8 @@ From the repository root, run `npm run build:extension`. This produces
 When the local backend is offline, IQ Option frames remain in the browser and
 the service worker runs a conservative local shadow analysis. The downbar shows
 `LOCAL SHADOW` and the popup exposes the classified network error; no order
-action is available in either mode.
+action is available in either mode. Local history records `WIN`, `LOSS`,
+`DRAW` or `UNKNOWN` after the 60-second observation window.
 Extract the ZIP, then load that extracted folder using Chrome or Edge's **Load
 unpacked** command. For a non-technical walkthrough, see
 `../INSTALL-EXTENSION.md` or run `../INSTALL-TRACECON-EXTENSION.bat`.
