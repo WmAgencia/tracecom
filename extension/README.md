@@ -1,6 +1,6 @@
 # TraceCon Browser Extension
 
-Version 0.4.8 adds a privacy-preserving ASSET DEBUG panel with a concrete chart-header observer, a `DOM_RESOLVED` state, and explicit rejection of placeholder `activeId: 0`. It still requires a dual confirmation gate (visible asset plus active-ID registry) before a shadow signal. **TRACE_1M**: analysis and expiry are fixed to one minute, the
+Version 0.4.9 adds a privacy-preserving protocol trace: redacted inbound/outbound market subscriptions, catalog metadata and binary-frame diagnostics. It still requires a dual confirmation gate (current-instrument evidence plus active-ID registry) before a shadow signal. **TRACE_1M**: analysis and expiry are fixed to one minute, the
 downbar shows a calibrated signal state, and BUY/SELL remains conditional on
 the backend production gate. The extension is analysis + shadow validation;
 manual execution remains with the user.
@@ -9,12 +9,12 @@ The TraceCon extension is a Manifest V3, local-development extension. It adds a 
 
 ## IQ Option safety boundary
 
-The IQ bridge is read-only. It observes only incoming `candle-generated` WebSocket events, then forwards an allowlisted numeric candle frame to the local TraceCon backend. It never reads credentials, cookies, local/session storage, SSID, account data, or outgoing WebSocket messages. It never clicks or submits BUY/SELL orders.
+The IQ bridge is read-only. It observes allowlisted market projections from incoming frames and outgoing market subscriptions, plus bounded market-related fetch responses. It never forwards raw payloads, credentials, cookies, local/session storage, account data, or authentication fields. It never clicks or submits BUY/SELL orders.
 
 ## Build and install
 
 From the repository root, run `npm run build:extension`. This produces
-`dist/tracecon-extension-v0.4.8.zip` and the unpacked `dist-extension` folder.
+`dist/tracecon-extension-v0.4.9.zip` and the unpacked `dist-extension` folder.
 
 When the local backend is offline, IQ Option frames remain in the browser and
 the service worker runs a conservative local shadow analysis. The downbar shows

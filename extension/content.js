@@ -47,6 +47,15 @@
         publishAssetDebug("websocket-metadata", { eventName: data.payload.eventName || null, activeIds: data.payload.activeIds || [] });
         return;
       }
+      if (data.payload.type === "protocol-event") {
+        const signal = data.payload;
+        const activeIds = Array.isArray(signal.activeIds) ? signal.activeIds.map((activeId) => ({ activeId, symbol: null })) : [];
+        const scope = signal.direction === "OUT" ? "WS_OUT" : "WS_IN";
+        console.info(`[TRACE_CON][${scope}]`, { transport: signal.transport, eventName: signal.eventName, activeIds: signal.activeIds || [], symbols: signal.symbols || [], fields: signal.fields || {} });
+        publishAssetDebug("market-protocol", { eventName: signal.eventName, activeIds, symbols: signal.symbols || [], direction: signal.direction, transport: signal.transport, fields: signal.fields || {} });
+        chrome.runtime.sendMessage({ type: "tc.iq.protocol", payload: { direction: signal.direction, transport: signal.transport, eventName: signal.eventName, activeIds: signal.activeIds || [], symbols: signal.symbols || [], fields: signal.fields || {}, timestamp: signal.timestamp || Date.now() } });
+        return;
+      }
       const context = detectAsset(data.payload.activeId);
       if (data.payload.type === "bridge-ready") {
         chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, activeId: data.payload.activeId ?? null, assetMismatch: !!context?.assetMismatch, assetResolutionConfidence: context?.confidence || 0, timeframe: detectTimeframe() } });

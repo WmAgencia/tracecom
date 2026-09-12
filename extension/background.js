@@ -434,6 +434,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sendResponse({ ok: true });
       return;
     }
+    if (msg.type === "tc.iq.protocol") {
+      if (!sender.tab?.id || !sender.tab.url || !/^https:\/\/([a-z0-9-]+\.)?iqoption\.com\//i.test(sender.tab.url)) { sendResponse({ ok: false, error: "untrusted_iq_sender" }); return; }
+      const signal = msg.payload || {};
+      const direction = signal.direction === "OUT" ? "WS_OUT" : "WS_IN";
+      traceLog(direction, "redacted market protocol", { tabId: sender.tab.id, transport: signal.transport, eventName: String(signal.eventName || "unknown").slice(0, 80), activeIds: Array.isArray(signal.activeIds) ? signal.activeIds.filter((id) => Number.isSafeInteger(Number(id)) && Number(id) > 0).slice(0, 24) : [], symbols: Array.isArray(signal.symbols) ? signal.symbols.filter((value) => typeof value === "string").map((value) => value.slice(0, 48)).slice(0, 24) : [] });
+      sendResponse({ ok: true });
+      return;
+    }
     if (msg.type === "tc.iq.market") {
       if (!sender.tab?.id || !sender.tab.url || !/^https:\/\/([a-z0-9-]+\.)?iqoption\.com\//i.test(sender.tab.url)) {
         sendResponse({ ok: false, error: "untrusted_iq_sender" });
