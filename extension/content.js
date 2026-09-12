@@ -276,19 +276,38 @@
     shadowPnlEl.style.display = "";
     shadowPnlValEl.style.color = signed >= 0 ? "#4ADE80" : "#F87171";
   }
+  function nextShadowRunMeta(callback) {
+    chrome.storage.local.get(["tcShadowHistory"], (stored) => {
+      const completed = (Array.isArray(stored.tcShadowHistory) ? stored.tcShadowHistory : []).filter((x) => ["WIN", "LOSS", "DRAW"].includes(x.outcome)).length;
+      callback(`RUN-${String.fromCharCode(65 + Math.min(25, Math.floor(completed / 100)))}`, completed % 100 + 1);
+    });
+  }
   function openShadowTrade(decision, payload) {
     const entryPrice = payload?.currentPrice;
     if (entryPrice == null || !Number.isFinite(entryPrice)) return;
+    nextShadowRunMeta((runId, tradeNumber) => {
     const trade = {
       symbol: payload.symbol || symbolEl.textContent || null,
+      asset: payload.symbol || symbolEl.textContent || null,
+      domain: /OTC/i.test(payload.symbol || symbolEl.textContent || "") ? "FOREX/OTC" : "IQ_OPTION",
       timeframe: tfEl.textContent || null,
       direction: payload.direction || "up",
       decision,
       entryTime: Date.now(),
+      entryTimestamp: Date.now(),
       entryPrice,
       currentPrice: entryPrice,
       confidence: payload?.confidence ?? null,
       probability: payload?.probability?.probability ?? payload?.calibration?.calibratedProb ?? null,
+      signalId: `shadow-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      runId,
+      tradeNumber,
+      strategyVersion: payload?.strategyVersion || "trace1m-local-v1",
+      signature: payload?.signature || null,
+      features: payload?.features ? { ...payload.features } : {},
+      reasons: Array.isArray(payload?.reasons) ? [...payload.reasons] : [],
+      counterReasons: Array.isArray(payload?.counterReasons) ? [...payload.counterReasons] : [],
+      snapshot: payload?.snapshot ? JSON.parse(JSON.stringify(payload.snapshot)) : null,
     };
     chrome.storage.local.set({ tcShadowOn: trade, tcShadow: trade }, () => {
       applyShadowBadge();
@@ -298,6 +317,7 @@
           if (state.tcShadowOn?.entryTime === trade.entryTime) closeShadowTrade("expiry_60s", state.tcShadowOn.currentPrice);
         });
       }, 60_250);
+    });
     });
   }
   function closeShadowTrade(reason, currentPrice) {
@@ -316,12 +336,14 @@
       const signedReturn = rawReturn === null ? null : closed.decision === "SELL" ? -rawReturn : rawReturn;
       closed.outcome = signedReturn === null ? "UNKNOWN" : Math.abs(signedReturn) < 0.00001 ? "DRAW" : signedReturn > 0 ? "WIN" : "LOSS";
       closed.returnPct = signedReturn === null ? null : signedReturn * 100;
+      closed.exitTimestamp = closed.exitTime;
+      closed.postAnalysis = { outcome: closed.outcome, returnPct: closed.returnPct, evaluatedAt: closed.exitTime, snapshotPreserved: true };
       // empurra pro histórico e limpa o aberto
       chrome.storage.local.get(["tcShadowHistory"], (h) => {
         const history = Array.isArray(h.tcShadowHistory) ? h.tcShadowHistory : [];
         history.push(closed);
         // mantém últimos 50
-        while (history.length > 50) history.shift();
+        while (history.length > 1000) history.shift();
         chrome.storage.local.set(
           { tcShadowOn: null, tcShadow: null, tcShadowHistory: history },
           () => {
@@ -434,6 +456,12 @@
               confidence: payload?.confidence,
               probability: payload?.probability,
               calibration: payload?.calibration,
+              signature: payload?.signature,
+              strategyVersion: payload?.strategyVersion,
+              features: payload?.features,
+              reasons: payload?.reasons,
+              counterReasons: payload?.counterReasons,
+              snapshot: payload?.snapshot,
             });
           } else {
             // já existe: atualiza currentPrice e verifica se mudou de direção/símbolo/TF
