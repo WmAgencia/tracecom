@@ -24,6 +24,7 @@ for (const forbidden of ["document.cookie", "localStorage", "sessionStorage", "s
 assert.match(bridge, /candle-generated/);
 assert.match(bridge, /traceConPassiveSend/);
 assert.match(bridge, /marketProtocol/);
+assert.match(bridge, /safeMarketStructureWalker/);
 const assetResolver = await readFile(path.join(extension, "asset-resolver.js"), "utf8");
 assert.match(assetResolver, /CURRENCIES/);
 assert.match(assetResolver, /IQ_OPTION_OTC/);

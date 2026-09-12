@@ -23,6 +23,13 @@ describe("IQ page bridge metadata projection", () => {
     expect(h.emitted.find((entry) => entry.payload?.kind === "tick")?.payload).toMatchObject({ activeId: 76, price: 1.1602, timestamp: 1_700_000_000_000 });
   });
 
+  it("walks candle structure through market paths without retaining sensitive fields", async () => {
+    const h = await bridge(); h.socket.emit(JSON.stringify({ name: "candle-generated", msg: { active_id: 76, size: 60, close: 1.1602, from: 1_700_000_000, secret_token: "must-not-leave-page" } }));
+    const event = h.emitted.find((entry) => entry.payload?.type === "asset-debug-event" && entry.payload.eventName === "candle-generated")?.payload;
+    expect(event.structure.paths).toEqual(expect.arrayContaining([expect.objectContaining({ path: "msg.active_id", value: 76 }), expect.objectContaining({ path: "msg.close", value: 1.1602 })]));
+    expect(JSON.stringify(event)).not.toContain("must-not-leave-page");
+  });
+
   it("observes only redacted market fields from an outbound subscription", async () => {
     const h = await bridge(); h.socket.send(JSON.stringify({ name: "subscribe", msg: { active_id: 76, instrument: "EUR/USD OTC", token: "must-not-leave-page" } }));
     const event = h.emitted.find((entry) => entry.payload?.type === "protocol-event" && entry.payload.direction === "OUT")?.payload;

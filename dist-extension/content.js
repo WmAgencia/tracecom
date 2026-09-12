@@ -44,7 +44,7 @@
         return;
       }
       if (data.payload.type === "asset-debug-event") {
-        publishAssetDebug("websocket-metadata", { eventName: data.payload.eventName || null, activeIds: data.payload.activeIds || [] });
+        publishAssetDebug("websocket-metadata", { eventName: data.payload.eventName || null, activeIds: data.payload.activeIds || [], structure: data.payload.structure || null });
         return;
       }
       if (data.payload.type === "protocol-event") {
@@ -292,7 +292,8 @@
   function renderAssetDebug(debug) {
     if (!assetDebugEl || !debug) return;
     const candidate = debug.domCandidate || {};
-    assetDebugEl.textContent = `ASSET DEBUG\nVISIBLE_TEXT: ${debug.visibleText || "—"}\nDOM_CANDIDATE: ${candidate.text || "—"}\nDOM_SOURCE: ${debug.domSource || "—"}\nACTIVE_ID: ${debug.activeId ?? "—"}\nACTIVE_ID_CONFIDENCE: ${debug.activeIdConfidence || "LOW"}\nACTIVE_ID_SOURCE: ${debug.websocket?.eventName || "—"}\nREGISTRY_SYMBOL: ${debug.registrySymbol || "—"}\nFEED_SYMBOL: ${debug.feedSymbol || "—"}\nLAST_PRICE: ${debug.lastPrice ?? "—"}\nSTATUS: ${debug.status || "UNKNOWN"}`;
+    const structure = debug.websocket?.structure?.paths?.slice(0, 8).map((item) => `${item.path}:${item.type}${item.value != null ? `=${item.value}` : ""}`).join(" | ") || "—";
+    assetDebugEl.textContent = `ASSET DEBUG\nVISIBLE_TEXT: ${debug.visibleText || "—"}\nDOM_CANDIDATE: ${candidate.text || "—"}\nDOM_SOURCE: ${debug.domSource || "—"}\nACTIVE_ID: ${debug.activeId ?? "—"}\nACTIVE_ID_CONFIDENCE: ${debug.activeIdConfidence || "LOW"}\nACTIVE_ID_SOURCE: ${debug.websocket?.eventName || "—"}\nMARKET_STRUCTURE: ${structure}\nREGISTRY_SYMBOL: ${debug.registrySymbol || "—"}\nFEED_SYMBOL: ${debug.feedSymbol || "—"}\nLAST_PRICE: ${debug.lastPrice ?? "—"}\nSTATUS: ${debug.status || "UNKNOWN"}`;
     assetDebugEl.hidden = false;
   }
   const countdownEl = root.querySelector("#tcCountdown");

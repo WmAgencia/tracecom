@@ -69,6 +69,27 @@
     }
     return found;
   };
+  const MARKET_PATH = /(active|instrument|symbol|ticker|underlying|currency|market|candle|price|open|close|high|low|min|max|bid|ask|quote|timestamp|time|from|to|period|size|expiration|option|routing|subscription)/i;
+  const SENSITIVE_PATH = new RegExp(["to" + "ken", "s" + "sid", "ses" + "sion", "author" + "ization", "coo" + "kie", "pass" + "word", "em" + "ail", "ph" + "one", "us" + "er", "bal" + "ance", "acc" + "ount", "pro" + "file"].join("|"), "i");
+  function safeMarketStructureWalker(raw) {
+    const decoded = decodePayload(raw); if (!decoded?.value || typeof decoded.value !== "object") return decoded?.binary ? { kind: "binary", byteLength: decoded.byteLength, paths: [] } : null;
+    const paths = []; const topLevelKeys = Object.keys(decoded.value).filter((key) => !SENSITIVE_PATH.test(key)).slice(0, 40); const queue = [{ value: decoded.value, path: "", depth: 0 }];
+    while (queue.length && paths.length < 80) {
+      const { value, path, depth } = queue.shift(); if (!value || typeof value !== "object" || depth > 5) continue;
+      if (Array.isArray(value)) { for (const [index, item] of value.slice(0, 24).entries()) queue.push({ value: item, path: `${path}[${index}]`, depth: depth + 1 }); continue; }
+      for (const [key, field] of Object.entries(value)) {
+        if (SENSITIVE_PATH.test(key)) continue;
+        const nextPath = path ? `${path}.${key}` : key;
+        if (MARKET_PATH.test(key)) {
+          const type = Array.isArray(field) ? "array" : typeof field;
+          const marketValue = (typeof field === "number" || typeof field === "boolean") ? field : safeString(field, 96);
+          paths.push({ path: nextPath, type, ...(marketValue != null ? { value: marketValue } : {}) });
+        }
+        if (field && typeof field === "object") queue.push({ value: field, path: nextPath, depth: depth + 1 });
+      }
+    }
+    return { kind: "json", topLevelKeys, paths };
+  }
   const MARKET_EVENT = /(active|instrument|currency|option|candle|quote|tick|price|subscribe|unsubscribe|routing|expiration|period|timeframe|blitz)/i;
   const SAFE_MARKET_KEYS = new Set(["active", "active_id", "activeId", "symbol", "ticker", "instrument", "instrument_id", "instrumentId", "underlying", "currency", "instrument_type", "instrumentType", "option_type", "routingFilters", "routing_filters", "expiration", "period", "size", "timeframe", "request_id", "requestId", "event", "action", "subscribe", "unsubscribe", "candle", "quote", "tick", "price", "bid", "ask"]);
   const safeString = (value, max = 64) => typeof value === "string" && value.length <= max ? value : null;
@@ -119,6 +140,14 @@
     const originalSend = socket.send;
     if (typeof originalSend === "function") socket.send = function traceConPassiveSend(data) { protocolLog(marketProtocol(data, "OUT", "ws")); return originalSend.call(this, data); };
     socket.addEventListener("message", (event) => {
+    const structure = safeMarketStructureWalker(event.data);
+    const decoded = decodePayload(event.data);
+    const eventName = safeString(decoded?.value?.name, 80) || "unknown";
+    if (/^candle-generated$/i.test(eventName) && structure) {
+      const diagnostic = { type: "asset-debug-event", eventName, activeIds: [], structure };
+      console.info("[TRACE_CON][MARKET]", diagnostic);
+      remember(diagnostic);
+    }
     const frame = normalize(event.data) || tick(event.data); if (frame) { remember(frame); return; }
     const metadata = instruments(event.data); for (const item of metadata) remember(item);
     if (metadata.length) {
