@@ -25,5 +25,7 @@ describe("multi-horizon prequential research", () => {
     expect(holdout).toHaveLength(200);
     expect(new Set(holdout.map((row) => `${row.modelVersion}/${row.strategyVersion}`)).size).toBe(1);
     expect(result.trades.every((row) => row.dataQualityScore >= 0.7)).toBe(true);
+    expect(result.trades.every((row) => Date.parse(row.expiryTimestamp) - Date.parse(row.timestamp) === 60_000)).toBe(true);
+    expect(result.trades.filter((row) => row.outcome === "WIN").every((row) => row.netReturn > 0)).toBe(true);
   });
 });

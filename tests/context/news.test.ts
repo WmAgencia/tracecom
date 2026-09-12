@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NewsService } from "../../src/context/service";
 import type { NewsItem, NewsProvider, NewsResult } from "../../src/context/types";
+import { normalizeCryptoNewsArticle } from "../../src/context/provider";
 
 function mk(title: string, credibility = 0.5, summary = ""): NewsItem {
   return {
@@ -24,6 +25,13 @@ class FakeNewsProvider implements NewsProvider {
 }
 
 describe("NewsService", () => {
+  it("rejects undated, invalid and future-dated articles instead of fabricating Date.now", () => {
+    const fetchedAt = Date.parse("2026-09-11T12:00:00Z");
+    expect(normalizeCryptoNewsArticle({ title: "x", link: "https://x.test" }, "btc", 0, fetchedAt)).toBeNull();
+    expect(normalizeCryptoNewsArticle({ title: "x", link: "https://x.test", pubDate: "invalid" }, "btc", 0, fetchedAt)).toBeNull();
+    expect(normalizeCryptoNewsArticle({ title: "x", link: "https://x.test", pubDate: "2026-09-12T12:00:00Z" }, "btc", 0, fetchedAt)).toBeNull();
+    expect(normalizeCryptoNewsArticle({ title: "x", link: "https://x.test", pubDate: "2026-09-10T12:00:00Z" }, "btc", 0, fetchedAt)?.publishedAt).toBe(Date.parse("2026-09-10T12:00:00Z"));
+  });
   it("sem provider → PROVIDER_NOT_CONFIGURED (nunca inventa)", async () => {
     const svc = new NewsService({ provider: null });
     const r = await svc.searchNews({ query: "BTC" });

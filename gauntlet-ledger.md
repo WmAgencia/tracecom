@@ -1,3 +1,13 @@
+## Professional TRACE_1M research wave (2026-09-11)
+
+| item | iter | verdict | evidence | next action |
+| --- | --- | --- | --- | --- |
+| Trader/quant contract | 2 | PASS | `src/research/professional-1m.ts` creates point-in-time OHLC context, A-E phase contract and signature statistics | Integrate only after provider preflight passes |
+| Causal target | 2 | PASS | Entry is candle-close time; expiry is exactly +60s; WIN requires positive return after cost | Preserve economic dead-zone |
+| News/macro audit | 1 | FAIL_PROVIDER | Forex has no historical point-in-time news or official release archive; crypto news is now disabled for Forex and invalid dates are rejected | Add versioned FX as-of provider |
+| Microstructure audit | 1 | FAIL_PROVIDER | Yahoo/IQ historical data has no spread/ticks/L1 sizes/L2; fields are `NOT_AVAILABLE` | Collect append-only quotes prospectively |
+| 3,600 experiment | 1 | BLOCKED | `diagnostic-results/professional-1m/status.md` records 0 evaluated instead of fabricating mandatory context | Start Phase A only after data contract is satisfied |
+
 ## TRACE_1M repository and extension wave (2026-09-11)
 
 | item | iter | verdict | evidence | next action |

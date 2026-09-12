@@ -131,7 +131,8 @@ function candidatesFor(series: Readonly<Record<string, readonly MarketCandle[]>>
   const bars = horizon / 60;
   const out: Candidate[] = [];
   for (const [symbol, untrusted] of Object.entries(series)) {
-    const candles = [...untrusted].filter((c, i, all) => i === 0 || c.timestamp > all[i - 1]!.timestamp).sort((a, b) => a.timestamp - b.timestamp);
+    const sorted = [...untrusted].sort((a, b) => a.timestamp - b.timestamp);
+    const candles = sorted.filter((c, i) => i === 0 || c.timestamp > sorted[i - 1]!.timestamp);
     // Per-symbol embargo equal to the outcome horizon. This makes outcome
     // windows non-overlapping within a pair; cross-pair dependence is reported
     // as a remaining limitation rather than silently treated as independent.
@@ -217,7 +218,8 @@ export function runPrequentialExperiment(input: ResearchInput, horizonSeconds: R
     if (!accepts(active, row) || row.quality < 0.7) continue;
     const net = row.gross - cost;
     const probability = frozenCalibration ? frozenCalibration(row.probability) : calibrate(row.probability, observed);
-    trades.push({ tradeId: `mh-${horizonSeconds}-${row.symbol.replace("/", "")}-${row.entry.timestamp}`, ordinal: trades.length + 1, phase: frozen ? "LOCKED_HOLDOUT" : "ADAPTIVE", modelVersion: `mh-v${model}`, strategyVersion: active, strategy: active, timestamp: new Date(row.entry.timestamp).toISOString(), expiryTimestamp: new Date(row.exit.timestamp + 60_000).toISOString(), symbol: row.symbol, horizonSeconds, direction: row.direction, probability, outcome: row.gross > 0 ? "WIN" : row.gross < 0 ? "LOSS" : "DRAW", grossReturn: row.gross, netReturn: net, cost, session: row.session, regime: row.regime, dataQualityScore: row.quality, reasonCodes: ["CLOSED_1M_SOURCE", "CAUSAL_ENTRY", "HORIZON_EMBARGO", frozenCalibration ? "CALIBRATION_FROZEN" : "EXPANDING_CAUSAL_CALIBRATION", `STRATEGY_${active}`] });
+    const entryAt = row.entry.timestamp + 60_000;
+    trades.push({ tradeId: `mh-${horizonSeconds}-${row.symbol.replace("/", "")}-${entryAt}`, ordinal: trades.length + 1, phase: frozen ? "LOCKED_HOLDOUT" : "ADAPTIVE", modelVersion: `mh-v${model}`, strategyVersion: active, strategy: active, timestamp: new Date(entryAt).toISOString(), expiryTimestamp: new Date(row.exit.timestamp + 60_000).toISOString(), symbol: row.symbol, horizonSeconds, direction: row.direction, probability, outcome: net > 0 ? "WIN" : net < 0 ? "LOSS" : "DRAW", grossReturn: row.gross, netReturn: net, cost, session: row.session, regime: row.regime, dataQualityScore: row.quality, reasonCodes: ["CLOSED_1M_SOURCE", "ENTRY_AT_CANDLE_CLOSE", "CAUSAL_ENTRY", "HORIZON_EMBARGO", "ECONOMIC_DEAD_ZONE", frozenCalibration ? "CALIBRATION_FROZEN" : "EXPANDING_CAUSAL_CALIBRATION", `STRATEGY_${active}`] });
     pending.push(row);
     if (trades.length >= maxActionable) break;
   }

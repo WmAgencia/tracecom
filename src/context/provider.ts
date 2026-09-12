@@ -39,8 +39,9 @@ export class FreeCryptoNewsProvider implements NewsProvider {
       const json = (await res.json()) as { articles?: CvApiArticle[] };
       const limit = params.limit ?? 10;
       const items: NewsItem[] = (json.articles ?? [])
-        .slice(0, limit)
-        .map((a, i) => normalize(a, category, i));
+        .map((a, i) => normalizeCryptoNewsArticle(a, category, i))
+        .filter((item): item is NewsItem => item !== null)
+        .slice(0, limit);
       return { available: true, items, fetchedAt: Date.now(), source: this.id };
     } catch {
       return { available: false, items: [], fetchedAt: Date.now(), source: this.id, note: "fetch falhou" };
@@ -48,16 +49,19 @@ export class FreeCryptoNewsProvider implements NewsProvider {
   }
 }
 
-function normalize(a: CvApiArticle, category: string, idx: number): NewsItem {
-  const publishedAt = a.pubDate ? Date.parse(a.pubDate) : Date.now();
+/** Missing or invalid publication time is rejected. Substituting Date.now()
+ * would make an undated article look point-in-time safe for historical work. */
+export function normalizeCryptoNewsArticle(a: CvApiArticle, category: string, idx: number, fetchedAt = Date.now()): NewsItem | null {
+  const publishedAt = a.pubDate ? Date.parse(a.pubDate) : Number.NaN;
+  if (!Number.isFinite(publishedAt) || publishedAt > fetchedAt || !a.title || !a.link) return null;
   return {
     id: `${a.source ?? "cv"}:${a.link ?? idx}:${publishedAt}`,
     title: a.title,
     summary: a.description ?? null,
     url: a.link,
     source: a.source ?? "unknown",
-    publishedAt: Number.isFinite(publishedAt) ? publishedAt : Date.now(),
-    fetchedAt: Date.now(),
+    publishedAt,
+    fetchedAt,
     category: a.category ?? category,
     assetTags: mapAssetTags(category),
     credibility: a.credibility ?? 0.5,

@@ -224,7 +224,10 @@ export function createMarketRuntime(
   });
   const service = new MarketDataService({ provider, pipeline });
   const prov: MarketDataProvider = provider; // não-nulo deste ponto em diante
-    const news = new NewsService({ provider: new FreeCryptoNewsProvider() });
+    // The public provider is crypto-only. Applying its lexical headlines to
+    // Forex/IQ Option would be false macro evidence, so those modes fail
+    // closed with no news provider until a point-in-time FX source exists.
+    const news = new NewsService({ provider: config.marketDataMode === "binance" ? new FreeCryptoNewsProvider() : null });
     // Estado de guard: carrega do SQLite se houver persistência; senão fresco.
     let runtimeGuardState: GuardState = guardRepo?.load() ?? freshGuardState(Date.now());
     const fusion = new FusionService({

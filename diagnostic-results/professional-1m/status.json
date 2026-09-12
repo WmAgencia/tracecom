@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-09-11T21:55:00-03:00",
+  "mode": "SHADOW_ONLY",
+  "inputCheckpoint": "60dbc3a1746f397ce58785e3e8c94d4a13333cc5",
+  "verdict": "DATA_PROVIDER_LIMITATION",
+  "productionGate": "FAIL_CLOSED_WAIT",
+  "phases": [
+    { "id": "A", "requestedActionable": 1000, "evaluated": 0, "status": "BLOCKED_MANDATORY_CONTEXT_UNAVAILABLE" },
+    { "id": "B", "requestedActionable": 1000, "evaluated": 0, "status": "NOT_STARTED" },
+    { "id": "C", "requestedActionable": 1000, "evaluated": 0, "status": "NOT_STARTED" },
+    { "id": "D", "requestedActionable": 500, "evaluated": 0, "status": "NOT_STARTED" },
+    { "id": "E", "requestedActionable": 100, "evaluated": 0, "status": "NOT_STARTED" }
+  ],
+  "availableHistoricalEvidence": ["CLOSED_1M_OHLC", "DERIVED_PRICE_ACTION", "CAUSAL_MTF_FROM_CLOSED_BARS", "SESSION"],
+  "unavailableHistoricalEvidence": ["POINT_IN_TIME_FX_NEWS", "OFFICIAL_MACRO_RELEASE_ARCHIVE", "HISTORICAL_BID_ASK", "TICKS", "L1_SIZES", "L2_ORDER_BOOK"],
+  "ordersExecuted": 0
+}
