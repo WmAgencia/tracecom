@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TRACE/CON — Sinal de Mercado",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Sinal de análise (BUY/SELL/WAIT) com probabilidade e ativo operado, ao lado da sua corretora. NÃO executa ordens — você decide.",
   "permissions": [
     "storage",
@@ -25,9 +25,10 @@
   "content_scripts": [
     {
       "matches": ["https://iqoption.com/*", "https://*.iqoption.com/*"],
-      "js": ["iq-bootstrap.js"],
+      "js": ["iq-page-bridge.js"],
       "run_at": "document_start",
-      "all_frames": false
+      "all_frames": false,
+      "world": "MAIN"
     },
     {
       "matches": [
@@ -45,10 +46,6 @@
       "all_frames": false
     }
   ],
-  "web_accessible_resources": [{
-    "resources": ["iq-page-bridge.js"],
-    "matches": ["https://iqoption.com/*", "https://*.iqoption.com/*"]
-  }],
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true

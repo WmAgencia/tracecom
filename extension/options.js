@@ -9,7 +9,7 @@ function load() {
       $("backend").value = s.tcBackend || "http://127.0.0.1:8788";
       $("apiToken").value = s.tcApiToken || "";
       $("auto").checked = !!s.tcAuto;
-      $("shadow").checked = !!s.tcShadowEnabled;
+      $("shadow").checked = s.tcShadowEnabled !== false;
       $("symbols").value = (s.tcSymbols || ["EURUSD", "GBPUSD", "USDJPY"]).join("\n");
       $("direction").value = s.tcDirection || "up";
     },

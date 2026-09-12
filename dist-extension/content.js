@@ -24,11 +24,6 @@
   // the page world solely to observe whitelisted inbound candle frames; it
   // never reads cookies, localStorage, outgoing frames, SSID or credentials.
   if (/(^|\.)iqoption\.com$/i.test(location.hostname)) {
-    const bridge = document.createElement("script");
-    bridge.src = chrome.runtime.getURL("iq-page-bridge.js");
-    bridge.async = false;
-    (document.documentElement || document.head).appendChild(bridge);
-    bridge.remove();
     window.addEventListener("message", (event) => {
       if (event.source !== window || event.origin !== location.origin) return;
       const data = event.data;
@@ -236,7 +231,7 @@
   // ------------------------------------------------------------
   function readShadowEnabled(cb) {
     chrome.storage.local.get(["tcShadowEnabled"], (s) => {
-      cb(!!s.tcShadowEnabled);
+      cb(s.tcShadowEnabled !== false);
     });
   }
   function applyShadowBadge() {
@@ -286,6 +281,12 @@
     };
     chrome.storage.local.set({ tcShadowOn: trade, tcShadow: trade }, () => {
       applyShadowBadge();
+      chrome.runtime.sendMessage({ type: "tc.shadowOpen", payload: trade });
+      setTimeout(() => {
+        chrome.storage.local.get(["tcShadowOn"], (state) => {
+          if (state.tcShadowOn?.entryTime === trade.entryTime) closeShadowTrade("expiry_60s", state.tcShadowOn.currentPrice);
+        });
+      }, 60_250);
     });
   }
   function closeShadowTrade(reason, currentPrice) {
@@ -417,23 +418,7 @@
             });
           } else {
             // já existe: atualiza currentPrice e verifica se mudou de direção/símbolo/TF
-            const changed =
-              open.decision !== d ||
-              open.symbol !== symbol ||
-              open.timeframe !== timeframe;
-            if (changed) {
-              closeShadowTrade("signal_change", currentPrice);
-              // abre o novo imediatamente se ainda for BUY/SELL
-              openShadowTrade(d, {
-                symbol,
-                timeframe,
-                direction: payload?.direction || "up",
-                currentPrice,
-                confidence: payload?.confidence,
-                probability: payload?.probability,
-                calibration: payload?.calibration,
-              });
-            } else if (currentPrice != null) {
+            if (currentPrice != null) {
               // mesma direção/símbolo/TF: só atualiza P&L
               const updated = { ...open, currentPrice };
               chrome.storage.local.set({ tcShadowOn: updated, tcShadow: updated }, () => {
@@ -441,9 +426,11 @@
               });
             }
           }
-        } else if (open && !isDirectional) {
-          // sinal virou WAIT ou OFF: fecha trade aberto
-          closeShadowTrade("signal_wait", currentPrice);
+        } else if (open && !isDirectional && currentPrice != null) {
+          // WAIT does not rewrite an earlier paper decision. Keep the latest
+          // observed price; the backend evaluates the immutable entry at T+60s.
+          const updated = { ...open, currentPrice };
+          chrome.storage.local.set({ tcShadowOn: updated, tcShadow: updated }, applyShadowBadge);
         }
       });
     });
@@ -538,6 +525,10 @@
   // mensagens do background
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg?.type === "tc.tick") fetchSignal(true);
+    if (msg?.type === "tc.iq.marketAccepted") {
+      clearTimeout(marketRefreshTimer);
+      marketRefreshTimer = setTimeout(() => fetchSignal(true), 750);
+    }
     if (msg?.type === "tc.notifySignal" && msg.payload) {
       const detected = detectAsset();
       const currentTf = detectTimeframe();
@@ -558,6 +549,7 @@
   chrome.storage.local.get(["tcDownbarEnabled"], (s) => { root.hidden = s.tcDownbarEnabled === false; });
 
   // primeira carga
+  let marketRefreshTimer = null;
   fetchSignal(false);
 
   // re-detecta se URL muda (single-page apps)

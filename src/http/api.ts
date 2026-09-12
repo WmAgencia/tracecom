@@ -133,6 +133,8 @@ export class TraceconHttpApi {
    */
   private resolveExtensionZip(): { path: string; size: number } | null {
     const candidates = [
+      join(process.cwd(), "dist", "tracecon-extension-v0.3.1.zip"),
+      join(process.cwd(), "..", "dist", "tracecon-extension-v0.3.1.zip"),
       join(process.cwd(), "dist", "tracecon-extension-v0.2.0.zip"),
       join(process.cwd(), "dist", "tracecon-extension-v0.1.0.zip"),
       join(process.cwd(), "..", "dist", "tracecon-extension-v0.2.0.zip"),
@@ -156,11 +158,11 @@ export class TraceconHttpApi {
     return {
       available: zip !== null,
       url: "/extension/download",
-      filename: zip ? zip.path.split(/[\\/]/).pop() : "tracecon-extension-v0.2.0.zip",
+      filename: zip ? zip.path.split(/[\\/]/).pop() : "tracecon-extension-v0.3.1.zip",
       sizeBytes: zip?.size ?? null,
       note: zip
         ? `Empacotada em ${zip.path}. Carregue em chrome://extensions com Modo do desenvolvedor.`
-        : "Zip não encontrado. Rode: (cd extension && powershell Compress-Archive -Path * -DestinationPath ../dist/tracecon-extension-v0.2.0.zip) — ou use o caminho local.",
+        : "Zip não encontrado. Rode npm run build:extension para gerar o pacote instalável.",
     };
   }
 
@@ -465,24 +467,21 @@ export class TraceconHttpApi {
       }
       case "POST /api/analytics/shadow": {
         try {
-          // O apiRoute não recebe o request stream; usa header content-length
-          // para ler do header forward. Como fallback, parseamos uma vez só.
-          // Para suportar POST com body, vamos usar headers enviados pelo servidor.
-          // Solução simples: corpo vazio aceita só JSON vazio {}; dados via query string.
-          const body: Record<string, unknown> = {};
-          for (const [k, v] of q.entries()) body[k] = v;
-          if (!body?.symbol || !body?.decision || body?.entryPrice == null) {
-            return { status: 400, json: { error: "bad_request", note: "envie symbol/decision/entryPrice via query string (serverless-friendly)", required: ["symbol", "decision", "entryPrice"] } };
+          const shadowBody: Record<string, unknown> = body && typeof body === "object" ? { ...(body as Record<string, unknown>) } : {};
+          for (const [k, v] of q.entries()) if (!(k in shadowBody)) shadowBody[k] = v;
+          if (!shadowBody.symbol || !shadowBody.decision || shadowBody.entryPrice == null) {
+            return { status: 400, json: { error: "bad_request", required: ["symbol", "decision", "entryPrice"] } };
           }
           const trade = await rt.analytics.recordShadowTrade({
-            symbol: String(body.symbol),
-            timeframe: String(body.timeframe ?? "1h"),
-            direction: body.direction === "down" ? "down" : "up",
-            decision: String(body.decision) as "BUY" | "SELL" | "WAIT",
-            entryTime: body.entryTime ? Number(body.entryTime) : Date.now(),
-            entryPrice: Number(body.entryPrice),
-            confidence: body.confidence != null ? Number(body.confidence) : undefined,
-            probability: body.probability != null ? Number(body.probability) : undefined,
+            symbol: String(shadowBody.symbol),
+            timeframe: String(shadowBody.timeframe ?? "1m"),
+            direction: shadowBody.direction === "down" ? "down" : "up",
+            decision: String(shadowBody.decision) as "BUY" | "SELL" | "WAIT",
+            entryTime: shadowBody.entryTime ? Number(shadowBody.entryTime) : Date.now(),
+            entryPrice: Number(shadowBody.entryPrice),
+            confidence: shadowBody.confidence != null ? Number(shadowBody.confidence) : undefined,
+            probability: shadowBody.probability != null ? Number(shadowBody.probability) : undefined,
+            cooldownMinutes: 0,
             providerId: rt.provider?.id ?? null,
           });
           if (!trade) {
@@ -577,7 +576,7 @@ code{background:#161b24;padding:2px 6px;border-radius:4px;color:#79c0ff}a{color:
 <li><code>/api/analytics/perf-snapshot?days=30</code> — PnL observado no período</li>
 <li><code>POST /api/analytics/reset-breaker</code> — zera manualmente o circuit breaker persistido</li>
 <li><code>/extension/info</code> — metadados do zip da extensão</li>
-<li><code>/extension/download</code> — baixa <code>tracecon-extension-v0.1.0.zip</code></li>
+<li><code>/extension/download</code> — baixa o pacote atual da extensão TraceCon</li>
 </ul>
 <p style="color:#7a8494">Se <code>TRACECON_API_TOKEN</code> estiver setado, envie <code>Authorization: Bearer &lt;token&gt;</code> em /api/*.</p>
 </body></html>`;

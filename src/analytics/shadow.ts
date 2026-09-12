@@ -141,7 +141,12 @@ export function evaluateShadowTrade(
     return { ...trade, outcome: "insufficient", evaluatedAt: Date.now() };
   }
   const exitTime = trade.entryTime + horizon * step;
-  const exitCandle = futureCandles.find((c) => c.timestamp === exitTime);
+  // Browser feeds publish candle timestamps on interval boundaries while a
+  // shadow entry can happen at any millisecond. Use the first causal candle at
+  // or after T+horizon, bounded to one timeframe; never reach farther ahead.
+  const exitCandle = futureCandles
+    .filter((c) => c.timestamp >= exitTime && c.timestamp < exitTime + step)
+    .sort((a, b) => a.timestamp - b.timestamp)[0];
 
   if (!exitCandle) {
     return {

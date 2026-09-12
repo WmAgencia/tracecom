@@ -1,6 +1,6 @@
 # TraceCon Browser Extension
 
-Version 0.3.0 is **TRACE_1M**: analysis and expiry are fixed to one minute, the
+Version 0.3.1 is **TRACE_1M**: analysis and expiry are fixed to one minute, the
 downbar shows a calibrated signal state, and BUY/SELL remains conditional on
 the backend production gate. The extension is analysis + shadow validation;
 manual execution remains with the user.
@@ -14,7 +14,7 @@ The IQ bridge is read-only. It observes only incoming `candle-generated` WebSock
 ## Build and install
 
 From the repository root, run `npm run build:extension`. This produces
-`dist/tracecon-extension-v0.3.0.zip` and the unpacked `dist-extension` folder.
+`dist/tracecon-extension-v0.3.1.zip` and the unpacked `dist-extension` folder.
 Extract the ZIP, then load that extracted folder using Chrome or Edge's **Load
 unpacked** command. For a non-technical walkthrough, see
 `../INSTALL-EXTENSION.md` or run `../INSTALL-TRACECON-EXTENSION.bat`.

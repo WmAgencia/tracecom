@@ -44,8 +44,8 @@
       <p class="hint">
         Shadow trading <strong>não executa ordens</strong>. Apenas observa: registra a entrada
         no momento do sinal e calcula P&amp;L em tempo real contra o preço atual.
-        Trades abertos são fechados automaticamente após 24h ou quando o sinal muda,
-        e o resultado é enviado ao backend para análise estatística.
+        Cada entrada é registrada imediatamente no backend e avaliada após 60 segundos
+        usando somente candles recebidos da sessão da IQ Option.
       </p>
     </section>
 

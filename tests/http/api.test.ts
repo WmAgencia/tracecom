@@ -25,6 +25,7 @@ function makeRuntime() {
     backtester: null as never,
     fusion: null as never,
     news: null as never,
+    analytics: { recordShadowTrade: async (input: Record<string, unknown>) => ({ id: "shadow-test", ...input }) },
     signalRepo,
     buildContext: async (_s: string, _tf: string) => ({ provider: "none", symbol: _s, timeframe: _tf, currentPrice: null, latestClosedCandle: null, recentCandles: [], volume: null, volatility: null, providerState: "disconnected", dataQuality: "unknown", freshness: "unavailable", timestamp: Date.now(), available: false }),
     start: async () => void 0,
@@ -65,6 +66,15 @@ describe("TraceconHttpApi", () => {
     return api.route({ headers: {} } as never, "GET", "/health", new URLSearchParams()).then((r) => {
       expect(r.status).toBe(200);
     });
+  });
+
+  it("aceita registro shadow enviado como JSON pela extensão", async () => {
+    const h = new ServerHarness({});
+    const api = h.api as unknown as { route(...a: unknown[]): Promise<{ status: number; json?: { ok?: boolean; id?: string } }> };
+    const response = await api.route({ headers: {} } as never, "POST", "/api/analytics/shadow", new URLSearchParams(), {
+      symbol: "EURUSD", timeframe: "1m", direction: "up", decision: "BUY", entryTime: 1_800_000_000_000, entryPrice: 1.1,
+    });
+    expect(response).toMatchObject({ status: 200, json: { ok: true, id: "shadow-test" } });
   });
 
   it("rota desconhecida → 404", () => {

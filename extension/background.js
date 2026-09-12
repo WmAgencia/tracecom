@@ -303,6 +303,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const opts = await getOpts();
         await forwardIqMarket(msg.payload, sender.tab.id, opts.backend, opts);
         await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: true, lastIngestError: null });
+        await chrome.tabs.sendMessage(sender.tab.id, { type: "tc.iq.marketAccepted", payload: { symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null } }).catch(() => null);
         sendResponse({ ok: true });
       } catch (e) {
         await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: false, lastIngestError: String(e?.message || e).slice(0, 80) });
@@ -356,13 +357,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sendResponse({ ok: true, data: await readStore() });
       return;
     }
-    if (msg.type === "tc.shadowClose") {
+    if (msg.type === "tc.shadowOpen") {
       const trade = msg.payload;
       const opts = await getOpts();
       const result = await postShadowToBackend(trade, opts);
       sendResponse(result);
       return;
     }
+    if (msg.type === "tc.shadowClose") { sendResponse({ ok: true, localOnly: true }); return; }
     sendResponse({ ok: false, error: "tipo desconhecido" });
   })();
   return true; // async
