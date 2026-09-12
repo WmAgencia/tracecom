@@ -1,0 +1,23 @@
+import { loadConfig } from "../config/env";
+import { Datastore } from "../store/db";
+import { Trace1mLedger } from "../trace1m/ledger";
+
+const config = loadConfig();
+const store = new Datastore({ path: config.database.path });
+if (!store.available) throw new Error("SQLite persistence is unavailable");
+const status = new Trace1mLedger(store).status();
+const pct = (value: number | null): string => value === null ? "n/a" : `${(value * 100).toFixed(2)}%`;
+console.log(`TRACE_1M ${status.phase}`);
+console.log(`Snapshots: ${status.totalSnapshots}`);
+console.log(`WAIT: ${status.totalWAIT}`);
+console.log(`Trades: ${status.actionableTrades} / 1000`);
+console.log(`Evaluated: ${status.evaluatedTrades}`);
+console.log(`Wins: ${status.wins}`);
+console.log(`Losses: ${status.losses}`);
+console.log(`Unknown: ${status.unknown}`);
+console.log(`WR: ${pct(status.currentWR)}`);
+console.log(`Net EV: ${status.currentNetEV === null ? "n/a" : status.currentNetEV.toFixed(8)}`);
+console.log(`Coverage: ${pct(status.currentCoverage)}`);
+console.log(`Provider: ${status.providers.join(", ") || "NOT_CONFIGURED"}`);
+console.log(`Data status: ${status.providers.length ? "COLLECTING" : "DATA_PROVIDER_LIMITATION"}`);
+store.close();

@@ -44,6 +44,8 @@ const envSchema = z.object({
   OANDA_API_KEY: z.string().optional(),
   OANDA_ACCOUNT_ID: z.string().optional(),
   OANDA_BASE_URL: z.string().url().default("https://api-fxpractice.oanda.com/v3"),
+  TRACE1M_PAIRS: z.string().default("EUR/USD,GBP/USD,USD/JPY,AUD/USD,USD/CAD,USD/CHF,NZD/USD"),
+  TRACE1M_POLL_INTERVAL_MS: z.coerce.number().int().min(5000).default(15000),
   DATABASE_PATH: z.string().default("tracecon.db"),
   MARKET_DATA_MODE: z.enum(MODES).default("noop"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -63,6 +65,7 @@ export interface EnvConfig {
   };
   readonly database: { readonly path: string };
   readonly oanda: { readonly apiKey: string | null; readonly accountId: string | null; readonly baseUrl: string };
+  readonly trace1m: { readonly pairs: readonly string[]; readonly pollIntervalMs: number };
   readonly marketDataMode: (typeof MODES)[number];
   readonly nodeEnv: "development" | "test" | "production";
   /** Token opcional de API (server-side) exigido em /api/*. */
@@ -89,6 +92,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): EnvConfig {
     OANDA_API_KEY: env.OANDA_API_KEY,
     OANDA_ACCOUNT_ID: env.OANDA_ACCOUNT_ID,
     OANDA_BASE_URL: env.OANDA_BASE_URL,
+    TRACE1M_PAIRS: env.TRACE1M_PAIRS,
+    TRACE1M_POLL_INTERVAL_MS: env.TRACE1M_POLL_INTERVAL_MS,
     DATABASE_PATH: env.DATABASE_PATH,
     MARKET_DATA_MODE: env.MARKET_DATA_MODE,
     NODE_ENV: env.NODE_ENV,
@@ -115,6 +120,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): EnvConfig {
       accountId: raw.OANDA_ACCOUNT_ID?.trim() || null,
       baseUrl: raw.OANDA_BASE_URL.replace(/\/$/, ""),
     },
+    trace1m: { pairs: raw.TRACE1M_PAIRS.split(",").map((pair) => pair.trim()).filter(Boolean), pollIntervalMs: raw.TRACE1M_POLL_INTERVAL_MS },
     marketDataMode: raw.MARKET_DATA_MODE,
     nodeEnv: raw.NODE_ENV,
     apiToken: raw.TRACECON_API_TOKEN?.trim() || null,

@@ -258,6 +258,89 @@ export class Datastore {
         details_json TEXT
       );
       CREATE INDEX IF NOT EXISTS idx_drift_detected_at ON drift_alerts(detected_at);
+
+      -- TRACE_1M official prospective ledger. These tables are immutable by
+      -- design: corrections are new events, never destructive rewrites.
+      CREATE TABLE IF NOT EXISTS trace1m_snapshots (
+        snapshot_id TEXT PRIMARY KEY,
+        observed_at INTEGER NOT NULL,
+        provider_timestamp INTEGER NOT NULL,
+        received_at INTEGER NOT NULL,
+        pair TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        provider_role TEXT NOT NULL CHECK(provider_role IN ('PRIMARY','FALLBACK')),
+        bid REAL NOT NULL,
+        ask REAL NOT NULL,
+        mid REAL NOT NULL,
+        spread REAL NOT NULL,
+        spread_pips REAL NOT NULL,
+        quote_age_ms INTEGER NOT NULL,
+        quality_score REAL NOT NULL,
+        data_quality TEXT NOT NULL,
+        session TEXT NOT NULL,
+        model_version TEXT NOT NULL,
+        feature_version TEXT NOT NULL,
+        provider_version TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        payload_hash TEXT NOT NULL UNIQUE,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_trace1m_snapshots_time ON trace1m_snapshots(pair, observed_at);
+
+      CREATE TABLE IF NOT EXISTS trace1m_decisions (
+        trade_id TEXT PRIMARY KEY,
+        snapshot_id TEXT NOT NULL UNIQUE,
+        pair TEXT NOT NULL,
+        analysis_timestamp INTEGER NOT NULL,
+        planned_entry_timestamp INTEGER NOT NULL,
+        actual_entry_timestamp INTEGER,
+        expiry_timestamp INTEGER,
+        research_decision TEXT NOT NULL CHECK(research_decision IN ('BUY','SELL','WAIT')),
+        production_decision TEXT NOT NULL CHECK(production_decision IN ('BUY','SELL','WAIT')),
+        wait_reason TEXT,
+        entry_bid REAL,
+        entry_ask REAL,
+        model_version TEXT NOT NULL,
+        feature_version TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY(snapshot_id) REFERENCES trace1m_snapshots(snapshot_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_trace1m_decisions_time ON trace1m_decisions(analysis_timestamp);
+
+      CREATE TABLE IF NOT EXISTS trace1m_outcomes (
+        outcome_id TEXT PRIMARY KEY,
+        trade_id TEXT NOT NULL UNIQUE,
+        exit_timestamp INTEGER NOT NULL,
+        exit_bid REAL NOT NULL,
+        exit_ask REAL NOT NULL,
+        gross_return REAL NOT NULL,
+        cost_return REAL NOT NULL,
+        net_return REAL NOT NULL,
+        outcome TEXT NOT NULL CHECK(outcome IN ('WIN','LOSS')),
+        payload_json TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY(trade_id) REFERENCES trace1m_decisions(trade_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS trace1m_audit_events (
+        event_id TEXT PRIMARY KEY,
+        entity_id TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        occurred_at INTEGER NOT NULL,
+        payload_json TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_trace1m_audit_entity ON trace1m_audit_events(entity_id, occurred_at);
+
+      CREATE TRIGGER IF NOT EXISTS trace1m_snapshots_no_update BEFORE UPDATE ON trace1m_snapshots BEGIN SELECT RAISE(ABORT, 'trace1m append-only'); END;
+      CREATE TRIGGER IF NOT EXISTS trace1m_snapshots_no_delete BEFORE DELETE ON trace1m_snapshots BEGIN SELECT RAISE(ABORT, 'trace1m append-only'); END;
+      CREATE TRIGGER IF NOT EXISTS trace1m_decisions_no_update BEFORE UPDATE ON trace1m_decisions BEGIN SELECT RAISE(ABORT, 'trace1m append-only'); END;
+      CREATE TRIGGER IF NOT EXISTS trace1m_decisions_no_delete BEFORE DELETE ON trace1m_decisions BEGIN SELECT RAISE(ABORT, 'trace1m append-only'); END;
+      CREATE TRIGGER IF NOT EXISTS trace1m_outcomes_no_update BEFORE UPDATE ON trace1m_outcomes BEGIN SELECT RAISE(ABORT, 'trace1m append-only'); END;
+      CREATE TRIGGER IF NOT EXISTS trace1m_outcomes_no_delete BEFORE DELETE ON trace1m_outcomes BEGIN SELECT RAISE(ABORT, 'trace1m append-only'); END;
+      CREATE TRIGGER IF NOT EXISTS trace1m_audit_no_update BEFORE UPDATE ON trace1m_audit_events BEGIN SELECT RAISE(ABORT, 'trace1m append-only'); END;
+      CREATE TRIGGER IF NOT EXISTS trace1m_audit_no_delete BEFORE DELETE ON trace1m_audit_events BEGIN SELECT RAISE(ABORT, 'trace1m append-only'); END;
     `);
 
     // Migração: colunas opcionais para stop-loss e cooldown em shadow_trades.

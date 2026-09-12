@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "trace1m.snapshot.v1",
+  "title": "TRACE_1M causal prospective snapshot",
+  "type": "object",
+  "required": ["schemaVersion", "observedAt", "providerTimestamp", "receivedAt", "pair", "provider", "providerRole", "bid", "ask", "mid", "spread", "spreadPips", "quoteAgeMs", "dataQuality", "qualityScore", "missingFields", "providerConsistency", "session", "candleState", "candles1m", "context5m", "context15m", "professional", "microstructure", "news", "macro", "modelVersion", "featureVersion", "providerVersion"],
+  "properties": {
+    "schemaVersion": { "const": "trace1m.snapshot.v1" },
+    "observedAt": { "type": "integer" },
+    "providerTimestamp": { "type": "integer" },
+    "receivedAt": { "type": "integer" },
+    "pair": { "type": "string" },
+    "provider": { "type": "string" },
+    "providerRole": { "enum": ["PRIMARY", "FALLBACK"] },
+    "bid": { "type": "number", "exclusiveMinimum": 0 },
+    "ask": { "type": "number", "exclusiveMinimum": 0 },
+    "mid": { "type": "number" },
+    "spread": { "type": "number", "minimum": 0 },
+    "spreadPips": { "type": "number", "minimum": 0 },
+    "quoteAgeMs": { "type": "integer", "minimum": 0 },
+    "dataQuality": { "enum": ["VALID", "INSUFFICIENT"] },
+    "qualityScore": { "type": "number", "minimum": 0, "maximum": 1 },
+    "missingFields": { "type": "array", "items": { "type": "string" } },
+    "providerConsistency": { "enum": ["CONSISTENT", "MISMATCH", "NOT_AVAILABLE"] },
+    "news": { "type": ["array", "null"] },
+    "macro": { "type": ["array", "null"] },
+    "modelVersion": { "type": "string" },
+    "featureVersion": { "type": "string" },
+    "providerVersion": { "type": "string" }
+  },
+  "additionalProperties": true
+}

@@ -20,6 +20,10 @@ dist/
 *.db-shm
 data/*.db
 data/*.db-*
+data/trace-1m/*
+!data/trace-1m/README.md
+!data/trace-1m/schema.v1.json
+!data/trace-1m/sample.redacted.json
 
 # Logs
 *.log
