@@ -13,13 +13,13 @@ const zipPath = path.join(artifactDir, `tracecon-extension-v${manifest.version}.
 
 if (manifest.manifest_version !== 3) throw new Error("A extensão deve usar Manifest V3.");
 if (!manifest.background?.service_worker || !manifest.action?.default_popup) throw new Error("Manifest sem service worker ou popup.");
-for (const file of [manifest.background.service_worker, manifest.action.default_popup, "local-engine.js", "experiment-runner.js", "content.js", "iq-page-bridge.js", "iq-bootstrap.js", "downbar.css", "popup.js", "popup.css"]) {
+for (const file of [manifest.background.service_worker, manifest.action.default_popup, "asset-resolver.js", "local-engine.js", "experiment-runner.js", "content.js", "iq-page-bridge.js", "iq-bootstrap.js", "downbar.css", "popup.js", "popup.css"]) {
   await access(path.join(source, file));
 }
 await rm(destination, { recursive: true, force: true });
 await mkdir(destination, { recursive: true });
 await cp(source, destination, { recursive: true, filter: (from) => !from.includes(".DS_Store") });
-for (const file of ["background.js", "local-engine.js", "experiment-runner.js", "content.js", "iq-page-bridge.js", "iq-bootstrap.js", "popup.js", "options.js"]) {
+for (const file of ["background.js", "asset-resolver.js", "local-engine.js", "experiment-runner.js", "content.js", "iq-page-bridge.js", "iq-bootstrap.js", "popup.js", "options.js"]) {
   const result = spawnSync(process.execPath, ["--check", path.join(destination, file)], { encoding: "utf8" });
   if (result.status !== 0) throw new Error(`Sintaxe inválida em ${file}: ${result.stderr}`);
 }

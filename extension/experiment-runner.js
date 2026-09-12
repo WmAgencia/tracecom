@@ -20,6 +20,13 @@
     return false;
   };
   const outcome = (decision, entry, exit) => globalThis.TraceConLocalEngine.classifyOutcome(decision, entry, exit);
+  const closeUnknown = (state, name, reason) => {
+    if (!state.active) return emit(note(state, name));
+    const closed = { ...state.active, exitTime: Date.now(), exitPrice: null, outcome: "UNKNOWN", postAnalysis: { outcome: "UNKNOWN", reason, snapshotPreserved: true, evaluatedAt: Date.now() } };
+    // UNKNOWN is persistent history, but deliberately does not increment the
+    // evaluated denominator or enter signature mining.
+    return emit(note({ ...state, active: null, observations: [...state.observations, closed] }, name));
+  };
   async function start() { const state = note({ ...empty(), status: "RUNNING", startedAt: Date.now() }, "EXPERIMENT_STARTED"); return emit(state); }
   async function pause() { const state = await read(); return emit({ ...state, status: state.status === "RUNNING" ? "PAUSED" : state.status }); }
   async function resume() { const state = await read(); return emit({ ...state, status: state.status === "PAUSED" ? "RUNNING" : state.status }); }
@@ -37,7 +44,11 @@
     let state = await read(); if (state.status !== "RUNNING" || !item?.symbol) return state;
     const analysis = globalThis.TraceConLocalEngine.analyze(item.symbol, item);
     if (state.active) {
-      if (state.active.originTabId !== originTabId || state.active.asset !== item.symbol || state.active.domain !== domainOf(item.symbol)) return state;
+      if (state.active.originTabId !== originTabId) return state;
+      // A chart switch is not a valid outcome feed for the prior signal. Keep
+      // its immutable snapshot and explicitly close it as UNKNOWN instead of
+      // ever evaluating EUR/USD from a later asset's price.
+      if (state.active.asset !== item.symbol || state.active.domain !== domainOf(item.symbol)) return closeUnknown(state, "ACTIVE_TRADE_UNKNOWN_ASSET_SWITCH", "ASSET_SWITCH");
       if (Date.now() - state.active.entryTime < 60_000) return state;
       const result = outcome(state.active.decision, state.active.entryPrice, analysis.currentPrice);
       if (!valid(result)) return emit(note({ ...state, active: null }, "ACTIVE_TRADE_UNKNOWN"));
@@ -49,6 +60,6 @@
     state.active = { signalId: `experiment-${Date.now()}`, phase: state.phase, originTabId, asset: item.symbol, domain: domainOf(item.symbol), decision: analysis.decision, entryTime: Date.now(), entryPrice: analysis.currentPrice, signature: analysis.signature, confidence: analysis.confidence, regime: analysis.regime, features: clone(analysis.features), reasons: clone(analysis.reasons), counterReasons: clone(analysis.counterReasons), snapshot: clone(analysis.snapshot) };
     return emit(state);
   }
-  async function disconnect(tabId) { const state = await read(); if (!state.active || state.active.originTabId !== tabId) return state; return emit(note({ ...state, active: null }, "ACTIVE_TRADE_UNKNOWN_INTERRUPTED")); }
+  async function disconnect(tabId) { const state = await read(); if (!state.active || state.active.originTabId !== tabId) return state; return closeUnknown(state, "ACTIVE_TRADE_UNKNOWN_INTERRUPTED", "SOURCE_TAB_CLOSED"); }
   globalThis.ProgressiveExperimentRunner = { read, start, pause, resume, stop, reset, ingest, disconnect, mine, outcome, eligible, advance, constants: RUNS };
 })();

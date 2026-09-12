@@ -19,6 +19,8 @@
 
   if (window.__traceconInjected) return;
   window.__traceconInjected = true;
+  const iqInstrumentRegistry = new Map();
+  let lastResolvedAssetKey = null;
 
   // IQ Option uses an isolated content world. The read-only bridge is loaded
   // in MAIN at document_start and posts only whitelisted inbound frames; this
@@ -28,40 +30,45 @@
       if (event.source !== window || event.origin !== location.origin) return;
       const data = event.data;
       if (!data || data.channel !== "tracecon-iq-market" || !data.payload) return;
-      const context = detectAsset();
-      if (data.payload.type === "bridge-ready") {
-        chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, timeframe: detectTimeframe() } });
+      if (data.payload.type === "instrument") {
+        const mapped = globalThis.TraceConAssetResolver?.parse(data.payload.symbol || data.payload.name || data.payload.displaySymbol, "iq-observed-instrument", .98);
+        if (mapped && Number.isFinite(Number(data.payload.activeId))) {
+          iqInstrumentRegistry.set(String(data.payload.activeId), { ...mapped, activeId: Number(data.payload.activeId), instrumentType: data.payload.instrumentType || "unknown" });
+          chrome.runtime.sendMessage({ type: "tc.iq.instrument", payload: { ...mapped, activeId: Number(data.payload.activeId), instrumentType: data.payload.instrumentType || "unknown" } });
+        }
         return;
       }
-      if (!context?.symbol) {
-        chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: null, timeframe: data.payload.timeframe || null } });
+      const context = detectAsset(data.payload.activeId);
+      if (data.payload.type === "bridge-ready") {
+        chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, activeId: data.payload.activeId ?? null, assetMismatch: !!context?.assetMismatch, assetResolutionConfidence: context?.confidence || 0, timeframe: detectTimeframe() } });
+        return;
+      }
+      if (!context?.symbol || context.assetMismatch || context.confidence < .65) {
+        chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, activeId: data.payload.activeId ?? null, assetMismatch: !!context?.assetMismatch, assetResolutionConfidence: context?.confidence || 0, timeframe: data.payload.timeframe || null } });
         return; // never guess activeId -> symbol mapping
       }
-      chrome.runtime.sendMessage({ type: "tc.iq.market", payload: { ...data.payload, symbol: context.symbol } });
+      const key = `${context.symbol}|${context.domain}`;
+      if (lastResolvedAssetKey && lastResolvedAssetKey !== key) console.info("[TRACE_CON][ASSET] switched", { from: lastResolvedAssetKey, to: key });
+      lastResolvedAssetKey = key;
+      console.info("[TRACE_CON][ASSET]", { visibleSymbol: context.visibleSymbol || context.symbol, activeId: data.payload.activeId, resolvedSymbol: context.symbol, source: context.source, confidence: context.confidence, domain: context.domain });
+      chrome.runtime.sendMessage({ type: "tc.iq.market", payload: { ...data.payload, symbol: context.symbol, domain: context.domain, visibleSymbol: context.visibleSymbol || context.symbol, assetResolutionConfidence: context.confidence, assetSource: context.source, uiPrice: detectUiPrice() } });
     });
   }
 
   // ------------------------------------------------------------
   // Detecção do ativo operado
   // ------------------------------------------------------------
-  function detectAsset() {
+  function detectAsset(activeId = null) {
     const host = location.host;
     const url = location.href;
 
     if (/(^|\.)iqoption\.com$/i.test(host)) {
-      const iq = document.title.match(/([A-Z]{3})\s*\/?\s*([A-Z]{3})(\s*[-_]?\s*OTC)?/i);
-      if (iq) return { symbol: `${iq[1]}${iq[2]}${iq[3] ? "-OTC" : ""}`.toUpperCase(), source: "iqoption-title" };
-      const selectorCandidates = [
-        "[data-testid*='asset' i]", "[data-testid*='instrument' i]", "[class*='asset-name' i]", "[class*='instrument-name' i]",
-      ];
-      for (const selector of selectorCandidates) {
-        const text = document.querySelector(selector)?.textContent?.trim() || "";
-        const match = text.match(/([A-Z]{3})\s*\/?\s*([A-Z]{3})(\s*[-_]?\s*OTC)?/i);
-        if (match) return { symbol: `${match[1]}${match[2]}${match[3] ? "-OTC" : ""}`.toUpperCase(), source: "iqoption-dom" };
-      }
-      const visible = (document.body?.innerText || "").slice(0, 20_000);
-      const bodyMatch = visible.match(/\b([A-Z]{3})\s*\/\s*([A-Z]{3})(\s*[-_]?\s*OTC)?\b/i);
-      if (bodyMatch) return { symbol: `${bodyMatch[1]}${bodyMatch[2]}${bodyMatch[3] ? "-OTC" : ""}`.toUpperCase(), source: "iqoption-visible-dom" };
+      const visible = globalThis.TraceConAssetResolver?.resolveVisible(document) || null;
+      const mapped = activeId != null ? iqInstrumentRegistry.get(String(activeId)) || null : null;
+      if (mapped && visible && !globalThis.TraceConAssetResolver.same(mapped, visible)) return { ...visible, activeId, visibleSymbol: visible.symbol, feedSymbol: mapped.symbol, assetMismatch: true, source: "iq-visible-vs-activeid-mismatch", confidence: 0 };
+      if (mapped) return { ...mapped, activeId, visibleSymbol: visible?.symbol || mapped.symbol, feedSymbol: mapped.symbol, source: "iq-activeid-registry", confidence: .98 };
+      if (visible) return { ...visible, activeId, visibleSymbol: visible.symbol, feedSymbol: visible.symbol, assetMismatch: false };
+      return null;
     }
 
     // TradingView: chart URL contains /symbols/<EXCHANGE>-<PAIR>/
@@ -91,6 +98,15 @@
     // TRACE_1M intentionally does not mirror the broker chart interval. The
     // backend contract and the visible expiry both remain one minute.
     return "1m";
+  }
+  function detectUiPrice() {
+    const selectors = ["[data-testid*='current-price' i]", "[data-testid*='quote-price' i]", "[class*='current-price' i]", "[class*='quote-price' i]"];
+    for (const selector of selectors) {
+      const text = document.querySelector(selector)?.textContent || "";
+      const match = text.replace(/\s/g, "").match(/\d+(?:[.,]\d+)?/);
+      if (match) { const value = Number(match[0].replace(",", ".")); if (Number.isFinite(value) && value > 0) return value; }
+    }
+    return null;
   }
 
   // ------------------------------------------------------------

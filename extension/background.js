@@ -28,6 +28,7 @@ const apiHeaders = (opts, extra = {}) => ({
 });
 const TRACE_PREFIX = "[TRACE_CON]";
 const IQ_MARKET_KEY = "tcIqMarketStore";
+const IQ_INSTRUMENT_REGISTRY_KEY = "tcIqInstrumentRegistry";
 const REMOTE_STATE_KEY = "tcRemoteApiState";
 
 function traceLog(scope, message, meta = {}) {
@@ -75,11 +76,12 @@ async function readLocalMarket() {
 async function writeLocalMarket(store) {
   return new Promise((resolve) => chrome.storage.local.set({ [IQ_MARKET_KEY]: store }, resolve));
 }
-async function persistIqFrame(frame) {
+const marketKey = (frame, tabId) => `${tabId ?? "unknown"}:${frame.domain || (/OTC/i.test(frame.symbol) ? "IQ_OPTION_OTC" : "IQ_OPTION_FOREX")}:${String(frame.symbol || "").toUpperCase()}`;
+async function persistIqFrame(frame, tabId) {
   if (!frame?.symbol || !["candle", "tick"].includes(frame.kind)) return;
   const store = await readLocalMarket();
-  const key = String(frame.symbol).toUpperCase();
-  const item = store[key] || { symbol: key, candles: [], ticks: [], lastFrameAt: null, source: "iqoption:browser-session" };
+  const key = marketKey(frame, tabId);
+  const item = store[key] || { symbol: String(frame.symbol).toUpperCase(), domain: frame.domain || (/OTC/i.test(frame.symbol) ? "IQ_OPTION_OTC" : "IQ_OPTION_FOREX"), sourceTabId: tabId ?? null, activeId: frame.activeId ?? null, candles: [], ticks: [], lastFrameAt: null, source: "iqoption:browser-session" };
   if (frame.kind === "candle") {
     const existing = item.candles.findIndex((c) => c.timestamp === frame.timestamp && c.timeframe === frame.timeframe);
     if (existing >= 0) item.candles[existing] = { ...frame };
@@ -93,14 +95,28 @@ async function persistIqFrame(frame) {
   item.lastFrameAt = Number(frame.receivedAt) || Date.now();
   item.lastPrice = frame.kind === "tick" ? frame.price : frame.close;
   item.lastPriceTimestamp = Number(frame.timestamp) || item.lastFrameAt;
+  item.activeId = frame.activeId ?? item.activeId;
   store[key] = item;
   await writeLocalMarket(store);
   return item;
 }
 
-async function localAnalyze(symbol) {
+async function localAnalyze(symbol, tabId = null) {
   const store = await readLocalMarket();
-  return globalThis.TraceConLocalEngine.analyze(symbol, store[String(symbol || "").toUpperCase()]);
+  const wanted = String(symbol || "").toUpperCase();
+  const item = Object.values(store).find((entry) => entry?.symbol === wanted && (tabId == null || entry.sourceTabId === tabId)) || null;
+  return globalThis.TraceConLocalEngine.analyze(symbol, item);
+}
+async function readInstrumentRegistry() {
+  return new Promise((resolve) => chrome.storage.local.get([IQ_INSTRUMENT_REGISTRY_KEY], (s) => resolve(s[IQ_INSTRUMENT_REGISTRY_KEY] || {})));
+}
+async function registerInstrument(instrument) {
+  if (!instrument?.symbol || !Number.isFinite(Number(instrument.activeId))) return null;
+  const registry = await readInstrumentRegistry();
+  const id = String(instrument.activeId);
+  registry[id] = { activeId: Number(instrument.activeId), symbol: String(instrument.symbol).toUpperCase(), displaySymbol: instrument.displaySymbol || instrument.symbol, domain: instrument.domain || null, instrumentType: instrument.instrumentType || "unknown", observedAt: Date.now() };
+  await new Promise((resolve) => chrome.storage.local.set({ [IQ_INSTRUMENT_REGISTRY_KEY]: registry }, resolve));
+  return registry[id];
 }
 
 // ------------------------------------------------------------
@@ -213,8 +229,8 @@ async function setOpt(key, value) {
 // ------------------------------------------------------------
 // Local signal path — deliberately zero HTTP.
 // ------------------------------------------------------------
-async function callAnalyze(symbol) {
-  return { ...(await localAnalyze(symbol)), backend: "LOCAL", remoteApi: await remoteState() };
+async function callAnalyze(symbol, tabId = null) {
+  return { ...(await localAnalyze(symbol, tabId)), backend: "LOCAL", remoteApi: await remoteState() };
 }
 
 async function forwardIqMarket(frame, tabId, backend, opts) {
@@ -280,6 +296,11 @@ async function broadcast(msg) {
 
 async function runTick(triggeredByTimer) {
   const opts = await getOpts();
+  // IQ Option shadow decisions are always tied to the active chart tab. A
+  // global timer has no trustworthy tab/asset identity, so it must not scan
+  // the configured symbol list and accidentally publish a stale cross-tab
+  // result. Fresh accepted IQ frames trigger analysis from their own tab.
+  if (triggeredByTimer) return;
   if (!opts.auto && !triggeredByTimer === false) return; // manual só se triggeredByTimer false
   // Manual (não timer): ignora o auto e roda sempre que o content pedir
   if (!triggeredByTimer && !opts.auto) {
@@ -289,7 +310,7 @@ async function runTick(triggeredByTimer) {
 
   for (const symbol of opts.symbols) {
     try {
-      const data = await callAnalyze(symbol, opts.timeframe, opts.direction, opts.horizon, opts.backend, opts);
+      const data = await callAnalyze(symbol);
       const key = `${symbol}-${opts.timeframe}`;
       const store = await readStore();
       const prev = store[key];
@@ -367,12 +388,31 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const opts = await getOpts();
       const { symbol, timeframe } = msg.payload || {};
       try {
-        const data = await callAnalyze(symbol, timeframe || opts.timeframe, opts.direction, opts.horizon, opts.backend, opts);
+        const tabId = sender.tab?.id ?? null;
+        const iqSender = !!sender.tab?.url && /^https:\/\/([a-z0-9-]+\.)?iqoption\.com\//i.test(sender.tab.url);
+        const diagnostics = tabId != null ? await readIqDiagnostics() : null;
+        const tabState = tabId != null ? diagnostics.tabs[String(tabId)] : null;
+        const requestedSymbol = String(symbol || "").toUpperCase();
+        if (iqSender && (!tabState || tabState.assetSync !== "ASSET_SYNCED" || tabState.symbol !== requestedSymbol)) {
+          const reason = tabState?.assetSync || "ASSET_UNKNOWN";
+          const data = { decision: "WAIT", symbol: requestedSymbol, timeframe: TRACE_1M_TIMEFRAME, confidence: 0, probability: null, rationale: reason, shadowEligible: false, backend: "LOCAL", remoteApi: await remoteState() };
+          await patchIqDiagnostics(tabId, { lastShadowDecision: "WAIT", lastError: reason });
+          sendResponse({ ok: true, data });
+          return;
+        }
+        const data = await callAnalyze(symbol, tabId);
         if (sender.tab?.id && data) await patchIqDiagnostics(sender.tab.id, { lastShadowDecision: data.decision || "WAIT", lastError: data.diagnostic?.message || null });
         sendResponse({ ok: true, data });
       } catch (e) {
         sendResponse({ ok: true, data: { decision: "WAIT", symbol, timeframe: TRACE_1M_TIMEFRAME, confidence: 0, rationale: "TRACE_EXTENSION_ERROR", diagnostic: traceError("SERVICE_WORKER", "analyze", e) } });
       }
+      return;
+    }
+    if (msg.type === "tc.iq.instrument") {
+      if (!sender.tab?.id || !sender.tab.url || !/^https:\/\/([a-z0-9-]+\.)?iqoption\.com\//i.test(sender.tab.url)) { sendResponse({ ok: false, error: "untrusted_iq_sender" }); return; }
+      const registered = await registerInstrument(msg.payload);
+      await patchIqDiagnostics(sender.tab.id, { activeId: registered?.activeId ?? null, registrySymbol: registered?.symbol ?? null, domain: registered?.domain ?? null, instrumentRegistry: registered ? "OBSERVED" : "UNAVAILABLE" });
+      sendResponse({ ok: !!registered });
       return;
     }
     if (msg.type === "tc.iq.market") {
@@ -382,11 +422,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
       try {
         const opts = await getOpts();
-        await persistIqFrame(msg.payload);
-        const localItem = await readLocalMarket();
-        const experimentItem = localItem[String(msg.payload?.symbol || "").toUpperCase()];
+        const registry = await readInstrumentRegistry();
+        const registered = msg.payload?.activeId != null ? registry[String(msg.payload.activeId)] : null;
+        if (registered?.symbol && registered.symbol !== String(msg.payload.symbol || "").toUpperCase()) {
+          await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, visibleSymbol: msg.payload.visibleSymbol || null, activeId: msg.payload.activeId, feedSymbol: registered.symbol, symbol: msg.payload.symbol || null, assetSync: "ASSET_MISMATCH", lastError: "ASSET_MISMATCH" });
+          sendResponse({ ok: true, localOnly: true, assetMismatch: true });
+          return;
+        }
+        const experimentItem = await persistIqFrame(msg.payload, sender.tab.id);
+        const feedPrice = Number(experimentItem?.lastPrice);
+        const uiPrice = Number(msg.payload?.uiPrice);
+        const priceDelta = Number.isFinite(feedPrice) && Number.isFinite(uiPrice) ? Math.abs(feedPrice - uiPrice) : null;
+        const priceTolerance = Number.isFinite(feedPrice) ? Math.max(Math.abs(feedPrice) * 0.002, 0.00001) : null;
+        if (priceDelta != null && priceTolerance != null && priceDelta > priceTolerance) {
+          await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, activeId: msg.payload?.activeId ?? null, assetSync: "PRICE_MISMATCH", uiPrice, feedPrice, priceDelta, priceTolerance, lastError: "PRICE_MISMATCH" });
+          sendResponse({ ok: true, localOnly: true, priceMismatch: true });
+          return;
+        }
         if (experimentItem) await ProgressiveExperimentRunner.ingest(experimentItem, sender.tab.id);
-        await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: true, lastIngestError: null, networkStatus: "LOCAL_SHADOW_ACTIVE" });
+        await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, visibleSymbol: msg.payload?.visibleSymbol || msg.payload?.symbol || null, feedSymbol: registered?.symbol || msg.payload?.symbol || null, activeId: msg.payload?.activeId ?? null, domain: msg.payload?.domain || null, assetResolutionConfidence: msg.payload?.assetResolutionConfidence ?? 0, assetSync: "ASSET_SYNCED", uiPrice: Number.isFinite(uiPrice) ? uiPrice : null, feedPrice: Number.isFinite(feedPrice) ? feedPrice : null, priceDelta, priceTolerance, timeframe: msg.payload?.timeframe || null, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: true, lastIngestError: null, networkStatus: "LOCAL_SHADOW_ACTIVE" });
+        console.info(`${TRACE_PREFIX}[MARKET]`, { symbol: msg.payload?.symbol, price: experimentItem?.lastPrice ?? null, timeframe: msg.payload?.timeframe, timestamp: msg.payload?.timestamp, candleCount: experimentItem?.candles?.length || 0, tickCount: experimentItem?.ticks?.length || 0 });
         // Remote ingestion is observational and must never delay local shadow.
         if (opts.remoteApiEnabled) forwardIqMarket(msg.payload, sender.tab.id, opts.backend, opts).then((upstream) => patchIqDiagnostics(sender.tab.id, { remoteSync: upstream.ok ? "SYNCED" : "OFFLINE" })).catch(() => null);
         await chrome.tabs.sendMessage(sender.tab.id, { type: "tc.iq.marketAccepted", payload: { symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null } }).catch(() => null);
@@ -403,7 +458,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ ok: false, error: "untrusted_iq_sender" });
         return;
       }
-      await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: !!msg.payload?.bridgeActive, symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null });
+      await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: !!msg.payload?.bridgeActive, symbol: msg.payload?.symbol || null, activeId: msg.payload?.activeId ?? null, assetSync: msg.payload?.assetMismatch ? "ASSET_MISMATCH" : msg.payload?.symbol ? "PENDING_FEED" : "ASSET_UNKNOWN", assetResolutionConfidence: msg.payload?.assetResolutionConfidence ?? 0, timeframe: msg.payload?.timeframe || null });
       sendResponse({ ok: true });
       return;
     }
