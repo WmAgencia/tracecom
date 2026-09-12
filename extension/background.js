@@ -76,7 +76,7 @@ async function readLocalMarket() {
 async function writeLocalMarket(store) {
   return new Promise((resolve) => chrome.storage.local.set({ [IQ_MARKET_KEY]: store }, resolve));
 }
-const marketKey = (frame, tabId) => `${tabId ?? "unknown"}:${frame.domain || (/OTC/i.test(frame.symbol) ? "IQ_OPTION_OTC" : "IQ_OPTION_FOREX")}:${String(frame.symbol || "").toUpperCase()}`;
+const marketKey = (frame, tabId) => `${tabId ?? "unknown"}:${frame.domain || (/OTC/i.test(frame.symbol) ? "IQ_OPTION_OTC" : "IQ_OPTION_FOREX")}:${String(frame.symbol || "").toUpperCase()}:${TRACE_1M_TIMEFRAME}`;
 async function persistIqFrame(frame, tabId) {
   if (!frame?.symbol || !["candle", "tick"].includes(frame.kind)) return;
   const store = await readLocalMarket();
@@ -263,10 +263,10 @@ async function patchIqDiagnostics(tabId, patch) {
 }
 async function extensionDiagnostics() {
   const current = await readIqDiagnostics();
-  const tabs = Object.values(current.tabs).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  const tabs = Object.entries(current.tabs).map(([tabId, value]) => ({ tabId: Number(tabId), ...value })).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   const remoteApi = await remoteState();
   const local = await readLocalMarket();
-  const activeMarket = Object.values(local).sort((a, b) => (b.lastFrameAt || 0) - (a.lastFrameAt || 0))[0] || null;
+  const activeMarket = Object.values(local).filter((item) => !tabs[0] || item?.sourceTabId === tabs[0].tabId).sort((a, b) => (b.lastFrameAt || 0) - (a.lastFrameAt || 0))[0] || null;
   return { ...(tabs[0] || {}), downbarEnabled: current.downbarEnabled, remoteApi, backend: { online: remoteApi.status === "REMOTE_API_ONLINE" }, states: { iqAdapter: tabs[0]?.bridgeActive ? "LIVE" : "WAITING", marketData: activeMarket ? "LIVE" : "WAITING", localEngine: "READY", shadowEngine: "ACTIVE", history: "READY", remoteApi: remoteApi.status }, market: activeMarket ? { price: activeMarket.lastPrice ?? null, candles: activeMarket.candles?.length || 0, ticks: activeMarket.ticks?.length || 0 } : { price: null, candles: 0, ticks: 0 } };
 }
 
@@ -424,6 +424,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const opts = await getOpts();
         const registry = await readInstrumentRegistry();
         const registered = msg.payload?.activeId != null ? registry[String(msg.payload.activeId)] : null;
+        if (!msg.payload?.visibleConfirmed || !registered?.symbol) {
+          await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, visibleSymbol: msg.payload?.visibleSymbol || null, activeId: msg.payload?.activeId ?? null, registrySymbol: registered?.symbol || null, assetSync: !msg.payload?.visibleConfirmed ? "WAITING_FOR_VISIBLE_ASSET" : "WAITING_FOR_ACTIVE_ID_MAPPING", lastError: !msg.payload?.visibleConfirmed ? "WAITING_FOR_VISIBLE_ASSET" : "WAITING_FOR_ACTIVE_ID_MAPPING" });
+          sendResponse({ ok: true, localOnly: true, assetPending: true });
+          return;
+        }
         if (registered?.symbol && registered.symbol !== String(msg.payload.symbol || "").toUpperCase()) {
           await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, visibleSymbol: msg.payload.visibleSymbol || null, activeId: msg.payload.activeId, feedSymbol: registered.symbol, symbol: msg.payload.symbol || null, assetSync: "ASSET_MISMATCH", lastError: "ASSET_MISMATCH" });
           sendResponse({ ok: true, localOnly: true, assetMismatch: true });
@@ -458,7 +463,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ ok: false, error: "untrusted_iq_sender" });
         return;
       }
-      await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: !!msg.payload?.bridgeActive, symbol: msg.payload?.symbol || null, activeId: msg.payload?.activeId ?? null, assetSync: msg.payload?.assetMismatch ? "ASSET_MISMATCH" : msg.payload?.symbol ? "PENDING_FEED" : "ASSET_UNKNOWN", assetResolutionConfidence: msg.payload?.assetResolutionConfidence ?? 0, timeframe: msg.payload?.timeframe || null });
+      const status = msg.payload?.assetMismatch ? "ASSET_MISMATCH" : !msg.payload?.visibleConfirmed ? "WAITING_FOR_VISIBLE_ASSET" : !msg.payload?.mappingConfirmed ? "WAITING_FOR_ACTIVE_ID_MAPPING" : msg.payload?.symbol ? "PENDING_FEED" : "ASSET_UNKNOWN";
+      await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: !!msg.payload?.bridgeActive, symbol: msg.payload?.symbol || null, visibleSymbol: msg.payload?.visibleSymbol || null, registrySymbol: msg.payload?.registrySymbol || null, visibleSource: msg.payload?.visibleSource || null, activeId: msg.payload?.activeId ?? null, assetSync: status, assetResolutionConfidence: msg.payload?.assetResolutionConfidence ?? 0, timeframe: msg.payload?.timeframe || null });
       sendResponse({ ok: true });
       return;
     }

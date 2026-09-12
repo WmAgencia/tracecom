@@ -21,6 +21,8 @@
   window.__traceconInjected = true;
   const iqInstrumentRegistry = new Map();
   let lastResolvedAssetKey = null;
+  let lastVisibleStatusKey = null;
+  let visibleStatusTimer = null;
 
   // IQ Option uses an isolated content world. The read-only bridge is loaded
   // in MAIN at document_start and posts only whitelisted inbound frames; this
@@ -43,15 +45,15 @@
         chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, activeId: data.payload.activeId ?? null, assetMismatch: !!context?.assetMismatch, assetResolutionConfidence: context?.confidence || 0, timeframe: detectTimeframe() } });
         return;
       }
-      if (!context?.symbol || context.assetMismatch || context.confidence < .65) {
-        chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, activeId: data.payload.activeId ?? null, assetMismatch: !!context?.assetMismatch, assetResolutionConfidence: context?.confidence || 0, timeframe: data.payload.timeframe || null } });
+      if (!context?.symbol || context.assetMismatch || context.confidence < .65 || !context.visibleConfirmed || !context.mappingConfirmed) {
+        chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, visibleSymbol: context?.visibleSymbol || null, activeId: data.payload.activeId ?? null, registrySymbol: context?.feedSymbol || null, assetMismatch: !!context?.assetMismatch, visibleConfirmed: !!context?.visibleConfirmed, mappingConfirmed: !!context?.mappingConfirmed, assetResolutionConfidence: context?.confidence || 0, timeframe: data.payload.timeframe || null } });
         return; // never guess activeId -> symbol mapping
       }
       const key = `${context.symbol}|${context.domain}`;
       if (lastResolvedAssetKey && lastResolvedAssetKey !== key) console.info("[TRACE_CON][ASSET] switched", { from: lastResolvedAssetKey, to: key });
       lastResolvedAssetKey = key;
       console.info("[TRACE_CON][ASSET]", { visibleSymbol: context.visibleSymbol || context.symbol, activeId: data.payload.activeId, resolvedSymbol: context.symbol, source: context.source, confidence: context.confidence, domain: context.domain });
-      chrome.runtime.sendMessage({ type: "tc.iq.market", payload: { ...data.payload, symbol: context.symbol, domain: context.domain, visibleSymbol: context.visibleSymbol || context.symbol, assetResolutionConfidence: context.confidence, assetSource: context.source, uiPrice: detectUiPrice() } });
+      chrome.runtime.sendMessage({ type: "tc.iq.market", payload: { ...data.payload, symbol: context.symbol, domain: context.domain, visibleSymbol: context.visibleSymbol || context.symbol, visibleConfirmed: true, mappingConfirmed: true, assetResolutionConfidence: context.confidence, assetSource: context.source, uiPrice: detectUiPrice() } });
     });
   }
 
@@ -65,9 +67,10 @@
     if (/(^|\.)iqoption\.com$/i.test(host)) {
       const visible = globalThis.TraceConAssetResolver?.resolveVisible(document) || null;
       const mapped = activeId != null ? iqInstrumentRegistry.get(String(activeId)) || null : null;
-      if (mapped && visible && !globalThis.TraceConAssetResolver.same(mapped, visible)) return { ...visible, activeId, visibleSymbol: visible.symbol, feedSymbol: mapped.symbol, assetMismatch: true, source: "iq-visible-vs-activeid-mismatch", confidence: 0 };
-      if (mapped) return { ...mapped, activeId, visibleSymbol: visible?.symbol || mapped.symbol, feedSymbol: mapped.symbol, source: "iq-activeid-registry", confidence: .98 };
-      if (visible) return { ...visible, activeId, visibleSymbol: visible.symbol, feedSymbol: visible.symbol, assetMismatch: false };
+      if (mapped && visible && !globalThis.TraceConAssetResolver.same(mapped, visible)) return { ...visible, activeId, visibleSymbol: visible.symbol, feedSymbol: mapped.symbol, assetMismatch: true, visibleConfirmed: true, mappingConfirmed: true, source: "iq-visible-vs-activeid-mismatch", confidence: 0 };
+      if (mapped && visible) return { ...mapped, activeId, visibleSymbol: visible.symbol, feedSymbol: mapped.symbol, assetMismatch: false, visibleConfirmed: true, mappingConfirmed: true, source: "iq-visible-plus-activeid-registry", confidence: .98 };
+      if (mapped) return { ...mapped, activeId, visibleSymbol: null, feedSymbol: mapped.symbol, assetMismatch: false, visibleConfirmed: false, mappingConfirmed: true, source: "iq-activeid-registry", confidence: .98 };
+      if (visible) return { ...visible, activeId, visibleSymbol: visible.symbol, feedSymbol: null, assetMismatch: false, visibleConfirmed: true, mappingConfirmed: false };
       return null;
     }
 
@@ -100,6 +103,8 @@
     return "1m";
   }
   function detectUiPrice() {
+    const iqPrice = globalThis.TraceConAssetResolver?.resolveUiPrice(document);
+    if (Number.isFinite(iqPrice)) return iqPrice;
     const selectors = ["[data-testid*='current-price' i]", "[data-testid*='quote-price' i]", "[class*='current-price' i]", "[class*='quote-price' i]"];
     for (const selector of selectors) {
       const text = document.querySelector(selector)?.textContent || "";
@@ -107,6 +112,15 @@
       if (match) { const value = Number(match[0].replace(",", ".")); if (Number.isFinite(value) && value > 0) return value; }
     }
     return null;
+  }
+
+  function publishVisibleAssetStatus() {
+    if (!/(^|\.)iqoption\.com$/i.test(location.hostname)) return;
+    const context = detectAsset();
+    const key = `${context?.visibleSymbol || "UNKNOWN"}|${context?.domain || "UNKNOWN"}`;
+    if (key === lastVisibleStatusKey) return;
+    lastVisibleStatusKey = key;
+    chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, visibleSymbol: context?.visibleSymbol || null, registrySymbol: context?.feedSymbol || null, activeId: context?.activeId ?? null, assetMismatch: !!context?.assetMismatch, visibleConfirmed: !!context?.visibleConfirmed, mappingConfirmed: !!context?.mappingConfirmed, assetResolutionConfidence: context?.confidence || 0, timeframe: detectTimeframe(), visibleSource: context?.source || null } });
   }
 
   // ------------------------------------------------------------
@@ -199,8 +213,9 @@
   // Page detected is useful even when no candle has arrived yet. The server
   // receives no page text or account information, only this minimal context.
   if (/(^|\.)iqoption\.com$/i.test(location.hostname)) {
-    const context = detectAsset();
-    chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, timeframe: detectTimeframe() } });
+    publishVisibleAssetStatus();
+    const chartHeaderObserver = new MutationObserver(() => { clearTimeout(visibleStatusTimer); visibleStatusTimer = setTimeout(publishVisibleAssetStatus, 100); });
+    chartHeaderObserver.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
   }
 
   const bar = root.querySelector("#tcBar");

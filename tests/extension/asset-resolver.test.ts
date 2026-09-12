@@ -25,6 +25,23 @@ describe("IQ Option strict asset resolver", () => {
     expect(assets.parse("OPT/ION")).toBeNull();
   });
 
+  it("finds the visible chart-header asset without scanning generic body text", async () => {
+    const assets = await resolver();
+    const header = { children: [], innerText: "EUR/USD (OTC)", getBoundingClientRect: () => ({ left: 150, top: 132, width: 90, height: 20 }) };
+    const watchlist = { children: [], innerText: "GBP/USD", getBoundingClientRect: () => ({ left: 40, top: 40, width: 90, height: 20 }) };
+    const doc = { title: "IQ Option", defaultView: { innerWidth: 1500, innerHeight: 700 }, querySelector: () => null, querySelectorAll: () => [watchlist, header] };
+    expect(assets.resolveVisible(doc)).toMatchObject({ symbol: "EURUSD-OTC", source: "iq-chart-header-geometry" });
+  });
+
+  it("uses only visible bid/ask nodes to calculate a UI price", async () => {
+    const assets = await resolver();
+    const ask = { children: [], innerText: "ask 1.160230", getBoundingClientRect: () => ({ left: 150, top: 580, width: 80, height: 12 }) };
+    const bid = { children: [], innerText: "bid 1.160220", getBoundingClientRect: () => ({ left: 150, top: 600, width: 80, height: 12 }) };
+    const unrelated = { children: [], innerText: "ask 9.99", getBoundingClientRect: () => ({ left: 2, top: 10, width: 80, height: 12 }) };
+    const doc = { defaultView: { innerWidth: 1500, innerHeight: 700 }, querySelectorAll: () => [ask, bid, unrelated] };
+    expect(assets.resolveUiPrice(doc)).toBeCloseTo(1.160225, 8);
+  });
+
   it("detects an asset or domain switch as a mismatch instead of allowing price reuse", async () => {
     const assets = await resolver();
     const forex = assets.parse("EUR/USD");

@@ -34,6 +34,11 @@ describe("TRACE_CON offline local shadow engine", () => {
     expect(one.signature).toBe(two.signature); expect(one.features.mtf.direction5m).not.toBe("UNAVAILABLE"); expect(one.features.ticks.tickCount).toBe(20); expect(one.snapshot.candles).toHaveLength(30);
   });
 
+  it("returns WAIT for a stale IQ feed even when enough candles are present", async () => {
+    const e = await engine(); const stale: any = item(Array.from({ length: 40 }, (_, i) => 1 + i * 0.001)); stale.lastFrameAt = Date.now() - 15_001;
+    expect(e.analyze("EURUSD", stale)).toMatchObject({ decision: "WAIT", shadowEligible: false, rationale: "IQ_FEED_STALE" });
+  });
+
   it("classifies offline outcomes and does not execute orders", async () => {
     const e = await engine();
     expect(e.classifyOutcome("BUY", 100, 101)).toBe("WIN");

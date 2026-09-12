@@ -19,18 +19,39 @@
     if (!timeframe || !finite(c.active_id)) return null;
     return { kind: "candle", activeId: c.active_id, timeframe, open: c.open, high: c.max, low: c.min, close: c.close, volume: finite(c.volume) ? c.volume : 0, timestamp: c.from * 1000, isClosed: c.to ? Date.now() >= c.to * 1000 : false, sequence: ++sequence, receivedAt: Date.now(), serverTime: c.to ? c.to * 1000 : undefined };
   };
-  const instrument = (raw) => {
+  const instruments = (raw) => {
+    let envelope;
+    try { envelope = typeof raw === "string" ? JSON.parse(raw) : raw; } catch { return []; }
+    const msg = envelope?.msg;
+    if (!msg || typeof msg !== "object") return [];
+    const found = []; const seen = new Set(); const queue = [{ value: msg, depth: 0 }];
+    while (queue.length && found.length < 80) {
+      const { value, depth } = queue.shift();
+      if (!value || typeof value !== "object" || depth > 4) continue;
+      if (Array.isArray(value)) { for (const child of value.slice(0, 240)) queue.push({ value: child, depth: depth + 1 }); continue; }
+      const activeId = numericId(value.active_id ?? value.activeId ?? value.id);
+      const symbol = value.symbol ?? value.ticker ?? value.instrument ?? value.underlying ?? value.name ?? value.description;
+      if (activeId != null && typeof symbol === "string" && symbol.length <= 48 && !seen.has(`${activeId}:${symbol}`)) {
+        seen.add(`${activeId}:${symbol}`);
+        // Only a small whitelisted metadata projection leaves the page: no
+        // account/session fields and never the original socket envelope.
+        found.push({ type: "instrument", activeId, symbol, name: typeof value.name === "string" ? value.name.slice(0, 48) : undefined, instrumentType: typeof envelope?.name === "string" ? envelope.name.slice(0, 48) : "unknown", receivedAt: Date.now() });
+      }
+      for (const key of ["actives", "active", "instruments", "instrument", "items", "data", "result", "list"]) if (value[key] && typeof value[key] === "object") queue.push({ value: value[key], depth: depth + 1 });
+    }
+    return found;
+  };
+  const tick = (raw) => {
     let envelope;
     try { envelope = typeof raw === "string" ? JSON.parse(raw) : raw; } catch { return null; }
-    const msg = envelope?.msg;
-    if (!msg || typeof msg !== "object") return null;
-    const activeId = numericId(msg.active_id ?? msg.activeId ?? msg.id);
-    const symbol = msg.symbol ?? msg.ticker ?? msg.instrument ?? msg.name;
-    if (activeId == null || typeof symbol !== "string" || symbol.length > 48) return null;
-    // Only a small metadata projection leaves the page: no account/session fields.
-    return { type: "instrument", activeId, symbol, name: typeof msg.name === "string" ? msg.name.slice(0, 48) : undefined, instrumentType: typeof envelope?.name === "string" ? envelope.name.slice(0, 48) : "unknown", receivedAt: Date.now() };
+    if (!/^(instrument-quotes-generated|quote-generated|tick-generated|price-generated)$/i.test(String(envelope?.name || ""))) return null;
+    const q = envelope?.msg; if (!q || typeof q !== "object" || Array.isArray(q)) return null;
+    const activeId = numericId(q.active_id ?? q.activeId); const price = Number(q.price ?? q.value ?? q.close); const rawTime = Number(q.timestamp ?? q.time ?? q.at ?? q.created_at);
+    if (activeId == null || !Number.isFinite(price) || price <= 0) return null;
+    const timestamp = Number.isFinite(rawTime) && rawTime > 0 ? (rawTime < 10_000_000_000 ? rawTime * 1000 : rawTime) : Date.now();
+    return { kind: "tick", activeId, price, timestamp, sequence: ++sequence, receivedAt: Date.now() };
   };
-  const observe = (socket) => socket.addEventListener("message", (event) => { const frame = normalize(event.data); if (frame) { post(frame); return; } const metadata = instrument(event.data); if (metadata) post(metadata); });
+  const observe = (socket) => socket.addEventListener("message", (event) => { const frame = normalize(event.data) || tick(event.data); if (frame) { post(frame); return; } for (const metadata of instruments(event.data)) post(metadata); });
   const Original = window.WebSocket;
   window.WebSocket = new Proxy(Original, {
     construct(Target, args, NewTarget) {
