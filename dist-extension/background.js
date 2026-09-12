@@ -9,6 +9,7 @@
  * NÃO executa ordens. NÃO clica em nada. Apenas atualiza o sinal.
  */
 importScripts("local-engine.js");
+importScripts("experiment-runner.js");
 
 const ALARM_NAME = "tcTick";
 const SHADOW_ALARM = "tcShadowTick";
@@ -334,6 +335,7 @@ chrome.runtime.onInstalled.addListener(ensureAlarm);
 chrome.runtime.onStartup.addListener(ensureAlarm);
 
 chrome.tabs.onRemoved.addListener((tabId) => {
+  ProgressiveExperimentRunner.disconnect();
   chrome.storage.local.get(["tcIqDiagnostics"], (s) => {
     const tabs = { ...(s.tcIqDiagnostics || {}) };
     delete tabs[String(tabId)];
@@ -371,8 +373,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       try {
         const opts = await getOpts();
         await persistIqFrame(msg.payload);
-        const upstream = await forwardIqMarket(msg.payload, sender.tab.id, opts.backend, opts);
-        await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: true, lastIngestError: upstream.ok ? null : upstream.diagnostic?.message || "backend unavailable", networkStatus: upstream.ok ? "BACKEND_SYNCED" : "LOCAL_FALLBACK" });
+        const localItem = await readLocalMarket();
+        const experimentItem = localItem[String(msg.payload?.symbol || "").toUpperCase()];
+        if (experimentItem) await ProgressiveExperimentRunner.ingest(experimentItem);
+        await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: true, lastIngestError: null, networkStatus: "LOCAL_FALLBACK" });
+        // Remote ingestion is observational and must never delay local shadow.
+        forwardIqMarket(msg.payload, sender.tab.id, opts.backend, opts).then((upstream) => patchIqDiagnostics(sender.tab.id, { lastIngestError: upstream.ok ? null : upstream.diagnostic?.message || "backend unavailable", networkStatus: upstream.ok ? "BACKEND_SYNCED" : "LOCAL_FALLBACK" })).catch(() => null);
         await chrome.tabs.sendMessage(sender.tab.id, { type: "tc.iq.marketAccepted", payload: { symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null } }).catch(() => null);
         sendResponse({ ok: true });
       } catch (e) {
@@ -435,6 +441,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sendResponse(result);
       return;
     }
+    if (msg.type === "tc.experiment.start") { sendResponse({ ok: true, data: await ProgressiveExperimentRunner.start() }); return; }
+    if (msg.type === "tc.experiment.pause") { sendResponse({ ok: true, data: await ProgressiveExperimentRunner.pause() }); return; }
+    if (msg.type === "tc.experiment.resume") { sendResponse({ ok: true, data: await ProgressiveExperimentRunner.resume() }); return; }
+    if (msg.type === "tc.experiment.stop") { sendResponse({ ok: true, data: await ProgressiveExperimentRunner.stop() }); return; }
+    if (msg.type === "tc.experiment.reset") { sendResponse({ ok: true, data: await ProgressiveExperimentRunner.reset() }); return; }
+    if (msg.type === "tc.experiment.status") { sendResponse({ ok: true, data: await ProgressiveExperimentRunner.read() }); return; }
     if (msg.type === "tc.shadowClose") { sendResponse({ ok: true, localOnly: true }); return; }
     sendResponse({ ok: false, error: "tipo desconhecido" });
   })();
