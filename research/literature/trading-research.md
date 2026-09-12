@@ -34,3 +34,13 @@ ele não testa microprice, book imbalance, depth, quote velocity, spread real,
 trade arrival intensity ou verdadeiro OFI. Uma fase futura só poderá adicionar
 essas hipóteses após integrar um feed read-only que retenha timestamps,
 bid/ask e, para OFI/L2, eventos de livro de ordens auditáveis.
+
+## Gate de precisão intraday
+
+70% é permissão, não objetivo de treino: sem suporte OOS no mesmo bucket,
+limite inferior Wilson 95%, EV líquido, dados frescos e risco aprovado, o
+sistema retorna `WAIT`. Há sazonalidade intraday de atividade, volatilidade e
+spread em FX, portanto uma métrica global não certifica uma sessão específica.
+[Ito & Hashimoto](https://www.nber.org/papers/w12413). Anúncios macro também
+alteram descoberta de preço e volatilidade; sem dados de evento validados OOS,
+o filtro deve ser conservador. [Vega et al.](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=312158)

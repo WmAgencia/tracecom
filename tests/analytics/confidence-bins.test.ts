@@ -1,0 +1,3 @@
+import { describe, expect, it } from "vitest";
+import { confidenceBinDiagnostics } from "../../src/analytics/confidence-bins";
+describe("confidence-bin diagnostics", () => it("does not accept a false 70% bin", () => { const rows = Array.from({ length: 100 }, (_, i) => ({ probabilityCalibrated: 0.72, outcome: i < 55 ? "WIN" as const : "LOSS" as const, netReturn: i < 55 ? 0.01 : -0.01, uniqueness: 0.8 })); const bin = confidenceBinDiagnostics(rows).find((x) => x.lo === 0.70)!; expect(bin.effectiveN).toBeCloseTo(80); expect(bin.observedWinRate).toBe(0.55); expect(bin.confidence95!.lower).toBeLessThan(0.70); }));

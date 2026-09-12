@@ -19,6 +19,7 @@ import { analyzeConfluence, type ConfluenceResult } from "./confluence";
 import { isActionable, expectedValue, wilsonLowerBound } from "./calibration";
 import { deriveMacroBias } from "./macro";
 import { noopMacroProvider, type MacroProvider } from "../context/macro/calendar-provider";
+import { evaluateProductionSignalGate, type ProductionSignalEvidence } from "./production-gate";
 import type { FusionInput, FusionResult } from "./types";
 import type { Direction } from "../backtest/types";
 import type { CandleHistorySource, EmpiricalProbability } from "../backtest/types";
@@ -39,6 +40,8 @@ export interface FusionServiceDeps {
   readonly getNewsBias?: (asset: string) => Promise<"up" | "down" | "neutral" | null>;
   /** Opcional: provedor de calendário macro (CPI/NFP/FOMC/...). Default: noop. */
   readonly macroProvider?: MacroProvider;
+  /** Immutable OOS evidence for the current signal bucket. Omission blocks BUY/SELL. */
+  readonly productionEvidenceProvider?: (input: { symbol: string; timeframe: Timeframe; regime: string | null; direction: Direction }) => ProductionSignalEvidence | null;
 }
 
 export interface AnalyzeRequest {
@@ -205,10 +208,12 @@ export class FusionService {
     const baseResult = this.fusion.fuse(input);
 
     // 6) Combinador final: aplica guards + confluência + calibração
+    const productionGate = evaluateProductionSignalGate(this.deps.productionEvidenceProvider?.({ symbol: req.symbol, timeframe: req.timeframe, regime: summary?.regime.regime ?? null, direction: req.direction }));
     const finalDecision = applyRobustnessLayers(baseResult, {
       guards: { allowed: guardDecision.allow, reason: guardDecision.reason ?? null },
       confluence,
       calibration,
+      productionGate,
     });
 
     return finalDecision;
@@ -226,9 +231,10 @@ function applyRobustnessLayers(
     guards: { allowed: boolean; reason: string | null };
     confluence: ConfluenceResult | undefined;
     calibration: { calibratedProb: number; ciLower: number; ciUpper: number; baseline: number; expectedValue: number; actionable: boolean } | undefined;
+    productionGate: ReturnType<typeof evaluateProductionSignalGate>;
   },
 ): FusionResult {
-  const { guards, confluence, calibration } = layers;
+  const { guards, confluence, calibration, productionGate } = layers;
   const blocked: string[] = [];
   if (!guards.allowed) blocked.push(guards.reason ?? "guards bloqueou");
   if (confluence && confluence.direction === "neutral") blocked.push(`confluência insuficiente (${confluence.reason})`);
@@ -237,6 +243,7 @@ function applyRobustnessLayers(
   } else if (calibration && !calibration.actionable && base.decision !== "WAIT") {
     blocked.push(`calibração não acionável (ci_lower ${(calibration.ciLower * 100).toFixed(1)}% ≤ baseline ${(calibration.baseline * 100).toFixed(1)}% + margem)`);
   }
+  if (!productionGate.allowed && base.decision !== "WAIT") blocked.push(`production 70% gate: ${productionGate.reasonCodes.join(",")}`);
 
   const newDecision: FusionResult["decision"] = blocked.length > 0 ? "WAIT" : base.decision;
   const newRationale = blocked.length > 0
@@ -260,6 +267,7 @@ function applyRobustnessLayers(
     } : undefined,
     calibration,
     guards: { allowed: guards.allowed, reason: guards.reason },
+    productionGate,
   };
 }
 

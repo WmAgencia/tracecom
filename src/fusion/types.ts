@@ -13,6 +13,7 @@
  */
 import type { Direction, EmpiricalProbability } from "../backtest/types";
 import type { MarketRegime } from "../quant/types";
+import type { ProductionSignalGateResult } from "./production-gate";
 
 /** Decisão final. */
 export type DecisionDirection = "BUY" | "SELL" | "WAIT";
@@ -108,4 +109,6 @@ export interface FusionResult {
     readonly allowed: boolean;
     readonly reason: string | null;
   };
+  /** Hard permission for a production-directional signal. */
+  readonly productionGate?: ProductionSignalGateResult;
 }
