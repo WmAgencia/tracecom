@@ -23,6 +23,7 @@
   let lastResolvedAssetKey = null;
   let lastVisibleStatusKey = null;
   let visibleStatusTimer = null;
+  let lastAssetDebugKey = null;
 
   // IQ Option uses an isolated content world. The read-only bridge is loaded
   // in MAIN at document_start and posts only whitelisted inbound frames; this
@@ -38,6 +39,10 @@
           iqInstrumentRegistry.set(String(data.payload.activeId), { ...mapped, activeId: Number(data.payload.activeId), instrumentType: data.payload.instrumentType || "unknown" });
           chrome.runtime.sendMessage({ type: "tc.iq.instrument", payload: { ...mapped, activeId: Number(data.payload.activeId), instrumentType: data.payload.instrumentType || "unknown" } });
         }
+        return;
+      }
+      if (data.payload.type === "asset-debug-event") {
+        publishAssetDebug("websocket-metadata", { eventName: data.payload.eventName || null, activeIds: data.payload.activeIds || [] });
         return;
       }
       const context = detectAsset(data.payload.activeId);
@@ -121,6 +126,21 @@
     if (key === lastVisibleStatusKey) return;
     lastVisibleStatusKey = key;
     chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, visibleSymbol: context?.visibleSymbol || null, registrySymbol: context?.feedSymbol || null, activeId: context?.activeId ?? null, assetMismatch: !!context?.assetMismatch, visibleConfirmed: !!context?.visibleConfirmed, mappingConfirmed: !!context?.mappingConfirmed, assetResolutionConfidence: context?.confidence || 0, timeframe: detectTimeframe(), visibleSource: context?.source || null } });
+    publishAssetDebug("dom-mutation");
+  }
+
+  function publishAssetDebug(reason, websocket = null) {
+    if (!/(^|\.)iqoption\.com$/i.test(location.hostname)) return;
+    const context = detectAsset();
+    const candidates = globalThis.TraceConAssetResolver?.assetDebugCandidates(document) || [];
+    // All fields are explicit market UI metadata. Do not serialize generic DOM
+    // text, page HTML, account state, cookies, storage, or raw WS messages.
+    const payload = { reason, visibleText: context?.visibleSymbol || null, domCandidate: candidates[0] || null, domCandidates: candidates, domSource: context?.source || null, activeId: context?.activeId ?? null, registrySymbol: context?.feedSymbol || null, feedSymbol: context?.symbol || null, lastPrice: detectUiPrice(), status: context?.assetMismatch ? "MISMATCH" : context?.visibleConfirmed && context?.mappingConfirmed ? "MATCH" : context?.visibleConfirmed || context?.mappingConfirmed ? "PARTIAL" : "UNKNOWN", websocket };
+    const key = JSON.stringify({ reason, visibleText: payload.visibleText, candidate: payload.domCandidate?.rect, activeId: payload.activeId, registrySymbol: payload.registrySymbol, websocket });
+    if (key === lastAssetDebugKey) return;
+    lastAssetDebugKey = key;
+    console.info("[TRACE_CON][ASSET_DEBUG]", payload);
+    chrome.runtime.sendMessage({ type: "tc.iq.assetDebug", payload });
   }
 
   // ------------------------------------------------------------
@@ -194,6 +214,7 @@
       <button class="tc-min" id="tcMin" type="button" aria-label="minimizar">─</button>
     </div>
     <div class="tc-error" id="tcError" hidden></div>
+    <pre id="tcAssetDebug" hidden style="position:fixed;left:12px;bottom:72px;z-index:2147483647;max-width:620px;margin:0;padding:10px;background:#08130e;color:#b8ffca;border:1px solid #406d50;border-radius:8px;font:11px/1.35 ui-monospace,monospace;white-space:pre-wrap;pointer-events:none"></pre>
   `;
   document.body.appendChild(root);
 
@@ -238,6 +259,13 @@
   const autoLabel = root.querySelector("#tcAutoLabel");
   const minBtn = root.querySelector("#tcMin");
   const errorEl = root.querySelector("#tcError");
+  const assetDebugEl = root.querySelector("#tcAssetDebug");
+  function renderAssetDebug(debug) {
+    if (!assetDebugEl || !debug) return;
+    const candidate = debug.domCandidate || {};
+    assetDebugEl.textContent = `ASSET DEBUG\nVISIBLE_TEXT: ${debug.visibleText || "—"}\nDOM_CANDIDATE: ${candidate.text || "—"}\nDOM_SOURCE: ${debug.domSource || "—"}\nACTIVE_ID: ${debug.activeId ?? "—"}\nACTIVE_ID_SOURCE: ${debug.websocket?.eventName || "—"}\nREGISTRY_SYMBOL: ${debug.registrySymbol || "—"}\nFEED_SYMBOL: ${debug.feedSymbol || "—"}\nLAST_PRICE: ${debug.lastPrice ?? "—"}\nSTATUS: ${debug.status || "UNKNOWN"}`;
+    assetDebugEl.hidden = false;
+  }
   const countdownEl = root.querySelector("#tcCountdown");
   const feedEl = root.querySelector("#tcFeed");
   const feedTextEl = root.querySelector("#tcFeedText");
@@ -561,6 +589,12 @@
     countdownTimer = setInterval(render, 1000);
   }
 
+  if (/(^|\.)iqoption\.com$/i.test(location.hostname)) {
+    // Content may start after document_start on an IQ SPA load. Ask the MAIN
+    // bridge to replay only its bounded, sanitized market projections.
+    window.postMessage({ channel: "tracecon-iq-control", type: "replay-request" }, location.origin);
+  }
+
   // ------------------------------------------------------------
   // Buscar sinal via background (service worker tem acesso ao storage)
   // ------------------------------------------------------------
@@ -607,6 +641,7 @@
       clearTimeout(marketRefreshTimer);
       marketRefreshTimer = setTimeout(() => fetchSignal(true), 750);
     }
+    if (msg?.type === "tc.iq.assetDebugState") renderAssetDebug(msg.payload);
     if (msg?.type === "tc.notifySignal" && msg.payload) {
       const detected = detectAsset();
       const currentTf = detectTimeframe();

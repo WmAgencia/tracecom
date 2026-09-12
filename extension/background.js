@@ -29,6 +29,7 @@ const apiHeaders = (opts, extra = {}) => ({
 const TRACE_PREFIX = "[TRACE_CON]";
 const IQ_MARKET_KEY = "tcIqMarketStore";
 const IQ_INSTRUMENT_REGISTRY_KEY = "tcIqInstrumentRegistry";
+const IQ_ASSET_DEBUG_KEY = "tcIqAssetDebug";
 const REMOTE_STATE_KEY = "tcRemoteApiState";
 
 function traceLog(scope, message, meta = {}) {
@@ -117,6 +118,13 @@ async function registerInstrument(instrument) {
   registry[id] = { activeId: Number(instrument.activeId), symbol: String(instrument.symbol).toUpperCase(), displaySymbol: instrument.displaySymbol || instrument.symbol, domain: instrument.domain || null, instrumentType: instrument.instrumentType || "unknown", observedAt: Date.now() };
   await new Promise((resolve) => chrome.storage.local.set({ [IQ_INSTRUMENT_REGISTRY_KEY]: registry }, resolve));
   return registry[id];
+}
+async function persistAssetDebug(tabId, payload) {
+  const current = await new Promise((resolve) => chrome.storage.local.get([IQ_ASSET_DEBUG_KEY], (s) => resolve(s[IQ_ASSET_DEBUG_KEY] || {})));
+  const safe = { reason: String(payload?.reason || "unknown").slice(0, 48), visibleText: typeof payload?.visibleText === "string" ? payload.visibleText.slice(0, 48) : null, domCandidate: payload?.domCandidate || null, domCandidates: Array.isArray(payload?.domCandidates) ? payload.domCandidates.slice(0, 12) : [], domSource: typeof payload?.domSource === "string" ? payload.domSource.slice(0, 80) : null, activeId: Number.isFinite(Number(payload?.activeId)) ? Number(payload.activeId) : null, registrySymbol: typeof payload?.registrySymbol === "string" ? payload.registrySymbol.slice(0, 32) : null, feedSymbol: typeof payload?.feedSymbol === "string" ? payload.feedSymbol.slice(0, 32) : null, lastPrice: Number.isFinite(Number(payload?.lastPrice)) ? Number(payload.lastPrice) : null, status: ["UNKNOWN", "PARTIAL", "MATCH", "MISMATCH"].includes(payload?.status) ? payload.status : "UNKNOWN", websocket: payload?.websocket && typeof payload.websocket === "object" ? { eventName: String(payload.websocket.eventName || "unknown").slice(0, 48), activeIds: Array.isArray(payload.websocket.activeIds) ? payload.websocket.activeIds.slice(0, 24).map((item) => ({ activeId: Number(item?.activeId), symbol: typeof item?.symbol === "string" ? item.symbol.slice(0, 48) : null })).filter((item) => Number.isFinite(item.activeId)) : [] } : null, observedAt: Date.now() };
+  const next = { ...current, [String(tabId)]: { ...(current[String(tabId)] || {}), latest: safe, events: [...(current[String(tabId)]?.events || []).slice(-39), safe] } };
+  await new Promise((resolve) => chrome.storage.local.set({ [IQ_ASSET_DEBUG_KEY]: next }, resolve));
+  return safe;
 }
 
 // ------------------------------------------------------------
@@ -267,7 +275,8 @@ async function extensionDiagnostics() {
   const remoteApi = await remoteState();
   const local = await readLocalMarket();
   const activeMarket = Object.values(local).filter((item) => !tabs[0] || item?.sourceTabId === tabs[0].tabId).sort((a, b) => (b.lastFrameAt || 0) - (a.lastFrameAt || 0))[0] || null;
-  return { ...(tabs[0] || {}), downbarEnabled: current.downbarEnabled, remoteApi, backend: { online: remoteApi.status === "REMOTE_API_ONLINE" }, states: { iqAdapter: tabs[0]?.bridgeActive ? "LIVE" : "WAITING", marketData: activeMarket ? "LIVE" : "WAITING", localEngine: "READY", shadowEngine: "ACTIVE", history: "READY", remoteApi: remoteApi.status }, market: activeMarket ? { price: activeMarket.lastPrice ?? null, candles: activeMarket.candles?.length || 0, ticks: activeMarket.ticks?.length || 0 } : { price: null, candles: 0, ticks: 0 } };
+  const debug = await new Promise((resolve) => chrome.storage.local.get([IQ_ASSET_DEBUG_KEY], (s) => resolve(s[IQ_ASSET_DEBUG_KEY]?.[String(tabs[0]?.tabId)]?.latest || null)));
+  return { ...(tabs[0] || {}), assetDebug: debug, downbarEnabled: current.downbarEnabled, remoteApi, backend: { online: remoteApi.status === "REMOTE_API_ONLINE" }, states: { iqAdapter: tabs[0]?.bridgeActive ? "LIVE" : "WAITING", marketData: activeMarket ? "LIVE" : "WAITING", localEngine: "READY", shadowEngine: "ACTIVE", history: "READY", remoteApi: remoteApi.status }, market: activeMarket ? { price: activeMarket.lastPrice ?? null, candles: activeMarket.candles?.length || 0, ticks: activeMarket.ticks?.length || 0 } : { price: null, candles: 0, ticks: 0 } };
 }
 
 // ------------------------------------------------------------
@@ -413,6 +422,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const registered = await registerInstrument(msg.payload);
       await patchIqDiagnostics(sender.tab.id, { activeId: registered?.activeId ?? null, registrySymbol: registered?.symbol ?? null, domain: registered?.domain ?? null, instrumentRegistry: registered ? "OBSERVED" : "UNAVAILABLE" });
       sendResponse({ ok: !!registered });
+      return;
+    }
+    if (msg.type === "tc.iq.assetDebug") {
+      if (!sender.tab?.id || !sender.tab.url || !/^https:\/\/([a-z0-9-]+\.)?iqoption\.com\//i.test(sender.tab.url)) { sendResponse({ ok: false, error: "untrusted_iq_sender" }); return; }
+      const debug = await persistAssetDebug(sender.tab.id, msg.payload);
+      await patchIqDiagnostics(sender.tab.id, { assetDebugStatus: debug.status, visibleSymbol: debug.visibleText || null, registrySymbol: debug.registrySymbol || null, activeId: debug.activeId ?? null });
+      console.info(`${TRACE_PREFIX}[ASSET_DEBUG]`, { tabId: sender.tab.id, status: debug.status, visibleText: debug.visibleText, activeId: debug.activeId, registrySymbol: debug.registrySymbol, eventName: debug.websocket?.eventName || null });
+      await chrome.tabs.sendMessage(sender.tab.id, { type: "tc.iq.assetDebugState", payload: debug }).catch(() => null);
+      sendResponse({ ok: true });
       return;
     }
     if (msg.type === "tc.iq.market") {

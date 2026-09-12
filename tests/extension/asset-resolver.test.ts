@@ -42,6 +42,14 @@ describe("IQ Option strict asset resolver", () => {
     expect(assets.resolveUiPrice(doc)).toBeCloseTo(1.160225, 8);
   });
 
+  it("returns only safe bounded chart-header diagnostics for valid forex candidates", async () => {
+    const assets = await resolver();
+    const candidate = { tagName: "SPAN", className: "instrument-name", innerText: "EUR/USD OTC", parentElement: { tagName: "DIV", className: "chart-header" }, getAttribute: (name: string) => name === "data-testid" ? "selected-asset" : null, getBoundingClientRect: () => ({ left: 150, top: 130, width: 90, height: 20 }) };
+    const invalid = { tagName: "SPAN", className: "account-secret", innerText: "OPTION", parentElement: null, getAttribute: () => null, getBoundingClientRect: () => ({ left: 150, top: 130, width: 90, height: 20 }) };
+    const doc = { defaultView: { innerWidth: 1500, innerHeight: 700 }, querySelectorAll: () => [candidate, invalid] };
+    expect(assets.assetDebugCandidates(doc)).toEqual([expect.objectContaining({ text: "EUR/USD OTC", symbol: "EURUSD-OTC", dataTestId: "selected-asset", parent: { tag: "div", className: "chart-header" } })]);
+  });
+
   it("detects an asset or domain switch as a mismatch instead of allowing price reuse", async () => {
     const assets = await resolver();
     const forex = assets.parse("EUR/USD");

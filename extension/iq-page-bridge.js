@@ -7,7 +7,15 @@
   const finite = (value) => typeof value === "number" && Number.isFinite(value);
   const numericId = (value) => Number.isFinite(Number(value)) ? Number(value) : null;
   const post = (payload) => window.postMessage({ channel: "tracecon-iq-market", payload }, location.origin);
-  post({ type: "bridge-ready" });
+  const replay = { instruments: [], frames: [] };
+  const remember = (payload) => {
+    if (payload?.type === "instrument") replay.instruments = [...replay.instruments.filter((item) => item.activeId !== payload.activeId || item.symbol !== payload.symbol), payload].slice(-240);
+    if (payload?.kind === "candle" || payload?.kind === "tick") replay.frames = [...replay.frames, payload].slice(-240);
+    post(payload);
+  };
+  const replayToContent = () => { post({ type: "bridge-ready" }); for (const item of replay.instruments) post(item); for (const item of replay.frames) post(item); };
+  replayToContent(); setTimeout(replayToContent, 1_000); setTimeout(replayToContent, 5_000);
+  window.addEventListener("message", (event) => { if (event.source === window && event.origin === location.origin && event.data?.channel === "tracecon-iq-control" && event.data?.type === "replay-request") replayToContent(); });
   const normalize = (raw) => {
     let envelope;
     try { envelope = typeof raw === "string" ? JSON.parse(raw) : raw; } catch { return null; }
@@ -51,7 +59,15 @@
     const timestamp = Number.isFinite(rawTime) && rawTime > 0 ? (rawTime < 10_000_000_000 ? rawTime * 1000 : rawTime) : Date.now();
     return { kind: "tick", activeId, price, timestamp, sequence: ++sequence, receivedAt: Date.now() };
   };
-  const observe = (socket) => socket.addEventListener("message", (event) => { const frame = normalize(event.data) || tick(event.data); if (frame) { post(frame); return; } for (const metadata of instruments(event.data)) post(metadata); });
+  const observe = (socket) => socket.addEventListener("message", (event) => {
+    const frame = normalize(event.data) || tick(event.data); if (frame) { remember(frame); return; }
+    const metadata = instruments(event.data); for (const item of metadata) remember(item);
+    if (metadata.length) {
+      // Diagnostic projection only: event name plus already-whitelisted market
+      // identifiers. The source frame is never forwarded or logged.
+      remember({ type: "asset-debug-event", eventName: metadata[0].instrumentType || "unknown", activeIds: metadata.slice(0, 24).map((item) => ({ activeId: item.activeId, symbol: item.symbol })) });
+    }
+  });
   const Original = window.WebSocket;
   window.WebSocket = new Proxy(Original, {
     construct(Target, args, NewTarget) {

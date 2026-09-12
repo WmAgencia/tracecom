@@ -57,6 +57,25 @@
     const ask = quotes.find((q) => q.side === "ASK")?.value, bid = quotes.find((q) => q.side === "BID")?.value;
     return Number.isFinite(ask) && Number.isFinite(bid) ? (ask + bid) / 2 : (ask ?? bid ?? null);
   }
+  function assetDebugCandidates(doc) {
+    if (typeof doc.querySelectorAll !== "function") return [];
+    const width = Number(globalThis.innerWidth || doc.defaultView?.innerWidth || 0);
+    const height = Number(globalThis.innerHeight || doc.defaultView?.innerHeight || 0);
+    const seen = new Set(); const rows = [];
+    for (const el of doc.querySelectorAll("body *")) {
+      if (typeof el.getBoundingClientRect !== "function") continue;
+      const rect = el.getBoundingClientRect();
+      if (!rect.width || !rect.height || rect.top < 70 || rect.top > Math.max(300, height * .45) || rect.left < 50 || (width && rect.left > width * .65)) continue;
+      const parsed = parse(el.innerText || el.textContent, "iq-header-diagnostic", .5);
+      if (!parsed) continue;
+      const text = String(el.innerText || el.textContent || "").trim().slice(0, 80);
+      const signature = `${parsed.symbol}|${Math.round(rect.left)}|${Math.round(rect.top)}|${text}`; if (seen.has(signature)) continue; seen.add(signature);
+      const className = typeof el.className === "string" ? el.className.slice(0, 160) : "";
+      const parent = el.parentElement;
+      rows.push({ text, symbol: parsed.symbol, domain: parsed.domain, tag: String(el.tagName || "").toLowerCase(), dataTestId: el.getAttribute?.("data-testid") || null, ariaLabel: el.getAttribute?.("aria-label") || null, className, parent: parent ? { tag: String(parent.tagName || "").toLowerCase(), className: typeof parent.className === "string" ? parent.className.slice(0, 160) : "" } : null, rect: { left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width), height: Math.round(rect.height) } });
+    }
+    return rows.sort((a, b) => Math.abs(a.rect.top - 132) - Math.abs(b.rect.top - 132)).slice(0, 12);
+  }
   function same(a, b) { return !!a?.symbol && !!b?.symbol && normalize(a.symbol) === normalize(b.symbol) && a.domain === b.domain; }
-  globalThis.TraceConAssetResolver = { CURRENCIES, parse, resolveVisible, resolveUiPrice, same, normalize };
+  globalThis.TraceConAssetResolver = { CURRENCIES, parse, resolveVisible, resolveUiPrice, assetDebugCandidates, same, normalize };
 })();

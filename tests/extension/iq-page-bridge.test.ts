@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 async function bridge() {
   const emitted: any[] = []; let socket: any;
   class FakeSocket { constructor() { socket = this; } addEventListener(_name: string, callback: (event: any) => void) { this.callback = callback; } emit(data: unknown) { this.callback({ data }); } callback!: (event: any) => void; }
-  const context: any = { Date, JSON, Number, Set, Proxy, Reflect, String, Array, Object, Math, window: { WebSocket: FakeSocket, postMessage: (value: any) => emitted.push(value), __traceconIqBridge: false }, location: { origin: "https://iqoption.com" } };
+  const context: any = { Date, JSON, Number, Set, Proxy, Reflect, String, Array, Object, Math, setTimeout: () => 0, window: { WebSocket: FakeSocket, postMessage: (value: any) => emitted.push(value), addEventListener: () => undefined, __traceconIqBridge: false }, location: { origin: "https://iqoption.com" } };
   const source = await readFile(new URL("../../extension/iq-page-bridge.js", import.meta.url), "utf8"); runInNewContext(source, context);
   new context.window.WebSocket("wss://example");
   return { emitted, socket };
