@@ -335,7 +335,7 @@ chrome.runtime.onInstalled.addListener(ensureAlarm);
 chrome.runtime.onStartup.addListener(ensureAlarm);
 
 chrome.tabs.onRemoved.addListener((tabId) => {
-  ProgressiveExperimentRunner.disconnect();
+  ProgressiveExperimentRunner.disconnect(tabId);
   chrome.storage.local.get(["tcIqDiagnostics"], (s) => {
     const tabs = { ...(s.tcIqDiagnostics || {}) };
     delete tabs[String(tabId)];
@@ -375,7 +375,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         await persistIqFrame(msg.payload);
         const localItem = await readLocalMarket();
         const experimentItem = localItem[String(msg.payload?.symbol || "").toUpperCase()];
-        if (experimentItem) await ProgressiveExperimentRunner.ingest(experimentItem);
+        if (experimentItem) await ProgressiveExperimentRunner.ingest(experimentItem, sender.tab.id);
         await patchIqDiagnostics(sender.tab.id, { pageDetected: true, bridgeActive: true, symbol: msg.payload?.symbol || null, timeframe: msg.payload?.timeframe || null, lastFrameAt: Date.now(), lastIngestAt: Date.now(), lastIngestOk: true, lastIngestError: null, networkStatus: "LOCAL_FALLBACK" });
         // Remote ingestion is observational and must never delay local shadow.
         forwardIqMarket(msg.payload, sender.tab.id, opts.backend, opts).then((upstream) => patchIqDiagnostics(sender.tab.id, { lastIngestError: upstream.ok ? null : upstream.diagnostic?.message || "backend unavailable", networkStatus: upstream.ok ? "BACKEND_SYNCED" : "LOCAL_FALLBACK" })).catch(() => null);

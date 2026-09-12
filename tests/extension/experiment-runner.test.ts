@@ -4,29 +4,18 @@ import vm from "node:vm";
 import { describe, expect, it } from "vitest";
 
 function harness() {
-  let clock = 1_000_000;
-  const storage: Record<string, unknown> = {};
+  let clock = 1_000_000; const storage: Record<string, any> = {};
   const chrome = { storage: { local: { get: (keys: string[], cb: (value: Record<string, unknown>) => void) => cb(Object.fromEntries(keys.map((key) => [key, storage[key]]))), set: (value: Record<string, unknown>, cb: () => void) => { Object.assign(storage, value); cb(); } } }, tabs: { query: async () => [] } };
-  const context = vm.createContext({ chrome, console, Date: { now: () => clock }, setTimeout, clearTimeout, TraceConLocalEngine: { analyze: (_symbol: string, item: any) => ({ decision: item.lastPrice > item.candles[0].close ? "BUY" : "WAIT", shadowEligible: item.lastPrice > item.candles[0].close, currentPrice: item.lastPrice, signature: "sig:test", confidence: 0.6, features: {}, reasons: [], counterReasons: [], snapshot: { candles: item.candles.slice() } }) } });
+  const context = vm.createContext({ chrome, console, Date: { now: () => clock }, setTimeout, clearTimeout, TraceConLocalEngine: { analyze: (_symbol: string, item: any) => ({ decision: item.lastPrice > item.candles[0].close ? "BUY" : "WAIT", shadowEligible: item.lastPrice > item.candles[0].close, currentPrice: item.lastPrice, signature: item.signature || "sig:test", confidence: .6, features: {}, reasons: [], counterReasons: [], snapshot: { candles: item.candles.slice() } }), classifyOutcome: (d: string, entry: number, exit: number) => (d === "BUY" && exit > entry ? "WIN" : "LOSS") } });
   vm.runInContext(readFileSync(resolve("extension/experiment-runner.js"), "utf8"), context);
   return { runner: (context as any).ProgressiveExperimentRunner, storage, advance: (ms: number) => { clock += ms; } };
 }
+const candidate = (signatureId: string) => ({ signatureId, n: 10, wins: 8, losses: 2, wr: .8 });
 
 describe("ProgressiveExperimentRunner", () => {
-  it("persists start, pause and resume without a remote browser", async () => {
-    const { runner, storage } = harness();
-    expect((await runner.start()).status).toBe("RUNNING");
-    expect((await runner.pause()).status).toBe("PAUSED");
-    expect((await runner.resume()).status).toBe("RUNNING");
-    expect((storage as any).tcProgressiveExperiment.phase).toBe("A");
-  });
-
-  it("opens one shadow opportunity and evaluates it after the 60s horizon", async () => {
-    const h = harness(); await h.runner.start();
-    const item = { symbol: "EURUSD", lastPrice: 1.001, candles: [{ close: 1.0 }] };
-    await h.runner.ingest(item);
-    expect((await h.runner.read()).active).not.toBeNull();
-    h.advance(60_001); await h.runner.ingest({ ...item, lastPrice: 1.002 });
-    const state = await h.runner.read(); expect(state.active).toBeNull(); expect(state.phaseEvaluated).toBe(1); expect(state.observations[0].outcome).toBe("WIN");
-  });
+  it("persists start, pause and resume without a remote browser", async () => { const { runner, storage } = harness(); expect((await runner.start()).status).toBe("RUNNING"); expect((await runner.pause()).status).toBe("PAUSED"); expect((await runner.resume()).status).toBe("RUNNING"); expect(storage.tcProgressiveExperiment.phase).toBe("A"); });
+  it("opens one shadow opportunity and evaluates it after the 60s horizon", async () => { const h = harness(); await h.runner.start(); const item = { symbol: "EURUSD", lastPrice: 1.001, candles: [{ close: 1 }] }; await h.runner.ingest(item, 7); expect((await h.runner.read()).active).not.toBeNull(); h.advance(60_001); await h.runner.ingest({ ...item, lastPrice: 1.002 }, 7); const state = await h.runner.read(); expect(state.active).toBeNull(); expect(state.phaseEvaluated).toBe(1); expect(state.observations[0].outcome).toBe("WIN"); });
+  it("uses frozen phase-specific signatures and never lets B/C read finalSet", () => { const { runner } = harness(); const base = { a80v1: [candidate("a")], a80v2: [candidate("b")], finalSet: [candidate("d")] }; expect(runner.eligible({ ...base, phase: "A" }, { signature: "any" })).toBe(true); expect(runner.eligible({ ...base, phase: "B" }, { signature: "a" })).toBe(true); expect(runner.eligible({ ...base, phase: "B" }, { signature: "d" })).toBe(false); expect(runner.eligible({ ...base, phase: "C" }, { signature: "b" })).toBe(true); expect(runner.eligible({ ...base, phase: "C" }, { signature: "d" })).toBe(false); expect(runner.eligible({ ...base, phase: "D" }, { signature: "d" })).toBe(true); expect(runner.eligible({ ...base, phase: "D" }, { signature: "a" })).toBe(false); });
+  it("does not interrupt an active trade when an unrelated tab closes", async () => { const h = harness(); await h.runner.start(); await h.runner.ingest({ symbol: "EURUSD", lastPrice: 2, candles: [{ close: 1 }] }, 8); await h.runner.disconnect(99); expect((await h.runner.read()).active.originTabId).toBe(8); await h.runner.disconnect(8); expect((await h.runner.read()).active).toBeNull(); });
+  it("stops honestly after A when no supported A80 signature exists", async () => { const h = harness(); const state = { ...(await h.runner.read()), status: "RUNNING", phase: "A", phaseEvaluated: 100, observations: Array.from({ length: 10 }, (_, i) => ({ phase: "A", outcome: i < 7 ? "WIN" : "LOSS", signature: "same", decision: "BUY" })) }; const advanced = await h.runner.advance(state); expect(advanced.status).toBe("NO_A80_AFTER_RUN_A"); });
 });

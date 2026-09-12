@@ -20,10 +20,18 @@ describe("TRACE_CON offline local shadow engine", () => {
     expect(e.analyze("EURUSD-OTC", item([1, 1, 1]))).toMatchObject({ decision: "WAIT", shadowEligible: false });
   });
 
-  it("generates BUY and SELL from local candle replay", async () => {
+  it("generates BUY and SELL from causal local feature replay", async () => {
     const e = await engine();
-    expect(e.analyze("EURUSD-OTC", item(Array.from({ length: 12 }, (_, i) => 1 + i * 0.001)))).toMatchObject({ decision: "BUY", productionDecision: "WAIT", shadowEligible: true });
-    expect(e.analyze("EURUSD-OTC", item(Array.from({ length: 12 }, (_, i) => 1.02 - i * 0.001)))).toMatchObject({ decision: "SELL", productionDecision: "WAIT", shadowEligible: true });
+    expect(e.analyze("EURUSD-OTC", item(Array.from({ length: 40 }, (_, i) => 1 + i * 0.001)))).toMatchObject({ decision: "BUY", productionDecision: "WAIT", shadowEligible: true });
+    expect(e.analyze("EURUSD-OTC", item(Array.from({ length: 40 }, (_, i) => 1.04 - i * 0.001)))).toMatchObject({ decision: "SELL", productionDecision: "WAIT", shadowEligible: true });
+  });
+
+  it("uses discrete signatures and causal MTF/tick features", async () => {
+    const e = await engine(); const prices = Array.from({ length: 45 }, (_, i) => 1 + i * 0.0007);
+    const a: any = item(prices); a.ticks = Array.from({ length: 20 }, (_, i) => ({ timestamp: i * 1000, price: 1 + i * .0001 }));
+    const b: any = item(prices.map((x) => x + 0.00000001)); b.ticks = a.ticks;
+    const one: any = e.analyze("EURUSD", a); const two: any = e.analyze("EURUSD", b);
+    expect(one.signature).toBe(two.signature); expect(one.features.mtf.direction5m).not.toBe("UNAVAILABLE"); expect(one.features.ticks.tickCount).toBe(20); expect(one.snapshot.candles).toHaveLength(30);
   });
 
   it("classifies offline outcomes and does not execute orders", async () => {

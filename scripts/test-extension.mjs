@@ -32,7 +32,7 @@ assert.match(background, /TRACE_API_UNREACHABLE/);
 assert.match(background, /tcIqMarketStore/);
 assert.match(background, /ProgressiveExperimentRunner/);
 const runner = await readFile(path.join(extension, "experiment-runner.js"), "utf8");
-for (const marker of ["RUN_A_COMPLETE_A80_V1_CREATED_RUN_B_STARTED", "RUN_B_COMPLETE_A80_V2_CREATED_RUN_C_STARTED", "RUN_C_COMPLETE_FINAL_SET_FROZEN_RUN_D_STARTED", "RUN_D_COMPLETE_REPORT_READY", "EXPERIMENT_STARTED"]) assert.match(runner, new RegExp(marker));
+for (const marker of ["RUN_A_COMPLETE_A80_V1_FROZEN_RUN_B_STARTED", "RUN_B_COMPLETE_A80_V2_FROZEN_RUN_C_STARTED", "RUN_C_COMPLETE_FINAL_SET_FROZEN_RUN_D_STARTED", "RUN_D_COMPLETE_REPORT_READY", "NO_A80_AFTER_RUN_A", "EXPERIMENT_STARTED"]) assert.match(runner, new RegExp(marker));
 const localEngine = await readFile(path.join(extension, "local-engine.js"), "utf8");
 assert.match(localEngine, /TraceConLocalEngine/);
 assert.match(localEngine, /productionDecision: "WAIT"/);
