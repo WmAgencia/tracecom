@@ -1,6 +1,6 @@
 # TraceCon Browser Extension
 
-Version 0.4.7 adds a privacy-preserving ASSET DEBUG panel: bounded header candidates, passive active-ID metadata events and explicit sync state. It still requires a dual confirmation gate (visible asset plus active-ID registry) before a shadow signal. **TRACE_1M**: analysis and expiry are fixed to one minute, the
+Version 0.4.8 adds a privacy-preserving ASSET DEBUG panel with a concrete chart-header observer, a `DOM_RESOLVED` state, and explicit rejection of placeholder `activeId: 0`. It still requires a dual confirmation gate (visible asset plus active-ID registry) before a shadow signal. **TRACE_1M**: analysis and expiry are fixed to one minute, the
 downbar shows a calibrated signal state, and BUY/SELL remains conditional on
 the backend production gate. The extension is analysis + shadow validation;
 manual execution remains with the user.
@@ -14,7 +14,7 @@ The IQ bridge is read-only. It observes only incoming `candle-generated` WebSock
 ## Build and install
 
 From the repository root, run `npm run build:extension`. This produces
-`dist/tracecon-extension-v0.4.7.zip` and the unpacked `dist-extension` folder.
+`dist/tracecon-extension-v0.4.8.zip` and the unpacked `dist-extension` folder.
 
 When the local backend is offline, IQ Option frames remain in the browser and
 the service worker runs a conservative local shadow analysis. The downbar shows

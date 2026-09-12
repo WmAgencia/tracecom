@@ -21,7 +21,7 @@ describe("IQ Option strict asset resolver", () => {
   it("normalizes visible forex and OTC instruments only when both codes are real currencies", async () => {
     const assets = await resolver();
     expect(assets.parse("EUR/USD")).toMatchObject({ symbol: "EURUSD", displaySymbol: "EUR/USD", domain: "IQ_OPTION_FOREX" });
-    expect(assets.parse("EUR/USD OTC")).toMatchObject({ symbol: "EURUSD-OTC", displaySymbol: "EUR/USD OTC", domain: "IQ_OPTION_OTC" });
+    expect(assets.parse("EUR/USD OTC")).toMatchObject({ symbol: "EURUSD-OTC", normalizedSymbol: "EURUSD", displaySymbol: "EUR/USD", domain: "IQ_OPTION_OTC", isOTC: true });
     expect(assets.parse("OPT/ION")).toBeNull();
   });
 
@@ -30,7 +30,7 @@ describe("IQ Option strict asset resolver", () => {
     const header = { children: [], innerText: "EUR/USD (OTC)", getBoundingClientRect: () => ({ left: 150, top: 132, width: 90, height: 20 }) };
     const watchlist = { children: [], innerText: "GBP/USD", getBoundingClientRect: () => ({ left: 40, top: 40, width: 90, height: 20 }) };
     const doc = { title: "IQ Option", defaultView: { innerWidth: 1500, innerHeight: 700 }, querySelector: () => null, querySelectorAll: () => [watchlist, header] };
-    expect(assets.resolveVisible(doc)).toMatchObject({ symbol: "EURUSD-OTC", source: "iq-chart-header-geometry" });
+    expect(assets.resolveVisible(doc)).toMatchObject({ symbol: "EURUSD-OTC", normalizedSymbol: "EURUSD", displaySymbol: "EUR/USD", domain: "IQ_OPTION_OTC", source: "chart-header" });
   });
 
   it("uses only visible bid/ask nodes to calculate a UI price", async () => {
@@ -47,7 +47,7 @@ describe("IQ Option strict asset resolver", () => {
     const candidate = { tagName: "SPAN", className: "instrument-name", innerText: "EUR/USD OTC", parentElement: { tagName: "DIV", className: "chart-header" }, getAttribute: (name: string) => name === "data-testid" ? "selected-asset" : null, getBoundingClientRect: () => ({ left: 150, top: 130, width: 90, height: 20 }) };
     const invalid = { tagName: "SPAN", className: "account-secret", innerText: "OPTION", parentElement: null, getAttribute: () => null, getBoundingClientRect: () => ({ left: 150, top: 130, width: 90, height: 20 }) };
     const doc = { defaultView: { innerWidth: 1500, innerHeight: 700 }, querySelectorAll: () => [candidate, invalid] };
-    expect(assets.assetDebugCandidates(doc)).toEqual([expect.objectContaining({ text: "EUR/USD OTC", symbol: "EURUSD-OTC", dataTestId: "selected-asset", parent: { tag: "div", className: "chart-header" } })]);
+    expect(assets.assetDebugCandidates(doc)).toEqual([expect.objectContaining({ text: "EUR/USD OTC", symbol: "EURUSD-OTC", normalizedSymbol: "EURUSD", dataTestId: "selected-asset", parent: { tag: "div", className: "chart-header" } })]);
   });
 
   it("detects an asset or domain switch as a mismatch instead of allowing price reuse", async () => {

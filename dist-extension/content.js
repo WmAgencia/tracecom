@@ -24,6 +24,8 @@
   let lastVisibleStatusKey = null;
   let visibleStatusTimer = null;
   let lastAssetDebugKey = null;
+  let observedChartHeader = null;
+  let chartHeaderObserver = null;
 
   // IQ Option uses an isolated content world. The read-only bridge is loaded
   // in MAIN at document_start and posts only whitelisted inbound frames; this
@@ -35,7 +37,7 @@
       if (!data || data.channel !== "tracecon-iq-market" || !data.payload) return;
       if (data.payload.type === "instrument") {
         const mapped = globalThis.TraceConAssetResolver?.parse(data.payload.symbol || data.payload.name || data.payload.displaySymbol, "iq-observed-instrument", .98);
-        if (mapped && Number.isFinite(Number(data.payload.activeId))) {
+        if (mapped && Number.isSafeInteger(Number(data.payload.activeId)) && Number(data.payload.activeId) > 0) {
           iqInstrumentRegistry.set(String(data.payload.activeId), { ...mapped, activeId: Number(data.payload.activeId), instrumentType: data.payload.instrumentType || "unknown" });
           chrome.runtime.sendMessage({ type: "tc.iq.instrument", payload: { ...mapped, activeId: Number(data.payload.activeId), instrumentType: data.payload.instrumentType || "unknown" } });
         }
@@ -127,6 +129,21 @@
     lastVisibleStatusKey = key;
     chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, visibleSymbol: context?.visibleSymbol || null, registrySymbol: context?.feedSymbol || null, activeId: context?.activeId ?? null, assetMismatch: !!context?.assetMismatch, visibleConfirmed: !!context?.visibleConfirmed, mappingConfirmed: !!context?.mappingConfirmed, assetResolutionConfidence: context?.confidence || 0, timeframe: detectTimeframe(), visibleSource: context?.source || null } });
     publishAssetDebug("dom-mutation");
+    observeResolvedChartHeader();
+  }
+
+  function observeResolvedChartHeader() {
+    const resolved = globalThis.TraceConAssetResolver?.findChartHeader?.(document) || null;
+    const node = resolved?.element || null;
+    if (!node || node === observedChartHeader) return;
+    chartHeaderObserver?.disconnect();
+    observedChartHeader = node;
+    console.info("[TRACE_CON][ASSET_DOM_FOUND]", { text: resolved.candidate?.text || null, tag: resolved.candidate?.tag || null, className: resolved.candidate?.className || null, parent: resolved.candidate?.parent || null, rect: resolved.candidate?.rect || null, selectorCandidate: "chart-header bounded visible leaf" });
+    chartHeaderObserver = new MutationObserver(() => {
+      clearTimeout(visibleStatusTimer);
+      visibleStatusTimer = setTimeout(() => { publishVisibleAssetStatus(); publishAssetDebug("chart-header-mutation"); }, 50);
+    });
+    chartHeaderObserver.observe(node, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["class", "aria-label", "data-testid"] });
   }
 
   function publishAssetDebug(reason, websocket = null) {
@@ -135,7 +152,7 @@
     const candidates = globalThis.TraceConAssetResolver?.assetDebugCandidates(document) || [];
     // All fields are explicit market UI metadata. Do not serialize generic DOM
     // text, page HTML, account state, cookies, storage, or raw WS messages.
-    const payload = { reason, visibleText: context?.visibleSymbol || null, domCandidate: candidates[0] || null, domCandidates: candidates, domSource: context?.source || null, activeId: context?.activeId ?? null, registrySymbol: context?.feedSymbol || null, feedSymbol: context?.symbol || null, lastPrice: detectUiPrice(), status: context?.assetMismatch ? "MISMATCH" : context?.visibleConfirmed && context?.mappingConfirmed ? "MATCH" : context?.visibleConfirmed || context?.mappingConfirmed ? "PARTIAL" : "UNKNOWN", websocket };
+    const payload = { reason, visibleText: context?.displaySymbol || context?.visibleSymbol || null, domCandidate: candidates[0] || null, domCandidates: candidates, domSource: context?.source || null, activeId: Number(context?.activeId) > 0 ? context.activeId : null, registrySymbol: context?.feedSymbol || null, feedSymbol: context?.symbol || null, lastPrice: detectUiPrice(), status: context?.assetMismatch ? "MISMATCH" : context?.visibleConfirmed && context?.mappingConfirmed ? "MATCH" : context?.visibleConfirmed ? "DOM_RESOLVED" : context?.mappingConfirmed ? "PARTIAL" : "UNKNOWN", websocket };
     const key = JSON.stringify({ reason, visibleText: payload.visibleText, candidate: payload.domCandidate?.rect, activeId: payload.activeId, registrySymbol: payload.registrySymbol, websocket });
     if (key === lastAssetDebugKey) return;
     lastAssetDebugKey = key;
@@ -235,8 +252,11 @@
   // receives no page text or account information, only this minimal context.
   if (/(^|\.)iqoption\.com$/i.test(location.hostname)) {
     publishVisibleAssetStatus();
-    const chartHeaderObserver = new MutationObserver(() => { clearTimeout(visibleStatusTimer); visibleStatusTimer = setTimeout(publishVisibleAssetStatus, 100); });
-    chartHeaderObserver.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
+    // A small discovery observer finds the actual chart-header node once; all
+    // subsequent asset updates are observed on that node, not document.body.
+    const headerDiscoveryObserver = new MutationObserver(() => { clearTimeout(visibleStatusTimer); visibleStatusTimer = setTimeout(observeResolvedChartHeader, 100); });
+    headerDiscoveryObserver.observe(document.documentElement, { subtree: true, childList: true });
+    observeResolvedChartHeader();
   }
 
   const bar = root.querySelector("#tcBar");
@@ -263,7 +283,7 @@
   function renderAssetDebug(debug) {
     if (!assetDebugEl || !debug) return;
     const candidate = debug.domCandidate || {};
-    assetDebugEl.textContent = `ASSET DEBUG\nVISIBLE_TEXT: ${debug.visibleText || "—"}\nDOM_CANDIDATE: ${candidate.text || "—"}\nDOM_SOURCE: ${debug.domSource || "—"}\nACTIVE_ID: ${debug.activeId ?? "—"}\nACTIVE_ID_SOURCE: ${debug.websocket?.eventName || "—"}\nREGISTRY_SYMBOL: ${debug.registrySymbol || "—"}\nFEED_SYMBOL: ${debug.feedSymbol || "—"}\nLAST_PRICE: ${debug.lastPrice ?? "—"}\nSTATUS: ${debug.status || "UNKNOWN"}`;
+    assetDebugEl.textContent = `ASSET DEBUG\nVISIBLE_TEXT: ${debug.visibleText || "—"}\nDOM_CANDIDATE: ${candidate.text || "—"}\nDOM_SOURCE: ${debug.domSource || "—"}\nACTIVE_ID: ${debug.activeId ?? "—"}\nACTIVE_ID_CONFIDENCE: ${debug.activeIdConfidence || "LOW"}\nACTIVE_ID_SOURCE: ${debug.websocket?.eventName || "—"}\nREGISTRY_SYMBOL: ${debug.registrySymbol || "—"}\nFEED_SYMBOL: ${debug.feedSymbol || "—"}\nLAST_PRICE: ${debug.lastPrice ?? "—"}\nSTATUS: ${debug.status || "UNKNOWN"}`;
     assetDebugEl.hidden = false;
   }
   const countdownEl = root.querySelector("#tcCountdown");
@@ -604,7 +624,7 @@
     setAsset(detected);
     setTimeframe(timeframe);
     if (!detected?.symbol) {
-      setError("não consegui detectar o ativo nesta página — abra um gráfico específico");
+      setError("diagnóstico IQ: nenhum nó de cabeçalho legível encontrado; aguardando DOM ou feed estruturado");
       return;
     }
     refreshBtn.disabled = true;
