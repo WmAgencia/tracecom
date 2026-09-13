@@ -81,4 +81,25 @@ describe("sanitized crop transport contract", () => {
     expect(api).toContain("/api/settlement");
     expect(api).toContain("early_settlement_rejected");
   });
+
+  it("keeps the full diagnostic access contracts", () => {
+    const relay = readFileSync("relay/server.mjs", "utf8");
+    const liveApi = readFileSync("api/live-api.ts", "utf8");
+    expect(relay).toContain("diagnostic_logs");
+    expect(relay).toContain("agent_runs");
+    expect(relay).toContain("OPENCODE_FULL_DIAGNOSTIC");
+    expect(relay).toContain("debug:read");
+    expect(relay).toContain("/timeline");
+    expect(relay).toContain("debug-snapshot");
+    expect(liveApi).toContain("/api/live/browser/logs");
+    expect(liveApi).toContain("/api/debug/agents");
+    expect(liveApi).toContain("/api/debug/config");
+    expect(api).toContain("/api/research/session-autopsy");
+    expect(api).toContain("/api/research/compare");
+    expect(api).toContain("/api/research/replay");
+    expect(api).toContain("/api/shadow/evaluate");
+    expect(api).toContain("/api/shadow/batch");
+    expect(browser).toContain("diagCapture");
+    expect(browser).toContain("UNCAUGHT_ERROR");
+  });
 });

@@ -11,7 +11,7 @@ export type PriceSample = { value: number; timestamp: number; accepted?: boolean
 export type SignalSample = { signalId: string; direction: string; createdAt: number; countdownEndsAt: number; status?: string; profile?: string; rawConfidence?: number; trendAlignment?: string; macroTrend?: string };
 export type PositionSample = { signalId?: string; detectedAt: number; hasOpenPosition?: boolean; direction?: string; evidence?: string[]; price?: number | null };
 export type SettlementSample = { signalId?: string; entryPrice: number | null; exitPrice: number | null; entryTimestamp: number; exitTimestamp: number; result: string; source?: string };
-export type FastDecisionSample = { candleId?: string; at: number; decision: string; rawConfidence?: number; regime?: string; trendAlignment?: string; counterTrend?: boolean; deepAnalysisAgeMs?: number | null; settlementResult?: string | null };
+export type FastDecisionSample = { candleId?: string; at: number; decision: string; rawConfidence?: number; regime?: string; trendAlignment?: string; counterTrend?: boolean; deepAnalysisAgeMs?: number | null; settlementResult?: string | null; deepFastAlignment?: string };
 export type TimeoutSample = { at: number; latencyMs: number; deadlineMs: number; status?: string };
 
 export type AuditInput = {

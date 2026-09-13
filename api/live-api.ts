@@ -55,7 +55,7 @@ export function revokeLiveApiKey(id: string): boolean { const k = keys.get(id); 
 export function emitLiveEvent(sessionId: string, event: Record<string, unknown>) { const s = sessions.get(sessionId); if (!s) return; s.updatedAt = Date.now(); s.events.push({ ...event, ts: Date.now() }); while (s.events.length > 500) s.events.shift(); for (const fn of listeners.get(sessionId) ?? []) fn(event); }
 
 export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, path: string, body: unknown, query: URLSearchParams): Promise<boolean> {
-  if (!path.startsWith("/api/live/")) return false;
+  if (!path.startsWith("/api/live/") && !path.startsWith("/api/debug/")) return false;
   const ip = req.socket?.remoteAddress ?? req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ?? "vercel"; if (!allowed(ip)) { send(res, 429, { error: "rate_limited" }); return true; }
   const relayAdmin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
   if (path === "/api/live/admin/status" && req.method === "GET") {
@@ -94,6 +94,63 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
     const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : null;
     if (!input || typeof input.sessionId !== "string" || !/^vision_[a-zA-Z0-9_-]{8,100}$/.test(input.sessionId) || containsSensitive(input)) { send(res, 400, { error: "invalid_crop_frame" }); return true; }
     try { const token = await ingestToken(input.sessionId, relayAdmin); const response = await relay("/api/live/frame/latest", { method: "PUT", headers: { authorization: `Bearer ${token}` }, body: JSON.stringify(input) }); await relayJson(res, response); }
+    catch { send(res, 502, { error: "relay_unreachable" }); }
+    return true;
+  }
+  const browserLogPath = path === "/api/live/browser/logs" || path === "/api/live/browser/agent-runs";
+  if (browserLogPath && req.method === "POST") {
+    if (!relayAdmin) { send(res, 503, { error: "relay_admin_not_configured" }); return true; }
+    const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : null;
+    if (!input || typeof input.sessionId !== "string" || !/^vision_[a-zA-Z0-9_-]{8,100}$/.test(input.sessionId) || containsSensitive(input)) { send(res, 400, { error: "invalid_diagnostics" }); return true; }
+    const rows = Array.isArray(input.logs) ? input.logs : Array.isArray(input.runs) ? input.runs : [];
+    if (rows.length > 200) { send(res, 413, { error: "diagnostics_batch_too_large" }); return true; }
+    try {
+      const token = await ingestToken(input.sessionId, relayAdmin);
+      const target = path.endsWith("agent-runs") ? `/api/live/sessions/${encodeURIComponent(input.sessionId)}/agent-runs` : `/api/live/sessions/${encodeURIComponent(input.sessionId)}/logs`;
+      const response = await relay(target, { method: path.endsWith("agent-runs") ? "PUT" : "POST", headers: { authorization: `Bearer ${token}` }, body: JSON.stringify(input) });
+      await relayJson(res, response);
+    } catch { send(res, 502, { error: "relay_unreachable" }); }
+    return true;
+  }
+  const sessionDebugRead = path.match(/^\/api\/live\/sessions\/([^/]+)\/(logs|agent-runs|timeline|debug-snapshot)$/);
+  if (sessionDebugRead && req.method === "GET") {
+    if (!relayAdmin) { send(res, 503, { error: "relay_admin_not_configured" }); return true; }
+    const token = req.headers.authorization?.toString() || "";
+    try {
+      const suffix = query.toString() ? `?${query}` : "";
+      const response = await relay(`/api/live/sessions/${encodeURIComponent(sessionDebugRead[1]!)}/${sessionDebugRead[2]}${suffix}`, { headers: { authorization: token } });
+      await relayJson(res, response);
+    } catch { send(res, 502, { error: "relay_unreachable" }); }
+    return true;
+  }
+  if (path === "/api/debug/agents" && req.method === "GET") {
+    if (!relayAdmin) { send(res, 503, { error: "relay_admin_not_configured" }); return true; }
+    try { const response = await relay("/api/debug/agents", { headers: { "x-relay-admin": relayAdmin } }); await relayJson(res, response); }
+    catch { send(res, 502, { error: "relay_unreachable" }); }
+    return true;
+  }
+  if (path === "/api/debug/config" && req.method === "GET") {
+    const secretPresent = (name: string) => Boolean(process.env[name] && String(process.env[name]).trim());
+    send(res, 200, {
+      profileThresholds: { CONSERVATIVE: "EXPERIMENTAL", BALANCED: "EXPERIMENTAL", AGGRESSIVE: "EXPERIMENTAL" },
+      featureFlags: { multiAgentMode: process.env.MULTI_AGENT_MODE || "TEXT_SPECIALISTS", visionEnabled: process.env.TRACECOM_VISION_ENABLED !== "false", fableMode: "text-only" },
+      timeouts: { fableTimeoutMs: Number(process.env.FABLE_TIMEOUT_MS) || 12_000, fastDeadlineMs: 5_000, priceTimeoutMs: 3_000 },
+      windows: { candleSeconds: 5, visibleWindowSeconds: 900, predictionHorizonSeconds: 60, entryWindowSeconds: 10, confirmationWindowSeconds: 20 },
+      outlier: { maxRelativeDeviation: Number(process.env.PRICE_OUTLIER_MAX_DEVIATION) || .005, madGate: true },
+      scheduler: { deepIntervalMs: 30_000, oneInFlight: true, latestStateWins: true },
+      agents: { specialists: ["PRICE_ACTION", "CANDLE_MOMENTUM", "QUANT_GEOMETRY", "RISK_CONTRARIAN"], advocates: ["BULL_ADVOCATE", "BEAR_ADVOCATE"], fusion: true, arbiter: true },
+      models: { vision: process.env.TRACECOM_VISION_MODEL || "claude-opus-5", fable: process.env.FABLE_MODEL || "claude-fable-5-1" },
+      versions: { apiVersion: "vision-observation-fable-text-v1", settlementPolicy: "settleTrade-v1", promptVersions: { vision: "sanitized-crop-base64-v1", fable: "vision-observation-fable-text-v1" }, calibration: "empirical-buckets-v1" },
+      rateLimits: { stream: 20, frame: 30, ingest: 240, keys: 60, default: 60 },
+      secrets: { nexxusApiKey: { secretPresent: secretPresent("NEXXUS_API_KEY") }, fableApiKey: { secretPresent: secretPresent("FABLE_API_KEY") }, relayAdmin: { secretPresent: secretPresent("TRACECOM_LIVE_RELAY_ADMIN_SECRET") }, database: { secretPresent: secretPresent("DATABASE_URL") } },
+    });
+    return true;
+  }
+  const traceRead = path.match(/^\/api\/debug\/traces\/([^/]+)$/);
+  if (traceRead && req.method === "GET") {
+    if (!relayAdmin) { send(res, 503, { error: "relay_admin_not_configured" }); return true; }
+    const token = req.headers.authorization?.toString() || "";
+    try { const response = await relay(`/api/live/sessions/${encodeURIComponent(query.get("sessionId") || "unknown")}/logs?traceId=${encodeURIComponent(traceRead[1]!)}`, { headers: { authorization: token } }); await relayJson(res, response); }
     catch { send(res, 502, { error: "relay_unreachable" }); }
     return true;
   }

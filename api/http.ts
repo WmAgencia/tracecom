@@ -21,7 +21,8 @@ import { validatePriceObservation, type AcceptedObservation } from "../src/visio
 import { buildFastDecision } from "../src/engine/fast-path.js";
 import { settleTrade } from "../src/training/settlement.js";
 import { runAudit, type AuditInput } from "../src/research/audit-engine.js";
-import { DEFAULT_VARIANTS, runVariants, type ReplayEvent, type Variant } from "../src/research/replay-engine.js";
+import { compareVariants, DEFAULT_VARIANTS, replayEvent, runVariants, type ReplayEvent, type Variant } from "../src/research/replay-engine.js";
+import { runAutopsy } from "../src/research/session-autopsy.js";
 
 type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -477,6 +478,30 @@ function toDecision(score: number, suff: boolean, counter: boolean): "BUY" | "SE
   return score > 0 ? "BUY" : "SELL";
 }
 
+function safeKeyEquals(expected: string | undefined, received: string): boolean {
+  const e = expected?.trim() ?? "";
+  return Boolean(e && received && e.length === received.length && timingSafeEqual(Buffer.from(e), Buffer.from(received)));
+}
+function researchAuthorized(req: IncomingMessage): boolean {
+  const suppliedAdmin = req.headers["x-live-admin-key"]?.toString() ?? "";
+  const bearer = (req.headers.authorization ?? "").toString().replace(/^Bearer\s+/i, "");
+  return safeKeyEquals(process.env.LIVE_API_ADMIN_KEY, suppliedAdmin) || safeKeyEquals(process.env.LIVE_API_KEY, bearer);
+}
+const researchLimits = new Map<string, { at: number; count: number }>();
+function researchRateOk(bucket: string, limit: number, windowMs = 60_000): boolean { const now = Date.now(); const hit = researchLimits.get(bucket) ?? { at: now, count: 0 }; if (now - hit.at > windowMs) { hit.at = now; hit.count = 0; } hit.count += 1; researchLimits.set(bucket, hit); return hit.count <= limit; }
+const shadowJobs = new Map<string, { status: string; createdAt: number; result: unknown }>();
+const shadowIdempotency = new Map<string, { createdAt: number; result: unknown }>();
+
+async function fetchRelayBundle(sessionId: string): Promise<Record<string, unknown> | null> {
+  const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
+  const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
+  if (!base || !admin) return null;
+  const get = async (suffix: string) => { try { const response = await fetch(`${base}/api/live/sessions/${encodeURIComponent(sessionId)}/${suffix}`, { headers: { "x-relay-admin": admin }, signal: AbortSignal.timeout(8_000) }); return response.ok ? await response.json() as Record<string, unknown> : null; } catch { return null; } };
+  const [timeline, logs, runs] = await Promise.all([get("timeline"), get("logs"), get("agent-runs")]);
+  if (!timeline && !logs && !runs) return null;
+  return { timeline, logs, agentRuns: runs };
+}
+
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const requestId = req.headers["x-request-id"]?.toString().slice(0, 128) || randomUUID();
   res.setHeader("X-TraceCon-Request-Id", requestId);
@@ -595,6 +620,80 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       }
       console.info("RESEARCH_AUDIT_COMPLETED", JSON.stringify({ checks: audits.length, failures: audits.filter((item) => item.status === "FAIL").length, warnings: audits.filter((item) => item.status === "WARN").length, evaluations: replay ? replay.evaluations : 0 }));
       json(200, { audits, replay, predictionHorizonSeconds: 60, brokerAutomation: "NONE", generatedAt: Date.now() });
+      return;
+    }
+
+    if (path.startsWith("/api/research/") || path.startsWith("/api/shadow/")) {
+      if (!researchAuthorized(req)) { json(403, { error: "research_auth_required" }); return; }
+      const ip = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || "unknown";
+      const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+      if (path === "/api/research/session-autopsy" && req.method === "POST") {
+        if (!researchRateOk(`autopsy:${ip}`, 30)) { json(429, { error: "rate_limited", bucket: "autopsy" }); return; }
+        let bundle = input as Record<string, unknown>;
+        let source = "provided_bundle";
+        const sessionId = typeof input.sessionId === "string" ? input.sessionId : null;
+        if (sessionId && !Array.isArray(input.events) && !Array.isArray(input.settlements)) {
+          const relay = await fetchRelayBundle(sessionId);
+          if (!relay) { json(404, { error: "session_bundle_unavailable", sessionId }); return; }
+          source = "relay";
+          const items = Array.isArray((relay.timeline as Record<string, unknown> | null)?.items) ? (relay.timeline as { items: Array<Record<string, unknown>> }).items : [];
+          const events = items.filter((item) => item.kind === "event").map((item) => ({ t: new Date(String(item.at)).getTime(), type: String(item.type), data: item.data }));
+          const settlements = items.filter((item) => item.kind === "settlement").map((item) => ({ signalId: item.decisionId ?? null, entryPrice: item.entry_price === null ? null : Number(item.entry_price), exitPrice: item.settlement_price === null ? null : Number(item.settlement_price), entryTimestamp: new Date(String(item.at)).getTime() - 60_000, exitTimestamp: new Date(String(item.at)).getTime(), result: String(item.result ?? "UNKNOWN") }));
+          const samples = items.filter((item) => item.kind === "market_sample" && Number.isFinite(Number(item.price))).map((item) => ({ value: Number(item.price), timestamp: new Date(String(item.at)).getTime(), accepted: true, source: "RELAY_MARKET_SAMPLE" }));
+          const logs = Array.isArray((relay.logs as Record<string, unknown> | null)?.logs) ? (relay.logs as { logs: Array<Record<string, unknown>> }).logs : [];
+          const runs = Array.isArray((relay.agentRuns as Record<string, unknown> | null)?.runs) ? (relay.agentRuns as { runs: Array<Record<string, unknown>> }).runs : [];
+          bundle = { sessionId, events, settlements, prices: samples, agentRuns: runs, logs };
+        }
+        const autopsy = runAutopsy({ ...(bundle as Record<string, unknown>), sessionId } as never);
+        json(200, { autopsy, source, brokerAutomation: "NONE" });
+        return;
+      }
+      if (path === "/api/research/compare" && req.method === "POST") {
+        if (!researchRateOk(`compare:${ip}`, 30)) { json(429, { error: "rate_limited", bucket: "compare" }); return; }
+        const evaluateVariant = async (variant: Variant) => { if (Array.isArray(input.marketEvents)) return (await runVariants((input.marketEvents as ReplayEvent[]).slice(0, 500), [variant], { concurrency: 4 })).evaluations; return []; };
+        const variantA = (input.variantA as Variant) ?? DEFAULT_VARIANTS[0]!;
+        const variantB = (input.variantB as Variant) ?? DEFAULT_VARIANTS[2]!;
+        const [rowsA, rowsB] = await Promise.all([evaluateVariant(variantA), evaluateVariant(variantB)]);
+        json(200, { comparison: compareVariants(rowsA, rowsB), variantA, variantB, brokerAutomation: "NONE" });
+        return;
+      }
+      if (path === "/api/research/replay" && req.method === "POST") {
+        if (!researchRateOk(`replay:${ip}`, 30)) { json(429, { error: "rate_limited", bucket: "replay" }); return; }
+        const events = Array.isArray(input.marketEvents) ? input.marketEvents as ReplayEvent[] : input.marketEvent ? [input.marketEvent as ReplayEvent] : [];
+        if (!events.length) { json(400, { error: "market_events_required" }); return; }
+        const variants = Array.isArray(input.variants) && input.variants.length ? input.variants as Variant[] : DEFAULT_VARIANTS;
+        const report = await runVariants(events.slice(0, 500), variants.slice(0, 64), { concurrency: 8 });
+        json(200, { evaluations: report.evaluations.slice(0, 500), uniqueMarketEvents: report.uniqueMarketEvents, uniqueGroundTruths: report.uniqueGroundTruths, perVariant: report.perVariant, causalOnly: true, brokerAutomation: "NONE" });
+        return;
+      }
+      if (path === "/api/shadow/evaluate" && req.method === "POST") {
+        if (!researchRateOk(`shadow-single:${ip}`, 120)) { json(429, { error: "rate_limited", bucket: "shadow" }); return; }
+        const event = input.marketEvent as ReplayEvent | undefined;
+        if (!event || typeof event.marketEventId !== "string") { json(400, { error: "market_event_required" }); return; }
+        const variant = (input.variant as Variant) ?? DEFAULT_VARIANTS[1]!;
+        json(200, { evaluation: replayEvent(event, variant), brokerAutomation: "NONE" });
+        return;
+      }
+      if (path === "/api/shadow/batch" && req.method === "POST") {
+        const events = Array.isArray(input.marketEvents) ? input.marketEvents as ReplayEvent[] : [];
+        const variants = Array.isArray(input.variants) && input.variants.length ? input.variants as Variant[] : DEFAULT_VARIANTS;
+        if (!events.length) { json(400, { error: "market_events_required" }); return; }
+        const evaluationsPlanned = Math.min(events.length, 500) * Math.min(variants.length, 64);
+        if (!researchRateOk(`shadow-batch:${ip}`, 10) || evaluationsPlanned > 6_400) { json(429, { error: "batch_throttled", bucket: "shadow-batch", evaluationsPlanned, maxEvaluations: 6_400 }); return; }
+        const idempotencyKey = typeof input.idempotencyKey === "string" ? input.idempotencyKey.slice(0, 80) : null;
+        const cached = idempotencyKey ? shadowIdempotency.get(idempotencyKey) : null;
+        if (cached && Date.now() - cached.createdAt < 600_000) { json(200, { ...(cached.result as Record<string, unknown>), idempotent: true }); return; }
+        const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        shadowJobs.set(jobId, { status: "RUNNING", createdAt: Date.now(), result: null });
+        const report = await runVariants(events.slice(0, 500), variants.slice(0, 64), { concurrency: Math.max(1, Math.min(8, Number(input.concurrency) || 8)) });
+        const result = { jobId, status: "COMPLETED", evaluations: report.evaluations.length, uniqueMarketEvents: report.uniqueMarketEvents, uniqueGroundTruths: report.uniqueGroundTruths, brokerSideEffects: report.brokerSideEffects, perVariant: report.perVariant, predictionHorizonSeconds: 60, brokerAutomation: "NONE" };
+        shadowJobs.set(jobId, { status: "COMPLETED", createdAt: Date.now(), result });
+        if (idempotencyKey) shadowIdempotency.set(idempotencyKey, { createdAt: Date.now(), result });
+        console.info("SHADOW_BATCH_COMPLETED", JSON.stringify({ jobId, evaluations: report.evaluations.length, uniqueMarketEvents: report.uniqueMarketEvents }));
+        json(200, result);
+        return;
+      }
+      json(404, { error: "research_route_not_found", path });
       return;
     }
 

@@ -88,12 +88,16 @@ setInterval(() => {
 const api = async (path, options = {}) => {
   const response = await fetch(path, { ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
+  if (!response.ok) { diagCapture("browser", response.status >= 500 ? "error" : "warn", "HTTP_ERROR", `${response.status} ${path}`, { status: response.status, route: path }); throw new Error(body.error || `HTTP ${response.status}`); }
   return body;
 };
 const text = (id, value) => { $(id).textContent = value; };
 const led = (id, stateName) => { $(id).className = stateName || ""; };
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const diagQueue = [];
+function diagCapture(component, level, event, message, structuredData) { try { diagQueue.push({ logId: `log_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, component, level, event, message: String(message).slice(0, 300), structuredData: structuredData || {}, traceId: state.liveSessionId || null, codeVersion: "web-v1" }); if (diagQueue.length >= 25) void flushDiagnostics(); } catch { /* diagnostics must never break the app */ } }
+async function flushDiagnostics() { if (!state.liveSessionId || !diagQueue.length) return; const logs = diagQueue.splice(0, 50); try { await fetch("/api/live/browser/logs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId: state.liveSessionId, logs }) }); } catch { /* best-effort */ } }
+if (typeof window !== "undefined") { window.addEventListener("error", (event) => diagCapture("browser", "error", "UNCAUGHT_ERROR", event.message || "unknown", { source: event.filename, line: event.lineno })); window.addEventListener("unhandledrejection", (event) => diagCapture("browser", "error", "UNHANDLED_REJECTION", event.reason?.message || String(event.reason || "unknown"))); setInterval(() => void flushDiagnostics(), 15_000); }
 
 function loadHistory() {
   try { const rows = JSON.parse(localStorage.getItem("tracecom:vision-history") || "[]"); return Array.isArray(rows) ? rows.slice(-30) : []; } catch { return []; }
