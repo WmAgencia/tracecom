@@ -15,6 +15,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { del, get, put } from "@vercel/blob";
 
 type FableImage = { label: string; dataUrl: string };
+const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
 type TrainingDirection = "BUY" | "SELL";
 type TrainingOutcome = "WIN" | "LOSS" | "DRAW" | "UNKNOWN";
 type VirtualTrade = {
@@ -155,6 +156,15 @@ async function temporaryVisionUrls(images: FableImage[]): Promise<{ images: Arra
     return { images: visualImages, cleanup: async () => { if (uploaded.length) await del(uploaded); } };
   } catch (error) {
     if (uploaded.length) await del(uploaded).catch(() => undefined);
+    // Fallback for suspended Blob stores: same-origin, signed, short-lived memory transport.
+    const fallback: string[] = [];
+    for (const image of images) {
+      const match = image.dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/); if (!match) continue;
+      const id = crypto.randomUUID(); const expires = Date.now() + 60_000;
+      ephemeralImages.set(id, { bytes: Buffer.from(match[2]!, "base64"), contentType: match[1]!, expires }); fallback.push(id);
+      visualImages.push({ label: image.label, url: `${process.env.VISION_PROXY_ORIGIN || "https://tracecom.consecom.com.br"}/api/vision/image?m=${id}&e=${expires}` });
+    }
+    if (visualImages.length) return { images: visualImages, cleanup: async () => { for (const id of fallback) ephemeralImages.delete(id); } };
     throw error;
   }
 }
@@ -423,6 +433,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
 
     if (path === "/api/vision/image" && req.method === "GET") {
+      const memoryId = q.get("m"); const memory = memoryId ? ephemeralImages.get(memoryId) : null;
+      if (memory && Number(q.get("e")) >= Date.now()) { res.statusCode = 200; res.setHeader("Content-Type", memory.contentType); res.setHeader("Cache-Control", "no-store"); res.end(memory.bytes); return; }
       const blobUrl = validVisionProxy(q.get("p") ?? "", q.get("e") ?? "", q.get("s") ?? "");
       if (!blobUrl) { res.statusCode = 403; res.end("forbidden"); return; }
       const object = await get(blobUrl, { access: "private", useCache: false });
