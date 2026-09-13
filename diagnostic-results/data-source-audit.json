@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-09-13T00:00:00.000Z",
+  "requiredCoverage": {
+    "earliestDecisionTimestamp": "2026-09-01T23:22:00.000Z",
+    "latestDecisionTimestamp": "2026-09-11T21:22:00.000Z",
+    "latestSettlementTimestamp": "2026-09-11T21:23:00.000Z"
+  },
+  "attempts": [
+    {"source":"TrueFX","method":"historical downloads","url":"https://www.truefx.com/truefx-historical-downloads-2/","httpStatus":200,"authenticationRequired":true,"result":"BLOCKED_AUTH_REQUIRED","reason":"official historical files require login/registration; no bypass attempted"},
+    {"source":"Dukascopy","method":"historical tick bi5 endpoint","url":"https://datafeed.dukascopy.com/datafeed/USDCAD/2026/08/13/00h_ticks.bi5","httpStatus":503,"authenticationRequired":false,"result":"UNAVAILABLE","reason":"endpoint returned Service Unavailable"},
+    {"source":"HistData","method":"manual historical download page","url":"https://www.histdata.com/download-free-forex-data/","httpStatus":200,"authenticationRequired":false,"result":"NO_VERIFIED_FILE","reason":"page reachable but no tick file covering required period was obtained"}
+  ],
+  "highResolutionDataset": null,
+  "productionChanged": false,
+  "syntheticData": false
+}
