@@ -1,0 +1,5 @@
+{
+  "status": "INVALIDATED_BY_SETTLEMENT_AUDIT",
+  "source": "paper-usdcad-1000-results.json",
+  "replacement": "settlement-diff-1000.json"
+}
