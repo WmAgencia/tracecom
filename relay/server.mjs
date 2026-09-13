@@ -18,7 +18,7 @@ const sign = payload => { const raw=Buffer.from(JSON.stringify(payload)).toStrin
 const verify = token => { const [raw,sig]=String(token||'').split('.'), expected=raw?crypto.createHmac('sha256',admin).update(raw).digest('base64url'):''; if(!raw||!sig||sig.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(sig),Buffer.from(expected)))return null; const value=JSON.parse(Buffer.from(raw,'base64url').toString()); return value.exp>Date.now()&&value.scope==='telemetry:write'&&value.issuer==='tracecom'&&value.audience==='tracecom-live-relay'&&value.nonce?value:null; };
 const reply = (res, code, body) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); };
 function rateLimit(req, bucket, ceiling, windowMs=60000) { const forwarded=String(req.headers['x-forwarded-for']||'').split(',')[0].trim(); const key=`${bucket}:${forwarded||req.socket.remoteAddress||'unknown'}`, now=Date.now(), hit=limits.get(key)||{at:now,count:0}; if(now-hit.at>windowMs){hit.at=now;hit.count=0;} hit.count++; limits.set(key,hit); return hit.count<=ceiling; }
-async function body(req) { let raw=''; for await (const part of req) { raw += part; if(raw.length > 262144) throw Error('payload_too_large'); } return raw ? JSON.parse(raw) : {}; }
+async function body(req, limit = 262144) { let raw=''; for await (const part of req) { raw += part; if(raw.length > limit) throw Error('payload_too_large'); } return raw ? JSON.parse(raw) : {}; }
 async function migrate() {
   const directory = path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrations');
   const files = (await fs.readdir(directory)).filter(file => file.endsWith('.sql')).sort();
@@ -75,6 +75,15 @@ const server = http.createServer(async (req, res) => {
     }
     if(url.pathname === '/api/live/keys' && req.method === 'GET') { if(req.headers['x-relay-admin']!==admin)return reply(res,401,{error:'unauthorized'}); return reply(res,200,(await pool.query('SELECT id,name,key_prefix,key_suffix,scopes,created_at,expires_at,revoked_at,last_used_at FROM live_api_keys ORDER BY created_at DESC')).rows); }
     if(url.pathname === '/api/live/ingest-token' && req.method === 'POST') { if(req.headers['x-relay-admin']!==admin)return reply(res,401,{error:'unauthorized'}); const input=await body(req); if(!input.sessionId)return reply(res,400,{error:'session_required'}); const now=Date.now(); return reply(res,201,{token:sign({sessionId:input.sessionId,scope:'telemetry:write',iat:now,exp:now+600000,nonce:crypto.randomUUID(),issuer:'tracecom',audience:'tracecom-live-relay'}),expiresAt:new Date(now+600000).toISOString()}); }
+    const trainingSessionPath = url.pathname.match(/^\/api\/training\/sessions\/([^/]+)$/);
+    if(trainingSessionPath && (req.method === 'GET' || req.method === 'PUT')) {
+      if(req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
+      const id = decodeURIComponent(trainingSessionPath[1]);
+      if(req.method === 'GET') { const row = (await pool.query('SELECT payload_json FROM training_sessions WHERE id=$1',[id])).rows[0]; if(!row) return reply(res, 404, { error: 'training_session_not_found' }); return reply(res, 200, { session: row.payload_json }); }
+      const input = await body(req, 1500000); if(!input.session || typeof input.session !== 'object') return reply(res, 400, { error: 'session_required' });
+      await pool.query("INSERT INTO training_sessions(id,status,payload_json,updated_at) VALUES($1,$2,$3::jsonb,now()) ON CONFLICT(id) DO UPDATE SET status=EXCLUDED.status,payload_json=EXCLUDED.payload_json,updated_at=now()",[id,String(input.session.status||'ACTIVE').slice(0,20),JSON.stringify(input.session)]);
+      return reply(res, 200, { stored: true, sessionId: id });
+    }
     const keyPath = url.pathname.match(/^\/api\/live\/keys\/([^/]+)$/);
     if(keyPath && req.method === 'DELETE') { if(req.headers['x-relay-admin']!==admin)return reply(res,401,{error:'unauthorized'}); await pool.query('UPDATE live_api_keys SET revoked_at=now() WHERE id=$1',[keyPath[1]]); return reply(res,200,{revoked:true}); }
     if(url.pathname === '/api/live/ingest' && req.method === 'POST') {

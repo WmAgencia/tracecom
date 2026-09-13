@@ -1,7 +1,8 @@
 /* Trace/Com Vision: user-initiated capture; local crops; virtual-only training. */
 const $ = (id) => document.getElementById(id);
-const CANDLE_SECONDS = 5, EXPIRATION_SECONDS = 60, VISIBLE_WINDOW_SECONDS = 300, ANALYSIS_DELAY_MS = 500;
-const state = { stream: null, crop: null, selecting: false, start: null, frames: [], observations: [], priceObservations: [], priceTimer: null, priceAnalyzing: false, timer: null, countdownTimer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, manualPosition: { state: "NO_POSITION", direction: "UNKNOWN", confidence: 0, evidence: [] }, stage: "IDLE", session: 0, liveSessionId: null, liveSequence: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0, reanalysisAt: 0, decisionId: null, decisionTimestamp: 0, expirationSeconds: EXPIRATION_SECONDS, lastSubmittedHash: null, lastSubmittedAt: 0, lastCandleId: null, requestCount: 0, hasSuccessfulAnalysis: false };
+const CANDLE_SECONDS = 5, EXPIRATION_SECONDS = 60, VISIBLE_WINDOW_SECONDS = 300, ANALYSIS_DELAY_MS = 500, ANALYSIS_STALE_MS = 30_000;
+const state = { stream: null, crop: null, selecting: false, start: null, frames: [], observations: [], priceObservations: [], priceOutlierCandidates: [], priceTimer: null, priceAnalyzing: false, timer: null, countdownTimer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, manualPosition: { state: "NO_POSITION", direction: "UNKNOWN", confidence: 0, evidence: [] }, metrics: { analysisStarted: 0, analysisCompleted: 0, analysisStale: 0, analysisSkippedBusy: 0, priceObservationsValid: 0, priceObservationsRejected: 0 }, stage: "IDLE", session: 0, liveSessionId: null, liveSequence: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0, reanalysisAt: 0, decisionId: null, decisionTimestamp: 0, expirationSeconds: EXPIRATION_SECONDS, lastSubmittedHash: null, lastSubmittedAt: 0, lastCandleId: null, requestCount: 0, hasSuccessfulAnalysis: false };
+window.tracecomMetrics = state.metrics;
 
 const api = async (path, options = {}) => {
   const response = await fetch(path, { ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
@@ -38,7 +39,28 @@ async function checkBackend() {
   catch { led("connectionLed", "bad"); text("connectionText", "BACKEND INDISPONÍVEL"); }
 }
 function priceCrop() { const video = $("screenVideo"); if (!video.videoWidth) return null; return makeCrop({ x: .83, y: .35, width: .09, height: .50 }, 180); }
-async function trackPrice() { if (state.priceAnalyzing || !state.stream) return; const crop = priceCrop(); if (!crop) return; state.priceAnalyzing = true; const frameId = `price_${Date.now()}`; try { const result = await api("/api/vision/price", { method: "POST", body: JSON.stringify({ frameId, dataUrl: crop.dataUrl, mimeType: "image/jpeg", width: crop.width, height: crop.height }) }); const observation = result.priceObservation; if (Number.isFinite(Number(observation?.value)) && Number(observation?.confidence) >= .6) { const row = { value: Number(observation.value), confidence: Number(observation.confidence), source: observation.source || "IQ_OPTION_CURRENT_PRICE_LABEL", timestamp: Number(observation.timestamp) || Date.now(), frameId, hash: observation.imageHash || null }; state.priceObservations = [...state.priceObservations, row].slice(-120); text("currentPriceValue", row.value.toString()); console.info("PRICE_OBSERVATION", JSON.stringify({ price: row.value, confidence: row.confidence, source: row.source, timestamp: row.timestamp, frameId: row.frameId })); } } catch (error) { console.info("PRICE_OBSERVATION_UNAVAILABLE", JSON.stringify({ frameId, reason: String(error?.message || error).slice(0, 120) })); } finally { state.priceAnalyzing = false; } }
+async function trackPrice() {
+  if (state.priceAnalyzing || !state.stream) return; const crop = priceCrop(); if (!crop) return; state.priceAnalyzing = true; const capturedAt = Date.now(), frameId = `price_${capturedAt}`;
+  try {
+    const history = state.priceObservations.slice(-12).map((item) => ({ value: item.value, timestamp: item.timestamp }));
+    const outlierCandidates = state.priceOutlierCandidates.slice(-6).map((item) => ({ value: item.value, timestamp: item.timestamp }));
+    const result = await api("/api/vision/price", { method: "POST", body: JSON.stringify({ frameId, dataUrl: crop.dataUrl, mimeType: "image/jpeg", width: crop.width, height: crop.height, history, outlierCandidates }) });
+    const observation = result.priceObservation, validation = result.validation || {};
+    const value = Number(observation?.value), confidence = Number(observation?.confidence) || 0;
+    if (Number.isFinite(value) && value > 0 && observation?.accepted !== false) {
+      const row = { value, confidence, source: observation.source || "IQ_OPTION_CURRENT_PRICE_LABEL", timestamp: Number(observation.timestamp) || Date.now(), frameId, hash: observation.imageHash || null };
+      state.priceObservations = [...state.priceObservations, row].slice(-120); state.metrics.priceObservationsValid += 1;
+      if (validation.status === "REGIME_CHANGE_ACCEPTED") state.priceOutlierCandidates = [];
+      text("currentPriceValue", value.toString());
+      console.info("PRICE_OBSERVATION", JSON.stringify({ price: value, confidence, source: row.source, timestamp: row.timestamp, frameId, ageMs: row.timestamp - capturedAt, validation: validation.status }));
+    } else if (Number.isFinite(value) && value > 0) {
+      state.priceOutlierCandidates = [...state.priceOutlierCandidates, { value, timestamp: Date.now() }].slice(-10); state.metrics.priceObservationsRejected += 1;
+      console.warn("PRICE_OBSERVATION_REJECTED", JSON.stringify({ reason: validation.reason || "UNKNOWN", rawPrice: value, previousPrice: validation.previousPrice ?? null, rollingMedian: validation.rollingMedian ?? null, relativeDeviation: validation.relativeDeviation ?? null, confidence, frameId }));
+    } else {
+      console.info("PRICE_OBSERVATION_UNAVAILABLE", JSON.stringify({ frameId, reason: "UNREADABLE" }));
+    }
+  } catch (error) { console.info("PRICE_OBSERVATION_UNAVAILABLE", JSON.stringify({ frameId, reason: String(error?.message || error).slice(0, 120) })); } finally { state.priceAnalyzing = false; }
+}
 function startPriceTracking() { if (state.priceTimer) clearInterval(state.priceTimer); void trackPrice(); state.priceTimer = setInterval(trackPrice, 2_000); }
 function latestCausalPrice(timestamp) { return state.priceObservations.slice().reverse().find((item) => item.timestamp <= timestamp && timestamp - item.timestamp <= 3_000) || null; }
 
@@ -130,10 +152,12 @@ function frameHash(stats) { return stats.sample ? stats.sample.slice(0, 96).join
 function scheduleNextCandle() { if (state.timer) clearTimeout(state.timer); const now = Date.now(); const nextClose = (Math.floor(now / (CANDLE_SECONDS * 1000)) + 1) * CANDLE_SECONDS * 1000; state.timer = setTimeout(() => { void observe(); scheduleNextCandle(); }, Math.max(50, nextClose + ANALYSIS_DELAY_MS - now)); }
 function startObservation() { if (state.timer) clearTimeout(state.timer); state.failures = 0; state.nextRetryAt = 0; state.circuitOpen = false; scheduleNextCandle(); }
 async function observe() {
-  if (state.analyzing || !state.stream || !state.crop || Date.now() < state.nextRetryAt) return;
+  if (state.analyzing) { state.metrics.analysisSkippedBusy += 1; const pending = Math.floor(Date.now() / (CANDLE_SECONDS * 1000)) * CANDLE_SECONDS * 1000; console.info("ANALYSIS_SKIPPED_BUSY", JSON.stringify({ candleId: `candle_${pending}`, metrics: state.metrics })); return; }
+  if (!state.stream || !state.crop || Date.now() < state.nextRetryAt) return;
   if (state.circuitOpen) { state.circuitOpen = false; state.failures = 0; setStage("CIRCUIT_HALF_OPEN"); }
   const session = state.session, stream = state.stream, candleCloseTimestamp = Math.floor(Date.now() / (CANDLE_SECONDS * 1000)) * CANDLE_SECONDS * 1000, candleId = `candle_${candleCloseTimestamp}`;
   if (state.lastCandleId === candleId) return;
+  state.metrics.analysisStarted += 1;
   console.info("CANDLE_CLOSED", JSON.stringify({ candleId, candleOpenTimestamp: candleCloseTimestamp - CANDLE_SECONDS * 1000, candleCloseTimestamp, candleSeconds: CANDLE_SECONDS }));
   setStage("CHART_CROP_GENERATING"); if (!state.hasSuccessfulAnalysis) setFable("LOADING"); else setFable("ONLINE"); text("pipelineState", "CAPTURANDO"); const chart = makeCrop(state.crop); if (!chart) { setStage("CROP_GENERATION_FAILED"); setFable("ERROR"); return; }
   setStage("SANITIZED_CROP_CREATED", `${chart.width}x${chart.height}`);
@@ -163,9 +187,17 @@ async function observe() {
   try {
     setStage("PIPELINE_REQUEST_STARTED"); console.info("VISION_REQUEST_PREPARED", JSON.stringify({ requestId, frameId, hasImage: true, bytes: byteLength, hash: imageHash, width: chart.width, height: chart.height })); const started = Date.now(); const result = await api("/api/fable/trade", { method: "POST", body: JSON.stringify({ snapshot, chartImages: temporal, contextImage: headerCrop()?.dataUrl || null }) });
     if (session !== state.session || stream !== state.stream || state.lastCandleId !== candleId) { console.info("STALE_DECISION", JSON.stringify({ requestId, candleId, currentCandleId: state.lastCandleId })); return; }
-    const latency = Date.now() - started; state.failures = 0; state.nextRetryAt = 0; state.lastAnalysis = result.analysis; state.observations = [...state.observations, { candleId, frameId, candleCloseTimestamp, timestamp: Date.now(), visionObservation: result.analysis?.visionObservation || null, directionalLean: result.analysis?.directionalLean || "NONE", pBuy: result.analysis?.pBuy ?? null, pSell: result.analysis?.pSell ?? null, pWait: result.analysis?.pWait ?? null }].slice(-60); console.info("ARBITER_DECISION", JSON.stringify({ candleId, frameId, decision: result.analysis?.decision || "WAIT", directionalLean: result.analysis?.directionalLean || "NONE", latencyMs: latency })); state.hasSuccessfulAnalysis = true; renderAnalysis(result.analysis || {}, latency); await persistDecision(snapshot, result.analysis || {}); await trainIfActive(snapshot, result.analysis || {}, stat, latency);
-    if (result.analysis?.decision === "WAIT" && ["BUY", "SELL"].includes(result.analysis?.directionalLean)) { console.info("SHADOW_LEAN_CREATED", JSON.stringify({ candleId, frameId, direction: result.analysis.directionalLean, leanConfidence: result.analysis.leanConfidence ?? null })); void liveEmit("SHADOW_UPDATE", { candleId, frameId, direction: result.analysis.directionalLean, leanConfidence: result.analysis.leanConfidence ?? null, pBuy: result.analysis?.pBuy ?? null, pSell: result.analysis?.pSell ?? null, pWait: result.analysis?.pWait ?? null, counterfactual: true }); }
-    void liveEmit("DECISION", { decisionId: state.decisionId, candleId, direction: result.analysis?.decision || "WAIT", confidence: result.analysis?.confidence ?? null, probabilitySource: result.analysis?.probabilitySource || "FABLE_5_1", pBuy: result.analysis?.pBuy ?? null, pSell: result.analysis?.pSell ?? null, pWait: result.analysis?.pWait ?? null, directionalLean: result.analysis?.directionalLean || "NONE", multiAgent: result.analysis?.multiAgent || null, latencyMetrics: result.analysis?.latencyMetrics || null });
+    const latency = Date.now() - started, candleAgeMs = Date.now() - candleCloseTimestamp, stale = candleAgeMs > ANALYSIS_STALE_MS;
+    state.failures = 0; state.nextRetryAt = 0; state.metrics.analysisCompleted += 1; if (stale) state.metrics.analysisStale += 1;
+    state.lastAnalysis = { ...result.analysis, stale }; state.observations = [...state.observations, { candleId, frameId, candleCloseTimestamp, timestamp: Date.now(), visionObservation: result.analysis?.visionObservation || null, directionalLean: result.analysis?.directionalLean || "NONE", pBuy: result.analysis?.pBuy ?? null, pSell: result.analysis?.pSell ?? null, pWait: result.analysis?.pWait ?? null, stale }].slice(-60);
+    console.info("ARBITER_DECISION", JSON.stringify({ candleId, frameId, decision: result.analysis?.decision || "WAIT", directionalLean: result.analysis?.directionalLean || "NONE", latencyMs: latency, candleAgeMs, stale, timings: result.analysis?.timing || null }));
+    state.hasSuccessfulAnalysis = true; renderAnalysis(state.lastAnalysis, latency); await persistDecision(snapshot, result.analysis || {});
+    if (stale) console.warn("STALE_ANALYSIS", JSON.stringify({ candleId, frameId, candleAgeMs, thresholdMs: ANALYSIS_STALE_MS, decision: result.analysis?.decision || "WAIT", metrics: state.metrics }));
+    else {
+      await trainIfActive(snapshot, result.analysis || {}, stat, latency);
+      if (result.analysis?.decision === "WAIT" && ["BUY", "SELL"].includes(result.analysis?.directionalLean)) { console.info("SHADOW_LEAN_CREATED", JSON.stringify({ candleId, frameId, direction: result.analysis.directionalLean, leanConfidence: result.analysis.leanConfidence ?? null })); void liveEmit("SHADOW_UPDATE", { candleId, frameId, direction: result.analysis.directionalLean, leanConfidence: result.analysis.leanConfidence ?? null, pBuy: result.analysis?.pBuy ?? null, pSell: result.analysis?.pSell ?? null, pWait: result.analysis?.pWait ?? null, counterfactual: true }); }
+    }
+    void liveEmit("DECISION", { decisionId: state.decisionId, candleId, direction: result.analysis?.decision || "WAIT", confidence: result.analysis?.confidence ?? null, probabilitySource: result.analysis?.probabilitySource || "FABLE_5_1", pBuy: result.analysis?.pBuy ?? null, pSell: result.analysis?.pSell ?? null, pWait: result.analysis?.pWait ?? null, directionalLean: result.analysis?.directionalLean || "NONE", multiAgent: result.analysis?.multiAgent || null, latencyMetrics: result.analysis?.latencyMetrics || null, stale, analysisMetrics: { ...state.metrics } });
   } catch (error) {
     if (session !== state.session || stream !== state.stream) return;
     const message = String(error.message || error);
@@ -241,11 +273,28 @@ function updateRunStats() {
   if (directional.length && state.training) text("trainingNote", `${directional.length} sinais direcionais · avaliações aguardam preço de liquidação estruturado.`);
 }
 
+const TRAINING_CONFIG_KEY = "tracecom:training-config";
+function trainingConfig() { return { symbol: state.lastContext?.symbol || null, marketType: state.lastContext?.marketType || null, horizonSeconds: 60, maxEvaluatedTrades: 100, agentVersion: "FABLE_TRADER_V1", promptVersion: "vision-v1", featureVersion: "screen-motion-v1", visionVersion: "sanitized-crop-v1" }; }
 async function startTraining() {
-  const session = await api("/api/training/sessions", { method: "POST", body: JSON.stringify({ symbol: state.lastContext?.symbol || null, marketType: state.lastContext?.marketType || null, horizonSeconds: 60, maxEvaluatedTrades: 100, agentVersion: "FABLE_TRADER_V1", promptVersion: "vision-v1", featureVersion: "screen-motion-v1", visionVersion: "sanitized-crop-v1" }) });
-  state.training = session; localStorage.setItem("tracecom:training-session", session.id); $("startTrainingButton").hidden = true; $("stopTrainingButton").hidden = false; text("trainingTitle", "Treinamento ativo"); text("trainingState", "ATIVO"); text("trainingNote", "Somente operações virtuais. Sem clique, stake ou ordem na IQ Option."); renderTraining(session);
+  const config = trainingConfig();
+  const session = await api("/api/training/sessions", { method: "POST", body: JSON.stringify(config) });
+  state.training = session; localStorage.setItem("tracecom:training-session", session.id); localStorage.setItem(TRAINING_CONFIG_KEY, JSON.stringify(config)); $("startTrainingButton").hidden = true; $("stopTrainingButton").hidden = false; text("trainingTitle", "Treinamento ativo"); text("trainingState", "ATIVO"); text("trainingNote", `Somente operações virtuais (${session.persistence}). Sem clique, stake ou ordem na IQ Option.`); renderTraining(session);
 }
-function stopTraining() { state.training = null; localStorage.removeItem("tracecom:training-session"); $("startTrainingButton").hidden = false; $("stopTrainingButton").hidden = true; text("trainingTitle", "Treino pausado"); text("trainingState", "PAUSADO"); }
+async function recoverTraining() {
+  const sessionId = state.training?.id; if (!sessionId) return;
+  console.info("TRAINING_SESSION_RECOVERY_STARTED", JSON.stringify({ sessionId }));
+  try {
+    const config = JSON.parse(localStorage.getItem(TRAINING_CONFIG_KEY) || "{}");
+    const session = await api("/api/training/sessions", { method: "POST", body: JSON.stringify({ ...config, sessionId }) });
+    state.training = session; renderTraining(session); liveStatus("READY", "Sessão de treino recuperada.");
+    console.info("TRAINING_SESSION_RECOVERED", JSON.stringify({ sessionId: session.id, persistence: session.persistence }));
+  } catch (error) {
+    console.error("TRAINING_SESSION_RECOVERY_FAILED", JSON.stringify({ sessionId, error: String(error?.message || error).slice(0, 160) }));
+    state.training = null; localStorage.removeItem("tracecom:training-session"); localStorage.removeItem(TRAINING_CONFIG_KEY);
+    $("startTrainingButton").hidden = false; $("stopTrainingButton").hidden = true; text("trainingTitle", "Treino interrompido"); text("trainingState", "ERRO"); text("trainingNote", "Sessão não pôde ser recuperada; polling encerrado para este ID.");
+  }
+}
+async function stopTraining() { const id = state.training?.id; if (id) { try { await api(`/api/training/sessions/${encodeURIComponent(id)}/stop`, { method: "POST", body: "{}" }); } catch { /* best-effort stop */ } } state.training = null; localStorage.removeItem("tracecom:training-session"); $("startTrainingButton").hidden = false; $("stopTrainingButton").hidden = true; text("trainingTitle", "Treino pausado"); text("trainingState", "PAUSADO"); }
 async function trainIfActive(snapshot, analysis, stat) {
   if (!state.training) return; const sizing = suggestedStake(analysis); const causalPrice = latestCausalPrice(snapshot.timestampMs); const visualPrice = Number(analysis.visionObservation?.price); const priceConfidence = Number(analysis.visionObservation?.priceConfidence) || 0; const referencePrice = causalPrice?.value ?? (Number.isFinite(visualPrice) && priceConfidence >= .6 ? visualPrice : null); const referencePriceSource = referencePrice === null ? "UNAVAILABLE" : (causalPrice?.source || analysis.visionObservation?.priceSource || "VISION_PRICE_LABEL"); const referencePriceConfidence = causalPrice?.confidence ?? priceConfidence; if (referencePrice !== null && (analysis.decision === "BUY" || analysis.decision === "SELL" || ["BUY", "SELL"].includes(analysis.directionalLean))) console.info("ENTRY_PRICE_LOCKED", JSON.stringify({ price: referencePrice, timestamp: causalPrice?.timestamp || snapshot.timestampMs, ageMs: causalPrice ? snapshot.timestampMs - causalPrice.timestamp : 0, confidence: referencePriceConfidence, source: referencePriceSource, candleId: snapshot.candleId })); const result = await api("/api/training/analyze", { method: "POST", body: JSON.stringify({ trainingSessionId: state.training.id, snapshot: { ...snapshot, symbol: state.lastContext?.symbol || "UNAVAILABLE", referencePrice, referencePriceSource, priceConfidence: referencePriceConfidence, framesHash: frameHash(stat), features: { motion: stat } }, analysis, suggestedStake: sizing.amount || null }) }); state.training = result; renderTraining(result);
 }
@@ -266,8 +315,8 @@ function renderTraining(session) {
   const note = $("trainingNote");
   if (note && session.persistence) note.textContent = `Persistência: ${session.persistence}. ${pending} operação(ões) aguardando o horizonte causal; WAIT directional lean: ${session.directionalLeanEvaluated || 0} avaliados, WR ${session.directionalLeanWR == null ? "—" : `${Math.round(Number(session.directionalLeanWR) * 100)}%`}.`;
 }
-async function restoreTraining() { const id = localStorage.getItem("tracecom:training-session"); if (!id) return; try { const session = await api(`/api/training/sessions/${encodeURIComponent(id)}`); state.training = session; $("startTrainingButton").hidden = true; $("stopTrainingButton").hidden = false; renderTraining(session); } catch { localStorage.removeItem("tracecom:training-session"); } }
-async function refreshTraining() { if (!state.training) return; try { const session = await api(`/api/training/sessions/${encodeURIComponent(state.training.id)}`); state.training = session; renderTraining(session); } catch { /* best-effort training refresh */ } }
+async function restoreTraining() { const id = localStorage.getItem("tracecom:training-session"); if (!id) return; state.training = { id }; try { const session = await api(`/api/training/sessions/${encodeURIComponent(id)}`); state.training = session; $("startTrainingButton").hidden = true; $("stopTrainingButton").hidden = false; renderTraining(session); } catch (error) { if (String(error?.message || "").includes("training_session_not_found")) await recoverTraining(); else { state.training = null; localStorage.removeItem("tracecom:training-session"); } } }
+async function refreshTraining() { if (!state.training) return; try { const session = await api(`/api/training/sessions/${encodeURIComponent(state.training.id)}`); state.training = session; renderTraining(session); } catch (error) { if (String(error?.message || "").includes("training_session_not_found")) await recoverTraining(); /* transient errors keep polling; 404 has explicit recovery */ } }
 function liveStatus(label, note) { text("liveAccessStatus", label); if (note) text("liveAccessNote", note); }
 async function generateLiveKey() { const adminKey = window.prompt("Chave administrativa da interface (não será armazenada):"); if (!adminKey) return; liveStatus("LOADING", "Gerando chave…"); try { const result = await api("/api/live/admin/keys", { method: "POST", headers: { "x-live-admin-key": adminKey }, body: JSON.stringify({ name: "Codex Live Access" }) }); const output = $("liveKeyOutput"); output.hidden = false; output.textContent = result.key; output.dataset.keyId = result.id; output.dataset.adminKey = adminKey; $("liveRevokeKey").hidden = false; liveStatus("READY", "Chave exibida uma única vez. Copie-a com segurança."); } catch (error) { liveStatus("ERROR", error.message); } }
 async function revokeLiveKey() { const output = $("liveKeyOutput"), id = output?.dataset.keyId, adminKey = output?.dataset.adminKey; if (!id || !adminKey) return; liveStatus("LOADING", "Revogando…"); try { await api(`/api/live/admin/keys/${encodeURIComponent(id)}/revoke`, { method: "POST", headers: { "x-live-admin-key": adminKey }, body: "{}" }); output.textContent = "Chave revogada"; delete output.dataset.adminKey; $("liveRevokeKey").hidden = true; liveStatus("REVOKED", "A chave foi revogada."); } catch (error) { liveStatus("ERROR", error.message); } }
