@@ -37,10 +37,11 @@ function normalizeProbabilities(input: Pick<FusedDecisionInput, "decision" | "pr
       return { pBuy: pBuy / total, pSell: pSell / total, pWait: pWait / total, source: "provided" };
     }
   }
-  if (typeof input.probability === "number" && Number.isFinite(input.probability) && input.probability >= 0 && input.probability <= 1) {
-    const wait = 1 - input.probability;
-    return { pBuy: input.decision === "BUY" ? input.probability : 0, pSell: input.decision === "SELL" ? input.probability : 0, pWait: wait, source: "derived_directional" };
-  }
+  // A directional confidence is a model score, not a three-way probability
+  // distribution. Expanding it into [confidence, 0, 1-confidence] creates
+  // artificial certainty (and the familiar 20/20/60-looking fallback).
+  // Keep probabilities unavailable until a provider/calibrator supplies all
+  // three components explicitly.
   return { pBuy: null, pSell: null, pWait: null, source: "unavailable" };
 }
 

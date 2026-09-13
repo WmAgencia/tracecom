@@ -109,6 +109,10 @@ function bounded(value: unknown, fallback: number): number {
   const n = Number(value);
   return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : fallback;
 }
+function finiteOrNull(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
 
 function validImage(item: unknown): item is FableImage {
   if (!item || typeof item !== "object") return false;
@@ -210,7 +214,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     "Analyze the current IQ Option chart for a one-minute paper signal.",
     "Use only the supplied chart images and normalized market snapshot.",
     "Write human-readable fields in Brazilian Portuguese. Keep enum values BUY, SELL, WAIT, NEUTRAL and UNAVAILABLE unchanged.",
-    "Return JSON only with decision, confidence, pBuy, pSell, pWait, dataQuality, imageUsed, framesUsed, visualBias, quantBias, confluence, trend, structure, momentum, volatility, supportResistance, candlePatterns, breakoutState, exhaustionState, supportingFactors, opposingFactors, observations, riskFlags, analysisQuality, agentAction, guidanceMessage, chartViewQualityScore, historicalContextScore, recentDetailScore, visibleCandleCount, summary, rationale and marketContext.",
+    "Return JSON only with decision, confidence, rawBuyScore, rawSellScore, rawWaitScore, pBuy, pSell, pWait, dataQuality, imageUsed, framesUsed, visualBias, quantBias, confluence, trend, structure, momentum, volatility, supportResistance, candlePatterns, breakoutState, exhaustionState, supportingFactors, opposingFactors, observations, riskFlags, analysisQuality, agentAction, guidanceMessage, chartViewQualityScore, historicalContextScore, recentDetailScore, visibleCandleCount, summary, rationale and marketContext.",
     "marketContext must be an object with symbol, marketType, visualTimeframe, displayedStake, confidence and sources. Use UNAVAILABLE or null when the supplied sanitized crops do not prove a field. Never infer account balance, identity or broker controls.",
     "If the image is missing, stale, ambiguous or the active asset is not trustworthy, return WAIT.",
     `NORMALIZED_SNAPSHOT=${JSON.stringify(reasoningSnapshot).slice(0, 45_000)}`,
@@ -252,10 +256,11 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     const pBuy = probabilityTotal > 0 ? probabilities[0]! / probabilityTotal : null;
     const pSell = probabilityTotal > 0 ? probabilities[1]! / probabilityTotal : null;
     const pWait = probabilityTotal > 0 ? probabilities[2]! / probabilityTotal : null;
+    const probabilitySource = probabilityTotal > 0 ? "MODEL_NATIVE" : "FALLBACK_UNAVAILABLE";
     return {
       model: { modelId: model, displayName: "Fable 5.1" },
       analysis: {
-        decision, confidence: bounded(parsed?.confidence, 0), pBuy, pSell, pWait, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: parsed?.imageUsed === true && imageUsed,
+        decision, confidence: bounded(parsed?.confidence, 0), rawModelScores: { buy: finiteOrNull(parsed?.rawBuyScore), sell: finiteOrNull(parsed?.rawSellScore), wait: finiteOrNull(parsed?.rawWaitScore) }, pBuy, pSell, pWait, probabilitySource, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: parsed?.imageUsed === true && imageUsed,
         framesUsed: Math.min(4, Number(parsed?.framesUsed) || images.length), visualBias, quantBias, confluence: bounded(parsed?.confluence, quantBias === visualBias && quantBias !== "UNAVAILABLE" ? .8 : 0),
         trend: typeof parsed?.trend === "string" ? parsed.trend.slice(0, 80) : "UNKNOWN", structure: typeof parsed?.structure === "string" ? parsed.structure.slice(0, 80) : "UNKNOWN", momentum: typeof parsed?.momentum === "string" ? parsed.momentum.slice(0, 80) : "UNKNOWN", volatility: typeof parsed?.volatility === "string" ? parsed.volatility.slice(0, 80) : "UNKNOWN",
         supportResistance: safeList(parsed?.supportResistance), candlePatterns: safeList(parsed?.candlePatterns), breakoutState: typeof parsed?.breakoutState === "string" ? parsed.breakoutState.slice(0, 80) : "UNKNOWN", exhaustionState: typeof parsed?.exhaustionState === "string" ? parsed.exhaustionState.slice(0, 80) : "UNKNOWN",
