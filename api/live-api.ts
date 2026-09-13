@@ -12,6 +12,12 @@ function auth(req: IncomingMessage): KeyRecord | null {
   const value = req.headers.authorization ?? "";
   const token = value.startsWith("Bearer ") ? value.slice(7).trim() : (req.headers["x-tracecon-api-key"]?.toString() ?? "");
   if (!token) return null;
+  // Vercel instances are ephemeral; a deployment-scoped token provides a
+  // stable read-only integration credential without persisting secrets.
+  const configured = process.env.LIVE_API_KEY?.trim();
+  if (configured && configured.length === token.length && timingSafeEqual(Buffer.from(configured), Buffer.from(token))) {
+    return { id: "env", hash: hash(configured), createdAt: 0 };
+  }
   const h = hash(token);
   for (const record of keys.values()) if (!record.revokedAt && record.hash.length === h.length && timingSafeEqual(Buffer.from(record.hash), Buffer.from(h))) return record;
   return null;
