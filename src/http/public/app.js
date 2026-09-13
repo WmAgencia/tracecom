@@ -1,6 +1,6 @@
 /* Trace/Com Vision: user-initiated capture; local crops; virtual-only training. */
 const $ = (id) => document.getElementById(id);
-const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, stage: "IDLE", session: 0, failures: 0, nextRetryAt: 0, circuitOpen: false };
+const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, stage: "IDLE", session: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0 };
 
 const api = async (path, options = {}) => {
   const response = await fetch(path, { ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
@@ -62,6 +62,7 @@ async function shareScreen() {
 
 function stopScreen() {
   state.session += 1; state.failures = 0; state.nextRetryAt = 0; state.circuitOpen = false;
+  state.entryUntil = 0;
   if (state.timer) clearInterval(state.timer); state.timer = null;
   if (state.stream) state.stream.getTracks().forEach((track) => track.stop());
   state.stream = null; state.crop = null; state.frames = [];
@@ -110,7 +111,7 @@ async function observe() {
   if (state.analyzing || !state.stream || !state.crop || Date.now() < state.nextRetryAt) return;
   if (state.circuitOpen) { state.circuitOpen = false; state.failures = 0; setStage("CIRCUIT_HALF_OPEN"); }
   const session = state.session, stream = state.stream;
-  setStage("CHART_CROP_GENERATING"); const chart = makeCrop(state.crop); if (!chart) { setStage("CROP_GENERATION_FAILED"); return; }
+  setStage("CHART_CROP_GENERATING"); setFable("LOADING"); text("pipelineState", "CAPTURANDO"); const chart = makeCrop(state.crop); if (!chart) { setStage("CROP_GENERATION_FAILED"); setFable("ERROR"); return; }
   setStage("SANITIZED_CROP_CREATED", `${chart.width}x${chart.height}`);
   const stat = metrics(chart, state.frames.at(-1)?.stats?.sample); const frame = { ...chart, stats: stat, capturedAt: Date.now() };
   state.frames.push(frame); state.frames = state.frames.slice(-4); state.analyzing = true;
@@ -158,10 +159,17 @@ function renderAnalysis(analysis, latency) {
   const context = analysis.marketContext || {}; state.lastContext = context.symbol !== "UNAVAILABLE" && Number(context.confidence) >= .6 ? context : state.lastContext; const shown = state.lastContext || context;
   text("contextAsset", shown.symbol && shown.symbol !== "UNAVAILABLE" ? `${shown.symbol}${shown.marketType && shown.marketType !== "UNAVAILABLE" ? ` ${shown.marketType}` : ""}` : "Ativo não confirmado"); text("contextMeta", (shown.sources || []).join(" · ") || "Confirme manualmente somente se a visão não provar o ativo."); text("contextTimeframe", shown.visualTimeframe || "—"); text("contextStake", shown.displayedStake ?? "—"); text("contextConfidence", shown.confidence ? `${Math.round(shown.confidence * 100)}%` : "—"); text("statusAsset", shown.symbol || "—"); text("marketLabel", shown.symbol || "Gráfico compartilhado");
   const sizing = suggestedStake(analysis); text("suggestedStake", sizing.amount ? `R$ ${sizing.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "R$ —"); text("sizingNote", sizing.reason);
+  state.entryUntil = decision === "BUY" || decision === "SELL" ? Date.now() + 10_000 : 0; updateEntryCountdown();
   const notes = [...(analysis.observations || []), ...(analysis.supportingFactors || [])].slice(0, 5); $("observationsList").innerHTML = (notes.length ? notes : ["Sem observação verificável."]).map((note) => `<li>${escape(note)}</li>`).join("");
   state.history.push({ analysisId: analysis.analysisId || `local-${Date.now()}`, decision, confidence, pBuy: analysis.pBuy ?? null, pSell: analysis.pSell ?? null, pWait: analysis.pWait ?? null, dataQuality: analysis.dataQuality ?? null, at: Date.now() }); state.history = state.history.slice(-30); saveHistory(); $("historyCount").textContent = String(state.history.length); $("historyList").innerHTML = state.history.slice().reverse().map((item) => `<p><b class="${item.decision.toLowerCase()}">${item.decision}</b><span>${probabilityText(item.confidence)} · B ${probabilityText(item.pBuy)} / S ${probabilityText(item.pSell)} / W ${probabilityText(item.pWait)} · ${new Date(item.at).toLocaleTimeString()}</span></p>`).join("");
   updateRunStats();
   updatePipeline();
+}
+function updateEntryCountdown() {
+  if (!state.entryUntil) return;
+  const left = Math.max(0, state.entryUntil - Date.now());
+  text("decisionSummary", left ? `${state.lastAnalysis?.summary || state.lastAnalysis?.rationale || "Sinal shadow"} · janela de entrada ${Math.ceil(left / 1000)}s` : (state.lastAnalysis?.summary || state.lastAnalysis?.rationale || "Sinal shadow"));
+  if (left) window.setTimeout(updateEntryCountdown, 250); else state.entryUntil = 0;
 }
 
 function updateRunStats() {
