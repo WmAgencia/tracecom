@@ -201,6 +201,15 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
     } catch { send(res, 502, { error: "relay_unreachable" }); }
     return true;
   }
+  const agentJoinRead = path.match(/^\/api\/live\/sessions\/([^/]+)\/(agent-join|decisions\/[^/]+\/agent-runs)$/);
+  const operationAgentRunsRead = path.match(/^\/api\/live\/operations\/([^/]+)\/agent-runs$/);
+  if ((agentJoinRead || operationAgentRunsRead) && req.method === "GET") {
+    const token = req.headers.authorization?.toString() || "";
+    const target = agentJoinRead ? `/api/live/sessions/${encodeURIComponent(agentJoinRead[1]! )}/${agentJoinRead[2]}` : `/api/live/operations/${encodeURIComponent(operationAgentRunsRead![1]!)}/agent-runs`;
+    try { const response = await relay(`${target}${query.toString() ? `?${query}` : ""}`, { headers: token ? { authorization: token } : { "x-relay-admin": relayAdmin ?? "" } }); await relayJson(res, response); }
+    catch { send(res, 502, { error: "relay_unreachable" }); }
+    return true;
+  }
   if (path === "/api/debug/agents" && req.method === "GET") {
     if (!relayAdmin) { send(res, 503, { error: "relay_admin_not_configured" }); return true; }
     try { const response = await relay("/api/debug/agents", { headers: { "x-relay-admin": relayAdmin } }); await relayJson(res, response); }

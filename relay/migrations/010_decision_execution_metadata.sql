@@ -1,0 +1,10 @@
+ALTER TABLE live_decisions ADD COLUMN IF NOT EXISTS trace_id text;
+ALTER TABLE live_decisions ADD COLUMN IF NOT EXISTS market_event_id text;
+ALTER TABLE live_decisions ADD COLUMN IF NOT EXISTS candle_id text;
+ALTER TABLE live_decisions ADD COLUMN IF NOT EXISTS frame_id text;
+ALTER TABLE live_decisions ADD COLUMN IF NOT EXISTS decision_source text;
+ALTER TABLE live_decisions ADD COLUMN IF NOT EXISTS deep_requested boolean NOT NULL DEFAULT false;
+ALTER TABLE live_decisions ADD COLUMN IF NOT EXISTS deep_executed boolean NOT NULL DEFAULT false;
+ALTER TABLE decision_provenance ADD COLUMN IF NOT EXISTS decision_source text;
+ALTER TABLE decision_provenance ADD COLUMN IF NOT EXISTS deep_requested boolean NOT NULL DEFAULT false;
+ALTER TABLE decision_provenance ADD COLUMN IF NOT EXISTS deep_executed boolean NOT NULL DEFAULT false;
