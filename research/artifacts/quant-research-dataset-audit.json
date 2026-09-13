@@ -1,0 +1,66 @@
+{
+  "source": "relay_price_observations",
+  "sessions": [
+    {
+      "sessionId": "vision_81225f7f-0743-4b61-8d42-72f48247a36e",
+      "start": 1789315824429,
+      "end": 1789317174394,
+      "durationMinutes": 22.499416666666665,
+      "observations": 500,
+      "accepted": 475,
+      "rejected": 20,
+      "assets": [],
+      "timeframes": [],
+      "potential5sSamples": 269,
+      "potential60sNonOverlappingSamples": 22
+    },
+    {
+      "sessionId": "vision_1b452642-272b-4fc5-af12-d00eb0189054",
+      "start": 1789318747807,
+      "end": 1789322642674,
+      "durationMinutes": 64.91445,
+      "observations": 500,
+      "accepted": 409,
+      "rejected": 11,
+      "assets": [],
+      "timeframes": [],
+      "potential5sSamples": 778,
+      "potential60sNonOverlappingSamples": 64
+    },
+    {
+      "sessionId": "vision_1951af7f-91a4-46c8-bd92-fed8a8a534b7",
+      "start": 1789327320323,
+      "end": 1789328640465,
+      "durationMinutes": 22.002366666666667,
+      "observations": 405,
+      "accepted": 222,
+      "rejected": 2,
+      "assets": [],
+      "timeframes": [],
+      "potential5sSamples": 264,
+      "potential60sNonOverlappingSamples": 22
+    }
+  ],
+  "rawPriceObservations": 1405,
+  "acceptedPriceObservations": 1106,
+  "operationalSettlements": 10,
+  "canonicalGroundTruths": 10,
+  "denseCandidates": 169,
+  "nonOverlappingCandidates": 9,
+  "usable": 0,
+  "rejected": 169,
+  "rejectionReasons": {
+    "ASSET_METADATA_MISSING": 165,
+    "NO_T60_OBSERVATION": 4
+  },
+  "targetTiming": {
+    "+-250ms": 10,
+    "+-500ms": 20,
+    "+-1s": 34,
+    "+2s": 68
+  },
+  "assetStatus": "UNKNOWN_ASSET_METADATA",
+  "marketType": "UNKNOWN",
+  "strategyChanged": false,
+  "brokerSideEffects": 0
+}
