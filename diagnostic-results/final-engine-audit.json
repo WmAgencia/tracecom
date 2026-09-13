@@ -1,0 +1,22 @@
+{
+  "generatedAt":"2026-09-13T01:30:00Z",
+  "engines":{
+    "VisionCapture":{"status":"PARTIAL","evidence":"browser capture paths exist; live human E2E not executed"},
+    "ROI":{"status":"PASS","evidence":"src/vision/market-map.ts with normalized ROIs and tests"},
+    "VisionProvider":{"status":"PASS","evidence":"Nexxus Claude Opus 5 path configured and tested"},
+    "ClaudeOpus5Vision":{"status":"PASS","evidence":"production version reports visionModel claude-opus-5"},
+    "MarketObservation":{"status":"PASS","evidence":"parser tests passing"},
+    "Fable5_1":{"status":"PARTIAL","evidence":"text-only path; no independent live-agent benchmark"},
+    "Decision":{"status":"PASS","evidence":"decision and probability tests"},
+    "Probability":{"status":"PASS","evidence":"no artificial fallback; source tracked"},
+    "Countdown":{"status":"PASS","evidence":"entry timer regression tests"},
+    "Shadow":{"status":"PASS","evidence":"settlement and shadow tests"},
+    "Settlement":{"status":"PASS","evidence":"settleTrade single source and independent cases"},
+    "Recorder":{"status":"BLOCKED","evidence":"durable relay recorder not yet integrated"},
+    "Telemetry":{"status":"PARTIAL","evidence":"initial read-only relay exists; durable ingest/SSE pending"},
+    "PaperRunner":{"status":"PASS","evidence":"replay artifacts and tests"},
+    "HighResImporter":{"status":"PASS","evidence":"CSV/CSV.GZ/ZIP/JSON importer tests"}
+  },
+  "financialExecutionEndpoints":0,
+  "trainingStarted":false
+}
