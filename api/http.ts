@@ -13,7 +13,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { del, get, put } from "@vercel/blob";
-import { NexxusVisionProvider } from "../src/vision/provider";
+import { NexxusVisionProvider } from "./vision-provider";
 
 type FableImage = { label: string; dataUrl: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
