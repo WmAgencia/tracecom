@@ -163,4 +163,33 @@ describe("TraceconHttpApi", () => {
     expect(list.status).toBe(200);
     expect(list.json?.count).toBe(1);
   });
+
+  it("persiste treinamento, separa WAIT e exclui UNKNOWN do WR", async () => {
+    const h = new ServerHarness({});
+    const api = h.api as unknown as { route(...a: unknown[]): Promise<{ status: number; json?: Record<string, any> }> };
+    const created = await api.route({ headers: {} } as never, "POST", "/api/training/sessions", new URLSearchParams(), { symbol: "EUR/USD", marketType: "OTC", horizonSeconds: 60 });
+    expect(created.status).toBe(201);
+    const id = String(created.json?.id);
+    const wait = await api.route({ headers: {} } as never, "POST", "/api/training/analyze", new URLSearchParams(), { trainingSessionId: id, analysis: { decision: "WAIT", confidence: 0.5 } });
+    expect(wait.json).toMatchObject({ analyses: 1, waits: 1, evaluatedTrades: 0, WR: null });
+    const unknown = await api.route({ headers: {} } as never, "POST", "/api/training/analyze", new URLSearchParams(), { trainingSessionId: id, snapshot: { referencePrice: null }, analysis: { decision: "BUY", confidence: 0.8 } });
+    expect(unknown.json).toMatchObject({ analyses: 2, signals: 1, pending: 1, evaluatedTrades: 0, WR: null });
+    const persisted = await api.route({ headers: {} } as never, "GET", `/api/training/sessions/${id}`, new URLSearchParams());
+    expect(persisted.status).toBe(200);
+    expect(persisted.json).toMatchObject({ id, analyses: 2, waits: 1, pending: 1, evaluatedTrades: 0 });
+  });
+
+  it("settles BUY objectively and records DRAW without changing the input snapshot", async () => {
+    const h = new ServerHarness({});
+    const api = h.api as unknown as { route(...a: unknown[]): Promise<{ status: number; json?: Record<string, any> }> };
+    const created = await api.route({ headers: {} } as never, "POST", "/api/training/sessions", new URLSearchParams(), {});
+    const id = String(created.json?.id);
+    const opened = await api.route({ headers: {} } as never, "POST", "/api/training/analyze", new URLSearchParams(), { trainingSessionId: id, snapshot: { referencePrice: 100, immutable: "yes" }, analysis: { decision: "BUY", confidence: 0.7 } });
+    const observationId = String(opened.json?.observationId);
+    const settled = await api.route({ headers: {} } as never, "POST", `/api/training/observations/${observationId}/settle`, new URLSearchParams(), { entryPrice: 100, exitPrice: 100 });
+    expect(settled.json).toMatchObject({ evaluatedTrades: 1, DRAW: 1, WR: null });
+    const row = h.api as unknown as { runtime: { store: { db: { prepare: (sql: string) => { get: (...args: unknown[]) => any } } } } };
+    const payload = row.runtime.store.db.prepare("SELECT payload_json FROM training_observations WHERE id = ?").get(observationId);
+    expect(JSON.parse(payload.payload_json).snapshot).toMatchObject({ referencePrice: 100, immutable: "yes" });
+  });
 });
