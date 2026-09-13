@@ -1,6 +1,6 @@
 /* Trace/Com Vision: user-initiated capture; local crops; virtual-only training. */
 const $ = (id) => document.getElementById(id);
-const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, stage: "IDLE", session: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0 };
+const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, countdownTimer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, stage: "IDLE", session: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0, lastSubmittedHash: null, lastSubmittedAt: 0, requestCount: 0 };
 
 const api = async (path, options = {}) => {
   const response = await fetch(path, { ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
@@ -63,6 +63,8 @@ async function shareScreen() {
 function stopScreen() {
   state.session += 1; state.failures = 0; state.nextRetryAt = 0; state.circuitOpen = false;
   state.entryUntil = 0;
+  state.lastSubmittedHash = null; state.lastSubmittedAt = 0; state.requestCount = 0;
+  if (state.countdownTimer) { clearTimeout(state.countdownTimer); state.countdownTimer = null; }
   if (state.timer) clearInterval(state.timer); state.timer = null;
   if (state.stream) state.stream.getTracks().forEach((track) => track.stop());
   state.stream = null; state.crop = null; state.frames = [];
@@ -115,6 +117,17 @@ async function observe() {
   setStage("SANITIZED_CROP_CREATED", `${chart.width}x${chart.height}`);
   const stat = metrics(chart, state.frames.at(-1)?.stats?.sample); const frame = { ...chart, stats: stat, capturedAt: Date.now() };
   state.frames.push(frame); state.frames = state.frames.slice(-4); state.analyzing = true;
+  const currentHash = frameHash(stat);
+  // A stationary screen is not a new market observation. Keep the temporal
+  // buffer, but do not repeatedly submit identical pixels to the provider.
+  // Re-sample at most once per 30 seconds so a stalled feed remains visible
+  // without creating a request storm.
+  if (currentHash && currentHash === state.lastSubmittedHash && Date.now() - state.lastSubmittedAt < 30_000) {
+    state.analyzing = false;
+    setStage("FRAME_DUPLICATE_SUPPRESSED", "aguardando mudança observável");
+    return;
+  }
+  state.lastSubmittedHash = currentHash; state.lastSubmittedAt = Date.now(); state.requestCount += 1;
   text("fpsText", "1 frame/s local · Fable /5s"); text("frameText", `${state.frames.length}/4 frames temporais · ${new Date().toLocaleTimeString()}`);
   const temporal = state.frames.slice().reverse().map((item, index) => ({ label: index ? `T-${index * 5}s` : "T0", dataUrl: item.dataUrl }));
   const snapshot = { analysisId: `vision_${Date.now()}`, timestamp: new Date().toISOString(), timestampMs: Date.now(), symbol: state.lastContext?.symbol || "UNAVAILABLE", horizonSeconds: 60, chartFrame: { crop: state.crop, width: chart.width, height: chart.height, capturedAt: Date.now() }, quantitativeFeatures: { availability: "SCREEN_MOTION_ONLY", frames: state.frames.map((item) => ({ ...item.stats, sample: undefined })) } };
@@ -166,10 +179,11 @@ function renderAnalysis(analysis, latency) {
   updatePipeline();
 }
 function updateEntryCountdown() {
+  if (state.countdownTimer) { clearTimeout(state.countdownTimer); state.countdownTimer = null; }
   if (!state.entryUntil) return;
   const left = Math.max(0, state.entryUntil - Date.now());
   text("decisionSummary", left ? `${state.lastAnalysis?.summary || state.lastAnalysis?.rationale || "Sinal shadow"} · janela de entrada ${Math.ceil(left / 1000)}s` : (state.lastAnalysis?.summary || state.lastAnalysis?.rationale || "Sinal shadow"));
-  if (left) window.setTimeout(updateEntryCountdown, 250); else state.entryUntil = 0;
+  if (left) state.countdownTimer = window.setTimeout(updateEntryCountdown, 250); else state.entryUntil = 0;
 }
 
 function updateRunStats() {
