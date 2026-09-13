@@ -14,6 +14,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
 import { del, get, put } from "@vercel/blob";
 import { NexxusVisionProvider } from "./vision-provider.js";
+import { settleTrade } from "../src/training/settlement.js";
 
 type FableImage = { label: string; dataUrl: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -61,14 +62,9 @@ function evaluateVirtualTrades(session: TrainingSession, timestamp: number, refe
     if (trade.result !== null || timestamp < trade.entryTimestamp + trade.horizonSeconds * 1_000) continue;
     trade.exitTimestamp = timestamp;
     trade.exitReference = reference;
-    if (!Number.isFinite(trade.entryReference) || !Number.isFinite(reference)) {
-      trade.result = "UNKNOWN";
-    } else if (Math.abs(reference! - trade.entryReference!) < Number.EPSILON) {
-      trade.result = "DRAW";
-    } else {
-      const rose = reference! > trade.entryReference!;
-      trade.result = (trade.direction === "BUY") === rose ? "WIN" : "LOSS";
-    }
+    trade.result = settleTrade({ direction: trade.direction, entryPrice: trade.entryReference,
+      exitPrice: reference, entryTimestamp: trade.entryTimestamp,
+      exitTimestamp: timestamp, dueTimestamp: trade.entryTimestamp + trade.horizonSeconds * 1_000 }).outcome;
   }
 }
 
