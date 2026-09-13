@@ -62,8 +62,8 @@ const server = http.createServer(async (req, res) => {
     if(origin && !allowed.includes(origin) && url.pathname!=='/health') return reply(res,403,{error:'forbidden_origin'});
     if(origin && allowed.includes(origin)) res.setHeader('access-control-allow-origin',origin);
     if(req.method==='OPTIONS'){res.writeHead(204);return res.end();}
-    const bucket=url.pathname.includes('/stream')?'stream':url.pathname.includes('/frame')?'frames':url.pathname.includes('/export')?'export':url.pathname.includes('/logs')?'logs':url.pathname.includes('/traces')?'traces':url.pathname.includes('/debug')?'debug':url.pathname.includes('/ingest')?'ingest':url.pathname.includes('/keys')?'keys':'session';
-    const ceiling=bucket==='stream'?20:bucket==='frames'?30:bucket==='logs'?120:bucket==='traces'?120:bucket==='debug'?120:bucket==='export'?30:bucket==='ingest'?240:bucket==='keys'?60:60;
+    const bucket=url.pathname.includes('/stream')?'stream':url.pathname.includes('/frame')?'frames':url.pathname.includes('/export')?'export':url.pathname.includes('/logs')?'logs':url.pathname.includes('/traces')?'traces':url.pathname.includes('/prices')?'prices':url.pathname.includes('/ground-truth')?'ground_truths':url.pathname.includes('/debug')?'debug':url.pathname.includes('/ingest')?'ingest':url.pathname.includes('/keys')?'keys':'session';
+    const ceiling=bucket==='stream'?20:bucket==='frames'?30:bucket==='prices'?240:bucket==='ground_truths'?120:bucket==='logs'?120:bucket==='traces'?120:bucket==='debug'?120:bucket==='export'?30:bucket==='ingest'?240:bucket==='keys'?60:60;
     if(!rateLimit(req,bucket,ceiling)){res.setHeader('retry-after','60');return reply(res,429,{error:'rate_limited',bucket});}
     if(url.pathname === '/health') return reply(res, 200, { ok:true, db:true, service:'tracecom-live-relay' });
     if(url.pathname === '/api/live/keys' && req.method === 'POST') {
@@ -196,6 +196,47 @@ const server = http.createServer(async (req, res) => {
         return reply(res, 200, { updated: true });
       }
       if(url.pathname === '/api/shadow/jobs' && req.method === 'GET') return reply(res, 200, (await pool.query('SELECT job_id as "jobId",status,requested_count as "requestedCount",processed_count as "processedCount",failed_count as "failedCount",queue_depth as "queueDepth",concurrency,created_at as "createdAt",completed_at as "completedAt" FROM shadow_jobs ORDER BY created_at DESC LIMIT 50')).rows);
+    }
+    const sessionPrices = url.pathname.match(/^\/api\/live\/sessions\/([^/]+)\/prices(?:\/([^/]+))?$/);
+    if(sessionPrices) {
+      const sid = decodeURIComponent(sessionPrices[1]);
+      if(req.method === 'POST') {
+        const ingest = verify((req.headers.authorization||'').replace(/^Bearer /,''));
+        if(req.headers['x-relay-admin'] !== admin && !(ingest && ingest.sessionId === sid)) return reply(res, 401, { error: 'unauthorized' });
+        const input = await body(req, 1500000); const rows = Array.isArray(input.prices) ? input.prices.slice(0, 200) : [];
+        for(const row of rows) await pool.query('INSERT INTO price_observations(price_observation_id,session_id,market_event_id,frame_id,candle_id,value,observed_at,received_at,source,confidence,status,rejection_reason,outlier_status,trace_id) VALUES($1,$2,$3,$4,$5,$6,to_timestamp($7/1000.0),to_timestamp($8/1000.0),$9,$10,$11,$12,$13,$14) ON CONFLICT(price_observation_id) DO NOTHING',[String(row.priceObservationId||crypto.randomUUID()).slice(0,80),sid,row.marketEventId||null,row.frameId||null,row.candleId||null,Number.isFinite(Number(row.value))?Number(row.value):null,Number(row.observedAt)||Date.now(),Number(row.receivedAt)||Date.now(),String(row.source||'').slice(0,48)||null,Number.isFinite(Number(row.confidence))?Number(row.confidence):null,String(row.status||'UNAVAILABLE').slice(0,16),row.rejectionReason?String(row.rejectionReason).slice(0,64):null,row.outlierStatus?String(row.outlierStatus).slice(0,24):null,row.traceId||null]);
+        return reply(res, 202, { stored: rows.length });
+      }
+      const key = await authenticate(req, 'live:frame:read'); if(!key && req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
+      if(sessionPrices[2]) {
+        const row=(await pool.query('SELECT price_observation_id as "priceObservationId",session_id as "sessionId",market_event_id as "marketEventId",frame_id as "frameId",candle_id as "candleId",value,observed_at as "observedAt",received_at as "receivedAt",source,confidence,status,rejection_reason as "rejectionReason",outlier_status as "outlierStatus",trace_id as "traceId",created_at as "createdAt" FROM price_observations WHERE session_id=$1 AND price_observation_id=$2',[sid,decodeURIComponent(sessionPrices[2])])).rows[0];
+        if(!row) return reply(res, 404, { error: 'price_observation_not_found' });
+        return reply(res, 200, row);
+      }
+      const filters=['session_id=$1'],args=[sid]; const add=(col,value)=>{ if(value){args.push(value);filters.push(`${col}=$${args.length}`);} };
+      add('status',url.searchParams.get('status')); add('frame_id',url.searchParams.get('frameId')); add('market_event_id',url.searchParams.get('marketEventId')); add('source',url.searchParams.get('source'));
+      const from=url.searchParams.get('from'),to=url.searchParams.get('to'); if(from){args.push(from);filters.push(`observed_at>=$${args.length}`);} if(to){args.push(to);filters.push(`observed_at<=$${args.length}`);}
+      const rows=(await pool.query(`SELECT price_observation_id as "priceObservationId",market_event_id as "marketEventId",frame_id as "frameId",candle_id as "candleId",value,observed_at as "observedAt",source,confidence,status,rejection_reason as "rejectionReason",outlier_status as "outlierStatus",trace_id as "traceId" FROM price_observations WHERE ${filters.join(' AND ')} ORDER BY observed_at DESC LIMIT 500`,args)).rows;
+      return reply(res, 200, { sessionId: sid, prices: rows });
+    }
+    const groundTruthRoute = url.pathname.match(/^\/api\/live\/sessions\/([^/]+)\/ground-truth(?:\/([^/]+))?$/);
+    if(groundTruthRoute) {
+      const sid = decodeURIComponent(groundTruthRoute[1]);
+      if(req.method === 'POST') {
+        const ingest = verify((req.headers.authorization||'').replace(/^Bearer /,''));
+        if(req.headers['x-relay-admin'] !== admin && !(ingest && ingest.sessionId === sid)) return reply(res, 401, { error: 'unauthorized' });
+        const input = await body(req, 1500000); const gt = input.groundTruth || input;
+        const legacy = !gt.entryPriceObservationId || !gt.settlementPriceObservationId;
+        await pool.query('INSERT INTO ground_truths(ground_truth_id,session_id,decision_id,signal_id,operation_id,market_event_id,entry_price_observation_id,settlement_price_observation_id,entry_price,settlement_price,result,status,trace_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) ON CONFLICT(ground_truth_id) DO UPDATE SET status=EXCLUDED.status',[String(gt.groundTruthId||crypto.randomUUID()).slice(0,80),sid,gt.decisionId||null,gt.signalId||null,gt.operationId||null,gt.marketEventId||null,gt.entryPriceObservationId||null,gt.settlementPriceObservationId||null,Number.isFinite(Number(gt.entryPrice))?Number(gt.entryPrice):null,Number.isFinite(Number(gt.settlementPrice))?Number(gt.settlementPrice):null,gt.result?String(gt.result).slice(0,16):null,legacy?'LEGACY_INCOMPLETE_PROVENANCE':'COMPLETE',gt.traceId||null]);
+        return reply(res, 202, { stored: true, status: legacy ? 'LEGACY_INCOMPLETE_PROVENANCE' : 'COMPLETE' });
+      }
+      const key = await authenticate(req, 'debug:read'); if(!key && req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
+      if(groundTruthRoute[2]) {
+        const row=(await pool.query('SELECT ground_truth_id as "groundTruthId",decision_id as "decisionId",signal_id as "signalId",operation_id as "operationId",market_event_id as "marketEventId",entry_price_observation_id as "entryPriceObservationId",settlement_price_observation_id as "settlementPriceObservationId",entry_price as "entryPrice",settlement_price as "settlementPrice",result,status,trace_id as "traceId" FROM ground_truths WHERE session_id=$1 AND ground_truth_id=$2',[sid,decodeURIComponent(groundTruthRoute[2])])).rows[0];
+        if(!row) return reply(res, 404, { error: 'ground_truth_not_found' });
+        return reply(res, 200, row);
+      }
+      return reply(res, 200, { sessionId: sid, groundTruths: (await pool.query('SELECT ground_truth_id as "groundTruthId",decision_id as "decisionId",signal_id as "signalId",operation_id as "operationId",entry_price_observation_id as "entryPriceObservationId",settlement_price_observation_id as "settlementPriceObservationId",entry_price as "entryPrice",settlement_price as "settlementPrice",result,status,trace_id as "traceId" FROM ground_truths WHERE session_id=$1 ORDER BY created_at DESC LIMIT 200',[sid])).rows });
     }
     if(url.pathname === '/api/debug/verify-key' && req.method === 'POST') {
       const value = (req.headers.authorization||'').replace(/^Bearer /,'');

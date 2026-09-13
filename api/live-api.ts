@@ -43,7 +43,7 @@ async function relayJson(res: ServerResponse, response: Response): Promise<void>
   const raw = await response.text();
   res.statusCode = response.status; res.setHeader("Content-Type", response.headers.get("content-type") || "application/json"); res.setHeader("Cache-Control", "no-store"); res.end(raw);
 }
-const browserEventTypes = new Set(["SESSION_STARTED", "VISION_MARKET_SAMPLE", "DECISION", "COUNTDOWN", "SHADOW_UPDATE", "SETTLEMENT", "PIPELINE_ERROR", "HEARTBEAT", "SESSION_ENDED"]);
+const browserEventTypes = new Set(["SESSION_STARTED", "VISION_MARKET_SAMPLE", "DECISION", "COUNTDOWN", "SHADOW_UPDATE", "SETTLEMENT", "PIPELINE_ERROR", "HEARTBEAT", "SESSION_ENDED", "OPERATIONAL_SIGNAL_CREATED", "OPERATIONAL_SIGNAL_LOCKED", "ENTRY_COUNTDOWN_STARTED", "ENTRY_CONFIRMATION_WAITING", "POSITION_CONFIRMED", "MANUAL_ENTRY_PRICE_LOCKED", "ENTRY_NOT_CONFIRMED", "SIGNAL_INVALIDATED_BEFORE_ENTRY", "SETTLEMENT_PRICE_LOCKED", "TRADE_SETTLED", "COOLDOWN_STARTED", "OPERATIONAL_CHANNEL_READY"]);
 function containsSensitive(value: unknown, depth = 0): boolean {
   if (depth > 8 || !value || typeof value !== "object") return false;
   return Object.entries(value as Record<string, unknown>).some(([key, nested]) => /password|cookie|credential|authorization|token|balance|saldo/i.test(key) || containsSensitive(nested, depth + 1));
@@ -143,6 +143,8 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
     "/api/live/browser/network-hops": { target: "network-hops", method: "POST", key: "hops" },
     "/api/live/browser/state-transitions": { target: "state-transitions", method: "POST", key: "transitions" },
     "/api/live/browser/provenance": { target: "decision-provenance", method: "POST", key: "provenance" },
+    "/api/live/browser/prices": { target: "prices", method: "POST", key: "prices" },
+    "/api/live/browser/ground-truth": { target: "ground-truth", method: "POST", key: "groundTruth" },
   };
   const browserWrite = browserWriteTargets[path];
   if (browserWrite && req.method === "POST") {
@@ -153,7 +155,7 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
     if (Array.isArray(rows) && rows.length > 200) { send(res, 413, { error: "diagnostics_batch_too_large" }); return true; }
     try {
       const token = await ingestToken(input.sessionId, relayAdmin);
-      const isSessionScoped = browserWrite.target === "logs" || browserWrite.target === "agent-runs";
+      const isSessionScoped = browserWrite.target === "logs" || browserWrite.target === "agent-runs" || browserWrite.target === "prices" || browserWrite.target === "ground-truth";
       const target = isSessionScoped ? `/api/live/sessions/${encodeURIComponent(input.sessionId)}/${browserWrite.target}` : `/api/debug/${browserWrite.target}`;
       const response = await relay(target, { method: browserWrite.method, headers: { authorization: `Bearer ${token}` }, body: JSON.stringify(input) });
       await relayJson(res, response);
@@ -175,7 +177,7 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
     });
     return true;
   }
-  const sessionReadProxy = path.match(/^\/api\/live\/sessions\/([^/]+)\/(state-history|decision-provenance)$/);
+  const sessionReadProxy = path.match(/^\/api\/live\/sessions\/([^/]+)\/(state-history|decision-provenance|prices(?:\/[^/]+)?|ground-truth(?:\/[^/]+)?)$/);
   if (sessionReadProxy && req.method === "GET") {
     const token = req.headers.authorization?.toString() || "";
     try { const response = await relay(`/api/live/sessions/${encodeURIComponent(sessionReadProxy[1]!)}/${sessionReadProxy[2]}${query.toString() ? `?${query}` : ""}`, { headers: token ? { authorization: token } : { "x-relay-admin": relayAdmin ?? "" } }); await relayJson(res, response); }

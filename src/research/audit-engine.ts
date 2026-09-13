@@ -5,12 +5,13 @@
  * with machine-readable evidence. Never reads secrets, never executes orders.
  */
 import { settleTrade } from "../training/settlement.js";
+import { resolveGroundTruthChain, type PriceObservationRef } from "./ground-truth.js";
 
 export type DiagnosticEvent = { t: number; type: string; signalId?: string; data?: Record<string, unknown> };
 export type PriceSample = { value: number; timestamp: number; accepted?: boolean; reason?: string; source?: string };
 export type SignalSample = { signalId: string; direction: string; createdAt: number; countdownEndsAt: number; status?: string; profile?: string; rawConfidence?: number; trendAlignment?: string; macroTrend?: string };
 export type PositionSample = { signalId?: string; detectedAt: number; hasOpenPosition?: boolean; direction?: string; evidence?: string[]; price?: number | null };
-export type SettlementSample = { signalId?: string; entryPrice: number | null; exitPrice: number | null; entryTimestamp: number; exitTimestamp: number; result: string; source?: string };
+export type SettlementSample = { signalId?: string; entryPrice: number | null; exitPrice: number | null; entryTimestamp: number; exitTimestamp: number; result: string; source?: string; entryPriceObservationId?: string | null; settlementPriceObservationId?: string | null };
 export type FastDecisionSample = { candleId?: string; at: number; decision: string; rawConfidence?: number; regime?: string; trendAlignment?: string; counterTrend?: boolean; deepAnalysisAgeMs?: number | null; settlementResult?: string | null; deepFastAlignment?: string };
 export type TimeoutSample = { at: number; latencyMs: number; deadlineMs: number; status?: string };
 
@@ -23,6 +24,7 @@ export type AuditInput = {
   settlements?: SettlementSample[];
   fastDecisions?: FastDecisionSample[];
   timeouts?: TimeoutSample[];
+  priceObservations?: Array<PriceObservationRef & { frameId?: string | null; source?: string | null; confidence?: number | null }>;
 };
 
 export type AuditStatus = "PASS" | "FAIL" | "WARN";
@@ -62,12 +64,21 @@ export function runAudit(input: AuditInput, checks?: readonly string[]): AuditCh
     results.push({ check: "OVERLAPPING_OPERATION", status: evidence.length ? "FAIL" : "PASS", evidence });
   }
   if (selected.has("PRICE_PROVENANCE")) {
-    const accepted = (input.prices ?? []).filter((sample) => sample.accepted !== false && Number.isFinite(sample.value));
     const evidence: Array<Record<string, unknown>> = [];
-    for (const settlement of input.settlements ?? []) {
-      if (settlement.entryPrice === null) continue;
-      const causal = accepted.filter((sample) => sample.timestamp <= settlement.entryTimestamp + 3_000).sort((a, b) => b.timestamp - a.timestamp)[0];
-      if (!causal || causal.value !== settlement.entryPrice) evidence.push({ signalId: settlement.signalId ?? null, entryPrice: settlement.entryPrice, nearestAccepted: causal ? { value: causal.value, timestamp: causal.timestamp, source: causal.source ?? null } : null, reason: causal ? "entry_price_not_from_causal_observation" : "no_causal_price_observation" });
+    const observations = input.priceObservations ?? [];
+    const strictMode = observations.length > 0 || (input.settlements ?? []).some((item) => item.entryPriceObservationId || item.settlementPriceObservationId);
+    if (strictMode) {
+      for (const settlement of input.settlements ?? []) {
+        const chain = resolveGroundTruthChain({ entryPriceObservationId: settlement.entryPriceObservationId, settlementPriceObservationId: settlement.settlementPriceObservationId, entryTimestamp: settlement.entryTimestamp, settlementTimestamp: settlement.exitTimestamp, entryPrice: settlement.entryPrice, settlementPrice: settlement.exitPrice, observations });
+        if (chain.status !== "COMPLETE") evidence.push({ signalId: settlement.signalId ?? null, status: chain.status, reasons: chain.reasons, entryPriceObservationId: settlement.entryPriceObservationId ?? null, settlementPriceObservationId: settlement.settlementPriceObservationId ?? null, reason: "price_provenance_incomplete" });
+      }
+    } else {
+      const accepted = (input.prices ?? []).filter((sample) => sample.accepted !== false && Number.isFinite(sample.value));
+      for (const settlement of input.settlements ?? []) {
+        if (settlement.entryPrice === null) continue;
+        const causal = accepted.filter((sample) => sample.timestamp <= settlement.entryTimestamp + 3_000).sort((a, b) => b.timestamp - a.timestamp)[0];
+        if (!causal || causal.value !== settlement.entryPrice) evidence.push({ signalId: settlement.signalId ?? null, entryPrice: settlement.entryPrice, nearestAccepted: causal ? { value: causal.value, timestamp: causal.timestamp, source: causal.source ?? null } : null, provenance: "LEGACY_INCOMPLETE_PROVENANCE", reason: causal ? "entry_price_not_from_causal_observation" : "no_causal_price_observation" });
+      }
     }
     results.push({ check: "PRICE_PROVENANCE", status: evidence.length ? "FAIL" : "PASS", evidence });
   }
