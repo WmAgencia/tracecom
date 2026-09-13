@@ -11,6 +11,237 @@
  * (processo long-running: `npm run serve`).
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { del, get, put } from "@vercel/blob";
+
+type FableImage = { label: string; dataUrl: string };
+type TrainingDirection = "BUY" | "SELL";
+type TrainingOutcome = "WIN" | "LOSS" | "DRAW" | "UNKNOWN";
+type VirtualTrade = {
+  tradeId: string; analysisId: string; symbol: string; direction: TrainingDirection;
+  decisionTimestamp: number; entryTimestamp: number; entryReference: number | null;
+  horizonSeconds: number; suggestedStake: number | null; confidence: number; dataQuality: number;
+  features: unknown; framesHash: string | null; agentVersion: string; result: TrainingOutcome | null;
+  exitTimestamp?: number; exitReference?: number | null;
+};
+type TrainingSession = {
+  id: string; createdAt: number; symbol: string | null; marketType: string | null;
+  horizonSeconds: number; maxEvaluatedTrades: number; frozen: Record<string, string>;
+  analyses: number; decisions: Record<"BUY" | "SELL" | "WAIT", number>;
+  trades: VirtualTrade[];
+};
+
+// A Vercel function can be replaced at any time. This map is deliberately
+// best-effort only; the browser keeps its own visible transcript and a durable
+// store can be added behind this boundary without changing the API contract.
+const trainingSessions = new Map<string, TrainingSession>();
+
+function trainingSummary(session: TrainingSession) {
+  const resolved = session.trades.filter((trade) => trade.result && trade.result !== "UNKNOWN");
+  const wins = resolved.filter((trade) => trade.result === "WIN").length;
+  const losses = resolved.filter((trade) => trade.result === "LOSS").length;
+  const draws = resolved.filter((trade) => trade.result === "DRAW").length;
+  const unknown = session.trades.filter((trade) => trade.result === "UNKNOWN").length;
+  return {
+    id: session.id, createdAt: session.createdAt, symbol: session.symbol, marketType: session.marketType,
+    horizonSeconds: session.horizonSeconds, maxEvaluatedTrades: session.maxEvaluatedTrades,
+    frozen: session.frozen, analyses: session.analyses, BUY: session.decisions.BUY, SELL: session.decisions.SELL,
+    WAIT: session.decisions.WAIT, openVirtualTrades: session.trades.filter((trade) => trade.result === null).length,
+    evaluatedTrades: resolved.length, WIN: wins, LOSS: losses, DRAW: draws, UNKNOWN: unknown,
+    WR: resolved.length ? wins / resolved.length : null, currentAgentVersion: session.frozen.agentVersion,
+    persistence: "BEST_EFFORT_SERVERLESS", trades: session.trades.slice(-25),
+  };
+}
+
+function evaluateVirtualTrades(session: TrainingSession, timestamp: number, reference: number | null) {
+  for (const trade of session.trades) {
+    if (trade.result !== null || timestamp < trade.entryTimestamp + trade.horizonSeconds * 1_000) continue;
+    trade.exitTimestamp = timestamp;
+    trade.exitReference = reference;
+    if (!Number.isFinite(trade.entryReference) || !Number.isFinite(reference)) {
+      trade.result = "UNKNOWN";
+    } else if (Math.abs(reference! - trade.entryReference!) < Number.EPSILON) {
+      trade.result = "DRAW";
+    } else {
+      const rose = reference! > trade.entryReference!;
+      trade.result = (trade.direction === "BUY") === rose ? "WIN" : "LOSS";
+    }
+  }
+}
+
+async function readBody(req: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of req) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    size += buffer.length;
+    if (size > 35_000_000) throw new Error("request_body_too_large");
+    chunks.push(buffer);
+  }
+  const text = Buffer.concat(chunks).toString("utf8");
+  if (!text) return null;
+  try { return JSON.parse(text); } catch { throw new Error("invalid_json_body"); }
+}
+
+function parseJsonText(text: string): Record<string, unknown> | null {
+  const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  try {
+    const value = JSON.parse(cleaned) as unknown;
+    return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    try {
+      const value = JSON.parse(match[0]) as unknown;
+      return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+    } catch { return null; }
+  }
+}
+
+function safeList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string").slice(0, 8) : [];
+}
+
+function bounded(value: unknown, fallback: number): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : fallback;
+}
+
+function validImage(item: unknown): item is FableImage {
+  if (!item || typeof item !== "object") return false;
+  const value = item as Record<string, unknown>;
+  return typeof value.label === "string" && typeof value.dataUrl === "string" && /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value.dataUrl) && value.dataUrl.length <= 7_500_000;
+}
+
+function visionProxyUrl(blobUrl: string, validUntil: number): string {
+  const payload = Buffer.from(blobUrl).toString("base64url");
+  const secret = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!secret) throw new Error("vision_storage_not_configured");
+  const signature = createHmac("sha256", secret).update(`${payload}.${validUntil}`).digest("base64url");
+  const origin = process.env.VISION_PROXY_ORIGIN || "https://tracecom.consecom.com.br";
+  return `${origin}/api/vision/image?p=${encodeURIComponent(payload)}&e=${validUntil}&s=${encodeURIComponent(signature)}`;
+}
+
+function validVisionProxy(payload: string, expiry: string, signature: string): string | null {
+  const validUntil = Number(expiry);
+  const secret = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!secret || !Number.isFinite(validUntil) || validUntil < Date.now() || !payload || !signature) return null;
+  const expected = createHmac("sha256", secret).update(`${payload}.${validUntil}`).digest("base64url");
+  const received = Buffer.from(signature);
+  const computed = Buffer.from(expected);
+  if (received.length !== computed.length || !timingSafeEqual(received, computed)) return null;
+  try {
+    const url = Buffer.from(payload, "base64url").toString("utf8");
+    return /^https:\/\/[^/]+\.blob\.vercel-storage\.com\//.test(url) ? url : null;
+  } catch { return null; }
+}
+
+async function temporaryVisionUrls(images: FableImage[]): Promise<{ images: Array<{ label: string; url: string }>; cleanup: () => Promise<void> }> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("vision_storage_not_configured");
+  const uploaded: string[] = [];
+  const visualImages: Array<{ label: string; url: string }> = [];
+  try {
+    for (const image of images) {
+      const match = image.dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+      if (!match) continue;
+      const mediaType = match[1]!; const base64 = match[2]!;
+      const extension = mediaType === "image/png" ? "png" : mediaType === "image/webp" ? "webp" : "jpg";
+      const blob = await put(`vision-ephemeral/${Date.now()}-${crypto.randomUUID()}.${extension}`, Buffer.from(base64, "base64"), {
+        access: "private", addRandomSuffix: false, contentType: mediaType, cacheControlMaxAge: 0,
+      });
+      uploaded.push(blob.url);
+      visualImages.push({ label: image.label, url: visionProxyUrl(blob.url, Date.now() + 60_000) });
+    }
+    return { images: visualImages, cleanup: async () => { if (uploaded.length) await del(uploaded); } };
+  } catch (error) {
+    if (uploaded.length) await del(uploaded).catch(() => undefined);
+    throw error;
+  }
+}
+
+async function fableVisionTrade(body: unknown): Promise<unknown> {
+  const apiKey = process.env.FABLE_API_KEY?.trim();
+  if (!apiKey) throw new Error("fable_not_configured");
+  if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("bad_request");
+  const payload = body as Record<string, unknown>;
+  const snapshot = payload.snapshot;
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) throw new Error("snapshot_required");
+  const images = (Array.isArray(payload.chartImages) ? payload.chartImages.filter(validImage) : []).slice(0, 4);
+  if (!images.length && validImage({ label: "current", dataUrl: payload.chartImage })) images.push({ label: "current", dataUrl: String(payload.chartImage) });
+  if (validImage({ label: "context", dataUrl: payload.contextImage }) && images.length < 4) {
+    images.push({ label: "context", dataUrl: String(payload.contextImage) });
+  }
+  const snapshotObject = snapshot as Record<string, unknown>;
+  const chartFrame = snapshotObject.chartFrame && typeof snapshotObject.chartFrame === "object" ? snapshotObject.chartFrame as Record<string, unknown> : {};
+  const crop = chartFrame.crop && typeof chartFrame.crop === "object" ? chartFrame.crop as Record<string, unknown> : {};
+  const quantitative = snapshotObject.quantitativeFeatures && typeof snapshotObject.quantitativeFeatures === "object" ? snapshotObject.quantitativeFeatures as Record<string, unknown> : {};
+  const imageUsed = images.length > 0;
+  const baseQuality = Math.min(1, (imageUsed ? 0.55 : 0) + (images.length >= 2 ? 0.15 : 0) + (images.length >= 4 ? 0.1 : 0) + (Number.isFinite(Number(crop.width)) ? 0.1 : 0) + (quantitative.availability === "READY" ? 0.1 : 0));
+  const temporary = imageUsed ? await temporaryVisionUrls(images) : null;
+  const content: Record<string, unknown>[] = [{ type: "text", text: [
+    "Analyze the current IQ Option chart for a one-minute paper signal.",
+    "Use only the supplied chart images and normalized market snapshot.",
+    "Write human-readable fields in Brazilian Portuguese. Keep enum values BUY, SELL, WAIT, NEUTRAL and UNAVAILABLE unchanged.",
+    "Return JSON only with decision, confidence, pBuy, pSell, pWait, dataQuality, imageUsed, framesUsed, visualBias, quantBias, confluence, trend, structure, momentum, volatility, supportResistance, candlePatterns, breakoutState, exhaustionState, supportingFactors, opposingFactors, observations, riskFlags, analysisQuality, agentAction, guidanceMessage, chartViewQualityScore, historicalContextScore, recentDetailScore, visibleCandleCount, summary, rationale and marketContext.",
+    "marketContext must be an object with symbol, marketType, visualTimeframe, displayedStake, confidence and sources. Use UNAVAILABLE or null when the supplied sanitized crops do not prove a field. Never infer account balance, identity or broker controls.",
+    "If the image is missing, stale, ambiguous or the active asset is not trustworthy, return WAIT.",
+    `NORMALIZED_SNAPSHOT=${JSON.stringify(snapshotObject).slice(0, 45_000)}`,
+  ].join("\n") }];
+  for (const image of temporary?.images ?? []) {
+    content.push({ type: "text", text: `TEMPORAL_FRAME=${image.label}` });
+    content.push({ type: "image", source: { type: "url", url: image.url } });
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const baseUrl = (process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site").replace(/\/$/, "");
+    const model = process.env.FABLE_MODEL || "claude-fable-5-1";
+    const response = await fetch(`${baseUrl}/v1/messages`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model, max_tokens: 1_500, system: "You are Fable 5.1, a cautious quantitative analyst. Do not provide execution instructions or claim data not present in the sanitized chart crops.", messages: [{ role: "user", content }] }),
+      signal: controller.signal,
+    });
+    const text = await response.text();
+    if (!response.ok) throw new Error(`FABLE_HTTP_${response.status}: ${text.slice(0, 300)}`);
+    const wire = JSON.parse(text) as { content?: Array<{ type?: string; text?: string }> };
+    const answer = (wire.content ?? []).filter((block) => block.type === "text").map((block) => block.text ?? "").join("\n");
+    const parsed = parseJsonText(answer);
+    const visualBias = parsed?.visualBias === "BUY" || parsed?.visualBias === "SELL" ? parsed.visualBias : "NEUTRAL";
+    const rawQuantBias = String(parsed?.quantBias ?? "");
+    const quantBias: "BUY" | "SELL" | "NEUTRAL" | "UNAVAILABLE" = rawQuantBias === "BUY" || rawQuantBias === "SELL" || rawQuantBias === "NEUTRAL" || rawQuantBias === "UNAVAILABLE" ? rawQuantBias : "UNAVAILABLE";
+    const decision = parsed?.decision === "BUY" || parsed?.decision === "SELL" ? parsed.decision : "WAIT";
+    const probabilities = [Number(parsed?.pBuy), Number(parsed?.pSell), Number(parsed?.pWait)];
+    const probabilityTotal = probabilities.every((item) => Number.isFinite(item) && item >= 0) ? probabilities.reduce((sum, item) => sum + item, 0) : 0;
+    const pBuy = probabilityTotal > 0 ? probabilities[0]! / probabilityTotal : null;
+    const pSell = probabilityTotal > 0 ? probabilities[1]! / probabilityTotal : null;
+    const pWait = probabilityTotal > 0 ? probabilities[2]! / probabilityTotal : null;
+    return {
+      model: { modelId: model, displayName: "Fable 5.1" },
+      analysis: {
+        decision, confidence: bounded(parsed?.confidence, 0), pBuy, pSell, pWait, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: parsed?.imageUsed === true && imageUsed,
+        framesUsed: Math.min(4, Number(parsed?.framesUsed) || images.length), visualBias, quantBias, confluence: bounded(parsed?.confluence, quantBias === visualBias && quantBias !== "UNAVAILABLE" ? .8 : 0),
+        trend: typeof parsed?.trend === "string" ? parsed.trend.slice(0, 80) : "UNKNOWN", structure: typeof parsed?.structure === "string" ? parsed.structure.slice(0, 80) : "UNKNOWN", momentum: typeof parsed?.momentum === "string" ? parsed.momentum.slice(0, 80) : "UNKNOWN", volatility: typeof parsed?.volatility === "string" ? parsed.volatility.slice(0, 80) : "UNKNOWN",
+        supportResistance: safeList(parsed?.supportResistance), candlePatterns: safeList(parsed?.candlePatterns), breakoutState: typeof parsed?.breakoutState === "string" ? parsed.breakoutState.slice(0, 80) : "UNKNOWN", exhaustionState: typeof parsed?.exhaustionState === "string" ? parsed.exhaustionState.slice(0, 80) : "UNKNOWN",
+        supportingFactors: safeList(parsed?.supportingFactors), opposingFactors: safeList(parsed?.opposingFactors), observations: safeList(parsed?.observations), riskFlags: safeList(parsed?.riskFlags),
+        summary: typeof parsed?.summary === "string" ? parsed.summary.slice(0, 260) : "WAIT: evidência insuficiente para uma decisão operacional.", rationale: typeof parsed?.rationale === "string" ? parsed.rationale.slice(0, 600) : "FABLE_INVALID_OR_INCOMPLETE_RESPONSE", analysisId: typeof snapshotObject.analysisId === "string" ? snapshotObject.analysisId : "unknown",
+        pipeline: { dataValidation: imageUsed && Number.isFinite(Number(crop.width)) ? "PASS" : "WAIT", visualAnalysis: imageUsed ? "PASS" : "WAIT", quantAnalysis: quantitative.availability === "READY" ? "PASS" : "LIMITED", confluence: quantBias === "UNAVAILABLE" ? "UNAVAILABLE" : quantBias === visualBias ? "PASS" : "CONFLICT", finalDecision: decision },
+        analysisQuality: parsed?.analysisQuality === "HIGH" || parsed?.analysisQuality === "MEDIUM" ? parsed.analysisQuality : "LOW",
+        agentAction: ["REQUEST_ZOOM_OUT", "REQUEST_ZOOM_IN", "CONTINUE_ANALYSIS"].includes(String(parsed?.agentAction)) ? parsed?.agentAction : "WAIT",
+        guidanceMessage: typeof parsed?.guidanceMessage === "string" ? parsed.guidanceMessage.slice(0, 240) : null,
+        chartView: { score: Math.round(Math.max(0, Math.min(100, Number(parsed?.chartViewQualityScore) || baseQuality * 100))), historicalContext: Math.round(Math.max(0, Math.min(100, Number(parsed?.historicalContextScore) || baseQuality * 100))), recentDetail: Math.round(Math.max(0, Math.min(100, Number(parsed?.recentDetailScore) || baseQuality * 100))), visibleCandleCount: Number.isFinite(Number(parsed?.visibleCandleCount)) ? Number(parsed?.visibleCandleCount) : null },
+        marketContext: {
+          symbol: typeof parsed?.marketContext === "object" && parsed.marketContext && typeof (parsed.marketContext as Record<string, unknown>).symbol === "string" ? String((parsed.marketContext as Record<string, unknown>).symbol).slice(0, 32) : "UNAVAILABLE",
+          marketType: typeof parsed?.marketContext === "object" && parsed.marketContext && typeof (parsed.marketContext as Record<string, unknown>).marketType === "string" ? String((parsed.marketContext as Record<string, unknown>).marketType).slice(0, 20) : "UNAVAILABLE",
+          visualTimeframe: typeof parsed?.marketContext === "object" && parsed.marketContext && typeof (parsed.marketContext as Record<string, unknown>).visualTimeframe === "string" ? String((parsed.marketContext as Record<string, unknown>).visualTimeframe).slice(0, 16) : "UNAVAILABLE",
+          displayedStake: typeof parsed?.marketContext === "object" && parsed.marketContext && (typeof (parsed.marketContext as Record<string, unknown>).displayedStake === "string" || typeof (parsed.marketContext as Record<string, unknown>).displayedStake === "number") ? (parsed.marketContext as Record<string, unknown>).displayedStake : null,
+          confidence: typeof parsed?.marketContext === "object" && parsed.marketContext ? bounded((parsed.marketContext as Record<string, unknown>).confidence, 0) : 0,
+          sources: typeof parsed?.marketContext === "object" && parsed.marketContext ? safeList((parsed.marketContext as Record<string, unknown>).sources) : [],
+        },
+      },
+    };
+  } finally { clearTimeout(timeout); await temporary?.cleanup().catch(() => undefined); }
+}
 
 /* ============================================================
    Tipos e primitivas inline (serverless bundle não inclui src/)
@@ -24,6 +255,9 @@ interface EmpiricalProbability {
   favorable: number;
   baseline?: number;
   confidenceInterval?: { lower: number; upper: number; method?: string; level?: number };
+  periodStart?: number;
+  periodEnd?: number;
+  similarityCriteria?: unknown;
 }
 
 // Wilson CI para IC95% (z=1.96)
@@ -182,8 +416,104 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
   try {
     const path = url.pathname;
+    const body = req.method === "POST" ? await readBody(req) : null;
     if (path === "/health" || path === "/api/health") {
       json(200, { ok: true, ts: Date.now() });
+      return;
+    }
+
+    if (path === "/api/vision/image" && req.method === "GET") {
+      const blobUrl = validVisionProxy(q.get("p") ?? "", q.get("e") ?? "", q.get("s") ?? "");
+      if (!blobUrl) { res.statusCode = 403; res.end("forbidden"); return; }
+      const object = await get(blobUrl, { access: "private", useCache: false });
+      if (!object || object.statusCode !== 200) { res.statusCode = 404; res.end("not_found"); return; }
+      const bytes = await new Response(object.stream).arrayBuffer();
+      res.statusCode = 200;
+      res.setHeader("Content-Type", object.blob.contentType || "image/jpeg");
+      res.setHeader("Cache-Control", "no-store, max-age=0");
+      res.end(Buffer.from(bytes));
+      return;
+    }
+
+    if (path === "/api/fable/trade" && req.method === "POST") {
+      try {
+        json(200, await fableVisionTrade(body));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "fable_unavailable";
+        if (message.startsWith("FABLE_HTTP_400")) {
+          json(422, {
+            error: "FABLE_VISION_UNSUPPORTED",
+            detail: "O roteador Fable aceitou texto, mas rejeitou o crop de imagem enviado. Nenhuma análise visual foi produzida.",
+            action: "Configure um endpoint/modelo Fable com visão que aceite crops privados via data URL ou URL assinada.",
+          });
+        } else {
+          json(503, { error: "FABLE_UNAVAILABLE", detail: message });
+        }
+      }
+      return;
+    }
+
+    if (path === "/api/training/sessions" && req.method === "POST") {
+      const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+      const horizonSeconds = Math.max(10, Math.min(300, Number(input.horizonSeconds) || 60));
+      const maxEvaluatedTrades = Math.max(1, Math.min(10_000, Number(input.maxEvaluatedTrades) || 100));
+      const id = `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      const session: TrainingSession = {
+        id, createdAt: Date.now(), symbol: typeof input.symbol === "string" ? input.symbol.slice(0, 32) : null,
+        marketType: typeof input.marketType === "string" ? input.marketType.slice(0, 20) : null,
+        horizonSeconds, maxEvaluatedTrades,
+        frozen: {
+          agentVersion: typeof input.agentVersion === "string" ? input.agentVersion.slice(0, 64) : "FABLE_TRADER_V1",
+          promptVersion: typeof input.promptVersion === "string" ? input.promptVersion.slice(0, 64) : "vision-v1",
+          featureVersion: typeof input.featureVersion === "string" ? input.featureVersion.slice(0, 64) : "screen-motion-v1",
+          visionVersion: typeof input.visionVersion === "string" ? input.visionVersion.slice(0, 64) : "sanitized-crop-v1",
+        }, analyses: 0, decisions: { BUY: 0, SELL: 0, WAIT: 0 }, trades: [],
+      };
+      trainingSessions.set(id, session);
+      json(201, trainingSummary(session));
+      return;
+    }
+
+    const trainingSessionMatch = path.match(/^\/api\/training\/sessions\/([^/]+)$/);
+    if (trainingSessionMatch && req.method === "GET") {
+      const session = trainingSessions.get(trainingSessionMatch[1]!);
+      if (!session) { json(404, { error: "training_session_not_found", persistence: "BEST_EFFORT_SERVERLESS" }); return; }
+      json(200, trainingSummary(session));
+      return;
+    }
+
+    if (path === "/api/training/analyze" && req.method === "POST") {
+      const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : null;
+      const sessionId = typeof input?.trainingSessionId === "string" ? input.trainingSessionId : "";
+      const session = trainingSessions.get(sessionId);
+      if (!session) { json(404, { error: "training_session_not_found", persistence: "BEST_EFFORT_SERVERLESS" }); return; }
+      const snapshot = input?.snapshot && typeof input.snapshot === "object" && !Array.isArray(input.snapshot) ? input.snapshot as Record<string, unknown> : {};
+      const analysis = input?.analysis && typeof input.analysis === "object" && !Array.isArray(input.analysis) ? input.analysis as Record<string, unknown> : {};
+      const timestamp = Number(snapshot.timestampMs) || Date.now();
+      const rawReference = snapshot.referencePrice;
+      const reference = (typeof rawReference === "number" || typeof rawReference === "string") && String(rawReference).trim() !== "" && Number.isFinite(Number(rawReference)) ? Number(rawReference) : null;
+      evaluateVirtualTrades(session, timestamp, reference);
+      session.analyses += 1;
+      const decision = analysis.decision === "BUY" || analysis.decision === "SELL" ? analysis.decision as TrainingDirection : "WAIT";
+      session.decisions[decision] += 1;
+      const hasOpenSameSymbol = session.trades.some((trade) => trade.result === null && trade.symbol === (typeof snapshot.symbol === "string" ? snapshot.symbol : session.symbol));
+      const evaluated = trainingSummary(session).evaluatedTrades;
+      let virtualTrade: VirtualTrade | null = null;
+      if (decision !== "WAIT" && !hasOpenSameSymbol && evaluated < session.maxEvaluatedTrades) {
+        virtualTrade = {
+          tradeId: `virtual_${timestamp}_${Math.random().toString(36).slice(2, 8)}`,
+          analysisId: typeof analysis.analysisId === "string" ? analysis.analysisId : `analysis_${timestamp}`,
+          symbol: typeof snapshot.symbol === "string" ? snapshot.symbol.slice(0, 32) : (session.symbol ?? "UNAVAILABLE"),
+          direction: decision, decisionTimestamp: timestamp, entryTimestamp: timestamp, entryReference: reference,
+          horizonSeconds: session.horizonSeconds,
+          suggestedStake: Number.isFinite(Number(input?.suggestedStake)) ? Number(input?.suggestedStake) : null,
+          confidence: bounded(analysis.confidence, 0), dataQuality: bounded(analysis.dataQuality, 0),
+          features: snapshot.features ?? null, framesHash: typeof snapshot.framesHash === "string" ? snapshot.framesHash.slice(0, 128) : null,
+           agentVersion: session.frozen.agentVersion || "FABLE_TRADER_V1", result: null,
+        };
+         if (virtualTrade) session.trades.push(virtualTrade);
+      }
+      json(200, { ...trainingSummary(session), virtualTrade, execution: "VIRTUAL_ONLY", brokerAutomation: "NONE" });
       return;
     }
 
@@ -308,8 +638,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
           ciLower,
           ciUpper,
           baseline: base,
-          expectedValue: expectedValue({ probability: p, gain: 1, loss: 1 }),
-          actionable: isActionable({ probability: p, ciLower, baseline: base }),
+           expectedValue: expectedValue(p, 1, 1),
+           actionable: isActionable(p, ciLower, base),
         };
       }
 
@@ -319,7 +649,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       // Vol anualizada como proxy p/ atrPct (em %); se volatilidade baixa, sem bloqueio.
       const atrPct = sd !== 0 ? sd * 1.732 / Math.max(last, 1e-9) * 100 : null;
       const age = lastCandleAgeMs(k, now, timeframe);
-      const guardDecision = evaluateGuards({ state: guardState, atrPct, lastCandleAgeMs: age, now });
+       const guardDecision = evaluateGuardsLocal({ atrPct, lastCandleAgeMs: age, now });
       const guards = { allowed: guardDecision.allow, reason: guardDecision.reason ?? null };
 
       // --- Combinação final: qualquer camada bloqueando → WAIT ---
@@ -488,7 +818,7 @@ function quickEmpiricalProbability(
           method: "wilson",
           level: 0.95,
         }
-      : null,
+       : undefined,
     outOfSample: false,
     baseline: 0.5,
     limitations: [

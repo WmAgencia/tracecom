@@ -26,6 +26,12 @@ describe("TRACE_CON offline local shadow engine", () => {
     expect(e.analyze("EURUSD-OTC", item(Array.from({ length: 40 }, (_, i) => 1.04 - i * 0.001)))).toMatchObject({ decision: "SELL", productionDecision: "WAIT", shadowEligible: true });
   });
 
+  it("uses observed closed 5-second candles as causal input for the 60-second horizon", async () => {
+    const e = await engine(); const closes = Array.from({ length: 60 }, (_, i) => 1 + i * 0.0001);
+    const fast: any = { lastFrameAt: Date.now(), lastPrice: closes.at(-1), candles: closes.map((close, index) => ({ timeframe: "source-5s", sourceTimeframeSeconds: 5, timestamp: index * 5_000, open: close - .00002, high: close + .00003, low: close - .00003, close, isClosed: true })) };
+    expect(e.analyze("EURUSD-OTC", fast)).toMatchObject({ sourceTimeframeSeconds: 5, shadowEligible: true, decision: "BUY" });
+  });
+
   it("uses discrete signatures and causal MTF/tick features", async () => {
     const e = await engine(); const prices = Array.from({ length: 45 }, (_, i) => 1 + i * 0.0007);
     const a: any = item(prices); a.ticks = Array.from({ length: 20 }, (_, i) => ({ timestamp: i * 1000, price: 1 + i * .0001 }));

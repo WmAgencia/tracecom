@@ -176,11 +176,11 @@ describe("evaluateShadowTrade", () => {
     expect(result.exitPrice).toBe(110);
   });
 
-  it("candle de exit não existe → outcome='insufficient', exit null", () => {
+  it("candle de exit não existe → outcome='stalled', exit null e pode retry", () => {
     const trade = tradeAt(100, "BUY");
     const candles = candleSeries([100, 101, 102, 103]); // só 4 candles; exit seria no 5
     const result = evaluateShadowTrade(trade, candles, 5, 0.5);
-    expect(result.outcome).toBe("insufficient");
+    expect(result.outcome).toBe("stalled");
     expect(result.exitTime).toBeNull();
     expect(result.exitPrice).toBeNull();
     expect(result.returnPct).toBeNull();
@@ -382,8 +382,8 @@ describe("ShadowRepository (in-memory)", () => {
     repo.update(w1.id, { outcome: "flat", exitTime: T0 + M, exitPrice: 100, returnPct: 0, evaluatedAt: T0 });
 
     const stats = repo.stats();
-    expect(stats.total).toBe(6);
-    expect(stats.evaluated).toBe(6);
+    expect(stats.total).toBe(5);
+    expect(stats.evaluated).toBe(5);
     expect(stats.wins).toBe(3);
     expect(stats.misses).toBe(2);
     // wins=3 (BUY2+SELL1), misses=2 (BUY1+SELL1) → winRate 3/5
@@ -436,7 +436,7 @@ describe("AnalyticsService.evaluatePendingShadows", () => {
       expect(result!.outcomes.hit).toBe(1);
 
       // O trade recente segue pendente
-      const pending = shadowRepo.list({ signal: "BUY" }).filter((t) => t.outcome === "pending");
+      const pending = shadowRepo.list({ signal: "BUY" }).filter((t) => t.outcome === "pending" || t.outcome === "stalled");
       expect(pending.length).toBe(1);
     } finally {
       store.close();
@@ -551,7 +551,7 @@ describe("AnalyticsService.evaluatePendingShadows", () => {
     }
   });
 
-  it("WAIT ignora cooldown (pode empilhar sinais WAIT)", async () => {
+  it("WAIT não cria shadow trade nem entra no cooldown", async () => {
     const store = new Datastore({ path: ":memory:" });
     try {
       const decisionRepo = new DecisionRepository(store);
@@ -569,8 +569,8 @@ describe("AnalyticsService.evaluatePendingShadows", () => {
         symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "WAIT",
         entryTime: t1Entry, entryPrice: 100,
       });
-      expect(first).not.toBeNull();
-      expect(second).not.toBeNull();
+      expect(first).toBeNull();
+      expect(second).toBeNull();
     } finally {
       store.close();
     }

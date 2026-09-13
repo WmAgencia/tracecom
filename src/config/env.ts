@@ -37,6 +37,9 @@ const envSchema = z.object({
     .default("true")
     .transform((v) => v === "true" || v === "1"),
   ANTHROPIC_THINKING_BUDGET: z.coerce.number().int().positive().default(8000),
+  FABLE_API_KEY: z.string().optional(),
+  FABLE_BASE_URL: z.string().url().default("https://api.nexxus-pro.site"),
+  FABLE_MODEL: z.string().default("claude-fable-5-1"),
   // ----------------------------------------------------------------------
   // --- OANDA Forex v20 ---------------------------------------------------
   // Ambos são obrigatórios para ativar scans Forex reais. Se ausentes, a
@@ -63,6 +66,7 @@ export interface EnvConfig {
     readonly thinkingEnabled: boolean;
     readonly thinkingBudget: number;
   };
+  readonly fable: { readonly apiKey: string | null; readonly baseUrl: string; readonly model: string };
   readonly database: { readonly path: string };
   readonly oanda: { readonly apiKey: string | null; readonly accountId: string | null; readonly baseUrl: string };
   readonly trace1m: { readonly pairs: readonly string[]; readonly pollIntervalMs: number };
@@ -89,6 +93,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): EnvConfig {
     ANTHROPIC_EXTENDED_OUTPUT: env.ANTHROPIC_EXTENDED_OUTPUT,
     ANTHROPIC_THINKING_ENABLED: env.ANTHROPIC_THINKING_ENABLED,
     ANTHROPIC_THINKING_BUDGET: env.ANTHROPIC_THINKING_BUDGET,
+    FABLE_API_KEY: env.FABLE_API_KEY,
+    FABLE_BASE_URL: env.FABLE_BASE_URL,
+    FABLE_MODEL: env.FABLE_MODEL,
     OANDA_API_KEY: env.OANDA_API_KEY,
     OANDA_ACCOUNT_ID: env.OANDA_ACCOUNT_ID,
     OANDA_BASE_URL: env.OANDA_BASE_URL,
@@ -119,6 +126,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): EnvConfig {
       apiKey: raw.OANDA_API_KEY?.trim() || null,
       accountId: raw.OANDA_ACCOUNT_ID?.trim() || null,
       baseUrl: raw.OANDA_BASE_URL.replace(/\/$/, ""),
+    },
+    fable: {
+      apiKey: raw.FABLE_API_KEY?.trim() || null,
+      baseUrl: raw.FABLE_BASE_URL.replace(/\/$/, ""),
+      model: raw.FABLE_MODEL,
     },
     trace1m: { pairs: raw.TRACE1M_PAIRS.split(",").map((pair) => pair.trim()).filter(Boolean), pollIntervalMs: raw.TRACE1M_POLL_INTERVAL_MS },
     marketDataMode: raw.MARKET_DATA_MODE,

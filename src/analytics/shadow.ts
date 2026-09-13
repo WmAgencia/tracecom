@@ -34,6 +34,7 @@ export interface ShadowTrade {
   readonly timeframe: string;
   readonly direction: "up" | "down";
   readonly decision: "BUY" | "SELL" | "WAIT";
+  readonly horizon?: number;
   readonly entryTime: number;
   readonly entryPrice: number | null;
   readonly exitTime: number | null;
@@ -72,6 +73,7 @@ export interface OpenShadowInput {
   readonly stopLossPct?: number;
   readonly cooldownMinutes?: number;
   readonly providerId?: string | null;
+  readonly horizon?: number;
 }
 
 /** Cria um shadow trade a partir de uma decisão + preço de entrada. */
@@ -82,6 +84,7 @@ export function openShadowTrade(input: OpenShadowInput): ShadowTrade {
     timeframe: input.timeframe,
     direction: input.direction,
     decision: input.decision,
+    horizon: input.horizon ?? 0,
     entryTime: input.entryTime,
     entryPrice: input.entryPrice,
     exitTime: null,
@@ -111,8 +114,8 @@ export interface FutureCandle {
  * Avalia um shadow trade aberto contra candles futuros.
  *
  * Retorna um novo ShadowTrade (imutável) com exitTime/exitPrice/outcome/returnPct
- * populados. Se não houver candle na saída exata, outcome='insufficient' e os
- * campos de saída ficam null (não inventa dados).
+   * populados. Se não houver candle na saída, outcome='stalled' e o scheduler
+   * poderá tentar novamente sem transformar a ausência temporária em resultado.
  *
  * Regras:
  *   - exitTime = entryTime + horizon * TF_MS[timeframe]
@@ -151,7 +154,7 @@ export function evaluateShadowTrade(
   if (!exitCandle) {
     return {
       ...trade,
-      outcome: "insufficient",
+      outcome: "stalled",
       exitTime: null,
       exitPrice: null,
       returnPct: null,
@@ -164,7 +167,7 @@ export function evaluateShadowTrade(
   if (entry === null || entry === 0 || !Number.isFinite(entry)) {
     return {
       ...trade,
-      outcome: "insufficient",
+      outcome: "stalled",
       exitTime,
       exitPrice: exitCandle.close,
       returnPct: null,

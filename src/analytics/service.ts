@@ -6,7 +6,7 @@
  * (horizonte já decorrido) e medimos o retorno real. Nunca a validação informa
  * a decisão (é posterior).
  */
-import type { DecisionRecord, DecisionStats, Outcome, ValidationConfig } from "./types";
+import type { DecisionRecord, DecisionStats, Outcome, ProbabilitySource, ValidationConfig } from "./types";
 import { TIMEFRAME_MS, Timeframe } from "../market/model";
 import type { MarketCandle } from "../market/model";
 import { getCalibrationReport, type CalibrationReport } from "./calibration";
@@ -29,6 +29,21 @@ export const DEFAULT_DRIFT_ECE_THRESHOLD = 0.15;
 
 export const DEFAULT_VALIDATION: ValidationConfig = { minMovePct: 0.5, lookback: 1000 };
 
+function normalizeProbabilities(input: Pick<FusedDecisionInput, "decision" | "probability" | "pBuy" | "pSell" | "pWait">): { pBuy: number | null; pSell: number | null; pWait: number | null; source: ProbabilitySource } {
+  const pBuy = Number(input.pBuy); const pSell = Number(input.pSell); const pWait = Number(input.pWait);
+  if ([pBuy, pSell, pWait].every((value) => Number.isFinite(value) && value >= 0)) {
+    const total = pBuy + pSell + pWait;
+    if (total > 0) {
+      return { pBuy: pBuy / total, pSell: pSell / total, pWait: pWait / total, source: "provided" };
+    }
+  }
+  if (typeof input.probability === "number" && Number.isFinite(input.probability) && input.probability >= 0 && input.probability <= 1) {
+    const wait = 1 - input.probability;
+    return { pBuy: input.decision === "BUY" ? input.probability : 0, pSell: input.decision === "SELL" ? input.probability : 0, pWait: wait, source: "derived_directional" };
+  }
+  return { pBuy: null, pSell: null, pWait: null, source: "unavailable" };
+}
+
 export interface FusedDecisionInput {
   readonly symbol: string;
   readonly timeframe: string;
@@ -40,6 +55,9 @@ export interface FusedDecisionInput {
   readonly score: number;
   readonly confidence: number;
   readonly probability: number | null;
+  readonly pBuy?: number | null;
+  readonly pSell?: number | null;
+  readonly pWait?: number | null;
   readonly sampleSize: number;
   readonly regime: string | null;
   readonly rationale: string;
@@ -90,6 +108,7 @@ export class AnalyticsService {
 
   /** Registra uma decisão saída da fusão. */
   async recordDecision(input: FusedDecisionInput): Promise<DecisionRecord> {
+    const probabilities = normalizeProbabilities(input);
     // P-A (B2): Platt-scaled probability via wrapper `calibrateProbability` no
     // CalibrationEngine. Regras (alinhadas ao brief B2):
     //  - engine ausente → `probabilityCalibrated = null`.
@@ -121,6 +140,10 @@ export class AnalyticsService {
       score: input.score,
       confidence: input.confidence,
       probability: rawProb,
+      pBuy: probabilities.pBuy,
+      pSell: probabilities.pSell,
+      pWait: probabilities.pWait,
+      probabilitySource: probabilities.source,
       probabilityCalibrated,
       sampleSize: input.sampleSize,
       regime: input.regime,
@@ -169,8 +192,8 @@ export class AnalyticsService {
       if (exitTime > now) continue; // horizonte ainda não decorreu (P-R pending puro)
 
       const candles = this.candles(rec.symbol, tf);
-      const entry = candles.find((c) => c.timestamp === rec.entryTime);
-      const exit = candles.find((c) => c.timestamp === exitTime);
+       const entry = candles.filter((c) => c.timestamp <= rec.entryTime).at(-1) ?? candles.find((c) => c.timestamp > rec.entryTime && c.timestamp < rec.entryTime + step);
+       const exit = candles.find((c) => c.timestamp >= exitTime && c.timestamp < exitTime + step);
       if (!entry || !exit) {
         // P-R: dados futuros indisponíveis — marca "stalled" para distinguir
         // de "pending" (nunca tentado). NÃO entra em calibração win/loss.
@@ -184,9 +207,10 @@ export class AnalyticsService {
         continue;
       }
 
-      const outcome = this.outcomeOf(rec, entry.close, exit.close);
+       const entryPrice = rec.entryPrice ?? entry.close;
+       const outcome = this.outcomeOf(rec, entryPrice, exit.close);
       // P-T: separar grossReturnPct (antes de custos) do líquido.
-      const rawReturnPct = ((exit.close - entry.close) / (entry.close || 1)) * 100;
+       const rawReturnPct = ((exit.close - entryPrice) / (entryPrice || 1)) * 100;
       const grossReturnPct = rec.direction === "down" ? -rawReturnPct : rawReturnPct;
       const hasExposure = rec.decision === "BUY" || rec.decision === "SELL";
       const market = marketForProvider(rec.providerId);
@@ -482,22 +506,23 @@ export class AnalyticsService {
     symbol: string;
     timeframe: string;
     direction: "up" | "down";
-    decision: "BUY" | "SELL" | "WAIT";
+     decision: "BUY" | "SELL" | "WAIT";
     entryTime: number;
     entryPrice: number;
-    confidence?: number;
-    probability?: number;
+     confidence?: number;
+     probability?: number;
+     horizon?: number;
     stopLossPct?: number;
     cooldownMinutes?: number;
     providerId?: string | null;
   }): Promise<ShadowTrade | null> {
     if (!this.shadowRepo) return null;
-
+    if (input.decision === "WAIT") return null;
     // Cooldown entre trades do mesmo symbol+decision: se o último foi aberto
     // há menos de `cooldownMinutes` (default 4h), rejeita o novo trade.
     // WAIT nunca respeita cooldown (não tem exposição direcional).
     const cooldownMinutes = input.cooldownMinutes ?? DEFAULT_COOLDOWN_MINUTES;
-    if (input.decision !== "WAIT" && Number.isFinite(cooldownMinutes) && cooldownMinutes > 0) {
+    if (Number.isFinite(cooldownMinutes) && cooldownMinutes > 0) {
       const cooldownMs = cooldownMinutes * 60 * 1000;
       const sinceMs = input.entryTime - cooldownMs;
       const recent = this.shadowRepo.list({
@@ -529,7 +554,7 @@ export class AnalyticsService {
   async evaluatePendingShadows(horizon: number): Promise<{ evaluated: number; outcomes: Record<string, number> } | null> {
     if (!this.shadowRepo) return null;
     const now = Date.now();
-    const pending = this.shadowRepo.list();
+    const pending = this.shadowRepo.list().filter((trade) => trade.outcome === "pending" || trade.outcome === "stalled");
     let evaluated = 0;
     const outcomes: Record<string, number> = {
       pending: 0, hit: 0, miss: 0, flat: 0, insufficient: 0, stopped: 0, stalled: 0, error: 0,
@@ -543,15 +568,17 @@ export class AnalyticsService {
         outcomes.error = (outcomes.error ?? 0) + 1;
         continue;
       }
-      const exitTime = trade.entryTime + horizon * step;
+      const tradeHorizon = trade.horizon && trade.horizon > 0 ? trade.horizon : horizon;
+      const exitTime = trade.entryTime + tradeHorizon * step;
       if (exitTime > now) continue;
 
       const candles = this.candles(trade.symbol, tf);
       const futureCandles = candles
         .filter((c) => c.timestamp >= trade.entryTime)
         .map((c) => ({ timestamp: c.timestamp, close: c.close, high: c.high, low: c.low }));
-      const evaluatedTrade = evaluateShadowTrade(trade, futureCandles, horizon, this.cfg.minMovePct);
-      if (evaluatedTrade.outcome === "pending") {
+      const evaluatedTrade = evaluateShadowTrade(trade, futureCandles, tradeHorizon, this.cfg.minMovePct);
+      if (evaluatedTrade.outcome === "stalled") {
+        this.shadowRepo.update(trade.id, { outcome: "stalled", evaluationAttempts: (trade.evaluationAttempts ?? 0) + 1, lastEvaluationError: "candle de liquidação ainda indisponível" });
         outcomes.stalled = (outcomes.stalled ?? 0) + 1;
         continue;
       }
@@ -565,6 +592,8 @@ export class AnalyticsService {
         costPct: evaluatedTrade.costPct ?? null,
         evaluatedAt: evaluatedTrade.evaluatedAt,
         stopLossTriggeredAt: evaluatedTrade.stopLossTriggeredAt ?? null,
+        evaluationAttempts: (trade.evaluationAttempts ?? 0) + 1,
+        lastEvaluationError: null,
       });
       outcomes[evaluatedTrade.outcome] = (outcomes[evaluatedTrade.outcome] ?? 0) + 1;
       evaluated++;

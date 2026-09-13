@@ -13,6 +13,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { MarketRuntime } from "../market/runtime";
+import type { FableTraderClient } from "../ai/fable-trader";
 import type { Direction } from "../backtest/types";
 import type { Timeframe } from "../market/model";
 import type { FusedDecisionInput } from "../analytics/service";
@@ -29,6 +30,7 @@ export interface HttpApiOptions {
   /** Diretório de assets estáticos (web app). Se omitido, só API. */
   readonly publicDir?: string;
   readonly logger?: { info(msg: string, meta?: unknown): void; error(msg: string, meta?: unknown): void };
+  readonly fableTrader?: FableTraderClient;
 }
 
 interface HttpResponse {
@@ -48,6 +50,7 @@ export class TraceconHttpApi {
   private readonly token: string | null;
   private readonly publicDir: string | null;
   private readonly log?: HttpApiOptions["logger"];
+  private readonly fableTrader?: FableTraderClient;
 
   constructor(opts: HttpApiOptions) {
     this.runtime = opts.runtime;
@@ -56,6 +59,7 @@ export class TraceconHttpApi {
     this.token = opts.apiToken?.trim() ? opts.apiToken : null;
     this.publicDir = opts.publicDir ? resolve(opts.publicDir) : null;
     this.log = opts.logger;
+    this.fableTrader = opts.fableTrader;
     this.server = createServer((req, res) => void this.handle(req, res));
   }
 
@@ -123,7 +127,92 @@ export class TraceconHttpApi {
       }
     }
 
+    if (path === "/api/training/sessions" && method === "POST") {
+      const input = body && typeof body === "object" ? body as Record<string, unknown> : {};
+      const now = Date.now();
+      const id = crypto.randomUUID();
+      this.runtime.store.db.prepare(`
+        INSERT INTO training_sessions (id,status,symbol,market_type,horizon_seconds,max_evaluated_trades,agent_version,prompt_version,feature_version,vision_version,created_at,updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+      `).run(
+        id, "ACTIVE", typeof input.symbol === "string" ? input.symbol : null, typeof input.marketType === "string" ? input.marketType : null,
+        Number(input.horizonSeconds) || 60, Number(input.maxEvaluatedTrades) || 100, String(input.agentVersion || "FABLE_TRADER_V1"), String(input.promptVersion || "vision-v1"), String(input.featureVersion || "screen-motion-v1"), String(input.visionVersion || "sanitized-crop-v1"), now, now,
+      );
+      return { status: 201, json: this.trainingStats(id) };
+    }
+
+    const trainingSessionGet = path.match(/^\/api\/training\/sessions\/([^/]+)$/);
+    if (trainingSessionGet && method === "GET") {
+      if (!this.trainingSession(trainingSessionGet[1]!)) return { status: 404, json: { error: "training_session_not_found" } };
+      return { status: 200, json: this.trainingStats(trainingSessionGet[1]!) };
+    }
+
+    const trainingAnalyze = path.match(/^\/api\/training\/analyze$/);
+    if (trainingAnalyze && method === "POST") {
+      const input = body && typeof body === "object" ? body as Record<string, unknown> : {};
+      const sessionId = typeof input.trainingSessionId === "string" ? input.trainingSessionId : "";
+      const session = this.trainingSession(sessionId);
+      if (!session) return { status: 404, json: { error: "training_session_not_found" } };
+      const analysis = input.analysis && typeof input.analysis === "object" ? input.analysis as Record<string, unknown> : {};
+      const decision = ["BUY", "SELL", "WAIT"].includes(String(analysis.decision)) ? String(analysis.decision) : "WAIT";
+      const now = Date.now();
+      const observationId = crypto.randomUUID();
+      const entryPrice = Number((input.snapshot as Record<string, unknown> | undefined)?.referencePrice);
+      const outcome = decision === "WAIT" ? "WAIT" : Number.isFinite(entryPrice) && entryPrice > 0 ? "PENDING" : "UNKNOWN";
+      this.runtime.store.db.prepare(`
+        INSERT INTO training_observations (id,session_id,analysis_id,decision,confidence,p_buy,p_sell,p_wait,outcome,payload_json,created_at,evaluated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+      `).run(
+        observationId, sessionId, typeof analysis.analysisId === "string" ? analysis.analysisId : null, decision,
+        Number.isFinite(Number(analysis.confidence)) ? Number(analysis.confidence) : null,
+        Number.isFinite(Number(analysis.pBuy)) ? Number(analysis.pBuy) : null, Number.isFinite(Number(analysis.pSell)) ? Number(analysis.pSell) : null, Number.isFinite(Number(analysis.pWait)) ? Number(analysis.pWait) : null,
+        outcome, JSON.stringify(input).slice(0, 200_000), now, null,
+      );
+      this.runtime.store.db.prepare("UPDATE training_sessions SET updated_at = ? WHERE id = ?").run(now, sessionId);
+      return { status: 200, json: { ...this.trainingStats(sessionId), observationId } };
+    }
+
+    const trainingSettle = path.match(/^\/api\/training\/observations\/([^/]+)\/settle$/);
+    if (trainingSettle && method === "POST") {
+      const input = body && typeof body === "object" ? body as Record<string, unknown> : {};
+      const observationId = trainingSettle[1]!;
+      const row = this.runtime.store.db.prepare("SELECT * FROM training_observations WHERE id = ?").get(observationId) as { session_id: string; decision: string; outcome: string } | undefined;
+      if (!row) return { status: 404, json: { error: "training_observation_not_found" } };
+      const entry = Number(input.entryPrice); const exit = Number(input.exitPrice);
+      if (!Number.isFinite(entry) || !Number.isFinite(exit) || entry <= 0) {
+        this.runtime.store.db.prepare("UPDATE training_observations SET outcome = ?, evaluated_at = ? WHERE id = ?").run("UNKNOWN", Date.now(), observationId);
+      } else {
+        const delta = (exit - entry) / entry;
+        const win = row.decision === "BUY" ? delta > 0 : row.decision === "SELL" ? delta < 0 : false;
+        const flat = Math.abs(delta) < 0.00001;
+        this.runtime.store.db.prepare("UPDATE training_observations SET outcome = ?, evaluated_at = ? WHERE id = ?").run(flat ? "DRAW" : win ? "WIN" : "LOSS", Date.now(), observationId);
+      }
+      return { status: 200, json: this.trainingStats(row.session_id) };
+    }
+
     return this.apiRoute(method, path, q, body);
+  }
+
+  private trainingSession(id: string): unknown {
+    if (!id) return null;
+    return this.runtime.store.db.prepare("SELECT id FROM training_sessions WHERE id = ?").get(id) ?? null;
+  }
+
+  private trainingStats(id: string): Record<string, unknown> {
+    const session = this.runtime.store.db.prepare("SELECT * FROM training_sessions WHERE id = ?").get(id) as Record<string, unknown> | undefined;
+    const row = this.runtime.store.db.prepare(`
+      SELECT COUNT(*) analyses,
+        SUM(CASE WHEN decision != 'WAIT' THEN 1 ELSE 0 END) signals,
+        SUM(CASE WHEN decision = 'WAIT' THEN 1 ELSE 0 END) waits,
+        SUM(CASE WHEN outcome IN ('PENDING','UNKNOWN') THEN 1 ELSE 0 END) pending,
+        SUM(CASE WHEN outcome IN ('WIN','LOSS','DRAW') THEN 1 ELSE 0 END) evaluated,
+        SUM(CASE WHEN outcome='WIN' THEN 1 ELSE 0 END) wins,
+        SUM(CASE WHEN outcome='LOSS' THEN 1 ELSE 0 END) losses,
+        SUM(CASE WHEN outcome='DRAW' THEN 1 ELSE 0 END) draws
+      FROM training_observations WHERE session_id = ?
+    `).get(id) as Record<string, number | null>;
+    const wins = Number(row.wins ?? 0); const losses = Number(row.losses ?? 0); const evaluated = Number(row.evaluated ?? 0);
+    return { id, status: session?.status ?? "UNKNOWN", analyses: Number(row.analyses ?? 0), signals: Number(row.signals ?? 0), waits: Number(row.waits ?? 0), pending: Number(row.pending ?? 0), evaluatedTrades: evaluated, WIN: wins, LOSS: losses, DRAW: Number(row.draws ?? 0), WR: wins + losses > 0 ? wins / (wins + losses) : null, maxEvaluatedTrades: session?.max_evaluated_trades ?? 100 };
   }
 
   /**
@@ -246,6 +335,17 @@ export class TraceconHttpApi {
     }
 
     switch (`${method} ${path}`) {
+      case "POST /api/fable/trade": {
+        if (!this.fableTrader) return { status: 503, json: { error: "fable_not_configured" } };
+        if (!body || typeof body !== "object" || Array.isArray(body)) return { status: 400, json: { error: "bad_request" } };
+        const payload = body as { snapshot?: unknown; chartImage?: unknown; chartImages?: unknown };
+        if (!payload.snapshot || typeof payload.snapshot !== "object" || Array.isArray(payload.snapshot)) return { status: 400, json: { error: "snapshot_required" } };
+        const chartImages = Array.isArray(payload.chartImages)
+          ? payload.chartImages.filter((item): item is { label: string; dataUrl: string } => Boolean(item && typeof item === "object" && typeof (item as Record<string, unknown>).label === "string" && typeof (item as Record<string, unknown>).dataUrl === "string")).slice(0, 4)
+          : undefined;
+        const result = await this.fableTrader.analyze({ snapshot: payload.snapshot as Record<string, unknown>, chartImage: typeof payload.chartImage === "string" ? payload.chartImage : null, ...(chartImages ? { chartImages } : {}) });
+        return { status: 200, json: result };
+      }
       case "GET /api/status":
         return { status: 200, json: await this.status() };
       case "GET /api/market":
@@ -388,13 +488,18 @@ export class TraceconHttpApi {
         return { status: 200, json: { count: filtered.length, decisions: filtered } };
       }
       case "POST /api/analytics/record": {
-        const decision = q.get("decision") ?? "WAIT";
-        const direction = q.get("direction") ?? "up";
-        const horizonValue = Number(q.get("horizon") ?? 12);
-        const entryTimeValue = Number(q.get("entryTime") ?? Date.now());
-        const entryPriceValue = q.get("entryPrice") ? Number(q.get("entryPrice")) : null;
-        const confidenceValue = Number(q.get("confidence") ?? 0);
-        const probabilityValue = q.get("probability") ? Number(q.get("probability")) : null;
+        const inputBody = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+        const field = (name: string, fallback: unknown = null): unknown => q.get(name) ?? inputBody[name] ?? fallback;
+        const decision = String(field("decision", "WAIT"));
+        const direction = String(field("direction", "up"));
+        const horizonValue = Number(field("horizon", 12));
+        const entryTimeValue = Number(field("entryTime", Date.now()));
+        const entryPriceRaw = field("entryPrice");
+        const entryPriceValue = entryPriceRaw === null || entryPriceRaw === undefined || entryPriceRaw === "" ? null : Number(entryPriceRaw);
+        const confidenceValue = Number(field("confidence", 0));
+        const probabilityRaw = field("probability");
+        const probabilityValue = probabilityRaw === null || probabilityRaw === undefined || probabilityRaw === "" ? null : Number(probabilityRaw);
+        const pBuyRaw = field("pBuy"); const pSellRaw = field("pSell"); const pWaitRaw = field("pWait");
         if (
           !["BUY", "SELL", "WAIT"].includes(decision) ||
           !["up", "down"].includes(direction) ||
@@ -417,6 +522,9 @@ export class TraceconHttpApi {
           score: Number(q.get("score") ?? 0),
           confidence: confidenceValue,
           probability: probabilityValue,
+          pBuy: pBuyRaw == null ? null : Number(pBuyRaw),
+          pSell: pSellRaw == null ? null : Number(pSellRaw),
+          pWait: pWaitRaw == null ? null : Number(pWaitRaw),
           sampleSize: Number(q.get("sampleSize") ?? 0),
           regime: q.get("regime") ?? null,
           rationale: q.get("rationale") ?? "",
@@ -478,7 +586,8 @@ export class TraceconHttpApi {
             direction: shadowBody.direction === "down" ? "down" : "up",
             decision: String(shadowBody.decision) as "BUY" | "SELL" | "WAIT",
             entryTime: shadowBody.entryTime ? Number(shadowBody.entryTime) : Date.now(),
-            entryPrice: Number(shadowBody.entryPrice),
+             entryPrice: Number(shadowBody.entryPrice),
+             horizon: shadowBody.horizon != null ? Number(shadowBody.horizon) : undefined,
             confidence: shadowBody.confidence != null ? Number(shadowBody.confidence) : undefined,
             probability: shadowBody.probability != null ? Number(shadowBody.probability) : undefined,
             cooldownMinutes: 0,

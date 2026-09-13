@@ -210,3 +210,26 @@ P-I a P-W, P-X a P-AM
 | Wave 2/3 — resolução de feed | 1 | PASS | Yahoo só entrega OHLC 1m; 30s/45s bloqueados pelo motor | integrar quote/tick provider antes de reabrir |
 | Wave 4/9 — prequential 60–300s | 1 | PASS | `runPrequentialExperiment`, versões por trade, holdout congelado | executar testes e auditoria final |
 | Wave 6 — adversarial leak barrier | 1 | PASS | labels liberados após expiry e embargo por par igual ao horizonte | preservar nas próximas estratégias |
+
+## Vision Web pivot (2026-09-12)
+
+| item | iter | verdict | evidence | next action |
+| --- | --- | --- | --- | --- |
+| Product boundary | 1 | PASS | `PRODUCT.md` and `docs/VISION-WEB-ARCHITECTURE.md` define screen-share-first analysis; existing `extension/` remains legacy | keep broker internals out of the Vision path |
+| Vision UI | 1 | PASS | `/` now serves a screen-share workstation with crop selection, preview, Fable decision and evidence panels; legacy landing is preserved as `legacy-landing.html` | validate in Chrome with an authenticated IQ Option window |
+| Crop privacy | 1 | PASS | `getDisplayMedia` is user initiated; browser canvas sends only the selected crop as compressed image data | verify crop visually at desktop/mobile sizes |
+| Fable 5.1 backend | 1 | PASS | `FableTraderClient` calls the configured Anthropic-compatible gateway with server-only key; real smoke returned model `Fable 5.1` and safe `WAIT` for non-informative frames | validate with a real chart crop |
+| Structured decision | 1 | PASS | response normalization validates BUY/SELL/WAIT, confidence, visual evidence and risk flags; invalid/missing evidence becomes WAIT | keep V1 prompt frozen during Run A |
+| Regression gates | 1 | PASS | 546 tests passed / 3 skipped; typecheck, build, extension checks and web syntax passed; npm audit reports 0 vulnerabilities | perform manual browser screen-share gate |
+| Browser E2E | 1 | BLOCKED_EXTERNAL | Chrome's native share picker requires the user to select the IQ Option window; no browser automation surface is available in this session | user selects the source window and crop once |
+
+## Vision analysis and UI V2 (2026-09-12)
+
+| item | iter | verdict | evidence | next action |
+| --- | --- | --- | --- | --- |
+| Temporal bundle | 1 | PASS | Vision Web keeps current, minus5s, minus10s and minus20s crops and sends up to four labeled frames | validate with a real moving chart |
+| Local screen metrics | 1 | PASS | Crop pipeline computes luma, edge activity and frame difference without claiming broker prices | add structured provider features only when a real feed exists |
+| Fable structured output | 1 | PASS | Fable 5.1 response now separates confidence, data quality, visual/quant bias, confluence, risk flags, summary and frames used | freeze FABLE_TRADER_V1 for Run A |
+| PT-BR decision surface | 1 | PASS | Signal, metrics, controls, health state and analysis drawer are rendered in Portuguese | browser visual review at 1366x768 and 1920x1080 |
+| Live placeholder state | 1 | PASS | Placeholder is hidden after stream connection; crop selection is the only empty state | verify with a real screen-share session |
+| Full gates | 1 | PASS | 546 tests passed / 3 skipped; typecheck, build, extension checks and web syntax passed; Fable 4-frame smoke returned safe WAIT with `framesUsed=4` | complete manual Chrome share/crop gate |

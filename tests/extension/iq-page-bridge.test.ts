@@ -30,6 +30,16 @@ describe("IQ page bridge metadata projection", () => {
     expect(JSON.stringify(event)).not.toContain("must-not-leave-page");
   });
 
+  it("normalizes string-encoded causal candle numbers without accepting non-numeric text", async () => {
+    const h = await bridge(); h.socket.emit(JSON.stringify({ name: "candle-generated", msg: { active_id: "76", size: "60", open: "1.1600", close: "1.1602", min: "1.1599", max: "1.1603", from: "1700000000" } }));
+    expect(h.emitted.find((entry) => entry.payload?.kind === "candle")?.payload).toMatchObject({ activeId: 76, timeframe: "1m", close: 1.1602, timestamp: 1_700_000_000_000 });
+  });
+
+  it("keeps a valid non-TRACE candle interval available for stream synchronization", async () => {
+    const h = await bridge(); h.socket.emit(JSON.stringify({ name: "candle-generated", msg: { active_id: 76, size: 5, open: 1.16, close: 1.1602, min: 1.1599, max: 1.1603, from: 1_700_000_000 } }));
+    expect(h.emitted.find((entry) => entry.payload?.kind === "candle")?.payload).toMatchObject({ activeId: 76, timeframe: "source-5s", sourceTimeframeSeconds: 5, close: 1.1602 });
+  });
+
   it("observes only redacted market fields from an outbound subscription", async () => {
     const h = await bridge(); h.socket.send(JSON.stringify({ name: "subscribe", msg: { active_id: 76, instrument: "EUR/USD OTC", token: "must-not-leave-page" } }));
     const event = h.emitted.find((entry) => entry.payload?.type === "protocol-event" && entry.payload.direction === "OUT")?.payload;

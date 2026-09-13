@@ -8,7 +8,14 @@
   const stdev = (xs) => { const m = mean(xs); return Math.sqrt(mean(xs.map((x) => (x - m) ** 2))); };
   const bucket = (value, weak, strong, labels = ["WEAK", "NORMAL", "STRONG"]) => Math.abs(value) >= strong ? labels[2] : Math.abs(value) >= weak ? labels[1] : labels[0];
   const direction = (value) => value > 0 ? "UP" : value < 0 ? "DOWN" : "FLAT";
-  const candlesOf = (item) => (item?.candles || []).filter((c) => c.timeframe === TF && c.isClosed !== false).map((c) => ({ ...c, open: n(c.open, n(c.close)), high: n(c.high, n(c.close)), low: n(c.low, n(c.close)), close: n(c.close), timestamp: n(c.timestamp) })).sort((a, b) => a.timestamp - b.timestamp);
+  // IQ Option can expose a 5-second candle stream. For a 60-second horizon,
+  // those observed closed micro-candles are causal input; waiting for thirty
+  // broker 1m bars would silently turn a five-minute warm-up into thirty minutes.
+  const candlesOf = (item) => {
+    const rows = (item?.candles || []).filter((c) => c.isClosed !== false).map((c) => ({ ...c, sourceSeconds: n(c.sourceTimeframeSeconds, c.timeframe === TF ? 60 : 0), open: n(c.open, n(c.close)), high: n(c.high, n(c.close)), low: n(c.low, n(c.close)), close: n(c.close), timestamp: n(c.timestamp) })).filter((c) => c.sourceSeconds > 0).sort((a, b) => a.timestamp - b.timestamp);
+    const shortest = Math.min(...rows.map((c) => c.sourceSeconds), Infinity);
+    return rows.filter((c) => c.sourceSeconds === shortest);
+  };
   const aggregate = (candles, minutes) => {
     const size = minutes * 60_000; const groups = new Map();
     for (const c of candles) { const t = Math.floor(c.timestamp / size) * size; groups.set(t, [...(groups.get(t) || []), c]); }
@@ -29,7 +36,7 @@
   function classifyOutcome(decision, entryPrice, exitPrice) { const entry = n(entryPrice, NaN); const exit = n(exitPrice, NaN); if (!Number.isFinite(entry) || entry <= 0 || !Number.isFinite(exit)) return "UNKNOWN"; const signed = (exit - entry) / entry * (decision === "SELL" ? -1 : 1); return Math.abs(signed) < 0.00001 ? "DRAW" : signed > 0 ? "WIN" : "LOSS"; }
 
   function analyze(symbol, item) {
-    const candles = candlesOf(item); const currentPrice = item?.lastPrice ?? candles.at(-1)?.close ?? null; const ageMs = item?.lastFrameAt ? Date.now() - item.lastFrameAt : Infinity; const base = { symbol, timeframe: TF, currentPrice, source: "iqoption:local-shadow", provider: "iqoption", feed: { state: ageMs <= 15_000 ? "LIVE" : "DEGRADED", lastPrice: currentPrice, lastPriceTimestamp: item?.lastPriceTimestamp ?? null, ageMs, candleCount: candles.length } };
+    const candles = candlesOf(item); const currentPrice = item?.lastPrice ?? candles.at(-1)?.close ?? null; const ageMs = item?.lastFrameAt ? Date.now() - item.lastFrameAt : Infinity; const base = { symbol, timeframe: TF, sourceTimeframeSeconds: candles.at(-1)?.sourceSeconds || null, currentPrice, source: "iqoption:local-shadow", provider: "iqoption", feed: { state: ageMs <= 15_000 ? "LIVE" : "DEGRADED", lastPrice: currentPrice, lastPriceTimestamp: item?.lastPriceTimestamp ?? null, ageMs, candleCount: candles.length } };
     if (candles.length < 30) return { ...base, decision: "WAIT", confidence: 0, rationale: "IQ_DATA_INSUFFICIENT_HISTORY", productionDecision: "WAIT", shadowEligible: false, reasons: ["IQ_DATA_INSUFFICIENT_HISTORY"], counterReasons: ["INSUFFICIENT_CLOSED_CANDLES"], features: { availability: "PARTIAL", candles: candles.length }, signature: "WAIT|INSUFFICIENT_HISTORY", snapshot: { asset: symbol, timeframe: TF, observedAt: Date.now(), price: currentPrice, candles: candles.slice(-30).map((c) => ({ ...c })) } };
     if (ageMs > 15_000) return { ...base, decision: "WAIT", confidence: 0, rationale: "IQ_FEED_STALE", productionDecision: "WAIT", shadowEligible: false, reasons: ["IQ_FEED_STALE"], counterReasons: ["STALE_MARKET_FRAME"], features: { availability: "STALE", candles: candles.length }, signature: "WAIT|STALE_FEED", snapshot: { asset: symbol, timeframe: TF, observedAt: Date.now(), price: currentPrice, candles: candles.slice(-30).map((c) => ({ ...c })) } };
     const closes = candles.map((c) => c.close); const last = candles.at(-1); const prev = candles.at(-2); const returns = (window) => (last.close - closes.at(-1 - window)) / Math.max(Math.abs(closes.at(-1 - window)), Number.EPSILON); const r1 = returns(1), r5 = returns(5), r10 = returns(10), r20 = returns(20); const e8 = ema(closes, 8), e21 = ema(closes, 21); const emaSlope = (e8.at(-1) - e8.at(-6)) / Math.max(Math.abs(e8.at(-6)), Number.EPSILON); const mediumSlope = (e21.at(-1) - e21.at(-6)) / Math.max(Math.abs(e21.at(-6)), Number.EPSILON); const distanceEma = (last.close - e21.at(-1)) / Math.max(Math.abs(e21.at(-1)), Number.EPSILON);

@@ -18,6 +18,10 @@ interface Row {
   confidence: number;
   probability: number | null;
   probability_calibrated: number | null;
+  p_buy: number | null;
+  p_sell: number | null;
+  p_wait: number | null;
+  probability_source: string | null;
   sample_size: number | null;
   regime: string | null;
   rationale: string;
@@ -59,6 +63,10 @@ export class DecisionRepository {
     confidence: number;
     probability: number | null;
     probabilityCalibrated?: number | null;
+    pBuy?: number | null;
+    pSell?: number | null;
+    pWait?: number | null;
+    probabilitySource?: string;
     sampleSize: number;
     regime: string | null;
     rationale: string;
@@ -91,16 +99,16 @@ export class DecisionRepository {
     this.store.db.prepare(`
       INSERT OR REPLACE INTO decision_records (
         id,symbol,timeframe,direction,decision,horizon,entry_time,entry_price,
-        score,confidence,probability,probability_calibrated,sample_size,regime,rationale,
+         score,confidence,probability,probability_calibrated,p_buy,p_sell,p_wait,probability_source,sample_size,regime,rationale,
         provider_id,model_version,feature_version,
         outcome,exit_time,exit_price,return_pct,gross_return_pct,cost_pct,evaluated_at,
         evaluation_attempts,last_evaluation_error,evaluation_locked,
         created_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+       ) VALUES (${Array(33).fill("?").join(",")})
     `).run(
       r.id, r.symbol, r.timeframe, r.direction, r.decision,
       r.horizon, r.entryTime, r.entryPrice, r.score, r.confidence,
-      r.probability, r.probabilityCalibrated, r.sampleSize, r.regime, r.rationale,
+       r.probability, r.probabilityCalibrated, r.pBuy ?? null, r.pSell ?? null, r.pWait ?? null, r.probabilitySource ?? null, r.sampleSize, r.regime, r.rationale,
       r.providerId, r.modelVersion, r.featureVersion,
       r.outcome, r.exitTime, r.exitPrice, r.returnPct, r.grossReturnPct, r.costPct, r.evaluatedAt,
       r.evaluationAttempts, r.lastEvaluationError, r.evaluationLocked ? 1 : 0,
@@ -185,8 +193,8 @@ export class DecisionRepository {
     const where = whereParts.length ? "WHERE " + whereParts.join(" AND ") : "";
     const total = (this.store.db.prepare(`SELECT COUNT(*) n FROM decision_records ${where}`).get(...params) as { n: number }).n;
     const whereEvaluated = whereParts.length
-      ? whereParts.join(" AND ") + " AND outcome != 'pending'"
-      : "outcome != 'pending'";
+      ? whereParts.join(" AND ") + " AND outcome IN ('hit','miss','flat')"
+      : "outcome IN ('hit','miss','flat')";
     const evaluatedRow = this.store.db.prepare(
       `SELECT COUNT(*) n, SUM(CASE WHEN outcome='hit' THEN 1 ELSE 0 END) w,
               SUM(CASE WHEN outcome='miss' THEN 1 ELSE 0 END) m,
@@ -236,6 +244,10 @@ function rowToRecord(r: Row): DecisionRecord {
     confidence: r.confidence,
     probability: r.probability,
     probabilityCalibrated: r.probability_calibrated ?? null,
+    pBuy: r.p_buy ?? null,
+    pSell: r.p_sell ?? null,
+    pWait: r.p_wait ?? null,
+    probabilitySource: (r.probability_source as DecisionRecord["probabilitySource"]) ?? "unavailable",
     sampleSize: r.sample_size ?? 0,
     regime: r.regime,
     rationale: r.rationale,
