@@ -630,12 +630,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
 
     if (path === "/api/research/audit" && req.method === "POST") {
-      const adminKey = process.env.LIVE_API_ADMIN_KEY?.trim() ?? "";
-      const readKey = process.env.LIVE_API_KEY?.trim() ?? "";
-      const suppliedAdmin = req.headers["x-live-admin-key"]?.toString() ?? "";
-      const bearer = (req.headers.authorization ?? "").toString().replace(/^Bearer\s+/i, "");
-      const safeEqual = (expected: string, received: string) => Boolean(expected && received && expected.length === received.length && timingSafeEqual(Buffer.from(expected), Buffer.from(received)));
-      if (!safeEqual(adminKey, suppliedAdmin) && !safeEqual(readKey, bearer)) { json(403, { error: "research_auth_required" }); return; }
+      if (!(await researchAuthorized(req))) { json(403, { error: "research_auth_required" }); return; }
       const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
       const audits = runAudit(input as AuditInput, Array.isArray(input.checks) ? input.checks.filter((item): item is string => typeof item === "string").slice(0, 40) : undefined);
       let replay: Record<string, unknown> | null = null;
