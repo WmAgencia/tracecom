@@ -201,7 +201,23 @@ function stopTraining() { state.training = null; localStorage.removeItem("tracec
 async function trainIfActive(snapshot, analysis, stat) {
   if (!state.training) return; const sizing = suggestedStake(analysis); const result = await api("/api/training/analyze", { method: "POST", body: JSON.stringify({ trainingSessionId: state.training.id, snapshot: { ...snapshot, symbol: state.lastContext?.symbol || "UNAVAILABLE", referencePrice: null, framesHash: frameHash(stat), features: { motion: stat } }, analysis, suggestedStake: sizing.amount || null }) }); state.training = result; renderTraining(result);
 }
-function renderTraining(session) { text("trainingAnalyses", String(session.analyses || 0)); text("trainingEvaluated", String(session.evaluatedTrades || 0)); text("trainingWins", `${session.WIN || 0} / ${session.LOSS || 0}`); text("trainingWr", session.WR == null ? "—" : `${Math.round(session.WR * 100)}%`); }
+function renderTraining(session) {
+  const analyses = Number(session.analyses || 0);
+  const evaluated = Number(session.evaluatedTrades || 0);
+  const wins = Number(session.WIN || 0);
+  const losses = Number(session.LOSS || 0);
+  const draws = Number(session.DRAW || 0);
+  const unknown = Number(session.UNKNOWN || 0);
+  const pending = Number(session.openVirtualTrades || 0);
+  text("trainingAnalyses", String(analyses));
+  text("trainingEvaluated", String(evaluated));
+  text("trainingWins", `${wins} / ${losses}`);
+  text("trainingDrawUnknown", `${draws} / ${unknown}`);
+  text("trainingPending", String(pending));
+  text("trainingWr", session.WR == null ? "—" : `${Math.round(Number(session.WR) * 100)}%`);
+  const note = $("trainingNote");
+  if (note && session.persistence) note.textContent = `Persistência: ${session.persistence}. ${pending} operação(ões) aguardando o horizonte causal; UNKNOWN não entra no WR.`;
+}
 async function restoreTraining() { const id = localStorage.getItem("tracecom:training-session"); if (!id) return; try { const session = await api(`/api/training/sessions/${encodeURIComponent(id)}`); state.training = session; $("startTrainingButton").hidden = true; $("stopTrainingButton").hidden = false; renderTraining(session); } catch { localStorage.removeItem("tracecom:training-session"); } }
 function escape(value) { return String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
