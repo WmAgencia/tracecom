@@ -40,7 +40,7 @@
         ,"https://iqoption.com/*"
         ,"https://*.iqoption.com/*"
       ],
-      "js": ["asset-resolver.js", "content.js"],
+      "js": ["asset-resolver.js", "diagnostic-sanitizer.js", "content.js"],
       "css": ["downbar.css"],
       "run_at": "document_idle",
       "all_frames": false

@@ -113,6 +113,10 @@ export class Datastore {
         score       REAL NOT NULL,
         confidence  REAL NOT NULL,
         probability REAL,
+        p_buy       REAL,
+        p_sell      REAL,
+        p_wait      REAL,
+        probability_source TEXT,
         sample_size INTEGER,
         regime      TEXT,
         rationale   TEXT NOT NULL,
@@ -146,6 +150,7 @@ export class Datastore {
         timeframe   TEXT NOT NULL,
         direction   TEXT NOT NULL,
         decision    TEXT NOT NULL,
+        horizon     INTEGER NOT NULL DEFAULT 1,
         entry_time  INTEGER NOT NULL,
         entry_price REAL,
         exit_time   INTEGER,
@@ -165,6 +170,36 @@ export class Datastore {
       CREATE INDEX IF NOT EXISTS idx_shadow_created_at ON shadow_trades(created_at);
       CREATE INDEX IF NOT EXISTS idx_shadow_outcome ON shadow_trades(outcome);
       CREATE INDEX IF NOT EXISTS idx_shadow_symbol_tf ON shadow_trades(symbol, timeframe);
+
+      CREATE TABLE IF NOT EXISTS training_sessions (
+        id TEXT PRIMARY KEY,
+        status TEXT NOT NULL,
+        symbol TEXT,
+        market_type TEXT,
+        horizon_seconds INTEGER NOT NULL,
+        max_evaluated_trades INTEGER NOT NULL,
+        agent_version TEXT NOT NULL,
+        prompt_version TEXT NOT NULL,
+        feature_version TEXT NOT NULL,
+        vision_version TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS training_observations (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        analysis_id TEXT,
+        decision TEXT NOT NULL,
+        confidence REAL,
+        p_buy REAL,
+        p_sell REAL,
+        p_wait REAL,
+        outcome TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        evaluated_at INTEGER
+      );
+      CREATE INDEX IF NOT EXISTS idx_training_observations_session ON training_observations(session_id, created_at);
 
       -- Sinais paper com máquina de estados explícita. A tabela de eventos é
       -- append-only e permite auditar cancelamento, invalidação e execução.
@@ -361,7 +396,12 @@ export class Datastore {
     try { this.db.exec("ALTER TABLE decision_records ADD COLUMN cost_pct REAL"); } catch { /* já existe */ }
     // P-A (B2): Platt-scaled probability aprendida por (symbol, timeframe, regime).
     try { this.db.exec("ALTER TABLE decision_records ADD COLUMN probability_calibrated REAL"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN p_buy REAL"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN p_sell REAL"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN p_wait REAL"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE decision_records ADD COLUMN probability_source TEXT"); } catch { /* já existe */ }
     try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN provider_id TEXT"); } catch { /* já existe */ }
+    try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN horizon INTEGER NOT NULL DEFAULT 1"); } catch { /* já existe */ }
     try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN evaluation_attempts INTEGER NOT NULL DEFAULT 0"); } catch { /* já existe */ }
     try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN last_evaluation_error TEXT"); } catch { /* já existe */ }
     try { this.db.exec("ALTER TABLE shadow_trades ADD COLUMN evaluation_locked INTEGER NOT NULL DEFAULT 0"); } catch { /* já existe */ }

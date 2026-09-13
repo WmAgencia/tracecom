@@ -10,6 +10,7 @@
  */
 importScripts("local-engine.js");
 importScripts("experiment-runner.js");
+importScripts("diagnostic-sanitizer.js");
 
 const ALARM_NAME = "tcTick";
 const SHADOW_ALARM = "tcShadowTick";
@@ -31,6 +32,12 @@ const IQ_MARKET_KEY = "tcIqMarketStore";
 const IQ_INSTRUMENT_REGISTRY_KEY = "tcIqInstrumentRegistry";
 const IQ_ASSET_DEBUG_KEY = "tcIqAssetDebug";
 const REMOTE_STATE_KEY = "tcRemoteApiState";
+const DEV_DIAGNOSTIC_CACHE_KEY = "tcDevDiagnosticCache";
+const DEV_DIAGNOSTIC_CACHE_TTL_MS = 10 * 60 * 1000;
+const FABLE_TRADER_CACHE_KEY = "tcFableTraderCache";
+const FABLE_TRADER_CACHE_TTL_MS = 15_000;
+const FABLE_WARMUP_KEY = "tcFableTraderWarmups";
+const FABLE_WARMUP_MS = 5 * 60_000;
 
 function traceLog(scope, message, meta = {}) {
   console.info(`${TRACE_PREFIX}[${scope}] ${message}`, meta);
@@ -108,6 +115,68 @@ async function localAnalyze(symbol, tabId = null) {
   const item = Object.values(store).find((entry) => entry?.symbol === wanted && (tabId == null || entry.sourceTabId === tabId)) || null;
   return globalThis.TraceConLocalEngine.analyze(symbol, item);
 }
+function traderSnapshot(symbol, item, analysis) {
+  return globalThis.TraceConDiagnostic?.sanitize({ profile: "FABLE_TRADER", horizonSeconds: 60, asset: symbol, domain: item?.domain || null, activeId: item?.activeId || null, price: analysis.currentPrice, feed: analysis.feed, features: analysis.features, localContext: { decision: analysis.decision, confidence: analysis.confidence, reasons: analysis.reasons, counterReasons: analysis.counterReasons, regime: analysis.regime }, candles: analysis.snapshot?.candles?.slice(-30), ticks: analysis.snapshot?.ticks?.slice(-120), generatedAt: Date.now() }) || {};
+}
+async function captureChartImage(tab, chartRect) {
+  if (!tab?.windowId || !chartRect || !Number.isFinite(Number(chartRect.width)) || !Number.isFinite(Number(chartRect.height))) return { image: null, status: "UNAVAILABLE" };
+  try {
+    const full = await chrome.tabs.captureVisibleTab(tab.windowId, { format: "jpeg", quality: 72 });
+    const response = await fetch(full); const bitmap = await createImageBitmap(await response.blob());
+    const ratioX = bitmap.width / Math.max(1, Number(chartRect.viewportWidth)); const ratioY = bitmap.height / Math.max(1, Number(chartRect.viewportHeight));
+    const sx = Math.max(0, Math.floor(Number(chartRect.left) * ratioX)), sy = Math.max(0, Math.floor(Number(chartRect.top) * ratioY)); const sw = Math.min(bitmap.width - sx, Math.floor(Number(chartRect.width) * ratioX)), sh = Math.min(bitmap.height - sy, Math.floor(Number(chartRect.height) * ratioY));
+    if (sw < 120 || sh < 120) return { image: null, status: "CROP_INVALID" };
+    const canvas = new OffscreenCanvas(Math.min(1280, sw), Math.min(720, sh)); const ctx = canvas.getContext("2d"); if (!ctx) return { image: null, status: "CROP_UNAVAILABLE" };
+    ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height); const blob = await canvas.convertToBlob({ type: "image/jpeg", quality: .78 }); const bytes = new Uint8Array(await blob.arrayBuffer()); let binary = ""; for (const byte of bytes) binary += String.fromCharCode(byte);
+    return { image: `data:image/jpeg;base64,${btoa(binary)}`, status: "PASS", capturedAt: Date.now() };
+  } catch (error) { return { image: null, status: "CAPTURE_FAILED", error: String(error?.message || error) }; }
+}
+async function readFableWarmups() { return new Promise((resolve) => chrome.storage.local.get([FABLE_WARMUP_KEY], (s) => resolve(s[FABLE_WARMUP_KEY] || {}))); }
+async function startFableWarmup(tabId, activeId, symbol) {
+  const warmups = await readFableWarmups(); const key = `${tabId}:${activeId}:${symbol}`;
+  if (!warmups[key]) { warmups[key] = { tabId, activeId, symbol, startedAt: Date.now(), requiredMs: FABLE_WARMUP_MS }; await new Promise((resolve) => chrome.storage.local.set({ [FABLE_WARMUP_KEY]: warmups }, resolve)); }
+  return warmups[key];
+}
+async function getFableWarmup(tabId, activeId, symbol) {
+  const warmups = await readFableWarmups(); const row = warmups[`${tabId}:${activeId}:${symbol}`];
+  if (!row) return null; const elapsedMs = Math.max(0, Date.now() - Number(row.startedAt)); return { ...row, elapsedMs, ready: elapsedMs >= FABLE_WARMUP_MS, remainingMs: Math.max(0, FABLE_WARMUP_MS - elapsedMs) };
+}
+function evidenceDirection(local) {
+  const score = Number(local?.features?.momentum?.roc5 || 0) + Number(local?.features?.momentum?.roc10 || 0) + Number(local?.features?.trend?.emaSlope || 0) + Number(local?.features?.trend?.mediumSlope || 0);
+  if (score > 0) return "BUY"; if (score < 0) return "SELL";
+  return local?.features?.candle?.bullBear === "BEAR" ? "SELL" : "BUY";
+}
+async function fableTraderAnalyze(symbol, tabId, local, tab = null, chartRect = null) {
+  const store = await readLocalMarket(); const item = Object.values(store).find((entry) => entry?.symbol === String(symbol).toUpperCase() && entry?.sourceTabId === tabId) || null;
+  if (!item?.activeId) return { ...local, decision: "WAIT", shadowEligible: false, rationale: "FABLE_TRADER_ASSET_NOT_BOUND", fableTrader: { status: "SKIPPED", reason: "ASSET_NOT_BOUND" } };
+  const warmup = await getFableWarmup(tabId, item.activeId, String(symbol).toUpperCase());
+  if (!warmup?.ready) return { ...local, decision: "WAIT", shadowEligible: false, rationale: "FABLE_TRADER_WARMUP", fableTrader: { status: "WARMING_UP", warmupRemainingMs: warmup?.remainingMs ?? FABLE_WARMUP_MS } };
+  const capture = await captureChartImage(tab, chartRect); const snapshot = { ...traderSnapshot(symbol, item, local), analysisId: `fable-${Date.now()}`, tabId, snapshotTimestamp: Date.now(), chartCapture: { status: capture.status, capturedAt: capture.capturedAt || null } }; const fingerprint = globalThis.TraceConDiagnostic?.fingerprint(snapshot) || `fable-${Date.now()}`;
+  const cached = await new Promise((resolve) => chrome.storage.local.get([FABLE_TRADER_CACHE_KEY], (s) => resolve(s[FABLE_TRADER_CACHE_KEY] || {})));
+  let record = cached[fingerprint];
+  if (!record || Date.now() - Number(record.receivedAt || 0) >= FABLE_TRADER_CACHE_TTL_MS) {
+    try {
+      const opts = await getOpts();
+      if (!opts.remoteApiEnabled || !opts.backend) throw new Error("FABLE_BACKEND_NOT_CONFIGURED");
+      const request = await remoteFetch(opts, "fable-trader", `${opts.backend}/api/fable/trade`, {
+        method: "POST",
+        headers: apiHeaders(opts, { "content-type": "application/json" }),
+        body: JSON.stringify({ snapshot, ...(capture.image ? { chartImage: capture.image } : {}) }),
+        timeoutMs: 20_000,
+      });
+      if (!request.ok) throw new Error(request.state?.error || "FABLE_TRADER_HTTP_ERROR");
+      const data = await request.response.json();
+      record = { ...data, fingerprint, receivedAt: Date.now(), captureStatus: capture.status };
+      await new Promise((resolve) => chrome.storage.local.set({ [FABLE_TRADER_CACHE_KEY]: { ...cached, [fingerprint]: record } }, resolve));
+    }
+    catch (error) { const status = /abort|timeout/i.test(String(error)) ? "TIMEOUT" : "OFFLINE"; await patchIqDiagnostics(tabId, { fableTraderStatus: status, fableTraderAt: Date.now() }); return { ...local, decision: "WAIT", shadowEligible: false, rationale: "FABLE_TRADER_UNAVAILABLE", fableTrader: { status, error: String(error?.message || error) } }; }
+  }
+  const verdict = record?.analysis || {}; const decision = ["BUY", "SELL", "WAIT"].includes(verdict.decision) ? verdict.decision : "WAIT"; const confidence = Number(verdict.confidence);
+  const accepted = ["BUY", "SELL"].includes(decision);
+  const fableTrader = { status: "ONLINE", model: record?.model?.displayName || null, modelId: record?.model?.modelId || null, cached: !!cached[fingerprint], dataQuality: verdict.dataQuality ?? 0, imageUsed: verdict.imageUsed === true, visionStatus: capture.status === "PASS" ? (verdict.imageUsed === true ? "ENABLED" : "UNSUPPORTED") : capture.status, rawDecision: decision, rawConfidence: confidence, fingerprint };
+  await patchIqDiagnostics(tabId, { fableTraderStatus: "ONLINE", fableTrader, fableTraderAt: Date.now() });
+  return { ...local, strategyVersion: "fable-trader-v1-fable-only", decision, confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(.99, confidence)) : 0, shadowEligible: accepted, rationale: accepted ? "FABLE_TRADER_SHADOW" : "FABLE_TRADER_WAIT", reasons: (verdict.supportingFactors || []).slice(0, 8), counterReasons: (verdict.opposingFactors || []).slice(0, 8), fableTrader };
+}
 async function readInstrumentRegistry() {
   return new Promise((resolve) => chrome.storage.local.get([IQ_INSTRUMENT_REGISTRY_KEY], (s) => resolve(s[IQ_INSTRUMENT_REGISTRY_KEY] || {})));
 }
@@ -115,7 +184,7 @@ async function registerInstrument(instrument) {
   if (!instrument?.symbol || !Number.isSafeInteger(Number(instrument.activeId)) || Number(instrument.activeId) <= 0) return null;
   const registry = await readInstrumentRegistry();
   const id = String(instrument.activeId);
-  registry[id] = { activeId: Number(instrument.activeId), symbol: String(instrument.symbol).toUpperCase(), displaySymbol: instrument.displaySymbol || instrument.symbol, domain: instrument.domain || null, instrumentType: instrument.instrumentType || "unknown", observedAt: Date.now() };
+  registry[id] = { activeId: Number(instrument.activeId), symbol: String(instrument.symbol).toUpperCase(), displaySymbol: instrument.displaySymbol || instrument.symbol, domain: instrument.domain || null, source: instrument.source || "OBSERVED", verifiedAt: Number(instrument.verifiedAt) || null, sessionId: typeof instrument.sessionId === "string" ? instrument.sessionId.slice(0, 64) : null, instrumentType: instrument.instrumentType || "unknown", observedAt: Date.now() };
   await new Promise((resolve) => chrome.storage.local.set({ [IQ_INSTRUMENT_REGISTRY_KEY]: registry }, resolve));
   return registry[id];
 }
@@ -240,8 +309,9 @@ async function setOpt(key, value) {
 // ------------------------------------------------------------
 // Local signal path — deliberately zero HTTP.
 // ------------------------------------------------------------
-async function callAnalyze(symbol, tabId = null) {
-  return { ...(await localAnalyze(symbol, tabId)), backend: "LOCAL", remoteApi: await remoteState() };
+async function callAnalyze(symbol, tabId = null, tab = null, chartRect = null) {
+  const local = await localAnalyze(symbol, tabId);
+  return { ...(await fableTraderAnalyze(symbol, tabId, local, tab, chartRect)), backend: "LOCAL_FABLE", remoteApi: await remoteState() };
 }
 
 async function forwardIqMarket(frame, tabId, backend, opts) {
@@ -412,7 +482,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           sendResponse({ ok: true, data });
           return;
         }
-        const data = await callAnalyze(symbol, tabId);
+        const data = await callAnalyze(symbol, tabId, sender.tab, msg.payload?.chartRect || null);
         if (sender.tab?.id && data) await patchIqDiagnostics(sender.tab.id, { lastShadowDecision: data.decision || "WAIT", lastError: data.diagnostic?.message || null });
         sendResponse({ ok: true, data });
       } catch (e) {
@@ -435,6 +505,56 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       await chrome.tabs.sendMessage(sender.tab.id, { type: "tc.iq.assetDebugState", payload: debug }).catch(() => null);
       sendResponse({ ok: true });
       return;
+    }
+    if (msg.type === "tc.iq.sync") {
+      if (!sender.tab?.id || !sender.tab.url || !/^https:\/\/([a-z0-9-]+\.)?iqoption\.com\//i.test(sender.tab.url)) { sendResponse({ ok: false, error: "untrusted_iq_sender" }); return; }
+      // A sync window clears only the tab's transient binding diagnostics. It
+      // deliberately preserves market history and previously proven registry entries.
+      await patchIqDiagnostics(sender.tab.id, { syncState: "SYNCING", assetSync: "SYNCING", lastError: null, syncStartedAt: Number(msg.payload?.startedAt) || Date.now(), syncWindowMs: Math.min(10_000, Math.max(5_000, Number(msg.payload?.windowMs) || 8_000)), activeId: null, symbol: null, feedSymbol: null });
+      traceLog("SYNC", "IQ current-instrument sync requested", { tabId: sender.tab.id });
+      sendResponse({ ok: true });
+      return;
+    }
+    if (msg.type === "tc.iq.syncResult") {
+      if (!sender.tab?.id || !sender.tab.url || !/^https:\/\/([a-z0-9-]+\.)?iqoption\.com\//i.test(sender.tab.url)) { sendResponse({ ok: false, error: "untrusted_iq_sender" }); return; }
+      const result = msg.payload || {};
+      const synced = result.state === "SYNCED" && Number.isSafeInteger(Number(result.activeId)) && Number(result.activeId) > 0 && typeof result.symbol === "string" && Number.isFinite(Number(result.lastPrice)) && Number(result.lastPrice) > 0;
+      const streamPending = result.state === "STREAM_FOUND_MAPPING_PENDING" && Number.isSafeInteger(Number(result.activeId)) && Number(result.activeId) > 0 && Number.isFinite(Number(result.lastPrice)) && Number(result.lastPrice) > 0;
+      const warmup = synced ? await startFableWarmup(sender.tab.id, Number(result.activeId), String(result.symbol).toUpperCase()) : null;
+      await patchIqDiagnostics(sender.tab.id, synced ? { syncState: "SYNCED", assetSync: "ASSET_SYNCED", activeId: Number(result.activeId), symbol: result.symbol, feedSymbol: result.symbol, domain: result.domain || null, lastPrice: Number(result.lastPrice), syncSource: result.source || "iq-sync-window-registry", fableTraderStatus: "WARMING_UP", fableWarmupStartedAt: warmup?.startedAt || Date.now(), fableWarmupEndsAt: Number(warmup?.startedAt || Date.now()) + FABLE_WARMUP_MS, lastError: null } : streamPending ? { syncState: "STREAM_FOUND_MAPPING_PENDING", assetSync: "WAITING_FOR_ACTIVE_ID_MAPPING", activeId: Number(result.activeId), lastPrice: Number(result.lastPrice), lastError: null } : { syncState: String(result.state || "SYNC_FAILED").slice(0, 48), assetSync: "WAITING_FOR_ACTIVE_ID_MAPPING", lastError: String(result.state || "SYNC_FAILED").slice(0, 48) });
+      traceLog("SYNC", synced ? "IQ binding verified" : "IQ binding not resolved", { tabId: sender.tab.id, state: result.state, activeId: result.activeId ?? null, symbol: result.symbol ?? null });
+      sendResponse({ ok: true, synced });
+      return;
+    }
+    if (msg.type === "tc.iq.syncSummary") {
+      if (!sender.tab?.id || !sender.tab.url || !/^https:\/\/([a-z0-9-]+\.)?iqoption\.com\//i.test(sender.tab.url)) { sendResponse({ ok: false, error: "untrusted_iq_sender" }); return; }
+      const summary = globalThis.TraceConDiagnostic?.sanitize(msg.payload || {}) || {};
+      await patchIqDiagnostics(sender.tab.id, { syncSummary: summary, syncFailureReason: summary.syncFailureReason || null });
+      sendResponse({ ok: true });
+      return;
+    }
+    if (msg.type === "tc.iq.userConfirmedMapping") {
+      if (!sender.tab?.id || !sender.tab.url || !/^https:\/\/([a-z0-9-]+\.)?iqoption\.com\//i.test(sender.tab.url)) { sendResponse({ ok: false, error: "untrusted_iq_sender" }); return; }
+      const registered = await registerInstrument({ ...(msg.payload || {}), source: "USER_CONFIRMED_MAPPING", instrumentType: "user-confirmed" });
+      if (registered) { registered.source = "USER_CONFIRMED_MAPPING"; registered.verifiedAt = Number(msg.payload?.verifiedAt) || Date.now(); registered.sessionId = typeof msg.payload?.sessionId === "string" ? msg.payload.sessionId.slice(0, 64) : null; const registry = await readInstrumentRegistry(); registry[String(registered.activeId)] = registered; await new Promise((resolve) => chrome.storage.local.set({ [IQ_INSTRUMENT_REGISTRY_KEY]: registry }, resolve)); }
+      await patchIqDiagnostics(sender.tab.id, { activeId: registered?.activeId ?? null, registrySymbol: registered?.symbol ?? null, domain: registered?.domain ?? null, instrumentRegistry: registered ? "USER_CONFIRMED_MAPPING" : "UNAVAILABLE" });
+      sendResponse({ ok: !!registered, data: registered });
+      return;
+    }
+    if (msg.type === "tc.dev.diagnose") {
+      if (!sender.tab?.id || !sender.tab.url || !/^https:\/\/([a-z0-9-]+\.)?iqoption\.com\//i.test(sender.tab.url)) { sendResponse({ ok: false, error: "untrusted_iq_sender" }); return; }
+      const snapshot = globalThis.TraceConDiagnostic?.sanitize(msg.payload || {}) || {};
+      const fingerprint = globalThis.TraceConDiagnostic?.fingerprint(snapshot) || `tcdiag-${Date.now()}`;
+      const stored = await new Promise((resolve) => chrome.storage.local.get([DEV_DIAGNOSTIC_CACHE_KEY], (s) => resolve(s[DEV_DIAGNOSTIC_CACHE_KEY] || {})));
+      if (stored[fingerprint] && Date.now() - Number(stored[fingerprint].receivedAt || 0) < DEV_DIAGNOSTIC_CACHE_TTL_MS) { await patchIqDiagnostics(sender.tab.id, { aiDiagnosis: stored[fingerprint], fableStatus: "ONLINE" }); sendResponse({ ok: true, cached: true, data: stored[fingerprint] }); return; }
+      try {
+        const response = await fetch("http://127.0.0.1:8789/diagnose", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(snapshot) });
+        const data = await response.json(); if (!response.ok) throw new Error(data?.error || `DIAGNOSTIC_HTTP_${response.status}`);
+        const next = { ...stored, [fingerprint]: { ...data, fingerprint, receivedAt: Date.now() } }; await new Promise((resolve) => chrome.storage.local.set({ [DEV_DIAGNOSTIC_CACHE_KEY]: next }, resolve));
+        await patchIqDiagnostics(sender.tab.id, { aiDiagnosis: next[fingerprint], fableStatus: "ONLINE" });
+        sendResponse({ ok: true, cached: false, data: next[fingerprint] });
+      } catch (error) { const message = String(error?.message || error); await patchIqDiagnostics(sender.tab.id, { fableStatus: /abort|timeout/i.test(message) ? "TIMEOUT" : "OFFLINE", aiDiagnosis: { status: "UNAVAILABLE", receivedAt: Date.now() } }); sendResponse({ ok: false, error: message }); }
+      return true;
     }
     if (msg.type === "tc.iq.protocol") {
       if (!sender.tab?.id || !sender.tab.url || !/^https:\/\/([a-z0-9-]+\.)?iqoption\.com\//i.test(sender.tab.url)) { sendResponse({ ok: false, error: "untrusted_iq_sender" }); return; }

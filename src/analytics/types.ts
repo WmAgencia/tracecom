@@ -12,6 +12,7 @@ import type { DecisionDirection as FusionDirection } from "../fusion/types";
 
 export type DecisionDirection = FusionDirection;
 export type Outcome = "hit" | "miss" | "flat" | "stalled" | "error" | "pending";
+export type ProbabilitySource = "provided" | "derived_directional" | "unavailable";
 
 /**
  * Estados semânticos distintos:
@@ -35,6 +36,11 @@ export interface DecisionRecord {
   readonly score: number;
   readonly confidence: number;
   readonly probability: number | null;
+  /** Immutable three-way distribution captured at decision time. */
+  readonly pBuy?: number | null;
+  readonly pSell?: number | null;
+  readonly pWait?: number | null;
+  readonly probabilitySource?: ProbabilitySource;
   /** P-A: Platt-scaled probability learnt from `(symbol, timeframe, regime)`. Null se n<30. */
   readonly probabilityCalibrated?: number | null;
   readonly sampleSize: number;

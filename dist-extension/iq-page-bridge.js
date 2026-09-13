@@ -4,7 +4,17 @@
   if (window.__traceconIqBridge) return;
   window.__traceconIqBridge = true;
   let sequence = 0;
+  let lastCandleLogAt = 0;
+  const protocolCounts = new Map();
+  let protocolSummaryTimer = null;
   const finite = (value) => typeof value === "number" && Number.isFinite(value);
+  // Some IQ transports serialize numeric market fields as JSON strings. This
+  // accepts only an exact numeric representation; it never parses prose.
+  const marketNumber = (value) => {
+    if (finite(value)) return value;
+    if (typeof value !== "string" || !/^-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(value.trim())) return null;
+    const parsed = Number(value); return Number.isFinite(parsed) ? parsed : null;
+  };
   // IQ Option's `currency-updated` can carry id: 0 as a UI placeholder.
   // It is diagnostic only, never a market-instrument identifier.
   const numericId = (value) => Number.isSafeInteger(Number(value)) && Number(value) > 0 ? Number(value) : null;
@@ -41,11 +51,14 @@
     try { envelope = typeof raw === "string" ? JSON.parse(raw) : raw; } catch { return null; }
     if (!envelope || envelope.name !== "candle-generated" || !envelope.msg || typeof envelope.msg !== "object") return null;
     const c = envelope.msg;
-    if (![c.open, c.close, c.min, c.max, c.from, c.size].every(finite)) return null;
+    const open = marketNumber(c.open), close = marketNumber(c.close), low = marketNumber(c.min), high = marketNumber(c.max), from = marketNumber(c.from), size = marketNumber(c.size), to = marketNumber(c.to), volume = marketNumber(c.volume);
+    if (![open, close, low, high, from, size].every(Number.isFinite)) return null;
     const sizes = { 60: "1m", 300: "5m", 900: "15m", 3600: "1h", 14400: "4h", 86400: "1d" };
-    const timeframe = sizes[c.size];
-    if (!timeframe || numericId(c.active_id) == null) return null;
-    return { kind: "candle", activeId: numericId(c.active_id), timeframe, open: c.open, high: c.max, low: c.min, close: c.close, volume: finite(c.volume) ? c.volume : 0, timestamp: c.from * 1000, isClosed: c.to ? Date.now() >= c.to * 1000 : false, sequence: ++sequence, receivedAt: Date.now(), serverTime: c.to ? c.to * 1000 : undefined };
+    const timeframe = sizes[size] || `source-${size}s`;
+    const activeId = numericId(c.active_id); if (activeId == null) return null;
+    const frame = { kind: "candle", activeId, timeframe, sourceTimeframeSeconds: size, open, high, low, close, bid: marketNumber(c.bid), ask: marketNumber(c.ask), volume: Number.isFinite(volume) ? volume : 0, timestamp: from * 1000, isClosed: Number.isFinite(to) ? Date.now() >= to * 1000 : false, sequence: ++sequence, receivedAt: Date.now(), serverTime: Number.isFinite(to) ? to * 1000 : undefined };
+    if (Date.now() - lastCandleLogAt >= 1_000) { lastCandleLogAt = Date.now(); console.info("[TRACE_CON][CANDLE_NORMALIZED]", JSON.stringify({ activeId: frame.activeId, close: frame.close, bid: frame.bid, ask: frame.ask, size: frame.sourceTimeframeSeconds, from: frame.timestamp, to: frame.serverTime })); }
+    return frame;
   };
   const instruments = (raw) => {
     let envelope;
@@ -135,7 +148,16 @@
     const timestamp = Number.isFinite(rawTime) && rawTime > 0 ? (rawTime < 10_000_000_000 ? rawTime * 1000 : rawTime) : Date.now();
     return { kind: "tick", activeId, price, timestamp, sequence: ++sequence, receivedAt: Date.now() };
   };
-  const protocolLog = (signal) => { if (!signal) return; const observed = AssetSwitchDifferentialAnalyzer.observe(signal); const scope = observed.direction === "OUT" ? "WS_OUT" : "WS_IN"; console.info(`[TRACE_CON][${scope}]`, observed); remember(observed); };
+  const protocolLog = (signal) => {
+    if (!signal) return;
+    const observed = AssetSwitchDifferentialAnalyzer.observe(signal);
+    const key = `${observed.direction || "IN"}:${observed.transport || "ws"}:${observed.eventName || "unknown"}`;
+    const prior = protocolCounts.get(key) || { count: 0, activeIds: new Set(), symbols: new Set() };
+    prior.count += 1; for (const id of observed.activeIds || []) prior.activeIds.add(id); for (const symbol of observed.symbols || []) prior.symbols.add(symbol);
+    protocolCounts.set(key, prior);
+    if (!protocolSummaryTimer) protocolSummaryTimer = setTimeout(() => { const summary = [...protocolCounts.entries()].map(([name, value]) => ({ name, count: value.count, activeIds: [...value.activeIds].slice(0, 12), symbols: [...value.symbols].slice(0, 12) })); protocolCounts.clear(); protocolSummaryTimer = null; console.info("[TRACE_CON][MARKET_SUMMARY]", JSON.stringify(summary)); }, 5_000);
+    remember(observed);
+  };
   const observe = (socket) => {
     const originalSend = socket.send;
     if (typeof originalSend === "function") socket.send = function traceConPassiveSend(data) { protocolLog(marketProtocol(data, "OUT", "ws")); return originalSend.call(this, data); };
@@ -145,7 +167,7 @@
     const eventName = safeString(decoded?.value?.name, 80) || "unknown";
     if (/^candle-generated$/i.test(eventName) && structure) {
       const diagnostic = { type: "asset-debug-event", eventName, activeIds: [], structure };
-      console.info("[TRACE_CON][MARKET]", diagnostic);
+      console.info("[TRACE_CON][MARKET]", JSON.stringify({ eventName, pathCount: structure.paths?.length || 0 }));
       remember(diagnostic);
     }
     const frame = normalize(event.data) || tick(event.data); if (frame) { remember(frame); return; }

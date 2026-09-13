@@ -11,6 +11,7 @@ import { createOutcomeScheduler } from "../analytics/scheduler";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { existsSync } from "node:fs";
+import { FableTraderClient } from "../ai/fable-trader";
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** Resolve o publicDir ok em dev (src/http/public) ou build (dist/http/public). */
@@ -49,6 +50,7 @@ async function main(): Promise<void> {
   const rt = createMarketRuntime(config, {
     symbols,
   });
+  const fableTrader = config.fable.apiKey ? new FableTraderClient({ apiKey: config.fable.apiKey, baseUrl: config.fable.baseUrl, model: config.fable.model }) : undefined;
 
   const api = new TraceconHttpApi({
     runtime: rt,
@@ -56,6 +58,7 @@ async function main(): Promise<void> {
     host: process.env.HOST ?? (config.nodeEnv === "production" || process.env.PORT ? "0.0.0.0" : "127.0.0.1"),
     apiToken: config.apiToken,
     publicDir,
+    ...(fableTrader ? { fableTrader } : {}),
     logger: {
       info: (m, meta) => console.log(JSON.stringify({ event: m, ...(meta as object) })),
       error: (m, meta) => console.error(JSON.stringify({ event: m, level: "error", ...(meta as object) })),

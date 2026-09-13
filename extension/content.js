@@ -26,20 +26,76 @@
   let lastAssetDebugKey = null;
   let observedChartHeader = null;
   let chartHeaderObserver = null;
+  let marketOnline = false;
+  let syncTimer = null;
+  let syncSession = null;
+  let syncBinding = null;
+  let extensionContextAlive = true;
+  let lifecycleInvalidatedLogged = false;
+  let headerDiscoveryObserver = null;
+  let urlWatcherTimer = null;
+  let countdownTimer = null;
+  let marketRefreshTimer = null;
+  let shadowExpiryTimer = null;
+  let errorEl = null;
+  let lastSyncSummary = null;
+  const browserSessionId = `iq-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const devDiagnosticState = { eventTypes: {}, recentEvents: [], normalizedFrames: [], errors: [] };
+  const lifecycleListeners = [];
+
+  const isContextInvalidated = (error) => /extension context invalidated/i.test(String(error?.message || error || ""));
+  function teardownInvalidatedContext(error) {
+    if (!extensionContextAlive) return;
+    extensionContextAlive = false;
+    if (!lifecycleInvalidatedLogged) { lifecycleInvalidatedLogged = true; console.info("[TRACE_CON][LIFECYCLE] extension context invalidated; waiting for page reload"); }
+    // Once invalidated, this path must use page JavaScript only. In
+    // particular, never call chrome.runtime.onMessage.removeListener here:
+    // Chrome owns and discards that listener with the dead extension context.
+    try { clearTimeout(syncTimer); clearTimeout(visibleStatusTimer); clearTimeout(marketRefreshTimer); clearTimeout(shadowExpiryTimer); clearTimeout(countdownTimer); clearInterval(countdownTimer); clearInterval(urlWatcherTimer); } catch {}
+    try { chartHeaderObserver?.disconnect(); headerDiscoveryObserver?.disconnect(); } catch {}
+    for (const [target, type, listener] of lifecycleListeners) {
+      if (type === "page") { try { target.removeEventListener("message", listener); } catch {} }
+    }
+    try { if (errorEl) { errorEl.hidden = false; errorEl.textContent = "Extensão recarregada — atualize a IQ Option"; } } catch {}
+  }
+  function safeRuntimeSendMessage(message) {
+    if (!extensionContextAlive) return Promise.resolve(null);
+    try {
+      if (!chrome?.runtime?.id) { teardownInvalidatedContext(new Error("Extension context invalidated")); return Promise.resolve(null); }
+      const result = chrome.runtime.sendMessage(message);
+      return Promise.resolve(result).catch((error) => { if (isContextInvalidated(error)) teardownInvalidatedContext(error); return null; });
+    } catch (error) { teardownInvalidatedContext(error); return Promise.resolve(null); }
+  }
+  function safeStorageGet(keys, callback) {
+    if (!extensionContextAlive) return;
+    try { if (!chrome?.runtime?.id) { teardownInvalidatedContext(new Error("Extension context invalidated")); return; } chrome.storage.local.get(keys, (value) => { if (extensionContextAlive) callback(value || {}); }); } catch (error) { teardownInvalidatedContext(error); }
+  }
+  function safeStorageSet(value, callback = () => {}) {
+    if (!extensionContextAlive) return;
+    try { if (!chrome?.runtime?.id) { teardownInvalidatedContext(new Error("Extension context invalidated")); return; } chrome.storage.local.set(value, () => { if (extensionContextAlive) callback(); }); } catch (error) { teardownInvalidatedContext(error); }
+  }
 
   // IQ Option uses an isolated content world. The read-only bridge is loaded
   // in MAIN at document_start and posts only whitelisted inbound frames; this
   // script never reads credentials, cookies, storage or outgoing messages.
   if (/(^|\.)iqoption\.com$/i.test(location.hostname)) {
-    window.addEventListener("message", (event) => {
+    const iqBridgeMessageListener = (event) => {
+      if (!extensionContextAlive) return;
       if (event.source !== window || event.origin !== location.origin) return;
       const data = event.data;
       if (!data || data.channel !== "tracecon-iq-market" || !data.payload) return;
+      markMarketOnline();
+      recordSyncEvidence(data.payload);
+      const eventName = data.payload.eventName || data.payload.kind || data.payload.type || "unknown";
+      devDiagnosticState.eventTypes[eventName] = (devDiagnosticState.eventTypes[eventName] || 0) + 1;
+      devDiagnosticState.recentEvents.push(globalThis.TraceConDiagnostic?.sanitize({ timestamp: Date.now(), type: data.payload.type, kind: data.payload.kind, eventName: data.payload.eventName, activeId: data.payload.activeId, close: data.payload.close, price: data.payload.price, timestampValue: data.payload.timestamp }));
+      devDiagnosticState.recentEvents = devDiagnosticState.recentEvents.slice(-200);
+      if (data.payload.kind === "candle" || data.payload.kind === "tick") { devDiagnosticState.normalizedFrames.push(globalThis.TraceConDiagnostic?.sanitize(data.payload)); devDiagnosticState.normalizedFrames = devDiagnosticState.normalizedFrames.slice(-40); }
       if (data.payload.type === "instrument") {
         const mapped = globalThis.TraceConAssetResolver?.parse(data.payload.symbol || data.payload.name || data.payload.displaySymbol, "iq-observed-instrument", .98);
         if (mapped && Number.isSafeInteger(Number(data.payload.activeId)) && Number(data.payload.activeId) > 0) {
           iqInstrumentRegistry.set(String(data.payload.activeId), { ...mapped, activeId: Number(data.payload.activeId), instrumentType: data.payload.instrumentType || "unknown" });
-          chrome.runtime.sendMessage({ type: "tc.iq.instrument", payload: { ...mapped, activeId: Number(data.payload.activeId), instrumentType: data.payload.instrumentType || "unknown" } });
+          safeRuntimeSendMessage({ type: "tc.iq.instrument", payload: { ...mapped, activeId: Number(data.payload.activeId), instrumentType: data.payload.instrumentType || "unknown" } });
         }
         return;
       }
@@ -50,27 +106,27 @@
       if (data.payload.type === "protocol-event") {
         const signal = data.payload;
         const activeIds = Array.isArray(signal.activeIds) ? signal.activeIds.map((activeId) => ({ activeId, symbol: null })) : [];
-        const scope = signal.direction === "OUT" ? "WS_OUT" : "WS_IN";
-        console.info(`[TRACE_CON][${scope}]`, { transport: signal.transport, eventName: signal.eventName, activeIds: signal.activeIds || [], symbols: signal.symbols || [], fields: signal.fields || {} });
         publishAssetDebug("market-protocol", { eventName: signal.eventName, activeIds, symbols: signal.symbols || [], direction: signal.direction, transport: signal.transport, fields: signal.fields || {} });
-        chrome.runtime.sendMessage({ type: "tc.iq.protocol", payload: { direction: signal.direction, transport: signal.transport, eventName: signal.eventName, activeIds: signal.activeIds || [], symbols: signal.symbols || [], fields: signal.fields || {}, timestamp: signal.timestamp || Date.now() } });
+        safeRuntimeSendMessage({ type: "tc.iq.protocol", payload: { direction: signal.direction, transport: signal.transport, eventName: signal.eventName, activeIds: signal.activeIds || [], symbols: signal.symbols || [], fields: signal.fields || {}, timestamp: signal.timestamp || Date.now() } });
         return;
       }
       const context = detectAsset(data.payload.activeId);
       if (data.payload.type === "bridge-ready") {
-        chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, activeId: data.payload.activeId ?? null, assetMismatch: !!context?.assetMismatch, assetResolutionConfidence: context?.confidence || 0, timeframe: detectTimeframe() } });
+        safeRuntimeSendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, activeId: data.payload.activeId ?? null, assetMismatch: !!context?.assetMismatch, assetResolutionConfidence: context?.confidence || 0, timeframe: detectTimeframe() } });
         return;
       }
       if (!context?.symbol || context.assetMismatch || context.confidence < .65 || !context.visibleConfirmed || !context.mappingConfirmed) {
-        chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, visibleSymbol: context?.visibleSymbol || null, activeId: data.payload.activeId ?? null, registrySymbol: context?.feedSymbol || null, assetMismatch: !!context?.assetMismatch, visibleConfirmed: !!context?.visibleConfirmed, mappingConfirmed: !!context?.mappingConfirmed, assetResolutionConfidence: context?.confidence || 0, timeframe: data.payload.timeframe || null } });
+        safeRuntimeSendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, visibleSymbol: context?.visibleSymbol || null, activeId: data.payload.activeId ?? null, registrySymbol: context?.feedSymbol || null, assetMismatch: !!context?.assetMismatch, visibleConfirmed: !!context?.visibleConfirmed, mappingConfirmed: !!context?.mappingConfirmed, assetResolutionConfidence: context?.confidence || 0, timeframe: data.payload.timeframe || null } });
         return; // never guess activeId -> symbol mapping
       }
       const key = `${context.symbol}|${context.domain}`;
       if (lastResolvedAssetKey && lastResolvedAssetKey !== key) console.info("[TRACE_CON][ASSET] switched", { from: lastResolvedAssetKey, to: key });
       lastResolvedAssetKey = key;
       console.info("[TRACE_CON][ASSET]", { visibleSymbol: context.visibleSymbol || context.symbol, activeId: data.payload.activeId, resolvedSymbol: context.symbol, source: context.source, confidence: context.confidence, domain: context.domain });
-      chrome.runtime.sendMessage({ type: "tc.iq.market", payload: { ...data.payload, symbol: context.symbol, domain: context.domain, visibleSymbol: context.visibleSymbol || context.symbol, visibleConfirmed: true, mappingConfirmed: true, assetResolutionConfidence: context.confidence, assetSource: context.source, uiPrice: detectUiPrice() } });
-    });
+      safeRuntimeSendMessage({ type: "tc.iq.market", payload: { ...data.payload, symbol: context.symbol, domain: context.domain, visibleSymbol: context.visibleSymbol || context.symbol, visibleConfirmed: true, mappingConfirmed: true, assetResolutionConfidence: context.confidence, assetSource: context.source, uiPrice: detectUiPrice() } });
+    };
+    window.addEventListener("message", iqBridgeMessageListener);
+    lifecycleListeners.push([window, "page", iqBridgeMessageListener]);
   }
 
   // ------------------------------------------------------------
@@ -81,6 +137,7 @@
     const url = location.href;
 
     if (/(^|\.)iqoption\.com$/i.test(host)) {
+      if (syncBinding && Number(activeId) === syncBinding.activeId) return { ...syncBinding, activeId, visibleSymbol: syncBinding.symbol, feedSymbol: syncBinding.symbol, assetMismatch: false, visibleConfirmed: true, mappingConfirmed: true, source: "iq-protocol-sync-binding", confidence: 1 };
       const visible = globalThis.TraceConAssetResolver?.resolveVisible(document) || null;
       const mapped = activeId != null ? iqInstrumentRegistry.get(String(activeId)) || null : null;
       if (mapped && visible && !globalThis.TraceConAssetResolver.same(mapped, visible)) return { ...visible, activeId, visibleSymbol: visible.symbol, feedSymbol: mapped.symbol, assetMismatch: true, visibleConfirmed: true, mappingConfirmed: true, source: "iq-visible-vs-activeid-mismatch", confidence: 0 };
@@ -130,13 +187,24 @@
     return null;
   }
 
+  function detectChartRect() {
+    const candidates = [...document.querySelectorAll("canvas, [class*='chart' i], [data-testid*='chart' i]")];
+    const visible = candidates.map((element) => {
+      const rect = element.getBoundingClientRect?.();
+      return rect && rect.width >= 300 && rect.height >= 180 && rect.bottom > 0 && rect.right > 0 ? rect : null;
+    }).filter(Boolean).sort((a, b) => (b.width * b.height) - (a.width * a.height));
+    const rect = visible[0];
+    if (!rect) return null;
+    return { left: Math.max(0, Math.round(rect.left)), top: Math.max(0, Math.round(rect.top)), width: Math.round(rect.width), height: Math.round(rect.height), viewportWidth: window.innerWidth, viewportHeight: window.innerHeight };
+  }
+
   function publishVisibleAssetStatus() {
     if (!/(^|\.)iqoption\.com$/i.test(location.hostname)) return;
     const context = detectAsset();
     const key = `${context?.visibleSymbol || "UNKNOWN"}|${context?.domain || "UNKNOWN"}`;
     if (key === lastVisibleStatusKey) return;
     lastVisibleStatusKey = key;
-    chrome.runtime.sendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, visibleSymbol: context?.visibleSymbol || null, registrySymbol: context?.feedSymbol || null, activeId: context?.activeId ?? null, assetMismatch: !!context?.assetMismatch, visibleConfirmed: !!context?.visibleConfirmed, mappingConfirmed: !!context?.mappingConfirmed, assetResolutionConfidence: context?.confidence || 0, timeframe: detectTimeframe(), visibleSource: context?.source || null } });
+    safeRuntimeSendMessage({ type: "tc.iq.status", payload: { bridgeActive: true, symbol: context?.symbol || null, visibleSymbol: context?.visibleSymbol || null, registrySymbol: context?.feedSymbol || null, activeId: context?.activeId ?? null, assetMismatch: !!context?.assetMismatch, visibleConfirmed: !!context?.visibleConfirmed, mappingConfirmed: !!context?.mappingConfirmed, assetResolutionConfidence: context?.confidence || 0, timeframe: detectTimeframe(), visibleSource: context?.source || null } });
     publishAssetDebug("dom-mutation");
     observeResolvedChartHeader();
   }
@@ -165,8 +233,8 @@
     const key = JSON.stringify({ reason, visibleText: payload.visibleText, candidate: payload.domCandidate?.rect, activeId: payload.activeId, registrySymbol: payload.registrySymbol, websocket });
     if (key === lastAssetDebugKey) return;
     lastAssetDebugKey = key;
-    console.info("[TRACE_CON][ASSET_DEBUG]", payload);
-    chrome.runtime.sendMessage({ type: "tc.iq.assetDebug", payload });
+    console.info("[TRACE_CON][ASSET_DEBUG]", JSON.stringify({ reason: payload.reason, visibleText: payload.visibleText, activeId: payload.activeId, registrySymbol: payload.registrySymbol, status: payload.status }));
+    safeRuntimeSendMessage({ type: "tc.iq.assetDebug", payload });
   }
 
   // ------------------------------------------------------------
@@ -240,7 +308,7 @@
       <button class="tc-min" id="tcMin" type="button" aria-label="minimizar">─</button>
     </div>
     <div class="tc-error" id="tcError" hidden></div>
-    <pre id="tcAssetDebug" hidden style="position:fixed;left:12px;bottom:72px;z-index:2147483647;max-width:620px;margin:0;padding:10px;background:#08130e;color:#b8ffca;border:1px solid #406d50;border-radius:8px;font:11px/1.35 ui-monospace,monospace;white-space:pre-wrap;pointer-events:none"></pre>
+    <div class="tc-confirm" id="tcConfirm" hidden><span>Stream encontrado. Confirme o ativo aberto:</span><select id="tcConfirmAsset" aria-label="Ativo do stream"><option value="EURUSD-OTC">EUR/USD · OTC</option><option value="USDCAD-OTC">USD/CAD · OTC</option><option value="GBPUSD-OTC">GBP/USD · OTC</option><option value="USDJPY-OTC">USD/JPY · OTC</option><option value="AUDUSD-OTC">AUD/USD · OTC</option><option value="EURUSD">EUR/USD</option><option value="USDCAD">USD/CAD</option><option value="GBPUSD">GBP/USD</option><option value="USDJPY">USD/JPY</option></select><button id="tcConfirmMapping" type="button">CONFIRMAR</button></div>
   `;
   document.body.appendChild(root);
 
@@ -253,8 +321,10 @@
     <div class="tc-countdown"><span>Janela</span><strong id="tcCountdown">00:00</strong></div>
     <div class="tc-decision"><div class="tc-signal is-wait" id="tcSignal"><em class="tc-signal-pulse"></em><b id="tcSignalText">WAIT</b></div><small id="tcReason">Analisando mercado</small></div>
     <div class="tc-prob"><span>Confiança</span><b id="tcProb">—</b></div>
-    <div class="tc-feed" id="tcFeed" title="Feed de mercado"><i></i><b id="tcFeedText">ANALYZING</b></div>
+    <div class="tc-feed" id="tcFeed" title="Estado de mercado"><i></i><b id="tcFeedText">AGUARDANDO SINCRONIZAÇÃO</b></div>
+    <button class="tc-refresh tc-sync" id="tcSync" type="button" title="Sincronizar com o gráfico atual">↻ SINCRONIZAR</button>
     <button class="tc-min" id="tcMin" type="button" aria-label="expandir detalhes" title="Expandir detalhes">•••</button>
+    <button class="tc-min" id="tcAiDiagnostic" type="button" hidden title="Diagnóstico IA">◈</button>
     <div class="tc-legacy" aria-hidden="true"><b id="tcTimeframe">1h</b><span id="tcCi"><b id="tcCiLower"></b></span><span id="tcEv"><b id="tcEvVal"></b></span><span id="tcPrice"></span><span id="tcShadowBadge"></span><span id="tcShadowPnl"><b id="tcShadowPnlVal"></b></span><button id="tcRefresh" type="button"></button><label id="tcAutoLabel"><span class="tc-auto-switch"></span></label></div>`;
 
   // Page detected is useful even when no candle has arrived yet. The server
@@ -263,7 +333,7 @@
     publishVisibleAssetStatus();
     // A small discovery observer finds the actual chart-header node once; all
     // subsequent asset updates are observed on that node, not document.body.
-    const headerDiscoveryObserver = new MutationObserver(() => { clearTimeout(visibleStatusTimer); visibleStatusTimer = setTimeout(observeResolvedChartHeader, 100); });
+    headerDiscoveryObserver = new MutationObserver(() => { clearTimeout(visibleStatusTimer); visibleStatusTimer = setTimeout(observeResolvedChartHeader, 100); });
     headerDiscoveryObserver.observe(document.documentElement, { subtree: true, childList: true });
     observeResolvedChartHeader();
   }
@@ -287,41 +357,43 @@
   const refreshBtn = root.querySelector("#tcRefresh");
   const autoLabel = root.querySelector("#tcAutoLabel");
   const minBtn = root.querySelector("#tcMin");
-  const errorEl = root.querySelector("#tcError");
-  const assetDebugEl = root.querySelector("#tcAssetDebug");
-  function renderAssetDebug(debug) {
-    if (!assetDebugEl || !debug) return;
-    const candidate = debug.domCandidate || {};
-    const structure = debug.websocket?.structure?.paths?.slice(0, 8).map((item) => `${item.path}:${item.type}${item.value != null ? `=${item.value}` : ""}`).join(" | ") || "—";
-    assetDebugEl.textContent = `ASSET DEBUG\nVISIBLE_TEXT: ${debug.visibleText || "—"}\nDOM_CANDIDATE: ${candidate.text || "—"}\nDOM_SOURCE: ${debug.domSource || "—"}\nACTIVE_ID: ${debug.activeId ?? "—"}\nACTIVE_ID_CONFIDENCE: ${debug.activeIdConfidence || "LOW"}\nACTIVE_ID_SOURCE: ${debug.websocket?.eventName || "—"}\nMARKET_STRUCTURE: ${structure}\nREGISTRY_SYMBOL: ${debug.registrySymbol || "—"}\nFEED_SYMBOL: ${debug.feedSymbol || "—"}\nLAST_PRICE: ${debug.lastPrice ?? "—"}\nSTATUS: ${debug.status || "UNKNOWN"}`;
-    assetDebugEl.hidden = false;
-  }
+  const aiDiagnosticBtn = root.querySelector("#tcAiDiagnostic");
+  errorEl = root.querySelector("#tcError");
   const countdownEl = root.querySelector("#tcCountdown");
   const feedEl = root.querySelector("#tcFeed");
   const feedTextEl = root.querySelector("#tcFeedText");
+  const syncBtn = root.querySelector("#tcSync");
+  const confirmEl = root.querySelector("#tcConfirm");
+  const confirmAssetEl = root.querySelector("#tcConfirmAsset");
+  const confirmMappingBtn = root.querySelector("#tcConfirmMapping");
+  bar.appendChild(confirmEl);
 
   let lastSignal = null;
   let collapsed = false;
   let autoOn = false;
-  let countdownTimer = null;
 
   // restore state from storage
-  chrome.storage.local.get(["tcAuto", "tcCollapsed", "tcShadow", "tcShadowOn"], (s) => {
+  safeStorageGet(["tcAuto", "tcCollapsed", "tcShadow", "tcShadowOn"], (s) => {
     autoOn = !!s.tcAuto;
     collapsed = !!s.tcCollapsed;
     applyAuto();
     applyCollapsed();
     applyShadowBadge();
   });
+  safeStorageGet(["tcIqInstrumentRegistry"], (s) => {
+    for (const [activeId, value] of Object.entries(s.tcIqInstrumentRegistry || {})) {
+      if (Number.isSafeInteger(Number(activeId)) && value?.symbol) iqInstrumentRegistry.set(String(activeId), value);
+    }
+  });
 
   function applyAuto() {
     autoLabel.classList.toggle("is-on", autoOn);
-    chrome.storage.local.set({ tcAuto: autoOn });
+    safeStorageSet({ tcAuto: autoOn });
   }
   function applyCollapsed() {
     bar.classList.toggle("is-collapsed", collapsed);
     minBtn.textContent = collapsed ? "+" : "─";
-    chrome.storage.local.set({ tcCollapsed: collapsed });
+    safeStorageSet({ tcCollapsed: collapsed });
   }
 
   // ------------------------------------------------------------
@@ -330,12 +402,12 @@
   // NÃO executa nada. Apenas registra e mostra P&L atual.
   // ------------------------------------------------------------
   function readShadowEnabled(cb) {
-    chrome.storage.local.get(["tcShadowEnabled"], (s) => {
+    safeStorageGet(["tcShadowEnabled"], (s) => {
       cb(s.tcShadowEnabled !== false);
     });
   }
   function applyShadowBadge() {
-    chrome.storage.local.get(["tcShadowOn", "tcShadow"], (s) => {
+    safeStorageGet(["tcShadowOn", "tcShadow"], (s) => {
       const open = s.tcShadowOn;
       const t = s.tcShadow;
       if (open && t) {
@@ -366,7 +438,7 @@
     shadowPnlValEl.style.color = signed >= 0 ? "#4ADE80" : "#F87171";
   }
   function nextShadowRunMeta(callback) {
-    chrome.storage.local.get(["tcShadowHistory"], (stored) => {
+    safeStorageGet(["tcShadowHistory"], (stored) => {
       const completed = (Array.isArray(stored.tcShadowHistory) ? stored.tcShadowHistory : []).filter((x) => ["WIN", "LOSS", "DRAW"].includes(x.outcome)).length;
       callback(`RUN-${String.fromCharCode(65 + Math.min(25, Math.floor(completed / 100)))}`, completed % 100 + 1);
     });
@@ -392,17 +464,19 @@
       runId,
       tradeNumber,
       strategyVersion: payload?.strategyVersion || "trace1m-local-v1",
+      agent: payload?.fableTrader ? { profile: "FABLE_TRADER", ...payload.fableTrader } : { profile: "LOCAL_ENGINE" },
       signature: payload?.signature || null,
       features: payload?.features ? { ...payload.features } : {},
       reasons: Array.isArray(payload?.reasons) ? [...payload.reasons] : [],
       counterReasons: Array.isArray(payload?.counterReasons) ? [...payload.counterReasons] : [],
       snapshot: payload?.snapshot ? JSON.parse(JSON.stringify(payload.snapshot)) : null,
     };
-    chrome.storage.local.set({ tcShadowOn: trade, tcShadow: trade }, () => {
+    safeStorageSet({ tcShadowOn: trade, tcShadow: trade }, () => {
       applyShadowBadge();
-      chrome.runtime.sendMessage({ type: "tc.shadowOpen", payload: trade });
-      setTimeout(() => {
-        chrome.storage.local.get(["tcShadowOn"], (state) => {
+      safeRuntimeSendMessage({ type: "tc.shadowOpen", payload: trade });
+      clearTimeout(shadowExpiryTimer);
+      shadowExpiryTimer = setTimeout(() => {
+        safeStorageGet(["tcShadowOn"], (state) => {
           if (state.tcShadowOn?.entryTime === trade.entryTime) closeShadowTrade("expiry_60s", state.tcShadowOn.currentPrice);
         });
       }, 60_250);
@@ -410,7 +484,7 @@
     });
   }
   function closeShadowTrade(reason, currentPrice) {
-    chrome.storage.local.get(["tcShadowOn"], (s) => {
+    safeStorageGet(["tcShadowOn"], (s) => {
       const t = s.tcShadowOn;
       if (!t) return;
       const closed = {
@@ -428,17 +502,17 @@
       closed.exitTimestamp = closed.exitTime;
       closed.postAnalysis = { outcome: closed.outcome, returnPct: closed.returnPct, evaluatedAt: closed.exitTime, snapshotPreserved: true };
       // empurra pro histórico e limpa o aberto
-      chrome.storage.local.get(["tcShadowHistory"], (h) => {
+      safeStorageGet(["tcShadowHistory"], (h) => {
         const history = Array.isArray(h.tcShadowHistory) ? h.tcShadowHistory : [];
         history.push(closed);
         // mantém últimos 50
         while (history.length > 1000) history.shift();
-        chrome.storage.local.set(
+        safeStorageSet(
           { tcShadowOn: null, tcShadow: null, tcShadowHistory: history },
           () => {
             applyShadowBadge();
             // pede pro background enviar pro backend
-            chrome.runtime.sendMessage({ type: "tc.shadowClose", payload: closed });
+            safeRuntimeSendMessage({ type: "tc.shadowClose", payload: closed });
           },
         );
       });
@@ -522,13 +596,13 @@
       const symbol = payload?.symbol || symbolEl.textContent;
       const timeframe = tfEl.textContent;
       const currentPrice = payload?.currentPrice;
-      chrome.storage.local.get(["tcShadowOn"], (s) => {
+      safeStorageGet(["tcShadowOn"], (s) => {
         const open = s.tcShadowOn;
         const isDirectional = d === "BUY" || d === "SELL";
         if (!shadowEnabled) {
           // shadow off: se sobrou trade aberto de antes, limpa silenciosamente
           if (open) {
-            chrome.storage.local.set({ tcShadowOn: null, tcShadow: null }, () => {
+            safeStorageSet({ tcShadowOn: null, tcShadow: null }, () => {
               applyShadowBadge();
             });
           }
@@ -551,13 +625,14 @@
               reasons: payload?.reasons,
               counterReasons: payload?.counterReasons,
               snapshot: payload?.snapshot,
+              fableTrader: payload?.fableTrader,
             });
           } else {
             // já existe: atualiza currentPrice e verifica se mudou de direção/símbolo/TF
             if (currentPrice != null) {
               // mesma direção/símbolo/TF: só atualiza P&L
               const updated = { ...open, currentPrice };
-              chrome.storage.local.set({ tcShadowOn: updated, tcShadow: updated }, () => {
+              safeStorageSet({ tcShadowOn: updated, tcShadow: updated }, () => {
                 applyShadowBadge();
               });
             }
@@ -566,7 +641,7 @@
           // WAIT does not rewrite an earlier paper decision. Keep the latest
           // observed price; the backend evaluates the immutable entry at T+60s.
           const updated = { ...open, currentPrice };
-          chrome.storage.local.set({ tcShadowOn: updated, tcShadow: updated }, applyShadowBadge);
+          safeStorageSet({ tcShadowOn: updated, tcShadow: updated }, applyShadowBadge);
         }
       });
     });
@@ -582,11 +657,129 @@
     signalText.textContent = "OFF";
     probEl.textContent = "—";
     priceEl.textContent = "";
-    feedEl.dataset.state = "offline";
-    feedTextEl.textContent = "OFFLINE";
+    feedEl.dataset.state = marketOnline ? "waiting" : "offline";
+    feedTextEl.textContent = marketOnline ? "AGUARDANDO SINCRONIZAÇÃO" : "MERCADO AGUARDANDO";
     countdownEl.textContent = "00:00";
     errorEl.hidden = false;
-    errorEl.textContent = msg;
+    errorEl.textContent = msg || "Aguardando sincronização com o gráfico";
+  }
+
+  function markMarketOnline() {
+    marketOnline = true;
+    if (feedTextEl && feedTextEl.textContent !== "SYNCED" && feedTextEl.textContent !== "LOCAL SHADOW") {
+      feedEl.dataset.state = "synced";
+      feedTextEl.textContent = "MERCADO ONLINE";
+    }
+  }
+
+  function startSync() {
+    if (!/(^|\.)iqoption\.com$/i.test(location.hostname)) return;
+    syncBinding = null;
+    confirmEl.hidden = true;
+    syncSession = { startedAt: Date.now(), endsAt: Date.now() + 8_000, streams: new Map(), protocolEvents: [] };
+    syncBtn.disabled = true;
+    syncBtn.textContent = "SINCRONIZANDO…";
+    feedEl.dataset.state = "waiting";
+    feedTextEl.textContent = "SINCRONIZANDO COM O GRÁFICO…";
+    signalEl.className = "tc-signal is-wait";
+    signalText.textContent = "WAIT";
+    errorEl.hidden = true;
+    safeRuntimeSendMessage({ type: "tc.iq.sync", payload: { startedAt: Date.now(), windowMs: 8_000 } });
+    window.postMessage({ channel: "tracecon-iq-control", type: "replay-request" }, location.origin);
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      finalizeSync();
+      syncBtn.disabled = false;
+      syncBtn.textContent = "↻ SINCRONIZAR";
+    }, 8_000);
+  }
+
+  function requestAiDiagnosis(summary = lastSyncSummary, automatic = false) {
+    let buildVersion = "unknown";
+    try { buildVersion = chrome.runtime.getManifest().version || buildVersion; } catch { /* extension context may have been invalidated */ }
+    const snapshot = globalThis.TraceConDiagnostic?.sanitize({ build: { version: buildVersion, devBuild: true, timestamp: Date.now() }, pageState: { url: location.pathname }, lifecycleState: { extensionContextAlive }, bridgeState: { loaded: !!window.__traceconIqBridge }, syncState: summary || { active: !!syncSession, failure: errorEl?.textContent || null, candidates: syncSession ? [...syncSession.streams.values()] : [] }, currentBinding: syncBinding, marketState: { marketOnline, lastMarketEventAt: devDiagnosticState.recentEvents.at(-1)?.timestamp || null, marketEventCount: devDiagnosticState.recentEvents.length }, protocolSummary: { eventTypes: devDiagnosticState.eventTypes }, recentEvents: devDiagnosticState.recentEvents, normalizedFrames: devDiagnosticState.normalizedFrames, registry: [...iqInstrumentRegistry.values()], errors: devDiagnosticState.errors, codeContext: { recordSyncEvidence: "Counts only normalized candle/tick frames by activeId during one 8s window.", finalizeSync: "Requires exactly one live candidate; verified mapping syncs, otherwise user confirmation is required.", bridgeNormalization: "Accepts normalized candle-generated fields active_id, OHLC, from and size; raw broker envelopes never leave the page." } }) || {};
+    aiDiagnosticBtn.disabled = true; aiDiagnosticBtn.textContent = "…";
+    safeRuntimeSendMessage({ type: "tc.dev.diagnose", payload: snapshot }).then((response) => {
+      aiDiagnosticBtn.disabled = false; aiDiagnosticBtn.textContent = "◈";
+      const diagnosis = response?.data?.diagnosis || response?.data || null;
+      if (diagnosis) console.info("[TRACE_CON][AI_DIAGNOSIS]", JSON.stringify(diagnosis));
+      else if (!automatic && response?.error) { errorEl.hidden = false; errorEl.textContent = "Diagnóstico IA indisponível localmente"; }
+    });
+  }
+
+  function recordSyncEvidence(payload) {
+    if (!syncSession || Date.now() > syncSession.endsAt) return;
+    const activeId = Number(payload?.activeId);
+    if (Number.isSafeInteger(activeId) && activeId > 0 && (payload?.kind === "candle" || payload?.kind === "tick")) {
+      const row = syncSession.streams.get(activeId) || { activeId, candles: 0, ticks: 0, lastPrice: null, firstSeenAt: Date.now(), lastSeenAt: null, timestamps: [] };
+      if (payload.kind === "candle") { row.candles += 1; row.lastPrice = Number.isFinite(Number(payload.close)) ? Number(payload.close) : row.lastPrice; }
+      if (payload.kind === "tick") { row.ticks += 1; row.lastPrice = Number.isFinite(Number(payload.price)) ? Number(payload.price) : row.lastPrice; }
+      row.lastSeenAt = Date.now(); row.timestamps = [...(row.timestamps || []).slice(-5), Number(payload.timestamp) || Date.now()]; syncSession.streams.set(activeId, row);
+    }
+    if (payload?.type === "protocol-event") syncSession.protocolEvents.push({ eventName: payload.eventName || "unknown", direction: payload.direction || null, activeIds: Array.isArray(payload.activeIds) ? payload.activeIds.filter((id) => Number.isSafeInteger(Number(id)) && Number(id) > 0).slice(0, 24) : [], timestamp: Date.now() });
+  }
+
+  function finalizeSync() {
+    const session = syncSession; syncSession = null;
+    if (!session) return;
+    const candidates = [...session.streams.values()].filter((row) => (row.candles > 0 || row.ticks > 0) && Number.isFinite(row.lastPrice) && row.lastPrice > 0);
+    const candidateSummary = candidates.map((row) => ({ activeId: row.activeId, candles: row.candles, priceUpdates: row.ticks, lastPrice: row.lastPrice, timestamps: row.timestamps || [], advancingTimestamp: new Set(row.timestamps || []).size > 1 }));
+    const summary = globalThis.TraceConDiagnostic?.sanitize({ candidateStreams: candidateSummary, candidateActiveIds: candidateSummary.map((row) => row.activeId), priceUpdatesByActiveId: Object.fromEntries(candidateSummary.map((row) => [row.activeId, row.priceUpdates])), candleUpdatesByActiveId: Object.fromEntries(candidateSummary.map((row) => [row.activeId, row.candles])), lastPriceByActiveId: Object.fromEntries(candidateSummary.map((row) => [row.activeId, row.lastPrice])), registryMappings: Object.fromEntries([...iqInstrumentRegistry.entries()].map(([id, row]) => [id, { symbol: row.symbol, domain: row.domain, source: row.source || "OBSERVED" }])), outboundSubscriptions: session.protocolEvents.filter((row) => row.direction === "OUT").slice(-40), inboundSubscriptions: session.protocolEvents.filter((row) => row.direction === "IN").slice(-40), syncFailureReason: null }) || {};
+    lastSyncSummary = summary;
+    const resolved = candidates.map((row) => ({ ...row, instrument: iqInstrumentRegistry.get(String(row.activeId)) || null })).filter((row) => row.instrument);
+    if (resolved.length === 1 && candidates.length === 1) {
+      const row = resolved[0];
+      syncBinding = { ...row.instrument, activeId: row.activeId, source: "iq-sync-window-registry", confidence: 1, lastPrice: row.lastPrice };
+      lastResolvedAssetKey = `${syncBinding.symbol}|${syncBinding.domain}`;
+      setAsset(syncBinding);
+      feedEl.dataset.state = "synced";
+      feedTextEl.textContent = "MERCADO ONLINE";
+      safeRuntimeSendMessage({ type: "tc.iq.syncResult", payload: { state: "SYNCED", activeId: row.activeId, symbol: row.instrument.symbol, domain: row.instrument.domain, lastPrice: row.lastPrice, candles: row.candles, ticks: row.ticks, source: syncBinding.source } });
+      safeRuntimeSendMessage({ type: "tc.iq.syncSummary", payload: { ...summary, syncFailureReason: null } });
+      fetchSignal(true);
+      return;
+    }
+    if (candidates.length === 1) {
+      const row = candidates[0];
+      feedEl.dataset.state = "synced";
+      feedTextEl.textContent = "STREAM ONLINE — ASSOCIANDO ATIVO";
+      const confidentCandidate = row.candles > 0 && (row.ticks > 1 || row.candles > 1) && (new Set(row.timestamps || []).size > 1);
+      setError(confidentCandidate ? "Stream encontrado. Confirme o ativo aberto para concluir a associação." : "Stream e preço ao vivo encontrados. Aguardando evidência adicional.");
+      confirmEl.hidden = !confidentCandidate;
+      confirmEl.dataset.activeId = String(row.activeId);
+      summary.syncFailureReason = confidentCandidate ? "STREAM_FOUND_SYMBOL_UNKNOWN" : "STREAM_EVIDENCE_INSUFFICIENT";
+      lastSyncSummary = summary;
+      safeRuntimeSendMessage({ type: "tc.iq.syncSummary", payload: summary });
+      safeRuntimeSendMessage({ type: "tc.iq.syncResult", payload: { state: "STREAM_FOUND_MAPPING_PENDING", activeId: row.activeId, lastPrice: row.lastPrice, candles: row.candles, ticks: row.ticks } });
+      requestAiDiagnosis(summary, true);
+      return;
+    }
+    const state = candidates.length ? "SYNC_NEEDS_SWITCH" : "NO_LIVE_MARKET_STREAM";
+    feedEl.dataset.state = "waiting";
+    feedTextEl.textContent = state === "SYNC_NEEDS_SWITCH" ? "TROQUE DE ATIVO E SINCRONIZE" : "AGUARDANDO STREAM DE MERCADO";
+    setError(state === "SYNC_NEEDS_SWITCH" ? "Não foi possível identificar o stream atual. Troque de ativo e tente novamente." : "Nenhum stream com preço ao vivo foi observado.");
+    summary.syncFailureReason = state; lastSyncSummary = summary;
+    safeRuntimeSendMessage({ type: "tc.iq.syncSummary", payload: summary });
+    safeRuntimeSendMessage({ type: "tc.iq.syncResult", payload: { state, candidates: candidates.map((row) => ({ activeId: row.activeId, candles: row.candles, ticks: row.ticks, lastPrice: row.lastPrice })) } });
+    if (state === "SYNC_NEEDS_SWITCH") requestAiDiagnosis(summary, true);
+  }
+
+  async function confirmCurrentStreamMapping() {
+    const activeId = Number(confirmEl.dataset.activeId);
+    if (!Number.isSafeInteger(activeId) || activeId <= 0 || !lastSyncSummary || lastSyncSummary.candidateActiveIds?.length !== 1) return;
+    const selected = globalThis.TraceConAssetResolver?.parse(confirmAssetEl.options[confirmAssetEl.selectedIndex]?.textContent || "", "user-confirmed-mapping", 1);
+    if (!selected) return;
+    confirmMappingBtn.disabled = true;
+    const mapping = { ...selected, activeId, source: "USER_CONFIRMED_MAPPING", verifiedAt: Date.now(), sessionId: browserSessionId };
+    const response = await safeRuntimeSendMessage({ type: "tc.iq.userConfirmedMapping", payload: mapping });
+    confirmMappingBtn.disabled = false;
+    if (!response?.ok) { setError("Não foi possível salvar a confirmação do ativo."); return; }
+    iqInstrumentRegistry.set(String(activeId), mapping);
+    const candidate = lastSyncSummary.candidateStreams[0];
+    syncBinding = { ...mapping, lastPrice: candidate.lastPrice, confidence: 1 };
+    confirmEl.hidden = true; setAsset(syncBinding); feedEl.dataset.state = "synced"; feedTextEl.textContent = "MERCADO ONLINE"; errorEl.hidden = true;
+    safeRuntimeSendMessage({ type: "tc.iq.syncResult", payload: { state: "SYNCED", activeId, symbol: mapping.symbol, domain: mapping.domain, lastPrice: candidate.lastPrice, candles: candidate.candles, ticks: candidate.priceUpdates, source: "USER_CONFIRMED_MAPPING" } });
+    fetchSignal(true);
   }
 
   function setAsset(detected) {
@@ -634,14 +827,14 @@
     setAsset(detected);
     setTimeframe(timeframe);
     if (!detected?.symbol) {
-      setError("diagnóstico IQ: nenhum nó de cabeçalho legível encontrado; aguardando DOM ou feed estruturado");
+      setError("Aguardando sincronização com o gráfico");
       return;
     }
     refreshBtn.disabled = true;
     try {
-      const resp = await chrome.runtime.sendMessage({
+      const resp = await safeRuntimeSendMessage({
         type: "tc.analyze",
-        payload: { symbol: detected.symbol, timeframe, direction: "up", horizon: 1, triggeredByTimer },
+        payload: { symbol: detected.symbol, timeframe, direction: "up", horizon: 1, triggeredByTimer, chartRect: detectChartRect() },
       });
       if (!resp?.ok) throw new Error(resp?.error || "sem resposta do background");
       setSignal(resp.data.decision, resp.data);
@@ -656,22 +849,26 @@
   // Eventos
   // ------------------------------------------------------------
   refreshBtn.addEventListener("click", () => fetchSignal(false));
-  minBtn.addEventListener("click", () => { collapsed = !collapsed; applyCollapsed(); });
+  syncBtn.addEventListener("click", startSync);
+  minBtn.addEventListener("click", () => { collapsed = !collapsed; aiDiagnosticBtn.hidden = collapsed; applyCollapsed(); });
+  aiDiagnosticBtn.addEventListener("click", requestAiDiagnosis);
+  confirmMappingBtn.addEventListener("click", confirmCurrentStreamMapping);
   autoLabel.addEventListener("click", () => {
     autoOn = !autoOn;
     applyAuto();
-    chrome.runtime.sendMessage({ type: "tc.setAuto", payload: { auto: autoOn } });
+    safeRuntimeSendMessage({ type: "tc.setAuto", payload: { auto: autoOn } });
     if (autoOn) fetchSignal(true);
   });
 
   // mensagens do background
-  chrome.runtime.onMessage.addListener((msg) => {
+  const runtimeMessageListener = (msg) => {
+    if (!extensionContextAlive) return;
     if (msg?.type === "tc.tick") fetchSignal(true);
     if (msg?.type === "tc.iq.marketAccepted") {
       clearTimeout(marketRefreshTimer);
       marketRefreshTimer = setTimeout(() => fetchSignal(true), 750);
     }
-    if (msg?.type === "tc.iq.assetDebugState") renderAssetDebug(msg.payload);
+    if (msg?.type === "tc.iq.assetDebugState") { /* diagnostics remain in storage/popup, never over the chart */ }
     if (msg?.type === "tc.notifySignal" && msg.payload) {
       const detected = detectAsset();
       const currentTf = detectTimeframe();
@@ -687,17 +884,17 @@
     if (msg?.type === "tc.downbarPreference") {
       root.hidden = msg.payload?.enabled === false;
     }
-  });
+  };
+  chrome.runtime.onMessage.addListener(runtimeMessageListener);
 
-  chrome.storage.local.get(["tcDownbarEnabled"], (s) => { root.hidden = s.tcDownbarEnabled === false; });
+  safeStorageGet(["tcDownbarEnabled"], (s) => { root.hidden = s.tcDownbarEnabled === false; });
 
   // primeira carga
-  let marketRefreshTimer = null;
   fetchSignal(false);
 
   // re-detecta se URL muda (single-page apps)
   let lastUrl = location.href;
-  setInterval(() => {
+  urlWatcherTimer = setInterval(() => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
       fetchSignal(false);

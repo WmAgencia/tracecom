@@ -14,6 +14,7 @@ interface Row {
   timeframe: string;
   direction: string;
   decision: string;
+  horizon: number | null;
   entry_time: number;
   entry_price: number | null;
   exit_time: number | null;
@@ -58,7 +59,7 @@ export class ShadowRepository {
   save(trade: ShadowTrade): void {
     this.store.db.prepare(`
       INSERT OR REPLACE INTO shadow_trades (
-        id, symbol, timeframe, direction, decision,
+         id, symbol, timeframe, direction, decision, horizon,
         entry_time, entry_price, exit_time, exit_price,
         outcome, return_pct, gross_return_pct, cost_pct,
         confidence, probability,
@@ -66,9 +67,9 @@ export class ShadowRepository {
         stop_loss_pct, cooldown_minutes, stop_loss_triggered_at,
         evaluation_attempts, last_evaluation_error, evaluation_locked,
         provider_id
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `).run(
-      trade.id, trade.symbol, trade.timeframe, trade.direction, trade.decision,
+      trade.id, trade.symbol, trade.timeframe, trade.direction, trade.decision, trade.horizon ?? 0,
       trade.entryTime, trade.entryPrice, trade.exitTime, trade.exitPrice,
       trade.outcome, trade.returnPct, trade.grossReturnPct ?? null, trade.costPct ?? null,
       trade.confidence, trade.probability,
@@ -90,6 +91,9 @@ export class ShadowRepository {
     if (updates.costPct !== undefined) { fields.push("cost_pct = ?"); params.push(updates.costPct); }
     if (updates.evaluatedAt !== undefined) { fields.push("evaluated_at = ?"); params.push(updates.evaluatedAt); }
     if (updates.stopLossTriggeredAt !== undefined) { fields.push("stop_loss_triggered_at = ?"); params.push(updates.stopLossTriggeredAt); }
+    if (updates.horizon !== undefined) { fields.push("horizon = ?"); params.push(updates.horizon); }
+    if (updates.evaluationAttempts !== undefined) { fields.push("evaluation_attempts = ?"); params.push(updates.evaluationAttempts); }
+    if (updates.lastEvaluationError !== undefined) { fields.push("last_evaluation_error = ?"); params.push(updates.lastEvaluationError); }
     if (fields.length === 0) return;
     params.push(id);
     this.store.db.prepare(`UPDATE shadow_trades SET ${fields.join(", ")} WHERE id = ?`).run(...params);
@@ -126,19 +130,20 @@ export class ShadowRepository {
     if (filter.sinceMs !== undefined) { where.push("created_at >= ?"); params.push(filter.sinceMs); }
     if (filter.symbol !== undefined) { where.push("symbol = ?"); params.push(filter.symbol); }
     if (filter.signal !== undefined && filter.signal !== null) { where.push("decision = ?"); params.push(filter.signal); }
-    const whereSql = where.length ? "WHERE " + where.join(" AND ") : "";
+    const directionalWhere = ["decision IN ('BUY','SELL')", ...where];
+    const whereSql = "WHERE " + directionalWhere.join(" AND ");
 
     const totalRow = this.store.db.prepare(
       `SELECT COUNT(*) AS n FROM shadow_trades ${whereSql}`,
     ).get(...params) as { n: number };
     const total = Number(totalRow.n);
 
-    const whereEval = where.length ? whereSql + " AND outcome IN ('hit','miss','flat','insufficient')" : "WHERE outcome IN ('hit','miss','flat','insufficient')";
+    const whereEval = `${whereSql} AND outcome IN ('hit','miss','flat','stopped')`;
     const evalRow = this.store.db.prepare(
       `SELECT
          COUNT(*) AS n,
          SUM(CASE WHEN outcome='hit' THEN 1 ELSE 0 END) AS w,
-         SUM(CASE WHEN outcome='miss' THEN 1 ELSE 0 END) AS m,
+            SUM(CASE WHEN outcome IN ('miss','stopped') THEN 1 ELSE 0 END) AS m,
          SUM(return_pct) AS net,
          AVG(return_pct) AS avg
        FROM shadow_trades ${whereEval}`,
@@ -159,11 +164,11 @@ export class ShadowRepository {
       const sigWhere = where.length ? [...where, "decision = ?"] : ["decision = ?"];
       const sigParams = [...params, sig];
       const sigRow = this.store.db.prepare(
-        `SELECT
+         `SELECT
            COUNT(*) AS n,
            SUM(CASE WHEN outcome='hit' THEN 1 ELSE 0 END) AS w,
            AVG(return_pct) AS avg
-         FROM shadow_trades WHERE ${sigWhere.join(" AND ")} AND outcome IN ('hit','miss','flat','insufficient')`,
+          FROM shadow_trades WHERE ${sigWhere.join(" AND ")} AND outcome IN ('hit','miss','flat','stopped')`,
       ).get(...sigParams) as { n: number; w: number | null; avg: number | null };
       const n = Number(sigRow.n);
       const w = Number(sigRow.w ?? 0);
@@ -172,8 +177,8 @@ export class ShadowRepository {
       const directionalDenomRow = this.store.db.prepare(
         `SELECT
            SUM(CASE WHEN outcome='hit' THEN 1 ELSE 0 END) AS h,
-           SUM(CASE WHEN outcome='miss' THEN 1 ELSE 0 END) AS mi
-         FROM shadow_trades WHERE ${sigWhere.join(" AND ")} AND outcome IN ('hit','miss')`,
+            SUM(CASE WHEN outcome IN ('miss','stopped') THEN 1 ELSE 0 END) AS mi
+          FROM shadow_trades WHERE ${sigWhere.join(" AND ")} AND outcome IN ('hit','miss','stopped')`,
       ).get(...sigParams) as { h: number | null; mi: number | null };
       const hits = Number(directionalDenomRow.h ?? 0);
       const missesSig = Number(directionalDenomRow.mi ?? 0);
@@ -207,6 +212,7 @@ function rowToTrade(r: Row): ShadowTrade {
     timeframe: r.timeframe,
     direction: r.direction as ShadowTrade["direction"],
     decision: r.decision as ShadowTrade["decision"],
+    horizon: r.horizon ?? 0,
     entryTime: r.entry_time,
     entryPrice: r.entry_price,
     exitTime: r.exit_time,

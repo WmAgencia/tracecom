@@ -35,6 +35,23 @@ describe("AnalyticsService + DecisionRepository", () => {
     store.close();
   });
 
+  it("persiste a distribuição BUY/SELL/WAIT de forma imutável", async () => {
+    const { store, repo } = repoOf();
+    const svc = new AnalyticsService({ persist: repo, candles: () => [] });
+    const rec = await svc.recordDecision({
+      symbol: "BTCUSDT", timeframe: "1h", direction: "up", decision: "SELL", horizon: 5,
+      entryTime: T0, entryPrice: 100, score: -0.4, confidence: 0.68, probability: 0.68,
+      pBuy: 0.12, pSell: 0.68, pWait: 0.20, sampleSize: 50, regime: "downtrend", rationale: "teste",
+    });
+    const rows = await repo.listAll({});
+    expect(rec.pBuy).toBeCloseTo(0.12);
+    expect(rec.pSell).toBeCloseTo(0.68);
+    expect(rec.pWait).toBeCloseTo(0.20);
+    expect(rec.probabilitySource).toBe("provided");
+    expect(rows[0]?.pSell).toBeCloseTo(0.68);
+    store.close();
+  });
+
   it("valida apenas decisões cujo horizonte já decorreu (dados reais, sem inventar)", async () => {
     const { store, repo } = repoOf();
     const now = Date.now();
