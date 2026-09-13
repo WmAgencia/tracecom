@@ -13,6 +13,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { del, get, put } from "@vercel/blob";
+import { NexxusVisionProvider } from "../src/vision/provider";
 
 type FableImage = { label: string; dataUrl: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -193,6 +194,18 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
   const imageUsed = images.length > 0;
   const baseQuality = Math.min(1, (imageUsed ? 0.55 : 0) + (images.length >= 2 ? 0.15 : 0) + (images.length >= 4 ? 0.1 : 0) + (Number.isFinite(Number(crop.width)) ? 0.1 : 0) + (quantitative.availability === "READY" ? 0.1 : 0));
   const temporary = imageUsed ? await temporaryVisionUrls(images) : null;
+  const visionEnabled = process.env.TRACECOM_VISION_ENABLED !== "false";
+  if (imageUsed && !visionEnabled) throw new Error("VISION_PROVIDER_NOT_CONFIGURED");
+  let visionObservation: Record<string, unknown> | null = null;
+  if (visionEnabled && temporary?.images[0]) {
+    const visionModel = process.env.TRACECOM_VISION_MODEL || "claude-opus-5";
+    console.info("VISION_MODEL_REQUEST_STARTED", JSON.stringify({ model: visionModel, endpoint: "/v1/messages" }));
+    const observation = await new NexxusVisionProvider({ apiKey, baseUrl: process.env.NEXXUS_BASE_URL || process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site", model: visionModel }).observe({ imageUrl: temporary.images[0].url, context: snapshotObject });
+    console.info("VISION_MODEL_RESPONSE_RECEIVED", JSON.stringify({ availability: observation.availability, sources: observation.sources }));
+    visionObservation = observation as unknown as Record<string, unknown>;
+    console.info("MARKET_OBSERVATION_CREATED", JSON.stringify({ availability: observation.availability }));
+  }
+  const reasoningSnapshot = visionObservation ? { ...snapshotObject, visionObservation } : snapshotObject;
   const content: Record<string, unknown>[] = [{ type: "text", text: [
     "Analyze the current IQ Option chart for a one-minute paper signal.",
     "Use only the supplied chart images and normalized market snapshot.",
@@ -200,9 +213,9 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     "Return JSON only with decision, confidence, pBuy, pSell, pWait, dataQuality, imageUsed, framesUsed, visualBias, quantBias, confluence, trend, structure, momentum, volatility, supportResistance, candlePatterns, breakoutState, exhaustionState, supportingFactors, opposingFactors, observations, riskFlags, analysisQuality, agentAction, guidanceMessage, chartViewQualityScore, historicalContextScore, recentDetailScore, visibleCandleCount, summary, rationale and marketContext.",
     "marketContext must be an object with symbol, marketType, visualTimeframe, displayedStake, confidence and sources. Use UNAVAILABLE or null when the supplied sanitized crops do not prove a field. Never infer account balance, identity or broker controls.",
     "If the image is missing, stale, ambiguous or the active asset is not trustworthy, return WAIT.",
-    `NORMALIZED_SNAPSHOT=${JSON.stringify(snapshotObject).slice(0, 45_000)}`,
+    `NORMALIZED_SNAPSHOT=${JSON.stringify(reasoningSnapshot).slice(0, 45_000)}`,
   ].join("\n") }];
-  for (const image of temporary?.images ?? []) {
+  if (!visionObservation) for (const image of temporary?.images ?? []) {
     content.push({ type: "text", text: `TEMPORAL_FRAME=${image.label}` });
     content.push({ type: "image", source: { type: "url", url: image.url } });
   }
@@ -211,6 +224,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
   try {
     const baseUrl = (process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site").replace(/\/$/, "");
     const model = process.env.FABLE_MODEL || "claude-fable-5-1";
+    console.info("FABLE_REASONING_STARTED", JSON.stringify({ model, mode: visionObservation ? "text-only" : "legacy-multimodal" }));
     const response = await fetch(`${baseUrl}/v1/messages`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
@@ -221,6 +235,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     if (!response.ok) throw new Error(`FABLE_HTTP_${response.status}: ${text.slice(0, 300)}`);
     const wire = JSON.parse(text) as { content?: Array<{ type?: string; text?: string }> };
     const answer = (wire.content ?? []).filter((block) => block.type === "text").map((block) => block.text ?? "").join("\n");
+    console.info("FABLE_REASONING_RECEIVED", JSON.stringify({ status: response.status, textLength: answer.length }));
     const parsed = parseJsonText(answer);
     const visualBias = parsed?.visualBias === "BUY" || parsed?.visualBias === "SELL" ? parsed.visualBias : "NEUTRAL";
     const rawQuantBias = String(parsed?.quantBias ?? "");
@@ -434,6 +449,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const body = req.method === "POST" ? await readBody(req) : null;
     if (path === "/health" || path === "/api/health") {
       json(200, { ok: true, ts: Date.now() });
+      return;
+    }
+    if (path === "/api/version" && req.method === "GET") {
+      json(200, { commitSha: process.env.VERCEL_GIT_COMMIT_SHA || "unknown", buildTimestamp: process.env.VERCEL_GIT_COMMIT_SHA ? (process.env.VERCEL_DEPLOYMENT_ID || "unknown") : "unknown", visionProviderEnabled: process.env.TRACECOM_VISION_ENABLED !== "false", visionModel: process.env.TRACECOM_VISION_MODEL || "claude-opus-5", visionEndpoint: "/v1/messages", fableMode: "text-only", pipelineVersion: "vision-observation-fable-text-v1" });
       return;
     }
 
