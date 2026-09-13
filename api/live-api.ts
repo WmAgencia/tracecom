@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { buildTraceTree, sanitizeHop, type Hop, type Span } from "../src/research/trace-tree.js";
+import { ADMIN_SESSION_COOKIE, adminCookieHeader, clearAdminCookieHeader, issueAdminSession, parseCookie, verifyAdminSession } from "../src/security/admin-session.js";
 
 type LiveSession = { id: string; createdAt: number; updatedAt: number; events: Record<string, unknown>[]; frame: Record<string, unknown> | null };
 type KeyRecord = { id: string; hash: string; createdAt: number; revokedAt?: number };
@@ -27,8 +28,11 @@ function allowed(ip: string): boolean { const now = Date.now(); const x = rate.g
 function send(res: ServerResponse, status: number, value: unknown) { res.statusCode = status; res.setHeader("Content-Type", "application/json"); res.setHeader("Cache-Control", "no-store"); res.end(JSON.stringify(value)); }
 function adminAuthorized(req: IncomingMessage): boolean {
   const expected = process.env.LIVE_API_ADMIN_KEY?.trim();
+  if (!expected) return false;
   const supplied = req.headers["x-live-admin-key"]?.toString() ?? "";
-  return Boolean(expected && supplied && expected.length === supplied.length && timingSafeEqual(Buffer.from(expected), Buffer.from(supplied)));
+  if (supplied && expected.length === supplied.length && timingSafeEqual(Buffer.from(expected), Buffer.from(supplied))) return true;
+  const cookie = parseCookie(req.headers.cookie?.toString(), ADMIN_SESSION_COOKIE);
+  return verifyAdminSession(expected, cookie);
 }
 async function relay(path: string, init: RequestInit = {}): Promise<Response> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
@@ -59,6 +63,24 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
   if (!path.startsWith("/api/live/") && !path.startsWith("/api/debug/")) return false;
   const ip = req.socket?.remoteAddress ?? req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ?? "vercel"; if (!allowed(ip)) { send(res, 429, { error: "rate_limited" }); return true; }
   const relayAdmin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
+  if (path === "/api/live/admin/login" && req.method === "POST") {
+    const expected = process.env.LIVE_API_ADMIN_KEY?.trim();
+    const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+    const supplied = typeof input.adminKey === "string" ? input.adminKey.trim() : "";
+    if (!expected || !supplied || expected.length !== supplied.length || !timingSafeEqual(Buffer.from(expected), Buffer.from(supplied))) { send(res, 401, { error: "admin_auth_failed" }); return true; }
+    res.setHeader("Set-Cookie", adminCookieHeader(issueAdminSession(expected)));
+    send(res, 200, { ok: true, authenticated: true, expiresInSeconds: Math.floor((12 * 60 * 60)) });
+    return true;
+  }
+  if (path === "/api/live/admin/logout" && req.method === "POST") {
+    res.setHeader("Set-Cookie", clearAdminCookieHeader());
+    send(res, 200, { ok: true, authenticated: false });
+    return true;
+  }
+  if (path === "/api/live/admin/session" && req.method === "GET") {
+    send(res, 200, { authenticated: adminAuthorized(req) });
+    return true;
+  }
   if (path === "/api/live/admin/status" && req.method === "GET") {
     try { const response = await relay("/health"); const value = await response.json() as Record<string, unknown>; send(res, response.status, { ...value, relayStatus: response.ok ? "ONLINE" : "ERROR" }); }
     catch { send(res, 503, { relayStatus: "OFFLINE", db: false }); }

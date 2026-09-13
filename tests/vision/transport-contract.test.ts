@@ -124,4 +124,18 @@ describe("sanitized crop transport contract", () => {
     expect(html).toContain("liveCopyPrompt");
     expect(html).toContain("DOCUMENTAÇÃO DA API");
   });
+
+  it("never asks for a master secret in a browser prompt", () => {
+    const liveApi = readFileSync("api/live-api.ts", "utf8");
+    const adminSession = readFileSync("src/security/admin-session.ts", "utf8");
+    expect(browser).not.toContain("window.prompt");
+    expect(browser).not.toContain("liveKeyOutput");
+    expect(liveApi).toContain("/api/live/admin/login");
+    expect(liveApi).toContain("Set-Cookie");
+    expect(adminSession).toContain("HttpOnly");
+    expect(adminSession).toContain("SameSite=Strict");
+    expect(html).toContain("adminSecretInput");
+    expect(html).toContain("adminGenerateConfirm");
+    expect(html).toContain("API KEY GERADA");
+  });
 });
