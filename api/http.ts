@@ -15,6 +15,7 @@ import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
 import { del, get, put } from "@vercel/blob";
 import { NexxusVisionProvider } from "./vision-provider.js";
 import { settleTrade } from "../src/training/settlement.js";
+import { handleLiveApi } from "./live-api.js";
 
 type FableImage = { label: string; dataUrl: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -456,6 +457,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   try {
     const path = url.pathname;
     const body = req.method === "POST" ? await readBody(req) : null;
+    if (await handleLiveApi(req, res, path, body, q)) return;
     if (path === "/health" || path === "/api/health") {
       json(200, { ok: true, ts: Date.now() });
       return;
