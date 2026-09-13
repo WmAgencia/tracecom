@@ -1,6 +1,6 @@
 /* Trace/Com Vision: user-initiated capture; local crops; virtual-only training. */
 const $ = (id) => document.getElementById(id);
-const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null };
+const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, stage: "IDLE" };
 
 const api = async (path, options = {}) => {
   const response = await fetch(path, { ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
@@ -20,6 +20,7 @@ function saveHistory() { localStorage.setItem("tracecom:vision-history", JSON.st
 function setCapture(status, label) { led("captureLed", status); text("captureText", label); text("visionBadge", status === "live" ? "VISION OBSERVANDO" : label); }
 function setFable(label) { text("fableState", label); $("fableState").classList.toggle("online", label === "ONLINE"); }
 function updatePipeline() { text("pipelineState", state.stream && state.crop ? "OBSERVANDO" : "AGUARDANDO"); text("healthCrop", state.crop ? "CROPS SANITIZADOS" : "CROP LOCAL"); }
+function setStage(stage, detail = "") { state.stage = stage; text("cropText", detail ? `${stage} · ${detail}` : stage); console.info(`[VISION] ${stage}`, detail); }
 
 async function checkBackend() {
   try { await api("/health"); led("connectionLed", "good"); text("connectionText", "FABLE GATE ONLINE"); }
@@ -46,7 +47,10 @@ async function shareScreen() {
     stream.getVideoTracks()[0]?.addEventListener("ended", stopScreen, { once: true });
     await video.play();
     const ready = () => {
+      if (!video.videoWidth || !video.videoHeight) { setStage("FRAME_INVALID", "dimensões indisponíveis"); return; }
+      setStage("SCREEN_FRAME_CAPTURED", `${video.videoWidth}x${video.videoHeight}`);
       const detected = detectChartRegion(video); state.crop = detected.crop;
+      setStage("CHART_REGION_DETECTED", `${Math.round(detected.confidence * 100)}%`);
       text("cropText", `ChartRegionDetector ${Math.round(detected.confidence * 100)}% · ${detected.source}`);
       $("recropButton").hidden = detected.confidence >= .6;
       if (detected.confidence < .6) $("recropButton").hidden = false;
@@ -103,19 +107,20 @@ function frameHash(stats) { return stats.sample ? stats.sample.slice(0, 96).join
 function startObservation() { if (state.timer) clearInterval(state.timer); observe(); state.timer = setInterval(observe, 5_000); }
 async function observe() {
   if (state.analyzing || !state.stream || !state.crop) return;
-  const chart = makeCrop(state.crop); if (!chart) return;
+  setStage("CHART_CROP_GENERATING"); const chart = makeCrop(state.crop); if (!chart) { setStage("CROP_GENERATION_FAILED"); return; }
+  setStage("SANITIZED_CROP_CREATED", `${chart.width}x${chart.height}`);
   const stat = metrics(chart, state.frames.at(-1)?.stats?.sample); const frame = { ...chart, stats: stat, capturedAt: Date.now() };
   state.frames.push(frame); state.frames = state.frames.slice(-4); state.analyzing = true;
   text("fpsText", "1 frame/s local · Fable /5s"); text("frameText", `${state.frames.length}/4 frames temporais · ${new Date().toLocaleTimeString()}`);
   const temporal = state.frames.slice().reverse().map((item, index) => ({ label: index ? `T-${index * 5}s` : "T0", dataUrl: item.dataUrl }));
   const snapshot = { analysisId: `vision_${Date.now()}`, timestamp: new Date().toISOString(), timestampMs: Date.now(), symbol: state.lastContext?.symbol || "UNAVAILABLE", horizonSeconds: 60, chartFrame: { crop: state.crop, width: chart.width, height: chart.height, capturedAt: Date.now() }, quantitativeFeatures: { availability: "SCREEN_MOTION_ONLY", frames: state.frames.map((item) => ({ ...item.stats, sample: undefined })) } };
   try {
-    const started = Date.now(); const result = await api("/api/fable/trade", { method: "POST", body: JSON.stringify({ snapshot, chartImages: temporal, contextImage: headerCrop()?.dataUrl || null }) });
+    setStage("FABLE_REQUEST_STARTED"); const started = Date.now(); const result = await api("/api/fable/trade", { method: "POST", body: JSON.stringify({ snapshot, chartImages: temporal, contextImage: headerCrop()?.dataUrl || null }) });
     const latency = Date.now() - started; state.lastAnalysis = result.analysis; renderAnalysis(result.analysis || {}, latency); await persistDecision(snapshot, result.analysis || {}); await trainIfActive(snapshot, result.analysis || {}, stat, latency);
   } catch (error) {
     const message = String(error.message || error);
     setFable(message.includes("FABLE_VISION_UNSUPPORTED") ? "VISION BLOCKED" : "OFFLINE");
-    text("decisionSummary", message.includes("FABLE_VISION_UNSUPPORTED") ? "O gateway Fable atual não aceitou o crop de imagem. Nenhum sinal visual será emitido." : `Fable indisponível: ${message}`);
+    setStage("ANALYSIS_ERROR", message); text("decisionSummary", message.includes("FABLE_VISION_UNSUPPORTED") ? "O gateway Fable atual não aceitou o crop de imagem. Nenhum sinal visual será emitido." : `Erro de análise: ${message}`);
   }
   finally { state.analyzing = false; }
 }
