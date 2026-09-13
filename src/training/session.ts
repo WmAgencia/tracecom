@@ -5,6 +5,10 @@
  * only ever produced by settlement.ts#settleTrade.
  */
 import { settleTrade } from "./settlement.js";
+import { buildCalibration, edgeVsBreakEven, type CalibrationSample } from "../analytics/confidence-calibration.js";
+
+export const PREDICTION_HORIZON_SECONDS = 60;
+export type ProfileCounters = { decisions: number; BUY: number; SELL: number; WAIT: number };
 
 export type TrainingDirection = "BUY" | "SELL";
 export type TrainingOutcome = "WIN" | "LOSS" | "DRAW" | "UNKNOWN";
@@ -18,6 +22,9 @@ export type VirtualTrade = {
   counterfactual?: boolean; shadowKind?: string; leanConfidence?: number | null;
   entryPriceSource?: string; settlementPriceSource?: string; priceConfidence?: number | null;
   controlDecision?: string; challengerDecision?: string;
+  predictionHorizonSeconds?: number; rawConfidence?: number | null; calibratedConfidence?: number | null;
+  selectedProfile?: string; regime?: string | null; profileDecisions?: Record<string, { decision: string; confidence: number | null }>;
+  synthetic?: boolean; payoutAtDecision?: number | null; breakEvenWinRate?: number | null;
   exitTimestamp?: number; exitReference?: number | null;
 };
 
@@ -26,6 +33,7 @@ export type TrainingSession = {
   symbol: string | null; marketType: string | null;
   horizonSeconds: number; maxEvaluatedTrades: number; frozen: Record<string, string>;
   analyses: number; decisions: Record<"BUY" | "SELL" | "WAIT", number>;
+  profiles?: Record<string, ProfileCounters>;
   trades: VirtualTrade[];
 };
 
@@ -38,6 +46,9 @@ export type AnalysisInput = {
   timestamp: number; analysis: Record<string, unknown>; reference: number | null;
   referenceSource?: string | null; priceConfidence?: number | null; suggestedStake?: number | null; symbol?: string | null;
   features?: unknown; framesHash?: string | null;
+  profiles?: Record<string, { decision: string; confidence: number | null }>;
+  selectedProfile?: string | null; regime?: string | null; rawConfidence?: number | null; calibratedConfidence?: number | null;
+  synthetic?: boolean; payoutAtDecision?: number | null; breakEvenWinRate?: number | null;
 };
 
 function bounded(value: unknown, fallback: number): number {
@@ -89,8 +100,29 @@ export function trainingSummary(session: TrainingSession) {
   const directionalLeanBuckets = ["50-55", "55-60", "60-65", "65-70", "70-75", "75+"] as const;
   const leanBuckets = Object.fromEntries(directionalLeanBuckets.map((bucket) => [bucket, { count: 0, WIN: 0, LOSS: 0, DRAW: 0, WR: null as number | null }])) as Record<string, { count: number; WIN: number; LOSS: number; DRAW: number; WR: number | null }>;
   for (const trade of leanTrades) { const confidence = Number(trade.leanConfidence); const bucket = confidence >= .75 ? "75+" : confidence >= .70 ? "70-75" : confidence >= .65 ? "65-70" : confidence >= .60 ? "60-65" : confidence >= .55 ? "55-60" : "50-55"; const entry = leanBuckets[bucket]!; entry.count += 1; if (trade.result === "WIN") entry.WIN += 1; if (trade.result === "LOSS") entry.LOSS += 1; if (trade.result === "DRAW") entry.DRAW += 1; entry.WR = entry.WIN + entry.LOSS ? entry.WIN / (entry.WIN + entry.LOSS) : null; }
+  const profileSummary = Object.fromEntries(Object.entries(session.profiles ?? {}).map(([profileId, counters]) => {
+    const rows = session.trades.filter((trade) => trade.profileDecisions && trade.profileDecisions[profileId] && trade.result !== null && (trade.profileDecisions[profileId]!.decision === "BUY" || trade.profileDecisions[profileId]!.decision === "SELL"));
+    const profileWins = rows.filter((trade) => trade.result === "WIN").length;
+    const profileLosses = rows.filter((trade) => trade.result === "LOSS").length;
+    const profileDraws = rows.filter((trade) => trade.result === "DRAW").length;
+    const profileUnknown = rows.filter((trade) => trade.result === "UNKNOWN").length;
+    return [profileId, { ...counters, signalRate: counters.decisions ? (counters.BUY + counters.SELL) / counters.decisions : null, evaluated: profileWins + profileLosses + profileDraws, WIN: profileWins, LOSS: profileLosses, DRAW: profileDraws, UNKNOWN: profileUnknown, coverage: counters.decisions ? (profileWins + profileLosses + profileDraws + profileUnknown) / counters.decisions : null, WR: profileWins + profileLosses ? profileWins / (profileWins + profileLosses) : null, status: "EXPERIMENTAL" }];
+  }));
+  const regimeBreakdown = Object.fromEntries([...new Set(session.trades.map((trade) => trade.regime ?? "UNKNOWN"))].map((regime) => {
+    const rows = session.trades.filter((trade) => (trade.regime ?? "UNKNOWN") === regime && trade.result !== null);
+    const regimeWins = rows.filter((trade) => trade.result === "WIN").length;
+    const regimeLosses = rows.filter((trade) => trade.result === "LOSS").length;
+    return [regime, { evaluated: rows.length, WIN: regimeWins, LOSS: regimeLosses, DRAW: rows.filter((trade) => trade.result === "DRAW").length, UNKNOWN: rows.filter((trade) => trade.result === "UNKNOWN").length, WR: regimeWins + regimeLosses ? regimeWins / (regimeWins + regimeLosses) : null }];
+  }));
+  const calibrationSamples: CalibrationSample[] = session.trades.filter((trade) => trade.result !== null).map((trade) => ({ direction: trade.direction, confidence: trade.rawConfidence ?? trade.confidence, result: trade.result, synthetic: trade.synthetic === true, regime: trade.regime ?? null, profile: trade.selectedProfile ?? null }));
+  const calibration = buildCalibration(calibrationSamples);
+  const payoutValues = session.trades.map((trade) => Number(trade.payoutAtDecision)).filter((value) => Number.isFinite(value) && value > 0);
+  const averagePayout = payoutValues.length ? payoutValues.reduce((sum, value) => sum + value, 0) / payoutValues.length : null;
+  const overallWR = wins + losses ? wins / (wins + losses) : null;
   return {
     id: session.id, createdAt: session.createdAt, updatedAt: session.updatedAt, status: session.status,
+    predictionHorizonSeconds: PREDICTION_HORIZON_SECONDS, profiles: profileSummary, regimeBreakdown, calibration,
+    payoutAtDecision: averagePayout, edgeVsBreakEven: edgeVsBreakEven(overallWR, averagePayout),
     symbol: session.symbol, marketType: session.marketType,
     horizonSeconds: session.horizonSeconds, maxEvaluatedTrades: session.maxEvaluatedTrades,
     frozen: session.frozen, analyses: session.analyses, BUY: session.decisions.BUY, SELL: session.decisions.SELL,
@@ -126,6 +158,14 @@ export function applyTrainingAnalysis(session: TrainingSession, input: AnalysisI
   const lean = analysis.directionalLean === "BUY" || analysis.directionalLean === "SELL" ? analysis.directionalLean as TrainingDirection : null;
   const counterfactualLean = decision === "WAIT" && lean !== null;
   session.decisions[decision] += 1;
+  session.profiles = session.profiles ?? {};
+  if (input.profiles && typeof input.profiles === "object") {
+    for (const [profileId, value] of Object.entries(input.profiles)) {
+      const counters = session.profiles[profileId] ??= { decisions: 0, BUY: 0, SELL: 0, WAIT: 0 };
+      const profileDecision = value && typeof value === "object" && (value as Record<string, unknown>).decision === "BUY" ? "BUY" : (value as Record<string, unknown>)?.decision === "SELL" ? "SELL" : "WAIT";
+      counters.decisions += 1; counters[profileDecision] += 1;
+    }
+  }
   const symbol = typeof input.symbol === "string" && input.symbol ? input.symbol.slice(0, 32) : session.symbol ?? "UNAVAILABLE";
   const hasOpenSameSymbol = session.trades.some((trade) => trade.result === null && trade.symbol === symbol);
   const evaluated = trainingSummary(session).evaluatedTrades;
@@ -148,6 +188,15 @@ export function applyTrainingAnalysis(session: TrainingSession, input: AnalysisI
       entryPriceSource: input.referenceSource || "UNAVAILABLE", settlementPriceSource: "UNAVAILABLE", priceConfidence: input.priceConfidence ?? null,
       controlDecision: typeof control.decision === "string" ? control.decision : decision,
       challengerDecision: typeof challenger.decision === "string" ? challenger.decision : decision,
+      predictionHorizonSeconds: PREDICTION_HORIZON_SECONDS,
+      rawConfidence: input.rawConfidence ?? finiteOrNull(analysis.confidence),
+      calibratedConfidence: input.calibratedConfidence ?? null,
+      selectedProfile: typeof input.selectedProfile === "string" ? input.selectedProfile : "BALANCED",
+      regime: typeof input.regime === "string" ? input.regime : null,
+      profileDecisions: input.profiles ?? undefined,
+      synthetic: input.synthetic === true,
+      payoutAtDecision: input.payoutAtDecision ?? null,
+      breakEvenWinRate: input.breakEvenWinRate ?? null,
     };
     session.trades.push(trade);
     return trade;

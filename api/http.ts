@@ -18,6 +18,7 @@ import { handleLiveApi } from "./live-api.js";
 import { applyTrainingAnalysis, createTrainingSession, evaluateVirtualTrades, trainingSummary, type TrainingSession, type VirtualTrade } from "../src/training/session.js";
 import { TrainingStore } from "../src/training/store.js";
 import { validatePriceObservation, type AcceptedObservation } from "../src/vision/price-lock.js";
+import { buildFastDecision } from "../src/engine/fast-path.js";
 
 type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -553,6 +554,26 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
+    if (path === "/api/fast/decision" && req.method === "POST") {
+      const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+      const asPrices = (value: unknown) => Array.isArray(value) ? value.filter((item): item is { value: number; timestamp: number } => Boolean(item) && typeof item === "object" && Number.isFinite(Number((item as Record<string, unknown>).value)) && Number.isFinite(Number((item as Record<string, unknown>).timestamp))).slice(-120) : [];
+      const asFrames = (value: unknown) => Array.isArray(value) ? value.filter((item): item is { capturedAt: number; frameDifference?: number | null; averageLuma?: number | null } => Boolean(item) && typeof item === "object" && Number.isFinite(Number((item as Record<string, unknown>).capturedAt))).slice(-24) : [];
+      const deepContext = input.deepContext && typeof input.deepContext === "object" && !Array.isArray(input.deepContext) ? input.deepContext as { version: number; at: number; trend?: string | null; momentum?: string | null; regime?: string | null } : null;
+      const result = buildFastDecision({
+        now: Number(input.now) || Date.now(),
+        prices: asPrices(input.prices),
+        frames: asFrames(input.frames),
+        deepContext,
+        profile: input.profile === "CONSERVATIVE" || input.profile === "BALANCED" || input.profile === "AGGRESSIVE" ? input.profile : undefined,
+        previousDecision: typeof input.previousDecision === "string" ? input.previousDecision : null,
+        previousLean: typeof input.previousLean === "string" ? input.previousLean : null,
+      });
+      recordLatency("fast_total", result.timings.totalMs);
+      console.info(result.fastPathStatus, JSON.stringify({ candleId: typeof input.candleId === "string" ? input.candleId : null, decision: result.decision, profile: result.selectedProfile, regime: result.regime, rawConfidence: result.rawConfidence, latencyMs: result.timings.totalMs }));
+      json(200, { fast: result, predictionHorizonSeconds: result.predictionHorizonSeconds });
+      return;
+    }
+
     if (path === "/api/fable/trade" && req.method === "POST") {
       try {
         json(200, await fableVisionTrade(body));
@@ -654,6 +675,14 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         symbol: typeof snapshot.symbol === "string" ? snapshot.symbol : null,
         features: snapshot.features ?? null,
         framesHash: typeof snapshot.framesHash === "string" ? snapshot.framesHash : null,
+        profiles: input?.profiles && typeof input.profiles === "object" && !Array.isArray(input.profiles) ? input.profiles as Record<string, { decision: string; confidence: number | null }> : undefined,
+        selectedProfile: typeof input?.selectedProfile === "string" ? input.selectedProfile : null,
+        regime: typeof input?.regime === "string" ? input.regime : null,
+        rawConfidence: finiteOrNull(input?.rawConfidence),
+        calibratedConfidence: finiteOrNull(input?.calibratedConfidence),
+        synthetic: input?.synthetic === true,
+        payoutAtDecision: finiteOrNull(input?.payoutAtDecision),
+        breakEvenWinRate: finiteOrNull(input?.breakEvenWinRate),
       });
       session.updatedAt = Date.now();
       await trainingStore.write(session);

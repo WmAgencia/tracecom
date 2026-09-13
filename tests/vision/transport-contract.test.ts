@@ -53,4 +53,19 @@ describe("sanitized crop transport contract", () => {
     expect(api).toContain("TEMPORAL_OUTLIER");
     expect(api).toContain("/api/metrics");
   });
+
+  it("keeps the fast T+60 path, deep background analysis and profile selector contracts", () => {
+    const fastPath = readFileSync("src/engine/fast-path.ts", "utf8");
+    expect(fastPath).toContain("PREDICTION_HORIZON_SECONDS = 60");
+    expect(fastPath).toContain("FAST_PATH_DEADLINE_MS = 5_000");
+    expect(fastPath).toContain("deepAnalysisAgeMs");
+    expect(browser).toContain("FAST_PATH_STARTED");
+    expect(browser).toContain("FAST_PATH_COMPLETED");
+    expect(browser).toContain("FAST_PATH_TIMEOUT");
+    expect(browser).toContain("DEEP_ANALYSIS_COMPLETED");
+    expect(browser).toContain("/api/fast/decision");
+    expect(browser).toContain("applyProfile");
+    expect(html).toContain("profileSelect");
+    expect(api).toContain("/api/fast/decision");
+  });
 });
