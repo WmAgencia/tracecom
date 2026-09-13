@@ -42,13 +42,16 @@ const trades = results.trades.map(t => {
     entryPrice, expirationSeconds,
     expectedSettlementTimestamp: new Date(expectedSettlementTimestamp).toISOString(), actualSettlementTimestamp: actualSettlementTimestamp ? new Date(actualSettlementTimestamp).toISOString() : null,
     settlementPrice, recordedResult: t.outcome, independentResult, differenceReason,
-    classification: !entry || !settlement ? 'TEMPORAL_RESOLUTION_INSUFFICIENT' : 'VALID_EXACT',
+    // Yahoo provides one-minute OHLC only. A close is not observable at an
+    // intraminute entry (and is future data until the bucket closes), so these
+    // rows are bucket-aligned, never exact. Exact requires a tick/second quote.
+    classification: !entry || !settlement ? 'TEMPORAL_RESOLUTION_INSUFFICIENT' : 'VALID_BUCKET_ALIGNED',
     pricePolicy: 'CLOSE_TO_CLOSE_NO_INTRAMINUTE_INTERPOLATION', sourcePrecision: 'ORIGINAL_YAHOO_FLOAT'
   };
 });
 const count = xs => xs.reduce((a, x) => ((a[x] = (a[x] ?? 0) + 1), a), {});
-const valid = trades.filter(t => t.classification === 'VALID_EXACT');
-const diff = { schemaVersion: 2, generatedAt: new Date().toISOString(), source: resultPath, dataset: datasetPath, settlementPolicy: { entry: 'decisionTimestamp + entryLeadSeconds', settlement: 'entryTimestamp + expirationSeconds', price: 'CLOSE_TO_CLOSE', interpolation: false, precision: 'original float' }, tradeCount: trades.length, validExact: valid.length, classificationCounts: count(trades.map(t => t.classification)), differenceCounts: count(trades.map(t => t.differenceReason)), recordedCounts: count(valid.map(t => t.recordedResult)), correctedCounts: count(valid.map(t => t.independentResult)), agreement: valid.filter(t => t.recordedResult === t.independentResult).length / valid.length, trades };
+const valid = trades.filter(t => t.classification === 'VALID_BUCKET_ALIGNED');
+const diff = { schemaVersion: 3, generatedAt: new Date().toISOString(), source: resultPath, dataset: datasetPath, marketType: 'FOREX_NORMAL', settlementPolicy: { entry: 'decisionTimestamp + entryLeadSeconds', settlement: 'entryTimestamp + expirationSeconds', price: 'CLOSE_TO_CLOSE', interpolation: false, precision: 'original float', temporalClass: 'VALID_BUCKET_ALIGNED', lookahead: 'close is only known at bucket close; not causal for intrabucket entry' }, tradeCount: trades.length, validExact: trades.filter(t => t.classification === 'VALID_EXACT').length, validBucketAligned: valid.length, classificationCounts: count(trades.map(t => t.classification)), differenceCounts: count(trades.map(t => t.differenceReason)), recordedCounts: count(valid.map(t => t.recordedResult)), correctedCounts: count(valid.map(t => t.independentResult)), agreement: valid.filter(t => t.recordedResult === t.independentResult).length / valid.length, trades };
 fs.mkdirSync('diagnostic-results/paper', { recursive: true });
 fs.writeFileSync('diagnostic-results/paper/settlement-diff-1000.json', JSON.stringify(diff, null, 2) + '\n');
 const report = `# Settlement diff — 1,000 decision replay\n\nReplay of **${resultPath}** using the same decisions and no model calls.\n\n- Policy: close-to-close on original Yahoo floating-point prices; no intraminute interpolation.\n- Alignment: entry = decision + entryLead; settlement = entry + expiration.\n- Valid exact: **${valid.length}/${trades.length}**\n- Recorded: ${JSON.stringify(diff.recordedCounts)}\n- Corrected: ${JSON.stringify(diff.correctedCounts)}\n- Difference causes: ${JSON.stringify(diff.differenceCounts)}\n- Agreement: **${pct(diff.agreement)}**\n\nThe prior labels are retained for comparison and are **INVALIDATED_BY_SETTLEMENT_AUDIT**; they must not enter training or calibration. This artifact is a consistency replay, not evidence of predictive edge.\n`;
