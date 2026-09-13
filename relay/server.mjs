@@ -14,7 +14,7 @@ const clients = new Set();
 const scopes = ['live:session:read', 'live:events:read', 'live:frame:read', 'live:export:read'];
 const hash = key => crypto.createHash('sha256').update(`${pepper}:${key}`).digest('hex');
 const sign = payload => { const raw=Buffer.from(JSON.stringify(payload)).toString('base64url'); return `${raw}.${crypto.createHmac('sha256',admin).update(raw).digest('base64url')}`; };
-const verify = token => { const [raw,sig]=String(token||'').split('.'), expected=raw?crypto.createHmac('sha256',admin).update(raw).digest('base64url'):''; if(!raw||!sig||sig.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(sig),Buffer.from(expected)))return null; const value=JSON.parse(Buffer.from(raw,'base64url').toString()); return value.exp>Date.now()&&value.scope==='telemetry:write'?value:null; };
+const verify = token => { const [raw,sig]=String(token||'').split('.'), expected=raw?crypto.createHmac('sha256',admin).update(raw).digest('base64url'):''; if(!raw||!sig||sig.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(sig),Buffer.from(expected)))return null; const value=JSON.parse(Buffer.from(raw,'base64url').toString()); return value.exp>Date.now()&&value.scope==='telemetry:write'&&value.issuer==='tracecom'&&value.audience==='tracecom-live-relay'&&value.nonce?value:null; };
 const reply = (res, code, body) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); };
 async function body(req) { let raw=''; for await (const part of req) { raw += part; if(raw.length > 262144) throw Error('payload_too_large'); } return raw ? JSON.parse(raw) : {}; }
 async function migrate() {
@@ -44,8 +44,13 @@ async function currentSnapshot() {
   const session = (await pool.query('SELECT * FROM live_sessions ORDER BY last_seen_at DESC NULLS LAST LIMIT 1')).rows[0];
   if(!session) return { connectionState: 'OFFLINE', timestamp: new Date().toISOString() };
   const age = Date.now() - new Date(session.last_seen_at).getTime();
-  const decision = (await pool.query('SELECT * FROM live_decisions WHERE session_id=$1 ORDER BY timestamp DESC LIMIT 1', [session.id])).rows[0] || null;
-  return { sessionId: session.id, timestamp: new Date().toISOString(), connectionState: session.ended_at ? 'ENDED' : age > staleMs ? 'STALE' : 'ONLINE', session, decision };
+  const [decision, settlement, sample, counts] = await Promise.all([
+    pool.query('SELECT * FROM live_decisions WHERE session_id=$1 ORDER BY timestamp DESC LIMIT 1', [session.id]),
+    pool.query('SELECT * FROM live_settlements WHERE session_id=$1 ORDER BY timestamp DESC LIMIT 1', [session.id]),
+    pool.query('SELECT * FROM vision_market_samples WHERE session_id=$1 ORDER BY timestamp DESC LIMIT 1', [session.id]),
+    pool.query("SELECT (SELECT count(*) FROM live_events WHERE session_id=$1)::int events,(SELECT count(*) FROM vision_market_samples WHERE session_id=$1)::int samples,(SELECT count(*) FROM live_decisions WHERE session_id=$1)::int decisions,(SELECT count(*) FROM live_settlements WHERE session_id=$1)::int settlements", [session.id])
+  ]);
+  return { sessionId: session.id, timestamp: new Date().toISOString(), connectionState: session.ended_at ? 'ENDED' : age > staleMs ? 'STALE' : 'ONLINE', startedAt:session.started_at,endedAt:session.ended_at,lastSeenAt:session.last_seen_at,metadata:session.metadata,latestDecision:decision.rows[0]||null,latestSettlement:settlement.rows[0]||null,latestObservation:sample.rows[0]||null,counts:counts.rows[0] };
 }
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -65,9 +70,13 @@ const server = http.createServer(async (req, res) => {
       const inputToken=verify((req.headers.authorization||'').replace(/^Bearer /,'')); if(!inputToken) return reply(res,401,{error:'unauthorized'});
       const input=await body(req); if(!input.sessionId||!input.type)return reply(res,400,{error:'invalid_event'});
       if(input.sessionId!==inputToken.sessionId)return reply(res,403,{error:'wrong_session'});
+      try { await pool.query('INSERT INTO live_ingest_nonces(nonce,session_id,expires_at) VALUES($1,$2,to_timestamp($3/1000.0))',[inputToken.nonce,input.sessionId,inputToken.exp]); } catch { return reply(res,409,{error:'nonce_reused'}); }
       await pool.query("INSERT INTO live_sessions(id,status,last_seen_at,metadata) VALUES($1,'ONLINE',now(),$2) ON CONFLICT(id) DO UPDATE SET status='ONLINE',last_seen_at=now(),metadata=EXCLUDED.metadata",[input.sessionId,input.session||{}]);
       const e=(await pool.query('INSERT INTO live_events(session_id,event_type,payload_json,sequence_id) VALUES($1,$2,$3,$4) RETURNING id',[input.sessionId,input.type,input.payload||{},input.sequenceId||crypto.randomUUID()])).rows[0];
       if(input.type==='DECISION') await pool.query('INSERT INTO live_decisions(session_id,decision_id,timestamp,direction,confidence,probability_source,p_buy,p_sell,p_wait,raw_model_scores_json) VALUES($1,$2,now(),$3,$4,$5,$6,$7,$8,$9)',[input.sessionId,input.payload?.decisionId||null,input.payload?.direction||null,input.payload?.confidence||null,input.payload?.probabilitySource||null,input.payload?.pBuy||null,input.payload?.pSell||null,input.payload?.pWait||null,input.payload?.rawModelScores||{}]);
+      if(input.type==='VISION_MARKET_SAMPLE') await pool.query('INSERT INTO vision_market_samples(session_id,frame_id,timestamp,asset,market_type,timeframe,expiration_seconds,detected_price,detected_price_confidence,observation_json,frame_hash,chart_region_json) VALUES($1,$2,now(),$3,$4,$5,$6,$7,$8,$9,$10,$11)',[input.sessionId,input.payload?.frameId||null,input.payload?.asset||null,input.payload?.marketType||null,input.payload?.timeframe||null,input.payload?.expirationSeconds||null,input.payload?.detectedPrice||null,input.payload?.detectedPriceConfidence||null,input.payload?.observation||{},input.payload?.frameHash||null,input.payload?.chartRegion||null]);
+      if(input.type==='SETTLEMENT') await pool.query('INSERT INTO live_settlements(session_id,decision_id,timestamp,result,entry_price,settlement_price) VALUES($1,$2,now(),$3,$4,$5)',[input.sessionId,input.payload?.decisionId||null,input.payload?.result||null,input.payload?.entryPrice||null,input.payload?.settlementPrice||null]);
+      if(input.type==='SESSION_ENDED') await pool.query("UPDATE live_sessions SET ended_at=now(),status='ENDED' WHERE id=$1",[input.sessionId]);
       emit(input.type,input,e.id); return reply(res,202,{eventId:e.id});
     }
     if(url.pathname === '/api/live/session') { if(!await authenticate(req,'live:session:read'))return reply(res,401,{error:'unauthorized'}); return reply(res,200,await currentSnapshot()); }
