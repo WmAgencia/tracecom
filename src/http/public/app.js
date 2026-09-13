@@ -119,7 +119,7 @@ async function observe() {
     const latency = Date.now() - started; state.lastAnalysis = result.analysis; renderAnalysis(result.analysis || {}, latency); await persistDecision(snapshot, result.analysis || {}); await trainIfActive(snapshot, result.analysis || {}, stat, latency);
   } catch (error) {
     const message = String(error.message || error);
-    setFable(message.includes("FABLE_VISION_UNSUPPORTED") ? "VISION BLOCKED" : "OFFLINE");
+    setFable("ERROR");
     setStage("ANALYSIS_ERROR", message); text("decisionSummary", message.includes("FABLE_VISION_UNSUPPORTED") ? "O gateway Fable atual não aceitou o crop de imagem. Nenhum sinal visual será emitido." : `Erro de análise: ${message}`);
   }
   finally { state.analyzing = false; }
