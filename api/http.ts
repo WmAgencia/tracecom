@@ -26,6 +26,7 @@ import { runAutopsy } from "../src/research/session-autopsy.js";
 import { buildAgentRuns } from "../src/research/agent-runs.js";
 import { buildFeatureSnapshot } from "../src/quant-v2/feature-engine.js";
 import { quantShadowDecision } from "../src/quant-v2/quant-fusion.js";
+import { OperationalController } from "../src/vision/operational-controller.js";
 
 type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -35,6 +36,10 @@ const trainingStore = new TrainingStore({ relayUrl: process.env.TRACECOM_LIVE_RE
 const trainingMetrics = { created: 0, recoveries: 0, misses: 0 };
 const priceMetrics = { valid: 0, rejected: 0, outliers: 0 };
 const decisionEvents: Array<Record<string, unknown>> = [];
+/** Serverless-local operational channels. Their event/snapshot contract is
+ * deliberately transport-neutral so the relay can persist/recover them without
+ * changing the signal state machine. These endpoints are paper-only. */
+const operationalSessions = new Map<string, OperationalController>();
 const latencySamples = new Map<string, number[]>();
 function recordLatency(stage: string, value: number) { const rows = latencySamples.get(stage) ?? []; rows.push(Math.max(0, Math.round(value))); latencySamples.set(stage, rows.slice(-100)); }
 function latencyStats(stage: string) { const values = [...(latencySamples.get(stage) ?? [])].sort((a, b) => a - b); if (!values.length) return { count: 0, min: null, max: null, avg: null, p50: null, p95: null, p99: null }; const at = (fraction: number) => values[Math.min(values.length - 1, Math.floor((values.length - 1) * fraction))]!; return { count: values.length, min: values[0]!, max: values.at(-1)!, avg: values.reduce((sum, value) => sum + value, 0) / values.length, p50: at(.5), p95: at(.95), p99: at(.99) }; }
@@ -562,6 +567,68 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const path = url.pathname;
     const body = req.method === "POST" || req.method === "PUT" || req.method === "PATCH" ? await readBody(req) : null;
     if (await handleLiveApi(req, res, path, body, q)) return;
+    const operationalInput = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+    const operationalSessionId = typeof operationalInput.sessionId === "string" ? operationalInput.sessionId.trim().slice(0, 128) : "";
+    const operationalResponse = (controller: OperationalController) => ({ ...controller.snapshot(), sessionId: operationalSessionId, shadowOnly: true, brokerAutomation: "NONE" });
+    if (path === "/api/operational/lock" && req.method === "POST") {
+      if (!operationalSessionId) { json(400, { error: "session_id_required" }); return; }
+      const controller = operationalSessions.get(operationalSessionId) ?? new OperationalController();
+      try {
+        const direction = operationalInput.direction === "BUY" || operationalInput.direction === "SELL" ? operationalInput.direction : null;
+        if (!direction) throw new Error("invalid_direction");
+        controller.lock({
+          signalId: typeof operationalInput.signalId === "string" ? operationalInput.signalId : "",
+          idempotencyKey: typeof operationalInput.idempotencyKey === "string" ? operationalInput.idempotencyKey : "",
+          direction,
+          originSymbol: typeof operationalInput.originSymbol === "string" ? operationalInput.originSymbol : "",
+          now: Number(operationalInput.now) || Date.now(),
+          countdownMs: Number.isFinite(Number(operationalInput.countdownMs)) ? Number(operationalInput.countdownMs) : 10_000,
+          horizonMs: Number.isFinite(Number(operationalInput.horizonMs)) ? Number(operationalInput.horizonMs) : 60_000,
+        });
+        operationalSessions.set(operationalSessionId, controller);
+        json(200, operationalResponse(controller));
+      } catch (error) { json(409, { error: error instanceof Error ? error.message : "operational_lock_rejected", shadowOnly: true, brokerAutomation: "NONE" }); }
+      return;
+    }
+    if (path === "/api/operational/entry" && req.method === "POST") {
+      if (!operationalSessionId) { json(400, { error: "session_id_required" }); return; }
+      const controller = operationalSessions.get(operationalSessionId);
+      if (!controller) { json(404, { error: "operational_session_not_found" }); return; }
+      try {
+        controller.lockEntry({ signalId: typeof operationalInput.signalId === "string" ? operationalInput.signalId : "", price: operationalInput.price === null ? null : Number(operationalInput.price), timestamp: Number(operationalInput.timestamp) || Date.now(), symbol: typeof operationalInput.symbol === "string" ? operationalInput.symbol : "" });
+        json(200, operationalResponse(controller));
+      } catch (error) { json(409, { error: error instanceof Error ? error.message : "operational_entry_rejected", shadowOnly: true, brokerAutomation: "NONE" }); }
+      return;
+    }
+    if (path === "/api/operational/settle" && req.method === "POST") {
+      if (!operationalSessionId) { json(400, { error: "session_id_required" }); return; }
+      const controller = operationalSessions.get(operationalSessionId);
+      if (!controller) { json(404, { error: "operational_session_not_found" }); return; }
+      try {
+        controller.settle({ signalId: typeof operationalInput.signalId === "string" ? operationalInput.signalId : "", price: operationalInput.price === null ? null : Number(operationalInput.price), timestamp: Number(operationalInput.timestamp) || Date.now(), symbol: typeof operationalInput.symbol === "string" ? operationalInput.symbol : "" });
+        json(200, operationalResponse(controller));
+      } catch (error) { json(409, { error: error instanceof Error ? error.message : "operational_settlement_rejected", shadowOnly: true, brokerAutomation: "NONE" }); }
+      return;
+    }
+    // Frontends consume this cursor feed plus the snapshot endpoint; they do
+    // not calculate, mutate, or settle an operational decision locally.
+    const operationalEventsMatch = path.match(/^\/api\/operational\/([^/]+)\/events$/);
+    if (operationalEventsMatch && req.method === "GET") {
+      const sessionId = decodeURIComponent(operationalEventsMatch[1]!);
+      const controller = operationalSessions.get(sessionId);
+      if (!controller) { json(404, { error: "operational_session_not_found" }); return; }
+      const after = Math.max(0, Number(q.get("after")) || 0);
+      json(200, { sessionId, after, events: controller.replay(after), cursor: controller.snapshot().nextSequence - 1, shadowOnly: true, brokerAutomation: "NONE" });
+      return;
+    }
+    const operationalSnapshotMatch = path.match(/^\/api\/operational\/([^/]+)$/);
+    if (operationalSnapshotMatch && req.method === "GET") {
+      const sessionId = decodeURIComponent(operationalSnapshotMatch[1]!);
+      const controller = operationalSessions.get(sessionId);
+      if (!controller) { json(404, { error: "operational_session_not_found" }); return; }
+      json(200, { ...controller.snapshot(), sessionId, shadowOnly: true, brokerAutomation: "NONE" });
+      return;
+    }
     if (path === "/health" || path === "/api/health") {
       json(200, { ok: true, ts: Date.now() });
       return;
