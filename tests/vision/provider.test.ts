@@ -63,7 +63,22 @@ describe("NexxusVisionProvider", () => {
     const call = fetch.mock.calls[0] as unknown as [unknown, { body?: unknown }];
     const request = JSON.parse(String(call[1].body));
     const image = request.messages[0].content.find((block: { type: string }) => block.type === "image");
-    expect(result).toMatchObject({ availability: "OBSERVED", imageProvided: true, imageBytes: 6, imageHash: expect.stringMatching(/^[0-9a-f]{16}$/) });
+    expect(result).toMatchObject({ availability: "PARTIAL", imageProvided: true, imageBytes: 6, imageHash: expect.stringMatching(/^[0-9a-f]{16}$/) });
     expect(image).toMatchObject({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: "AAECAwQF" } });
+  });
+
+  it("repairs a fenced/prefixed response and preserves partial visual facts", async () => {
+    const fetch = vi.fn(async () => new Response(JSON.stringify({ content: [{ type: "text", text: 'Here is the visual read:\n```json\n{"trend":"BEARISH","momentum":"DOWN","asset":{"value":"USDCAD","confidence":"0.8"}}\n```' }] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+    const result = await new ServerlessVisionProvider({ apiKey: "redacted", baseUrl: "https://provider.test", model: "claude-opus-5" }).observe({ imageDataUrl: "data:image/jpeg;base64,AAECAwQF", frameId: "frame-repaired" });
+    expect(result).toMatchObject({ availability: "PARTIAL", parseMode: "REPAIRED", symbol: "USDCAD", trend: "BEARISH", momentum: "DOWN", imageProvided: true });
+  });
+
+  it("keeps image provenance when the provider returns malformed JSON", async () => {
+    const fetch = vi.fn(async () => new Response(JSON.stringify({ content: [{ type: "text", text: "{trend: BEARISH" }] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+    const result = await new ServerlessVisionProvider({ apiKey: "redacted", baseUrl: "https://provider.test", model: "claude-opus-5" }).observe({ imageDataUrl: "data:image/jpeg;base64,AAECAwQF", frameId: "frame-invalid" });
+    expect(result).toMatchObject({ availability: "UNAVAILABLE", parseMode: "FAILED", imageProvided: true, imageBytes: 6 });
+    expect(result.notes).toContain("VISION_INVALID_JSON");
   });
 });
