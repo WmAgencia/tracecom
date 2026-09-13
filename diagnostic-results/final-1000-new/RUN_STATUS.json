@@ -1,0 +1,9 @@
+{
+  "status": "INVALIDATED_BY_CANONICAL_SETTLEMENT_MIGRATION",
+  "commit": "7129359",
+  "reason": "The runner derived WIN/LOSS from netReturn after execution cost instead of the canonical direction-only settleTrade function.",
+  "trainingEligible": false,
+  "calibrationEligible": false,
+  "promotionEligible": false,
+  "replacement": "../final-1000-settlement-v2/RUN_USDCAD_REPORT.json"
+}

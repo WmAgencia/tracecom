@@ -6,7 +6,7 @@
  * phases are a reporting partition of the causal engine output; no broker
  * capability is imported or invoked.
  *
- * Usage: tsx src/cli/paper-runner.ts path/to/usdcad-1m.json [output-dir]
+ * Usage: tsx src/cli/paper-runner.ts path/to/usdcad-1m.json [output-dir] [run-id]
  */
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { runPrequentialExperiment, type ResearchInput, type ResearchTrade } from "../multi-horizon/engine";
@@ -27,18 +27,19 @@ function parse(raw: unknown): { input: ResearchInput; candles: MarketCandle[] } 
   return { candles, input: { provider: value.provider ?? "user-ohcl-export", minimumResolutionSeconds: value.minimumResolutionSeconds ?? 60, series: { [value.symbol ?? "USD/CAD"]: candles }, maxActionable: 1_000 } };
 }
 
-function report(trades: readonly ResearchTrade[], source: string) {
-  const phases = PHASES.map((phase, i) => { const rows = trades.slice(i ? PHASES.slice(0, i).reduce((n, p) => n + p.size, 0) : 0, PHASES.slice(0, i + 1).reduce((n, p) => n + p.size, 0)); const wins = rows.filter((r) => r.outcome === "WIN").length; return { phase: phase.id, target: phase.size, n: rows.length, wins, losses: rows.filter((r) => r.outcome === "LOSS").length, winRate: rows.length ? wins / rows.length : null, firstTimestamp: rows[0]?.timestamp ?? null, lastTimestamp: rows.at(-1)?.timestamp ?? null }; });
-  return { schemaVersion: 1, mode: "SHADOW_PAPER_REPLAY", source, symbol: "USD/CAD", phases, total: trades.length, trades, note: "Outcomes derive only from supplied closed OHLC. No orders, prices, or trades were fabricated." };
+function report(trades: readonly ResearchTrade[], source: string, runId: string) {
+  const phases = PHASES.map((phase, i) => { const rows = trades.slice(i ? PHASES.slice(0, i).reduce((n, p) => n + p.size, 0) : 0, PHASES.slice(0, i + 1).reduce((n, p) => n + p.size, 0)); const wins = rows.filter((r) => r.outcome === "WIN").length; const losses = rows.filter((r) => r.outcome === "LOSS").length; const draws = rows.filter((r) => r.outcome === "DRAW").length; return { phase: phase.id, target: phase.size, n: rows.length, wins, losses, draws, evaluatedExcludingDraws: wins + losses, winRateExcludingDraws: wins + losses ? wins / (wins + losses) : null, firstTimestamp: rows[0]?.timestamp ?? null, lastTimestamp: rows.at(-1)?.timestamp ?? null }; });
+  return { schemaVersion: 2, runId, mode: "SHADOW_PAPER_REPLAY", source, symbol: "USD/CAD", settlementSource: "src/training/settlement.ts#settleTrade", temporalValidity: "VALID_BUCKET_ALIGNED", trainingEligible: false, phases, total: trades.length, trades, note: "Outcomes derive only from supplied closed OHLC through canonical settleTrade. This 1m replay is temporally approximate and sends no broker orders." };
 }
 
-const [file, output = "diagnostic-results/paper/usdcad"] = process.argv.slice(2);
+const [file, output = "diagnostic-results/paper/usdcad", requestedRunId] = process.argv.slice(2);
 if (!file) throw new Error("USAGE: paper-runner <real-usdcad-1m.json> [output-dir]");
+const runId = requestedRunId ?? `paper-${new Date().toISOString().replace(/[:.]/g, "-")}`;
 const parsed = parse(JSON.parse(await readFile(file, "utf8")));
 const result = runPrequentialExperiment(parsed.input, 60);
 if (result.status !== "COMPLETED" || result.trades.length < 1_000) throw new Error(`PAPER_DATA_INSUFFICIENT: engine produced ${result.trades.length}/1000 actionable windows; no partial A/B/C/D report written`);
-const payload = report(result.trades.slice(0, 1_000), file);
+const payload = report(result.trades.slice(0, 1_000), file, runId);
 await mkdir(output, { recursive: true });
 await writeFile(`${output}/RUN_USDCAD_REPORT.json`, JSON.stringify(payload, null, 2), "utf8");
-await writeFile(`${output}/RUN_USDCAD_REPORT.md`, `# USD/CAD paper replay\n\n- Mode: **SHADOW_PAPER_REPLAY**\n- Source: \`${file}\`\n- No broker orders were sent.\n\n| phase | target | n | wins | losses | WR | first | last |\n|---|---:|---:|---:|---:|---:|---|---|\n${payload.phases.map((p) => `| ${p.phase} | ${p.target} | ${p.n} | ${p.wins} | ${p.losses} | ${p.winRate === null ? "—" : (p.winRate * 100).toFixed(2) + "%"} | ${p.firstTimestamp ?? "—"} | ${p.lastTimestamp ?? "—"} |`).join("\n")}\n`, "utf8");
+await writeFile(`${output}/RUN_USDCAD_REPORT.md`, `# USD/CAD paper replay\n\n- Run ID: \`${runId}\`\n- Mode: **SHADOW_PAPER_REPLAY**\n- Source: \`${file}\`\n- Settlement: \`src/training/settlement.ts#settleTrade\`\n- Temporal validity: **VALID_BUCKET_ALIGNED**\n- Training eligible: **NO**\n- No broker orders were sent.\n\n| phase | target | n | wins | losses | draws | WR excluding draws | first | last |\n|---|---:|---:|---:|---:|---:|---:|---|---|\n${payload.phases.map((p) => `| ${p.phase} | ${p.target} | ${p.n} | ${p.wins} | ${p.losses} | ${p.draws} | ${p.winRateExcludingDraws === null ? "—" : (p.winRateExcludingDraws * 100).toFixed(2) + "%"} | ${p.firstTimestamp ?? "—"} | ${p.lastTimestamp ?? "—"} |`).join("\n")}\n`, "utf8");
 console.log(JSON.stringify({ status: "COMPLETE", output, phases: payload.phases }, null, 2));

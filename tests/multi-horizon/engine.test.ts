@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { MarketCandle } from "../../src/market/model";
 import { runPrequentialExperiment } from "../../src/multi-horizon/engine";
+import { settleTrade } from "../../src/training/settlement";
 
 function candles(symbol: string, count = 2_800): MarketCandle[] {
   return Array.from({ length: count }, (_, index) => {
@@ -26,6 +27,26 @@ describe("multi-horizon prequential research", () => {
     expect(new Set(holdout.map((row) => `${row.modelVersion}/${row.strategyVersion}`)).size).toBe(1);
     expect(result.trades.every((row) => row.dataQualityScore >= 0.7)).toBe(true);
     expect(result.trades.every((row) => Date.parse(row.expiryTimestamp) - Date.parse(row.timestamp) === 60_000)).toBe(true);
-    expect(result.trades.filter((row) => row.outcome === "WIN").every((row) => row.netReturn > 0)).toBe(true);
+    expect(result.trades.every((row) => row.reasonCodes.includes("CANONICAL_SETTLE_TRADE"))).toBe(true);
+    expect(result.trades.every((row) => {
+      const independent = settleTrade({
+        direction: row.direction,
+        entryPrice: row.entryPrice,
+        exitPrice: row.exitPrice,
+        entryTimestamp: Date.parse(row.timestamp),
+        exitTimestamp: Date.parse(row.expiryTimestamp),
+        dueTimestamp: Date.parse(row.expiryTimestamp),
+        entrySymbol: row.symbol,
+        exitSymbol: row.symbol,
+      });
+      return independent.outcome === row.outcome && independent.reason === row.settlementReason;
+    })).toBe(true);
+  });
+
+  it("does not relabel a directionally correct paper trade as LOSS because of execution cost", () => {
+    const result = runPrequentialExperiment({ provider: "test", minimumResolutionSeconds: 60, series: { "EUR/USD": candles("EUR/USD") }, maxActionable: 500 }, 60);
+    const costDominatedWin = result.trades.find((row) => row.outcome === "WIN" && row.netReturn < 0);
+    expect(costDominatedWin).toBeDefined();
+    expect(costDominatedWin?.settlementReason).toBe("DIRECTIONAL_MOVE");
   });
 });

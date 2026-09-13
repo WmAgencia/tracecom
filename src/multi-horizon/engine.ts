@@ -8,6 +8,7 @@
  */
 import type { MarketCandle } from "../market/model";
 import { executionCostPct } from "../risk/fees";
+import { settleTrade, type SettlementResult } from "../training/settlement";
 
 /** TRACE_1M is the only active research target. Older horizon artifacts remain
  * historical evidence, but no new sub-/multi-minute study starts from here. */
@@ -38,9 +39,14 @@ export interface ResearchTrade {
   readonly expiryTimestamp: string;
   readonly symbol: string;
   readonly horizonSeconds: ResearchHorizonSeconds;
-  readonly direction: ResearchDirection;
+  readonly direction: Exclude<ResearchDirection, "WAIT">;
   readonly probability: number;
   readonly outcome: "WIN" | "LOSS" | "DRAW";
+  /** Prices and reason retained so every reported label can be independently
+   * reconciled against the canonical settlement function. */
+  readonly entryPrice: number;
+  readonly exitPrice: number;
+  readonly settlementReason: SettlementResult["reason"];
   readonly grossReturn: number;
   readonly netReturn: number;
   readonly cost: number;
@@ -219,7 +225,19 @@ export function runPrequentialExperiment(input: ResearchInput, horizonSeconds: R
     const net = row.gross - cost;
     const probability = frozenCalibration ? frozenCalibration(row.probability) : calibrate(row.probability, observed);
     const entryAt = row.entry.timestamp + 60_000;
-    trades.push({ tradeId: `mh-${horizonSeconds}-${row.symbol.replace("/", "")}-${entryAt}`, ordinal: trades.length + 1, phase: frozen ? "LOCKED_HOLDOUT" : "ADAPTIVE", modelVersion: `mh-v${model}`, strategyVersion: active, strategy: active, timestamp: new Date(entryAt).toISOString(), expiryTimestamp: new Date(row.exit.timestamp + 60_000).toISOString(), symbol: row.symbol, horizonSeconds, direction: row.direction, probability, outcome: net > 0 ? "WIN" : net < 0 ? "LOSS" : "DRAW", grossReturn: row.gross, netReturn: net, cost, session: row.session, regime: row.regime, dataQualityScore: row.quality, reasonCodes: ["CLOSED_1M_SOURCE", "ENTRY_AT_CANDLE_CLOSE", "CAUSAL_ENTRY", "HORIZON_EMBARGO", "ECONOMIC_DEAD_ZONE", frozenCalibration ? "CALIBRATION_FROZEN" : "EXPANDING_CAUSAL_CALIBRATION", `STRATEGY_${active}`] });
+    const expiryAt = row.exit.timestamp + 60_000;
+    const settlement = settleTrade({
+      direction: row.direction,
+      entryPrice: row.entry.close,
+      exitPrice: row.exit.close,
+      entryTimestamp: entryAt,
+      exitTimestamp: expiryAt,
+      dueTimestamp: expiryAt,
+      entrySymbol: row.symbol,
+      exitSymbol: row.symbol,
+    });
+    if (settlement.outcome === "UNKNOWN") throw new Error(`SETTLEMENT_INVARIANT_FAILED: ${settlement.reason}`);
+    trades.push({ tradeId: `mh-${horizonSeconds}-${row.symbol.replace("/", "")}-${entryAt}`, ordinal: trades.length + 1, phase: frozen ? "LOCKED_HOLDOUT" : "ADAPTIVE", modelVersion: `mh-v${model}`, strategyVersion: active, strategy: active, timestamp: new Date(entryAt).toISOString(), expiryTimestamp: new Date(expiryAt).toISOString(), symbol: row.symbol, horizonSeconds, direction: row.direction, probability, outcome: settlement.outcome, entryPrice: row.entry.close, exitPrice: row.exit.close, settlementReason: settlement.reason, grossReturn: row.gross, netReturn: net, cost, session: row.session, regime: row.regime, dataQualityScore: row.quality, reasonCodes: ["CLOSED_1M_SOURCE", "ENTRY_AT_CANDLE_CLOSE", "CAUSAL_ENTRY", "HORIZON_EMBARGO", "CANONICAL_SETTLE_TRADE", "ECONOMIC_DEAD_ZONE", frozenCalibration ? "CALIBRATION_FROZEN" : "EXPANDING_CAUSAL_CALIBRATION", `STRATEGY_${active}`] });
     pending.push(row);
     if (trades.length >= maxActionable) break;
   }
