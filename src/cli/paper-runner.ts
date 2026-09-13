@@ -20,10 +20,10 @@ function parse(raw: unknown): { input: ResearchInput; candles: MarketCandle[] } 
   const rows = Array.isArray(value?.candles) ? value.candles : (Array.isArray((value as any)?.rows) ? (value as any).rows : null);
   if (!rows) throw new Error("INPUT_INVALID: expected { candles: [...] } from a real OHLC export");
   const candles = rows.map((c: any) => ({ ...c, timestamp: Number(c.timestamp), open: Number(c.open), high: Number(c.high), low: Number(c.low), close: Number(c.close) }))
-    .sort((a, b) => a.timestamp - b.timestamp);
+    .sort((a: MarketCandle, b: MarketCandle) => a.timestamp - b.timestamp);
   if (candles.length < 21) throw new Error("INPUT_INSUFFICIENT: at least 21 chronological candles are required");
-  if (candles.some((c) => !Number.isFinite(c.timestamp) || ![c.open, c.high, c.low, c.close].every(Number.isFinite))) throw new Error("INPUT_INVALID: non-finite OHLC value");
-  if (candles.some((c, i) => i > 0 && c.timestamp <= candles[i - 1]!.timestamp)) throw new Error("INPUT_INVALID: timestamps must be strictly increasing");
+  if (candles.some((c: MarketCandle) => !Number.isFinite(c.timestamp) || ![c.open, c.high, c.low, c.close].every(Number.isFinite))) throw new Error("INPUT_INVALID: non-finite OHLC value");
+  if (candles.some((c: MarketCandle, i: number) => i > 0 && c.timestamp <= candles[i - 1]!.timestamp)) throw new Error("INPUT_INVALID: timestamps must be strictly increasing");
   return { candles, input: { provider: value.provider ?? "user-ohcl-export", minimumResolutionSeconds: value.minimumResolutionSeconds ?? 60, series: { [value.symbol ?? "USD/CAD"]: candles }, maxActionable: 1_000 } };
 }
 
