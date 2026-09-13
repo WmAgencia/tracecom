@@ -1,6 +1,6 @@
 /* Trace/Com Vision: user-initiated capture; local crops; virtual-only training. */
 const $ = (id) => document.getElementById(id);
-const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, stage: "IDLE" };
+const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, stage: "IDLE", session: 0, failures: 0, nextRetryAt: 0 };
 
 const api = async (path, options = {}) => {
   const response = await fetch(path, { ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
@@ -61,6 +61,7 @@ async function shareScreen() {
 }
 
 function stopScreen() {
+  state.session += 1; state.failures = 0; state.nextRetryAt = 0;
   if (state.timer) clearInterval(state.timer); state.timer = null;
   if (state.stream) state.stream.getTracks().forEach((track) => track.stop());
   state.stream = null; state.crop = null; state.frames = [];
@@ -104,9 +105,10 @@ function metrics(image, previous) {
 function headerCrop() { return makeCrop({ x: .04, y: .04, width: .60, height: .12 }, 800); }
 function frameHash(stats) { return stats.sample ? stats.sample.slice(0, 96).join("") : null; }
 
-function startObservation() { if (state.timer) clearInterval(state.timer); observe(); state.timer = setInterval(observe, 5_000); }
+function startObservation() { if (state.timer) clearInterval(state.timer); state.failures = 0; state.nextRetryAt = 0; observe(); state.timer = setInterval(observe, 5_000); }
 async function observe() {
-  if (state.analyzing || !state.stream || !state.crop) return;
+  if (state.analyzing || !state.stream || !state.crop || Date.now() < state.nextRetryAt) return;
+  const session = state.session, stream = state.stream;
   setStage("CHART_CROP_GENERATING"); const chart = makeCrop(state.crop); if (!chart) { setStage("CROP_GENERATION_FAILED"); return; }
   setStage("SANITIZED_CROP_CREATED", `${chart.width}x${chart.height}`);
   const stat = metrics(chart, state.frames.at(-1)?.stats?.sample); const frame = { ...chart, stats: stat, capturedAt: Date.now() };
@@ -116,9 +118,12 @@ async function observe() {
   const snapshot = { analysisId: `vision_${Date.now()}`, timestamp: new Date().toISOString(), timestampMs: Date.now(), symbol: state.lastContext?.symbol || "UNAVAILABLE", horizonSeconds: 60, chartFrame: { crop: state.crop, width: chart.width, height: chart.height, capturedAt: Date.now() }, quantitativeFeatures: { availability: "SCREEN_MOTION_ONLY", frames: state.frames.map((item) => ({ ...item.stats, sample: undefined })) } };
   try {
     setStage("FABLE_REQUEST_STARTED"); const started = Date.now(); const result = await api("/api/fable/trade", { method: "POST", body: JSON.stringify({ snapshot, chartImages: temporal, contextImage: headerCrop()?.dataUrl || null }) });
-    const latency = Date.now() - started; state.lastAnalysis = result.analysis; renderAnalysis(result.analysis || {}, latency); await persistDecision(snapshot, result.analysis || {}); await trainIfActive(snapshot, result.analysis || {}, stat, latency);
+    if (session !== state.session || stream !== state.stream) return;
+    const latency = Date.now() - started; state.failures = 0; state.nextRetryAt = 0; state.lastAnalysis = result.analysis; renderAnalysis(result.analysis || {}, latency); await persistDecision(snapshot, result.analysis || {}); await trainIfActive(snapshot, result.analysis || {}, stat, latency);
   } catch (error) {
+    if (session !== state.session || stream !== state.stream) return;
     const message = String(error.message || error);
+    state.failures += 1; state.nextRetryAt = Date.now() + Math.min(60_000, 5_000 * (2 ** Math.min(state.failures - 1, 3)));
     setFable("ERROR");
     setStage("ANALYSIS_ERROR", message); text("decisionSummary", message.includes("FABLE_VISION_UNSUPPORTED") ? "O gateway Fable atual não aceitou o crop de imagem. Nenhum sinal visual será emitido." : `Erro de análise: ${message}`);
   }
