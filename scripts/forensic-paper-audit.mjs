@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
-const results = JSON.parse(fs.readFileSync('paper-usdcad-1000-results.json', 'utf8'));
+const resultFile = process.argv[2] || 'paper-usdcad-1000-results.json';
+const results = JSON.parse(fs.readFileSync(resultFile, 'utf8'));
 const dataset = JSON.parse(fs.readFileSync('data/real/usdcad-1m-8d.json', 'utf8'));
 const rows = new Map(dataset.rows.map(r => [Number(r.timestamp), r]));
 const trades = results.trades;
