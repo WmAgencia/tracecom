@@ -6,6 +6,7 @@
     "latestSettlementTimestamp": "2026-09-11T21:23:00.000Z"
   },
   "attempts": [
+    {"source":"FXCM","method":"weekly CSV.GZ download","url":"https://tickdata.fxcorporate.com/USDCAD/2026/{36,37}.csv.gz","httpStatus":200,"authenticationRequired":true,"result":"BLOCKED_CLOUDFLARE_ACCESS","files":{"36":"32868 bytes, HTML sign-in page, not gzip","37":"32868 bytes, HTML sign-in page, not gzip"},"reason":"HTTP 200 response was text/html Cloudflare Access sign-in; gzip/CSV validation failed"},
     {"source":"TrueFX","method":"historical downloads","url":"https://www.truefx.com/truefx-historical-downloads-2/","httpStatus":200,"authenticationRequired":true,"result":"BLOCKED_AUTH_REQUIRED","reason":"official historical files require login/registration; no bypass attempted"},
     {"source":"Dukascopy","method":"historical tick bi5 endpoint","url":"https://datafeed.dukascopy.com/datafeed/USDCAD/2026/08/13/00h_ticks.bi5","httpStatus":503,"authenticationRequired":false,"result":"UNAVAILABLE","reason":"endpoint returned Service Unavailable"},
     {"source":"HistData","method":"manual historical download page","url":"https://www.histdata.com/download-free-forex-data/","httpStatus":200,"authenticationRequired":false,"result":"NO_VERIFIED_FILE","reason":"page reachable but no tick file covering required period was obtained"}
