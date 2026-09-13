@@ -157,6 +157,10 @@ async function temporaryVisionUrls(images: FableImage[]): Promise<{ images: Arra
     return { images: visualImages, cleanup: async () => { if (uploaded.length) await del(uploaded); } };
   } catch (error) {
     if (uploaded.length) await del(uploaded).catch(() => undefined);
+    // Do not leak URLs from a partially completed Blob upload into the
+    // fallback request. Mixing transports makes the provider see duplicate
+    // frames and can produce a misleading multimodal 422.
+    visualImages.length = 0;
     // Fallback for suspended Blob stores: same-origin, signed, short-lived memory transport.
     const fallback: string[] = [];
     for (const image of images) {
@@ -472,7 +476,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     if (path === "/api/analytics/record" && req.method === "POST") {
       if (body && typeof body === "object" && !Array.isArray(body)) decisionEvents.push({ ...(body as Record<string, unknown>), recordedAt: Date.now() });
       while (decisionEvents.length > 500) decisionEvents.shift();
-      json(200, { ok: true, persisted: true, persistence: "BEST_EFFORT_SERVERLESS" });
+      json(200, { ok: true, persisted: false, persistence: "BEST_EFFORT_SERVERLESS", note: "accepted_in_memory; durable persistence requires the local/managed datastore" });
       return;
     }
 
