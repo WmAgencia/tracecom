@@ -125,6 +125,18 @@ describe("sanitized crop transport contract", () => {
     expect(html).toContain("DOCUMENTAÇÃO DA API");
   });
 
+  it("normalizes new decision ids, keeps legacy ids and never uses sessionId as trace", () => {
+    const ids = readFileSync("src/research/ids.ts", "utf8");
+    expect(ids).toContain("KNOWN_DECISION_PREFIXES");
+    expect(ids).toContain("local-");
+    expect(ids).toContain("decision_candle_");
+    expect(browser).toContain("decision_${now}_");
+    expect(browser).not.toContain("traceId: state.liveSessionId");
+    expect(browser).toContain("trace_${event}_${Date.now()}");
+    expect(browser).toContain("state.currentTraceId = `trace_${candleId}`");
+    expect(api).toContain("DATA_COLLECTION_FREEZE");
+  });
+
   it("auto-authorizes the panel without ever asking for a credential", () => {
     const liveApi = readFileSync("api/live-api.ts", "utf8");
     const adminSession = readFileSync("src/security/admin-session.ts", "utf8");

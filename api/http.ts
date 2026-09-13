@@ -561,7 +561,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
     if (path === "/api/version" && req.method === "GET") {
-      json(200, { commitSha: process.env.VERCEL_GIT_COMMIT_SHA || "unknown", buildTimestamp: process.env.VERCEL_GIT_COMMIT_SHA ? (process.env.VERCEL_DEPLOYMENT_ID || "unknown") : "unknown", visionProviderEnabled: process.env.TRACECOM_VISION_ENABLED !== "false", visionModel: process.env.TRACECOM_VISION_MODEL || "claude-opus-5", visionEndpoint: "/v1/messages", fableMode: "text-only", pipelineVersion: "vision-observation-fable-text-v1" });
+      json(200, { commitSha: process.env.VERCEL_GIT_COMMIT_SHA || "unknown", dataCollectionFreeze: "DATA_COLLECTION_FREEZE", strategyAutoChange: false, buildTimestamp: process.env.VERCEL_GIT_COMMIT_SHA ? (process.env.VERCEL_DEPLOYMENT_ID || "unknown") : "unknown", visionProviderEnabled: process.env.TRACECOM_VISION_ENABLED !== "false", visionModel: process.env.TRACECOM_VISION_MODEL || "claude-opus-5", visionEndpoint: "/v1/messages", fableMode: "text-only", pipelineVersion: "vision-observation-fable-text-v1" });
       return;
     }
 
