@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS market_contexts(id bigserial PRIMARY KEY,market_context_id text UNIQUE,session_id text,segment_id text,asset_canonical text,asset_display text,base_currency text,quote_currency text,market_type text,base_timeframe_seconds integer,visible_window_seconds integer,trade_expiration_seconds integer,source text,confidence numeric,validation_status text,frame_id text,observed_at timestamptz,created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS market_contexts_session_idx ON market_contexts(session_id,observed_at DESC);
+ALTER TABLE price_observations ADD COLUMN IF NOT EXISTS market_context_id text;
+ALTER TABLE price_observations ADD COLUMN IF NOT EXISTS segment_id text;
+ALTER TABLE price_observations ADD COLUMN IF NOT EXISTS asset_canonical text;
+ALTER TABLE price_observations ADD COLUMN IF NOT EXISTS market_type text;
+ALTER TABLE price_observations ADD COLUMN IF NOT EXISTS base_timeframe_seconds integer;
+ALTER TABLE price_observations ADD COLUMN IF NOT EXISTS visible_window_seconds integer;
+ALTER TABLE price_observations ADD COLUMN IF NOT EXISTS trade_expiration_seconds integer;
+ALTER TABLE price_observations ADD COLUMN IF NOT EXISTS context_validation_status text;

@@ -519,6 +519,10 @@ async function relayAdminSend(method: "POST" | "PUT", path: string, payload: unk
   if (!base || !admin) return false;
   try { const response = await fetch(`${base}${path}`, { method, headers: { "content-type": "application/json", "x-relay-admin": admin }, body: JSON.stringify(payload), signal: AbortSignal.timeout(8_000) }); return response.ok; } catch { return false; }
 }
+async function relayAdminGet(path: string): Promise<Record<string, unknown>> {
+  const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, ""); const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim(); if (!base || !admin) throw new Error("relay_not_configured");
+  const response = await fetch(`${base}${path}`, { headers: { "x-relay-admin": admin }, signal: AbortSignal.timeout(8_000) }); if (!response.ok) throw new Error(`relay_${response.status}`); return await response.json() as Record<string, unknown>;
+}
 
 async function fetchRelayBundle(sessionId: string): Promise<Record<string, unknown> | null> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
@@ -776,6 +780,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
+    if (path === "/api/quant/research/dataset-summary" && req.method === "GET") {
+      try { json(200, await relayAdminGet("/api/quant/research/dataset-summary")); } catch { json(503, { error: "quant_research_unavailable" }); } return;
+    }
     if (path === "/api/quant/shadow" && req.method === "POST") {
       const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
       const raw = Array.isArray(input.candles) ? input.candles : [];
