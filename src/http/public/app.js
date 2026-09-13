@@ -1,6 +1,6 @@
 /* Trace/Com Vision: user-initiated capture; local crops; virtual-only training. */
 const $ = (id) => document.getElementById(id);
-const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, countdownTimer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, stage: "IDLE", session: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0, lastSubmittedHash: null, lastSubmittedAt: 0, requestCount: 0 };
+const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, countdownTimer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, stage: "IDLE", session: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0, lastSubmittedHash: null, lastSubmittedAt: 0, requestCount: 0, hasSuccessfulAnalysis: false };
 
 const api = async (path, options = {}) => {
   const response = await fetch(path, { ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
@@ -41,7 +41,7 @@ async function shareScreen() {
   stopScreen();
   try {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 12, max: 20 } }, audio: false });
-    state.stream = stream; state.frames = []; state.lastAnalysis = null;
+    state.stream = stream; state.frames = []; state.lastAnalysis = null; state.hasSuccessfulAnalysis = false;
     const video = $("screenVideo"); video.srcObject = stream; video.hidden = false; $("previewEmpty").hidden = true;
     $("shareButton").textContent = "RECOMPARTILHAR"; $("stopShareButton").hidden = false; $("startTrainingButton").disabled = false;
     stream.getVideoTracks()[0]?.addEventListener("ended", stopScreen, { once: true });
@@ -67,7 +67,7 @@ function stopScreen() {
   if (state.countdownTimer) { clearTimeout(state.countdownTimer); state.countdownTimer = null; }
   if (state.timer) clearInterval(state.timer); state.timer = null;
   if (state.stream) state.stream.getTracks().forEach((track) => track.stop());
-  state.stream = null; state.crop = null; state.frames = [];
+  state.stream = null; state.crop = null; state.frames = []; state.hasSuccessfulAnalysis = false;
   const video = $("screenVideo"); video.pause(); video.srcObject = null; video.hidden = true;
   $("previewEmpty").hidden = false; $("shareButton").textContent = "COMPARTILHAR TELA"; $("stopShareButton").hidden = true; $("startTrainingButton").disabled = true;
   setCapture("", "NÃO COMPARTILHADO"); updatePipeline();
@@ -113,7 +113,7 @@ async function observe() {
   if (state.analyzing || !state.stream || !state.crop || Date.now() < state.nextRetryAt) return;
   if (state.circuitOpen) { state.circuitOpen = false; state.failures = 0; setStage("CIRCUIT_HALF_OPEN"); }
   const session = state.session, stream = state.stream;
-  setStage("CHART_CROP_GENERATING"); setFable("LOADING"); text("pipelineState", "CAPTURANDO"); const chart = makeCrop(state.crop); if (!chart) { setStage("CROP_GENERATION_FAILED"); setFable("ERROR"); return; }
+  setStage("CHART_CROP_GENERATING"); if (!state.hasSuccessfulAnalysis) setFable("LOADING"); else setFable("ONLINE"); text("pipelineState", "CAPTURANDO"); const chart = makeCrop(state.crop); if (!chart) { setStage("CROP_GENERATION_FAILED"); setFable("ERROR"); return; }
   setStage("SANITIZED_CROP_CREATED", `${chart.width}x${chart.height}`);
   const stat = metrics(chart, state.frames.at(-1)?.stats?.sample); const frame = { ...chart, stats: stat, capturedAt: Date.now() };
   state.frames.push(frame); state.frames = state.frames.slice(-4); state.analyzing = true;
@@ -132,9 +132,9 @@ async function observe() {
   const temporal = state.frames.slice().reverse().map((item, index) => ({ label: index ? `T-${index * 5}s` : "T0", dataUrl: item.dataUrl }));
   const snapshot = { analysisId: `vision_${Date.now()}`, timestamp: new Date().toISOString(), timestampMs: Date.now(), symbol: state.lastContext?.symbol || "UNAVAILABLE", horizonSeconds: 60, chartFrame: { crop: state.crop, width: chart.width, height: chart.height, capturedAt: Date.now() }, quantitativeFeatures: { availability: "SCREEN_MOTION_ONLY", frames: state.frames.map((item) => ({ ...item.stats, sample: undefined })) } };
   try {
-    setStage("FABLE_REQUEST_STARTED"); const started = Date.now(); const result = await api("/api/fable/trade", { method: "POST", body: JSON.stringify({ snapshot, chartImages: temporal, contextImage: headerCrop()?.dataUrl || null }) });
+    setStage("PIPELINE_REQUEST_STARTED"); const started = Date.now(); const result = await api("/api/fable/trade", { method: "POST", body: JSON.stringify({ snapshot, chartImages: temporal, contextImage: headerCrop()?.dataUrl || null }) });
     if (session !== state.session || stream !== state.stream) return;
-    const latency = Date.now() - started; state.failures = 0; state.nextRetryAt = 0; state.lastAnalysis = result.analysis; renderAnalysis(result.analysis || {}, latency); await persistDecision(snapshot, result.analysis || {}); await trainIfActive(snapshot, result.analysis || {}, stat, latency);
+    const latency = Date.now() - started; state.failures = 0; state.nextRetryAt = 0; state.lastAnalysis = result.analysis; state.hasSuccessfulAnalysis = true; renderAnalysis(result.analysis || {}, latency); await persistDecision(snapshot, result.analysis || {}); await trainIfActive(snapshot, result.analysis || {}, stat, latency);
   } catch (error) {
     if (session !== state.session || stream !== state.stream) return;
     const message = String(error.message || error);
