@@ -1,4 +1,4 @@
-import { describe, expect, it, afterEach } from "vitest";
+import { describe, expect, it, afterEach, vi } from "vitest";
 import { TraceconHttpApi } from "../../src/http/api";
 import { Datastore } from "../../src/store/db";
 import { MarketDataService } from "../../src/market/service";
@@ -75,6 +75,18 @@ describe("TraceconHttpApi", () => {
       symbol: "EURUSD", timeframe: "1m", direction: "up", decision: "BUY", entryTime: 1_800_000_000_000, entryPrice: 1.1,
     });
     expect(response).toMatchObject({ status: 200, json: { ok: true, id: "shadow-test" } });
+  });
+
+  it("mantém o Fable text-only quando não há provider de percepção", async () => {
+    const analyze = vi.fn().mockResolvedValue({ analysis: { decision: "WAIT" } });
+    const apiInstance = new TraceconHttpApi({ runtime: makeRuntime() as never, port: 0, host: "127.0.0.1", fableTrader: { analyze } as never });
+    const api = apiInstance as unknown as { route(...a: unknown[]): Promise<{ status: number }> };
+    const frame = `data:image/jpeg;base64,${Buffer.from("frame").toString("base64")}`;
+    const response = await api.route({ headers: {} } as never, "POST", "/api/fable/trade", new URLSearchParams(), {
+      snapshot: { analysisId: "test" }, chartImage: frame, chartImages: [{ label: "current", dataUrl: frame }],
+    });
+    expect(response.status).toBe(200);
+    expect(analyze).toHaveBeenCalledWith({ snapshot: { analysisId: "test" }, chartImage: null });
   });
 
   it("rota desconhecida → 404", () => {

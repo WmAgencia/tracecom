@@ -359,6 +359,13 @@ export class TraceconHttpApi {
           // to Fable when a provider is configured; only its normalized result.
           chartImage = null;
           images = undefined;
+        } else {
+          // The decision agent is text-only in the production pipeline. If no
+          // explicit perception provider is configured, never forward raw
+          // crops to Fable (the provider may reject multimodal payloads and
+          // the agent must not silently become the perception layer).
+          chartImage = null;
+          images = undefined;
         }
         const result = await this.fableTrader.analyze({ snapshot, chartImage, ...(images ? { chartImages: images } : {}) });
         return { status: 200, json: result };
