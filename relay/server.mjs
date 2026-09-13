@@ -11,11 +11,13 @@ const admin = process.env.TOKEN_SIGNING_SECRET || '';
 const pepper = process.env.API_KEY_PEPPER || '';
 const staleMs = Number(process.env.LIVE_SESSION_STALE_MS || 60000);
 const clients = new Set();
+const limits = new Map();
 const scopes = ['live:session:read', 'live:events:read', 'live:frame:read', 'live:export:read'];
 const hash = key => crypto.createHash('sha256').update(`${pepper}:${key}`).digest('hex');
 const sign = payload => { const raw=Buffer.from(JSON.stringify(payload)).toString('base64url'); return `${raw}.${crypto.createHmac('sha256',admin).update(raw).digest('base64url')}`; };
 const verify = token => { const [raw,sig]=String(token||'').split('.'), expected=raw?crypto.createHmac('sha256',admin).update(raw).digest('base64url'):''; if(!raw||!sig||sig.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(sig),Buffer.from(expected)))return null; const value=JSON.parse(Buffer.from(raw,'base64url').toString()); return value.exp>Date.now()&&value.scope==='telemetry:write'&&value.issuer==='tracecom'&&value.audience==='tracecom-live-relay'&&value.nonce?value:null; };
 const reply = (res, code, body) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); };
+function rateLimit(req, bucket, ceiling, windowMs=60000) { const key=`${bucket}:${req.socket.remoteAddress||'unknown'}`, now=Date.now(), hit=limits.get(key)||{at:now,count:0}; if(now-hit.at>windowMs){hit.at=now;hit.count=0;} hit.count++; limits.set(key,hit); return hit.count<=ceiling; }
 async function body(req) { let raw=''; for await (const part of req) { raw += part; if(raw.length > 262144) throw Error('payload_too_large'); } return raw ? JSON.parse(raw) : {}; }
 async function migrate() {
   const directory = path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrations');
@@ -55,6 +57,13 @@ async function currentSnapshot() {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   try {
+    const allowed=(process.env.ALLOWED_ORIGINS||'').split(',').filter(Boolean), origin=req.headers.origin;
+    if(origin && !allowed.includes(origin) && url.pathname!=='/health') return reply(res,403,{error:'forbidden_origin'});
+    if(origin && allowed.includes(origin)) res.setHeader('access-control-allow-origin',origin);
+    if(req.method==='OPTIONS'){res.writeHead(204);return res.end();}
+    const bucket=url.pathname.includes('/stream')?'stream':url.pathname.includes('/frame')?'frame':url.pathname.includes('/export')?'export':url.pathname.includes('/ingest')?'ingest':url.pathname.includes('/keys')?'keys':'session';
+    const ceiling=bucket==='stream'?20:bucket==='frame'?30:bucket==='ingest'?240:60;
+    if(!rateLimit(req,bucket,ceiling)){res.setHeader('retry-after','60');return reply(res,429,{error:'rate_limited',bucket});}
     if(url.pathname === '/health') return reply(res, 200, { ok:true, db:true, service:'tracecom-live-relay' });
     if(url.pathname === '/api/live/keys' && req.method === 'POST') {
       if(req.headers['x-relay-admin'] !== admin) return reply(res, 401, {error:'unauthorized'});
@@ -81,7 +90,7 @@ const server = http.createServer(async (req, res) => {
     }
     if(url.pathname === '/api/live/session') { if(!await authenticate(req,'live:session:read'))return reply(res,401,{error:'unauthorized'}); return reply(res,200,await currentSnapshot()); }
     if(url.pathname === '/api/live/stream') { if(!await authenticate(req,'live:events:read'))return reply(res,401,{error:'unauthorized'}); res.writeHead(200,{'content-type':'text/event-stream','cache-control':'no-cache','connection':'keep-alive'}); res.write('retry: 3000\n\n'); const after=Number(req.headers['last-event-id']||0); if(Number.isFinite(after)&&after>0){const missed=(await pool.query('SELECT id,event_type,payload_json FROM live_events WHERE id>$1 ORDER BY id ASC LIMIT 500',[after])).rows; for(const event of missed)res.write(`id: ${event.id}\nevent: ${event.event_type}\ndata: ${JSON.stringify(event.payload_json)}\n\n`);} clients.add(res); res.write(`event: session\ndata: ${JSON.stringify(await currentSnapshot())}\n\n`); const h=setInterval(()=>res.write(`event: heartbeat\ndata: ${JSON.stringify({timestamp:new Date().toISOString()})}\n\n`),15000); req.on('close',()=>{clients.delete(res);clearInterval(h)}); return; }
-    if(url.pathname === '/api/live/export') { if(!await authenticate(req,'live:export:read'))return reply(res,401,{error:'unauthorized'}); return reply(res,200,{sessions:(await pool.query('SELECT * FROM live_sessions')).rows,events:(await pool.query('SELECT * FROM live_events ORDER BY id')).rows}); }
+    if(url.pathname === '/api/live/export') { if(!await authenticate(req,'live:export:read'))return reply(res,401,{error:'unauthorized'}); const sessionId=url.searchParams.get('sessionId'), where=sessionId?' WHERE session_id=$1':'', args=sessionId?[sessionId]:[]; const sessions=sessionId?(await pool.query('SELECT * FROM live_sessions WHERE id=$1',args)).rows:(await pool.query('SELECT * FROM live_sessions')).rows, events=(await pool.query(`SELECT * FROM live_events${where} ORDER BY id`,args)).rows, samples=(await pool.query(`SELECT * FROM vision_market_samples${where} ORDER BY id`,args)).rows, decisions=(await pool.query(`SELECT * FROM live_decisions${where} ORDER BY id`,args)).rows, settlements=(await pool.query(`SELECT * FROM live_settlements${where} ORDER BY id`,args)).rows; const output={sessions,events,samples,decisions,settlements}; if(url.searchParams.get('format')==='csv'){const esc=v=>`"${String(v??'').replaceAll('"','""')}"`; const rows=[['table','id','session_id','timestamp','payload'],...events.map(x=>['event',x.id,x.session_id,x.event_timestamp,JSON.stringify(x.payload_json)]),...decisions.map(x=>['decision',x.id,x.session_id,x.timestamp,JSON.stringify(x)])]; res.writeHead(200,{'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename="tracecom-live-export.csv"'});return res.end(rows.map(r=>r.map(esc).join(',')).join('\n')); } if(url.searchParams.get('format')&&url.searchParams.get('format')!=='json')return reply(res,400,{error:'invalid_format'}); return reply(res,200,output); }
     return reply(res,404,{error:'not_found'});
   } catch(error) { return reply(res,error.message==='payload_too_large'?413:400,{error:error.message}); }
 });
