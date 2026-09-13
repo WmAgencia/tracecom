@@ -630,6 +630,18 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
+    if (path.startsWith("/api/shadow/jobs") && req.method === "GET") {
+      const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
+      const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim() ?? "";
+      const token = (req.headers.authorization ?? "").toString();
+      if (!base) { json(503, { error: "relay_not_configured" }); return; }
+      try {
+        const response = await fetch(`${base}${path}`, { headers: token ? { authorization: token } : { "x-relay-admin": admin }, signal: AbortSignal.timeout(8_000) });
+        const payload = await response.text();
+        res.statusCode = response.status; res.setHeader("Content-Type", "application/json"); res.end(payload);
+      } catch { json(502, { error: "relay_unreachable" }); }
+      return;
+    }
     if (path.startsWith("/api/research/") || path.startsWith("/api/shadow/")) {
       if (!researchAuthorized(req)) { json(403, { error: "research_auth_required" }); return; }
       const ip = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || "unknown";
