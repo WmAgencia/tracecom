@@ -20,6 +20,8 @@ import { TrainingStore } from "../src/training/store.js";
 import { validatePriceObservation, type AcceptedObservation } from "../src/vision/price-lock.js";
 import { buildFastDecision } from "../src/engine/fast-path.js";
 import { settleTrade } from "../src/training/settlement.js";
+import { runAudit, type AuditInput } from "../src/research/audit-engine.js";
+import { DEFAULT_VARIANTS, runVariants, type ReplayEvent, type Variant } from "../src/research/replay-engine.js";
 
 type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -573,6 +575,26 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       recordLatency("fast_total", result.timings.totalMs);
       console.info(result.fastPathStatus, JSON.stringify({ candleId: typeof input.candleId === "string" ? input.candleId : null, decision: result.decision, profile: result.selectedProfile, regime: result.regime, rawConfidence: result.rawConfidence, latencyMs: result.timings.totalMs }));
       json(200, { fast: result, predictionHorizonSeconds: result.predictionHorizonSeconds });
+      return;
+    }
+
+    if (path === "/api/research/audit" && req.method === "POST") {
+      const adminKey = process.env.LIVE_API_ADMIN_KEY?.trim() ?? "";
+      const readKey = process.env.LIVE_API_KEY?.trim() ?? "";
+      const suppliedAdmin = req.headers["x-live-admin-key"]?.toString() ?? "";
+      const bearer = (req.headers.authorization ?? "").toString().replace(/^Bearer\s+/i, "");
+      const safeEqual = (expected: string, received: string) => Boolean(expected && received && expected.length === received.length && timingSafeEqual(Buffer.from(expected), Buffer.from(received)));
+      if (!safeEqual(adminKey, suppliedAdmin) && !safeEqual(readKey, bearer)) { json(403, { error: "research_auth_required" }); return; }
+      const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+      const audits = runAudit(input as AuditInput, Array.isArray(input.checks) ? input.checks.filter((item): item is string => typeof item === "string").slice(0, 40) : undefined);
+      let replay: Record<string, unknown> | null = null;
+      if (Array.isArray(input.marketEvents) && input.marketEvents.length) {
+        const requestedVariants = Array.isArray(input.variants) && input.variants.length ? input.variants as Variant[] : DEFAULT_VARIANTS;
+        const report = await runVariants((input.marketEvents as ReplayEvent[]).slice(0, 500), requestedVariants.slice(0, 64), { concurrency: 8 });
+        replay = { evaluations: report.evaluations.length, uniqueMarketEvents: report.uniqueMarketEvents, uniqueGroundTruths: report.uniqueGroundTruths, brokerSideEffects: report.brokerSideEffects, perVariant: report.perVariant };
+      }
+      console.info("RESEARCH_AUDIT_COMPLETED", JSON.stringify({ checks: audits.length, failures: audits.filter((item) => item.status === "FAIL").length, warnings: audits.filter((item) => item.status === "WARN").length, evaluations: replay ? replay.evaluations : 0 }));
+      json(200, { audits, replay, predictionHorizonSeconds: 60, brokerAutomation: "NONE", generatedAt: Date.now() });
       return;
     }
 
