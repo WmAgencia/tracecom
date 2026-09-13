@@ -15,7 +15,7 @@ const OP_LOCKED_STATES = ["ENTRY_COUNTDOWN", "WAITING_ENTRY_CONFIRMATION", "POSI
 function emptyChannel() { return { state: "READY", signal: null, countdownEndsAt: 0, confirmationDeadline: 0, manualEntry: null, settlementAt: 0, settlement: null, cooldownUntil: 0, researchDecisions: 0, midTradeFlips: 0, metrics: { operationalSignals: 0, entryConfirmed: 0, entryNotConfirmed: 0, preEntryInvalidations: 0, manualTradesSettled: 0, manualWins: 0, manualLosses: 0, manualDraws: 0, manualUnknown: 0, midTradeDirectionFlips: 0, withTrendSignals: 0, counterTrendSignals: 0 } }; }
 state.channel = emptyChannel();
 function channelLog(name, detail) { console.info(name, JSON.stringify(detail || {})); }
-function channelRelease(channel, stateName) { channel.state = stateName; channel.signal = null; channel.manualEntry = null; channel.settlementAt = 0; channelLog("OPERATION_CHANNEL_RELEASED", { to: stateName }); }
+function channelRelease(channel, stateName) { const from = channel.state; channel.state = stateName; channel.signal = null; channel.manualEntry = null; channel.settlementAt = 0; channelLog("OPERATION_CHANNEL_RELEASED", { to: stateName }); diagTransition("OperationalChannel", from, stateName, "channel_released", { traceId: state.currentTraceId }); }
 function channelProfileSwitch() { const channel = state.channel; if (OP_LOCKED_STATES.includes(channel.state)) channelLog("PROFILE_SWITCH_DURING_OPERATION_IGNORED", { activeProfile: channel.signal?.profile, nextProfile: state.profile }); else channelLog("PROFILE_SWITCH_ARMED_FOR_NEXT_OPERATION", { profile: state.profile }); }
 function renderOperational() {
   const channel = state.channel; if (!$("opStateValue")) return;
@@ -45,6 +45,7 @@ function channelCandidate(fast, candleId, frameId) {
   channelLog("OPERATIONAL_SIGNAL_CREATED", { signalId: channel.signal.signalId, direction, profile: fast.selectedProfile, rawConfidence: fast.rawConfidence, regime: fast.regime, macroTrend: fast.macroTrend, microTrend: fast.microTrend, trendAlignment: fast.trendAlignment, counterTrend: fast.counterTrend, reversalEvidence: fast.reversalEvidence || [], candleId, frameId });
   channelLog("OPERATIONAL_SIGNAL_LOCKED", { signalId: channel.signal.signalId });
   channelLog("ENTRY_COUNTDOWN_STARTED", { signalId: channel.signal.signalId, countdownEndsAt: channel.countdownEndsAt });
+  diagTransition("OperationalChannel", "READY", "ENTRY_COUNTDOWN", "signal_locked", { signalId: channel.signal.signalId, traceId: state.currentTraceId, marketEventId: candleId });
   renderOperational();
 }
 async function settleManualOperation(priceRow) {
@@ -57,6 +58,8 @@ async function settleManualOperation(priceRow) {
     channel.cooldownUntil = Date.now() + OP_COOLDOWN_MS;
     channelLog("SETTLEMENT_PRICE_LOCKED", { signalId: signal.signalId, exitPrice: priceRow ? priceRow.value : null, source: priceRow ? priceRow.source : "UNAVAILABLE", confidence: priceRow ? priceRow.confidence : 0 });
     channelLog("TRADE_SETTLED", { signalId: signal.signalId, result: result.outcome, reason: result.reason });
+    diagTransition("Settlement", "IN_POSITION", "SETTLED", `result_${result.outcome}`, { signalId: signal.signalId, traceId: state.currentTraceId });
+    diagProvenance({ decisionId: signal.signalId, marketEventId: signal.candleId, candleId: signal.candleId, frameId: signal.frameId, profile: signal.profile, decision: signal.direction, directionalLean: signal.direction, rawScores: { rawConfidence: signal.rawConfidence }, why: { primaryReasons: [`settlement_${result.outcome}`], supportingEvidence: [`entryPrice=${entry.price}`, `source=${entry.source}`], opposingEvidence: [], rejectedAlternatives: [], uncertaintyFactors: result.outcome === "UNKNOWN" ? ["missing_settlement_price"] : [], riskFactors: [] }, warnings: result.outcome === "UNKNOWN" ? ["SETTLEMENT_UNKNOWN"] : [], traceId: state.currentTraceId });
     void liveEmit("SETTLEMENT", { decisionId: signal.signalId, direction: signal.direction, result: result.outcome, entryPrice: entry.price, settlementPrice: priceRow ? priceRow.value : null, manual: true, synthetic: false });
   } catch (error) { channelLog("SETTLEMENT_WAITING", { reason: String(error?.message || error).slice(0, 120) }); }
   renderOperational();
@@ -73,6 +76,7 @@ function channelManualPosition(manual) {
   channelLog("POSITION_CONFIRMED", { signalId: signal.signalId, direction: manual.direction, confidence: manual.confidence, evidence: manual.evidence });
   channelLog("MANUAL_ENTRY_PRICE_LOCKED", { price: priceRow.value, source: priceRow.source, confidence: priceRow.confidence, timestamp: now, signalId: signal.signalId });
   channelLog("OPERATION_IN_PROGRESS", { signalId: signal.signalId, settlementAt: channel.settlementAt });
+  diagTransition("ManualPosition", channel.confirmationDeadline ? "WAITING_ENTRY_CONFIRMATION" : "ENTRY_COUNTDOWN", "IN_POSITION", "visual_position_confirmed", { signalId: signal.signalId, traceId: state.currentTraceId });
   renderOperational();
 }
 setInterval(() => {
@@ -97,7 +101,16 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const diagQueue = [];
 function diagCapture(component, level, event, message, structuredData) { try { diagQueue.push({ logId: `log_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, component, level, event, message: String(message).slice(0, 300), structuredData: structuredData || {}, traceId: state.liveSessionId || null, codeVersion: "web-v1" }); if (diagQueue.length >= 25) void flushDiagnostics(); } catch { /* diagnostics must never break the app */ } }
 async function flushDiagnostics() { if (!state.liveSessionId || !diagQueue.length) return; const logs = diagQueue.splice(0, 50); try { await fetch("/api/live/browser/logs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId: state.liveSessionId, logs }) }); } catch { /* best-effort */ } }
-if (typeof window !== "undefined") { window.addEventListener("error", (event) => diagCapture("browser", "error", "UNCAUGHT_ERROR", event.message || "unknown", { source: event.filename, line: event.lineno })); window.addEventListener("unhandledrejection", (event) => diagCapture("browser", "error", "UNHANDLED_REJECTION", event.reason?.message || String(event.reason || "unknown"))); setInterval(() => void flushDiagnostics(), 15_000); }
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (event) => diagCapture("browser", "error", "UNCAUGHT_ERROR", event.message || "unknown", { source: event.filename, line: event.lineno }));
+  window.addEventListener("unhandledrejection", (event) => diagCapture("browser", "error", "UNHANDLED_REJECTION", event.reason?.message || String(event.reason || "unknown")));
+  for (const level of ["warn", "error"]) { const original = console[level].bind(console); console[level] = (...args) => { original(...args); try { diagCapture("browser", level, level === "error" ? "CONSOLE_ERROR" : "CONSOLE_WARN", args.map((arg) => typeof arg === "string" ? arg : JSON.stringify(arg)).join(" ").slice(0, 280)); } catch { /* never break logging */ } }; }
+  setInterval(() => void flushDiagnostics(), 15_000);
+}
+function postDiag(route, payload) { if (!state.liveSessionId) return; void fetch(route, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId: state.liveSessionId, ...payload }) }).catch(() => {}); }
+function diagSpan(component, operation, startedAt, completedAt, status, relatedIds) { if (!state.liveSessionId) return; postDiag("/api/live/browser/spans", { spans: [{ spanId: `span_${startedAt}_${Math.random().toString(36).slice(2, 6)}`, parentSpanId: state.currentSpanId || null, traceId: state.currentTraceId || null, component, operation, startedAt, completedAt, latencyMs: completedAt - startedAt, status, relatedIds: relatedIds || {} }] }); }
+function diagTransition(machine, from, to, reason, related) { if (!state.liveSessionId) return; postDiag("/api/live/browser/state-transitions", { transitions: [{ machine, from, to, reason, ...(related || {}) }] }); }
+function diagProvenance(provenance) { if (!state.liveSessionId) return; postDiag("/api/live/browser/provenance", { provenance }); }
 
 function loadHistory() {
   try { const rows = JSON.parse(localStorage.getItem("tracecom:vision-history") || "[]"); return Array.isArray(rows) ? rows.slice(-30) : []; } catch { return []; }
@@ -271,7 +284,7 @@ async function observe() {
   state.lastCandleId = candleId;
   try {
     console.info("VISION_REQUEST_PREPARED", JSON.stringify({ requestId, frameId, hasImage: true, bytes: byteLength, hash: imageHash, width: chart.width, height: chart.height, route: "deep_background" }));
-    const started = Date.now(); setStage("FAST_PATH_STARTED"); state.metrics.fastStarted += 1;
+    const started = Date.now(); setStage("FAST_PATH_STARTED"); state.metrics.fastStarted += 1; state.currentTraceId = `trace_${candleId}`; const fastSpanStart = started;
     const fastResponse = await api("/api/fast/decision", { method: "POST", body: JSON.stringify({
       now: Date.now(), candleId, candleSeconds: CANDLE_SECONDS, predictionHorizonSeconds: EXPIRATION_SECONDS, profile: state.profile,
       prices: state.priceObservations.slice(-120).map((item) => ({ value: item.value, timestamp: item.timestamp })),
@@ -284,8 +297,17 @@ async function observe() {
     if (fast.fastPathStatus !== "FAST_PATH_COMPLETED" || fastLatency > FAST_DEADLINE_MS) { state.metrics.fastTimeouts += 1; setStage("FAST_PATH_TIMEOUT", `${fastLatency}ms`); console.warn("FAST_PATH_TIMEOUT", JSON.stringify({ candleId, status: fast.fastPathStatus, latencyMs: fastLatency, deadlineMs: FAST_DEADLINE_MS })); return; }
     if (!fast.operational) { setStage("FAST_PATH_NOT_OPERATIONAL", `${fastLatency}ms`); console.info("FAST_PATH_NOT_OPERATIONAL", JSON.stringify({ candleId, latencyMs: fastLatency, reason: "insufficient_causal_price_evidence", status: fast.fastPathStatus })); return; }
     console.info("FAST_PATH_COMPLETED", JSON.stringify({ candleId, decision: fast.decision, profile: fast.selectedProfile, regime: fast.regime, macroTrend: fast.macroTrend, microTrend: fast.microTrend, trendAlignment: fast.trendAlignment, deepFastAlignment: fast.deepFastAlignment, rawConfidence: fast.rawConfidence, latencyMs: fastLatency, timings: fast.timings }));
+    diagSpan("fast-path", "FAST_PATH", fastSpanStart, Date.now(), "OK", { candleId });
+    diagSpan("fast-path", "REGIME", fastSpanStart, Date.now(), "OK", { regime: fast.regime, macroTrend: fast.macroTrend, microTrend: fast.microTrend });
     state.macroState = fast.macroState || state.macroState;
     channelCandidate(fast, candleId, frameId);
+    diagProvenance({
+      decisionId: state.channel.signal ? state.channel.signal.signalId : `decision_${candleId}`, marketEventId: candleId, frameId, candleId, profile: fast.selectedProfile,
+      decision: fast.decision, directionalLean: fast.directionalLean,
+      rawScores: { bullScore: fast.bullScore, bearScore: fast.bearScore, rawConfidence: fast.rawConfidence }, calibratedScores: {},
+      why: { primaryReasons: [fast.fastPathStatus, `regime=${fast.regime}`], supportingEvidence: [`macroTrend=${fast.macroTrend}`, `microTrend=${fast.microTrend}`, `trendAlignment=${fast.trendAlignment}`, ...((fast.reversalEvidence || []).slice(0, 4))], opposingEvidence: fast.counterTrend ? [`counter_trend_reason=${fast.counterTrendReason || "unknown"}`] : [], rejectedAlternatives: [], uncertaintyFactors: fast.conflictScore > .6 ? [`conflictScore=${fast.conflictScore.toFixed(2)}`] : [], riskFactors: fast.counterTrend ? ["counter_trend"] : [] },
+      conflicts: fast.deepFastAlignment === "CONFLICT" ? ["deep_fast_conflict"] : [], warnings: [], traceId: state.currentTraceId,
+    });
     const result = { analysis: { decision: fast.decision, confidence: fast.rawConfidence, rawConfidence: fast.rawConfidence, directionalLean: fast.directionalLean, leanConfidence: fast.leanConfidence, regime: fast.regime, regimeConfidence: fast.regimeConfidence, profiles: fast.profiles, selectedProfile: fast.selectedProfile, predictionHorizonSeconds: fast.predictionHorizonSeconds, candleSeconds: fast.candleSeconds, expirationSeconds: EXPIRATION_SECONDS, confidenceBuckets: null, fastTimings: fast.timings, visionObservation: state.deepContext.observation, imageUsed: Boolean(state.deepContext.observation), imageStatus: state.deepContext.observation ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", marketContext: state.lastContext || {} } };
     if (session !== state.session || stream !== state.stream || state.lastCandleId !== candleId) { console.info("STALE_DECISION", JSON.stringify({ requestId, candleId, currentCandleId: state.lastCandleId })); return; }
     const latency = Date.now() - started, candleAgeMs = Date.now() - candleCloseTimestamp, stale = candleAgeMs > ANALYSIS_STALE_MS;

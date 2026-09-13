@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { buildTraceTree, sanitizeHop, type Hop, type Span } from "../src/research/trace-tree.js";
 
 type LiveSession = { id: string; createdAt: number; updatedAt: number; events: Record<string, unknown>[]; frame: Record<string, unknown> | null };
 type KeyRecord = { id: string; hash: string; createdAt: number; revokedAt?: number };
@@ -97,19 +98,56 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
     catch { send(res, 502, { error: "relay_unreachable" }); }
     return true;
   }
-  const browserLogPath = path === "/api/live/browser/logs" || path === "/api/live/browser/agent-runs";
-  if (browserLogPath && req.method === "POST") {
+  const browserWriteTargets: Record<string, { target: string; method: string; key: string }> = {
+    "/api/live/browser/logs": { target: "logs", method: "POST", key: "logs" },
+    "/api/live/browser/agent-runs": { target: "agent-runs", method: "PUT", key: "runs" },
+    "/api/live/browser/spans": { target: "spans", method: "POST", key: "spans" },
+    "/api/live/browser/network-hops": { target: "hops", method: "POST", key: "hops" },
+    "/api/live/browser/state-transitions": { target: "transitions", method: "POST", key: "transitions" },
+    "/api/live/browser/provenance": { target: "provenance", method: "POST", key: "provenance" },
+  };
+  const browserWrite = browserWriteTargets[path];
+  if (browserWrite && req.method === "POST") {
     if (!relayAdmin) { send(res, 503, { error: "relay_admin_not_configured" }); return true; }
     const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : null;
     if (!input || typeof input.sessionId !== "string" || !/^vision_[a-zA-Z0-9_-]{8,100}$/.test(input.sessionId) || containsSensitive(input)) { send(res, 400, { error: "invalid_diagnostics" }); return true; }
-    const rows = Array.isArray(input.logs) ? input.logs : Array.isArray(input.runs) ? input.runs : [];
-    if (rows.length > 200) { send(res, 413, { error: "diagnostics_batch_too_large" }); return true; }
+    const rows = input[browserWrite.key];
+    if (Array.isArray(rows) && rows.length > 200) { send(res, 413, { error: "diagnostics_batch_too_large" }); return true; }
     try {
       const token = await ingestToken(input.sessionId, relayAdmin);
-      const target = path.endsWith("agent-runs") ? `/api/live/sessions/${encodeURIComponent(input.sessionId)}/agent-runs` : `/api/live/sessions/${encodeURIComponent(input.sessionId)}/logs`;
-      const response = await relay(target, { method: path.endsWith("agent-runs") ? "PUT" : "POST", headers: { authorization: `Bearer ${token}` }, body: JSON.stringify(input) });
+      const isSessionScoped = browserWrite.target === "logs" || browserWrite.target === "agent-runs";
+      const target = isSessionScoped ? `/api/live/sessions/${encodeURIComponent(input.sessionId)}/${browserWrite.target}` : `/api/debug/${browserWrite.target}`;
+      const response = await relay(target, { method: browserWrite.method, headers: { authorization: `Bearer ${token}` }, body: JSON.stringify(input) });
       await relayJson(res, response);
     } catch { send(res, 502, { error: "relay_unreachable" }); }
+    return true;
+  }
+  const bundlePost = path.match(/^\/api\/live\/sessions\/([^/]+)\/diagnostic-bundle$/);
+  if (bundlePost && req.method === "POST") {
+    if (!relayAdmin) { send(res, 503, { error: "relay_admin_not_configured" }); return true; }
+    const sessionId = decodeURIComponent(bundlePost[1]!);
+    const getAdmin = async (suffix: string) => { try { const response = await relay(`/api/live/sessions/${encodeURIComponent(sessionId)}/${suffix}`, { headers: { "x-relay-admin": relayAdmin } }); return response.ok ? await response.json() : null; } catch { return null; } };
+    const [timeline, logs, runs, stateHistory, provenance] = await Promise.all([getAdmin("timeline"), getAdmin("logs"), getAdmin("agent-runs"), getAdmin("state-history"), getAdmin("decision-provenance")]);
+    send(res, 200, {
+      bundle: { sessionId, generatedAt: Date.now(), timeline, logs, agentRuns: runs, stateHistory, provenance,
+        frameRefs: { policy: "sanitized-crop-only", desktopExported: false },
+        versions: { apiVersion: "vision-observation-fable-text-v1", thresholdVersion: "profiles-experimental-v1", settlementPolicy: "settleTrade-v1", promptVersion: "sanitized-crop-base64-v1" },
+        configSummary: { candleSeconds: 5, visibleWindowSeconds: 900, predictionHorizonSeconds: 60, entryWindowSeconds: 10 }, secrets: "omitted" },
+      brokerAutomation: "NONE",
+    });
+    return true;
+  }
+  const sessionReadProxy = path.match(/^\/api\/live\/sessions\/([^/]+)\/(state-history|decision-provenance)$/);
+  if (sessionReadProxy && req.method === "GET") {
+    const token = req.headers.authorization?.toString() || "";
+    try { const response = await relay(`/api/live/sessions/${encodeURIComponent(sessionReadProxy[1]!)}/${sessionReadProxy[2]}${query.toString() ? `?${query}` : ""}`, { headers: token ? { authorization: token } : { "x-relay-admin": relayAdmin ?? "" } }); await relayJson(res, response); }
+    catch { send(res, 502, { error: "relay_unreachable" }); }
+    return true;
+  }
+  if (path.startsWith("/api/shadow/jobs") && req.method === "GET") {
+    const token = req.headers.authorization?.toString() || "";
+    try { const response = await relay(`${path}${query.toString() ? `?${query}` : ""}`, { headers: token ? { authorization: token } : { "x-relay-admin": relayAdmin ?? "" } }); await relayJson(res, response); }
+    catch { send(res, 502, { error: "relay_unreachable" }); }
     return true;
   }
   const sessionDebugRead = path.match(/^\/api\/live\/sessions\/([^/]+)\/(logs|agent-runs|timeline|debug-snapshot)$/);
@@ -150,8 +188,12 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
   if (traceRead && req.method === "GET") {
     if (!relayAdmin) { send(res, 503, { error: "relay_admin_not_configured" }); return true; }
     const token = req.headers.authorization?.toString() || "";
-    try { const response = await relay(`/api/live/sessions/${encodeURIComponent(query.get("sessionId") || "unknown")}/logs?traceId=${encodeURIComponent(traceRead[1]!)}`, { headers: { authorization: token } }); await relayJson(res, response); }
-    catch { send(res, 502, { error: "relay_unreachable" }); }
+    try {
+      const response = await relay(`/api/debug/traces/${encodeURIComponent(traceRead[1]!)}/spans`, { headers: token ? { authorization: token } : { "x-relay-admin": relayAdmin } });
+      if (!response.ok) { await relayJson(res, response); return true; }
+      const data = await response.json() as { spans?: Span[]; hops?: Hop[] };
+      send(res, 200, buildTraceTree(data.spans ?? [], (data.hops ?? []).map(sanitizeHop)));
+    } catch { send(res, 502, { error: "relay_unreachable" }); }
     return true;
   }
   if (path === "/api/live/relay/ingest" && req.method === "POST") {

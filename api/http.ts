@@ -492,6 +492,13 @@ function researchRateOk(bucket: string, limit: number, windowMs = 60_000): boole
 const shadowJobs = new Map<string, { status: string; createdAt: number; result: unknown }>();
 const shadowIdempotency = new Map<string, { createdAt: number; result: unknown }>();
 
+async function relayAdminSend(method: "POST" | "PUT", path: string, payload: unknown): Promise<boolean> {
+  const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
+  const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
+  if (!base || !admin) return false;
+  try { const response = await fetch(`${base}${path}`, { method, headers: { "content-type": "application/json", "x-relay-admin": admin }, body: JSON.stringify(payload), signal: AbortSignal.timeout(8_000) }); return response.ok; } catch { return false; }
+}
+
 async function fetchRelayBundle(sessionId: string): Promise<Record<string, unknown> | null> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
   const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
@@ -685,9 +692,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         if (cached && Date.now() - cached.createdAt < 600_000) { json(200, { ...(cached.result as Record<string, unknown>), idempotent: true }); return; }
         const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         shadowJobs.set(jobId, { status: "RUNNING", createdAt: Date.now(), result: null });
+        await relayAdminSend("POST", "/api/shadow/jobs", { jobId, status: "RUNNING", requestedCount: evaluationsPlanned, queueDepth: 0, concurrency: Math.max(1, Math.min(8, Number(input.concurrency) || 8)), idempotencyKey });
         const report = await runVariants(events.slice(0, 500), variants.slice(0, 64), { concurrency: Math.max(1, Math.min(8, Number(input.concurrency) || 8)) });
         const result = { jobId, status: "COMPLETED", evaluations: report.evaluations.length, uniqueMarketEvents: report.uniqueMarketEvents, uniqueGroundTruths: report.uniqueGroundTruths, brokerSideEffects: report.brokerSideEffects, perVariant: report.perVariant, predictionHorizonSeconds: 60, brokerAutomation: "NONE" };
         shadowJobs.set(jobId, { status: "COMPLETED", createdAt: Date.now(), result });
+        await relayAdminSend("PUT", `/api/shadow/jobs/${encodeURIComponent(jobId)}`, { status: "COMPLETED", processedCount: report.evaluations.length, failedCount: 0, queueDepth: 0, result: { evaluations: report.evaluations.length, uniqueMarketEvents: report.uniqueMarketEvents, uniqueGroundTruths: report.uniqueGroundTruths } });
         if (idempotencyKey) shadowIdempotency.set(idempotencyKey, { createdAt: Date.now(), result });
         console.info("SHADOW_BATCH_COMPLETED", JSON.stringify({ jobId, evaluations: report.evaluations.length, uniqueMarketEvents: report.uniqueMarketEvents }));
         json(200, result);

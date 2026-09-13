@@ -118,6 +118,74 @@ const server = http.createServer(async (req, res) => {
       const runs=(await pool.query('SELECT agent_run_id as "agentRunId",agent_id as "agentId",agent_name as "agentName",agent_role as "agentRole",agent_version as "agentVersion",model,provider,prompt_version as "promptVersion",config_version as "configVersion",started_at as "startedAt",completed_at as "completedAt",latency_ms as "latencyMs",status,structured_input as "structuredInput",structured_output as "structuredOutput",confidence,evidence,warnings,error,fallback_used as "fallbackUsed",trace_id as "traceId",market_event_id as "marketEventId" FROM agent_runs WHERE session_id=$1 ORDER BY created_at DESC LIMIT 300',[sid])).rows;
       return reply(res, 200, { sessionId: sid, runs });
     }
+    if(url.pathname === '/api/debug/spans' && req.method === 'POST') {
+      const ingest = verify((req.headers.authorization||'').replace(/^Bearer /,''));
+      if(req.headers['x-relay-admin'] !== admin && !ingest) return reply(res, 401, { error: 'unauthorized' });
+      const input = await body(req, 1500000); const rows = Array.isArray(input.spans) ? input.spans.slice(0, 300) : [];
+      for(const span of rows) await pool.query('INSERT INTO trace_spans(span_id,parent_span_id,trace_id,session_id,component,operation,started_at,completed_at,latency_ms,status,error_code,related_ids) VALUES($1,$2,$3,$4,$5,$6,to_timestamp($7/1000.0),to_timestamp($8/1000.0),$9,$10,$11,$12::jsonb) ON CONFLICT(span_id) DO NOTHING',[String(span.spanId||crypto.randomUUID()).slice(0,80),span.parentSpanId||null,String(span.traceId||'').slice(0,80)||null,span.sessionId||input.sessionId||null,String(span.component||'').slice(0,32),String(span.operation||'').slice(0,64),Number(span.startedAt)||Date.now(),Number(span.completedAt)||Date.now(),Number(span.latencyMs)||null,String(span.status||'OK').slice(0,16),span.errorCode?String(span.errorCode).slice(0,64):null,JSON.stringify(span.relatedIds||{})]);
+      return reply(res, 202, { stored: rows.length });
+    }
+    if(url.pathname === '/api/debug/network-hops' && req.method === 'POST') {
+      const ingest = verify((req.headers.authorization||'').replace(/^Bearer /,''));
+      if(req.headers['x-relay-admin'] !== admin && !ingest) return reply(res, 401, { error: 'unauthorized' });
+      const input = await body(req, 1500000); const rows = Array.isArray(input.hops) ? input.hops.slice(0, 300) : [];
+      for(const hop of rows) await pool.query('INSERT INTO network_hops(request_id,trace_id,hop,route,method,status,started_at,completed_at,latency_ms,upstream,error_code) VALUES($1,$2,$3,$4,$5,$6,to_timestamp($7/1000.0),to_timestamp($8/1000.0),$9,$10,$11)',[hop.requestId||null,hop.traceId||null,String(hop.hop||'').slice(0,32),String(hop.route||'').slice(0,120),String(hop.method||'GET').slice(0,8),Number(hop.status)||0,Number(hop.startedAt)||Date.now(),Number(hop.completedAt)||Date.now(),Number(hop.latencyMs)||null,String(hop.upstream||'').slice(0,32),hop.errorCode?String(hop.errorCode).slice(0,64):null]);
+      return reply(res, 202, { stored: rows.length });
+    }
+    if(url.pathname === '/api/debug/decision-provenance' && req.method === 'POST') {
+      const ingest = verify((req.headers.authorization||'').replace(/^Bearer /,''));
+      if(req.headers['x-relay-admin'] !== admin && !ingest) return reply(res, 401, { error: 'unauthorized' });
+      const input = await body(req, 1500000); const p = input.provenance || input;
+      await pool.query('INSERT INTO decision_provenance(decision_id,session_id,market_event_id,frame_id,candle_id,price_observation_ids,context_versions,agent_run_ids,bull_run_id,bear_run_id,fusion_run_id,arbiter_run_id,profile,threshold_version,config_version,prompt_version,model_versions,raw_scores,calibrated_scores,decision,directional_lean,why,conflicts,warnings,trace_id) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb,$18::jsonb,$19::jsonb,$20,$21,$22::jsonb,$23::jsonb,$24::jsonb,$25) ON CONFLICT(decision_id) DO UPDATE SET why=EXCLUDED.why,agent_run_ids=EXCLUDED.agent_run_ids,decision=EXCLUDED.decision,directional_lean=EXCLUDED.directional_lean',[String(p.decisionId||crypto.randomUUID()).slice(0,80),p.sessionId||null,p.marketEventId||null,p.frameId||null,p.candleId||null,JSON.stringify(p.priceObservationIds||[]),JSON.stringify(p.contextVersions||{}),JSON.stringify(p.agentRunIds||[]),p.bullRunId||null,p.bearRunId||null,p.fusionRunId||null,p.arbiterRunId||null,p.profile||null,p.thresholdVersion||null,p.configVersion||null,p.promptVersion||null,JSON.stringify(p.modelVersions||{}),JSON.stringify(p.rawScores||{}),JSON.stringify(p.calibratedScores||{}),p.decision||null,p.directionalLean||null,JSON.stringify(p.why||{}),JSON.stringify(p.conflicts||[]),JSON.stringify(p.warnings||[]),p.traceId||null]);
+      return reply(res, 202, { stored: true, decisionId: p.decisionId || null });
+    }
+    const provenanceRead = url.pathname.match(/^\/api\/live\/sessions\/([^/]+)\/decision-provenance$/);
+    if(provenanceRead && req.method === 'GET') {
+      const key = await authenticate(req, 'debug:read'); if(!key && req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
+      const sid = decodeURIComponent(provenanceRead[1]); const decisionId = url.searchParams.get('decisionId');
+      const rows = decisionId ? (await pool.query('SELECT * FROM decision_provenance WHERE session_id=$1 AND decision_id=$2',[sid,decisionId])).rows : (await pool.query('SELECT * FROM decision_provenance WHERE session_id=$1 ORDER BY created_at DESC LIMIT 200',[sid])).rows;
+      return reply(res, 200, { sessionId: sid, provenance: rows });
+    }
+    const stateHistoryRead = url.pathname.match(/^\/api\/live\/sessions\/([^/]+)\/state-history$/);
+    if(stateHistoryRead && req.method === 'GET') {
+      const key = await authenticate(req, 'debug:read'); if(!key && req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
+      const sid = decodeURIComponent(stateHistoryRead[1]); const machine = url.searchParams.get('machine');
+      const rows = machine ? (await pool.query('SELECT machine,from_state as "from",to_state as "to",reason,signal_id as "signalId",market_event_id as "marketEventId",trace_id as "traceId",transitioned_at as timestamp FROM state_transitions WHERE session_id=$1 AND machine=$2 ORDER BY transitioned_at DESC LIMIT 500',[sid,machine])).rows : (await pool.query('SELECT machine,from_state as "from",to_state as "to",reason,signal_id as "signalId",market_event_id as "marketEventId",trace_id as "traceId",transitioned_at as timestamp FROM state_transitions WHERE session_id=$1 ORDER BY transitioned_at DESC LIMIT 500',[sid])).rows;
+      return reply(res, 200, { sessionId: sid, transitions: rows });
+    }
+    if(url.pathname === '/api/debug/state-transitions' && req.method === 'POST') {
+      const ingest = verify((req.headers.authorization||'').replace(/^Bearer /,''));
+      if(req.headers['x-relay-admin'] !== admin && !ingest) return reply(res, 401, { error: 'unauthorized' });
+      const input = await body(req, 1500000); const rows = Array.isArray(input.transitions) ? input.transitions.slice(0, 300) : [];
+      for(const row of rows) await pool.query('INSERT INTO state_transitions(session_id,machine,from_state,to_state,reason,signal_id,market_event_id,trace_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',[row.sessionId||input.sessionId||null,String(row.machine||'').slice(0,32),String(row.from||'').slice(0,32),String(row.to||'').slice(0,32),String(row.reason||'').slice(0,120),row.signalId||null,row.marketEventId||null,row.traceId||null]);
+      return reply(res, 202, { stored: rows.length });
+    }
+    const traceSpansRead = url.pathname.match(/^\/api\/debug\/traces\/([^/]+)\/spans$/);
+    if(traceSpansRead && req.method === 'GET') {
+      const key = await authenticate(req, 'traces:read'); if(!key && req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
+      const traceId = decodeURIComponent(traceSpansRead[1]);
+      const [spans,hops] = await Promise.all([
+        pool.query('SELECT span_id as "spanId",parent_span_id as "parentSpanId",trace_id as "traceId",session_id as "sessionId",component,operation,started_at as "startedAt",completed_at as "completedAt",latency_ms as "latencyMs",status,error_code as "errorCode",related_ids as "relatedIds" FROM trace_spans WHERE trace_id=$1 ORDER BY started_at',[traceId]),
+        pool.query('SELECT request_id as "requestId",hop,route,method,status,started_at as "startedAt",completed_at as "completedAt",latency_ms as "latencyMs",upstream,error_code as "errorCode" FROM network_hops WHERE trace_id=$1 ORDER BY started_at',[traceId]),
+      ]);
+      return reply(res, 200, { traceId, spans: spans.rows, hops: hops.rows });
+    }
+    if(url.pathname === '/api/shadow/jobs' && req.method === 'POST') {
+      if(req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
+      const input = await body(req); const jobId = String(input.jobId||`job_${Date.now()}`).slice(0,80);
+      await pool.query("INSERT INTO shadow_jobs(job_id,status,requested_count,queue_depth,concurrency,idempotency_key,started_at) VALUES($1,$2,$3,$4,$5,$6,now()) ON CONFLICT(job_id) DO UPDATE SET status=EXCLUDED.status,requested_count=EXCLUDED.requested_count,queue_depth=EXCLUDED.queue_depth,started_at=now()",[jobId,String(input.status||'RUNNING').slice(0,16),Number(input.requestedCount)||0,Number(input.queueDepth)||0,Number(input.concurrency)||8,input.idempotencyKey||null]);
+      return reply(res, 202, { jobId, status: input.status||'RUNNING' });
+    }
+    if(url.pathname.startsWith('/api/shadow/jobs')) {
+      if(req.headers['x-relay-admin'] !== admin) { const key = await authenticate(req, 'shadow:read'); if(!key) return reply(res, 401, { error: 'unauthorized' }); }
+      const jobPath = url.pathname.match(/^\/api\/shadow\/jobs\/([^/]+)$/);
+      if(jobPath && req.method === 'GET') { const row = (await pool.query('SELECT job_id as "jobId",status,requested_count as "requestedCount",processed_count as "processedCount",failed_count as "failedCount",queue_depth as "queueDepth",concurrency,idempotency_key as "idempotencyKey",created_at as "createdAt",started_at as "startedAt",completed_at as "completedAt",result FROM shadow_jobs WHERE job_id=$1',[decodeURIComponent(jobPath[1])])).rows[0]; if(!row) return reply(res, 404, { error: 'job_not_found' }); return reply(res, 200, row); }
+      if(jobPath && req.method === 'PUT') {
+        const b = await body(req); await pool.query("UPDATE shadow_jobs SET status=$2,processed_count=$3,failed_count=$4,queue_depth=$5,completed_at=CASE WHEN $2 IN ('COMPLETED','FAILED','CANCELLED') THEN now() ELSE completed_at END,result=COALESCE($6,result) WHERE job_id=$1",[decodeURIComponent(jobPath[1]),String(b.status||'RUNNING').slice(0,16),Number(b.processedCount)||0,Number(b.failedCount)||0,Number(b.queueDepth)||0,b.result?JSON.stringify(b.result):null]);
+        return reply(res, 200, { updated: true });
+      }
+      if(url.pathname === '/api/shadow/jobs' && req.method === 'GET') return reply(res, 200, (await pool.query('SELECT job_id as "jobId",status,requested_count as "requestedCount",processed_count as "processedCount",failed_count as "failedCount",queue_depth as "queueDepth",concurrency,created_at as "createdAt",completed_at as "completedAt" FROM shadow_jobs ORDER BY created_at DESC LIMIT 50')).rows);
+    }
     if(url.pathname === '/api/debug/agents' && req.method === 'GET') {
       if(req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
       return reply(res, 200, { agents: (await pool.query('SELECT agent_id as "agentId", agent_name as "agentName", agent_role as "agentRole", count(*)::int as runs, max(created_at) as "lastRunAt" FROM agent_runs GROUP BY agent_id, agent_name, agent_role ORDER BY runs DESC')).rows });
