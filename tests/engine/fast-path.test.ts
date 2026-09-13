@@ -64,6 +64,15 @@ describe("fast decision path — T+60 semantics", () => {
     expect(result.decision).toBe("WAIT");
   });
 
+  it("never reports TIMEOUT for a sub-deadline run (167ms vs 5000ms regression)", () => {
+    const fast = buildFastDecision({ now, prices: series([1.3850, 1.3855]), deadlineMs: 5_000 });
+    expect(fast.timings.totalMs).toBeLessThan(5_000);
+    expect(fast.fastPathStatus).toBe("FAST_PATH_COMPLETED");
+    const insufficient = buildFastDecision({ now, prices: series([1.3850]), deadlineMs: 5_000 });
+    expect(insufficient.fastPathStatus).toBe("FAST_PATH_COMPLETED");
+    expect(insufficient.operational).toBe(false);
+  });
+
   it("keeps the fast path well under the 5s budget in controlled runs", () => {
     const started = Date.now();
     const result = buildFastDecision({ now, prices: series([1.3850, 1.3855, 1.3860, 1.3865]) });

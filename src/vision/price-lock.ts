@@ -55,12 +55,19 @@ export function validatePriceObservation(input: {
   // Só rejeita por formato quando a precisão observada é claramente menor
   // (ex.: "1.38" no lugar de "1.385285"), nunca por zeros à direita perdidos.
   if (historyDecimals >= 4 && decimalPlaces(input.value) <= 2 && decimalPlaces(input.value) <= historyDecimals - 3) return { ...base, status: "OUTLIER", reason: "DECIMAL_FORMAT_INCONSISTENT" };
-  if (relativeDeviation <= threshold) return { ...base, status: "ACCEPTED", reason: null };
   const confirmations = (input.outlierCandidates ?? [])
     .filter((item) => Number.isFinite(item.value) && item.value > 0
       && input.timestamp - item.timestamp <= (input.candidateWindowMs ?? 30_000)
       && Math.abs(item.value - input.value) / input.value <= threshold / 2)
     .length;
   if (confirmations >= 2) return { ...base, status: "REGIME_CHANGE_ACCEPTED", reason: "REGIME_CHANGE_CONFIRMED", confirmations: confirmations + 1 };
+  // Robust dispersion gate: a large absolute jump in a few seconds is a spike
+  // unless confirmed by a coherent cluster (handled above).
+  const deviations = recent.slice(-8).map((item) => Math.abs(item.value - rollingMedian)).sort((a, b) => a - b);
+  const mad = deviations[Math.floor((deviations.length - 1) / 2)] ?? 0;
+  const stepRelative = previousPrice > 0 ? Math.abs(input.value - previousPrice) / previousPrice : relativeDeviation;
+  const madRelative = rollingMedian > 0 ? mad / rollingMedian : 0;
+  if (stepRelative > Math.max(.002, 6 * madRelative)) return { ...base, status: "OUTLIER", reason: "TEMPORAL_SPIKE" };
+  if (relativeDeviation <= threshold) return { ...base, status: "ACCEPTED", reason: null };
   return { ...base, status: "OUTLIER", reason: "TEMPORAL_OUTLIER" };
 }
