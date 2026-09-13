@@ -102,9 +102,9 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
     "/api/live/browser/logs": { target: "logs", method: "POST", key: "logs" },
     "/api/live/browser/agent-runs": { target: "agent-runs", method: "PUT", key: "runs" },
     "/api/live/browser/spans": { target: "spans", method: "POST", key: "spans" },
-    "/api/live/browser/network-hops": { target: "hops", method: "POST", key: "hops" },
-    "/api/live/browser/state-transitions": { target: "transitions", method: "POST", key: "transitions" },
-    "/api/live/browser/provenance": { target: "provenance", method: "POST", key: "provenance" },
+    "/api/live/browser/network-hops": { target: "network-hops", method: "POST", key: "hops" },
+    "/api/live/browser/state-transitions": { target: "state-transitions", method: "POST", key: "transitions" },
+    "/api/live/browser/provenance": { target: "decision-provenance", method: "POST", key: "provenance" },
   };
   const browserWrite = browserWriteTargets[path];
   if (browserWrite && req.method === "POST") {
