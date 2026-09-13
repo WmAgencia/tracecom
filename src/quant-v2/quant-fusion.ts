@@ -1,8 +1,8 @@
-import { calibratePlatt, CALIBRATION_VERSION } from "./calibration";
-import { classifyRegime, REGIME_VERSION } from "./regime-engine";
-import { baselineModel, MODEL_VERSION } from "./models";
-import { findSimilarPatterns, type HistoricalPattern } from "./similar-pattern";
-import type { FeatureSnapshot, QuantDecision, SimilarPatternResult } from "./types";
+import { calibratePlatt, CALIBRATION_VERSION } from "./calibration.js";
+import { classifyRegime, REGIME_VERSION } from "./regime-engine.js";
+import { baselineModel, MODEL_VERSION } from "./models.js";
+import { findSimilarPatterns, type HistoricalPattern } from "./similar-pattern.js";
+import type { FeatureSnapshot, QuantDecision, SimilarPatternResult } from "./types.js";
 
 export const POLICY_VERSION = "quant-v2-shadow-policy-v1";
 export function quantShadowDecision(input: { snapshot: FeatureSnapshot; history?: HistoricalPattern[]; labels?: number[]; now?: number }): QuantDecision {
