@@ -150,7 +150,7 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
     catch { send(res, 502, { error: "relay_unreachable" }); }
     return true;
   }
-  const sessionDebugRead = path.match(/^\/api\/live\/sessions\/([^/]+)\/(logs|agent-runs|timeline|debug-snapshot)$/);
+  const sessionDebugRead = path.match(/^\/api\/live\/sessions\/([^/]+)\/(logs|agent-runs(?:\/[^/]+)?|timeline|debug-snapshot)$/);
   if (sessionDebugRead && req.method === "GET") {
     if (!relayAdmin) { send(res, 503, { error: "relay_admin_not_configured" }); return true; }
     const token = req.headers.authorization?.toString() || "";
@@ -164,6 +164,20 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
   if (path === "/api/debug/agents" && req.method === "GET") {
     if (!relayAdmin) { send(res, 503, { error: "relay_admin_not_configured" }); return true; }
     try { const response = await relay("/api/debug/agents", { headers: { "x-relay-admin": relayAdmin } }); await relayJson(res, response); }
+    catch { send(res, 502, { error: "relay_unreachable" }); }
+    return true;
+  }
+  const debugAgentDetail = path.match(/^\/api\/debug\/agents\/([^/]+)$/);
+  if (debugAgentDetail && req.method === "GET") {
+    if (!relayAdmin) { send(res, 503, { error: "relay_admin_not_configured" }); return true; }
+    try { const response = await relay(`/api/debug/agents/${encodeURIComponent(debugAgentDetail[1]!)}`, { headers: { "x-relay-admin": relayAdmin } }); await relayJson(res, response); }
+    catch { send(res, 502, { error: "relay_unreachable" }); }
+    return true;
+  }
+  const debugRunDetail = path.match(/^\/api\/debug\/agent-runs\/([^/]+)$/);
+  if (debugRunDetail && req.method === "GET") {
+    const token = req.headers.authorization?.toString() || "";
+    try { const response = await relay(`/api/debug/agent-runs/${encodeURIComponent(debugRunDetail[1]!)}`, { headers: token ? { authorization: token } : { "x-relay-admin": relayAdmin ?? "" } }); await relayJson(res, response); }
     catch { send(res, 502, { error: "relay_unreachable" }); }
     return true;
   }

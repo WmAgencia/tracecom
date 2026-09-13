@@ -102,4 +102,26 @@ describe("sanitized crop transport contract", () => {
     expect(browser).toContain("diagCapture");
     expect(browser).toContain("UNCAUGHT_ERROR");
   });
+
+  it("keeps agent detail, deep emission and key lifecycle contracts", () => {
+    const relay = readFileSync("relay/server.mjs", "utf8");
+    const liveApi = readFileSync("api/live-api.ts", "utf8");
+    const agentRuns = readFileSync("src/research/agent-runs.ts", "utf8");
+    expect(relay).toContain("agent_run_not_found");
+    expect(relay).toContain("agentDetail");
+    expect(relay).toContain("agentRunGlobal");
+    expect(agentRuns).toContain("deep_debate_not_executed");
+    expect(agentRuns).toContain("BULL_ADVOCATE");
+    expect(agentRuns).toContain("ARBITER");
+    expect(api).toContain("DEEP_AGENT_RUNS_PERSISTED");
+    expect(api).toContain("arbiterRunId");
+    expect(liveApi).toContain("/api/debug/agent-runs/");
+    expect(browser).toContain("rotateLiveKey");
+    expect(browser).toContain("copyOpenCodePrompt");
+    expect(browser).toContain("OPENCODE_FULL_DIAGNOSTIC");
+    expect(browser).not.toContain("localStorage.setItem(\"tracecom:api");
+    expect(html).toContain("liveRotateKey");
+    expect(html).toContain("liveCopyPrompt");
+    expect(html).toContain("DOCUMENTAÇÃO DA API");
+  });
 });

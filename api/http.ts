@@ -23,6 +23,7 @@ import { settleTrade } from "../src/training/settlement.js";
 import { runAudit, type AuditInput } from "../src/research/audit-engine.js";
 import { compareVariants, DEFAULT_VARIANTS, replayEvent, runVariants, type ReplayEvent, type Variant } from "../src/research/replay-engine.js";
 import { runAutopsy } from "../src/research/session-autopsy.js";
+import { buildAgentRuns } from "../src/research/agent-runs.js";
 
 type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -282,12 +283,23 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     const control = { decision, directionalLean: debate.arbiter.directionalLean, leanConfidence: debate.arbiter.leanConfidence, latencyMs: debate.arbiter.latencyMs };
     const challenger = { decision, directionalLean: debate.arbiter.directionalLean, leanConfidence: debate.arbiter.leanConfidence, latencyMs: debate.arbiter.latencyMs + advocates.latencyMs };
     const probabilitySource = probabilityTotal > 0 ? "MODEL_NATIVE" : "FALLBACK_UNAVAILABLE";
+    const agentRuns = buildAgentRuns({ debate, advocates, meta: {
+      sessionId: typeof snapshotObject.sessionId === "string" ? snapshotObject.sessionId : null,
+      traceId: typeof snapshotObject.candleId === "string" ? `trace_${snapshotObject.candleId}` : null,
+      marketEventId: typeof snapshotObject.candleId === "string" ? snapshotObject.candleId : null,
+      frameId: typeof chartFrame.frameId === "string" ? chartFrame.frameId : null,
+      candleId: typeof snapshotObject.candleId === "string" ? snapshotObject.candleId : null,
+      decisionId: typeof snapshotObject.analysisId === "string" ? snapshotObject.analysisId : null,
+      startedAt: pipelineStarted, completedAt: Date.now(), model: visionModel, provider: "nexxus",
+    } });
+    void relayAdminSend("POST", "/api/debug/agent-runs", { sessionId: typeof snapshotObject.sessionId === "string" ? snapshotObject.sessionId : null, runs: agentRuns.runs });
+    console.info("DEEP_AGENT_RUNS_PERSISTED", JSON.stringify({ runs: agentRuns.runs.length, arbiterRunId: agentRuns.arbiterRunId, fusionRunId: agentRuns.fusionRunId }));
     const totalMs = Date.now() - pipelineStarted;
     recordLatency("total", totalMs);
     return {
       model: { modelId: model, displayName: "Fable 5.1" },
       analysis: {
-        decision, confidence: bounded(parsed?.confidence, 0), rawModelScores: { buy: finiteOrNull(parsed?.rawBuyScore), sell: finiteOrNull(parsed?.rawSellScore), wait: finiteOrNull(parsed?.rawWaitScore) }, pBuy, pSell, pWait, directionalLean: debate.arbiter.directionalLean, leanConfidence: debate.arbiter.leanConfidence, multiAgent: { ...debate, advocates, mode: process.env.MULTI_AGENT_MODE || "TEXT_SPECIALISTS", control, challenger, agreement: control.decision === challenger.decision && control.directionalLean === challenger.directionalLean }, timing: { visionMs: visionLatencyMs, fableMs: Date.now() - fableStarted, totalMs }, latencyMetrics: allLatencyStats(), probabilitySource, candleSeconds: Number(snapshotObject.candleSeconds) || 5, expirationSeconds: Number(snapshotObject.horizonSeconds) || 60, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: imageUsed && visionObservation?.imageProvided === true, imageStatus: imageUsed && visionObservation?.imageProvided === true ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", visionObservation, visionTransport: { frameId: receivedImage?.frameId || null, hasImage: imageUsed && visionObservation?.imageProvided === true, imageBytes: Number(visionObservation?.imageBytes) || receivedImage?.byteLength || 0, imageHash: visionObservation?.imageHash || receivedImage?.hash || null, provider: "nexxus-vision", model: visionModel },
+        decision, confidence: bounded(parsed?.confidence, 0), rawModelScores: { buy: finiteOrNull(parsed?.rawBuyScore), sell: finiteOrNull(parsed?.rawSellScore), wait: finiteOrNull(parsed?.rawWaitScore) }, pBuy, pSell, pWait, directionalLean: debate.arbiter.directionalLean, leanConfidence: debate.arbiter.leanConfidence, agentRunIds: agentRuns.runIds, arbiterRunId: agentRuns.arbiterRunId, fusionRunId: agentRuns.fusionRunId, bullRunId: agentRuns.bullRunId, bearRunId: agentRuns.bearRunId, specialistRunIds: agentRuns.specialistRunIds, multiAgent: { ...debate, advocates, mode: process.env.MULTI_AGENT_MODE || "TEXT_SPECIALISTS", control, challenger, agreement: control.decision === challenger.decision && control.directionalLean === challenger.directionalLean }, timing: { visionMs: visionLatencyMs, fableMs: Date.now() - fableStarted, totalMs }, latencyMetrics: allLatencyStats(), probabilitySource, candleSeconds: Number(snapshotObject.candleSeconds) || 5, expirationSeconds: Number(snapshotObject.horizonSeconds) || 60, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: imageUsed && visionObservation?.imageProvided === true, imageStatus: imageUsed && visionObservation?.imageProvided === true ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", visionObservation, visionTransport: { frameId: receivedImage?.frameId || null, hasImage: imageUsed && visionObservation?.imageProvided === true, imageBytes: Number(visionObservation?.imageBytes) || receivedImage?.byteLength || 0, imageHash: visionObservation?.imageHash || receivedImage?.hash || null, provider: "nexxus-vision", model: visionModel },
         framesUsed: Math.min(4, Number(parsed?.framesUsed) || images.length), visualBias, quantBias, confluence: bounded(parsed?.confluence, quantAvailable && quantBias === visualBias ? .8 : 0),
         trend: typeof parsed?.trend === "string" ? parsed.trend.slice(0, 80) : "UNKNOWN", structure: typeof parsed?.structure === "string" ? parsed.structure.slice(0, 80) : "UNKNOWN", momentum: typeof parsed?.momentum === "string" ? parsed.momentum.slice(0, 80) : "UNKNOWN", volatility: typeof parsed?.volatility === "string" ? parsed.volatility.slice(0, 80) : "UNKNOWN",
         supportResistance: safeList(parsed?.supportResistance), candlePatterns: safeList(parsed?.candlePatterns), breakoutState: typeof parsed?.breakoutState === "string" ? parsed.breakoutState.slice(0, 80) : "UNKNOWN", exhaustionState: typeof parsed?.exhaustionState === "string" ? parsed.exhaustionState.slice(0, 80) : "UNKNOWN",

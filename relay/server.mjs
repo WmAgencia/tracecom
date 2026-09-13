@@ -62,8 +62,8 @@ const server = http.createServer(async (req, res) => {
     if(origin && !allowed.includes(origin) && url.pathname!=='/health') return reply(res,403,{error:'forbidden_origin'});
     if(origin && allowed.includes(origin)) res.setHeader('access-control-allow-origin',origin);
     if(req.method==='OPTIONS'){res.writeHead(204);return res.end();}
-    const bucket=url.pathname.includes('/stream')?'stream':url.pathname.includes('/frame')?'frame':url.pathname.includes('/export')?'export':url.pathname.includes('/ingest')?'ingest':url.pathname.includes('/keys')?'keys':'session';
-    const ceiling=bucket==='stream'?20:bucket==='frame'?30:bucket==='ingest'?240:60;
+    const bucket=url.pathname.includes('/stream')?'stream':url.pathname.includes('/frame')?'frames':url.pathname.includes('/export')?'export':url.pathname.includes('/logs')?'logs':url.pathname.includes('/traces')?'traces':url.pathname.includes('/debug')?'debug':url.pathname.includes('/ingest')?'ingest':url.pathname.includes('/keys')?'keys':'session';
+    const ceiling=bucket==='stream'?20:bucket==='frames'?30:bucket==='logs'?120:bucket==='traces'?120:bucket==='debug'?120:bucket==='export'?30:bucket==='ingest'?240:bucket==='keys'?60:60;
     if(!rateLimit(req,bucket,ceiling)){res.setHeader('retry-after','60');return reply(res,429,{error:'rate_limited',bucket});}
     if(url.pathname === '/health') return reply(res, 200, { ok:true, db:true, service:'tracecom-live-relay' });
     if(url.pathname === '/api/live/keys' && req.method === 'POST') {
@@ -115,7 +115,18 @@ const server = http.createServer(async (req, res) => {
         return reply(res, 202, { stored: rows.length });
       }
       const key = await authenticate(req, 'agents:read'); if(!key && req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
-      const runs=(await pool.query('SELECT agent_run_id as "agentRunId",agent_id as "agentId",agent_name as "agentName",agent_role as "agentRole",agent_version as "agentVersion",model,provider,prompt_version as "promptVersion",config_version as "configVersion",started_at as "startedAt",completed_at as "completedAt",latency_ms as "latencyMs",status,structured_input as "structuredInput",structured_output as "structuredOutput",confidence,evidence,warnings,error,fallback_used as "fallbackUsed",trace_id as "traceId",market_event_id as "marketEventId" FROM agent_runs WHERE session_id=$1 ORDER BY created_at DESC LIMIT 300',[sid])).rows;
+      const columns='agent_run_id as "agentRunId",agent_id as "agentId",agent_name as "agentName",agent_role as "agentRole",agent_version as "agentVersion",model,provider,prompt_version as "promptVersion",config_version as "configVersion",started_at as "startedAt",completed_at as "completedAt",latency_ms as "latencyMs",status,structured_input as "structuredInput",structured_output as "structuredOutput",confidence,evidence,warnings,error,fallback_used as "fallbackUsed",trace_id as "traceId",market_event_id as "marketEventId",frame_id as "frameId",candle_id as "candleId",decision_id as "decisionId"';
+      const runDetail = url.pathname.match(/^\/api\/live\/sessions\/([^/]+)\/agent-runs\/([^/]+)$/);
+      if(runDetail && req.method === 'GET') {
+        const row=(await pool.query(`SELECT ${columns} FROM agent_runs WHERE session_id=$1 AND agent_run_id=$2`,[decodeURIComponent(runDetail[1]),decodeURIComponent(runDetail[2])])).rows[0];
+        if(!row) return reply(res, 404, { error: 'agent_run_not_found' });
+        return reply(res, 200, row);
+      }
+      const agentId=url.searchParams.get('agentId'), runId=url.searchParams.get('agentRunId');
+      const where=['session_id=$1']; const args=[sid];
+      if(agentId){args.push(agentId);where.push(`agent_id=$${args.length}`);}
+      if(runId){args.push(runId);where.push(`agent_run_id=$${args.length}`);}
+      const runs=(await pool.query(`SELECT ${columns} FROM agent_runs WHERE ${where.join(' AND ')} ORDER BY created_at DESC LIMIT 300`,args)).rows;
       return reply(res, 200, { sessionId: sid, runs });
     }
     if(url.pathname === '/api/debug/spans' && req.method === 'POST') {
@@ -185,6 +196,31 @@ const server = http.createServer(async (req, res) => {
         return reply(res, 200, { updated: true });
       }
       if(url.pathname === '/api/shadow/jobs' && req.method === 'GET') return reply(res, 200, (await pool.query('SELECT job_id as "jobId",status,requested_count as "requestedCount",processed_count as "processedCount",failed_count as "failedCount",queue_depth as "queueDepth",concurrency,created_at as "createdAt",completed_at as "completedAt" FROM shadow_jobs ORDER BY created_at DESC LIMIT 50')).rows);
+    }
+    if(url.pathname === '/api/debug/agent-runs' && req.method === 'POST') {
+      const ingest = verify((req.headers.authorization||'').replace(/^Bearer /,''));
+      if(req.headers['x-relay-admin'] !== admin && !ingest) return reply(res, 401, { error: 'unauthorized' });
+      const input = await body(req, 1500000); const rows = Array.isArray(input.runs) ? input.runs.slice(0, 100) : [];
+      for(const run of rows) await pool.query('INSERT INTO agent_runs(session_id,agent_run_id,agent_id,agent_name,agent_role,agent_version,model,provider,prompt_version,config_version,started_at,completed_at,latency_ms,status,structured_input,structured_output,confidence,evidence,warnings,error,fallback_used,trace_id,market_event_id,frame_id,candle_id,decision_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,to_timestamp($11/1000.0),to_timestamp($12/1000.0),$13,$14,$15::jsonb,$16::jsonb,$17,$18::jsonb,$19::jsonb,$20,$21,$22,$23,$24,$25,$26) ON CONFLICT(agent_run_id) DO NOTHING',[run.sessionId||input.sessionId||null,String(run.agentRunId||crypto.randomUUID()).slice(0,80),String(run.agentId||'').slice(0,64),String(run.agentName||'').slice(0,64),String(run.agentRole||'').slice(0,32),String(run.agentVersion||'v1').slice(0,32),String(run.model||'').slice(0,64)||null,String(run.provider||'').slice(0,32)||null,String(run.promptVersion||'').slice(0,32)||null,String(run.configVersion||'').slice(0,32)||null,Number(run.startedAt)||Date.now(),Number(run.completedAt)||Date.now(),Number(run.latencyMs)||null,String(run.status||'COMPLETED').slice(0,24),JSON.stringify(run.structuredInput||{}),JSON.stringify(run.structuredOutput||{}),Number.isFinite(Number(run.confidence))?Number(run.confidence):null,JSON.stringify(run.evidence||[]),JSON.stringify(run.warnings||[]),run.error?String(run.error).slice(0,300):null,run.fallbackUsed===true,run.traceId||null,run.marketEventId||null,run.frameId||null,run.candleId||null,run.decisionId||null]);
+      return reply(res, 202, { stored: rows.length });
+    }
+    const agentRunGlobal = url.pathname.match(/^\/api\/debug\/agent-runs\/([^/]+)$/);
+    if(agentRunGlobal && req.method === 'GET') {
+      const key = await authenticate(req, 'agents:read'); if(!key && req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
+      const row=(await pool.query('SELECT agent_run_id as "agentRunId",agent_id as "agentId",agent_name as "agentName",agent_role as "agentRole",agent_version as "agentVersion",model,provider,prompt_version as "promptVersion",config_version as "configVersion",started_at as "startedAt",completed_at as "completedAt",latency_ms as "latencyMs",status,structured_input as "structuredInput",structured_output as "structuredOutput",confidence,evidence,warnings,error,fallback_used as "fallbackUsed",trace_id as "traceId",market_event_id as "marketEventId",frame_id as "frameId",candle_id as "candleId",decision_id as "decisionId",session_id as "sessionId" FROM agent_runs WHERE agent_run_id=$1',[decodeURIComponent(agentRunGlobal[1])])).rows[0];
+      if(!row) return reply(res, 404, { error: 'agent_run_not_found' });
+      return reply(res, 200, row);
+    }
+    const agentDetail = url.pathname.match(/^\/api\/debug\/agents\/([^/]+)$/);
+    if(agentDetail && req.method === 'GET') {
+      if(req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
+      const agentId = decodeURIComponent(agentDetail[1]);
+      const [summary,runs] = await Promise.all([
+        pool.query('SELECT agent_id as "agentId",agent_name as "agentName",agent_role as "agentRole",count(*)::int as runs,max(created_at) as "lastRunAt" FROM agent_runs WHERE agent_id=$1 GROUP BY agent_id,agent_name,agent_role',[agentId]),
+        pool.query('SELECT agent_run_id as "agentRunId",status,latency_ms as "latencyMs",fallback_used as "fallbackUsed",error,started_at as "startedAt" FROM agent_runs WHERE agent_id=$1 ORDER BY created_at DESC LIMIT 100',[agentId]),
+      ]);
+      if(!summary.rows[0]) return reply(res, 404, { error: 'agent_not_found' });
+      return reply(res, 200, { agent: summary.rows[0], runs: runs.rows });
     }
     if(url.pathname === '/api/debug/agents' && req.method === 'GET') {
       if(req.headers['x-relay-admin'] !== admin) return reply(res, 401, { error: 'unauthorized' });
