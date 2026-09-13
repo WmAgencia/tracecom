@@ -783,6 +783,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (!candles.length) { json(400, { error: "causal_candles_required", shadowOnly: true }); return; }
       const snapshot = buildFeatureSnapshot(candles);
       const decision = quantShadowDecision({ snapshot, labels: Array.isArray(input.labels) ? input.labels.filter((x): x is number => x === 0 || x === 1) : [] });
+      try { await relayAdminSend("POST", "/api/quant/shadow/decisions", { decision, featureSnapshot: snapshot, sessionId: typeof input.sessionId === "string" ? input.sessionId : null, marketEventId: typeof input.marketEventId === "string" ? input.marketEventId : null }); } catch { /* shadow persistence is best effort and never blocks operation */ }
       json(200, { decision, featureSnapshot: snapshot, operationalStrategyChanged: false, brokerAutomation: "NONE", shadowOnly: true }); return;
     }
 

@@ -1,0 +1,117 @@
+{
+  "generatedAt": "2026-09-13T19:45:25.553Z",
+  "source": "relay_postgresql",
+  "sessions": [
+    "vision_81225f7f-0743-4b61-8d42-72f48247a36e",
+    "vision_1b452642-272b-4fc5-af12-d00eb0189054"
+  ],
+  "dataset": {
+    "rawGroundTruths": "queried",
+    "usable": 4,
+    "excluded": "unknown/invalid/incomplete provenance",
+    "UP": 1,
+    "DOWN": 3,
+    "DRAW": 0
+  },
+  "split": {
+    "train": 2,
+    "validation": 1,
+    "holdout": 1
+  },
+  "models": {
+    "empiricalPrior": {
+      "N": 1,
+      "W": 0,
+      "L": 1,
+      "D": 0,
+      "WR": 0,
+      "coverage": 1,
+      "priorUp": 0.25
+    },
+    "quantFusionShadow": {
+      "N": 1,
+      "W": 0,
+      "L": 1,
+      "D": 0,
+      "WR": 0,
+      "coverage": 1,
+      "featureVersion": "quant-v2-features-v1",
+      "modelVersion": "quant-v2-classical-baseline-v1"
+    }
+  },
+  "regimePerformance": {
+    "TREND_UP": {
+      "N": 1,
+      "W": 0,
+      "L": 1,
+      "D": 0,
+      "WR": 0,
+      "coverage": 1
+    },
+    "REVERSAL_UP": {
+      "N": 2,
+      "W": 2,
+      "L": 0,
+      "D": 0,
+      "WR": 1,
+      "coverage": 2
+    },
+    "TREND_DOWN": {
+      "N": 1,
+      "W": 0,
+      "L": 1,
+      "D": 0,
+      "WR": 0,
+      "coverage": 1
+    }
+  },
+  "calibration": {
+    "platt": {
+      "version": "quant-v2-calibration-v1",
+      "raw": 0.25,
+      "calibrated": 0.125,
+      "method": "platt",
+      "bins": [
+        {
+          "lower": 0,
+          "upper": 1,
+          "count": 1,
+          "observed": 0,
+          "expected": 0.125
+        }
+      ],
+      "brier": 0.015625,
+      "logLoss": 0.13353139262452263,
+      "ece": 0.125
+    },
+    "isotonic": {
+      "version": "quant-v2-calibration-v1",
+      "raw": 0.25,
+      "calibrated": 0.0001,
+      "method": "isotonic",
+      "bins": [
+        {
+          "lower": 0,
+          "upper": 1,
+          "count": 1,
+          "observed": 0,
+          "expected": 0.0001
+        }
+      ],
+      "brier": 1e-8,
+      "logLoss": 0.00010000500033334732,
+      "ece": 0.0001
+    }
+  },
+  "walkForward": [
+    {
+      "train": 2,
+      "validation": 1,
+      "holdout": 1,
+      "embargoUntil": 1789316951126
+    }
+  ],
+  "status": "INSUFFICIENT_SAMPLE",
+  "strategyChanged": false,
+  "modelsPromoted": []
+}
