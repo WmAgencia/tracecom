@@ -589,9 +589,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
       const requestedId = typeof input.sessionId === "string" && /^training_[A-Za-z0-9_]{4,90}$/.test(input.sessionId) ? input.sessionId : null;
       let session = requestedId ? await trainingStore.read(requestedId) : null;
-      let recovered = false;
+      let recovered = false, created = false;
       if (session) recovered = true;
       if (!session) {
+        created = true;
         session = createTrainingSession({
           id: requestedId ?? `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
           symbol: typeof input.symbol === "string" ? input.symbol : null,
@@ -607,7 +608,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         if (requestedId) { trainingMetrics.recoveries += 1; console.info("TRAINING_SESSION_RECOVERED", JSON.stringify({ sessionId: session.id, store: session.persistence })); }
         else { trainingMetrics.created += 1; console.info("TRAINING_SESSION_CREATED", JSON.stringify({ sessionId: session.id, store: session.persistence })); }
       }
-      json(requestedId && !recovered ? 201 : 200, { ...trainingSummary(session), recovered: recovered || Boolean(requestedId), execution: "VIRTUAL_ONLY", brokerAutomation: "NONE" });
+      json(created ? 201 : 200, { ...trainingSummary(session), recovered, execution: "VIRTUAL_ONLY", brokerAutomation: "NONE" });
       return;
     }
 
