@@ -495,10 +495,16 @@ function safeKeyEquals(expected: string | undefined, received: string): boolean 
   const e = expected?.trim() ?? "";
   return Boolean(e && received && e.length === received.length && timingSafeEqual(Buffer.from(e), Buffer.from(received)));
 }
-function researchAuthorized(req: IncomingMessage): boolean {
+async function researchAuthorized(req: IncomingMessage): Promise<boolean> {
   const suppliedAdmin = req.headers["x-live-admin-key"]?.toString() ?? "";
   const bearer = (req.headers.authorization ?? "").toString().replace(/^Bearer\s+/i, "");
-  return safeKeyEquals(process.env.LIVE_API_ADMIN_KEY, suppliedAdmin) || safeKeyEquals(process.env.LIVE_API_KEY, bearer);
+  if (safeKeyEquals(process.env.LIVE_API_ADMIN_KEY, suppliedAdmin) || safeKeyEquals(process.env.LIVE_API_KEY, bearer)) return true;
+  if (bearer.startsWith("tc_live_")) {
+    const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
+    if (!base) return false;
+    try { const response = await fetch(`${base}/api/live/session`, { headers: { authorization: bearer }, signal: AbortSignal.timeout(8_000) }); return response.ok; } catch { return false; }
+  }
+  return false;
 }
 const researchLimits = new Map<string, { at: number; count: number }>();
 function researchRateOk(bucket: string, limit: number, windowMs = 60_000): boolean { const now = Date.now(); const hit = researchLimits.get(bucket) ?? { at: now, count: 0 }; if (now - hit.at > windowMs) { hit.at = now; hit.count = 0; } hit.count += 1; researchLimits.set(bucket, hit); return hit.count <= limit; }
@@ -656,7 +662,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
     if (path.startsWith("/api/research/") || path.startsWith("/api/shadow/")) {
-      if (!researchAuthorized(req)) { json(403, { error: "research_auth_required" }); return; }
+      if (!(await researchAuthorized(req))) { json(403, { error: "research_auth_required" }); return; }
       const ip = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || "unknown";
       const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
       if (path === "/api/research/session-autopsy" && req.method === "POST") {
