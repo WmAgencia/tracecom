@@ -1,5 +1,8 @@
 import http from 'node:http';
 import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 
 const port = Number(process.env.PORT || 3000);
@@ -13,14 +16,18 @@ const hash = key => crypto.createHash('sha256').update(`${pepper}:${key}`).diges
 const reply = (res, code, body) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); };
 async function body(req) { let raw=''; for await (const part of req) { raw += part; if(raw.length > 262144) throw Error('payload_too_large'); } return raw ? JSON.parse(raw) : {}; }
 async function migrate() {
-  await pool.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;
-CREATE TABLE IF NOT EXISTS live_api_keys(id uuid primary key default gen_random_uuid(),name text,key_prefix text,key_suffix text,key_hash text unique,scopes jsonb,created_at timestamptz default now(),expires_at timestamptz,revoked_at timestamptz,last_used_at timestamptz);
-CREATE TABLE IF NOT EXISTS live_sessions(id text primary key,started_at timestamptz default now(),ended_at timestamptz,status text,last_seen_at timestamptz,metadata jsonb default '{}');
-CREATE TABLE IF NOT EXISTS live_events(id bigserial primary key,session_id text references live_sessions(id),event_type text,event_timestamp timestamptz default now(),payload_json jsonb,sequence_id text unique);
-CREATE TABLE IF NOT EXISTS vision_market_samples(id bigserial primary key,session_id text,frame_id text,timestamp timestamptz,asset text,market_type text,timeframe text,expiration_seconds integer,detected_price numeric,detected_price_confidence numeric,observation_json jsonb,frame_hash text,chart_region_json jsonb);
-CREATE TABLE IF NOT EXISTS live_decisions(id bigserial primary key,session_id text,decision_id text,timestamp timestamptz,direction text,confidence numeric,probability_source text,p_buy numeric,p_sell numeric,p_wait numeric,raw_model_scores_json jsonb);
-CREATE TABLE IF NOT EXISTS live_settlements(id bigserial primary key,session_id text,decision_id text,timestamp timestamptz,result text,entry_price numeric,settlement_price numeric);
-CREATE TABLE IF NOT EXISTS live_access_logs(id bigserial primary key,api_key_id uuid,endpoint text,timestamp timestamptz default now(),status integer,latency_ms integer,client_label text);`);
+  const directory = path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrations');
+  const files = (await fs.readdir(directory)).filter(file => file.endsWith('.sql')).sort();
+  await pool.query('CREATE TABLE IF NOT EXISTS schema_migrations(version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
+  for (const file of files) {
+    const applied = await pool.query('SELECT 1 FROM schema_migrations WHERE version=$1', [file]);
+    if (applied.rowCount) continue;
+    const sql = await fs.readFile(path.join(directory, file), 'utf8');
+    const client = await pool.connect();
+    try { await client.query('BEGIN'); await client.query(sql); await client.query('INSERT INTO schema_migrations(version) VALUES($1)', [file]); await client.query('COMMIT'); }
+    catch (error) { await client.query('ROLLBACK'); throw error; }
+    finally { client.release(); }
+  }
 }
 await migrate();
 async function authenticate(req, scope) {
