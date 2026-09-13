@@ -290,7 +290,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
       marketEventId: typeof snapshotObject.candleId === "string" ? snapshotObject.candleId : null,
       frameId: typeof chartFrame.frameId === "string" ? chartFrame.frameId : null,
       candleId: typeof snapshotObject.candleId === "string" ? snapshotObject.candleId : null,
-      decisionId: typeof snapshotObject.analysisId === "string" ? snapshotObject.analysisId : null,
+      decisionId: typeof snapshotObject.decisionId === "string" ? snapshotObject.decisionId : typeof snapshotObject.analysisId === "string" ? snapshotObject.analysisId : null,
       startedAt: pipelineStarted, completedAt: Date.now(), model: visionModel, provider: "nexxus",
     } });
     const agentRunsPersisted = await relayAdminSend("POST", "/api/debug/agent-runs", { sessionId: typeof snapshotObject.sessionId === "string" ? snapshotObject.sessionId : null, runs: agentRuns.runs });
