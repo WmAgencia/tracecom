@@ -24,6 +24,7 @@
     "research:multi-horizon": "tsx src/cli/multi-horizon-research.ts",
     "trace1m:collect": "tsx src/cli/trace1m-collect.ts",
     "trace1m:status": "tsx src/cli/trace1m-status.ts",
+    "dataset:usdcad": "node scripts/download-usdcad-real-dataset.mjs",
     "decide": "tsx src/cli/decide.ts",
     "news": "tsx src/cli/news.ts",
     "serve": "tsx src/cli/serve.ts"

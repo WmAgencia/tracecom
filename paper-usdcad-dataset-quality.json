@@ -1,0 +1,11 @@
+{
+  "schema": "tracecon.real-ohlc.v1",
+  "source": "Yahoo Finance Chart API",
+  "sourceUrl": "https://query1.finance.yahoo.com/v8/finance/chart/USDCAD=X?interval=1m&range=8d&includePrePost=false&events=div%2Csplits",
+  "timeframe": "1m",
+  "timezone": "Europe/London",
+  "rows": 11512,
+  "sha256": "e8e9b701d503f610d33f5231932c5b340a5b77f1600c5fb54cdaa2ec64c756de",
+  "gaps": 7,
+  "validated": true
+}

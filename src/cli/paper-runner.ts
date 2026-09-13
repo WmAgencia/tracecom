@@ -17,8 +17,9 @@ type Input = { symbol?: string; provider?: string; minimumResolutionSeconds?: nu
 
 function parse(raw: unknown): { input: ResearchInput; candles: MarketCandle[] } {
   const value = raw as Input;
-  if (!Array.isArray(value?.candles)) throw new Error("INPUT_INVALID: expected { candles: [...] } from a real OHLC export");
-  const candles = value.candles.map((c) => ({ ...c, timestamp: Number(c.timestamp), open: Number(c.open), high: Number(c.high), low: Number(c.low), close: Number(c.close) }))
+  const rows = Array.isArray(value?.candles) ? value.candles : (Array.isArray((value as any)?.rows) ? (value as any).rows : null);
+  if (!rows) throw new Error("INPUT_INVALID: expected { candles: [...] } from a real OHLC export");
+  const candles = rows.map((c: any) => ({ ...c, timestamp: Number(c.timestamp), open: Number(c.open), high: Number(c.high), low: Number(c.low), close: Number(c.close) }))
     .sort((a, b) => a.timestamp - b.timestamp);
   if (candles.length < 21) throw new Error("INPUT_INSUFFICIENT: at least 21 chronological candles are required");
   if (candles.some((c) => !Number.isFinite(c.timestamp) || ![c.open, c.high, c.low, c.close].every(Number.isFinite))) throw new Error("INPUT_INVALID: non-finite OHLC value");
