@@ -197,6 +197,13 @@ const server = http.createServer(async (req, res) => {
       }
       if(url.pathname === '/api/shadow/jobs' && req.method === 'GET') return reply(res, 200, (await pool.query('SELECT job_id as "jobId",status,requested_count as "requestedCount",processed_count as "processedCount",failed_count as "failedCount",queue_depth as "queueDepth",concurrency,created_at as "createdAt",completed_at as "completedAt" FROM shadow_jobs ORDER BY created_at DESC LIMIT 50')).rows);
     }
+    if(url.pathname === '/api/debug/verify-key' && req.method === 'POST') {
+      const value = (req.headers.authorization||'').replace(/^Bearer /,'');
+      if(!value.startsWith('tc_live_')) return reply(res, 401, { valid: false });
+      const result = await pool.query('SELECT scopes FROM live_api_keys WHERE key_hash=$1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>now())',[hash(value)]);
+      if(!result.rows[0]) return reply(res, 401, { valid: false });
+      return reply(res, 200, { valid: true, scopes: result.rows[0].scopes });
+    }
     if(url.pathname === '/api/debug/agent-runs' && req.method === 'POST') {
       const ingest = verify((req.headers.authorization||'').replace(/^Bearer /,''));
       if(req.headers['x-relay-admin'] !== admin && !ingest) return reply(res, 401, { error: 'unauthorized' });

@@ -502,7 +502,7 @@ async function researchAuthorized(req: IncomingMessage): Promise<boolean> {
   if (bearer.startsWith("tc_live_")) {
     const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
     if (!base) return false;
-    try { const response = await fetch(`${base}/api/live/session`, { headers: { authorization: bearer }, signal: AbortSignal.timeout(8_000) }); return response.ok; } catch { return false; }
+    try { const response = await fetch(`${base}/api/debug/verify-key`, { method: "POST", headers: { authorization: bearer }, signal: AbortSignal.timeout(8_000) }); return response.ok; } catch { return false; }
   }
   return false;
 }
