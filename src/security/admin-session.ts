@@ -27,6 +27,21 @@ export function verifyAdminSession(adminSecret: string, token: string | undefine
   } catch { return false; }
 }
 
+/** Auto-authorization gate for the panel: the session cookie is only issued to
+ * same-origin browser POSTs. No manual credential is ever typed in the UI.
+ * Anonymous non-browser callers (no Origin) stay rejected. */
+export function sameOriginAllowed(input: { origin?: string | null; host?: string | null; fetchSite?: string | null; allowedOrigins: string[] }): boolean {
+  const site = String(input.fetchSite ?? "").toLowerCase();
+  if (site && site !== "same-origin" && site !== "same-site") return false;
+  const origin = String(input.origin ?? "").replace(/\/$/, "");
+  if (!origin) return false;
+  try {
+    const url = new URL(origin);
+    if (input.host && url.host === input.host) return true;
+  } catch { return false; }
+  return input.allowedOrigins.includes(origin);
+}
+
 export function parseCookie(header: string | undefined, name: string): string | null {
   if (!header) return null;
   for (const part of header.split(";")) {

@@ -125,16 +125,21 @@ describe("sanitized crop transport contract", () => {
     expect(html).toContain("DOCUMENTAÇÃO DA API");
   });
 
-  it("never asks for a master secret in a browser prompt", () => {
+  it("auto-authorizes the panel without ever asking for a credential", () => {
     const liveApi = readFileSync("api/live-api.ts", "utf8");
     const adminSession = readFileSync("src/security/admin-session.ts", "utf8");
     expect(browser).not.toContain("window.prompt");
     expect(browser).not.toContain("liveKeyOutput");
-    expect(liveApi).toContain("/api/live/admin/login");
+    expect(browser).not.toContain("adminSecretInput");
+    expect(html).not.toContain("adminSecretInput");
+    expect(html).not.toContain("AUTENTICAR");
+    expect(liveApi).toContain("/api/live/admin/bootstrap");
+    expect(liveApi).toContain("bootstrap_forbidden");
     expect(liveApi).toContain("Set-Cookie");
     expect(adminSession).toContain("HttpOnly");
     expect(adminSession).toContain("SameSite=Strict");
-    expect(html).toContain("adminSecretInput");
+    expect(adminSession).toContain("sameOriginAllowed");
+    expect(browser).toContain("ensureAdminSession");
     expect(html).toContain("adminGenerateConfirm");
     expect(html).toContain("API KEY GERADA");
   });

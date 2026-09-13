@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { buildTraceTree, sanitizeHop, type Hop, type Span } from "../src/research/trace-tree.js";
-import { ADMIN_SESSION_COOKIE, adminCookieHeader, clearAdminCookieHeader, issueAdminSession, parseCookie, verifyAdminSession } from "../src/security/admin-session.js";
+import { ADMIN_SESSION_COOKIE, adminCookieHeader, clearAdminCookieHeader, issueAdminSession, parseCookie, sameOriginAllowed, verifyAdminSession } from "../src/security/admin-session.js";
 
 type LiveSession = { id: string; createdAt: number; updatedAt: number; events: Record<string, unknown>[]; frame: Record<string, unknown> | null };
 type KeyRecord = { id: string; hash: string; createdAt: number; revokedAt?: number };
@@ -63,6 +63,16 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
   if (!path.startsWith("/api/live/") && !path.startsWith("/api/debug/")) return false;
   const ip = req.socket?.remoteAddress ?? req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ?? "vercel"; if (!allowed(ip)) { send(res, 429, { error: "rate_limited" }); return true; }
   const relayAdmin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
+  if (path === "/api/live/admin/bootstrap" && req.method === "POST") {
+    const expected = process.env.LIVE_API_ADMIN_KEY?.trim();
+    if (!expected) { send(res, 503, { error: "admin_not_configured" }); return true; }
+    const allowedOrigins = (process.env.TRACECOM_ADMIN_ALLOWED_ORIGINS || "https://tracecom.consecom.com.br").split(",").map((item) => item.trim()).filter(Boolean);
+    const allowed = sameOriginAllowed({ origin: req.headers.origin?.toString(), host: req.headers.host?.toString(), fetchSite: req.headers["sec-fetch-site"]?.toString(), allowedOrigins });
+    if (!allowed) { send(res, 403, { error: "bootstrap_forbidden" }); return true; }
+    res.setHeader("Set-Cookie", adminCookieHeader(issueAdminSession(expected)));
+    send(res, 200, { authenticated: true, auto: true });
+    return true;
+  }
   if (path === "/api/live/admin/login" && req.method === "POST") {
     const expected = process.env.LIVE_API_ADMIN_KEY?.trim();
     const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
