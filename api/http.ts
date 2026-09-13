@@ -24,6 +24,8 @@ import { runAudit, type AuditInput } from "../src/research/audit-engine.js";
 import { compareVariants, DEFAULT_VARIANTS, replayEvent, runVariants, type ReplayEvent, type Variant } from "../src/research/replay-engine.js";
 import { runAutopsy } from "../src/research/session-autopsy.js";
 import { buildAgentRuns } from "../src/research/agent-runs.js";
+import { buildFeatureSnapshot } from "../src/quant-v2/feature-engine.js";
+import { quantShadowDecision } from "../src/quant-v2/quant-fusion.js";
 
 type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -772,6 +774,16 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         }
       }
       return;
+    }
+
+    if (path === "/api/quant/shadow" && req.method === "POST") {
+      const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+      const raw = Array.isArray(input.candles) ? input.candles : [];
+      const candles = raw.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item)).map((c) => ({ provider: String(c.provider || "shadow"), symbol: String(c.symbol || "UNKNOWN"), timeframe: "1m" as const, open: Number(c.open), high: Number(c.high), low: Number(c.low), close: Number(c.close), volume: Number(c.volume || 0), timestamp: Number(c.timestamp), receivedAt: Number(c.receivedAt || c.timestamp), isClosed: c.isClosed !== false, source: String(c.source || "shadow"), quality: "high" as const })).filter((c) => [c.open, c.high, c.low, c.close, c.timestamp].every(Number.isFinite));
+      if (!candles.length) { json(400, { error: "causal_candles_required", shadowOnly: true }); return; }
+      const snapshot = buildFeatureSnapshot(candles);
+      const decision = quantShadowDecision({ snapshot, labels: Array.isArray(input.labels) ? input.labels.filter((x): x is number => x === 0 || x === 1) : [] });
+      json(200, { decision, featureSnapshot: snapshot, operationalStrategyChanged: false, brokerAutomation: "NONE", shadowOnly: true }); return;
     }
 
     if (path === "/api/analytics/record" && req.method === "POST") {

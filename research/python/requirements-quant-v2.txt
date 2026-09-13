@@ -1,0 +1,7 @@
+# Optional offline research worker only. Never installed in the browser/API path.
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.5
+tsfresh>=0.20
+optuna>=3.6
+river>=0.21
