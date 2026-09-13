@@ -28,8 +28,8 @@ async function liveEmit(type, payload = {}, keepalive = false) {
 }
 async function liveFrame(frame, hash) {
   if (!state.liveSessionId) return;
-  const payload = { captureType: "crop", data: frame.dataUrl, mime: "image/jpeg", width: frame.width, height: frame.height, timestamp: new Date().toISOString(), chartRegion: state.crop, frameHash: hash };
-  try { await api("/api/live/browser/frame", { method: "PUT", body: JSON.stringify({ sessionId: state.liveSessionId, frameId: `frame_${Date.now()}`, payload }) }); } catch { /* best-effort, crop-only */ }
+  const payload = { captureType: "crop", data: frame.dataUrl, mime: "image/jpeg", byteLength: frame.byteLength, width: frame.width, height: frame.height, timestamp: new Date().toISOString(), chartRegion: state.crop, frameHash: hash, imageHash: frame.imageHash };
+  try { await api("/api/live/browser/frame", { method: "PUT", body: JSON.stringify({ sessionId: state.liveSessionId, frameId: frame.frameId, payload }) }); } catch { /* best-effort, crop-only */ }
 }
 
 async function checkBackend() {
@@ -108,6 +108,8 @@ function makeCrop(crop, maxWidth = 1120) {
   canvas.getContext("2d", { alpha: false })?.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
   return { dataUrl: canvas.toDataURL("image/jpeg", .76), width: canvas.width, height: canvas.height };
 }
+function dataUrlBytes(dataUrl) { const base64 = String(dataUrl).split(",", 2)[1] || ""; return Math.max(0, Math.floor(base64.length * 3 / 4) - (base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0)); }
+async function cropHash(dataUrl) { const base64 = String(dataUrl).split(",", 2)[1] || ""; const raw = atob(base64); const bytes = Uint8Array.from(raw, (char) => char.charCodeAt(0)); const digest = await crypto.subtle.digest("SHA-256", bytes); return Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("").slice(0, 16); }
 function metrics(image, previous) {
   const mini = document.createElement("canvas"); mini.width = 48; mini.height = 27; const ctx = mini.getContext("2d", { willReadFrequently: true }); if (!ctx) return { availability: "UNAVAILABLE" };
   const source = new Image(); source.src = image.dataUrl; // Captured data URL is used only for hash-like local motion, after synchronous canvas source below.
@@ -127,7 +129,10 @@ async function observe() {
   const session = state.session, stream = state.stream;
   setStage("CHART_CROP_GENERATING"); if (!state.hasSuccessfulAnalysis) setFable("LOADING"); else setFable("ONLINE"); text("pipelineState", "CAPTURANDO"); const chart = makeCrop(state.crop); if (!chart) { setStage("CROP_GENERATION_FAILED"); setFable("ERROR"); return; }
   setStage("SANITIZED_CROP_CREATED", `${chart.width}x${chart.height}`);
-  const stat = metrics(chart, state.frames.at(-1)?.stats?.sample); const frame = { ...chart, stats: stat, capturedAt: Date.now() };
+  const frameId = `frame_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const imageHash = await cropHash(chart.dataUrl); const byteLength = dataUrlBytes(chart.dataUrl);
+  console.info("VISION_CROP_READY", JSON.stringify({ frameId, mimeType: "image/jpeg", byteLength, width: chart.width, height: chart.height, hash: imageHash }));
+  const stat = metrics(chart, state.frames.at(-1)?.stats?.sample); const frame = { ...chart, frameId, imageHash, byteLength, stats: stat, capturedAt: Date.now() };
   state.frames.push(frame); state.frames = state.frames.slice(-4); state.analyzing = true; updateEntryCountdown();
   const currentHash = frameHash(stat);
   // A stationary screen is not a new market observation. Keep the temporal
@@ -140,13 +145,14 @@ async function observe() {
     return;
   }
   state.lastSubmittedHash = currentHash; state.lastSubmittedAt = Date.now(); state.requestCount += 1;
-  void liveFrame(frame, currentHash);
-  void liveEmit("VISION_MARKET_SAMPLE", { frameId: `sample_${frame.capturedAt}`, asset: state.lastContext?.symbol || null, marketType: state.lastContext?.marketType || null, timeframe: state.lastContext?.visualTimeframe || null, expirationSeconds: 60, detectedPrice: null, detectedPriceConfidence: null, observation: { motion: stat.frameDifference, averageLuma: stat.averageLuma }, frameHash: currentHash, chartRegion: state.crop });
+  void liveFrame(frame, imageHash);
+  void liveEmit("VISION_MARKET_SAMPLE", { frameId, asset: state.lastContext?.symbol || null, marketType: state.lastContext?.marketType || null, timeframe: state.lastContext?.visualTimeframe || null, expirationSeconds: 60, detectedPrice: null, detectedPriceConfidence: null, observation: { motion: stat.frameDifference, averageLuma: stat.averageLuma }, frameHash: imageHash, chartRegion: state.crop });
   text("fpsText", "1 frame/s local · Fable /5s"); text("frameText", `${state.frames.length}/4 frames temporais · ${new Date().toLocaleTimeString()}`);
-  const temporal = state.frames.slice().reverse().map((item, index) => ({ label: index ? `T-${index * 5}s` : "T0", dataUrl: item.dataUrl }));
-  const snapshot = { analysisId: `vision_${Date.now()}`, timestamp: new Date().toISOString(), timestampMs: Date.now(), symbol: state.lastContext?.symbol || "UNAVAILABLE", horizonSeconds: 60, chartFrame: { crop: state.crop, width: chart.width, height: chart.height, capturedAt: Date.now() }, quantitativeFeatures: { availability: "SCREEN_MOTION_ONLY", frames: state.frames.map((item) => ({ ...item.stats, sample: undefined })) } };
+  const temporal = state.frames.slice().reverse().map((item, index) => ({ label: index ? `T-${index * 5}s` : "T0", frameId: item.frameId, dataUrl: item.dataUrl, mimeType: "image/jpeg", byteLength: item.byteLength, width: item.width, height: item.height, imageHash: item.imageHash }));
+  const requestId = `vision_request_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const snapshot = { analysisId: `vision_${Date.now()}`, requestId, timestamp: new Date().toISOString(), timestampMs: Date.now(), symbol: state.lastContext?.symbol || "UNAVAILABLE", assetResolution: { visionAsset: null, uiAsset: state.lastContext?.symbol || null, sessionAsset: null, status: state.lastContext?.symbol ? "SESSION_ONLY" : "UNKNOWN" }, horizonSeconds: 60, chartFrame: { frameId, crop: state.crop, width: chart.width, height: chart.height, capturedAt: Date.now(), mimeType: "image/jpeg", byteLength, imageHash }, quantitativeFeatures: { availability: "SCREEN_MOTION_ONLY", frames: state.frames.map((item) => ({ ...item.stats, sample: undefined })) } };
   try {
-    setStage("PIPELINE_REQUEST_STARTED"); const started = Date.now(); const result = await api("/api/fable/trade", { method: "POST", body: JSON.stringify({ snapshot, chartImages: temporal, contextImage: headerCrop()?.dataUrl || null }) });
+    setStage("PIPELINE_REQUEST_STARTED"); console.info("VISION_REQUEST_PREPARED", JSON.stringify({ requestId, frameId, hasImage: true, bytes: byteLength, hash: imageHash, width: chart.width, height: chart.height })); const started = Date.now(); const result = await api("/api/fable/trade", { method: "POST", body: JSON.stringify({ snapshot, chartImages: temporal, contextImage: headerCrop()?.dataUrl || null }) });
     if (session !== state.session || stream !== state.stream) return;
     const latency = Date.now() - started; state.failures = 0; state.nextRetryAt = 0; state.lastAnalysis = result.analysis; state.hasSuccessfulAnalysis = true; renderAnalysis(result.analysis || {}, latency); await persistDecision(snapshot, result.analysis || {}); await trainIfActive(snapshot, result.analysis || {}, stat, latency);
     void liveEmit("DECISION", { decisionId: state.decisionId, direction: result.analysis?.decision || "WAIT", confidence: result.analysis?.confidence ?? null, probabilitySource: result.analysis?.probabilitySource || "FABLE_5_1", pBuy: result.analysis?.pBuy ?? null, pSell: result.analysis?.pSell ?? null, pWait: result.analysis?.pWait ?? null });

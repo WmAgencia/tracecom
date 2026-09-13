@@ -11,13 +11,13 @@
  * (processo long-running: `npm run serve`).
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual, randomUUID } from "node:crypto";
 import { del, get, put } from "@vercel/blob";
 import { NexxusVisionProvider } from "./vision-provider.js";
 import { settleTrade } from "../src/training/settlement.js";
 import { handleLiveApi } from "./live-api.js";
 
-type FableImage = { label: string; dataUrl: string };
+type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
 type TrainingDirection = "BUY" | "SELL";
 type TrainingOutcome = "WIN" | "LOSS" | "DRAW" | "UNKNOWN";
@@ -114,7 +114,17 @@ function finiteOrNull(value: unknown): number | null {
 function validImage(item: unknown): item is FableImage {
   if (!item || typeof item !== "object") return false;
   const value = item as Record<string, unknown>;
-  return typeof value.label === "string" && typeof value.dataUrl === "string" && /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value.dataUrl) && value.dataUrl.length <= 7_500_000;
+  const dataUrl = typeof value.dataUrl === "string" ? value.dataUrl : "";
+  const match = dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+  const bytes = match ? Buffer.from(match[2]!, "base64") : null;
+  return typeof value.label === "string" && Boolean(match) && Boolean(bytes?.length) && dataUrl.length <= 7_500_000 && (value.mimeType === undefined || value.mimeType === match![1]) && (value.width === undefined || Number(value.width) > 0) && (value.height === undefined || Number(value.height) > 0);
+}
+
+function imageMeta(image: FableImage) {
+  const match = image.dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+  const bytes = match ? Buffer.from(match[2]!, "base64") : Buffer.alloc(0);
+  const hash = bytes.length ? createHash("sha256").update(bytes).digest("hex").slice(0, 16) : null;
+  return { frameId: image.frameId || null, mimeType: match?.[1] || image.mimeType || null, byteLength: bytes.length, width: image.width || null, height: image.height || null, hash, providedHashMatches: image.imageHash ? image.imageHash === hash : null };
 }
 
 function visionProxyUrl(blobUrl: string, validUntil: number): string {
@@ -193,33 +203,40 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
   const crop = chartFrame.crop && typeof chartFrame.crop === "object" ? chartFrame.crop as Record<string, unknown> : {};
   const quantitative = snapshotObject.quantitativeFeatures && typeof snapshotObject.quantitativeFeatures === "object" ? snapshotObject.quantitativeFeatures as Record<string, unknown> : {};
   const imageUsed = images.length > 0;
+  const receivedImage = images[0] ? imageMeta(images[0]) : null;
+  console.info("VISION_API_RECEIVED", JSON.stringify({ requestId: typeof payload.requestId === "string" ? payload.requestId : null, hasImage: Boolean(receivedImage?.byteLength), ...receivedImage }));
+  if (!imageUsed || !receivedImage?.byteLength) throw new Error("VISION_IMAGE_MISSING");
   const baseQuality = Math.min(1, (imageUsed ? 0.55 : 0) + (images.length >= 2 ? 0.15 : 0) + (images.length >= 4 ? 0.1 : 0) + (Number.isFinite(Number(crop.width)) ? 0.1 : 0) + (quantitative.availability === "READY" ? 0.1 : 0));
-  const temporary = imageUsed ? await temporaryVisionUrls(images) : null;
   const visionEnabled = process.env.TRACECOM_VISION_ENABLED !== "false";
+  const visionModel = process.env.TRACECOM_VISION_MODEL || "claude-opus-5";
   if (imageUsed && !visionEnabled) throw new Error("VISION_PROVIDER_NOT_CONFIGURED");
   let visionObservation: Record<string, unknown> | null = null;
-  if (visionEnabled && temporary?.images[0]) {
-    const visionModel = process.env.TRACECOM_VISION_MODEL || "claude-opus-5";
-    console.info("VISION_MODEL_REQUEST_STARTED", JSON.stringify({ model: visionModel, endpoint: "/v1/messages" }));
-    const observation = await new NexxusVisionProvider({ apiKey, baseUrl: process.env.NEXXUS_BASE_URL || process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site", model: visionModel }).observe({ imageUrl: temporary.images[0].url, context: snapshotObject });
+  if (visionEnabled && images[0]) {
+    console.info("CLAUDE_VISION_REQUEST_STARTED", JSON.stringify({ requestId: typeof payload.requestId === "string" ? payload.requestId : null, model: visionModel, hasImage: true, imageBytes: receivedImage?.byteLength || 0, imageHash: receivedImage?.hash || null }));
+    const observation = await new NexxusVisionProvider({ apiKey, baseUrl: process.env.NEXXUS_BASE_URL || process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site", model: visionModel }).observe({ imageDataUrl: images[0].dataUrl, frameId: images[0].frameId, context: snapshotObject });
     console.info("VISION_MODEL_RESPONSE_RECEIVED", JSON.stringify({ availability: observation.availability, sources: observation.sources, notes: observation.notes }));
     visionObservation = observation as unknown as Record<string, unknown>;
-    console.info("MARKET_OBSERVATION_CREATED", JSON.stringify({ availability: observation.availability }));
+    console.info("MARKET_OBSERVATION_CREATED", JSON.stringify({ availability: observation.availability, imageProvided: observation.imageProvided === true, imageBytes: observation.imageBytes || 0, imageHash: observation.imageHash || null }));
   }
-  const reasoningSnapshot = visionObservation ? { ...snapshotObject, visionObservation } : snapshotObject;
+  const existingResolution = snapshotObject.assetResolution && typeof snapshotObject.assetResolution === "object" ? snapshotObject.assetResolution as Record<string, unknown> : {};
+  const visionAsset = typeof visionObservation?.symbol === "string" ? visionObservation.symbol : null;
+  const uiAsset = typeof existingResolution.uiAsset === "string" ? existingResolution.uiAsset : null;
+  const sessionAsset = typeof existingResolution.sessionAsset === "string" ? existingResolution.sessionAsset : null;
+  const assetStatus = visionAsset && uiAsset ? (visionAsset.toUpperCase() === uiAsset.toUpperCase() ? "MATCH" : "MISMATCH") : visionAsset ? "VISION_ONLY" : uiAsset || sessionAsset ? "SESSION_ONLY" : "UNKNOWN";
+  const assetResolution = { visionAsset, uiAsset, sessionAsset, status: assetStatus };
+  const reasoningSnapshot = visionObservation ? { ...snapshotObject, visionObservation, assetResolution, imageStatus: visionObservation.imageProvided === true ? "IMAGE_PROVIDED_BUT_FIELDS_MAY_BE_UNREADABLE" : "IMAGE_NOT_PROVIDED" } : { ...snapshotObject, assetResolution };
   const content: Record<string, unknown>[] = [{ type: "text", text: [
     "Analyze the current IQ Option chart for a one-minute paper signal.",
     "Use only the supplied chart images and normalized market snapshot.",
     "Write human-readable fields in Brazilian Portuguese. Keep enum values BUY, SELL, WAIT, NEUTRAL and UNAVAILABLE unchanged.",
     "Return JSON only with decision, confidence, rawBuyScore, rawSellScore, rawWaitScore, pBuy, pSell, pWait, dataQuality, imageUsed, framesUsed, visualBias, quantBias, confluence, trend, structure, momentum, volatility, supportResistance, candlePatterns, breakoutState, exhaustionState, supportingFactors, opposingFactors, observations, riskFlags, analysisQuality, agentAction, guidanceMessage, chartViewQualityScore, historicalContextScore, recentDetailScore, visibleCandleCount, summary, rationale and marketContext.",
     "marketContext must be an object with symbol, marketType, visualTimeframe, displayedStake, confidence and sources. Use UNAVAILABLE or null when the supplied sanitized crops do not prove a field. Never infer account balance, identity or broker controls.",
+    "If visionObservation.imageProvided is true, the sanitized crop was delivered to Claude Vision. Distinguish IMAGE_PROVIDED_BUT_FIELDS_MAY_BE_UNREADABLE from IMAGE_NOT_PROVIDED; never claim that no image was supplied when imageProvided is true.",
     "If the image is missing, stale, ambiguous or the active asset is not trustworthy, return WAIT.",
     `NORMALIZED_SNAPSHOT=${JSON.stringify(reasoningSnapshot).slice(0, 45_000)}`,
   ].join("\n") }];
-  if (!visionObservation) for (const image of temporary?.images ?? []) {
-    content.push({ type: "text", text: `TEMPORAL_FRAME=${image.label}` });
-    content.push({ type: "image", source: { type: "url", url: image.url } });
-  }
+  // Fable remains text-only. Claude Vision receives the crop bytes above and
+  // contributes only the structured MarketObservation to this request.
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
@@ -258,7 +275,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     return {
       model: { modelId: model, displayName: "Fable 5.1" },
       analysis: {
-        decision, confidence: bounded(parsed?.confidence, 0), rawModelScores: { buy: finiteOrNull(parsed?.rawBuyScore), sell: finiteOrNull(parsed?.rawSellScore), wait: finiteOrNull(parsed?.rawWaitScore) }, pBuy, pSell, pWait, probabilitySource, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: parsed?.imageUsed === true && imageUsed,
+        decision, confidence: bounded(parsed?.confidence, 0), rawModelScores: { buy: finiteOrNull(parsed?.rawBuyScore), sell: finiteOrNull(parsed?.rawSellScore), wait: finiteOrNull(parsed?.rawWaitScore) }, pBuy, pSell, pWait, probabilitySource, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: imageUsed && visionObservation?.imageProvided === true, imageStatus: imageUsed && visionObservation?.imageProvided === true ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", visionTransport: { frameId: receivedImage?.frameId || null, hasImage: imageUsed && visionObservation?.imageProvided === true, imageBytes: Number(visionObservation?.imageBytes) || receivedImage?.byteLength || 0, imageHash: visionObservation?.imageHash || receivedImage?.hash || null, provider: "nexxus-vision", model: visionModel },
         framesUsed: Math.min(4, Number(parsed?.framesUsed) || images.length), visualBias, quantBias, confluence: bounded(parsed?.confluence, quantAvailable && quantBias === visualBias ? .8 : 0),
         trend: typeof parsed?.trend === "string" ? parsed.trend.slice(0, 80) : "UNKNOWN", structure: typeof parsed?.structure === "string" ? parsed.structure.slice(0, 80) : "UNKNOWN", momentum: typeof parsed?.momentum === "string" ? parsed.momentum.slice(0, 80) : "UNKNOWN", volatility: typeof parsed?.volatility === "string" ? parsed.volatility.slice(0, 80) : "UNKNOWN",
         supportResistance: safeList(parsed?.supportResistance), candlePatterns: safeList(parsed?.candlePatterns), breakoutState: typeof parsed?.breakoutState === "string" ? parsed.breakoutState.slice(0, 80) : "UNKNOWN", exhaustionState: typeof parsed?.exhaustionState === "string" ? parsed.exhaustionState.slice(0, 80) : "UNKNOWN",
@@ -277,9 +294,10 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
           confidence: typeof parsed?.marketContext === "object" && parsed.marketContext ? bounded((parsed.marketContext as Record<string, unknown>).confidence, 0) : 0,
           sources: typeof parsed?.marketContext === "object" && parsed.marketContext ? safeList((parsed.marketContext as Record<string, unknown>).sources) : [],
         },
+        assetResolution,
       },
     };
-  } finally { clearTimeout(timeout); await temporary?.cleanup().catch(() => undefined); }
+  } finally { clearTimeout(timeout); }
 }
 
 /* ============================================================

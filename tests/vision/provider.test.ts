@@ -1,5 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { NexxusVisionProvider } from "../../src/vision/provider";
+import { NexxusVisionProvider as ServerlessVisionProvider } from "../../api/vision-provider";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("NexxusVisionProvider", () => {
   it("normalizes a verified observation", async () => {
@@ -50,5 +53,17 @@ describe("NexxusVisionProvider", () => {
     expect(first.symbol).toBe("EURUSD");
     expect(second.symbol).toBe("GBPUSD");
     expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("sends real sanitized crop bytes to the serverless Claude Vision adapter", async () => {
+    const dataUrl = "data:image/jpeg;base64,AAECAwQF";
+    const fetch = vi.fn(async () => new Response(JSON.stringify({ content: [{ type: "text", text: '{"symbol":"USDCAD","timeframe":"1m"}' }] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+    const result = await new ServerlessVisionProvider({ apiKey: "redacted", baseUrl: "https://provider.test", model: "claude-opus-5" }).observe({ imageDataUrl: dataUrl, frameId: "frame-real-bytes" });
+    const call = fetch.mock.calls[0] as unknown as [unknown, { body?: unknown }];
+    const request = JSON.parse(String(call[1].body));
+    const image = request.messages[0].content.find((block: { type: string }) => block.type === "image");
+    expect(result).toMatchObject({ availability: "OBSERVED", imageProvided: true, imageBytes: 6, imageHash: expect.stringMatching(/^[0-9a-f]{16}$/) });
+    expect(image).toMatchObject({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: "AAECAwQF" } });
   });
 });
