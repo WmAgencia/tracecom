@@ -8,7 +8,81 @@ state.profile = localStorage.getItem("tracecom:profile") || "BALANCED";
 state.deepContext = { version: 0, at: 0, observation: null, trend: null, momentum: null, regime: null, latencyMs: null };
 state.deepTimer = null; state.deepRunning = false;
 window.tracecomMetrics = state.metrics;
-function applyProfile(value) { const profile = ["CONSERVATIVE", "BALANCED", "AGGRESSIVE"].includes(value) ? value : "BALANCED"; state.profile = profile; localStorage.setItem("tracecom:profile", profile); const select = $("profileSelect"); if (select) select.value = profile; if ($("profileLine")) $("profileLine").textContent = `Perfil: ${PROFILE_LABELS[profile]} · Horizonte: 60s`; console.info("PROFILE_SELECTED", JSON.stringify({ profile })); }
+function applyProfile(value) { const profile = ["CONSERVATIVE", "BALANCED", "AGGRESSIVE"].includes(value) ? value : "BALANCED"; state.profile = profile; localStorage.setItem("tracecom:profile", profile); const select = $("profileSelect"); if (select) select.value = profile; if ($("profileLine")) $("profileLine").textContent = `Perfil: ${PROFILE_LABELS[profile]} · Horizonte: 60s`; console.info("PROFILE_SELECTED", JSON.stringify({ profile })); channelProfileSwitch(); }
+
+const OP_ENTRY_MS = 10_000, OP_CONFIRM_MS = 20_000, OP_COOLDOWN_MS = 5_000, OP_HORIZON_MS = 60_000;
+const OP_LOCKED_STATES = ["ENTRY_COUNTDOWN", "WAITING_ENTRY_CONFIRMATION", "POSITION_CONFIRMED", "IN_POSITION", "WAITING_SETTLEMENT"];
+function emptyChannel() { return { state: "READY", signal: null, countdownEndsAt: 0, confirmationDeadline: 0, manualEntry: null, settlementAt: 0, settlement: null, cooldownUntil: 0, researchDecisions: 0, midTradeFlips: 0, metrics: { operationalSignals: 0, entryConfirmed: 0, entryNotConfirmed: 0, preEntryInvalidations: 0, manualTradesSettled: 0, manualWins: 0, manualLosses: 0, manualDraws: 0, manualUnknown: 0, midTradeDirectionFlips: 0, withTrendSignals: 0, counterTrendSignals: 0 } }; }
+state.channel = emptyChannel();
+function channelLog(name, detail) { console.info(name, JSON.stringify(detail || {})); }
+function channelRelease(channel, stateName) { channel.state = stateName; channel.signal = null; channel.manualEntry = null; channel.settlementAt = 0; channelLog("OPERATION_CHANNEL_RELEASED", { to: stateName }); }
+function channelProfileSwitch() { const channel = state.channel; if (OP_LOCKED_STATES.includes(channel.state)) channelLog("PROFILE_SWITCH_DURING_OPERATION_IGNORED", { activeProfile: channel.signal?.profile, nextProfile: state.profile }); else channelLog("PROFILE_SWITCH_ARMED_FOR_NEXT_OPERATION", { profile: state.profile }); }
+function renderOperational() {
+  const channel = state.channel; if (!$("opStateValue")) return;
+  text("opStateValue", channel.state);
+  if (channel.signal && (channel.state === "ENTRY_COUNTDOWN" || channel.state === "WAITING_ENTRY_CONFIRMATION")) text("opDirectionValue", `${channel.signal.direction} · ${PROFILE_LABELS[channel.signal.profile] || channel.signal.profile} · ${channel.signal.regime || "UNCERTAIN"}`);
+  else if (channel.manualEntry && channel.signal) text("opDirectionValue", `${channel.signal.direction} · entrada ${channel.manualEntry.price}`);
+  else if (channel.settlement) text("opDirectionValue", `${channel.settlement.result}`);
+  else text("opDirectionValue", "Sem operação ativa");
+  text("opEntryValue", channel.manualEntry ? String(channel.manualEntry.price) : "—");
+  const now = Date.now();
+  if (channel.state === "ENTRY_COUNTDOWN") text("opCountdownValue", `${Math.max(0, Math.ceil((channel.countdownEndsAt - now) / 1000))}s`);
+  else if (channel.state === "WAITING_ENTRY_CONFIRMATION") text("opCountdownValue", `confirmação até ${Math.max(0, Math.ceil((channel.confirmationDeadline - now) / 1000))}s`);
+  else if (channel.state === "IN_POSITION") text("opCountdownValue", `${Math.max(0, Math.ceil((channel.settlementAt - now) / 1000))}s`);
+  else text("opCountdownValue", "—");
+  if ($("opResultValue")) text("opResultValue", channel.settlement ? channel.settlement.result : "—");
+}
+function channelCandidate(fast, candleId, frameId) {
+  const channel = state.channel; const direction = fast.decision; const now = Date.now();
+  const opposite = (direction === "BUY" || direction === "SELL") && channel.signal && direction !== channel.signal.direction && (fast.rawConfidence || 0) >= .7 && (fast.reversalEvidence?.length || 0) >= 1;
+  if ((channel.state === "ENTRY_COUNTDOWN" || channel.state === "WAITING_ENTRY_CONFIRMATION") && opposite) { channel.metrics.preEntryInvalidations += 1; channel.cooldownUntil = now + OP_COOLDOWN_MS; channelLog("SIGNAL_INVALIDATED_BEFORE_ENTRY", { signalId: channel.signal.signalId, reason: "opposite_confident_reversal", oppositeDirection: direction, rawConfidence: fast.rawConfidence }); channelRelease(channel, "COOLDOWN"); renderOperational(); return; }
+  if (OP_LOCKED_STATES.includes(channel.state)) { channel.researchDecisions += 1; if (channel.state === "IN_POSITION" && channel.signal && (direction === "BUY" || direction === "SELL") && direction !== channel.signal.direction) { channel.midTradeFlips += 1; channel.metrics.midTradeDirectionFlips += 1; channelLog("MID_TRADE_DIRECTION_FLIP", { signalId: channel.signal.signalId, from: channel.signal.direction, to: direction, rawConfidence: fast.rawConfidence }); } renderOperational(); return; }
+  if (channel.state === "COOLDOWN") { if (now < channel.cooldownUntil) { channel.researchDecisions += 1; return; } channelRelease(channel, "READY"); }
+  const decisive = direction === "BUY" || direction === "SELL"; const counterOk = !fast.counterTrend || (fast.reversalEvidence?.length || 0) >= 1;
+  if (!decisive || !counterOk) { channel.researchDecisions += 1; if (!counterOk) channelLog("COUNTER_TREND_SIGNAL_BLOCKED", { direction, macroTrend: fast.macroTrend, reversalEvidence: fast.reversalEvidence || [] }); renderOperational(); return; }
+  channel.signal = { signalId: `op_${now}_${Math.random().toString(36).slice(2, 8)}`, direction, profile: fast.selectedProfile, rawConfidence: fast.rawConfidence, regime: fast.regime, macroTrend: fast.macroTrend, microTrend: fast.microTrend, trendAlignment: fast.trendAlignment, counterTrend: fast.counterTrend, createdAt: now, entryWindowMs: OP_ENTRY_MS, predictionHorizonSeconds: 60, contextVersion: fast.deepContextVersion, candleId, frameId, status: "ACTIVE" };
+  channel.state = "ENTRY_COUNTDOWN"; channel.countdownEndsAt = now + OP_ENTRY_MS; channel.metrics.operationalSignals += 1; if (fast.counterTrend) channel.metrics.counterTrendSignals += 1; else channel.metrics.withTrendSignals += 1;
+  channelLog("OPERATIONAL_SIGNAL_CREATED", { signalId: channel.signal.signalId, direction, profile: fast.selectedProfile, rawConfidence: fast.rawConfidence, regime: fast.regime, macroTrend: fast.macroTrend, microTrend: fast.microTrend, trendAlignment: fast.trendAlignment, counterTrend: fast.counterTrend, reversalEvidence: fast.reversalEvidence || [], candleId, frameId });
+  channelLog("OPERATIONAL_SIGNAL_LOCKED", { signalId: channel.signal.signalId });
+  channelLog("ENTRY_COUNTDOWN_STARTED", { signalId: channel.signal.signalId, countdownEndsAt: channel.countdownEndsAt });
+  renderOperational();
+}
+async function settleManualOperation(priceRow) {
+  const channel = state.channel, signal = channel.signal, entry = channel.manualEntry; if (!signal || !entry) return;
+  try {
+    const body = { direction: signal.direction, entryPrice: entry.price, exitPrice: priceRow ? priceRow.value : null, entryTimestamp: entry.timestamp, exitTimestamp: Date.now(), dueTimestamp: channel.settlementAt };
+    const result = await api("/api/settlement", { method: "POST", body: JSON.stringify(body) });
+    channel.state = "SETTLED"; channel.settlement = { ...body, result: result.outcome }; if (signal) signal.status = "SETTLED";
+    channel.metrics.manualTradesSettled += 1; if (result.outcome === "WIN") channel.metrics.manualWins += 1; else if (result.outcome === "LOSS") channel.metrics.manualLosses += 1; else if (result.outcome === "DRAW") channel.metrics.manualDraws += 1; else channel.metrics.manualUnknown += 1;
+    channel.cooldownUntil = Date.now() + OP_COOLDOWN_MS;
+    channelLog("SETTLEMENT_PRICE_LOCKED", { signalId: signal.signalId, exitPrice: priceRow ? priceRow.value : null, source: priceRow ? priceRow.source : "UNAVAILABLE", confidence: priceRow ? priceRow.confidence : 0 });
+    channelLog("TRADE_SETTLED", { signalId: signal.signalId, result: result.outcome, reason: result.reason });
+    void liveEmit("SETTLEMENT", { decisionId: signal.signalId, direction: signal.direction, result: result.outcome, entryPrice: entry.price, settlementPrice: priceRow ? priceRow.value : null, manual: true, synthetic: false });
+  } catch (error) { channelLog("SETTLEMENT_WAITING", { reason: String(error?.message || error).slice(0, 120) }); }
+  renderOperational();
+}
+function channelManualPosition(manual) {
+  const channel = state.channel; if (channel.state !== "ENTRY_COUNTDOWN" && channel.state !== "WAITING_ENTRY_CONFIRMATION") return;
+  if (manual.state !== "POSITION_CONFIRMED" && manual.state !== "WAITING_SETTLEMENT" && manual.state !== "SETTLED") return;
+  const signal = channel.signal; if (!signal) return;
+  if (manual.direction !== "UNKNOWN" && manual.direction !== signal.direction) { channelLog("POSITION_DIRECTION_MISMATCH", { expected: signal.direction, detected: manual.direction }); return; }
+  const now = Date.now(); const priceRow = latestCausalPrice(now);
+  if (!priceRow) { channel.state = "POSITION_DETECTION_UNCERTAIN"; channelLog("MANUAL_ENTRY_PRICE_UNAVAILABLE", { signalId: signal.signalId }); renderOperational(); return; }
+  channel.state = "IN_POSITION"; channel.manualEntry = { price: priceRow.value, confidence: priceRow.confidence, source: priceRow.source, timestamp: now, signalId: signal.signalId }; channel.settlementAt = now + OP_HORIZON_MS; channel.metrics.entryConfirmed += 1;
+  channelLog("POSITION_CONFIRMED", { signalId: signal.signalId, direction: manual.direction, confidence: manual.confidence, evidence: manual.evidence });
+  channelLog("MANUAL_ENTRY_PRICE_LOCKED", { price: priceRow.value, source: priceRow.source, confidence: priceRow.confidence, timestamp: now, signalId: signal.signalId });
+  channelLog("OPERATION_IN_PROGRESS", { signalId: signal.signalId, settlementAt: channel.settlementAt });
+  renderOperational();
+}
+setInterval(() => {
+  const channel = state.channel, now = Date.now();
+  if (channel.state === "ENTRY_COUNTDOWN" && now >= channel.countdownEndsAt) { channel.state = "WAITING_ENTRY_CONFIRMATION"; channel.confirmationDeadline = channel.countdownEndsAt + OP_CONFIRM_MS; channelLog("ENTRY_CONFIRMATION_WAITING", { signalId: channel.signal?.signalId }); }
+  else if (channel.state === "WAITING_ENTRY_CONFIRMATION" && now >= channel.confirmationDeadline) { channel.metrics.entryNotConfirmed += 1; channelLog("ENTRY_NOT_CONFIRMED", { signalId: channel.signal?.signalId }); channel.cooldownUntil = now + OP_COOLDOWN_MS; channelRelease(channel, "COOLDOWN"); }
+  else if (channel.state === "IN_POSITION" && now >= channel.settlementAt) { void settleManualOperation(latestCausalPrice(now)); }
+  else if (channel.state === "COOLDOWN" && now >= channel.cooldownUntil) channelRelease(channel, "READY");
+  else if (channel.state === "SETTLED" && now >= channel.cooldownUntil) channelRelease(channel, "READY");
+  renderOperational();
+}, 1000);
 
 const api = async (path, options = {}) => {
   const response = await fetch(path, { ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
@@ -199,10 +273,13 @@ async function observe() {
       frames: state.frames.map((item) => ({ capturedAt: item.capturedAt, frameDifference: item.stats?.frameDifference ?? null, averageLuma: item.stats?.averageLuma ?? null })),
       deepContext: state.deepContext.at ? { version: state.deepContext.version, at: state.deepContext.at, trend: state.deepContext.trend, momentum: state.deepContext.momentum, regime: state.deepContext.regime } : null,
       previousDecision: state.lastAnalysis?.decision || null, previousLean: state.lastAnalysis?.directionalLean || null,
+      previousMacroState: state.macroState || null,
     }) });
     const fast = fastResponse.fast; const fastLatency = Date.now() - started; state.metrics.fastLatencies = [...state.metrics.fastLatencies, fastLatency].slice(-200);
     if (fast.fastPathStatus !== "FAST_PATH_COMPLETED" || !fast.operational || fastLatency > FAST_DEADLINE_MS) { state.metrics.fastTimeouts += 1; setStage("FAST_PATH_TIMEOUT", `${fastLatency}ms`); console.warn("FAST_PATH_TIMEOUT", JSON.stringify({ candleId, status: fast.fastPathStatus, operational: fast.operational, latencyMs: fastLatency, deadlineMs: FAST_DEADLINE_MS })); return; }
-    console.info("FAST_PATH_COMPLETED", JSON.stringify({ candleId, decision: fast.decision, profile: fast.selectedProfile, regime: fast.regime, rawConfidence: fast.rawConfidence, latencyMs: fastLatency, timings: fast.timings }));
+    console.info("FAST_PATH_COMPLETED", JSON.stringify({ candleId, decision: fast.decision, profile: fast.selectedProfile, regime: fast.regime, macroTrend: fast.macroTrend, microTrend: fast.microTrend, trendAlignment: fast.trendAlignment, deepFastAlignment: fast.deepFastAlignment, rawConfidence: fast.rawConfidence, latencyMs: fastLatency, timings: fast.timings }));
+    state.macroState = fast.macroState || state.macroState;
+    channelCandidate(fast, candleId, frameId);
     const result = { analysis: { decision: fast.decision, confidence: fast.rawConfidence, rawConfidence: fast.rawConfidence, directionalLean: fast.directionalLean, leanConfidence: fast.leanConfidence, regime: fast.regime, regimeConfidence: fast.regimeConfidence, profiles: fast.profiles, selectedProfile: fast.selectedProfile, predictionHorizonSeconds: fast.predictionHorizonSeconds, candleSeconds: fast.candleSeconds, expirationSeconds: EXPIRATION_SECONDS, confidenceBuckets: null, fastTimings: fast.timings, visionObservation: state.deepContext.observation, imageUsed: Boolean(state.deepContext.observation), imageStatus: state.deepContext.observation ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", marketContext: state.lastContext || {} } };
     if (session !== state.session || stream !== state.stream || state.lastCandleId !== candleId) { console.info("STALE_DECISION", JSON.stringify({ requestId, candleId, currentCandleId: state.lastCandleId })); return; }
     const latency = Date.now() - started, candleAgeMs = Date.now() - candleCloseTimestamp, stale = candleAgeMs > ANALYSIS_STALE_MS;
@@ -265,7 +342,7 @@ function suggestedStake(analysis) {
   const risk = Math.min(.01, .003 + confidence * quality * .007); return { amount: Math.max(0, Math.floor(budget * risk * 100) / 100), reason: `Risco fixo ${(risk * 100).toFixed(1)}%; sem martingale.` };
 }
 function probabilityText(value) { return Number.isFinite(Number(value)) ? `${Math.round(Number(value) * 100)}%` : "N/A"; }
-function updateManualPosition(observation, analysis) { const raw = observation?.manualPosition; if (!raw || !["POSSIBLE_POSITION", "POSITION_CONFIRMED", "WAITING_SETTLEMENT", "SETTLED"].includes(raw.state)) return; const direction = ["BUY", "SELL"].includes(raw.direction) ? raw.direction : "UNKNOWN"; state.manualPosition = { state: raw.state, direction, confidence: Number(raw.confidence) || 0, evidence: Array.isArray(raw.evidence) ? raw.evidence.slice(0, 4) : [] }; text("manualPositionValue", `${state.manualPosition.state} · ${state.manualPosition.direction}`); text("manualPositionMeta", `${Math.round(state.manualPosition.confidence * 100)}% · ${state.manualPosition.evidence.join(" · ") || "evidência visual"}`); void liveEmit("SHADOW_UPDATE", { manualPosition: state.manualPosition, decisionId: analysis?.analysisId || null, directionalLean: analysis?.directionalLean || "NONE" }); }
+function updateManualPosition(observation, analysis) { const raw = observation?.manualPosition; if (!raw || !["POSSIBLE_POSITION", "POSITION_CONFIRMED", "WAITING_SETTLEMENT", "SETTLED"].includes(raw.state)) return; const direction = ["BUY", "SELL"].includes(raw.direction) ? raw.direction : "UNKNOWN"; state.manualPosition = { state: raw.state, direction, confidence: Number(raw.confidence) || 0, evidence: Array.isArray(raw.evidence) ? raw.evidence.slice(0, 4) : [] }; text("manualPositionValue", `${state.manualPosition.state} · ${state.manualPosition.direction}`); text("manualPositionMeta", `${Math.round(state.manualPosition.confidence * 100)}% · ${state.manualPosition.evidence.join(" · ") || "evidência visual"}`); void liveEmit("SHADOW_UPDATE", { manualPosition: state.manualPosition, decisionId: analysis?.analysisId || null, directionalLean: analysis?.directionalLean || "NONE" }); channelManualPosition(state.manualPosition); }
 function renderAnalysis(analysis, latency) {
   const decision = ["BUY", "SELL", "WAIT"].includes(analysis.decision) ? analysis.decision : "WAIT", confidence = Number(analysis.confidence) || 0;
   $("decisionBox").className = `decision-box state-${decision.toLowerCase()}`; text("decisionValue", decision); text("decisionSummary", analysis.summary || analysis.rationale || "Sem conclusão verificável."); text("confidenceValue", `${Math.round(confidence * 100)}%`); $("confidenceBar").style.transform = `scaleX(${clamp(confidence, 0, 1)})`;

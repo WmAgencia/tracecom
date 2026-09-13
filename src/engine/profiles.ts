@@ -16,17 +16,20 @@ export type ProfilePolicy = {
   readonly minConfidence: number;
   readonly allowUncertainRegime: boolean;
   readonly conflictPenalty: number;
+  readonly counterTrendMinEvidence: number;
 };
 
 export const PROFILE_POLICIES: Readonly<Record<Profile, ProfilePolicy>> = Object.freeze({
-  CONSERVATIVE: { label: "CONSERVATIVE", status: "EXPERIMENTAL", minSeparation: .35, minConfidence: .64, allowUncertainRegime: false, conflictPenalty: .25 },
-  BALANCED: { label: "BALANCED", status: "EXPERIMENTAL", minSeparation: .22, minConfidence: .56, allowUncertainRegime: false, conflictPenalty: .15 },
-  AGGRESSIVE: { label: "AGGRESSIVE", status: "EXPERIMENTAL", minSeparation: .10, minConfidence: .51, allowUncertainRegime: true, conflictPenalty: .05 },
+  CONSERVATIVE: { label: "CONSERVATIVE", status: "EXPERIMENTAL", minSeparation: .35, minConfidence: .64, allowUncertainRegime: false, conflictPenalty: .25, counterTrendMinEvidence: 2 },
+  BALANCED: { label: "BALANCED", status: "EXPERIMENTAL", minSeparation: .22, minConfidence: .56, allowUncertainRegime: false, conflictPenalty: .15, counterTrendMinEvidence: 1 },
+  AGGRESSIVE: { label: "AGGRESSIVE", status: "EXPERIMENTAL", minSeparation: .10, minConfidence: .51, allowUncertainRegime: true, conflictPenalty: .05, counterTrendMinEvidence: 1 },
 });
 
 export type DirectionalEvidence = {
   bullScore: number; bearScore: number; directionalLean: "BUY" | "SELL" | "NONE"; rawConfidence: number;
   regime: MarketRegime; regimeConfidence: number; conflictScore: number;
+  trendAlignment?: "WITH_TREND" | "COUNTER_TREND" | "NEUTRAL";
+  reversalEvidenceCount?: number;
 };
 
 export type ProfileDecision = { profile: Profile; decision: "BUY" | "SELL" | "WAIT"; confidence: number; blockedBy: string[] };
@@ -41,6 +44,7 @@ export function evaluateProfile(profile: Profile, evidence: DirectionalEvidence)
   if (separation < requiredSeparation) blockedBy.push("INSUFFICIENT_SEPARATION");
   if (evidence.rawConfidence < policy.minConfidence) blockedBy.push("INSUFFICIENT_CONFIDENCE");
   if (evidence.regime === "UNCERTAIN" && !policy.allowUncertainRegime) blockedBy.push("REGIME_UNCERTAIN");
+  if (evidence.trendAlignment === "COUNTER_TREND" && (evidence.reversalEvidenceCount ?? 0) < policy.counterTrendMinEvidence) blockedBy.push("COUNTER_TREND_NO_REVERSAL_EVIDENCE");
   const decision = blockedBy.length === 0 && evidence.directionalLean !== "NONE" ? evidence.directionalLean : "WAIT";
   // Confidence never changes with the profile; it is the same underlying estimate.
   return { profile, decision, confidence: evidence.rawConfidence, blockedBy };

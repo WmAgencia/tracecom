@@ -68,4 +68,17 @@ describe("sanitized crop transport contract", () => {
     expect(html).toContain("profileSelect");
     expect(api).toContain("/api/fast/decision");
   });
+
+  it("keeps the exclusive operational channel contracts", () => {
+    expect(browser).toContain("OPERATIONAL_SIGNAL_LOCKED");
+    expect(browser).toContain("ENTRY_COUNTDOWN_STARTED");
+    expect(browser).toContain("SIGNAL_INVALIDATED_BEFORE_ENTRY");
+    expect(browser).toContain("MID_TRADE_DIRECTION_FLIP");
+    expect(browser).toContain("MANUAL_ENTRY_PRICE_LOCKED");
+    expect(browser).toContain("channelManualPosition");
+    expect(browser).toContain("ENTRY_NOT_CONFIRMED");
+    expect(html).toContain("opStateValue");
+    expect(api).toContain("/api/settlement");
+    expect(api).toContain("early_settlement_rejected");
+  });
 });

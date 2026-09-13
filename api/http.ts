@@ -19,6 +19,7 @@ import { applyTrainingAnalysis, createTrainingSession, evaluateVirtualTrades, tr
 import { TrainingStore } from "../src/training/store.js";
 import { validatePriceObservation, type AcceptedObservation } from "../src/vision/price-lock.js";
 import { buildFastDecision } from "../src/engine/fast-path.js";
+import { settleTrade } from "../src/training/settlement.js";
 
 type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -567,10 +568,27 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         profile: input.profile === "CONSERVATIVE" || input.profile === "BALANCED" || input.profile === "AGGRESSIVE" ? input.profile : undefined,
         previousDecision: typeof input.previousDecision === "string" ? input.previousDecision : null,
         previousLean: typeof input.previousLean === "string" ? input.previousLean : null,
+        previousMacroState: input.previousMacroState && typeof input.previousMacroState === "object" && !Array.isArray(input.previousMacroState) ? input.previousMacroState as { trend: "STRONG_UP" | "UP" | "SIDEWAYS" | "DOWN" | "STRONG_DOWN" | "UNCERTAIN"; confidence: number; pending: "STRONG_UP" | "UP" | "SIDEWAYS" | "DOWN" | "STRONG_DOWN" | "UNCERTAIN"; pendingCount: number; updatedAt: number; transitions: number; evidence: string[] } : null,
       });
       recordLatency("fast_total", result.timings.totalMs);
       console.info(result.fastPathStatus, JSON.stringify({ candleId: typeof input.candleId === "string" ? input.candleId : null, decision: result.decision, profile: result.selectedProfile, regime: result.regime, rawConfidence: result.rawConfidence, latencyMs: result.timings.totalMs }));
       json(200, { fast: result, predictionHorizonSeconds: result.predictionHorizonSeconds });
+      return;
+    }
+
+    if (path === "/api/settlement" && req.method === "POST") {
+      const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+      const direction = input.direction === "BUY" || input.direction === "SELL" ? input.direction : null;
+      const entryPrice = Number(input.entryPrice);
+      const exitPrice = input.exitPrice === null || input.exitPrice === undefined ? null : Number(input.exitPrice);
+      const entryTimestamp = Number(input.entryTimestamp);
+      const exitTimestamp = Number(input.exitTimestamp);
+      const dueTimestamp = Number(input.dueTimestamp);
+      if (!direction || !Number.isFinite(entryPrice) || !Number.isFinite(entryTimestamp) || !Number.isFinite(exitTimestamp) || !Number.isFinite(dueTimestamp)) { json(400, { error: "invalid_settlement_input" }); return; }
+      if (exitTimestamp < dueTimestamp) { json(409, { error: "early_settlement_rejected", dueTimestamp, exitTimestamp }); return; }
+      const result = settleTrade({ direction, entryPrice, exitPrice, entryTimestamp, exitTimestamp, dueTimestamp });
+      console.info("TRADE_SETTLED", JSON.stringify({ source: "manual_operational_channel", direction, outcome: result.outcome, reason: result.reason }));
+      json(200, { outcome: result.outcome, reason: result.reason });
       return;
     }
 

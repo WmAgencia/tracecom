@@ -10,6 +10,7 @@
  */
 import { classifyRegime, type MarketRegime, type RegimeObservation, type RegimeResult } from "./regime.js";
 import { DEFAULT_PROFILE, evaluateAllProfiles, PROFILE_IDS, type DirectionalEvidence, type Profile, type ProfileDecision } from "./profiles.js";
+import { buildMacroContext, buildMicroContext, counterTrendEvidence, trendAlignmentFor, type MacroState, type MicroState, type TrendAlignment } from "./macro-context.js";
 
 export const PREDICTION_HORIZON_SECONDS = 60;
 export const FAST_PATH_DEADLINE_MS = 5_000;
@@ -27,6 +28,7 @@ export type FastInput = {
   previousDecision?: string | null;
   previousLean?: string | null;
   deadlineMs?: number;
+  previousMacroState?: MacroState | null;
 };
 
 export type FastResult = {
@@ -49,6 +51,17 @@ export type FastResult = {
   deepContextVersion: number | null;
   deepAnalysisAgeMs: number | null;
   evidenceAgeMs: number | null;
+  macroTrend: string;
+  macroTrendConfidence: number;
+  macroStructure: string;
+  microTrend: string;
+  microMomentum: number;
+  trendAlignment: TrendAlignment;
+  counterTrend: boolean;
+  counterTrendReason: string | null;
+  reversalEvidence: string[];
+  deepFastAlignment: "ALIGNED" | "CONFLICT" | "DEEP_STALE" | "DEEP_UNAVAILABLE";
+  macroState: MacroState;
   timings: { observationMs: number; regimeMs: number; bullBearMs: number; arbiterMs: number; totalMs: number };
 };
 
@@ -91,7 +104,10 @@ export function buildFastDecision(input: FastInput): FastResult {
     if (momentum === "DOWN") deepBias -= .05;
     deepBias = clamp(deepBias, -FAST_THRESHOLDS.deepBiasCap, FAST_THRESHOLDS.deepBiasCap);
   }
-  const directionalScore = clamp(momentumScore * .7 + regimeBias + deepBias, -1, 1);
+  const macroState = buildMacroContext(causalPrices, input.now, input.previousMacroState ?? null);
+  const microState: MicroState = buildMicroContext(causalPrices, input.now);
+  const macroBias = clamp(macroState.trend === "UP" ? .2 : macroState.trend === "STRONG_UP" ? .3 : macroState.trend === "DOWN" ? -.2 : macroState.trend === "STRONG_DOWN" ? -.3 : 0, -.3, .3);
+  const directionalScore = clamp(momentumScore * .7 + regimeBias + deepBias + macroBias, -1, 1);
   const bullScore = (directionalScore + 1) / 2;
   const bearScore = 1 - bullScore;
   const separation = Math.abs(bullScore - bearScore);
@@ -99,9 +115,13 @@ export function buildFastDecision(input: FastInput): FastResult {
   const rawConfidence = clamp(.5 + separation * .4 - activityPenalty, .5, .9);
   const directionalLean: "BUY" | "SELL" | "NONE" = directionalScore > FAST_THRESHOLDS.leanEpsilon ? "BUY" : directionalScore < -FAST_THRESHOLDS.leanEpsilon ? "SELL" : "NONE";
   const conflictScore = clamp(1 - separation, 0, 1);
+  const trendAlignment: TrendAlignment = trendAlignmentFor(directionalLean, macroState.trend);
+  const reversalEvidence = trendAlignment === "COUNTER_TREND" && directionalLean !== "NONE" ? counterTrendEvidence(directionalLean, macroState.trend, microState, causalPrices, input.now) : [];
+  const counterTrend = trendAlignment === "COUNTER_TREND";
+  const deepFastAlignment: "ALIGNED" | "CONFLICT" | "DEEP_STALE" | "DEEP_UNAVAILABLE" = !deepContext ? "DEEP_UNAVAILABLE" : deepAnalysisAgeMs !== null && deepAnalysisAgeMs > DEEP_CONTEXT_FRESH_MS ? "DEEP_STALE" : ((String(deepContext.trend ?? "").toUpperCase() === "BULLISH" && directionalLean === "SELL") || (String(deepContext.trend ?? "").toUpperCase() === "BEARISH" && directionalLean === "BUY")) ? "CONFLICT" : "ALIGNED";
   const bullBearMs = Date.now() - bullBearStarted;
   const arbiterStarted = Date.now();
-  const evidence: DirectionalEvidence = { bullScore, bearScore, directionalLean, rawConfidence, regime: regime.regime, regimeConfidence: regime.confidence, conflictScore };
+  const evidence: DirectionalEvidence = { bullScore, bearScore, directionalLean, rawConfidence, regime: regime.regime, regimeConfidence: regime.confidence, conflictScore, trendAlignment, reversalEvidenceCount: reversalEvidence.length };
   const profiles = evaluateAllProfiles(evidence);
   const decision = profiles[profile].decision;
   const arbiterMs = Date.now() - arbiterStarted;
@@ -129,6 +149,17 @@ export function buildFastDecision(input: FastInput): FastResult {
     deepContextVersion: deepContext?.version ?? null,
     deepAnalysisAgeMs,
     evidenceAgeMs: latest !== null && causalPrices.length ? input.now - causalPrices[causalPrices.length - 1]!.timestamp : null,
+    macroTrend: macroState.trend,
+    macroTrendConfidence: macroState.confidence,
+    macroStructure: macroState.evidence.join(" · "),
+    microTrend: microState.microTrend,
+    microMomentum: microState.microMomentum,
+    trendAlignment,
+    counterTrend,
+    counterTrendReason: counterTrend ? (reversalEvidence.length ? "reversal_evidence_present" : "no_reversal_evidence") : null,
+    reversalEvidence,
+    deepFastAlignment,
+    macroState,
     timings: { observationMs, regimeMs, bullBearMs, arbiterMs, totalMs },
   };
 }
