@@ -14,6 +14,7 @@ import { readFileSync, existsSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { MarketRuntime } from "../market/runtime";
 import type { FableTraderClient } from "../ai/fable-trader";
+import type { VisionProvider } from "../vision/provider";
 import type { Direction } from "../backtest/types";
 import type { Timeframe } from "../market/model";
 import type { FusedDecisionInput } from "../analytics/service";
@@ -31,6 +32,8 @@ export interface HttpApiOptions {
   readonly publicDir?: string;
   readonly logger?: { info(msg: string, meta?: unknown): void; error(msg: string, meta?: unknown): void };
   readonly fableTrader?: FableTraderClient;
+  /** Optional perception stage. When present, Fable receives structured text only. */
+  readonly visionProvider?: VisionProvider;
 }
 
 interface HttpResponse {
@@ -51,6 +54,7 @@ export class TraceconHttpApi {
   private readonly publicDir: string | null;
   private readonly log?: HttpApiOptions["logger"];
   private readonly fableTrader?: FableTraderClient;
+  private readonly visionProvider?: VisionProvider;
 
   constructor(opts: HttpApiOptions) {
     this.runtime = opts.runtime;
@@ -60,6 +64,7 @@ export class TraceconHttpApi {
     this.publicDir = opts.publicDir ? resolve(opts.publicDir) : null;
     this.log = opts.logger;
     this.fableTrader = opts.fableTrader;
+    this.visionProvider = opts.visionProvider;
     this.server = createServer((req, res) => void this.handle(req, res));
   }
 
@@ -343,7 +348,19 @@ export class TraceconHttpApi {
         const chartImages = Array.isArray(payload.chartImages)
           ? payload.chartImages.filter((item): item is { label: string; dataUrl: string } => Boolean(item && typeof item === "object" && typeof (item as Record<string, unknown>).label === "string" && typeof (item as Record<string, unknown>).dataUrl === "string")).slice(0, 4)
           : undefined;
-        const result = await this.fableTrader.analyze({ snapshot: payload.snapshot as Record<string, unknown>, chartImage: typeof payload.chartImage === "string" ? payload.chartImage : null, ...(chartImages ? { chartImages } : {}) });
+        let snapshot = payload.snapshot as Record<string, unknown>;
+        let chartImage = typeof payload.chartImage === "string" ? payload.chartImage : null;
+        let images = chartImages;
+        if (this.visionProvider) {
+          const candidate = chartImages?.find((item) => item.label === "current") ?? chartImages?.[0] ?? (chartImage ? { label: "current", dataUrl: chartImage } : null);
+          const observation = await this.visionProvider.observe(candidate ? { imageDataUrl: candidate.dataUrl, context: snapshot } : {});
+          snapshot = { ...snapshot, visionObservation: observation };
+          // Perception and reasoning are separate stages. Do not send the crop
+          // to Fable when a provider is configured; only its normalized result.
+          chartImage = null;
+          images = undefined;
+        }
+        const result = await this.fableTrader.analyze({ snapshot, chartImage, ...(images ? { chartImages: images } : {}) });
         return { status: 200, json: result };
       }
       case "GET /api/status":

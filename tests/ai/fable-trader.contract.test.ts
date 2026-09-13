@@ -44,4 +44,12 @@ describe("Fable vision frame contract", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ error: { message: "invalid payload" } }), { status: 400 }));
     await expect(new FableTraderClient({ apiKey: "test", baseUrl: "https://provider.invalid", model: "claude-fable-5-1" }).analyze({ snapshot, chartImage: image("current").dataUrl })).rejects.toThrow("FABLE_HTTP_400");
   });
+
+  it("preserves visual market metadata and normalizes its probability distribution", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ content: [{ type: "text", text: JSON.stringify({ decision: "BUY", confidence: .8, pBuy: 8, pSell: 1, pWait: 1, imageUsed: true, visualBias: "BUY", quantBias: "BUY", marketContext: { symbol: "EUR/USD", marketType: "OTC", visualTimeframe: "1m", displayedStake: "$20", expiration: "60s", payout: "91%", confidence: .9, sources: ["header", "chart"] } }) }] }), { status: 200 }));
+    const result = await new FableTraderClient({ apiKey: "test", baseUrl: "https://provider.invalid", model: "claude-fable-5-1" }).analyze({ snapshot, chartImage: image("current").dataUrl });
+    expect(result.analysis.marketContext).toMatchObject({ symbol: "EUR/USD", marketType: "OTC", visualTimeframe: "1m", expiration: "60s", payout: "91%" });
+    expect((result.analysis.pBuy ?? 0) + (result.analysis.pSell ?? 0) + (result.analysis.pWait ?? 0)).toBeCloseTo(1);
+    expect(result.analysis.pBuy).toBeCloseTo(.8);
+  });
 });
