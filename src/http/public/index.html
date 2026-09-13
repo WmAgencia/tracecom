@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TRACE/COM Vision</title><meta name="description" content="Observação visual de gráficos para sinais shadow. Sem automação de corretora." />
-  <link rel="stylesheet" href="/vision.css" />
+  <link rel="stylesheet" href="/vision.css" /><style>.operation-clock{display:flex;align-items:center;gap:14px;margin:0 0 18px;padding:13px;border:1px solid #24383c;background:#091315}.clock-ring{width:60px;height:60px;display:grid;place-content:center;text-align:center;border:3px solid #edbc66;border-radius:50%;flex:none}.clock-ring b{font:21px monospace;color:#edbc66}.clock-ring span{font:8px monospace;color:#53646a}.operation-clock strong{display:block;margin-top:4px;font:12px monospace}.operation-clock p{margin:3px 0 0;color:#91a1a7;font-size:11px}</style>
 </head>
 <body>
   <header class="vision-header"><a class="vision-brand" href="/" aria-label="TraceCom Vision"><span class="brand-orbit"></span><span>TRACE<em>/</em>COM <small>VISION WEB</small></span></a><div class="header-state"><i id="connectionLed"></i><span id="connectionText">VERIFICANDO SERVIÇO</span><b>SHADOW ONLY</b></div></header>
@@ -17,6 +17,7 @@
     <aside class="decision-panel" aria-label="Decisão Fable">
       <div class="decision-head"><div><span class="kicker">FABLE 5.1</span><h2>Decisão shadow</h2></div><span id="fableState" class="badge">OFFLINE</span></div>
        <div id="decisionBox" class="decision-box state-wait"><span>DECISÃO ATUAL</span><strong id="decisionValue">WAIT</strong><p id="decisionSummary">Compartilhe a tela para iniciar a observação automática.</p></div>
+       <section id="operationClock" class="operation-clock" aria-live="polite"><div class="clock-ring"><b id="clockValue">—</b><span>s</span></div><div><span class="kicker">CRONÔMETRO DE ENTRADA</span><strong id="clockState">AGUARDANDO</strong><p id="clockText">A próxima análise será iniciada automaticamente.</p></div></section>
        <div class="probability-strip"><div><span>BUY</span><b id="pBuyValue">N/A</b></div><div><span>SELL</span><b id="pSellValue">N/A</b></div><div><span>WAIT</span><b id="pWaitValue">N/A</b></div></div>
        <section class="guidance" id="agentGuidance" hidden><span class="kicker">ORIENTAÇÃO DO AGENTE</span><p id="guidanceText"></p><small id="guidanceReason"></small></section>
        <div class="confidence"><span>CONFIANÇA DO AGENTE</span><b id="confidenceValue">N/A</b><i><em id="confidenceBar"></em></i></div>

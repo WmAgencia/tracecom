@@ -180,8 +180,10 @@ function renderAnalysis(analysis, latency) {
 }
 function updateEntryCountdown() {
   if (state.countdownTimer) { clearTimeout(state.countdownTimer); state.countdownTimer = null; }
-  if (!state.entryUntil) return;
+  const clock = $("operationClock");
+  if (!state.entryUntil) { if (clock) { text("clockValue", "—"); text("clockState", state.analyzing ? "ANALYZING" : "AGUARDANDO"); text("clockText", state.analyzing ? "Processando nova observação." : "A próxima análise será iniciada automaticamente."); } return; }
   const left = Math.max(0, state.entryUntil - Date.now());
+  if (clock) { text("clockValue", String(Math.ceil(left / 1000)).padStart(2, "0")); text("clockState", left ? "COUNTDOWN" : "SETTLEMENT"); text("clockText", left ? `Próxima análise em ${Math.ceil(left / 1000)} segundos.` : "Janela encerrada; aguardando resultado."); }
   text("decisionSummary", left ? `${state.lastAnalysis?.summary || state.lastAnalysis?.rationale || "Sinal shadow"} · janela de entrada ${Math.ceil(left / 1000)}s` : (state.lastAnalysis?.summary || state.lastAnalysis?.rationale || "Sinal shadow"));
   if (left) state.countdownTimer = window.setTimeout(updateEntryCountdown, 250); else state.entryUntil = 0;
 }
