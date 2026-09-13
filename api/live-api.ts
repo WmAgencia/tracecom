@@ -63,6 +63,12 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
   if (!path.startsWith("/api/live/") && !path.startsWith("/api/debug/")) return false;
   const ip = req.socket?.remoteAddress ?? req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ?? "vercel"; if (!allowed(ip)) { send(res, 429, { error: "rate_limited" }); return true; }
   const relayAdmin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
+  if (path === "/api/live/session" && req.method === "GET") {
+    const token = req.headers.authorization?.toString() || "";
+    try { const response = await relay(`/api/live/session${query.toString() ? `?${query}` : ""}`, { headers: token ? { authorization: token } : {} }); await relayJson(res, response); }
+    catch { send(res, 502, { error: "relay_unreachable" }); }
+    return true;
+  }
   if (path === "/api/live/admin/bootstrap" && req.method === "POST") {
     const expected = process.env.LIVE_API_ADMIN_KEY?.trim();
     if (!expected) { send(res, 503, { error: "admin_not_configured" }); return true; }
