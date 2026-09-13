@@ -456,7 +456,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
   try {
     const path = url.pathname;
-    const body = req.method === "POST" ? await readBody(req) : null;
+    const body = req.method === "POST" || req.method === "PUT" || req.method === "PATCH" ? await readBody(req) : null;
     if (await handleLiveApi(req, res, path, body, q)) return;
     if (path === "/health" || path === "/api/health") {
       json(200, { ok: true, ts: Date.now() });

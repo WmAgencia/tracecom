@@ -1,6 +1,6 @@
 /* Trace/Com Vision: user-initiated capture; local crops; virtual-only training. */
 const $ = (id) => document.getElementById(id);
-const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, countdownTimer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, stage: "IDLE", session: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0, reanalysisAt: 0, decisionId: null, decisionTimestamp: 0, expirationSeconds: 60, lastSubmittedHash: null, lastSubmittedAt: 0, requestCount: 0, hasSuccessfulAnalysis: false };
+const state = { stream: null, crop: null, selecting: false, start: null, frames: [], timer: null, countdownTimer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, stage: "IDLE", session: 0, liveSessionId: null, liveSequence: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0, reanalysisAt: 0, decisionId: null, decisionTimestamp: 0, expirationSeconds: 60, lastSubmittedHash: null, lastSubmittedAt: 0, requestCount: 0, hasSuccessfulAnalysis: false };
 
 const api = async (path, options = {}) => {
   const response = await fetch(path, { ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
@@ -21,6 +21,16 @@ function setCapture(status, label) { led("captureLed", status); text("captureTex
 function setFable(label) { text("fableState", label); $("fableState").classList.toggle("online", label === "ONLINE"); }
 function updatePipeline() { text("pipelineState", state.stream && state.crop ? "OBSERVANDO" : "AGUARDANDO"); text("healthCrop", state.crop ? "CROPS SANITIZADOS" : "CROP LOCAL"); }
 function setStage(stage, detail = "") { state.stage = stage; text("cropText", detail ? `${stage} · ${detail}` : stage); console.info(`[VISION] ${stage}`, detail); }
+async function liveEmit(type, payload = {}, keepalive = false) {
+  if (!state.liveSessionId) return;
+  const event = { sessionId: state.liveSessionId, type, sequenceId: `${state.liveSessionId}:${++state.liveSequence}`, payload, session: { source: "VISION_WEB", shadowOnly: true } };
+  try { await fetch("/api/live/browser/ingest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(event), keepalive }); } catch { /* telemetry must never block analysis */ }
+}
+async function liveFrame(frame, hash) {
+  if (!state.liveSessionId) return;
+  const payload = { captureType: "crop", data: frame.dataUrl, mime: "image/jpeg", width: frame.width, height: frame.height, timestamp: new Date().toISOString(), chartRegion: state.crop, frameHash: hash };
+  try { await api("/api/live/browser/frame", { method: "PUT", body: JSON.stringify({ sessionId: state.liveSessionId, frameId: `frame_${Date.now()}`, payload }) }); } catch { /* best-effort, crop-only */ }
+}
 
 async function checkBackend() {
   try { await api("/health"); led("connectionLed", "good"); text("connectionText", "FABLE GATE ONLINE"); }
@@ -42,6 +52,7 @@ async function shareScreen() {
   try {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 12, max: 20 } }, audio: false });
     state.stream = stream; state.frames = []; state.lastAnalysis = null; state.hasSuccessfulAnalysis = false;
+    state.liveSessionId = `vision_${crypto.randomUUID()}`; state.liveSequence = 0; void liveEmit("SESSION_STARTED", { startedAt: new Date().toISOString() });
     const video = $("screenVideo"); video.srcObject = stream; video.hidden = false; $("previewEmpty").hidden = true;
     $("shareButton").textContent = "RECOMPARTILHAR"; $("stopShareButton").hidden = false; $("startTrainingButton").disabled = false;
     stream.getVideoTracks()[0]?.addEventListener("ended", stopScreen, { once: true });
@@ -61,13 +72,14 @@ async function shareScreen() {
 }
 
 function stopScreen() {
+  if (state.liveSessionId) void liveEmit("SESSION_ENDED", { endedAt: new Date().toISOString() }, true);
   state.session += 1; state.failures = 0; state.nextRetryAt = 0; state.circuitOpen = false;
   state.entryUntil = 0; state.reanalysisAt = 0; state.decisionId = null; state.decisionTimestamp = 0;
   state.lastSubmittedHash = null; state.lastSubmittedAt = 0; state.requestCount = 0;
   if (state.countdownTimer) { clearTimeout(state.countdownTimer); state.countdownTimer = null; }
   if (state.timer) clearInterval(state.timer); state.timer = null;
   if (state.stream) state.stream.getTracks().forEach((track) => track.stop());
-  state.stream = null; state.crop = null; state.frames = []; state.hasSuccessfulAnalysis = false;
+  state.stream = null; state.crop = null; state.frames = []; state.hasSuccessfulAnalysis = false; state.liveSessionId = null;
   const video = $("screenVideo"); video.pause(); video.srcObject = null; video.hidden = true;
   $("previewEmpty").hidden = false; $("shareButton").textContent = "COMPARTILHAR TELA"; $("stopShareButton").hidden = true; $("startTrainingButton").disabled = true;
   setCapture("", "NÃO COMPARTILHADO"); updatePipeline();
@@ -128,6 +140,8 @@ async function observe() {
     return;
   }
   state.lastSubmittedHash = currentHash; state.lastSubmittedAt = Date.now(); state.requestCount += 1;
+  void liveFrame(frame, currentHash);
+  void liveEmit("VISION_MARKET_SAMPLE", { frameId: `sample_${frame.capturedAt}`, asset: state.lastContext?.symbol || null, marketType: state.lastContext?.marketType || null, timeframe: state.lastContext?.visualTimeframe || null, expirationSeconds: 60, detectedPrice: null, detectedPriceConfidence: null, observation: { motion: stat.frameDifference, averageLuma: stat.averageLuma }, frameHash: currentHash, chartRegion: state.crop });
   text("fpsText", "1 frame/s local · Fable /5s"); text("frameText", `${state.frames.length}/4 frames temporais · ${new Date().toLocaleTimeString()}`);
   const temporal = state.frames.slice().reverse().map((item, index) => ({ label: index ? `T-${index * 5}s` : "T0", dataUrl: item.dataUrl }));
   const snapshot = { analysisId: `vision_${Date.now()}`, timestamp: new Date().toISOString(), timestampMs: Date.now(), symbol: state.lastContext?.symbol || "UNAVAILABLE", horizonSeconds: 60, chartFrame: { crop: state.crop, width: chart.width, height: chart.height, capturedAt: Date.now() }, quantitativeFeatures: { availability: "SCREEN_MOTION_ONLY", frames: state.frames.map((item) => ({ ...item.stats, sample: undefined })) } };
@@ -135,12 +149,14 @@ async function observe() {
     setStage("PIPELINE_REQUEST_STARTED"); const started = Date.now(); const result = await api("/api/fable/trade", { method: "POST", body: JSON.stringify({ snapshot, chartImages: temporal, contextImage: headerCrop()?.dataUrl || null }) });
     if (session !== state.session || stream !== state.stream) return;
     const latency = Date.now() - started; state.failures = 0; state.nextRetryAt = 0; state.lastAnalysis = result.analysis; state.hasSuccessfulAnalysis = true; renderAnalysis(result.analysis || {}, latency); await persistDecision(snapshot, result.analysis || {}); await trainIfActive(snapshot, result.analysis || {}, stat, latency);
+    void liveEmit("DECISION", { decisionId: state.decisionId, direction: result.analysis?.decision || "WAIT", confidence: result.analysis?.confidence ?? null, probabilitySource: result.analysis?.probabilitySource || "FABLE_5_1", pBuy: result.analysis?.pBuy ?? null, pSell: result.analysis?.pSell ?? null, pWait: result.analysis?.pWait ?? null });
   } catch (error) {
     if (session !== state.session || stream !== state.stream) return;
     const message = String(error.message || error);
     state.failures += 1; const delay = Math.min(60_000, 5_000 * (2 ** Math.min(state.failures - 1, 3))); state.circuitOpen = state.failures >= 4; state.nextRetryAt = Date.now() + (state.circuitOpen ? 60_000 : delay);
     setFable("ERROR");
     setStage(state.circuitOpen ? "CIRCUIT_OPEN" : "ANALYSIS_ERROR", message); text("decisionSummary", state.circuitOpen ? "Análise pausada temporariamente após falhas consecutivas. Nenhum WAIT foi gerado." : (message.includes("FABLE_VISION_UNSUPPORTED") ? "O gateway Fable atual não aceitou o crop de imagem. Nenhum sinal visual será emitido." : `Erro de análise: ${message}`));
+    void liveEmit("PIPELINE_ERROR", { stage: state.stage, code: message.slice(0, 160) });
   }
   finally { state.analyzing = false; }
 }
@@ -235,9 +251,10 @@ function renderTraining(session) {
 }
 async function restoreTraining() { const id = localStorage.getItem("tracecom:training-session"); if (!id) return; try { const session = await api(`/api/training/sessions/${encodeURIComponent(id)}`); state.training = session; $("startTrainingButton").hidden = true; $("stopTrainingButton").hidden = false; renderTraining(session); } catch { localStorage.removeItem("tracecom:training-session"); } }
 function liveStatus(label, note) { text("liveAccessStatus", label); if (note) text("liveAccessNote", note); }
-async function generateLiveKey() { const adminKey = window.prompt("Chave administrativa (não será armazenada):"); if (!adminKey) return; liveStatus("LOADING", "Gerando chave…"); try { const result = await api("/api/live/keys", { method: "POST", headers: { "x-live-admin-key": adminKey } }); const output = $("liveKeyOutput"); output.hidden = false; output.textContent = result.key; output.dataset.keyId = result.id; $("liveRevokeKey").hidden = false; liveStatus("READY", "Chave exibida uma única vez. Copie-a com segurança."); } catch (error) { liveStatus("ERROR", error.message); } }
-async function revokeLiveKey() { const output = $("liveKeyOutput"), id = output?.dataset.keyId; if (!id) return; liveStatus("LOADING", "Revogando…"); try { await api(`/api/live/keys/${encodeURIComponent(id)}`, { method: "DELETE" }); output.textContent = "Chave revogada"; $("liveRevokeKey").hidden = true; liveStatus("REVOKED", "A chave foi revogada."); } catch (error) { liveStatus("ERROR", error.message); } }
+async function generateLiveKey() { const adminKey = window.prompt("Chave administrativa da interface (não será armazenada):"); if (!adminKey) return; liveStatus("LOADING", "Gerando chave…"); try { const result = await api("/api/live/admin/keys", { method: "POST", headers: { "x-live-admin-key": adminKey }, body: JSON.stringify({ name: "Codex Live Access" }) }); const output = $("liveKeyOutput"); output.hidden = false; output.textContent = result.key; output.dataset.keyId = result.id; output.dataset.adminKey = adminKey; $("liveRevokeKey").hidden = false; liveStatus("READY", "Chave exibida uma única vez. Copie-a com segurança."); } catch (error) { liveStatus("ERROR", error.message); } }
+async function revokeLiveKey() { const output = $("liveKeyOutput"), id = output?.dataset.keyId, adminKey = output?.dataset.adminKey; if (!id || !adminKey) return; liveStatus("LOADING", "Revogando…"); try { await api(`/api/live/admin/keys/${encodeURIComponent(id)}/revoke`, { method: "POST", headers: { "x-live-admin-key": adminKey }, body: "{}" }); output.textContent = "Chave revogada"; delete output.dataset.adminKey; $("liveRevokeKey").hidden = true; liveStatus("REVOKED", "A chave foi revogada."); } catch (error) { liveStatus("ERROR", error.message); } }
+async function refreshLiveStatus() { try { const value = await api("/api/live/admin/status"); text("liveAccessMeta", `${value.relayStatus || "ONLINE"} / ${value.db ? "READY" : "OFFLINE"} / ${state.liveSessionId || "—"}`); liveStatus(value.relayStatus === "ONLINE" ? "READY" : "OFFLINE"); } catch { liveStatus("OFFLINE", "Relay indisponível."); } }
 async function copyLiveInstructions() { try { await navigator.clipboard.writeText("TraceCon Live Access (read-only)\nEnvie somente frames crop-only e telemetria para /api/live/session/frame/latest. Nunca envie credenciais, cookies, tokens, saldo ou imagens integrais."); liveStatus("READY", "Instruções copiadas."); } catch { liveStatus("ERROR", "Não foi possível copiar as instruções."); } }
 function escape(value) { return String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
-$("shareButton").addEventListener("click", shareScreen); $("stopShareButton").addEventListener("click", stopScreen); $("recropButton").addEventListener("click", openManualCrop); $("startTrainingButton").addEventListener("click", () => startTraining().catch((error) => text("trainingNote", error.message))); $("stopTrainingButton").addEventListener("click", stopTraining); $("liveGenerateKey")?.addEventListener("click", generateLiveKey); $("liveRevokeKey")?.addEventListener("click", revokeLiveKey); $("liveCopyInstructions")?.addEventListener("click", copyLiveInstructions); bindManualCrop(); checkBackend(); updatePipeline(); restoreTraining(); window.addEventListener("beforeunload", stopScreen);
+$("shareButton").addEventListener("click", shareScreen); $("stopShareButton").addEventListener("click", stopScreen); $("recropButton").addEventListener("click", openManualCrop); $("startTrainingButton").addEventListener("click", () => startTraining().catch((error) => text("trainingNote", error.message))); $("stopTrainingButton").addEventListener("click", stopTraining); $("liveGenerateKey")?.addEventListener("click", generateLiveKey); $("liveRevokeKey")?.addEventListener("click", revokeLiveKey); $("liveCopyInstructions")?.addEventListener("click", copyLiveInstructions); bindManualCrop(); checkBackend(); updatePipeline(); restoreTraining(); refreshLiveStatus(); setInterval(refreshLiveStatus, 30000); window.addEventListener("beforeunload", stopScreen);
