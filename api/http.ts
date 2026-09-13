@@ -84,9 +84,11 @@ function evaluateVirtualTrades(session: TrainingSession, timestamp: number, refe
     trade.exitReference = reference;
     trade.settlementPriceSource = reference === null ? "UNAVAILABLE" : source;
     trade.priceConfidence = priceConfidence;
+    if (reference !== null) console.info("SETTLEMENT_PRICE_LOCKED", JSON.stringify({ tradeId: trade.tradeId, price: reference, timestamp, source, confidence: priceConfidence }));
     trade.result = settleTrade({ direction: trade.direction, entryPrice: trade.entryReference,
       exitPrice: reference, entryTimestamp: trade.entryTimestamp,
       exitTimestamp: timestamp, dueTimestamp: trade.entryTimestamp + trade.horizonSeconds * 1_000 }).outcome;
+    console.info("TRADE_SETTLED", JSON.stringify({ tradeId: trade.tradeId, result: trade.result, source: trade.settlementPriceSource }));
   }
 }
 
