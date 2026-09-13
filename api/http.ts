@@ -453,11 +453,14 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         json(200, await fableVisionTrade(body));
       } catch (error) {
         const message = error instanceof Error ? error.message : "fable_unavailable";
-        if (message.startsWith("FABLE_HTTP_400")) {
+        if (message.startsWith("FABLE_HTTP_")) {
+          const status = Number(message.match(/^FABLE_HTTP_(\d+)/)?.[1] || 0);
+          const code = status === 401 || status === 403 ? "FABLE_AUTH_ERROR" : status === 404 ? "FABLE_MODEL_NOT_FOUND" : status === 422 ? "FABLE_INVALID_MULTIMODAL_PAYLOAD" : status === 429 ? "FABLE_RATE_LIMIT" : status >= 500 ? "FABLE_UPSTREAM_ERROR" : "FABLE_PROVIDER_BAD_REQUEST";
           json(422, {
-            error: "FABLE_VISION_UNSUPPORTED",
-            detail: "O roteador Fable aceitou texto, mas rejeitou o crop de imagem enviado. Nenhuma análise visual foi produzida.",
-            action: "Configure um endpoint/modelo Fable com visão que aceite crops privados via data URL ou URL assinada.",
+            error: code,
+            upstreamStatus: status,
+            detail: message.slice(0, 420),
+            analysisStatus: "ERROR",
           });
         } else {
           json(503, { error: "FABLE_UNAVAILABLE", detail: message });
