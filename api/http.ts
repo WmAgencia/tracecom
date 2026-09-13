@@ -36,6 +36,7 @@ type TrainingSession = {
 // best-effort only; the browser keeps its own visible transcript and a durable
 // store can be added behind this boundary without changing the API contract.
 const trainingSessions = new Map<string, TrainingSession>();
+const decisionEvents: Array<Record<string, unknown>> = [];
 
 function trainingSummary(session: TrainingSession) {
   const resolved = session.trades.filter((trade) => trade.result && trade.result !== "UNKNOWN");
@@ -462,6 +463,13 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
           json(503, { error: "FABLE_UNAVAILABLE", detail: message });
         }
       }
+      return;
+    }
+
+    if (path === "/api/analytics/record" && req.method === "POST") {
+      if (body && typeof body === "object" && !Array.isArray(body)) decisionEvents.push({ ...(body as Record<string, unknown>), recordedAt: Date.now() });
+      while (decisionEvents.length > 500) decisionEvents.shift();
+      json(200, { ok: true, persisted: true, persistence: "BEST_EFFORT_SERVERLESS" });
       return;
     }
 
