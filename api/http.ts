@@ -11,7 +11,7 @@
  * (processo long-running: `npm run serve`).
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
 import { del, get, put } from "@vercel/blob";
 import { NexxusVisionProvider } from "./vision-provider.js";
 
@@ -201,7 +201,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     const visionModel = process.env.TRACECOM_VISION_MODEL || "claude-opus-5";
     console.info("VISION_MODEL_REQUEST_STARTED", JSON.stringify({ model: visionModel, endpoint: "/v1/messages" }));
     const observation = await new NexxusVisionProvider({ apiKey, baseUrl: process.env.NEXXUS_BASE_URL || process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site", model: visionModel }).observe({ imageUrl: temporary.images[0].url, context: snapshotObject });
-    console.info("VISION_MODEL_RESPONSE_RECEIVED", JSON.stringify({ availability: observation.availability, sources: observation.sources }));
+    console.info("VISION_MODEL_RESPONSE_RECEIVED", JSON.stringify({ availability: observation.availability, sources: observation.sources, notes: observation.notes }));
     visionObservation = observation as unknown as Record<string, unknown>;
     console.info("MARKET_OBSERVATION_CREATED", JSON.stringify({ availability: observation.availability }));
   }
@@ -232,7 +232,13 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
       signal: controller.signal,
     });
     const text = await response.text();
-    if (!response.ok) throw new Error(`FABLE_HTTP_${response.status}: ${text.slice(0, 300)}`);
+    if (!response.ok) {
+      // Keep the provider request id when present; it is safe diagnostics and
+      // lets support correlate a production failure without exposing payloads.
+      let providerRequestId = response.headers.get("request-id") || response.headers.get("x-request-id");
+      try { providerRequestId ||= String((JSON.parse(text) as Record<string, unknown>).request_id || ""); } catch { /* non-json upstream */ }
+      throw new Error(`FABLE_HTTP_${response.status}: ${providerRequestId ? `request_id=${providerRequestId} ` : ""}${text.slice(0, 300)}`);
+    }
     const wire = JSON.parse(text) as { content?: Array<{ type?: string; text?: string }> };
     const answer = (wire.content ?? []).filter((block) => block.type === "text").map((block) => block.text ?? "").join("\n");
     console.info("FABLE_REASONING_RECEIVED", JSON.stringify({ status: response.status, textLength: answer.length }));
@@ -423,6 +429,8 @@ function toDecision(score: number, suff: boolean, counter: boolean): "BUY" | "SE
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const requestId = req.headers["x-request-id"]?.toString().slice(0, 128) || randomUUID();
+  res.setHeader("X-TraceCon-Request-Id", requestId);
   const url = new URL(req.url ?? "/", "http://x");
   const q = url.searchParams;
   const symbol = (q.get("symbol") ?? "BTCUSDT").toUpperCase();
@@ -484,9 +492,13 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
             upstreamStatus: status,
             detail: message.slice(0, 420),
             analysisStatus: "ERROR",
+            requestId,
+            stage: "FABLE_REASONING",
           });
         } else {
-          json(503, { error: "FABLE_UNAVAILABLE", detail: message });
+          const timeout = error instanceof Error && (error.name === "AbortError" || message.includes("aborted"));
+          const vision = message.startsWith("VISION_") || message.startsWith("vision_");
+          json(503, { error: timeout ? "FABLE_TIMEOUT" : vision ? "VISION_UNAVAILABLE" : "FABLE_UNAVAILABLE", detail: message.slice(0, 420), analysisStatus: "ERROR", requestId, stage: vision ? "VISION_PERCEPTION" : "FABLE_REASONING" });
         }
       }
       return;
