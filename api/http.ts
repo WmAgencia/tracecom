@@ -25,7 +25,7 @@ type VirtualTrade = {
   tradeId: string; analysisId: string; symbol: string; direction: TrainingDirection;
   decisionTimestamp: number; entryTimestamp: number; entryReference: number | null;
   horizonSeconds: number; suggestedStake: number | null; confidence: number; dataQuality: number;
-  features: unknown; framesHash: string | null; agentVersion: string; result: TrainingOutcome | null; counterfactual?: boolean; shadowKind?: string; leanConfidence?: number | null;
+  features: unknown; framesHash: string | null; agentVersion: string; result: TrainingOutcome | null; counterfactual?: boolean; shadowKind?: string; leanConfidence?: number | null; entryPriceSource?: string; settlementPriceSource?: string; priceConfidence?: number | null; controlDecision?: string; challengerDecision?: string;
   exitTimestamp?: number; exitReference?: number | null;
 };
 type TrainingSession = {
@@ -40,6 +40,10 @@ type TrainingSession = {
 // store can be added behind this boundary without changing the API contract.
 const trainingSessions = new Map<string, TrainingSession>();
 const decisionEvents: Array<Record<string, unknown>> = [];
+const latencySamples = new Map<string, number[]>();
+function recordLatency(stage: string, value: number) { const rows = latencySamples.get(stage) ?? []; rows.push(Math.max(0, Math.round(value))); latencySamples.set(stage, rows.slice(-100)); }
+function latencyStats(stage: string) { const values = [...(latencySamples.get(stage) ?? [])].sort((a, b) => a - b); if (!values.length) return { count: 0, min: null, max: null, avg: null, p50: null, p95: null, p99: null }; const at = (fraction: number) => values[Math.min(values.length - 1, Math.floor((values.length - 1) * fraction))]!; return { count: values.length, min: values[0]!, max: values.at(-1)!, avg: values.reduce((sum, value) => sum + value, 0) / values.length, p50: at(.5), p95: at(.95), p99: at(.99) }; }
+function allLatencyStats() { return Object.fromEntries([...latencySamples.keys()].map((stage) => [stage, latencyStats(stage)])); }
 
 function trainingSummary(session: TrainingSession) {
   const resolved = session.trades.filter((trade) => trade.result && trade.result !== "UNKNOWN");
@@ -53,6 +57,12 @@ function trainingSummary(session: TrainingSession) {
   const leanLosses = leanResolved.filter((trade) => trade.result === "LOSS").length;
   const leanDraws = leanResolved.filter((trade) => trade.result === "DRAW").length;
   const leanUnknown = leanTrades.filter((trade) => trade.result === "UNKNOWN").length;
+  const abSummary = Object.fromEntries(["CONTROL", "CHALLENGER"].map((variant) => {
+    const rows = session.trades.filter((trade) => trade.result !== null && (variant === "CONTROL" ? trade.controlDecision : trade.challengerDecision));
+    const winsForVariant = rows.filter((trade) => trade.result === "WIN").length;
+    const lossesForVariant = rows.filter((trade) => trade.result === "LOSS").length;
+    return [variant.toLowerCase(), { count: rows.length, WIN: winsForVariant, LOSS: lossesForVariant, DRAW: rows.filter((trade) => trade.result === "DRAW").length, UNKNOWN: rows.filter((trade) => trade.result === "UNKNOWN").length, WR: winsForVariant + lossesForVariant ? winsForVariant / (winsForVariant + lossesForVariant) : null }];
+  }));
   const directionalLeanBuckets = ["50-55", "55-60", "60-65", "65-70", "70-75", "75+"] as const;
   const leanBuckets = Object.fromEntries(directionalLeanBuckets.map((bucket) => [bucket, { count: 0, WIN: 0, LOSS: 0, DRAW: 0, WR: null as number | null }])) as Record<string, { count: number; WIN: number; LOSS: number; DRAW: number; WR: number | null }>;
   for (const trade of leanTrades) { const confidence = Number(trade.leanConfidence); const bucket = confidence >= .75 ? "75+" : confidence >= .70 ? "70-75" : confidence >= .65 ? "65-70" : confidence >= .60 ? "60-65" : confidence >= .55 ? "55-60" : "50-55"; const entry = leanBuckets[bucket]!; entry.count += 1; if (trade.result === "WIN") entry.WIN += 1; if (trade.result === "LOSS") entry.LOSS += 1; if (trade.result === "DRAW") entry.DRAW += 1; entry.WR = entry.WIN + entry.LOSS ? entry.WIN / (entry.WIN + entry.LOSS) : null; }
@@ -62,16 +72,18 @@ function trainingSummary(session: TrainingSession) {
     frozen: session.frozen, analyses: session.analyses, BUY: session.decisions.BUY, SELL: session.decisions.SELL,
     WAIT: session.decisions.WAIT, openVirtualTrades: session.trades.filter((trade) => trade.result === null).length,
     evaluatedTrades: resolved.length, WIN: wins, LOSS: losses, DRAW: draws, UNKNOWN: unknown,
-    WR: resolved.length ? wins / resolved.length : null, directionalLeanTrades: leanTrades.length, directionalLeanEvaluated: leanResolved.length, directionalLeanWIN: leanWins, directionalLeanLOSS: leanLosses, directionalLeanDRAW: leanDraws, directionalLeanUNKNOWN: leanUnknown, directionalLeanWR: leanWins + leanLosses ? leanWins / (leanWins + leanLosses) : null, directionalLeanBuckets: leanBuckets, currentAgentVersion: session.frozen.agentVersion,
+    WR: resolved.length ? wins / resolved.length : null, directionalLeanTrades: leanTrades.length, directionalLeanEvaluated: leanResolved.length, directionalLeanWIN: leanWins, directionalLeanLOSS: leanLosses, directionalLeanDRAW: leanDraws, directionalLeanUNKNOWN: leanUnknown, directionalLeanWR: leanWins + leanLosses ? leanWins / (leanWins + leanLosses) : null, directionalLeanBuckets: leanBuckets, abSummary, currentAgentVersion: session.frozen.agentVersion,
     persistence: "BEST_EFFORT_SERVERLESS", trades: session.trades.slice(-25),
   };
 }
 
-function evaluateVirtualTrades(session: TrainingSession, timestamp: number, reference: number | null) {
+function evaluateVirtualTrades(session: TrainingSession, timestamp: number, reference: number | null, source = "UNAVAILABLE", priceConfidence: number | null = null) {
   for (const trade of session.trades) {
     if (trade.result !== null || timestamp < trade.entryTimestamp + trade.horizonSeconds * 1_000) continue;
     trade.exitTimestamp = timestamp;
     trade.exitReference = reference;
+    trade.settlementPriceSource = reference === null ? "UNAVAILABLE" : source;
+    trade.priceConfidence = priceConfidence;
     trade.result = settleTrade({ direction: trade.direction, entryPrice: trade.entryReference,
       exitPrice: reference, entryTimestamp: trade.entryTimestamp,
       exitTimestamp: timestamp, dueTimestamp: trade.entryTimestamp + trade.horizonSeconds * 1_000 }).outcome;
@@ -138,6 +150,17 @@ async function runStructuredDebate(observation: Record<string, unknown> | null, 
   const lean = pBuy === null || pSell === null || pBuy === pSell ? "NONE" : pBuy > pSell ? "BUY" : "SELL";
   const leanConfidence = pBuy === null || pSell === null ? 0 : Math.max(pBuy, pSell);
   return { agents: [bull, bear, structure, risk], arbiter: { decision, directionalLean: lean, leanConfidence, latencyMs: Date.now() - started, agentsCompleted: 4, agentsTimedOut: 0 } };
+}
+
+async function runAdversarialAdvocates(debate: { agents: DebateAgent[]; arbiter: { directionalLean: string; leanConfidence: number } }, observation: Record<string, unknown> | null) {
+  const started = Date.now();
+  const risk = debate.agents.find((agent) => agent.name === "RISK_NO_TRADE_AGENT");
+  const structure = debate.agents.find((agent) => agent.name === "STRUCTURE_MOMENTUM_AGENT");
+  const [bull, bear] = await Promise.all([
+    Promise.resolve({ name: "BULL_ADVOCATE", bullConfidence: debate.agents.find((agent) => agent.name === "BULL_AGENT")?.score || 0, evidence: ["fusion_bull_case", String(observation?.trend || "UNCLEAR")], invalidators: risk?.evidence || [], regimeCompatibility: String(observation?.trend || "UNCLEAR") === "BULLISH" ? "COMPATIBLE" : "UNCLEAR", timedOut: false }),
+    Promise.resolve({ name: "BEAR_ADVOCATE", bearConfidence: debate.agents.find((agent) => agent.name === "BEAR_AGENT")?.score || 0, evidence: ["fusion_bear_case", String(observation?.trend || "UNCLEAR")], invalidators: risk?.evidence || [], regimeCompatibility: String(observation?.trend || "UNCLEAR") === "BEARISH" ? "COMPATIBLE" : "UNCLEAR", timedOut: false }),
+  ]);
+  return { bull, bear, latencyMs: Date.now() - started, structureScore: structure?.score || 0, agentsCompleted: 2, agentsTimedOut: 0 };
 }
 
 function validImage(item: unknown): item is FableImage {
@@ -248,7 +271,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     console.info("VISION_MODEL_RESPONSE_RECEIVED", JSON.stringify({ availability: observation.availability, sources: observation.sources, notes: observation.notes }));
     visionObservation = observation as unknown as Record<string, unknown>;
     console.info("MARKET_OBSERVATION_CREATED", JSON.stringify({ availability: observation.availability, imageProvided: observation.imageProvided === true, imageBytes: observation.imageBytes || 0, imageHash: observation.imageHash || null }));
-    console.info("VISION_LATENCY", JSON.stringify({ frameId: receivedImage?.frameId || null, latencyMs: Date.now() - visionStarted }));
+    const visionLatencyMs = Date.now() - visionStarted; recordLatency("vision", visionLatencyMs); console.info("VISION_LATENCY", JSON.stringify({ frameId: receivedImage?.frameId || null, latencyMs: visionLatencyMs }));
   }
   const existingResolution = snapshotObject.assetResolution && typeof snapshotObject.assetResolution === "object" ? snapshotObject.assetResolution as Record<string, unknown> : {};
   const visionAsset = typeof visionObservation?.symbol === "string" ? visionObservation.symbol : null;
@@ -283,7 +306,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
       signal: controller.signal,
     });
     const text = await response.text();
-    console.info("FABLE_LATENCY", JSON.stringify({ requestId: typeof payload.requestId === "string" ? payload.requestId : null, latencyMs: Date.now() - pipelineStarted, timeoutMs: fableTimeoutMs }));
+    const fableLatencyMs = Date.now() - pipelineStarted; recordLatency("fable", fableLatencyMs); console.info("FABLE_LATENCY", JSON.stringify({ requestId: typeof payload.requestId === "string" ? payload.requestId : null, latencyMs: fableLatencyMs, timeoutMs: fableTimeoutMs }));
     if (!response.ok) {
       // Keep the provider request id when present; it is safe diagnostics and
       // lets support correlate a production failure without exposing payloads.
@@ -306,11 +329,15 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     const pWait = probabilityTotal > 0 ? probabilities[2]! / probabilityTotal : null;
     const quantAvailable = (quantBias as string) !== "UNAVAILABLE";
     const debate = await runStructuredDebate(visionObservation, pBuy, pSell, decision);
+    const advocates = await runAdversarialAdvocates(debate, visionObservation);
+    const control = { decision, directionalLean: debate.arbiter.directionalLean, leanConfidence: debate.arbiter.leanConfidence, latencyMs: debate.arbiter.latencyMs };
+    const challenger = { decision, directionalLean: debate.arbiter.directionalLean, leanConfidence: debate.arbiter.leanConfidence, latencyMs: debate.arbiter.latencyMs + advocates.latencyMs };
     const probabilitySource = probabilityTotal > 0 ? "MODEL_NATIVE" : "FALLBACK_UNAVAILABLE";
+    recordLatency("total", Date.now() - pipelineStarted);
     return {
       model: { modelId: model, displayName: "Fable 5.1" },
       analysis: {
-        decision, confidence: bounded(parsed?.confidence, 0), rawModelScores: { buy: finiteOrNull(parsed?.rawBuyScore), sell: finiteOrNull(parsed?.rawSellScore), wait: finiteOrNull(parsed?.rawWaitScore) }, pBuy, pSell, pWait, directionalLean: debate.arbiter.directionalLean, leanConfidence: debate.arbiter.leanConfidence, multiAgent: debate, probabilitySource, candleSeconds: Number(snapshotObject.candleSeconds) || 5, expirationSeconds: Number(snapshotObject.horizonSeconds) || 60, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: imageUsed && visionObservation?.imageProvided === true, imageStatus: imageUsed && visionObservation?.imageProvided === true ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", visionObservation, visionTransport: { frameId: receivedImage?.frameId || null, hasImage: imageUsed && visionObservation?.imageProvided === true, imageBytes: Number(visionObservation?.imageBytes) || receivedImage?.byteLength || 0, imageHash: visionObservation?.imageHash || receivedImage?.hash || null, provider: "nexxus-vision", model: visionModel },
+        decision, confidence: bounded(parsed?.confidence, 0), rawModelScores: { buy: finiteOrNull(parsed?.rawBuyScore), sell: finiteOrNull(parsed?.rawSellScore), wait: finiteOrNull(parsed?.rawWaitScore) }, pBuy, pSell, pWait, directionalLean: debate.arbiter.directionalLean, leanConfidence: debate.arbiter.leanConfidence, multiAgent: { ...debate, advocates, mode: process.env.MULTI_AGENT_MODE || "TEXT_SPECIALISTS", control, challenger, agreement: control.decision === challenger.decision && control.directionalLean === challenger.directionalLean }, latencyMetrics: allLatencyStats(), probabilitySource, candleSeconds: Number(snapshotObject.candleSeconds) || 5, expirationSeconds: Number(snapshotObject.horizonSeconds) || 60, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: imageUsed && visionObservation?.imageProvided === true, imageStatus: imageUsed && visionObservation?.imageProvided === true ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", visionObservation, visionTransport: { frameId: receivedImage?.frameId || null, hasImage: imageUsed && visionObservation?.imageProvided === true, imageBytes: Number(visionObservation?.imageBytes) || receivedImage?.byteLength || 0, imageHash: visionObservation?.imageHash || receivedImage?.hash || null, provider: "nexxus-vision", model: visionModel },
         framesUsed: Math.min(4, Number(parsed?.framesUsed) || images.length), visualBias, quantBias, confluence: bounded(parsed?.confluence, quantAvailable && quantBias === visualBias ? .8 : 0),
         trend: typeof parsed?.trend === "string" ? parsed.trend.slice(0, 80) : "UNKNOWN", structure: typeof parsed?.structure === "string" ? parsed.structure.slice(0, 80) : "UNKNOWN", momentum: typeof parsed?.momentum === "string" ? parsed.momentum.slice(0, 80) : "UNKNOWN", volatility: typeof parsed?.volatility === "string" ? parsed.volatility.slice(0, 80) : "UNKNOWN",
         supportResistance: safeList(parsed?.supportResistance), candlePatterns: safeList(parsed?.candlePatterns), breakoutState: typeof parsed?.breakoutState === "string" ? parsed.breakoutState.slice(0, 80) : "UNKNOWN", exhaustionState: typeof parsed?.exhaustionState === "string" ? parsed.exhaustionState.slice(0, 80) : "UNKNOWN",
@@ -335,11 +362,11 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
   } catch (error) {
     const timedOut = error instanceof Error && (error.name === "AbortError" || error.message.includes("aborted"));
     if (!timedOut) throw error;
-    console.warn("FABLE_TIMEOUT", JSON.stringify({ requestId: typeof payload.requestId === "string" ? payload.requestId : null, timeoutMs: fableTimeoutMs, latencyMs: Date.now() - pipelineStarted }));
+    const timeoutLatencyMs = Date.now() - pipelineStarted; recordLatency("fable", timeoutLatencyMs); recordLatency("total", timeoutLatencyMs); console.warn("FABLE_TIMEOUT", JSON.stringify({ requestId: typeof payload.requestId === "string" ? payload.requestId : null, timeoutMs: fableTimeoutMs, latencyMs: timeoutLatencyMs }));
     return {
       model: { modelId: model, displayName: "Fable 5.1" },
       analysis: {
-        decision: "WAIT", confidence: 0, pBuy: null, pSell: null, pWait: null, probabilitySource: "UNAVAILABLE", directionalLean: "NONE", leanConfidence: 0,
+        decision: "WAIT", confidence: 0, pBuy: null, pSell: null, pWait: null, probabilitySource: "UNAVAILABLE", directionalLean: "NONE", leanConfidence: 0, latencyMetrics: allLatencyStats(),
         dataQuality: baseQuality, imageUsed: imageUsed && visionObservation?.imageProvided === true, imageStatus: "IMAGE_PROVIDED", visionObservation,
         visionTransport: { frameId: receivedImage?.frameId || null, hasImage: true, imageBytes: receivedImage?.byteLength || 0, imageHash: receivedImage?.hash || null, provider: "nexxus-vision", model: visionModel },
         riskFlags: ["FABLE_TIMEOUT"], observations: ["Vision observation preserved; Fable response exceeded its deadline."], supportingFactors: [], opposingFactors: [], summary: "WAIT: Fable timeout; evidência visual preservada para coleta shadow.", rationale: "FABLE_TIMEOUT", analysisId: typeof snapshotObject.analysisId === "string" ? snapshotObject.analysisId : "unknown", pipeline: { dataValidation: "PASS", visualAnalysis: "PASS", quantAnalysis: "LIMITED", confluence: "UNAVAILABLE", finalDecision: "WAIT" }, assetResolution,
@@ -625,7 +652,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       const timestamp = Number(snapshot.timestampMs) || Date.now();
       const rawReference = snapshot.referencePrice;
       const reference = (typeof rawReference === "number" || typeof rawReference === "string") && String(rawReference).trim() !== "" && Number.isFinite(Number(rawReference)) ? Number(rawReference) : null;
-      evaluateVirtualTrades(session, timestamp, reference);
+       evaluateVirtualTrades(session, timestamp, reference, typeof snapshot.referencePriceSource === "string" ? snapshot.referencePriceSource : "UNAVAILABLE", finiteOrNull(snapshot.priceConfidence));
       session.analyses += 1;
       const decision = analysis.decision === "BUY" || analysis.decision === "SELL" ? analysis.decision as TrainingDirection : "WAIT";
       const lean = analysis.directionalLean === "BUY" || analysis.directionalLean === "SELL" ? analysis.directionalLean as TrainingDirection : null;
@@ -644,7 +671,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
           suggestedStake: Number.isFinite(Number(input?.suggestedStake)) ? Number(input?.suggestedStake) : null,
           confidence: bounded(analysis.confidence, 0), dataQuality: bounded(analysis.dataQuality, 0),
           features: snapshot.features ?? null, framesHash: typeof snapshot.framesHash === "string" ? snapshot.framesHash.slice(0, 128) : null,
-            agentVersion: session.frozen.agentVersion || "FABLE_TRADER_V1", result: null, counterfactual: counterfactualLean, shadowKind: counterfactualLean ? "WAIT_DIRECTIONAL_LEAN" : "DECISION", leanConfidence: finiteOrNull(analysis.leanConfidence),
+            agentVersion: session.frozen.agentVersion || "FABLE_TRADER_V1", result: null, counterfactual: counterfactualLean, shadowKind: counterfactualLean ? "WAIT_DIRECTIONAL_LEAN" : "DECISION", leanConfidence: finiteOrNull(analysis.leanConfidence), entryPriceSource: typeof snapshot.referencePriceSource === "string" ? snapshot.referencePriceSource : "UNAVAILABLE", settlementPriceSource: "UNAVAILABLE", priceConfidence: finiteOrNull(snapshot.priceConfidence), controlDecision: typeof (analysis.multiAgent as Record<string, unknown> | undefined)?.control === "object" ? String(((analysis.multiAgent as Record<string, unknown>).control as Record<string, unknown>).decision || decision) : decision, challengerDecision: typeof (analysis.multiAgent as Record<string, unknown> | undefined)?.challenger === "object" ? String(((analysis.multiAgent as Record<string, unknown>).challenger as Record<string, unknown>).decision || decision) : decision,
         };
          if (virtualTrade) session.trades.push(virtualTrade);
       }

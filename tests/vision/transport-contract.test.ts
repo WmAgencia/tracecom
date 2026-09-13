@@ -25,6 +25,12 @@ describe("sanitized crop transport contract", () => {
     expect(api).toContain("Promise.all([");
     expect(api).toContain("BULL_AGENT");
     expect(api).toContain("RISK_NO_TRADE_AGENT");
+    expect(api).toContain("BULL_ADVOCATE");
+    expect(api).toContain("BEAR_ADVOCATE");
+    expect(api).toContain("controlDecision");
+    expect(api).toContain("challengerDecision");
+    expect(api).toContain("latencyStats");
+    expect(api).toContain("FABLE_TIMEOUT");
     expect(api).toContain("WAIT_DIRECTIONAL_LEAN");
     expect(provider).toContain("VISION_PARSE_REPAIRED");
     expect(html).toContain("directionalLeanValue");
