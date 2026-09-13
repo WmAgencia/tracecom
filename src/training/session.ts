@@ -4,7 +4,7 @@
  * run behind any store (PostgreSQL relay, memory fallback, tests). Outcomes are
  * only ever produced by settlement.ts#settleTrade.
  */
-import { settleTrade } from "./settlement";
+import { settleTrade } from "./settlement.js";
 
 export type TrainingDirection = "BUY" | "SELL";
 export type TrainingOutcome = "WIN" | "LOSS" | "DRAW" | "UNKNOWN";

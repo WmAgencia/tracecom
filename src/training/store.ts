@@ -5,7 +5,7 @@
  * (PostgreSQL) is configured, it is the source of truth; the in-process map is
  * only a best-effort fallback so local development keeps working.
  */
-import type { TrainingSession } from "./session";
+import type { TrainingSession } from "./session.js";
 
 type StoreOptions = {
   relayUrl?: string | null;
