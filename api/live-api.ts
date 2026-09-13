@@ -56,7 +56,7 @@ export function emitLiveEvent(sessionId: string, event: Record<string, unknown>)
 
 export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, path: string, body: unknown, query: URLSearchParams): Promise<boolean> {
   if (!path.startsWith("/api/live/")) return false;
-  const ip = req.socket.remoteAddress ?? "unknown"; if (!allowed(ip)) { send(res, 429, { error: "rate_limited" }); return true; }
+  const ip = req.socket?.remoteAddress ?? req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ?? "vercel"; if (!allowed(ip)) { send(res, 429, { error: "rate_limited" }); return true; }
   const relayAdmin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
   if (path === "/api/live/admin/status" && req.method === "GET") {
     try { const response = await relay("/health"); const value = await response.json() as Record<string, unknown>; send(res, response.status, { ...value, relayStatus: response.ok ? "ONLINE" : "ERROR" }); }

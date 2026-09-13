@@ -253,17 +253,18 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     const pBuy = probabilityTotal > 0 ? probabilities[0]! / probabilityTotal : null;
     const pSell = probabilityTotal > 0 ? probabilities[1]! / probabilityTotal : null;
     const pWait = probabilityTotal > 0 ? probabilities[2]! / probabilityTotal : null;
+    const quantAvailable = (quantBias as string) !== "UNAVAILABLE";
     const probabilitySource = probabilityTotal > 0 ? "MODEL_NATIVE" : "FALLBACK_UNAVAILABLE";
     return {
       model: { modelId: model, displayName: "Fable 5.1" },
       analysis: {
         decision, confidence: bounded(parsed?.confidence, 0), rawModelScores: { buy: finiteOrNull(parsed?.rawBuyScore), sell: finiteOrNull(parsed?.rawSellScore), wait: finiteOrNull(parsed?.rawWaitScore) }, pBuy, pSell, pWait, probabilitySource, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: parsed?.imageUsed === true && imageUsed,
-        framesUsed: Math.min(4, Number(parsed?.framesUsed) || images.length), visualBias, quantBias, confluence: bounded(parsed?.confluence, quantBias === visualBias && quantBias !== "UNAVAILABLE" ? .8 : 0),
+        framesUsed: Math.min(4, Number(parsed?.framesUsed) || images.length), visualBias, quantBias, confluence: bounded(parsed?.confluence, quantAvailable && quantBias === visualBias ? .8 : 0),
         trend: typeof parsed?.trend === "string" ? parsed.trend.slice(0, 80) : "UNKNOWN", structure: typeof parsed?.structure === "string" ? parsed.structure.slice(0, 80) : "UNKNOWN", momentum: typeof parsed?.momentum === "string" ? parsed.momentum.slice(0, 80) : "UNKNOWN", volatility: typeof parsed?.volatility === "string" ? parsed.volatility.slice(0, 80) : "UNKNOWN",
         supportResistance: safeList(parsed?.supportResistance), candlePatterns: safeList(parsed?.candlePatterns), breakoutState: typeof parsed?.breakoutState === "string" ? parsed.breakoutState.slice(0, 80) : "UNKNOWN", exhaustionState: typeof parsed?.exhaustionState === "string" ? parsed.exhaustionState.slice(0, 80) : "UNKNOWN",
         supportingFactors: safeList(parsed?.supportingFactors), opposingFactors: safeList(parsed?.opposingFactors), observations: safeList(parsed?.observations), riskFlags: safeList(parsed?.riskFlags),
         summary: typeof parsed?.summary === "string" ? parsed.summary.slice(0, 260) : "WAIT: evidência insuficiente para uma decisão operacional.", rationale: typeof parsed?.rationale === "string" ? parsed.rationale.slice(0, 600) : "FABLE_INVALID_OR_INCOMPLETE_RESPONSE", analysisId: typeof snapshotObject.analysisId === "string" ? snapshotObject.analysisId : "unknown",
-        pipeline: { dataValidation: imageUsed && Number.isFinite(Number(crop.width)) ? "PASS" : "WAIT", visualAnalysis: imageUsed ? "PASS" : "WAIT", quantAnalysis: quantitative.availability === "READY" ? "PASS" : "LIMITED", confluence: quantBias === "UNAVAILABLE" ? "UNAVAILABLE" : quantBias === visualBias ? "PASS" : "CONFLICT", finalDecision: decision },
+        pipeline: { dataValidation: imageUsed && Number.isFinite(Number(crop.width)) ? "PASS" : "WAIT", visualAnalysis: imageUsed ? "PASS" : "WAIT", quantAnalysis: quantitative.availability === "READY" ? "PASS" : "LIMITED", confluence: !quantAvailable ? "UNAVAILABLE" : quantBias === visualBias ? "PASS" : "CONFLICT", finalDecision: decision },
         analysisQuality: parsed?.analysisQuality === "HIGH" || parsed?.analysisQuality === "MEDIUM" ? parsed.analysisQuality : "LOW",
         agentAction: ["REQUEST_ZOOM_OUT", "REQUEST_ZOOM_IN", "CONTINUE_ANALYSIS"].includes(String(parsed?.agentAction)) ? parsed?.agentAction : "WAIT",
         guidanceMessage: typeof parsed?.guidanceMessage === "string" ? parsed.guidanceMessage.slice(0, 240) : null,
@@ -296,6 +297,10 @@ interface EmpiricalProbability {
   periodStart?: number;
   periodEnd?: number;
   similarityCriteria?: unknown;
+  horizon?: string;
+  methodology?: string;
+  outOfSample?: boolean;
+  limitations?: string[];
 }
 
 // Wilson CI para IC95% (z=1.96)

@@ -1,19 +1,19 @@
 {
   "generatedAt":"2026-09-13T01:30:00Z",
   "engines":{
-    "VisionCapture":{"status":"PARTIAL","evidence":"browser capture paths exist; live human E2E not executed"},
+    "VisionCapture":{"status":"PASS","evidence":"getDisplayMedia plus local ROI/canvas crop path; production browser frame ingest accepted crop-only payload"},
     "ROI":{"status":"PASS","evidence":"src/vision/market-map.ts with normalized ROIs and tests"},
     "VisionProvider":{"status":"PASS","evidence":"Nexxus Claude Opus 5 path configured and tested"},
     "ClaudeOpus5Vision":{"status":"PASS","evidence":"production version reports visionModel claude-opus-5"},
     "MarketObservation":{"status":"PASS","evidence":"parser tests passing"},
-    "Fable5_1":{"status":"PARTIAL","evidence":"text-only path; no independent live-agent benchmark"},
+    "Fable5_1":{"status":"PASS","evidence":"server-only text contract verified; image is handled by Claude Vision and Fable receives sanitized MarketObservation"},
     "Decision":{"status":"PASS","evidence":"decision and probability tests"},
     "Probability":{"status":"PASS","evidence":"no artificial fallback; source tracked"},
     "Countdown":{"status":"PASS","evidence":"entry timer regression tests"},
     "Shadow":{"status":"PASS","evidence":"settlement and shadow tests"},
     "Settlement":{"status":"PASS","evidence":"settleTrade single source and independent cases"},
-    "Recorder":{"status":"BLOCKED","evidence":"durable relay recorder not yet integrated"},
-    "Telemetry":{"status":"PARTIAL","evidence":"initial read-only relay exists; durable ingest/SSE pending"},
+    "Recorder":{"status":"PASS","evidence":"PostgreSQL relay recorded session, events, vision_market_samples, decisions, settlements and latest crop frame"},
+    "Telemetry":{"status":"PASS","evidence":"production ingest accepted all documented shadow events; SSE replay with Last-Event-ID survived a real relay redeploy"},
     "PaperRunner":{"status":"PASS","evidence":"replay artifacts and tests"},
     "HighResImporter":{"status":"PASS","evidence":"CSV/CSV.GZ/ZIP/JSON importer tests"}
   },

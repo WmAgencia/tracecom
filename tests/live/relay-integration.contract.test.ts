@@ -24,4 +24,11 @@ describe("live relay security and crop-only contracts", () => {
     for (const type of ["SESSION_STARTED", "VISION_MARKET_SAMPLE", "DECISION", "COUNTDOWN", "SHADOW_UPDATE", "SETTLEMENT", "PIPELINE_ERROR", "HEARTBEAT", "SESSION_ENDED"]) expect(api).toContain(`"${type}"`);
     expect(api).not.toMatch(/BROKER_ACTION|EXECUTE_ORDER/);
   });
+
+  it("keeps JSONB key scopes and request access logging durable", () => {
+    expect(relay).toContain("JSON.stringify(requestedScopes)");
+    expect(relay).toContain("_tracecomKeyId");
+    expect(relay).toContain("live_access_logs");
+    expect(relay).toContain("last-event-id");
+  });
 });

@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-09-13T10:55:00Z",
+  "sessionId": "vision_restart_20260913",
+  "scope": "PAPER_SHADOW_ONLY",
+  "relay": "https://tracecom-live-relay-production.up.railway.app",
+  "events": [
+    "SESSION_STARTED",
+    "VISION_MARKET_SAMPLE",
+    "DECISION",
+    "COUNTDOWN",
+    "SHADOW_UPDATE",
+    "SETTLEMENT",
+    "HEARTBEAT",
+    "SESSION_ENDED"
+  ],
+  "databaseCounts": { "events": 8, "visionMarketSamples": 1, "decisions": 1, "settlements": 1, "frames": 1 },
+  "frame": {
+    "cropOnly": true,
+    "captureType": "crop",
+    "mime": "image/jpeg",
+    "width": 320,
+    "height": 180,
+    "chartRegionPresent": true,
+    "frameHashPresent": true,
+    "fullDesktopSent": false
+  },
+  "restartRecovery": {
+    "deploymentId": "291cc82b-06cc-4f80-bae2-ec12c3f4f529",
+    "healthAfterRestart": 200,
+    "snapshotAfterRestart": 200,
+    "sessionRecovered": true,
+    "lastEventIdReplay": true,
+    "replayedSettlement": true
+  },
+  "finalRelayDeploymentId": "ad2d442b-14d3-469a-acb1-06b7f0aa277f",
+  "apiKeyLifecycle": { "generated": true, "used": true, "revoked": true },
+  "financialExecutionEndpoints": 0
+}

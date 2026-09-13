@@ -1,0 +1,44 @@
+{
+  "runId": "RUN_USDCAD_CANONICAL_20260913",
+  "split": {
+    "evaluation": "trades 1-900",
+    "blind": "trades 901-1000"
+  },
+  "evaluation": {
+    "observations": 900,
+    "BUY": 448,
+    "SELL": 452,
+    "WAIT": 0,
+    "evaluable": 900,
+    "settled": 900,
+    "WIN": 333,
+    "LOSS": 501,
+    "DRAW": 66,
+    "UNKNOWN": 0,
+    "winRateExcludingDraw": 0.39928057553956836,
+    "maxWinStreak": 6,
+    "maxLossStreak": 13
+  },
+  "blind": {
+    "observations": 100,
+    "BUY": 56,
+    "SELL": 44,
+    "WAIT": 0,
+    "evaluable": 100,
+    "settled": 100,
+    "WIN": 39,
+    "LOSS": 54,
+    "DRAW": 7,
+    "UNKNOWN": 0,
+    "winRateExcludingDraw": 0.41935483870967744,
+    "maxWinStreak": 4,
+    "maxLossStreak": 7
+  },
+  "configFrozenBeforeBlind": true,
+  "runnerVsSettleTrade": {
+    "matches": 1000,
+    "total": 1000,
+    "percentage": 1,
+    "exact": true
+  }
+}
