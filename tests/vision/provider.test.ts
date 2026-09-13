@@ -81,4 +81,11 @@ describe("NexxusVisionProvider", () => {
     expect(result).toMatchObject({ availability: "UNAVAILABLE", parseMode: "FAILED", imageProvided: true, imageBytes: 6 });
     expect(result.notes).toContain("VISION_INVALID_JSON");
   });
+
+  it("extracts a current-price label without inferring from candle geometry", async () => {
+    const fetch = vi.fn(async () => new Response(JSON.stringify({ content: [{ type: "text", text: '{"price":"1.387408","priceConfidence":"0.96","labelVisible":true,"bbox":{"x":0.82,"y":0.63,"width":0.08,"height":0.05}}' }] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+    const result = await new ServerlessVisionProvider({ apiKey: "redacted", baseUrl: "https://provider.test", model: "claude-opus-5" }).observe({ imageDataUrl: "data:image/jpeg;base64,AAECAwQF", frameId: "price-frame", task: "PRICE_LABEL_ONLY" });
+    expect(result).toMatchObject({ price: 1.387408, priceConfidence: .96, priceSource: "VISION_PRICE_LABEL", labelVisible: true });
+  });
 });

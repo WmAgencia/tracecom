@@ -1,7 +1,7 @@
 /* Trace/Com Vision: user-initiated capture; local crops; virtual-only training. */
 const $ = (id) => document.getElementById(id);
 const CANDLE_SECONDS = 5, EXPIRATION_SECONDS = 60, VISIBLE_WINDOW_SECONDS = 300, ANALYSIS_DELAY_MS = 500;
-const state = { stream: null, crop: null, selecting: false, start: null, frames: [], observations: [], timer: null, countdownTimer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, manualPosition: { state: "NO_POSITION", direction: "UNKNOWN", confidence: 0, evidence: [] }, stage: "IDLE", session: 0, liveSessionId: null, liveSequence: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0, reanalysisAt: 0, decisionId: null, decisionTimestamp: 0, expirationSeconds: EXPIRATION_SECONDS, lastSubmittedHash: null, lastSubmittedAt: 0, lastCandleId: null, requestCount: 0, hasSuccessfulAnalysis: false };
+const state = { stream: null, crop: null, selecting: false, start: null, frames: [], observations: [], priceObservations: [], priceTimer: null, priceAnalyzing: false, timer: null, countdownTimer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, manualPosition: { state: "NO_POSITION", direction: "UNKNOWN", confidence: 0, evidence: [] }, stage: "IDLE", session: 0, liveSessionId: null, liveSequence: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0, reanalysisAt: 0, decisionId: null, decisionTimestamp: 0, expirationSeconds: EXPIRATION_SECONDS, lastSubmittedHash: null, lastSubmittedAt: 0, lastCandleId: null, requestCount: 0, hasSuccessfulAnalysis: false };
 
 const api = async (path, options = {}) => {
   const response = await fetch(path, { ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
@@ -37,6 +37,10 @@ async function checkBackend() {
   try { await api("/health"); led("connectionLed", "good"); text("connectionText", "FABLE GATE ONLINE"); }
   catch { led("connectionLed", "bad"); text("connectionText", "BACKEND INDISPONÍVEL"); }
 }
+function priceCrop() { const video = $("screenVideo"); if (!video.videoWidth) return null; return makeCrop({ x: .79, y: .10, width: .16, height: .76 }, 320); }
+async function trackPrice() { if (state.priceAnalyzing || !state.stream) return; const crop = priceCrop(); if (!crop) return; state.priceAnalyzing = true; const frameId = `price_${Date.now()}`; try { const result = await api("/api/vision/price", { method: "POST", body: JSON.stringify({ frameId, dataUrl: crop.dataUrl, mimeType: "image/jpeg", width: crop.width, height: crop.height }) }); const observation = result.priceObservation; if (Number.isFinite(Number(observation?.value)) && Number(observation?.confidence) >= .6) { const row = { value: Number(observation.value), confidence: Number(observation.confidence), source: observation.source || "IQ_OPTION_CURRENT_PRICE_LABEL", timestamp: Number(observation.timestamp) || Date.now(), frameId, hash: observation.imageHash || null }; state.priceObservations = [...state.priceObservations, row].slice(-120); text("currentPriceValue", row.value.toString()); console.info("PRICE_OBSERVATION", JSON.stringify({ price: row.value, confidence: row.confidence, source: row.source, timestamp: row.timestamp, frameId: row.frameId })); } } catch (error) { console.info("PRICE_OBSERVATION_UNAVAILABLE", JSON.stringify({ frameId, reason: String(error?.message || error).slice(0, 120) })); } finally { state.priceAnalyzing = false; } }
+function startPriceTracking() { if (state.priceTimer) clearInterval(state.priceTimer); void trackPrice(); state.priceTimer = setInterval(trackPrice, 2_000); }
+function latestCausalPrice(timestamp) { return state.priceObservations.slice().reverse().find((item) => item.timestamp <= timestamp && timestamp - item.timestamp <= 3_000) || null; }
 
 // Geometry-only detector. It never claims it read pixels or broker internals;
 // it chooses the chart-safe center of a conventional trading window and exposes
@@ -52,7 +56,7 @@ async function shareScreen() {
   stopScreen();
   try {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 12, max: 20 } }, audio: false });
-    state.stream = stream; state.frames = []; state.observations = []; state.lastCandleId = null; state.lastAnalysis = null; state.hasSuccessfulAnalysis = false;
+    state.stream = stream; state.frames = []; state.observations = []; state.priceObservations = []; state.lastCandleId = null; state.lastAnalysis = null; state.hasSuccessfulAnalysis = false;
     state.liveSessionId = `vision_${crypto.randomUUID()}`; state.liveSequence = 0; void liveEmit("SESSION_STARTED", { startedAt: new Date().toISOString() });
     const video = $("screenVideo"); video.srcObject = stream; video.hidden = false; $("previewEmpty").hidden = true;
     $("shareButton").textContent = "RECOMPARTILHAR"; $("stopShareButton").hidden = false; $("startTrainingButton").disabled = false;
@@ -66,7 +70,7 @@ async function shareScreen() {
       text("cropText", `ChartRegionDetector ${Math.round(detected.confidence * 100)}% · ${detected.source}`);
       $("recropButton").hidden = detected.confidence >= .6;
       if (detected.confidence < .6) $("recropButton").hidden = false;
-      setCapture("live", "CAPTURA AO VIVO"); updatePipeline(); startObservation();
+       setCapture("live", "CAPTURA AO VIVO"); updatePipeline(); startPriceTracking(); startObservation();
     };
     if (video.videoWidth) ready(); else video.addEventListener("loadedmetadata", ready, { once: true });
   } catch (error) { if (error?.name !== "NotAllowedError") setCapture("bad", "ERRO DE CAPTURA"); text("decisionSummary", error?.name === "NotAllowedError" ? "O compartilhamento foi cancelado." : String(error?.message || error)); }
@@ -78,9 +82,9 @@ function stopScreen() {
   state.entryUntil = 0; state.reanalysisAt = 0; state.decisionId = null; state.decisionTimestamp = 0;
   state.lastSubmittedHash = null; state.lastSubmittedAt = 0; state.requestCount = 0;
   if (state.countdownTimer) { clearTimeout(state.countdownTimer); state.countdownTimer = null; }
-  if (state.timer) clearTimeout(state.timer); state.timer = null;
+  if (state.timer) clearTimeout(state.timer); state.timer = null; if (state.priceTimer) clearInterval(state.priceTimer); state.priceTimer = null;
   if (state.stream) state.stream.getTracks().forEach((track) => track.stop());
-  state.stream = null; state.crop = null; state.frames = []; state.observations = []; state.lastCandleId = null; state.hasSuccessfulAnalysis = false; state.liveSessionId = null;
+  state.stream = null; state.crop = null; state.frames = []; state.observations = []; state.priceObservations = []; state.lastCandleId = null; state.hasSuccessfulAnalysis = false; state.liveSessionId = null;
   const video = $("screenVideo"); video.pause(); video.srcObject = null; video.hidden = true;
   $("previewEmpty").hidden = false; $("shareButton").textContent = "COMPARTILHAR TELA"; $("stopShareButton").hidden = true; $("startTrainingButton").disabled = true;
   setCapture("", "NÃO COMPARTILHADO"); updatePipeline();
@@ -243,7 +247,7 @@ async function startTraining() {
 }
 function stopTraining() { state.training = null; localStorage.removeItem("tracecom:training-session"); $("startTrainingButton").hidden = false; $("stopTrainingButton").hidden = true; text("trainingTitle", "Treino pausado"); text("trainingState", "PAUSADO"); }
 async function trainIfActive(snapshot, analysis, stat) {
-  if (!state.training) return; const sizing = suggestedStake(analysis); const visualPrice = Number(analysis.visionObservation?.price); const priceConfidence = Number(analysis.visionObservation?.priceConfidence) || 0; const referencePrice = Number.isFinite(visualPrice) && priceConfidence >= .6 ? visualPrice : null; const referencePriceSource = referencePrice === null ? "UNAVAILABLE" : (analysis.visionObservation?.priceSource || "VISION_PRICE_LABEL"); const result = await api("/api/training/analyze", { method: "POST", body: JSON.stringify({ trainingSessionId: state.training.id, snapshot: { ...snapshot, symbol: state.lastContext?.symbol || "UNAVAILABLE", referencePrice, referencePriceSource, priceConfidence, framesHash: frameHash(stat), features: { motion: stat } }, analysis, suggestedStake: sizing.amount || null }) }); state.training = result; renderTraining(result);
+  if (!state.training) return; const sizing = suggestedStake(analysis); const causalPrice = latestCausalPrice(snapshot.timestampMs); const visualPrice = Number(analysis.visionObservation?.price); const priceConfidence = Number(analysis.visionObservation?.priceConfidence) || 0; const referencePrice = causalPrice?.value ?? (Number.isFinite(visualPrice) && priceConfidence >= .6 ? visualPrice : null); const referencePriceSource = referencePrice === null ? "UNAVAILABLE" : (causalPrice?.source || analysis.visionObservation?.priceSource || "VISION_PRICE_LABEL"); const referencePriceConfidence = causalPrice?.confidence ?? priceConfidence; const result = await api("/api/training/analyze", { method: "POST", body: JSON.stringify({ trainingSessionId: state.training.id, snapshot: { ...snapshot, symbol: state.lastContext?.symbol || "UNAVAILABLE", referencePrice, referencePriceSource, priceConfidence: referencePriceConfidence, framesHash: frameHash(stat), features: { motion: stat } }, analysis, suggestedStake: sizing.amount || null }) }); state.training = result; renderTraining(result);
 }
 function renderTraining(session) {
   const analyses = Number(session.analyses || 0);

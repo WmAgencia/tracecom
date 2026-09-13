@@ -580,6 +580,17 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
+    if (path === "/api/vision/price" && req.method === "POST") {
+      const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+      const dataUrl = input.dataUrl;
+      if (!validImage({ label: "price-axis", dataUrl, mimeType: typeof input.mimeType === "string" ? input.mimeType : undefined })) { json(400, { error: "price_crop_invalid" }); return; }
+      const apiKey = (process.env.NEXXUS_API_KEY || process.env.FABLE_API_KEY || "").trim();
+      if (!apiKey) { json(503, { error: "vision_provider_not_configured" }); return; }
+      const observation = await new NexxusVisionProvider({ apiKey, baseUrl: process.env.NEXXUS_BASE_URL || process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site", model: process.env.TRACECOM_VISION_MODEL || "claude-opus-5", timeoutMs: 3_000 }).observe({ imageDataUrl: String(dataUrl), frameId: typeof input.frameId === "string" ? input.frameId : null, task: "PRICE_LABEL_ONLY" });
+      json(200, { priceObservation: { value: observation.price ?? null, confidence: observation.priceConfidence ?? 0, source: observation.priceSource || "UNAVAILABLE", labelVisible: observation.labelVisible === true, bbox: observation.bbox || null, timestamp: Date.now(), frameId: input.frameId || null, imageHash: observation.imageHash || null } });
+      return;
+    }
+
     if (path === "/api/fable/trade" && req.method === "POST") {
       try {
         json(200, await fableVisionTrade(body));
