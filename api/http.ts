@@ -528,6 +528,10 @@ async function relayAdminGet(path: string): Promise<Record<string, unknown>> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, ""); const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim(); if (!base || !admin) throw new Error("relay_not_configured");
   const response = await fetch(`${base}${path}`, { headers: { "x-relay-admin": admin }, signal: AbortSignal.timeout(8_000) }); if (!response.ok) throw new Error(`relay_${response.status}`); return await response.json() as Record<string, unknown>;
 }
+async function relayOperationalSnapshot(sessionId: string, snapshot?: unknown): Promise<Record<string, unknown>> {
+  if (snapshot !== undefined) { await relayAdminSend("PUT", `/api/operational/${encodeURIComponent(sessionId)}`, snapshot); return snapshot as Record<string, unknown>; }
+  return relayAdminGet(`/api/operational/${encodeURIComponent(sessionId)}`);
+}
 
 async function fetchRelayBundle(sessionId: string): Promise<Record<string, unknown> | null> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
@@ -570,6 +574,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const operationalInput = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
     const operationalSessionId = typeof operationalInput.sessionId === "string" ? operationalInput.sessionId.trim().slice(0, 128) : "";
     const operationalResponse = (controller: OperationalController) => ({ ...controller.snapshot(), sessionId: operationalSessionId, shadowOnly: true, brokerAutomation: "NONE" });
+    const operationalController = async (sessionId: string): Promise<OperationalController | null> => {
+      const cached = operationalSessions.get(sessionId); if (cached) return cached;
+      try { const persisted = await relayOperationalSnapshot(sessionId); const restored = OperationalController.restore((persisted.snapshot || persisted) as never); operationalSessions.set(sessionId, restored); return restored; } catch { return null; }
+    };
     if (path === "/api/operational/lock" && req.method === "POST") {
       if (!operationalSessionId) { json(400, { error: "session_id_required" }); return; }
       const controller = operationalSessions.get(operationalSessionId) ?? new OperationalController();
@@ -585,28 +593,28 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
           countdownMs: Number.isFinite(Number(operationalInput.countdownMs)) ? Number(operationalInput.countdownMs) : 10_000,
           horizonMs: Number.isFinite(Number(operationalInput.horizonMs)) ? Number(operationalInput.horizonMs) : 60_000,
         });
-        operationalSessions.set(operationalSessionId, controller);
+        operationalSessions.set(operationalSessionId, controller); await relayOperationalSnapshot(operationalSessionId, controller.snapshot());
         json(200, operationalResponse(controller));
       } catch (error) { json(409, { error: error instanceof Error ? error.message : "operational_lock_rejected", shadowOnly: true, brokerAutomation: "NONE" }); }
       return;
     }
     if (path === "/api/operational/entry" && req.method === "POST") {
       if (!operationalSessionId) { json(400, { error: "session_id_required" }); return; }
-      const controller = operationalSessions.get(operationalSessionId);
-      if (!controller) { json(404, { error: "operational_session_not_found" }); return; }
+      const controller = await operationalController(operationalSessionId);
+      if (!controller) { json(404, { error: "operational_session_not_found", recovery: "OPERATION_RECOVERY_FAILED" }); return; }
       try {
         controller.lockEntry({ signalId: typeof operationalInput.signalId === "string" ? operationalInput.signalId : "", price: operationalInput.price === null ? null : Number(operationalInput.price), timestamp: Number(operationalInput.timestamp) || Date.now(), symbol: typeof operationalInput.symbol === "string" ? operationalInput.symbol : "" });
-        json(200, operationalResponse(controller));
+        await relayOperationalSnapshot(operationalSessionId, controller.snapshot()); json(200, operationalResponse(controller));
       } catch (error) { json(409, { error: error instanceof Error ? error.message : "operational_entry_rejected", shadowOnly: true, brokerAutomation: "NONE" }); }
       return;
     }
     if (path === "/api/operational/settle" && req.method === "POST") {
       if (!operationalSessionId) { json(400, { error: "session_id_required" }); return; }
-      const controller = operationalSessions.get(operationalSessionId);
-      if (!controller) { json(404, { error: "operational_session_not_found" }); return; }
+      const controller = await operationalController(operationalSessionId);
+      if (!controller) { json(404, { error: "operational_session_not_found", recovery: "OPERATION_RECOVERY_FAILED" }); return; }
       try {
         controller.settle({ signalId: typeof operationalInput.signalId === "string" ? operationalInput.signalId : "", price: operationalInput.price === null ? null : Number(operationalInput.price), timestamp: Number(operationalInput.timestamp) || Date.now(), symbol: typeof operationalInput.symbol === "string" ? operationalInput.symbol : "" });
-        json(200, operationalResponse(controller));
+        await relayOperationalSnapshot(operationalSessionId, controller.snapshot()); json(200, operationalResponse(controller));
       } catch (error) { json(409, { error: error instanceof Error ? error.message : "operational_settlement_rejected", shadowOnly: true, brokerAutomation: "NONE" }); }
       return;
     }
@@ -615,8 +623,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const operationalEventsMatch = path.match(/^\/api\/operational\/([^/]+)\/events$/);
     if (operationalEventsMatch && req.method === "GET") {
       const sessionId = decodeURIComponent(operationalEventsMatch[1]!);
-      const controller = operationalSessions.get(sessionId);
-      if (!controller) { json(404, { error: "operational_session_not_found" }); return; }
+      const controller = await operationalController(sessionId);
+      if (!controller) { json(404, { error: "operational_session_not_found", recovery: "OPERATION_RECOVERY_FAILED" }); return; }
       const after = Math.max(0, Number(q.get("after")) || 0);
       json(200, { sessionId, after, events: controller.replay(after), cursor: controller.snapshot().nextSequence - 1, shadowOnly: true, brokerAutomation: "NONE" });
       return;
@@ -624,8 +632,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const operationalSnapshotMatch = path.match(/^\/api\/operational\/([^/]+)$/);
     if (operationalSnapshotMatch && req.method === "GET") {
       const sessionId = decodeURIComponent(operationalSnapshotMatch[1]!);
-      const controller = operationalSessions.get(sessionId);
-      if (!controller) { json(404, { error: "operational_session_not_found" }); return; }
+      const controller = await operationalController(sessionId);
+      if (!controller) { json(404, { error: "operational_session_not_found", recovery: "OPERATION_RECOVERY_FAILED" }); return; }
       json(200, { ...controller.snapshot(), sessionId, shadowOnly: true, brokerAutomation: "NONE" });
       return;
     }
