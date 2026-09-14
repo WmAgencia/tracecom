@@ -42,6 +42,10 @@ export type FastResult = {
   directionalLean: "BUY" | "SELL" | "NONE";
   leanConfidence: number;
   rawConfidence: number;
+  pBuy: number;
+  pSell: number;
+  pWait: number;
+  probabilitySource: "EVIDENCE_MODEL";
   bullScore: number;
   bearScore: number;
   conflictScore: number;
@@ -111,6 +115,9 @@ export function buildFastDecision(input: FastInput): FastResult {
   const bullScore = (directionalScore + 1) / 2;
   const bearScore = 1 - bullScore;
   const separation = Math.abs(bullScore - bearScore);
+  const pWait = conflictScoreFor(separation);
+  const pBuy = bullScore * (1 - pWait);
+  const pSell = bearScore * (1 - pWait);
   const activityPenalty = activity < FAST_THRESHOLDS.activityFloor ? .05 : 0;
   const rawConfidence = clamp(.5 + separation * .4 - activityPenalty, .5, .9);
   const directionalLean: "BUY" | "SELL" | "NONE" = directionalScore > FAST_THRESHOLDS.leanEpsilon ? "BUY" : directionalScore < -FAST_THRESHOLDS.leanEpsilon ? "SELL" : "NONE";
@@ -140,6 +147,10 @@ export function buildFastDecision(input: FastInput): FastResult {
     directionalLean,
     leanConfidence: rawConfidence,
     rawConfidence,
+    pBuy,
+    pSell,
+    pWait,
+    probabilitySource: "EVIDENCE_MODEL",
     bullScore,
     bearScore,
     conflictScore,
@@ -163,3 +174,5 @@ export function buildFastDecision(input: FastInput): FastResult {
     timings: { observationMs, regimeMs, bullBearMs, arbiterMs, totalMs },
   };
 }
+
+function conflictScoreFor(separation: number): number { return clamp(1 - separation, 0, 1); }

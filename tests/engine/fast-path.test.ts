@@ -23,6 +23,13 @@ describe("fast decision path — T+60 semantics", () => {
     expect(PREDICTION_HORIZON_SECONDS / 5).toBe(12);
   });
 
+  it("always exposes a nonzero evidence probability distribution", () => {
+    const result = buildFastDecision({ now, prices: series([1.385, 1.3852, 1.3854, 1.3856]) });
+    expect(result.pBuy).toBeGreaterThanOrEqual(0); expect(result.pSell).toBeGreaterThanOrEqual(0); expect(result.pWait).toBeGreaterThanOrEqual(0);
+    expect(result.pBuy + result.pSell + result.pWait).toBeCloseTo(1, 8);
+    expect(result.probabilitySource).toBe("EVIDENCE_MODEL");
+  });
+
   it("BUY labels only the T+60 price, not the intermediate path", () => {
     const entry = 1.3850;
     expect(labelFor("BUY", entry, [1.386, 1.383, 1.386, 1.383, 1.3862])).toBe("WIN");
