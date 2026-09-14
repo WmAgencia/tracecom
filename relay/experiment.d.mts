@@ -13,5 +13,6 @@ export declare function wilsonLower(wins: number, total: number, z?: number): nu
 export declare function experimentTick(pool: unknown, options?: { now?: number; targetAsset?: string; targetTrades?: number }): Promise<Record<string, unknown>>;
 export declare function experimentStatus(pool: unknown): Promise<Record<string, unknown>>;
 export declare function experimentTrades(pool: unknown, limit?: number): Promise<Record<string, unknown>>;
+export declare function retroEvaluate(pool: unknown, options?: { strategies?: string[] | null; maxCreations?: number; now?: number }): Promise<Record<string, unknown>>;
 export declare function shouldAttemptSettlement(now: number, settlementTargetAt: number, graceMs?: number): boolean;
 export declare function startExperimentLoop(pool: unknown, intervalMs?: number): () => void;

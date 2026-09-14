@@ -16,7 +16,7 @@ export const EXPERIMENT_DISCOVERY_TRADES = 5_000;
 export const SETTLEMENT_TOLERANCE_MS = 30_000;
 export const SETTLEMENT_GRACE_MS = 15_000;
 export const MIN_CANDLES = 24;
-export const STRATEGY_VERSIONS = ["shadow-momentum-v1", "shadow-trend-v1", "shadow-reversion-v1"];
+export const STRATEGY_VERSIONS = ["shadow-momentum-v1", "shadow-trend-v1", "shadow-reversion-v1", "shadow-reversion-v2"];
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
@@ -51,6 +51,7 @@ export function evaluateStrategies(f) {
   { const s = score(f.momentum30, .0008) * .6 + score(f.momentum60, .0012) * .4; raw.push({ strategyVersion: "shadow-momentum-v1", direction: s > .25 ? "BUY" : s < -.25 ? "SELL" : "WAIT", score: s }); }
   { const s = score(f.slope, .0008) * .7 + score(f.momentum120, .002) * .3; raw.push({ strategyVersion: "shadow-trend-v1", direction: s > .3 ? "BUY" : s < -.3 ? "SELL" : "WAIT", score: s }); }
   { const volOk = f.vol !== null && f.vol < .0009; const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; raw.push({ strategyVersion: "shadow-reversion-v1", direction: volOk && s > .33 ? "BUY" : volOk && s < -.33 ? "SELL" : "WAIT", score: s }); }
+  { const volOk = f.vol !== null && f.vol < .0012; const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; raw.push({ strategyVersion: "shadow-reversion-v2", direction: volOk && s > .22 ? "BUY" : volOk && s < -.22 ? "SELL" : "WAIT", score: s }); }
   return raw.map((x) => {
     const edge = Math.abs(x.score);
     const pDir = clamp(.5 + edge * .35, .5, .9);
@@ -89,21 +90,36 @@ export function shouldAttemptSettlement(now, settlementTargetAt, graceMs = SETTL
   return Number.isFinite(now) && Number.isFinite(settlementTargetAt) && now >= settlementTargetAt + graceMs;
 }
 
+async function findSettlementObservation(pool, trade, toleranceMs) {
+  const target = Number(trade.settlement_target_at);
+  return (await pool.query("SELECT value, price_observation_id, EXTRACT(EPOCH FROM observed_at)*1000 AS t FROM price_observations WHERE session_id=$1 AND status='ACCEPTED' AND observed_at >= to_timestamp($2/1000.0) AND observed_at <= to_timestamp($3/1000.0) AND ($4::text IS NULL OR segment_id = $4) ORDER BY observed_at ASC LIMIT 1", [trade.session_id, target, target + toleranceMs, trade.segment_id ?? null])).rows[0] ?? null;
+}
+
+async function bumpCounters(pool, trade, now) {
+  const phase = trade.phase === "VALIDATION" ? "VALIDATION" : "DISCOVERY";
+  await pool.query(`UPDATE shadow_experiments SET valid_settled_trades = valid_settled_trades + 1, ${phase === "VALIDATION" ? "validation_count" : "discovery_count"} = ${phase === "VALIDATION" ? "validation_count" : "discovery_count"} + 1, last_trade_at=$2, updated_at=now() WHERE experiment_id=$1`, [trade.experiment_id, now]);
+}
+
+async function resolveTrade(pool, trade, now, toleranceMs) {
+  const ref = await findSettlementObservation(pool, trade, toleranceMs);
+  const result = settleOutcome(trade.decision, Number(trade.reference_price), ref ? Number(ref.value) : NaN);
+  await pool.query("UPDATE shadow_trades SET settlement_price=$2, settlement_price_observation_id=$3, settlement_observed_at=$4, result=$5, settled_at=$6 WHERE trade_id=$1 AND result IS NULL", [trade.trade_id, ref ? Number(ref.value) : null, ref ? ref.price_observation_id : null, ref ? Number(ref.t) : null, result, now]);
+  if (result === "WIN" || result === "LOSS" || result === "DRAW") { await bumpCounters(pool, trade, now); return 1; }
+  return 0;
+}
+
 async function settleDueTrades(pool, now) {
-  const due = (await pool.query("SELECT t.*, e.phase AS experiment_phase FROM shadow_trades t LEFT JOIN shadow_experiments e ON e.experiment_id = t.experiment_id WHERE t.result IS NULL AND t.settlement_target_at + $1 <= $2 ORDER BY t.settlement_target_at ASC LIMIT 200", [SETTLEMENT_GRACE_MS, now])).rows;
+  const due = (await pool.query("SELECT t.* FROM shadow_trades t WHERE t.result IS NULL AND t.settlement_target_at + $1 <= $2 ORDER BY t.settlement_target_at ASC LIMIT 200", [SETTLEMENT_GRACE_MS, now])).rows;
   let settled = 0, counted = 0;
-  for (const trade of due) {
-    const target = Number(trade.settlement_target_at);
-    const ref = (await pool.query("SELECT value, price_observation_id, EXTRACT(EPOCH FROM observed_at)*1000 AS t FROM price_observations WHERE session_id=$1 AND status='ACCEPTED' AND observed_at >= to_timestamp($2/1000.0) AND observed_at <= to_timestamp($3/1000.0) AND ($4::text IS NULL OR segment_id = $4) ORDER BY observed_at ASC LIMIT 1", [trade.session_id, target, target + SETTLEMENT_TOLERANCE_MS, trade.segment_id ?? null])).rows[0];
-    const result = settleOutcome(trade.decision, Number(trade.reference_price), ref ? Number(ref.value) : NaN);
-    const settledAt = now;
-    await pool.query("UPDATE shadow_trades SET settlement_price=$2, settlement_price_observation_id=$3, settlement_observed_at=$4, result=$5, settled_at=$6 WHERE trade_id=$1 AND result IS NULL", [trade.trade_id, ref ? Number(ref.value) : null, ref ? ref.price_observation_id : null, ref ? Number(ref.t) : null, result, settledAt]);
-    settled += 1;
-    if (result === "WIN" || result === "LOSS" || result === "DRAW") {
-      counted += 1;
-      const phase = trade.phase === "VALIDATION" ? "VALIDATION" : "DISCOVERY";
-      await pool.query(`UPDATE shadow_experiments SET valid_settled_trades = valid_settled_trades + 1, ${phase === "VALIDATION" ? "validation_count" : "discovery_count"} = ${phase === "VALIDATION" ? "validation_count" : "discovery_count"} + 1, last_trade_at = $2, updated_at = now() WHERE experiment_id = $1`, [trade.experiment_id, settledAt]);
-    }
+  for (const trade of due) { settled += 1; counted += await resolveTrade(pool, trade, now, SETTLEMENT_TOLERANCE_MS); }
+  const retryable = (await pool.query("SELECT * FROM shadow_trades WHERE result='UNKNOWN' AND retry_count < 3 AND (last_retry_at IS NULL OR last_retry_at + 30000 <= $1) ORDER BY settlement_target_at ASC LIMIT 100", [now])).rows;
+  for (const trade of retryable) {
+    const ref = await findSettlementObservation(pool, trade, 120_000);
+    if (ref) {
+      const result = settleOutcome(trade.decision, Number(trade.reference_price), Number(ref.value));
+      const updated = await pool.query("UPDATE shadow_trades SET settlement_price=$2, settlement_price_observation_id=$3, settlement_observed_at=$4, result=$5, settled_at=$6, retry_count=retry_count+1, last_retry_at=$6 WHERE trade_id=$1 AND result='UNKNOWN'", [trade.trade_id, Number(ref.value), ref.price_observation_id, Number(ref.t), result, now]);
+      if (updated.rowCount > 0 && (result === "WIN" || result === "LOSS" || result === "DRAW")) { counted += 1; await bumpCounters(pool, trade, now); }
+    } else await pool.query("UPDATE shadow_trades SET retry_count=retry_count+1, last_retry_at=$2 WHERE trade_id=$1", [trade.trade_id, now]);
   }
   return { settled, counted };
 }
@@ -190,6 +206,56 @@ export async function experimentStatus(pool) {
 export async function experimentTrades(pool, limit = 100) {
   const trades = (await pool.query("SELECT trade_id, strategy_version, decision, confidence, p_buy, p_sell, p_wait, reference_price, reference_timestamp, settlement_price, settlement_target_at, settlement_observed_at, result, asset_canonical, market_type, segment_id, created_at, settled_at FROM shadow_trades ORDER BY created_at DESC LIMIT $1", [Math.max(1, Math.min(500, Number(limit) || 100))])).rows;
   return { trades, brokerAutomation: "NONE", shadowOnly: true };
+}
+
+export async function retroEvaluate(pool, { strategies = null, maxCreations = 400, now = Date.now() } = {}) {
+  const exp = (await pool.query("SELECT * FROM shadow_experiments ORDER BY created_at ASC LIMIT 1")).rows[0];
+  if (!exp) return { created: 0, reason: "NO_EXPERIMENT" };
+  if (exp.phase !== "DISCOVERY") return { created: 0, reason: "FROZEN_OR_COMPLETE" };
+  const allowed = new Set(strategies && strategies.length ? strategies : STRATEGY_VERSIONS);
+  const sessions = (await pool.query("SELECT session_id FROM price_observations WHERE status='ACCEPTED' GROUP BY session_id ORDER BY MAX(observed_at) DESC LIMIT 8")).rows.map((r) => r.session_id);
+  let created = 0, counted = 0, evaluations = 0, newEvents = 0;
+  for (const sid of sessions) {
+    if (created >= maxCreations) break;
+    const rows = (await pool.query("SELECT value, EXTRACT(EPOCH FROM observed_at)*1000 AS t, price_observation_id, segment_id, market_context_id, asset_canonical, market_type, context_validation_status FROM price_observations WHERE session_id=$1 AND status='ACCEPTED' ORDER BY observed_at ASC", [sid])).rows
+      .map((r) => ({ t: Number(r.t), v: Number(r.value), id: r.price_observation_id, segment: r.segment_id, context: r.market_context_id, asset: r.asset_canonical, marketType: r.market_type, validation: r.context_validation_status }))
+      .filter((o) => o.t > 0 && Number.isFinite(o.v) && o.asset === exp.target_asset && o.marketType === "OTC" && o.validation === "VALID");
+    const groups = new Map();
+    for (const o of rows) { const key = o.segment ?? "none"; groups.set(key, [...(groups.get(key) ?? []), o]); }
+    for (const [segment, group] of groups) {
+      if (created >= maxCreations) break;
+      const candles = buildCandles(group);
+      if (candles.length < MIN_CANDLES) continue;
+      for (let i = MIN_CANDLES - 1; i < candles.length && created < maxCreations; i++) {
+        const candle = candles[i];
+        const marketEventId = `${sid}:${candle.start}`;
+        if ((await pool.query("SELECT 1 FROM shadow_trades WHERE market_event_id=$1 LIMIT 1", [marketEventId])).rowCount > 0) continue;
+        const allEvals = evaluateStrategies(computeFeatures(candles.slice(0, i + 1))).filter((s) => allowed.has(s.strategyVersion));
+        evaluations += allEvals.length;
+        const evals = allEvals.filter((s) => s.direction === "BUY" || s.direction === "SELL");
+        if (!evals.length) continue;
+        const reference = [...group].reverse().find((o) => o.t <= candle.start + EXPERIMENT_BUCKET_MS);
+        if (!reference) continue;
+        const settleRef = group.find((o) => o.t >= reference.t + EXPERIMENT_HORIZON_MS && o.t <= reference.t + EXPERIMENT_HORIZON_MS + SETTLEMENT_TOLERANCE_MS);
+        if (!settleRef) continue;
+        let eventCreated = 0;
+        for (const strategy of evals) {
+          const tradeId = `${strategy.strategyVersion}_${candle.start}_${Math.random().toString(36).slice(2, 8)}`;
+          const result = settleOutcome(strategy.direction, reference.v, settleRef.v);
+          const inserted = await pool.query("INSERT INTO shadow_trades(trade_id,experiment_id,market_event_id,strategy_version,decision,confidence,p_buy,p_sell,p_wait,probability_source,regime,reference_price,reference_price_observation_id,reference_timestamp,settlement_target_at,settlement_price,settlement_price_observation_id,settlement_observed_at,result,session_id,market_context_id,segment_id,asset_canonical,market_type,created_at,settled_at,phase) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$25,'DISCOVERY') ON CONFLICT (market_event_id,strategy_version) DO NOTHING",
+            [tradeId, exp.experiment_id, marketEventId, strategy.strategyVersion, strategy.direction, strategy.confidence, strategy.pBuy, strategy.pSell, strategy.pWait, strategy.probabilitySource, null, reference.v, reference.id, reference.t, reference.t + EXPERIMENT_HORIZON_MS, settleRef.v, settleRef.id, settleRef.t, result, sid, reference.context, segment === "none" ? null : segment, reference.asset, reference.marketType, now]);
+          if (inserted.rowCount > 0) { created += 1; eventCreated += 1; if (result === "WIN" || result === "LOSS" || result === "DRAW") counted += 1; }
+        }
+        if (eventCreated > 0) newEvents += 1;
+      }
+    }
+  }
+  if (counted > 0 || newEvents > 0 || evaluations > 0) {
+    await pool.query("UPDATE shadow_experiments SET evaluations = evaluations + $2, unique_market_events = unique_market_events + $3, valid_settled_trades = valid_settled_trades + $4, discovery_count = discovery_count + $4, updated_at=now() WHERE experiment_id=$1", [exp.experiment_id, evaluations, newEvents, counted]);
+  }
+  const after = (await pool.query("SELECT * FROM shadow_experiments WHERE experiment_id=$1", [exp.experiment_id])).rows[0];
+  await recordCheckpoint(pool, after, now);
+  return { created, counted, evaluations, newEvents, validSettledTrades: Number(after.valid_settled_trades) };
 }
 
 export function startExperimentLoop(pool, intervalMs = 5_000) {
