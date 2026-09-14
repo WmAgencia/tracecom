@@ -16,7 +16,9 @@ export const EXPERIMENT_DISCOVERY_TRADES = 5_000;
 export const SETTLEMENT_TOLERANCE_MS = 30_000;
 export const SETTLEMENT_GRACE_MS = 15_000;
 export const MIN_CANDLES = 24;
-export const STRATEGY_VERSIONS = ["shadow-momentum-v1", "shadow-trend-v1", "shadow-reversion-v1", "shadow-reversion-v2", "shadow-reversion-v3", "shadow-reversion-v4", "shadow-pullback-v1", "shadow-snapback-v1", "shadow-dual-rsi-v1", "shadow-bollinger-rsi-v1", "shadow-macd-rsi-v1", "shadow-reversion-v5"];
+export const STRATEGY_HORIZON_MS = { "shadow-reversion-v6": 45_000 };
+export const horizonFor = (strategyVersion) => STRATEGY_HORIZON_MS[strategyVersion] ?? EXPERIMENT_HORIZON_MS;
+export const STRATEGY_VERSIONS = ["shadow-momentum-v1", "shadow-trend-v1", "shadow-reversion-v1", "shadow-reversion-v2", "shadow-reversion-v3", "shadow-reversion-v4", "shadow-pullback-v1", "shadow-snapback-v1", "shadow-dual-rsi-v1", "shadow-bollinger-rsi-v1", "shadow-macd-rsi-v1", "shadow-reversion-v5", "shadow-reversion-v6"];
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
@@ -67,6 +69,7 @@ export function evaluateStrategies(f) {
   { const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; raw.push({ strategyVersion: "shadow-bollinger-rsi-v1", direction: f.last !== null && f.bbLower !== null && f.last <= f.bbLower && f.rsi !== null && f.rsi < 30 ? "BUY" : f.last !== null && f.bbUpper !== null && f.last >= f.bbUpper && f.rsi !== null && f.rsi > 70 ? "SELL" : "WAIT", score: s }); }
   { const climb = f.macdHist !== null && f.macdHistPrev !== null && f.macdHist > f.macdHistPrev; const fall = f.macdHist !== null && f.macdHistPrev !== null && f.macdHist < f.macdHistPrev; const s = f.macdHist === null ? 0 : clamp(f.macdHist * 20000, -1, 1); raw.push({ strategyVersion: "shadow-macd-rsi-v1", direction: f.rsi !== null && f.rsi < 50 && f.macdHist !== null && f.macdHist > 0 && climb ? "BUY" : f.rsi !== null && f.rsi > 50 && f.macdHist !== null && f.macdHist < 0 && fall ? "SELL" : "WAIT", score: s }); }
   { const volOk = f.vol !== null && f.vol < .0009; const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; const deep = Math.abs(s) >= .63 && Math.abs(s) <= .857; raw.push({ strategyVersion: "shadow-reversion-v5", direction: volOk && deep && s > 0 ? "BUY" : volOk && deep && s < 0 ? "SELL" : "WAIT", score: s }); }
+  { const volOk = f.vol !== null && f.vol < .0009; const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; const deep = Math.abs(s) >= .63 && Math.abs(s) <= .857; raw.push({ strategyVersion: "shadow-reversion-v6", direction: volOk && deep && s > 0 ? "BUY" : volOk && deep && s < 0 ? "SELL" : "WAIT", score: s }); }
   return raw.map((x) => {
     const edge = Math.abs(x.score);
     const pDir = clamp(.5 + edge * .35, .5, .9);
@@ -215,7 +218,7 @@ export async function experimentTick(pool, options = {}) {
     if (exists) continue;
     const tradeId = `${strategy.strategyVersion}_${last.start}_${Math.random().toString(36).slice(2, 8)}`;
     const inserted = await pool.query("INSERT INTO shadow_trades(trade_id, experiment_id, market_event_id, strategy_version, decision, confidence, p_buy, p_sell, p_wait, probability_source, regime, reference_price, reference_price_observation_id, reference_timestamp, settlement_target_at, session_id, market_context_id, segment_id, asset_canonical, market_type, created_at, phase) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) ON CONFLICT (market_event_id, strategy_version) DO NOTHING",
-      [tradeId, fresh.experiment_id, marketEventId, strategy.strategyVersion, strategy.direction, strategy.confidence, strategy.pBuy, strategy.pSell, strategy.pWait, strategy.probabilitySource, null, reference.v, reference.id, reference.t, reference.t + EXPERIMENT_HORIZON_MS, session.id, reference.context, reference.segment, reference.asset, reference.marketType, now, fresh.phase === "VALIDATION" ? "VALIDATION" : "DISCOVERY"]);
+      [tradeId, fresh.experiment_id, marketEventId, strategy.strategyVersion, strategy.direction, strategy.confidence, strategy.pBuy, strategy.pSell, strategy.pWait, strategy.probabilitySource, null, reference.v, reference.id, reference.t, reference.t + horizonFor(strategy.strategyVersion), session.id, reference.context, reference.segment, reference.asset, reference.marketType, now, fresh.phase === "VALIDATION" ? "VALIDATION" : "DISCOVERY"]);
     if (inserted.rowCount > 0) { created += 1; evaluated += 1; }
   }
   await pool.query("UPDATE shadow_experiments SET evaluations = evaluations + $2, unique_market_events = unique_market_events + $3, last_trade_at = CASE WHEN $4 > 0 THEN $5 ELSE last_trade_at END, updated_at = now() WHERE experiment_id=$1", [fresh.experiment_id, evaluated, !eventExists && created > 0 ? 1 : 0, created, now]);
@@ -269,14 +272,15 @@ export async function retroEvaluate(pool, { strategies = null, maxCreations = 40
         if (!evals.length) continue;
         const reference = [...group].reverse().find((o) => o.t <= candle.start + EXPERIMENT_BUCKET_MS);
         if (!reference) continue;
-        const settleRef = group.find((o) => o.t >= reference.t + EXPERIMENT_HORIZON_MS && o.t <= reference.t + EXPERIMENT_HORIZON_MS + SETTLEMENT_TOLERANCE_MS);
-        if (!settleRef) continue;
         let eventCreated = 0;
         for (const strategy of evals) {
+          const horizon = horizonFor(strategy.strategyVersion);
+          const settleRef = group.find((o) => o.t >= reference.t + horizon && o.t <= reference.t + horizon + SETTLEMENT_TOLERANCE_MS);
+          if (!settleRef) continue;
           const tradeId = `${strategy.strategyVersion}_${candle.start}_${Math.random().toString(36).slice(2, 8)}`;
           const result = settleOutcome(strategy.direction, reference.v, settleRef.v);
           const inserted = await pool.query("INSERT INTO shadow_trades(trade_id,experiment_id,market_event_id,strategy_version,decision,confidence,p_buy,p_sell,p_wait,probability_source,regime,reference_price,reference_price_observation_id,reference_timestamp,settlement_target_at,settlement_price,settlement_price_observation_id,settlement_observed_at,result,session_id,market_context_id,segment_id,asset_canonical,market_type,created_at,settled_at,phase) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$25,'DISCOVERY') ON CONFLICT (market_event_id,strategy_version) DO NOTHING",
-            [tradeId, exp.experiment_id, marketEventId, strategy.strategyVersion, strategy.direction, strategy.confidence, strategy.pBuy, strategy.pSell, strategy.pWait, strategy.probabilitySource, null, reference.v, reference.id, reference.t, reference.t + EXPERIMENT_HORIZON_MS, settleRef.v, settleRef.id, settleRef.t, result, sid, reference.context, segment === "none" ? null : segment, reference.asset, reference.marketType, now]);
+            [tradeId, exp.experiment_id, marketEventId, strategy.strategyVersion, strategy.direction, strategy.confidence, strategy.pBuy, strategy.pSell, strategy.pWait, strategy.probabilitySource, null, reference.v, reference.id, reference.t, reference.t + horizon, settleRef.v, settleRef.id, settleRef.t, result, sid, reference.context, segment === "none" ? null : segment, reference.asset, reference.marketType, now]);
           if (inserted.rowCount > 0) { created += 1; eventCreated += 1; if (result === "WIN" || result === "LOSS" || result === "DRAW") counted += 1; }
         }
         if (eventCreated > 0 && !eventHadTrades) newEvents += 1;
