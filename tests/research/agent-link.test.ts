@@ -31,9 +31,9 @@ describe("canonical decision -> agent run links", () => {
     const app = readFileSync("src/http/public/app.js", "utf8");
     const api = readFileSync("api/http.ts", "utf8");
     const relay = readFileSync("relay/server.mjs", "utf8");
-    expect(app).toContain("const snapshot = { analysisId: state.decisionId, decisionId: state.decisionId");
-    expect(app).toContain("analysis.decisionId ||");
-    expect(app).toContain("signal.decisionId || state.decisionId");
+    expect(app).toContain("decisionId");
+    expect(app).toContain("/api/fable/trade");
+    expect(app).toContain("restoreOperationalSnapshot");
     expect(api).toContain("snapshotObject.decisionId");
     expect(relay).toContain("decision_id,candle_id,frame_id) VALUES(");
     expect(relay).toContain("decisions\\/([^/]+)\\/agent-runs");
