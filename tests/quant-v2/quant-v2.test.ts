@@ -34,6 +34,7 @@ describe("Quant V2 causal shadow stack", () => {
   it("produces a shadow-only decision and never operational signal side effects", () => {
     const decision = quantShadowDecision({ snapshot: buildFeatureSnapshot(candles()) });
     expect(["BUY", "SELL", "NO_EDGE"]).toContain(decision.direction);
+    expect((decision.pUp ?? 0) + (decision.pDown ?? 0) + (decision.pNoEdge ?? 0)).toBeCloseTo(1, 8);
     expect(decision.shadowOnly).toBe(true);
     expect(decision.policyVersion).toContain("shadow");
   });
