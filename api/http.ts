@@ -529,8 +529,8 @@ async function relayAdminGet(path: string): Promise<Record<string, unknown>> {
   const response = await fetch(`${base}${path}`, { headers: { "x-relay-admin": admin }, signal: AbortSignal.timeout(8_000) }); if (!response.ok) throw new Error(`relay_${response.status}`); return await response.json() as Record<string, unknown>;
 }
 async function relayOperationalSnapshot(sessionId: string, snapshot?: unknown): Promise<Record<string, unknown>> {
-  if (snapshot !== undefined) { await relayAdminSend("PUT", `/api/operational/${encodeURIComponent(sessionId)}`, snapshot); return snapshot as Record<string, unknown>; }
-  return relayAdminGet(`/api/operational/${encodeURIComponent(sessionId)}`);
+  if (snapshot !== undefined) { if (!process.env.TRACECOM_LIVE_RELAY_URL) return snapshot as Record<string, unknown>; const stored = await relayAdminSend("PUT", `/api/operational/${encodeURIComponent(sessionId)}`, snapshot); if (!stored) throw new Error("operational_snapshot_persist_failed"); return snapshot as Record<string, unknown>; }
+  if (!process.env.TRACECOM_LIVE_RELAY_URL) throw new Error("relay_not_configured"); return relayAdminGet(`/api/operational/${encodeURIComponent(sessionId)}`);
 }
 
 async function fetchRelayBundle(sessionId: string): Promise<Record<string, unknown> | null> {
