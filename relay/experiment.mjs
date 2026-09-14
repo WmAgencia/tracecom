@@ -80,6 +80,7 @@ export function wilsonLower(wins, total, z = 1.96) {
 async function ensureExperiment(pool, now, targetAsset, targetTrades) {
   let exp = (await pool.query("SELECT * FROM shadow_experiments ORDER BY created_at ASC LIMIT 1")).rows[0];
   if (!exp) exp = (await pool.query("INSERT INTO shadow_experiments(experiment_id,target_trades,target_asset,phase,status,started_at) VALUES($1,$2,$3,'DISCOVERY','RUNNING',$4) RETURNING *", [`shadow_${now}`, targetTrades, targetAsset, now])).rows[0];
+  else if (exp.target_asset !== targetAsset && exp.phase !== "COMPLETE" && !exp.validation_started_at) exp = (await pool.query("UPDATE shadow_experiments SET target_asset=$2, updated_at=now() WHERE experiment_id=$1 RETURNING *", [exp.experiment_id, targetAsset])).rows[0];
   return exp;
 }
 
