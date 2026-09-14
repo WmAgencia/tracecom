@@ -1,0 +1,15 @@
+export declare const EXPERIMENT_HORIZON_MS: number;
+export declare const EXPERIMENT_BUCKET_MS: number;
+export declare const EXPERIMENT_TARGET_TRADES: number;
+export declare const EXPERIMENT_DISCOVERY_TRADES: number;
+export declare const SETTLEMENT_TOLERANCE_MS: number;
+export declare const MIN_CANDLES: number;
+export declare const STRATEGY_VERSIONS: string[];
+export declare function buildCandles(observations: ReadonlyArray<{ t: number; v: number }>): Array<{ start: number; end: number; open: number; high: number; low: number; close: number; n: number }>;
+export declare function computeFeatures(candles: ReadonlyArray<{ close: number }>): { momentum30: number | null; momentum60: number | null; momentum120: number | null; slope: number | null; rsi: number | null; vol: number | null; last: number | null };
+export declare function evaluateStrategies(features: ReturnType<typeof computeFeatures>): Array<{ strategyVersion: string; direction: "BUY" | "SELL" | "WAIT"; score: number; pBuy: number; pSell: number; pWait: number; confidence: number; probabilitySource: string }>;
+export declare function settleOutcome(direction: "BUY" | "SELL", entryPrice: number, exitPrice: number): "WIN" | "LOSS" | "DRAW" | "UNKNOWN";
+export declare function wilsonLower(wins: number, total: number, z?: number): number | null;
+export declare function experimentTick(pool: unknown, options?: { now?: number; targetAsset?: string; targetTrades?: number }): Promise<Record<string, unknown>>;
+export declare function experimentStatus(pool: unknown): Promise<Record<string, unknown>>;
+export declare function startExperimentLoop(pool: unknown, intervalMs?: number): () => void;
