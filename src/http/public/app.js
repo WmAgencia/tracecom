@@ -181,17 +181,28 @@ function latestCausalPrice(timestamp) { return state.priceObservations.slice().r
 // Geometry-only detector. It never claims it read pixels or broker internals;
 // it chooses the chart-safe center of a conventional trading window and exposes
 // manual adjustment when that assumption has low confidence.
-function detectChartRegion(video) {
+function detectChartRegion(video, surface = "browser") {
   const ratio = video.videoWidth / Math.max(1, video.videoHeight);
   const crop = { x: .045, y: .13, width: .74, height: .70 };
-  const confidence = ratio >= 1.2 && ratio <= 2.4 ? .68 : .42;
-  return { crop, confidence, source: "LAYOUT_GEOMETRY_V1" };
+  const geometryOk = ratio >= 1.2 && ratio <= 2.4;
+  const base = geometryOk ? .68 : .42;
+  const confidence = surface === "browser" ? base : Math.min(base, .55);
+  return { crop, confidence, source: `LAYOUT_GEOMETRY_V1_${String(surface).toUpperCase()}` };
 }
 
 async function shareScreen() {
   stopScreen();
   try {
-    const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 12, max: 20 } }, audio: false });
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: { ideal: 12, max: 20 }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false,
+      preferCurrentTab: false,
+      selfBrowserSurface: "exclude",
+      surfaceSwitching: "include",
+      systemAudio: "exclude",
+    });
+    const captureSurface = stream.getVideoTracks()[0]?.getSettings?.().displaySurface ?? "unknown";
+    diagCapture("browser", "info", "CAPTURE_SURFACE", String(captureSurface));
     state.stream = stream; state.frames = []; state.observations = []; state.priceObservations = []; state.manualPositionConfirmations = 0; state.marketContext = null; state.contextSegmentId = `seg_${Date.now()}`; state.lastCandleId = null; state.lastAnalysis = null; state.hasSuccessfulAnalysis = false;
     state.liveSessionId = `vision_${crypto.randomUUID()}`; state.liveSequence = 0; void liveEmit("SESSION_STARTED", { startedAt: new Date().toISOString() });
     const video = $("screenVideo"); video.srcObject = stream; video.hidden = false; $("previewEmpty").hidden = true;
@@ -201,7 +212,7 @@ async function shareScreen() {
     const ready = () => {
       if (!video.videoWidth || !video.videoHeight) { setStage("FRAME_INVALID", "dimensões indisponíveis"); return; }
       setStage("SCREEN_FRAME_CAPTURED", `${video.videoWidth}x${video.videoHeight}`);
-      const detected = detectChartRegion(video); state.crop = detected.crop;
+      const detected = detectChartRegion(video, captureSurface); state.crop = detected.crop;
       setStage("CHART_REGION_DETECTED", `${Math.round(detected.confidence * 100)}%`);
       text("cropText", `ChartRegionDetector ${Math.round(detected.confidence * 100)}% · ${detected.source}`);
       $("recropButton").hidden = detected.confidence >= .6;
@@ -331,7 +342,7 @@ async function observe() {
       why: { primaryReasons: [fast.fastPathStatus, `regime=${fast.regime}`], supportingEvidence: [`macroTrend=${fast.macroTrend}`, `microTrend=${fast.microTrend}`, `trendAlignment=${fast.trendAlignment}`, ...((fast.reversalEvidence || []).slice(0, 4))], opposingEvidence: fast.counterTrend ? [`counter_trend_reason=${fast.counterTrendReason || "unknown"}`] : [], rejectedAlternatives: [], uncertaintyFactors: fast.conflictScore > .6 ? [`conflictScore=${fast.conflictScore.toFixed(2)}`] : [], riskFactors: fast.counterTrend ? ["counter_trend"] : [] },
       conflicts: fast.deepFastAlignment === "CONFLICT" ? ["deep_fast_conflict"] : [], warnings: [], traceId: state.currentTraceId,
     });
-    const result = { analysis: { decision: fast.decision, confidence: fast.rawConfidence, rawConfidence: fast.rawConfidence, directionalLean: fast.directionalLean, leanConfidence: fast.leanConfidence, regime: fast.regime, regimeConfidence: fast.regimeConfidence, profiles: fast.profiles, selectedProfile: fast.selectedProfile, predictionHorizonSeconds: fast.predictionHorizonSeconds, candleSeconds: fast.candleSeconds, expirationSeconds: EXPIRATION_SECONDS, confidenceBuckets: null, fastTimings: fast.timings, visionObservation: state.deepContext.observation, imageUsed: Boolean(state.deepContext.observation), imageStatus: state.deepContext.observation ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", marketContext: state.lastContext || {} } };
+     const result = { analysis: { decision: fast.decision, confidence: fast.rawConfidence, rawConfidence: fast.rawConfidence, pBuy: fast.pBuy ?? null, pSell: fast.pSell ?? null, pWait: fast.pWait ?? null, probabilitySource: fast.probabilitySource || "EVIDENCE_MODEL", directionalLean: fast.directionalLean, leanConfidence: fast.leanConfidence, regime: fast.regime, regimeConfidence: fast.regimeConfidence, profiles: fast.profiles, selectedProfile: fast.selectedProfile, predictionHorizonSeconds: fast.predictionHorizonSeconds, candleSeconds: fast.candleSeconds, expirationSeconds: EXPIRATION_SECONDS, confidenceBuckets: null, fastTimings: fast.timings, visionObservation: state.deepContext.observation, imageUsed: Boolean(state.deepContext.observation), imageStatus: state.deepContext.observation ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", marketContext: state.lastContext || {} } };
     if (session !== state.session || stream !== state.stream || state.lastCandleId !== candleId) { console.info("STALE_DECISION", JSON.stringify({ requestId, candleId, currentCandleId: state.lastCandleId })); return; }
     const latency = Date.now() - started, candleAgeMs = Date.now() - candleCloseTimestamp, stale = candleAgeMs > ANALYSIS_STALE_MS;
     state.failures = 0; state.nextRetryAt = 0; state.metrics.analysisCompleted += 1; if (stale) state.metrics.analysisStale += 1;
@@ -457,7 +468,7 @@ function updateRunStats() {
 }
 
 const TRAINING_CONFIG_KEY = "tracecom:training-config";
-function trainingConfig() { return { symbol: state.lastContext?.symbol || null, marketType: state.lastContext?.marketType || null, horizonSeconds: 60, maxEvaluatedTrades: 100, agentVersion: "FABLE_TRADER_V1", promptVersion: "vision-v1", featureVersion: "screen-motion-v1", visionVersion: "sanitized-crop-v1" }; }
+ function trainingConfig() { return { sessionId: state.liveSessionId || null, symbol: state.lastContext?.symbol || null, marketType: state.lastContext?.marketType || null, horizonSeconds: 60, maxEvaluatedTrades: 100, agentVersion: "FABLE_TRADER_V1", promptVersion: "vision-v1", featureVersion: "screen-motion-v1", visionVersion: "sanitized-crop-v1" }; }
 async function startTraining() {
   const config = trainingConfig();
   const session = await api("/api/training/sessions", { method: "POST", body: JSON.stringify(config) });
