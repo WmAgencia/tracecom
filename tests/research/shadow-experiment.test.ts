@@ -23,8 +23,8 @@ describe("shadow experiment engine (causal, accounting-safe)", () => {
 
   it("keeps the probability distribution normalized and WAIT first-class", () => {
     const rows = evaluateStrategies(computeFeatures(Array.from({ length: 60 }, (_, i) => ({ start: i * 5000, close: 1 + Math.sin(i / 3) * 0.0005 })) as never));
-    expect(rows.length).toBe(4);
-    expect(rows.map((r) => r.strategyVersion)).toContain("shadow-reversion-v2");
+    expect(rows.length).toBe(5);
+    expect(rows.map((r) => r.strategyVersion)).toContain("shadow-reversion-v3");
     for (const row of rows) {
       expect(row.pBuy + row.pSell + row.pWait).toBeCloseTo(1, 8);
       expect(["BUY", "SELL", "WAIT"]).toContain(row.direction);

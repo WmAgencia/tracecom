@@ -16,7 +16,7 @@ export const EXPERIMENT_DISCOVERY_TRADES = 5_000;
 export const SETTLEMENT_TOLERANCE_MS = 30_000;
 export const SETTLEMENT_GRACE_MS = 15_000;
 export const MIN_CANDLES = 24;
-export const STRATEGY_VERSIONS = ["shadow-momentum-v1", "shadow-trend-v1", "shadow-reversion-v1", "shadow-reversion-v2"];
+export const STRATEGY_VERSIONS = ["shadow-momentum-v1", "shadow-trend-v1", "shadow-reversion-v1", "shadow-reversion-v2", "shadow-reversion-v3"];
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
@@ -52,6 +52,7 @@ export function evaluateStrategies(f) {
   { const s = score(f.slope, .0008) * .7 + score(f.momentum120, .002) * .3; raw.push({ strategyVersion: "shadow-trend-v1", direction: s > .3 ? "BUY" : s < -.3 ? "SELL" : "WAIT", score: s }); }
   { const volOk = f.vol !== null && f.vol < .0009; const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; raw.push({ strategyVersion: "shadow-reversion-v1", direction: volOk && s > .33 ? "BUY" : volOk && s < -.33 ? "SELL" : "WAIT", score: s }); }
   { const volOk = f.vol !== null && f.vol < .0012; const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; raw.push({ strategyVersion: "shadow-reversion-v2", direction: volOk && s > .22 ? "BUY" : volOk && s < -.22 ? "SELL" : "WAIT", score: s }); }
+  { const volOk = f.vol !== null && f.vol < .0012; const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; const up = f.momentum120 !== null && f.momentum120 > 0; const down = f.momentum120 !== null && f.momentum120 < 0; raw.push({ strategyVersion: "shadow-reversion-v3", direction: volOk && s > .22 && up ? "BUY" : volOk && s < -.22 && down ? "SELL" : "WAIT", score: s }); }
   return raw.map((x) => {
     const edge = Math.abs(x.score);
     const pDir = clamp(.5 + edge * .35, .5, .9);
