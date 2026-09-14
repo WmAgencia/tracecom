@@ -145,6 +145,13 @@ async function recordCheckpoint(pool, exp, now) {
   console.info("SHADOW_EXPERIMENT_CHECKPOINT", JSON.stringify({ experimentId: exp.experiment_id, atTrade: count, phase: exp.phase }));
 }
 
+let lastAssetMismatchKey = null;
+
+async function dominantLiveAsset(pool) {
+  const row = (await pool.query("SELECT asset_canonical AS asset, COUNT(*)::int AS observations, MAX(observed_at) AS last_seen FROM price_observations WHERE status='ACCEPTED' AND asset_canonical IS NOT NULL AND market_type='OTC' AND context_validation_status='VALID' AND observed_at > now() - interval '10 minutes' GROUP BY asset_canonical ORDER BY observations DESC LIMIT 1")).rows[0];
+  return row ?? null;
+}
+
 export async function experimentTick(pool, options = {}) {
   const now = options.now ?? Date.now();
   const targetAsset = options.targetAsset ?? process.env.SHADOW_EXPERIMENT_ASSET ?? "USD/CAD";
@@ -161,6 +168,16 @@ export async function experimentTick(pool, options = {}) {
   }
   const session = (await pool.query("SELECT id FROM live_sessions WHERE last_seen_at > now() - interval '2 minutes' ORDER BY last_seen_at DESC LIMIT 1")).rows[0];
   if (!session) return { status: fresh.status, reason: "NO_ACTIVE_SESSION", settlement };
+  const live = await dominantLiveAsset(pool);
+  if (live && live.asset !== targetAsset) {
+    const key = `${fresh.experiment_id}:${live.asset}`;
+    if (lastAssetMismatchKey !== key) {
+      lastAssetMismatchKey = key;
+      console.info("SHADOW_EXPERIMENT_ASSET_MISMATCH", JSON.stringify({ experimentId: fresh.experiment_id, targetAsset, liveAsset: live.asset, observations: live.observations, lastSeenAt: live.last_seen }));
+    }
+    return { status: fresh.status, reason: "ASSET_MISMATCH", targetAsset, liveAsset: live.asset, settlement };
+  }
+  lastAssetMismatchKey = null;
   const observations = (await pool.query("SELECT value, EXTRACT(EPOCH FROM observed_at)*1000 AS t, price_observation_id, segment_id, market_context_id, asset_canonical, market_type, context_validation_status FROM price_observations WHERE session_id=$1 AND status='ACCEPTED' ORDER BY observed_at DESC LIMIT 400", [session.id])).rows
     .map((r) => ({ t: Number(r.t), v: Number(r.value), id: r.price_observation_id, segment: r.segment_id, context: r.market_context_id, asset: r.asset_canonical, marketType: r.market_type, validation: r.context_validation_status }))
     .filter((o) => o.t > 0 && Number.isFinite(o.v) && o.asset === targetAsset && o.marketType === "OTC" && o.validation === "VALID")
@@ -201,8 +218,9 @@ export async function experimentStatus(pool) {
   const exp = (await pool.query("SELECT * FROM shadow_experiments ORDER BY created_at ASC LIMIT 1")).rows[0] ?? null;
   if (!exp) return { experiment: null, status: "NOT_STARTED" };
   const perStrategy = (await pool.query("SELECT strategy_version, COUNT(*)::int AS trades, COUNT(*) FILTER (WHERE result='WIN')::int AS wins, COUNT(*) FILTER (WHERE result='LOSS')::int AS losses, COUNT(*) FILTER (WHERE result='DRAW')::int AS draws, COUNT(*) FILTER (WHERE result='UNKNOWN')::int AS unknown, COUNT(*) FILTER (WHERE result IS NULL)::int AS pending FROM shadow_trades WHERE experiment_id=$1 GROUP BY strategy_version", [exp.experiment_id])).rows;
+  const live = await dominantLiveAsset(pool);
   const checkpoints = (await pool.query("SELECT at_trade, metrics, created_at FROM shadow_experiment_checkpoints WHERE experiment_id=$1 ORDER BY at_trade ASC", [exp.experiment_id])).rows;
-  return { experiment: exp, perStrategy, checkpoints, brokerAutomation: "NONE", shadowOnly: true };
+  return { experiment: exp, liveAsset: live?.asset ?? null, liveAssetObservations: live?.observations ?? 0, liveAssetLastSeenAt: live?.last_seen ?? null, assetMismatch: live ? live.asset !== exp.target_asset : false, perStrategy, checkpoints, brokerAutomation: "NONE", shadowOnly: true };
 }
 
 export async function experimentTrades(pool, limit = 100) {
