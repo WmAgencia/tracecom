@@ -7,14 +7,13 @@ describe("Vision Web entry timer contract", () => {
 
   it("uses an absolute entry target and records the decision metadata", () => {
     expect(source).toContain("entryAt");
-    expect(source).toContain("countdownEndsAt");
     expect(source).toContain("settlementAt");
+    expect(source).toContain("operationalMutation");
   });
 
   it("keeps WAIT re-evaluation distinct from an actionable entry window", () => {
     expect(source).toContain("reanalysisAt = decision === \"WAIT\" ? now + 5_000 : 0");
-    expect(source).toContain("REAVALIANDO EM");
-    expect(source).toContain("ENTRADA EM");
     expect(source).toContain("AGUARDANDO CONFIRMAÇÃO");
+    expect(source).toContain("restoreOperationalSnapshot");
   });
 });

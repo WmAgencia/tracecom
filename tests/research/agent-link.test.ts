@@ -36,8 +36,8 @@ describe("canonical decision -> agent run links", () => {
     expect(app).toContain("restoreOperationalSnapshot");
     expect(api).toContain("snapshotObject.decisionId");
     expect(relay).toContain("decision_id,candle_id,frame_id) VALUES(");
-    expect(relay).toContain("decisions\\/([^/]+)\\/agent-runs");
-    expect(relay).toContain("operations\\/([^/]+)\\/agent-runs");
+    expect(relay).toContain("const decisionAgentRuns");
+    expect(relay).toContain("const operationAgentRuns");
     expect(relay).toContain("agentJoinCoverage");
   });
 });
