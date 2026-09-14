@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import handler from "../../api/http";
 
@@ -16,6 +17,12 @@ async function post(base: string, path: string, payload: Record<string, unknown>
 afterEach(async () => { await Promise.all(servers.splice(0).map((server) => new Promise<void>((resolve) => server.close(() => resolve())))); });
 
 describe("operational HTTP paper channel", () => {
+  it("uses persisted operational state instead of trusting a stale serverless cache", () => {
+    const source = readFileSync("api/http.ts", "utf8");
+    expect(source).toContain("const operationalController = async");
+    expect(source).not.toContain("operationalSessions.get(operationalSessionId) ?? new OperationalController()");
+  });
+
   it("locks, settles and exposes a session snapshot without any broker action", async () => {
     const base = await endpoint(); const sessionId = `operational-http-${Date.now()}`;
     const locked = await post(base, "/api/operational/lock", { sessionId, signalId: "s-http", idempotencyKey: "key-http", direction: "BUY", originSymbol: "USD/CAD (OTC)", now: 1_000, countdownMs: 10_000, horizonMs: 60_000 });

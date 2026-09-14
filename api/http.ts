@@ -580,12 +580,12 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const operationalSessionId = typeof operationalInput.sessionId === "string" ? operationalInput.sessionId.trim().slice(0, 128) : "";
     const operationalResponse = (controller: OperationalController) => ({ ...controller.snapshot(), sessionId: operationalSessionId, shadowOnly: true, brokerAutomation: "NONE" });
     const operationalController = async (sessionId: string): Promise<OperationalController | null> => {
-      const cached = operationalSessions.get(sessionId); if (cached) return cached;
+      if (!process.env.TRACECOM_LIVE_RELAY_URL) return operationalSessions.get(sessionId) ?? null;
       try { const persisted = await relayOperationalSnapshot(sessionId); const restored = OperationalController.restore((persisted.snapshot || persisted) as never); operationalSessions.set(sessionId, restored); return restored; } catch { return null; }
     };
     if (path === "/api/operational/lock" && req.method === "POST") {
       if (!operationalSessionId) { json(400, { error: "session_id_required" }); return; }
-      const controller = operationalSessions.get(operationalSessionId) ?? new OperationalController();
+      const controller = await operationalController(operationalSessionId) ?? new OperationalController();
       try {
         const direction = operationalInput.direction === "BUY" || operationalInput.direction === "SELL" ? operationalInput.direction : null;
         if (!direction) throw new Error("invalid_direction");
