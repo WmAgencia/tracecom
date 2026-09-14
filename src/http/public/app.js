@@ -3,7 +3,8 @@ const $ = (id) => document.getElementById(id);
 const CANDLE_SECONDS = 5, EXPIRATION_SECONDS = 60, VISIBLE_WINDOW_SECONDS = 300, ANALYSIS_DELAY_MS = 500, ANALYSIS_STALE_MS = 30_000, DEEP_INTERVAL_MS = 30_000, FAST_DEADLINE_MS = 5_000;
 const PROFILE_LABELS = { CONSERVATIVE: "Conservador", BALANCED: "Balanceado", AGGRESSIVE: "Agressivo" };
 const state = { stream: null, crop: null, selecting: false, start: null, frames: [], observations: [], priceObservations: [], priceOutlierCandidates: [], priceTimer: null, priceAnalyzing: false, timer: null, countdownTimer: null, analyzing: false, history: loadHistory(), lastAnalysis: null, training: null, lastContext: null, marketContext: null, contextSegmentId: null, manualPositionConfirmations: 0, manualPosition: { state: "NO_POSITION", direction: "UNKNOWN", confidence: 0, evidence: [] }, metrics: { analysisStarted: 0, analysisCompleted: 0, analysisStale: 0, analysisSkippedBusy: 0, priceObservationsValid: 0, priceObservationsRejected: 0 }, stage: "IDLE", session: 0, liveSessionId: null, liveSequence: 0, failures: 0, nextRetryAt: 0, circuitOpen: false, entryUntil: 0, reanalysisAt: 0, decisionId: null, decisionSource: null, deepRequested: false, deepExecuted: false, decisionTimestamp: 0, expirationSeconds: EXPIRATION_SECONDS, lastSubmittedHash: null, lastSubmittedAt: 0, lastCandleId: null, requestCount: 0, hasSuccessfulAnalysis: false };
-function lockMarketContext(observation, frameId) { const raw = String(observation?.symbol || observation?.asset || "").toUpperCase().replace(/\s+/g, " ").trim(); const asset = /USD\s*\/\s*CAD\s*(\(\s*OTC\s*\)|OTC)|USDCAD OTC/.test(raw) ? "USD/CAD (OTC)" : raw || null; const marketType = String(observation?.marketType || "").toUpperCase() === "OTC" ? "OTC" : "UNKNOWN"; const timeframe = Number(observation?.timeframeSeconds); const visible = Number(observation?.visibleWindowSeconds); const expiration = EXPIRATION_SECONDS; const status = asset === "USD/CAD (OTC)" && marketType === "OTC" && timeframe === CANDLE_SECONDS && visible === 300 && expiration === 60 ? "VALID" : !asset ? "INSUFFICIENT_EVIDENCE" : asset !== "USD/CAD (OTC)" ? "ASSET_MISMATCH" : marketType !== "OTC" ? "MARKET_TYPE_MISMATCH" : timeframe !== CANDLE_SECONDS ? "TIMEFRAME_MISMATCH" : visible !== 300 ? "VISIBLE_WINDOW_MISMATCH" : "EXPIRATION_MISMATCH"; const context = { marketContextId: `mc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, sessionId: state.liveSessionId, segmentId: state.contextSegmentId || `seg_${Date.now()}`, assetCanonical: asset, assetDisplay: raw || null, baseCurrency: asset ? "USD" : null, quoteCurrency: asset ? "CAD" : null, marketType, baseTimeframeSeconds: Number.isFinite(timeframe) ? timeframe : null, visibleWindowSeconds: Number.isFinite(visible) ? visible : null, tradeExpirationSeconds: expiration, source: "VISION_CONTEXT", frameId, observedAt: Date.now(), confidence: Number(observation?.confidence || observation?.visualQuality?.assetReadable ? .9 : 0), validationStatus: status, createdAt: Date.now() }; if (status === "VALID" && state.marketContext?.assetCanonical !== context.assetCanonical) state.contextSegmentId = context.segmentId; state.marketContext = context; void liveEmit(status === "VALID" ? "MARKET_CONTEXT_LOCKED" : "MARKET_CONTEXT_INVALID", context); return context; }
+function lockMarketContext(observation, frameId) { const raw = String(observation?.symbol || observation?.asset || "").toUpperCase().replace(/\s+/g, " ").trim(); const pair = raw.match(/([A-Z]{3})\s*\/\s*([A-Z]{3})/) || raw.match(/([A-Z]{6})/); const pairCanonical = pair ? (pair[1].length === 6 ? `${pair[1].slice(0, 3)}/${pair[1].slice(3)}` : `${pair[1]}/${pair[2]}`) : null; const asset = pairCanonical ? pairCanonical : null; const marketType = String(observation?.marketType || "").toUpperCase() === "OTC" || /\bOTC\b/.test(raw) ? "OTC" : "UNKNOWN"; const timeframe = Number(observation?.timeframeSeconds); const visible = Number(observation?.visibleWindowSeconds); const expiration = EXPIRATION_SECONDS; const status = asset && marketType === "OTC" && timeframe === CANDLE_SECONDS && visible === 300 && expiration === 60 ? "VALID" : !asset ? "INSUFFICIENT_EVIDENCE" : marketType !== "OTC" ? "MARKET_TYPE_MISMATCH" : timeframe !== CANDLE_SECONDS ? "TIMEFRAME_MISMATCH" : visible !== 300 ? "VISIBLE_WINDOW_MISMATCH" : "EXPIRATION_MISMATCH"; const [baseCurrency, quoteCurrency] = asset ? asset.split("/") : [null, null]; const changed = state.marketContext?.assetCanonical !== asset || state.marketContext?.marketType !== marketType; if (changed) { state.contextSegmentId = `seg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`; state.priceObservations = []; state.priceOutlierCandidates = []; state.observations = []; state.lastCandleId = null; state.deepContext = { version: 0, at: 0, observation: null, trend: null, momentum: null, regime: null, latencyMs: null }; state.entryUntil = 0; state.reanalysisAt = 0; }
+  const context = { marketContextId: `mc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, sessionId: state.liveSessionId, segmentId: state.contextSegmentId || `seg_${Date.now()}`, assetCanonical: asset, assetDisplay: raw || null, baseCurrency, quoteCurrency, marketType, baseTimeframeSeconds: Number.isFinite(timeframe) ? timeframe : null, visibleWindowSeconds: Number.isFinite(visible) ? visible : null, tradeExpirationSeconds: expiration, source: "VISION_CONTEXT", frameId, observedAt: Date.now(), confidence: Number(observation?.confidence || observation?.visualQuality?.assetReadable ? .9 : 0), validationStatus: status, createdAt: Date.now() }; state.marketContext = context; if (changed && state.channel?.signal) void operationalMutation("/api/operational/invalidate", { signalId: state.channel.signal.signalId, reason: "market_context_changed", timestamp: Date.now() }).catch((error) => channelLog("OPERATIONAL_CONTEXT_INVALIDATION_FAILED", { reason: String(error?.message || error) })); void liveEmit(status === "VALID" ? "MARKET_CONTEXT_LOCKED" : "MARKET_CONTEXT_INVALID", context); return context; }
 state.metrics.fastStarted = 0; state.metrics.fastTimeouts = 0; state.metrics.fastLatencies = [];
 state.profile = localStorage.getItem("tracecom:profile") || "BALANCED";
 state.deepContext = { version: 0, at: 0, observation: null, trend: null, momentum: null, regime: null, latencyMs: null };
@@ -11,97 +12,89 @@ state.deepTimer = null; state.deepRunning = false;
 window.tracecomMetrics = state.metrics;
 function applyProfile(value) { const profile = ["CONSERVATIVE", "BALANCED", "AGGRESSIVE"].includes(value) ? value : "BALANCED"; state.profile = profile; localStorage.setItem("tracecom:profile", profile); const select = $("profileSelect"); if (select) select.value = profile; if ($("profileLine")) $("profileLine").textContent = `Perfil: ${PROFILE_LABELS[profile]} · Horizonte: 60s`; console.info("PROFILE_SELECTED", JSON.stringify({ profile })); channelProfileSwitch(); }
 
-const OP_ENTRY_MS = 10_000, OP_CONFIRM_MS = 20_000, OP_COOLDOWN_MS = 5_000, OP_HORIZON_MS = 60_000;
-const OP_LOCKED_STATES = ["SIGNAL_LOCKED", "ENTRY_COUNTDOWN", "WAITING_ENTRY_CONFIRMATION", "POSITION_CONFIRMED", "POSITION_DETECTION_UNCERTAIN", "IN_POSITION", "WAITING_SETTLEMENT", "SETTLED"];
+const OP_ENTRY_MS = 10_000, OP_HORIZON_MS = 60_000;
+const OP_LOCKED_STATES = ["SIGNAL_LOCKED", "ENTRY_COUNTDOWN", "WAITING_ENTRY_CONFIRMATION", "POSITION_CONFIRMED", "POSITION_DETECTION_UNCERTAIN", "IN_POSITION", "WAITING_SETTLEMENT"];
+const OPERATIONAL_SESSION_KEY = "tracecom:operational-session";
+const OPERATIONAL_CURSOR_KEY = "tracecom:operational-cursor";
 function emptyChannel() { return { state: "READY", signal: null, countdownEndsAt: 0, confirmationDeadline: 0, manualEntry: null, settlementAt: 0, settlement: null, cooldownUntil: 0, researchDecisions: 0, midTradeFlips: 0, metrics: { operationalSignals: 0, suppressedOperationalDecisions: 0, signalFlipDuringCountdown: 0, signalFlipDuringPosition: 0, countdownRestart: 0, settlementRestart: 0, shadowToOperationalLeak: 0, entryConfirmed: 0, entryNotConfirmed: 0, preEntryInvalidations: 0, manualTradesSettled: 0, manualWins: 0, manualLosses: 0, manualDraws: 0, manualUnknown: 0, midTradeDirectionFlips: 0, withTrendSignals: 0, counterTrendSignals: 0 } }; }
-state.channel = emptyChannel();
+state.channel = { state: "IDLE", signal: null, events: [], metrics: {}, nextSequence: 1 };
+state.operationalSessionId = localStorage.getItem(OPERATIONAL_SESSION_KEY) || null;
+state.operationalCursor = Number(localStorage.getItem(OPERATIONAL_CURSOR_KEY) || "0") || 0;
+state.operationalSettling = false;
 function channelLog(name, detail) { console.info(name, JSON.stringify(detail || {})); }
-function channelRelease(channel, stateName) { const from = channel.state; channel.state = stateName; channel.signal = null; channel.manualEntry = null; channel.settlementAt = 0; channelLog("OPERATION_CHANNEL_RELEASED", { to: stateName }); diagTransition("OperationalChannel", from, stateName, "channel_released", { traceId: state.currentTraceId }); }
 function channelProfileSwitch() { const channel = state.channel; if (OP_LOCKED_STATES.includes(channel.state)) channelLog("PROFILE_SWITCH_DURING_OPERATION_IGNORED", { activeProfile: channel.signal?.profile, nextProfile: state.profile }); else channelLog("PROFILE_SWITCH_ARMED_FOR_NEXT_OPERATION", { profile: state.profile }); }
+function ensureOperationalSession() { if (!state.operationalSessionId) { state.operationalSessionId = `operational_${crypto.randomUUID()}`; localStorage.setItem(OPERATIONAL_SESSION_KEY, state.operationalSessionId); state.operationalCursor = 0; localStorage.setItem(OPERATIONAL_CURSOR_KEY, "0"); } return state.operationalSessionId; }
+function applyOperationalSnapshot(snapshot) { if (!snapshot || typeof snapshot !== "object") return; state.channel = snapshot; state.operationalCursor = Math.max(state.operationalCursor || 0, Number(snapshot.nextSequence || 1) - 1); localStorage.setItem(OPERATIONAL_CURSOR_KEY, String(state.operationalCursor)); renderOperational(); }
+async function restoreOperationalSnapshot() { if (!state.operationalSessionId) return; try { const snapshot = await api(`/api/operational/${encodeURIComponent(state.operationalSessionId)}`); applyOperationalSnapshot(snapshot); const replay = await api(`/api/operational/${encodeURIComponent(state.operationalSessionId)}/events?after=${state.operationalCursor}`); state.operationalCursor = Number(replay.cursor || state.operationalCursor); localStorage.setItem(OPERATIONAL_CURSOR_KEY, String(state.operationalCursor)); } catch (error) { if (String(error?.message || error).includes("operational_session_not_found")) { localStorage.removeItem(OPERATIONAL_SESSION_KEY); localStorage.removeItem(OPERATIONAL_CURSOR_KEY); state.operationalSessionId = null; state.operationalCursor = 0; } else channelLog("OPERATIONAL_RESTORE_PENDING", { reason: String(error?.message || error) }); } }
+async function operationalMutation(path, payload) { const snapshot = await api(path, { method: "POST", body: JSON.stringify({ sessionId: ensureOperationalSession(), ...payload }) }); applyOperationalSnapshot(snapshot); return snapshot; }
 function renderOperational() {
-  const channel = state.channel; if (!$("opStateValue")) return;
-  text("opStateValue", channel.state);
-  if (channel.signal && channel.state === "ENTRY_COUNTDOWN") text("opDirectionValue", `${channel.signal.direction} · entrada em ${Math.ceil(Math.max(0, channel.countdownEndsAt - Date.now()) / 1000)}s`);
-  else if (channel.signal && channel.state === "WAITING_ENTRY_CONFIRMATION") text("opDirectionValue", `${channel.signal.direction} · aguardando sua entrada`);
-  else if (channel.signal && channel.state === "IN_POSITION") text("opDirectionValue", `${channel.signal.direction} ATIVO · até ${new Date(channel.settlementAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`);
-  else if (channel.manualEntry && channel.signal) text("opDirectionValue", `${channel.signal.direction} · entrada ${channel.manualEntry.price}`);
-  else if (channel.settlement) text("opDirectionValue", `${channel.settlement.result}`);
+  const channel = state.channel || {}, signal = channel.signal, now = Date.now(); if (!$("opStateValue")) return;
+  text("opStateValue", channel.state || "IDLE");
+  if (signal && signal.outcome) text("opDirectionValue", `${signal.direction} · ${signal.outcome}`);
+  else if (signal && channel.state === "WAITING_ENTRY_CONFIRMATION") text("opDirectionValue", `${signal.direction} · aguardando confirmação manual`);
+  else if (signal && signal.entryPrice !== null) text("opDirectionValue", `${signal.direction} ATIVO · até ${new Date(signal.settlementAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`);
+  else if (signal) text("opDirectionValue", `${signal.direction} · entrada em ${Math.max(0, Math.ceil((signal.entryAt - now) / 1000))}s`);
   else text("opDirectionValue", "Sem operação ativa");
-  text("opEntryValue", channel.manualEntry ? String(channel.manualEntry.price) : "—");
-  const now = Date.now();
-  if (channel.state === "ENTRY_COUNTDOWN") text("opCountdownValue", `${Math.max(0, Math.ceil((channel.countdownEndsAt - now) / 1000))}s`);
-  else if (channel.state === "WAITING_ENTRY_CONFIRMATION") text("opCountdownValue", `confirmação até ${Math.max(0, Math.ceil((channel.confirmationDeadline - now) / 1000))}s`);
-  else if (channel.state === "IN_POSITION") text("opCountdownValue", `${Math.max(0, Math.ceil((channel.settlementAt - now) / 1000))}s`);
+  text("opEntryValue", signal?.entryPrice ?? "—");
+  if (signal && signal.entryPrice === null) text("opCountdownValue", `${Math.max(0, Math.ceil((signal.entryAt - now) / 1000))}s`);
+  else if (signal && signal.outcome === null) text("opCountdownValue", `${Math.max(0, Math.ceil((signal.settlementAt - now) / 1000))}s`);
   else text("opCountdownValue", "—");
-  if ($("opResultValue")) text("opResultValue", channel.settlement ? channel.settlement.result : "—");
+  if ($("opResultValue")) text("opResultValue", signal?.outcome || "—");
 }
-function channelCandidate(fast, candleId, frameId) {
-  const channel = state.channel; const direction = fast.decision; const now = Date.now();
-  const contextInvalid = state.marketContext && state.marketContext.validationStatus !== "VALID";
-  if ((channel.state === "ENTRY_COUNTDOWN" || channel.state === "WAITING_ENTRY_CONFIRMATION" || channel.state === "POSITION_DETECTION_UNCERTAIN") && contextInvalid) { channel.metrics.preEntryInvalidations += 1; channel.cooldownUntil = now + OP_COOLDOWN_MS; channelLog("SIGNAL_INVALIDATED_BEFORE_ENTRY", { signalId: channel.signal?.signalId, reason: "market_context_invalid", validationStatus: state.marketContext.validationStatus }); channelRelease(channel, "COOLDOWN"); renderOperational(); return; }
-  if (OP_LOCKED_STATES.includes(channel.state)) { channel.researchDecisions += 1; channel.metrics.suppressedOperationalDecisions += 1; void liveEmit("OPERATIONAL_DECISION_SUPPRESSED_ACTIVE_OPERATION", { signalId: channel.signal?.signalId || null, lockedDirection: channel.signal?.direction || null, researchDirection: direction, state: channel.state, traceId: state.currentTraceId }); if (channel.state === "IN_POSITION" && channel.signal && (direction === "BUY" || direction === "SELL") && direction !== channel.signal.direction) { channel.midTradeFlips += 1; channel.metrics.midTradeDirectionFlips += 1; channel.metrics.signalFlipDuringPosition += 1; channelLog("MID_TRADE_DIRECTION_FLIP", { signalId: channel.signal.signalId, from: channel.signal.direction, to: direction, rawConfidence: fast.rawConfidence }); } renderOperational(); return; }
-  if (channel.state === "COOLDOWN") { if (now < channel.cooldownUntil) { channel.researchDecisions += 1; return; } channelRelease(channel, "READY"); }
-  if (!state.marketContext || state.marketContext.validationStatus !== "VALID") { channel.researchDecisions += 1; void liveEmit("OPERATIONAL_DECISION_SUPPRESSED_CONTEXT_INVALID", { validationStatus: state.marketContext?.validationStatus || "UNKNOWN", researchDirection: direction, candleId, frameId, traceId: state.currentTraceId }); renderOperational(); return; }
-  const decisive = direction === "BUY" || direction === "SELL"; const counterOk = !fast.counterTrend || (fast.reversalEvidence?.length || 0) >= 1;
-  if (!decisive || !counterOk) { channel.researchDecisions += 1; if (!counterOk) channelLog("COUNTER_TREND_SIGNAL_BLOCKED", { direction, macroTrend: fast.macroTrend, reversalEvidence: fast.reversalEvidence || [] }); renderOperational(); return; }
-  channel.signal = { signalId: `op_${now}_${Math.random().toString(36).slice(2, 8)}`, direction, profile: fast.selectedProfile, rawConfidence: fast.rawConfidence, regime: fast.regime, macroTrend: fast.macroTrend, microTrend: fast.microTrend, trendAlignment: fast.trendAlignment, counterTrend: fast.counterTrend, createdAt: now, entryWindowMs: OP_ENTRY_MS, predictionHorizonSeconds: 60, contextVersion: fast.deepContextVersion, candleId, frameId, status: "ACTIVE" };
-  channel.state = "ENTRY_COUNTDOWN"; channel.countdownEndsAt = now + OP_ENTRY_MS; channel.metrics.operationalSignals += 1; if (fast.counterTrend) channel.metrics.counterTrendSignals += 1; else channel.metrics.withTrendSignals += 1;
-  channelLog("OPERATIONAL_SIGNAL_CREATED", { signalId: channel.signal.signalId, direction, profile: fast.selectedProfile, rawConfidence: fast.rawConfidence, regime: fast.regime, macroTrend: fast.macroTrend, microTrend: fast.microTrend, trendAlignment: fast.trendAlignment, counterTrend: fast.counterTrend, reversalEvidence: fast.reversalEvidence || [], candleId, frameId });
-  channelLog("OPERATIONAL_SIGNAL_LOCKED", { signalId: channel.signal.signalId });
-  channelLog("ENTRY_COUNTDOWN_STARTED", { signalId: channel.signal.signalId, countdownEndsAt: channel.countdownEndsAt });
-  diagTransition("OperationalChannel", "READY", "ENTRY_COUNTDOWN", "signal_locked", { signalId: channel.signal.signalId, traceId: state.currentTraceId, marketEventId: candleId });
-  const operationalDecisionId = state.decisionId && String(state.decisionId).startsWith("op_") ? `decision_${state.decisionId}` : (state.decisionId || `decision_${candleId}`);
-  void liveEmit("OPERATIONAL_SIGNAL_CREATED", { signalId: channel.signal.signalId, decisionId: operationalDecisionId, marketEventId: candleId, frameId, candleId, direction, profile: fast.selectedProfile, rawConfidence: fast.rawConfidence, regime: fast.regime, macroTrend: fast.macroTrend, microTrend: fast.microTrend, trendAlignment: fast.trendAlignment, issuedAt: now, countdownEndsAt: channel.countdownEndsAt, traceId: state.currentTraceId });
-  void liveEmit("OPERATIONAL_SIGNAL_LOCKED", { signalId: channel.signal.signalId, decisionId: operationalDecisionId, marketEventId: candleId, frameId, candleId, direction, profile: fast.selectedProfile, rawConfidence: fast.rawConfidence, calibratedConfidence: fast.calibratedConfidence ?? null, issuedAt: now, countdownEndsAt: channel.countdownEndsAt, macroTrend: fast.macroTrend, microTrend: fast.microTrend, regime: fast.regime, trendAlignment: fast.trendAlignment, traceId: state.currentTraceId });
-  void liveEmit("ENTRY_COUNTDOWN_STARTED", { signalId: channel.signal.signalId, countdownEndsAt: channel.countdownEndsAt, traceId: state.currentTraceId });
-  channel.signal.decisionId = operationalDecisionId;
-  renderOperational();
+async function channelCandidate(fast, candleId, frameId) {
+  const channel = state.channel || {}, direction = fast.decision, now = Date.now();
+  if (OP_LOCKED_STATES.includes(channel.state)) { void liveEmit("OPERATIONAL_DECISION_SUPPRESSED_ACTIVE_OPERATION", { signalId: channel.signal?.signalId || null, lockedDirection: channel.signal?.direction || null, researchDirection: direction, state: channel.state, traceId: state.currentTraceId }); return; }
+  if (!state.marketContext || state.marketContext.validationStatus !== "VALID") { void liveEmit("OPERATIONAL_DECISION_SUPPRESSED_CONTEXT_INVALID", { validationStatus: state.marketContext?.validationStatus || "UNKNOWN", researchDirection: direction, candleId, frameId, traceId: state.currentTraceId }); return; }
+  const decisive = direction === "BUY" || direction === "SELL", counterOk = !fast.counterTrend || (fast.reversalEvidence?.length || 0) >= 1;
+  if (!decisive || !counterOk) { if (!counterOk) channelLog("COUNTER_TREND_SIGNAL_BLOCKED", { direction, macroTrend: fast.macroTrend }); return; }
+  const signalId = `op_${now}_${Math.random().toString(36).slice(2, 8)}`, decisionId = state.decisionId || `decision_${candleId}`;
+  try {
+    const snapshot = await operationalMutation("/api/operational/lock", { signalId, idempotencyKey: `lock:${state.liveSessionId || "web"}:${candleId}:${direction}`, direction, originSymbol: state.marketContext.assetCanonical, now, countdownMs: OP_ENTRY_MS, confirmationMs: 20_000, horizonMs: OP_HORIZON_MS });
+    if (snapshot.signal?.signalId !== signalId) return;
+    diagTransition("OperationalChannel", "IDLE", snapshot.state, "server_lock", { signalId, traceId: state.currentTraceId, marketEventId: candleId });
+    void liveEmit("OPERATIONAL_SIGNAL_LOCKED", { signalId, decisionId, marketEventId: candleId, frameId, candleId, direction, profile: fast.selectedProfile, rawConfidence: fast.rawConfidence, issuedAt: snapshot.signal.lockedAt, countdownEndsAt: snapshot.signal.countdownEndsAt, settlementAt: snapshot.signal.settlementAt, traceId: state.currentTraceId });
+  } catch (error) { channelLog("OPERATIONAL_LOCK_REJECTED", { reason: String(error?.message || error) }); void restoreOperationalSnapshot(); }
 }
 async function settleManualOperation(priceRow) {
-  const channel = state.channel, signal = channel.signal, entry = channel.manualEntry; if (!signal || !entry) return;
+  const channel = state.channel, signal = channel.signal; if (!signal || signal.entryPrice === null || state.operationalSettling) return;
+  state.operationalSettling = true;
   try {
-    const body = { direction: signal.direction, entryPrice: entry.price, exitPrice: priceRow ? priceRow.value : null, entryTimestamp: entry.timestamp, exitTimestamp: Date.now(), dueTimestamp: channel.settlementAt };
     if (!priceRow || !priceRow.priceObservationId) { console.warn("SETTLEMENT_PRICE_UNAVAILABLE", JSON.stringify({ signalId: signal.signalId, reason: "no_causal_observation_with_id" })); }
-    const result = await api("/api/settlement", { method: "POST", body: JSON.stringify(body) });
-    channel.state = "SETTLED"; channel.settlement = { ...body, result: result.outcome }; if (signal) signal.status = "SETTLED";
-    channel.metrics.manualTradesSettled += 1; if (result.outcome === "WIN") channel.metrics.manualWins += 1; else if (result.outcome === "LOSS") channel.metrics.manualLosses += 1; else if (result.outcome === "DRAW") channel.metrics.manualDraws += 1; else channel.metrics.manualUnknown += 1;
-    channel.cooldownUntil = Date.now() + OP_COOLDOWN_MS;
+    const snapshot = await operationalMutation("/api/operational/settle", { signalId: signal.signalId, price: priceRow ? priceRow.value : null, timestamp: Date.now(), symbol: signal.originSymbol });
+    const settled = snapshot.signal;
+    if (!settled?.outcome) return;
     channelLog("SETTLEMENT_PRICE_LOCKED", { signalId: signal.signalId, exitPrice: priceRow ? priceRow.value : null, source: priceRow ? priceRow.source : "UNAVAILABLE", confidence: priceRow ? priceRow.confidence : 0, settlementPriceObservationId: priceRow ? priceRow.priceObservationId : null });
-    channelLog("TRADE_SETTLED", { signalId: signal.signalId, result: result.outcome, reason: result.reason });
-    diagTransition("Settlement", "IN_POSITION", "SETTLED", `result_${result.outcome}`, { signalId: signal.signalId, traceId: state.currentTraceId });
-    const groundTruth = { groundTruthId: `gt_${signal.signalId}`, decisionId: signal.decisionId || null, signalId: signal.signalId, operationId: `operation_${signal.signalId}`, marketEventId: signal.candleId || null, entryPriceObservationId: entry.priceObservationId || null, settlementPriceObservationId: priceRow ? priceRow.priceObservationId : null, entryPrice: entry.price, settlementPrice: priceRow ? priceRow.value : null, result: result.outcome, traceId: state.currentTraceId || null };
+    channelLog("TRADE_SETTLED", { signalId: signal.signalId, result: settled.outcome, reason: settled.settlementReason });
+    diagTransition("Settlement", "IN_POSITION", "SETTLED", `result_${settled.outcome}`, { signalId: signal.signalId, traceId: state.currentTraceId });
+    const groundTruth = { groundTruthId: `gt_${signal.signalId}`, decisionId: state.decisionId || null, signalId: signal.signalId, operationId: `operation_${signal.signalId}`, marketEventId: state.lastCandleId || null, entryPriceObservationId: null, settlementPriceObservationId: priceRow ? priceRow.priceObservationId : null, entryPrice: settled.entryPrice, settlementPrice: settled.exitPrice, result: settled.outcome, traceId: state.currentTraceId || null };
     postDiag("/api/live/browser/ground-truth", { groundTruth });
     void liveEmit("SETTLEMENT_PRICE_LOCKED", { signalId: signal.signalId, settlementPrice: priceRow ? priceRow.value : null, settlementPriceObservationId: priceRow ? priceRow.priceObservationId : null, traceId: state.currentTraceId });
-    void liveEmit("TRADE_SETTLED", { signalId: signal.signalId, decisionId: signal.decisionId || null, operationId: `operation_${signal.signalId}`, result: result.outcome, groundTruthId: groundTruth.groundTruthId, traceId: state.currentTraceId });
-    diagProvenance({ decisionId: signal.decisionId || state.decisionId || signal.signalId, marketEventId: signal.candleId, candleId: signal.candleId, frameId: signal.frameId, profile: signal.profile, decision: signal.direction, directionalLean: signal.direction, rawScores: { rawConfidence: signal.rawConfidence }, why: { primaryReasons: [`settlement_${result.outcome}`], supportingEvidence: [`entryPrice=${entry.price}`, `source=${entry.source}`], opposingEvidence: [], rejectedAlternatives: [], uncertaintyFactors: result.outcome === "UNKNOWN" ? ["missing_settlement_price"] : [], riskFactors: [] }, warnings: result.outcome === "UNKNOWN" ? ["SETTLEMENT_UNKNOWN"] : [], traceId: state.currentTraceId });
-    void liveEmit("SETTLEMENT", { decisionId: signal.signalId, direction: signal.direction, result: result.outcome, entryPrice: entry.price, settlementPrice: priceRow ? priceRow.value : null, manual: true, synthetic: false });
+    void liveEmit("TRADE_SETTLED", { signalId: signal.signalId, decisionId: state.decisionId || null, operationId: `operation_${signal.signalId}`, result: settled.outcome, groundTruthId: groundTruth.groundTruthId, traceId: state.currentTraceId });
+    void liveEmit("SETTLEMENT", { decisionId: signal.signalId, direction: signal.direction, result: settled.outcome, entryPrice: settled.entryPrice, settlementPrice: settled.exitPrice, manual: true, synthetic: false });
   } catch (error) { channelLog("SETTLEMENT_WAITING", { reason: String(error?.message || error).slice(0, 120) }); }
-  renderOperational();
+  finally { state.operationalSettling = false; renderOperational(); }
 }
-function channelManualPosition(manual) {
-  const channel = state.channel; if (channel.state !== "ENTRY_COUNTDOWN" && channel.state !== "WAITING_ENTRY_CONFIRMATION" && channel.state !== "POSITION_DETECTION_UNCERTAIN") return;
-  if (manual.state === "POSSIBLE_POSITION") { channel.state = channel.state === "POSITION_DETECTION_UNCERTAIN" ? "WAITING_ENTRY_CONFIRMATION" : channel.state; channel.confirmationDeadline = Math.max(channel.confirmationDeadline || 0, Date.now() + 8000); console.info("MANUAL_POSITION_POSSIBLE", JSON.stringify({ signalId: channel.signal?.signalId, evidence: manual.evidence, confirmationDeadline: channel.confirmationDeadline })); renderOperational(); return; }
+async function channelManualPosition(manual) {
+  const channel = state.channel, signal = channel.signal; if (!signal || !["SIGNAL_LOCKED", "ENTRY_COUNTDOWN", "WAITING_ENTRY_CONFIRMATION", "POSITION_DETECTION_UNCERTAIN"].includes(channel.state)) return;
+  if (manual.state === "POSSIBLE_POSITION") { console.info("MANUAL_POSITION_POSSIBLE", JSON.stringify({ signalId: signal.signalId, evidence: manual.evidence })); return; }
   if (manual.state !== "POSITION_CONFIRMED" && manual.state !== "WAITING_SETTLEMENT" && manual.state !== "SETTLED") return;
-  const signal = channel.signal; if (!signal) return;
   if (manual.direction !== "UNKNOWN" && manual.direction !== signal.direction) { channelLog("POSITION_DIRECTION_MISMATCH", { expected: signal.direction, detected: manual.direction }); return; }
   const now = Date.now(); const priceRow = latestCausalPrice(now);
-  if (!priceRow) { channel.state = "POSITION_DETECTION_UNCERTAIN"; channelLog("MANUAL_ENTRY_PRICE_UNAVAILABLE", { signalId: signal.signalId }); renderOperational(); return; }
-  channel.state = "IN_POSITION"; channel.manualEntry = { price: priceRow.value, confidence: priceRow.confidence, source: priceRow.source, timestamp: now, signalId: signal.signalId, priceObservationId: priceRow.priceObservationId || null, frameId: priceRow.frameId || null, observedAt: priceRow.timestamp }; channel.settlementAt = now + OP_HORIZON_MS; channel.metrics.entryConfirmed += 1;
+  if (!priceRow) { channelLog("MANUAL_ENTRY_PRICE_UNAVAILABLE", { signalId: signal.signalId }); return; }
+  try { await operationalMutation("/api/operational/entry", { signalId: signal.signalId, price: priceRow.value, timestamp: now, symbol: signal.originSymbol }); } catch (error) { channelLog("OPERATIONAL_ENTRY_REJECTED", { signalId: signal.signalId, reason: String(error?.message || error) }); void restoreOperationalSnapshot(); return; }
   void liveEmit("POSITION_CONFIRMED", { signalId: signal.signalId, direction: manual.direction, confidence: manual.confidence, evidence: manual.evidence, traceId: state.currentTraceId });
   void liveEmit("MANUAL_ENTRY_PRICE_LOCKED", { signalId: signal.signalId, price: priceRow.value, entryPriceObservationId: priceRow.priceObservationId || null, entryFrameId: priceRow.frameId || null, entryObservedAt: priceRow.timestamp, entrySource: priceRow.source, entryConfidence: priceRow.confidence, entryPriceAgeMs: now - priceRow.timestamp, traceId: state.currentTraceId });
   channelLog("POSITION_CONFIRMED", { signalId: signal.signalId, direction: manual.direction, confidence: manual.confidence, evidence: manual.evidence });
   channelLog("MANUAL_ENTRY_PRICE_LOCKED", { price: priceRow.value, source: priceRow.source, confidence: priceRow.confidence, timestamp: now, signalId: signal.signalId });
-  channelLog("OPERATION_IN_PROGRESS", { signalId: signal.signalId, settlementAt: channel.settlementAt });
-  diagTransition("ManualPosition", channel.confirmationDeadline ? "WAITING_ENTRY_CONFIRMATION" : "ENTRY_COUNTDOWN", "IN_POSITION", "visual_position_confirmed", { signalId: signal.signalId, traceId: state.currentTraceId });
-  renderOperational();
+  channelLog("OPERATION_IN_PROGRESS", { signalId: signal.signalId, settlementAt: signal.settlementAt });
+  diagTransition("ManualPosition", channel.state, "POSITION_CONFIRMED", "server_entry_lock", { signalId: signal.signalId, traceId: state.currentTraceId });
 }
-setInterval(() => {
-  const channel = state.channel, now = Date.now();
-  if (channel.state === "ENTRY_COUNTDOWN" && now >= channel.countdownEndsAt) { channel.state = "WAITING_ENTRY_CONFIRMATION"; channel.confirmationDeadline = channel.countdownEndsAt + OP_CONFIRM_MS; channelLog("ENTRY_CONFIRMATION_WAITING", { signalId: channel.signal?.signalId }); }
-  else if (channel.state === "WAITING_ENTRY_CONFIRMATION" && now >= channel.confirmationDeadline) { channel.metrics.entryNotConfirmed += 1; channelLog("ENTRY_NOT_CONFIRMED", { signalId: channel.signal?.signalId }); channel.cooldownUntil = now + OP_COOLDOWN_MS; channelRelease(channel, "COOLDOWN"); }
-  else if (channel.state === "IN_POSITION" && now >= channel.settlementAt) { void settleManualOperation(latestCausalPrice(now)); }
-  else if (channel.state === "COOLDOWN" && now >= channel.cooldownUntil) channelRelease(channel, "READY");
-  else if (channel.state === "SETTLED" && now >= channel.cooldownUntil) channelRelease(channel, "READY");
+ let operationalTicking = false;
+ async function tickOperational() { const signal = state.channel?.signal; if (!state.operationalSessionId || !signal || signal.outcome !== null || operationalTicking) return; operationalTicking = true; try { const snapshot = await api("/api/operational/tick", { method: "POST", body: JSON.stringify({ sessionId: state.operationalSessionId, now: Date.now() }) }); applyOperationalSnapshot(snapshot); } catch { /* recovery loop handles unavailable instances */ } finally { operationalTicking = false; } }
+ setInterval(() => {
+   void tickOperational();
+  const channel = state.channel, now = Date.now(), signal = channel?.signal;
+  if (signal?.entryPrice !== null && signal?.outcome === null && now >= signal?.settlementAt) void settleManualOperation(latestCausalPrice(now));
   renderOperational();
 }, 1000);
 
@@ -169,6 +162,7 @@ async function trackPrice() {
       if (validation.status === "REGIME_CHANGE_ACCEPTED") state.priceOutlierCandidates = [];
       text("currentPriceValue", value.toString());
       postDiag("/api/live/browser/prices", { prices: [{ ...common, value, status: "ACCEPTED", outlierStatus: validation.status || "ACCEPTED" }] });
+      void liveEmit("MARKET_OBSERVATION", { observationId: priceObservationId, frameId, capturedAt, processedAt: Date.now(), marketContextId: state.marketContext?.marketContextId || null, segmentId: state.marketContext?.segmentId || null, assetRaw: state.marketContext?.assetDisplay || null, assetCanonical: state.marketContext?.assetCanonical || null, marketType: state.marketContext?.marketType || "UNKNOWN", currentPrice: value, priceSource: common.source, priceConfidence: confidence, baseTimeframeSeconds: state.marketContext?.baseTimeframeSeconds || null, tradeExpirationSeconds: EXPIRATION_SECONDS, investmentValue: null, positionExists: Boolean(state.manualPosition?.hasOpenPosition), positionDirection: state.manualPosition?.direction || "UNKNOWN", positionConfidence: state.manualPosition?.confidence || null, observationQuality: state.marketContext?.validationStatus === "VALID" ? "VALID" : "PARTIAL" });
       console.info("PRICE_OBSERVATION", JSON.stringify({ price: value, confidence, source: row.source, timestamp: row.timestamp, frameId, ageMs: row.timestamp - capturedAt, validation: validation.status, priceObservationId }));
     } else if (Number.isFinite(value) && value > 0) {
       state.priceOutlierCandidates = [...state.priceOutlierCandidates, { value, timestamp: Date.now() }].slice(-10); state.metrics.priceObservationsRejected += 1;
@@ -180,7 +174,7 @@ async function trackPrice() {
     }
   } catch (error) { console.info("PRICE_OBSERVATION_UNAVAILABLE", JSON.stringify({ frameId, reason: String(error?.message || error).slice(0, 120) })); } finally { state.priceAnalyzing = false; }
 }
-function startPriceTracking() { if (state.priceTimer) clearInterval(state.priceTimer); void trackPrice(); state.priceTimer = setInterval(trackPrice, 2_000); }
+function startPriceTracking() { if (state.priceTimer) clearInterval(state.priceTimer); void trackPrice(); state.priceTimer = setInterval(trackPrice, 1_000); }
 function latestCausalPrice(timestamp) { return state.priceObservations.slice().reverse().find((item) => item.timestamp <= timestamp && timestamp - item.timestamp <= 3_000) || null; }
 
 // Geometry-only detector. It never claims it read pixels or broker internals;
@@ -425,7 +419,7 @@ function renderAnalysis(analysis, latency) {
   text("contextAsset", shown.symbol && shown.symbol !== "UNAVAILABLE" ? `${shown.symbol}${shown.marketType && shown.marketType !== "UNAVAILABLE" ? ` ${shown.marketType}` : ""}` : "Ativo não confirmado"); text("contextMeta", (shown.sources || []).join(" · ") || "Confirme manualmente somente se a visão não provar o ativo."); text("contextTimeframe", shown.visualTimeframe || "—"); text("contextStake", shown.displayedStake ?? "—"); text("contextConfidence", shown.confidence ? `${Math.round(shown.confidence * 100)}%` : "—"); text("statusAsset", shown.symbol || "—"); text("marketLabel", shown.symbol || "Gráfico compartilhado");
   const sizing = suggestedStake(analysis); text("suggestedStake", sizing.amount ? `R$ ${sizing.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "R$ —"); text("sizingNote", sizing.reason);
   const now = Date.now(); const rawDecisionId = state.channel.signal?.decisionId || analysis.decisionId || (typeof state.decisionId === "string" && state.decisionId.startsWith("decision_") ? state.decisionId : analysis.analysisId); state.decisionId = (typeof rawDecisionId === "string" && rawDecisionId.length && ["decision_", "op_", "local-", "decision_candle_"].some((prefix) => rawDecisionId.startsWith(prefix))) ? rawDecisionId : `decision_${now}_${Math.random().toString(36).slice(2, 8)}`; state.decisionTimestamp = now; state.expirationSeconds = Number(analysis.expirationSeconds) > 0 ? Number(analysis.expirationSeconds) : 60;
-  if (!OP_LOCKED_STATES.includes(state.channel.state)) { state.entryUntil = decision === "BUY" || decision === "SELL" ? now + 10_000 : 0; state.reanalysisAt = decision === "WAIT" ? now + 5_000 : 0; }
+  if (!OP_LOCKED_STATES.includes(state.channel.state)) state.reanalysisAt = decision === "WAIT" ? now + 5_000 : 0;
   updateEntryCountdown();
   const notes = [...(analysis.observations || []), ...(analysis.supportingFactors || [])].slice(0, 5); $("observationsList").innerHTML = (notes.length ? notes : ["Sem observação verificável."]).map((note) => `<li>${escape(note)}</li>`).join("");
   state.history.push({ analysisId: analysis.analysisId || `local-${Date.now()}`, decision, confidence, pBuy: analysis.pBuy ?? null, pSell: analysis.pSell ?? null, pWait: analysis.pWait ?? null, dataQuality: analysis.dataQuality ?? null, at: Date.now() }); state.history = state.history.slice(-30); saveHistory(); $("historyCount").textContent = String(state.history.length); $("historyList").innerHTML = state.history.slice().reverse().map((item) => `<p><b class="${item.decision.toLowerCase()}">${item.decision}</b><span>${probabilityText(item.confidence)} · B ${probabilityText(item.pBuy)} / S ${probabilityText(item.pSell)} / W ${probabilityText(item.pWait)} · ${new Date(item.at).toLocaleTimeString()}</span></p>`).join("");
@@ -437,17 +431,11 @@ function updateEntryCountdown() {
   const clock = $("operationClock");
   const now = Date.now();
   const channel = state.channel;
-  if (channel.signal && (channel.state === "ENTRY_COUNTDOWN" || channel.state === "WAITING_ENTRY_CONFIRMATION" || channel.state === "IN_POSITION")) {
-    const reference = channel.state === "IN_POSITION" ? channel.settlementAt : channel.state === "ENTRY_COUNTDOWN" ? channel.countdownEndsAt : channel.confirmationDeadline;
+  if (channel.signal && !channel.signal.outcome) {
+    const entered = channel.signal.entryPrice !== null;
+    const reference = entered ? channel.signal.settlementAt : channel.signal.entryAt;
     const left = Math.max(0, reference - now);
-    if (clock) { text("clockValue", String(Math.ceil(left / 1000)).padStart(2, "0")); text("clockState", channel.state === "IN_POSITION" ? "OPERAÇÃO ATIVA" : channel.state === "ENTRY_COUNTDOWN" ? "ENTRADA EM" : "AGUARDANDO ENTRADA"); text("clockText", channel.state === "IN_POSITION" ? `Settlement do sinal ${channel.signal.signalId} em ${Math.ceil(left / 1000)}s.` : channel.state === "ENTRY_COUNTDOWN" ? `Sinal ${channel.signal.signalId} · janela de entrada em ${Math.ceil(left / 1000)}s.` : `Sinal ${channel.signal.signalId} aguardando confirmação visual da posição.`); }
-    if (left) state.countdownTimer = window.setTimeout(updateEntryCountdown, 250);
-    return;
-  }
-  if (state.entryUntil) {
-    const left = Math.max(0, state.entryUntil - now);
-    if (clock) { text("clockValue", String(Math.ceil(left / 1000)).padStart(2, "0")); text("clockState", left ? "ENTRADA EM" : "EXPIRADO"); text("clockText", left ? `Janela recomendada de entrada em ${Math.ceil(left / 1000)} segundos.` : "A janela de entrada expirou; aguardando nova decisão."); }
-    text("decisionSummary", left ? `${state.lastAnalysis?.summary || state.lastAnalysis?.rationale || "Sinal shadow"} · entrada em ${Math.ceil(left / 1000)}s` : (state.lastAnalysis?.summary || state.lastAnalysis?.rationale || "Sinal shadow"));
+    if (clock) { text("clockValue", String(Math.ceil(left / 1000)).padStart(2, "0")); text("clockState", entered ? "OPERAÇÃO SHADOW ATIVA" : left ? "ENTRADA EM" : "AGUARDANDO CONFIRMAÇÃO"); text("clockText", entered ? `Settlement do sinal ${channel.signal.signalId} em ${Math.ceil(left / 1000)}s.` : left ? `Sinal ${channel.signal.signalId} · janela de entrada em ${Math.ceil(left / 1000)}s.` : `Sinal ${channel.signal.signalId} aguardando confirmação visual da posição.`); }
     if (left) state.countdownTimer = window.setTimeout(updateEntryCountdown, 250);
     return;
   }
@@ -552,4 +540,4 @@ function escape(value) { return String(value).replace(/[&<>"']/g, (c) => ({ "&":
 
 $("shareButton").addEventListener("click", shareScreen); $("stopShareButton").addEventListener("click", stopScreen); $("recropButton").addEventListener("click", openManualCrop); $("startTrainingButton").addEventListener("click", () => startTraining().catch((error) => text("trainingNote", error.message))); $("stopTrainingButton").addEventListener("click", stopTraining); $("liveGenerateKey")?.addEventListener("click", () => generateLiveKey(false)); $("liveRotateKey")?.addEventListener("click", () => generateLiveKey(true)); $("liveRevokeKey")?.addEventListener("click", revokeLiveKey); $("liveCopyInstructions")?.addEventListener("click", copyLiveInstructions); $("liveCopyPrompt")?.addEventListener("click", copyOpenCodePrompt);
 $("adminGenerateConfirm")?.addEventListener("click", () => generateLiveKey(false)); $("adminRotateConfirm")?.addEventListener("click", () => generateLiveKey(true)); $("adminRevokeConfirm")?.addEventListener("click", revokeLiveKey); $("adminClose")?.addEventListener("click", closeAdminDialog); $("adminCopyKey")?.addEventListener("click", async () => { const value = $("adminKeyValue")?.textContent || ""; if (!value) return; try { await navigator.clipboard.writeText(value); liveStatus("READY", "Chave copiada. Guarde-a agora."); } catch { liveStatus("ERROR", "Não foi possível copiar."); } });
-void ensureAdminSession(); bindManualCrop(); $("profileSelect")?.addEventListener("change", (event) => applyProfile(event.target.value)); applyProfile(state.profile); checkBackend(); updatePipeline(); restoreTraining(); refreshLiveStatus(); setInterval(refreshLiveStatus, 30000); setInterval(refreshTraining, 5000); window.addEventListener("beforeunload", stopScreen);
+void ensureAdminSession(); void restoreOperationalSnapshot(); bindManualCrop(); $("profileSelect")?.addEventListener("change", (event) => applyProfile(event.target.value)); applyProfile(state.profile); checkBackend(); updatePipeline(); restoreTraining(); refreshLiveStatus(); setInterval(refreshLiveStatus, 30000); setInterval(refreshTraining, 5000); setInterval(() => void restoreOperationalSnapshot(), 5000); window.addEventListener("beforeunload", stopScreen);

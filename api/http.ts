@@ -26,6 +26,7 @@ import { runAutopsy } from "../src/research/session-autopsy.js";
 import { buildAgentRuns } from "../src/research/agent-runs.js";
 import { buildFeatureSnapshot } from "../src/quant-v2/feature-engine.js";
 import { quantShadowDecision } from "../src/quant-v2/quant-fusion.js";
+import { analyzeTechnicalState } from "../src/vision/technical-analyst.js";
 import { OperationalController } from "../src/vision/operational-controller.js";
 
 type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
@@ -868,6 +869,13 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
     if (path === "/api/quant/research/dataset-summary" && req.method === "GET") {
       try { json(200, await relayAdminGet("/api/quant/research/dataset-summary")); } catch { json(503, { error: "quant_research_unavailable" }); } return;
+    }
+    if (path === "/api/technical/analyst" && req.method === "POST") {
+      const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+      const candles = Array.isArray(input.candles) ? input.candles : [];
+      const mapped = candles.filter((x): x is Record<string, unknown> => Boolean(x) && typeof x === "object").map((c) => ({ provider: String(c.provider || "structured"), symbol: String(c.symbol || "UNKNOWN"), timeframe: "1m" as const, open: Number(c.open), high: Number(c.high), low: Number(c.low), close: Number(c.close), volume: Number(c.volume || 0), timestamp: Number(c.timestamp), receivedAt: Number(c.receivedAt || c.timestamp), isClosed: c.isClosed !== false, source: String(c.source || "structured"), quality: "high" as const })).filter((c) => [c.open, c.high, c.low, c.close, c.timestamp].every(Number.isFinite));
+      const result = analyzeTechnicalState({ candles: mapped, marketContextId: String(input.marketContextId || ""), segmentId: String(input.segmentId || ""), referencePrice: Number.isFinite(Number(input.referencePrice)) ? Number(input.referencePrice) : null, observationsAvailable: Number(input.observationsAvailable) || 0 });
+      json(200, { analyst: result, shadowOnly: true, brokerAutomation: "NONE" }); return;
     }
     if (path === "/api/quant/shadow" && req.method === "POST") {
       const input = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
