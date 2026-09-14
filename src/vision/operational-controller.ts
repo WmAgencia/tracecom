@@ -20,6 +20,7 @@ export type OperationalSignal = Readonly<{
   lockedAt: number;
   countdownEndsAt: number;
   entryAt: number;
+  confirmationDeadline: number;
   settlementAt: number;
   entryPrice: number | null;
   entryTimestamp: number | null;
@@ -41,6 +42,7 @@ export type LockRequest = Readonly<{
   now: number;
   countdownMs: number;
   horizonMs: number;
+  confirmationMs?: number;
 }>;
 
 export type EntryRequest = Readonly<{ signalId: string; price: number | null; timestamp: number; symbol: string }>;
@@ -105,7 +107,7 @@ export class OperationalController {
     const signal: OperationalSignal = {
       signalId: request.signalId, idempotencyKey: request.idempotencyKey, direction: request.direction,
       originSymbol: request.originSymbol, lockedAt: request.now, countdownEndsAt: entryAt,
-      entryAt, settlementAt: entryAt + request.horizonMs, entryPrice: null, entryTimestamp: null,
+      entryAt, confirmationDeadline: entryAt + (request.confirmationMs ?? 20_000), settlementAt: entryAt + request.horizonMs, entryPrice: null, entryTimestamp: null,
       exitPrice: null, exitTimestamp: null, outcome: null, settlementReason: null,
     };
     this.signal = signal; this.state = request.countdownMs > 0 ? "SIGNAL_LOCKED" : "WAITING_ENTRY_CONFIRMATION";
@@ -121,6 +123,7 @@ export class OperationalController {
     if (!this.signal || terminal.has(this.state)) return this.state;
     if (this.state === "SIGNAL_LOCKED" && now >= this.signal.countdownEndsAt) this.state = "ENTRY_COUNTDOWN";
     if (this.state === "ENTRY_COUNTDOWN" && now >= this.signal.entryAt) this.state = "WAITING_ENTRY_CONFIRMATION";
+    if (this.state === "WAITING_ENTRY_CONFIRMATION" && now >= this.signal.confirmationDeadline) { this.state = "INVALIDATED"; this.bump("invalidated"); this.emit("OPERATIONAL_INVALIDATED", now, { reason: "ENTRY_NOT_CONFIRMED", confirmationDeadline: this.signal.confirmationDeadline }); }
     if ((this.state === "POSITION_CONFIRMED" || this.state === "IN_POSITION") && now >= this.signal.settlementAt) this.state = "WAITING_SETTLEMENT";
     this.assertInvariant();
     return this.state;

@@ -48,4 +48,10 @@ describe("OperationalController", () => {
     controller.lockEntry({ signalId: "sig-1", price: 1.2, timestamp: 11_000, symbol: "USD/CAD (OTC)" });
     expect(() => controller.invalidate("sig-1", "stale", 12_000)).toThrow("cannot_invalidate_entered_signal");
   });
+
+  it("expires an unconfirmed entry instead of leaving BUY stuck forever", () => {
+    const controller = new OperationalController(); lock(controller); controller.tick(11_000); controller.tick(31_000);
+    expect(controller.current().state).toBe("INVALIDATED");
+    expect(controller.current().metrics.invalidated).toBe(1);
+  });
 });

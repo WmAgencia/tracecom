@@ -591,6 +591,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
           originSymbol: typeof operationalInput.originSymbol === "string" ? operationalInput.originSymbol : "",
           now: Number(operationalInput.now) || Date.now(),
           countdownMs: Number.isFinite(Number(operationalInput.countdownMs)) ? Number(operationalInput.countdownMs) : 10_000,
+          confirmationMs: Number.isFinite(Number(operationalInput.confirmationMs)) ? Number(operationalInput.confirmationMs) : 20_000,
           horizonMs: Number.isFinite(Number(operationalInput.horizonMs)) ? Number(operationalInput.horizonMs) : 60_000,
         });
         operationalSessions.set(operationalSessionId, controller); await relayOperationalSnapshot(operationalSessionId, controller.snapshot());
@@ -607,6 +608,16 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         await relayOperationalSnapshot(operationalSessionId, controller.snapshot()); json(200, operationalResponse(controller));
       } catch (error) { json(409, { error: error instanceof Error ? error.message : "operational_entry_rejected", shadowOnly: true, brokerAutomation: "NONE" }); }
       return;
+    }
+    if (path === "/api/operational/invalidate" && req.method === "POST") {
+      if (!operationalSessionId) { json(400, { error: "session_id_required" }); return; }
+      const controller = await operationalController(operationalSessionId); if (!controller) { json(404, { error: "operational_session_not_found", recovery: "OPERATION_RECOVERY_FAILED" }); return; }
+      try { controller.invalidate(typeof operationalInput.signalId === "string" ? operationalInput.signalId : "", typeof operationalInput.reason === "string" ? operationalInput.reason : "market_context_changed", Number(operationalInput.timestamp) || Date.now()); await relayOperationalSnapshot(operationalSessionId, controller.snapshot()); json(200, operationalResponse(controller)); } catch (error) { json(409, { error: error instanceof Error ? error.message : "operational_invalidation_rejected", shadowOnly: true, brokerAutomation: "NONE" }); } return;
+    }
+    if (path === "/api/operational/tick" && req.method === "POST") {
+      if (!operationalSessionId) { json(400, { error: "session_id_required" }); return; }
+      const controller = await operationalController(operationalSessionId); if (!controller) { json(404, { error: "operational_session_not_found", recovery: "OPERATION_RECOVERY_FAILED" }); return; }
+      controller.tick(Number(operationalInput.now) || Date.now()); await relayOperationalSnapshot(operationalSessionId, controller.snapshot()); json(200, operationalResponse(controller)); return;
     }
     if (path === "/api/operational/settle" && req.method === "POST") {
       if (!operationalSessionId) { json(400, { error: "session_id_required" }); return; }
