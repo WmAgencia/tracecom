@@ -301,5 +301,11 @@ export function startExperimentLoop(pool, intervalMs = 5_000) {
   };
   void run();
   const timer = setInterval(() => void run(), intervalMs);
-  return () => clearInterval(timer);
+  const retroTimer = setInterval(async () => {
+    try {
+      const swept = await retroEvaluate(pool, { maxCreations: 2000 });
+      if (swept.created) console.info("SHADOW_EXPERIMENT_RETRO_SWEEP", JSON.stringify(swept));
+    } catch (error) { console.error("SHADOW_EXPERIMENT_RETRO_ERROR", error instanceof Error ? error.message : String(error)); }
+  }, 30 * 60_000);
+  return () => { clearInterval(timer); clearInterval(retroTimer); };
 }
