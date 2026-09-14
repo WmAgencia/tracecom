@@ -543,6 +543,10 @@ async function fetchRelayBundle(sessionId: string): Promise<Record<string, unkno
   if (!timeline && !logs && !runs) return null;
   return { timeline, logs, agentRuns: runs };
 }
+async function fetchCausalTrainingPrices(sessionId: string | null): Promise<Array<{ observedAt: number; value: number; priceObservationId?: string; source: string; confidence?: number }>> {
+  if (!sessionId) return []; const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, ""); const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim(); if (!base || !admin) return [];
+  try { const response = await fetch(`${base}/api/live/sessions/${encodeURIComponent(sessionId)}/prices?status=ACCEPTED`, { headers: { "x-relay-admin": admin }, signal: AbortSignal.timeout(8_000) }); if (!response.ok) return []; const body = await response.json() as { prices?: Array<Record<string, unknown>> }; return (body.prices ?? []).map((p) => ({ observedAt: Date.parse(String(p.observedAt)), value: Number(p.value), priceObservationId: typeof p.priceObservationId === "string" ? p.priceObservationId : undefined, source: typeof p.source === "string" ? p.source : "UNKNOWN", confidence: Number.isFinite(Number(p.confidence)) ? Number(p.confidence) : undefined })).filter((p) => p.observedAt > 0 && Number.isFinite(p.value)).sort((a, b) => a.observedAt - b.observedAt); } catch { return []; }
+}
 
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const requestId = req.headers["x-request-id"]?.toString().slice(0, 128) || randomUUID();
@@ -905,6 +909,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         created = true;
         session = createTrainingSession({
           id: requestedId ?? `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+          sessionId: typeof input.sessionId === "string" ? input.sessionId : null,
           symbol: typeof input.symbol === "string" ? input.symbol : null,
           marketType: typeof input.marketType === "string" ? input.marketType : null,
           horizonSeconds: Number(input.horizonSeconds) || 60,
@@ -936,8 +941,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     if (trainingSessionMatch && req.method === "GET") {
       const session = await trainingStore.read(decodeURIComponent(trainingSessionMatch[1]!));
       if (!session) { trainingMetrics.misses += 1; json(404, { error: "training_session_not_found", recovery: "post the same sessionId to /api/training/sessions", store: trainingStore.mode() }); return; }
-      if (session.status === "COMPLETED") { json(200, { ...trainingSummary(session), execution: "VIRTUAL_ONLY", brokerAutomation: "NONE" }); return; }
-      evaluateVirtualTrades(session, Date.now(), null, "UNAVAILABLE", null);
+       if (session.status === "COMPLETED") { json(200, { ...trainingSummary(session), execution: "VIRTUAL_ONLY", brokerAutomation: "NONE" }); return; }
+       const causalPrices = await fetchCausalTrainingPrices(session.sessionId ?? null);
+       evaluateVirtualTrades(session, Date.now(), null, "UNAVAILABLE", null, (trade) => { const target = trade.entryTimestamp + trade.horizonSeconds * 1_000; const row = causalPrices.find((price) => price.observedAt >= target); return row ? { value: row.value, source: row.source, confidence: row.confidence } : null; });
       session.updatedAt = Date.now();
       await trainingStore.write(session);
       json(200, { ...trainingSummary(session), execution: "VIRTUAL_ONLY", brokerAutomation: "NONE" });
@@ -956,7 +962,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       const timestamp = Number(snapshot.timestampMs) || Date.now();
       const rawReference = snapshot.referencePrice;
       const reference = (typeof rawReference === "number" || typeof rawReference === "string") && String(rawReference).trim() !== "" && Number.isFinite(Number(rawReference)) ? Number(rawReference) : null;
-      const virtualTrade = applyTrainingAnalysis(session, {
+       const causalPrices = await fetchCausalTrainingPrices(session.sessionId ?? (typeof snapshot.sessionId === "string" ? snapshot.sessionId : null));
+       const virtualTrade = applyTrainingAnalysis(session, {
         timestamp, analysis, reference,
         referenceSource: typeof snapshot.referencePriceSource === "string" ? snapshot.referencePriceSource : "UNAVAILABLE",
         priceConfidence: finiteOrNull(snapshot.priceConfidence),
@@ -971,8 +978,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         calibratedConfidence: finiteOrNull(input?.calibratedConfidence),
         synthetic: input?.synthetic === true,
         payoutAtDecision: finiteOrNull(input?.payoutAtDecision),
-        breakEvenWinRate: finiteOrNull(input?.breakEvenWinRate),
-      });
+         breakEvenWinRate: finiteOrNull(input?.breakEvenWinRate),
+         settlementResolver: (trade) => { const target = trade.entryTimestamp + trade.horizonSeconds * 1_000; const row = causalPrices.find((price) => price.observedAt >= target); return row ? { value: row.value, source: row.source, confidence: row.confidence } : null; },
+       });
       session.updatedAt = Date.now();
       await trainingStore.write(session);
       json(200, { ...trainingSummary(session), virtualTrade, execution: "VIRTUAL_ONLY", brokerAutomation: "NONE" });

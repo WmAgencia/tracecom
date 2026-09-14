@@ -29,7 +29,7 @@ export type VirtualTrade = {
 };
 
 export type TrainingSession = {
-  id: string; createdAt: number; updatedAt: number; status: TrainingStatus; persistence?: string;
+  id: string; createdAt: number; updatedAt: number; status: TrainingStatus; persistence?: string; sessionId?: string | null;
   symbol: string | null; marketType: string | null;
   horizonSeconds: number; maxEvaluatedTrades: number; frozen: Record<string, string>;
   analyses: number; decisions: Record<"BUY" | "SELL" | "WAIT", number>;
@@ -38,7 +38,7 @@ export type TrainingSession = {
 };
 
 export type CreateTrainingInput = {
-  id: string; symbol?: string | null; marketType?: string | null; horizonSeconds?: number; maxEvaluatedTrades?: number;
+  id: string; sessionId?: string | null; symbol?: string | null; marketType?: string | null; horizonSeconds?: number; maxEvaluatedTrades?: number;
   agentVersion?: string; promptVersion?: string; featureVersion?: string; visionVersion?: string;
 };
 
@@ -49,6 +49,7 @@ export type AnalysisInput = {
   profiles?: Record<string, { decision: string; confidence: number | null }>;
   selectedProfile?: string | null; regime?: string | null; rawConfidence?: number | null; calibratedConfidence?: number | null;
   synthetic?: boolean; payoutAtDecision?: number | null; breakEvenWinRate?: number | null;
+  settlementResolver?: (trade: VirtualTrade) => { value: number; source?: string; confidence?: number } | null;
 };
 
 function bounded(value: unknown, fallback: number): number {
@@ -65,7 +66,7 @@ export function createTrainingSession(input: CreateTrainingInput): TrainingSessi
   const horizonSeconds = Math.max(10, Math.min(300, Number(input.horizonSeconds) || 60));
   const maxEvaluatedTrades = Math.max(1, Math.min(10_000, Number(input.maxEvaluatedTrades) || 100));
   return {
-    id: input.id, createdAt: now, updatedAt: now, status: "ACTIVE", persistence: "MEMORY_FALLBACK",
+    id: input.id, sessionId: input.sessionId ?? null, createdAt: now, updatedAt: now, status: "ACTIVE", persistence: "MEMORY_FALLBACK",
     symbol: typeof input.symbol === "string" ? input.symbol.slice(0, 32) : null,
     marketType: typeof input.marketType === "string" ? input.marketType.slice(0, 20) : null,
     horizonSeconds, maxEvaluatedTrades,
@@ -133,16 +134,17 @@ export function trainingSummary(session: TrainingSession) {
   };
 }
 
-export function evaluateVirtualTrades(session: TrainingSession, timestamp: number, reference: number | null, source = "UNAVAILABLE", priceConfidence: number | null = null) {
+export function evaluateVirtualTrades(session: TrainingSession, timestamp: number, reference: number | null, source = "UNAVAILABLE", priceConfidence: number | null = null, resolver?: (trade: VirtualTrade) => { value: number; source?: string; confidence?: number } | null) {
   for (const trade of session.trades) {
     if (trade.result !== null || timestamp < trade.entryTimestamp + trade.horizonSeconds * 1_000) continue;
+    const resolved = resolver ? resolver(trade) : null; const exitReference = resolved ? resolved.value : reference; const exitSource = resolved?.source || source; const exitConfidence = resolved?.confidence ?? priceConfidence;
     trade.exitTimestamp = timestamp;
-    trade.exitReference = reference;
-    trade.settlementPriceSource = reference === null ? "UNAVAILABLE" : source;
-    trade.priceConfidence = priceConfidence;
-    if (reference !== null) console.info("SETTLEMENT_PRICE_LOCKED", JSON.stringify({ tradeId: trade.tradeId, price: reference, timestamp, source, confidence: priceConfidence }));
+    trade.exitReference = exitReference;
+    trade.settlementPriceSource = exitReference === null ? "UNAVAILABLE" : exitSource;
+    trade.priceConfidence = exitConfidence;
+    if (exitReference !== null) console.info("SETTLEMENT_PRICE_LOCKED", JSON.stringify({ tradeId: trade.tradeId, price: exitReference, timestamp, source: exitSource, confidence: exitConfidence }));
     trade.result = settleTrade({ direction: trade.direction, entryPrice: trade.entryReference,
-      exitPrice: reference, entryTimestamp: trade.entryTimestamp,
+      exitPrice: exitReference, entryTimestamp: trade.entryTimestamp,
       exitTimestamp: timestamp, dueTimestamp: trade.entryTimestamp + trade.horizonSeconds * 1_000 }).outcome;
     console.info("TRADE_SETTLED", JSON.stringify({ tradeId: trade.tradeId, result: trade.result, source: trade.settlementPriceSource }));
   }
@@ -151,7 +153,7 @@ export function evaluateVirtualTrades(session: TrainingSession, timestamp: numbe
 /** Appends one analysis to the session, creating an operational or counterfactual
  * trade under the same rules previously enforced inline in the API handler. */
 export function applyTrainingAnalysis(session: TrainingSession, input: AnalysisInput): VirtualTrade | null {
-  evaluateVirtualTrades(session, input.timestamp, input.reference, input.referenceSource || "UNAVAILABLE", input.priceConfidence ?? null);
+  evaluateVirtualTrades(session, input.timestamp, input.reference, input.referenceSource || "UNAVAILABLE", input.priceConfidence ?? null, input.settlementResolver);
   session.analyses += 1;
   const analysis = input.analysis;
   const decision = analysis.decision === "BUY" || analysis.decision === "SELL" ? analysis.decision as TrainingDirection : "WAIT";
