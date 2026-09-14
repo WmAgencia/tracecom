@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { settleTrade } from "../../src/training/settlement";
-import { buildCandles, computeFeatures, evaluateStrategies, settleOutcome, wilsonLower } from "../../relay/experiment.mjs";
+import { buildCandles, computeFeatures, evaluateStrategies, settleOutcome, shouldAttemptSettlement, wilsonLower } from "../../relay/experiment.mjs";
 
 const obs = (start: number, values: number[]) => values.map((v, i) => ({ t: start + i * 1000, v }));
 
@@ -44,5 +44,12 @@ describe("shadow experiment engine (causal, accounting-safe)", () => {
   it("never counts evaluations as independent ground truth (accounting helper)", () => {
     expect(wilsonLower(60, 100)).toBeGreaterThan(0.4);
     expect(wilsonLower(0, 0)).toBeNull();
+  });
+
+  it("waits for the observation grace period before marking UNKNOWN", () => {
+    const target = 1_000_000;
+    expect(shouldAttemptSettlement(target, target)).toBe(false);
+    expect(shouldAttemptSettlement(target + 14_999, target)).toBe(false);
+    expect(shouldAttemptSettlement(target + 15_001, target)).toBe(true);
   });
 });

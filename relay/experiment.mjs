@@ -13,7 +13,8 @@ export const EXPERIMENT_HORIZON_MS = 60_000;
 export const EXPERIMENT_BUCKET_MS = 5_000;
 export const EXPERIMENT_TARGET_TRADES = 10_000;
 export const EXPERIMENT_DISCOVERY_TRADES = 5_000;
-export const SETTLEMENT_TOLERANCE_MS = 15_000;
+export const SETTLEMENT_TOLERANCE_MS = 30_000;
+export const SETTLEMENT_GRACE_MS = 15_000;
 export const MIN_CANDLES = 24;
 export const STRATEGY_VERSIONS = ["shadow-momentum-v1", "shadow-trend-v1", "shadow-reversion-v1"];
 
@@ -84,8 +85,12 @@ async function ensureExperiment(pool, now, targetAsset, targetTrades) {
   return exp;
 }
 
+export function shouldAttemptSettlement(now, settlementTargetAt, graceMs = SETTLEMENT_GRACE_MS) {
+  return Number.isFinite(now) && Number.isFinite(settlementTargetAt) && now >= settlementTargetAt + graceMs;
+}
+
 async function settleDueTrades(pool, now) {
-  const due = (await pool.query("SELECT t.*, e.phase AS experiment_phase FROM shadow_trades t LEFT JOIN shadow_experiments e ON e.experiment_id = t.experiment_id WHERE t.result IS NULL AND t.settlement_target_at <= $1 ORDER BY t.settlement_target_at ASC LIMIT 200", [now])).rows;
+  const due = (await pool.query("SELECT t.*, e.phase AS experiment_phase FROM shadow_trades t LEFT JOIN shadow_experiments e ON e.experiment_id = t.experiment_id WHERE t.result IS NULL AND t.settlement_target_at + $1 <= $2 ORDER BY t.settlement_target_at ASC LIMIT 200", [SETTLEMENT_GRACE_MS, now])).rows;
   let settled = 0, counted = 0;
   for (const trade of due) {
     const target = Number(trade.settlement_target_at);
@@ -180,6 +185,11 @@ export async function experimentStatus(pool) {
   const perStrategy = (await pool.query("SELECT strategy_version, COUNT(*)::int AS trades, COUNT(*) FILTER (WHERE result='WIN')::int AS wins, COUNT(*) FILTER (WHERE result='LOSS')::int AS losses, COUNT(*) FILTER (WHERE result='DRAW')::int AS draws, COUNT(*) FILTER (WHERE result='UNKNOWN')::int AS unknown, COUNT(*) FILTER (WHERE result IS NULL)::int AS pending FROM shadow_trades WHERE experiment_id=$1 GROUP BY strategy_version", [exp.experiment_id])).rows;
   const checkpoints = (await pool.query("SELECT at_trade, metrics, created_at FROM shadow_experiment_checkpoints WHERE experiment_id=$1 ORDER BY at_trade ASC", [exp.experiment_id])).rows;
   return { experiment: exp, perStrategy, checkpoints, brokerAutomation: "NONE", shadowOnly: true };
+}
+
+export async function experimentTrades(pool, limit = 100) {
+  const trades = (await pool.query("SELECT trade_id, strategy_version, decision, confidence, p_buy, p_sell, p_wait, reference_price, reference_timestamp, settlement_price, settlement_target_at, settlement_observed_at, result, asset_canonical, market_type, segment_id, created_at, settled_at FROM shadow_trades ORDER BY created_at DESC LIMIT $1", [Math.max(1, Math.min(500, Number(limit) || 100))])).rows;
+  return { trades, brokerAutomation: "NONE", shadowOnly: true };
 }
 
 export function startExperimentLoop(pool, intervalMs = 5_000) {
