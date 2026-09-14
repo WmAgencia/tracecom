@@ -16,7 +16,7 @@ export const EXPERIMENT_DISCOVERY_TRADES = 5_000;
 export const SETTLEMENT_TOLERANCE_MS = 30_000;
 export const SETTLEMENT_GRACE_MS = 15_000;
 export const MIN_CANDLES = 24;
-export const STRATEGY_VERSIONS = ["shadow-momentum-v1", "shadow-trend-v1", "shadow-reversion-v1", "shadow-reversion-v2", "shadow-reversion-v3", "shadow-reversion-v4"];
+export const STRATEGY_VERSIONS = ["shadow-momentum-v1", "shadow-trend-v1", "shadow-reversion-v1", "shadow-reversion-v2", "shadow-reversion-v3", "shadow-reversion-v4", "shadow-pullback-v1", "shadow-snapback-v1", "shadow-dual-rsi-v1", "shadow-bollinger-rsi-v1", "shadow-macd-rsi-v1"];
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
@@ -36,13 +36,20 @@ export function computeFeatures(candles) {
   const closes = candles.map((c) => c.close);
   const n = closes.length;
   const ret = (k) => (n > k && closes[n - 1 - k] ? (closes[n - 1] - closes[n - 1 - k]) / closes[n - 1 - k] : null);
-  const ema = (p) => { if (n < p) return null; const a = 2 / (p + 1); let e = closes.slice(0, p).reduce((s, x) => s + x, 0) / p; for (let i = p; i < n; i++) e = closes[i] * a + e * (1 - a); return e; };
-  const ema9 = ema(9), ema21 = ema(21);
-  let rsi = null;
-  if (n > 15) { let g = 0, l = 0; for (let i = n - 14; i < n; i++) { const d = closes[i] - closes[i - 1]; if (d >= 0) g += d; else l -= d; } rsi = l === 0 ? 100 : 100 - 100 / (1 + g / l); }
+  const emaOver = (arr, p) => { if (arr.length < p) return null; const a = 2 / (p + 1); let e = arr.slice(0, p).reduce((s, x) => s + x, 0) / p; for (let i = p; i < arr.length; i++) e = arr[i] * a + e * (1 - a); return e; };
+  const ema = (p) => emaOver(closes, p);
+  const rsiOver = (arr, p) => { if (arr.length <= p) return null; let g = 0, l = 0; for (let i = arr.length - p; i < arr.length; i++) { const d = arr[i] - arr[i - 1]; if (d >= 0) g += d; else l -= d; } return l === 0 ? 100 : 100 - 100 / (1 + g / l); };
+  const ema9 = ema(9), ema21 = ema(21), ema12 = ema(12), ema26 = ema(26);
+  const rsi = rsiOver(closes, 14);
+  const rsi3 = rsiOver(closes, 3);
+  const macdHist = ema12 !== null && ema26 !== null ? ema12 - ema26 : null;
+  let macdHistPrev = null;
+  if (n >= 27) { const prev = closes.slice(0, n - 1); const e12 = emaOver(prev, 12), e26 = emaOver(prev, 26); if (e12 !== null && e26 !== null) macdHistPrev = e12 - e26; }
+  let bbUpper = null, bbLower = null;
+  if (n >= 20) { const w = closes.slice(n - 20); const m = w.reduce((s, x) => s + x, 0) / w.length; const sd = Math.sqrt(w.reduce((s, x) => s + (x - m) ** 2, 0) / w.length); bbUpper = m + 2 * sd; bbLower = m - 2 * sd; }
   let vol = null;
   if (n > 13) { const rs = []; for (let i = n - 12; i < n; i++) rs.push((closes[i] - closes[i - 1]) / closes[i - 1]); const m = rs.reduce((s, x) => s + x, 0) / rs.length; vol = Math.sqrt(rs.reduce((s, x) => s + (x - m) ** 2, 0) / rs.length); }
-  return { momentum30: ret(6), momentum60: ret(12), momentum120: ret(24), slope: ema9 !== null && ema21 ? (ema9 - ema21) / ema21 : null, rsi, vol, last: closes[n - 1] ?? null };
+  return { momentum30: ret(6), momentum60: ret(12), momentum120: ret(24), slope: ema9 !== null && ema21 ? (ema9 - ema21) / ema21 : null, rsi, rsi3, ema12, ema26, macdHist, macdHistPrev, bbUpper, bbLower, vol, last: closes[n - 1] ?? null };
 }
 
 export function evaluateStrategies(f) {
@@ -54,6 +61,11 @@ export function evaluateStrategies(f) {
   { const volOk = f.vol !== null && f.vol < .0012; const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; raw.push({ strategyVersion: "shadow-reversion-v2", direction: volOk && s > .22 ? "BUY" : volOk && s < -.22 ? "SELL" : "WAIT", score: s }); }
   { const volOk = f.vol !== null && f.vol < .0012; const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; const up = f.momentum120 !== null && f.momentum120 > 0; const down = f.momentum120 !== null && f.momentum120 < 0; raw.push({ strategyVersion: "shadow-reversion-v3", direction: volOk && s > .22 && up ? "BUY" : volOk && s < -.22 && down ? "SELL" : "WAIT", score: s }); }
   { const volOk = f.vol !== null && f.vol < .0012; const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; const up = f.momentum120 !== null && f.momentum120 > 0; const down = f.momentum120 !== null && f.momentum120 < 0; const turningUp = f.momentum30 !== null && f.momentum30 > 0; const turningDown = f.momentum30 !== null && f.momentum30 < 0; raw.push({ strategyVersion: "shadow-reversion-v4", direction: volOk && s > .22 && up && turningUp ? "BUY" : volOk && s < -.22 && down && turningDown ? "SELL" : "WAIT", score: s }); }
+  { const up = f.slope !== null && f.slope > 0; const down = f.slope !== null && f.slope < 0; const rec = f.momentum30 !== null && f.momentum30 > 0; const drop = f.momentum30 !== null && f.momentum30 < 0; const s = f.rsi === null ? 0 : (50 - f.rsi) / 50; raw.push({ strategyVersion: "shadow-pullback-v1", direction: up && f.rsi !== null && f.rsi < 42 && rec ? "BUY" : down && f.rsi !== null && f.rsi > 58 && drop ? "SELL" : "WAIT", score: s }); }
+  { const tr = f.momentum120 === null ? 0 : Math.sign(f.momentum120); const s = f.rsi3 === null ? 0 : (55 - f.rsi3) / 45; raw.push({ strategyVersion: "shadow-snapback-v1", direction: tr > 0 && f.rsi3 !== null && f.rsi3 < 15 ? "BUY" : tr < 0 && f.rsi3 !== null && f.rsi3 > 85 ? "SELL" : "WAIT", score: s }); }
+  { const s = f.rsi3 === null ? 0 : (55 - f.rsi3) / 45; raw.push({ strategyVersion: "shadow-dual-rsi-v1", direction: f.rsi3 !== null && f.rsi3 < 30 && f.rsi !== null && f.rsi > 45 ? "BUY" : f.rsi3 !== null && f.rsi3 > 70 && f.rsi !== null && f.rsi < 55 ? "SELL" : "WAIT", score: s }); }
+  { const s = f.rsi === null ? 0 : (55 - f.rsi) / 45; raw.push({ strategyVersion: "shadow-bollinger-rsi-v1", direction: f.last !== null && f.bbLower !== null && f.last <= f.bbLower && f.rsi !== null && f.rsi < 30 ? "BUY" : f.last !== null && f.bbUpper !== null && f.last >= f.bbUpper && f.rsi !== null && f.rsi > 70 ? "SELL" : "WAIT", score: s }); }
+  { const climb = f.macdHist !== null && f.macdHistPrev !== null && f.macdHist > f.macdHistPrev; const fall = f.macdHist !== null && f.macdHistPrev !== null && f.macdHist < f.macdHistPrev; const s = f.macdHist === null ? 0 : clamp(f.macdHist * 20000, -1, 1); raw.push({ strategyVersion: "shadow-macd-rsi-v1", direction: f.rsi !== null && f.rsi < 50 && f.macdHist !== null && f.macdHist > 0 && climb ? "BUY" : f.rsi !== null && f.rsi > 50 && f.macdHist !== null && f.macdHist < 0 && fall ? "SELL" : "WAIT", score: s }); }
   return raw.map((x) => {
     const edge = Math.abs(x.score);
     const pDir = clamp(.5 + edge * .35, .5, .9);
@@ -178,7 +190,7 @@ export async function experimentTick(pool, options = {}) {
     return { status: fresh.status, reason: "ASSET_MISMATCH", targetAsset, liveAsset: live.asset, settlement };
   }
   lastAssetMismatchKey = null;
-  const observations = (await pool.query("SELECT value, EXTRACT(EPOCH FROM observed_at)*1000 AS t, price_observation_id, segment_id, market_context_id, asset_canonical, market_type, context_validation_status FROM price_observations WHERE session_id=$1 AND status='ACCEPTED' ORDER BY observed_at DESC LIMIT 400", [session.id])).rows
+  const observations = (await pool.query("SELECT value, EXTRACT(EPOCH FROM observed_at)*1000 AS t, price_observation_id, segment_id, market_context_id, asset_canonical, market_type, context_validation_status FROM price_observations WHERE session_id=$1 AND status='ACCEPTED' ORDER BY observed_at DESC LIMIT 5000", [session.id])).rows
     .map((r) => ({ t: Number(r.t), v: Number(r.value), id: r.price_observation_id, segment: r.segment_id, context: r.market_context_id, asset: r.asset_canonical, marketType: r.market_type, validation: r.context_validation_status }))
     .filter((o) => o.t > 0 && Number.isFinite(o.v) && o.asset === targetAsset && o.marketType === "OTC" && o.validation === "VALID")
     .sort((a, b) => a.t - b.t);
@@ -233,7 +245,7 @@ export async function retroEvaluate(pool, { strategies = null, maxCreations = 40
   if (!exp) return { created: 0, reason: "NO_EXPERIMENT" };
   if (exp.phase !== "DISCOVERY") return { created: 0, reason: "FROZEN_OR_COMPLETE" };
   const allowed = new Set(strategies && strategies.length ? strategies : STRATEGY_VERSIONS);
-  const sessions = (await pool.query("SELECT session_id FROM price_observations WHERE status='ACCEPTED' GROUP BY session_id ORDER BY MAX(observed_at) DESC LIMIT 25")).rows.map((r) => r.session_id);
+  const sessions = (await pool.query("SELECT session_id FROM price_observations WHERE status='ACCEPTED' GROUP BY session_id ORDER BY MAX(observed_at) DESC LIMIT 50")).rows.map((r) => r.session_id);
   let created = 0, counted = 0, evaluations = 0, newEvents = 0;
   for (const sid of sessions) {
     if (created >= maxCreations) break;
