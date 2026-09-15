@@ -1,0 +1,709 @@
+{
+ "generated_at": "2026-09-15T23:10:28.906Z",
+ "source": "Supabase iqopt_candles_5s (MESMOS datasets; nada refetchado)",
+ "engine": "run-all.cjs v2 causal",
+ "datasets": {
+  "IQOPTION_EURUSD_BINARY_10H": {
+   "candles": 7201,
+   "rows": 7171,
+   "base_market_up": 53.07,
+   "strategies": {
+    "prod_v1fib": {
+     "signals": 148,
+     "buyN": 120,
+     "sellN": 28,
+     "w": 88,
+     "l": 54,
+     "draws": 6,
+     "unknown": 0,
+     "wr": 61.97,
+     "coverage": 2.06,
+     "buyW": 78,
+     "buyL": 38,
+     "buyWR": 67.24,
+     "sellW": 10,
+     "sellL": 16,
+     "sellWR": 38.46,
+     "indepN": 6,
+     "indepWR": 50,
+     "maxWinStreak": 23,
+     "maxLossStreak": 13,
+     "baseStrategy": 51.91,
+     "edge_pp": 10.06
+    },
+    "prod_v3fib": {
+     "signals": 237,
+     "buyN": 173,
+     "sellN": 64,
+     "w": 115,
+     "l": 112,
+     "draws": 10,
+     "unknown": 0,
+     "wr": 50.66,
+     "coverage": 3.3,
+     "buyW": 95,
+     "buyL": 72,
+     "buyWR": 56.89,
+     "sellW": 20,
+     "sellL": 40,
+     "sellWR": 33.33,
+     "indepN": 7,
+     "indepWR": 28.57,
+     "maxWinStreak": 19,
+     "maxLossStreak": 12,
+     "baseStrategy": 51.41,
+     "edge_pp": -0.75
+    },
+    "prod_v6fib": {
+     "signals": 16,
+     "buyN": 13,
+     "sellN": 3,
+     "w": 6,
+     "l": 10,
+     "draws": 0,
+     "unknown": 0,
+     "wr": 37.5,
+     "coverage": 0.22,
+     "buyW": 6,
+     "buyL": 7,
+     "buyWR": 46.15,
+     "sellW": 0,
+     "sellL": 3,
+     "sellWR": 0,
+     "indepN": 2,
+     "indepWR": 50,
+     "maxWinStreak": 4,
+     "maxLossStreak": 5,
+     "baseStrategy": 51.92,
+     "edge_pp": -14.42
+    },
+    "prod_v7and": {
+     "signals": 5,
+     "buyN": 3,
+     "sellN": 2,
+     "w": 3,
+     "l": 2,
+     "draws": 0,
+     "unknown": 0,
+     "wr": 60,
+     "coverage": 0.07,
+     "buyW": 3,
+     "buyL": 0,
+     "buyWR": 100,
+     "sellW": 0,
+     "sellL": 2,
+     "sellWR": 0,
+     "indepN": 1,
+     "indepWR": 100,
+     "maxWinStreak": 2,
+     "maxLossStreak": 2,
+     "baseStrategy": 50.61,
+     "edge_pp": 9.39
+    },
+    "prod_v7relaxed": {
+     "signals": 310,
+     "buyN": 176,
+     "sellN": 134,
+     "w": 164,
+     "l": 130,
+     "draws": 16,
+     "unknown": 0,
+     "wr": 55.78,
+     "coverage": 4.32,
+     "buyW": 109,
+     "buyL": 60,
+     "buyWR": 64.5,
+     "sellW": 55,
+     "sellL": 70,
+     "sellWR": 44,
+     "indepN": 16,
+     "indepWR": 56.25,
+     "maxWinStreak": 21,
+     "maxLossStreak": 10,
+     "baseStrategy": 50.42,
+     "edge_pp": 5.37
+    },
+    "prod_v2fib": {
+     "signals": 262,
+     "buyN": 196,
+     "sellN": 66,
+     "w": 132,
+     "l": 120,
+     "draws": 10,
+     "unknown": 0,
+     "wr": 52.38,
+     "coverage": 3.65,
+     "buyW": 111,
+     "buyL": 79,
+     "buyWR": 58.42,
+     "sellW": 21,
+     "sellL": 41,
+     "sellWR": 33.87,
+     "indepN": 10,
+     "indepWR": 40,
+     "maxWinStreak": 21,
+     "maxLossStreak": 9,
+     "baseStrategy": 51.53,
+     "edge_pp": 0.86
+    },
+    "always_buy": {
+     "signals": 7171,
+     "buyN": 7171,
+     "sellN": 0,
+     "w": 3643,
+     "l": 3221,
+     "draws": 295,
+     "unknown": 12,
+     "wr": 53.07,
+     "coverage": 100,
+     "buyW": 3643,
+     "buyL": 3221,
+     "buyWR": 53.07,
+     "sellW": 0,
+     "sellL": 0,
+     "sellWR": null,
+     "indepN": 378,
+     "indepWR": 51.85,
+     "maxWinStreak": 53,
+     "maxLossStreak": 60,
+     "baseStrategy": 53.07,
+     "edge_pp": 0
+    },
+    "always_sell": {
+     "signals": 7171,
+     "buyN": 0,
+     "sellN": 7171,
+     "w": 3221,
+     "l": 3643,
+     "draws": 295,
+     "unknown": 12,
+     "wr": 46.93,
+     "coverage": 100,
+     "buyW": 0,
+     "buyL": 0,
+     "buyWR": null,
+     "sellW": 3221,
+     "sellL": 3643,
+     "sellWR": 46.93,
+     "indepN": 378,
+     "indepWR": 48.15,
+     "maxWinStreak": 60,
+     "maxLossStreak": 53,
+     "baseStrategy": 46.93,
+     "edge_pp": 0
+    },
+    "random42": {
+     "signals": 7171,
+     "buyN": 3578,
+     "sellN": 3593,
+     "w": 3383,
+     "l": 3481,
+     "draws": 295,
+     "unknown": 12,
+     "wr": 49.29,
+     "coverage": 100,
+     "buyW": 1798,
+     "buyL": 1636,
+     "buyWR": 52.36,
+     "sellW": 1585,
+     "sellL": 1845,
+     "sellWR": 46.21,
+     "indepN": 378,
+     "indepWR": 43.39,
+     "maxWinStreak": 10,
+     "maxLossStreak": 12,
+     "baseStrategy": 49.99,
+     "edge_pp": -0.71
+    },
+    "last_candle": {
+     "signals": 5426,
+     "buyN": 2714,
+     "sellN": 2712,
+     "w": 2593,
+     "l": 2619,
+     "draws": 206,
+     "unknown": 8,
+     "wr": 49.75,
+     "coverage": 75.67,
+     "buyW": 1349,
+     "buyL": 1259,
+     "buyWR": 51.73,
+     "sellW": 1244,
+     "sellL": 1360,
+     "sellWR": 47.77,
+     "indepN": 284,
+     "indepWR": 51.06,
+     "maxWinStreak": 12,
+     "maxLossStreak": 11,
+     "baseStrategy": 50,
+     "edge_pp": -0.25
+    }
+   },
+   "cross_check_vs_iqopt_benchmark": [
+    {
+     "strategy_id": "prod_v6fib",
+     "match": true,
+     "mine": {
+      "s": 16,
+      "w": 6,
+      "l": 10
+     },
+     "bench": {
+      "s": 16,
+      "w": 6,
+      "l": 10
+     }
+    },
+    {
+     "strategy_id": "prod_v7and",
+     "match": true,
+     "mine": {
+      "s": 5,
+      "w": 3,
+      "l": 2
+     },
+     "bench": {
+      "s": 5,
+      "w": 3,
+      "l": 2
+     }
+    },
+    {
+     "strategy_id": "prod_v2fib",
+     "match": true,
+     "mine": {
+      "s": 262,
+      "w": 132,
+      "l": 120
+     },
+     "bench": {
+      "s": 262,
+      "w": 132,
+      "l": 120
+     }
+    },
+    {
+     "strategy_id": "prod_v1fib",
+     "match": true,
+     "mine": {
+      "s": 148,
+      "w": 88,
+      "l": 54
+     },
+     "bench": {
+      "s": 148,
+      "w": 88,
+      "l": 54
+     }
+    },
+    {
+     "strategy_id": "prod_v7relaxed",
+     "match": true,
+     "mine": {
+      "s": 310,
+      "w": 164,
+      "l": 130
+     },
+     "bench": {
+      "s": 310,
+      "w": 164,
+      "l": 130
+     }
+    },
+    {
+     "strategy_id": "prod_v3fib",
+     "match": true,
+     "mine": {
+      "s": 237,
+      "w": 115,
+      "l": 112
+     },
+     "bench": {
+      "s": 237,
+      "w": 115,
+      "l": 112
+     }
+    }
+   ]
+  },
+  "IQOPTION_EURUSD_OTC_10H": {
+   "candles": 7201,
+   "rows": 7171,
+   "base_market_up": 48.91,
+   "strategies": {
+    "prod_v1fib": {
+     "signals": 101,
+     "buyN": 91,
+     "sellN": 10,
+     "w": 49,
+     "l": 49,
+     "draws": 2,
+     "unknown": 1,
+     "wr": 50,
+     "coverage": 1.41,
+     "buyW": 43,
+     "buyL": 45,
+     "buyWR": 48.86,
+     "sellW": 6,
+     "sellL": 4,
+     "sellWR": 60,
+     "indepN": 1,
+     "indepWR": 100,
+     "maxWinStreak": 8,
+     "maxLossStreak": 7,
+     "baseStrategy": 49.12,
+     "edge_pp": 0.88
+    },
+    "prod_v3fib": {
+     "signals": 215,
+     "buyN": 185,
+     "sellN": 30,
+     "w": 110,
+     "l": 100,
+     "draws": 3,
+     "unknown": 2,
+     "wr": 52.38,
+     "coverage": 3,
+     "buyW": 90,
+     "buyL": 90,
+     "buyWR": 50,
+     "sellW": 20,
+     "sellL": 10,
+     "sellWR": 66.67,
+     "indepN": 12,
+     "indepWR": 41.67,
+     "maxWinStreak": 14,
+     "maxLossStreak": 15,
+     "baseStrategy": 49.21,
+     "edge_pp": 3.17
+    },
+    "prod_v6fib": {
+     "signals": 4,
+     "buyN": 4,
+     "sellN": 0,
+     "w": 3,
+     "l": 0,
+     "draws": 0,
+     "unknown": 1,
+     "wr": 100,
+     "coverage": 0.06,
+     "buyW": 3,
+     "buyL": 0,
+     "buyWR": 100,
+     "sellW": 0,
+     "sellL": 0,
+     "sellWR": null,
+     "indepN": 0,
+     "indepWR": null,
+     "maxWinStreak": 3,
+     "maxLossStreak": 0,
+     "baseStrategy": 48.91,
+     "edge_pp": 51.09
+    },
+    "prod_v7and": {
+     "signals": 0,
+     "buyN": 0,
+     "sellN": 0,
+     "w": 0,
+     "l": 0,
+     "draws": 0,
+     "unknown": 0,
+     "wr": null,
+     "coverage": 0,
+     "buyW": 0,
+     "buyL": 0,
+     "buyWR": null,
+     "sellW": 0,
+     "sellL": 0,
+     "sellWR": null,
+     "indepN": 0,
+     "indepWR": null,
+     "maxWinStreak": 0,
+     "maxLossStreak": 0,
+     "baseStrategy": null,
+     "edge_pp": null
+    },
+    "prod_v7relaxed": {
+     "signals": 187,
+     "buyN": 123,
+     "sellN": 64,
+     "w": 96,
+     "l": 88,
+     "draws": 2,
+     "unknown": 1,
+     "wr": 52.17,
+     "coverage": 2.61,
+     "buyW": 57,
+     "buyL": 63,
+     "buyWR": 47.5,
+     "sellW": 39,
+     "sellL": 25,
+     "sellWR": 60.94,
+     "indepN": 6,
+     "indepWR": 66.67,
+     "maxWinStreak": 10,
+     "maxLossStreak": 12,
+     "baseStrategy": 49.66,
+     "edge_pp": 2.52
+    },
+    "prod_v2fib": {
+     "signals": 241,
+     "buyN": 210,
+     "sellN": 31,
+     "w": 119,
+     "l": 117,
+     "draws": 3,
+     "unknown": 2,
+     "wr": 50.42,
+     "coverage": 3.36,
+     "buyW": 99,
+     "buyL": 106,
+     "buyWR": 48.29,
+     "sellW": 20,
+     "sellL": 11,
+     "sellWR": 64.52,
+     "indepN": 12,
+     "indepWR": 41.67,
+     "maxWinStreak": 10,
+     "maxLossStreak": 20,
+     "baseStrategy": 49.19,
+     "edge_pp": 1.24
+    },
+    "always_buy": {
+     "signals": 7171,
+     "buyN": 7171,
+     "sellN": 0,
+     "w": 3445,
+     "l": 3599,
+     "draws": 115,
+     "unknown": 12,
+     "wr": 48.91,
+     "coverage": 100,
+     "buyW": 3445,
+     "buyL": 3599,
+     "buyWR": 48.91,
+     "sellW": 0,
+     "sellL": 0,
+     "sellWR": null,
+     "indepN": 388,
+     "indepWR": 51.03,
+     "maxWinStreak": 54,
+     "maxLossStreak": 68,
+     "baseStrategy": 48.91,
+     "edge_pp": 0
+    },
+    "always_sell": {
+     "signals": 7171,
+     "buyN": 0,
+     "sellN": 7171,
+     "w": 3599,
+     "l": 3445,
+     "draws": 115,
+     "unknown": 12,
+     "wr": 51.09,
+     "coverage": 100,
+     "buyW": 0,
+     "buyL": 0,
+     "buyWR": null,
+     "sellW": 3599,
+     "sellL": 3445,
+     "sellWR": 51.09,
+     "indepN": 388,
+     "indepWR": 48.97,
+     "maxWinStreak": 68,
+     "maxLossStreak": 54,
+     "baseStrategy": 51.09,
+     "edge_pp": 0
+    },
+    "random42": {
+     "signals": 7171,
+     "buyN": 3578,
+     "sellN": 3593,
+     "w": 3509,
+     "l": 3535,
+     "draws": 115,
+     "unknown": 12,
+     "wr": 49.82,
+     "coverage": 100,
+     "buyW": 1707,
+     "buyL": 1797,
+     "buyWR": 48.72,
+     "sellW": 1802,
+     "sellL": 1738,
+     "sellWR": 50.9,
+     "indepN": 388,
+     "indepWR": 51.29,
+     "maxWinStreak": 14,
+     "maxLossStreak": 17,
+     "baseStrategy": 50,
+     "edge_pp": -0.19
+    },
+    "last_candle": {
+     "signals": 6878,
+     "buyN": 3421,
+     "sellN": 3457,
+     "w": 3390,
+     "l": 3415,
+     "draws": 62,
+     "unknown": 11,
+     "wr": 49.82,
+     "coverage": 95.91,
+     "buyW": 1656,
+     "buyL": 1731,
+     "buyWR": 48.89,
+     "sellW": 1734,
+     "sellL": 1684,
+     "sellWR": 50.73,
+     "indepN": 377,
+     "indepWR": 48.28,
+     "maxWinStreak": 9,
+     "maxLossStreak": 15,
+     "baseStrategy": 50.01,
+     "edge_pp": -0.19
+    }
+   },
+   "cross_check_vs_iqopt_benchmark": [
+    {
+     "strategy_id": "prod_v6fib",
+     "match": true,
+     "mine": {
+      "s": 4,
+      "w": 3,
+      "l": 0
+     },
+     "bench": {
+      "s": 4,
+      "w": 3,
+      "l": 0
+     }
+    },
+    {
+     "strategy_id": "prod_v7and",
+     "match": true,
+     "mine": {
+      "s": 0,
+      "w": 0,
+      "l": 0
+     },
+     "bench": {
+      "s": 0,
+      "w": 0,
+      "l": 0
+     }
+    },
+    {
+     "strategy_id": "prod_v2fib",
+     "match": true,
+     "mine": {
+      "s": 241,
+      "w": 119,
+      "l": 117
+     },
+     "bench": {
+      "s": 241,
+      "w": 119,
+      "l": 117
+     }
+    },
+    {
+     "strategy_id": "prod_v1fib",
+     "match": true,
+     "mine": {
+      "s": 101,
+      "w": 49,
+      "l": 49
+     },
+     "bench": {
+      "s": 101,
+      "w": 49,
+      "l": 49
+     }
+    },
+    {
+     "strategy_id": "prod_v7relaxed",
+     "match": true,
+     "mine": {
+      "s": 187,
+      "w": 96,
+      "l": 88
+     },
+     "bench": {
+      "s": 187,
+      "w": 96,
+      "l": 88
+     }
+    },
+    {
+     "strategy_id": "prod_v3fib",
+     "match": true,
+     "mine": {
+      "s": 215,
+      "w": 110,
+      "l": 100
+     },
+     "bench": {
+      "s": 215,
+      "w": 110,
+      "l": 100
+     }
+    }
+   ]
+  }
+ },
+ "comparison": {
+  "previous_hold_blind": {
+   "prod_v1fib": {
+    "wr": 0.75,
+    "n": 4
+   },
+   "prod_v3fib": {
+    "wr": 1,
+    "n": 6
+   },
+   "prod_v6fib": {
+    "wr": 1,
+    "n": 1
+   },
+   "prod_v7and": {
+    "wr": 1,
+    "n": 3
+   },
+   "prod_v7relaxed": {
+    "wr": 0.8,
+    "n": 20
+   }
+  },
+  "previous_gauntlet_disc_val": {
+   "prod_v1fib": {
+    "disc_acc": 0.7058823529411765,
+    "disc_n": 17,
+    "val_acc": 0.8571428571428571,
+    "val_n": 7
+   },
+   "prod_v3fib": {
+    "disc_acc": 0.5384615384615384,
+    "disc_n": 39,
+    "val_acc": 1,
+    "val_n": 8
+   },
+   "prod_v6fib": {
+    "disc_acc": 0,
+    "disc_n": 0,
+    "val_acc": 1,
+    "val_n": 3
+   },
+   "prod_v7and": {
+    "disc_acc": 1,
+    "disc_n": 5,
+    "val_acc": 1,
+    "val_n": 5
+   },
+   "prod_v7relaxed": {
+    "disc_acc": 0.5824175824175825,
+    "disc_n": 91,
+    "val_acc": 0.6923076923076923,
+    "val_n": 26
+   }
+  }
+ }
+}

@@ -1,0 +1,138 @@
+{
+ "generated_at": "2026-09-15T23:10:28.723Z",
+ "note": "V1/V2/V3/V6/V7 são os IDs de produção do pipeline de perfis; V4/V5 não existem nessa linhagem (confirmado no registry/freeze).",
+ "manifest": [
+  {
+   "version": "V1",
+   "strategy_id": "prod_v1fib",
+   "internal_id": "reversion-v1-fib",
+   "source_file": "gauntlet-compile.cjs (case prod) + REGISTRO-TECNICO-ESTRATEGIAS.md",
+   "relation": "principal",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v1-fib"
+   },
+   "hash": "70a7bfcb568bec8c",
+   "rules": "production"
+  },
+  {
+   "version": "V3",
+   "strategy_id": "prod_v3fib",
+   "internal_id": "reversion-v3-fib",
+   "source_file": "gauntlet-compile.cjs (case prod) + REGISTRO-TECNICO-ESTRATEGIAS.md",
+   "relation": "principal",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v3-fib"
+   },
+   "hash": "acf733a866146537",
+   "rules": "production"
+  },
+  {
+   "version": "V6",
+   "strategy_id": "prod_v6fib",
+   "internal_id": "reversion-v6-fib",
+   "source_file": "gauntlet-compile.cjs (case prod) + REGISTRO-TECNICO-ESTRATEGIAS.md",
+   "relation": "principal",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v6-fib"
+   },
+   "hash": "4acbfbe1477cff67",
+   "rules": "production"
+  },
+  {
+   "version": "V7",
+   "strategy_id": "prod_v7and",
+   "internal_id": "reversion-v7-and",
+   "source_file": "gauntlet-compile.cjs (case prod) + REGISTRO-TECNICO-ESTRATEGIAS.md",
+   "relation": "principal (V7-AND)",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v7-and"
+   },
+   "hash": "53173d3e4f31fb4e",
+   "rules": "production"
+  },
+  {
+   "version": "V7 (variante)",
+   "strategy_id": "prod_v7relaxed",
+   "internal_id": "reversion-v7-relaxed",
+   "source_file": "gauntlet-compile.cjs (case prod) + REGISTRO-TECNICO-ESTRATEGIAS.md",
+   "relation": "VARIANTE DE V7 (união relaxada ATR 1x OU V1fib)",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v7-relaxed"
+   },
+   "hash": "853c0fb29b71ea6c",
+   "rules": "production"
+  },
+  {
+   "version": "V2 (variante)",
+   "strategy_id": "prod_v2fib",
+   "internal_id": "(sem id interno; composto gateFib(rsi_vol .22/.0012))",
+   "source_file": "benchmark-freeze.json (addDef) + REGISTRO-TECNICO-ESTRATEGIAS.md (V2)",
+   "relation": "VARIANTE DE V1/V3 (mesma família, sem filtro de tendência)",
+   "spec": {
+    "op": "gateFib",
+    "innerSpec": {
+     "type": "rsi_vol",
+     "t": 0.22,
+     "v": 0.0012
+    }
+   },
+   "hash": "6f8b9001c63b7597",
+   "rules": "production"
+  },
+  {
+   "version": "-",
+   "strategy_id": "always_buy",
+   "internal_id": "always_buy",
+   "source_file": "benchmark-freeze.json (G0)",
+   "relation": "baseline",
+   "spec": {
+    "type": "always",
+    "dir": 1
+   },
+   "hash": "f4b678d23c033748",
+   "rules": "baseline"
+  },
+  {
+   "version": "-",
+   "strategy_id": "always_sell",
+   "internal_id": "always_sell",
+   "source_file": "benchmark-freeze.json (G0)",
+   "relation": "baseline",
+   "spec": {
+    "type": "always",
+    "dir": -1
+   },
+   "hash": "759a4b64a27a43bc",
+   "rules": "baseline"
+  },
+  {
+   "version": "-",
+   "strategy_id": "random42",
+   "internal_id": "random42",
+   "source_file": "benchmark-freeze.json (G0)",
+   "relation": "baseline",
+   "spec": {
+    "type": "random"
+   },
+   "hash": "c67eaeb77ecf330f",
+   "rules": "baseline"
+  },
+  {
+   "version": "-",
+   "strategy_id": "last_candle",
+   "internal_id": "last_candle",
+   "source_file": "benchmark-freeze.json (G0)",
+   "relation": "baseline",
+   "spec": {
+    "type": "last_candle"
+   },
+   "hash": "6ca21bd301b5bc57",
+   "rules": "baseline"
+  }
+ ]
+}
