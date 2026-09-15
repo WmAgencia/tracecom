@@ -1,0 +1,469 @@
+{
+ "generated_at": "2026-09-15T16:16:37.434Z",
+ "db": "supabase-production",
+ "shadowTrades": {
+  "total": 6878,
+  "uniq_trade_id": 6878,
+  "sessions": 15,
+  "assets": 3,
+  "tmin": 1789380927260,
+  "tmax": 1789455235233,
+  "with_settlement": "6349",
+  "with_result": "6878",
+  "with_refprice": "6878"
+ },
+ "shadowByResult": [
+  {
+   "result": "LOSS",
+   "n": 2947
+  },
+  {
+   "result": "WIN",
+   "n": 2892
+  },
+  {
+   "result": "UNKNOWN",
+   "n": 529
+  },
+  {
+   "result": "DRAW",
+   "n": 510
+  }
+ ],
+ "shadowByAsset": [
+  {
+   "asset_canonical": "EUR/USD",
+   "market_type": "OTC",
+   "n": 3057
+  },
+  {
+   "asset_canonical": "EUR/NZD",
+   "market_type": "OTC",
+   "n": 2935
+  },
+  {
+   "asset_canonical": "NZD/USD",
+   "market_type": "OTC",
+   "n": 886
+  }
+ ],
+ "shadowByStrategy": [
+  {
+   "strategy_version": "shadow-reversion-v1",
+   "n": 1641
+  },
+  {
+   "strategy_version": "shadow-reversion-v2",
+   "n": 1297
+  },
+  {
+   "strategy_version": "shadow-momentum-v1",
+   "n": 1045
+  },
+  {
+   "strategy_version": "shadow-dual-rsi-v1",
+   "n": 1045
+  },
+  {
+   "strategy_version": "shadow-trend-v1",
+   "n": 591
+  },
+  {
+   "strategy_version": "shadow-snapback-v1",
+   "n": 478
+  },
+  {
+   "strategy_version": "shadow-reversion-v3",
+   "n": 209
+  },
+  {
+   "strategy_version": "shadow-bollinger-rsi-v1",
+   "n": 151
+  },
+  {
+   "strategy_version": "shadow-reversion-v6",
+   "n": 142
+  },
+  {
+   "strategy_version": "shadow-reversion-v5",
+   "n": 98
+  },
+  {
+   "strategy_version": "shadow-macd-rsi-v1",
+   "n": 83
+  },
+  {
+   "strategy_version": "shadow-reversion-v4",
+   "n": 66
+  },
+  {
+   "strategy_version": "shadow-pullback-v1",
+   "n": 32
+  }
+ ],
+ "shadowByPhase": [
+  {
+   "phase": "DISCOVERY",
+   "n": 5373
+  },
+  {
+   "phase": "VALIDATION",
+   "n": 1505
+  }
+ ],
+ "shadowByExperiment": [
+  {
+   "experiment_id": "shadow_1789387640187",
+   "n": 6878
+  }
+ ],
+ "dupTradeIds": [],
+ "sessions": [
+  {
+   "session_id": "vision_582ddb48-9e04-4c8c-8f44-14e3f19f499d",
+   "t0min": 1789380927260,
+   "t0max": 1789383061943,
+   "n": 13,
+   "segs": 3,
+   "assets": 1,
+   "asset_list": "NZD/USD"
+  },
+  {
+   "session_id": "vision_c436df7d-6bfd-4d29-a801-caba349c7d61",
+   "t0min": 1789383673290,
+   "t0max": 1789384868925,
+   "n": 172,
+   "segs": 1,
+   "assets": 1,
+   "asset_list": "NZD/USD"
+  },
+  {
+   "session_id": "vision_b17ef5e8-94e9-4085-b18a-1a0eaebccfd2",
+   "t0min": 1789385633937,
+   "t0max": 1789386794591,
+   "n": 114,
+   "segs": 1,
+   "assets": 1,
+   "asset_list": "NZD/USD"
+  },
+  {
+   "session_id": "vision_c23ce016-dfc1-4ff9-a965-1d6d3c4f23c3",
+   "t0min": 1789387078977,
+   "t0max": 1789389357186,
+   "n": 587,
+   "segs": 1,
+   "assets": 1,
+   "asset_list": "NZD/USD"
+  },
+  {
+   "session_id": "vision_e87a27f6-9c8e-4069-89e6-fc1cb14ae819",
+   "t0min": 1789390976660,
+   "t0max": 1789392743896,
+   "n": 397,
+   "segs": 3,
+   "assets": 1,
+   "asset_list": "EUR/USD"
+  },
+  {
+   "session_id": "vision_e61a8abc-110a-41d3-a678-8a2471af4b4f",
+   "t0min": 1789393498243,
+   "t0max": 1789395941277,
+   "n": 452,
+   "segs": 6,
+   "assets": 1,
+   "asset_list": "EUR/USD"
+  },
+  {
+   "session_id": "vision_dd598375-98eb-45d9-aadd-ef6b1a759a02",
+   "t0min": 1789396794014,
+   "t0max": 1789399175557,
+   "n": 860,
+   "segs": 1,
+   "assets": 1,
+   "asset_list": "EUR/USD"
+  },
+  {
+   "session_id": "vision_01a8f226-5c1e-4257-adf0-393e03b92744",
+   "t0min": 1789399620997,
+   "t0max": 1789402002157,
+   "n": 887,
+   "segs": 3,
+   "assets": 1,
+   "asset_list": "EUR/USD"
+  },
+  {
+   "session_id": "vision_6b7ae2d6-2cee-490a-93ef-deaff11f9059",
+   "t0min": 1789404685464,
+   "t0max": 1789407180258,
+   "n": 841,
+   "segs": 3,
+   "assets": 2,
+   "asset_list": "EUR/NZD,EUR/USD"
+  },
+  {
+   "session_id": "vision_4f382fd0-86c9-46d9-a0f5-7f5d0119d825",
+   "t0min": 1789407837818,
+   "t0max": 1789411333547,
+   "n": 1093,
+   "segs": 3,
+   "assets": 1,
+   "asset_list": "EUR/NZD"
+  },
+  {
+   "session_id": "vision_8a952e8a-2a2d-410d-b535-f3b652a640d3",
+   "t0min": 1789411958533,
+   "t0max": 1789414961667,
+   "n": 410,
+   "segs": 3,
+   "assets": 1,
+   "asset_list": "EUR/NZD"
+  },
+  {
+   "session_id": "vision_5a8de64b-f9ce-417d-b155-a1d0f4c41a73",
+   "t0min": 1789416727498,
+   "t0max": 1789417932391,
+   "n": 52,
+   "segs": 2,
+   "assets": 1,
+   "asset_list": "EUR/NZD"
+  },
+  {
+   "session_id": "vision_da1d80d7-d430-4aec-bda9-a4da9e39376b",
+   "t0min": 1789420029136,
+   "t0max": 1789421804274,
+   "n": 148,
+   "segs": 4,
+   "assets": 1,
+   "asset_list": "EUR/NZD"
+  },
+  {
+   "session_id": "vision_801bea94-1acc-49ed-8f65-18d4687db225",
+   "t0min": 1789426568453,
+   "t0max": 1789431658170,
+   "n": 471,
+   "segs": 5,
+   "assets": 1,
+   "asset_list": "EUR/NZD"
+  },
+  {
+   "session_id": "vision_24fa7fc9-0e96-4def-a080-436b664e84de",
+   "t0min": 1789450537935,
+   "t0max": 1789455235233,
+   "n": 381,
+   "segs": 16,
+   "assets": 1,
+   "asset_list": "EUR/NZD"
+  }
+ ],
+ "priceObs": {
+  "total": 18666,
+  "tmin": "2026-09-14T10:10:01.178Z",
+  "tmax": "2026-09-15T14:47:30.039Z"
+ },
+ "priceObsByStatus": [
+  {
+   "status": "ACCEPTED",
+   "market_type": "OTC",
+   "context_validation_status": "VALID",
+   "n": 11400
+  },
+  {
+   "status": "UNAVAILABLE",
+   "market_type": "OTC",
+   "context_validation_status": "VALID",
+   "n": 3925
+  },
+  {
+   "status": "ACCEPTED",
+   "market_type": "OTC",
+   "context_validation_status": "TIMEFRAME_MISMATCH",
+   "n": 707
+  },
+  {
+   "status": "UNAVAILABLE",
+   "market_type": "UNKNOWN",
+   "context_validation_status": "INSUFFICIENT_EVIDENCE",
+   "n": 599
+  },
+  {
+   "status": "REJECTED",
+   "market_type": "OTC",
+   "context_validation_status": "VALID",
+   "n": 548
+  },
+  {
+   "status": "ACCEPTED",
+   "market_type": "UNKNOWN",
+   "context_validation_status": "INSUFFICIENT_EVIDENCE",
+   "n": 494
+  },
+  {
+   "status": "UNAVAILABLE",
+   "market_type": "OTC",
+   "context_validation_status": "TIMEFRAME_MISMATCH",
+   "n": 393
+  },
+  {
+   "status": "ACCEPTED",
+   "market_type": "OTC",
+   "context_validation_status": "VISIBLE_WINDOW_MISMATCH",
+   "n": 141
+  },
+  {
+   "status": "UNAVAILABLE",
+   "market_type": "UNKNOWN",
+   "context_validation_status": "MARKET_TYPE_MISMATCH",
+   "n": 83
+  },
+  {
+   "status": "ACCEPTED",
+   "market_type": "UNKNOWN",
+   "context_validation_status": "MARKET_TYPE_MISMATCH",
+   "n": 83
+  },
+  {
+   "status": "REJECTED",
+   "market_type": "UNKNOWN",
+   "context_validation_status": "INSUFFICIENT_EVIDENCE",
+   "n": 60
+  },
+  {
+   "status": "ACCEPTED",
+   "market_type": "UNKNOWN",
+   "context_validation_status": "UNKNOWN",
+   "n": 57
+  }
+ ],
+ "liveDecisions": {
+  "n": 8906,
+  "sessions": 25,
+  "tmin": "2026-09-14T10:10:02.976Z",
+  "tmax": "2026-09-15T14:47:20.606Z"
+ },
+ "liveDecisionsBySource": [
+  {
+   "decision_source": "FAST_THEN_DEEP",
+   "probability_source": "EVIDENCE_MODEL",
+   "n": 6072
+  },
+  {
+   "decision_source": "FAST_THEN_DEEP",
+   "probability_source": null,
+   "n": 2187
+  },
+  {
+   "decision_source": "FAST_THEN_DEEP",
+   "probability_source": "FABLE_5_1",
+   "n": 640
+  },
+  {
+   "decision_source": "FAST_THEN_DEEP",
+   "probability_source": "V3FIB_FROZEN_v1",
+   "n": 7
+  }
+ ],
+ "groundTruthsCols": [
+  "id",
+  "ground_truth_id",
+  "session_id",
+  "decision_id",
+  "signal_id",
+  "operation_id",
+  "market_event_id",
+  "entry_price_observation_id",
+  "settlement_price_observation_id",
+  "entry_price",
+  "settlement_price",
+  "result",
+  "status",
+  "trace_id",
+  "created_at"
+ ],
+ "groundTruthsN": 0,
+ "liveSettlementsN": 0,
+ "shadowExperiments": [
+  {
+   "id": "1",
+   "experiment_id": "shadow_1789387640187",
+   "target_trades": 10000,
+   "target_asset": "EUR/NZD",
+   "phase": "VALIDATION",
+   "status": "VALIDATION_RUNNING",
+   "valid_settled_trades": 6355,
+   "discovery_count": 5040,
+   "validation_count": 1315,
+   "unique_market_events": 3212,
+   "evaluations": 89522,
+   "frozen_strategy_versions": [
+    {
+     "n": 444,
+     "wins": 231,
+     "wilson": 0.47382529986558836,
+     "strategyVersion": "shadow-dual-rsi-v1"
+    },
+    {
+     "n": 766,
+     "wins": 390,
+     "wilson": 0.47377826818849167,
+     "strategyVersion": "shadow-reversion-v1"
+    },
+    {
+     "n": 195,
+     "wins": 106,
+     "wilson": 0.47350905457690146,
+     "strategyVersion": "shadow-snapback-v1"
+    },
+    {
+     "n": 0,
+     "wins": 0,
+     "wilson": null,
+     "ownerOverride": true,
+     "strategyVersion": "shadow-reversion-v6"
+    }
+   ],
+   "validation_started_at": "1789411068232",
+   "started_at": "1789387640187",
+   "last_trade_at": "1789455238830",
+   "created_at": "2026-09-14T12:07:20.408Z",
+   "updated_at": "2026-09-15T06:59:50.440Z"
+  }
+ ],
+ "marketObs": {
+  "n": 12449
+ },
+ "dataset": {
+  "trades": 6878,
+  "snapshots": 3212,
+  "eligible": 2592,
+  "skippedWarmup": 620,
+  "label60": {
+   "up": 1270,
+   "down": 1395,
+   "draw": 207,
+   "missing": 340
+  },
+  "systemCrosscheck": {
+   "agree": 2854,
+   "disagree": 18,
+   "draws": 207
+  },
+  "independent": 267,
+  "splits": {
+   "DISC": 1555,
+   "EMBARGO": 7,
+   "VAL": 513,
+   "HOLD": 517,
+   "indepDISC": 151,
+   "indepVAL": 49,
+   "indepHOLD": 65
+  },
+  "boundaries": {
+   "tA": 1789408869732,
+   "tB": 1789417170859,
+   "tA_iso": "2026-09-14T18:01:09.732Z",
+   "tB_iso": "2026-09-14T20:19:30.859Z",
+   "tmin": 1789380927260,
+   "tmax": 1789454238024
+  }
+ }
+}

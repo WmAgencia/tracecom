@@ -1,0 +1,678 @@
+{
+ "executed_at": "2026-09-15T16:26:47.977Z",
+ "manifest_hash": "2a49fb3e2b80ee87331fb2edf318d0d2",
+ "executed_once": true,
+ "holdout_rows": 517,
+ "finalists": [
+  {
+   "id": "and(fib_ctx,stoch_r_30)",
+   "n": 21,
+   "w": 17,
+   "l": 4,
+   "d": 3,
+   "acc": 0.81,
+   "coverage": 0.0464,
+   "wilson": [
+    0.599990134607267,
+    0.9233255938482269
+   ],
+   "indep": {
+    "n": 3,
+    "acc": 0.333
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 21,
+     "acc": 0.81
+    }
+   },
+   "decision_counts": {
+    "buy": 12,
+    "sell": 12,
+    "wait": 493
+   },
+   "pre_holdout": {
+    "disc_acc": 0.6375,
+    "disc_n": 80,
+    "val_acc": 0.6785714285714286,
+    "val_n": 28,
+    "folds": [
+     0.65,
+     0.667,
+     0.632,
+     0.588
+    ],
+    "p_perm": 0.04495504495504495
+   }
+  },
+  {
+   "id": "and(struct_f,macd_r)",
+   "n": 85,
+   "w": 64,
+   "l": 21,
+   "d": 14,
+   "acc": 0.753,
+   "coverage": 0.1915,
+   "wilson": [
+    0.651652476458812,
+    0.8323550155269245
+   ],
+   "indep": {
+    "n": 6,
+    "acc": 0.5
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 85,
+     "acc": 0.753
+    }
+   },
+   "decision_counts": {
+    "buy": 35,
+    "sell": 64,
+    "wait": 418
+   },
+   "pre_holdout": {
+    "disc_acc": 0.6216216216216216,
+    "disc_n": 222,
+    "val_acc": 0.6323529411764706,
+    "val_n": 68,
+    "folds": [
+     0.559,
+     0.549,
+     0.692,
+     0.727
+    ],
+    "p_perm": 0.022977022977022976
+   }
+  },
+  {
+   "id": "gate(struct_f|bullDiv)",
+   "n": 40,
+   "w": 27,
+   "l": 13,
+   "d": 7,
+   "acc": 0.675,
+   "coverage": 0.0909,
+   "wilson": [
+    0.52017458088898,
+    0.7991568303733828
+   ],
+   "indep": {
+    "n": 5,
+    "acc": 0.8
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 40,
+     "acc": 0.675
+    }
+   },
+   "decision_counts": {
+    "buy": 10,
+    "sell": 37,
+    "wait": 470
+   },
+   "pre_holdout": {
+    "disc_acc": 0.7065217391304348,
+    "disc_n": 92,
+    "val_acc": 0.65625,
+    "val_n": 32,
+    "folds": [
+     0.571,
+     0.609,
+     0.909,
+     0.784
+    ],
+    "p_perm": 0.011988011988011988
+   }
+  },
+  {
+   "id": "gate(struct_f|expansion>1.3)",
+   "n": 70,
+   "w": 51,
+   "l": 19,
+   "d": 12,
+   "acc": 0.729,
+   "coverage": 0.1586,
+   "wilson": [
+    0.614554665291375,
+    0.8188053919121524
+   ],
+   "indep": {
+    "n": 6,
+    "acc": 0.333
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 70,
+     "acc": 0.729
+    }
+   },
+   "decision_counts": {
+    "buy": 35,
+    "sell": 47,
+    "wait": 435
+   },
+   "pre_holdout": {
+    "disc_acc": 0.5941422594142259,
+    "disc_n": 239,
+    "val_acc": 0.625,
+    "val_n": 64,
+    "folds": [
+     0.463,
+     0.5,
+     0.574,
+     0.806
+    ],
+    "p_perm": 0.04595404595404595
+   }
+  }
+ ],
+ "references": [
+  {
+   "id": "prod_v1fib",
+   "n": 4,
+   "w": 3,
+   "l": 1,
+   "d": 0,
+   "acc": 0.75,
+   "coverage": 0.0077,
+   "wilson": [
+    0.3006360524426366,
+    0.9544139373553637
+   ],
+   "indep": {
+    "n": 1,
+    "acc": 1
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 4,
+     "acc": 0.75
+    }
+   },
+   "decision_counts": {
+    "buy": 4,
+    "sell": 0,
+    "wait": 513
+   }
+  },
+  {
+   "id": "prod_v3fib",
+   "n": 6,
+   "w": 6,
+   "l": 0,
+   "d": 0,
+   "acc": 1,
+   "coverage": 0.0116,
+   "wilson": [
+    0.6096569663469354,
+    0.9999999999999999
+   ],
+   "indep": {
+    "n": 1,
+    "acc": 1
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 6,
+     "acc": 1
+    }
+   },
+   "decision_counts": {
+    "buy": 6,
+    "sell": 0,
+    "wait": 511
+   }
+  },
+  {
+   "id": "prod_v6fib",
+   "n": 1,
+   "w": 1,
+   "l": 0,
+   "d": 0,
+   "acc": 1,
+   "coverage": 0.0019,
+   "wilson": [
+    0.20654329147389294,
+    1
+   ],
+   "indep": {
+    "n": 1,
+    "acc": 1
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 1,
+     "acc": 1
+    }
+   },
+   "decision_counts": {
+    "buy": 1,
+    "sell": 0,
+    "wait": 516
+   }
+  },
+  {
+   "id": "prod_v7and",
+   "n": 3,
+   "w": 3,
+   "l": 0,
+   "d": 0,
+   "acc": 1,
+   "coverage": 0.0058,
+   "wilson": [
+    0.43849391955098227,
+    1
+   ],
+   "indep": {
+    "n": 1,
+    "acc": 1
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 3,
+     "acc": 1
+    }
+   },
+   "decision_counts": {
+    "buy": 3,
+    "sell": 0,
+    "wait": 514
+   }
+  },
+  {
+   "id": "prod_v7relaxed",
+   "n": 20,
+   "w": 16,
+   "l": 4,
+   "d": 5,
+   "acc": 0.8,
+   "coverage": 0.0484,
+   "wilson": [
+    0.5839782779742401,
+    0.9193436467288
+   ],
+   "indep": {
+    "n": 3,
+    "acc": 0.333
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 20,
+     "acc": 0.8
+    }
+   },
+   "decision_counts": {
+    "buy": 11,
+    "sell": 14,
+    "wait": 492
+   }
+  },
+  {
+   "id": "always_buy",
+   "n": 427,
+   "w": 175,
+   "l": 252,
+   "d": 90,
+   "acc": 0.41,
+   "coverage": 1,
+   "wilson": [
+    0.3641934321775946,
+    0.45708659277821284
+   ],
+   "indep": {
+    "n": 49,
+    "acc": 0.49
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 427,
+     "acc": 0.41
+    }
+   },
+   "decision_counts": {
+    "buy": 517,
+    "sell": 0,
+    "wait": 0
+   }
+  },
+  {
+   "id": "always_sell",
+   "n": 427,
+   "w": 252,
+   "l": 175,
+   "d": 90,
+   "acc": 0.59,
+   "coverage": 1,
+   "wilson": [
+    0.5429134072217872,
+    0.6358065678224054
+   ],
+   "indep": {
+    "n": 49,
+    "acc": 0.51
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 427,
+     "acc": 0.59
+    }
+   },
+   "decision_counts": {
+    "buy": 0,
+    "sell": 517,
+    "wait": 0
+   }
+  },
+  {
+   "id": "random42",
+   "n": 427,
+   "w": 205,
+   "l": 222,
+   "d": 90,
+   "acc": 0.48,
+   "coverage": 1,
+   "wilson": [
+    0.43309465472612924,
+    0.5274476884459322
+   ],
+   "indep": {
+    "n": 49,
+    "acc": 0.592
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 427,
+     "acc": 0.48
+    }
+   },
+   "decision_counts": {
+    "buy": 250,
+    "sell": 267,
+    "wait": 0
+   }
+  },
+  {
+   "id": "last_candle",
+   "n": 418,
+   "w": 197,
+   "l": 221,
+   "d": 71,
+   "acc": 0.471,
+   "coverage": 0.9458,
+   "wilson": [
+    0.42391669019588313,
+    0.5191899166442199
+   ],
+   "indep": {
+    "n": 49,
+    "acc": 0.49
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 418,
+     "acc": 0.471
+    }
+   },
+   "decision_counts": {
+    "buy": 221,
+    "sell": 268,
+    "wait": 28
+   }
+  },
+  {
+   "id": "mom_f_0.0002",
+   "n": 383,
+   "w": 223,
+   "l": 160,
+   "d": 79,
+   "acc": 0.582,
+   "coverage": 0.8936,
+   "wilson": [
+    0.5322741989402953,
+    0.6305831566284956
+   ],
+   "indep": {
+    "n": 43,
+    "acc": 0.465
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 383,
+     "acc": 0.582
+    }
+   },
+   "decision_counts": {
+    "buy": 155,
+    "sell": 307,
+    "wait": 55
+   }
+  },
+  {
+   "id": "rsi_band_0.63_0.857",
+   "n": 72,
+   "w": 27,
+   "l": 45,
+   "d": 3,
+   "acc": 0.375,
+   "coverage": 0.1451,
+   "wilson": [
+    0.27219009399354577,
+    0.4904731409593034
+   ],
+   "indep": {
+    "n": 8,
+    "acc": 0.5
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 72,
+     "acc": 0.375
+    }
+   },
+   "decision_counts": {
+    "buy": 58,
+    "sell": 17,
+    "wait": 442
+   }
+  },
+  {
+   "id": "struct_f",
+   "n": 248,
+   "w": 151,
+   "l": 97,
+   "d": 45,
+   "acc": 0.609,
+   "coverage": 0.5667,
+   "wilson": [
+    0.5469154553438071,
+    0.6675050375374325
+   ],
+   "indep": {
+    "n": 25,
+    "acc": 0.4
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 248,
+     "acc": 0.609
+    }
+   },
+   "decision_counts": {
+    "buy": 115,
+    "sell": 178,
+    "wait": 224
+   }
+  },
+  {
+   "id": "stoch_r_30",
+   "n": 330,
+   "w": 157,
+   "l": 173,
+   "d": 61,
+   "acc": 0.476,
+   "coverage": 0.7563,
+   "wilson": [
+    0.4224629592549987,
+    0.5296101197141891
+   ],
+   "indep": {
+    "n": 38,
+    "acc": 0.474
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 330,
+     "acc": 0.476
+    }
+   },
+   "decision_counts": {
+    "buy": 243,
+    "sell": 148,
+    "wait": 126
+   }
+  },
+  {
+   "id": "fib_ctx",
+   "n": 65,
+   "w": 37,
+   "l": 28,
+   "d": 12,
+   "acc": 0.569,
+   "coverage": 0.1489,
+   "wilson": [
+    0.44832757984982086,
+    0.6824073246265422
+   ],
+   "indep": {
+    "n": 9,
+    "acc": 0.222
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 65,
+     "acc": 0.569
+    }
+   },
+   "decision_counts": {
+    "buy": 35,
+    "sell": 42,
+    "wait": 440
+   }
+  },
+  {
+   "id": "macd_r",
+   "n": 406,
+   "w": 239,
+   "l": 167,
+   "d": 79,
+   "acc": 0.589,
+   "coverage": 0.9381,
+   "wilson": [
+    0.5401907469719147,
+    0.6354868806774014
+   ],
+   "indep": {
+    "n": 40,
+    "acc": 0.575
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 406,
+     "acc": 0.589
+    }
+   },
+   "decision_counts": {
+    "buy": 211,
+    "sell": 274,
+    "wait": 32
+   }
+  },
+  {
+   "id": "div_r",
+   "n": 106,
+   "w": 41,
+   "l": 65,
+   "d": 22,
+   "acc": 0.387,
+   "coverage": 0.2476,
+   "wilson": [
+    0.29958735620971916,
+    0.4819161907160358
+   ],
+   "indep": {
+    "n": 22,
+    "acc": 0.409
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 106,
+     "acc": 0.387
+    }
+   },
+   "decision_counts": {
+    "buy": 88,
+    "sell": 40,
+    "wait": 389
+   }
+  },
+  {
+   "id": "and(struct_f,stoch_r_30)",
+   "n": 40,
+   "w": 24,
+   "l": 16,
+   "d": 8,
+   "acc": 0.6,
+   "coverage": 0.0928,
+   "wilson": [
+    0.445956198273935,
+    0.7365188938759863
+   ],
+   "indep": {
+    "n": 5,
+    "acc": 0.4
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 40,
+     "acc": 0.6
+    }
+   },
+   "decision_counts": {
+    "buy": 28,
+    "sell": 20,
+    "wait": 469
+   }
+  },
+  {
+   "id": "and(fib_ctx,macd_r)",
+   "n": 32,
+   "w": 22,
+   "l": 10,
+   "d": 6,
+   "acc": 0.688,
+   "coverage": 0.0735,
+   "wilson": [
+    0.514330003019676,
+    0.8204764788338126
+   ],
+   "indep": {
+    "n": 3,
+    "acc": 0.333
+   },
+   "by_asset": {
+    "EUR/NZD": {
+     "n": 32,
+     "acc": 0.688
+    }
+   },
+   "decision_counts": {
+    "buy": 15,
+    "sell": 23,
+    "wait": 479
+   }
+  }
+ ]
+}
