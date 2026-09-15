@@ -22,8 +22,10 @@ const STRATEGIES = [
   { key: "v2", version: "reversion-v2-fib", profile: "AGRESSIVO" },
   { key: "v3", version: "reversion-v3-fib", profile: "AGRESSIVO" },
   { key: "v6", version: "reversion-v6-fib", profile: "CONSERVADOR" },
+  { key: "v7and", version: "reversion-v7-and", profile: "EXPERIMENTAL" },
+  { key: "v7relaxed", version: "reversion-v7-relaxed", profile: "EXPERIMENTAL" },
 ];
-const CONFIG = { version: "fwd-profiles-2.0.0", asset: ASSET, bucket_ms: BUCKET, min_candles: MIN_CANDLES, tol_ms: TOL, grace_ms: GRACE, warmup_ms: WARMUP_MS, profiles: { AGRESSIVO: ["reversion-v2-fib", "reversion-v3-fib"], BALANCEADO: ["reversion-v1-fib"], CONSERVADOR: ["reversion-v6-fib"] }, rules: "frozen: v1/v2/v3 via signalsFor; v6fib = deep band |s| in [0.63,0.857] & vol<0.0009 & golden zone & swing context", concordance: "registered only (count+direction); never used for decisions" };
+const CONFIG = { version: "fwd-profiles-2.1.0", asset: ASSET, bucket_ms: BUCKET, min_candles: MIN_CANDLES, tol_ms: TOL, grace_ms: GRACE, warmup_ms: WARMUP_MS, profiles: { AGRESSIVO: ["reversion-v2-fib", "reversion-v3-fib"], BALANCEADO: ["reversion-v1-fib"], CONSERVADOR: ["reversion-v6-fib"], EXPERIMENTAL: ["reversion-v7-and", "reversion-v7-relaxed"] }, rules: "frozen: v1/v2/v3 via signalsFor; v6fib = deep band; v7and = ATR-Fib(3x) == V1Fib; v7relaxed = ATR-Fib(1x) OR V1Fib (conflict=WAIT)", concordance: "registered only (v1-v6 count+direction); never used for decisions" };
 const CONFIG_HASH = createHash("sha256").update(JSON.stringify(CONFIG)).digest("hex").slice(0, 16);
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 4 });
 
@@ -33,12 +35,21 @@ function decideV6Fib(f) {
   const fibDir = f.fib && f.fib.inZone ? (f.s > 0 && f.fib.upSwing ? "BUY" : f.s < 0 && !f.fib.upSwing ? "SELL" : null) : null;
   return f.vol !== null && f.vol < .0009 && deep && fibDir ? fibDir : "WAIT";
 }
-export function decideAll(f) {
+function atrSma(candles) { const m = candles.length; const atr = candles.slice(m - 14).reduce((a, x) => a + (x.high - x.low), 0) / 14; const sma20 = candles.slice(m - 20).reduce((a, x) => a + x.close, 0) / 20; return { atr, sma20 }; }
+// ATR-Overshoot+Fib: desvio >= mult*ATR(14) da SMA20 + golden zone + contexto de swing (regra congelada do experimento)
+export function decideAtrFib(f, candles, mult) { if (!f || !f.fib) return "WAIT"; const lastCandle = candles[candles.length - 1]; const close = lastCandle ? lastCandle.close : null; if (close === null || !Number.isFinite(close)) return "WAIT"; const { atr, sma20 } = atrSma(candles); const dir = sma20 - close >= mult * atr ? "BUY" : close - sma20 >= mult * atr ? "SELL" : "WAIT"; const fibDir = dir === "BUY" ? f.fib.upSwing : dir === "SELL" ? !f.fib.upSwing : false; return dir !== "WAIT" && f.fib.inZone && fibDir ? dir : "WAIT"; }
+// V7-AND: ATR-Overshoot+Fib (3x) E V1+Fib concordando na mesma direção
+export function decideV7And(f, candles) { const a = decideAtrFib(f, candles, 3); const b = f ? (signalsFor(f, "reversion-v1-fib")[0] ?? "WAIT") : "WAIT"; return a !== "WAIT" && a === b ? a : "WAIT"; }
+// V7-Relaxado: união (ATR-Overshoot+Fib com dev>=1xATR) OU (V1+Fib); conflito -> WAIT
+export function decideV7Relaxed(f, candles) { const a = decideAtrFib(f, candles, 1); const b = f ? (signalsFor(f, "reversion-v1-fib")[0] ?? "WAIT") : "WAIT"; if (a === "WAIT") return b; if (b === "WAIT") return a; return a === b ? a : "WAIT"; }
+export function decideAll(f, candles) {
   const v1 = f ? (signalsFor(f, "reversion-v1-fib")[0] ?? "WAIT") : "WAIT";
   const v2 = f ? (signalsFor(f, "reversion-v2-fib")[0] ?? "WAIT") : "WAIT";
   const v3 = f ? (signalsFor(f, "reversion-v3-fib")[0] ?? "WAIT") : "WAIT";
   const v6 = decideV6Fib(f);
-  const decisions = { v1, v2, v3, v6 };
+  const v7and = decideV7And(f, candles);
+  const v7relaxed = decideV7Relaxed(f, candles);
+  const decisions = { v1, v2, v3, v6, v7and, v7relaxed };
   const nBuy = [v1, v2, v3, v6].filter((d) => d === "BUY").length;
   const nSell = [v1, v2, v3, v6].filter((d) => d === "SELL").length;
   const nWait = 4 - nBuy - nSell;
@@ -50,7 +61,9 @@ const outcome = (side, entry, exit) => (exit === null || exit === undefined ? nu
 
 async function init() {
   await pool.query(`CREATE TABLE IF NOT EXISTS fwd_profile_runs (run_id text PRIMARY KEY, started_at timestamptz NOT NULL DEFAULT now(), start_ms bigint NOT NULL, asset text NOT NULL, config jsonb NOT NULL, config_hash text NOT NULL)`);
-  await pool.query(`CREATE TABLE IF NOT EXISTS fwd_profile_events (event_id text PRIMARY KEY, run_id text NOT NULL, asset text NOT NULL, session_id text, segment_id text, t0_ms bigint NOT NULL, entry_price double precision, entry_observation_id text, market_context_id text, v1 text, v2 text, v3 text, v6 text, n_buy int, n_sell int, n_wait int, concordant_count int, concordant_direction text, price_t45 double precision, ts_t45 bigint, obs_t45 text, price_t60 double precision, ts_t60 bigint, obs_t60 text, retry_count int NOT NULL DEFAULT 0, last_retry_ms bigint, created_ms bigint NOT NULL, settled_ms bigint, provenance jsonb)`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS fwd_profile_events (event_id text PRIMARY KEY, run_id text NOT NULL, asset text NOT NULL, session_id text, segment_id text, t0_ms bigint NOT NULL, entry_price double precision, entry_observation_id text, market_context_id text, v1 text, v2 text, v3 text, v6 text, v7and text, v7relaxed text, n_buy int, n_sell int, n_wait int, concordant_count int, concordant_direction text, price_t45 double precision, ts_t45 bigint, obs_t45 text, price_t60 double precision, ts_t60 bigint, obs_t60 text, retry_count int NOT NULL DEFAULT 0, last_retry_ms bigint, created_ms bigint NOT NULL, settled_ms bigint, provenance jsonb)`);
+  await pool.query(`ALTER TABLE fwd_profile_events ADD COLUMN IF NOT EXISTS v7and text`);
+  await pool.query(`ALTER TABLE fwd_profile_events ADD COLUMN IF NOT EXISTS v7relaxed text`);
   await pool.query(`CREATE TABLE IF NOT EXISTS fwd_profile_decisions (decision_id text PRIMARY KEY, event_id text NOT NULL, run_id text NOT NULL, strategy_version text NOT NULL, profile text NOT NULL, decision text NOT NULL, t0_ms bigint NOT NULL, entry_price double precision, price_t45 double precision, price_t60 double precision, result_45 text, result_60 text, observation_id text, context_id text, asset text, created_ms bigint NOT NULL, settled_ms bigint)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS fwd_profile_events_t0_idx ON fwd_profile_events (t0_ms)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS fwd_profile_decisions_event_idx ON fwd_profile_decisions (event_id)`);
@@ -106,9 +119,9 @@ async function sampleEvents(run, now) {
       if (ref.t < Number(run.start_ms)) continue;
       if (now - ref.t >= 45000) { console.info("FWD_PROFILES_SKIPPED_STALE", JSON.stringify({ eventId, ageMs: now - ref.t })); continue; }
       const f = featuresAt(g.candles, i);
-      const { decisions, nBuy, nSell, nWait, concordantCount, concordantDirection } = decideAll(f);
-      const ins = await pool.query(`INSERT INTO fwd_profile_events(event_id,run_id,asset,session_id,segment_id,t0_ms,entry_price,entry_observation_id,market_context_id,v1,v2,v3,v6,n_buy,n_sell,n_wait,concordant_count,concordant_direction,created_ms,provenance) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::jsonb) ON CONFLICT (event_id) DO NOTHING`,
-        [eventId, run.run_id, ASSET, sid, seg === "null" ? null : seg, ref.t, ref.v, ref.id, ref.ctx ?? null, decisions.v1, decisions.v2, decisions.v3, decisions.v6, nBuy, nSell, nWait, concordantCount, concordantDirection, now, JSON.stringify({ candleStart: candle.start, configHash: CONFIG_HASH, cohortStartMs: Number(run.start_ms), warmupMs: WARMUP_MS, warmupCandles: i })]);
+      const { decisions, nBuy, nSell, nWait, concordantCount, concordantDirection } = decideAll(f, g.candles.slice(0, i + 1));
+      const ins = await pool.query(`INSERT INTO fwd_profile_events(event_id,run_id,asset,session_id,segment_id,t0_ms,entry_price,entry_observation_id,market_context_id,v1,v2,v3,v6,v7and,v7relaxed,n_buy,n_sell,n_wait,concordant_count,concordant_direction,created_ms,provenance) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22::jsonb) ON CONFLICT (event_id) DO NOTHING`,
+        [eventId, run.run_id, ASSET, sid, seg === "null" ? null : seg, ref.t, ref.v, ref.id, ref.ctx ?? null, decisions.v1, decisions.v2, decisions.v3, decisions.v6, decisions.v7and, decisions.v7relaxed, nBuy, nSell, nWait, concordantCount, concordantDirection, now, JSON.stringify({ candleStart: candle.start, configHash: CONFIG_HASH, cohortStartMs: Number(run.start_ms), warmupMs: WARMUP_MS, warmupCandles: i })]);
       if (ins.rowCount > 0) {
         inserted += 1;
         for (const s of STRATEGIES) {
@@ -176,6 +189,6 @@ async function main() {
   await tick();
   setInterval(() => void tick(), POLL_MS);
 }
-if (process.env.FWD4_NO_AUTOSTART !== "1") {
+if (process.env.FWD_PROFILES_NO_AUTOSTART !== "1") {
   main().catch((e) => { console.error("FWD_PROFILES_FATAL", e instanceof Error ? e.message : String(e)); process.exit(1); });
 }

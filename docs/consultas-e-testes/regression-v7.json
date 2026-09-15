@@ -1,0 +1,13 @@
+{
+ "checked": 2592,
+ "agree": {
+  "v1": 2592,
+  "v3": 2592,
+  "v6": 2592,
+  "v7and": 2592,
+  "v7relaxed": 2592
+ },
+ "cex": [],
+ "causalityOk": true,
+ "allPass": true
+}
