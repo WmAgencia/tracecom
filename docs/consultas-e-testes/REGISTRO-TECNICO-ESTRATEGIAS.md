@@ -73,3 +73,21 @@ Todos os cinco conjuntos foram **reproduzidos dos artefatos** (`consolidado-6.js
 - **Métricas separadas** por natureza (script `metrics-profiles.cjs`): **Hoje** · **Coorte acumulada** (+ Wilson) · **Discovery** (histórico acima) — **nunca somados**.
 - **Regressão**: 2.592/2.592 = 100% de concordância BUY/SELL/WAIT nas 5 estratégias vs função de referência + **causalidade PASS** (mutação do futuro não altera decisões). Duas divergências encontradas e corrigidas durante a validação: (a) guard `atr<=0` inexistente na referência; (b) `f.last` ausente em `featuresAt` (o componente ATR lia `undefined`) — ambos corrigidos antes do deploy final.
 - Incidente auditável: entre 13:52–14:39Z o executor ficou inativo (bug de autostart corrigido no commit de código; colunas v7 adicionadas no boot seguinte). Eventos desse intervalo não entram na coorte (sem backfill retroativo); v7 começa no 1º evento após 14:30Z.
+
+## Camada de identidade visual e classificação (implementada em 15/09/2026)
+
+> **Escopo**: APENAS apresentação. Nenhuma equação, threshold, versão congelada, tabela ou decisão foi alterada. `strategyId`/`strategy_version` internos permanecem idênticos em banco, relatórios e decisões antigas. Nomes visuais derivados da **implementação real**.
+
+| ID interno (preservado) | Nome visual | Perfil (metadado) | Descrição curta |
+|---|---|---|---|
+| `reversion-v7-and` | **Fib Dual Exhaustion** | CONVICÇÃO MÁXIMA | Concordância entre overshoot de ATR (≥3×ATR da SMA20) e exaustão de RSI, ambos na zona dourada. |
+| `reversion-v6-fib` | **Fib Deep Exhaustion** | CONSERVADORA | Exaustão profunda de RSI (banda 0,63–0,857), excluindo o extremo terminal, na zona dourada. |
+| `reversion-v1-fib` | **Fib RSI Reversal** | BALANCEADA | Exaustão de RSI(14) em região estrutural de Fibonacci com volatilidade baixa (σ12<0,0009). |
+| `reversion-v3-fib` | **Fib Trend Reversal** | AGRESSIVA | Reversão de RSI(14) alinhada à tendência de 120s, ancorada em Fibonacci (σ12<0,0012). |
+| `reversion-v7-relaxed` | **Fib Adaptive Reversal** | ALTA FREQUÊNCIA | União adaptativa: overshoot de ATR (≥1×ATR) OU exaustão de RSI, em Fibonacci; conflito → WAIT. |
+
+- **Regra**: `displayName` e `profile` são `METADADOS` de categoria — **não afirmam WR futuro** e **não mudam automaticamente** com resultados diários.
+- **Frontend** (`src/http/public/app.js`, constante `STRATEGY_IDENTITY`, render `renderStrategyIdentityPanel()`): cartão mostra `Nome visual` + `Perfil`; dados secundários/tooltip exibem `ID interno (V7-AND etc.)`. Filtros visuais: **Todas | Convicção Máxima | Conservadora | Balanceada | Agressiva | Alta Frequência** — filtragem puramente visual, **sem seleção automática de estratégia**.
+- **Regressão desta etapa**: 2.592/2.592 = 100,0% PASS nas 5 + causalidade PASS **após** a mudança de identidade/UI (comprovando 0 alterações em BUY/SELL/WAIT).
+- Candidatos avaliados por estratégia (registro da decisão): V7-AND → "Twin Exhaustion Confluence", "Confluence Exhaustion" (escolhido: Fib Dual Exhaustion); V6+Fib → "Deep Band Reversal", "Core RSI Exhaustion" (escolhido: Fib Deep Exhaustion); V1+Fib → "Low-Vol RSI Reversal", "Fib Exhaustion Reversal" (escolhido: Fib RSI Reversal); V3+Fib → "Trend-Aligned Dips", "Fib Pullback Reversal" (escolhido: Fib Trend Reversal); V7-Relaxado → "Wide Fib Reversal", "Hybrid Exhaustion Reversal" (escolhido: Fib Adaptive Reversal).
+- **Não implementado nesta etapa (conforme instrução)**: ranking automático, prioridade automática, escolha de estratégia por WR.
