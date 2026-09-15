@@ -1,0 +1,391 @@
+{
+ "frozen_at": "2026-09-15T16:26:47.795Z",
+ "hash": "2a49fb3e2b80ee87331fb2edf318d0d2",
+ "protocol": "Frozen BEFORE blind holdout; executed exactly once after this file was written; no post-holdout adjustments allowed.",
+ "selection_notes": "Selection used DISC (train criterion) and VAL (stability filter) only. HOLD (517 rows, incl. 65 independent) was NEVER used by any builder/critic script before this freeze.",
+ "finalists": [
+  {
+   "id": "and(fib_ctx,stoch_r_30)",
+   "spec": {
+    "op": "and",
+    "a": "fib_ctx",
+    "b": "stoch_r_30",
+    "aSpec": {
+     "type": "fib_ctx"
+    },
+    "bSpec": {
+     "type": "stoch_rev",
+     "t": 30
+    }
+   },
+   "hypothesis": "Fibonacci golden zone alignment (upSwing context) + statistical oversold/overbought (Stochastic<30/>70) = structural confluence for reversion",
+   "pre_holdout": {
+    "disc": {
+     "sig": 89,
+     "w": 51,
+     "l": 29,
+     "d": 9,
+     "n": 80,
+     "acc": 0.6375,
+     "wilson_lo": 0.5281059097698362,
+     "wilson_hi": 0.7342936627574055,
+     "indep_n": 7,
+     "indep_w": 5,
+     "indep_l": 2,
+     "indep_acc": 0.7142857142857143,
+     "p": 0.0002521549893133024,
+     "q": 0.002884022690270896
+    },
+    "val": {
+     "sig": 33,
+     "w": 19,
+     "l": 9,
+     "d": 5,
+     "n": 28,
+     "acc": 0.6785714285714286,
+     "wilson_lo": 0.4933850455563118,
+     "wilson_hi": 0.8206695245657927,
+     "indep_n": 2,
+     "indep_w": 2,
+     "indep_l": 0,
+     "indep_acc": 1
+    },
+    "folds_disc": [
+     0.65,
+     0.667,
+     0.632,
+     0.588
+    ],
+    "p_perm": 0.04495504495504495,
+    "indep": {
+     "n": 9,
+     "acc": 0.778
+    }
+   }
+  },
+  {
+   "id": "and(struct_f,macd_r)",
+   "spec": {
+    "op": "and",
+    "a": "struct_f",
+    "b": "macd_r",
+    "aSpec": {
+     "type": "struct_follow"
+    },
+    "bSpec": {
+     "type": "macd_revert"
+    }
+   },
+   "hypothesis": "Swing structure (HH/HL or LH/LL) + MACD histogram fade = trend-with-structure reversion",
+   "pre_holdout": {
+    "disc": {
+     "sig": 267,
+     "w": 138,
+     "l": 84,
+     "d": 45,
+     "n": 222,
+     "acc": 0.6216216216216216,
+     "wilson_lo": 0.5562661152322508,
+     "wilson_hi": 0.6828395234100542,
+     "indep_n": 18,
+     "indep_w": 9,
+     "indep_l": 9,
+     "indep_acc": 0.5,
+     "p": 1.4867597986079062e-7,
+     "q": 0.00003627693908603291
+    },
+    "val": {
+     "sig": 71,
+     "w": 43,
+     "l": 25,
+     "d": 3,
+     "n": 68,
+     "acc": 0.6323529411764706,
+     "wilson_lo": 0.5135541592730174,
+     "wilson_hi": 0.7369970533948519,
+     "indep_n": 4,
+     "indep_w": 3,
+     "indep_l": 1,
+     "indep_acc": 0.75
+    },
+    "folds_disc": [
+     0.559,
+     0.549,
+     0.692,
+     0.727
+    ],
+    "p_perm": 0.022977022977022976,
+    "indep": {
+     "n": 22,
+     "acc": 0.545
+    }
+   }
+  },
+  {
+   "id": "gate(struct_f|bullDiv)",
+   "spec": {
+    "op": "gate",
+    "a": "struct_f",
+    "cond": "bullDiv",
+    "innerSpec": {
+     "type": "struct_follow"
+    }
+   },
+   "hypothesis": "Swing structure signals traded only when causal RSI/price divergence present (bullDiv/bearDiv computed on window ending at T)",
+   "pre_holdout": {
+    "disc": {
+     "sig": 103,
+     "w": 65,
+     "l": 27,
+     "d": 11,
+     "n": 92,
+     "acc": 0.7065217391304348,
+     "wilson_lo": 0.6067033690450713,
+     "wilson_hi": 0.7897841687255837,
+     "indep_n": 7,
+     "indep_w": 5,
+     "indep_l": 2,
+     "indep_acc": 0.7142857142857143,
+     "p": 1.057440335294757e-8,
+     "q": 0.000006023048949588272
+    },
+    "val": {
+     "sig": 33,
+     "w": 21,
+     "l": 11,
+     "d": 1,
+     "n": 32,
+     "acc": 0.65625,
+     "wilson_lo": 0.4831077350878594,
+     "wilson_hi": 0.7958976664567146,
+     "indep_n": 4,
+     "indep_w": 2,
+     "indep_l": 2,
+     "indep_acc": 0.5
+    },
+    "folds_disc": [
+     0.571,
+     0.609,
+     0.909,
+     0.784
+    ],
+    "p_perm": 0.011988011988011988,
+    "indep": {
+     "n": 11,
+     "acc": 0.636
+    }
+   }
+  },
+  {
+   "id": "gate(struct_f|expansion>1.3)",
+   "spec": {
+    "op": "gate",
+    "a": "struct_f",
+    "cond": "expansion>1.3",
+    "innerSpec": {
+     "type": "struct_follow"
+    }
+   },
+   "hypothesis": "Swing structure signals traded only in range-expansion regimes (recent 4-candle range vs 20-candle avg > 1.3)",
+   "pre_holdout": {
+    "disc": {
+     "sig": 272,
+     "w": 142,
+     "l": 97,
+     "d": 33,
+     "n": 239,
+     "acc": 0.5941422594142259,
+     "wilson_lo": 0.5308722800180494,
+     "wilson_hi": 0.6544336972115521,
+     "indep_n": 25,
+     "indep_w": 13,
+     "indep_l": 12,
+     "indep_acc": 0.52,
+     "p": 0.000019243807707125526,
+     "q": 0.0009320994139739303
+    },
+    "val": {
+     "sig": 70,
+     "w": 40,
+     "l": 24,
+     "d": 6,
+     "n": 64,
+     "acc": 0.625,
+     "wilson_lo": 0.5025015331382642,
+     "wilson_hi": 0.7333419611189468,
+     "indep_n": 6,
+     "indep_w": 3,
+     "indep_l": 3,
+     "indep_acc": 0.5
+    },
+    "folds_disc": [
+     0.463,
+     0.5,
+     0.574,
+     0.806
+    ],
+    "p_perm": 0.04595404595404595,
+    "indep": {
+     "n": 31,
+     "acc": 0.516
+    }
+   }
+  }
+ ],
+ "references": [
+  {
+   "id": "prod_v1fib",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v1-fib"
+   },
+   "note": "production"
+  },
+  {
+   "id": "prod_v3fib",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v3-fib"
+   },
+   "note": "production"
+  },
+  {
+   "id": "prod_v6fib",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v6-fib"
+   },
+   "note": "production"
+  },
+  {
+   "id": "prod_v7and",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v7-and"
+   },
+   "note": "production"
+  },
+  {
+   "id": "prod_v7relaxed",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v7-relaxed"
+   },
+   "note": "production"
+  },
+  {
+   "id": "always_buy",
+   "spec": {
+    "type": "always",
+    "dir": 1
+   },
+   "note": "baseline"
+  },
+  {
+   "id": "always_sell",
+   "spec": {
+    "type": "always",
+    "dir": -1
+   },
+   "note": "baseline"
+  },
+  {
+   "id": "random42",
+   "spec": {
+    "type": "random"
+   },
+   "note": "baseline"
+  },
+  {
+   "id": "last_candle",
+   "spec": {
+    "type": "last_candle"
+   },
+   "note": "baseline"
+  },
+  {
+   "id": "mom_f_0.0002",
+   "spec": {
+    "type": "mom_follow",
+    "t": 0.0002
+   },
+   "note": "trend"
+  },
+  {
+   "id": "rsi_band_0.63_0.857",
+   "spec": {
+    "type": "rsi_band",
+    "lo": 0.63,
+    "hi": 0.857
+   },
+   "note": "reversion"
+  },
+  {
+   "id": "struct_f",
+   "spec": {
+    "type": "struct_follow"
+   },
+   "note": "structure"
+  },
+  {
+   "id": "stoch_r_30",
+   "spec": {
+    "type": "stoch_rev",
+    "t": 30
+   },
+   "note": "momentum"
+  },
+  {
+   "id": "fib_ctx",
+   "spec": {
+    "type": "fib_ctx"
+   },
+   "note": "fibonacci"
+  },
+  {
+   "id": "macd_r",
+   "spec": {
+    "type": "macd_revert"
+   },
+   "note": "momentum"
+  },
+  {
+   "id": "div_r",
+   "spec": {
+    "type": "div_rev"
+   },
+   "note": "divergence"
+  },
+  {
+   "id": "and(struct_f,stoch_r_30)",
+   "spec": {
+    "op": "and",
+    "a": "struct_f",
+    "b": "stoch_r_30",
+    "aSpec": {
+     "type": "struct_follow"
+    },
+    "bSpec": {
+     "type": "stoch_rev",
+     "t": 30
+    }
+   },
+   "note": "combo-2-and"
+  },
+  {
+   "id": "and(fib_ctx,macd_r)",
+   "spec": {
+    "op": "and",
+    "a": "fib_ctx",
+    "b": "macd_r",
+    "aSpec": {
+     "type": "fib_ctx"
+    },
+    "bSpec": {
+     "type": "macd_revert"
+    }
+   },
+   "note": "combo-2-and"
+  }
+ ]
+}

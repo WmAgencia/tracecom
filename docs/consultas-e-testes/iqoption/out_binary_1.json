@@ -1,0 +1,729 @@
+{
+ "dataset_id": "IQOPTION_EURUSD_BINARY_10H",
+ "active_id": 1,
+ "otc": false,
+ "ticks": 104805,
+ "pages": 30,
+ "first_ts": "2026-09-15T07:01:19.000Z",
+ "last_ts": "2026-09-15T17:01:18.000Z",
+ "md5_ts_bid_ask": "73fa63b82b6253e33dcfe849287bd690",
+ "candles_5s": 7201,
+ "gaps": [],
+ "rows": 7171,
+ "independent_windows": 399,
+ "evaluated": [
+  {
+   "id": "and(fib_ctx,stoch_r_30)",
+   "family": "finalist",
+   "spec": {
+    "op": "and",
+    "a": "fib_ctx",
+    "b": "stoch_r_30",
+    "aSpec": {
+     "type": "fib_ctx"
+    },
+    "bSpec": {
+     "type": "stoch_rev",
+     "t": 30
+    }
+   },
+   "signals": 492,
+   "wait": 6679,
+   "coverage": 6.86,
+   "w": 247,
+   "l": 221,
+   "draws": 24,
+   "unknown": 0,
+   "wr": 52.78,
+   "buy": {
+    "n": 250,
+    "wr": 58.4
+   },
+   "sell": {
+    "n": 218,
+    "wr": 46.33
+   },
+   "indep": {
+    "n": 25,
+    "wr": 56
+   },
+   "previous": {
+    "disc_acc": 0.6375,
+    "disc_n": 80,
+    "val_acc": 0.6785714285714286,
+    "val_n": 28
+   },
+   "t0_first": "2026-09-15T07:03:55.000Z"
+  },
+  {
+   "id": "and(struct_f,macd_r)",
+   "family": "finalist",
+   "spec": {
+    "op": "and",
+    "a": "struct_f",
+    "b": "macd_r",
+    "aSpec": {
+     "type": "struct_follow"
+    },
+    "bSpec": {
+     "type": "macd_revert"
+    }
+   },
+   "signals": 1481,
+   "wait": 5690,
+   "coverage": 20.65,
+   "w": 717,
+   "l": 706,
+   "draws": 58,
+   "unknown": 0,
+   "wr": 50.39,
+   "buy": {
+    "n": 747,
+    "wr": 53.28
+   },
+   "sell": {
+    "n": 676,
+    "wr": 47.19
+   },
+   "indep": {
+    "n": 84,
+    "wr": 59.52
+   },
+   "previous": {
+    "disc_acc": 0.6216216216216216,
+    "disc_n": 222,
+    "val_acc": 0.6323529411764706,
+    "val_n": 68
+   },
+   "t0_first": "2026-09-15T07:05:50.000Z"
+  },
+  {
+   "id": "gate(struct_f|bullDiv)",
+   "family": "finalist",
+   "spec": {
+    "op": "gate",
+    "a": "struct_f",
+    "cond": "bullDiv",
+    "innerSpec": {
+     "type": "struct_follow"
+    }
+   },
+   "signals": 312,
+   "wait": 6859,
+   "coverage": 4.35,
+   "w": 130,
+   "l": 170,
+   "draws": 12,
+   "unknown": 0,
+   "wr": 43.33,
+   "buy": {
+    "n": 92,
+    "wr": 54.35
+   },
+   "sell": {
+    "n": 208,
+    "wr": 38.46
+   },
+   "indep": {
+    "n": 12,
+    "wr": 41.67
+   },
+   "previous": {
+    "disc_acc": 0.7065217391304348,
+    "disc_n": 92,
+    "val_acc": 0.65625,
+    "val_n": 32
+   },
+   "t0_first": "2026-09-15T07:04:20.000Z"
+  },
+  {
+   "id": "gate(struct_f|expansion>1.3)",
+   "family": "finalist",
+   "spec": {
+    "op": "gate",
+    "a": "struct_f",
+    "cond": "expansion>1.3",
+    "innerSpec": {
+     "type": "struct_follow"
+    }
+   },
+   "signals": 526,
+   "wait": 6645,
+   "coverage": 7.34,
+   "w": 234,
+   "l": 276,
+   "draws": 16,
+   "unknown": 0,
+   "wr": 45.88,
+   "buy": {
+    "n": 240,
+    "wr": 47.92
+   },
+   "sell": {
+    "n": 270,
+    "wr": 44.07
+   },
+   "indep": {
+    "n": 39,
+    "wr": 48.72
+   },
+   "previous": {
+    "disc_acc": 0.5941422594142259,
+    "disc_n": 239,
+    "val_acc": 0.625,
+    "val_n": 64
+   },
+   "t0_first": "2026-09-15T07:05:45.000Z"
+  },
+  {
+   "id": "prod_v1fib",
+   "family": "reference",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v1-fib"
+   },
+   "signals": 148,
+   "wait": 7023,
+   "coverage": 2.06,
+   "w": 88,
+   "l": 54,
+   "draws": 6,
+   "unknown": 0,
+   "wr": 61.97,
+   "buy": {
+    "n": 116,
+    "wr": 67.24
+   },
+   "sell": {
+    "n": 26,
+    "wr": 38.46
+   },
+   "indep": {
+    "n": 6,
+    "wr": 50
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:11:15.000Z"
+  },
+  {
+   "id": "prod_v3fib",
+   "family": "reference",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v3-fib"
+   },
+   "signals": 237,
+   "wait": 6934,
+   "coverage": 3.3,
+   "w": 115,
+   "l": 112,
+   "draws": 10,
+   "unknown": 0,
+   "wr": 50.66,
+   "buy": {
+    "n": 167,
+    "wr": 56.89
+   },
+   "sell": {
+    "n": 60,
+    "wr": 33.33
+   },
+   "indep": {
+    "n": 7,
+    "wr": 28.57
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:11:15.000Z"
+  },
+  {
+   "id": "prod_v6fib",
+   "family": "reference",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v6-fib"
+   },
+   "signals": 16,
+   "wait": 7155,
+   "coverage": 0.22,
+   "w": 6,
+   "l": 10,
+   "draws": 0,
+   "unknown": 0,
+   "wr": 37.5,
+   "buy": {
+    "n": 13,
+    "wr": 46.15
+   },
+   "sell": {
+    "n": 3,
+    "wr": 0
+   },
+   "indep": {
+    "n": 2,
+    "wr": 50
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:33:45.000Z"
+  },
+  {
+   "id": "prod_v7and",
+   "family": "reference",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v7-and"
+   },
+   "signals": 5,
+   "wait": 7166,
+   "coverage": 0.07,
+   "w": 3,
+   "l": 2,
+   "draws": 0,
+   "unknown": 0,
+   "wr": 60,
+   "buy": {
+    "n": 3,
+    "wr": 100
+   },
+   "sell": {
+    "n": 2,
+    "wr": 0
+   },
+   "indep": {
+    "n": 1,
+    "wr": 100
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T08:14:20.000Z"
+  },
+  {
+   "id": "prod_v7relaxed",
+   "family": "reference",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v7-relaxed"
+   },
+   "signals": 310,
+   "wait": 6861,
+   "coverage": 4.32,
+   "w": 164,
+   "l": 130,
+   "draws": 16,
+   "unknown": 0,
+   "wr": 55.78,
+   "buy": {
+    "n": 169,
+    "wr": 64.5
+   },
+   "sell": {
+    "n": 125,
+    "wr": 44
+   },
+   "indep": {
+    "n": 16,
+    "wr": 56.25
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:06:50.000Z"
+  },
+  {
+   "id": "always_buy",
+   "family": "reference",
+   "spec": {
+    "type": "always",
+    "dir": 1
+   },
+   "signals": 7171,
+   "wait": 0,
+   "coverage": 100,
+   "w": 3643,
+   "l": 3221,
+   "draws": 295,
+   "unknown": 12,
+   "wr": 53.07,
+   "buy": {
+    "n": 6864,
+    "wr": 53.07
+   },
+   "sell": {
+    "n": 0,
+    "wr": null
+   },
+   "indep": {
+    "n": 378,
+    "wr": 51.85
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:03:50.000Z"
+  },
+  {
+   "id": "always_sell",
+   "family": "reference",
+   "spec": {
+    "type": "always",
+    "dir": -1
+   },
+   "signals": 7171,
+   "wait": 0,
+   "coverage": 100,
+   "w": 3221,
+   "l": 3643,
+   "draws": 295,
+   "unknown": 12,
+   "wr": 46.93,
+   "buy": {
+    "n": 0,
+    "wr": null
+   },
+   "sell": {
+    "n": 6864,
+    "wr": 46.93
+   },
+   "indep": {
+    "n": 378,
+    "wr": 48.15
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:03:50.000Z"
+  },
+  {
+   "id": "random42",
+   "family": "reference",
+   "spec": {
+    "type": "random"
+   },
+   "signals": 7171,
+   "wait": 0,
+   "coverage": 100,
+   "w": 3383,
+   "l": 3481,
+   "draws": 295,
+   "unknown": 12,
+   "wr": 49.29,
+   "buy": {
+    "n": 3434,
+    "wr": 52.36
+   },
+   "sell": {
+    "n": 3430,
+    "wr": 46.21
+   },
+   "indep": {
+    "n": 378,
+    "wr": 43.39
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:03:50.000Z"
+  },
+  {
+   "id": "last_candle",
+   "family": "reference",
+   "spec": {
+    "type": "last_candle"
+   },
+   "signals": 5426,
+   "wait": 1745,
+   "coverage": 75.67,
+   "w": 2593,
+   "l": 2619,
+   "draws": 206,
+   "unknown": 8,
+   "wr": 49.75,
+   "buy": {
+    "n": 2608,
+    "wr": 51.73
+   },
+   "sell": {
+    "n": 2604,
+    "wr": 47.77
+   },
+   "indep": {
+    "n": 284,
+    "wr": 51.06
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:03:50.000Z"
+  },
+  {
+   "id": "mom_f_0.0002",
+   "family": "reference",
+   "spec": {
+    "type": "mom_follow",
+    "t": 0.0002
+   },
+   "signals": 305,
+   "wait": 6866,
+   "coverage": 4.25,
+   "w": 158,
+   "l": 136,
+   "draws": 11,
+   "unknown": 0,
+   "wr": 53.74,
+   "buy": {
+    "n": 106,
+    "wr": 51.89
+   },
+   "sell": {
+    "n": 188,
+    "wr": 54.79
+   },
+   "indep": {
+    "n": 17,
+    "wr": 64.71
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:09:30.000Z"
+  },
+  {
+   "id": "rsi_band_0.63_0.857",
+   "family": "reference",
+   "spec": {
+    "type": "rsi_band",
+    "lo": 0.63,
+    "hi": 0.857
+   },
+   "signals": 826,
+   "wait": 6345,
+   "coverage": 11.52,
+   "w": 414,
+   "l": 386,
+   "draws": 26,
+   "unknown": 0,
+   "wr": 51.75,
+   "buy": {
+    "n": 557,
+    "wr": 54.04
+   },
+   "sell": {
+    "n": 243,
+    "wr": 46.5
+   },
+   "indep": {
+    "n": 50,
+    "wr": 56
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:06:25.000Z"
+  },
+  {
+   "id": "struct_f",
+   "family": "reference",
+   "spec": {
+    "type": "struct_follow"
+   },
+   "signals": 2982,
+   "wait": 4189,
+   "coverage": 41.58,
+   "w": 1430,
+   "l": 1443,
+   "draws": 109,
+   "unknown": 0,
+   "wr": 49.77,
+   "buy": {
+    "n": 1510,
+    "wr": 54.24
+   },
+   "sell": {
+    "n": 1363,
+    "wr": 44.83
+   },
+   "indep": {
+    "n": 156,
+    "wr": 53.85
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:04:20.000Z"
+  },
+  {
+   "id": "stoch_r_30",
+   "family": "reference",
+   "spec": {
+    "type": "stoch_rev",
+    "t": 30
+   },
+   "signals": 5102,
+   "wait": 2069,
+   "coverage": 71.15,
+   "w": 2491,
+   "l": 2379,
+   "draws": 220,
+   "unknown": 12,
+   "wr": 51.15,
+   "buy": {
+    "n": 2310,
+    "wr": 54.03
+   },
+   "sell": {
+    "n": 2560,
+    "wr": 48.55
+   },
+   "indep": {
+    "n": 273,
+    "wr": 50.55
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:03:55.000Z"
+  },
+  {
+   "id": "fib_ctx",
+   "family": "reference",
+   "spec": {
+    "type": "fib_ctx"
+   },
+   "signals": 1278,
+   "wait": 5893,
+   "coverage": 17.82,
+   "w": 607,
+   "l": 612,
+   "draws": 59,
+   "unknown": 0,
+   "wr": 49.79,
+   "buy": {
+    "n": 642,
+    "wr": 56.39
+   },
+   "sell": {
+    "n": 577,
+    "wr": 42.46
+   },
+   "indep": {
+    "n": 65,
+    "wr": 50.77
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:03:50.000Z"
+  },
+  {
+   "id": "macd_r",
+   "family": "reference",
+   "spec": {
+    "type": "macd_revert"
+   },
+   "signals": 7168,
+   "wait": 3,
+   "coverage": 99.96,
+   "w": 3478,
+   "l": 3383,
+   "draws": 295,
+   "unknown": 12,
+   "wr": 50.69,
+   "buy": {
+    "n": 3426,
+    "wr": 53.79
+   },
+   "sell": {
+    "n": 3435,
+    "wr": 47.6
+   },
+   "indep": {
+    "n": 377,
+    "wr": 49.07
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:04:05.000Z"
+  },
+  {
+   "id": "div_r",
+   "family": "reference",
+   "spec": {
+    "type": "div_rev"
+   },
+   "signals": 1596,
+   "wait": 5575,
+   "coverage": 22.26,
+   "w": 795,
+   "l": 736,
+   "draws": 62,
+   "unknown": 3,
+   "wr": 51.93,
+   "buy": {
+    "n": 732,
+    "wr": 55.33
+   },
+   "sell": {
+    "n": 799,
+    "wr": 48.81
+   },
+   "indep": {
+    "n": 74,
+    "wr": 50
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:04:20.000Z"
+  },
+  {
+   "id": "and(struct_f,stoch_r_30)",
+   "family": "reference",
+   "spec": {
+    "op": "and",
+    "a": "struct_f",
+    "b": "stoch_r_30",
+    "aSpec": {
+     "type": "struct_follow"
+    },
+    "bSpec": {
+     "type": "stoch_rev",
+     "t": 30
+    }
+   },
+   "signals": 802,
+   "wait": 6369,
+   "coverage": 11.18,
+   "w": 387,
+   "l": 377,
+   "draws": 38,
+   "unknown": 0,
+   "wr": 50.65,
+   "buy": {
+    "n": 367,
+    "wr": 50.14
+   },
+   "sell": {
+    "n": 397,
+    "wr": 51.13
+   },
+   "indep": {
+    "n": 47,
+    "wr": 48.94
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:04:55.000Z"
+  },
+  {
+   "id": "and(fib_ctx,macd_r)",
+   "family": "reference",
+   "spec": {
+    "op": "and",
+    "a": "fib_ctx",
+    "b": "macd_r",
+    "aSpec": {
+     "type": "fib_ctx"
+    },
+    "bSpec": {
+     "type": "macd_revert"
+    }
+   },
+   "signals": 888,
+   "wait": 6283,
+   "coverage": 12.38,
+   "w": 416,
+   "l": 431,
+   "draws": 41,
+   "unknown": 0,
+   "wr": 49.11,
+   "buy": {
+    "n": 453,
+    "wr": 54.97
+   },
+   "sell": {
+    "n": 394,
+    "wr": 42.39
+   },
+   "indep": {
+    "n": 43,
+    "wr": 48.84
+   },
+   "previous": null,
+   "t0_first": "2026-09-15T07:04:10.000Z"
+  }
+ ]
+}
