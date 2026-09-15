@@ -1,0 +1,1011 @@
+{
+ "generated_at": "2026-09-15T23:35:41.075Z",
+ "engine": "bx-lib.cjs (features causais) + run-all v2 (base)",
+ "hypotheses": [
+  {
+   "id": "brk_12_0_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N12",
+    "minD": 0,
+    "quality": "none"
+   },
+   "hash": "16f37d0fbef1d3ef"
+  },
+  {
+   "id": "brk_12_0_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N12",
+    "minD": 0,
+    "quality": "body"
+   },
+   "hash": "11c48b72a54c5572"
+  },
+  {
+   "id": "brk_12_0_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N12",
+    "minD": 0,
+    "quality": "clv"
+   },
+   "hash": "69d709453deec159"
+  },
+  {
+   "id": "brk_12_0.15_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N12",
+    "minD": 0.15,
+    "quality": "none"
+   },
+   "hash": "8e9b46cc3f81aa3a"
+  },
+  {
+   "id": "brk_12_0.15_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N12",
+    "minD": 0.15,
+    "quality": "body"
+   },
+   "hash": "e4f10bae7bb1f5c2"
+  },
+  {
+   "id": "brk_12_0.15_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N12",
+    "minD": 0.15,
+    "quality": "clv"
+   },
+   "hash": "5aa8f16f36681cc7"
+  },
+  {
+   "id": "brk_12_0.3_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N12",
+    "minD": 0.3,
+    "quality": "none"
+   },
+   "hash": "93ffbf50d2d00afa"
+  },
+  {
+   "id": "brk_12_0.3_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N12",
+    "minD": 0.3,
+    "quality": "body"
+   },
+   "hash": "9b273889f2e5d282"
+  },
+  {
+   "id": "brk_12_0.3_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N12",
+    "minD": 0.3,
+    "quality": "clv"
+   },
+   "hash": "d4a5b4b059577a7a"
+  },
+  {
+   "id": "brk_24_0_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N24",
+    "minD": 0,
+    "quality": "none"
+   },
+   "hash": "bd80dc61b9a50ab6"
+  },
+  {
+   "id": "brk_24_0_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N24",
+    "minD": 0,
+    "quality": "body"
+   },
+   "hash": "31ccf54e77a27057"
+  },
+  {
+   "id": "brk_24_0_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N24",
+    "minD": 0,
+    "quality": "clv"
+   },
+   "hash": "0b68342710cd0c2c"
+  },
+  {
+   "id": "brk_24_0.15_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N24",
+    "minD": 0.15,
+    "quality": "none"
+   },
+   "hash": "fae57fc92bfbaf25"
+  },
+  {
+   "id": "brk_24_0.15_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N24",
+    "minD": 0.15,
+    "quality": "body"
+   },
+   "hash": "f259da9e4e52021c"
+  },
+  {
+   "id": "brk_24_0.15_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N24",
+    "minD": 0.15,
+    "quality": "clv"
+   },
+   "hash": "a60836077a58a73f"
+  },
+  {
+   "id": "brk_24_0.3_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N24",
+    "minD": 0.3,
+    "quality": "none"
+   },
+   "hash": "cd5c4266bfcf2c91"
+  },
+  {
+   "id": "brk_24_0.3_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N24",
+    "minD": 0.3,
+    "quality": "body"
+   },
+   "hash": "f78701c78f231098"
+  },
+  {
+   "id": "brk_24_0.3_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N24",
+    "minD": 0.3,
+    "quality": "clv"
+   },
+   "hash": "a4313eb5a43c59a4"
+  },
+  {
+   "id": "brk_48_0_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N48",
+    "minD": 0,
+    "quality": "none"
+   },
+   "hash": "baa0faed14d58eef"
+  },
+  {
+   "id": "brk_48_0_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N48",
+    "minD": 0,
+    "quality": "body"
+   },
+   "hash": "e731819f684e0231"
+  },
+  {
+   "id": "brk_48_0_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N48",
+    "minD": 0,
+    "quality": "clv"
+   },
+   "hash": "b2464ffef865d6a5"
+  },
+  {
+   "id": "brk_48_0.15_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N48",
+    "minD": 0.15,
+    "quality": "none"
+   },
+   "hash": "e51e4a5b1c57559e"
+  },
+  {
+   "id": "brk_48_0.15_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N48",
+    "minD": 0.15,
+    "quality": "body"
+   },
+   "hash": "b78bec6bcaeb409e"
+  },
+  {
+   "id": "brk_48_0.15_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N48",
+    "minD": 0.15,
+    "quality": "clv"
+   },
+   "hash": "2aeed9d9c2d8602d"
+  },
+  {
+   "id": "brk_48_0.3_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N48",
+    "minD": 0.3,
+    "quality": "none"
+   },
+   "hash": "89785440e3f98ee5"
+  },
+  {
+   "id": "brk_48_0.3_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N48",
+    "minD": 0.3,
+    "quality": "body"
+   },
+   "hash": "046f90d40f0cfaae"
+  },
+  {
+   "id": "brk_48_0.3_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N48",
+    "minD": 0.3,
+    "quality": "clv"
+   },
+   "hash": "6fd83af89d15ad10"
+  },
+  {
+   "id": "brk_96_0_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N96",
+    "minD": 0,
+    "quality": "none"
+   },
+   "hash": "9860a98d989e8446"
+  },
+  {
+   "id": "brk_96_0_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N96",
+    "minD": 0,
+    "quality": "body"
+   },
+   "hash": "ed981e824222e825"
+  },
+  {
+   "id": "brk_96_0_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N96",
+    "minD": 0,
+    "quality": "clv"
+   },
+   "hash": "31c4a0ff6a4dfec7"
+  },
+  {
+   "id": "brk_96_0.15_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N96",
+    "minD": 0.15,
+    "quality": "none"
+   },
+   "hash": "0fa181d1dac8da1d"
+  },
+  {
+   "id": "brk_96_0.15_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N96",
+    "minD": 0.15,
+    "quality": "body"
+   },
+   "hash": "56655a943709e7da"
+  },
+  {
+   "id": "brk_96_0.15_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N96",
+    "minD": 0.15,
+    "quality": "clv"
+   },
+   "hash": "0bf2ce411d0b0260"
+  },
+  {
+   "id": "brk_96_0.3_none",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N96",
+    "minD": 0.3,
+    "quality": "none"
+   },
+   "hash": "f8f53ae32c904b5f"
+  },
+  {
+   "id": "brk_96_0.3_body",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N96",
+    "minD": 0.3,
+    "quality": "body"
+   },
+   "hash": "8956f611990ff1fd"
+  },
+  {
+   "id": "brk_96_0.3_clv",
+   "family": "A_breakout",
+   "spec": {
+    "type": "brk",
+    "N": "N96",
+    "minD": 0.3,
+    "quality": "clv"
+   },
+   "hash": "2f0f768de2315d51"
+  },
+  {
+   "id": "fb_0.1",
+   "family": "B_falsebreak",
+   "spec": {
+    "type": "fb",
+    "minD": 0.1
+   },
+   "hash": "090f40e0ff8fe319"
+  },
+  {
+   "id": "fb_0.25",
+   "family": "B_falsebreak",
+   "spec": {
+    "type": "fb",
+    "minD": 0.25
+   },
+   "hash": "30b478b8573c5443"
+  },
+  {
+   "id": "tlbrk_0.5",
+   "family": "A_trendline",
+   "spec": {
+    "type": "tl",
+    "mode": "break",
+    "minR2": 0.5
+   },
+   "hash": "d1a784eeb3573493"
+  },
+  {
+   "id": "tlrej_0.5",
+   "family": "A_trendline",
+   "spec": {
+    "type": "tl",
+    "mode": "reject",
+    "minR2": 0.5
+   },
+   "hash": "5161009bc1738597"
+  },
+  {
+   "id": "tlbrk_0.7",
+   "family": "A_trendline",
+   "spec": {
+    "type": "tl",
+    "mode": "break",
+    "minR2": 0.7
+   },
+   "hash": "312eb7290c9cc5ae"
+  },
+  {
+   "id": "tlrej_0.7",
+   "family": "A_trendline",
+   "spec": {
+    "type": "tl",
+    "mode": "reject",
+    "minR2": 0.7
+   },
+   "hash": "623c865449ec9576"
+  },
+  {
+   "id": "bos",
+   "family": "C_structure",
+   "spec": {
+    "type": "bos",
+    "kind": "bos"
+   },
+   "hash": "bdffd1acf4e20039"
+  },
+  {
+   "id": "choch",
+   "family": "C_structure",
+   "spec": {
+    "type": "bos",
+    "kind": "choch"
+   },
+   "hash": "cf2a6ba05d329fe4"
+  },
+  {
+   "id": "sweep",
+   "family": "C_structure",
+   "spec": {
+    "type": "bos",
+    "kind": "sweep"
+   },
+   "hash": "c556eac52e3c5a3a"
+  },
+  {
+   "id": "comp_N24_0.7_noexp",
+   "family": "D_compression",
+   "spec": {
+    "type": "comp",
+    "N": "N24",
+    "maxComp": 0.7,
+    "needExp": false
+   },
+   "hash": "44e466e90aebfe2f"
+  },
+  {
+   "id": "comp_N24_0.7_exp",
+   "family": "D_compression",
+   "spec": {
+    "type": "comp",
+    "N": "N24",
+    "maxComp": 0.7,
+    "needExp": true
+   },
+   "hash": "ec497e16846250f7"
+  },
+  {
+   "id": "comp_N24_0.8_noexp",
+   "family": "D_compression",
+   "spec": {
+    "type": "comp",
+    "N": "N24",
+    "maxComp": 0.8,
+    "needExp": false
+   },
+   "hash": "7f9ecb3dc649d5d5"
+  },
+  {
+   "id": "comp_N24_0.8_exp",
+   "family": "D_compression",
+   "spec": {
+    "type": "comp",
+    "N": "N24",
+    "maxComp": 0.8,
+    "needExp": true
+   },
+   "hash": "7b84fee31daaf1af"
+  },
+  {
+   "id": "comp_N48_0.7_noexp",
+   "family": "D_compression",
+   "spec": {
+    "type": "comp",
+    "N": "N48",
+    "maxComp": 0.7,
+    "needExp": false
+   },
+   "hash": "b31e43b8194a72bb"
+  },
+  {
+   "id": "comp_N48_0.7_exp",
+   "family": "D_compression",
+   "spec": {
+    "type": "comp",
+    "N": "N48",
+    "maxComp": 0.7,
+    "needExp": true
+   },
+   "hash": "a83260b06b8cc19f"
+  },
+  {
+   "id": "comp_N48_0.8_noexp",
+   "family": "D_compression",
+   "spec": {
+    "type": "comp",
+    "N": "N48",
+    "maxComp": 0.8,
+    "needExp": false
+   },
+   "hash": "56999248bc24fe56"
+  },
+  {
+   "id": "comp_N48_0.8_exp",
+   "family": "D_compression",
+   "spec": {
+    "type": "comp",
+    "N": "N48",
+    "maxComp": 0.8,
+    "needExp": true
+   },
+   "hash": "a1e6e46d82ff5a70"
+  },
+  {
+   "id": "retest_cont",
+   "family": "B_retest",
+   "spec": {
+    "type": "bos",
+    "kind": "retest"
+   },
+   "hash": "f1b8b6aebd28ae3e"
+  },
+  {
+   "id": "gate_brk24up_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk24up",
+    "dir": 1,
+    "condName": "rsi"
+   },
+   "hash": "724c58a0da775cbe"
+  },
+  {
+   "id": "gate_brk24up_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk24up",
+    "dir": 1,
+    "condName": "mom12"
+   },
+   "hash": "92212032d3922648"
+  },
+  {
+   "id": "gate_brk24up_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk24up",
+    "dir": 1,
+    "condName": "imb"
+   },
+   "hash": "cdd51ad3f0f09b87"
+  },
+  {
+   "id": "gate_brk24dn_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk24dn",
+    "dir": -1,
+    "condName": "rsi"
+   },
+   "hash": "6131ad94faac41e4"
+  },
+  {
+   "id": "gate_brk24dn_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk24dn",
+    "dir": -1,
+    "condName": "mom12"
+   },
+   "hash": "a4bd6b1a64375915"
+  },
+  {
+   "id": "gate_brk24dn_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk24dn",
+    "dir": -1,
+    "condName": "imb"
+   },
+   "hash": "bd86b5379c987b17"
+  },
+  {
+   "id": "gate_brk48up_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk48up",
+    "dir": 1,
+    "condName": "rsi"
+   },
+   "hash": "9e64aae9cd7a3da8"
+  },
+  {
+   "id": "gate_brk48up_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk48up",
+    "dir": 1,
+    "condName": "mom12"
+   },
+   "hash": "59efbc44f5836397"
+  },
+  {
+   "id": "gate_brk48up_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk48up",
+    "dir": 1,
+    "condName": "imb"
+   },
+   "hash": "48df83a2d239112e"
+  },
+  {
+   "id": "gate_brk48dn_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk48dn",
+    "dir": -1,
+    "condName": "rsi"
+   },
+   "hash": "d3f3225094429d2e"
+  },
+  {
+   "id": "gate_brk48dn_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk48dn",
+    "dir": -1,
+    "condName": "mom12"
+   },
+   "hash": "c901dd489ea10a14"
+  },
+  {
+   "id": "gate_brk48dn_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "brk48dn",
+    "dir": -1,
+    "condName": "imb"
+   },
+   "hash": "c02b82f418a5b4e3"
+  },
+  {
+   "id": "gate_bosUp_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "bosUp",
+    "dir": 1,
+    "condName": "rsi"
+   },
+   "hash": "4944fbc91096581d"
+  },
+  {
+   "id": "gate_bosUp_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "bosUp",
+    "dir": 1,
+    "condName": "mom12"
+   },
+   "hash": "a539be2bd5b2c67a"
+  },
+  {
+   "id": "gate_bosUp_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "bosUp",
+    "dir": 1,
+    "condName": "imb"
+   },
+   "hash": "dad2b2d52b6d4470"
+  },
+  {
+   "id": "gate_bosDn_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "bosDn",
+    "dir": -1,
+    "condName": "rsi"
+   },
+   "hash": "e9b66fe61390d818"
+  },
+  {
+   "id": "gate_bosDn_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "bosDn",
+    "dir": -1,
+    "condName": "mom12"
+   },
+   "hash": "a35ea5167cde16b6"
+  },
+  {
+   "id": "gate_bosDn_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "bosDn",
+    "dir": -1,
+    "condName": "imb"
+   },
+   "hash": "16cad738605a82bc"
+  },
+  {
+   "id": "gate_sweepUp_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "sweepUp",
+    "dir": -1,
+    "condName": "rsi"
+   },
+   "hash": "7431f3fd0bca2894"
+  },
+  {
+   "id": "gate_sweepUp_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "sweepUp",
+    "dir": -1,
+    "condName": "mom12"
+   },
+   "hash": "5fd246ef15243082"
+  },
+  {
+   "id": "gate_sweepUp_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "sweepUp",
+    "dir": -1,
+    "condName": "imb"
+   },
+   "hash": "c9c90cbfe0d9bc90"
+  },
+  {
+   "id": "gate_sweepDn_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "sweepDn",
+    "dir": 1,
+    "condName": "rsi"
+   },
+   "hash": "f48e9d9a12aaeda6"
+  },
+  {
+   "id": "gate_sweepDn_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "sweepDn",
+    "dir": 1,
+    "condName": "mom12"
+   },
+   "hash": "89e3397be0003dfa"
+  },
+  {
+   "id": "gate_sweepDn_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "sweepDn",
+    "dir": 1,
+    "condName": "imb"
+   },
+   "hash": "95cef66f4e79093a"
+  },
+  {
+   "id": "gate_fbUp_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "fbUp",
+    "dir": -1,
+    "condName": "rsi"
+   },
+   "hash": "ef742652e8e287a5"
+  },
+  {
+   "id": "gate_fbUp_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "fbUp",
+    "dir": -1,
+    "condName": "mom12"
+   },
+   "hash": "fe51cab18376ff12"
+  },
+  {
+   "id": "gate_fbUp_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "fbUp",
+    "dir": -1,
+    "condName": "imb"
+   },
+   "hash": "43e2e21924b52287"
+  },
+  {
+   "id": "gate_fbDn_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "fbDn",
+    "dir": 1,
+    "condName": "rsi"
+   },
+   "hash": "a5682c6fe68c1a1c"
+  },
+  {
+   "id": "gate_fbDn_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "fbDn",
+    "dir": 1,
+    "condName": "mom12"
+   },
+   "hash": "d434a1a57a1b0168"
+  },
+  {
+   "id": "gate_fbDn_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "fbDn",
+    "dir": 1,
+    "condName": "imb"
+   },
+   "hash": "373e90f80d1bb61e"
+  },
+  {
+   "id": "gate_retestUp_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "retestUp",
+    "dir": 1,
+    "condName": "rsi"
+   },
+   "hash": "e48795103ddba6d4"
+  },
+  {
+   "id": "gate_retestUp_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "retestUp",
+    "dir": 1,
+    "condName": "mom12"
+   },
+   "hash": "a1c497b30197bb79"
+  },
+  {
+   "id": "gate_retestUp_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "retestUp",
+    "dir": 1,
+    "condName": "imb"
+   },
+   "hash": "2b4c944791dde16c"
+  },
+  {
+   "id": "gate_retestDn_rsi",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "retestDn",
+    "dir": -1,
+    "condName": "rsi"
+   },
+   "hash": "95ec00d8e9ce952a"
+  },
+  {
+   "id": "gate_retestDn_mom12",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "retestDn",
+    "dir": -1,
+    "condName": "mom12"
+   },
+   "hash": "87633075e3dc8913"
+  },
+  {
+   "id": "gate_retestDn_imb",
+   "family": "F_combos",
+   "spec": {
+    "type": "gate",
+    "baseName": "retestDn",
+    "dir": -1,
+    "condName": "imb"
+   },
+   "hash": "3391011efb6f4167"
+  },
+  {
+   "id": "baseline_always_buy",
+   "family": "G0_baseline",
+   "spec": {
+    "type": "always",
+    "dir": 1
+   },
+   "hash": "f4b678d23c033748"
+  },
+  {
+   "id": "baseline_always_sell",
+   "family": "G0_baseline",
+   "spec": {
+    "type": "always",
+    "dir": -1
+   },
+   "hash": "759a4b64a27a43bc"
+  }
+ ],
+ "totals": {
+  "K": 92,
+  "by_family": {
+   "A_breakout": 36,
+   "B_falsebreak": 2,
+   "A_trendline": 4,
+   "C_structure": 3,
+   "D_compression": 8,
+   "B_retest": 1,
+   "F_combos": 36,
+   "G0_baseline": 2
+  }
+ }
+}

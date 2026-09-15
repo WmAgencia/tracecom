@@ -1,0 +1,603 @@
+{
+ "generated_at": "2026-09-15T23:36:32.488Z",
+ "note": "grupo BLIND = congelado 23:23:33Z antes da janela (bx-finalists-freeze-blind.json; avaliação canônica em bx-prospective-results-blind.json na janela curta). Grupo POST-HOC = selecionado APÓS bugfix do compilador; janela já havia sido vista na rodada blind — NÃO é evidência independente.",
+ "window": {
+  "from": "2026-09-15T17:01:18.758Z",
+  "to": "2026-09-15T23:01:32.032Z",
+  "hours": 6
+ },
+ "datasets": {
+  "IQOPTION_EURUSD_BINARY_PROSP": {
+   "active": 1,
+   "ticks": 40704,
+   "candles": 4324,
+   "rows": 4248,
+   "indep": 238,
+   "baseP": 49.26,
+   "finalists": [
+    {
+     "id": "gate_fbDn_rsi",
+     "group": "BLIND",
+     "spec": {
+      "type": "gate",
+      "baseName": "fbDn",
+      "dir": 1,
+      "condName": "rsi"
+     },
+     "discovery": {
+      "signals": 658,
+      "sigPerHour": 66.2,
+      "buyN": 658,
+      "sellN": 0,
+      "w": 344,
+      "l": 294,
+      "draws": 20,
+      "unknown": 0,
+      "wr": 53.92,
+      "coverage": 9.19,
+      "buyWR": 53.92,
+      "sellWR": null,
+      "indepN": 40,
+      "indepW": 22,
+      "indepL": 18,
+      "indepWR": 55,
+      "maxWinStreak": 24,
+      "maxLossStreak": 24,
+      "baseStrategy": 53.05,
+      "edge_pp": 0.87,
+      "z": 0.4399058332873034,
+      "wilson95": [
+       0.5003863930224983,
+       0.5775144473094467
+      ],
+      "wilsonLo": 50.04
+     },
+     "prospective": {
+      "signals": 275,
+      "sigPerHour": 46.6,
+      "buyN": 275,
+      "sellN": 0,
+      "w": 122,
+      "l": 117,
+      "draws": 36,
+      "unknown": 0,
+      "wr": 51.05,
+      "coverage": 6.47,
+      "buyWR": 51.05,
+      "sellWR": null,
+      "indepN": 14,
+      "indepW": 7,
+      "indepL": 7,
+      "indepWR": 50,
+      "maxWinStreak": 13,
+      "maxLossStreak": 17,
+      "baseStrategy": 49.26,
+      "edge_pp": 1.78,
+      "z": 0.5513090322445696,
+      "wilson95": [
+       0.447420792848591,
+       0.5731687601769203
+      ],
+      "wilsonLo": 44.74
+     }
+    },
+    {
+     "id": "tlbrk_0.7",
+     "group": "BLIND",
+     "spec": {
+      "type": "tl",
+      "mode": "break",
+      "minR2": 0.7
+     },
+     "discovery": {
+      "signals": 695,
+      "sigPerHour": 69.9,
+      "buyN": 253,
+      "sellN": 442,
+      "w": 359,
+      "l": 308,
+      "draws": 28,
+      "unknown": 0,
+      "wr": 53.82,
+      "coverage": 9.71,
+      "buyWR": 62.4,
+      "sellWR": 48.68,
+      "indepN": 42,
+      "indepW": 24,
+      "indepL": 18,
+      "indepWR": 57.14,
+      "maxWinStreak": 51,
+      "maxLossStreak": 35,
+      "baseStrategy": 49.17,
+      "edge_pp": 4.65,
+      "z": 2.4033821321427045,
+      "wilson95": [
+       0.5002851391875756,
+       0.5757387686917212
+      ],
+      "wilsonLo": 50.03
+     },
+     "prospective": {
+      "signals": 604,
+      "sigPerHour": 102.4,
+      "buyN": 452,
+      "sellN": 152,
+      "w": 279,
+      "l": 270,
+      "draws": 55,
+      "unknown": 0,
+      "wr": 50.82,
+      "coverage": 14.22,
+      "buyWR": 44.96,
+      "sellWR": 67.61,
+      "indepN": 33,
+      "indepW": 18,
+      "indepL": 15,
+      "indepWR": 54.55,
+      "maxWinStreak": 44,
+      "maxLossStreak": 32,
+      "baseStrategy": 49.63,
+      "edge_pp": 1.19,
+      "z": 0.5556297871194886,
+      "wilson95": [
+       0.46646551699012223,
+       0.5498140104549903
+      ],
+      "wilsonLo": 46.65
+     }
+    },
+    {
+     "id": "tlbrk_0.5",
+     "group": "BLIND",
+     "spec": {
+      "type": "tl",
+      "mode": "break",
+      "minR2": 0.5
+     },
+     "discovery": {
+      "signals": 1441,
+      "sigPerHour": 144.9,
+      "buyN": 676,
+      "sellN": 765,
+      "w": 702,
+      "l": 682,
+      "draws": 57,
+      "unknown": 0,
+      "wr": 50.72,
+      "coverage": 20.12,
+      "buyWR": 54.34,
+      "sellWR": 47.46,
+      "indepN": 80,
+      "indepW": 38,
+      "indepL": 42,
+      "indepWR": 47.5,
+      "maxWinStreak": 33,
+      "maxLossStreak": 35,
+      "baseStrategy": 49.81,
+      "edge_pp": 0.91,
+      "z": 0.6777365672288294,
+      "wilson95": [
+       0.4809020931902685,
+       0.5335087732947827
+      ],
+      "wilsonLo": 48.09
+     },
+     "prospective": {
+      "signals": 965,
+      "sigPerHour": 163.6,
+      "buyN": 636,
+      "sellN": 329,
+      "w": 425,
+      "l": 440,
+      "draws": 100,
+      "unknown": 0,
+      "wr": 49.13,
+      "coverage": 22.72,
+      "buyWR": 46.47,
+      "sellWR": 54.18,
+      "indepN": 53,
+      "indepW": 28,
+      "indepL": 25,
+      "indepWR": 52.83,
+      "maxWinStreak": 44,
+      "maxLossStreak": 44,
+      "baseStrategy": 49.77,
+      "edge_pp": -0.63,
+      "z": -0.37213231952336606,
+      "wilson95": [
+       0.45812554051720467,
+       0.5246100927673892
+      ],
+      "wilsonLo": 45.81
+     }
+    },
+    {
+     "id": "brk_96_0_none",
+     "group": "POSTHOC",
+     "spec": {
+      "type": "brk",
+      "N": "N96",
+      "minD": 0,
+      "quality": "none"
+     },
+     "discovery": {
+      "signals": 405,
+      "sigPerHour": 40.7,
+      "buyN": 233,
+      "sellN": 172,
+      "w": 214,
+      "l": 182,
+      "draws": 7,
+      "unknown": 2,
+      "wr": 54.04,
+      "coverage": 5.66,
+      "buyWR": 54.63,
+      "sellWR": 53.25,
+      "indepN": 28,
+      "indepW": 18,
+      "indepL": 10,
+      "indepWR": 64.29,
+      "maxWinStreak": 45,
+      "maxLossStreak": 14,
+      "baseStrategy": 50.46,
+      "edge_pp": 3.58,
+      "z": 1.425329730380813,
+      "wilson95": [
+       0.4911648764170271,
+       0.5888668161332229
+      ],
+      "wilsonLo": 49.12
+     },
+     "prospective": {
+      "signals": 219,
+      "sigPerHour": 37.1,
+      "buyN": 130,
+      "sellN": 89,
+      "w": 74,
+      "l": 126,
+      "draws": 19,
+      "unknown": 0,
+      "wr": 37,
+      "coverage": 5.16,
+      "buyWR": 32.23,
+      "sellWR": 44.3,
+      "indepN": 18,
+      "indepW": 7,
+      "indepL": 11,
+      "indepWR": 38.89,
+      "maxWinStreak": 7,
+      "maxLossStreak": 28,
+      "baseStrategy": 49.86,
+      "edge_pp": -12.86,
+      "z": -3.637951632069979,
+      "wilson95": [
+       0.3061249750375241,
+       0.43877498650123936
+      ],
+      "wilsonLo": 30.61
+     }
+    }
+   ],
+   "baselines": {
+    "always_buy": {
+     "signals": 4248,
+     "sigPerHour": 720,
+     "buyN": 4248,
+     "sellN": 0,
+     "w": 1872,
+     "l": 1928,
+     "draws": 436,
+     "unknown": 12,
+     "wr": 49.26,
+     "coverage": 100,
+     "buyWR": 49.26,
+     "sellWR": null,
+     "indepN": 206,
+     "indepW": 101,
+     "indepL": 105,
+     "indepWR": 49.03,
+     "maxWinStreak": 54,
+     "maxLossStreak": 47,
+     "baseStrategy": 49.26,
+     "edge_pp": 0,
+     "z": 0,
+     "wilson95": [
+      0.47675107478685874,
+      0.5085269662335665
+     ],
+     "wilsonLo": 47.68
+    },
+    "always_sell": {
+     "signals": 4248,
+     "sigPerHour": 720,
+     "buyN": 0,
+     "sellN": 4248,
+     "w": 1928,
+     "l": 1872,
+     "draws": 436,
+     "unknown": 12,
+     "wr": 50.74,
+     "coverage": 100,
+     "buyWR": null,
+     "sellWR": 50.74,
+     "indepN": 206,
+     "indepW": 105,
+     "indepL": 101,
+     "indepWR": 50.97,
+     "maxWinStreak": 47,
+     "maxLossStreak": 54,
+     "baseStrategy": 50.74,
+     "edge_pp": 0,
+     "z": 0,
+     "wilson95": [
+      0.49147303376643353,
+      0.5232489252131413
+     ],
+     "wilsonLo": 49.15
+    }
+   }
+  },
+  "IQOPTION_EURUSD_OTC_PROSP": {
+   "active": 76,
+   "ticks": 85059,
+   "candles": 4324,
+   "rows": 4284,
+   "indep": 238,
+   "baseP": 45.28,
+   "finalists": [
+    {
+     "id": "fb_0.25",
+     "group": "BLIND",
+     "spec": {
+      "type": "fb",
+      "minD": 0.25
+     },
+     "discovery": {
+      "signals": 1491,
+      "sigPerHour": 150.9,
+      "buyN": 726,
+      "sellN": 765,
+      "w": 817,
+      "l": 656,
+      "draws": 14,
+      "unknown": 4,
+      "wr": 55.47,
+      "coverage": 20.96,
+      "buyWR": 54.37,
+      "sellWR": 56.52,
+      "indepN": 75,
+      "indepW": 39,
+      "indepL": 36,
+      "indepWR": 52,
+      "maxWinStreak": 27,
+      "maxLossStreak": 26,
+      "baseStrategy": 50.03,
+      "edge_pp": 5.44,
+      "z": 4.17391578749622,
+      "wilson95": [
+       0.5291594889967874,
+       0.5798569417429749
+      ],
+      "wilsonLo": 52.92
+     },
+     "prospective": {
+      "signals": 1031,
+      "sigPerHour": 173.3,
+      "buyN": 585,
+      "sellN": 446,
+      "w": 525,
+      "l": 492,
+      "draws": 8,
+      "unknown": 6,
+      "wr": 51.62,
+      "coverage": 24.07,
+      "buyWR": 43.13,
+      "sellWR": 62.67,
+      "indepN": 51,
+      "indepW": 29,
+      "indepL": 22,
+      "indepWR": 56.86,
+      "maxWinStreak": 24,
+      "maxLossStreak": 43,
+      "baseStrategy": 49.36,
+      "edge_pp": 2.26,
+      "z": 1.440559821469634,
+      "wilson95": [
+       0.48550688625414495,
+       0.5468193825812944
+      ],
+      "wilsonLo": 48.55
+     }
+    },
+    {
+     "id": "tlbrk_0.5",
+     "group": "BLIND",
+     "spec": {
+      "type": "tl",
+      "mode": "break",
+      "minR2": 0.5
+     },
+     "discovery": {
+      "signals": 1596,
+      "sigPerHour": 161.5,
+      "buyN": 788,
+      "sellN": 808,
+      "w": 860,
+      "l": 706,
+      "draws": 30,
+      "unknown": 0,
+      "wr": 54.92,
+      "coverage": 22.43,
+      "buyWR": 59.5,
+      "sellWR": 50.56,
+      "indepN": 86,
+      "indepW": 52,
+      "indepL": 34,
+      "indepWR": 60.47,
+      "maxWinStreak": 43,
+      "maxLossStreak": 22,
+      "baseStrategy": 50.01,
+      "edge_pp": 4.9,
+      "z": 3.8811903223774276,
+      "wilson95": [
+       0.5244349131765961,
+       0.5736641561817392
+      ],
+      "wilsonLo": 52.44
+     },
+     "prospective": {
+      "signals": 786,
+      "sigPerHour": 132.1,
+      "buyN": 536,
+      "sellN": 250,
+      "w": 415,
+      "l": 364,
+      "draws": 7,
+      "unknown": 0,
+      "wr": 53.27,
+      "coverage": 18.35,
+      "buyWR": 46.98,
+      "sellWR": 66.67,
+      "indepN": 44,
+      "indepW": 18,
+      "indepL": 26,
+      "indepWR": 40.91,
+      "maxWinStreak": 31,
+      "maxLossStreak": 24,
+      "baseStrategy": 48.28,
+      "edge_pp": 4.99,
+      "z": 2.7870882257348852,
+      "wilson95": [
+       0.4976225278162476,
+       0.5675247510202375
+      ],
+      "wilsonLo": 49.76
+     }
+    },
+    {
+     "id": "tlbrk_0.7",
+     "group": "BLIND",
+     "spec": {
+      "type": "tl",
+      "mode": "break",
+      "minR2": 0.7
+     },
+     "discovery": {
+      "signals": 982,
+      "sigPerHour": 99.4,
+      "buyN": 521,
+      "sellN": 461,
+      "w": 526,
+      "l": 431,
+      "draws": 25,
+      "unknown": 0,
+      "wr": 54.96,
+      "coverage": 13.8,
+      "buyWR": 62.4,
+      "sellWR": 46.83,
+      "indepN": 52,
+      "indepW": 30,
+      "indepL": 22,
+      "indepWR": 57.69,
+      "maxWinStreak": 43,
+      "maxLossStreak": 26,
+      "baseStrategy": 49.94,
+      "edge_pp": 5.03,
+      "z": 3.1104795245769186,
+      "wilson95": [
+       0.5179758522706909,
+       0.5808958035776822
+      ],
+      "wilsonLo": 51.8
+     },
+     "prospective": {
+      "signals": 493,
+      "sigPerHour": 82.9,
+      "buyN": 340,
+      "sellN": 153,
+      "w": 273,
+      "l": 213,
+      "draws": 7,
+      "unknown": 0,
+      "wr": 56.17,
+      "coverage": 11.51,
+      "buyWR": 51.5,
+      "sellWR": 66.45,
+      "indepN": 28,
+      "indepW": 10,
+      "indepL": 18,
+      "indepWR": 35.71,
+      "maxWinStreak": 25,
+      "maxLossStreak": 23,
+      "baseStrategy": 48.21,
+      "edge_pp": 7.96,
+      "z": 3.512852879370405,
+      "wilson95": [
+       0.5173013134312697,
+       0.6051872624675515
+      ],
+      "wilsonLo": 51.73
+     }
+    }
+   ],
+   "baselines": {
+    "always_buy": {
+     "signals": 4284,
+     "sigPerHour": 720,
+     "buyN": 4284,
+     "sellN": 0,
+     "w": 1915,
+     "l": 2314,
+     "draws": 43,
+     "unknown": 12,
+     "wr": 45.28,
+     "coverage": 100,
+     "buyWR": 45.28,
+     "sellWR": null,
+     "indepN": 235,
+     "indepW": 105,
+     "indepL": 130,
+     "indepWR": 44.68,
+     "maxWinStreak": 39,
+     "maxLossStreak": 80,
+     "baseStrategy": 45.28,
+     "edge_pp": 0,
+     "z": 0,
+     "wilson95": [
+      0.4378727212301058,
+      0.46786436092293293
+     ],
+     "wilsonLo": 43.79
+    },
+    "always_sell": {
+     "signals": 4284,
+     "sigPerHour": 720,
+     "buyN": 0,
+     "sellN": 4284,
+     "w": 2314,
+     "l": 1915,
+     "draws": 43,
+     "unknown": 12,
+     "wr": 54.72,
+     "coverage": 100,
+     "buyWR": null,
+     "sellWR": 54.72,
+     "indepN": 235,
+     "indepW": 130,
+     "indepL": 105,
+     "indepWR": 55.32,
+     "maxWinStreak": 80,
+     "maxLossStreak": 39,
+     "baseStrategy": 54.72,
+     "edge_pp": 0,
+     "z": 0,
+     "wilson95": [
+      0.5321356390770671,
+      0.5621272787698941
+     ],
+     "wilsonLo": 53.21
+    }
+   }
+  }
+ }
+}
