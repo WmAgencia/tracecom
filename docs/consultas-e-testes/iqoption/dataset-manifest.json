@@ -1,0 +1,40 @@
+﻿{
+    "generated_at":  "2026-09-15T17:36:18.759Z",
+    "source":  "IQ_OPTION",
+    "source_url":  "https://api.iqoption.com/v3/quotes",
+    "provenance":  "A_IQ_OPTION_OFFICIAL",
+    "frozen_hash":  "2a49fb3e2b80ee87331fb2edf318d0d2",
+    "leakage_fix":  "v2 estrÃ­ctamente causal (crÃ­tico v1 detectou slices ancorados no fim do array; corrigido)",
+    "window":  {
+                   "from":  "2026-09-15T07:01:18.757Z",
+                   "to":  "2026-09-15T17:01:18.757Z"
+               },
+    "datasets":  [
+                     {
+                         "dataset_id":  "IQOPTION_EURUSD_BINARY_10H",
+                         "active_id":  1,
+                         "otc":  false,
+                         "ticks":  104805,
+                         "pages":  30,
+                         "first_ts":  "2026-09-15T07:01:19.000Z",
+                         "last_ts":  "2026-09-15T17:01:18.000Z",
+                         "candles_5s":  7201,
+                         "rows":  7171,
+                         "independent_windows":  399,
+                         "md5_ts_bid_ask":  "73fa63b82b6253e33dcfe849287bd690"
+                     },
+                     {
+                         "dataset_id":  "IQOPTION_EURUSD_OTC_10H",
+                         "active_id":  76,
+                         "otc":  true,
+                         "ticks":  141103,
+                         "pages":  40,
+                         "first_ts":  "2026-09-15T07:01:19.000Z",
+                         "last_ts":  "2026-09-15T17:01:18.502Z",
+                         "candles_5s":  7201,
+                         "rows":  7171,
+                         "independent_windows":  399,
+                         "md5_ts_bid_ask":  "7d68e270bfed65f4be2944f32e862b09"
+                     }
+                 ]
+}
