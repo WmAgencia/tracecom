@@ -1,0 +1,13 @@
+{
+ "trades": 6861,
+ "uniqueSnapshots": 3199,
+ "myBuys": 146,
+ "mySells": 24,
+ "myWaits": 6691,
+ "myWins": 108,
+ "myLosses": 58,
+ "myDraws": 0,
+ "agree": 3199,
+ "diverge": 0,
+ "cex": []
+}
