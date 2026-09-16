@@ -218,11 +218,23 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
   const baseQuality = Math.min(1, (imageUsed ? 0.55 : 0) + (images.length >= 2 ? 0.15 : 0) + (images.length >= 4 ? 0.1 : 0) + (Number.isFinite(Number(crop.width)) ? 0.1 : 0) + (quantitative.availability === "READY" ? 0.1 : 0));
   const visionEnabled = process.env.TRACECOM_VISION_ENABLED !== "false";
   const visionModel = process.env.TRACECOM_VISION_MODEL || "claude-opus-5";
+  const aiConfig = await readAiProviderConfig();
+  const openCodeGoActive = aiConfig?.status === "CONFIGURED" && aiConfig.provider === "openCodeGo";
+  const openCodeModel = openCodeGoActive && typeof aiConfig?.model === "string" ? aiConfig.model : "qwen3.7-plus";
   const pipelineStarted = Date.now();
   let visionLatencyMs: number | null = null;
   if (imageUsed && !visionEnabled) throw new Error("VISION_PROVIDER_NOT_CONFIGURED");
   let visionObservation: Record<string, unknown> | null = null;
-  if (visionEnabled && images[0]) {
+  if (visionEnabled && images[0] && openCodeGoActive) {
+    const visionStarted = Date.now();
+    const proxy = await relayAdminPost("/api/ai/go/vision", { imageDataUrl: images[0].dataUrl, frameId: images[0].frameId, requestId: typeof payload.requestId === "string" ? payload.requestId : null, sessionContext: { sessionId: typeof snapshotObject.sessionId === "string" ? snapshotObject.sessionId : null, traceId: typeof snapshotObject.traceId === "string" ? snapshotObject.traceId : null, segmentId: typeof snapshotObject.segmentId === "string" ? snapshotObject.segmentId : null } }, 25_000);
+    if (!proxy || proxy.status !== "OK" || !proxy.observation) throw new Error(`OPENCODE_GO_VISION_FAILED:${String(proxy?.reason || proxy?.status || "relay_unreachable").slice(0, 120)}`);
+    visionObservation = proxy.observation as Record<string, unknown>;
+    visionLatencyMs = Number(proxy.latencyMs) || Date.now() - visionStarted;
+    recordLatency("vision", visionLatencyMs);
+    console.info("OPENCODE_GO_VISION_ACTIVE", JSON.stringify({ model: proxy.model || openCodeModel, requestId: typeof payload.requestId === "string" ? payload.requestId : null, latencyMs: visionLatencyMs, sessionId: proxy.sessionId || null }));
+  }
+  if (visionEnabled && images[0] && !openCodeGoActive) {
     const visionStarted = Date.now();
     console.info("CLAUDE_VISION_REQUEST_STARTED", JSON.stringify({ requestId: typeof payload.requestId === "string" ? payload.requestId : null, model: visionModel, hasImage: true, imageBytes: receivedImage?.byteLength || 0, imageHash: receivedImage?.hash || null }));
     const observation = await new NexxusVisionProvider({ apiKey, baseUrl: process.env.NEXXUS_BASE_URL || process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site", model: visionModel }).observe({ imageDataUrl: images[0].dataUrl, frameId: images[0].frameId, context: snapshotObject });
@@ -253,10 +265,18 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
   const controller = new AbortController();
   const model = process.env.FABLE_MODEL || "claude-fable-5-1";
   const fableTimeoutMs = Math.max(4_500, Math.min(15_000, Number(process.env.FABLE_TIMEOUT_MS) || 12_000));
-  const timeout = setTimeout(() => controller.abort(), fableTimeoutMs);
+  const textTimeout = setTimeout(() => controller.abort(), fableTimeoutMs);
   const fableStarted = Date.now();
   let agentRuns: ReturnType<typeof buildAgentRuns> | null = null;
+  let answer = "";
   try {
+    if (openCodeGoActive) {
+      const proxy = await relayAdminPost("/api/ai/go/text", { system: "You are a cautious quantitative analyst. Do not provide execution instructions or claim data not present in the sanitized chart crops.", prompt: content[0]?.text ?? "", maxTokens: 1_500, requestId: typeof payload.requestId === "string" ? payload.requestId : null, sessionContext: { sessionId: typeof snapshotObject.sessionId === "string" ? snapshotObject.sessionId : null, traceId: typeof snapshotObject.traceId === "string" ? snapshotObject.traceId : null, segmentId: typeof snapshotObject.segmentId === "string" ? snapshotObject.segmentId : null } }, 25_000);
+      if (!proxy || proxy.status !== "OK" || typeof proxy.text !== "string" || !proxy.text) throw new Error(`OPENCODE_GO_TEXT_FAILED:${String(proxy?.reason || proxy?.status || "relay_unreachable").slice(0, 120)}`);
+      answer = proxy.text;
+      recordLatency("fable", Date.now() - fableStarted);
+      console.info("OPENCODE_GO_TEXT_ACTIVE", JSON.stringify({ model: proxy.model || openCodeModel, requestId: typeof payload.requestId === "string" ? payload.requestId : null, latencyMs: proxy.latencyMs ?? null, sessionId: proxy.sessionId ?? null }));
+    } else {
     const baseUrl = (process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site").replace(/\/$/, "");
     console.info("FABLE_REASONING_STARTED", JSON.stringify({ model, mode: visionObservation ? "text-only" : "legacy-multimodal" }));
     const response = await fetch(`${baseUrl}/v1/messages`, {
@@ -275,8 +295,9 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
       throw new Error(`FABLE_HTTP_${response.status}: ${providerRequestId ? `request_id=${providerRequestId} ` : ""}${text.slice(0, 300)}`);
     }
     const wire = JSON.parse(text) as { content?: Array<{ type?: string; text?: string }> };
-    const answer = (wire.content ?? []).filter((block) => block.type === "text").map((block) => block.text ?? "").join("\n");
+    answer = (wire.content ?? []).filter((block) => block.type === "text").map((block) => block.text ?? "").join("\n");
     console.info("FABLE_REASONING_RECEIVED", JSON.stringify({ status: response.status, textLength: answer.length }));
+    }
     const parsed = parseJsonText(answer);
     const visualBias = parsed?.visualBias === "BUY" || parsed?.visualBias === "SELL" ? parsed.visualBias : "NEUTRAL";
     const rawQuantBias = String(parsed?.quantBias ?? "");
@@ -300,16 +321,16 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
       frameId: typeof chartFrame.frameId === "string" ? chartFrame.frameId : null,
       candleId: typeof snapshotObject.candleId === "string" ? snapshotObject.candleId : null,
       decisionId: typeof snapshotObject.decisionId === "string" ? snapshotObject.decisionId : typeof snapshotObject.analysisId === "string" ? snapshotObject.analysisId : null,
-      startedAt: pipelineStarted, completedAt: Date.now(), model: visionModel, provider: "nexxus",
+      startedAt: pipelineStarted, completedAt: Date.now(), model: openCodeGoActive ? openCodeModel : visionModel, provider: openCodeGoActive ? "openCodeGo" : "nexxus",
     } });
     const agentRunsPersisted = await relayAdminSend("POST", "/api/debug/agent-runs", { sessionId: typeof snapshotObject.sessionId === "string" ? snapshotObject.sessionId : null, runs: agentRuns.runs });
     console.info("DEEP_AGENT_RUNS_PERSISTED", JSON.stringify({ runs: agentRuns.runs.length, persisted: agentRunsPersisted, arbiterRunId: agentRuns.arbiterRunId, fusionRunId: agentRuns.fusionRunId }));
     const totalMs = Date.now() - pipelineStarted;
     recordLatency("total", totalMs);
     return {
-      model: { modelId: model, displayName: "Fable 5.1" },
+      model: { modelId: openCodeGoActive ? openCodeModel : model, displayName: openCodeGoActive ? `OpenCode Go (${openCodeModel})` : "Fable 5.1" },
       analysis: {
-        decision, confidence: bounded(parsed?.confidence, 0), rawModelScores: { buy: finiteOrNull(parsed?.rawBuyScore), sell: finiteOrNull(parsed?.rawSellScore), wait: finiteOrNull(parsed?.rawWaitScore) }, pBuy, pSell, pWait, directionalLean: debate.arbiter.directionalLean, leanConfidence: debate.arbiter.leanConfidence, agentRunIds: agentRuns!.runIds, arbiterRunId: agentRuns!.arbiterRunId, fusionRunId: agentRuns!.fusionRunId, bullRunId: agentRuns!.bullRunId, bearRunId: agentRuns!.bearRunId, specialistRunIds: agentRuns!.specialistRunIds, multiAgent: { ...debate, advocates, mode: process.env.MULTI_AGENT_MODE || "TEXT_SPECIALISTS", control, challenger, agreement: control.decision === challenger.decision && control.directionalLean === challenger.directionalLean }, timing: { visionMs: visionLatencyMs, fableMs: Date.now() - fableStarted, totalMs }, latencyMetrics: allLatencyStats(), probabilitySource, candleSeconds: Number(snapshotObject.candleSeconds) || 5, expirationSeconds: Number(snapshotObject.horizonSeconds) || 60, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: imageUsed && visionObservation?.imageProvided === true, imageStatus: imageUsed && visionObservation?.imageProvided === true ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", visionObservation, visionTransport: { frameId: receivedImage?.frameId || null, hasImage: imageUsed && visionObservation?.imageProvided === true, imageBytes: Number(visionObservation?.imageBytes) || receivedImage?.byteLength || 0, imageHash: visionObservation?.imageHash || receivedImage?.hash || null, provider: "nexxus-vision", model: visionModel },
+        decision, confidence: bounded(parsed?.confidence, 0), rawModelScores: { buy: finiteOrNull(parsed?.rawBuyScore), sell: finiteOrNull(parsed?.rawSellScore), wait: finiteOrNull(parsed?.rawWaitScore) }, pBuy, pSell, pWait, directionalLean: debate.arbiter.directionalLean, leanConfidence: debate.arbiter.leanConfidence, agentRunIds: agentRuns!.runIds, arbiterRunId: agentRuns!.arbiterRunId, fusionRunId: agentRuns!.fusionRunId, bullRunId: agentRuns!.bullRunId, bearRunId: agentRuns!.bearRunId, specialistRunIds: agentRuns!.specialistRunIds, multiAgent: { ...debate, advocates, mode: process.env.MULTI_AGENT_MODE || "TEXT_SPECIALISTS", control, challenger, agreement: control.decision === challenger.decision && control.directionalLean === challenger.directionalLean }, timing: { visionMs: visionLatencyMs, fableMs: Date.now() - fableStarted, totalMs }, latencyMetrics: allLatencyStats(), probabilitySource, candleSeconds: Number(snapshotObject.candleSeconds) || 5, expirationSeconds: Number(snapshotObject.horizonSeconds) || 60, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: imageUsed && visionObservation?.imageProvided === true, imageStatus: imageUsed && visionObservation?.imageProvided === true ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", visionObservation, visionTransport: { frameId: receivedImage?.frameId || null, hasImage: imageUsed && visionObservation?.imageProvided === true, imageBytes: Number(visionObservation?.imageBytes) || receivedImage?.byteLength || 0, imageHash: visionObservation?.imageHash || receivedImage?.hash || null, provider: openCodeGoActive ? "opencode-go-vision" : "nexxus-vision", model: openCodeGoActive ? openCodeModel : visionModel },
         framesUsed: Math.min(4, Number(parsed?.framesUsed) || images.length), visualBias, quantBias, confluence: bounded(parsed?.confluence, quantAvailable && quantBias === visualBias ? .8 : 0),
         trend: typeof parsed?.trend === "string" ? parsed.trend.slice(0, 80) : "UNKNOWN", structure: typeof parsed?.structure === "string" ? parsed.structure.slice(0, 80) : "UNKNOWN", momentum: typeof parsed?.momentum === "string" ? parsed.momentum.slice(0, 80) : "UNKNOWN", volatility: typeof parsed?.volatility === "string" ? parsed.volatility.slice(0, 80) : "UNKNOWN",
         supportResistance: safeList(parsed?.supportResistance), candlePatterns: safeList(parsed?.candlePatterns), breakoutState: typeof parsed?.breakoutState === "string" ? parsed.breakoutState.slice(0, 80) : "UNKNOWN", exhaustionState: typeof parsed?.exhaustionState === "string" ? parsed.exhaustionState.slice(0, 80) : "UNKNOWN",
@@ -344,7 +365,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
         riskFlags: ["FABLE_TIMEOUT"], observations: ["Vision observation preserved; Fable response exceeded its deadline."], supportingFactors: [], opposingFactors: [], summary: "WAIT: Fable timeout; evidência visual preservada para coleta shadow.", rationale: "FABLE_TIMEOUT", analysisId: typeof snapshotObject.analysisId === "string" ? snapshotObject.analysisId : "unknown", decisionId: typeof snapshotObject.decisionId === "string" ? snapshotObject.decisionId : null, sessionId: typeof snapshotObject.sessionId === "string" ? snapshotObject.sessionId : null, traceId: typeof snapshotObject.traceId === "string" ? snapshotObject.traceId : null, marketEventId: typeof snapshotObject.marketEventId === "string" ? snapshotObject.marketEventId : null, candleId: typeof snapshotObject.candleId === "string" ? snapshotObject.candleId : null, frameId: typeof chartFrame.frameId === "string" ? chartFrame.frameId : null, decisionSource: typeof snapshotObject.decisionSource === "string" ? snapshotObject.decisionSource : "DEEP_ONLY", deepRequested: snapshotObject.deepRequested === true, deepExecuted: true, pipeline: { dataValidation: "PASS", visualAnalysis: "PASS", quantAnalysis: "LIMITED", confluence: "UNAVAILABLE", finalDecision: "WAIT" }, assetResolution,
       },
     };
-  } finally { clearTimeout(timeout); }
+  } finally { clearTimeout(textTimeout); }
 }
 
 /* ============================================================
@@ -525,6 +546,12 @@ async function relayAdminSend(method: "POST" | "PUT", path: string, payload: unk
   const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
   if (!base || !admin) return false;
   try { const response = await fetch(`${base}${path}`, { method, headers: { "content-type": "application/json", "x-relay-admin": admin }, body: JSON.stringify(payload), signal: AbortSignal.timeout(8_000) }); return response.ok; } catch { return false; }
+}
+async function relayAdminPost(path: string, payload: unknown, timeoutMs = 25_000): Promise<Record<string, unknown> | null> {
+  const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
+  const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
+  if (!base || !admin) return null;
+  try { const response = await fetch(`${base}${path}`, { method: "POST", headers: { "content-type": "application/json", "x-relay-admin": admin }, body: JSON.stringify(payload), signal: AbortSignal.timeout(timeoutMs) }); if (!response.ok) return null; return await response.json() as Record<string, unknown>; } catch { return null; }
 }
 async function relayAdminGet(path: string): Promise<Record<string, unknown>> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, ""); const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim(); if (!base || !admin) throw new Error("relay_not_configured");
