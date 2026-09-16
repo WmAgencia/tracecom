@@ -258,11 +258,12 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(JSON.stringify(runtime.office()).includes(FAKE_SSID)).toBe(false);
     expect(JSON.stringify(runtime.status()).includes(FAKE_SSID)).toBe(false);
   });
-  it("payout: resolver le initialization-data.sum e commission-changed (runtime)", () => {
+  it("payout: resolver le option.profit.commission e commission-changed (runtime)", () => {
     const resolver = new RuntimeAssetResolver() as any;
-    resolver.ingestInitializationData({ binary: { actives: { "81": { name: "GBPUSD-OTC", enabled: true, sum: 87 } } }, turbo: { actives: {} } });
+    resolver.ingestInitializationData({ binary: { actives: { "81": { name: "GBPUSD-OTC", enabled: true, option: { profit: { commission: 13 } } } } }, turbo: { actives: {} } });
     expect(resolver.get("GBPUSD:OTC").payout).toBe(87);
-    resolver.ingestAuxiliary({ "81": { payout: 92 } });
+    expect(resolver.get("GBPUSD:OTC").payoutSource).toBe("initialization-data.option.profit.commission");
+    resolver.ingestAuxiliary({ active_id: 81, instrument_type: "binary", commission: { value: 8 } });
     expect(resolver.get("GBPUSD:OTC").payout).toBe(92);
     expect(resolver.get("GBPUSD:OTC").payoutSource).toBe("commission-changed");
   });

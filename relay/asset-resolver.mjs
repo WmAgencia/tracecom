@@ -21,13 +21,13 @@ export function canonicalFromName(rawName) {
 
 function extractPayout(active) {
   if (!active || typeof active !== "object") return null;
+  const commission = Number(active?.option?.profit?.commission);
+  if (Number.isFinite(commission) && commission >= 0 && commission < 100) return { value: Number((100 - commission).toFixed(2)), source: "initialization-data.option.profit.commission" };
   for (const [key, value] of Object.entries(active)) {
     if (!/payout/i.test(key)) continue;
     const number = Number(value);
     if (Number.isFinite(number) && number > 0) return { value: number, source: `initialization-data.${key}` };
   }
-  const sum = Number(active.sum);
-  if (Number.isFinite(sum) && sum > 0 && sum <= 100 && !/^0+$/.test(String(active.sum))) return { value: sum, source: "initialization-data.sum" };
   return null;
 }
 
@@ -90,7 +90,10 @@ export class RuntimeAssetResolver {
         const payoutValue = Number(row?.payout ?? row?.payout_percent ?? row?.win ?? NaN);
         if (Number.isFinite(activeId) && Number.isFinite(payoutValue) && payoutValue > 0) this.payoutByActiveId.set(activeId, payoutValue);
       }
-      if (rows.length) this.#refreshPayouts();
+      const commissionActiveId = Number(msg?.active_id ?? msg?.activeId);
+      const commissionValue = Number(msg?.commission?.value ?? msg?.commission);
+      if (Number.isFinite(commissionActiveId) && Number.isFinite(commissionValue) && commissionValue >= 0 && commissionValue < 100) this.payoutByActiveId.set(commissionActiveId, Number((100 - commissionValue).toFixed(2)));
+      if (rows.length || Number.isFinite(commissionActiveId)) this.#refreshPayouts();
     } catch { /* best effort */ }
     return this.status();
   }
@@ -100,8 +103,9 @@ export class RuntimeAssetResolver {
     for (const [key, row] of this.mapping.entries()) {
       if (row.activeId === null || row.activeId === undefined) continue;
       const payout = this.payoutByActiveId.get(Number(row.activeId));
-      if (Number.isFinite(payout) && payout > 0 && row.payout !== payout) this.mapping.set(key, { ...row, payout, payoutSource: row.payoutSource?.startsWith("commission") ? row.payoutSource : "commission-changed", resolvedAt: now });
-      else if (!Number.isFinite(payout) && row.payoutSource?.startsWith("initialization-data.sum")) { /* mantem leitura inicial */ }
+      if (!Number.isFinite(payout) || payout <= 0) continue;
+      const source = row.payoutSource?.startsWith("commission") ? row.payoutSource : "commission-changed";
+      if (row.payout !== payout || row.payoutSource !== source) this.mapping.set(key, { ...row, payout, payoutSource: source, resolvedAt: now });
     }
   }
 
