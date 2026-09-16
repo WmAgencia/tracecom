@@ -344,8 +344,8 @@ const OfficeUI = (() => {
   /* ------------------------------ data ------------------------------ */
   async function refreshOffice() {
     try {
-      const office = await get("/api/iq/office");
-      state.office = office;
+      if (window.__OFFICE_FIXTURE__?.office) { state.office = window.__OFFICE_FIXTURE__.office; }
+      else state.office = await get("/api/iq/office");
       if (!state.initialized) { computeDefaultCamera(); state.initialized = true; }
       renderTopbar(); renderAux(); renderTicker();
       if (state.selectedMarket) marketDrawer(state.selectedMarket);
@@ -390,6 +390,7 @@ const OfficeUI = (() => {
   function pushTicker(text) { state.ticker = [`<b>${new Date().toLocaleTimeString("pt-BR")}</b> ${text}`, ...state.ticker].slice(0, 60); }
   async function pollEvents() {
     try {
+      if (window.__OFFICE_FIXTURE__?.events) { for (const event of window.__OFFICE_FIXTURE__.events) handleEvent(event); window.__OFFICE_FIXTURE__.events = []; renderTicker(); return; }
       const result = await get(`/api/iq/events?after=${state.eventsCursor}&limit=200`);
       state.eventsCursor = result.cursor ?? state.eventsCursor;
       for (const event of result.events ?? []) handleEvent(event);
@@ -475,14 +476,26 @@ const OfficeUI = (() => {
   }
 
   /* ------------------------------ boot ------------------------------ */
+  /** Reload da pagina = REAL volta bloqueado (spec 20): forca PRACTICE + revoga sessao REAL. */
+  async function enforceReloadReset() {
+    if (window.__OFFICE_FIXTURE__) return;
+    try {
+      const office = await get("/api/iq/office");
+      if (office.mode === "REAL" || office.modeState?.realMode?.realModeEnabled === true) {
+        await post("/api/iq/mode", { mode: "PRACTICE" }).catch(() => undefined);
+        pushTicker("reload detectado: modo REAL revogado (PRACTICE restaurado)");
+      }
+    } catch { /* backend indisponivel: mantem estado local */ }
+  }
+
   function init() {
     canvas = $("officeCanvas"); overlay = $("officeOverlay");
     if (!canvas) return;
     ctx = canvas.getContext("2d");
     bindInteractions(); bindButtons(); bindNavDefault();
-    window.addEventListener("resize", () => { if (!state.initialized) computeDefaultCamera(); else if (state.defaultCamera) { /* mantem camera do usuario */ } });
+    window.addEventListener("resize", () => { if (!state.initialized) computeDefaultCamera(); });
     requestAnimationFrame(render);
-    void refreshOffice();
+    void enforceReloadReset().then(() => refreshOffice());
     setInterval(() => { const page = $("page-office"); if (page && !page.hidden) void refreshOffice(); }, 2_000);
     setInterval(() => { const page = $("page-office"); if (page && !page.hidden) void pollEvents(); }, 1_000);
   }

@@ -820,7 +820,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (path === "/api/iq/test-order" && (!Number.isFinite(Number(payload.stake)) || Number(payload.stake) <= 0 || Number(payload.stake) > 100)) { json(400, { error: "invalid_stake" }); return; }
       if (path === "/api/iq/market" && !String(payload.marketKey ?? "")) { json(400, { error: "market_key_required" }); return; }
       if (path === "/api/iq/config/global-stake" && (!Number.isFinite(Number(payload.value)) || Number(payload.value) <= 0 || Number(payload.value) > 100)) { json(400, { error: "invalid_global_stake" }); return; }
-      if (path === "/api/iq/real/confirm" && (!String(payload.phrase ?? "") || payload.acknowledgeRisk !== true)) { json(400, { error: "real_confirmation_required" }); return; }
+      if (path === "/api/iq/real/confirm" && !String(payload.phrase ?? "")) { json(400, { error: "real_confirmation_required" }); return; }
       const result = await relayAdminJson(path === "/api/iq/market" ? "PUT" : "POST", path, payload, 20_000);
       if (!result) { json(502, { error: "iq_relay_unavailable" }); return; }
       if (!result.ok) { json(result.status >= 400 && result.status < 500 ? result.status : 502, { ...result.body, practiceOnly: true, brokerAutomation: "WS_ONLY_PRACTICE" }); return; }
