@@ -5,6 +5,7 @@
   <title>TRACE/COM · Área Operacional</title><meta name="description" content="Área operacional shadow do TraceCom. Observação visual de gráficos; sem automação de corretora." />
   <link rel="stylesheet" href="/vision.css" />
   <link rel="stylesheet" href="/console.css" />
+  <link rel="stylesheet" href="/office.css" />
 </head>
 <body>
   <button type="button" id="navToggle" class="nav-toggle" aria-label="Abrir menu">☰</button>
@@ -12,6 +13,7 @@
     <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
       <div class="sidebar-brand"><span class="brand-orbit"></span><span>TRACE<em>/</em>COM <small>VISION · SHADOW</small></span></div>
       <nav class="sidebar-nav">
+        <button type="button" class="nav-item" data-page="office"><span class="nav-ico">◫</span>Escritório Pixel</button>
         <button type="button" class="nav-item active" data-page="operational"><span class="nav-ico">◎</span>Área Operacional</button>
         <button type="button" class="nav-item" data-page="history"><span class="nav-ico">▤</span>Histórico</button>
         <button type="button" class="nav-item" data-page="training"><span class="nav-ico">✦</span>Treinamento do Agente</button>
@@ -23,6 +25,37 @@
     </aside>
 
     <main class="main">
+      <!-- ============ PÁGINA: PIXEL TRADING OFFICE (10 mesas = 10 markets ativos reais) ============ -->
+      <div id="page-office" class="page office-page" hidden>
+        <div class="office-topbar">
+          <div class="office-brand"><b>TRACE<em>/</em>COM</b><small>PIXEL TRADING OFFICE</small></div>
+          <div class="office-mode" role="group" aria-label="Modo de execução">
+            <button type="button" id="officePractice" class="active">PRACTICE</button>
+            <button type="button" id="officeReal" class="real">REAL</button>
+          </div>
+          <button type="button" id="officeArm" class="office-btn primary">ARM</button>
+          <button type="button" id="officeDisarm" class="office-btn ghost">DISARM</button>
+          <button type="button" id="officeKill" class="office-btn danger">KILL SWITCH</button>
+          <label class="office-field">MAX GLOBAL R$ <input id="officeGlobalStake" type="number" min="1" max="100" step="1" value="2" /></label>
+          <button type="button" id="officeApplyAll" class="office-btn">APLICAR A TODOS</button>
+          <button type="button" id="officeAutoExec" class="office-btn ghost">AUTO: OFF</button>
+          <span class="office-chip" id="officeActiveCount">ATIVOS 0/10</span>
+          <span class="office-chip" id="officeOpenPositions">POSIÇÕES 0</span>
+          <span class="office-chip" id="officeConnection">WS —</span>
+          <button type="button" id="officeManage" class="office-btn">GERENCIAR ATIVOS</button>
+          <button type="button" id="officeFocus" class="office-btn ghost">CENTRALIZAR</button>
+          <button type="button" id="officeZoomIn" class="office-btn ghost">+</button>
+          <button type="button" id="officeZoomOut" class="office-btn ghost">−</button>
+          <button type="button" id="officeReset" class="office-btn ghost">RESET</button>
+        </div>
+        <div class="office-aux" id="officeAux"></div>
+        <div class="office-stage">
+          <canvas id="officeCanvas" aria-label="Escritório isométrico dos agentes"></canvas>
+          <div class="office-overlay" id="officeOverlay"></div>
+        </div>
+        <div class="office-ticker" id="officeTicker"><span class="fine">Aguardando eventos do backend…</span></div>
+      </div>
+
       <!-- ============ PÁGINA: ÁREA OPERACIONAL (3 blocos: gráfico+leitura, banca, estratégias) ============ -->
       <div id="page-operational" class="page">
         <section class="op-hero">
@@ -211,4 +244,5 @@
   <dialog id="adminDialog"><div id="adminGenerateStep"><span class="kicker">OPENCODE FULL DIAGNOSTIC</span><p>Expiração: <input id="adminExpiration" type="number" min="0" value="0" /> dias (0 = sem expiração)</p><p class="fine">Scopes somente de leitura e pesquisa. Nenhum scope de broker ou ordem.</p><div class="controls"><button id="adminGenerateConfirm" class="secondary">GERAR API KEY</button><button id="adminRotateConfirm" class="quiet">ROTACIONAR</button><button id="adminRevokeConfirm" class="quiet" hidden>REVOGAR ATUAL</button><button id="adminClose" class="quiet">FECHAR</button></div><div id="adminKeyBox" hidden><span class="kicker">API KEY GERADA</span><pre id="adminKeyValue"></pre><p class="fine">Copie esta chave agora. Ela não poderá ser exibida novamente.</p><div class="controls"><button id="adminCopyKey" class="secondary">COPIAR CHAVE</button></div></div></div></dialog>
   <script type="module" src="/app.js"></script>
   <script type="module" src="/strategy-console.js"></script>
+  <script type="module" src="/office.js"></script>
 </body></html>
