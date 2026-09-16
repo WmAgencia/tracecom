@@ -1,0 +1,336 @@
+{
+ "generated_at": "2026-09-16T04:30:06.682Z",
+ "note": "classificacao pelo CODIGO REAL clonado; pesos .pth/.h5/.joblib/.mq5 detectados",
+ "repos": [
+  {
+   "repository": "AgentFxTrading",
+   "files": 46,
+   "mb": 2.4,
+   "langs": ".py:22 .md:9 .png:5",
+   "weightsFiles": 0,
+   "category": [
+    "F",
+    "G",
+    "H"
+   ],
+   "license": "AUSENTE",
+   "status": "REFERENCE_ONLY",
+   "reason": "framework multi-agente + cBots C#; port C# fora de escopo"
+  },
+  {
+   "repository": "Binary-bot",
+   "files": 18,
+   "mb": 1.1,
+   "langs": ".py:11 .joblib:3 .md:2",
+   "weightsFiles": 3,
+   "category": [
+    "D",
+    "J"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "modelos sklearn .joblib treinados + execucao IQ Option; runtime Python ausente"
+  },
+  {
+   "repository": "BinaryOptions_DeepLearning",
+   "files": 13,
+   "mb": 4.4,
+   "langs": ".ipynb:7 :2 .py:1",
+   "weightsFiles": 0,
+   "category": [
+    "E"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "notebooks LSTM/Transformers; requer treino; sem pesos"
+  },
+  {
+   "repository": "binary_options_bot",
+   "files": 199,
+   "mb": 18.3,
+   "langs": ".png:122 .csv:28 .py:25",
+   "weightsFiles": 1,
+   "category": [
+    "A",
+    "D",
+    "F",
+    "I"
+   ],
+   "license": "MIT (LICENSE.md)",
+   "status": "INTEGRATED",
+   "reason": "catalogo de 19 regras + vote2; 20 candidatos JS tc-1.1.0"
+  },
+  {
+   "repository": "BOTAI",
+   "files": 24,
+   "mb": 6.1,
+   "langs": ".py:11 .md:4 .csv:3",
+   "weightsFiles": 0,
+   "category": [
+    "E"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "LSTM train.py; requer treino; simulador proprio"
+  },
+  {
+   "repository": "cortex5-ai-trading",
+   "files": 26,
+   "mb": 1.9,
+   "langs": ".md:15 .mq5:5 .json:2",
+   "weightsFiles": 0,
+   "category": [
+    "F",
+    "J"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "Double-Dueling DRQN+LSTM em MQL5; requer MT5; port inviavel"
+  },
+  {
+   "repository": "deterministic-trading-engine",
+   "files": 511,
+   "mb": 3.7,
+   "langs": ".py:442 .md:46 .toml:12",
+   "weightsFiles": 0,
+   "category": [
+    "D",
+    "I"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "transformer+DSL; requer treino; sem pesos"
+  },
+  {
+   "repository": "FinGPT",
+   "files": 259,
+   "mb": 13.9,
+   "langs": ".py:143 .md:29 .ipynb:27",
+   "weightsFiles": 0,
+   "category": [
+    "G"
+   ],
+   "license": "AUSENTE",
+   "status": "REFERENCE_ONLY",
+   "reason": "framework LLM financeiro; requer GPU/LLM APIs"
+  },
+  {
+   "repository": "forex-ai-agent",
+   "files": 69,
+   "mb": 0.6,
+   "langs": ".ts:52 .sql:9 .json:3",
+   "weightsFiles": 0,
+   "category": [
+    "G"
+   ],
+   "license": "AUSENTE",
+   "status": "REFERENCE_ONLY",
+   "reason": "agente LLM (Claude API) + Telegram"
+  },
+  {
+   "repository": "forex-ai-trader",
+   "files": 21,
+   "mb": 0.9,
+   "langs": ".py:5 .pkl:4 .md:4",
+   "weightsFiles": 4,
+   "category": [
+    "D",
+    "I"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "OANDA API; sem modelo treinado; pkls sao backtest"
+  },
+  {
+   "repository": "Forex-ML",
+   "files": 1,
+   "mb": 0,
+   "langs": ".md:1",
+   "weightsFiles": 0,
+   "category": [
+    "L"
+   ],
+   "license": "AUSENTE",
+   "status": "REFERENCE_ONLY",
+   "reason": "apenas README, sem codigo"
+  },
+  {
+   "repository": "forex-stgfx",
+   "files": 1,
+   "mb": 0,
+   "langs": ".md:1",
+   "weightsFiles": 0,
+   "category": [
+    "L"
+   ],
+   "license": "AUSENTE",
+   "status": "REFERENCE_ONLY",
+   "reason": "apenas README (marketing), 0 arquivos de codigo"
+  },
+  {
+   "repository": "GGTH-Forex-Predictor",
+   "files": 53,
+   "mb": 4.2,
+   "langs": ".py:24 .bat:6 .mq5:4",
+   "weightsFiles": 0,
+   "category": [
+    "D",
+    "E",
+    "J"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "predictor Python + EA MT5; dependencia MT5; sem pesos"
+  },
+  {
+   "repository": "IQOPTION-ML-TRADER",
+   "files": 17,
+   "mb": 2.1,
+   "langs": ".py:10 .md:2 :1",
+   "weightsFiles": 1,
+   "category": [
+    "E"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "Keras .h5 PRETRAINED; runtime TF/Python ausente neste ambiente"
+  },
+  {
+   "repository": "iqoption_bot",
+   "files": 24,
+   "mb": 0.1,
+   "langs": ".py:19 .example:1 :1",
+   "weightsFiles": 0,
+   "category": [
+    "E"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "LSTM+padrao de candle; requer treino; execucao broker"
+  },
+  {
+   "repository": "IQ_Options_Binary_Bot",
+   "files": 10,
+   "mb": 4.2,
+   "langs": ".py:3 .png:2 :1",
+   "weightsFiles": 0,
+   "category": [
+    "D"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "training.py/testing.py; requer treino; broker gateway"
+  },
+  {
+   "repository": "KJStockScreener",
+   "files": 79,
+   "mb": 1.6,
+   "langs": ".py:54 .yaml:6 :5",
+   "weightsFiles": 0,
+   "category": [
+    "B",
+    "C",
+    "I"
+   ],
+   "license": "AUSENTE",
+   "status": "REFERENCE_ONLY",
+   "reason": "screener NSE (acoes indianas), sem logica T+60; licenca nao declarada"
+  },
+  {
+   "repository": "RL-FX-Trading",
+   "files": 79,
+   "mb": 49.3,
+   "langs": ".py:37 .png:13 .ipynb:12",
+   "weightsFiles": 0,
+   "category": [
+    "F"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "DRL/DQN; dataset Integral nao publico; requer treino"
+  },
+  {
+   "repository": "SuperThree",
+   "files": 7,
+   "mb": 0,
+   "langs": ".md:3 :2 .yml:1",
+   "weightsFiles": 0,
+   "category": [
+    "B",
+    "A"
+   ],
+   "license": "MIT",
+   "status": "INTEGRATED",
+   "reason": "indicador Pine; 2 candidatos JS (trend, ctm) tc-1.1.0"
+  },
+  {
+   "repository": "TodoQuant",
+   "files": 292,
+   "mb": 6.5,
+   "langs": ".ts:160 .tsx:66 .png:17",
+   "weightsFiles": 0,
+   "category": [
+    "J",
+    "K"
+   ],
+   "license": "AUSENTE",
+   "status": "REFERENCE_ONLY",
+   "reason": "plataforma de execucao OKX/Binance, nao estrategia"
+  },
+  {
+   "repository": "TradingAgents",
+   "files": 168,
+   "mb": 4.4,
+   "langs": ".py:145 .png:10 :4",
+   "weightsFiles": 0,
+   "category": [
+    "G",
+    "H"
+   ],
+   "license": "AUSENTE",
+   "status": "REFERENCE_ONLY",
+   "reason": "multi-agente LLM; requer APIs LLM"
+  },
+  {
+   "repository": "Transformer-Trader",
+   "files": 7,
+   "mb": 1.2,
+   "langs": ".ipynb:3 .py:2 :1",
+   "weightsFiles": 0,
+   "category": [
+    "E"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "transformer/SSL; requer treino; sem pesos"
+  },
+  {
+   "repository": "vibe-trading",
+   "files": 201,
+   "mb": 37.9,
+   "langs": ".py:112 .yaml:29 .ts:12",
+   "weightsFiles": 0,
+   "category": [
+    "G",
+    "H"
+   ],
+   "license": "AUSENTE",
+   "status": "REFERENCE_ONLY",
+   "reason": "agente LLM + skills; requer APIs LLM"
+  },
+  {
+   "repository": "WinstonAI",
+   "files": 98,
+   "mb": 666.9,
+   "langs": ".py:35 .pth:32 .md:14",
+   "weightsFiles": 32,
+   "category": [
+    "E",
+    "F"
+   ],
+   "license": "AUSENTE",
+   "status": "NOT_READY",
+   "reason": "DQN/LSTM PyTorch com .pth (667MB); runtime Python/GPU ausente"
+  }
+ ]
+}

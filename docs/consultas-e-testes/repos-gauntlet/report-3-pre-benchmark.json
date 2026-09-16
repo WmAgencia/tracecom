@@ -1,0 +1,20 @@
+{
+ "generated_at": "2026-09-16T04:30:06.686Z",
+ "checks": {
+  "t60_exact": true,
+  "dup_buckets": 0,
+  "future_perturb": "0/200",
+  "same_stream": true,
+  "isolation": true,
+  "no_broker_execution": true,
+  "hashes_frozen_before_eval": true
+ },
+ "critics": [
+  "critic-repos-bench.md (round1: FAILs -> correcoes RMA/Wilder/Stoch/PSAR/SuperThree)",
+  "critic-repos-bench2.md (round2: psarUp nao retornado -> fixed tc-1.1.0)",
+  "re-run final: psar 3535 sinais 52.81% (BATE o esperado do critic)"
+ ],
+ "ready_candidates": 20,
+ "not_ready_repos": 10,
+ "reference_only_repos": 12
+}

@@ -1,0 +1,485 @@
+{
+ "generated_at": "2026-09-16T04:30:06.685Z",
+ "candidates": [
+  {
+   "candidate": "deriv_sma_rsi",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "15m-1h (Abe Cofnas cap.6)",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "cadabcfc1c1ad591",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 492,
+    "n": 492,
+    "wr": 53.46,
+    "sigPerHour": 49.2
+   },
+   "OTC": {
+    "signals": 187,
+    "n": 187,
+    "wr": 52.94,
+    "sigPerHour": 18.7
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_macd_cross",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "original: varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "cff87972f076bb63",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 6861,
+    "n": 6861,
+    "wr": 49.31,
+    "sigPerHour": 686
+   },
+   "OTC": {
+    "signals": 7042,
+    "n": 7042,
+    "wr": 50.64,
+    "sigPerHour": 704.1
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_sma_rsi_macd_combo",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "15m-1h",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "e6777f6a5ffac7bf",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 8,
+    "n": 8,
+    "wr": 62.5,
+    "sigPerHour": 0.8
+   },
+   "OTC": {
+    "signals": 1,
+    "n": 1,
+    "wr": 100,
+    "sigPerHour": 0.1
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_bollinger_bands",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "15m-1h",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "493e0592460bf0dc",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 822,
+    "n": 822,
+    "wr": 49.51,
+    "sigPerHour": 82.2
+   },
+   "OTC": {
+    "signals": 833,
+    "n": 833,
+    "wr": 51.14,
+    "sigPerHour": 83.3
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_bollinger_breakout",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "15m-1h (Cofnas cap.6 p.100)",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "6ac8d9df53711b66",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 822,
+    "n": 822,
+    "wr": 50.49,
+    "sigPerHour": 82.2
+   },
+   "OTC": {
+    "signals": 833,
+    "n": 833,
+    "wr": 48.86,
+    "sigPerHour": 83.3
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_adx_trend",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "00f439aef0f1a1d9",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 3591,
+    "n": 3591,
+    "wr": 46.95,
+    "sigPerHour": 359.1
+   },
+   "OTC": {
+    "signals": 2685,
+    "n": 2685,
+    "wr": 45.55,
+    "sigPerHour": 268.5
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_ichimoku_tk",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "08f7111d5b500306",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 6869,
+    "n": 6869,
+    "wr": 50.53,
+    "sigPerHour": 686.8
+   },
+   "OTC": {
+    "signals": 7049,
+    "n": 7049,
+    "wr": 49.48,
+    "sigPerHour": 704.8
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_breakout20",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "283322ad7c54286b",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 851,
+    "n": 851,
+    "wr": 50.41,
+    "sigPerHour": 85.1
+   },
+   "OTC": {
+    "signals": 1136,
+    "n": 1136,
+    "wr": 49.65,
+    "sigPerHour": 113.6
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_trend_follow",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "c7bf233846fc4fd6",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 3591,
+    "n": 3591,
+    "wr": 46.17,
+    "sigPerHour": 359.1
+   },
+   "OTC": {
+    "signals": 2685,
+    "n": 2685,
+    "wr": 45.51,
+    "sigPerHour": 268.5
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_stoch_rsi",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "709d57c17cec0dee",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 1028,
+    "n": 1028,
+    "wr": 52.53,
+    "sigPerHour": 102.8
+   },
+   "OTC": {
+    "signals": 647,
+    "n": 647,
+    "wr": 51.62,
+    "sigPerHour": 64.7
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_heikin_ashi",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "73a0056265e3471a",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 6894,
+    "n": 6894,
+    "wr": 48.74,
+    "sigPerHour": 689.3
+   },
+   "OTC": {
+    "signals": 7074,
+    "n": 7074,
+    "wr": 50.03,
+    "sigPerHour": 707.3
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_candle_reversal",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "a1317b179af9641f",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 258,
+    "n": 258,
+    "wr": 51.94,
+    "sigPerHour": 25.8
+   },
+   "OTC": {
+    "signals": 528,
+    "n": 528,
+    "wr": 50.57,
+    "sigPerHour": 52.8
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_atr_breakout",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "eab06749d82daee6",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 992,
+    "n": 992,
+    "wr": 49.9,
+    "sigPerHour": 99.2
+   },
+   "OTC": {
+    "signals": 554,
+    "n": 554,
+    "wr": 50.9,
+    "sigPerHour": 55.4
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_psar",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "7d32ec6849386b12",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 3535,
+    "n": 3535,
+    "wr": 52.81,
+    "sigPerHour": 353.5
+   },
+   "OTC": {
+    "signals": 3508,
+    "n": 3508,
+    "wr": 49.14,
+    "sigPerHour": 350.8
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_ema_cross_adx",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "ef2132b62bb5191f",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 1213,
+    "n": 1213,
+    "wr": 48.8,
+    "sigPerHour": 121.3
+   },
+   "OTC": {
+    "signals": 1321,
+    "n": 1321,
+    "wr": 51.02,
+    "sigPerHour": 132.1
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_golden_death_cross",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "2d11f5d8719cf224",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 49,
+    "n": 49,
+    "wr": 51.02,
+    "sigPerHour": 4.9
+   },
+   "OTC": {
+    "signals": 41,
+    "n": 41,
+    "wr": 43.9,
+    "sigPerHour": 4.1
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_stoch_rsi_reversal",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "15m-1h (Cofnas cap.6)",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "2bee85fe73854ec4",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 980,
+    "n": 980,
+    "wr": 52.45,
+    "sigPerHour": 98
+   },
+   "OTC": {
+    "signals": 627,
+    "n": 627,
+    "wr": 51.99,
+    "sigPerHour": 62.7
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "superthree_trend",
+   "sourceRepo": "SuperThree (MIT)",
+   "sourceCommit": "68b413e61e8d",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "TradingView (qualquer TF)",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "3b8c15c24242322c",
+   "license": "MIT",
+   "BINARY": {
+    "signals": 3272,
+    "n": 3272,
+    "wr": 48.47,
+    "sigPerHour": 327.2
+   },
+   "OTC": {
+    "signals": 2580,
+    "n": 2580,
+    "wr": 48.57,
+    "sigPerHour": 258
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "superthree_ctm",
+   "sourceRepo": "SuperThree (MIT)",
+   "sourceCommit": "68b413e61e8d",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "TradingView (qualquer TF)",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "cc9c549a573e82dd",
+   "license": "MIT",
+   "BINARY": {
+    "signals": 1,
+    "n": 1,
+    "wr": 0,
+    "sigPerHour": 0.1
+   },
+   "OTC": {
+    "signals": 0,
+    "n": 0,
+    "wr": null,
+    "sigPerHour": 0
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  },
+  {
+   "candidate": "deriv_vote2",
+   "sourceRepo": "binary_options_bot (Deriv, MIT*)",
+   "sourceCommit": "a3c79c4ef3e3",
+   "sourceType": "A_signal/B_indicator deterministic",
+   "originalTF": "varios (ensemble do repo)",
+   "adapterVersion": "tc-1.1.0",
+   "configHash": "755378d1317e6eab",
+   "license": "MIT(ver arquivo)",
+   "BINARY": {
+    "signals": 6883,
+    "n": 6883,
+    "wr": 50.95,
+    "sigPerHour": 688.2
+   },
+   "OTC": {
+    "signals": 7057,
+    "n": 7057,
+    "wr": 49.77,
+    "sigPerHour": 705.6
+   },
+   "critic": "PASS (2 rodadas)",
+   "ready": true
+  }
+ ]
+}
