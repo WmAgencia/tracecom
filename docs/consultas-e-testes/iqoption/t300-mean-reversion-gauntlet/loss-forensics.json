@@ -1,0 +1,649 @@
+{
+ "baseline": {
+  "train": {
+   "n": 535,
+   "w": 338,
+   "wr": 63.18
+  },
+  "val": {
+   "n": 347,
+   "w": 220,
+   "wr": 63.4
+  }
+ },
+ "split": {
+  "splitT": 1789476590000,
+  "train": 535,
+  "val": 347
+ },
+ "note": "effect_size = (mean_win - mean_loss)/sd_pooled (TRAIN)",
+ "features": [
+  {
+   "feat": "Hp",
+   "mean_win": 0.72516,
+   "mean_loss": 0.67123,
+   "diff": 0.05393,
+   "effect_size": 0.48,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "cpMean",
+   "mean_win": 0.05052,
+   "mean_loss": 1.33004,
+   "diff": -1.27952,
+   "effect_size": -0.476,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "distATR",
+   "mean_win": -0.16585,
+   "mean_loss": 4.08439,
+   "diff": -4.25024,
+   "effect_size": -0.475,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "upSwing",
+   "mean_win": 0.53254,
+   "mean_loss": 0.75127,
+   "diff": -0.21872,
+   "effect_size": -0.449,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "tick_imb_60s",
+   "mean_win": -0.00605,
+   "mean_loss": 0.08185,
+   "diff": -0.0879,
+   "effect_size": -0.441,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "stoch",
+   "mean_win": 51.51847,
+   "mean_loss": 68.84939,
+   "diff": -17.33093,
+   "effect_size": -0.434,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "wpr",
+   "mean_win": -48.48153,
+   "mean_loss": -31.15061,
+   "diff": -17.33093,
+   "effect_size": -0.434,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "emaStack",
+   "mean_win": 0.06509,
+   "mean_loss": 0.48731,
+   "diff": -0.42222,
+   "effect_size": -0.433,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "reg120_r2",
+   "mean_win": 0.30494,
+   "mean_loss": 0.43224,
+   "diff": -0.1273,
+   "effect_size": -0.421,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "distPH",
+   "mean_win": 3.03198,
+   "mean_loss": 0.64367,
+   "diff": 2.38832,
+   "effect_size": 0.414,
+   "nw": 323,
+   "nl": 197
+  },
+  {
+   "feat": "rsi14",
+   "mean_win": 50.67439,
+   "mean_loss": 62.2507,
+   "diff": -11.57631,
+   "effect_size": -0.404,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "reg60_residZ",
+   "mean_win": 0.0566,
+   "mean_loss": 0.69614,
+   "diff": -0.63953,
+   "effect_size": -0.4,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "ret180",
+   "mean_win": 0.00001,
+   "mean_loss": 0.00008,
+   "diff": -0.00007,
+   "effect_size": -0.399,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "cci",
+   "mean_win": 13.39983,
+   "mean_loss": 70.83917,
+   "diff": -57.43934,
+   "effect_size": -0.398,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "ret300",
+   "mean_win": 0,
+   "mean_loss": 0.00008,
+   "diff": -0.00008,
+   "effect_size": -0.391,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "H",
+   "mean_win": 1.52098,
+   "mean_loss": 1.54007,
+   "diff": -0.01909,
+   "effect_size": -0.387,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "structDown",
+   "mean_win": 0.25444,
+   "mean_loss": 0.10152,
+   "diff": 0.15292,
+   "effect_size": 0.384,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "ret90",
+   "mean_win": 0,
+   "mean_loss": 0.00005,
+   "diff": -0.00005,
+   "effect_size": -0.383,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "ret120",
+   "mean_win": 0,
+   "mean_loss": 0.00005,
+   "diff": -0.00005,
+   "effect_size": -0.372,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "nearRes",
+   "mean_win": 0.39941,
+   "mean_loss": 0.57868,
+   "diff": -0.17927,
+   "effect_size": -0.359,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "nearRes",
+   "mean_win": 0.39941,
+   "mean_loss": 0.57868,
+   "diff": -0.17927,
+   "effect_size": -0.359,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "ret60",
+   "mean_win": 0,
+   "mean_loss": 0.00004,
+   "diff": -0.00003,
+   "effect_size": -0.356,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "spread_60s",
+   "mean_win": 0.00001,
+   "mean_loss": 0.00001,
+   "diff": 0,
+   "effect_size": 0.354,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "rsi7",
+   "mean_win": 51.20744,
+   "mean_loss": 62.03035,
+   "diff": -10.82291,
+   "effect_size": -0.335,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "vol12",
+   "mean_win": 0.00002,
+   "mean_loss": 0.00002,
+   "diff": 0,
+   "effect_size": 0.332,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "ret45",
+   "mean_win": 0,
+   "mean_loss": 0.00003,
+   "diff": -0.00003,
+   "effect_size": -0.329,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "tick_rate_15s",
+   "mean_win": 2.95621,
+   "mean_loss": 2.57259,
+   "diff": 0.38362,
+   "effect_size": 0.323,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "distPL",
+   "mean_win": 1.912,
+   "mean_loss": 3.58497,
+   "diff": -1.67297,
+   "effect_size": -0.32,
+   "nw": 325,
+   "nl": 176
+  },
+  {
+   "feat": "ac1",
+   "mean_win": -0.03738,
+   "mean_loss": 0.00942,
+   "diff": -0.0468,
+   "effect_size": -0.32,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "tick_rate_60s",
+   "mean_win": 2.80261,
+   "mean_loss": 2.55668,
+   "diff": 0.24593,
+   "effect_size": 0.305,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "maxZ",
+   "mean_win": 2.83354,
+   "mean_loss": 2.68794,
+   "diff": 0.14559,
+   "effect_size": 0.28,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "structUp",
+   "mean_win": 0.23077,
+   "mean_loss": 0.35025,
+   "diff": -0.11948,
+   "effect_size": -0.268,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "reg60_r2",
+   "mean_win": 0.64467,
+   "mean_loss": 0.58147,
+   "diff": 0.0632,
+   "effect_size": 0.264,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "nearSup",
+   "mean_win": 0.40533,
+   "mean_loss": 0.27919,
+   "diff": 0.12614,
+   "effect_size": 0.263,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "nearSup",
+   "mean_win": 0.40533,
+   "mean_loss": 0.27919,
+   "diff": 0.12614,
+   "effect_size": 0.263,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "tick_imb_30s",
+   "mean_win": 0.00956,
+   "mean_loss": 0.07169,
+   "diff": -0.06213,
+   "effect_size": -0.262,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "bbw",
+   "mean_win": 0.00018,
+   "mean_loss": 0.00016,
+   "diff": 0.00002,
+   "effect_size": 0.262,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "atrPct",
+   "mean_win": 0.00002,
+   "mean_loss": 0.00002,
+   "diff": 0,
+   "effect_size": 0.251,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "dirCandles",
+   "mean_win": 9.02071,
+   "mean_loss": 8.56853,
+   "diff": 0.45218,
+   "effect_size": 0.246,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "tick_imb_15s",
+   "mean_win": 0.02881,
+   "mean_loss": 0.10212,
+   "diff": -0.0733,
+   "effect_size": -0.229,
+   "nw": 338,
+   "nl": 194
+  },
+  {
+   "feat": "tick_rate_5s",
+   "mean_win": 2.99408,
+   "mean_loss": 2.61421,
+   "diff": 0.37987,
+   "effect_size": 0.229,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "ret15",
+   "mean_win": 0,
+   "mean_loss": 0.00001,
+   "diff": -0.00001,
+   "effect_size": -0.228,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "ret30",
+   "mean_win": 0,
+   "mean_loss": 0.00002,
+   "diff": -0.00001,
+   "effect_size": -0.223,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "zAbs",
+   "mean_win": 2.49164,
+   "mean_loss": 2.40398,
+   "diff": 0.08765,
+   "effect_size": 0.222,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "tick_imb_10s",
+   "mean_win": 0.03085,
+   "mean_loss": 0.11442,
+   "diff": -0.08358,
+   "effect_size": -0.215,
+   "nw": 334,
+   "nl": 190
+  },
+  {
+   "feat": "clv",
+   "mean_win": -0.00587,
+   "mean_loss": 0.15344,
+   "diff": -0.15931,
+   "effect_size": -0.2,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "tick_imb_5s",
+   "mean_win": 0.01986,
+   "mean_loss": 0.12163,
+   "diff": -0.10177,
+   "effect_size": -0.194,
+   "nw": 308,
+   "nl": 169
+  },
+  {
+   "feat": "macdDecel",
+   "mean_win": 0,
+   "mean_loss": 0,
+   "diff": 0,
+   "effect_size": -0.191,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "hurst",
+   "mean_win": 0.47598,
+   "mean_loss": 0.49291,
+   "diff": -0.01693,
+   "effect_size": -0.188,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "maxAdverse",
+   "mean_win": 0.0001,
+   "mean_loss": 0.00009,
+   "diff": 0.00001,
+   "effect_size": 0.186,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "spread_15s",
+   "mean_win": 0.00001,
+   "mean_loss": 0.00001,
+   "diff": 0,
+   "effect_size": 0.171,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "er60",
+   "mean_win": 0.26645,
+   "mean_loss": 0.2532,
+   "diff": 0.01325,
+   "effect_size": 0.123,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "bodyRatio",
+   "mean_win": 0.58708,
+   "mean_loss": 0.53797,
+   "diff": 0.04911,
+   "effect_size": 0.122,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "inZone",
+   "mean_win": 0.00888,
+   "mean_loss": 0,
+   "diff": 0.00888,
+   "effect_size": 0.119,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "reg300_r2",
+   "mean_win": 0.3372,
+   "mean_loss": 0.31037,
+   "diff": 0.02684,
+   "effect_size": 0.108,
+   "nw": 336,
+   "nl": 196
+  },
+  {
+   "feat": "accel",
+   "mean_win": 0,
+   "mean_loss": 0.00001,
+   "diff": 0,
+   "effect_size": -0.1,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "maxCandleShare",
+   "mean_win": 0.30291,
+   "mean_loss": 0.29435,
+   "diff": 0.00855,
+   "effect_size": 0.083,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "distPct",
+   "mean_win": 0.63081,
+   "mean_loss": 0.60656,
+   "diff": 0.02425,
+   "effect_size": 0.082,
+   "nw": 336,
+   "nl": 193
+  },
+  {
+   "feat": "volPct",
+   "mean_win": 0.63081,
+   "mean_loss": 0.60656,
+   "diff": 0.02425,
+   "effect_size": 0.082,
+   "nw": 336,
+   "nl": 193
+  },
+  {
+   "feat": "er30",
+   "mean_win": 0.39252,
+   "mean_loss": 0.40361,
+   "diff": -0.01109,
+   "effect_size": -0.077,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "pathEff",
+   "mean_win": 0.56549,
+   "mean_loss": 0.55265,
+   "diff": 0.01284,
+   "effect_size": 0.057,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "cpVar",
+   "mean_win": 1.01272,
+   "mean_loss": 1.00287,
+   "diff": 0.00985,
+   "effect_size": 0.039,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "extCandles",
+   "mean_win": 6.67751,
+   "mean_loss": 6.53807,
+   "diff": 0.13944,
+   "effect_size": 0.037,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "signChanges",
+   "mean_win": 4.04734,
+   "mean_loss": 4,
+   "diff": 0.04734,
+   "effect_size": 0.027,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "barsSinceMax",
+   "mean_win": 5.78698,
+   "mean_loss": 5.70051,
+   "diff": 0.08647,
+   "effect_size": 0.024,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "wickExp",
+   "mean_win": 0.29057,
+   "mean_loss": 0.29733,
+   "diff": -0.00676,
+   "effect_size": -0.02,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "barsSinceCross",
+   "mean_win": 6.5,
+   "mean_loss": 6.56853,
+   "diff": -0.06853,
+   "effect_size": -0.017,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "fibPos",
+   "insufficient": true,
+   "nw": 0,
+   "nl": 0
+  },
+  {
+   "feat": "fibOk",
+   "mean_win": 0,
+   "mean_loss": 0,
+   "diff": 0,
+   "effect_size": 0,
+   "nw": 338,
+   "nl": 197
+  },
+  {
+   "feat": "volHigh",
+   "mean_win": 0,
+   "mean_loss": 0,
+   "diff": 0,
+   "effect_size": 0,
+   "nw": 338,
+   "nl": 197
+  }
+ ]
+}

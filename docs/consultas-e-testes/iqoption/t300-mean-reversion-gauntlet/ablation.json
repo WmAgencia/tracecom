@@ -1,0 +1,42 @@
+[
+ {
+  "id": "ret180<-0.000104",
+  "note": "remover cada filtro do combo",
+  "parts": []
+ },
+ {
+  "id": "H<1.512369",
+  "note": "remover cada filtro do combo",
+  "parts": []
+ },
+ {
+  "id": "ret300<-0.000152",
+  "note": "remover cada filtro do combo",
+  "parts": []
+ },
+ {
+  "id": "ret60<-0.000074",
+  "note": "remover cada filtro do combo",
+  "parts": []
+ },
+ {
+  "id": "Hp>=0.781789",
+  "note": "remover cada filtro do combo",
+  "parts": []
+ },
+ {
+  "id": "ret45<-0.000052",
+  "note": "remover cada filtro do combo",
+  "parts": []
+ },
+ {
+  "id": "ret90<-0.000087",
+  "note": "remover cada filtro do combo",
+  "parts": []
+ },
+ {
+  "id": "ret120<-0.000104",
+  "note": "remover cada filtro do combo",
+  "parts": []
+ }
+]

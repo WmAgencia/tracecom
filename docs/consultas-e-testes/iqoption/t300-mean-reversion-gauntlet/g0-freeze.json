@@ -1,0 +1,9 @@
+{
+ "generated_at": "2026-09-16T01:21:48.286Z",
+ "baseline": "z120_rev_2",
+ "market": "IQOPTION_EURUSD_BINARY_10H",
+ "horizon": 300,
+ "rule": "z(i,120)=(C[i]-mean120)/sd120; |z|>=2 -> direcao contraria; entry=close(T); settlement=close(T+300s)",
+ "parent_freeze": "docs/consultas-e-testes/iqoption/multi-horizon-1-2-3-5m/strategy-freeze.json",
+ "hash": "023c63918ecdb85f"
+}

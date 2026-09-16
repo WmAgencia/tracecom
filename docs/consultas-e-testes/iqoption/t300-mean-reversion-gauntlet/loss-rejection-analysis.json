@@ -1,0 +1,172 @@
+[
+ {
+  "id": "ret180<-0.000104",
+  "val": {
+   "n": 215,
+   "w": 151,
+   "wr": 70.23,
+   "buyN": 215,
+   "buyWR": 70.23,
+   "sellN": 0,
+   "sellWR": null,
+   "indepN": 13,
+   "sigPerHour": null,
+   "wilsonLo": 63.81
+  },
+  "loss_rejection": 100,
+  "win_retention": 0
+ },
+ {
+  "id": "H<1.512369",
+  "val": {
+   "n": 228,
+   "w": 147,
+   "wr": 64.47,
+   "buyN": 152,
+   "buyWR": 64.47,
+   "sellN": 76,
+   "sellWR": 64.47,
+   "indepN": 18,
+   "sigPerHour": null,
+   "wilsonLo": 58.07
+  },
+  "loss_rejection": 100,
+  "win_retention": 0
+ },
+ {
+  "id": "ret300<-0.000152",
+  "val": {
+   "n": 182,
+   "w": 129,
+   "wr": 70.88,
+   "buyN": 182,
+   "buyWR": 70.88,
+   "sellN": 0,
+   "sellWR": null,
+   "indepN": 11,
+   "sigPerHour": null,
+   "wilsonLo": 63.9
+  },
+  "loss_rejection": 100,
+  "win_retention": 0
+ },
+ {
+  "id": "ret60<-0.000074",
+  "val": {
+   "n": 159,
+   "w": 115,
+   "wr": 72.33,
+   "buyN": 159,
+   "buyWR": 72.33,
+   "sellN": 0,
+   "sellWR": null,
+   "indepN": 11,
+   "sigPerHour": null,
+   "wilsonLo": 64.91
+  },
+  "loss_rejection": 100,
+  "win_retention": 0
+ },
+ {
+  "id": "Hp>=0.781789",
+  "val": {
+   "n": 148,
+   "w": 115,
+   "wr": 77.7,
+   "buyN": 117,
+   "buyWR": 84.62,
+   "sellN": 31,
+   "sellWR": 51.61,
+   "indepN": 16,
+   "sigPerHour": null,
+   "wilsonLo": 70.34
+  },
+  "loss_rejection": 100,
+  "win_retention": 0
+ },
+ {
+  "id": "ret45<-0.000052",
+  "val": {
+   "n": 170,
+   "w": 118,
+   "wr": 69.41,
+   "buyN": 170,
+   "buyWR": 69.41,
+   "sellN": 0,
+   "sellWR": null,
+   "indepN": 14,
+   "sigPerHour": null,
+   "wilsonLo": 62.12
+  },
+  "loss_rejection": 100,
+  "win_retention": 0
+ },
+ {
+  "id": "ret90<-0.000087",
+  "val": {
+   "n": 190,
+   "w": 146,
+   "wr": 76.84,
+   "buyN": 190,
+   "buyWR": 76.84,
+   "sellN": 0,
+   "sellWR": null,
+   "indepN": 13,
+   "sigPerHour": null,
+   "wilsonLo": 70.35
+  },
+  "loss_rejection": 100,
+  "win_retention": 0
+ },
+ {
+  "id": "ret120<-0.000104",
+  "val": {
+   "n": 196,
+   "w": 148,
+   "wr": 75.51,
+   "buyN": 196,
+   "buyWR": 75.51,
+   "sellN": 0,
+   "sellWR": null,
+   "indepN": 11,
+   "sigPerHour": null,
+   "wilsonLo": 69.04
+  },
+  "loss_rejection": 100,
+  "win_retention": 0
+ },
+ {
+  "id": "cpMean<-2.341218",
+  "val": {
+   "n": 127,
+   "w": 90,
+   "wr": 70.87,
+   "buyN": 127,
+   "buyWR": 70.87,
+   "sellN": 0,
+   "sellWR": null,
+   "indepN": 10,
+   "sigPerHour": null,
+   "wilsonLo": 62.44
+  },
+  "loss_rejection": 100,
+  "win_retention": 0
+ },
+ {
+  "id": "structDown==1",
+  "val": {
+   "n": 103,
+   "w": 82,
+   "wr": 79.61,
+   "buyN": 92,
+   "buyWR": 83.7,
+   "sellN": 11,
+   "sellWR": 45.45,
+   "indepN": 12,
+   "sigPerHour": null,
+   "wilsonLo": 70.83
+  },
+  "loss_rejection": 100,
+  "win_retention": 0
+ }
+]

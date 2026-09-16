@@ -1,0 +1,106 @@
+{
+ "generated_at": "2026-09-16T01:30:11.848Z",
+ "window": {
+  "from": "2026-09-16T00:20:00.000Z",
+  "to": "2026-09-16T00:55:10.000Z",
+  "hours": 0.59
+ },
+ "freeze_at": "2026-09-16T01:20:43.421Z",
+ "ticks": 4113,
+ "candles": 423,
+ "z120": {
+  "signals": 48,
+  "decided": 40
+ },
+ "base": {
+  "n": 40,
+  "w": 7,
+  "wr": 17.5,
+  "buyN": 40,
+  "buyW": 7,
+  "sellN": 0,
+  "sellW": 0
+ },
+ "finalists": [
+  {
+   "id": "structDown==1",
+   "gen": "G1",
+   "gate": {
+    "feat": "structDown",
+    "op": "fl1"
+   },
+   "discovery": {
+    "train": 81.13,
+    "val": 79.61
+   },
+   "prospective": {
+    "n": 31,
+    "w": 0,
+    "wr": 0,
+    "buyN": 31,
+    "buyWR": 0,
+    "sellN": 0,
+    "sellWR": null,
+    "indepN": 3,
+    "ci95": [
+     0,
+     11.03
+    ]
+   }
+  },
+  {
+   "id": "ret90<-0.000087",
+   "gen": "G1",
+   "gate": {
+    "feat": "ret90",
+    "op": "<",
+    "th": -0.00008667313826098061
+   },
+   "discovery": {
+    "train": 80.45,
+    "val": 76.84
+   },
+   "prospective": {
+    "n": 6,
+    "w": 0,
+    "wr": 0,
+    "buyN": 6,
+    "buyWR": 0,
+    "sellN": 0,
+    "sellWR": null,
+    "indepN": 1,
+    "ci95": [
+     0,
+     39.03
+    ]
+   }
+  },
+  {
+   "id": "Hp>=0.781789",
+   "gen": "G1",
+   "gate": {
+    "feat": "Hp",
+    "op": ">=",
+    "th": 0.7817885815245882
+   },
+   "discovery": {
+    "train": 80.6,
+    "val": 77.7
+   },
+   "prospective": {
+    "n": 17,
+    "w": 1,
+    "wr": 5.88,
+    "buyN": 17,
+    "buyWR": 5.88,
+    "sellN": 0,
+    "sellWR": null,
+    "indepN": 2,
+    "ci95": [
+     1.05,
+     26.98
+    ]
+   }
+  }
+ ]
+}

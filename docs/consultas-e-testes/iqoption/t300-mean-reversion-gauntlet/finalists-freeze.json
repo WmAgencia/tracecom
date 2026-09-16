@@ -1,0 +1,122 @@
+{
+ "frozen_at": "2026-09-16T01:20:43.421Z",
+ "base": "z120_rev_2 (BINARY, T+300)",
+ "market": "IQOPTION_EURUSD_BINARY_10H",
+ "split": {
+  "splitT": "2026-09-15T12:49:50.000Z",
+  "train": 535,
+  "val": 347,
+  "embargo_s": 300
+ },
+ "rule": "train n>=50, val n>=25, top3 por val wilsonLo",
+ "finalists": [
+  {
+   "id": "structDown==1",
+   "gen": "G1",
+   "train": {
+    "n": 106,
+    "w": 86,
+    "wr": 81.13,
+    "buyN": 105,
+    "buyWR": 80.95,
+    "sellN": 1,
+    "sellWR": 100,
+    "indepN": 14,
+    "sigPerHour": 19.2,
+    "wilsonLo": 72.65
+   },
+   "val": {
+    "n": 103,
+    "w": 82,
+    "wr": 79.61,
+    "buyN": 92,
+    "buyWR": 83.7,
+    "sellN": 11,
+    "sellWR": 45.45,
+    "indepN": 12,
+    "sigPerHour": null,
+    "wilsonLo": 70.83
+   },
+   "spec": {
+    "id": "structDown==1",
+    "feat": "structDown",
+    "op": "fl1",
+    "quantile": null
+   },
+   "hash": "ba8d4443e1ac2f17"
+  },
+  {
+   "id": "ret90<-0.000087",
+   "gen": "G1",
+   "train": {
+    "n": 133,
+    "w": 107,
+    "wr": 80.45,
+    "buyN": 133,
+    "buyWR": 80.45,
+    "sellN": 0,
+    "sellWR": null,
+    "indepN": 15,
+    "sigPerHour": 24.1,
+    "wilsonLo": 72.9
+   },
+   "val": {
+    "n": 190,
+    "w": 146,
+    "wr": 76.84,
+    "buyN": 190,
+    "buyWR": 76.84,
+    "sellN": 0,
+    "sellWR": null,
+    "indepN": 13,
+    "sigPerHour": null,
+    "wilsonLo": 70.35
+   },
+   "spec": {
+    "id": "ret90<-0.000087",
+    "feat": "ret90",
+    "op": "<",
+    "th": -0.00008667313826098061,
+    "quantile": 0.25
+   },
+   "hash": "041c0c94b1ca71a3"
+  },
+  {
+   "id": "Hp>=0.781789",
+   "gen": "G1",
+   "train": {
+    "n": 134,
+    "w": 108,
+    "wr": 80.6,
+    "buyN": 100,
+    "buyWR": 83,
+    "sellN": 34,
+    "sellWR": 73.53,
+    "indepN": 19,
+    "sigPerHour": 24.3,
+    "wilsonLo": 73.09
+   },
+   "val": {
+    "n": 148,
+    "w": 115,
+    "wr": 77.7,
+    "buyN": 117,
+    "buyWR": 84.62,
+    "sellN": 31,
+    "sellWR": 51.61,
+    "indepN": 16,
+    "sigPerHour": null,
+    "wilsonLo": 70.34
+   },
+   "spec": {
+    "id": "Hp>=0.781789",
+    "feat": "Hp",
+    "op": ">=",
+    "th": 0.7817885815245882,
+    "quantile": 0.75
+   },
+   "hash": "b99ca6ef4eca0580"
+  }
+ ],
+ "note_hash": "corrigido pos-critico: hash cobre o spec completo (feat/op/th); regra inalterada"
+}

@@ -1,0 +1,36 @@
+{
+ "generated_at": "2026-09-16T01:20:43.413Z",
+ "spec": {
+  "model": "logistic",
+  "feats": [
+   "zAbs",
+   "distATR",
+   "ret30",
+   "ret120",
+   "accel",
+   "rsi14",
+   "stoch",
+   "cci",
+   "tick_imb_15s",
+   "tick_imb_60s",
+   "er30",
+   "er60",
+   "hurst",
+   "H",
+   "Hp",
+   "cpMean",
+   "pathEff",
+   "maxAdverse",
+   "extCandles",
+   "barsSinceCross",
+   "clv",
+   "wickExp",
+   "fibOk",
+   "nearRes",
+   "nearSup"
+  ],
+  "threshold": 0.7,
+  "trained_on": "TRAIN only"
+ },
+ "hash": "38ac1d6f2e1f259a"
+}

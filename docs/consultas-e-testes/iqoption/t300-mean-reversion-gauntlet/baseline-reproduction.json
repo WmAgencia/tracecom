@@ -1,0 +1,31 @@
+{
+ "dataset": "IQOPTION_EURUSD_BINARY_10H",
+ "signals": 904,
+ "W": 566,
+ "L": 324,
+ "DRAW": 14,
+ "UNKNOWN": 0,
+ "WR": 63.6,
+ "sigPerHour": 90.4,
+ "BUY": {
+  "n": 438,
+  "wr": 73.29
+ },
+ "SELL": {
+  "n": 452,
+  "wr": 54.2
+ },
+ "expected": {
+  "n": 890,
+  "wr": 63.6,
+  "sigPerHour": 89.5
+ },
+ "match": true,
+ "decided": {
+  "n": 890,
+  "W": 566,
+  "L": 324,
+  "WR": 63.6
+ },
+ "note": "match compara DECIDIDOS (exclui 14 draws); 904 brutos = 890 decididos + 14 draws"
+}
