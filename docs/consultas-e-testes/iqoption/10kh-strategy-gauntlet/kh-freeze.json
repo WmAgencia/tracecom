@@ -1,0 +1,716 @@
+{
+ "generated_at": "2026-09-16T00:18:54.418Z",
+ "K": 70,
+ "hypotheses": [
+  {
+   "id": "z_z60_1.25_none",
+   "fam": "F01_meanzscore",
+   "hash": "57e883b104a88f10",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 1.25,
+    "gate": "none"
+   }
+  },
+  {
+   "id": "z_z60_1.25_lowVol",
+   "fam": "F01_meanzscore",
+   "hash": "3e3293d520f0e15e",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 1.25,
+    "gate": "lowVol"
+   }
+  },
+  {
+   "id": "z_z60_1.25_hurstMR",
+   "fam": "F01_meanzscore",
+   "hash": "38eea8193c067109",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 1.25,
+    "gate": "hurstMR"
+   }
+  },
+  {
+   "id": "z_z60_1.5_none",
+   "fam": "F01_meanzscore",
+   "hash": "da2b6dcc7ac88867",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 1.5,
+    "gate": "none"
+   }
+  },
+  {
+   "id": "z_z60_1.5_lowVol",
+   "fam": "F01_meanzscore",
+   "hash": "58169fb86e6fc0b6",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 1.5,
+    "gate": "lowVol"
+   }
+  },
+  {
+   "id": "z_z60_1.5_hurstMR",
+   "fam": "F01_meanzscore",
+   "hash": "e87ededc8d73fc17",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 1.5,
+    "gate": "hurstMR"
+   }
+  },
+  {
+   "id": "z_z60_2_none",
+   "fam": "F01_meanzscore",
+   "hash": "688a1ed5c1f5372d",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 2,
+    "gate": "none"
+   }
+  },
+  {
+   "id": "z_z60_2_lowVol",
+   "fam": "F01_meanzscore",
+   "hash": "cd26bf27f6fcf92a",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 2,
+    "gate": "lowVol"
+   }
+  },
+  {
+   "id": "z_z60_2_hurstMR",
+   "fam": "F01_meanzscore",
+   "hash": "563d9435867ae045",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 2,
+    "gate": "hurstMR"
+   }
+  },
+  {
+   "id": "z_z60_2.5_none",
+   "fam": "F01_meanzscore",
+   "hash": "6772f7e2068012d3",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 2.5,
+    "gate": "none"
+   }
+  },
+  {
+   "id": "z_z60_2.5_lowVol",
+   "fam": "F01_meanzscore",
+   "hash": "592d3f7f298c0dc0",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 2.5,
+    "gate": "lowVol"
+   }
+  },
+  {
+   "id": "z_z60_2.5_hurstMR",
+   "fam": "F01_meanzscore",
+   "hash": "8c6afc959a89704c",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 2.5,
+    "gate": "hurstMR"
+   }
+  },
+  {
+   "id": "z_z60_3_none",
+   "fam": "F01_meanzscore",
+   "hash": "9fedc42215fef6aa",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 3,
+    "gate": "none"
+   }
+  },
+  {
+   "id": "z_z60_3_lowVol",
+   "fam": "F01_meanzscore",
+   "hash": "e2b02ae6acf4adc2",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 3,
+    "gate": "lowVol"
+   }
+  },
+  {
+   "id": "z_z60_3_hurstMR",
+   "fam": "F01_meanzscore",
+   "hash": "ae3351f31f09ec38",
+   "spec": {
+    "type": "z",
+    "zk": "z60",
+    "th": 3,
+    "gate": "hurstMR"
+   }
+  },
+  {
+   "id": "z_z240_1.25_none",
+   "fam": "F01_meanzscore",
+   "hash": "8656495b318bd8e4",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 1.25,
+    "gate": "none"
+   }
+  },
+  {
+   "id": "z_z240_1.25_lowVol",
+   "fam": "F01_meanzscore",
+   "hash": "df4a2d976738ba3e",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 1.25,
+    "gate": "lowVol"
+   }
+  },
+  {
+   "id": "z_z240_1.25_hurstMR",
+   "fam": "F01_meanzscore",
+   "hash": "bc140497e49306a6",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 1.25,
+    "gate": "hurstMR"
+   }
+  },
+  {
+   "id": "z_z240_1.5_none",
+   "fam": "F01_meanzscore",
+   "hash": "d46ac1ce5a4ed6b0",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 1.5,
+    "gate": "none"
+   }
+  },
+  {
+   "id": "z_z240_1.5_lowVol",
+   "fam": "F01_meanzscore",
+   "hash": "2126b56300c0cf99",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 1.5,
+    "gate": "lowVol"
+   }
+  },
+  {
+   "id": "z_z240_1.5_hurstMR",
+   "fam": "F01_meanzscore",
+   "hash": "74a7cb5e9799f02b",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 1.5,
+    "gate": "hurstMR"
+   }
+  },
+  {
+   "id": "z_z240_2_none",
+   "fam": "F01_meanzscore",
+   "hash": "6b09f9c67b06feab",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 2,
+    "gate": "none"
+   }
+  },
+  {
+   "id": "z_z240_2_lowVol",
+   "fam": "F01_meanzscore",
+   "hash": "68723945d99d2db9",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 2,
+    "gate": "lowVol"
+   }
+  },
+  {
+   "id": "z_z240_2_hurstMR",
+   "fam": "F01_meanzscore",
+   "hash": "9f2eca0a85d05c03",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 2,
+    "gate": "hurstMR"
+   }
+  },
+  {
+   "id": "z_z240_2.5_none",
+   "fam": "F01_meanzscore",
+   "hash": "b1dccc8c00bb6549",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 2.5,
+    "gate": "none"
+   }
+  },
+  {
+   "id": "z_z240_2.5_lowVol",
+   "fam": "F01_meanzscore",
+   "hash": "6e46676b2330ca70",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 2.5,
+    "gate": "lowVol"
+   }
+  },
+  {
+   "id": "z_z240_2.5_hurstMR",
+   "fam": "F01_meanzscore",
+   "hash": "72c900c19e5b2a4c",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 2.5,
+    "gate": "hurstMR"
+   }
+  },
+  {
+   "id": "z_z240_3_none",
+   "fam": "F01_meanzscore",
+   "hash": "66d37a2db1017754",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 3,
+    "gate": "none"
+   }
+  },
+  {
+   "id": "z_z240_3_lowVol",
+   "fam": "F01_meanzscore",
+   "hash": "47bac37a1863460b",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 3,
+    "gate": "lowVol"
+   }
+  },
+  {
+   "id": "z_z240_3_hurstMR",
+   "fam": "F01_meanzscore",
+   "hash": "fce290ec7b51c603",
+   "spec": {
+    "type": "z",
+    "zk": "z240",
+    "th": 3,
+    "gate": "hurstMR"
+   }
+  },
+  {
+   "id": "ex_rsi_0.33",
+   "fam": "F02_exhaustion",
+   "hash": "5adf21b6bb3125a9",
+   "spec": {
+    "type": "exRsi",
+    "th": 0.33
+   }
+  },
+  {
+   "id": "ex_rsi_0.44",
+   "fam": "F02_exhaustion",
+   "hash": "7f0cfcf8b62c4fb6",
+   "spec": {
+    "type": "exRsi",
+    "th": 0.44
+   }
+  },
+  {
+   "id": "ex_rsi_0.55",
+   "fam": "F02_exhaustion",
+   "hash": "309df6247443293f",
+   "spec": {
+    "type": "exRsi",
+    "th": 0.55
+   }
+  },
+  {
+   "id": "ex_rsi_0.63",
+   "fam": "F02_exhaustion",
+   "hash": "ea0eea4234bedd1e",
+   "spec": {
+    "type": "exRsi",
+    "th": 0.63
+   }
+  },
+  {
+   "id": "ex_decel_0.6",
+   "fam": "F02_exhaustion",
+   "hash": "3acdc9a98bb96259",
+   "spec": {
+    "type": "exDecel",
+    "cf": 0.6
+   }
+  },
+  {
+   "id": "ex_decel_0.75",
+   "fam": "F02_exhaustion",
+   "hash": "106bcd97fedd7f3a",
+   "spec": {
+    "type": "exDecel",
+    "cf": 0.75
+   }
+  },
+  {
+   "id": "ex_wick_0.55",
+   "fam": "F02_exhaustion",
+   "hash": "ca75ad9661a3dd37",
+   "spec": {
+    "type": "exWick",
+    "w": 0.55
+   }
+  },
+  {
+   "id": "ex_wick_0.7",
+   "fam": "F02_exhaustion",
+   "hash": "9d5aadb5616b7505",
+   "spec": {
+    "type": "exWick",
+    "w": 0.7
+   }
+  },
+  {
+   "id": "cp_mean_0.5",
+   "fam": "F03_changepoint",
+   "hash": "946ed199709e6e8e",
+   "spec": {
+    "type": "cpMean",
+    "k": 0.5
+   }
+  },
+  {
+   "id": "cp_mean_0.8",
+   "fam": "F03_changepoint",
+   "hash": "e208e670daa8ba12",
+   "spec": {
+    "type": "cpMean",
+    "k": 0.8
+   }
+  },
+  {
+   "id": "ac_follow_0.15",
+   "fam": "F04_autocorr",
+   "hash": "d15bdfd98e9b865f",
+   "spec": {
+    "type": "acFollow",
+    "th": 0.15
+   }
+  },
+  {
+   "id": "ac_fade_0.15",
+   "fam": "F04_autocorr",
+   "hash": "7eec39d6bf57393c",
+   "spec": {
+    "type": "acFade",
+    "th": 0.15
+   }
+  },
+  {
+   "id": "ac_follow_0.25",
+   "fam": "F04_autocorr",
+   "hash": "252f42f9df0b286b",
+   "spec": {
+    "type": "acFollow",
+    "th": 0.25
+   }
+  },
+  {
+   "id": "ac_fade_0.25",
+   "fam": "F04_autocorr",
+   "hash": "5ebd50849a11b1e1",
+   "spec": {
+    "type": "acFade",
+    "th": 0.25
+   }
+  },
+  {
+   "id": "runs_fade_4",
+   "fam": "F04_autocorr",
+   "hash": "54ebda8bdd687330",
+   "spec": {
+    "type": "runsFade",
+    "n": 4
+   }
+  },
+  {
+   "id": "runs_fade_5",
+   "fam": "F04_autocorr",
+   "hash": "41480cc8887a765f",
+   "spec": {
+    "type": "runsFade",
+    "n": 5
+   }
+  },
+  {
+   "id": "runs_fade_6",
+   "fam": "F04_autocorr",
+   "hash": "6a3cdc0bdc844e88",
+   "spec": {
+    "type": "runsFade",
+    "n": 6
+   }
+  },
+  {
+   "id": "mk_3_0.03",
+   "fam": "F05_markov",
+   "hash": "975ef10133d89a16",
+   "spec": {
+    "type": "mk",
+    "L": 3,
+    "th": 0.03
+   }
+  },
+  {
+   "id": "mk_3_0.05",
+   "fam": "F05_markov",
+   "hash": "9e4d53d1f63b4a4a",
+   "spec": {
+    "type": "mk",
+    "L": 3,
+    "th": 0.05
+   }
+  },
+  {
+   "id": "mi_imb_0.1",
+   "fam": "F06_micro",
+   "hash": "4d121a10b8e01112",
+   "spec": {
+    "type": "miImb",
+    "th": 0.1
+   }
+  },
+  {
+   "id": "mi_imb_0.2",
+   "fam": "F06_micro",
+   "hash": "30ac3ac69db2d226",
+   "spec": {
+    "type": "miImb",
+    "th": 0.2
+   }
+  },
+  {
+   "id": "mi_burst_follow",
+   "fam": "F06_micro",
+   "hash": "0bc8cd6cccce922b",
+   "spec": {
+    "type": "miBurst"
+   }
+  },
+  {
+   "id": "en_low_2.5",
+   "fam": "F07_entropy",
+   "hash": "cb57d849b498bb1f",
+   "spec": {
+    "type": "enLow",
+    "th": 2.5
+   }
+  },
+  {
+   "id": "en_low_2.7",
+   "fam": "F07_entropy",
+   "hash": "bdfec4dc40140a60",
+   "spec": {
+    "type": "enLow",
+    "th": 2.7
+   }
+  },
+  {
+   "id": "en_perm_0.7",
+   "fam": "F07_entropy",
+   "hash": "7f44df5cbea623cc",
+   "spec": {
+    "type": "enPerm",
+    "th": 0.7
+   }
+  },
+  {
+   "id": "en_perm_0.8",
+   "fam": "F07_entropy",
+   "hash": "9a8e9379ba5e0bd1",
+   "spec": {
+    "type": "enPerm",
+    "th": 0.8
+   }
+  },
+  {
+   "id": "hu_mr",
+   "fam": "F08_hurst",
+   "hash": "5b378365bd91f887",
+   "spec": {
+    "type": "huMr"
+   }
+  },
+  {
+   "id": "hu_persist",
+   "fam": "F08_hurst",
+   "hash": "9bf6cc26b62b9d1c",
+   "spec": {
+    "type": "huPersist"
+   }
+  },
+  {
+   "id": "pt_3_0.04",
+   "fam": "F09_patterns",
+   "hash": "d49b86fee5ae0be0",
+   "spec": {
+    "type": "pt",
+    "L": 3,
+    "th": 0.04,
+    "sup": 1500
+   }
+  },
+  {
+   "id": "pt_5_0.03",
+   "fam": "F09_patterns",
+   "hash": "f83ac7518e81ae2d",
+   "spec": {
+    "type": "pt",
+    "L": 5,
+    "th": 0.03,
+    "sup": 500
+   }
+  },
+  {
+   "id": "pt_10_0.025",
+   "fam": "F09_patterns",
+   "hash": "086e7d18b6705ad0",
+   "spec": {
+    "type": "pt",
+    "L": 10,
+    "th": 0.025,
+    "sup": 300
+   }
+  },
+  {
+   "id": "rg_cluster",
+   "fam": "F10_regime",
+   "hash": "924a20e7bbe0c2da",
+   "spec": {
+    "type": "rg",
+    "k": 6
+   }
+  },
+  {
+   "id": "ml_logit_lo",
+   "fam": "F11_ml",
+   "hash": "3f4f70375cc67f88",
+   "spec": {
+    "type": "mlLogit",
+    "th": "lo"
+   }
+  },
+  {
+   "id": "ml_logit_hi",
+   "fam": "F11_ml",
+   "hash": "b21e26d6c4c3ad56",
+   "spec": {
+    "type": "mlLogit",
+    "th": "hi"
+   }
+  },
+  {
+   "id": "ens_vote",
+   "fam": "F12_ensemble",
+   "hash": "7fec5bcc2ef4f946",
+   "spec": {
+    "type": "ens",
+    "th": 3
+   }
+  },
+  {
+   "id": "fib_v7and",
+   "fam": "F13_17_fib",
+   "hash": "53173d3e4f31fb4e",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v7-and"
+   }
+  },
+  {
+   "id": "fib_v6",
+   "fam": "F13_17_fib",
+   "hash": "4acbfbe1477cff67",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v6-fib"
+   }
+  },
+  {
+   "id": "fib_v1",
+   "fam": "F13_17_fib",
+   "hash": "70a7bfcb568bec8c",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v1-fib"
+   }
+  },
+  {
+   "id": "fib_v3",
+   "fam": "F13_17_fib",
+   "hash": "acf733a866146537",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v3-fib"
+   }
+  },
+  {
+   "id": "fib_v7relaxed",
+   "fam": "F13_17_fib",
+   "hash": "853c0fb29b71ea6c",
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v7-relaxed"
+   }
+  }
+ ],
+ "by_family": {
+  "F01_meanzscore": 30,
+  "F02_exhaustion": 8,
+  "F03_changepoint": 2,
+  "F04_autocorr": 7,
+  "F05_markov": 2,
+  "F06_micro": 3,
+  "F07_entropy": 4,
+  "F08_hurst": 2,
+  "F09_patterns": 3,
+  "F10_regime": 1,
+  "F11_ml": 2,
+  "F12_ensemble": 1,
+  "F13_17_fib": 5
+ }
+}

@@ -1,0 +1,43 @@
+{
+ "requested_hours": 10000,
+ "fetched_at": "2026-09-15T23:42:22.082Z",
+ "source": "https://api.iqoption.com/v3/quotes",
+ "provenance": "A_IQ_OPTION_OFFICIAL",
+ "max_retention": "7 days (official)",
+ "window": {
+  "from": "2026-09-08T23:56:46.079Z",
+  "to": "2026-09-15T23:07:22.079Z"
+ },
+ "datasets": [
+  {
+   "dataset_id": "IQOPTION_EURUSD_BINARY_7D",
+   "active_id": 1,
+   "otc": false,
+   "pages": 404,
+   "ticks": 1453512,
+   "duplicates_in_pages": 0,
+   "candles": 120368,
+   "gaps_gt_5s": 0,
+   "first": "2026-09-08T23:56:45.000Z",
+   "last": "2026-09-15T23:07:20.000Z",
+   "hours": 167.18,
+   "page_sha16_agg": "fc61200053f8f793"
+  },
+  {
+   "dataset_id": "IQOPTION_EURUSD_OTC_7D",
+   "active_id": 76,
+   "otc": true,
+   "pages": 658,
+   "ticks": 2368670,
+   "duplicates_in_pages": 0,
+   "candles": 120368,
+   "gaps_gt_5s": 0,
+   "first": "2026-09-08T23:56:45.000Z",
+   "last": "2026-09-15T23:07:20.000Z",
+   "hours": 167.18,
+   "page_sha16_agg": "9b71d963069c2a72"
+  }
+ ],
+ "acquired_hours_binary": 167.18,
+ "acquired_hours_otc": 167.18
+}
