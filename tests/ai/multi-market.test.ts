@@ -309,8 +309,9 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     await sleep(15);
     expect(runtime.signals(5).signals.find((row: any) => row.id === record.id)?.result).toBe("WIN");
     const duplicate = await runtime.simulateSignal("GBPJPY:NORMAL", "BUY");
-    expect(duplicate).toMatchObject({ disposition: "DUPLICATE", reason: "SINAL_JA_REGISTRADO" });
+    expect(duplicate).toMatchObject({ disposition: "EXECUTED", brokerOrderId: "ORD-SIG-1" });
     expect(runtime.__sent).toHaveLength(1);
+    expect(runtime.signals(5).stats["GBPJPY:NORMAL"]?.duplicate).toBe(1);
     expect(ctx.settlementState.daily.wins).toBe(1);
   });
   it("SIGNAL -> disposicao: posicao aberta bloqueia novo sinal; bloqueado antigo EXPIRA", async () => {

@@ -545,6 +545,13 @@ export class IqMultiRuntime extends EventEmitter {
     const bucket = ctx.lastCandle?.bucketStart ?? null;
     const idempotencyKey = `${ctx.marketKey}:${bucket}:${action}`;
     const existing = this.signalLog.find((row) => row.idempotencyKey === idempotencyKey);
+    if (existing) {
+      const stats = this.#signalStatsFor(ctx.marketKey);
+      stats.duplicate += 1;
+      existing.attempts = (existing.attempts ?? 1) + 1;
+      if (!existing.duplicateLogged) { existing.duplicateLogged = true; this.#emitEvent("signal.disposition", { marketKey: ctx.marketKey, action, disposition: "DUPLICATE", reason: "SINAL_JA_REGISTRADO", signalId: existing.id }); }
+      return existing;
+    }
     const resolved = resolveFinalStake({ calculatedBankrollStake: this.config.calculatedBankrollStake, marketMaxStake: ctx.maxStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap });
     const last = list[list.length - 1] ?? ctx.lastCandle ?? null;
     const horizonSeconds = selection.horizonSeconds ?? this.config.selection.horizonSeconds;
@@ -560,8 +567,7 @@ export class IqMultiRuntime extends EventEmitter {
       killSwitch: this.killSwitch.status(), idempotencyKey, horizonSeconds,
     });
     let disposition = "EXECUTED"; let reason = "AUTORIZADO";
-    if (existing) { disposition = "DUPLICATE"; reason = "SINAL_JA_REGISTRADO"; }
-    else if (this.killSwitch.status().executionEnabled !== true) { disposition = "BLOCKED"; reason = "PARADA_DE_EMERGENCIA"; }
+    if (this.killSwitch.status().executionEnabled !== true) { disposition = "BLOCKED"; reason = "PARADA_DE_EMERGENCIA"; }
     else if (this.config.autoExecute !== true) { disposition = "BLOCKED"; reason = "AUTO_DESLIGADO"; }
     else if (this.armState.armed !== true) { disposition = "BLOCKED"; reason = "SISTEMA_DESARMADO"; }
     else if (ctx.paused === true) { disposition = "BLOCKED"; reason = "AGENTE_PAUSADO"; }
@@ -579,7 +585,7 @@ export class IqMultiRuntime extends EventEmitter {
     };
     this.signalLog.push(record);    if (this.signalLog.length > 500) this.signalLog.splice(0, this.signalLog.length - 500);
     const stats = this.#signalStatsFor(ctx.marketKey); stats.total += 1;
-    if (disposition === "DUPLICATE") stats.duplicate += 1; else if (disposition === "BLOCKED") stats.blocked += 1; else stats.executed += 1;
+    if (disposition === "BLOCKED") stats.blocked += 1; else stats.executed += 1;
     this.#emitEvent("signal.disposition", { marketKey: ctx.marketKey, action, disposition, reason, signalId: record.id, stakeFinal: record.stakeFinal, auto: record.auto, armed: record.armed });
     this.#safe(() => this.log("IQ_MULTI_SIGNAL_DISPOSITION", JSON.stringify({ signalId: record.id, marketKey: ctx.marketKey, action, disposition, reason, stakeFinal: record.stakeFinal, auto: record.auto, armed: record.armed })));
     if (disposition === "BLOCKED" || disposition === "DUPLICATE") return record;
