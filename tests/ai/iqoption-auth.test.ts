@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const auth = await import("../../relay/iqoption-auth.mjs");
 const { IqAuthError, IqAuthSession, sanitizeError } = auth as unknown as { IqAuthError: new (code: string, message?: string) => Error; IqAuthSession: new (options?: Record<string, unknown>) => any; sanitizeError: (input: unknown, extraSecrets?: string[]) => string };
 
-const response = (status: number, { ssid = null, body = "{}" } = {}) => ({ ok: status >= 200 && status < 300, status, headers: { get: (name: string) => (name === "set-cookie" && ssid ? `ssid=${ssid}; Path=/; HttpOnly; Secure` : null) }, text: async () => body });
+const response = (status: number, { ssid = null, body = "{}" }: { ssid?: string | null; body?: string } = {}) => ({ ok: status >= 200 && status < 300, status, headers: { get: (name: string) => (name === "set-cookie" && ssid ? `ssid=${ssid}; Path=/; HttpOnly; Secure` : null) }, text: async () => body });
 
 describe("AUTH — login/2FA/SSID state machine", () => {
   it("login OK → CONNECTED_READ_ONLY com sessao em memoria e status sanitizado (sem ssid/senha)", async () => {
