@@ -26,6 +26,8 @@ function extractPayout(active) {
     const number = Number(value);
     if (Number.isFinite(number) && number > 0) return { value: number, source: `initialization-data.${key}` };
   }
+  const sum = Number(active.sum);
+  if (Number.isFinite(sum) && sum > 0 && sum <= 100 && !/^0+$/.test(String(active.sum))) return { value: sum, source: "initialization-data.sum" };
   return null;
 }
 
@@ -69,17 +71,38 @@ export class RuntimeAssetResolver {
     } catch (error) { this.lastError = String(error?.message ?? error).slice(0, 160); return this.status(); }
   }
 
-  /** instruments (get-instruments v4) e/ou get-options: apenas payout/disponibilidade auxiliares. */
+  /** instruments (get-instruments v4), get-options e commission-changed: payout/disponibilidade auxiliares. */
   ingestAuxiliary(msg) {
     try {
-      const rows = Array.isArray(msg) ? msg : Array.isArray(msg?.instruments) ? msg.instruments : Array.isArray(msg?.open_options) ? msg.open_options : [];
+      let rows = [];
+      if (Array.isArray(msg)) rows = msg;
+      else if (Array.isArray(msg?.instruments)) rows = msg.instruments;
+      else if (Array.isArray(msg?.open_options)) rows = msg.open_options;
+      else if (Array.isArray(msg?.payouts)) rows = msg.payouts;
+      else if (msg && typeof msg === "object") {
+        for (const [key, value] of Object.entries(msg)) {
+          if (/^\d+$/.test(key) && value && typeof value === "object") rows.push({ active_id: Number(key), ...value });
+          else if (value && typeof value === "object" && (value.active_id !== undefined || value.payout !== undefined)) rows.push(value);
+        }
+      }
       for (const row of rows) {
         const activeId = Number(row?.active_id ?? row?.activeId ?? row?.id);
         const payoutValue = Number(row?.payout ?? row?.payout_percent ?? row?.win ?? NaN);
         if (Number.isFinite(activeId) && Number.isFinite(payoutValue) && payoutValue > 0) this.payoutByActiveId.set(activeId, payoutValue);
       }
+      if (rows.length) this.#refreshPayouts();
     } catch { /* best effort */ }
     return this.status();
+  }
+
+  #refreshPayouts() {
+    const now = this.now();
+    for (const [key, row] of this.mapping.entries()) {
+      if (row.activeId === null || row.activeId === undefined) continue;
+      const payout = this.payoutByActiveId.get(Number(row.activeId));
+      if (Number.isFinite(payout) && payout > 0 && row.payout !== payout) this.mapping.set(key, { ...row, payout, payoutSource: row.payoutSource?.startsWith("commission") ? row.payoutSource : "commission-changed", resolvedAt: now });
+      else if (!Number.isFinite(payout) && row.payoutSource?.startsWith("initialization-data.sum")) { /* mantem leitura inicial */ }
+    }
   }
 
   #merge(rows) {

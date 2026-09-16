@@ -258,4 +258,18 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(JSON.stringify(runtime.office()).includes(FAKE_SSID)).toBe(false);
     expect(JSON.stringify(runtime.status()).includes(FAKE_SSID)).toBe(false);
   });
+  it("payout: resolver le initialization-data.sum e commission-changed (runtime)", () => {
+    const resolver = new RuntimeAssetResolver() as any;
+    resolver.ingestInitializationData({ binary: { actives: { "81": { name: "GBPUSD-OTC", enabled: true, sum: 87 } } }, turbo: { actives: {} } });
+    expect(resolver.get("GBPUSD:OTC").payout).toBe(87);
+    resolver.ingestAuxiliary({ "81": { payout: 92 } });
+    expect(resolver.get("GBPUSD:OTC").payout).toBe(92);
+    expect(resolver.get("GBPUSD:OTC").payoutSource).toBe("commission-changed");
+  });
+  it("event bus: payload nunca sobrescreve o campo type do evento", () => {
+    const runtime = multiFixture();
+    runtime.ingestEvent("balances", { connectionId: CONNECTION_ID, receivedAt: Date.now(), msg: [{ id: 555, type: 4, currency: "USD", amount: 100, is_default: true }] });
+    const event = runtime.eventsAfter(0, 100).events.find((row: any) => row.practice === true);
+    expect(event?.type).toBe("account.balances");
+  });
 });

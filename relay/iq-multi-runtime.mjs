@@ -169,6 +169,15 @@ export class IqMultiRuntime extends EventEmitter {
     client.on("socket-option-opened", (event) => this.ingestEvent("socket-option-opened", event));
     client.on("socket-option-closed", (event) => this.ingestEvent("socket-option-closed", event));
     client.on("option-closed", (event) => this.ingestEvent("option-closed", event));
+    client.on("commission-changed", (event) => this.ingestAuxiliary(event?.msg));
+    client.on("instruments", (event) => this.ingestAuxiliary(event?.msg));
+    client.on("api_game_getoptions_result", (event) => this.ingestAuxiliary(event?.msg));
+  }
+
+  /** Payout/disponibilidade auxiliares em runtime (commission-changed/instruments/get-options). */
+  ingestAuxiliary(msg) {
+    this.resolver.ingestAuxiliary(msg);
+    this.#applyResolver({ reason: "AUXILIARY" });
   }
 
   ingestEvent(kind, event) {
@@ -194,6 +203,10 @@ export class IqMultiRuntime extends EventEmitter {
       this.#applyResolver({ reason: "BOOTSTRAP" });
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_INIT_DATA_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 120))); }
     try { const { response } = await client.getBalances(); this.#applyBalances(response.msg); } catch (error) { this.#safe(() => this.log("IQ_MULTI_BALANCES_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 120))); }
+    try {
+      for (const instrument of ["binary-option", "turbo-option"]) client.send("subscribeMessage", { name: "commission-changed", params: { routingFilters: { instrument_type: instrument } }, version: "1.0" });
+      this.#safe(() => this.log("IQ_MULTI_PAYOUT_SUBSCRIBED", "binary-option,turbo-option"));
+    } catch (error) { this.#safe(() => this.log("IQ_MULTI_PAYOUT_SUBSCRIBE_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 80))); }
     if (!this.activeMarketKeys().length) this.#applyDefaultSelection();
     for (const ctx of this.markets.values()) this.#subscribeCtx(client, ctx);
     await this.#loadDailyStats();
@@ -858,8 +871,9 @@ export class IqMultiRuntime extends EventEmitter {
 
   /* ------------------------------- eventos/status ------------------------------- */
 
+  /** Emitido com o tipo SEMPRE por ultimo: payload nunca sobrescreve `type`/`seq`. */
   #emitEvent(type, payload = {}) {
-    const event = { seq: ++this.eventSeq, type, at: this.now(), ...payload };
+    const event = { ...payload, seq: ++this.eventSeq, type, at: this.now() };
     this.events.push(event);
     if (this.events.length > EVENT_BUFFER) this.events.splice(0, this.events.length - EVENT_BUFFER);
     this.emit("event", event);
@@ -956,7 +970,7 @@ export class IqMultiRuntime extends EventEmitter {
         candleDiagnostics: { rejected: this.metrics.rejected, lastCode: null, lastReason: null, rawShape: null, rawShapeAt: null }, reconcile: this.reconcile,
         recentCandles: candles.slice(-12).map((candle) => ({ bucketStart: candle.bucketStart, bucketEnd: candle.bucketEnd, open: candle.open, high: candle.high, low: candle.low, close: candle.close, serverTimestamp: candle.serverTimestamp, receivedAt: candle.receivedAt, segmentId: candle.segmentId })),
         features: primary.featureState ? { builtAt: primary.featureState.builtAt, fresh: primary.featureState.fresh, freshnessReason: primary.featureState.freshnessReason, rsi14: primary.featureState.context?.deterministicIndicators?.rsi14?.value ?? null, atr14: primary.featureState.context?.deterministicIndicators?.atr14?.value ?? null, adx14: primary.featureState.context?.deterministicIndicators?.adx14?.value ?? null, donchianPosition: primary.featureState.context?.deterministicIndicators?.donchianPosition?.value ?? null, microstructureStreak: primary.featureState.context?.microstructure?.streak ?? null } : null,
-      } : { connected: false, healthy: false, healthReasons: ["NO_MARKET_DATA"] },
+      } : { connected: this.session.connected, host: this.session.host, hostExpectedFromRepo: "iqoption.com", connectionId: this.session.connectionId, serverTime: Number.isFinite(this.client?.serverNow()) ? nowIso(this.client.serverNow()) : null, serverTimeMs: this.session.serverTimeMs, clockSkewMs: this.session.clockSkewMs, timeValid: this.session.timeValid, candles5s: 0, healthy: false, healthReasons: ["NO_MARKET_DATA_WITH_CANDLES"], recentCandles: [], features: null, latencyMs: { serverToReceived: latencySummary([]), receivedToNormalized: latencySummary([]), normalizedToFeature: latencySummary([]), orderAck: latencySummary([]), visionP95ReferenceMs: 27_500 } },
       account: { verified: this.account.practice.verified, type: this.account.type, currency: this.account.practice.currency, balance: this.account.practice.balance, hasReal: this.account.hasReal, checkedAt: this.account.checkedAt, balanceFailure: null, practiceOnly: true, realExecutionForbidden: true },
       execution: { ...this.armState.snapshot(), killSwitch: this.killSwitch.status(), userLimitBrl: this.userLimitBrl ?? null, pendingOrder: this.pendingOrders.size ? { count: this.pendingOrders.size, keys: [...this.pendingOrders.keys()] } : null, lastExecution: [...this.markets.values()].map((ctx) => ctx.lastTrade).filter(Boolean).sort((a, b) => b.at - a.at)[0] ?? null },
       brokerAutomation: "WS_ONLY_PRACTICE",
