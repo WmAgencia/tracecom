@@ -1,7 +1,7 @@
 /**
  * IQOPTION AUTH — fluxo server-side (email/senha -> 2FA opcional -> SSID -> sessao em memoria).
  * Auditoria Fase 1: HTTP auth -> cookie `ssid`; 2FA via token SMS; canais de erro conhecidos.
- * REGRAS: nenhuma credencial em log/persistencia/frontend; TLS SEMPRE validado (sem rejectUnauthorized:false);
+ * REGRAS: nenhuma credencial em log/persistencia/frontend; TLS SEMPRE validado (validacao padrao do fetch);
  * sessao somente em memoria do processo (relay); revogavel via disconnect(); status sanitizado.
  * Endpoints reais: EXPECTED_FROM_REPO (verificacao em runtime pelo spike read-only, com credenciais digitadas pelo usuario na UI).
  */
@@ -43,7 +43,7 @@ export class IqAuthSession {
     this.lastError = null;
   }
 
-  static #maskEmail(email) {
+  static _maskEmail(email) {
     const value = String(email ?? "");
     const at = value.indexOf("@");
     if (at <= 0) return value ? "***" : null;
@@ -61,7 +61,7 @@ export class IqAuthSession {
     };
   }
 
-  #fail(code, error, secrets = []) {
+  _fail(code, error, secrets = []) {
     this.state = "ERROR";
     this.lastError = sanitizeError(error, [this.ssid, ...secrets].filter(Boolean));
     this.ssid = null;
@@ -70,10 +70,10 @@ export class IqAuthSession {
 
   async login({ email, password } = {}) {
     if (typeof email !== "string" || !email.includes("@") || typeof password !== "string" || password.length === 0) {
-      this.#fail("INVALID_CREDENTIALS_INPUT", "email/senha ausentes");
+      this._fail("INVALID_CREDENTIALS_INPUT", "email/senha ausentes");
     }
     this.state = "CONNECTING";
-    this.emailMasked = IqAuthSession.#maskEmail(email);
+    this.emailMasked = IqAuthSession._maskEmail(email);
     let response;
     try {
       response = await this.fetchImpl(`${this.baseUrl}/api/v2/login`, {
@@ -82,7 +82,7 @@ export class IqAuthSession {
         body: JSON.stringify({ identifier: email, password }),
       });
     } catch (error) {
-      this.#fail("AUTH_NETWORK_ERROR", error);
+      this._fail("AUTH_NETWORK_ERROR", error);
     }
     const setCookie = response.headers?.get?.("set-cookie") ?? "";
     const ssid = extractCookie(setCookie, "ssid");
@@ -95,15 +95,15 @@ export class IqAuthSession {
     }
     if (!response.ok || !ssid) {
       const parsed = (() => { try { return JSON.parse(bodyText); } catch { return null; } })();
-      this.#fail("AUTH_REJECTED", parsed?.message || bodyText || `HTTP ${response.status}`, [password]);
+      this._fail("AUTH_REJECTED", parsed?.message || bodyText || `HTTP ${response.status}`, [password]);
     }
-    this.#establish(ssid);
+    this._establish(ssid);
     return { state: this.state, twoFactorRequired: false };
   }
 
   async verifyTwoFactor(code) {
     if (this.state !== "TWO_FACTOR_REQUIRED") throw new IqAuthError("TWO_FACTOR_NOT_PENDING");
-    if (typeof code !== "string" || !/^\d{4,8}$/.test(code.trim())) this.#fail("INVALID_2FA_CODE_FORMAT", "codigo deve ter 4-8 digitos");
+    if (typeof code !== "string" || !/^\d{4,8}$/.test(code.trim())) this._fail("INVALID_2FA_CODE_FORMAT", "codigo deve ter 4-8 digitos");
     let response;
     try {
       response = await this.fetchImpl(`${this.baseUrl}/api/v2/verify-2fa`, {
@@ -112,20 +112,20 @@ export class IqAuthSession {
         body: JSON.stringify({ code: code.trim(), token: this.twoFactorToken }),
       });
     } catch (error) {
-      this.#fail("AUTH_NETWORK_ERROR", error);
+      this._fail("AUTH_NETWORK_ERROR", error);
     }
     const setCookie = response.headers?.get?.("set-cookie") ?? "";
     const ssid = extractCookie(setCookie, "ssid");
     const bodyText = await response.text().catch(() => "");
     if (!response.ok || !ssid) {
       const parsed = (() => { try { return JSON.parse(bodyText); } catch { return null; } })();
-      this.#fail("TWO_FACTOR_REJECTED", parsed?.message || `HTTP ${response.status}`, [code.trim()]);
+      this._fail("TWO_FACTOR_REJECTED", parsed?.message || `HTTP ${response.status}`, [code.trim()]);
     }
-    this.#establish(ssid);
+    this._establish(ssid);
     return { state: this.state };
   }
 
-  #establish(ssid) {
+  _establish(ssid) {
     this.ssid = String(ssid);
     this.twoFactorToken = null;
     this.state = "CONNECTED_READ_ONLY";
