@@ -75,13 +75,18 @@ describe("microestrutura e contexto deterministico", () => {
     expect(rich.deterministicIndicators.rsi14.value).not.toBeNull();
     expect(rich.deterministicIndicators.donchianPosition.value).toBeGreaterThanOrEqual(0);
   });
-  it("FRESHNESS GATE: observation velha → STALE_ANALYSIS (nunca decisao atrasada apresentada como atual)", () => {
+  it("FRESHNESS GATE: projetado do horizonte (nunca aceita age >= horizonte) — decisao atrasada vira STALE_ANALYSIS", () => {
     const fresh = buildFeatureContext({ candles: [], now: 30_000, frameCapturedAt: 25_000 }) as Record<string, any>;
     expect(freshnessGate(fresh).fresh).toBe(true);
+    const nearHorizon = buildFeatureContext({ candles: [], now: 130_000, frameCapturedAt: 70_000 }) as Record<string, any>;
+    expect(freshnessGate(nearHorizon)).toMatchObject({ fresh: false, reason: "STALE_ANALYSIS" }); // age 60s >= horizonte 60s
     const stale = buildFeatureContext({ candles: [], now: 200_000, frameCapturedAt: 60_000 }) as Record<string, any>;
     expect(freshnessGate(stale)).toMatchObject({ fresh: false, reason: "STALE_ANALYSIS" });
     const unknown = buildFeatureContext({ candles: [], now: 1000, frameCapturedAt: null }) as Record<string, any>;
     expect(freshnessGate(unknown)).toMatchObject({ fresh: false, reason: "FRAME_TIMESTAMP_UNAVAILABLE" });
+    // invariante: effectiveMax SEMPRE < horizonte
+    const gate = freshnessGate(fresh, 999_999, 60) as { maxAgeMs: number };
+    expect(gate.maxAgeMs).toBeLessThan(60_000);
   });
   it("GOLDEN FIXTURE §17: midpoint ask/bid corrobora o preco 1.153700 exatamente", () => {
     expect((1.153710 + 1.153690) / 2).toBeCloseTo(1.153700, 10);

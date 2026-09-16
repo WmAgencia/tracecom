@@ -131,11 +131,15 @@ export function buildFeatureContext({ candles, now = Date.now(), timeframeSecond
   return context;
 }
 
-/** Freshness gate: decisao atrasada vira STALE_ANALYSIS/WAIT. */
-export const MAX_OBSERVATION_AGE_MS = 90_000;
-export function freshnessGate(context, maxAgeMs = MAX_OBSERVATION_AGE_MS) {
+/** Freshness gate: decisao atrasada vira STALE_ANALYSIS/WAIT.
+ * Threshold projetado do horizonte + latencia medida (nao constante arbitraria):
+ * horizon=60s; Vision p95 medido 27.5s; pipeline total p95 ~35s; margem -> 50s.
+ * Invariante: maxAge < horizonSeconds*1000 (nunca aceitar observacao mais velha que o proprio horizonte). */
+export const MAX_OBSERVATION_AGE_MS = 50_000;
+export function freshnessGate(context, maxAgeMs = MAX_OBSERVATION_AGE_MS, horizonSeconds = 60) {
+  const effectiveMax = Math.max(5_000, Math.min(maxAgeMs, horizonSeconds * 1_000 - 10_000));
   const age = context?.freshness?.observationAgeMs;
   if (age === null || age === undefined) return { fresh: false, reason: "FRAME_TIMESTAMP_UNAVAILABLE" };
-  if (age > maxAgeMs) return { fresh: false, reason: "STALE_ANALYSIS" };
-  return { fresh: true, reason: "OK" };
+  if (age > effectiveMax) return { fresh: false, reason: "STALE_ANALYSIS", maxAgeMs: effectiveMax, ageMs: age };
+  return { fresh: true, reason: "OK", maxAgeMs: effectiveMax, ageMs: age };
 }
