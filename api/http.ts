@@ -568,6 +568,17 @@ async function relayAdminPost(path: string, payload: unknown, timeoutMs = 25_000
   if (!base || !admin) return null;
   try { const response = await fetch(`${base}${path}`, { method: "POST", headers: { "content-type": "application/json", "x-relay-admin": admin }, body: JSON.stringify(payload), signal: AbortSignal.timeout(timeoutMs) }); if (!response.ok) return null; return await response.json() as Record<string, unknown>; } catch { return null; }
 }
+/** Igual ao relayAdminPost, mas devolve status/body reais (erros do relay nao viram 502 cego). */
+async function relayAdminExchange(path: string, payload: unknown, timeoutMs = 20_000): Promise<{ ok: boolean; status: number; body: Record<string, unknown> } | null> {
+  const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
+  const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
+  if (!base || !admin) return null;
+  try {
+    const response = await fetch(`${base}${path}`, { method: "POST", headers: { "content-type": "application/json", "x-relay-admin": admin }, body: JSON.stringify(payload), signal: AbortSignal.timeout(timeoutMs) });
+    const body = await response.json().catch(() => ({})) as Record<string, unknown>;
+    return { ok: response.ok, status: response.status, body };
+  } catch { return null; }
+}
 async function relayAdminGet(path: string): Promise<Record<string, unknown>> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, ""); const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim(); if (!base || !admin) throw new Error("relay_not_configured");
   const response = await fetch(`${base}${path}`, { headers: { "x-relay-admin": admin }, signal: AbortSignal.timeout(8_000) }); if (!response.ok) throw new Error(`relay_${response.status}`); return await response.json() as Record<string, unknown>;
@@ -783,10 +794,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (path === "/api/iq/arm" && (!Number.isFinite(Number(payload.limitBrl)) || Number(payload.limitBrl) <= 0 || Number(payload.limitBrl) > 100)) { json(400, { error: "invalid_limit_brl" }); return; }
       if (path === "/api/iq/test-order" && (payload.direction !== "BUY" && payload.direction !== "SELL")) { json(400, { error: "direction_required" }); return; }
       if (path === "/api/iq/test-order" && (!Number.isFinite(Number(payload.stake)) || Number(payload.stake) <= 0 || Number(payload.stake) > 100)) { json(400, { error: "invalid_stake" }); return; }
-      const result = await relayAdminPost(path, payload, path === "/api/iq/test-order" ? 20_000 : 20_000);
+      const result = await relayAdminExchange(path, payload, path === "/api/iq/test-order" ? 20_000 : 20_000);
       if (!result) { json(502, { error: "iq_relay_unavailable" }); return; }
-      if ((result as Record<string, unknown>).error && path !== "/api/iq/connect" && path !== "/api/iq/verify-2fa") { json(400, { ...(result as Record<string, unknown>), practiceOnly: true }); return; }
-      json(200, { state: result.state ?? (path === "/api/iq/disarm" ? "CONNECTED_PRACTICE" : "OK"), twoFactorRequired: result.twoFactorRequired === true, email: result.email ?? null, connectedAt: result.connectedAt ?? null, lastError: result.lastError ?? null, hasSession: result.hasSession === true, ...(path === "/api/iq/connect" || path === "/api/iq/verify-2fa" ? {} : result), practiceOnly: true, brokerAutomation: path === "/api/iq/connect" || path === "/api/iq/verify-2fa" ? "NONE" : "WS_ONLY_PRACTICE" });
+      if (!result.ok) { json(result.status >= 400 && result.status < 500 ? result.status : 502, { ...result.body, practiceOnly: true, brokerAutomation: "WS_ONLY_PRACTICE" }); return; }
+      json(200, { state: result.body.state ?? (path === "/api/iq/disarm" ? "CONNECTED_PRACTICE" : "OK"), twoFactorRequired: result.body.twoFactorRequired === true, email: result.body.email ?? null, connectedAt: result.body.connectedAt ?? null, lastError: result.body.lastError ?? null, hasSession: result.body.hasSession === true, ...(path === "/api/iq/connect" || path === "/api/iq/verify-2fa" ? {} : result.body), practiceOnly: true, brokerAutomation: path === "/api/iq/connect" || path === "/api/iq/verify-2fa" ? "NONE" : "WS_ONLY_PRACTICE" });
       return;
     }
     if (path === "/api/strategies/stats" && req.method === "GET") {

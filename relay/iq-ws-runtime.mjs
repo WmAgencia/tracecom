@@ -57,6 +57,7 @@ export class IqWsRuntime extends EventEmitter {
     this.active = { symbol, activeId: null, expectedFromRepo: 1, actual2026: null, section: null, otc: null, enabled: null, expectedVsActual: null, resolvedAt: null, candidates: [] };
     this.candles = new Map();
     this.lastCandle = null; this.lastCandleReceivedAt = null;
+    this.candleDiagnostics = { rejected: 0, lastCode: null, lastReason: null, rawShape: null, rawShapeAt: null };
     this.lastContext = null; this.lastFeatureAt = null;
     this.latency = { serverToReceived: [], receivedToNormalized: [], normalizedToFeature: [], orderAck: [] };
     this.pendingOrder = null; this.lastExecution = null; this.executionsCache = [];
@@ -175,6 +176,41 @@ export class IqWsRuntime extends EventEmitter {
       this.#applyBalances(rawList);
     } catch (error) { this.balanceFailure = String(error?.code ?? error?.message ?? error).slice(0, 120); this.#safe(() => this.log("IQ_WS_BALANCES_FAILED", this.balanceFailure)); }
     this.#evaluateHealth();
+    void this.reconcileOrphans();
+  }
+
+  /** Ordens REQUESTED/ACKNOWLEDGED antigas (ex.: relay reiniciou com ordem em voo): nunca reenvia;
+   *  consulta get-options e liquida com o resultado real; sem brokerOrderId persistido -> UNKNOWN. */
+  async reconcileOrphans() {
+    if (!this.pool || !this.client || !this.session.connected) return { checked: 0, settled: 0, unknown: 0 };
+    if (!await this.#ensureDb()) return { checked: 0, settled: 0, unknown: 0 };
+    let rows = [];
+    try { rows = (await this.pool.query("SELECT execution_id, idempotency_key, broker_order_id, direction, symbol, active_id, stake, expiration_at, entry_price FROM iq_executions WHERE state IN ('REQUESTED','ACKNOWLEDGED') AND requested_at < now() - interval '2 minutes' ORDER BY requested_at DESC LIMIT 10")).rows; }
+    catch (error) { this.#safe(() => this.log("IQ_WS_RECONCILE_QUERY_FAILED", String(error?.message ?? error).slice(0, 120))); return { checked: 0, settled: 0, unknown: 0 }; }
+    if (!rows.length) return { checked: 0, settled: 0, unknown: 0 };
+    const result = { checked: rows.length, settled: 0, unknown: 0 };
+    let closed = [];
+    try {
+      const { response } = await this.client.getOptions({ limit: 100, instrumentType: "binary,turbo", balanceId: this.account.balanceId });
+      closed = response.msg?.closed_options ?? response.msg?.closedOptions ?? [];
+    } catch (error) { this.#safe(() => this.log("IQ_WS_RECONCILE_OPTIONS_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 120))); }
+    for (const row of rows) {
+      if (!row.broker_order_id) {
+        await this.#persistExecution({ executionId: row.execution_id, state: "UNKNOWN", error: "ORPHANED_NO_ACK_RECONCILED" });
+        result.unknown += 1;
+        continue;
+      }
+      const match = closed.find((entry) => String(entry?.id?.[0] ?? entry?.id ?? "") === String(row.broker_order_id));
+      if (!match) continue;
+      const broker = parseSettlement(match);
+      if (broker.result === "UNKNOWN") continue;
+      const comparison = compareSettlement(broker.result, "UNKNOWN");
+      await this.#persistExecution({ executionId: row.execution_id, state: "SETTLED", brokerOrderId: String(row.broker_order_id), settledAt: new Date().toISOString(), brokerResult: broker.result, causalResult: "UNKNOWN", mismatch: comparison.mismatch, profit: broker.profit, meta: { reconciled: true, reason: comparison.reason } });
+      result.settled += 1;
+      this.#safe(() => this.log("IQ_WS_RECONCILED", JSON.stringify({ executionId: row.execution_id, brokerOrderId: String(row.broker_order_id), brokerResult: broker.result })));
+      this.lastExecution = this.lastExecution ?? { executionId: row.execution_id, brokerOrderId: String(row.broker_order_id), state: "SETTLED", brokerResult: broker.result, causalResult: "UNKNOWN", mismatch: comparison.mismatch, profit: broker.profit, at: this.now(), reason: comparison.reason };
+    }
+    return result;
   }
 
   /* ----------------------------- market data ----------------------------- */
@@ -197,7 +233,17 @@ export class IqWsRuntime extends EventEmitter {
     for (const raw of raws) {
       let candle;
       try { candle = normalizeCandle(raw, { symbol: this.symbol, activeId: this.active.activeId, serverTimestamp, receivedAt, connectionId: event.connectionId, sizeSeconds: CANDLE_SIZE_SECONDS }); }
-      catch (error) { if (error?.code !== "CROSS_ASSET_REJECTED") this.#safe(() => this.log("IQ_WS_CANDLE_REJECTED", String(error?.code ?? error?.message ?? error))); continue; }
+      catch (error) {
+        this.candleDiagnostics.rejected += 1;
+        this.candleDiagnostics.lastCode = error?.code ?? "UNKNOWN";
+        this.candleDiagnostics.lastReason = String(error?.message ?? error).slice(0, 200);
+        if (!this.candleDiagnostics.rawShape && error?.code === "INVALID_CANDLE_PRICE") {
+          this.candleDiagnostics.rawShape = JSON.stringify(raw).slice(0, 500);
+          this.candleDiagnostics.rawShapeAt = this.now();
+          this.#safe(() => this.log("IQ_WS_CANDLE_RAW_SHAPE", this.candleDiagnostics.rawShape));
+        }
+        continue;
+      }
       const existing = this.candles.get(candle.bucketStart);
       if (existing && existing.bucketEnd === candle.bucketEnd && existing.close === candle.close && existing.high === candle.high && existing.low === candle.low) continue;
       this.candles.set(candle.bucketStart, { ...(existing ?? {}), ...candle });
@@ -411,7 +457,10 @@ export class IqWsRuntime extends EventEmitter {
     const pending = this.pendingOrder;
     const pendingId = pending?.executionId ?? null;
     if (!pendingId) return;
+    if (pending.settling === true) return;
     if (pending.brokerOrderId && String(pending.brokerOrderId) !== String(brokerOrderId)) return;
+    if (broker.result === "UNKNOWN") { this.#safe(() => this.log("IQ_WS_SETTLEMENT_UNKNOWN", JSON.stringify({ executionId: pending.executionId, brokerOrderId: String(brokerOrderId) }))); return; }
+    pending.settling = true;
     const causal = this.#causalSettlement(pending, pending.expirationSec * 1000);
     const comparison = compareSettlement(broker.result, causal.result);
     const settledAt = new Date().toISOString();
@@ -463,15 +512,22 @@ export class IqWsRuntime extends EventEmitter {
   }
 
   async #persistExecution(row) {
-    this.executionsCache = [row, ...this.executionsCache.filter((item) => item.executionId !== row.executionId)].slice(0, 50);
+    const previous = this.executionsCache.find((item) => item.executionId === row.executionId) ?? {};
+    const merged = { ...previous, ...row };
+    this.executionsCache = [merged, ...this.executionsCache.filter((item) => item.executionId !== merged.executionId)].slice(0, 50);
     try {
       if (!await this.#ensureDb()) return false;
-      await this.pool.query(
-        `INSERT INTO iq_executions(execution_id,idempotency_key,decision_id,connection_id,account_type,broker_order_id,symbol,active_id,direction,stake,currency,state,request_id,expiration_at,entry_price,acked_at,settled_at,broker_result,causal_result,settlement_mismatch,profit,error,meta,requested_at,updated_at)
-         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,now(),now())
-         ON CONFLICT(execution_id) DO UPDATE SET broker_order_id=COALESCE(EXCLUDED.broker_order_id,iq_executions.broker_order_id), state=EXCLUDED.state, acked_at=COALESCE(EXCLUDED.acked_at,iq_executions.acked_at), settled_at=COALESCE(EXCLUDED.settled_at,iq_executions.settled_at), broker_result=COALESCE(EXCLUDED.broker_result,iq_executions.broker_result), causal_result=COALESCE(EXCLUDED.causal_result,iq_executions.causal_result), settlement_mismatch=EXCLUDED.settlement_mismatch OR iq_executions.settlement_mismatch, profit=COALESCE(EXCLUDED.profit,iq_executions.profit), error=COALESCE(EXCLUDED.error,iq_executions.error), meta=EXCLUDED.meta, updated_at=now()`,
-        [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.connectionId ?? null, row.accountType ?? "PRACTICE", row.brokerOrderId ?? null, row.symbol ?? this.symbol, row.activeId ?? this.active.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? this.account.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, JSON.stringify(row.meta ?? {})],
+      const updated = await this.pool.query(
+        `UPDATE iq_executions SET idempotency_key=COALESCE($2,idempotency_key), decision_id=COALESCE($3,decision_id), connection_id=COALESCE($4,connection_id), account_type=COALESCE($5,account_type), broker_order_id=COALESCE($6,broker_order_id), symbol=COALESCE($7,symbol), active_id=COALESCE($8,active_id), direction=COALESCE($9,direction), stake=COALESCE($10,stake), currency=COALESCE($11,currency), state=$12, request_id=COALESCE($13,request_id), expiration_at=COALESCE($14,expiration_at), entry_price=COALESCE($15,entry_price), acked_at=COALESCE($16,acked_at), settled_at=COALESCE($17,settled_at), broker_result=COALESCE($18,broker_result), causal_result=COALESCE($19,causal_result), settlement_mismatch=($20 OR settlement_mismatch), profit=COALESCE($21,profit), error=COALESCE($22,error), meta=$23, updated_at=now() WHERE execution_id=$1`,
+        [merged.executionId, merged.idempotencyKey ?? null, merged.decisionId ?? null, merged.connectionId ?? null, merged.accountType ?? null, merged.brokerOrderId ?? null, merged.symbol ?? null, merged.activeId ?? null, merged.direction ?? null, merged.stake ?? null, merged.currency ?? null, merged.state, merged.requestId ?? null, merged.expirationAt ?? null, merged.entryPrice ?? null, merged.ackedAt ?? null, merged.settledAt ?? null, merged.brokerResult ?? null, merged.causalResult ?? null, merged.mismatch === true, merged.profit ?? null, merged.error ?? null, JSON.stringify(merged.meta ?? {})],
       );
+      if ((updated.rowCount ?? 0) === 0) {
+        await this.pool.query(
+          `INSERT INTO iq_executions(execution_id,idempotency_key,decision_id,connection_id,account_type,broker_order_id,symbol,active_id,direction,stake,currency,state,request_id,expiration_at,entry_price,acked_at,settled_at,broker_result,causal_result,settlement_mismatch,profit,error,meta,requested_at,updated_at)
+           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,now(),now())`,
+          [merged.executionId, merged.idempotencyKey ?? null, merged.decisionId ?? null, merged.connectionId ?? null, merged.accountType ?? "PRACTICE", merged.brokerOrderId ?? null, merged.symbol ?? this.symbol, merged.activeId ?? this.active.activeId ?? null, merged.direction ?? null, merged.stake ?? null, merged.currency ?? this.account.currency ?? null, merged.state, merged.requestId ?? null, merged.expirationAt ?? null, merged.entryPrice ?? null, merged.ackedAt ?? null, merged.settledAt ?? null, merged.brokerResult ?? null, merged.causalResult ?? null, merged.mismatch === true, merged.profit ?? null, merged.error ?? null, JSON.stringify(merged.meta ?? {})],
+        );
+      }
       return true;
     } catch (error) { this.#safe(() => this.log("IQ_WS_PERSIST_FAILED", String(error?.message ?? error).slice(0, 160))); return false; }
   }
@@ -524,6 +580,7 @@ export class IqWsRuntime extends EventEmitter {
         },
         healthy: health.healthy,
         healthReasons: health.reasons,
+        candleDiagnostics: this.candleDiagnostics,
         features: this.lastContext ? {
           builtAt: this.lastContext.builtAt,
           fresh: this.lastContext.fresh.fresh,

@@ -179,7 +179,9 @@ export function envelope(name, msg, requestId = "") { return JSON.stringify({ na
 export function toEpochMs(value) {
   const number = Number(value);
   if (!Number.isFinite(number) || number <= 0) return null;
-  return number > 1e12 ? Math.round(number) : Math.round(number * 1000);
+  if (number > 1e15) return Math.round(number / 1e6); // nanoseconds (ACTUAL_2026: candle-generated.at)
+  if (number > 1e12) return Math.round(number); // milliseconds
+  return Math.round(number * 1000); // seconds
 }
 
 export function validateServerTime(serverTimeMs, localNowMs, toleranceMs = TIME_SYNC_TOLERANCE_MS) {
@@ -192,28 +194,35 @@ export function validateServerTime(serverTimeMs, localNowMs, toleranceMs = TIME_
 /** Normaliza candle 5s da IQ para IQCandle causal. Rejeita futuro e ativo cruzado; nunca inventa preco. */
 export function normalizeCandle(raw, { symbol, activeId, serverTimestamp, receivedAt, connectionId, sizeSeconds = CANDLE_SIZE_SECONDS } = {}) {
   if (!raw || typeof raw !== "object") throw new IqWsError("INVALID_CANDLE");
-  const rawActive = raw.active_id ?? raw.activeId ?? null;
+  const rawActive = raw.active_id ?? raw.activeId ?? raw.active ?? null;
   if (rawActive !== null && activeId !== null && activeId !== undefined && Number(rawActive) !== Number(activeId)) throw new IqWsError("CROSS_ASSET_REJECTED", `${rawActive} != ${activeId}`);
   const rawSize = Number(raw.size ?? raw.candle_size ?? sizeSeconds);
   const size = Number.isFinite(rawSize) && rawSize > 0 ? rawSize : sizeSeconds;
-  const bucketStart = toEpochMs(raw.from ?? raw.start ?? raw.at);
+  const price = (candidates) => { for (const value of candidates) { const number = typeof value === "string" ? Number(value.replace(",", ".")) : Number(value); if (Number.isFinite(number)) return number; } return null; };
+  const open = price([raw.open, raw.price_open, raw.o]);
+  const high = price([raw.high, raw.max, raw.price_high, raw.h]);
+  const low = price([raw.low, raw.min, raw.price_low, raw.l]);
+  const close = price([raw.close, raw.value, raw.price_close, raw.c]);
+  const rawFromMs = toEpochMs(raw.from ?? raw.start);
+  const rawAtMs = toEpochMs(raw.at ?? raw.timestamp);
+  let bucketStart = rawFromMs ?? (rawAtMs === null ? null : Math.floor(rawAtMs / (size * 1000)) * size * 1000);
+  if (bucketStart === null && rawAtMs !== null && Number.isFinite(serverTimestamp)) bucketStart = Math.floor(serverTimestamp / (size * 1000)) * size * 1000;
   const bucketEnd = toEpochMs(raw.to ?? raw.end) ?? (bucketStart === null ? null : bucketStart + size * 1000);
   if (bucketStart === null) throw new IqWsError("INVALID_CANDLE_TIMESTAMP");
-  const open = Number(raw.open), high = Number(raw.high), low = Number(raw.low), close = Number(raw.close);
-  if (![open, high, low, close].every(Number.isFinite)) throw new IqWsError("INVALID_CANDLE_PRICE");
+  if (![open, high, low, close].every(Number.isFinite)) throw new IqWsError("INVALID_CANDLE_PRICE", `open=${open} high=${high} low=${low} close=${close}`);
   if (Number.isFinite(serverTimestamp) && bucketStart > serverTimestamp + size * 1000) throw new IqWsError("FUTURE_CANDLE_REJECTED", `${bucketStart} > ${serverTimestamp}`);
   if (bucketEnd > bucketStart + size * 1000 + 1) throw new IqWsError("CANDLE_TOO_LONG");
   return {
     symbol, activeId: activeId ?? (rawActive === null ? null : Number(rawActive)),
     bucketStart, bucketEnd, open, high, low, close,
     source: CANDLE_SOURCE,
-    serverTimestamp: Number.isFinite(Number(raw.at)) ? Number(raw.at) : (Number.isFinite(serverTimestamp) ? serverTimestamp : null),
+    serverTimestamp: rawAtMs ?? (Number.isFinite(serverTimestamp) ? serverTimestamp : null),
     receivedAt: receivedAt ?? Date.now(),
     segmentId: `${symbol}:${bucketStart}`,
     connectionId: connectionId ?? null,
     volume: Number.isFinite(Number(raw.volume)) ? Number(raw.volume) : null,
-    ask: Number.isFinite(Number(raw.ask)) ? Number(raw.ask) : null,
-    bid: Number.isFinite(Number(raw.bid)) ? Number(raw.bid) : null,
+    ask: price([raw.ask, raw.price_ask]),
+    bid: price([raw.bid, raw.price_bid]),
   };
 }
 

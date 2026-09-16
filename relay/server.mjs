@@ -54,6 +54,10 @@ await migrate();
 try {
   const restored = await loadSession(pool, process.env.TOKEN_SIGNING_SECRET || "");
   if (restored && iqAuth.restore(restored)) { console.info("IQ_SESSION_RESTORED", JSON.stringify({ email: restored.emailMasked })); wsRuntime.start(); }
+  else {
+    const diag = await pool.query("SELECT (ssid_enc IS NOT NULL) AS has_enc, length(ssid_enc) AS enc_len, (iv IS NOT NULL) AS has_iv, (tag IS NOT NULL) AS has_tag, updated_at FROM iq_auth_session WHERE id=1").catch(() => null);
+    console.info("IQ_SESSION_NOT_RESTORED", JSON.stringify({ secretPresent: Boolean(process.env.TOKEN_SIGNING_SECRET), row: diag?.rows?.[0] ?? null }));
+  }
 } catch { console.info("IQ_SESSION_RESTORE_UNAVAILABLE"); }
 async function authenticate(req, scope) {
   const value = req.headers.authorization || ''; const key = value.startsWith('Bearer ') ? value.slice(7) : '';

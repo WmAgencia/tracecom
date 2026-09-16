@@ -11,7 +11,7 @@ const runtimeModule = await import("../../relay/iq-ws-runtime.mjs");
 const connector = await import("../../relay/iqoption-connector.mjs");
 const {
   encodeFrame, FrameParser, WS_OPCODES, RawWebSocket, IqWsClient,
-  normalizeCandle, validateServerTime, classifyBalances, resolveEurUsdActive, computeExpiration, parseSettlement,
+  normalizeCandle, validateServerTime, classifyBalances, resolveEurUsdActive, computeExpiration, parseSettlement, toEpochMs,
 } = ws as unknown as Record<string, any>;
 const { IqWsRuntime, percentile, latencySummary } = runtimeModule as unknown as Record<string, any>;
 const { ExecutionArmState } = connector as unknown as Record<string, any>;
@@ -128,6 +128,13 @@ describe("CANDLES 5s — normalizacao causal (unidades, futuro, ativo cruzado)",
     expect(() => normalizeCandle({ active_id: 1, size: 5, from: 1_700_000_020_000, open: 1, high: 1, low: 1, close: 1 }, base)).toThrowError(/FUTURE_CANDLE_REJECTED/);
     expect(() => normalizeCandle({ active_id: 99, size: 5, from: 1_700_000_000_000, open: 1, high: 1, low: 1, close: 1 }, base)).toThrowError(/CROSS_ASSET_REJECTED/);
   });
+  it("payload REAL 2026 (max/min + at em nanossegundos) normaliza corretamente", () => {
+    const raw = { active_id: 76, size: 5, at: 1_789_586_338_000_000_000, from: 1_789_586_335, to: 1_789_586_340, id: 55_705_336, open: 1.149175, close: 1.149265, min: 1.149175, max: 1.149285, ask: 1.14927, bid: 1.14926, volume: 0, phase: "T" };
+    const candle = normalizeCandle(raw, { symbol: "EUR/USD", activeId: 76, serverTimestamp: 1_789_586_338_000, receivedAt: 1_789_586_338_050, connectionId: CONNECTION_ID });
+    expect(candle).toMatchObject({ high: 1.149285, low: 1.149175, open: 1.149175, close: 1.149265, bucketStart: 1_789_586_335_000, bucketEnd: 1_789_586_340_000, serverTimestamp: 1_789_586_338_000, source: "IQ_OPTION_WS" });
+    expect(toEpochMs(1_789_586_338_000_000_000)).toBe(1_789_586_338_000);
+    expect(toEpochMs(1_789_586_335)).toBe(1_789_586_335_000);
+  });
 });
 
 describe("CONTA — classificacao server-side (get_balances)", () => {
@@ -167,7 +174,8 @@ describe("EXPIRACAO — algoritmo da referencia (turbo/binary)", () => {
     expect([1, 3]).toContain(oneMinute.optionTypeId);
     expect(oneMinute.expiration - nowSec).toBeLessThanOrEqual(6 * 60);
     const long = computeExpiration(nowSec, 15);
-    expect(long.expiration - nowSec).toBeLessThanOrEqual(20 * 60);
+    expect(long.expiration - nowSec).toBeLessThanOrEqual(25 * 60);
+    expect(long.expiration % 900).toBe(0);
   });
 });
 
@@ -251,6 +259,21 @@ describe("RUNTIME — arm/disarm, ordem PRACTICE com ACK, idempotencia, settleme
     expect(runtime.lastExecution).toMatchObject({ state: "SETTLED", brokerResult: "LOSS", causalResult: "WIN", mismatch: true });
     expect(parseSettlement({ win: "loose", sum: 1, win_amount: 0 })).toMatchObject({ result: "LOSS", profit: -1 });
   });
+  it("settlement com evento UNKNOWN primeiro nao liquida; o definitivo seguinte liquida (sem corrida)", async () => {
+    const runtime = runtimeFixture();
+    runtime.arm(1, { confirmation: true });
+    const pending = runtime.requestPracticeOrder({ direction: "SELL", stake: 1, horizonSeconds: 60, idempotencyKey: "ui-smoke-5" });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    runtime.ingestEvent("buyComplete", orderEvent({ isSuccessful: true, result: { id: "ORD-99" } }));
+    await pending;
+    runtime.ingestEvent("socket-option-closed", { connectionId: CONNECTION_ID, receivedAt: nowMs(), name: "socket-option-closed", requestId: null, msg: { id: "ORD-99", win: "", sum: 1, win_amount: 0 } });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(runtime.pendingOrder).not.toBeNull();
+    runtime.ingestEvent("option-closed", { connectionId: CONNECTION_ID, receivedAt: nowMs(), name: "option-closed", requestId: null, msg: { option_id: "ORD-99", win: "equal", sum: 1, win_amount: 1 } });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(runtime.lastExecution).toMatchObject({ state: "SETTLED", brokerResult: "DRAW" });
+    expect(runtime.pendingOrder).toBeNull();
+  });
   it("kill switch bloqueia ARM e REATIVAR libera", () => {
     const runtime = runtimeFixture();
     runtime.setKillSwitch(true);
@@ -263,6 +286,22 @@ describe("RUNTIME — arm/disarm, ordem PRACTICE com ACK, idempotencia, settleme
     runtime.arm(1, { confirmation: true });
     runtime.stop("TEST_DISCONNECT");
     expect(runtime.armState.snapshot()).toMatchObject({ armed: false, disarmReason: "WS_DISCONNECTED" });
+  });
+  it("reconciliacao de orfaos: sem brokerOrderId persistido vira UNKNOWN (nunca reenvia)", async () => {
+    const queries: string[] = [];
+    const pool = { query: async (sql: string) => {
+      queries.push(sql);
+      if (sql.includes("to_regclass")) return { rows: [{ table_name: "iq_executions" }] };
+      if (sql.includes("SELECT execution_id")) return { rows: [{ execution_id: "exec_orphan", idempotency_key: "k", broker_order_id: null, direction: "CALL", symbol: "EUR/USD", active_id: 76, stake: 1, expiration_at: null, entry_price: 1.1 }] };
+      if (sql.startsWith("UPDATE iq_executions")) return { rows: [], rowCount: 1 };
+      return { rows: [], rowCount: 1 };
+    } };
+    const runtime = runtimeFixture({ pool });
+    runtime.client = { serverNow: () => nowMs(), getOptions: async () => ({ response: { msg: { closed_options: [] } } }) };
+    const result = await runtime.reconcileOrphans();
+    expect(result).toMatchObject({ checked: 1, unknown: 1, settled: 0 });
+    expect(runtime.executionsCache[0]).toMatchObject({ executionId: "exec_orphan", state: "UNKNOWN" });
+    expect(queries.some((sql) => sql.startsWith("UPDATE iq_executions"))).toBe(true);
   });
   it("conta REAL nunca arma (gate soberano continua no connector)", () => {
     const armState = new ExecutionArmState();
