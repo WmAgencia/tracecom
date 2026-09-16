@@ -1000,10 +1000,11 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.stress.running) throw new IqWsError("STRESS_ALREADY_RUNNING");
     if (!this.session.connected) throw new IqWsError("WS_DISCONNECTED");
     const normalizedStages = [...new Set(stages.map((value) => Math.max(1, Math.min(this.config.maxActiveMarkets, Number(value) || 1))))].sort((a, b) => a - b);
+    const windowSeconds = Math.max(5, Math.min(300, Number(secondsPerStage) || 45));
     const originalEnabled = this.activeMarketKeys();
-    this.stress = { running: true, startedAt: this.now(), stages: normalizedStages, secondsPerStage, report: null, originalEnabled };
-    void this.#runStress(normalizedStages, secondsPerStage, originalEnabled);
-    return { started: true, stages: normalizedStages, secondsPerStage };
+    this.stress = { running: true, startedAt: this.now(), stages: normalizedStages, secondsPerStage: windowSeconds, report: null, originalEnabled };
+    void this.#runStress(normalizedStages, windowSeconds, originalEnabled);
+    return { started: true, stages: normalizedStages, secondsPerStage: windowSeconds };
   }
 
   async #runStress(stages, secondsPerStage, originalEnabled) {
@@ -1015,7 +1016,7 @@ export class IqMultiRuntime extends EventEmitter {
         for (const ctx of candidates.slice(0, stage)) { if (!ctx.enabled) { try { this.setMarket(ctx.marketKey, { enabled: true }, { persist: false }); } catch (error) { this.#safe(() => this.log("IQ_MULTI_STRESS_ENABLE_FAILED", `${ctx.marketKey}:${String(error?.code ?? error.message)}`)); } } }
         const baseline = Object.fromEntries(candidates.slice(0, stage).map((ctx) => [ctx.marketKey, { messages: ctx.stats.messages, candles: ctx.stats.candlesProcessed, rejected: ctx.stats.rejected, duplicates: ctx.stats.duplicates, reorder: ctx.stats.reorder, gaps: ctx.stats.gaps, reconnects: this.reconnects }]));
         const started = this.now(); const cpuStart = process.cpuUsage();
-        await sleep(Math.max(5_000, secondsPerStage) * 1000);
+        await sleep(secondsPerStage * 1000);
         const cpuEnd = process.cpuUsage(cpuStart);
         const perMarket = candidates.slice(0, stage).map((ctx) => ({
           marketKey: ctx.marketKey, activeId: ctx.activeId, candles: ctx.candles.size,
