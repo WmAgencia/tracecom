@@ -1,0 +1,34 @@
+/* console.css — Area Operacional: sidebar de navegacao, estrategias, banca, historico, treinamento. */
+.console-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:18px;max-width:1460px;margin:0 auto;padding:0 18px 48px}
+.console-content{min-width:0}
+.page[hidden]{display:none}
+.sidebar{position:sticky;top:14px;align-self:start;display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:18px;background:rgba(10,16,28,.72);border:1px solid rgba(122,162,255,.14);backdrop-filter:blur(8px)}
+.nav-item{appearance:none;border:1px solid transparent;background:transparent;color:#b9c6e2;text-align:left;padding:10px 12px;border-radius:12px;font:inherit;font-size:13px;letter-spacing:.02em;cursor:pointer;transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s ease}
+.nav-item:hover{background:rgba(122,162,255,.08);color:#eaf0ff;transform:translateX(1px)}
+.nav-item.active{background:linear-gradient(120deg,rgba(76,120,255,.22),rgba(76,120,255,.08));border-color:rgba(122,162,255,.35);color:#fff}
+.sidebar-foot{margin-top:6px;padding:8px 10px;border-radius:10px;background:rgba(122,162,255,.06);color:#8fa3c8;font-size:11px;letter-spacing:.04em}
+.console-strategies{margin:18px 0;padding:16px;border-radius:18px;background:rgba(10,16,28,.62);border:1px solid rgba(122,162,255,.12)}
+.bankroll-row{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:10px 0;font-size:13px;color:#c6d2ea}
+.bankroll-row input{width:130px;margin-left:6px}
+.strategy-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.strategy-family{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:2px 4px}
+.strategy-variant{border:1px solid rgba(122,162,255,.10);border-radius:14px;padding:10px 12px;background:rgba(8,13,24,.5)}
+.strategy-horizons{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.strategy-horizon{display:flex;flex-direction:column;gap:2px;align-items:center;min-width:74px;padding:8px 10px;border-radius:12px;border:1px solid rgba(122,162,255,.16);background:rgba(12,18,32,.6);color:#dbe4f7;cursor:pointer;transition:border-color .18s ease,background .18s ease,transform .18s ease}
+.strategy-horizon:hover{transform:translateY(-1px);border-color:rgba(122,162,255,.4)}
+.strategy-horizon.selected{border-color:#5f8bff;background:linear-gradient(140deg,rgba(76,120,255,.28),rgba(76,120,255,.06));color:#fff;box-shadow:0 6px 18px rgba(60,100,255,.20)}
+.strategy-horizon em{font-style:normal;font-size:11px;color:#8fa3c8}
+.strategy-horizon em.sample-badge{color:#ffb469}
+.strategy-row.auto{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;padding:10px 12px;border-radius:14px;border:1px solid rgba(122,162,255,.16);background:rgba(12,18,32,.6);color:#dbe4f7;cursor:pointer}
+.strategy-row.auto.selected{border-color:#5f8bff;background:linear-gradient(140deg,rgba(76,120,255,.28),rgba(76,120,255,.06));color:#fff}
+.warn{color:#ffb469}
+.history-table-wrap{overflow:auto;border:1px solid rgba(122,162,255,.12);border-radius:14px;background:rgba(8,13,24,.5)}
+.history-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.history-table th,.history-table td{padding:8px 10px;text-align:left;border-bottom:1px solid rgba(122,162,255,.08);white-space:nowrap}
+.history-table thead th{color:#8fa3c8;font-weight:600;letter-spacing:.04em}
+.result-win{color:#5ddc9a}.result-loss{color:#ff7a7a}.result-draw{color:#ffd479}.result-pending{color:#8fa3c8}
+.promo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0}
+.promo-grid>div{padding:12px;border-radius:14px;border:1px solid rgba(122,162,255,.12);background:rgba(8,13,24,.5)}
+.promo-grid span{display:block;font-size:11px;color:#8fa3c8;letter-spacing:.05em}
+.promo-grid b{display:block;margin-top:4px;color:#eaf0ff}
+@media (max-width:980px){.console-layout{grid-template-columns:1fr}.sidebar{position:static;flex-direction:row;flex-wrap:wrap}.sidebar-foot{width:100%}}

@@ -42,17 +42,35 @@ function renderOperational() {
   if ($("opResultValue")) text("opResultValue", signal?.outcome || "—");
 }
 async function channelCandidate(fast, candleId, frameId) {
-  const channel = state.channel || {}, direction = fast.decision, now = Date.now();
+  const channel = state.channel || {}, now = Date.now();
+  let direction = fast.decision, horizonMs = OP_HORIZON_MS, strategyVariantId = null, strategyHash = null, strategySignalBucket = null, strategySource = "FAST_PATH_FALLBACK";
   if (OP_LOCKED_STATES.includes(channel.state)) { void liveEmit("OPERATIONAL_DECISION_SUPPRESSED_ACTIVE_OPERATION", { signalId: channel.signal?.signalId || null, lockedDirection: channel.signal?.direction || null, researchDirection: direction, state: channel.state, traceId: state.currentTraceId }); return; }
   if (!state.marketContext || state.marketContext.validationStatus !== "VALID") { void liveEmit("OPERATIONAL_DECISION_SUPPRESSED_CONTEXT_INVALID", { validationStatus: state.marketContext?.validationStatus || "UNKNOWN", researchDirection: direction, candleId, frameId, traceId: state.currentTraceId }); return; }
-  const decisive = direction === "BUY" || direction === "SELL", counterOk = !fast.counterTrend || (fast.reversalEvidence?.length || 0) >= 1;
+  // FONTE OPERACIONAL = estrategia congelada selecionada (source of truth server-side).
+  // O fast-path vira fallback apenas quando o controle de estrategias nao esta configurado.
+  try {
+    const control = await api("/api/strategies/selection");
+    if (control && control.selection) {
+      strategySource = "FROZEN_STRATEGY";
+      const signal = (control.latestSignals || []).find((candidate) => candidate.family === control.selection.family && candidate.horizonSeconds === control.selection.horizonSeconds) || null;
+      if (!signal) { channelLog("STRATEGY_SIGNAL_WAIT", { variantId: control.selection.variantId }); return; }
+      direction = signal.direction;
+      horizonMs = control.selection.horizonSeconds * 1000;
+      strategyVariantId = control.selection.variantId;
+      strategyHash = control.selection.entryLogicHash;
+      strategySignalBucket = signal.signalBucket;
+    }
+  } catch (error) {
+    if (!String(error?.message || error).includes("relay_not_configured")) { channelLog("STRATEGY_CONTROL_UNAVAILABLE", { reason: String(error?.message || error) }); return; }
+  }
+  const decisive = direction === "BUY" || direction === "SELL", counterOk = strategySource === "FROZEN_STRATEGY" ? true : (!fast.counterTrend || (fast.reversalEvidence?.length || 0) >= 1);
   if (!decisive || !counterOk) { if (!counterOk) channelLog("COUNTER_TREND_SIGNAL_BLOCKED", { direction, macroTrend: fast.macroTrend }); return; }
   const signalId = `op_${now}_${Math.random().toString(36).slice(2, 8)}`, decisionId = state.decisionId || `decision_${candleId}`;
   try {
-    const snapshot = await operationalMutation("/api/operational/lock", { signalId, idempotencyKey: `lock:${state.liveSessionId || "web"}:${candleId}:${direction}`, direction, originSymbol: state.marketContext.assetCanonical, now, countdownMs: OP_ENTRY_MS, confirmationMs: 20_000, horizonMs: OP_HORIZON_MS });
+    const snapshot = await operationalMutation("/api/operational/lock", { signalId, idempotencyKey: `lock:${state.liveSessionId || "web"}:${strategySignalBucket || candleId}:${direction}`, direction, originSymbol: state.marketContext.assetCanonical, now, countdownMs: OP_ENTRY_MS, confirmationMs: 20_000, horizonMs, strategyVariantId, strategyHash, strategySource });
     if (snapshot.signal?.signalId !== signalId) return;
     diagTransition("OperationalChannel", "IDLE", snapshot.state, "server_lock", { signalId, traceId: state.currentTraceId, marketEventId: candleId });
-    void liveEmit("OPERATIONAL_SIGNAL_LOCKED", { signalId, decisionId, marketEventId: candleId, frameId, candleId, direction, profile: fast.selectedProfile, rawConfidence: fast.rawConfidence, issuedAt: snapshot.signal.lockedAt, countdownEndsAt: snapshot.signal.countdownEndsAt, settlementAt: snapshot.signal.settlementAt, traceId: state.currentTraceId });
+    void liveEmit("OPERATIONAL_SIGNAL_LOCKED", { signalId, decisionId, marketEventId: candleId, frameId, candleId, direction, profile: fast.selectedProfile, rawConfidence: fast.rawConfidence, strategyVariantId, strategyHash, strategySource, issuedAt: snapshot.signal.lockedAt, countdownEndsAt: snapshot.signal.countdownEndsAt, settlementAt: snapshot.signal.settlementAt, traceId: state.currentTraceId });
   } catch (error) { channelLog("OPERATIONAL_LOCK_REJECTED", { reason: String(error?.message || error) }); void restoreOperationalSnapshot(); }
 }
 async function settleManualOperation(priceRow) {

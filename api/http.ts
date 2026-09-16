@@ -28,6 +28,7 @@ import { buildFeatureSnapshot } from "../src/quant-v2/feature-engine.js";
 import { quantShadowDecision } from "../src/quant-v2/quant-fusion.js";
 import { analyzeTechnicalState } from "../src/vision/technical-analyst.js";
 import { OperationalController } from "../src/vision/operational-controller.js";
+import { decideOperationalGate, horizonCompatibility, makeSelection, type LatestOperationalSignal, type StrategySelection } from "../src/strategies/selection.js";
 
 type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -534,6 +535,40 @@ async function relayOperationalSnapshot(sessionId: string, snapshot?: unknown): 
   if (!process.env.TRACECOM_LIVE_RELAY_URL) throw new Error("relay_not_configured"); return relayAdminGet(`/api/operational/${encodeURIComponent(sessionId)}`);
 }
 
+async function fetchStrategySelection(): Promise<{ selection: StrategySelection | null; latestSignals: LatestOperationalSignal[] }> {
+  if (!process.env.TRACECOM_LIVE_RELAY_URL || !process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET) return { selection: null, latestSignals: [] };
+  try {
+    const [selectionBody, signalsBody] = await Promise.all([relayAdminGet("/api/strategies/selection"), relayAdminGet("/api/strategies/latest-signal")]);
+    const row = selectionBody.selection as Record<string, unknown> | undefined;
+    let selection: StrategySelection | null = null;
+    if (row && typeof row === "object") {
+      const base = makeSelection(String(row.family) as never, Number(row.horizon_seconds), String(row.reason ?? "relay"));
+      if (base) selection = { ...base, mode: row.mode === "AUTO" ? "AUTO" : "MANUAL", updatedAt: typeof row.updated_at === "string" ? row.updated_at : base.updatedAt };
+    }
+    const signals = Array.isArray(signalsBody.signals) ? (signalsBody.signals as Array<Record<string, unknown>>) : [];
+    const latestSignals: LatestOperationalSignal[] = signals.map((signal) => ({
+      family: String(signal.family) as LatestOperationalSignal["family"],
+      horizonSeconds: Number(signal.horizon_seconds),
+      direction: (signal.direction === "SELL" ? "SELL" : "BUY") as LatestOperationalSignal["direction"],
+      signalBucket: Number(signal.signal_bucket),
+      entryPrice: Number(signal.entry_price),
+      strategyHash: String(signal.strategy_hash ?? ""),
+      entryTimestamp: Number(signal.entry_timestamp),
+    })).filter((signal) => Number.isFinite(signal.horizonSeconds) && Number.isFinite(signal.signalBucket) && Number.isFinite(signal.entryPrice));
+    return { selection, latestSignals };
+  } catch { return { selection: null, latestSignals: [] }; }
+}
+
+async function fetchStrategyStats(): Promise<Record<string, unknown>> {
+  const [stats, history, promotion] = await Promise.all([
+    relayAdminGet("/api/strategies/stats"),
+    relayAdminGet("/api/strategies/history?limit=200"),
+    relayAdminGet("/api/strategies/promotion").catch(() => ({ state: null, audit: [] })),
+  ]);
+  return { ...stats, history: history.history ?? [], promotion };
+}
+
+
 async function fetchRelayBundle(sessionId: string): Promise<Record<string, unknown> | null> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
   const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
@@ -589,6 +624,14 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       try {
         const direction = operationalInput.direction === "BUY" || operationalInput.direction === "SELL" ? operationalInput.direction : null;
         if (!direction) throw new Error("invalid_direction");
+        const horizonMs = Number.isFinite(Number(operationalInput.horizonMs)) ? Number(operationalInput.horizonMs) : 60_000;
+        if (process.env.TRACECOM_LIVE_RELAY_URL) {
+          const { selection, latestSignals } = await fetchStrategySelection();
+          const latestSignal = selection ? latestSignals.find((signal) => signal.family === selection.family && signal.horizonSeconds === selection.horizonSeconds) ?? null : null;
+          const brokerHorizonSeconds = Number.isFinite(Number(operationalInput.brokerHorizonSeconds)) ? Number(operationalInput.brokerHorizonSeconds) : null;
+          const gate = decideOperationalGate({ direction, horizonMs }, { selection, latestSignal, brokerHorizonSeconds });
+          if (!gate.allowed) { json(409, { error: "strategy_gate_rejected", reason: gate.reason, detail: gate.detail, selection, shadowOnly: true, brokerAutomation: "NONE" }); return; }
+        }
         controller.lock({
           signalId: typeof operationalInput.signalId === "string" ? operationalInput.signalId : "",
           idempotencyKey: typeof operationalInput.idempotencyKey === "string" ? operationalInput.idempotencyKey : "",
@@ -597,7 +640,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
           now: Number(operationalInput.now) || Date.now(),
           countdownMs: Number.isFinite(Number(operationalInput.countdownMs)) ? Number(operationalInput.countdownMs) : 10_000,
           confirmationMs: Number.isFinite(Number(operationalInput.confirmationMs)) ? Number(operationalInput.confirmationMs) : 20_000,
-          horizonMs: Number.isFinite(Number(operationalInput.horizonMs)) ? Number(operationalInput.horizonMs) : 60_000,
+          horizonMs: Number.isFinite(Number(operationalInput.horizonMs)) ? Number(operationalInput.horizonMs) : horizonMs,
         });
         operationalSessions.set(operationalSessionId, controller); await relayOperationalSnapshot(operationalSessionId, controller.snapshot());
         json(200, operationalResponse(controller));
@@ -651,6 +694,35 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       const controller = await operationalController(sessionId);
       if (!controller) { json(404, { error: "operational_session_not_found", recovery: "OPERATION_RECOVERY_FAILED" }); return; }
       json(200, { ...controller.snapshot(), sessionId, shadowOnly: true, brokerAutomation: "NONE" });
+      return;
+    }
+    if (path === "/api/strategies/stats" && req.method === "GET") {
+      if (!process.env.TRACECOM_LIVE_RELAY_URL) { json(503, { error: "relay_not_configured" }); return; }
+      try { json(200, await fetchStrategyStats()); } catch (error) { json(502, { error: error instanceof Error ? error.message : "strategy_stats_failed" }); }
+      return;
+    }
+    if (path === "/api/strategies/history" && req.method === "GET") {
+      if (!process.env.TRACECOM_LIVE_RELAY_URL) { json(503, { error: "relay_not_configured" }); return; }
+      try { const history = await relayAdminGet(`/api/strategies/history?limit=${Math.max(10, Math.min(500, Number(q.get("limit")) || 200))}`); json(200, { ...history, shadowOnly: true, brokerAutomation: "NONE" }); } catch (error) { json(502, { error: error instanceof Error ? error.message : "strategy_history_failed" }); }
+      return;
+    }
+    if (path === "/api/strategies/selection" && req.method === "GET") {
+      const { selection, latestSignals } = await fetchStrategySelection();
+      const brokerHorizonSeconds = Number.isFinite(Number(q.get("brokerHorizonSeconds"))) ? Number(q.get("brokerHorizonSeconds")) : null;
+      json(200, { selection, latestSignals, compatibility: selection ? horizonCompatibility(selection, brokerHorizonSeconds) : null, shadowOnly: true });
+      return;
+    }
+    if (path === "/api/strategies/selection" && req.method === "PUT") {
+      const family = String(operationalInput.family ?? "").toUpperCase();
+      const horizonSeconds = Number(operationalInput.horizonSeconds);
+      const mode = operationalInput.mode === "AUTO" ? "AUTO" : "MANUAL";
+      const candidate = makeSelection(family as never, horizonSeconds, "ui");
+      if (!candidate) { json(400, { error: "invalid_variant", family, horizonSeconds }); return; }
+      if (!process.env.TRACECOM_LIVE_RELAY_URL) { json(503, { error: "relay_not_configured" }); return; }
+      const sent = await relayAdminSend("PUT", "/api/strategies/selection", { family: candidate.family, horizonSeconds: candidate.horizonSeconds, reason: String(operationalInput.reason ?? "ui").slice(0, 200), actor: String(operationalInput.actor ?? "ui").slice(0, 64), mode });
+      if (!sent) { json(502, { error: "relay_persist_failed" }); return; }
+      const { selection } = await fetchStrategySelection();
+      json(200, { selection, requested: { ...candidate, mode }, appliesFromNextSignal: true, notice: "Aplicada a partir do proximo sinal se houver operacao ativa.", shadowOnly: true, brokerAutomation: "NONE" });
       return;
     }
     if (path === "/health" || path === "/api/health") {
