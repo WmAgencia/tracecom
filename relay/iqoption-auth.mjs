@@ -19,7 +19,9 @@ export function sanitizeError(input, extraSecrets = []) {
     .replace(/("ssid"\s*:\s*")[^"]+/gi, "$1***")
     .replace(/(password["'\s:=]+)[^"'\s,}]+/gi, "$1***")
     .replace(/(2fa[_-]?token["'\s:=]+)[^"'\s,}]+/gi, "$1***")
+    .replace(/("token"\s*:\s*")[^"]+/gi, "$1***")
     .replace(/(authorization["'\s:=]+)[^"'\s,}]+/gi, "$1***")
+    .replace(/bearer\s+[^\s"',}]+/gi, "Bearer ***")
     .replace(/(cookie["'\s:=]+)[^"'\s,}]+/gi, "$1***")
     .slice(0, 300);
 }
