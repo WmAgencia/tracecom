@@ -63,6 +63,9 @@ function boolOrNull(value) { return typeof value === "boolean" ? value : null; }
 function enumOrNull(value, allowed) { const normalized = typeof value === "string" ? value.toUpperCase() : ""; return allowed.includes(normalized) ? normalized : null; }
 function bounded100(value) { const parsed = numberOrNull(value); return parsed === null ? null : Math.max(0, Math.min(100, Math.round(parsed))); }
 function stringList(value, max = 6) { return Array.isArray(value) ? value.filter((item) => typeof item === "string" && item.trim()).slice(0, max).map((item) => item.trim().slice(0, 200)) : []; }
+function normalizeCandles(value) { return Array.isArray(value) ? value.slice(-40).map((candle, index) => ({ index: numberOrNull(candle?.index) ?? index, x: numberOrNull(candle?.x), bodyTopY: numberOrNull(candle?.bodyTopY), bodyBottomY: numberOrNull(candle?.bodyBottomY), wickTopY: numberOrNull(candle?.wickTopY), wickBottomY: numberOrNull(candle?.wickBottomY), direction: candle?.direction === "UP" || candle?.direction === "DOWN" ? candle.direction : "DOJI", open: numberOrNull(candle?.open), high: numberOrNull(candle?.high), low: numberOrNull(candle?.low), close: numberOrNull(candle?.close), confidence: numberOrNull(candle?.confidence) })) : []; }
+function normalizeGeometry(value) { return Array.isArray(value) ? value.slice(0, 80).map((point) => ({ x: numberOrNull(point?.x), y: numberOrNull(point?.y) })).filter((point) => point.x !== null && point.y !== null) : []; }
+function normalizeVisualIndicators(value) { const indicators = value && typeof value === "object" ? value : {}; const line = (item, extra) => ({ visible: item?.visible === true, period: numberOrNull(item?.period), ...(extra ? extra(item) : {}), geometry: normalizeGeometry(item?.geometry), confidence: numberOrNull(item?.confidence) }); const slope = (value2) => (["RISING", "FALLING", "FLAT"].includes(value2) ? value2 : null); return { donchian: line(indicators.donchian, null), rsi: line(indicators.rsi, (item) => ({ displayedValue: numberOrNull(item?.displayedValue), relativePosition: textOrNull(item?.relativePosition, 40), slopeVisual: slope(item?.slopeVisual) })), atr: line(indicators.atr, (item) => ({ displayedValue: numberOrNull(item?.displayedValue) })), adx: line(indicators.adx, (item) => ({ displayedValue: numberOrNull(item?.displayedValue), plusDI: numberOrNull(item?.plusDI), minusDI: numberOrNull(item?.minusDI), slopeVisual: slope(item?.slopeVisual) })) }; }
 
 /** Normaliza para o contrato de MarketObservation consumido pelo pipeline (UNKNOWN/null preservados). */
 export function normalizeObservation(parsed, provenance) {
@@ -88,27 +91,14 @@ export function normalizeObservation(parsed, provenance) {
     evidence: Array.isArray(parsed.evidence) ? parsed.evidence.filter((item) => typeof item === "string").slice(0, 8) : [],
     ask: numberOrNull(parsed.ask),
     bid: numberOrNull(parsed.bid),
-    sentiment: { up: numberOrNull(parsed.sentiment?.up ?? null), down: numberOrNull(parsed.sentiment?.down ?? null) },
-    analysis: (() => {
-      const regime = parsed.regime && typeof parsed.regime === "object" ? parsed.regime : {};
-      const donchian = parsed.donchian && typeof parsed.donchian === "object" ? parsed.donchian : {};
-      const rsi = parsed.rsi && typeof parsed.rsi === "object" ? parsed.rsi : {};
-      const atr = parsed.atr && typeof parsed.atr === "object" ? parsed.atr : {};
-      const adx = parsed.adx && typeof parsed.adx === "object" ? parsed.adx : {};
-      const micro = parsed.microstructure && typeof parsed.microstructure === "object" ? parsed.microstructure : {};
-      const decision = parsed.decision && typeof parsed.decision === "object" ? parsed.decision : {};
-      const action = decision.action === "BUY" || decision.action === "SELL" ? decision.action : "WAIT";
-      return {
-        candleTimeframeSeconds: 5, contextMinutes: 15, horizonSeconds: 60,
-        regime: { type: enumOrNull(regime.type, ["UPTREND", "DOWNTREND", "RANGE", "TRANSITION", "UNCERTAIN"]) ?? "UNCERTAIN", confidence: bounded100(regime.confidence) },
-        donchian: { location: enumOrNull(donchian.location, ["UPPER", "MIDDLE", "LOWER", "BREAKOUT_UP", "BREAKOUT_DOWN", "UNKNOWN"]) ?? "UNKNOWN", channelDirection: enumOrNull(donchian.channelDirection, ["UP", "DOWN", "FLAT", "UNKNOWN"]) ?? "UNKNOWN", breakout: enumOrNull(donchian.breakout, ["NONE", "WICK", "BODY", "CONFIRMED", "FAILED", "UNKNOWN"]) ?? "UNKNOWN" },
-        rsi: { value: numberOrNull(rsi.value), zone: enumOrNull(rsi.zone, ["OVERSOLD", "LOW", "NEUTRAL", "HIGH", "OVERBOUGHT", "UNKNOWN"]) ?? "UNKNOWN", direction: enumOrNull(rsi.direction, ["RISING", "FALLING", "FLAT", "UNKNOWN"]) ?? "UNKNOWN", divergence: enumOrNull(rsi.divergence, ["BULLISH", "BEARISH", "NONE", "UNKNOWN"]) ?? "UNKNOWN" },
-        atr: { state: enumOrNull(atr.state, ["EXPANDING", "NORMAL", "CONTRACTING", "UNKNOWN"]) ?? "UNKNOWN" },
-        adx: { strength: enumOrNull(adx.strength, ["WEAK", "MODERATE", "STRONG", "UNKNOWN"]) ?? "UNKNOWN", trendState: enumOrNull(adx.trendState, ["STRENGTHENING", "WEAKENING", "UNCERTAIN", "UNKNOWN"]) ?? "UNKNOWN", directionalBias: enumOrNull(adx.directionalBias, ["BULLISH", "BEARISH", "NEUTRAL", "UNKNOWN"]) ?? "UNKNOWN" },
-        microstructure: { state: enumOrNull(micro.state, ["BULLISH", "BEARISH", "RANGE", "REVERSAL", "UNCERTAIN"]) ?? "UNCERTAIN", trigger: textOrNull(micro.trigger, 160) },
-        decision: { action, analysisConfidence: bounded100(decision.analysisConfidence) ?? 0, estimatedWinProbability: null, referencePrice: numberOrNull(decision.referencePrice), primaryReason: textOrNull(decision.primaryReason, 240) ?? "", supportingEvidence: stringList(decision.supportingEvidence), contradictingEvidence: stringList(decision.contradictingEvidence), primaryRisk: textOrNull(decision.primaryRisk, 200) ?? "", waitReason: textOrNull(decision.waitReason, 200), secondaryBias: textOrNull(decision.secondaryBias, 80), whatWouldChange: textOrNull(decision.whatWouldChange, 200) },
-      };
-    })(),
+    payout: numberOrNull(parsed.payout),
+    platformTime: textOrNull(parsed.platformTime, 24),
+    displayedWindow: textOrNull(parsed.displayedWindow, 24),
+    expirationDisplayed: textOrNull(parsed.expirationDisplayed, 24),
+    sentiment: { abovePercent: numberOrNull(parsed.sentiment?.abovePercent ?? null), belowPercent: numberOrNull(parsed.sentiment?.belowPercent ?? null) },
+    chartBounds: parsed.chartBounds && typeof parsed.chartBounds === "object" ? { x: numberOrNull(parsed.chartBounds.x), y: numberOrNull(parsed.chartBounds.y), width: numberOrNull(parsed.chartBounds.width), height: numberOrNull(parsed.chartBounds.height) } : null,
+    candles: normalizeCandles(parsed.candles),
+    visualIndicators: normalizeVisualIndicators(parsed.visualIndicators),
     availability: hasUseful ? "PARTIAL" : "UNAVAILABLE",
     imageProvided: true,
     parseMode: "DIRECT",
@@ -141,13 +131,14 @@ async function callProvider(request, apiKey, timeoutMs) {
   } finally { clearTimeout(timer); }
 }
 
-/** Contrato operacional do agente de visao TraceCom (WAIT-first; sem dados futuros). */
+/** VISUAL MARKET OBSERVER — extracao factual. NAO decide, NAO opina, NAO recomenda direcao. */
 export const VISION_PROMPT = [
-  "You are the TraceCom operational visual analyst. Analyze ONLY visible, causal evidence from this sanitized IQ Option crop (5s candles, ~15min context, 60s horizon). Follow the order strictly: REGIME->STRUCTURE->LOCATION->MOMENTUM->VOLATILITY->TREND_STRENGTH->MICROSTRUCTURE->TRIGGER->DECISION.",
-  "Context is NOT entry; bias is NOT entry; trend is NOT entry. Emit BUY/SELL ONLY with a clear recent TRIGGER and confluence; otherwise WAIT (WAIT is a valid and preferred decision when evidence is weak).",
-  "Donchian is for location/structure only (never touch=entry; never chase extended moves - exhaustion risk near bands). RSI(14) is momentum only (70/30 are not buttons; watch slope/divergences). ATR measures volatility, never direction (expanding|normal|contracting; climax risk after extended moves). ADX(14) measures strength only (+DI/-DI give direction; weak/converging = reduce continuation confidence). Microstructure = last 6-18 candles (bodies, wicks, sequence, rejection, absorption). Breakouts: WICK vs BODY vs CONFIRMED vs FAILED. Pullback needs resumption evidence. IQ Option sentiment ACIMA/ABAIXO: record with LOW weight, never a trigger.",
-  "Confidence = quality of evidence, NOT win probability. estimatedWinProbability must be null. Never invent price/values; null when not visible. Never use future information; freeze analysis before outcome.",
-  "RETURN JSON ONLY (no markdown). Shape: {\"symbol\":string|null,\"marketType\":\"OTC\"|\"FIXED\"|null,\"timeframeSeconds\":number|null,\"price\":number|null,\"ask\":number|null,\"bid\":number|null,\"investmentValue\":number|null,\"expirationSeconds\":number|null,\"sentiment\":{\"up\":number|null,\"down\":number|null},\"regime\":{\"type\":\"UPTREND\"|\"DOWNTREND\"|\"RANGE\"|\"TRANSITION\"|\"UNCERTAIN\",\"confidence\":number|null},\"donchian\":{\"location\":\"UPPER\"|\"MIDDLE\"|\"LOWER\"|\"BREAKOUT_UP\"|\"BREAKOUT_DOWN\"|\"UNKNOWN\",\"channelDirection\":\"UP\"|\"DOWN\"|\"FLAT\"|\"UNKNOWN\",\"breakout\":\"NONE\"|\"WICK\"|\"BODY\"|\"CONFIRMED\"|\"FAILED\"|\"UNKNOWN\"},\"rsi\":{\"value\":number|null,\"zone\":\"OVERSOLD\"|\"LOW\"|\"NEUTRAL\"|\"HIGH\"|\"OVERBOUGHT\"|\"UNKNOWN\",\"direction\":\"RISING\"|\"FALLING\"|\"FLAT\"|\"UNKNOWN\",\"divergence\":\"BULLISH\"|\"BEARISH\"|\"NONE\"|\"UNKNOWN\"},\"atr\":{\"state\":\"EXPANDING\"|\"NORMAL\"|\"CONTRACTING\"|\"UNKNOWN\"},\"adx\":{\"strength\":\"WEAK\"|\"MODERATE\"|\"STRONG\"|\"UNKNOWN\",\"trendState\":\"STRENGTHENING\"|\"WEAKENING\"|\"UNCERTAIN\"|\"UNKNOWN\",\"directionalBias\":\"BULLISH\"|\"BEARISH\"|\"NEUTRAL\"|\"UNKNOWN\"},\"microstructure\":{\"state\":\"BULLISH\"|\"BEARISH\"|\"RANGE\"|\"REVERSAL\"|\"UNCERTAIN\",\"trigger\":string|null},\"decision\":{\"action\":\"BUY\"|\"SELL\"|\"WAIT\",\"analysisConfidence\":number,\"estimatedWinProbability\":null,\"referencePrice\":number|null,\"primaryReason\":string,\"supportingEvidence\":string[],\"contradictingEvidence\":string[],\"primaryRisk\":string,\"waitReason\":string|null,\"secondaryBias\":string|null,\"whatWouldChange\":string|null},\"manualPosition\":{\"hasOpenPosition\":boolean,\"state\":string,\"direction\":\"BUY\"|\"SELL\"|\"UNKNOWN\",\"confidence\":number|null,\"evidence\":string[]},\"visualQuality\":{\"candlesReadable\":boolean,\"assetReadable\":boolean,\"priceReadable\":boolean},\"evidence\":string[]}",
+  "You are the TraceCom VISUAL MARKET OBSERVER. Extract ONLY objectively visible facts from this sanitized IQ Option crop. Do NOT decide BUY/SELL/WAIT, do NOT estimate win probability, do NOT give operational recommendations, do NOT reason about entries or confluence.",
+  "Extract: market fields (symbol, marketType, OTC, platformTime, candleTimeframe, displayedWindow, expirationDisplayed, investmentValue, payout), price fields (currentPrice, ask, bid), sentiment (abovePercent, belowPercent), chart (chartBounds, visibleCandleCount), and EVERY identifiable candle as visual geometry.",
+  "For each candle give: {\"index\":number,\"x\":number,\"bodyTopY\":number,\"bodyBottomY\":number,\"wickTopY\":number,\"wickBottomY\":number,\"direction\":\"UP\"|\"DOWN\"|\"DOJI\",\"confidence\":number} plus optional numeric OHLC ONLY if exact digits are read; otherwise omit/null. NEVER invent numbers; if OHLC cannot be determined visually, keep geometry only.",
+  "For indicators visible on screen (Donchian, RSI, ATR, ADX, +DI, -DI) report presence and geometry ONLY: {\"visible\":boolean,\"period\":number|null,\"displayedValue\":number|null,\"relativePosition\":string|null,\"slopeVisual\":\"RISING\"|\"FALLING\"|\"FLAT\"|null,\"geometry\":[{\"x\":number,\"y\":number}],\"confidence\":number|null}. Never conclude anything from them.",
+  "Use null when not visible. Never use future information. Report visualQuality (candlesReadable, assetReadable, priceReadable) and evidence strings.",
+  "RETURN JSON ONLY (no markdown). Shape: {\"symbol\":string|null,\"marketType\":\"OTC\"|\"FIXED\"|null,\"platformTime\":string|null,\"timeframeSeconds\":number|null,\"displayedWindow\":string|null,\"expirationDisplayed\":string|null,\"investmentValue\":number|null,\"payout\":number|null,\"price\":number|null,\"ask\":number|null,\"bid\":number|null,\"sentiment\":{\"abovePercent\":number|null,\"belowPercent\":number|null},\"chartBounds\":{\"x\":number,\"y\":number,\"width\":number,\"height\":number}|null,\"visibleCandleCount\":number|null,\"candles\":[{\"index\":number,\"x\":number,\"bodyTopY\":number,\"bodyBottomY\":number,\"wickTopY\":number,\"wickBottomY\":number,\"direction\":\"UP\"|\"DOWN\"|\"DOJI\",\"open\":number|null,\"high\":number|null,\"low\":number|null,\"close\":number|null,\"confidence\":number}],\"visualIndicators\":{\"donchian\":{\"visible\":boolean,\"period\":number|null,\"geometry\":[{\"x\":number,\"y\":number}],\"confidence\":number|null},\"rsi\":{\"visible\":boolean,\"period\":number|null,\"displayedValue\":number|null,\"relativePosition\":string|null,\"slopeVisual\":\"RISING\"|\"FALLING\"|\"FLAT\"|null,\"geometry\":[{\"x\":number,\"y\":number}],\"confidence\":number|null},\"atr\":{\"visible\":boolean,\"period\":number|null,\"displayedValue\":number|null,\"confidence\":number|null},\"adx\":{\"visible\":boolean,\"period\":number|null,\"displayedValue\":number|null,\"plusDI\":number|null,\"minusDI\":number|null,\"slopeVisual\":\"RISING\"|\"FALLING\"|\"FLAT\"|null,\"confidence\":number|null}},\"manualPosition\":{\"hasOpenPosition\":boolean,\"state\":string,\"direction\":\"BUY\"|\"SELL\"|\"UNKNOWN\",\"confidence\":number|null,\"evidence\":string[]},\"visualQuality\":{\"candlesReadable\":boolean,\"assetReadable\":boolean,\"priceReadable\":boolean},\"evidence\":string[]}",
 ].join("\n");
 
 export async function runVisionProvider(pool, { imageDataUrl, frameId = null, requestId = null, sessionContext = {} }) {
@@ -195,4 +186,65 @@ export async function runTextProvider(pool, { system = "You are a cautious quant
     console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ model, requestId, status: "ERROR", reason, sessionId }));
     return { status: "ERROR", reason, requestId, sessionId, model, text: null, parsed: null, latencyMs: null };
   }
+}
+
+/** DECISION AGENT (text-only) — recebe numeros JA CALCULADOS; nunca pede ao LLM para calcular. */
+export const DECISION_RULES = [
+  "Pipeline: REGIME->STRUCTURE->LOCATION->MOMENTUM->VOLATILITY->TREND_STRENGTH->MICROSTRUCTURE->TRIGGER->DECISION. WAIT-FIRST: context/bias/trend are NOT entry; BUY/SELL requires a recent TRIGGER plus confluence; WAIT is valid and preferred when evidence is weak.",
+  "Donchian = location only (touch never triggers; never chase extended moves; price pinned near lower band after a big drop = exhaustion risk, near upper after a big rally = exhaustion risk). RSI 70/30 are not triggers (use value/slope/divergence). ATR has no direction (expansion/contraction/climax). ADX is strength only (direction from structure and +DI/-DI; weak/converging = reduce continuation confidence). 60s horizon makes microstructure/timing critical. You may be right about regime and still lose on timing.",
+  "The numeric indicator values in the context are mathematically calculated by the backend. USE THEM AS GIVEN; never recompute, adjust, or invent other numbers. estimatedWinProbability MUST be null (no calibrated model). referencePrice must be the causal price from the context (null if unavailable). Do not use future information. Freeze the analysis before outcome.",
+].join("\n");
+
+export function buildDecisionPrompt(context) {
+  const indicators = context?.deterministicIndicators ?? {};
+  const values = {};
+  for (const [key, entry] of Object.entries(indicators)) values[key] = entry && typeof entry === "object" ? { value: entry.value ?? null, source: entry.source ?? "UNAVAILABLE" } : null;
+  const payload = {
+    market: context?.market ?? null,
+    causalPrice: context?.causalPrice?.value ?? null,
+    deterministicIndicators: values,
+    microstructure: context?.microstructure ?? null,
+    visualObservation: context?.visualObservation ? { symbol: context.visualObservation.symbol ?? null, marketType: context.visualObservation.marketType ?? null, price: context.visualObservation.price ?? null, ask: context.visualObservation.ask ?? null, bid: context.visualObservation.bid ?? null, sentiment: context.visualObservation.sentiment ?? null, visualIndicators: context.visualObservation.visualIndicators ?? null } : null,
+    freshness: context?.freshness ?? null,
+    provenance: context?.provenance ?? null,
+  };
+  return [
+    DECISION_RULES,
+    "CONTEXT (backend-calculated; numbers are authoritative):",
+    JSON.stringify(payload).slice(0, 20_000),
+    "RETURN JSON ONLY (no markdown): {\"action\":\"BUY\"|\"SELL\"|\"WAIT\",\"analysisConfidence\":number,\"estimatedWinProbability\":null,\"referencePrice\":number|null,\"horizonSeconds\":60,\"regime\":string,\"structuralBias\":string,\"trigger\":string|null,\"supportingEvidence\":string[],\"contradictingEvidence\":string[],\"primaryRisk\":string,\"waitReason\":string|null,\"whatWouldChange\":string[]}",
+  ].join("\n");
+}
+
+export function parseDecision(text) {
+  const parsed = parseStructured(typeof text === "string" ? text : "");
+  if (!parsed || (parsed.action !== "BUY" && parsed.action !== "SELL" && parsed.action !== "WAIT")) {
+    return { action: "UNAVAILABLE", analysisConfidence: 0, estimatedWinProbability: null, referencePrice: null, horizonSeconds: 60, regime: null, structuralBias: null, trigger: null, supportingEvidence: [], contradictingEvidence: [], primaryRisk: "DECISION_AGENT_INVALID_JSON", waitReason: "DECISION_AGENT_UNAVAILABLE", whatWouldChange: [] };
+  }
+  const confidence = numberOrNull(parsed.analysisConfidence);
+  return {
+    action: parsed.action,
+    analysisConfidence: confidence === null ? 0 : Math.max(0, Math.min(100, Math.round(confidence))),
+    estimatedWinProbability: null,
+    referencePrice: numberOrNull(parsed.referencePrice),
+    horizonSeconds: numberOrNull(parsed.horizonSeconds) ?? 60,
+    regime: textOrNull(parsed.regime, 40),
+    structuralBias: textOrNull(parsed.structuralBias, 40),
+    trigger: textOrNull(parsed.trigger, 200),
+    supportingEvidence: stringList(parsed.supportingEvidence),
+    contradictingEvidence: stringList(parsed.contradictingEvidence),
+    primaryRisk: textOrNull(parsed.primaryRisk, 200) ?? "",
+    waitReason: textOrNull(parsed.waitReason, 200),
+    whatWouldChange: stringList(parsed.whatWouldChange, 8),
+  };
+}
+
+export async function runDecisionAgent(pool, { context, requestId = null, sessionContext = {} }) {
+  const sessionId = sessionFor({ ...sessionContext, requestId });
+  if (!context) return { status: "ERROR", reason: "CONTEXT_REQUIRED", requestId, sessionId, model: null, latencyMs: null, decision: parseDecision("") };
+  const result = await runTextProvider(pool, { system: "You are the TraceCom Decision Agent. Cautious, WAIT-first, never invent numbers.", prompt: buildDecisionPrompt(context), maxTokens: 1200, requestId, sessionContext });
+  if (result.status !== "OK" || typeof result.text !== "string") return { status: "ERROR", reason: result.reason ?? "TEXT_FAILED", requestId, sessionId: result.sessionId ?? sessionId, model: result.model, latencyMs: result.latencyMs, decision: parseDecision("") };
+  const decision = parseDecision(result.text);
+  console.info("DECISION_AGENT_RESULT", JSON.stringify({ action: decision.action, confidence: decision.analysisConfidence, model: result.model, latencyMs: result.latencyMs, sessionId: result.sessionId }));
+  return { status: decision.action === "UNAVAILABLE" ? "ERROR" : "OK", reason: decision.action === "UNAVAILABLE" ? "INVALID_DECISION_JSON" : null, requestId, sessionId: result.sessionId ?? sessionId, model: result.model, latencyMs: result.latencyMs, decision };
 }

@@ -124,39 +124,60 @@ describe("parser fail-closed e UNKNOWN/null preservado", () => {
   });
 });
 
-describe("contrato do agente de visao (especificacao operacional TraceCom)", () => {
+describe("VISUAL MARKET OBSERVER — factual, nunca decide", () => {
   const prompt = (goModule as Record<string, unknown>).VISION_PROMPT as string;
-  it("embute a ordem obrigatoria e as regras anti-alucinacao", () => {
-    expect(prompt).toContain("REGIME->STRUCTURE->LOCATION->MOMENTUM->VOLATILITY->TREND_STRENGTH->MICROSTRUCTURE->TRIGGER->DECISION");
-    expect(prompt).toContain("WAIT (WAIT is a valid");
-    expect(prompt).toContain("estimatedWinProbability must be null");
-    expect(prompt).toContain("never chase extended moves");
-    expect(prompt).toContain("LOW weight, never a trigger");
-    expect(prompt).toContain("null when not visible");
+  it("proibe decisao/explicacao e define extracao factual", () => {
+    expect(prompt).toContain("VISUAL MARKET OBSERVER");
+    expect(prompt).toContain("Do NOT decide BUY/SELL/WAIT");
+    expect(prompt).toContain("NEVER invent numbers");
+    expect(prompt).toContain("bodyTopY");
+    expect(prompt).toContain("visualIndicators");
+    expect(prompt).not.toContain('"decision"');
+    expect(prompt).not.toContain("estimatedWinProbability");
+    expect(prompt).not.toContain("analysisConfidence");
   });
-  it("decision WAIT por padrao e estimatedWinProbability sempre null (confianca != probabilidade)", () => {
-    const base = normalizeObservation({ symbol: "EUR/USD" }, { provider: "openCodeGo", model: "qwen3.7-plus", requestId: "c1", status: "OK", latencyMs: 1000, sessionId: "tc", frameId: null, timestamp: "t", parseMode: "DIRECT" });
-    const analysis = base.analysis as Record<string, unknown>;
-    const decision = analysis.decision as Record<string, unknown>;
-    expect(decision.action).toBe("WAIT");
-    expect(decision.analysisConfidence).toBe(0);
+  it("observacao factual NAO contem decision/analysis (decisao nao pertence ao Vision)", () => {
+    const observation = normalizeObservation({ symbol: "EUR/USD", candles: [{ x: 10, bodyTopY: 100, bodyBottomY: 120, wickTopY: 95, wickBottomY: 125, direction: "UP" }] }, { provider: "openCodeGo", model: "qwen3.7-plus", requestId: "f1", status: "OK", latencyMs: 1000, sessionId: "tc", frameId: null, timestamp: "t", parseMode: "DIRECT" }) as Record<string, unknown>;
+    expect(observation.decision).toBeUndefined();
+    expect(observation.analysis).toBeUndefined();
+    const candles = observation.candles as Array<Record<string, unknown>>;
+    expect(candles).toHaveLength(1);
+    expect(candles[0]).toMatchObject({ bodyTopY: 100, bodyBottomY: 120, direction: "UP" });
+  });
+  it("geometria/indicadores normalizados com fail-closed e null preservado", () => {
+    const observation = normalizeObservation({ symbol: "EUR/USD", candles: [{ direction: "WEIRD" }, 42], visualIndicators: { rsi: { visible: true, period: 14, displayedValue: null, slopeVisual: "UPUP", geometry: [{ x: 1, y: 2 }, { x: null, y: 3 }] } } }, { provider: "openCodeGo", model: "qwen3.7-plus", requestId: "f2", status: "OK", latencyMs: 1000, sessionId: "tc", frameId: null, timestamp: "t", parseMode: "DIRECT" }) as Record<string, any>;
+    const candles = observation.candles as Array<Record<string, unknown>>;
+    expect(candles).toHaveLength(2);
+    expect(candles[0]!.direction).toBe("DOJI");
+    expect(observation.visualIndicators.rsi).toMatchObject({ visible: true, period: 14, displayedValue: null, slopeVisual: null });
+    expect(observation.visualIndicators.rsi.geometry).toHaveLength(1);
+  });
+});
+
+describe("DECISION AGENT — numeros calculados, WAIT-first, fail-closed", () => {
+  const go = goModule as Record<string, unknown>;
+  it("prompt embute os valores calculados e proibe recalcular/inventar", () => {
+    const prompt = (go.buildDecisionPrompt as (context: unknown) => string)({ market: { timeframeSeconds: 5 }, causalPrice: { value: 1.1537 }, deterministicIndicators: { rsi14: { value: 47.82, source: "DETERMINISTIC_CALCULATION" }, adx14: { value: 21.31, source: "DETERMINISTIC_CALCULATION" } }, microstructure: null, visualObservation: null, freshness: null, provenance: null });
+    expect(prompt).toContain("47.82");
+    expect(prompt).toContain("21.31");
+    expect(prompt).toContain("1.1537");
+    expect(prompt).toContain("never recompute");
+    expect(prompt).toContain("WAIT-FIRST");
+    expect(prompt).toContain("estimatedWinProbability MUST be null");
+  });
+  it("parseDecision valido preserva action/confianca clampada e forca estimatedWinProbability null", () => {
+    const decision = (go.parseDecision as (text: string) => Record<string, unknown>)('{"action":"BUY","analysisConfidence":150,"estimatedWinProbability":0.9,"referencePrice":1.1537,"regime":"UPTREND","trigger":"micro-break","supportingEvidence":["a"],"contradictingEvidence":[],"primaryRisk":"timing","whatWouldChange":["x"]}');
+    expect(decision.action).toBe("BUY");
+    expect(decision.analysisConfidence).toBe(100);
     expect(decision.estimatedWinProbability).toBeNull();
-    const risky = normalizeObservation({ symbol: "EUR/USD", decision: { action: "BUY", analysisConfidence: 150, estimatedWinProbability: 0.85 } }, { provider: "openCodeGo", model: "qwen3.7-plus", requestId: "c2", status: "OK", latencyMs: 1000, sessionId: "tc", frameId: null, timestamp: "t", parseMode: "DIRECT" });
-    const riskyDecision = (risky.analysis as Record<string, unknown>).decision as Record<string, unknown>;
-    expect(riskyDecision.action).toBe("BUY");
-    expect(riskyDecision.analysisConfidence).toBe(100);
-    expect(riskyDecision.estimatedWinProbability).toBeNull();
+    expect(decision.referencePrice).toBe(1.1537);
   });
-  it("enums invalidos caem para UNKNOWN/UNCERTAIN (fail-closed) e validos sao preservados", () => {
-    const observation = normalizeObservation({ symbol: "EUR/USD", regime: { type: "BREAKOUT_MAGIC" }, donchian: { location: "LOWER", breakout: "CONFIRMED" }, rsi: { zone: "OVERHEATED" }, adx: { strength: "STRONG", directionalBias: "BEARISH" }, atr: { state: "EXPANDING" } }, { provider: "openCodeGo", model: "qwen3.7-plus", requestId: "c3", status: "OK", latencyMs: 1000, sessionId: "tc", frameId: null, timestamp: "t", parseMode: "DIRECT" });
-    const analysis = observation.analysis as Record<string, any>;
-    expect(analysis.regime.type).toBe("UNCERTAIN");
-    expect(analysis.donchian.location).toBe("LOWER");
-    expect(analysis.donchian.breakout).toBe("CONFIRMED");
-    expect(analysis.rsi.zone).toBe("UNKNOWN");
-    expect(analysis.adx.strength).toBe("STRONG");
-    expect(analysis.adx.directionalBias).toBe("BEARISH");
-    expect(analysis.atr.state).toBe("EXPANDING");
+  it("parseDecision invalido → UNAVAILABLE (fail-closed), WAIT e SELL validos", () => {
+    const invalid = (go.parseDecision as (text: string) => Record<string, unknown>)("isso nao e json");
+    expect(invalid.action).toBe("UNAVAILABLE");
+    expect(invalid.estimatedWinProbability).toBeNull();
+    expect((go.parseDecision as (text: string) => Record<string, unknown>)('{"action":"WAIT","analysisConfidence":20}').action).toBe("WAIT");
+    expect((go.parseDecision as (text: string) => Record<string, unknown>)('{"action":"SELL","analysisConfidence":61}').action).toBe("SELL");
   });
 });
 

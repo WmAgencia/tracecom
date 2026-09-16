@@ -234,6 +234,18 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     recordLatency("vision", visionLatencyMs);
     console.info("OPENCODE_GO_VISION_ACTIVE", JSON.stringify({ model: proxy.model || openCodeModel, requestId: typeof payload.requestId === "string" ? payload.requestId : null, latencyMs: visionLatencyMs, sessionId: proxy.sessionId || null }));
   }
+  let decisionAgent: Record<string, unknown> | null = null;
+  let decisionTimestamps: Record<string, unknown> | null = null;
+  let decisionFreshness: Record<string, unknown> | null = null;
+  if (openCodeGoActive && visionObservation !== null) {
+    const decisionStarted = Date.now();
+    const decisionProxy = await relayAdminPost("/api/ai/go/decision", { frameCapturedAt: pipelineStarted, visionObservation, requestId: typeof payload.requestId === "string" ? payload.requestId : null, sessionContext: { sessionId: typeof snapshotObject.sessionId === "string" ? snapshotObject.sessionId : null, traceId: typeof snapshotObject.traceId === "string" ? snapshotObject.traceId : null, segmentId: typeof snapshotObject.segmentId === "string" ? snapshotObject.segmentId : null } }, 35_000);
+    const decisionCompleted = Date.now();
+    decisionAgent = decisionProxy && decisionProxy.decision && typeof decisionProxy.decision === "object" ? decisionProxy.decision as Record<string, unknown> : { action: "UNAVAILABLE", analysisConfidence: 0, estimatedWinProbability: null, primaryRisk: "DECISION_AGENT_UNAVAILABLE" };
+    decisionFreshness = decisionProxy && decisionProxy.freshness && typeof decisionProxy.freshness === "object" ? decisionProxy.freshness as Record<string, unknown> : { fresh: false, reason: "FRESHNESS_UNAVAILABLE" };
+    decisionTimestamps = { pipelineStartedAt: pipelineStarted, visionLatencyMs, decisionStartedAt: decisionStarted, decisionCompletedAt: decisionCompleted, decisionLatencyMs: decisionCompleted - decisionStarted, observationAgeMs: decisionProxy?.freshness && typeof decisionProxy.freshness === "object" ? (decisionProxy.freshness as Record<string, unknown>).observationAgeMs ?? null : null };
+    console.info("DECISION_AGENT_ACTIVE", JSON.stringify({ action: decisionAgent.action, confidence: decisionAgent.analysisConfidence, fresh: decisionFreshness.fresh, decisionLatencyMs: decisionTimestamps.decisionLatencyMs }));
+  }
   if (visionEnabled && images[0] && !openCodeGoActive) {
     const visionStarted = Date.now();
     console.info("CLAUDE_VISION_REQUEST_STARTED", JSON.stringify({ requestId: typeof payload.requestId === "string" ? payload.requestId : null, model: visionModel, hasImage: true, imageBytes: receivedImage?.byteLength || 0, imageHash: receivedImage?.hash || null }));
@@ -329,6 +341,9 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     recordLatency("total", totalMs);
     return {
       model: { modelId: openCodeGoActive ? openCodeModel : model, displayName: openCodeGoActive ? `OpenCode Go (${openCodeModel})` : "Fable 5.1" },
+      decisionAgent,
+      decisionTimestamps,
+      decisionFreshness,
       analysis: {
         decision, confidence: bounded(parsed?.confidence, 0), rawModelScores: { buy: finiteOrNull(parsed?.rawBuyScore), sell: finiteOrNull(parsed?.rawSellScore), wait: finiteOrNull(parsed?.rawWaitScore) }, pBuy, pSell, pWait, directionalLean: debate.arbiter.directionalLean, leanConfidence: debate.arbiter.leanConfidence, agentRunIds: agentRuns!.runIds, arbiterRunId: agentRuns!.arbiterRunId, fusionRunId: agentRuns!.fusionRunId, bullRunId: agentRuns!.bullRunId, bearRunId: agentRuns!.bearRunId, specialistRunIds: agentRuns!.specialistRunIds, multiAgent: { ...debate, advocates, mode: process.env.MULTI_AGENT_MODE || "TEXT_SPECIALISTS", control, challenger, agreement: control.decision === challenger.decision && control.directionalLean === challenger.directionalLean }, timing: { visionMs: visionLatencyMs, fableMs: Date.now() - fableStarted, totalMs }, latencyMetrics: allLatencyStats(), probabilitySource, candleSeconds: Number(snapshotObject.candleSeconds) || 5, expirationSeconds: Number(snapshotObject.horizonSeconds) || 60, dataQuality: Math.min(baseQuality, bounded(parsed?.dataQuality, baseQuality)), imageUsed: imageUsed && visionObservation?.imageProvided === true, imageStatus: imageUsed && visionObservation?.imageProvided === true ? "IMAGE_PROVIDED" : "IMAGE_NOT_PROVIDED", visionObservation, visionTransport: { frameId: receivedImage?.frameId || null, hasImage: imageUsed && visionObservation?.imageProvided === true, imageBytes: Number(visionObservation?.imageBytes) || receivedImage?.byteLength || 0, imageHash: visionObservation?.imageHash || receivedImage?.hash || null, provider: openCodeGoActive ? "opencode-go-vision" : "nexxus-vision", model: openCodeGoActive ? openCodeModel : visionModel },
         framesUsed: Math.min(4, Number(parsed?.framesUsed) || images.length), visualBias, quantBias, confluence: bounded(parsed?.confluence, quantAvailable && quantBias === visualBias ? .8 : 0),
