@@ -57,8 +57,8 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionResult 
   const candidateWilson = wilsonLowerBound(evidence.candidateWins, candidateDecided);
   const championWilson = wilsonLowerBound(evidence.championWins, championDecided);
   const reasons: string[] = [];
-  if (evidence.validationN < PROMOTION_REQUIRED_NEW_TRADES) {
-    reasons.push(`INSUFFICIENT_EVIDENCE: validationN=${evidence.validationN} < ${PROMOTION_REQUIRED_NEW_TRADES} trades novos exigidos`);
+  if (evidence.validationN < PROMOTION_REQUIRED_NEW_TRADES || candidateDecided < PROMOTION_REQUIRED_NEW_TRADES) {
+    reasons.push(`INSUFFICIENT_EVIDENCE: validationN=${evidence.validationN}, decided=${candidateDecided} < ${PROMOTION_REQUIRED_NEW_TRADES} trades novos exigidos`);
     return { decision: "INSUFFICIENT_EVIDENCE", reasons, candidateWr, championWr, candidateWilsonLower: candidateWilson, championWilsonLower: championWilson };
   }
   if (council(candidateWr, championWr)) reasons.push(`REJECT: ${Number(candidateWr).toFixed(2)}% < champion ${Number(championWr).toFixed(2)}%`);

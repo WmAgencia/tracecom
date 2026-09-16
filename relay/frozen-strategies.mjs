@@ -176,7 +176,7 @@ async function settleFrozenDue(pool, now) {
   let settled = 0;
   for (const signal of due) {
     const targetBucket = Number(signal.signal_bucket) + Number(signal.horizon_seconds) * 1000;
-    const ref = (await pool.query("SELECT value FROM price_observations WHERE session_id=$1 AND status='ACCEPTED' AND observed_at >= to_timestamp($2/1000.0) AND observed_at < to_timestamp($3/1000.0) ORDER BY observed_at DESC LIMIT 1", [signal.session_id, targetBucket, targetBucket + 5000])).rows[0];
+    const ref = (await pool.query("SELECT value FROM price_observations WHERE session_id=$1 AND status='ACCEPTED' AND observed_at >= to_timestamp($2/1000.0) AND observed_at < to_timestamp($3/1000.0) AND ($4::text IS NULL OR segment_id = $4) ORDER BY observed_at DESC LIMIT 1", [signal.session_id, targetBucket, targetBucket + 5000, signal.segment_id ?? null])).rows[0];
     if (ref) {
       const outcome = settleFrozen(signal.direction, Number(signal.entry_price), Number(ref.value));
       await pool.query("UPDATE frozen_signals SET settled_outcome=$2, settlement_price=$3, settlement_bucket=$4, settled_at=now(), settlement_attempts=settlement_attempts+1 WHERE id=$1 AND settled_outcome IS NULL", [signal.id, outcome, Number(ref.value), targetBucket]);
@@ -245,7 +245,8 @@ export async function maybeAutoSelect(pool) {
   if (selection.mode !== "AUTO") return { changed: false, reason: "MODE_MANUAL" };
   const stats = await frozenStats(pool);
   const eligible = stats.map((entry) => {
-    const wr = wrOf(entry);
+    const decidedIndep = entry.independentWins + entry.independentLosses;
+    const wr = decidedIndep > 0 ? +((entry.independentWins / decidedIndep) * 100).toFixed(2) : null;
     const wilson = autoWilsonLower(entry.independentWins, entry.independentN);
     const ok = entry.independentN >= AUTO_MIN_INDEPENDENT_N && wr !== null && wr >= AUTO_BREAKEVEN_WR + AUTO_MIN_EDGE_PP && wilson !== null;
     return { entry, wr, wilson, ok };
