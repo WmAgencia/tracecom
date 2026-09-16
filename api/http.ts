@@ -227,7 +227,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
   let visionObservation: Record<string, unknown> | null = null;
   if (visionEnabled && images[0] && openCodeGoActive) {
     const visionStarted = Date.now();
-    const proxy = await relayAdminPost("/api/ai/go/vision", { imageDataUrl: images[0].dataUrl, frameId: images[0].frameId, requestId: typeof payload.requestId === "string" ? payload.requestId : null, sessionContext: { sessionId: typeof snapshotObject.sessionId === "string" ? snapshotObject.sessionId : null, traceId: typeof snapshotObject.traceId === "string" ? snapshotObject.traceId : null, segmentId: typeof snapshotObject.segmentId === "string" ? snapshotObject.segmentId : null } }, 25_000);
+    const proxy = await relayAdminPost("/api/ai/go/vision", { imageDataUrl: images[0].dataUrl, frameId: images[0].frameId, requestId: typeof payload.requestId === "string" ? payload.requestId : null, sessionContext: { sessionId: typeof snapshotObject.sessionId === "string" ? snapshotObject.sessionId : null, traceId: typeof snapshotObject.traceId === "string" ? snapshotObject.traceId : null, segmentId: typeof snapshotObject.segmentId === "string" ? snapshotObject.segmentId : null } }, 35_000);
     if (!proxy || proxy.status !== "OK" || !proxy.observation) throw new Error(`OPENCODE_GO_VISION_FAILED:${String(proxy?.reason || proxy?.status || "relay_unreachable").slice(0, 120)}`);
     visionObservation = proxy.observation as Record<string, unknown>;
     visionLatencyMs = Number(proxy.latencyMs) || Date.now() - visionStarted;

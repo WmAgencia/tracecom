@@ -124,9 +124,9 @@ describe("parser fail-closed e UNKNOWN/null preservado", () => {
   });
 });
 
-describe("timeouts — coerentes com evidência real (~3,0-4,9s)", () => {
-  it("vision e texto com 20s documentados (margem >3x sobre o pior caso observado)", () => {
-    expect(VISION_TIMEOUT_MS).toBe(20_000);
+describe("timeouts — coerentes com evidência real (texto 3-8s; vision JSON pode passar de 20s)", () => {
+  it("vision 30s e texto 20s documentados (margem >3x o pior caso observado; nunca infinito)", () => {
+    expect(VISION_TIMEOUT_MS).toBe(30_000);
     expect(TEXT_TIMEOUT_MS).toBe(20_000);
     expect(VISION_TIMEOUT_MS).toBeGreaterThan(4_900 * 3);
     expect(VISION_TIMEOUT_MS).toBeLessThanOrEqual(30_000); // nunca request infinito

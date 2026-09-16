@@ -7,7 +7,7 @@
 import crypto from "node:crypto";
 
 export const OPENCODE_GO_BASE = "https://opencode.ai/zen/go/v1";
-export const VISION_TIMEOUT_MS = 20_000; // evidencia real: 3,0-4,9s + margem
+export const VISION_TIMEOUT_MS = 30_000; // evidencia: texto 3-8s; vision JSON com crop real pode passar de 20s → 30s (limite, nunca infinito)
 export const TEXT_TIMEOUT_MS = 20_000;
 export const DEFAULT_MODEL = "qwen3.7-plus";
 
@@ -31,7 +31,7 @@ export function buildVisionRequest({ model, imageDataUrl, prompt, sessionId }) {
   return {
     url: `${OPENCODE_GO_BASE}/chat/completions`,
     headers: { "content-type": "application/json", "x-opencode-session": sessionId },
-    body: { model, max_tokens: 900, messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: imageDataUrl } }] }] },
+    body: { model, max_tokens: 420, messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: imageDataUrl } }] }] },
   };
 }
 
@@ -53,6 +53,11 @@ export function parseStructured(text) {
 }
 
 function textOrNull(value, max = 120) { return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null; }
+/** Mensagem de erro do provider, redigida contra segredos (nunca contem a key; defesa em profundidade). */
+export function safeProviderError(text, max = 200) {
+  if (typeof text !== "string" || !text) return null;
+  return text.replace(/sk-[A-Za-z0-9_\-]+/g, "sk-***").slice(0, max);
+}
 function numberOrNull(value) { if (value === null || value === undefined) return null; const raw = String(value).replace(",", ".").trim(); if (!raw) return null; const parsed = Number(raw); return Number.isFinite(parsed) ? parsed : null; }
 function boolOrNull(value) { return typeof value === "boolean" ? value : null; }
 
@@ -116,7 +121,7 @@ export async function runVisionProvider(pool, { imageDataUrl, frameId = null, re
   const provenanceBase = { provider: "openCodeGo", model: config ? resolveModel(config) : null, requestId, frameId, sessionId, timestamp: new Date().toISOString(), status: "PENDING", latencyMs: null };
   if (!config || config.provider !== "openCodeGo") return failedObservation({ ...provenanceBase, status: "ERROR" }, "PROVIDER_NOT_CONFIGURED");
   const model = resolveModel(config);
-  const prompt = "RETURN JSON ONLY. Analyze this sanitized IQ Option chart crop. Shape: {\"symbol\":string|null,\"marketType\":\"OTC\"|\"FIXED\"|null,\"timeframeSeconds\":number|null,\"price\":number|null,\"investmentValue\":number|null,\"expirationSeconds\":number|null,\"trend\":\"BULLISH\"|\"BEARISH\"|\"SIDEWAYS\"|null,\"structure\":string|null,\"momentum\":\"UP\"|\"DOWN\"|\"NEUTRAL\"|null,\"volatility\":\"LOW\"|\"NORMAL\"|\"HIGH\"|null,\"visibleCandleCount\":number|null,\"visualQuality\":{\"candlesReadable\":boolean,\"assetReadable\":boolean,\"priceReadable\":boolean},\"manualPosition\":{\"hasOpenPosition\":boolean,\"state\":string,\"direction\":\"BUY\"|\"SELL\"|\"UNKNOWN\",\"confidence\":number|null,\"evidence\":string[]},\"evidence\":string[]}. Use null when a field is not visible in the crop. Never infer account balance, identity, broker controls or position direction from candle color. The crop may omit fields; null is valid and preferred over guessing.";
+  const prompt = "RETURN JSON ONLY (no prose). Sanitized IQ Option chart crop. Shape: {\"symbol\":string|null,\"marketType\":\"OTC\"|\"FIXED\"|null,\"timeframeSeconds\":number|null,\"price\":number|null,\"investmentValue\":number|null,\"expirationSeconds\":number|null,\"trend\":string|null,\"structure\":string|null,\"momentum\":string|null,\"volatility\":string|null,\"visibleCandleCount\":number|null,\"visualQuality\":{\"candlesReadable\":boolean,\"assetReadable\":boolean,\"priceReadable\":boolean},\"manualPosition\":{\"hasOpenPosition\":boolean,\"state\":string,\"direction\":\"BUY\"|\"SELL\"|\"UNKNOWN\",\"confidence\":number|null,\"evidence\":string[]},\"evidence\":string[]}. null when not visible; never guess; no markdown.";
   const request = buildVisionRequest({ model, imageDataUrl, prompt, sessionId });
   try {
     const result = await callProvider(request, config.apiKey, VISION_TIMEOUT_MS);
@@ -125,7 +130,7 @@ export async function runVisionProvider(pool, { imageDataUrl, frameId = null, re
     const parsed = parseStructured(typeof answer === "string" ? answer : Array.isArray(answer) ? answer.map((part) => part?.text ?? "").join("") : "");
     const status = result.status === 200 && parsed ? "OK" : "ERROR";
     const provenance = { ...provenanceBase, status, latencyMs: result.latencyMs, parseMode: parsed ? "DIRECT" : "FAILED" };
-    if (status !== "OK") { console.info("OPENCODE_GO_VISION_FAILED", JSON.stringify({ requestId, frameId, httpStatus: result.status, latencyMs: result.latencyMs, sessionId })); return failedObservation(provenance, result.status === 200 ? "VISION_INVALID_JSON" : `OPENCODE_GO_HTTP_${result.status}`); }
+    if (status !== "OK") { console.info("OPENCODE_GO_VISION_FAILED", JSON.stringify({ requestId, frameId, httpStatus: result.status, latencyMs: result.latencyMs, sessionId, providerError: safeProviderError(result.text) })); return failedObservation(provenance, result.status === 200 ? "VISION_INVALID_JSON" : `OPENCODE_GO_HTTP_${result.status}`); }
     console.info("OPENCODE_GO_VISION_OK", JSON.stringify({ model, requestId, frameId, latencyMs: result.latencyMs, sessionId }));
     return normalizeObservation(parsed, provenance);
   } catch (error) {
