@@ -571,13 +571,8 @@ async function fetchStrategyStats(): Promise<Record<string, unknown>> {
 
 const AI_PROVIDER_CONFIG_PATH = "ai-provider/config.json";
 async function readAiProviderConfig(): Promise<Record<string, unknown> | null> {
-  try {
-    const object = await get(AI_PROVIDER_CONFIG_PATH, { access: "private", useCache: false });
-    if (!object || object.statusCode !== 200) return null;
-    const bytes = await new Response(object.stream).arrayBuffer();
-    const parsed = JSON.parse(Buffer.from(bytes).toString("utf8")) as Record<string, unknown>;
-    return parsed && typeof parsed === "object" ? parsed : null;
-  } catch { return null; }
+  if (!process.env.TRACECOM_LIVE_RELAY_URL || !process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET) return null;
+  try { return await relayAdminGet("/api/ai/provider"); } catch { return null; }
 }
 function maskApiKey(key: string): string { const trimmed = key.trim(); return trimmed.length <= 4 ? "••••" : `••••${trimmed.slice(-4)}`; }
 
@@ -710,21 +705,18 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
     if (path === "/api/ai/provider" && req.method === "GET") {
       const config = await readAiProviderConfig();
-      if (!config || typeof config.apiKey !== "string" || config.apiKey.length < 8) { json(200, { status: "NOT_CONFIGURED", provider: "openCodeGo", model: null, maskedKey: null, updatedAt: null }); return; }
-      json(200, { status: "CONFIGURED", provider: typeof config.provider === "string" ? config.provider : "openCodeGo", model: typeof config.model === "string" ? config.model : null, maskedKey: maskApiKey(config.apiKey), updatedAt: typeof config.updatedAt === "string" ? config.updatedAt : null, shadowOnly: true });
+      if (!config || config.status !== "CONFIGURED" || typeof config.maskedKey !== "string") { json(200, { status: "NOT_CONFIGURED", provider: "openCodeGo", model: null, maskedKey: null, updatedAt: null }); return; }
+      json(200, { status: "CONFIGURED", provider: typeof config.provider === "string" ? config.provider : "openCodeGo", model: typeof config.model === "string" ? config.model : null, maskedKey: config.maskedKey, updatedAt: typeof config.updatedAt === "string" ? config.updatedAt : null, shadowOnly: true });
       return;
     }
     if (path === "/api/ai/provider" && req.method === "PUT") {
       const apiKey = String(operationalInput.apiKey ?? "").trim();
       const model = typeof operationalInput.model === "string" && /^[a-z0-9.\-]{2,64}$/i.test(operationalInput.model.trim()) ? operationalInput.model.trim() : null;
       if (apiKey.length < 20 || apiKey.length > 300 || /\s/.test(apiKey)) { json(400, { error: "invalid_api_key" }); return; }
-      try {
-        const existing = (await readAiProviderConfig()) ?? {};
-        const record = { ...existing, provider: "openCodeGo", apiKey, model: model ?? (typeof existing.model === "string" ? existing.model : null), updatedAt: new Date().toISOString() };
-        await del(AI_PROVIDER_CONFIG_PATH).catch(() => undefined);
-        await put(AI_PROVIDER_CONFIG_PATH, JSON.stringify(record), { access: "private", addRandomSuffix: false, contentType: "application/json", cacheControlMaxAge: 0 } as never);
-        json(200, { status: "CONFIGURED", provider: "openCodeGo", model: record.model, maskedKey: maskApiKey(apiKey), updatedAt: record.updatedAt, shadowOnly: true });
-      } catch { json(502, { error: "provider_store_unavailable" }); }
+      const stored = await relayAdminSend("PUT", "/api/ai/provider", { provider: "openCodeGo", apiKey, model });
+      if (!stored) { json(502, { error: "provider_store_unavailable" }); return; }
+      const config = await readAiProviderConfig();
+      json(200, { status: "CONFIGURED", provider: "openCodeGo", model: config && typeof config.model === "string" ? config.model : model, maskedKey: maskApiKey(apiKey), updatedAt: new Date().toISOString(), shadowOnly: true });
       return;
     }
     if (path === "/api/strategies/stats" && req.method === "GET") {
