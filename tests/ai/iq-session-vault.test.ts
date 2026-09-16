@@ -2,7 +2,15 @@
 import { describe, expect, it } from "vitest";
 // @ts-expect-error - relay ESM sem tipagem (validado em runtime)
 const vault = await import("../../relay/iq-session-vault.mjs");
-const { clearSession, decryptSecret, deriveKey, encryptSecret, loadSession, saveSession } = vault as unknown as Record<string, (...args: any[]) => any>;
+const vaultApi = vault as unknown as {
+  clearSession: (pool: unknown) => Promise<unknown>;
+  decryptSecret: (sealed: { enc: string; iv: string; tag: string }, key: Buffer) => string;
+  deriveKey: (secret: string) => Buffer;
+  encryptSecret: (plain: string, key: Buffer) => { enc: string; iv: string; tag: string };
+  loadSession: (pool: unknown, secret: string) => Promise<{ ssid: string; emailMasked: string | null; connectedAt: number | null } | null>;
+  saveSession: (pool: unknown, secret: string, record: { ssid: string; emailMasked?: string | null; connectedAt?: number | null }) => Promise<unknown>;
+};
+const { clearSession, decryptSecret, deriveKey, encryptSecret, loadSession, saveSession } = vaultApi;
 
 const SECRET = "server-side-signing-secret";
 
