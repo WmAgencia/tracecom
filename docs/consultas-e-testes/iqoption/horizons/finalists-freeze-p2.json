@@ -1,0 +1,48 @@
+{
+ "frozen_at": "2026-09-16T00:55:02.507Z",
+ "rule": "Promocao SOMENTE com WR prospectivo >= 70% (com n e indepN reportados). Nenhum ajuste pos-freeze.",
+ "hypotheses": [
+  {
+   "id": "H1_V1_at_T45s",
+   "strategy": "V1 (Fib RSI Reversal)",
+   "market": "BINARY",
+   "horizon_s": 45,
+   "spec": {
+    "type": "prod",
+    "id": "reversion-v1-fib"
+   },
+   "hash": "70a7bfcb568bec8c",
+   "discovery": {
+    "wr": 63.77,
+    "n": 138,
+    "base": 52.36,
+    "indepN": 6
+   }
+  },
+  {
+   "id": "H2_V8_at_T60s",
+   "strategy": "V8 (ATR1x+Fib)",
+   "market": "OTC",
+   "horizon_s": 60,
+   "spec": {
+    "op": "gateFib",
+    "innerSpec": {
+     "type": "atr_over",
+     "m": 1
+    }
+   },
+   "hash": "f0b6b88cb5968287",
+   "discovery": {
+    "wr": 54.07,
+    "n": 135,
+    "base": 48.91,
+    "indepN": 5
+   }
+  }
+ ],
+ "secondary_reads": [
+  "H1 tambem no OTC",
+  "H2 tambem no BINARY",
+  "mesmas estrategias em T+60/T+45/T+300 para contexto"
+ ]
+}

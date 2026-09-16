@@ -1,0 +1,366 @@
+{
+ "generated_at": "2026-09-16T00:55:02.513Z",
+ "tranche": "P2",
+ "window": {
+  "from": "2026-09-16T00:01:33.001Z",
+  "to": "2026-09-16T00:20:02.513Z",
+  "hours": 0.31
+ },
+ "freeze_at": "2026-09-16T00:55:02.507Z",
+ "datasets": {
+  "IQOPTION_EURUSD_BINARY_P2": {
+   "ticks": 2451,
+   "pages": 1,
+   "candles": 223,
+   "rows": 183,
+   "baseP": {
+    "l45": 53.66,
+    "l60": 51.53,
+    "l300": 67.5
+   },
+   "frozen": [
+    {
+     "id": "H1_V1_at_T45s",
+     "market": "BINARY",
+     "horizon": "T+45s",
+     "frozen_hash": "70a7bfcb568bec8c",
+     "hash_recomputed": "70a7bfcb568bec8c",
+     "discovery": {
+      "wr": 63.77,
+      "n": 138,
+      "base": 52.36,
+      "indepN": 6
+     },
+     "prospective": {
+      "signals": 3,
+      "w": 1,
+      "l": 2,
+      "draws": 1,
+      "unknown": 0,
+      "wr": 33.33,
+      "buyNWR": "3/33.3",
+      "sellNWR": "0/-",
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": -20.33,
+      "ci95": [
+       6.15,
+       79.23
+      ]
+     }
+    },
+    {
+     "id": "H2_V8_at_T60s",
+     "market": "OTC",
+     "horizon": "T+60s",
+     "frozen_hash": "f0b6b88cb5968287",
+     "hash_recomputed": "f0b6b88cb5968287",
+     "discovery": {
+      "wr": 54.07,
+      "n": 135,
+      "base": 48.91,
+      "indepN": 5
+     },
+     "prospective": {
+      "signals": 3,
+      "w": 1,
+      "l": 2,
+      "draws": 0,
+      "unknown": 1,
+      "wr": 33.33,
+      "buyNWR": "3/33.3",
+      "sellNWR": "0/-",
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": -18.2,
+      "ci95": [
+       6.15,
+       79.23
+      ]
+     }
+    }
+   ],
+   "secondary": [
+    {
+     "id": "V1@T45s(binary-spec) em OTC",
+     "horizon": "l45",
+     "signals": 3,
+     "w": 1,
+     "l": 2,
+     "draws": 1,
+     "unknown": 0,
+     "wr": 33.33,
+     "buyNWR": "3/33.3",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": -20.33,
+     "ci95": [
+      6.15,
+      79.23
+     ]
+    },
+    {
+     "id": "V1@T60s",
+     "horizon": "l60",
+     "signals": 4,
+     "w": 1,
+     "l": 3,
+     "draws": 0,
+     "unknown": 0,
+     "wr": 25,
+     "buyNWR": "4/25",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": -26.53,
+     "ci95": [
+      4.56,
+      69.94
+     ]
+    },
+    {
+     "id": "V1@T300s",
+     "horizon": "l300",
+     "signals": 3,
+     "w": 1,
+     "l": 2,
+     "draws": 0,
+     "unknown": 1,
+     "wr": 33.33,
+     "buyNWR": "3/33.3",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": -34.17,
+     "ci95": [
+      6.15,
+      79.23
+     ]
+    },
+    {
+     "id": "V8@T60s",
+     "horizon": "l60",
+     "signals": 3,
+     "w": 1,
+     "l": 2,
+     "draws": 0,
+     "unknown": 1,
+     "wr": 33.33,
+     "buyNWR": "3/33.3",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": -18.2,
+     "ci95": [
+      6.15,
+      79.23
+     ]
+    },
+    {
+     "id": "V8@T45s",
+     "horizon": "l45",
+     "signals": 2,
+     "w": 1,
+     "l": 1,
+     "draws": 1,
+     "unknown": 1,
+     "wr": 50,
+     "buyNWR": "2/50",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": -3.66,
+     "ci95": [
+      9.45,
+      90.55
+     ]
+    },
+    {
+     "id": "V8@T300s",
+     "horizon": "l300",
+     "signals": 1,
+     "w": 1,
+     "l": 0,
+     "draws": 0,
+     "unknown": 3,
+     "wr": 100,
+     "buyNWR": "1/100",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": 32.5,
+     "ci95": [
+      20.65,
+      100
+     ]
+    }
+   ]
+  },
+  "IQOPTION_EURUSD_OTC_P2": {
+   "ticks": 4404,
+   "pages": 2,
+   "candles": 223,
+   "rows": 183,
+   "baseP": {
+    "l45": 38.32,
+    "l60": 34.5,
+    "l300": 9.92
+   },
+   "frozen": [
+    {
+     "id": "H1_V1_at_T45s",
+     "market": "BINARY",
+     "horizon": "T+45s",
+     "frozen_hash": "70a7bfcb568bec8c",
+     "hash_recomputed": "70a7bfcb568bec8c",
+     "discovery": {
+      "wr": 63.77,
+      "n": 138,
+      "base": 52.36,
+      "indepN": 6
+     },
+     "prospective": {
+      "signals": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyNWR": "0/-",
+      "sellNWR": "0/-",
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "ci95": null
+     }
+    },
+    {
+     "id": "H2_V8_at_T60s",
+     "market": "OTC",
+     "horizon": "T+60s",
+     "frozen_hash": "f0b6b88cb5968287",
+     "hash_recomputed": "f0b6b88cb5968287",
+     "discovery": {
+      "wr": 54.07,
+      "n": 135,
+      "base": 48.91,
+      "indepN": 5
+     },
+     "prospective": {
+      "signals": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyNWR": "0/-",
+      "sellNWR": "0/-",
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "ci95": null
+     }
+    }
+   ],
+   "secondary": [
+    {
+     "id": "V1@T45s(binary-spec) em OTC",
+     "horizon": "l45",
+     "signals": 0,
+     "w": 0,
+     "l": 0,
+     "draws": 0,
+     "unknown": 0,
+     "wr": null,
+     "buyNWR": "0/-",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": null,
+     "ci95": null
+    },
+    {
+     "id": "V1@T60s",
+     "horizon": "l60",
+     "signals": 0,
+     "w": 0,
+     "l": 0,
+     "draws": 0,
+     "unknown": 0,
+     "wr": null,
+     "buyNWR": "0/-",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": null,
+     "ci95": null
+    },
+    {
+     "id": "V1@T300s",
+     "horizon": "l300",
+     "signals": 0,
+     "w": 0,
+     "l": 0,
+     "draws": 0,
+     "unknown": 0,
+     "wr": null,
+     "buyNWR": "0/-",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": null,
+     "ci95": null
+    },
+    {
+     "id": "V8@T60s",
+     "horizon": "l60",
+     "signals": 0,
+     "w": 0,
+     "l": 0,
+     "draws": 0,
+     "unknown": 0,
+     "wr": null,
+     "buyNWR": "0/-",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": null,
+     "ci95": null
+    },
+    {
+     "id": "V8@T45s",
+     "horizon": "l45",
+     "signals": 0,
+     "w": 0,
+     "l": 0,
+     "draws": 0,
+     "unknown": 0,
+     "wr": null,
+     "buyNWR": "0/-",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": null,
+     "ci95": null
+    },
+    {
+     "id": "V8@T300s",
+     "horizon": "l300",
+     "signals": 0,
+     "w": 0,
+     "l": 0,
+     "draws": 0,
+     "unknown": 0,
+     "wr": null,
+     "buyNWR": "0/-",
+     "sellNWR": "0/-",
+     "indepN": 0,
+     "indepWR": null,
+     "edge_pp": null,
+     "ci95": null
+    }
+   ]
+  }
+ }
+}
