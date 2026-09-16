@@ -1,5 +1,5 @@
-/* Escritório de Agentes — visão operacional isométrica (produto simples, backend é a fonte da verdade).
- * Arte original desenhada por código. Controles técnicos ficam em "Detalhes avançados". */
+/* Escritório de Agentes — 15 estações (NORMAL + OTC), produto simples, backend é a fonte da verdade.
+ * Arte original por código. Configuração visível = configuração real (revisões evitam stale polling). */
 const OfficeUI = (() => {
   const $ = (id) => document.getElementById(id);
   const api = async (path, options) => {
@@ -11,24 +11,26 @@ const OfficeUI = (() => {
   const get = (path) => api(path);
   const post = (path, body) => api(path, { method: "POST", body: body ?? {} });
   const put = (path, body) => api(path, { method: "PUT", body: body ?? {} });
-  const money = (value, currency = "") => (Number.isFinite(Number(value)) ? `${currency ? currency + " " : ""}${Number(value).toFixed(2)}` : "—");
   const brl = (value) => (Number.isFinite(Number(value)) ? `R$ ${Number(value).toFixed(2)}` : "R$ —");
   const signed = (value) => (Number.isFinite(Number(value)) ? `${Number(value) >= 0 ? "+" : "−"}R$ ${Math.abs(Number(value)).toFixed(2)}` : "—");
+  const money = (value, currency = "") => (Number.isFinite(Number(value)) ? `${currency ? currency + " " : ""}${Number(value).toFixed(2)}` : "—");
   const timeOf = (ms) => (Number.isFinite(Number(ms)) ? new Date(Number(ms)).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "--:--");
+  const STRATEGY_VARIANTS = ["V3-45", "V3-60", "V3-120", "V3-180", "V3-300", "V8-45", "V8-60", "V2-60", "V2-120", "V1-300"];
 
   const TILE_W = 84, TILE_H = 38, TILE_Z = 26;
   const SLOTS = [
     { gx: 0, gy: 0 }, { gx: 3.6, gy: 0 }, { gx: 7.2, gy: 0 }, { gx: 10.8, gy: 0 }, { gx: 14.4, gy: 0 },
-    { gx: 0, gy: 7.4 }, { gx: 3.6, gy: 7.4 }, { gx: 7.2, gy: 7.4 }, { gx: 10.8, gy: 7.4 }, { gx: 14.4, gy: 7.4 },
+    { gx: 0, gy: 7.6 }, { gx: 3.6, gy: 7.6 }, { gx: 7.2, gy: 7.6 }, { gx: 10.8, gy: 7.6 }, { gx: 14.4, gy: 7.6 },
+    { gx: 0, gy: 16.6 }, { gx: 3.6, gy: 16.6 }, { gx: 7.2, gy: 16.6 }, { gx: 10.8, gy: 16.6 }, { gx: 14.4, gy: 16.6 },
   ];
   const state = {
     office: null, eventsCursor: 0, selectedMarket: null, activity: [], activitySeeded: false, techLog: [],
     camera: { x: 0, y: 0, zoom: 1 }, defaultCamera: null, dragging: false, dragMoved: false, lastPointer: { x: 0, y: 0 },
     flashes: new Map(), deskAnim: new Map(), initialized: false, showTechActivity: false,
+    pinned: new Map(), drawerDirty: false, toast: null,
   };
   let canvas = null, ctx = null, overlay = null;
 
-  /* ------------------------------ projeção ------------------------------ */
   function iso(gx, gy, gz = 0) { return { x: (gx - gy) * TILE_W / 2, y: (gx + gy) * TILE_H / 2 - gz * TILE_Z }; }
   function project(gx, gy, gz = 0) { const p = iso(gx, gy, gz); return { x: state.camera.x + p.x * state.camera.zoom, y: state.camera.y + p.y * state.camera.zoom }; }
   const zoom = () => state.camera.zoom;
@@ -37,7 +39,6 @@ const OfficeUI = (() => {
     g.fillStyle = color; g.font = `${bold ? "bold " : ""}${Math.max(7, Math.round(size * zoom()))}px "Courier New", monospace`; g.textAlign = align; g.textBaseline = "middle"; g.fillText(String(value), x, y);
   }
 
-  /* ------------------------------ linguagem amigável ------------------------------ */
   const REASON_TEXT = {
     AUTO_DESLIGADO: "execução automática desligada",
     SISTEMA_DESARMADO: "sistema parado",
@@ -50,6 +51,8 @@ const OfficeUI = (() => {
     SINAL_JA_REGISTRADO: "sinal repetido ignorado",
     IDEMPOTENCIA: "sinal já executado (idempotência)",
     INSTRUMENT_NOT_AVAILABLE_FOR_HORIZON: "instrumento indisponível para este prazo",
+    MARKET_AVAILABLE: "mercado indisponível na IQ Option neste momento",
+    MARKET_ENABLED: "agente desativado pelo operador",
   };
   const reasonText = (reason) => {
     if (!reason) return "motivo não informado";
@@ -58,9 +61,12 @@ const OfficeUI = (() => {
     if (String(reason).endsWith("_EXPIRADO")) return `${reasonText(String(reason).replace("_EXPIRADO", ""))} — oportunidade expirou`;
     return String(reason).toLowerCase().replaceAll("_", " ");
   };
-  const agentLabel = { OFFLINE: "INDISPONÍVEL", UNAVAILABLE: "INDISPONÍVEL", WAIT: "AGUARDANDO", ANALYZING: "ANALISANDO", SIGNAL: "OPORTUNIDADE", ORDERING: "ENVIANDO ORDEM", IN_POSITION: "EM OPERAÇÃO", SETTLING: "FINALIZANDO", WIN: "WIN", LOSS: "LOSS", DRAW: "EMPATE", ERROR: "ERRO" };
+  const stakeAdjustmentText = (signal) => {
+    const adjustment = signal?.stakeAdjustment;
+    if (!adjustment?.applied) return "";
+    return ` (valor configurado ${brl(signal.stakeRequested ?? signal.stakeConfigured)}, executado ${brl(adjustment.to)}: limite ${adjustment.reason.toLowerCase().replaceAll("_", " ")})`;
+  };
 
-  /* ------------------------------ sprites ------------------------------ */
   function drawAgent(g, x, y, pixel, colors, pose, frame) {
     const p = pixel, bounce = pose === "typing" ? (frame % 2 === 0 ? 0 : p) : 0;
     block(g, x - 3.5 * p, y + 6 * p, 7 * p, p, "#05070d40");
@@ -79,19 +85,21 @@ const OfficeUI = (() => {
     else if (pose === "loss") { block(g, x - 4.2 * p, armY + p, p + 1.2 * p, p, colors.skin); block(g, x + 1.8 * p, armY + p + p, p + 1.2 * p, p, colors.skin); }
     else if (pose === "order") { block(g, x - 4.4 * p, armY - 1.4 * p, p + 1.4 * p, p, colors.skin); block(g, x + 2 * p, armY + p, p + 1.4 * p, p, colors.skin); }
     else if (pose === "think") { block(g, x - 4.2 * p, armY - 1.8 * p, p, 2.4 * p, colors.skin); block(g, x + 2.6 * p, armY + p, p + 1.2 * p, p, colors.skin); }
+    else if (pose === "sleep") { block(g, x - 4.6 * p, armY + p, 2.6 * p, p, colors.skin); block(g, x - 1.6 * p, armY + 2 * p, 3.2 * p, p, colors.pants); }
     else if (pose === "offline") { block(g, x - 4.2 * p, armY + p, p + 1.2 * p, p, colors.skin); block(g, x + 2 * p, armY + p, p + 1.2 * p, p, colors.skin); }
     else { block(g, x - 4.2 * p, armY, p + 1.2 * p, p, colors.skin); block(g, x + 2 * p, armY, p + 1.2 * p, p, colors.skin); }
     if (pose === "error") { block(g, x - 0.4 * p, headY - 3.4 * p, 1.2 * p, 2.2 * p, "#ff5d5d"); block(g, x - 0.4 * p, headY - 1 * p, 1.2 * p, 1.2 * p, "#ff5d5d"); }
-    if (pose === "offline") { block(g, x + 3.4 * p, headY - 1.6 * p, 1.2 * p, 1.2 * p, "#5b6a86"); block(g, x + 4.8 * p, headY - 2.6 * p, 1.4 * p, 1.4 * p, "#42506b"); }
   }
   const paletteFor = (market) => market.marketType === "OTC"
     ? { shirt: "#c98a2e", shirtLight: "#e8ad4d", pants: "#2c3448", skin: "#f0c39a", hair: "#3a2a1c" }
     : { shirt: "#3f6fd8", shirtLight: "#5b8cf0", pants: "#232c42", skin: "#f0c39a", hair: "#2b2b33" };
+  const isClosed = (market) => market?.availability !== "OPEN";
   const isPaused = (market) => market?.paused === true;
-  const isDown = (market) => market?.agentState === "OFFLINE" || market?.agentState === "UNAVAILABLE" || market?.availability !== "OPEN";
+  const isDisabled = (market) => market && market.availability === "OPEN" && market.enabled !== true;
   function bubbleInfo(market) {
+    if (isClosed(market)) return { text: market.availability === "NOT_FOUND" ? "MERCADO FECHADO" : "INDISPONÍVEL", kind: "SLEEP" };
+    if (isDisabled(market)) return { text: "DESATIVADO", kind: "DISABLED" };
     if (isPaused(market)) return { text: "PAUSADO", kind: "PAUSED" };
-    if (isDown(market)) return { text: market?.availability === "NOT_FOUND" ? "INDISPONÍVEL" : "SEM DADOS", kind: "OFFLINE" };
     if (market.agentState === "ERROR") return { text: "ERRO", kind: "ERROR" };
     const flash = state.flashes.get(market.marketKey);
     if (flash) return { text: flash.result === "WIN" ? `WIN ${signed(flash.profit)}` : flash.result === "LOSS" ? `LOSS ${signed(flash.profit)}` : "EMPATE", kind: flash.result === "WIN" ? "WIN" : flash.result === "LOSS" ? "LOSS" : "NEUTRAL" };
@@ -106,9 +114,10 @@ const OfficeUI = (() => {
     if (market.agentState === "SETTLING") return { text: "FINALIZANDO", kind: "SETTLING" };
     return { text: "AGUARDANDO", kind: "WAIT" };
   }
-  const bubbleColor = (kind) => kind === "FAVORABLE" || kind === "WIN" ? "#8ce4a0" : kind === "UNFAVORABLE" || kind === "LOSS" ? "#ff8f8f" : kind === "ERROR" ? "#ff5d5d" : kind === "SIGNAL" ? "#ffd76a" : kind === "OFFLINE" || kind === "PAUSED" ? "#9fb2d6" : kind === "ORDERING" ? "#7fc4ff" : "#d7e4ff";
+  const bubbleColor = (kind) => kind === "FAVORABLE" || kind === "WIN" ? "#8ce4a0" : kind === "UNFAVORABLE" || kind === "LOSS" ? "#ff8f8f" : kind === "ERROR" ? "#ff5d5d" : kind === "SIGNAL" ? "#ffd76a" : kind === "SLEEP" ? "#7f93b8" : kind === "DISABLED" || kind === "PAUSED" ? "#9fb2d6" : kind === "ORDERING" ? "#7fc4ff" : "#d7e4ff";
   const poseFor = (market, frame) => {
-    if (isPaused(market) || isDown(market)) return isPaused(market) ? "think" : "offline";
+    if (isClosed(market)) return "sleep";
+    if (isDisabled(market) || isPaused(market)) return "think";
     if (market.agentState === "ERROR") return "error";
     if (market.agentState === "IN_POSITION") return market.indicative?.state === "UNFAVORABLE" ? "loss" : "typing";
     if (market.agentState === "ORDERING") return "order";
@@ -118,7 +127,6 @@ const OfficeUI = (() => {
     return frame % 8 < 5 ? "typing" : "think";
   };
 
-  /* ------------------------------ render ------------------------------ */
   function diamond(g, cx, cy, w, h, fill, stroke) {
     g.beginPath(); g.moveTo(cx, cy - h / 2); g.lineTo(cx + w / 2, cy); g.lineTo(cx, cy + h / 2); g.lineTo(cx - w / 2, cy); g.closePath();
     if (fill) { g.fillStyle = fill; g.fill(); }
@@ -126,10 +134,14 @@ const OfficeUI = (() => {
   }
   function drawFloor(g) {
     const z = zoom();
-    for (let gx = -5; gx <= 20; gx += 2) for (let gy = -7; gy <= 14; gy += 2) {
+    for (let gx = -5; gx <= 20; gx += 2) for (let gy = -7; gy <= 24; gy += 2) {
       const p = project(gx, gy, -0.02);
-      diamond(g, p.x, p.y, TILE_W * 2 * z, TILE_H * 2 * z, ((gx + gy) / 2) % 2 === 0 ? "#0a1120" : "#0c1424", "#101a30");
+      const zone = gy < 12 ? "#0a1120" : "#0d1018";
+      diamond(g, p.x, p.y, TILE_W * 2 * z, TILE_H * 2 * z, ((gx + gy) / 2) % 2 === 0 ? zone : "#0c1424", "#101a30");
     }
+    const normalLabel = project(7.2, -2.4, 0.05), otcLabel = project(7.2, 13.6, 0.05);
+    text(g, "MERCADO NORMAL", normalLabel.x, normalLabel.y, { size: 13, color: "#5f78a8", bold: true });
+    text(g, "MERCADO OTC", otcLabel.x, otcLabel.y, { size: 13, color: "#8a6f34", bold: true });
   }
   function drawBackWall(g) {
     const z = zoom();
@@ -139,14 +151,14 @@ const OfficeUI = (() => {
     g.beginPath(); g.moveTo(left.x, left.y); g.lineTo(right.x, right.y); g.lineTo(right.x, right.y - height); g.lineTo(left.x, left.y - height); g.closePath(); g.fill();
     g.strokeStyle = "#1c2a48"; g.lineWidth = Math.max(1, z); g.stroke();
     const office = state.office;
-    const panel = { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2 - height + 12 * z, w: Math.abs(right.x - left.x) * 0.72, h: height - 26 * z };
+    const panel = { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2 - height + 12 * z, w: Math.abs(right.x - left.x) * 0.66, h: height - 26 * z };
     block(g, panel.x - panel.w / 2, panel.y - panel.h, panel.w, panel.h, "#081120");
     g.strokeStyle = "#2a3d63"; g.strokeRect(Math.round(panel.x - panel.w / 2), Math.round(panel.y - panel.h), Math.round(panel.w), Math.round(panel.h));
     const settled = office?.portfolio?.settled ?? { pnl: 0, wins: 0, losses: 0, draws: 0, trades: 0 };
     text(g, "RESULTADO DO DIA", panel.x, panel.y - panel.h + 12 * z, { size: 10, color: "#7f93b8", bold: true });
     text(g, signed(settled.pnl), panel.x, panel.y - panel.h + 34 * z, { size: 32, color: settled.pnl > 0 ? "#8ce4a0" : settled.pnl < 0 ? "#ff9d9d" : "#cfe0ff", bold: true });
     text(g, `operações ${settled.trades} · ${settled.wins} ganhos · ${settled.losses} perdas · ${settled.draws} empates`, panel.x, panel.y - panel.h + 56 * z, { size: 10, color: "#9fb2d6" });
-    text(g, `${office?.activeCount ?? 0} mercados ativos · ${office?.portfolio?.openPositions?.length ?? 0} em operação · ${office?.portfolio?.practiceBalance !== null ? brl(office?.portfolio?.practiceBalance) : "—"}`, panel.x, panel.y - panel.h + 72 * z, { size: 10, color: "#7f93b8" });
+    text(g, `${office?.activeCount ?? 0} mercados ativos · ${office?.portfolio?.openPositions?.length ?? 0} em operação · saldo ${office?.portfolio?.practiceBalance !== null ? money(office?.portfolio?.practiceBalance) : "—"}`, panel.x, panel.y - panel.h + 72 * z, { size: 10, color: "#7f93b8" });
     const curve = office?.portfolio?.equityCurve ?? [];
     const chart = { x: panel.x - panel.w / 2 + 14 * z, y: panel.y - panel.h + 88 * z, w: panel.w - 28 * z, h: panel.h - 104 * z };
     g.strokeStyle = "#16213a"; g.strokeRect(Math.round(chart.x), Math.round(chart.y), Math.round(chart.w), Math.round(chart.h));
@@ -158,51 +170,60 @@ const OfficeUI = (() => {
       g.stroke();
     } else text(g, "sem resultados hoje", chart.x + chart.w / 2, chart.y + chart.h / 2, { size: 10, color: "#42506b" });
   }
+  function drawZzz(g, x, y, frame) {
+    const z = zoom();
+    for (let index = 0; index < 3; index += 1) {
+      const phase = ((frame + index * 4) % 12) / 12;
+      const size = (7 + index * 2.5) * z;
+      g.fillStyle = `rgba(159,178,214,${0.25 + phase * 0.6})`;
+      g.font = `bold ${size}px "Courier New", monospace`; g.textAlign = "left"; g.textBaseline = "middle";
+      g.fillText("Z", x + index * 7 * z, y - phase * 16 * z - index * 3 * z);
+    }
+  }
   function drawSlotPlate(g, slotIndex, market) {
     const z = zoom();
     const center = SLOTS[slotIndex];
+    if (!center) return;
     const p = project(center.gx + 1.8, center.gy + 1.8, 0.02);
     const w = 96 * z, h = 20 * z;
-    block(g, p.x - w / 2, p.y, w, h, market ? "#0d1830" : "#0a1120cc");
-    g.strokeStyle = market ? "#2a3d63" : "#1a2338"; g.lineWidth = Math.max(1, z); g.strokeRect(Math.round(p.x - w / 2), Math.round(p.y), Math.round(w), Math.round(h));
-    text(g, `MESA ${String(slotIndex + 1).padStart(2, "0")}${market ? "" : " · LIVRE"}`, p.x, p.y + h / 2, { size: 9, color: market ? "#9fb2d6" : "#42506b", bold: true });
+    block(g, p.x - w / 2, p.y, w, h, "#0d1830cc");
+    g.strokeStyle = "#2a3d63"; g.lineWidth = Math.max(1, z); g.strokeRect(Math.round(p.x - w / 2), Math.round(p.y), Math.round(w), Math.round(h));
+    text(g, `MESA ${String(slotIndex + 1).padStart(2, "0")}`, p.x, p.y + h / 2, { size: 9, color: "#9fb2d6", bold: true });
   }
   function drawDesk(g, market, slotIndex, targets, bubbles, frame) {
     const z = zoom();
-    const anim = state.deskAnim.get(market.marketKey) ?? { gx: SLOTS[slotIndex].gx, gy: SLOTS[slotIndex].gy, alpha: 1 };
+    const anim = state.deskAnim.get(market.marketKey) ?? { gx: SLOTS[slotIndex]?.gx ?? 0, gy: SLOTS[slotIndex]?.gy ?? 0, alpha: 1 };
     const cx = anim.gx + 1.8, cy = anim.gy + 1.8;
-    g.globalAlpha = Math.min(1, Math.max(0, anim.alpha));
+    const dim = isClosed(market) ? 0.5 : isDisabled(market) || isPaused(market) ? 0.72 : 1;
+    g.globalAlpha = Math.min(1, Math.max(0, anim.alpha)) * dim;
     const top = project(cx, cy, 0.6);
-    const w = TILE_W * 2.0 * z, h = TILE_H * 2.0 * z, depth = 20 * z;
+    const w = TILE_W * 1.95 * z, h = TILE_H * 1.95 * z, depth = 20 * z;
     diamond(g, top.x, top.y, w, h, "#16213a", "#2a3d63");
     g.fillStyle = "#0f1830";
     g.beginPath(); g.moveTo(top.x - w / 2, top.y); g.lineTo(top.x, top.y + h / 2); g.lineTo(top.x, top.y + h / 2 + depth); g.lineTo(top.x - w / 2, top.y + depth); g.closePath(); g.fill();
     g.fillStyle = "#0b1226";
     g.beginPath(); g.moveTo(top.x + w / 2, top.y); g.lineTo(top.x, top.y + h / 2); g.lineTo(top.x, top.y + h / 2 + depth); g.lineTo(top.x + w / 2, top.y + depth); g.closePath(); g.fill();
-    // monitor
     const m = project(cx - 0.4, cy - 0.4, 0.6);
-    const mw = 34 * z, mh = 22 * z;
+    const mw = 32 * z, mh = 21 * z;
     block(g, m.x - mw / 2, m.y - mh - 6 * z, mw, mh, "#050a14");
-    const glow = market.agentState === "ERROR" ? "#ff5d5d" : isPaused(market) ? "#f2c14e" : isDown(market) ? "#31405e" : market.positionState?.status === "OPEN" ? (market.indicative?.state === "FAVORABLE" ? "#37d67a" : market.indicative?.state === "UNFAVORABLE" ? "#ff5d5d" : "#f2c14e") : "#4da3ff";
+    const powered = !isClosed(market) && !isDisabled(market);
+    const glow = !powered ? "#1b2536" : market.agentState === "ERROR" ? "#ff5d5d" : isPaused(market) ? "#f2c14e" : market.positionState?.status === "OPEN" ? (market.indicative?.state === "FAVORABLE" ? "#37d67a" : market.indicative?.state === "UNFAVORABLE" ? "#ff5d5d" : "#f2c14e") : "#4da3ff";
     block(g, m.x - mw / 2 + 2 * z, m.y - mh - 4 * z, mw - 4 * z, mh - 4 * z, glow);
-    // big ticker plate
     const plate = project(cx + 0.7, cy + 1.6, 0.35);
-    const pw = 132 * z, ph = 46 * z;
+    const pw = 128 * z, ph = 46 * z;
     block(g, plate.x - pw / 2, plate.y, pw, ph, "#0b1226");
     g.strokeStyle = market.marketType === "OTC" ? "#96702c" : "#3b5da8"; g.lineWidth = Math.max(1.4, 1.6 * z); g.strokeRect(Math.round(plate.x - pw / 2), Math.round(plate.y), Math.round(pw), Math.round(ph));
-    text(g, market.symbol, plate.x, plate.y + 13 * z, { size: 15, color: "#eef4ff", bold: true });
+    text(g, market.symbol, plate.x, plate.y + 13 * z, { size: 14, color: "#eef4ff", bold: true });
     const badgeW = 62 * z, badgeH = 15 * z;
     block(g, plate.x - badgeW / 2, plate.y + 24 * z, badgeW, badgeH, market.marketType === "OTC" ? "#3a2a10" : "#16264a");
     g.strokeStyle = market.marketType === "OTC" ? "#96702c" : "#3b5da8"; g.strokeRect(Math.round(plate.x - badgeW / 2), Math.round(plate.y + 24 * z), Math.round(badgeW), Math.round(badgeH));
     text(g, market.marketType, plate.x, plate.y + 24 * z + badgeH / 2, { size: 10, color: market.marketType === "OTC" ? "#ffd08a" : "#9fc6ff", bold: true });
-    const stake = market.maxStake ?? null;
-    text(g, `payout ${market.payout ?? "—"} · limite ${brl(stake)} · ${market.strategy ?? "—"}`, plate.x, plate.y + ph + 9 * z, { size: 9, color: "#7f93b8" });
-    // led
+    text(g, `payout ${market.payout ?? "—"} · ${brl(market.configuredStake)} · ${market.strategyEffective ?? "—"}`, plate.x, plate.y + ph + 9 * z, { size: 9, color: "#7f93b8" });
     block(g, plate.x + pw / 2 - 8 * z, plate.y + 5 * z, 5 * z, 5 * z, market.connectionHealth?.connected ? "#37d67a" : "#ff5d5d");
-    // agent
     const agentPos = project(cx + 0.15, cy + 1.05, 0.04);
     const pixel = Math.max(1.6, 2.4 * z);
     drawAgent(g, agentPos.x, agentPos.y, pixel, paletteFor(market), poseFor(market, frame), frame);
+    if (isClosed(market)) drawZzz(g, agentPos.x + 8 * z, agentPos.y - 26 * z, frame);
     targets.push({ x: top.x - w / 2, y: top.y - 30 * z, w, h: h + depth + 70 * z, type: "desk", key: market.marketKey });
     bubbles.push({ x: agentPos.x, y: agentPos.y - 46 * z, ...bubbleInfo(market) });
     g.globalAlpha = 1;
@@ -212,7 +233,7 @@ const OfficeUI = (() => {
     const color = bubbleColor(bubble.kind);
     const size = Math.max(9, Math.round(10.5 * z));
     g.font = `bold ${size}px "Courier New", monospace`;
-    const width = Math.max(72 * z, g.measureText(bubble.text).width + 22 * z);
+    const width = Math.max(76 * z, g.measureText(bubble.text).width + 22 * z);
     const height = 22 * z;
     const x = Math.min(Math.max(bubble.x, width / 2 + 6), (canvas?.clientWidth ?? 1000) - width / 2 - 6);
     const y = Math.max(bubble.y, height + 8);
@@ -233,10 +254,10 @@ const OfficeUI = (() => {
     const targets = [], bubbles = [];
     drawFloor(ctx);
     drawBackWall(ctx);
-    const active = (state.office?.markets ?? []).filter((market) => market.enabled);
-    const byKey = new Map(active.map((market, index) => [market.marketKey, index]));
-    for (const [key, entry] of [...state.deskAnim.entries()]) if (!byKey.has(key)) state.deskAnim.delete(key);
-    active.forEach((market, index) => {
+    const markets = state.office?.markets ?? [];
+    const byKey = new Map(markets.map((market, index) => [market.marketKey, index]));
+    for (const [key] of [...state.deskAnim.entries()]) if (!byKey.has(key)) state.deskAnim.delete(key);
+    markets.forEach((market, index) => {
       const target = SLOTS[index] ?? SLOTS[0];
       let anim = state.deskAnim.get(market.marketKey);
       if (!anim) { anim = { gx: target.gx, gy: target.gy - 5, alpha: 0 }; state.deskAnim.set(market.marketKey, anim); }
@@ -245,9 +266,7 @@ const OfficeUI = (() => {
       anim.gy += (anim.targetGy - anim.gy) * 0.12;
       anim.alpha = Math.min(1, anim.alpha + 0.08);
     });
-    const occupied = new Set(active.map((_, index) => index));
-    for (let slot = 0; slot < SLOTS.length; slot += 1) if (!occupied.has(slot)) drawSlotPlate(ctx, slot, null);
-    for (const [index, market] of active.entries()) { drawSlotPlate(ctx, index, market); drawDesk(ctx, market, index, targets, bubbles, frame); }
+    for (const [index, market] of markets.entries()) { drawSlotPlate(ctx, index, market); drawDesk(ctx, market, index, targets, bubbles, frame); }
     for (const bubble of bubbles) drawBubble(ctx, bubble);
     canvas.__targets = targets;
     ctx.fillStyle = "#4da3ff22";
@@ -257,41 +276,57 @@ const OfficeUI = (() => {
   function computeDefaultCamera() {
     if (!canvas) return;
     const width = canvas.clientWidth, height = canvas.clientHeight;
-    const center = iso(9, 3.7, 0);
-    const z = Math.min(1.1, Math.max(0.5, Math.min(width / 1500, height / 820)));
-    state.defaultCamera = { zoom: z, x: width / 2 - center.x * z, y: height * 0.26 - center.y * z };
+    const center = iso(9, 8.2, 0);
+    const z = Math.min(0.92, Math.max(0.4, Math.min(width / 1900, height / 1080)));
+    state.defaultCamera = { zoom: z, x: width / 2 - center.x * z, y: height * 0.18 - center.y * z };
     state.camera = { ...state.defaultCamera };
   }
   function centerOn(gx, gy, z = null) {
     if (!canvas) return;
     const width = canvas.clientWidth, height = canvas.clientHeight;
-    const value = z ?? state.camera.zoom;
+    const value = z ?? Math.max(state.camera.zoom, 0.9);
     const p = iso(gx, gy, 0);
     state.camera.x = width / 2 - p.x * value;
-    state.camera.y = height * 0.52 - p.y * value;
+    state.camera.y = height * 0.5 - p.y * value;
     state.camera.zoom = value;
   }
 
-  /* ------------------------------ dados / atividade ------------------------------ */
   async function refreshOffice() {
     try {
-      state.office = window.__OFFICE_FIXTURE__?.office ?? await get("/api/iq/office");
+      const incoming = window.__OFFICE_FIXTURE__?.office ?? await get("/api/iq/office");
+      state.office = mergePinned(incoming);
       if (!state.initialized) { computeDefaultCamera(); state.initialized = true; }
       if (!state.activitySeeded) { seedActivity(); state.activitySeeded = true; }
       renderTopbar(); renderAux(); renderActivity();
-      if (state.selectedMarket) marketDrawer(state.selectedMarket, true);
+      for (const [key, pinned] of [...state.pinned.entries()]) {
+        const market = state.office?.markets?.find((row) => row.marketKey === key);
+        if (market && Number(market.revision) >= Number(pinned.market.revision)) state.pinned.delete(key);
+      }
+      if (state.selectedMarket && !state.drawerDirty) marketDrawer(state.selectedMarket, true);
     } catch {
       const chip = $("officeChipIq");
       if (chip) { chip.textContent = "Servidor offline"; chip.className = "office-chip bad"; }
     }
   }
+  /** Revisao anti-race: resposta de polling mais antiga que um save confirmado nao sobrescreve a UI. */
+  function mergePinned(incoming) {
+    if (!state.pinned.size || !Array.isArray(incoming?.markets)) return incoming;
+    const markets = incoming.markets.map((market) => {
+      const pinned = state.pinned.get(market.marketKey);
+      if (!pinned) return market;
+      return Number(market.revision) >= Number(pinned.market.revision) ? market : { ...market, ...pinned.market };
+    });
+    return { ...incoming, markets };
+  }
+  function pinMarket(market) { if (market?.marketKey) state.pinned.set(market.marketKey, { market, at: Date.now() }); }
+
   function seedActivity() {
     const signals = (state.office?.signals ?? []).slice(0, 12).reverse();
     for (const signal of signals) activityLine(signalLine(signal), signal.disposition === "EXECUTED" ? "" : "blocked", signal.at);
   }
   function signalLine(signal) {
     const direction = signal.action === "BUY" ? "compra" : "venda";
-    if (signal.disposition === "EXECUTED") return `${signal.display} iniciou operação de ${brl(signal.stakeFinal)} (${direction}).`;
+    if (signal.disposition === "EXECUTED") return `${signal.display} iniciou operação de ${brl(signal.stakeFinal)} (${direction})${stakeAdjustmentText(signal)}.`;
     if (signal.disposition === "DUPLICATE") return `${signal.display} ignorou sinal repetido (${direction}).`;
     if (signal.disposition === "EXPIRED") return `${signal.display} oportunidade de ${direction} expirou sem execução: ${reasonText(signal.reason)}.`;
     return `${signal.display} encontrou oportunidade de ${direction}, mas não executou: ${reasonText(signal.reason)}.`;
@@ -336,6 +371,7 @@ const OfficeUI = (() => {
     else if (event.type === "connection.disconnected") activityLine("IQ Option desconectada — sistema pausado automaticamente.", "blocked", event.at);
     else if (event.type === "connection.ready") activityLine("IQ Option conectada.", "", event.at);
     else if (event.type === "mode.changed") activityLine(`Conta alterada para ${event.mode === "REAL" ? "real" : "de teste"} — sistema parado por segurança.`, "", event.at);
+    else if (event.type === "market.config") activityLine(`${name || event.marketKey} configuração atualizada (revisão ${event.revision ?? "—"}).`, "", event.at);
   }
   function renderTopbar() {
     const office = state.office; if (!office) return;
@@ -368,7 +404,7 @@ const OfficeUI = (() => {
     const chipPositions = $("officeChipPositions"); if (chipPositions) { chipPositions.textContent = `${positions} em operação`; chipPositions.className = `office-chip ${positions ? "on" : ""}`; }
     const pnl = office.portfolio?.settled?.pnl ?? 0;
     const chipResult = $("officeChipResult"); if (chipResult) { chipResult.textContent = `Resultado do dia ${signed(pnl)}`; chipResult.className = `office-chip ${pnl > 0 ? "on" : pnl < 0 ? "bad" : ""}`; }
-    const limitInput = $("officeLimitInput"); if (limitInput && document.activeElement !== limitInput) limitInput.value = String(office.config?.globalMaxStake ?? 2);
+    const limitInput = $("officeLimitInput"); if (limitInput && document.activeElement !== limitInput) limitInput.value = String(office.config?.defaultStake ?? 2);
   }
   function renderAux() {
     const office = state.office; if (!office) return;
@@ -385,60 +421,70 @@ const OfficeUI = (() => {
     container.innerHTML = tiles.map((tile) => `<button class="office-aux-tile ${tile.state}" data-aux="${tile.kind}"><span>${tile.label}</span><b>${tile.value}</b><small>${tile.hint}</small></button>`).join("");
   }
 
-  /* ------------------------------ drawers/modais ------------------------------ */
-  function closeDrawers() { if (overlay) overlay.innerHTML = ""; state.selectedMarket = null; }
-  function drawerShell(title, subtitle, subtitleKind, extra = "", extraClass = "") {
+  function closeDrawers() { if (overlay) overlay.innerHTML = ""; state.selectedMarket = null; state.drawerDirty = false; state.toast = null; }
+  function drawerShell(title, subtitle, subtitleKind, extra = "") {
     return `<div class="office-drawer"><button class="office-btn ghost close small" data-close="1">FECHAR</button>
-      <div class="office-hero"><span class="office-badge ${subtitleKind}">${subtitle}</span><h3>${title}</h3></div>${extra}</div>`.replace("<h3>", `<h3 class="${extraClass}">`);
+      <div class="office-hero"><span class="office-badge ${subtitleKind}">${subtitle}</span><h3>${title}</h3></div>${extra}</div>`;
   }
+  const toastHtml = () => (state.toast ? `<p class="office-toast ${state.toast.kind}">${state.toast.text}</p>` : "");
   function marketDrawer(marketKey, silent = false) {
     const market = state.office?.markets?.find((row) => row.marketKey === marketKey);
     if (!market || !overlay) return;
-    if (!silent) state.selectedMarket = marketKey;
+    if (!silent) { state.selectedMarket = marketKey; state.drawerDirty = false; }
+    if (state.selectedMarket !== marketKey) return;
     const position = market.positionState ?? {};
     const daily = market.settlementState?.daily ?? {};
     const latency = market.latency ?? {};
     const feature = market.featureState ?? {};
     const decision = market.decisionState ?? {};
-    const status = market.paused ? "Pausado" : isDown(market) ? (market.availability === "NOT_FOUND" ? "Indisponível" : "Sem dados") : market.positionState?.status === "OPEN" ? "Em operação" : market.agentState === "SIGNAL" ? "Oportunidade encontrada" : "Aguardando";
+    const closed = isClosed(market);
+    const disabled = isDisabled(market);
+    const status = closed ? (market.availability === "NOT_FOUND" ? "Mercado fechado" : "Indisponível") : disabled ? "Desativado" : market.paused ? "Pausado" : market.positionState?.status === "OPEN" ? "Em operação" : market.agentState === "SIGNAL" ? "Oportunidade encontrada" : "Aguardando";
+    const limitReached = state.office.activeCount >= state.office.activeLimit;
     overlay.innerHTML = drawerShell(`${market.symbol}`, market.marketType, market.marketType === "OTC" ? "otc" : "normal", `
+      ${toastHtml()}
       <div class="office-kv">
         <div><span>STATUS</span><b>${status}</b></div>
         <div><span>PAYOUT</span><b>${market.payout ?? "—"}%</b></div>
-        <div><span>LIMITE POR OPERAÇÃO</span><b>${brl(market.maxStake)}</b></div>
-        <div><span>ESTRATÉGIA</span><b>${market.strategy ?? "—"}</b></div>
+        <div><span>VALOR POR OPERAÇÃO</span><b>${brl(market.configuredStake ?? state.office.config.defaultStake)}</b></div>
+        <div><span>ESTRATÉGIA</span><b>${market.strategyEffective ?? "—"}${market.strategySource === "MARKET" ? " (individual)" : " (global)"}</b></div>
         <div><span>OPERAÇÕES HOJE</span><b>${daily.trades ?? 0}</b></div>
-        <div><span>GANHOS</span><b>${daily.wins ?? 0}</b></div>
-        <div><span>PERDAS</span><b>${daily.losses ?? 0}</b></div>
+        <div><span>GANHOS / PERDAS</span><b>${daily.wins ?? 0} / ${daily.losses ?? 0}</b></div>
         <div><span>RESULTADO</span><b>${signed(daily.settledPnl ?? 0)}</b></div>
         <div><span>ÚLTIMA DECISÃO</span><b>${decision.action ?? "—"}</b></div>
       </div>
+      ${closed ? `<p class="fine">Este mercado não está disponível na IQ Option neste momento.</p>` : ""}
+      ${disabled && limitReached ? `<p class="fine">Limite de ${state.office.activeLimit} mercados ativos atingido. Desative outro mercado primeiro.</p>` : ""}
       <div class="office-actions">
-        <button class="office-btn ${market.paused ? "primary" : "warn"}" data-market-pause="${market.marketKey}">${market.paused ? "RETOMAR AGENTE" : "PAUSAR AGENTE"}</button>
-        <label class="office-field">LIMITE R$ <input type="number" min="1" max="100" step="1" value="${Number(market.maxStake) || 1}" data-market-stake-input="${market.marketKey}" /></label>
-        <button class="office-btn" data-market-stake="${market.marketKey}">SALVAR LIMITE</button>
-        <label class="office-field">ESTRATÉGIA <select data-market-strategy="${market.marketKey}">${["V1", "V2", "V3", "V8"].map((family) => `<option ${String(market.strategy) === family ? "selected" : ""}>${family}</option>`).join("")}</select></label>
+        ${!closed ? `<button class="office-btn ${market.enabled ? "warn" : "primary"}" data-market-toggle="${market.marketKey}" ${!market.enabled && limitReached ? "disabled" : ""}>${market.enabled ? "DESATIVAR AGENTE" : "ATIVAR AGENTE"}</button>` : ""}
+        ${market.enabled ? `<button class="office-btn ${market.paused ? "primary" : "ghost"}" data-market-pause="${market.marketKey}">${market.paused ? "RETOMAR AGENTE" : "PAUSAR AGENTE"}</button>` : ""}
+      </div>
+      <div class="office-actions">
+        <label class="office-field">VALOR R$ <input type="number" min="1" max="100" step="1" value="${Number(market.configuredStake ?? state.office.config.defaultStake) || 1}" data-market-stake-input="${market.marketKey}" /></label>
+        <button class="office-btn" data-market-stake="${market.marketKey}">SALVAR VALOR</button>
+        <label class="office-field">ESTRATÉGIA <select data-market-strategy="${market.marketKey}">${STRATEGY_VARIANTS.map((variant) => `<option value="${variant}" ${(market.strategyEffective ?? "") === variant ? "selected" : ""}>${variant}</option>`).join("")}</select></label>
         <button class="office-btn" data-market-strategy-save="${market.marketKey}">SALVAR ESTRATÉGIA</button>
       </div>
-      <p class="fine">Alterações valem para a próxima operação; uma operação em andamento mantém o valor combinado.</p>
+      <p class="fine">Alterações valem para a próxima operação; uma operação em andamento mantém o valor combinado. Limite máximo de segurança: ${brl(state.office.config.hardCap)}.</p>
       <button class="office-details-toggle" data-toggle-details="1">DETALHES AVANÇADOS</button>
       <div class="office-details" id="officeMarketDetails" hidden>
         <div class="office-kv">
           <div><span>MERCADO</span><b>${market.marketKey}</b></div>
           <div><span>ACTIVE ID</span><b>${market.activeId ?? "—"}</b></div>
+          <div><span>REVISÃO CONFIG</span><b>${market.revision ?? 0}</b></div>
           <div><span>SEGMENTO</span><b>${market.lastTick?.segmentId ?? "—"}</b></div>
           <div><span>DADOS ATUAIS</span><b>${feature.fresh ? "saudáveis" : feature.freshnessReason ?? "—"} · ${market.lastTick?.ageMs ?? "—"}ms</b></div>
           <div><span>LATÊNCIA p50/p95</span><b>${latency.serverToReceived?.p50 ?? "—"} / ${latency.serverToReceived?.p95 ?? "—"} ms</b></div>
           <div><span>CANDLES 5s</span><b>${market.candles5s ?? 0}</b></div>
           <div><span>RSI / ATR / ADX</span><b>${Number.isFinite(feature.rsi14) ? feature.rsi14.toFixed(1) : "—"} / ${Number.isFinite(feature.atr14) ? feature.atr14.toFixed(5) : "—"} / ${Number.isFinite(feature.adx14) ? feature.adx14.toFixed(1) : "—"}</b></div>
-          <div><span>CONFIANÇA / TRIGGER</span><b>${decision.confidence ?? "—"} · ${decision.trigger ? `s ${Number(decision.trigger.s ?? 0).toFixed(2)}` : "—"}</b></div>
+          <div><span>TETO DO AGENTE</span><b>${brl(market.maxStake)}</b></div>
           <div><span>ENTRADA / DIREÇÃO</span><b>${position.entryPrice ?? "—"} · ${position.direction ?? "—"}</b></div>
-          <div><span>PREÇO ATUAL</span><b>${market.lastTick?.price ?? "—"}</b></div>
         </div>
       </div>`);
   }
   function auxDrawer(kind) {
     const office = state.office; if (!office || !overlay) return;
+    state.selectedMarket = null; state.drawerDirty = false;
     const titles = { risk: "RISCO", compliance: "SEGURANÇA", executionGate: "EXECUÇÃO", portfolioControl: "CARTEIRA", macro: "MERCADO", news: "NOTÍCIAS" };
     let content = "";
     if (kind === "risk") content = `<div class="office-kv"><div><span>EM OPERAÇÃO</span><b>${office.aux.risk.openPositions}</b></div><div><span>VALOR EM RISCO</span><b>${brl(office.aux.risk.stakeAtRisk)}</b></div><div><span>LIMITE POR MERCADO</span><b>1 operação</b></div><div><span>LIMITE DE MERCADOS</span><b>${office.aux.risk.limits.maxActiveMarkets}</b></div></div><div class="office-list">${(office.aux.risk.exposure ?? []).map((row) => `<div class="office-list-row"><div><b>${row.currency}</b><small>exposição ${signed(row.net)} · ${brl(row.stake)}</small></div><div class="right"><span class="office-badge ${Math.max(row.longCount, row.shortCount) >= 3 ? "bad" : "good"}">${row.longCount}C/${row.shortCount}V</span></div></div>`).join("") || "<p class='fine'>Nenhuma operação aberta.</p>"}</div>`;
@@ -450,21 +496,24 @@ const OfficeUI = (() => {
   }
   function chooseMarketsModal() {
     const office = state.office; if (!office || !overlay) return;
-    const row = (market) => `<div class="office-market-row">
-        <div><b>${market.display}</b><small>${market.availability === "OPEN" ? (market.marketType === "OTC" ? `disponível · payout ${market.payout ?? "—"}%` : "disponível") : market.availability === "SUSPENDED" ? "temporariamente suspenso" : "indisponível neste horário"}</small></div>
-        <div class="right"><button class="office-btn ${market.enabled ? "warn" : "primary"}" data-choose-toggle="${market.marketKey}" ${!market.enabled && (office.activeCount >= office.activeLimit || market.availability !== "OPEN") ? "disabled" : ""}>${market.enabled ? "DESLIGAR" : "ATIVAR"}</button></div>
+    const row = (market) => {
+      const closed = isClosed(market);
+      const limitReached = office.activeCount >= office.activeLimit;
+      return `<div class="office-market-row">
+        <div><b>${market.display}</b><small>${closed ? (market.availability === "NOT_FOUND" ? "mercado fechado" : "indisponível") : market.marketType === "OTC" ? `disponível · payout ${market.payout ?? "—"}% · ${brl(market.configuredStake ?? office.config.defaultStake)}/op` : `disponível · ${brl(market.configuredStake ?? office.config.defaultStake)}/op`}</small></div>
+        <div class="right"><button class="office-btn ${market.enabled ? "warn" : "primary"}" data-choose-toggle="${market.marketKey}" ${!market.enabled && (limitReached || closed) ? "disabled" : ""}>${market.enabled ? "DESLIGAR" : closed ? "FECHADO" : "ATIVAR"}</button></div>
       </div>`;
+    };
     const normal = office.markets.filter((market) => market.marketType === "NORMAL");
     const otc = office.markets.filter((market) => market.marketType === "OTC");
     overlay.innerHTML = `<div class="office-modal"><div class="office-modal-card">
       <button class="office-btn ghost close small" data-close="1" style="float:right">FECHAR</button>
       <h3>ESCOLHER MERCADOS</h3>
-      <p><b>${office.activeCount} de ${office.activeLimit} mercados ativos.</b> Você pode ativar até ${office.activeLimit} mercados ao mesmo tempo (NORMAL + OTC). OTC nunca substitui NORMAL automaticamente.</p>
+      <p><b>${office.activeCount} de ${office.activeLimit} mercados ativos.</b> Você pode ativar até ${office.activeLimit} mercados ao mesmo tempo (NORMAL + OTC). Mercados fechados continuam no escritório, mas não operam.</p>
       <div class="office-section-title">NORMAL (${normal.filter((market) => market.enabled).length} de ${normal.length} ativos)</div>
       ${normal.map(row).join("")}
       <div class="office-section-title">OTC (${otc.filter((market) => market.enabled).length} de ${otc.length} ativos)</div>
       ${otc.map(row).join("")}
-      <p class="fine">As mesas se reorganizam automaticamente conforme os mercados escolhidos.</p>
     </div></div>`;
   }
   function realModal() {
@@ -476,7 +525,7 @@ const OfficeUI = (() => {
       <h3>ATIVAR CONTA REAL</h3>
       <p><b>Saldo real disponível:</b> ${money(realState.balance, realState.currency)}</p>
       <p><b>Aviso:</b> operações em conta real usam dinheiro real. O TraceCom pode enviar ordens reais na sua conta IQ Option após todos os gates de segurança.</p>
-      <label class="office-field">LIMITE MÁXIMO REAL (teto ${brl(office.config.hardCap)}) <input id="officeRealStake" type="number" min="1" max="${office.config.hardCap}" step="1" value="${Number(realMode.maxStake) || 1}" /></label>
+      <label class="office-field">VALOR MÁXIMO REAL (teto ${brl(office.config.hardCap)}) <input id="officeRealStake" type="number" min="1" max="${office.config.hardCap}" step="1" value="${Number(realMode.maxStake) || 1}" /></label>
       <div class="row"><input id="officeRealAck" type="checkbox" /><label for="officeRealAck">Confirmo que li o aviso e aceito operar com dinheiro real.</label></div>
       <p>Digite <b>${realMode.phraseRequired ?? "OPERAR CONTA REAL"}</b> para confirmar:</p>
       <input id="officeRealPhrase" type="text" autocomplete="off" placeholder="OPERAR CONTA REAL" />
@@ -490,6 +539,7 @@ const OfficeUI = (() => {
   }
   function advancedDrawer() {
     const office = state.office; if (!office || !overlay) return;
+    state.selectedMarket = null; state.drawerDirty = false;
     const metrics = office.metrics ?? {};
     const resolver = office.resolver ?? {};
     overlay.innerHTML = `<div class="office-drawer"><button class="office-btn ghost close small" data-close="1">FECHAR</button><h3>Detalhes avançados</h3>
@@ -502,18 +552,18 @@ const OfficeUI = (() => {
         <div><span>RESOLVER</span><b>${resolver.resolvedCount ?? 0} mercados resolvidos</b></div>
         <div><span>RECONCILIAÇÃO</span><b>${office.reconcile?.error ? office.reconcile.error : "ok"} (${office.reconcile?.checked ?? 0})</b></div>
         <div><span>MEMÓRIA / UPTIME</span><b>${metrics.memoryMb ?? "—"}MB · ${Math.round((metrics.uptimeSec ?? 0) / 60)}min</b></div>
+        <div><span>VALOR GLOBAL / TETO</span><b>${brl(office.config.defaultStake)} / ${brl(office.config.globalMaxStake)}</b></div>
+        <div><span>REVISÃO CONFIG</span><b>${office.config.revision ?? 0}</b></div>
         <div><span>MENSAGENS / CANDLES</span><b>${metrics.messages ?? 0} / ${metrics.candles ?? 0}</b></div>
       </div>
       <div class="office-actions">
         <button class="office-btn" id="officeStressRun">Rodar teste de estresse (1/3/5/10)</button>
-        <button class="office-btn ghost" id="officeCameraReset">Resetar câmera</button>
         <button class="office-btn ghost" id="officeRawLog">${state.showTechActivity ? "Ver atividade amigável" : "Ver log técnico"}</button>
       </div>
       <p class="fine" id="officeStressReport">${office.stress?.report ? `Último teste: ${(office.stress.report.results ?? []).map((row) => `${row.stage}→${row.markets?.length ?? 0}`).join(" · ")}` : "Nenhum teste de estresse executado."}</p>
     </div>`;
   }
 
-  /* ------------------------------ interações ------------------------------ */
   function hitTest(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
     const x = clientX - rect.left, y = clientY - rect.top;
@@ -534,26 +584,34 @@ const OfficeUI = (() => {
       if (Math.abs(dx) + Math.abs(dy) > 3) state.dragMoved = true;
       state.camera.x += dx; state.camera.y += dy; state.lastPointer = { x: event.clientX, y: event.clientY };
     });
-    canvas.addEventListener("wheel", (event) => { event.preventDefault(); const rect = canvas.getBoundingClientRect(); const px = event.clientX - rect.left, py = event.clientY - rect.top; const factor = event.deltaY < 0 ? 1.1 : 0.9; const value = Math.min(1.8, Math.max(0.42, state.camera.zoom * factor)); const ratio = value / state.camera.zoom; state.camera.x = px - (px - state.camera.x) * ratio; state.camera.y = py - (py - state.camera.y) * ratio; state.camera.zoom = value; }, { passive: false });
+    canvas.addEventListener("wheel", (event) => { event.preventDefault(); const rect = canvas.getBoundingClientRect(); const px = event.clientX - rect.left, py = event.clientY - rect.top; const factor = event.deltaY < 0 ? 1.1 : 0.9; const value = Math.min(1.8, Math.max(0.36, state.camera.zoom * factor)); const ratio = value / state.camera.zoom; state.camera.x = px - (px - state.camera.x) * ratio; state.camera.y = py - (py - state.camera.y) * ratio; state.camera.zoom = value; }, { passive: false });
     canvas.addEventListener("dblclick", () => { if (state.defaultCamera) state.camera = { ...state.defaultCamera }; });
+    if (overlay) {
+      overlay.addEventListener("input", (event) => { if (event.target.closest("[data-market-stake-input],[data-market-strategy]")) state.drawerDirty = true; });
+      overlay.addEventListener("change", (event) => { if (event.target.closest("[data-market-stake-input],[data-market-strategy]")) state.drawerDirty = true; });
+    }
   }
   async function startSystem() {
-    const limit = Math.min(100, Math.max(1, Number($("officeLimitInput")?.value) || state.office?.config?.globalMaxStake || 2));
-    await post("/api/iq/config/global-stake", { value: limit });
-    await post("/api/iq/config/auto-execute", { enabled: true });
-    await post("/api/iq/arm", { limitBrl: limit, confirmation: "ARM_PRACTICE" });
-    activityLine(`Sistema iniciado: operação automática ligada com limite de ${brl(limit)} por operação.`, "");
+    const limit = Math.min(100, Math.max(1, Number($("officeLimitInput")?.value) || state.office?.config?.defaultStake || 2));
+    try {
+      await post("/api/iq/config/global-stake", { value: limit });
+      await post("/api/iq/config/auto-execute", { enabled: true });
+      await post("/api/iq/arm", { limitBrl: limit, confirmation: "ARM_PRACTICE" });
+      activityLine(`Sistema iniciado: operação automática ligada com valor de ${brl(limit)} por operação.`, "");
+    } catch (error) { activityLine(`Não foi possível iniciar o sistema: ${reasonText(String(error?.message || error))}.`, "blocked"); }
     return refreshOffice();
   }
   async function stopSystem() {
-    await post("/api/iq/config/auto-execute", { enabled: false });
-    await post("/api/iq/disarm", {});
-    activityLine("Sistema parado: os agentes voltaram a apenas observar.", "");
+    try {
+      await post("/api/iq/config/auto-execute", { enabled: false });
+      await post("/api/iq/disarm", {});
+      activityLine("Sistema parado: os agentes voltaram a apenas observar.", "");
+    } catch (error) { activityLine(`Falha ao parar o sistema: ${String(error?.message || error).slice(0, 80)}`, "blocked"); }
     return refreshOffice();
   }
   function bindButtons() {
     document.addEventListener("click", async (event) => {
-      const target = event.target.closest("[data-close],[data-aux],[data-choose-toggle],[data-toggle-details],[data-market-pause],[data-market-stake],[data-market-strategy-save],#officeAccountPractice,#officeAccountReal,#officeSystemStart,#officeSystemStop,#officeEmergency,#officeApplyLimit,#officeChooseMarkets,#officeAdvanced,#officeActivityTech,#officeRealConfirm,#officeRealRevoke,#officeStressRun,#officeCameraReset,#officeRawLog");
+      const target = event.target.closest("[data-close],[data-aux],[data-choose-toggle],[data-toggle-details],[data-market-toggle],[data-market-pause],[data-market-stake],[data-market-strategy-save],#officeAccountPractice,#officeAccountReal,#officeSystemStart,#officeSystemStop,#officeEmergency,#officeApplyLimit,#officeChooseMarkets,#officeAdvanced,#officeActivityTech,#officeRealConfirm,#officeRealRevoke,#officeStressRun,#officeRawLog,#officeZoomIn,#officeZoomOut,#officeCameraReset,#officeFocus");
       if (!target) return;
       const id = target.id;
       try {
@@ -565,20 +623,55 @@ const OfficeUI = (() => {
         if (id === "officeSystemStart") return startSystem();
         if (id === "officeSystemStop") return stopSystem();
         if (id === "officeEmergency") { const engaged = state.office?.aux?.compliance?.killSwitch?.executionEnabled !== false; await post("/api/iq/kill-switch", { engaged }); activityLine(engaged ? "PARADA DE EMERGÊNCIA acionada: nenhuma nova operação será enviada." : "Sistema reativado após parada de emergência.", engaged ? "blocked" : ""); return refreshOffice(); }
-        if (id === "officeApplyLimit") { const value = Math.min(100, Math.max(1, Number($("officeLimitInput")?.value) || 2)); await post("/api/iq/config/global-stake", { value }); activityLine(`Limite por operação definido em ${brl(value)} para todos os agentes.`, ""); return refreshOffice(); }
+        if (id === "officeApplyLimit") {
+          const value = Math.min(100, Math.max(1, Number($("officeLimitInput")?.value) || 2));
+          await post("/api/iq/config/global-stake", { value });
+          activityLine(`Valor por operação definido em ${brl(value)} para todos os agentes (teto de segurança ${brl(state.office?.config?.hardCap ?? 100)}).`, "");
+          return refreshOffice();
+        }
         if (id === "officeChooseMarkets") return chooseMarketsModal();
         if (id === "officeAdvanced") return advancedDrawer();
         if (id === "officeActivityTech") { state.showTechActivity = !state.showTechActivity; target.textContent = state.showTechActivity ? "ver atividade" : "ver log técnico"; return renderActivity(); }
         if (id === "officeRawLog") { state.showTechActivity = !state.showTechActivity; return advancedDrawer(); }
+        if (id === "officeZoomIn") { state.camera.zoom = Math.min(1.8, state.camera.zoom * 1.15); return; }
+        if (id === "officeZoomOut") { state.camera.zoom = Math.max(0.36, state.camera.zoom * 0.87); return; }
         if (id === "officeCameraReset") { if (state.defaultCamera) state.camera = { ...state.defaultCamera }; return; }
+        if (id === "officeFocus") { const market = state.office?.markets?.find((row) => row.marketKey === state.selectedMarket) ?? state.office?.markets?.find((row) => row.enabled); const index = (state.office?.markets ?? []).findIndex((row) => row.marketKey === market?.marketKey); const slot = SLOTS[index]; if (slot) centerOn(slot.gx + 1.8, slot.gy + 1.8); return; }
         if (id === "officeStressRun") { await post("/api/iq/stress/run", { stages: [1, 3, 5, 10], secondsPerStage: 20 }); activityLine("Teste de estresse iniciado (1/3/5/10 mercados).", ""); return advancedDrawer(); }
         if (id === "officeRealConfirm") { const maxStake = Number($("officeRealStake")?.value) || 1; const phrase = String($("officeRealPhrase")?.value ?? ""); const acknowledgeRisk = $("officeRealAck")?.checked === true; await post("/api/iq/real/confirm", { maxStake, phrase, acknowledgeRisk }); activityLine(`Conta real confirmada no servidor (limite ${brl(maxStake)}).`, ""); closeDrawers(); return refreshOffice(); }
         if (id === "officeRealRevoke") { await post("/api/iq/real/revoke", {}); activityLine("Conta real desativada.", ""); closeDrawers(); return refreshOffice(); }
         if (target.dataset.chooseToggle) { const market = state.office?.markets?.find((row) => row.marketKey === target.dataset.chooseToggle); await put("/api/iq/market", { marketKey: target.dataset.chooseToggle, enabled: market?.enabled !== true }); return refreshOffice().then(() => chooseMarketsModal()); }
+        if (target.dataset.marketToggle) { const market = state.office?.markets?.find((row) => row.marketKey === target.dataset.marketToggle); await put("/api/iq/market", { marketKey: target.dataset.marketToggle, enabled: market?.enabled !== true }); state.toast = { kind: "good", text: market?.enabled ? "Agente desativado." : "Agente ativado." }; return refreshOffice(); }
         if (target.dataset.marketPause) { const market = state.office?.markets?.find((row) => row.marketKey === target.dataset.marketPause); await put("/api/iq/market", { marketKey: target.dataset.marketPause, paused: market?.paused !== true }); activityLine(`${market?.display ?? target.dataset.marketPause} ${market?.paused ? "retomado" : "pausado"}.`, ""); return refreshOffice(); }
-        if (target.dataset.marketStake) { const value = Number(document.querySelector(`[data-market-stake-input="${CSS.escape(target.dataset.marketStake)}"]`)?.value); await put("/api/iq/market", { marketKey: target.dataset.marketStake, maxStake: value }); activityLine(`Limite de ${target.dataset.marketStake} definido em ${brl(value)}.`, ""); return refreshOffice(); }
-        if (target.dataset.marketStrategySave) { const value = document.querySelector(`[data-market-strategy="${CSS.escape(target.dataset.marketStrategySave)}"]`)?.value; await put("/api/iq/market", { marketKey: target.dataset.marketStrategySave, strategy: value }); activityLine(`Estratégia de ${target.dataset.marketStrategySave} alterada para ${value}.`, ""); return refreshOffice(); }
-      } catch (error) { activityLine(`Ação não concluída: ${String(error?.message || error).slice(0, 90)}`, "blocked"); renderActivity(); }
+        if (target.dataset.marketStake) {
+          const key = target.dataset.marketStake;
+          const value = Number(document.querySelector(`[data-market-stake-input="${CSS.escape(key)}"]`)?.value);
+          const response = await put("/api/iq/market", { marketKey: key, configuredStake: value });
+          pinMarket(response.market);
+          state.drawerDirty = false;
+          state.toast = { kind: "good", text: `Valor salvo: ${brl(response.market?.configuredStake ?? value)} por operação.` };
+          activityLine(`${response.market?.display ?? key} valor por operação definido em ${brl(response.market?.configuredStake ?? value)}.`, "");
+          return refreshOffice();
+        }
+        if (target.dataset.marketStrategySave) {
+          const key = target.dataset.marketStrategySave;
+          const value = String(document.querySelector(`[data-market-strategy="${CSS.escape(key)}"]`)?.value ?? "");
+          const response = await put("/api/iq/market", { marketKey: key, strategyVariantId: value });
+          pinMarket(response.market);
+          state.drawerDirty = false;
+          state.toast = { kind: "good", text: `Estratégia salva: ${response.market?.strategyEffective ?? value}.` };
+          activityLine(`${response.market?.display ?? key} estratégia alterada para ${response.market?.strategyEffective ?? value}.`, "");
+          return refreshOffice();
+        }
+      } catch (error) {
+        const key = state.selectedMarket ?? target.dataset.marketStrategySave ?? target.dataset.marketStake;
+        const effective = state.office?.markets?.find((row) => row.marketKey === key);
+        state.drawerDirty = false;
+        state.toast = { kind: "bad", text: `Não foi possível salvar. Configuração ativa: ${effective ? `${effective.strategyEffective ?? "—"} · ${brl(effective.configuredStake)}` : reasonText(String(error?.message || error))}` };
+        activityLine(`Ação não concluída: ${reasonText(String(error?.message || error))}.`, "blocked");
+        if (state.selectedMarket) marketDrawer(state.selectedMarket, true);
+        renderActivity();
+      }
     });
   }
   function bindNavDefault() {

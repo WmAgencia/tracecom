@@ -220,7 +220,7 @@ async function loadIqSignals() {
       <td>${row.action ?? "—"}</td>
       <td class="result-${String(row.disposition || "blocked").toLowerCase()}">${row.disposition ?? "—"}</td>
       <td class="fine">${iqReason(row.reason)}</td>
-      <td>${row.stakeFinal ?? "—"}</td>
+      <td>${row.stakeFinal ?? "—"}${row.stakeAdjustment?.applied ? ` <span class="fine">(config ${row.stakeRequested ?? row.stakeConfigured} → ${row.stakeAdjustment.to}: ${String(row.stakeAdjustment.reason).toLowerCase()})</span>` : ""}</td>
       <td class="fine">${row.brokerOrderId ?? (row.result ? `${row.result}${row.profit !== null && row.profit !== undefined ? ` ${Number(row.profit) >= 0 ? "+" : ""}${Number(row.profit).toFixed(2)}` : ""}` : "—")}</td>
     </tr>`).join("") || `<tr><td colspan="8" class="fine">Sem sinais registrados ainda.</td></tr>`;
   } catch (error) { body.innerHTML = `<tr><td colspan="8" class="fine">Sinais indisponíveis: ${String(error?.message || error)}</td></tr>`; }
@@ -237,7 +237,7 @@ async function loadIqTraining() {
       return `<tr>
         <td>${market.display}</td>
         <td><span class="office-badge ${market.marketType === "OTC" ? "otc" : "normal"}">${market.marketType}</span></td>
-        <td>${market.strategy ?? "—"}</td>
+        <td>${market.strategyEffective ?? market.strategy ?? "—"}</td>
         <td>${market.payout ?? "—"}%</td>
         <td>${signalStats.total ?? 0}</td>
         <td>${signalStats.executed ?? 0}</td>
@@ -245,11 +245,10 @@ async function loadIqTraining() {
         <td>${signalStats.expired ?? 0}</td>
         <td>${daily.wins ?? 0}/${daily.losses ?? 0}/${daily.draws ?? 0}</td>
         <td>${Number.isFinite(Number(daily.settledPnl)) ? `${Number(daily.settledPnl) >= 0 ? "+" : ""}${Number(daily.settledPnl).toFixed(2)}` : "—"}</td>
-        <td>${market.enabled ? (market.availability === "OPEN" ? "ATIVO" : "AGUARDANDO MERCADO") : "DESLIGADO"}</td>
+        <td>${market.enabled ? (market.availability === "OPEN" ? `R$ ${Number(market.configuredStake ?? office.config?.defaultStake ?? 0).toFixed(2)}/op` : "AGUARDANDO MERCADO") : "DESLIGADO"}</td>
       </tr>`;
     };
-    const enabled = office.markets.filter((market) => market.enabled);
-    body.innerHTML = enabled.map(row).join("") || `<tr><td colspan="11" class="fine">Nenhum mercado ativo no momento.</td></tr>`;
+    body.innerHTML = office.markets.map(row).join("") || `<tr><td colspan="11" class="fine">Nenhum mercado configurado.</td></tr>`;
   } catch (error) { body.innerHTML = `<tr><td colspan="11" class="fine">Treinamento indisponível: ${String(error?.message || error)}</td></tr>`; }
 }
 async function connectIq() {

@@ -45,9 +45,9 @@
             <button type="button" id="officeEmergency" class="office-btn danger">PARADA DE EMERGÊNCIA</button>
           </div>
           <div class="office-group" aria-label="Valor por operação">
-            <span class="office-group-label">LIMITE POR OPERAÇÃO</span>
-            <label class="office-field" title="Este é o valor máximo permitido por operação. O sistema pode utilizar um valor menor conforme as regras de risco.">R$ <input id="officeLimitInput" type="number" min="1" max="100" step="1" value="2" /></label>
-            <button type="button" id="officeApplyLimit" class="office-btn" title="Este é o valor máximo permitido por operação. O sistema pode utilizar um valor menor conforme as regras de risco.">Aplicar aos agentes</button>
+            <span class="office-group-label">VALOR POR OPERAÇÃO</span>
+            <label class="office-field" title="Este é o valor que o sistema usará na próxima operação. Nunca ultrapassa o limite máximo de segurança (R$100).">R$ <input id="officeLimitInput" type="number" min="1" max="100" step="1" value="2" /></label>
+            <button type="button" id="officeApplyLimit" class="office-btn" title="Este é o valor que o sistema usará na próxima operação. Nunca ultrapassa o limite máximo de segurança (R$100).">Aplicar aos agentes</button>
           </div>
           <div class="office-chips">
             <span class="office-chip" id="officeChipIq">IQ Option —</span>
@@ -63,6 +63,12 @@
         <div class="office-aux" id="officeAux"></div>
         <div class="office-stage">
           <canvas id="officeCanvas" aria-label="Escritório isométrico dos agentes"></canvas>
+          <div class="office-camera">
+            <button type="button" id="officeZoomIn" class="office-btn ghost small" aria-label="Aproximar">+</button>
+            <button type="button" id="officeZoomOut" class="office-btn ghost small" aria-label="Afastar">−</button>
+            <button type="button" id="officeCameraReset" class="office-btn ghost small">RESET</button>
+            <button type="button" id="officeFocus" class="office-btn ghost small">CENTRALIZAR</button>
+          </div>
           <div class="office-overlay" id="officeOverlay"></div>
         </div>
         <div class="office-activity">

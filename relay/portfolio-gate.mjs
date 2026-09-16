@@ -7,11 +7,35 @@ import { HARD_CAP_STAKE, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, entr
 
 export const GATE_VERSION = "portfolio-execution-gate-v1";
 
-export function resolveFinalStake({ calculatedBankrollStake, marketMaxStake, globalMaxStake, hardCap = HARD_CAP_STAKE } = {}) {
-  const candidates = [calculatedBankrollStake, marketMaxStake, globalMaxStake, hardCap].map(Number).filter((value) => Number.isFinite(value) && value > 0);
-  if (!candidates.length) return { finalStake: null, reason: "NO_STAKE_CONFIGURED" };
-  const finalStake = Math.min(...candidates);
-  return { finalStake, cappedBy: finalStake === Number(calculatedBankrollStake) ? "CALCULATED" : finalStake === Number(marketMaxStake) ? "MARKET_MAX" : finalStake === Number(globalMaxStake) ? "GLOBAL_MAX" : "HARD_CAP", hardCap };
+/**
+ * Resolve o valor da proxima operacao.
+ * configuredStake (valor escolhido pelo operador) e o stakeRequested; ele NAO e apenas teto.
+ * O valor final passa por: teto do mercado, teto global e hard cap (nunca silencioso: devolve motivo).
+ */
+export function resolveFinalStake({ configuredStake, calculatedBankrollStake, marketConfiguredStake, marketMaxStake, globalMaxStake, hardCap = HARD_CAP_STAKE, requestedStake } = {}) {
+  const requested = [requestedStake, marketConfiguredStake, configuredStake, calculatedBankrollStake]
+    .map(Number).find((value) => Number.isFinite(value) && value > 0) ?? null;
+  if (requested === null) return { finalStake: null, requestedStake: null, reason: "NO_STAKE_CONFIGURED", adjustment: null, source: "NONE" };
+  const source = Number.isFinite(Number(requestedStake)) && Number(requestedStake) > 0 ? "MANUAL_OVERRIDE"
+    : Number.isFinite(Number(marketConfiguredStake)) && Number(marketConfiguredStake) > 0 ? "MARKET_CONFIGURED"
+    : Number.isFinite(Number(configuredStake)) && Number(configuredStake) > 0 ? "GLOBAL_CONFIGURED"
+    : "FALLBACK_CALCULATED";
+  const caps = [
+    { name: "MARKET_MAX", value: Number(marketMaxStake) },
+    { name: "GLOBAL_MAX", value: Number(globalMaxStake) },
+    { name: "HARD_CAP", value: Number(hardCap) },
+  ].filter((cap) => Number.isFinite(cap.value) && cap.value > 0);
+  const binding = caps.filter((cap) => cap.value < requested).sort((a, b) => a.value - b.value)[0] ?? null;
+  const finalStake = binding ? binding.value : requested;
+  return {
+    finalStake,
+    requestedStake: requested,
+    source,
+    cappedBy: binding ? binding.name : "REQUESTED",
+    reason: binding ? `STAKE_ADJUSTED_BY_${binding.name}` : "STAKE_AS_CONFIGURED",
+    adjustment: binding ? { applied: true, reason: binding.name, from: requested, to: binding.value } : { applied: false, reason: null, from: requested, to: requested },
+    hardCap,
+  };
 }
 
 export class PortfolioExecutionGate {
@@ -54,8 +78,8 @@ export class PortfolioExecutionGate {
     add("global_positions_respected", openPositions.length < this.maxGlobalOpenPositions, { open: openPositions.length, limit: this.maxGlobalOpenPositions });
     add("active_markets_respected", new Set(activeMarketKeys).size <= this.maxActiveMarkets, { active: new Set(activeMarketKeys).size, limit: this.maxActiveMarkets });
 
-    const resolved = resolveFinalStake({ calculatedBankrollStake: Number(stake ?? calculatedBankrollStake), marketMaxStake: Number(market?.maxStake), globalMaxStake: Number(globalMaxStake), hardCap: this.hardCap });
-    const stakeValue = Number(stake ?? resolved.finalStake);
+    const resolved = resolveFinalStake({ requestedStake: Number.isFinite(Number(stake)) && Number(stake) > 0 ? Number(stake) : undefined, marketConfiguredStake: Number(market?.configuredStake), configuredStake: Number(input.configuredStake), calculatedBankrollStake: Number(calculatedBankrollStake), marketMaxStake: Number(market?.maxStake), globalMaxStake: Number(globalMaxStake), hardCap: this.hardCap });
+    const stakeValue = Number.isFinite(Number(stake)) && Number(stake) > 0 ? Number(stake) : resolved.finalStake;
     add("market_stake_respected", Number.isFinite(stakeValue) && stakeValue > 0 && stakeValue <= Number(market?.maxStake ?? Infinity), { stake: Number.isFinite(stakeValue) ? stakeValue : null, marketMaxStake: market?.maxStake ?? null });
     add("global_stake_respected", Number.isFinite(stakeValue) && stakeValue <= Number(globalMaxStake ?? Infinity), { stake: Number.isFinite(stakeValue) ? stakeValue : null, globalMaxStake: globalMaxStake ?? null });
     add("hard_cap_respected", Number.isFinite(stakeValue) && stakeValue <= this.hardCap, { stake: Number.isFinite(stakeValue) ? stakeValue : null, hardCap: this.hardCap });

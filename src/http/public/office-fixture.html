@@ -33,7 +33,7 @@
     /* Fixture: cobre estados amigáveis, slots livres, OTC/NORMAL, sinais executados/bloqueados. Nada toca o backend. */
     const market = (key, display, marketType, activeId, agentState, extra = {}) => ({
       marketKey: key, marketType, canonical: key.split(":")[0], symbol: display.replace(" OTC", ""), display, enabled: extra.enabled !== false, paused: extra.paused === true,
-      maxStake: extra.maxStake ?? 2, strategy: extra.strategy ?? "V3", activeId, instrumentTypes: ["binary", "turbo"], availability: extra.availability ?? "OPEN", payout: extra.payout ?? 85, payoutSource: "fixture",
+      maxStake: 100, configuredStake: extra.configuredStake ?? (marketType === "OTC" ? 10 : 10), strategy: (extra.strategyVariant ?? "V3-60").split("-")[0], strategyVariantId: extra.strategyVariant ?? "V3-60", strategyEffective: extra.strategyVariant ?? "V3-60", strategySource: extra.strategyVariant ? "MARKET" : "GLOBAL", revision: extra.revision ?? 3, activeId, instrumentTypes: ["binary", "turbo"], availability: extra.availability ?? "OPEN", payout: extra.payout ?? 85, payoutSource: "fixture",
       connectionHealth: { connected: agentState !== "OFFLINE" && extra.availability !== "NOT_FOUND", lastMessageAt: Date.now(), gaps: 0 }, serverTime: Date.now(),
       lastTick: { price: 1.1 + activeId / 1000, ageMs: 320, source: "IQ_OPTION_WS", segmentId: `${key}:${Date.now() - 2500}`, bucketStart: Date.now() - 2500, bucketEnd: Date.now() + 2500, serverTimestamp: Date.now() - 320, receivedAt: Date.now() - 320 },
       candles5s: 120, featureState: { builtAt: Date.now() - 500, fresh: true, freshnessReason: "OK", rsi14: 48.2, atr14: 0.00015, adx14: 22.4, donchianPosition: 0.42, microstructureStreak: -1 },
@@ -61,10 +61,12 @@
     ];
     for (const [key, display, type, activeId, availability] of [["AUDUSD:NORMAL", "AUD/USD", "NORMAL", 6, "NOT_FOUND"], ["USDCAD:NORMAL", "USD/CAD", "NORMAL", 7, "NOT_FOUND"], ["AUDJPY:NORMAL", "AUD/JPY", "NORMAL", 8, "NOT_FOUND"], ["EURGBP:NORMAL", "EUR/GBP", "NORMAL", 9, "NOT_FOUND"], ["GBPJPY:NORMAL", "GBP/JPY", "NORMAL", 10, "NOT_FOUND"]]) markets.push(market(key, display, type, activeId, "UNAVAILABLE", { enabled: false, availability, payout: null }));
     const signals = [
-      { id: 4, marketKey: "EURGBP:OTC", display: "EUR/GBP OTC", marketType: "OTC", action: "BUY", at: Date.now() - 40_000, disposition: "EXECUTED", reason: "AUTORIZADO", stakeFinal: 2, brokerOrderId: "FX-2002", result: null, profit: null },
-      { id: 3, marketKey: "GBPJPY:OTC", display: "GBP/JPY OTC", marketType: "OTC", action: "SELL", at: Date.now() - 90_000, disposition: "BLOCKED", reason: "AUTO_DESLIGADO", stakeFinal: 2, brokerOrderId: null },
-      { id: 2, marketKey: "EURUSD:OTC", display: "EUR/USD OTC", marketType: "OTC", action: "BUY", at: Date.now() - 180_000, disposition: "BLOCKED", reason: "SISTEMA_DESARMADO", stakeFinal: 2, brokerOrderId: null },
-      { id: 1, marketKey: "USDJPY:OTC", display: "USD/JPY OTC", marketType: "OTC", action: "SELL", at: Date.now() - 600_000, disposition: "EXPIRED", reason: "AUTO_DESLIGADO_EXPIRADO", stakeFinal: 1, brokerOrderId: null },
+      { id: 5, marketKey: "GBPUSD:OTC", display: "GBP/USD OTC", marketType: "OTC", action: "BUY", at: Date.now() - 20_000, disposition: "EXECUTED", reason: "AUTORIZADO", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 10, stakeSource: "MARKET_CONFIGURED", stakeAdjustment: { applied: false, reason: null, from: 10, to: 10 }, strategyVariantId: "V8-60", brokerOrderId: "FX-3001", result: null, profit: null },
+      { id: 4, marketKey: "EURGBP:OTC", display: "EUR/GBP OTC", marketType: "OTC", action: "BUY", at: Date.now() - 40_000, disposition: "EXECUTED", reason: "AUTORIZADO", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 3, stakeSource: "MARKET_CONFIGURED", stakeAdjustment: { applied: true, reason: "MARKET_MAX", from: 10, to: 3 }, strategyVariantId: "V3-60", brokerOrderId: "FX-2002", result: null, profit: null },
+      { id: 3, marketKey: "GBPJPY:OTC", display: "GBP/JPY OTC", marketType: "OTC", action: "SELL", at: Date.now() - 90_000, disposition: "BLOCKED", reason: "AUTO_DESLIGADO", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 10, brokerOrderId: null },
+      { id: 2, marketKey: "EURUSD:OTC", display: "EUR/USD OTC", marketType: "OTC", action: "BUY", at: Date.now() - 180_000, disposition: "BLOCKED", reason: "SISTEMA_DESARMADO", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 10, brokerOrderId: null },
+      { id: 1, marketKey: "AUDUSD:NORMAL", display: "AUD/USD", marketType: "NORMAL", action: "BUY", at: Date.now() - 320_000, disposition: "BLOCKED", reason: "GATE_MARKET_AVAILABLE", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 10, brokerOrderId: null },
+      { id: 0, marketKey: "USDJPY:OTC", display: "USD/JPY OTC", marketType: "OTC", action: "SELL", at: Date.now() - 600_000, disposition: "EXPIRED", reason: "AUTO_DESLIGADO_EXPIRADO", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 10, brokerOrderId: null },
     ];
     window.__OFFICE_FIXTURE__ = {
       events: [],
@@ -73,7 +75,7 @@
         connection: { connected: true, host: "ws.iqoption.com", timeValid: true, clockSkewMs: 0, reconnects: 0, healthy: true, connectionId: "fixture" },
         mode: "PRACTICE",
         modeState: { mode: "PRACTICE", practice: { verified: true, balance: 10_000, currency: "USD" }, real: { available: true, balance: 0, currency: "BRL" }, realMode: { realModeEnabled: false, phraseRequired: "OPERAR CONTA REAL", maxStake: null, lastRevokeReason: "RESTART" } },
-        config: { globalMaxStake: 10, calculatedBankrollStake: 1, hardCap: 100, maxActiveMarkets: 10, autoExecute: true, selection: { family: "V3", horizonSeconds: 60, variantId: "V3-60" } },
+        config: { globalMaxStake: 100, defaultStake: 10, calculatedBankrollStake: 1, hardCap: 100, maxActiveMarkets: 10, autoExecute: true, revision: 9, selection: { family: "V3", horizonSeconds: 60, variantId: "V3-60" } },
         activeCount: 10, activeLimit: 10, universeCount: 15,
         portfolio: {
           openPositions: [

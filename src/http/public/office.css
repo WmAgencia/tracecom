@@ -83,6 +83,9 @@
 .office-market-row small { color: #7f93b8; font: 9px var(--mono, monospace); display: block; margin-top: 2px; }
 .office-market-row b { color: #dbe6ff; font: 700 12.5px var(--mono, monospace); }
 .office-market-row .right { display: flex; gap: 8px; align-items: center; }
+.office-toast { margin: 8px 0 4px; padding: 8px 10px; border-radius: 10px; font: 10.5px var(--mono, monospace); }
+.office-toast.good { color: #8ce4a0; border: 1px solid #2f7d49; background: #0d221a; }
+.office-toast.bad { color: #ff9d9d; border: 1px solid #8a3333; background: #220d0d; }
 .office-activity { border: 1px solid rgba(122,162,255,.14); border-radius: 14px; background: #080d18; padding: 10px 12px; }
 .office-activity-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .office-activity-list { max-height: 180px; overflow: auto; display: flex; flex-direction: column; gap: 4px; }

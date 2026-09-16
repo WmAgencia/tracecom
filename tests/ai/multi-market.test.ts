@@ -196,27 +196,46 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     await sleep(10);
     expect(ctx.settlementState.daily.wins).toBe(1);
   });
-  it("stake individual e APPLY TO ALL respeitam teto; hard cap clampa em 100", async () => {
+  it("VALOR POR OPERACAO: configuredStake e usado como valor pedido (nao apenas teto) e APPLY ALL sobrescreve individual", async () => {
     const runtime = multiFixture();
     seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101 });
     seedMarket(runtime, "USDJPY:NORMAL", { activeId: 201 });
-    runtime.applyGlobalMaxStake(2);
-    runtime.setMarket("EURUSD:NORMAL", { maxStake: 1 }, { persist: false });
-    expect(() => runtime.applyGlobalMaxStake(150)).toThrowError(/INVALID_GLOBAL_STAKE/);
-    expect(() => runtime.setMarket("EURUSD:NORMAL", { maxStake: 150 }, { persist: false })).toThrowError(/INVALID_MARKET_STAKE/);
     runtime.arm(100, { confirmation: true });
-    const order = runtime.requestOrder({ marketKey: "EURUSD:NORMAL", direction: "BUY", stake: 50, horizonSeconds: 60, idempotencyKey: "k-stake" });
+    runtime.applyGlobalMaxStake(3);
+    expect(runtime.markets.get("EURUSD:NORMAL").configuredStake).toBe(3);
+    const first = runtime.requestOrder({ marketKey: "EURUSD:NORMAL", direction: "BUY", horizonSeconds: 60, idempotencyKey: "k-cfg-1" });
     await sleep(10);
-    expect(runtime.__sent[0].price).toBe(1);
-    await ack(runtime, "EURUSD:NORMAL", "ORD-D");
-    await order;
-    runtime.config.calculatedBankrollStake = 500; runtime.config.globalMaxStake = 500;
-    runtime.markets.get("USDJPY:NORMAL").maxStake = 500;
-    const capped = runtime.requestOrder({ marketKey: "USDJPY:NORMAL", direction: "BUY", stake: 500, horizonSeconds: 60, idempotencyKey: "k-hardcap" });
+    expect(runtime.__sent[0].price).toBe(3);
+    await ack(runtime, "EURUSD:NORMAL", "ORD-CFG-1");
+    await first;
+    runtime.ingestEvent("socket-option-closed", { connectionId: CONNECTION_ID, receivedAt: Date.now(), msg: { id: "ORD-CFG-1", win: "win", sum: 3, win_amount: 5.5 } });
+    await sleep(15);
+    runtime.setMarket("EURUSD:NORMAL", { configuredStake: 5 }, { persist: false });
+    runtime.setMarket("USDJPY:NORMAL", { configuredStake: 5 }, { persist: false });
+    runtime.applyGlobalMaxStake(10);
+    expect(runtime.markets.get("EURUSD:NORMAL").configuredStake).toBe(10);
+    expect(runtime.markets.get("USDJPY:NORMAL").configuredStake).toBe(10);
+    runtime.setMarket("EURUSD:NORMAL", { configuredStake: 2 }, { persist: false });
+    const individual = runtime.requestOrder({ marketKey: "EURUSD:NORMAL", direction: "BUY", horizonSeconds: 60, idempotencyKey: "k-cfg-2" });
+    const other = runtime.requestOrder({ marketKey: "USDJPY:NORMAL", direction: "BUY", horizonSeconds: 60, idempotencyKey: "k-cfg-3" });
     await sleep(10);
-    expect(runtime.__sent[1].price).toBe(100);
-    await ack(runtime, "USDJPY:NORMAL", "ORD-E");
-    await capped;
+    const sent = Object.fromEntries(runtime.__sent.slice(1).map((row: any) => [row.activeId, row.price]));
+    expect(sent[101]).toBe(2);
+    expect(sent[201]).toBe(10);
+    await ack(runtime, "EURUSD:NORMAL", "ORD-CFG-2");
+    await ack(runtime, "USDJPY:NORMAL", "ORD-CFG-3");
+    await individual; await other;
+  });
+  it("HARD CAP: nenhuma combinacao de configuracao envia acima de 100 + ajuste observavel (nunca silencioso)", async () => {
+    const runtime = multiFixture();
+    const ctx = seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101 });
+    runtime.arm(100, { confirmation: true }); runtime.config.autoExecute = true;
+    runtime.config.globalMaxStake = 500; runtime.config.defaultStake = 500; ctx.configuredStake = 500; ctx.maxStake = 500;
+    const record = await runtime.simulateSignal("EURUSD:NORMAL", "BUY");
+    await sleep(10);
+    expect(runtime.__sent[0].price).toBe(100);
+    expect(record).toMatchObject({ stakeRequested: 500, stakeFinal: 100 });
+    expect(record.stakeAdjustment).toMatchObject({ applied: true, reason: "HARD_CAP", to: 100 });
   });
   it("reconciliacao de orfaos no restart nao reenvia ordem", async () => {
     const queries: string[] = [];
@@ -331,6 +350,57 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     runtime.expireSignals();
     expect(target.disposition).toBe("EXPIRED");
     expect(String(target.reason)).toContain("EXPIRADO");
+  });
+  it("ESTRATEGIA por variante: persiste, nao reverte e e usada na decisao; variante invalida rejeitada", async () => {
+    const runtime = multiFixture();
+    const ctx = seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101 });
+    runtime.config.autoExecute = true; runtime.arm(2, { confirmation: true });
+    expect(() => runtime.setMarket("EURUSD:NORMAL", { strategyVariantId: "V9-999" }, { persist: false })).toThrowError(/INVALID_STRATEGY_VARIANT/);
+    const saved = runtime.setMarket("EURUSD:NORMAL", { strategyVariantId: "V8-60" }, { persist: false });
+    expect(saved).toMatchObject({ strategyVariantId: "V8-60", strategy: "V8", strategyEffective: "V8-60", revision: expect.any(Number) });
+    expect(ctx.strategyVariantId).toBe("V8-60");
+    ctx.lastCandle = { ...ctx.lastCandle, bucketStart: Number(ctx.lastCandle.bucketStart) + 10_000 };
+    const record = await runtime.simulateSignal("EURUSD:NORMAL", "BUY");
+    expect(record).toMatchObject({ strategy: "V8", strategyVariantId: "V8-60", horizonSeconds: 60, strategySource: "MARKET" });
+    const reread = runtime.office().markets.find((market: any) => market.marketKey === "EURUSD:NORMAL");
+    expect(reread).toMatchObject({ strategyVariantId: "V8-60", strategyEffective: "V8-60" });
+  });
+  it("PERSISTENCIA: reload restaura configuredStake, defaultStake, strategyVariantId e revision", async () => {
+    const stored = {
+      config: { mode: "PRACTICE", global_max_stake: 100, default_stake: 7, calculated_bankroll_stake: 1, auto_execute: false, selection_json: { family: "V3", horizonSeconds: 60, variantId: "V3-60" }, resolver_json: null, revision: 42 },
+      markets: [{ market_key: "EURUSD:NORMAL", enabled: true, paused: false, max_stake: 100, configured_stake: 7, strategy_variant_id: "V8-60", strategy: "V8", revision: 12, active_id: 101, instrument_types: ["binary"], availability: "OPEN", payout: 85 }],
+    };
+    const pool = { query: async (sql: string) => {
+      if (sql.includes("to_regclass")) return { rows: [{ table_name: "iq_executions" }] };
+      if (sql.includes("iq_runtime_config")) return { rows: [stored.config] };
+      if (sql.includes("iq_markets")) return { rows: stored.markets };
+      return { rows: [], rowCount: 1 };
+    } };
+    const runtime = new IqMultiRuntime({ pool, getSsid: () => null, now: () => Date.now(), log: () => {} }) as any;
+    await runtime.reloadConfiguration();
+    expect(runtime.config.defaultStake).toBe(7);
+    expect(runtime.config.revision).toBe(42);
+    const ctx = runtime.markets.get("EURUSD:NORMAL");
+    expect(ctx).toMatchObject({ configuredStake: 7, strategyVariantId: "V8-60", strategy: "V8", revision: 12, maxStake: 100 });
+    const reread = runtime.office().markets.find((market: any) => market.marketKey === "EURUSD:NORMAL");
+    expect(reread).toMatchObject({ configuredStake: 7, strategyEffective: "V8-60" });
+  });
+  it("MERCADO FECHADO nao opera e continua existindo no escritorio (15 estacoes, max 10 ativos)", async () => {
+    const runtime = multiFixture();
+    const closed = seedMarket(runtime, "AUDUSD:NORMAL", { activeId: 401, enabled: false });
+    closed.availability = "NOT_FOUND"; closed.enabled = true;
+    const open = seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101 });
+    open.configuredStake = 2;
+    runtime.arm(2, { confirmation: true }); runtime.config.autoExecute = true;
+    closed.lastCandle = open.lastCandle; closed.featureState = open.featureState; closed.lastTickAt = Date.now();
+    await expect(runtime.requestOrder({ marketKey: "AUDUSD:NORMAL", direction: "BUY", horizonSeconds: 60, idempotencyKey: "k-closed" })).rejects.toThrowError(/PORTFOLIO_GATE_MARKET_AVAILABLE/);
+    closed.availability = "OPEN"; closed.enabled = false;
+    await expect(runtime.requestOrder({ marketKey: "AUDUSD:NORMAL", direction: "BUY", horizonSeconds: 60, idempotencyKey: "k-disabled" })).rejects.toThrowError(/PORTFOLIO_GATE_MARKET_ENABLED/);
+    expect(runtime.__sent).toHaveLength(0);
+    const office = runtime.office();
+    expect(office.markets).toHaveLength(15);
+    expect(office.markets.filter((market: any) => market.enabled).length).toBeLessThanOrEqual(10);
+    expect(office.markets.find((market: any) => market.marketKey === "AUDUSD:NORMAL")).toMatchObject({ availability: "OPEN", enabled: false });
   });
   it("event bus: payload nunca sobrescreve o campo type do evento", () => {
     const runtime = multiFixture();
