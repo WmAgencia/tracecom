@@ -1,8 +1,9 @@
 /** OpenCode Go pipeline — adapter, session header, fail-closed, null/UNKNOWN, segurança.
  * Provider real validado: openCodeGo / qwen3.7-plus (health PASS 2026-09-16; ~3,0-4,9s). */
 import { describe, expect, it } from "vitest";
-// @ts-ignore - modulo ESM sem tipagem (validado em runtime)
-import {
+// @ts-expect-error - relay ESM sem tipagem (validado em runtime)
+const goModule = await import("../../relay/opencode-go.mjs");
+const {
   DEFAULT_MODEL,
   OPENCODE_GO_BASE,
   TEXT_TIMEOUT_MS,
@@ -15,7 +16,17 @@ import {
   resolveModel,
   sessionFor,
   shouldUseOpenCodeGo,
-} from "../../relay/opencode-go.mjs";
+} = goModule as unknown as Record<string, (input: never) => never> & Record<string, unknown> as never as {
+  DEFAULT_MODEL: string; OPENCODE_GO_BASE: string; TEXT_TIMEOUT_MS: number; VISION_TIMEOUT_MS: number;
+  buildTextRequest: (input: { model: string; system: string; prompt: string; sessionId: string }) => { url: string; headers: Record<string, string>; body: { model: string; messages: Array<{ role: string; content: unknown }> } };
+  buildVisionRequest: (input: { model: string; imageDataUrl: string; prompt: string; sessionId: string }) => { url: string; headers: Record<string, string>; body: { model: string; messages: Array<{ role: string; content: Array<{ type: string; text?: string; image_url?: { url: string } }> }> } };
+  failedObservation: (provenance: Record<string, unknown>, note: string) => Record<string, unknown> & { notes: string[] };
+  normalizeObservation: (parsed: Record<string, unknown> | null, provenance: Record<string, unknown>) => Record<string, unknown> & { marketType: string | null; investmentValue: number | null; expirationSeconds: number | null; symbol: string | null; availability: string; parseMode: string; provenance: Record<string, unknown>; manualPosition: { hasOpenPosition: boolean; direction: string } };
+  parseStructured: (text: unknown) => Record<string, unknown> | null;
+  resolveModel: (config: { model?: string } | null) => string;
+  sessionFor: (context: Record<string, unknown>) => string;
+  shouldUseOpenCodeGo: (config: Record<string, unknown> | null | undefined) => boolean;
+};
 
 const CV = "configurado";
 describe("provider resolution — CONFIG controla o runtime", () => {
@@ -58,16 +69,16 @@ describe("requisições — host/modelo/session/imagem por etapa", () => {
     expect(request.url).toBe(`${OPENCODE_GO_BASE}/chat/completions`);
     expect(request.headers["x-opencode-session"]).toBe(sessionId);
     expect(request.body.model).toBe("qwen3.7-plus");
-    const content = request.body.messages[0].content;
-    expect(content[0].type).toBe("text");
-    expect(content[1].type).toBe("image_url");
-    expect(content[1].image_url.url.startsWith("data:image/jpeg")).toBe(true);
+    const content = request.body.messages[0]!.content;
+    expect(content[0]!.type).toBe("text");
+    expect(content[1]!.type).toBe("image_url");
+    expect(content[1]!.image_url!.url.startsWith("data:image/jpeg")).toBe(true);
   });
   it("text: sem imagem na etapa textual (reasoning recebe só contexto)", () => {
     const request = buildTextRequest({ model: "qwen3.7-plus", system: "sys", prompt: "ctx", sessionId });
     expect(request.headers["x-opencode-session"]).toBe(sessionId);
-    expect(request.body.messages[0].role).toBe("system");
-    expect(request.body.messages[1].role).toBe("user");
+    expect(request.body.messages[0]!.role).toBe("system");
+    expect(request.body.messages[1]!.role).toBe("user");
     expect(JSON.stringify(request.body)).not.toContain("image_url");
   });
   it("a key nunca aparece nas requisições montadas (Authorization é injetado só no relay runner)", () => {
