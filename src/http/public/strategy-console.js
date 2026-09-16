@@ -118,7 +118,7 @@ async function loadStats() {
 async function loadAiStatus() {
   try {
     const body = await jget("/api/ai/provider");
-    setText("aiStatus", body.status === "CONFIGURED" ? `CONECTADO · ${body.provider ?? "openCodeGo"}` : "NÃO CONFIGURADO");
+    setText("aiStatus", body.status === "CONFIGURED" ? `CONECTADO · ${body.provider ?? "openCodeGo"}${body.model ? ` · ${body.model}` : ""}` : "NÃO CONFIGURADO");
     setText("aiMasked", body.maskedKey ? `Chave armazenada (${body.maskedKey}) — nunca exibida por inteiro.` : "");
   } catch { setText("aiStatus", "ERRO"); }
 }

@@ -716,12 +716,13 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
     if (path === "/api/ai/provider" && req.method === "PUT") {
       const apiKey = String(operationalInput.apiKey ?? "").trim();
+      const model = typeof operationalInput.model === "string" && /^[a-z0-9.\-]{2,64}$/i.test(operationalInput.model.trim()) ? operationalInput.model.trim() : null;
       if (apiKey.length < 20 || apiKey.length > 300 || /\s/.test(apiKey)) { json(400, { error: "invalid_api_key" }); return; }
       try {
         const existing = (await readAiProviderConfig()) ?? {};
-        const record = { ...existing, provider: "openCodeGo", apiKey, updatedAt: new Date().toISOString() };
+        const record = { ...existing, provider: "openCodeGo", apiKey, model: model ?? (typeof existing.model === "string" ? existing.model : null), updatedAt: new Date().toISOString() };
         await put(AI_PROVIDER_CONFIG_PATH, JSON.stringify(record), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 } as never);
-        json(200, { status: "CONFIGURED", provider: "openCodeGo", maskedKey: maskApiKey(apiKey), updatedAt: record.updatedAt, shadowOnly: true });
+        json(200, { status: "CONFIGURED", provider: "openCodeGo", model: record.model, maskedKey: maskApiKey(apiKey), updatedAt: record.updatedAt, shadowOnly: true });
       } catch { json(502, { error: "provider_store_unavailable" }); }
       return;
     }
