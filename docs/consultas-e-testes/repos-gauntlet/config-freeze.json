@@ -1,0 +1,303 @@
+{
+ "frozen_at": "2026-09-16T04:29:14.185Z",
+ "protocol": {
+  "candle_s": 5,
+  "horizon_s": 60,
+  "payout": 0.89,
+  "breakeven": 52.91,
+  "entry": "close(T)",
+  "settlement": "close(T+60s)",
+  "markets": [
+   "BINARY",
+   "OTC"
+  ],
+  "split": "mesmas 10h para todos"
+ },
+ "candidates": [
+  {
+   "id": "deriv_sma_rsi",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "15m-1h (Abe Cofnas cap.6)",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "cadabcfc1c1ad591",
+   "params": {
+    "sma": [
+     50,
+     200
+    ],
+    "rsi": 14,
+    "th": [
+     30,
+     70
+    ]
+   }
+  },
+  {
+   "id": "deriv_macd_cross",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "original: varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "cff87972f076bb63",
+   "params": {
+    "macd": [
+     12,
+     26,
+     9
+    ]
+   }
+  },
+  {
+   "id": "deriv_sma_rsi_macd_combo",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "15m-1h",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "e6777f6a5ffac7bf",
+   "params": {}
+  },
+  {
+   "id": "deriv_bollinger_bands",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "15m-1h",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "493e0592460bf0dc",
+   "params": {
+    "bb": [
+     20,
+     2
+    ]
+   }
+  },
+  {
+   "id": "deriv_bollinger_breakout",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "15m-1h (Cofnas cap.6 p.100)",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "6ac8d9df53711b66",
+   "params": {
+    "bb": [
+     20,
+     2
+    ],
+    "follow": true
+   }
+  },
+  {
+   "id": "deriv_adx_trend",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "00f439aef0f1a1d9",
+   "params": {
+    "adx": 14,
+    "th": 25
+   }
+  },
+  {
+   "id": "deriv_ichimoku_tk",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "08f7111d5b500306",
+   "params": {
+    "ichimoku": [
+     9,
+     26
+    ]
+   }
+  },
+  {
+   "id": "deriv_breakout20",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "283322ad7c54286b",
+   "params": {
+    "look": 20
+   }
+  },
+  {
+   "id": "deriv_trend_follow",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "c7bf233846fc4fd6",
+   "params": {
+    "ema": [
+     8,
+     21
+    ],
+    "adx": 25
+   }
+  },
+  {
+   "id": "deriv_stoch_rsi",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "709d57c17cec0dee",
+   "params": {
+    "stoch": [
+     14,
+     3,
+     3
+    ],
+    "rsi": 14
+   }
+  },
+  {
+   "id": "deriv_heikin_ashi",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "73a0056265e3471a",
+   "params": {}
+  },
+  {
+   "id": "deriv_candle_reversal",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "a1317b179af9641f",
+   "params": {
+    "patterns": [
+     "engulfing",
+     "hammer",
+     "shootingstar"
+    ]
+   }
+  },
+  {
+   "id": "deriv_atr_breakout",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "eab06749d82daee6",
+   "params": {
+    "atr": 14
+   }
+  },
+  {
+   "id": "deriv_psar",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "7d32ec6849386b12",
+   "params": {
+    "psar": [
+     0.02,
+     0.2
+    ],
+    "regra_fonte": "apenas estado PSARl (long); NaN -> None"
+   }
+  },
+  {
+   "id": "deriv_ema_cross_adx",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "ef2132b62bb5191f",
+   "params": {
+    "ema8": true,
+    "adx": 13
+   }
+  },
+  {
+   "id": "deriv_golden_death_cross",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "2d11f5d8719cf224",
+   "params": {
+    "sma": [
+     50,
+     200
+    ]
+   }
+  },
+  {
+   "id": "deriv_stoch_rsi_reversal",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "15m-1h (Cofnas cap.6)",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "2bee85fe73854ec4",
+   "params": {
+    "stoch": 14,
+    "rsi": 14,
+    "adx_filter": true
+   }
+  },
+  {
+   "id": "superthree_trend",
+   "repo": "SuperThree (MIT)",
+   "commit": "68b413e61e8d",
+   "license": "MIT",
+   "origTF": "TradingView (qualquer TF)",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "3b8c15c24242322c",
+   "params": {
+    "atr": 10,
+    "factor": 3,
+    "mode": "Quick"
+   }
+  },
+  {
+   "id": "superthree_ctm",
+   "repo": "SuperThree (MIT)",
+   "commit": "68b413e61e8d",
+   "license": "MIT",
+   "origTF": "TradingView (qualquer TF)",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "cc9c549a573e82dd",
+   "params": {
+    "ctmLevel": 5,
+    "mode": "Quick"
+   }
+  },
+  {
+   "id": "deriv_vote2",
+   "repo": "binary_options_bot (Deriv, MIT*)",
+   "commit": "a3c79c4ef3e3",
+   "license": "MIT(ver arquivo)",
+   "origTF": "varios (ensemble do repo)",
+   "adapterVersion": "tc-1.1.0",
+   "hash": "755378d1317e6eab",
+   "params": {
+    "min_agree": 2
+   }
+  }
+ ]
+}
