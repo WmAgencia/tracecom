@@ -24,7 +24,7 @@ check("WS-01", "runtime WS ativo", ["iq-ws-runtime-v1", "iq-multi-runtime-v2"].i
 check("WS-02", "WS conectado", md.connected === true, md.host ?? null);
 check("WS-03", "host real esperado (ws.iqoption.com/iqoption.com)", ["ws.iqoption.com", "iqoption.com"].includes(md.host), md.host ?? null);
 check("WS-04", "server time validado (+-2s)", md.timeValid === true && Number.isFinite(md.clockSkewMs) && Math.abs(md.clockSkewMs) <= 2_000, { skewMs: md.clockSkewMs ?? null });
-check("MD-01", "EUR/USD resolvido em runtime (nunca hardcoded)", Number.isFinite(md.activeId) && md.activeExpectedFromRepo === 1 && md.activeActual2026 !== null && md.activeActual2026 !== undefined, { expected: md.activeExpectedFromRepo, actual: md.activeActual2026, otc: md.activeOtc ?? null, section: md.activeSection ?? null });
+check("MD-01", "EUR/USD resolvido em runtime (nunca hardcoded)", Number.isFinite(md.activeId) && (md.activeOtc === true ? md.activeExpectedFromRepo === 76 : md.activeExpectedFromRepo === 1) && md.activeActual2026 !== null && md.activeActual2026 !== undefined, { expected: md.activeExpectedFromRepo, actual: md.activeActual2026, otc: md.activeOtc ?? null, section: md.activeSection ?? null });
 check("MD-02", "candles 5s suficientes", Number(md.candles5s) >= 30, md.candles5s ?? 0);
 check("MD-03", "ultimo tick fresco (<15s)", Boolean(md.lastTick) && Number(md.lastTick.ageMs) < 15_000, md.lastTick ? { ageMs: md.lastTick.ageMs, price: md.lastTick.price } : null);
 check("MD-04", "market data healthy", md.healthy === true, md.healthReasons ?? []);

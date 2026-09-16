@@ -14,7 +14,7 @@
  */
 import crypto from "node:crypto";
 import { EventEmitter } from "node:events";
-import { IqWsClient, IqWsError, IQ_WS_CANDIDATE_HOSTS, CANDLE_SIZE_SECONDS, classifyBalances, computeExpiration, normalizeCandle, parseSettlement, toEpochMs } from "./iqoption-ws.mjs";
+import { IqWsClient, IqWsError, IQ_WS_CANDIDATE_HOSTS, CANDLE_SIZE_SECONDS, classifyBalances, computeExpiration, normalizeCandle, parseSettlement, toEpochMs, EXPECTED_EURUSD_ACTIVE_ID_FROM_REPO, EXPECTED_EURUSD_OTC_ACTIVE_ID_FROM_REPO } from "./iqoption-ws.mjs";
 import { buildFeatureContext, freshnessGate } from "./feature-engine.mjs";
 import { executionGate, applyBrokerAcknowledgement, compareSettlement, ExecutionArmState, IdempotencyStore, KillSwitch, MAX_PRACTICE_STAKE_BRL } from "./iqoption-connector.mjs";
 import { computeFrozenFeatures, evaluateFrozen } from "./frozen-strategies.mjs";
@@ -982,7 +982,7 @@ export class IqMultiRuntime extends EventEmitter {
       marketData: primary ? {
         connected: this.session.connected, host: this.session.host, hostExpectedFromRepo: "iqoption.com", connectionId: this.session.connectionId,
         serverTime: Number.isFinite(this.client?.serverNow()) ? nowIso(this.client.serverNow()) : null, serverTimeMs: this.client?.serverNow() ?? this.session.serverTimeMs, clockSkewMs: this.session.clockSkewMs, timeValid: this.session.timeValid,
-        symbol: primary.symbol, activeId: primary.activeId, activeExpectedFromRepo: primary.marketType === "NORMAL" ? 1 : null, activeActual2026: primary.activeId, activeExpectedVsActual: primary.marketType === "NORMAL" ? "MATCH" : "OTC", activeSection: primary.instrumentTypes[0] ?? null, activeOtc: primary.marketType === "OTC", activeCandidates: primary.candidates ?? [],
+        symbol: primary.symbol, activeId: primary.activeId, activeExpectedFromRepo: primary.canonical === "EURUSD" ? (primary.marketType === "NORMAL" ? EXPECTED_EURUSD_ACTIVE_ID_FROM_REPO : EXPECTED_EURUSD_OTC_ACTIVE_ID_FROM_REPO) : null, activeActual2026: primary.activeId, activeExpectedVsActual: primary.marketType === "NORMAL" ? "MATCH" : "OTC", activeSection: primary.instrumentTypes[0] ?? null, activeOtc: primary.marketType === "OTC", activeCandidates: primary.candidates ?? [],
         candles5s: candles.length, lastTick: primary.lastTick, latencyMs: { serverToReceived: latencySummary(primary.latency.serverToReceived), receivedToNormalized: latencySummary(primary.latency.receivedToNormalized), normalizedToFeature: latencySummary(primary.latency.normalizedToFeature), orderAck: latencySummary(primary.latency.orderAck), visionP95ReferenceMs: 27_500 },
         healthy: this.connectionHealth().healthy && primary.featureState?.fresh === true, healthReasons: [...this.connectionHealth().reasons, ...(primary.featureState?.fresh === true ? [] : ["FEATURE_NOT_FRESH"])],
         candleDiagnostics: { rejected: this.metrics.rejected, lastCode: null, lastReason: null, rawShape: null, rawShapeAt: null }, reconcile: this.reconcile,

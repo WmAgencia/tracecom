@@ -33,6 +33,7 @@ export const TIME_SYNC_TOLERANCE_MS = 2_000;
 export const HEARTBEAT_FALLBACK_MS = 30_000;
 export const CANDLE_SOURCE = "IQ_OPTION_WS";
 export const EXPECTED_EURUSD_ACTIVE_ID_FROM_REPO = 1;
+export const EXPECTED_EURUSD_OTC_ACTIVE_ID_FROM_REPO = 76;
 export const BALANCE_TYPES = { 1: "REAL", 2: "TOURNAMENT", 4: "PRACTICE" };
 
 export class IqWsError extends Error {
