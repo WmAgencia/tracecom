@@ -21,11 +21,13 @@ export function canonicalFromName(rawName) {
 
 function extractPayout(active) {
   if (!active || typeof active !== "object") return null;
-  const commission = Number(active?.option?.profit?.commission);
+  const profit = active?.option?.profit;
+  const commissionRaw = profit && typeof profit === "object" ? (profit.commission?.value ?? profit.commission) : null;
+  const commission = Number(commissionRaw);
   if (Number.isFinite(commission) && commission >= 0 && commission < 100) return { value: Number((100 - commission).toFixed(2)), source: "initialization-data.option.profit.commission" };
   for (const [key, value] of Object.entries(active)) {
     if (!/payout/i.test(key)) continue;
-    const number = Number(value);
+    const number = Number(value?.value ?? value);
     if (Number.isFinite(number) && number > 0) return { value: number, source: `initialization-data.${key}` };
   }
   return null;
@@ -43,6 +45,9 @@ export class RuntimeAssetResolver {
     this.lastResolvedAt = null;
     this.lastError = null;
     this.rawActivesSeen = 0;
+    this.auxMessages = 0;
+    this.lastAuxShape = null;
+    this.sampleOptionShape = null;
   }
 
   ingestInitializationData(msg) {
@@ -55,6 +60,7 @@ export class RuntimeAssetResolver {
         for (const [id, active] of Object.entries(actives)) {
           this.rawActivesSeen += 1;
           if (this.sampleActiveKeys.length < 3) this.sampleActiveKeys.push(Object.keys(active ?? {}));
+          if (!this.sampleOptionShape && active?.option) this.sampleOptionShape = { keys: Object.keys(active.option ?? {}), profit: active.option?.profit ?? null };
           const { canonical, otc } = canonicalFromName(active?.name);
           if (!canonical) continue;
           const payout = extractPayout(active);
@@ -73,6 +79,7 @@ export class RuntimeAssetResolver {
 
   /** instruments (get-instruments v4), get-options e commission-changed: payout/disponibilidade auxiliares. */
   ingestAuxiliary(msg) {
+    this.auxMessages += 1;
     try {
       let rows = [];
       if (Array.isArray(msg)) rows = msg;
@@ -84,6 +91,10 @@ export class RuntimeAssetResolver {
           if (/^\d+$/.test(key) && value && typeof value === "object") rows.push({ active_id: Number(key), ...value });
           else if (value && typeof value === "object" && (value.active_id !== undefined || value.payout !== undefined)) rows.push(value);
         }
+      }
+      if (!this.lastAuxShape) {
+        const sample = rows[0] ?? (msg && typeof msg === "object" ? msg : null);
+        this.lastAuxShape = sample && typeof sample === "object" ? Object.keys(sample).slice(0, 24) : null;
       }
       for (const row of rows) {
         const activeId = Number(row?.active_id ?? row?.activeId ?? row?.id);
@@ -150,6 +161,9 @@ export class RuntimeAssetResolver {
       sectionsSeen: this.sectionsSeen,
       rawActivesSeen: this.rawActivesSeen,
       sampleActiveKeys: this.sampleActiveKeys,
+      sampleOptionShape: this.sampleOptionShape,
+      auxMessages: this.auxMessages,
+      lastAuxShape: this.lastAuxShape,
       markets: [...this.mapping.values()].map((row) => ({ ...row })),
     };
   }

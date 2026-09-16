@@ -180,6 +180,17 @@ export class IqMultiRuntime extends EventEmitter {
     this.#applyResolver({ reason: "AUXILIARY" });
   }
 
+  /** Diagnostico sanitizado de get-options (sem ids de usuario/segredos). */
+  async diagnoseOptions() {
+    if (!this.client || !this.session.connected) throw new IqWsError("WS_DISCONNECTED");
+    const { response } = await this.client.getOptions({ limit: 20, instrumentType: "binary,turbo", balanceId: this.account.practice.balanceId ?? this.account.real.balanceId });
+    const msg = response.msg ?? {};
+    const open = Array.isArray(msg.open_options) ? msg.open_options : [];
+    const closed = Array.isArray(msg.closed_options) ? msg.closed_options : [];
+    const sanitize = (row) => (row && typeof row === "object" ? Object.fromEntries(Object.entries(row).filter(([key]) => !/user|balance|token|ssid/i.test(key)).slice(0, 24)) : null);
+    return { msgKeys: Object.keys(msg), openCount: open.length, closedCount: closed.length, sampleOpen: sanitize(open[0]), resolver: this.resolver.status() };
+  }
+
   ingestEvent(kind, event) {
     const normalized = event && typeof event === "object" ? { name: kind, ...event } : { name: kind, msg: event };
     if (!this.#isCurrentConnection(normalized)) return undefined;
@@ -203,6 +214,11 @@ export class IqMultiRuntime extends EventEmitter {
       this.#applyResolver({ reason: "BOOTSTRAP" });
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_INIT_DATA_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 120))); }
     try { const { response } = await client.getBalances(); this.#applyBalances(response.msg); } catch (error) { this.#safe(() => this.log("IQ_MULTI_BALANCES_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 120))); }
+    try {
+      const { response } = await client.getOptions({ limit: 30, instrumentType: "binary,turbo", balanceId: this.account.practice.balanceId ?? this.account.real.balanceId });
+      this.resolver.ingestAuxiliary(response.msg);
+      this.#applyResolver({ reason: "BOOTSTRAP_OPTIONS" });
+    } catch (error) { this.#safe(() => this.log("IQ_MULTI_OPTIONS_BOOTSTRAP_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 80))); }
     try {
       for (const instrument of ["binary-option", "turbo-option"]) client.send("subscribeMessage", { name: "commission-changed", params: { routingFilters: { instrument_type: instrument } }, version: "1.0" });
       this.#safe(() => this.log("IQ_MULTI_PAYOUT_SUBSCRIBED", "binary-option,turbo-option"));
