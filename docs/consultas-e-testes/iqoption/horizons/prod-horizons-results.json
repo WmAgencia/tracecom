@@ -1,0 +1,1216 @@
+{
+ "generated_at": "2026-09-16T00:52:40.443Z",
+ "horizons": [
+  "T+45s",
+  "T+60s",
+  "T+300s"
+ ],
+ "note": "specs historicas exatas (RELATORIO-V7-V8.md / benchmark-freeze); zero tuning; entry=close em T; settlement=close exato em T+H",
+ "datasets": {
+  "IQOPTION_EURUSD_BINARY_10H": {
+   "rows": 7171,
+   "baseP": {
+    "l45": 52.36,
+    "l60": 53.07,
+    "l300": 54.7
+   },
+   "results": [
+    {
+     "id": "V1 (Fib RSI Reversal)",
+     "hash": "70a7bfcb568bec8c",
+     "spec": {
+      "type": "prod",
+      "id": "reversion-v1-fib"
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 138,
+       "w": 88,
+       "l": 50,
+       "draws": 10,
+       "unknown": 0,
+       "wr": 63.77,
+       "buyN": 111,
+       "buyWR": 70.27,
+       "sellN": 27,
+       "sellWR": 37.04,
+       "indepN": 6,
+       "indepWR": 50,
+       "edge_pp": 12.33,
+       "ci95": [
+        55.48,
+        71.31
+       ],
+       "maxWinStreak": 15,
+       "maxLossStreak": 8
+      },
+      "T+60s": {
+       "signals": 142,
+       "w": 88,
+       "l": 54,
+       "draws": 6,
+       "unknown": 0,
+       "wr": 61.97,
+       "buyN": 116,
+       "buyWR": 67.24,
+       "sellN": 26,
+       "sellWR": 38.46,
+       "indepN": 6,
+       "indepWR": 50,
+       "edge_pp": 10.02,
+       "ci95": [
+        53.77,
+        69.54
+       ],
+       "maxWinStreak": 23,
+       "maxLossStreak": 13
+      },
+      "T+300s": {
+       "signals": 148,
+       "w": 67,
+       "l": 81,
+       "draws": 0,
+       "unknown": 0,
+       "wr": 45.27,
+       "buyN": 120,
+       "buyWR": 52.5,
+       "sellN": 28,
+       "sellWR": 14.29,
+       "indepN": 6,
+       "indepWR": 83.33,
+       "edge_pp": -7.65,
+       "ci95": [
+        37.47,
+        53.31
+       ],
+       "maxWinStreak": 13,
+       "maxLossStreak": 14
+      }
+     }
+    },
+    {
+     "id": "V3 (Fib Trend Reversal)",
+     "hash": "acf733a866146537",
+     "spec": {
+      "type": "prod",
+      "id": "reversion-v3-fib"
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 225,
+       "w": 122,
+       "l": 103,
+       "draws": 12,
+       "unknown": 0,
+       "wr": 54.22,
+       "buyN": 166,
+       "buyWR": 60.24,
+       "sellN": 59,
+       "sellWR": 37.29,
+       "indepN": 9,
+       "indepWR": 33.33,
+       "edge_pp": 3.1,
+       "ci95": [
+        47.7,
+        60.61
+       ],
+       "maxWinStreak": 12,
+       "maxLossStreak": 8
+      },
+      "T+60s": {
+       "signals": 227,
+       "w": 115,
+       "l": 112,
+       "draws": 10,
+       "unknown": 0,
+       "wr": 50.66,
+       "buyN": 167,
+       "buyWR": 56.89,
+       "sellN": 60,
+       "sellWR": 33.33,
+       "indepN": 7,
+       "indepWR": 28.57,
+       "edge_pp": -0.79,
+       "ci95": [
+        44.2,
+        57.1
+       ],
+       "maxWinStreak": 19,
+       "maxLossStreak": 12
+      },
+      "T+300s": {
+       "signals": 234,
+       "w": 93,
+       "l": 141,
+       "draws": 1,
+       "unknown": 2,
+       "wr": 39.74,
+       "buyN": 170,
+       "buyWR": 50,
+       "sellN": 64,
+       "sellWR": 12.5,
+       "indepN": 9,
+       "indepWR": 44.44,
+       "edge_pp": -12.38,
+       "ci95": [
+        33.69,
+        46.13
+       ],
+       "maxWinStreak": 9,
+       "maxLossStreak": 14
+      }
+     }
+    },
+    {
+     "id": "V6 (Fib Deep Exhaustion)",
+     "hash": "4acbfbe1477cff67",
+     "spec": {
+      "type": "prod",
+      "id": "reversion-v6-fib"
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 15,
+       "w": 6,
+       "l": 9,
+       "draws": 1,
+       "unknown": 0,
+       "wr": 40,
+       "buyN": 12,
+       "buyWR": 50,
+       "sellN": 3,
+       "sellWR": 0,
+       "indepN": 2,
+       "indepWR": 100,
+       "edge_pp": -11.42,
+       "ci95": [
+        19.82,
+        64.25
+       ],
+       "maxWinStreak": 3,
+       "maxLossStreak": 5
+      },
+      "T+60s": {
+       "signals": 16,
+       "w": 6,
+       "l": 10,
+       "draws": 0,
+       "unknown": 0,
+       "wr": 37.5,
+       "buyN": 13,
+       "buyWR": 46.15,
+       "sellN": 3,
+       "sellWR": 0,
+       "indepN": 2,
+       "indepWR": 50,
+       "edge_pp": -14.42,
+       "ci95": [
+        18.48,
+        61.36
+       ],
+       "maxWinStreak": 4,
+       "maxLossStreak": 5
+      },
+      "T+300s": {
+       "signals": 16,
+       "w": 5,
+       "l": 11,
+       "draws": 0,
+       "unknown": 0,
+       "wr": 31.25,
+       "buyN": 13,
+       "buyWR": 38.46,
+       "sellN": 3,
+       "sellWR": 0,
+       "indepN": 2,
+       "indepWR": 100,
+       "edge_pp": -21.69,
+       "ci95": [
+        14.16,
+        55.6
+       ],
+       "maxWinStreak": 2,
+       "maxLossStreak": 5
+      }
+     }
+    },
+    {
+     "id": "V7-AND (Dual Exhaustion)",
+     "hash": "53173d3e4f31fb4e",
+     "spec": {
+      "type": "prod",
+      "id": "reversion-v7-and"
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 5,
+       "w": 2,
+       "l": 3,
+       "draws": 0,
+       "unknown": 0,
+       "wr": 40,
+       "buyN": 3,
+       "buyWR": 66.67,
+       "sellN": 2,
+       "sellWR": 0,
+       "indepN": 1,
+       "indepWR": 100,
+       "edge_pp": -10.47,
+       "ci95": [
+        11.76,
+        76.93
+       ],
+       "maxWinStreak": 2,
+       "maxLossStreak": 3
+      },
+      "T+60s": {
+       "signals": 5,
+       "w": 3,
+       "l": 2,
+       "draws": 0,
+       "unknown": 0,
+       "wr": 60,
+       "buyN": 3,
+       "buyWR": 100,
+       "sellN": 2,
+       "sellWR": 0,
+       "indepN": 1,
+       "indepWR": 100,
+       "edge_pp": 9.39,
+       "ci95": [
+        23.07,
+        88.24
+       ],
+       "maxWinStreak": 2,
+       "maxLossStreak": 2
+      },
+      "T+300s": {
+       "signals": 5,
+       "w": 3,
+       "l": 2,
+       "draws": 0,
+       "unknown": 0,
+       "wr": 60,
+       "buyN": 3,
+       "buyWR": 100,
+       "sellN": 2,
+       "sellWR": 0,
+       "indepN": 1,
+       "indepWR": 100,
+       "edge_pp": 9.06,
+       "ci95": [
+        23.07,
+        88.24
+       ],
+       "maxWinStreak": 2,
+       "maxLossStreak": 2
+      }
+     }
+    },
+    {
+     "id": "V7-OR (ATR3x OU V1fib)",
+     "hash": null,
+     "spec": {
+      "op": "union",
+      "aSpec": {
+       "op": "gateFib",
+       "innerSpec": {
+        "type": "atr_over",
+        "m": 3
+       }
+      },
+      "bSpec": {
+       "type": "prod",
+       "id": "reversion-v1-fib"
+      }
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 138,
+       "w": 88,
+       "l": 50,
+       "draws": 10,
+       "unknown": 0,
+       "wr": 63.77,
+       "buyN": 111,
+       "buyWR": 70.27,
+       "sellN": 27,
+       "sellWR": 37.04,
+       "indepN": 6,
+       "indepWR": 50,
+       "edge_pp": 12.33,
+       "ci95": [
+        55.48,
+        71.31
+       ],
+       "maxWinStreak": 15,
+       "maxLossStreak": 8
+      },
+      "T+60s": {
+       "signals": 142,
+       "w": 88,
+       "l": 54,
+       "draws": 6,
+       "unknown": 0,
+       "wr": 61.97,
+       "buyN": 116,
+       "buyWR": 67.24,
+       "sellN": 26,
+       "sellWR": 38.46,
+       "indepN": 6,
+       "indepWR": 50,
+       "edge_pp": 10.02,
+       "ci95": [
+        53.77,
+        69.54
+       ],
+       "maxWinStreak": 23,
+       "maxLossStreak": 13
+      },
+      "T+300s": {
+       "signals": 148,
+       "w": 67,
+       "l": 81,
+       "draws": 0,
+       "unknown": 0,
+       "wr": 45.27,
+       "buyN": 120,
+       "buyWR": 52.5,
+       "sellN": 28,
+       "sellWR": 14.29,
+       "indepN": 6,
+       "indepWR": 83.33,
+       "edge_pp": -7.65,
+       "ci95": [
+        37.47,
+        53.31
+       ],
+       "maxWinStreak": 13,
+       "maxLossStreak": 14
+      }
+     }
+    },
+    {
+     "id": "V7-Relaxado (ATR1x OU V1fib)",
+     "hash": "853c0fb29b71ea6c",
+     "spec": {
+      "type": "prod",
+      "id": "reversion-v7-relaxed"
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 286,
+       "w": 163,
+       "l": 123,
+       "draws": 24,
+       "unknown": 0,
+       "wr": 56.99,
+       "buyN": 162,
+       "buyWR": 66.67,
+       "sellN": 124,
+       "sellWR": 44.35,
+       "indepN": 15,
+       "indepWR": 53.33,
+       "edge_pp": 6.68,
+       "ci95": [
+        51.2,
+        62.6
+       ],
+       "maxWinStreak": 13,
+       "maxLossStreak": 7
+      },
+      "T+60s": {
+       "signals": 294,
+       "w": 164,
+       "l": 130,
+       "draws": 16,
+       "unknown": 0,
+       "wr": 55.78,
+       "buyN": 169,
+       "buyWR": 64.5,
+       "sellN": 125,
+       "sellWR": 44,
+       "indepN": 16,
+       "indepWR": 56.25,
+       "edge_pp": 5.32,
+       "ci95": [
+        50.07,
+        61.35
+       ],
+       "maxWinStreak": 21,
+       "maxLossStreak": 10
+      },
+      "T+300s": {
+       "signals": 306,
+       "w": 134,
+       "l": 172,
+       "draws": 3,
+       "unknown": 1,
+       "wr": 43.79,
+       "buyN": 176,
+       "buyWR": 51.7,
+       "sellN": 130,
+       "sellWR": 33.08,
+       "indepN": 17,
+       "indepWR": 52.94,
+       "edge_pp": -6.92,
+       "ci95": [
+        38.34,
+        49.39
+       ],
+       "maxWinStreak": 11,
+       "maxLossStreak": 16
+      }
+     }
+    },
+    {
+     "id": "V8 (ATR1x+Fib standalone)",
+     "hash": null,
+     "spec": {
+      "op": "gateFib",
+      "innerSpec": {
+       "type": "atr_over",
+       "m": 1
+      }
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 225,
+       "w": 124,
+       "l": 101,
+       "draws": 20,
+       "unknown": 0,
+       "wr": 55.11,
+       "buyN": 112,
+       "buyWR": 64.29,
+       "sellN": 113,
+       "sellWR": 46.02,
+       "indepN": 12,
+       "indepWR": 50,
+       "edge_pp": 5.12,
+       "ci95": [
+        48.58,
+        61.47
+       ],
+       "maxWinStreak": 11,
+       "maxLossStreak": 10
+      },
+      "T+60s": {
+       "signals": 232,
+       "w": 126,
+       "l": 106,
+       "draws": 13,
+       "unknown": 0,
+       "wr": 54.31,
+       "buyN": 118,
+       "buyWR": 63.56,
+       "sellN": 114,
+       "sellWR": 44.74,
+       "indepN": 13,
+       "indepWR": 61.54,
+       "edge_pp": 4.26,
+       "ci95": [
+        47.88,
+        60.6
+       ],
+       "maxWinStreak": 15,
+       "maxLossStreak": 8
+      },
+      "T+300s": {
+       "signals": 241,
+       "w": 105,
+       "l": 136,
+       "draws": 3,
+       "unknown": 1,
+       "wr": 43.57,
+       "buyN": 123,
+       "buyWR": 51.22,
+       "sellN": 118,
+       "sellWR": 35.59,
+       "indepN": 14,
+       "indepWR": 50,
+       "edge_pp": -6.53,
+       "ci95": [
+        37.46,
+        49.88
+       ],
+       "maxWinStreak": 13,
+       "maxLossStreak": 13
+      }
+     }
+    },
+    {
+     "id": "V8-all (contra-SMA20)",
+     "hash": null,
+     "spec": {
+      "type": "atr_over",
+      "m": 0
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 6805,
+       "w": 3473,
+       "l": 3332,
+       "draws": 357,
+       "unknown": 9,
+       "wr": 51.04,
+       "buyN": 3203,
+       "buyWR": 53.61,
+       "sellN": 3602,
+       "sellWR": 48.75,
+       "indepN": 379,
+       "indepWR": 50.4,
+       "edge_pp": 1.17,
+       "ci95": [
+        49.85,
+        52.22
+       ],
+       "maxWinStreak": 30,
+       "maxLossStreak": 37
+      },
+      "T+60s": {
+       "signals": 6864,
+       "w": 3468,
+       "l": 3396,
+       "draws": 295,
+       "unknown": 12,
+       "wr": 50.52,
+       "buyN": 3221,
+       "buyWR": 53.83,
+       "sellN": 3643,
+       "sellWR": 47.6,
+       "indepN": 378,
+       "indepWR": 50,
+       "edge_pp": 0.71,
+       "ci95": [
+        49.34,
+        51.71
+       ],
+       "maxWinStreak": 44,
+       "maxLossStreak": 48
+      },
+      "T+300s": {
+       "signals": 6995,
+       "w": 3636,
+       "l": 3359,
+       "draws": 116,
+       "unknown": 60,
+       "wr": 51.98,
+       "buyN": 3281,
+       "buyWR": 57.12,
+       "sellN": 3714,
+       "sellWR": 47.44,
+       "indepN": 392,
+       "indepWR": 51.53,
+       "edge_pp": 2.27,
+       "ci95": [
+        50.81,
+        53.15
+       ],
+       "maxWinStreak": 35,
+       "maxLossStreak": 48
+      }
+     }
+    }
+   ]
+  },
+  "IQOPTION_EURUSD_OTC_10H": {
+   "rows": 7171,
+   "baseP": {
+    "l45": 49.37,
+    "l60": 48.91,
+    "l300": 49.69
+   },
+   "results": [
+    {
+     "id": "V1 (Fib RSI Reversal)",
+     "hash": "70a7bfcb568bec8c",
+     "spec": {
+      "type": "prod",
+      "id": "reversion-v1-fib"
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 98,
+       "w": 49,
+       "l": 49,
+       "draws": 2,
+       "unknown": 1,
+       "wr": 50,
+       "buyN": 89,
+       "buyWR": 49.44,
+       "sellN": 9,
+       "sellWR": 55.56,
+       "indepN": 1,
+       "indepWR": 100,
+       "edge_pp": 0.51,
+       "ci95": [
+        40.29,
+        59.71
+       ],
+       "maxWinStreak": 8,
+       "maxLossStreak": 8
+      },
+      "T+60s": {
+       "signals": 98,
+       "w": 49,
+       "l": 49,
+       "draws": 2,
+       "unknown": 1,
+       "wr": 50,
+       "buyN": 88,
+       "buyWR": 48.86,
+       "sellN": 10,
+       "sellWR": 60,
+       "indepN": 1,
+       "indepWR": 100,
+       "edge_pp": 0.87,
+       "ci95": [
+        40.29,
+        59.71
+       ],
+       "maxWinStreak": 8,
+       "maxLossStreak": 7
+      },
+      "T+300s": {
+       "signals": 99,
+       "w": 50,
+       "l": 49,
+       "draws": 1,
+       "unknown": 1,
+       "wr": 50.51,
+       "buyN": 90,
+       "buyWR": 52.22,
+       "sellN": 9,
+       "sellWR": 33.33,
+       "indepN": 1,
+       "indepWR": 100,
+       "edge_pp": 0.76,
+       "ci95": [
+        40.82,
+        60.15
+       ],
+       "maxWinStreak": 11,
+       "maxLossStreak": 17
+      }
+     }
+    },
+    {
+     "id": "V3 (Fib Trend Reversal)",
+     "hash": "acf733a866146537",
+     "spec": {
+      "type": "prod",
+      "id": "reversion-v3-fib"
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 211,
+       "w": 104,
+       "l": 107,
+       "draws": 2,
+       "unknown": 2,
+       "wr": 49.29,
+       "buyN": 182,
+       "buyWR": 48.35,
+       "sellN": 29,
+       "sellWR": 55.17,
+       "indepN": 12,
+       "indepWR": 50,
+       "edge_pp": -0.26,
+       "ci95": [
+        42.62,
+        55.99
+       ],
+       "maxWinStreak": 13,
+       "maxLossStreak": 15
+      },
+      "T+60s": {
+       "signals": 210,
+       "w": 110,
+       "l": 100,
+       "draws": 3,
+       "unknown": 2,
+       "wr": 52.38,
+       "buyN": 180,
+       "buyWR": 50,
+       "sellN": 30,
+       "sellWR": 66.67,
+       "indepN": 12,
+       "indepWR": 41.67,
+       "edge_pp": 3.16,
+       "ci95": [
+        45.64,
+        59.03
+       ],
+       "maxWinStreak": 14,
+       "maxLossStreak": 15
+      },
+      "T+300s": {
+       "signals": 212,
+       "w": 107,
+       "l": 105,
+       "draws": 1,
+       "unknown": 2,
+       "wr": 50.47,
+       "buyN": 183,
+       "buyWR": 51.37,
+       "sellN": 29,
+       "sellWR": 44.83,
+       "indepN": 12,
+       "indepWR": 16.67,
+       "edge_pp": 0.7,
+       "ci95": [
+        43.79,
+        57.13
+       ],
+       "maxWinStreak": 19,
+       "maxLossStreak": 13
+      }
+     }
+    },
+    {
+     "id": "V6 (Fib Deep Exhaustion)",
+     "hash": "4acbfbe1477cff67",
+     "spec": {
+      "type": "prod",
+      "id": "reversion-v6-fib"
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 3,
+       "w": 3,
+       "l": 0,
+       "draws": 0,
+       "unknown": 1,
+       "wr": 100,
+       "buyN": 3,
+       "buyWR": 100,
+       "sellN": 0,
+       "sellWR": null,
+       "indepN": 0,
+       "indepWR": null,
+       "edge_pp": 50.63,
+       "ci95": [
+        43.85,
+        100
+       ],
+       "maxWinStreak": 3,
+       "maxLossStreak": 0
+      },
+      "T+60s": {
+       "signals": 3,
+       "w": 3,
+       "l": 0,
+       "draws": 0,
+       "unknown": 1,
+       "wr": 100,
+       "buyN": 3,
+       "buyWR": 100,
+       "sellN": 0,
+       "sellWR": null,
+       "indepN": 0,
+       "indepWR": null,
+       "edge_pp": 51.09,
+       "ci95": [
+        43.85,
+        100
+       ],
+       "maxWinStreak": 3,
+       "maxLossStreak": 0
+      },
+      "T+300s": {
+       "signals": 3,
+       "w": 3,
+       "l": 0,
+       "draws": 0,
+       "unknown": 1,
+       "wr": 100,
+       "buyN": 3,
+       "buyWR": 100,
+       "sellN": 0,
+       "sellWR": null,
+       "indepN": 0,
+       "indepWR": null,
+       "edge_pp": 50.31,
+       "ci95": [
+        43.85,
+        100
+       ],
+       "maxWinStreak": 3,
+       "maxLossStreak": 0
+      }
+     }
+    },
+    {
+     "id": "V7-AND (Dual Exhaustion)",
+     "hash": "53173d3e4f31fb4e",
+     "spec": {
+      "type": "prod",
+      "id": "reversion-v7-and"
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 0,
+       "w": 0,
+       "l": 0,
+       "draws": 0,
+       "unknown": 0,
+       "wr": null,
+       "buyN": 0,
+       "buyWR": null,
+       "sellN": 0,
+       "sellWR": null,
+       "indepN": 0,
+       "indepWR": null,
+       "edge_pp": null,
+       "ci95": null,
+       "maxWinStreak": 0,
+       "maxLossStreak": 0
+      },
+      "T+60s": {
+       "signals": 0,
+       "w": 0,
+       "l": 0,
+       "draws": 0,
+       "unknown": 0,
+       "wr": null,
+       "buyN": 0,
+       "buyWR": null,
+       "sellN": 0,
+       "sellWR": null,
+       "indepN": 0,
+       "indepWR": null,
+       "edge_pp": null,
+       "ci95": null,
+       "maxWinStreak": 0,
+       "maxLossStreak": 0
+      },
+      "T+300s": {
+       "signals": 0,
+       "w": 0,
+       "l": 0,
+       "draws": 0,
+       "unknown": 0,
+       "wr": null,
+       "buyN": 0,
+       "buyWR": null,
+       "sellN": 0,
+       "sellWR": null,
+       "indepN": 0,
+       "indepWR": null,
+       "edge_pp": null,
+       "ci95": null,
+       "maxWinStreak": 0,
+       "maxLossStreak": 0
+      }
+     }
+    },
+    {
+     "id": "V7-OR (ATR3x OU V1fib)",
+     "hash": null,
+     "spec": {
+      "op": "union",
+      "aSpec": {
+       "op": "gateFib",
+       "innerSpec": {
+        "type": "atr_over",
+        "m": 3
+       }
+      },
+      "bSpec": {
+       "type": "prod",
+       "id": "reversion-v1-fib"
+      }
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 98,
+       "w": 49,
+       "l": 49,
+       "draws": 2,
+       "unknown": 1,
+       "wr": 50,
+       "buyN": 89,
+       "buyWR": 49.44,
+       "sellN": 9,
+       "sellWR": 55.56,
+       "indepN": 1,
+       "indepWR": 100,
+       "edge_pp": 0.51,
+       "ci95": [
+        40.29,
+        59.71
+       ],
+       "maxWinStreak": 8,
+       "maxLossStreak": 8
+      },
+      "T+60s": {
+       "signals": 98,
+       "w": 49,
+       "l": 49,
+       "draws": 2,
+       "unknown": 1,
+       "wr": 50,
+       "buyN": 88,
+       "buyWR": 48.86,
+       "sellN": 10,
+       "sellWR": 60,
+       "indepN": 1,
+       "indepWR": 100,
+       "edge_pp": 0.87,
+       "ci95": [
+        40.29,
+        59.71
+       ],
+       "maxWinStreak": 8,
+       "maxLossStreak": 7
+      },
+      "T+300s": {
+       "signals": 99,
+       "w": 50,
+       "l": 49,
+       "draws": 1,
+       "unknown": 1,
+       "wr": 50.51,
+       "buyN": 90,
+       "buyWR": 52.22,
+       "sellN": 9,
+       "sellWR": 33.33,
+       "indepN": 1,
+       "indepWR": 100,
+       "edge_pp": 0.76,
+       "ci95": [
+        40.82,
+        60.15
+       ],
+       "maxWinStreak": 11,
+       "maxLossStreak": 17
+      }
+     }
+    },
+    {
+     "id": "V7-Relaxado (ATR1x OU V1fib)",
+     "hash": "853c0fb29b71ea6c",
+     "spec": {
+      "type": "prod",
+      "id": "reversion-v7-relaxed"
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 184,
+       "w": 88,
+       "l": 96,
+       "draws": 2,
+       "unknown": 1,
+       "wr": 47.83,
+       "buyN": 121,
+       "buyWR": 48.76,
+       "sellN": 63,
+       "sellWR": 46.03,
+       "indepN": 6,
+       "indepWR": 66.67,
+       "edge_pp": -1.98,
+       "ci95": [
+        40.73,
+        55.01
+       ],
+       "maxWinStreak": 9,
+       "maxLossStreak": 14
+      },
+      "T+60s": {
+       "signals": 184,
+       "w": 96,
+       "l": 88,
+       "draws": 2,
+       "unknown": 1,
+       "wr": 52.17,
+       "buyN": 120,
+       "buyWR": 47.5,
+       "sellN": 64,
+       "sellWR": 60.94,
+       "indepN": 6,
+       "indepWR": 66.67,
+       "edge_pp": 2.51,
+       "ci95": [
+        44.99,
+        59.27
+       ],
+       "maxWinStreak": 10,
+       "maxLossStreak": 12
+      },
+      "T+300s": {
+       "signals": 184,
+       "w": 93,
+       "l": 91,
+       "draws": 1,
+       "unknown": 2,
+       "wr": 50.54,
+       "buyN": 122,
+       "buyWR": 51.64,
+       "sellN": 62,
+       "sellWR": 48.39,
+       "indepN": 6,
+       "indepWR": 50,
+       "edge_pp": 0.64,
+       "ci95": [
+        43.38,
+        57.68
+       ],
+       "maxWinStreak": 17,
+       "maxLossStreak": 12
+      }
+     }
+    },
+    {
+     "id": "V8 (ATR1x+Fib standalone)",
+     "hash": null,
+     "spec": {
+      "op": "gateFib",
+      "innerSpec": {
+       "type": "atr_over",
+       "m": 1
+      }
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 135,
+       "w": 66,
+       "l": 69,
+       "draws": 0,
+       "unknown": 1,
+       "wr": 48.89,
+       "buyN": 73,
+       "buyWR": 52.05,
+       "sellN": 62,
+       "sellWR": 45.16,
+       "indepN": 5,
+       "indepWR": 60,
+       "edge_pp": -1.06,
+       "ci95": [
+        40.6,
+        57.23
+       ],
+       "maxWinStreak": 8,
+       "maxLossStreak": 10
+      },
+      "T+60s": {
+       "signals": 135,
+       "w": 73,
+       "l": 62,
+       "draws": 0,
+       "unknown": 1,
+       "wr": 54.07,
+       "buyN": 73,
+       "buyWR": 49.32,
+       "sellN": 62,
+       "sellWR": 59.68,
+       "indepN": 5,
+       "indepWR": 60,
+       "edge_pp": 4.16,
+       "ci95": [
+        45.67,
+        62.25
+       ],
+       "maxWinStreak": 8,
+       "maxLossStreak": 10
+      },
+      "T+300s": {
+       "signals": 133,
+       "w": 66,
+       "l": 67,
+       "draws": 1,
+       "unknown": 2,
+       "wr": 49.62,
+       "buyN": 73,
+       "buyWR": 50.68,
+       "sellN": 60,
+       "sellWR": 48.33,
+       "indepN": 5,
+       "indepWR": 40,
+       "edge_pp": -0.35,
+       "ci95": [
+        41.26,
+        58.01
+       ],
+       "maxWinStreak": 16,
+       "maxLossStreak": 13
+      }
+     }
+    },
+    {
+     "id": "V8-all (contra-SMA20)",
+     "hash": null,
+     "spec": {
+      "type": "atr_over",
+      "m": 0
+     },
+     "horizons": {
+      "T+45s": {
+       "signals": 7025,
+       "w": 3528,
+       "l": 3497,
+       "draws": 95,
+       "unknown": 9,
+       "wr": 50.22,
+       "buyN": 3568,
+       "buyWR": 49.66,
+       "sellN": 3457,
+       "sellWR": 50.8,
+       "indepN": 391,
+       "indepWR": 50.38,
+       "edge_pp": 0.23,
+       "ci95": [
+        49.05,
+        51.39
+       ],
+       "maxWinStreak": 27,
+       "maxLossStreak": 44
+      },
+      "T+60s": {
+       "signals": 7032,
+       "w": 3554,
+       "l": 3478,
+       "draws": 85,
+       "unknown": 12,
+       "wr": 50.54,
+       "buyN": 3573,
+       "buyWR": 49.54,
+       "sellN": 3459,
+       "sellWR": 51.58,
+       "indepN": 387,
+       "indepWR": 55.04,
+       "edge_pp": 0.56,
+       "ci95": [
+        49.37,
+        51.71
+       ],
+       "maxWinStreak": 22,
+       "maxLossStreak": 59
+      },
+      "T+300s": {
+       "signals": 7034,
+       "w": 3565,
+       "l": 3469,
+       "draws": 35,
+       "unknown": 60,
+       "wr": 50.68,
+       "buyN": 3563,
+       "buyWR": 50.66,
+       "sellN": 3471,
+       "sellWR": 50.71,
+       "indepN": 388,
+       "indepWR": 50.52,
+       "edge_pp": 0.69,
+       "ci95": [
+        49.51,
+        51.85
+       ],
+       "maxWinStreak": 36,
+       "maxLossStreak": 49
+      }
+     }
+    }
+   ]
+  }
+ }
+}
