@@ -16,7 +16,7 @@ function navigate(page) {
   document.querySelectorAll(".page").forEach((node) => { node.hidden = node.id !== `page-${page}`; });
   document.querySelectorAll(".nav-item[data-page]").forEach((node) => node.classList.toggle("active", node.dataset.page === page));
   if (page === "history") void loadHistory();
-  if (page === "iq") void loadIqStatus();
+  if (page === "iq") { void loadIqStatus(); void loadIqExecutions(); }
   if (page === "training") void loadStats();
   if (page === "operational" || page === "settings") void loadStats();
 }
@@ -118,6 +118,9 @@ async function loadStats() {
 }
 
 const IQ_STATE_LABELS = { DISCONNECTED: "DESCONECTADO", CONNECTING: "CONECTANDO", TWO_FACTOR_REQUIRED: "2FA NECESSÁRIO", CONNECTED_READ_ONLY: "CONECTADO — PRACTICE", ERROR: "ERRO" };
+const formatClock = (value) => { const ms = Number(value); return Number.isFinite(ms) && ms > 0 ? new Date(ms).toLocaleTimeString("pt-BR") : "—"; };
+const formatMoney = (currency, value) => (value === null || value === undefined || !Number.isFinite(Number(value)) ? "—" : `${String(currency || "")} ${Number(value).toFixed(2)}`.trim());
+const formatLatency = (summary) => (!summary || !summary.count ? "—" : `p50 ${summary.p50}ms / p95 ${summary.p95}ms`);
 function renderIq(status) {
   const state = String(status?.state ?? "DISCONNECTED");
   setText("iqStateBadge", IQ_STATE_LABELS[state] ?? "ERRO");
@@ -126,9 +129,70 @@ function renderIq(status) {
   setText("iqStatusDetail", detail);
   const twoFactorRow = $id("iqTwoFactorRow"); if (twoFactorRow) twoFactorRow.hidden = state !== "TWO_FACTOR_REQUIRED";
   const disconnect = $id("iqDisconnect"); if (disconnect) disconnect.hidden = status?.hasSession !== true;
+  renderIqMarket(status?.marketData ?? null, status);
+  renderIqAccount(status?.account ?? null, status?.execution ?? null);
+  renderIqExecution(status?.execution ?? null);
+}
+function renderIqMarket(market, status) {
+  const badge = $id("iqMarketBadge");
+  const online = market?.connected === true && market?.healthy === true;
+  if (badge) { badge.textContent = online ? "ONLINE" : market?.connected ? "DEGRADADO" : "OFFLINE"; badge.classList.toggle("online", online); }
+  setText("iqServerTime", market?.connected ? `${formatClock(market?.serverTimeMs)} · skew ${market?.clockSkewMs ?? "?"}ms` : "—");
+  setText("iqActiveValue", market?.activeId ? `#${market.activeId}${market.activeOtc ? " OTC" : ""} (${market.activeExpectedVsActual ?? "?"})` : "RESOLVENDO…");
+  const tick = market?.lastTick;
+  setText("iqLastTick", tick ? `${Number(tick.price).toFixed(5)} · ${tick.ageMs}ms` : "—");
+  setText("iqCandles5s", market ? String(market.candles5s ?? 0) : "—");
+  const latency = market?.latencyMs;
+  setText("iqLatency", latency ? `${formatLatency(latency.serverToReceived)} · feature ${formatLatency(latency.normalizedToFeature)}` : "—");
+  const features = market?.features;
+  const detail = [];
+  detail.push(`host ${market?.host ?? "—"} (repo ${market?.hostExpectedFromRepo ?? "iqoption.com"})`);
+  if (market) detail.push(market.healthy ? "dados saudáveis" : `bloqueios: ${(market.healthReasons ?? []).join(", ") || "—"}`);
+  if (features) detail.push(`RSI ${features.rsi14 === null ? "—" : Number(features.rsi14).toFixed(1)} · ATR ${features.atr14 === null ? "—" : Number(features.atr14).toFixed(5)} · ADX ${features.adx14 === null ? "—" : Number(features.adx14).toFixed(1)} · fresh ${features.fresh ? "OK" : features.freshnessReason}`);
+  if (status?.runtimeVersion) detail.push(status.runtimeVersion);
+  setText("iqMarketDetail", detail.join(" · "));
+}
+function renderIqAccount(account, execution) {
+  const badge = $id("iqAccountBadge");
+  const verified = account?.verified === true;
+  if (badge) { badge.textContent = verified ? "PRACTICE VERIFIED" : account?.type === "REAL" ? "REAL — EXECUÇÃO PROIBIDA" : "NÃO VERIFICADA"; badge.classList.toggle("online", verified); }
+  setText("iqAccountType", account ? String(account.type ?? "UNKNOWN") : "—");
+  setText("iqAccountCurrency", account?.currency ?? "—");
+  setText("iqAccountBalance", formatMoney(account?.currency, account?.balance));
+  const armed = execution?.armed === true;
+  setText("iqExecutionMode", !verified ? "BLOQUEADA (CONTA)" : armed ? "ARMADA" : "BLOQUEADA (DISARMED)");
+  const detail = [];
+  if (account?.hasReal) detail.push("conta REAL detectada — execução REAL permanentemente proibida");
+  if (account?.balanceFailure) detail.push(`falha get_balances: ${account.balanceFailure}`);
+  if (!verified && account?.type === "UNKNOWN") detail.push("aguardando get_balances server-side");
+  setText("iqAccountDetail", detail.join(" · ") || "Tipo e saldo verificados no servidor via get_balances.");
+}
+function renderIqExecution(execution) {
+  const badge = $id("iqExecutionBadge");
+  const armed = execution?.armed === true;
+  const killActive = execution?.killSwitch?.executionEnabled !== true;
+  if (badge) { badge.textContent = killActive ? "KILL SWITCH" : armed ? `ARMADA ≤ ${formatBRL(execution?.userLimitBrl ?? 0)}` : String(execution?.state ?? "DISARMED"); badge.classList.toggle("online", armed && !killActive); }
+  const killButton = $id("iqKillRelease"); if (killButton) killButton.hidden = !killActive;
+  const armButton = $id("iqArm"); if (armButton) armButton.disabled = armed;
+  const disarmButton = $id("iqDisarm"); if (disarmButton) disarmButton.disabled = !armed && !killActive;
+  const pending = execution?.pendingOrder;
+  const last = execution?.lastExecution;
+  const detail = [];
+  if (pending) detail.push(`ordem em curso ${pending.direction} stake ${pending.stake} ${pending.acked ? "ACK" : "aguardando ACK"}`);
+  if (last) detail.push(`última: ${last.state}${last.brokerOrderId ? ` · ordem ${last.brokerOrderId}` : ""}${last.mismatch ? " · SETTLEMENT_MISMATCH" : ""}${last.brokerResult ? ` · broker ${last.brokerResult}/causal ${last.causalResult}` : ""}`);
+  if (execution?.disarmReason) detail.push(`motivo disarm: ${execution.disarmReason}`);
+  setText("iqExecutionDetail", detail.join(" · ") || "ARM exige conta PRACTICE verificada e market data saudável. O primeiro teste executa UMA ordem de stake mínimo e desarma em seguida. Sem ACK = UNKNOWN (nunca reenvia).");
 }
 async function loadIqStatus() {
   try { renderIq(await jget("/api/iq/status")); } catch { renderIq({ state: "DISCONNECTED", lastError: "Serviço indisponível no momento." }); }
+}
+async function loadIqExecutions() {
+  const body = $id("iqExecutionsBody"); if (!body) return;
+  try {
+    const result = await jget("/api/iq/executions?limit=50");
+    const rows = Array.isArray(result.executions) ? result.executions : [];
+    body.innerHTML = rows.map((row) => `<tr><td>${row.requestedAt ? new Date(row.requestedAt).toLocaleString("pt-BR") : "—"}</td><td>${row.direction ?? "—"}</td><td>${row.stake ?? "—"} ${row.currency ?? ""}</td><td class="fine">${row.brokerOrderId ?? row.state}</td><td class="result-${String(row.state || "unknown").toLowerCase()}">${row.state ?? "—"}</td><td>${row.brokerResult ?? "—"}</td><td>${row.causalResult ?? "—"}${row.settlementMismatch ? " ⚠" : ""}</td><td>${row.profit ?? "—"}</td></tr>`).join("") || `<tr><td colspan="8" class="fine">Sem execuções ainda.</td></tr>`;
+  } catch (error) { body.innerHTML = `<tr><td colspan="8" class="fine">Histórico indisponível: ${String(error?.message || error)}</td></tr>`; }
 }
 async function connectIq() {
   const emailInput = $id("iqEmail"), passwordInput = $id("iqPassword");
@@ -149,6 +213,24 @@ async function verifyIq() {
   try { const result = await jpost("/api/iq/verify-2fa", { code }); if (codeInput) codeInput.value = ""; renderIq(result); } catch (error) { renderIq({ state: "TWO_FACTOR_REQUIRED", lastError: String(error?.message || error).slice(0, 120) }); }
 }
 async function disconnectIq() { try { renderIq(await jpost("/api/iq/disconnect", {})); } catch { renderIq({ state: "DISCONNECTED" }); } }
+async function armIq() {
+  const limit = Math.max(1, Math.min(100, Number($id("iqLimit")?.value) || 1));
+  const confirmed = window.confirm(`ARMAR execução PRACTICE?\n\nLimite máximo por ordem: ${formatBRL(limit)}\nConta PRACTICE verificada server-side, market data saudável.\nNenhuma ordem REAL é possível.`);
+  if (!confirmed) return;
+  try { await jpost("/api/iq/arm", { limitBrl: limit, confirmation: "ARM_PRACTICE" }); } catch (error) { setText("iqExecutionDetail", `Falha ao armar: ${String(error?.message || error).slice(0, 140)}`); }
+  await loadIqStatus();
+}
+async function disarmIq() { try { await jpost("/api/iq/disarm", {}); } catch { /* status recarrega abaixo */ } await loadIqStatus(); }
+async function releaseKillSwitch() { try { await jpost("/api/iq/kill-switch", { engaged: false }); } catch { /* status recarrega abaixo */ } await loadIqStatus(); }
+async function testIqOrder(direction) {
+  const stake = Math.max(1, Math.min(100, Number($id("iqTestStake")?.value) || 1));
+  const confirmed = window.confirm(`ENVIAR ordem PRACTICE de teste?\n\n${direction === "BUY" ? "BUY (CALL)" : "SELL (PUT)"} · stake ${formatBRL(stake)}\nUMA ordem, depois AUTO-DISARM.\nSem ACK = UNKNOWN e nunca reenvia.`);
+  if (!confirmed) return;
+  setText("iqExecutionDetail", "Enviando ordem PRACTICE de teste (aguardando ACK real)…");
+  try { const result = await jpost("/api/iq/test-order", { direction, stake, horizonSeconds: 60 }); setText("iqExecutionDetail", `Resultado: ${result.state}${result.brokerOrderId ? ` · ordem ${result.brokerOrderId}` : ""}${result.reason ? ` · ${result.reason}` : ""}`); } catch (error) { setText("iqExecutionDetail", `Falha no teste: ${String(error?.message || error).slice(0, 140)}`); }
+  await loadIqStatus();
+  await loadIqExecutions();
+}
 async function loadAiStatus() {
   try {
     const body = await jget("/api/ai/provider");
@@ -239,7 +321,13 @@ function bindUi() {
   const iqConnectButton = $id("iqConnect"); if (iqConnectButton) iqConnectButton.addEventListener("click", () => void connectIq());
   const iqVerifyButton = $id("iqVerify2fa"); if (iqVerifyButton) iqVerifyButton.addEventListener("click", () => void verifyIq());
   const iqDisconnectButton = $id("iqDisconnect"); if (iqDisconnectButton) iqDisconnectButton.addEventListener("click", () => void disconnectIq());
+  const iqArmButton = $id("iqArm"); if (iqArmButton) iqArmButton.addEventListener("click", () => void armIq());
+  const iqDisarmButton = $id("iqDisarm"); if (iqDisarmButton) iqDisarmButton.addEventListener("click", () => void disarmIq());
+  const iqKillButton = $id("iqKillRelease"); if (iqKillButton) iqKillButton.addEventListener("click", () => void releaseKillSwitch());
+  const iqTestBuyButton = $id("iqTestBuy"); if (iqTestBuyButton) iqTestBuyButton.addEventListener("click", () => void testIqOrder("BUY"));
+  const iqTestSellButton = $id("iqTestSell"); if (iqTestSellButton) iqTestSellButton.addEventListener("click", () => void testIqOrder("SELL"));
   void loadIqStatus();
+  void loadIqExecutions();
   renderBankroll();
   renderSessionMetrics();
   navigate("operational");
@@ -249,5 +337,6 @@ function bindUi() {
   setInterval(renderSessionMetrics, 3_000);
   setInterval(() => { if (state.page === "operational" || state.page === "training" || state.page === "settings") void loadStats(); }, REFRESH_MS);
   setInterval(() => { if (state.page === "history") void loadHistory(); }, 30_000);
+  setInterval(() => { if (state.page === "iq") { void loadIqStatus(); void loadIqExecutions(); } }, 5_000);
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindUi); else bindUi();

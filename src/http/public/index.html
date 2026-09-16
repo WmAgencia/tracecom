@@ -138,6 +138,43 @@
           <div class="ai-config-actions"><button id="iqDisconnect" class="quiet" type="button" hidden>DESCONECTAR</button></div>
           <p class="fine"><b>READ-ONLY</b> nesta fase (market data/ordens em seguida) · execução automática exigirá ARM explícito · <b>PRACTICE somente</b> — conta REAL permanece com execução permanentemente bloqueada.</p>
         </section>
+        <section class="ai-config" aria-label="Market data IQ via WebSocket">
+          <div class="page-head"><span class="kicker">MARKET DATA WS</span><h1>EUR/USD · candles 5s</h1><span id="iqMarketBadge" class="badge">OFFLINE</span></div>
+          <div class="market-status" aria-label="Status do market data">
+            <div><span>SERVER TIME</span><b id="iqServerTime">—</b></div>
+            <div><span>ATIVO (RUNTIME)</span><b id="iqActiveValue">—</b></div>
+            <div><span>ÚLTIMO TICK</span><b id="iqLastTick">—</b></div>
+            <div><span>CANDLES 5s</span><b id="iqCandles5s">—</b></div>
+            <div><span>LATÊNCIA p50/p95</span><b id="iqLatency">—</b></div>
+          </div>
+          <p id="iqMarketDetail" class="fine">Aguardando conexão WS.</p>
+        </section>
+        <section class="ai-config" aria-label="Conta IQ verificada server-side">
+          <div class="page-head"><span class="kicker">CONTA</span><h1>Verificação server-side (get_balances)</h1><span id="iqAccountBadge" class="badge">NÃO VERIFICADA</span></div>
+          <div class="market-status" aria-label="Conta">
+            <div><span>TIPO</span><b id="iqAccountType">—</b></div>
+            <div><span>MOEDA</span><b id="iqAccountCurrency">—</b></div>
+            <div><span>SALDO</span><b id="iqAccountBalance">—</b></div>
+            <div><span>EXECUÇÃO</span><b id="iqExecutionMode">BLOQUEADA</b></div>
+          </div>
+          <p id="iqAccountDetail" class="fine">O tipo da conta vem do servidor (get_balances). Conta REAL jamais habilita execução.</p>
+        </section>
+        <section class="ai-config" aria-label="Execução practice">
+          <div class="page-head"><span class="kicker">EXECUÇÃO</span><h1>PRACTICE · ARM + kill switch</h1><span id="iqExecutionBadge" class="badge">DISARMED</span></div>
+          <div class="ai-config-actions">
+            <label>LIMITE (R$) <input id="iqLimit" type="number" min="1" max="100" step="1" value="1" inputmode="decimal" /></label>
+            <button id="iqArm" class="primary" type="button">ARMAR EXECUÇÃO PRACTICE</button>
+            <button id="iqDisarm" class="quiet" type="button">PARAR EXECUÇÃO</button>
+            <button id="iqKillRelease" class="quiet" type="button" hidden>REATIVAR</button>
+          </div>
+          <div class="ai-config-actions">
+            <label>STAKE MÍNIMO <input id="iqTestStake" type="number" min="1" max="100" step="1" value="1" inputmode="decimal" /></label>
+            <button id="iqTestBuy" class="secondary" type="button">TESTE PRACTICE · BUY</button>
+            <button id="iqTestSell" class="secondary" type="button">TESTE PRACTICE · SELL</button>
+          </div>
+          <p id="iqExecutionDetail" class="fine">ARM exige conta PRACTICE verificada e market data saudável. O primeiro teste executa UMA ordem de stake mínimo e desarma em seguida. Sem ACK = UNKNOWN (nunca reenvia).</p>
+          <div class="history-table-wrap"><table class="history-table"><thead><tr><th>HORA</th><th>DIREÇÃO</th><th>STAKE</th><th>ORDEM (BROKER)</th><th>ESTADO</th><th>BROKER</th><th>CAUSAL</th><th>PNL</th></tr></thead><tbody id="iqExecutionsBody"><tr><td colspan="8" class="fine">Sem execuções ainda.</td></tr></tbody></table></div>
+        </section>
       </div>
 
       <!-- ============ PÁGINA: CONFIGURAÇÕES (dados técnicos/diagnóstico) ============ -->

@@ -762,18 +762,31 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
     if (path.startsWith("/api/iq/") && (req.method === "GET" || req.method === "POST")) {
-      const known = ["/api/iq/connect", "/api/iq/verify-2fa", "/api/iq/status", "/api/iq/disconnect"];
+      const known = ["/api/iq/connect", "/api/iq/verify-2fa", "/api/iq/status", "/api/iq/disconnect", "/api/iq/arm", "/api/iq/disarm", "/api/iq/kill-switch", "/api/iq/test-order", "/api/iq/executions"];
       if (!known.includes(path)) { json(404, { error: "not_found" }); return; }
       if (path === "/api/iq/status") {
         try { const status = await relayAdminGet(path); json(200, { ...status, practiceOnly: true, brokerAutomation: "NONE" }); } catch { json(200, { state: "DISCONNECTED", hasSession: false, lastError: "RELAY_UNAVAILABLE", practiceOnly: true }); }
         return;
       }
-      const payload: Record<string, string> = path === "/api/iq/connect" ? { email: String(operationalInput.email ?? "").trim(), password: String(operationalInput.password ?? "") } : path === "/api/iq/verify-2fa" ? { code: String(operationalInput.code ?? "").trim() } : {};
+      if (path === "/api/iq/executions") {
+        try { const result = await relayAdminGet(`/api/iq/executions?limit=${Math.max(1, Math.min(200, Number(q.get("limit")) || 50))}`); json(200, { ...result, practiceOnly: true, brokerAutomation: "WS_ONLY_PRACTICE" }); } catch { json(502, { error: "iq_executions_unavailable" }); }
+        return;
+      }
+      const payload: Record<string, unknown> = path === "/api/iq/connect" ? { email: String(operationalInput.email ?? "").trim(), password: String(operationalInput.password ?? "") }
+        : path === "/api/iq/verify-2fa" ? { code: String(operationalInput.code ?? "").trim() }
+        : path === "/api/iq/arm" ? { limitBrl: Number(operationalInput.limitBrl), confirmation: String(operationalInput.confirmation ?? "").slice(0, 40) }
+        : path === "/api/iq/kill-switch" ? { engaged: operationalInput.engaged === true }
+        : path === "/api/iq/test-order" ? { direction: String(operationalInput.direction ?? "").slice(0, 8), stake: Number(operationalInput.stake), horizonSeconds: Number(operationalInput.horizonSeconds) || 60, decisionId: typeof operationalInput.decisionId === "string" ? operationalInput.decisionId.slice(0, 120) : null, idempotencyKey: typeof operationalInput.idempotencyKey === "string" ? operationalInput.idempotencyKey.slice(0, 120) : null }
+        : {};
       if (path === "/api/iq/connect" && (!payload.email || !payload.password)) { json(400, { error: "email_password_required" }); return; }
       if (path === "/api/iq/verify-2fa" && !payload.code) { json(400, { error: "code_required" }); return; }
-      const result = await relayAdminPost(path, payload, 20_000);
+      if (path === "/api/iq/arm" && (!Number.isFinite(Number(payload.limitBrl)) || Number(payload.limitBrl) <= 0 || Number(payload.limitBrl) > 100)) { json(400, { error: "invalid_limit_brl" }); return; }
+      if (path === "/api/iq/test-order" && (payload.direction !== "BUY" && payload.direction !== "SELL")) { json(400, { error: "direction_required" }); return; }
+      if (path === "/api/iq/test-order" && (!Number.isFinite(Number(payload.stake)) || Number(payload.stake) <= 0 || Number(payload.stake) > 100)) { json(400, { error: "invalid_stake" }); return; }
+      const result = await relayAdminPost(path, payload, path === "/api/iq/test-order" ? 20_000 : 20_000);
       if (!result) { json(502, { error: "iq_relay_unavailable" }); return; }
-      json(200, { state: result.state ?? "ERROR", twoFactorRequired: result.twoFactorRequired === true, email: result.email ?? null, connectedAt: result.connectedAt ?? null, lastError: result.lastError ?? null, hasSession: result.hasSession === true, practiceOnly: true, brokerAutomation: "NONE" });
+      if ((result as Record<string, unknown>).error && path !== "/api/iq/connect" && path !== "/api/iq/verify-2fa") { json(400, { ...(result as Record<string, unknown>), practiceOnly: true }); return; }
+      json(200, { state: result.state ?? (path === "/api/iq/disarm" ? "CONNECTED_PRACTICE" : "OK"), twoFactorRequired: result.twoFactorRequired === true, email: result.email ?? null, connectedAt: result.connectedAt ?? null, lastError: result.lastError ?? null, hasSession: result.hasSession === true, ...(path === "/api/iq/connect" || path === "/api/iq/verify-2fa" ? {} : result), practiceOnly: true, brokerAutomation: path === "/api/iq/connect" || path === "/api/iq/verify-2fa" ? "NONE" : "WS_ONLY_PRACTICE" });
       return;
     }
     if (path === "/api/strategies/stats" && req.method === "GET") {
