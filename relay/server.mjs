@@ -87,8 +87,8 @@ const server = http.createServer(async (req, res) => {
     if(origin && !allowed.includes(origin) && url.pathname!=='/health') return reply(res,403,{error:'forbidden_origin'});
     if(origin && allowed.includes(origin)) res.setHeader('access-control-allow-origin',origin);
     if(req.method==='OPTIONS'){res.writeHead(204);return res.end();}
-    const bucket=url.pathname.includes('/stream')?'stream':url.pathname.includes('/frame')?'frames':url.pathname.includes('/export')?'export':url.pathname.includes('/logs')?'logs':url.pathname.includes('/traces')?'traces':url.pathname.includes('/prices')?'prices':url.pathname.includes('/ground-truth')?'ground_truths':url.pathname.includes('/debug')?'debug':url.pathname.includes('/ingest')?'ingest':url.pathname.includes('/keys')?'keys':'session';
-    const ceiling=bucket==='stream'?20:bucket==='frames'?30:bucket==='prices'?240:bucket==='ground_truths'?120:bucket==='logs'?120:bucket==='traces'?120:bucket==='debug'?120:bucket==='export'?30:bucket==='ingest'?240:bucket==='keys'?60:60;
+    const bucket = url.pathname.startsWith('/api/iq/')?'iq':url.pathname.includes('/stream')?'stream':url.pathname.includes('/frame')?'frames':url.pathname.includes('/export')?'export':url.pathname.includes('/logs')?'logs':url.pathname.includes('/traces')?'traces':url.pathname.includes('/prices')?'prices':url.pathname.includes('/ground-truth')?'ground_truths':url.pathname.includes('/debug')?'debug':url.pathname.includes('/ingest')?'ingest':url.pathname.includes('/keys')?'keys':'session';
+    const ceiling = bucket === 'iq' ? 600 : bucket==='stream'?20:bucket==='frames'?30:bucket==='prices'?240:bucket==='ground_truths'?120:bucket==='logs'?120:bucket==='traces'?120:bucket==='debug'?120:bucket==='export'?30:bucket==='ingest'?240:bucket==='keys'?60:60;
     if(!rateLimit(req,bucket,ceiling)){res.setHeader('retry-after','60');return reply(res,429,{error:'rate_limited',bucket});}
     if(url.pathname === '/health') return reply(res, 200, { ok:true, db:true, service:'tracecom-live-relay' });
     if(url.pathname === '/api/live/keys' && req.method === 'POST') {
