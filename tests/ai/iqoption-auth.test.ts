@@ -45,7 +45,7 @@ describe("AUTH — login/2FA/SSID state machine", () => {
   it("credenciais rejeitadas e erros de rede → ERROR, nunca credenciais vazadas; entrada invalida rejeitada", async () => {
     const rejected = new IqAuthSession({ fetchImpl: async () => response(401, { body: '{"message":"wrong password=hunter2"}' }) });
     let error = null; try { await rejected.login({ email: "u@x.com", password: "hunter2" }); } catch (caught) { error = caught; }
-    expect(String(error?.message ?? "")).not.toContain("hunter2");
+    expect(String((error as { message?: string } | null)?.message ?? "")).not.toContain("hunter2");
     const network = new IqAuthSession({ fetchImpl: async () => { throw new Error("fetch failed ssid=NET-LEAK"); } });
     let networkError = null; try { await network.login({ email: "u@x.com", password: "pw" }); } catch (caught) { networkError = caught; }
     expect(String(networkError?.message ?? "")).not.toContain("NET-LEAK");
