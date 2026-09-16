@@ -36,7 +36,7 @@ describe("AUTH — login/2FA/SSID state machine", () => {
     await session.login({ email: "user@example.com", password: "pw" });
     let error = null; try { await session.verifyTwoFactor("123456"); } catch (caught) { error = caught; }
     expect(error).toBeInstanceOf(IqAuthError);
-    const message = String(error?.message ?? "");
+    const message = String((error as { message?: string } | null)?.message ?? error ?? "");
     expect(message).not.toContain("123456");
     expect(message).not.toContain("tk-secret-999");
     expect(message).not.toContain("LEAK-ABC");
