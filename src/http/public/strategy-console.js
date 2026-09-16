@@ -15,9 +15,9 @@ function navigate(page) {
   state.page = page;
   document.querySelectorAll(".page").forEach((node) => { node.hidden = node.id !== `page-${page}`; });
   document.querySelectorAll(".nav-item[data-page]").forEach((node) => node.classList.toggle("active", node.dataset.page === page));
-  if (page === "history") void loadHistory();
+  if (page === "history") { void loadHistory(); void loadIqSignals(); }
   if (page === "iq") { void loadIqStatus(); void loadIqExecutions(); }
-  if (page === "training") void loadStats();
+  if (page === "training") { void loadStats(); void loadIqTraining(); }
   if (page === "operational" || page === "settings") void loadStats();
 }
 
@@ -194,6 +194,64 @@ async function loadIqExecutions() {
     body.innerHTML = rows.map((row) => `<tr><td>${row.requestedAt ? new Date(row.requestedAt).toLocaleString("pt-BR") : "—"}</td><td>${row.direction ?? "—"}</td><td>${row.stake ?? "—"} ${row.currency ?? ""}</td><td class="fine">${row.brokerOrderId ?? row.state}</td><td class="result-${String(row.state || "unknown").toLowerCase()}">${row.state ?? "—"}</td><td>${row.brokerResult ?? "—"}</td><td>${row.causalResult ?? "—"}${row.settlementMismatch ? " ⚠" : ""}</td><td>${row.profit ?? "—"}</td></tr>`).join("") || `<tr><td colspan="8" class="fine">Sem execuções ainda.</td></tr>`;
   } catch (error) { body.innerHTML = `<tr><td colspan="8" class="fine">Histórico indisponível: ${String(error?.message || error)}</td></tr>`; }
 }
+const IQ_SIGNAL_REASONS = {
+  AUTO_DESLIGADO: "execução automática desligada",
+  SISTEMA_DESARMADO: "sistema parado",
+  PARADA_DE_EMERGENCIA: "parada de emergência acionada",
+  POSICAO_JA_ABERTA: "já existe operação aberta",
+  ORDEM_EM_ANDAMENTO: "ordem anterior em andamento",
+  AGENTE_PAUSADO: "agente pausado",
+  SEM_CONEXAO_IQ: "IQ Option desconectada",
+  ACK_DESCONHECIDO: "ordem sem confirmação (não reenvia)",
+  SINAL_JA_REGISTRADO: "sinal repetido ignorado",
+  IDEMPOTENCIA: "sinal já executado (idempotência)",
+};
+const iqReason = (reason) => !reason ? "—" : (IQ_SIGNAL_REASONS[reason] ?? (String(reason).startsWith("GATE_") ? `gate: ${String(reason).slice(5)}` : String(reason).replaceAll("_", " ").toLowerCase()));
+async function loadIqSignals() {
+  const body = $id("iqSignalsBody"); if (!body) return;
+  try {
+    const result = await jget("/api/iq/signals?limit=60");
+    const rows = Array.isArray(result.signals) ? result.signals : [];
+    setText("iqSignalsCount", String(result.total ?? rows.length));
+    body.innerHTML = rows.map((row) => `<tr>
+      <td>${new Date(Number(row.at)).toLocaleString("pt-BR")}</td>
+      <td>${row.display ?? row.marketKey}</td>
+      <td><span class="office-badge ${row.marketType === "OTC" ? "otc" : "normal"}">${row.marketType}</span></td>
+      <td>${row.action ?? "—"}</td>
+      <td class="result-${String(row.disposition || "blocked").toLowerCase()}">${row.disposition ?? "—"}</td>
+      <td class="fine">${iqReason(row.reason)}</td>
+      <td>${row.stakeFinal ?? "—"}</td>
+      <td class="fine">${row.brokerOrderId ?? (row.result ? `${row.result}${row.profit !== null && row.profit !== undefined ? ` ${Number(row.profit) >= 0 ? "+" : ""}${Number(row.profit).toFixed(2)}` : ""}` : "—")}</td>
+    </tr>`).join("") || `<tr><td colspan="8" class="fine">Sem sinais registrados ainda.</td></tr>`;
+  } catch (error) { body.innerHTML = `<tr><td colspan="8" class="fine">Sinais indisponíveis: ${String(error?.message || error)}</td></tr>`; }
+}
+async function loadIqTraining() {
+  const body = $id("iqTrainingMarketsBody"); if (!body) return;
+  try {
+    const office = await jget("/api/iq/office");
+    const stats = office.signalStats ?? {};
+    setText("iqTrainingUpdated", `ATUALIZADO ${new Date().toLocaleTimeString("pt-BR")}`);
+    const row = (market) => {
+      const signalStats = stats[market.marketKey] ?? {};
+      const daily = market.settlementState?.daily ?? {};
+      return `<tr>
+        <td>${market.display}</td>
+        <td><span class="office-badge ${market.marketType === "OTC" ? "otc" : "normal"}">${market.marketType}</span></td>
+        <td>${market.strategy ?? "—"}</td>
+        <td>${market.payout ?? "—"}%</td>
+        <td>${signalStats.total ?? 0}</td>
+        <td>${signalStats.executed ?? 0}</td>
+        <td>${signalStats.blocked ?? 0}</td>
+        <td>${signalStats.expired ?? 0}</td>
+        <td>${daily.wins ?? 0}/${daily.losses ?? 0}/${daily.draws ?? 0}</td>
+        <td>${Number.isFinite(Number(daily.settledPnl)) ? `${Number(daily.settledPnl) >= 0 ? "+" : ""}${Number(daily.settledPnl).toFixed(2)}` : "—"}</td>
+        <td>${market.enabled ? (market.availability === "OPEN" ? "ATIVO" : "AGUARDANDO MERCADO") : "DESLIGADO"}</td>
+      </tr>`;
+    };
+    const enabled = office.markets.filter((market) => market.enabled);
+    body.innerHTML = enabled.map(row).join("") || `<tr><td colspan="11" class="fine">Nenhum mercado ativo no momento.</td></tr>`;
+  } catch (error) { body.innerHTML = `<tr><td colspan="11" class="fine">Treinamento indisponível: ${String(error?.message || error)}</td></tr>`; }
+}
 async function connectIq() {
   const emailInput = $id("iqEmail"), passwordInput = $id("iqPassword");
   const email = String(emailInput?.value ?? "").trim();
@@ -338,5 +396,7 @@ function bindUi() {
   setInterval(() => { if (state.page === "operational" || state.page === "training" || state.page === "settings") void loadStats(); }, REFRESH_MS);
   setInterval(() => { if (state.page === "history") void loadHistory(); }, 30_000);
   setInterval(() => { if (state.page === "iq") { void loadIqStatus(); void loadIqExecutions(); } }, 5_000);
+  setInterval(() => { if (state.page === "history") void loadIqSignals(); }, 15_000);
+  setInterval(() => { if (state.page === "training") void loadIqTraining(); }, 20_000);
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindUi); else bindUi();

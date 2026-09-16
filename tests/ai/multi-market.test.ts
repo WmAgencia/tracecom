@@ -276,6 +276,61 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     await expect(runtime.requestOrder({ marketKey: "USDJPY:NORMAL", direction: "BUY", stake: 1, horizonSeconds: 60, idempotencyKey: "k-no-turbo" })).rejects.toThrowError(/INSTRUMENT_NOT_AVAILABLE_FOR_HORIZON/);
     expect(runtime.__sent).toHaveLength(0);
   });
+  it("SIGNAL -> disposicao: AUTO desligado registra BLOCKED sem enviar ordem", async () => {
+    const runtime = multiFixture();
+    seedMarket(runtime, "GBPJPY:NORMAL", { activeId: 301 });
+    const record = await runtime.simulateSignal("GBPJPY:NORMAL", "BUY");
+    expect(record).toMatchObject({ disposition: "BLOCKED", reason: "AUTO_DESLIGADO", auto: false, action: "BUY", marketType: "NORMAL", stakeCalculated: 1, stakeFinal: 1 });
+    expect(runtime.__sent).toHaveLength(0);
+    expect(Array.isArray(record.gate.checks ?? record.gate.failed)).toBe(true);
+    const listed = runtime.signals(10).signals.find((row: any) => row.id === record.id);
+    expect(listed?.reason).toBe("AUTO_DESLIGADO");
+  });
+  it("SIGNAL -> disposicao: AUTO ligado sem ARM registra SISTEMA_DESARMADO", async () => {
+    const runtime = multiFixture();
+    seedMarket(runtime, "GBPJPY:NORMAL", { activeId: 301 });
+    runtime.config.autoExecute = true;
+    const record = await runtime.simulateSignal("GBPJPY:NORMAL", "BUY");
+    expect(record).toMatchObject({ disposition: "BLOCKED", reason: "SISTEMA_DESARMADO" });
+    expect(runtime.__sent).toHaveLength(0);
+  });
+  it("SIGNAL -> disposicao: EXECUTED com brokerOrderId e settlement; bucket repetido vira DUPLICATE", async () => {
+    const runtime = multiFixture();
+    const ctx = seedMarket(runtime, "GBPJPY:NORMAL", { activeId: 301 });
+    runtime.config.autoExecute = true;
+    runtime.arm(2, { confirmation: true });
+    const promise = runtime.simulateSignal("GBPJPY:NORMAL", "BUY");
+    await sleep(10);
+    expect(runtime.__sent).toHaveLength(1);
+    await ack(runtime, "GBPJPY:NORMAL", "ORD-SIG-1");
+    const record = await promise;
+    expect(record).toMatchObject({ disposition: "EXECUTED", brokerOrderId: "ORD-SIG-1" });
+    runtime.ingestEvent("socket-option-closed", { connectionId: CONNECTION_ID, receivedAt: Date.now(), msg: { id: "ORD-SIG-1", win: "win", sum: 1, win_amount: 1.85 } });
+    await sleep(15);
+    expect(runtime.signals(5).signals.find((row: any) => row.id === record.id)?.result).toBe("WIN");
+    const duplicate = await runtime.simulateSignal("GBPJPY:NORMAL", "BUY");
+    expect(duplicate).toMatchObject({ disposition: "DUPLICATE", reason: "SINAL_JA_REGISTRADO" });
+    expect(runtime.__sent).toHaveLength(1);
+    expect(ctx.settlementState.daily.wins).toBe(1);
+  });
+  it("SIGNAL -> disposicao: posicao aberta bloqueia novo sinal; bloqueado antigo EXPIRA", async () => {
+    const runtime = multiFixture();
+    const ctx = seedMarket(runtime, "GBPJPY:NORMAL", { activeId: 301 });
+    runtime.config.autoExecute = true;
+    runtime.arm(2, { confirmation: true });
+    const first = runtime.simulateSignal("GBPJPY:NORMAL", "BUY");
+    await sleep(10);
+    await ack(runtime, "GBPJPY:NORMAL", "ORD-SIG-2");
+    await first;
+    ctx.lastCandle = { ...ctx.lastCandle, bucketStart: Number(ctx.lastCandle.bucketStart) + 5_000 };
+    const second = await runtime.simulateSignal("GBPJPY:NORMAL", "SELL");
+    expect(second).toMatchObject({ disposition: "BLOCKED", reason: "POSICAO_JA_ABERTA" });
+    const target = runtime.signalLog.find((row: any) => row.id === second.id);
+    target.at = Date.now() - 120_000;
+    runtime.expireSignals();
+    expect(target.disposition).toBe("EXPIRED");
+    expect(String(target.reason)).toContain("EXPIRADO");
+  });
   it("event bus: payload nunca sobrescreve o campo type do evento", () => {
     const runtime = multiFixture();
     runtime.ingestEvent("balances", { connectionId: CONNECTION_ID, receivedAt: Date.now(), msg: [{ id: 555, type: 4, currency: "USD", amount: 100, is_default: true }] });

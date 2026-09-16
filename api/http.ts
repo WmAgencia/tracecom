@@ -784,7 +784,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
     if (path.startsWith("/api/iq/") && (req.method === "GET" || req.method === "POST" || req.method === "PUT")) {
-      const getPaths = ["/api/iq/status", "/api/iq/executions", "/api/iq/office", "/api/iq/markets", "/api/iq/events", "/api/iq/asset-map", "/api/iq/diagnostic/options", "/api/iq/stress/report"];
+      const getPaths = ["/api/iq/status", "/api/iq/executions", "/api/iq/office", "/api/iq/markets", "/api/iq/events", "/api/iq/asset-map", "/api/iq/diagnostic/options", "/api/iq/signals", "/api/iq/stress/report"];
       const postPaths = ["/api/iq/connect", "/api/iq/verify-2fa", "/api/iq/disconnect", "/api/iq/arm", "/api/iq/disarm", "/api/iq/kill-switch", "/api/iq/test-order", "/api/iq/config/global-stake", "/api/iq/config/auto-execute", "/api/iq/mode", "/api/iq/real/confirm", "/api/iq/real/revoke", "/api/iq/stress/run", "/api/iq/stress/cancel"];
       const putPaths = ["/api/iq/market"];
       const known = [...getPaths, ...postPaths, ...putPaths];

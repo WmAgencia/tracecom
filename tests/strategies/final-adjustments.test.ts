@@ -31,9 +31,11 @@ describe("banca — limite de 5% por operação (sem martingale)", () => {
 });
 
 describe("share — ação da sidebar (não rota) e cancelamento seguro", () => {
-  it("item Compartilhar Tela é ação (data-action) e não navegação (data-page)", () => {
-    expect(indexHtml).toMatch(/data-action="share"[^>]*>.*Compartilhar Tela/);
+  it("sidebar da Fase 4.1 nao expoe Area Operacional nem Compartilhar Tela (foco no Escritorio)", () => {
+    expect(indexHtml).not.toMatch(/data-action="share"[^>]*>.*Compartilhar Tela/);
     expect(indexHtml).not.toMatch(/data-page="share"/);
+    expect(indexHtml).not.toMatch(/data-page="operational"/);
+    expect(indexHtml).toMatch(/data-page="office"/);
   });
   it("app.js trata cancelamento do seletor sem erro feio", () => {
     expect(app).toContain("SHARE_CANCELLED_OR_UNAVAILABLE");

@@ -66,6 +66,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.pendingOrders = new Map();
     this.openPositions = new Map();
     this.orderIndex = new Map();
+    this.signalLog = []; this.signalStats = new Map(); this.signalSeq = 0;
     this.events = []; this.eventSeq = 0;
     this.stress = { running: false, report: null };
     this.metrics = { messages: 0, candles: 0, reorder: 0, duplicates: 0, rejected: 0, startedAt: null, cpuBase: process.cpuUsage(), reconnects: 0 };
@@ -491,11 +492,12 @@ export class IqMultiRuntime extends EventEmitter {
       ctx.lastSignal = { action, at: this.now(), bucketStart: ctx.lastCandle?.bucketStart ?? null, family: selection.family };
       this.#setAgent(ctx, "SIGNAL", reason);
       this.#emitEvent("market.signal", { marketKey: ctx.marketKey, action, bucketStart: ctx.lastSignal.bucketStart });
-      if (this.config.autoExecute === true) void this.#autoExecute(ctx, action);
+      void this.#handleSignal(ctx, action, selection, list);
     } else {
       if (ctx.positionState?.status === "OPEN" || ctx.positionState?.status === "ORDERING") this.#setAgent(ctx, ctx.positionState.status === "OPEN" ? "IN_POSITION" : "ORDERING", "POSITION_OPEN");
       else this.#setAgent(ctx, "WAIT", reason);
       if (this.now() - (ctx.lastWaitEmit ?? 0) > 5_000) { ctx.lastWaitEmit = this.now(); this.#emitEvent("market.wait", { marketKey: ctx.marketKey, reason }); }
+      this.#expireSignals(ctx);
     }
   }
 
@@ -530,13 +532,103 @@ export class IqMultiRuntime extends EventEmitter {
 
   /* ------------------------------- execucao ------------------------------- */
 
-  async #autoExecute(ctx, action) {
-    if (this.pendingOrders.has(ctx.marketKey) || this.openPositions.has(ctx.marketKey)) return;
-    const bucket = ctx.lastSignal?.bucketStart ?? ctx.lastCandle?.bucketStart ?? 0;
-    const idempotencyKey = `${ctx.marketKey}:${bucket}:${action}`;
-    try { await this.requestOrder({ marketKey: ctx.marketKey, direction: action, decisionId: `auto_${ctx.marketKey}_${bucket}`, idempotencyKey, source: "AUTO_DECISION", horizonSeconds: ctx.decisionState.horizonSeconds }); }
-    catch (error) { this.#safe(() => this.log("IQ_MULTI_AUTO_EXEC_BLOCKED", `${ctx.marketKey}:${String(error?.code ?? error?.message ?? error).slice(0, 120)}`)); }
+  /* ------------------------------- signal -> disposicao (observabilidade obrigatoria) ------------------------------- */
+
+  #signalStatsFor(key) {
+    if (!this.signalStats.has(key)) this.signalStats.set(key, { total: 0, executed: 0, blocked: 0, expired: 0, duplicate: 0, wins: 0, losses: 0, draws: 0, settledPnl: 0 });
+    return this.signalStats.get(key);
   }
+
+  /** Registra TODO sinal com destino observavel: EXECUTED | BLOCKED | EXPIRED | DUPLICATE + motivo humano. */
+  async #handleSignal(ctx, action, selection, list) {
+    const now = this.now();
+    const bucket = ctx.lastCandle?.bucketStart ?? null;
+    const idempotencyKey = `${ctx.marketKey}:${bucket}:${action}`;
+    const existing = this.signalLog.find((row) => row.idempotencyKey === idempotencyKey);
+    const resolved = resolveFinalStake({ calculatedBankrollStake: this.config.calculatedBankrollStake, marketMaxStake: ctx.maxStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap });
+    const last = list[list.length - 1] ?? ctx.lastCandle ?? null;
+    const horizonSeconds = selection.horizonSeconds ?? this.config.selection.horizonSeconds;
+    const freshness = { fresh: Boolean(ctx.featureState?.fresh) && ctx.lastTickAt !== null && now - ctx.lastTickAt <= MARKET_TICK_AGE_MS, tickAgeMs: ctx.lastTickAt === null ? null : now - ctx.lastTickAt, reason: ctx.featureState?.freshnessReason ?? "NO_FEATURE" };
+    const realAuthorized = this.config.mode === "REAL" && this.realMode.authorized();
+    const gate = this.gate.evaluate({
+      market: { ...ctx, marketKey: ctx.marketKey }, marketKey: ctx.marketKey, requestedMode: this.config.mode, realAuthorized,
+      connection: { connected: this.session.connected, timeValid: this.session.timeValid, host: this.session.host },
+      serverTime: { ms: this.client?.serverNow() ?? now, skewMs: this.session.clockSkewMs },
+      freshness, decision: { action, ageMs: 0, horizonSeconds, reason: ctx.decisionState.reason }, strategy: { valid: Boolean(selection.family), variantId: `${selection.family}-${horizonSeconds}`, reason: null },
+      price: last?.close ?? null, stake: resolved.finalStake, globalMaxStake: this.config.globalMaxStake, calculatedBankrollStake: this.config.calculatedBankrollStake,
+      openPositions: [...this.openPositions.values()], pendingOrderKeys: [...this.pendingOrders.keys()], usedIdempotencyKeys: [...this.idempotency.byKey.keys()], activeMarketKeys: this.activeMarketKeys(),
+      killSwitch: this.killSwitch.status(), idempotencyKey, horizonSeconds,
+    });
+    let disposition = "EXECUTED"; let reason = "AUTORIZADO";
+    if (existing) { disposition = "DUPLICATE"; reason = "SINAL_JA_REGISTRADO"; }
+    else if (this.killSwitch.status().executionEnabled !== true) { disposition = "BLOCKED"; reason = "PARADA_DE_EMERGENCIA"; }
+    else if (this.config.autoExecute !== true) { disposition = "BLOCKED"; reason = "AUTO_DESLIGADO"; }
+    else if (this.armState.armed !== true) { disposition = "BLOCKED"; reason = "SISTEMA_DESARMADO"; }
+    else if (ctx.paused === true) { disposition = "BLOCKED"; reason = "AGENTE_PAUSADO"; }
+    else if (!this.session.connected) { disposition = "BLOCKED"; reason = "SEM_CONEXAO_IQ"; }
+    else if (this.pendingOrders.has(ctx.marketKey)) { disposition = "BLOCKED"; reason = "ORDEM_EM_ANDAMENTO"; }
+    else if (this.openPositions.has(ctx.marketKey)) { disposition = "BLOCKED"; reason = "POSICAO_JA_ABERTA"; }
+    else if (!gate.allowed) { disposition = "BLOCKED"; reason = `GATE_${gate.code}`; }
+    const record = {
+      id: ++this.signalSeq, marketKey: ctx.marketKey, marketType: ctx.marketType, canonical: ctx.canonical, display: ctx.display, activeId: ctx.activeId,
+      action, strategy: selection.family, at: now, bucketStart: bucket, horizonSeconds,
+      stakeCalculated: Number(this.config.calculatedBankrollStake), stakeFinal: resolved.finalStake, cappedBy: resolved.cappedBy,
+      payout: ctx.payout, auto: this.config.autoExecute === true, armed: this.armState.armed === true, mode: this.config.mode,
+      disposition, reason, idempotencyKey, gate: { allowed: gate.allowed, code: gate.code, reasons: gate.reasons, failed: gate.checks.filter((check) => !check.ok).map((check) => check.name) },
+      executionId: null, brokerOrderId: null, ackAt: null, settledAt: null, result: null, profit: null, duplicateOf: existing?.id ?? null,
+    };
+    this.signalLog.push(record);    if (this.signalLog.length > 500) this.signalLog.splice(0, this.signalLog.length - 500);
+    const stats = this.#signalStatsFor(ctx.marketKey); stats.total += 1;
+    if (disposition === "DUPLICATE") stats.duplicate += 1; else if (disposition === "BLOCKED") stats.blocked += 1; else stats.executed += 1;
+    this.#emitEvent("signal.disposition", { marketKey: ctx.marketKey, action, disposition, reason, signalId: record.id, stakeFinal: record.stakeFinal, auto: record.auto, armed: record.armed });
+    this.#safe(() => this.log("IQ_MULTI_SIGNAL_DISPOSITION", JSON.stringify({ signalId: record.id, marketKey: ctx.marketKey, action, disposition, reason, stakeFinal: record.stakeFinal, auto: record.auto, armed: record.armed })));
+    if (disposition === "BLOCKED" || disposition === "DUPLICATE") return record;
+    try {
+      const result = await this.requestOrder({ marketKey: ctx.marketKey, direction: action, stake: null, decisionId: `auto_${ctx.marketKey}_${bucket}`, idempotencyKey, source: "AUTO_DECISION", horizonSeconds, decisionAgeMs: Math.max(0, this.now() - now) });
+      if (result.duplicate) { record.disposition = "DUPLICATE"; record.reason = "IDEMPOTENCIA"; stats.executed = Math.max(0, stats.executed - 1); stats.duplicate += 1; }
+      else {
+        record.executionId = result.executionId ?? null; record.brokerOrderId = result.brokerOrderId ?? null; record.ackAt = result.state === "ACKNOWLEDGED" ? this.now() : null;
+        if (result.state !== "ACKNOWLEDGED") { record.disposition = "BLOCKED"; record.reason = result.state === "UNKNOWN" ? "ACK_DESCONHECIDO" : String(result.state); stats.executed = Math.max(0, stats.executed - 1); stats.blocked += 1; }
+      }
+      this.#emitEvent("signal.disposition.final", { marketKey: ctx.marketKey, signalId: record.id, disposition: record.disposition, reason: record.reason, brokerOrderId: record.brokerOrderId });
+      return record;
+    } catch (error) {
+      record.disposition = "BLOCKED"; record.reason = String(error?.code ?? error?.message ?? error).slice(0, 80);
+      stats.executed = Math.max(0, stats.executed - 1); stats.blocked += 1;
+      this.#emitEvent("signal.disposition.final", { marketKey: ctx.marketKey, signalId: record.id, disposition: "BLOCKED", reason: record.reason });
+      return record;
+    }
+  }
+
+  /** Sinal bloqueado que ficou velho sem execucao vira EXPIRED (nunca desaparece silenciosamente). */
+  #expireSignals(ctx) {
+    const now = this.now();
+    for (const record of this.signalLog) {
+      if (record.marketKey !== ctx.marketKey || record.disposition !== "BLOCKED") continue;
+      if (now - record.at < 60_000) continue;
+      record.disposition = "EXPIRED"; record.expiredAt = now; record.blockedReason = record.reason; record.reason = `${record.reason}_EXPIRADO`;
+      const stats = this.#signalStatsFor(ctx.marketKey); stats.blocked = Math.max(0, stats.blocked - 1); stats.expired += 1;
+    }
+  }
+
+  signals(limit = 50, marketKeyFilter = null) {
+    const bounded = Math.max(1, Math.min(200, Number(limit) || 50));
+    const rows = [...this.signalLog].reverse().filter((row) => !marketKeyFilter || row.marketKey === marketKeyFilter).slice(0, bounded);
+    return { signals: rows, stats: Object.fromEntries(this.signalStats), total: this.signalLog.length };
+  }
+
+  /** Sinal sintetico para diagnostico/teste: registra disposicao passando por TODOS os gates reais. */
+  async simulateSignal(marketKey, action, { strategy = null } = {}) {
+    const ctx = this.markets.get(marketKey);
+    if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
+    if (action !== "BUY" && action !== "SELL") throw new IqWsError("INVALID_DIRECTION", String(action));
+    const selection = { family: strategy ?? ctx.strategy ?? this.config.selection.family, horizonSeconds: this.config.selection.horizonSeconds };
+    return this.#handleSignal(ctx, action, selection, this.#candleList(ctx));
+  }
+
+  expireSignals() { for (const ctx of this.markets.values()) this.#expireSignals(ctx); return this.signalLog.filter((row) => row.disposition === "EXPIRED").length; }
+
+  async #autoExecute(ctx, action) { return this.#handleSignal(ctx, action, ctx.strategy ? { family: ctx.strategy, horizonSeconds: this.config.selection.horizonSeconds } : this.config.selection, this.#candleList(ctx)); }
 
   portfolioSnapshot() {
     const openPositions = [...this.openPositions.values()];
@@ -656,6 +748,8 @@ export class IqMultiRuntime extends EventEmitter {
     pending.ackResolved = true;
     const record = this.idempotency.get(pending.idempotencyKey);
     if (record) applyBrokerAcknowledgement(record, { orderId: brokerOrderId });
+    const signalRecord = this.signalLog.find((row) => row.executionId === pending.executionId && row.disposition === "EXECUTED");
+    if (signalRecord) { signalRecord.brokerOrderId = brokerOrderId; signalRecord.ackAt = this.now(); }
     pending.brokerOrderId = brokerOrderId;
     const ackMs = this.now() - pending.requestedAt;
     const ctx = this.markets.get(pending.marketKey);
@@ -714,6 +808,11 @@ export class IqMultiRuntime extends EventEmitter {
     ctx.lastTrade = { marketKey: key, brokerOrderId, direction: position.direction, stake: position.stake, result: broker.result, profit: broker.profit, causalResult: settlement.result, mismatch: comparison.mismatch, at: settledAt };
     const agentState = broker.result === "WIN" ? "WIN" : broker.result === "LOSS" ? "LOSS" : "DRAW";
     this.#setAgent(ctx, agentState, comparison.reason);
+    const signalRecord = this.signalLog.find((row) => row.executionId === position.executionId && row.disposition === "EXECUTED");
+    if (signalRecord) { signalRecord.settledAt = settledAt; signalRecord.result = broker.result; signalRecord.profit = broker.profit; }
+    const signalStats = this.#signalStatsFor(key);
+    if (broker.result === "WIN") signalStats.wins += 1; else if (broker.result === "LOSS") signalStats.losses += 1; else if (broker.result === "DRAW") signalStats.draws += 1;
+    signalStats.settledPnl = Number((signalStats.settledPnl + (Number(broker.profit) || 0)).toFixed(4));
     ctx.indicative = { state: "NEUTRAL", delta: null, indicativePnl: null, updatedAt: settledAt };
     this.openPositions.delete(key); this.orderIndex.delete(String(brokerOrderId));
     await this.#persistExecution({ executionId: position.executionId, brokerOrderId: String(brokerOrderId), state: "SETTLED", settledAt: nowIso(settledAt), brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, meta: { settlementReason: comparison.reason, causal: settlement.detail, marketKey: key } });
@@ -951,6 +1050,8 @@ export class IqMultiRuntime extends EventEmitter {
         portfolioControl: { activeMarkets: this.activeMarketKeys(), openPositions: portfolio.openPositions.length, settledPnl: portfolio.settled.pnl, wins: portfolio.settled.wins, losses: portfolio.settled.losses, draws: portfolio.settled.draws, agentsOnline: markets.filter((market) => market.agentState !== "OFFLINE" && market.agentState !== "UNAVAILABLE").length },
       },
       resolver: { lastResolvedAt: this.resolver.lastResolvedAt, resolvedCount: this.resolver.resolvedCount(), sampleActiveKeys: this.resolver.sampleActiveKeys, lastError: this.resolver.lastError },
+      signals: [...this.signalLog].reverse().slice(0, 40),
+      signalStats: Object.fromEntries(this.signalStats),
       reconcile: this.reconcile,
       metrics: { messages: this.metrics.messages, candles: this.metrics.candles, rejected: this.metrics.rejected, reconnects: this.reconnects, memoryMb: Number((process.memoryUsage().rss / 1048576).toFixed(1)), cpuUserMs: process.cpuUsage().user, uptimeSec: Math.round(process.uptime()) },
       stress: { running: this.stress.running, report: this.stress.report },

@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TRACE/COM · Pixel Office (fixture visual)</title>
+  <title>TRACE/COM · Escritório de Agentes (fixture visual)</title>
   <link rel="stylesheet" href="/vision.css" />
   <link rel="stylesheet" href="/console.css" />
   <link rel="stylesheet" href="/office.css" />
@@ -12,92 +12,90 @@
     <main class="main">
       <div id="page-office" class="page office-page">
         <div class="office-topbar">
-          <div class="office-brand"><b>TRACE<em>/</em>COM</b><small>PIXEL TRADING OFFICE · FIXTURE</small></div>
-          <div class="office-mode"><button type="button" id="officePractice" class="active">PRACTICE</button><button type="button" id="officeReal" class="real blocked">REAL</button></div>
-          <button type="button" id="officeArm" class="office-btn primary">ARM</button>
-          <button type="button" id="officeDisarm" class="office-btn ghost">DISARM</button>
-          <button type="button" id="officeKill" class="office-btn danger">KILL SWITCH</button>
-          <label class="office-field">MAX GLOBAL R$ <input id="officeGlobalStake" type="number" min="1" max="100" step="1" value="2" /></label>
-          <button type="button" id="officeApplyAll" class="office-btn">APLICAR A TODOS</button>
-          <button type="button" id="officeAutoExec" class="office-btn ghost">AUTO: OFF</button>
-          <span class="office-chip" id="officeActiveCount">ATIVOS 10/10</span>
-          <span class="office-chip" id="officeOpenPositions">POSIÇÕES 4</span>
-          <span class="office-chip" id="officeConnection">WS FIXTURE</span>
-          <button type="button" id="officeManage" class="office-btn">GERENCIAR ATIVOS</button>
-          <button type="button" id="officeFocus" class="office-btn ghost">CENTRALIZAR</button>
-          <button type="button" id="officeZoomIn" class="office-btn ghost">+</button>
-          <button type="button" id="officeZoomOut" class="office-btn ghost">−</button>
-          <button type="button" id="officeReset" class="office-btn ghost">RESET</button>
+          <div class="office-brand"><b>TRACE<em>/</em>COM</b><small>ESCRITÓRIO DE AGENTES · FIXTURE</small></div>
+          <div class="office-group"><span class="office-group-label">CONTA</span><div class="office-mode"><button type="button" id="officeAccountPractice" class="active">Conta de teste</button><button type="button" id="officeAccountReal" class="real blocked">Conta real</button></div></div>
+          <div class="office-group system"><span class="office-group-label">SISTEMA</span><button type="button" id="officeSystemStart" class="office-btn primary big" hidden>INICIAR OPERAÇÃO AUTOMÁTICA</button><button type="button" id="officeSystemStop" class="office-btn warn big">PARAR SISTEMA</button><span id="officeSystemState" class="office-system-state">SISTEMA OPERANDO — fixture</span></div>
+          <div class="office-group"><span class="office-group-label">EMERGÊNCIA</span><button type="button" id="officeEmergency" class="office-btn danger">PARADA DE EMERGÊNCIA</button></div>
+          <div class="office-group"><span class="office-group-label">LIMITE POR OPERAÇÃO</span><label class="office-field" title="Este é o valor máximo permitido por operação. O sistema pode utilizar um valor menor conforme as regras de risco.">R$ <input id="officeLimitInput" type="number" min="1" max="100" step="1" value="10" /></label><button type="button" id="officeApplyLimit" class="office-btn" title="Este é o valor máximo permitido por operação. O sistema pode utilizar um valor menor conforme as regras de risco.">Aplicar aos agentes</button></div>
+          <div class="office-chips"><span class="office-chip" id="officeChipIq">—</span><span class="office-chip" id="officeChipMarkets">—</span><span class="office-chip" id="officeChipPositions">—</span><span class="office-chip" id="officeChipResult">—</span></div>
+          <div class="office-top-actions"><button type="button" id="officeChooseMarkets" class="office-btn">ESCOLHER MERCADOS</button><button type="button" id="officeAdvanced" class="office-btn ghost">DETALHES AVANÇADOS</button></div>
         </div>
         <div class="office-aux" id="officeAux"></div>
         <div class="office-stage">
           <canvas id="officeCanvas"></canvas>
           <div class="office-overlay" id="officeOverlay"></div>
         </div>
-        <div class="office-ticker" id="officeTicker"></div>
+        <div class="office-activity"><div class="office-activity-head"><span class="office-group-label">ATIVIDADE RECENTE</span><button type="button" id="officeActivityTech" class="office-btn ghost small">ver log técnico</button></div><div class="office-activity-list" id="officeActivity"></div></div>
       </div>
     </main>
   </div>
   <script>
-    /* Fixture visual: cobre todos os estados do agente exigidos pela spec 63, sem tocar o backend. */
+    /* Fixture: cobre estados amigáveis, slots livres, OTC/NORMAL, sinais executados/bloqueados. Nada toca o backend. */
     const market = (key, display, marketType, activeId, agentState, extra = {}) => ({
-      marketKey: key, marketType, canonical: key.split(":")[0], symbol: display.replace(" OTC", ""), display, enabled: true, paused: false,
-      maxStake: 2, strategy: "V3", activeId, instrumentTypes: ["binary", "turbo"], availability: "OPEN", payout: 85, payoutSource: "fixture",
-      connectionHealth: { connected: agentState !== "OFFLINE", lastMessageAt: Date.now(), gaps: 0 }, serverTime: Date.now(),
+      marketKey: key, marketType, canonical: key.split(":")[0], symbol: display.replace(" OTC", ""), display, enabled: extra.enabled !== false, paused: extra.paused === true,
+      maxStake: extra.maxStake ?? 2, strategy: extra.strategy ?? "V3", activeId, instrumentTypes: ["binary", "turbo"], availability: extra.availability ?? "OPEN", payout: extra.payout ?? 85, payoutSource: "fixture",
+      connectionHealth: { connected: agentState !== "OFFLINE" && extra.availability !== "NOT_FOUND", lastMessageAt: Date.now(), gaps: 0 }, serverTime: Date.now(),
       lastTick: { price: 1.1 + activeId / 1000, ageMs: 320, source: "IQ_OPTION_WS", segmentId: `${key}:${Date.now() - 2500}`, bucketStart: Date.now() - 2500, bucketEnd: Date.now() + 2500, serverTimestamp: Date.now() - 320, receivedAt: Date.now() - 320 },
       candles5s: 120, featureState: { builtAt: Date.now() - 500, fresh: true, freshnessReason: "OK", rsi14: 48.2, atr14: 0.00015, adx14: 22.4, donchianPosition: 0.42, microstructureStreak: -1 },
-      decisionState: { action: agentState === "SIGNAL" ? "BUY" : "WAIT", reason: agentState === "ANALYZING" ? "NO_SETUP" : agentState === "ERROR" ? "FEATURES_UNAVAILABLE" : "STRATEGY_SIGNAL", confidence: 0.42, family: "V3", horizonSeconds: 60, evaluatedAt: Date.now() - 400, trigger: { rsi14: 48.2, s: 0.21, vol12: 0.0004, r24: 0.0002 } },
+      decisionState: { action: agentState === "SIGNAL" ? "BUY" : "WAIT", reason: "STRATEGY_SIGNAL", confidence: 0.42, family: "V3", horizonSeconds: 60, evaluatedAt: Date.now() - 400, trigger: { rsi14: 48.2, s: 0.21, vol12: 0.0004, r24: 0.0002 } },
       positionState: { status: extra.positionStatus ?? "IDLE", direction: extra.direction ?? null, entryPrice: extra.entryPrice ?? null, stake: extra.stake ?? null, brokerOrderId: extra.brokerOrderId ?? null, requestId: null, expirationSec: null, openedAt: extra.openedAt ?? null, settledAt: null, result: extra.result ?? null, profit: extra.profit ?? null, mode: "PRACTICE" },
       settlementState: { lastResult: extra.result ?? null, lastProfit: extra.profit ?? null, lastAt: extra.openedAt ?? null, daily: { wins: extra.result === "WIN" ? 1 : 0, losses: extra.result === "LOSS" ? 1 : 0, draws: 0, settledPnl: extra.profit ?? 0, trades: extra.result ? 1 : 0 } },
       indicative: extra.indicative ?? { state: "NEUTRAL", delta: null, indicativePnl: null, updatedAt: null },
       latency: { serverToReceived: { count: 300, p50: 58, p95: 104, p99: 115, max: 130 }, receivedToNormalized: { count: 300, p50: 0, p95: 0, p99: 0, max: 0 }, normalizedToFeature: { count: 300, p50: 0, p95: 650, p99: 900, max: 990 }, orderAck: { count: 2, p50: 420, p95: 430, p99: 430, max: 430 } },
       stats: { messages: 900, candlesProcessed: 120, duplicates: 700, reorder: 0, gaps: 0, rejected: 0, lastBucketStart: Date.now() - 2500 },
-      agentState, agentSince: Date.now() - 3000, agentReason: "FIXTURE", lastSignal: agentState === "SIGNAL" ? { action: "BUY", at: Date.now(), bucketStart: Date.now(), family: "V3" } : null,
-      lastDecision: null,
+      agentState, agentSince: Date.now() - 3000, agentReason: "FIXTURE", lastSignal: null, lastDecision: null,
       lastTrade: extra.result ? { marketKey: key, brokerOrderId: extra.brokerOrderId, direction: extra.direction, stake: extra.stake, result: extra.result, profit: extra.profit, causalResult: extra.result, mismatch: false, at: Date.now() - 1000 } : null,
       selectionReason: null,
     });
     const markets = [
-      market("EURUSD:NORMAL", "EUR/USD", "NORMAL", 1, "WAIT"),
-      market("USDJPY:NORMAL", "USD/JPY", "NORMAL", 2, "ANALYZING"),
-      market("GBPUSD:NORMAL", "GBP/USD", "NORMAL", 3, "IN_POSITION", { positionStatus: "OPEN", direction: "CALL", entryPrice: 1.27, stake: 2, brokerOrderId: "FX-1001", indicative: { state: "FAVORABLE", delta: 0.0004, indicativePnl: 1.4, updatedAt: Date.now() } }),
-      market("AUDUSD:NORMAL", "AUD/USD", "NORMAL", 4, "IN_POSITION", { positionStatus: "OPEN", direction: "PUT", entryPrice: 0.66, stake: 2, brokerOrderId: "FX-1002", indicative: { state: "UNFAVORABLE", delta: -0.0003, indicativePnl: -2, updatedAt: Date.now() } }),
-      market("USDCAD:NORMAL", "USD/CAD", "NORMAL", 5, "WAIT", { result: "WIN", profit: 1.7, direction: "CALL", stake: 2, brokerOrderId: "FX-1003", openedAt: Date.now() - 70_000 }),
-      market("USDCHF:NORMAL", "USD/CHF", "NORMAL", 6, "WAIT", { result: "LOSS", profit: -2, direction: "PUT", stake: 2, brokerOrderId: "FX-1004", openedAt: Date.now() - 70_000 }),
-      market("EURJPY:NORMAL", "EUR/JPY", "NORMAL", 7, "ERROR"),
-      market("EURGBP:NORMAL", "EUR/GBP", "NORMAL", 8, "OFFLINE"),
-      market("AUDJPY:NORMAL", "AUD/JPY", "NORMAL", 9, "ORDERING", { positionStatus: "ORDERING", direction: "CALL", stake: 2 }),
-      market("GBPJPY:NORMAL", "GBP/JPY", "NORMAL", 10, "SETTLING", { positionStatus: "OPEN", direction: "CALL", entryPrice: 188.2, stake: 2, brokerOrderId: "FX-1005", indicative: { state: "NEUTRAL", delta: 0.00001, indicativePnl: 0, updatedAt: Date.now() } }),
+      market("EURUSD:OTC", "EUR/USD OTC", "OTC", 76, "WAIT", { payout: 85 }),
+      market("GBPUSD:OTC", "GBP/USD OTC", "OTC", 81, "IN_POSITION", { payout: 86, positionStatus: "OPEN", direction: "CALL", entryPrice: 1.27, stake: 2, brokerOrderId: "FX-1001", indicative: { state: "FAVORABLE", delta: 0.0004, indicativePnl: 1.72, updatedAt: Date.now() } }),
+      market("USDJPY:OTC", "USD/JPY OTC", "OTC", 85, "IN_POSITION", { payout: 84, positionStatus: "OPEN", direction: "PUT", entryPrice: 150.2, stake: 2, brokerOrderId: "FX-1002", indicative: { state: "UNFAVORABLE", delta: -0.03, indicativePnl: -2, updatedAt: Date.now() } }),
+      market("EURGBP:OTC", "EUR/GBP OTC", "OTC", 77, "SIGNAL", { payout: 83 }),
+      market("GBPJPY:OTC", "GBP/JPY OTC", "OTC", 84, "ORDERING", { payout: 86, positionStatus: "ORDERING", direction: "CALL", stake: 2 }),
+      market("EURUSD:NORMAL", "EUR/USD", "NORMAL", 1, "WAIT", { payout: 82 }),
+      market("USDJPY:NORMAL", "USD/JPY", "NORMAL", 2, "ANALYZING", { payout: 80 }),
+      market("GBPUSD:NORMAL", "GBP/USD", "NORMAL", 3, "ERROR", { payout: 81 }),
+      market("EURJPY:NORMAL", "EUR/JPY", "NORMAL", 4, "WAIT", { paused: true, payout: 79 }),
+      market("USDCHF:NORMAL", "USD/CHF", "NORMAL", 5, "WAIT", { result: "WIN", profit: 1.7, direction: "CALL", stake: 2, brokerOrderId: "FX-1003", openedAt: Date.now() - 70_000 }),
     ];
-    const disabled = (key, display, marketType, activeId) => ({ ...market(key, display, marketType, activeId, "OFFLINE"), enabled: false, availability: "NOT_FOUND", activeId, candles5s: 0, lastTick: null, featureState: null, decisionState: { action: "WAIT", reason: "NOT_FOUND", evaluatedAt: null }, payout: null });
-    for (const row of [disabled("EURUSD:OTC", "EUR/USD OTC", "OTC", 76), disabled("GBPUSD:OTC", "GBP/USD OTC", "OTC", 81), disabled("USDJPY:OTC", "USD/JPY OTC", "OTC", 85), disabled("EURGBP:OTC", "EUR/GBP OTC", "OTC", 77), disabled("GBPJPY:OTC", "GBP/JPY OTC", "OTC", 84)]) markets.push(row);
+    for (const [key, display, type, activeId, availability] of [["AUDUSD:NORMAL", "AUD/USD", "NORMAL", 6, "NOT_FOUND"], ["USDCAD:NORMAL", "USD/CAD", "NORMAL", 7, "NOT_FOUND"], ["AUDJPY:NORMAL", "AUD/JPY", "NORMAL", 8, "NOT_FOUND"], ["EURGBP:NORMAL", "EUR/GBP", "NORMAL", 9, "NOT_FOUND"], ["GBPJPY:NORMAL", "GBP/JPY", "NORMAL", 10, "NOT_FOUND"]]) markets.push(market(key, display, type, activeId, "UNAVAILABLE", { enabled: false, availability, payout: null }));
+    const signals = [
+      { id: 4, marketKey: "EURGBP:OTC", display: "EUR/GBP OTC", marketType: "OTC", action: "BUY", at: Date.now() - 40_000, disposition: "EXECUTED", reason: "AUTORIZADO", stakeFinal: 2, brokerOrderId: "FX-2002", result: null, profit: null },
+      { id: 3, marketKey: "GBPJPY:OTC", display: "GBP/JPY OTC", marketType: "OTC", action: "SELL", at: Date.now() - 90_000, disposition: "BLOCKED", reason: "AUTO_DESLIGADO", stakeFinal: 2, brokerOrderId: null },
+      { id: 2, marketKey: "EURUSD:OTC", display: "EUR/USD OTC", marketType: "OTC", action: "BUY", at: Date.now() - 180_000, disposition: "BLOCKED", reason: "SISTEMA_DESARMADO", stakeFinal: 2, brokerOrderId: null },
+      { id: 1, marketKey: "USDJPY:OTC", display: "USD/JPY OTC", marketType: "OTC", action: "SELL", at: Date.now() - 600_000, disposition: "EXPIRED", reason: "AUTO_DESLIGADO_EXPIRADO", stakeFinal: 1, brokerOrderId: null },
+    ];
     window.__OFFICE_FIXTURE__ = {
       events: [],
       office: {
-        version: "iq-multi-runtime-v2", at: Date.now(), serverTime: Date.now(),
+        version: "iq-multi-runtime-v2", at: Date.now(),
         connection: { connected: true, host: "ws.iqoption.com", timeValid: true, clockSkewMs: 0, reconnects: 0, healthy: true, connectionId: "fixture" },
         mode: "PRACTICE",
         modeState: { mode: "PRACTICE", practice: { verified: true, balance: 10_000, currency: "USD" }, real: { available: true, balance: 0, currency: "BRL" }, realMode: { realModeEnabled: false, phraseRequired: "OPERAR CONTA REAL", maxStake: null, lastRevokeReason: "RESTART" } },
-        config: { globalMaxStake: 2, calculatedBankrollStake: 1, hardCap: 100, maxActiveMarkets: 10, autoExecute: false, selection: { family: "V3", horizonSeconds: 60, variantId: "V3-60" } },
+        config: { globalMaxStake: 10, calculatedBankrollStake: 1, hardCap: 100, maxActiveMarkets: 10, autoExecute: true, selection: { family: "V3", horizonSeconds: 60, variantId: "V3-60" } },
         activeCount: 10, activeLimit: 10, universeCount: 15,
         portfolio: {
           openPositions: [
-            { marketKey: "GBPUSD:NORMAL", direction: "CALL", stake: 2, entryPrice: 1.27, brokerOrderId: "FX-1001", openedAt: Date.now() - 20_000, indicative: { state: "FAVORABLE", indicativePnl: 1.4 } },
-            { marketKey: "AUDUSD:NORMAL", direction: "PUT", stake: 2, entryPrice: 0.66, brokerOrderId: "FX-1002", openedAt: Date.now() - 20_000, indicative: { state: "UNFAVORABLE", indicativePnl: -2 } },
-            { marketKey: "AUDJPY:NORMAL", direction: "CALL", stake: 2, entryPrice: null, brokerOrderId: null, openedAt: Date.now(), indicative: null },
-            { marketKey: "GBPJPY:NORMAL", direction: "CALL", stake: 2, entryPrice: 188.2, brokerOrderId: "FX-1005", openedAt: Date.now() - 10_000, indicative: { state: "NEUTRAL", indicativePnl: 0 } },
+            { marketKey: "GBPUSD:OTC", direction: "CALL", stake: 2, entryPrice: 1.27, brokerOrderId: "FX-1001", openedAt: Date.now() - 20_000, indicative: { state: "FAVORABLE", indicativePnl: 1.72 } },
+            { marketKey: "USDJPY:OTC", direction: "PUT", stake: 2, entryPrice: 150.2, brokerOrderId: "FX-1002", openedAt: Date.now() - 20_000, indicative: { state: "UNFAVORABLE", indicativePnl: -2 } },
+            { marketKey: "GBPJPY:OTC", direction: "CALL", stake: 2, entryPrice: null, brokerOrderId: null, openedAt: Date.now(), indicative: null },
           ],
           exposure: [{ currency: "USD", net: -2, stake: 4, longCount: 1, shortCount: 1 }, { currency: "GBP", net: 2, stake: 2, longCount: 1, shortCount: 0 }],
           concentrationWarnings: [], settled: { wins: 14, losses: 9, draws: 1, pnl: 6.42, trades: 24 },
           practiceBalance: 10_000, realBalance: 0,
           equityCurve: Array.from({ length: 24 }, (_, index) => ({ at: Date.now() - (24 - index) * 120_000, cumulative: Number((Math.sin(index / 3) * 1.2 + index * 0.28).toFixed(2)) })),
         },
-        markets, aux: {
-          risk: { openPositions: 4, stakeAtRisk: 8, exposure: [{ currency: "USD", net: -2, stake: 4, longCount: 1, shortCount: 1 }], concentrationWarnings: [], limits: { maxActiveMarkets: 10, maxOpenPerMarket: 1, hardCap: 100 } },
-          compliance: { mode: "PRACTICE", armState: { state: "ARMED", armed: true, connectedAccountType: "PRACTICE", marketDataHealthy: true, maxPracticeStakeBrl: 100, disarmReason: null }, killSwitch: { executionEnabled: true }, hardCap: 100, realMode: { realModeEnabled: false }, invariants: { practiceOnlyDefault: true, realRequiresExplicitConfirmation: true, oneOrderPerDecision: true, onePositionPerMarket: true, normalNeverFallsBackToOtc: true, maxActiveMarkets: 10 } },
+        markets, signals, signalStats: {
+          "EURGBP:OTC": { total: 2, executed: 1, blocked: 1, expired: 0, duplicate: 0, wins: 0, losses: 0, draws: 0, settledPnl: 0 },
+          "GBPJPY:OTC": { total: 3, executed: 1, blocked: 1, expired: 1, duplicate: 0, wins: 1, losses: 0, draws: 0, settledPnl: 1.7 },
+        },
+        aux: {
+          risk: { openPositions: 3, stakeAtRisk: 6, exposure: [{ currency: "USD", net: -2, stake: 4, longCount: 1, shortCount: 1 }], concentrationWarnings: [], limits: { maxActiveMarkets: 10, maxOpenPerMarket: 1, hardCap: 100 } },
+          compliance: { mode: "PRACTICE", armState: { state: "ARMED", armed: true, connectedAccountType: "PRACTICE", marketDataHealthy: true, maxPracticeStakeBrl: 100, disarmReason: null }, killSwitch: { executionEnabled: true }, hardCap: 100, realMode: { realModeEnabled: false }, invariants: {} },
           macro: { status: "NO_FEED", note: "contexto macro nao conectado nesta fase" }, news: { status: "NO_FEED", note: "interface pronta; nenhum evento inventado" },
           executionGate: { state: "ARMED", armed: true, pendingOrders: 1, allowedMarkets: markets.filter((row) => row.enabled).map((row) => row.marketKey), blockedMarkets: [], reasons: [] },
-          portfolioControl: { activeMarkets: markets.filter((row) => row.enabled).map((row) => row.marketKey), openPositions: 4, settledPnl: 6.42, wins: 14, losses: 9, draws: 1, agentsOnline: 9 },
+          portfolioControl: { activeMarkets: markets.filter((row) => row.enabled).map((row) => row.marketKey), openPositions: 3, settledPnl: 6.42, wins: 14, losses: 9, draws: 1, agentsOnline: 9 },
         },
         resolver: { lastResolvedAt: Date.now(), resolvedCount: 15, sampleActiveKeys: [], lastError: null },
         reconcile: { lastRunAt: Date.now() - 60_000, checked: 0, settled: 0, unknown: 0, error: null },
@@ -106,7 +104,7 @@
         legacy: { marketData: {}, account: {}, execution: {}, brokerAutomation: "WS_ONLY_PRACTICE" },
       },
     };
-    window.fetch = (async (input, init) => {
+    window.fetch = (async (input) => {
       const url = String(input?.url ?? input);
       if (url.includes("/api/iq/office")) return new Response(JSON.stringify(window.__OFFICE_FIXTURE__.office), { status: 200, headers: { "content-type": "application/json" } });
       if (url.includes("/api/iq/events")) return new Response(JSON.stringify({ events: [], cursor: 0 }), { status: 200, headers: { "content-type": "application/json" } });

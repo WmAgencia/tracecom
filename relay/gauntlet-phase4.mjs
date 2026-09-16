@@ -63,6 +63,7 @@ const orderKill = await req("POST", "/api/iq/test-order", { marketKey: o.markets
 check("P4-KILL-01", "kill switch bloqueia ARM e ordem", killOn.json.killSwitch?.executionEnabled === false && armKill.status === 400 && orderKill.status === 400, { arm: armKill.json.error ?? null, order: orderKill.json.error ?? null });
 await req("POST", "/api/iq/kill-switch", { engaged: false });
 
+const originalGlobal = Number(o.config.globalMaxStake) || 2;
 const badGlobal = await req("POST", "/api/iq/config/global-stake", { value: 150 });
 check("P4-STAKE-01", "stake global acima do hard cap bloqueado", badGlobal.status === 400 && badGlobal.json.error === "invalid_global_stake", badGlobal.json);
 const applyAll = await req("POST", "/api/iq/config/global-stake", { value: 3 });
@@ -74,8 +75,8 @@ const individual = await req("PUT", "/api/iq/market", { marketKey: target, maxSt
 const afterIndividual = await req("GET", "/api/iq/markets");
 const individualMarket = (afterIndividual.json.universe ?? []).find((m) => m.marketKey === target);
 check("P4-STAKE-03", "stake individual prevalece sobre global (teto menor)", individual.status === 200 && Number(individualMarket?.maxStake) === 1, { marketKey: target ?? null, maxStake: individualMarket?.maxStake ?? null });
-await req("POST", "/api/iq/config/global-stake", { value: 2 });
-if (target) await req("PUT", "/api/iq/market", { marketKey: target, maxStake: 2 });
+await req("POST", "/api/iq/config/global-stake", { value: originalGlobal });
+if (target) await req("PUT", "/api/iq/market", { marketKey: target, maxStake: originalGlobal });
 
 const armNoConfirm2 = await req("POST", "/api/iq/arm", { limitBrl: 2 });
 check("P4-GATE-01", "ARM exige confirmacao explicita", armNoConfirm2.status === 400 && armNoConfirm2.json.error === "EXPLICIT_CONFIRMATION_REQUIRED", armNoConfirm2.json);
@@ -83,6 +84,14 @@ const orderNoArm = await req("POST", "/api/iq/test-order", { direction: "BUY", s
 check("P4-GATE-02", "ordem sem ARM bloqueada", orderNoArm.status === 400 && ["EXECUTION_NOT_ARMED", "ORDER_IN_FLIGHT", "POSITION_ALREADY_OPEN"].includes(orderNoArm.json.error), orderNoArm.json);
 
 const officeText = asText(office.json);
+const signalFeed = await req("GET", "/api/iq/signals?limit=20");
+check("P4-SIGNAL-01", "feed de sinais com disposicao observavel", signalFeed.status === 200 && Array.isArray(signalFeed.json.signals) && typeof signalFeed.json.stats === "object", { signals: signalFeed.json.signals?.length ?? null });
+const executedSignals = (signalFeed.json.signals ?? []).filter((row) => row.disposition === "EXECUTED");
+const blockedSignals = (signalFeed.json.signals ?? []).filter((row) => row.disposition === "BLOCKED" || row.disposition === "EXPIRED");
+check("P4-SIGNAL-02", "todo sinal tem disposition e reason", [...(signalFeed.json.signals ?? [])].every((row) => ["EXECUTED", "BLOCKED", "EXPIRED", "DUPLICATE"].includes(row.disposition) && Boolean(row.reason)), { executed: executedSignals.length, blocked: blockedSignals.length });
+check("P4-SIGNAL-03", "stake final nunca excede o limite global (teto, nao obrigacao)", (signalFeed.json.signals ?? []).every((row) => Number(row.stakeFinal) <= Number(o.config.globalMaxStake)) && Number(o.config.calculatedBankrollStake) <= Number(o.config.globalMaxStake), { globalMax: o.config.globalMaxStake, calculated: o.config.calculatedBankrollStake });
+check("P4-SIGNAL-04", "ordens reais de sinal persistidas com brokerOrderId quando executadas", executedSignals.every((row) => row.executionId) && (executions.json.executions ?? []).every((row) => row.mode !== "REAL"), executedSignals.length);
+
 const marketsText = asText(await req("GET", "/api/iq/markets"));
 const eventsText = asText(await req("GET", "/api/iq/events?after=0&limit=200"));
 check("P4-SECRET-01", "office sem ssid/senha/bearer/2fa", !officeText.includes("ssid") && !officeText.includes("password") && !officeText.includes("bearer ") && !officeText.includes("2fa"), null);
@@ -100,11 +109,14 @@ check("P4-IDEMP-02", "posicao aberta por mercado limitada a 1", o.portfolio.open
 
 const uiIndex = await fetch(`${BASE}/`, { signal: AbortSignal.timeout(30_000) }).then((response) => response.text()).catch(() => "");
 const uiJs = await fetch(`${BASE}/office.js`, { signal: AbortSignal.timeout(30_000) }).then((response) => response.text()).catch(() => "");
-check("P4-UI-01", "pagina do escritorio servida com canvas e topbar", uiIndex.includes('id="page-office"') && uiIndex.includes('id="officeCanvas"') && uiIndex.includes("office.js") && uiIndex.includes("office.css"), null);
+check("P4-UI-01", "pagina do escritorio servida com canvas e controles simplificados", uiIndex.includes('id="page-office"') && uiIndex.includes('id="officeCanvas"') && uiIndex.includes("office.js") && uiIndex.includes("office.css"), null);
 check("P4-UI-02", "frontend consome o backend real (office/events/market/config)", uiJs.includes("/api/iq/office") && uiJs.includes("/api/iq/events") && uiJs.includes("/api/iq/market") && uiJs.includes("/api/iq/real/confirm"), null);
-check("P4-UI-03", "UI e backend concordam no limite/ativos", uiJs.includes("activeCount") && uiIndex.includes("officeActiveCount"), null);
+check("P4-UI-03", "UI simplificada: SISTEMA/CONTA/EMERGENCIA/VALOR/ESCOLHER MERCADOS/ATIVIDADE", uiIndex.includes("officeSystemStart") && uiIndex.includes("officeAccountPractice") && uiIndex.includes("officeEmergency") && uiIndex.includes("officeApplyLimit") && uiIndex.includes("officeChooseMarkets") && uiIndex.includes("officeActivity"), null);
+check("P4-UI-04", "WS nao e informacao principal (host apenas em detalhes)", !uiIndex.includes("ws.iqoption.com") && uiIndex.includes("IQ Option"), null);
+check("P4-UI-05", "sidebar enxuta: sem Area Operacional/Compartilhar Tela", !uiIndex.includes('data-page="operational"') && !uiIndex.includes('data-action="share"'), null);
 const uiFixture = await fetch(`${BASE}/office-fixture.html`, { signal: AbortSignal.timeout(30_000) }).then((response) => response.text()).catch(() => "");
-check("P4-UI-04", "fixture visual cobre os 10 estados exigidos (WAIT/ANALYZING/+1.40/-2.00/WIN/LOSS/ERROR/OFFLINE/ORDERING/SETTLING)", ["WAIT", "ANALYZING", "FAVORABLE", "UNFAVORABLE", "WIN", "LOSS", "ERROR", "OFFLINE", "ORDERING", "SETTLING"].every((state) => uiFixture.includes(state)), null);
+check("P4-UI-06", "fixture visual cobre estados amigaveis (AGUARDANDO/ANALISANDO/OPORTUNIDADE/EM OPERACAO/ENVIANDO/INDISPONIVEL/PAUSADO/WIN/LOSS/FAVORABLE/UNFAVORABLE)", ["SIGNAL", "ORDERING", "IN_POSITION", "ANALYZING", "UNAVAILABLE", "paused", "WIN", "FAVORABLE", "UNFAVORABLE"].every((state) => uiFixture.includes(state)) && uiJs.includes("AGUARDANDO") && uiJs.includes("LIVRE") && uiJs.includes("OPORTUNIDADE"), null);
+check("P4-UI-07", "mesas em slots com ticker grande NORMAL/OTC e slots livres", uiJs.includes("MESA ") && uiJs.includes("market.marketType") && uiJs.includes("SLOTS"), null);
 
 const failed = results.filter((row) => !row.pass);
 console.log(JSON.stringify({ base: BASE, at: new Date().toISOString(), total: results.length, passed: results.length - failed.length, failed: failed.map((row) => row.id), results }, null, 2));
