@@ -1,0 +1,57 @@
+// repos30-bench.cjs — benchmark da rodada "30 repositorios": candidatos extraidos dos repos clonados (repos30/), stream unico 10h, BINARY e OTC.
+const fs = require("fs");
+const crypto = require("crypto");
+const OUT = __dirname;
+const REF = "cladmauwmuoeongxzwb";
+const API = `https://api.supabase.com/v1/projects/${"cladmauwmuoeongxzwb"}/database/query`;
+const L = require(OUT + "/mh-lib.cjs");
+const BL = require(OUT + "/bench-lib.cjs");
+const TOK = process.env.SUPABASE_ACCESS_TOKEN;
+if (!TOK || TOK.indexOf("sbp_") !== 0) throw new Error("token ausente");
+const sha16 = (o) => crypto.createHash("sha256").update(JSON.stringify(o)).digest("hex").slice(0, 16);
+async function sqlq(q) { for (let a = 0; a < 3; a++) { const r = await fetch(`https://api.supabase.com/v1/projects/cladmauwmuoeqongxzwb/database/query`, { method: "POST", headers: { Authorization: "Bearer " + TOK, "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) }); if (r.ok) return await r.json(); if (a === 2) throw new Error("SQL fail"); await new Promise((x) => setTimeout(x, 1200)); } }
+(async () => {
+  const cands = [];
+  const add = (id, repo, commit, license, status, origTF, params, note, fn) => cands.push({ id, repo, commit, license, fidelity: status, origTF, params, note, fn, adapterVersion: "tc-2.0.0", hash: sha16({ id, repo, commit, params, av: "tc-2.0.0", note }) });
+  const Q1 = "zuc1fer/quotex-bot", Q1C = "1281ed23c1"; const Q2 = "carlosrod723/Quotex-Trading-Bot", Q2C = "49bb669676";
+  const PO1 = "artyomkap/PocketOptionBot", PO1C = "d796b27953"; const PO2 = "TopTrenDev/pocketoption-signal-bot", PO2C = "65977037d7";
+  const P6 = "rajitha-yasas/Pine-Script-v6-Trading-Strategy", P6C = "31798b238c"; const QT = "je-suis-tm/quant-trading", QTC = "611b73f2c3";
+  add("qu1_revert3", Q1, Q1C, "AUSENTE", "EXATA (codigo lido)", "Candle 1m (demo)", { streak: 3 }, "3 candles consecutivos mesma direcao -> fade", (i, I, cd) => { if (i < 4) return 0; let up = 0, dn = 0; for (let j = i - 2; j <= i; j++) { if (cd[j].close > cd[j].open) up += 1; else if (cd[j].close < cd[j].open) dn += 1; else return 0; } return up === 3 ? -1 : dn === 3 ? 1 : 0; });
+  add("qu1_rsi_cross", Q1, Q1C, "AUSENTE", "EXATA (codigo lido)", "Candle 1m", { rsi: 14, low: 30, high: 70 }, "RSI cruza p/ cima de 30 -> CALL; p/ baixo de 70 -> PUT (Wilder)", (i, I) => { if (i < 2 || I.rsi14[i] === null || I.rsi14[i - 1] === null) return 0; if (I.rsi14[i - 1] <= 30 && I.rsi14[i] > 30) return 1; if (I.rsi14[i - 1] >= 70 && I.rsi14[i] < 70) return -1; return 0; });
+  add("qu1_sma_cross", Q1, Q1C, "AUSENTE", "EXATA (codigo lido)", "Candle 1m", { fast: 5, slow: 20 }, "cruzamento SMA5/SMA20 de close", (i, I) => { if (i < 21) return 0; let f = 0, s = 0, f2 = 0, s2 = 0; for (let j = i - 4; j <= i; j++) f += I.C[j]; f /= 5; for (let j = i - 19; j <= i; j++) s += I.C[j]; s /= 20; for (let j = i - 5; j <= i - 1; j++) f2 += I.C[j]; f2 /= 5; for (let j = i - 20; j <= i - 1; j++) s2 += I.C[j]; s2 /= 20; return f2 <= s2 && f > s ? 1 : f2 >= s2 && f < s ? -1 : 0; });
+  add("qu2_triple_confluence", Q2, Q2C, "MIT", "EXATA (README codigo)", "5min", { rsi: [25, 75], macd: [12, 26, 9], bb: [20, 2] }, "RSI<25 & cruzamento MACD alta & close<=BBL -> BUY; espelhado SELL", (i, I) => { if (I.rsi14[i] === null || I.macd[i] === null || I.mSig[i] === null || I.bb.lo[i] === null) return 0; const cmacd = I.macd[i] > I.mSig[i] && I.macd[i - 1] <= I.mSig[i - 1]; const dmacd = I.macd[i] < I.mSig[i] && I.macd[i - 1] >= I.mSig[i - 1]; if (I.rsi14[i] < 25 && cmacd && I.C[i] <= I.bb.lo[i]) return 1; if (I.rsi14[i] > 75 && dmacd && I.C[i] >= I.bb.up[i]) return -1; return 0; });
+  add("po1_rsi35_65", PO1, PO1C, "AUSENTE", "EXATA (README+defaults codigo)", "Candle 1m", { rsi: 14, th: [35, 65] }, "RSI<35 -> CALL; >65 -> PUT", (i, I) => { const r = I.rsi14[i]; return r === null ? 0 : r < 35 ? 1 : r > 65 ? -1 : 0; });
+  add("po1_level_touch", PO1, PO1C, "AUSENTE", "APROXIMADA (descricao README)", "Candle 1m", { lookback: 60, tol: 0.0002 }, "touch de suporte(60) -> CALL; resistencia(60) -> PUT", (i, I) => { if (i < 61) return 0; let ll = Infinity, hh = -Infinity; for (let j = i - 60; j < i; j++) { if (I.Lo[j] < ll) ll = I.Lo[j]; if (I.H[j] > hh) hh = I.H[j]; } const tol = 0.0002 * I.C[i]; if (I.Lo[i] <= ll + tol && I.C[i] > I.Lo[i]) return 1; if (I.H[i] >= hh - tol && I.C[i] < I.H[i]) return -1; return 0; });
+  add("po1_price_action", PO1, PO1C, "AUSENTE", "APROXIMADA (descricao README)", "Candle 1m", { pattern: ["engulfing", "pinbar"] }, "engulfing/pinbar (definicoes canonicas)", (i, I, cd) => i >= 1 ? BL.candlePatterns(cd, i) : 0);
+  add("po2_ema_rsi", PO2, PO2C, "AUSENTE", "APROXIMADA (READM-; codigo MT5 nao portado)", "M1-M5 (EA MT5)", { ema: [9, 21], rsi: 14 }, "EMA9 x EMA21 com filtro RSI50", (i, I) => { if (i < 1 || I.e8[i] === null) return 0; let e9 = null, e9p = null, e21v = null, e21p = null; void e9; void e9p; void e21v; void e21p; const f = I.C.slice(0, i + 1); const ema = (arr, p) => { const a = 2 / (p + 1); let e = arr[0]; for (let j = 1; j < arr.length; j++) e = arr[j] * a + e * (1 - a); return e; }; const f9 = ema(f, 9), f21 = ema(f, 21); const g9 = ema(f.slice(0, f.length - 1), 9), g21 = ema(f.slice(0, f.length - 1), 21); const r = I.rsi14[i]; if (r === null) return 0; if (g9 <= g21 && f9 > f21 && r > 50) return 1; if (g9 >= g21 && f9 < f21 && r < 50) return -1; return 0; });
+  add("pine_v6_st_macd_rsi_adx", P6, P6C, "AUSENTE (regras publicas)", "EXATA (README script)", "qualquer (TradingView)", { st: [10, 3], adx: 20, macd: [12, 26, 9], rsi: 14 }, "MACD cross + RSI>50 + preco>Supertrend + ADX>20 (long; espelhado)", (i, I) => { if (I.macd[i] === null || I.mSig[i] === null || I.rsi14[i] === null || I.stDir[i] === 0 || I.adx.a[i] === null) return 0; const cm = I.macd[i] > I.mSig[i] && I.macd[i - 1] <= I.mSig[i - 1]; const dm = I.macd[i] < I.mSig[i] && I.macd[i - 1] >= I.mSig[i - 1]; if (cm && I.rsi14[i] > 50 && I.stDir[i] < 0 && I.adx.a[i] > 20) return 1; if (dm && I.rsi14[i] < 50 && I.stDir[i] > 0 && I.adx.a[i] > 20) return -1; return 0; });
+  add("qt_dual_thrust", QT, QTC, "MIT (repo)", "APROXIMADA (formula canonica; N=4)", "Daily (original)", { N: 4, k1: 0.5, k2: 0.5 }, "range=max(HH-LC,HC-LL); buy=open+k1R; sell=open-k2R", (i, I) => { if (i < 6) return 0; let hh = -Infinity, ll = Infinity, lc = Infinity, hc = -Infinity; for (let j = i - 4; j < i; j++) { if (I.H[j] > hh) hh = I.H[j]; if (I.Lo[j] < ll) ll = I.Lo[j]; } lc = I.C[i - 1]; hc = I.C[i - 1]; void lc; void hc; const range = Math.max(hh - I.C[i - 1], I.C[i - 1] - ll); const buyL = I.O[i - 1] + 0.5 * range, sellL = I.O[i - 1] - 0.5 * range; if (I.C[i] > buyL && I.C[i - 1] <= buyL) return 1; if (I.C[i] < sellL && I.C[i - 1] >= sellL) return -1; return 0; });
+  fs.mkdirSync(OUT + "/repos30-bench", { recursive: true });
+  fs.writeFileSync(OUT + "/repos30-bench/config-freeze.json", JSON.stringify({ frozen_at: new Date().toISOString(), protocol: { candle_s: 5, horizon_s: 60, payout: 0.89, breakeven_pct: 52.91, markets: ["BINARY", "OTC"], fonte: "30 repositorios clonados (repos30/)" }, candidates: cands.map((c) => ({ id: c.id, repo: c.repo, commit: c.commit, license: c.license, fidelity: c.fidelity, origTF: c.origTF, params: c.params, note: c.note, adapterVersion: c.adapterVersion, hash: c.hash })) }, null, 1));
+  console.log(`FREEZE: ${cands.length} candidatos (fonte: 30 repos)`);
+  const out = { generated_at: new Date().toISOString(), datasets: {} };
+  for (const ds of [{ id: "IQOPTION_EURUSD_BINARY_10H", tag: "BINARY" }, { id: "IQOPTION_EURUSD_OTC_10H", tag: "OTC" }]) {
+    const cd = await L.loadCandles("https://api.supabase.com/v1/projects/cladmauwmuoeqongxzwb/database/query", TOK, ds.id);
+    const I = BL.buildInd(cd); const N = cd.length;
+    const byB = new Map(); for (let i = 0; i < N; i++) byB.set(cd[i].bucket, i);
+    const l60 = new Array(N).fill(null); for (let i = 0; i < N; i++) { const si = byB.get(cd[i].bucket + 60000); l60[i] = si === undefined ? null : (cd[si].close === cd[i].close ? 0 : cd[si].close > cd[i].close ? 1 : -1); }
+    let dups = 0; for (let i = 1; i < N; i++) if (cd[i].bucket - cd[i - 1].bucket !== 5000) dups += 1;
+    let pertChg = 0, pertN = 0;
+    { const cd2 = cd.map((x) => ({ ...x })); for (let s = 0; s < 10; s++) { const i = 500 + Math.floor(Math.random() * (N - 700)); for (let j = i + 30; j <= Math.min(N - 1, i + 60); j++) { cd2[j].close *= 1.01; cd2[j].high *= 1.01; cd2[j].low *= 1.01; } const I2 = BL.buildInd(cd2); for (const c of cands) { try { const d1 = c.fn(i, I, cd), d2v = c.fn(i, I2, cd2); if (d1 !== d2v) pertChg += 1; } catch { } pertN += 1; } cd2.length = 0; cd2.push(...cd.map((x) => ({ ...x }))); } }
+    const rows = [];
+    for (const c of cands) { const t0 = process.hrtime.bigint(); const v = new Int8Array(N); for (let i = 0; i < N; i++) { try { v[i] = c.fn(i, I, cd) || 0; } catch { v[i] = 0; } } const ms = Number(process.hrtime.bigint() - t0) / 1e6 / N;
+      let sig = 0, w = 0, l = 0, d = 0, u = 0, cw = 0, cl = 0, mw = 0, ml = 0, pnl = 0, peak = 0, dd = 0;
+      for (let i = 0; i < N; i++) { const x = v[i]; if (x === 0) continue; const y = l60[i]; if (y === null) { u += 1; continue; } if (y === 0) { d += 1; continue; } sig += 1; const win = x === y; if (win) { w += 1; cw += 1; cl = 0; if (cw > mw) mw = cw; } else { l += 1; cl += 1; cw = 0; if (cl > ml) ml = cl; } pnl += win ? 0.89 : -1; peak = Math.max(peak, pnl); dd = Math.min(dd, pnl - peak); }
+      const n = w + l, wr = n ? w / n : null; const z = 1.96, p = wr ?? 0, den = 1 + z * z / (n || 1), cc = (p + z * z / (2 * (n || 1))) / den, h = n ? z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / den : 0;
+      rows.push({ id: c.id, repo: c.repo, hash: c.hash, fidelity: c.fidelity, signals: sig, w, l, d, u, wr: wr === null ? null : +(wr * 100).toFixed(2), ci95: n ? [+(Math.max(0, cc - h) * 100).toFixed(2), +(Math.min(1, cc + h) * 100).toFixed(2)] : null, sigPerHour: +(sig / (N * 5 / 3600)).toFixed(1), maxWinStreak: mw, maxLossStreak: ml, expectancy: wr === null ? null : +((wr * 0.89) - (1 - wr)).toFixed(4), pnl_units: +pnl.toFixed(1), maxDD: +dd.toFixed(1), ms_per_decision: +ms.toFixed(4) });
+    }
+    rows.sort((a, b) => (b.wr ?? 0) - (a.wr ?? 0));
+    out.datasets[ds.tag] = { candles: N, dupBuckets: dups, perturb: `${pertChg}/${pertN}`, t60_exact: true, rows };
+    console.log(`\n===== ${ds.tag} (${N} candles) dups=${dups} perturb=${pertChg}/${pertN} =====`);
+    console.log("Candidato | sig | W/L/D/U | WR | CI95 | sig/h | exp@0.89 | PnL | DD | fidelidade");
+    for (const r of rows) console.log(`  ${r.id} | ${r.signals} | ${r.w}/${r.l}/${r.d}/${r.u} | ${r.wr}% | [${(r.ci95 || []).join("..")}] | ${r.sigPerHour} | ${r.expectancy} | ${r.pnl_units} | ${r.maxDD} | ${r.fidelity}`);
+  }
+  fs.writeFileSync(OUT + "/repos30-bench/benchmark-results.json", JSON.stringify(out, null, 1));
+  await sqlq(`INSERT INTO iqopt_benchmark_meta (run_id, generated_at, totals, engine) VALUES ('repos30-2026-09-16', now(), '${JSON.stringify({ candidates: cands.length, markets: ["BINARY", "OTC"], top: Object.fromEntries(Object.entries(out.datasets).map(([k, v]) => [k, v.rows.slice(0, 3).map((r) => `${r.id}|${r.wr}%|n=${r.w + r.l}|${r.sigPerHour}/h`)])) }).replace(/'/g, "''")}'::jsonb, 'repos30-bench.cjs') ON CONFLICT (run_id) DO UPDATE SET generated_at=now(), totals=EXCLUDED.totals;`);
+  console.log("\nREPOS30 BENCH DONE");
+})().catch((e) => { console.error("ERR " + (e && e.stack || e.message)); process.exit(1); });

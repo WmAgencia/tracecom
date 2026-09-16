@@ -1,0 +1,195 @@
+{
+ "frozen_at": "2026-09-16T04:53:05.912Z",
+ "protocol": {
+  "candle_s": 5,
+  "horizon_s": 60,
+  "payout": 0.89,
+  "breakeven_pct": 52.91,
+  "markets": [
+   "BINARY",
+   "OTC"
+  ],
+  "fonte": "30 repositorios clonados (repos30/)"
+ },
+ "candidates": [
+  {
+   "id": "qu1_revert3",
+   "repo": "zuc1fer/quotex-bot",
+   "commit": "1281ed23c1",
+   "license": "AUSENTE",
+   "fidelity": "EXATA (codigo lido)",
+   "origTF": "Candle 1m (demo)",
+   "params": {
+    "streak": 3
+   },
+   "note": "3 candles consecutivos mesma direcao -> fade",
+   "adapterVersion": "tc-2.0.0",
+   "hash": "15bcd3bcbd99fb30"
+  },
+  {
+   "id": "qu1_rsi_cross",
+   "repo": "zuc1fer/quotex-bot",
+   "commit": "1281ed23c1",
+   "license": "AUSENTE",
+   "fidelity": "EXATA (codigo lido)",
+   "origTF": "Candle 1m",
+   "params": {
+    "rsi": 14,
+    "low": 30,
+    "high": 70
+   },
+   "note": "RSI cruza p/ cima de 30 -> CALL; p/ baixo de 70 -> PUT (Wilder)",
+   "adapterVersion": "tc-2.0.0",
+   "hash": "88ebac8919d46892"
+  },
+  {
+   "id": "qu1_sma_cross",
+   "repo": "zuc1fer/quotex-bot",
+   "commit": "1281ed23c1",
+   "license": "AUSENTE",
+   "fidelity": "EXATA (codigo lido)",
+   "origTF": "Candle 1m",
+   "params": {
+    "fast": 5,
+    "slow": 20
+   },
+   "note": "cruzamento SMA5/SMA20 de close",
+   "adapterVersion": "tc-2.0.0",
+   "hash": "47dd970324070839"
+  },
+  {
+   "id": "qu2_triple_confluence",
+   "repo": "carlosrod723/Quotex-Trading-Bot",
+   "commit": "49bb669676",
+   "license": "MIT",
+   "fidelity": "EXATA (README codigo)",
+   "origTF": "5min",
+   "params": {
+    "rsi": [
+     25,
+     75
+    ],
+    "macd": [
+     12,
+     26,
+     9
+    ],
+    "bb": [
+     20,
+     2
+    ]
+   },
+   "note": "RSI<25 & cruzamento MACD alta & close<=BBL -> BUY; espelhado SELL",
+   "adapterVersion": "tc-2.0.0",
+   "hash": "df7f2801308bfced"
+  },
+  {
+   "id": "po1_rsi35_65",
+   "repo": "artyomkap/PocketOptionBot",
+   "commit": "d796b27953",
+   "license": "AUSENTE",
+   "fidelity": "EXATA (README+defaults codigo)",
+   "origTF": "Candle 1m",
+   "params": {
+    "rsi": 14,
+    "th": [
+     35,
+     65
+    ]
+   },
+   "note": "RSI<35 -> CALL; >65 -> PUT",
+   "adapterVersion": "tc-2.0.0",
+   "hash": "8cdd3d887de42308"
+  },
+  {
+   "id": "po1_level_touch",
+   "repo": "artyomkap/PocketOptionBot",
+   "commit": "d796b27953",
+   "license": "AUSENTE",
+   "fidelity": "APROXIMADA (descricao README)",
+   "origTF": "Candle 1m",
+   "params": {
+    "lookback": 60,
+    "tol": 0.0002
+   },
+   "note": "touch de suporte(60) -> CALL; resistencia(60) -> PUT",
+   "adapterVersion": "tc-2.0.0",
+   "hash": "e935d98912023302"
+  },
+  {
+   "id": "po1_price_action",
+   "repo": "artyomkap/PocketOptionBot",
+   "commit": "d796b27953",
+   "license": "AUSENTE",
+   "fidelity": "APROXIMADA (descricao README)",
+   "origTF": "Candle 1m",
+   "params": {
+    "pattern": [
+     "engulfing",
+     "pinbar"
+    ]
+   },
+   "note": "engulfing/pinbar (definicoes canonicas)",
+   "adapterVersion": "tc-2.0.0",
+   "hash": "af2d54760d4952e6"
+  },
+  {
+   "id": "po2_ema_rsi",
+   "repo": "TopTrenDev/pocketoption-signal-bot",
+   "commit": "65977037d7",
+   "license": "AUSENTE",
+   "fidelity": "APROXIMADA (READM-; codigo MT5 nao portado)",
+   "origTF": "M1-M5 (EA MT5)",
+   "params": {
+    "ema": [
+     9,
+     21
+    ],
+    "rsi": 14
+   },
+   "note": "EMA9 x EMA21 com filtro RSI50",
+   "adapterVersion": "tc-2.0.0",
+   "hash": "9f367d8a646fb56a"
+  },
+  {
+   "id": "pine_v6_st_macd_rsi_adx",
+   "repo": "rajitha-yasas/Pine-Script-v6-Trading-Strategy",
+   "commit": "31798b238c",
+   "license": "AUSENTE (regras publicas)",
+   "fidelity": "EXATA (README script)",
+   "origTF": "qualquer (TradingView)",
+   "params": {
+    "st": [
+     10,
+     3
+    ],
+    "adx": 20,
+    "macd": [
+     12,
+     26,
+     9
+    ],
+    "rsi": 14
+   },
+   "note": "MACD cross + RSI>50 + preco>Supertrend + ADX>20 (long; espelhado)",
+   "adapterVersion": "tc-2.0.0",
+   "hash": "68477273335be363"
+  },
+  {
+   "id": "qt_dual_thrust",
+   "repo": "je-suis-tm/quant-trading",
+   "commit": "611b73f2c3",
+   "license": "MIT (repo)",
+   "fidelity": "APROXIMADA (formula canonica; N=4)",
+   "origTF": "Daily (original)",
+   "params": {
+    "N": 4,
+    "k1": 0.5,
+    "k2": 0.5
+   },
+   "note": "range=max(HH-LC,HC-LL); buy=open+k1R; sell=open-k2R",
+   "adapterVersion": "tc-2.0.0",
+   "hash": "70c0271903933a15"
+  }
+ ]
+}

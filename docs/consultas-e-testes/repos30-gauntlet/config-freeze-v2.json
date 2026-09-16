@@ -1,0 +1,161 @@
+{
+ "frozen_at": "2026-09-16T05:13:39.230Z",
+ "note": "v2.2.0 pos-critico rodada 2: fidelidade TF/parametros/filtros corrigida",
+ "candidates": [
+  {
+   "id": "qu1_revert3_min",
+   "repo": "zuc1fer/quotex-bot",
+   "commit": "1281ed23c1",
+   "fidelity": "EXATA (codigo lido; TF 1m original)",
+   "origTF": "1m",
+   "params": {
+    "streak": 3
+   },
+   "hash": "9bf6cbe25f63fc06"
+  },
+  {
+   "id": "qu1_rsi_cross_min",
+   "repo": "zuc1fer/quotex-bot",
+   "commit": "1281ed23c1",
+   "fidelity": "EXATA (codigo lido; TF 1m original)",
+   "origTF": "1m",
+   "params": {
+    "rsi": 14,
+    "low": 30,
+    "high": 70
+   },
+   "hash": "b59e49c7f69280f1"
+  },
+  {
+   "id": "qu1_sma_cross_min",
+   "repo": "zuc1fer/quotex-bot",
+   "commit": "1281ed23c1",
+   "fidelity": "EXATA (codigo lido; TF 1m original)",
+   "origTF": "1m",
+   "params": {
+    "fast": 5,
+    "slow": 20
+   },
+   "hash": "5f4c44c36cb43dfa"
+  },
+  {
+   "id": "qu2_triple_confluence_5m",
+   "repo": "carlosrod723/Quotex-Trading-Bot",
+   "commit": "49bb669676",
+   "fidelity": "EXATA (README; TF 5m original)",
+   "origTF": "5m",
+   "params": {
+    "rsi": [
+     25,
+     75
+    ],
+    "macd": [
+     12,
+     26,
+     9
+    ],
+    "bb": [
+     20,
+     2
+    ]
+   },
+   "hash": "d758fd0b9056fdad"
+  },
+  {
+   "id": "po1_levels_min",
+   "repo": "artyomkap/PocketOptionBot",
+   "commit": "d796b27953",
+   "fidelity": "EXATA (codigo lido; niveis fractal-60; tol fonte)",
+   "origTF": "1m",
+   "params": {
+    "lookback": 60,
+    "tol": "max(0.0005*C,0.0003)"
+   },
+   "hash": "2a714f08a4cca6ca"
+  },
+  {
+   "id": "po1_priceaction_min",
+   "repo": "artyomkap/PocketOptionBot",
+   "commit": "d796b27953",
+   "fidelity": "EXATA (pinbar/engulfing exatos)",
+   "origTF": "1m",
+   "params": {
+    "pinBar": [
+     0.6,
+     0.3
+    ],
+    "engulfing": true
+   },
+   "hash": "f9e83fbe523c51e5"
+  },
+  {
+   "id": "po1_multifactor_min",
+   "repo": "artyomkap/PocketOptionBot",
+   "commit": "d796b27953",
+   "fidelity": "EXATA (fonte integral; MIN_FACTORS=1)",
+   "origTF": "1m",
+   "params": {
+    "factors": "levels+PA+rsiCutler",
+    "minFactors": 1
+   },
+   "hash": "56fcbcca1b3496a5"
+  },
+  {
+   "id": "po2_ema_rsi_min",
+   "repo": "TopTrenDev/pocketoption-signal-bot",
+   "commit": "65977037d7",
+   "fidelity": "EXATA (strategy.py integral: estado + chop + streak + banda neutra + voto; janela 300)",
+   "origTF": "1m (pocket signal path, timeframe_sec=60)",
+   "params": {
+    "ema": [
+     20,
+     50
+    ],
+    "rsi": 14,
+    "rsiBuy": 52,
+    "rsiSell": 48,
+    "neutralBand": 1.5,
+    "chop": [
+     20,
+     0.05
+    ],
+    "streak": 2,
+    "momentumConfirm": true
+   },
+   "hash": "25cbed096449b661"
+  },
+  {
+   "id": "pine_v6_st_macd_rsi_adx_5s",
+   "repo": "rajitha-yasas/Pine-Script-v6-Trading-Strategy",
+   "commit": "31798b238c",
+   "fidelity": "EXATA (README script; TF livre)",
+   "origTF": "livre",
+   "params": {
+    "st": [
+     10,
+     3
+    ],
+    "adx": 20,
+    "macd": [
+     12,
+     26,
+     9
+    ],
+    "rsi": 14
+   },
+   "hash": "3a8fe21629c8ecbd"
+  },
+  {
+   "id": "qt_dual_thrust",
+   "repo": "je-suis-tm/quant-trading",
+   "commit": "611b73f2c3",
+   "fidelity": "APROXIMADA (formula canonica; original daily)",
+   "origTF": "daily",
+   "params": {
+    "N": 4,
+    "k": 0.5
+   },
+   "hash": "267eacd7798f2d1f"
+  }
+ ]
+}
