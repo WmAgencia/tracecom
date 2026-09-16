@@ -49,12 +49,12 @@ function renderControl() {
   const labels = { V3: "V3 + Fibonacci", V8: "V8 Structure + Fibonacci", V2: "V2 + Fibonacci", V1: "V1 + Fibonacci" };
   const rows = [];
   const autoSelected = selection?.mode === "AUTO";
-  rows.push(`<button type="button" class="strategy-row auto ${autoSelected ? "selected" : ""}" data-auto="1"><b>◉ AUTOMÁTICO</b><span class="fine">Política conservadora: min N=30, WR ≥ 54.9%, Wilson lower; mantém se nada elegível.</span></button>`);
+  rows.push(`<button type="button" class="strategy-row auto ${autoSelected ? "selected" : ""}" data-auto="1"><b>◉ AUTOMÁTICO</b><span class="fine">O agente seleciona automaticamente entre as estratégias elegíveis (N mínimo, WR e Wilson lower; conservador — mantém a atual se nada elegível).</span></button>`);
   for (const family of families) {
     const familyVariants = variants.filter((variant) => variant.family === family);
     const horizons = [45, 60, 120, 180, 300].filter((h) => familyVariants.some((v) => v.horizonSeconds === h));
     if (!horizons.length) { const def = { V3: [45, 60, 120, 180, 300], V8: [45, 60], V2: [60, 120], V1: [300] }[family] ?? []; horizons.push(...def); }
-    const header = `<div class="strategy-family"><b>${labels[family]}</b><span class="fine">hash ${family === "V3" ? "acf733a6" : family === "V8" ? "712373de" : family === "V2" ? "6f8b9001" : "70a7bfcb"} …</span></div>`;
+    const header = `<div class="strategy-family"><b>${labels[family]}</b><span class="fine">${horizons.length} horizonte${horizons.length > 1 ? "s" : ""} · WR e N reais do shadow engine</span></div>`;
     const buttons = horizons.map((horizon) => {
       const variant = familyVariants.find((v) => v.horizonSeconds === horizon) ?? null;
       const wr = variant ? pct(variant.wr) : "—";
@@ -143,9 +143,11 @@ function bindUi() {
   document.querySelectorAll(".nav-item").forEach((node) => {
     node.addEventListener("click", () => {
       if (node.dataset.action === "share") { const share = $id("shareButton"); if (share) share.click(); navigate("operational"); return; }
-      if (node.dataset.page) navigate(node.dataset.page);
+      if (node.dataset.page) { navigate(node.dataset.page); const sidebar = $id("sidebar"); if (sidebar) sidebar.classList.remove("open"); }
     });
   });
+  const navToggle = $id("navToggle");
+  if (navToggle) navToggle.addEventListener("click", () => { const sidebar = $id("sidebar"); if (sidebar) sidebar.classList.toggle("open"); });
   const bankrollInput = $id("bankrollTotal");
   if (bankrollInput) bankrollInput.addEventListener("change", () => { const value = Math.max(0, Number(bankrollInput.value) || 0); localStorage.setItem("tracecom:bankroll", String(value)); renderBankroll(); });
   const historyStrategy = $id("historyFilterStrategy"); if (historyStrategy) historyStrategy.addEventListener("change", () => { state.historyFilter.family = historyStrategy.value; void loadHistory(); });

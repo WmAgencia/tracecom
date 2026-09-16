@@ -2,83 +2,134 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TRACE/COM Vision</title><meta name="description" content="Observação visual de gráficos para sinais shadow. Sem automação de corretora." />
+  <title>TRACE/COM · Área Operacional</title><meta name="description" content="Área operacional shadow do TraceCom. Observação visual de gráficos; sem automação de corretora." />
   <link rel="stylesheet" href="/vision.css" />
   <link rel="stylesheet" href="/console.css" />
 </head>
 <body>
-  <header class="vision-header">
-    <a class="vision-brand" href="/" aria-label="TraceCom Vision"><span class="brand-orbit"></span><span>TRACE<em>/</em>COM <small>VISION · SHADOW</small></span></a>
-    <div class="header-actions"><label class="profile-select">PERFIL <select id="profileSelect"><option value="CONSERVATIVE">Conservador</option><option value="BALANCED" selected>Balanceado</option><option value="AGGRESSIVE">Agressivo</option></select></label><div class="header-state"><i id="connectionLed"></i><span id="connectionText">VERIFICANDO SERVIÇO</span><b>SEM ORDENS</b></div></div>
-  </header>
-  <div class="console-layout">
-  <nav class="sidebar" aria-label="Navegação"><button type="button" class="nav-item active" data-page="operational">Área Operacional</button><button type="button" class="nav-item" data-page="history">Histórico</button><button type="button" class="nav-item" data-page="training">Treinamento do Agente</button><button type="button" class="nav-item" data-page="settings">Configurações</button><button type="button" class="nav-item" data-action="share">Compartilhar Tela</button><span class="sidebar-foot" id="sidebarSelection">—</span></nav>
-  <div class="console-content">
-  <div id="page-operational" class="page">
-  <main class="operation-shell">
-    <section class="market-view" aria-label="Gráfico compartilhado">
-      <div class="market-head"><div><span class="kicker">MERCADO OBSERVADO</span><h1 id="marketLabel">Aguardando gráfico</h1></div><div class="capture-state"><i id="captureLed"></i><span id="captureText">NÃO COMPARTILHADO</span><small id="fpsText">—</small></div></div>
-      <div id="previewFrame" class="preview-frame"><video id="screenVideo" playsinline muted></video><div id="previewEmpty" class="preview-empty"><strong>Compartilhe somente a janela da IQ Option</strong><span>O TraceCom usa apenas o crop do gráfico. Nenhuma ordem é enviada.</span></div><div id="cropLayer" class="crop-layer" hidden><div id="cropGuide" class="crop-guide"><span>REGIÃO DO GRÁFICO</span></div><p>Ajuste a região somente se o detector precisar.</p></div><span id="visionBadge" class="badge">VISION STANDBY</span></div>
-      <div class="market-footer"><span id="frameText">Nenhum frame</span><span id="cropText">Detector aguardando captura</span><button id="recropButton" class="quiet" hidden>AJUSTAR ÁREA</button></div>
-      <div class="controls capture-controls"><button id="shareButton" class="primary">COMPARTILHAR (ABA/JANELA/TELA)</button><button id="stopShareButton" class="quiet" hidden>PARAR</button><label>Capital da sessão <input id="sessionBudget" type="number" min="0" step="1" value="500" inputmode="decimal" /></label><button id="startTrainingButton" class="secondary" disabled>INICIAR SHADOW</button><button id="stopTrainingButton" class="quiet" hidden>PARAR SHADOW</button></div>
-      <div class="market-status" aria-label="Status do mercado"><div><span>ATIVO</span><b id="statusAsset">—</b></div><div><span>PREÇO</span><b id="currentPriceValue">—</b></div><div><span>VELA / EXPIRAÇÃO</span><b>5s / 60s</b></div><div><span>PIPELINE</span><b id="pipelineState">AGUARDANDO</b></div><div class="privacy-status"><span>PRIVACIDADE</span><b id="healthCrop">CROP LOCAL</b></div></div>
-    </section>
-    <aside class="decision-panel" aria-label="Decisão shadow do Fable">
-      <div class="decision-head"><div><span class="kicker">FABLE 5.1 · SHADOW</span><h2>Leitura operacional</h2></div><span id="fableState" class="badge">OFFLINE</span></div>
-      <div id="decisionBox" class="decision-box state-wait"><span>SINAL ATUAL</span><strong id="decisionValue">WAIT</strong><p id="decisionSummary">Compartilhe o gráfico para iniciar a observação.</p><p id="profileLine" class="fine">Perfil: Balanceado · Horizonte: 60s</p></div>
-      <section id="operationClock" class="operation-clock" aria-live="polite"><div class="clock-ring"><b id="clockValue">—</b><span>s</span></div><div><span class="kicker">ESTADO DO SINAL</span><strong id="clockState">AGUARDANDO</strong><p id="clockText">A próxima análise inicia automaticamente.</p></div></section>
-      <div class="probability-strip"><div><span>BUY</span><b id="pBuyValue">N/A</b></div><div><span>SELL</span><b id="pSellValue">N/A</b></div><div><span>WAIT</span><b id="pWaitValue">N/A</b></div></div>
-      <section class="context primary-context"><span class="kicker">CONTEXTO CONFIRMADO</span><p><b id="contextAsset">Ativo não confirmado</b><span id="contextMeta">Aguardando crop sanitizado</span></p><dl><div><dt>TF</dt><dd id="contextTimeframe">—</dd></div><div><dt>CONFIANÇA</dt><dd id="contextConfidence">—</dd></div><div><dt>VISÃO</dt><dd id="visionStatusValue">—</dd></div></dl></section>
-      <div class="confidence"><span>CONFIANÇA DO AGENTE</span><b id="confidenceValue">N/A</b><i><em id="confidenceBar"></em></i><small id="confidenceProvenance" class="fine">CALIBRANDO — sem seleção.</small></div>
-      <section id="operationPanel" class="operation-summary"><span class="kicker">CANAL SHADOW</span><p><b id="opStateValue">READY</b><span id="opDirectionValue">Sem operação ativa</span></p><dl><div><dt>ENTRY</dt><dd id="opEntryValue">—</dd></div><div><dt>JANELA / EXPIRAÇÃO</dt><dd id="opCountdownValue">—</dd></div><div><dt>RESULTADO</dt><dd id="opResultValue">—</dd></div></dl></section>
-      <p id="analysisAge" class="fine analysis-age">—</p>
+  <button type="button" id="navToggle" class="nav-toggle" aria-label="Abrir menu">☰</button>
+  <div class="app" id="appShell">
+    <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+      <div class="sidebar-brand"><span class="brand-orbit"></span><span>TRACE<em>/</em>COM <small>VISION · SHADOW</small></span></div>
+      <nav class="sidebar-nav">
+        <button type="button" class="nav-item active" data-page="operational"><span class="nav-ico">◎</span>Área Operacional</button>
+        <button type="button" class="nav-item" data-page="history"><span class="nav-ico">▤</span>Histórico</button>
+        <button type="button" class="nav-item" data-page="training"><span class="nav-ico">✦</span>Treinamento do Agente</button>
+        <button type="button" class="nav-item" data-page="share"><span class="nav-ico">◱</span>Compartilhar Tela</button>
+        <button type="button" class="nav-item" data-page="settings"><span class="nav-ico">⚙</span>Configurações</button>
+      </nav>
+      <div class="sidebar-foot">
+        <span class="sidebar-foot-label">SELEÇÃO ATIVA</span>
+        <span class="sidebar-selection" id="sidebarSelection">—</span>
+        <label class="profile-select">PERFIL <select id="profileSelect"><option value="CONSERVATIVE">Conservador</option><option value="BALANCED" selected>Balanceado</option><option value="AGGRESSIVE">Agressivo</option></select></label>
+        <div class="header-state"><i id="connectionLed"></i><span id="connectionText">VERIFICANDO SERVIÇO</span><b>SEM ORDENS</b></div>
+      </div>
     </aside>
-  </main>
-  <section class="activity-grid">
-    <article class="history-card"><div class="lower-head"><div><span class="kicker">HISTÓRICO</span><h2>Sinais recentes</h2></div><span id="historyCount" class="badge">0</span></div><div id="historyList" class="history-list"><p>Nenhum sinal ainda.</p></div></article>
-    <article class="training-card"><div class="lower-head"><div><span class="kicker">SESSÃO SHADOW</span><h2 id="trainingTitle">Treino inativo</h2></div><span id="trainingState" class="badge">PRONTO</span></div><div class="training-grid"><div><span>DECISÕES</span><b id="trainingAnalyses">0</b></div><div><span>AVALIADAS</span><b id="trainingEvaluated">0</b></div><div><span>WIN / LOSS</span><b id="trainingWins">0 / 0</b></div><div><span>WR</span><b id="trainingWr">—</b></div></div><p id="trainingNote">A sessão registra apenas operações shadow; nada é enviado à plataforma.</p></article>
-  </section>
-  <section class="console-strategies" aria-label="Estratégias congeladas">
-    <div class="lower-head"><div><span class="kicker">ESTRATÉGIAS CONGELADAS · SHADOW</span><h2>Seleção operacional</h2></div><span id="strategyModeBadge" class="badge">MANUAL</span></div>
-    <div class="bankroll-row"><label>BANCA TOTAL R$ <input id="bankrollTotal" type="number" min="0" step="10" value="500" inputmode="decimal" /></label><span>Limite por operação: <b id="bankrollLimit">R$ 5,00</b> (1%)</span><span class="fine">Sem martingale · execução manual · nenhuma ordem enviada.</span></div>
-    <p id="selectionNotice" class="fine" hidden></p>
-    <p id="horizonWarning" class="fine warn" hidden></p>
-    <div id="strategyList" class="strategy-list"><p class="fine">Carregando estatísticas reais do shadow engine…</p></div>
-    <p class="fine">WR e N vêm do shadow engine (V3/V8/V2/V1 rodando em paralelo). CONFIANÇA = Wilson lower da variante selecionada; abaixo de N=30 exibe CALIBRANDO.</p>
-  </section>
-  <section class="research-wrap">
-    <details class="research-panel"><summary><span><b>RESEARCH E DIAGNÓSTICO</b><small>Detalhes técnicos, calibração, telemetria e acesso Codex</small></span><span>ABRIR</span></summary>
-      <div class="research-grid">
-        <section class="context quant-shadow-panel"><span class="kicker">QUANT SHADOW · NÃO OPERACIONAL</span><p><b id="quantShadowDirection">UNAVAILABLE</b><span id="quantShadowMeta">Feature/model shadow aguardando dataset causal.</span></p><dl><div><dt>P(UP)</dt><dd id="quantShadowUp">—</dd></div><div><dt>P(DOWN)</dt><dd id="quantShadowDown">—</dd></div><div><dt>P(NO EDGE)</dt><dd id="quantShadowNoEdge">—</dd></div><div><dt>REGIME</dt><dd id="quantShadowRegime">—</dd></div></dl></section>
-        <section class="context"><span class="kicker">LEITURA E QUALIDADE</span><dl class="signal-grid"><div><dt>PARSE</dt><dd id="parseStatusValue">—</dd></div><div><dt>ATIVO</dt><dd id="assetStatusValue">—</dd></div><div><dt>VELA</dt><dd id="candleStatusValue">5s / 60s</dd></div><div><dt>REGIME</dt><dd id="regimeValue">—</dd></div><div><dt>TENDÊNCIA</dt><dd id="trendValue">—</dd></div><div><dt>MOMENTUM</dt><dd id="momentumValue">—</dd></div><div><dt>QUALIDADE</dt><dd id="dataQualityValue">—</dd></div><div><dt>CONFLUÊNCIA</dt><dd id="confluenceValue">—</dd></div><div><dt>FRAME</dt><dd id="visionValue">—</dd></div></dl></section>
-        <section class="context"><span class="kicker">DECISÃO E POSIÇÃO OBSERVADA</span><p><b id="directionalLeanValue">NONE</b><span id="leanText">WAIT não implica ausência de direção.</span></p><p><b id="manualPositionValue">NONE</b><span id="manualPositionMeta">Nenhum marcador visual confirmado.</span></p><dl><div><dt>VALOR NA TELA</dt><dd id="contextStake">—</dd></div><div><dt>LATÊNCIA</dt><dd id="latencyValue">—</dd></div><div><dt>CHART VIEW</dt><dd id="chartViewQuality">N/A</dd></div></dl></section>
-        <section class="guidance" id="agentGuidance" hidden><span class="kicker">ORIENTAÇÃO DO AGENTE</span><p id="guidanceText"></p><small id="guidanceReason"></small></section>
+
+    <main class="main">
+      <!-- ============ PÁGINA: ÁREA OPERACIONAL (3 blocos: gráfico+leitura, banca, estratégias) ============ -->
+      <div id="page-operational" class="page">
+        <section class="op-hero">
+          <div class="chart-stage">
+            <div class="chart-head">
+              <div><span class="kicker">MERCADO OBSERVADO</span><h1 id="marketLabel">Aguardando gráfico</h1></div>
+              <div class="capture-state"><i id="captureLed"></i><span id="captureText">NÃO COMPARTILHADO</span><small id="fpsText">—</small></div>
+            </div>
+            <div id="previewFrame" class="preview-frame">
+              <video id="screenVideo" playsinline muted></video>
+              <div id="previewEmpty" class="preview-empty"><strong>AGUARDANDO GRÁFICO</strong><span>Compartilhe a tela pelo menu lateral (“Compartilhar Tela”). Nenhuma ordem é enviada.</span></div>
+              <div id="cropLayer" class="crop-layer" hidden><div id="cropGuide" class="crop-guide"><span>REGIÃO DO GRÁFICO</span></div><p>Ajuste a região somente se o detector precisar.</p></div>
+              <span id="visionBadge" class="badge">VISION STANDBY</span>
+            </div>
+            <div class="market-footer"><span id="frameText">Nenhum frame</span><span id="cropText">Detector aguardando captura</span><button id="recropButton" class="quiet" hidden>AJUSTAR ÁREA</button></div>
+          </div>
+
+          <aside class="signal-panel" aria-label="Leitura operacional">
+            <span class="kicker">LEITURA OPERACIONAL</span>
+            <div id="decisionBox" class="decision-box state-wait">
+              <strong id="decisionValue">WAIT</strong>
+              <p id="decisionSummary">Aguardando sinal da estratégia selecionada.</p>
+            </div>
+            <section id="operationClock" class="operation-clock" aria-live="polite">
+              <div class="clock-block"><span id="clockState" class="clock-label">AGUARDANDO</span><b id="clockValue">—</b><small id="clockText" class="fine">A próxima análise inicia automaticamente.</small></div>
+              <div class="clock-block validity"><span class="clock-label">VALIDADE</span><b id="opCountdownValue">—</b><small class="fine">Horizonte da variante selecionada (source of truth: servidor).</small></div>
+            </section>
+            <div class="confidence">
+              <span>CONFIANÇA DO AGENTE</span>
+              <b id="confidenceValue">CALIBRANDO</b>
+              <i><em id="confidenceBar"></em></i>
+              <small id="confidenceProvenance" class="fine">CALIBRANDO — sem seleção.</small>
+            </div>
+            <section id="operationPanel" class="operation-summary">
+              <p><b id="opStateValue">READY</b><span id="opDirectionValue">Sem operação ativa</span></p>
+              <dl><div><dt>ENTRY</dt><dd id="opEntryValue">—</dd></div><div><dt>RESULTADO</dt><dd id="opResultValue">—</dd></div></dl>
+            </section>
+          </aside>
+        </section>
+
+        <section class="bankroll-strip" aria-label="Banca">
+          <span class="kicker">BANCA</span>
+          <label>Banca total <input id="bankrollTotal" type="number" min="0" step="10" value="500" inputmode="decimal" /></label>
+          <span class="bankroll-limit">Limite por operação <b id="bankrollLimit">R$ 5,00</b></span>
+          <span class="fine">Sem martingale · execução manual · nenhuma ordem enviada.</span>
+        </section>
+
+        <section class="console-strategies" aria-label="Estratégias congeladas">
+          <div class="lower-head"><div><span class="kicker">SELEÇÃO OPERACIONAL</span><h2>Estratégias</h2></div><span id="strategyModeBadge" class="badge">MANUAL</span></div>
+          <p id="selectionNotice" class="fine" hidden></p>
+          <p id="horizonWarning" class="fine warn" hidden></p>
+          <div id="strategyList" class="strategy-list"><p class="fine">Carregando estatísticas reais do shadow engine…</p></div>
+          <p class="fine">WR e N vêm do shadow engine (V1/V2/V3/V8 rodando em paralelo). A variante selecionada controla o agente a partir do próximo sinal.</p>
+        </section>
+      </div>
+
+      <!-- ============ PÁGINA: HISTÓRICO ============ -->
+      <div id="page-history" class="page" hidden>
+        <div class="page-head"><span class="kicker">HISTÓRICO</span><h1>Operações e sinais shadow</h1><span id="historyPageCount" class="badge">0</span></div>
+        <div class="controls"><label>Estratégia <select id="historyFilterStrategy"><option value="">TODAS</option><option value="V1">V1</option><option value="V2">V2</option><option value="V3">V3</option><option value="V8">V8</option></select></label><label>Resultado <select id="historyFilterResult"><option value="">TODOS</option><option value="WIN">WIN</option><option value="LOSS">LOSS</option><option value="DRAW">DRAW</option></select></label><button id="historyRefresh" class="quiet" type="button">ATUALIZAR</button></div>
+        <div class="history-table-wrap"><table class="history-table"><thead><tr><th>DATA/HORA</th><th>ESTRATÉGIA</th><th>HORIZONTE</th><th>DIR</th><th>ENTRY</th><th>SETTLEMENT</th><th>RESULTADO</th><th>HASH</th></tr></thead><tbody id="historyTableBody"><tr><td colspan="8" class="fine">Carregando…</td></tr></tbody></table></div>
+        <article class="history-card"><div class="lower-head"><div><span class="kicker">SESSÃO (LOCAL)</span><h2>Sinais recentes do agente</h2></div><span id="historyCount" class="badge">0</span></div><div id="historyList" class="history-list"><p>Nenhum sinal ainda.</p></div></article>
+      </div>
+
+      <!-- ============ PÁGINA: TREINAMENTO DO AGENTE ============ -->
+      <div id="page-training" class="page" hidden>
+        <div class="page-head"><span class="kicker">TREINAMENTO DO AGENTE</span><h1>TRAINING 24H · CHAMPION / CANDIDATE</h1><span id="trainingPageState" class="badge">TRAINING 24H</span></div>
+        <div class="promo-grid"><div><span>CHAMPION</span><b id="promoChampion">—</b></div><div><span>CANDIDATE</span><b id="promoCandidate">—</b></div><div><span>TRADES CANDIDATE</span><b id="promoCandidateN">0 / 5000</b></div><div><span>ÚLTIMA DECISÃO</span><b id="promoDecision">SEM_DECISAO</b></div></div>
+        <p id="promoReason" class="fine">Gate congelado: 5000 trades OOS + Wilson lower + baseline + estabilidade. Candidate nunca altera o agente operacional sem passar no gate.</p>
+        <div class="history-table-wrap" style="margin-top:12px"><table class="history-table"><thead><tr><th>DATA</th><th>CANDIDATE</th><th>CHAMPION</th><th>DECISÃO</th><th>MOTIVO</th></tr></thead><tbody id="promotionAuditBody"><tr><td colspan="5" class="fine">Sem decisões de promoção ainda.</td></tr></tbody></table></div>
+        <article class="training-card"><div class="lower-head"><div><span class="kicker">SESSÃO SHADOW</span><h2 id="trainingTitle">Treino inativo</h2></div><span id="trainingState" class="badge">PRONTO</span></div><div class="training-grid"><div><span>DECISÕES</span><b id="trainingAnalyses">0</b></div><div><span>AVALIADAS</span><b id="trainingEvaluated">0</b></div><div><span>WIN / LOSS</span><b id="trainingWins">0 / 0</b></div><div><span>WR</span><b id="trainingWr">—</b></div><div><span>DRAW / UNKNOWN</span><b id="trainingDrawUnknown">0 / 0</b></div><div><span>PENDENTES</span><b id="trainingPending">0</b></div><div><span>PERFIS C/B/A</span><b id="profileStats">—</b></div><div><span>CALIBRAÇÃO</span><b id="calibrationValue">INSUFFICIENT_SAMPLE</b></div></div><p id="trainingNote">A sessão registra apenas operações shadow; nada é enviado à plataforma.</p><div class="controls"><button id="startTrainingButton" class="secondary" disabled>INICIAR SHADOW</button><button id="stopTrainingButton" class="quiet" hidden>PARAR SHADOW</button></div></article>
+      </div>
+
+      <!-- ============ PÁGINA: COMPARTILHAR TELA ============ -->
+      <div id="page-share" class="page" hidden>
+        <div class="page-head"><span class="kicker">COMPARTILHAR TELA</span><h1>Captura do gráfico</h1></div>
+        <p class="fine">Inicie a captura e escolha a aba/janela da IQ Option. O TraceCom usa apenas o crop do gráfico; nenhuma ordem é enviada.</p>
+        <div class="controls capture-controls"><button id="shareButton" class="primary">COMPARTILHAR (ABA/JANELA/TELA)</button><button id="stopShareButton" class="quiet" hidden>PARAR</button><label>Capital da sessão <input id="sessionBudget" type="number" min="0" step="1" value="500" inputmode="decimal" /></label></div>
+        <div class="market-status" aria-label="Status do mercado"><div><span>ATIVO</span><b id="statusAsset">—</b></div><div><span>PREÇO</span><b id="currentPriceValue">—</b></div><div><span>VELA / EXPIRAÇÃO</span><b>5s / 60s</b></div><div><span>PIPELINE</span><b id="pipelineState">AGUARDANDO</b></div><div class="privacy-status"><span>PRIVACIDADE</span><b id="healthCrop">CROP LOCAL</b></div></div>
         <section class="stake"><span class="kicker">SUGESTÃO SHADOW</span><strong id="suggestedStake">R$ —</strong><p id="sizingNote">Informe o capital da sessão. Nada é enviado à IQ Option.</p></section>
       </div>
-      <section class="research-training"><span class="kicker">MÉTRICAS COMPLETAS DE TREINO</span><div class="training-grid"><div><span>PERFIS C/B/A</span><b id="profileStats">—</b></div><div><span>DRAW / UNKNOWN</span><b id="trainingDrawUnknown">0 / 0</b></div><div><span>PENDENTES</span><b id="trainingPending">0</b></div><div><span>CALIBRAÇÃO</span><b id="calibrationValue">INSUFFICIENT_SAMPLE</b></div></div></section>
-      <ul id="observationsList" class="observations"><li>O agente começa a observar logo após o compartilhamento.</li></ul>
-      <section class="live-access"><div class="lower-head"><div><span class="kicker">CODEX LIVE ACCESS</span><h2>Relay somente leitura</h2></div><span id="liveAccessStatus" class="badge">OFFLINE</span></div><div class="training-grid"><div><span>RELAY / DB / SESSÃO</span><b id="liveAccessMeta">—</b></div><div><span>CLIENTES / AMOSTRAS</span><b id="liveAccessSamples">0 / 0</b></div><div><span>ÚLTIMO INGEST / ACCESS</span><b id="liveAccessLast">—</b></div><div><span>DECISÃO / SETTLEMENT</span><b id="liveAccessDecision">—</b></div></div><p id="liveAccessNote">Frames aceitos são crop-only. Nenhum segredo administrativo é exibido ou persistido.</p><div class="controls"><label>Preset <select id="livePreset"><option value="OPENCODE_FULL_DIAGNOSTIC">OPENCODE FULL DIAGNOSTIC</option><option value="READ_ONLY">READ ONLY</option></select></label><label>Expira (dias) <input id="liveExpiration" type="number" min="0" value="0" /></label><button id="liveGenerateKey" class="secondary">GERAR CHAVE</button><button id="liveRotateKey" class="quiet">ROTACIONAR</button><button id="liveCopyInstructions" class="quiet">COPIAR INSTRUÇÕES</button><button id="liveCopyPrompt" class="quiet">COPIAR PROMPT</button><button id="liveRevokeKey" class="quiet" hidden>REVOGAR CHAVE</button></div><pre id="liveKeyOutput" hidden></pre><details class="fine"><summary>DOCUMENTAÇÃO DA API</summary><p>Auth: Bearer tc_live_… · SSE: GET /api/live/stream · Sessões: /api/live/session · Export: /api/live/export. Apenas leitura; não há endpoint de corretora.</p></details></section>
-    </details>
-  </section>
+
+      <!-- ============ PÁGINA: CONFIGURAÇÕES (dados técnicos/diagnóstico) ============ -->
+      <div id="page-settings" class="page" hidden>
+        <div class="page-head"><span class="kicker">CONFIGURAÇÕES</span><h1>Modo operacional e diagnóstico</h1></div>
+        <p class="fine"><b>MANUAL:</b> o agente operacional aceita somente sinais da variante selecionada (família + horizonte + hash), a partir do próximo sinal; operação ativa permanece imutável. <b>AUTOMÁTICO:</b> política determinística conservadora escolhe entre as variantes congeladas (N, WR, Wilson lower); sem elegíveis, mantém a seleção.</p>
+        <div class="research-grid">
+          <div class="probability-strip"><div><span>BUY</span><b id="pBuyValue">N/A</b></div><div><span>SELL</span><b id="pSellValue">N/A</b></div><div><span>WAIT</span><b id="pWaitValue">N/A</b></div></div>
+          <section class="context primary-context"><span class="kicker">CONTEXTO (DIAGNÓSTICO)</span><p><b id="contextAsset">Ativo não confirmado</b><span id="contextMeta">Aguardando crop sanitizado</span></p><dl><div><dt>TF</dt><dd id="contextTimeframe">—</dd></div><div><dt>CONFIANÇA (CONTEXTO)</dt><dd id="contextConfidence">—</dd></div><div><dt>VISÃO</dt><dd id="visionStatusValue">—</dd></div></dl></section>
+          <section class="context quant-shadow-panel"><span class="kicker">QUANT SHADOW · NÃO OPERACIONAL</span><p><b id="quantShadowDirection">UNAVAILABLE</b><span id="quantShadowMeta">Feature/model shadow aguardando dataset causal.</span></p><dl><div><dt>P(UP)</dt><dd id="quantShadowUp">—</dd></div><div><dt>P(DOWN)</dt><dd id="quantShadowDown">—</dd></div><div><dt>P(NO EDGE)</dt><dd id="quantShadowNoEdge">—</dd></div><div><dt>REGIME</dt><dd id="quantShadowRegime">—</dd></div></dl></section>
+          <section class="context"><span class="kicker">LEITURA E QUALIDADE</span><dl class="signal-grid"><div><dt>PARSE</dt><dd id="parseStatusValue">—</dd></div><div><dt>ATIVO</dt><dd id="assetStatusValue">—</dd></div><div><dt>VELA</dt><dd id="candleStatusValue">5s / 60s</dd></div><div><dt>REGIME</dt><dd id="regimeValue">—</dd></div><div><dt>TENDÊNCIA</dt><dd id="trendValue">—</dd></div><div><dt>MOMENTUM</dt><dd id="momentumValue">—</dd></div><div><dt>QUALIDADE</dt><dd id="dataQualityValue">—</dd></div><div><dt>CONFLUÊNCIA</dt><dd id="confluenceValue">—</dd></div><div><dt>FRAME</dt><dd id="visionValue">—</dd></div></dl></section>
+          <section class="context"><span class="kicker">DECISÃO E POSIÇÃO OBSERVADA</span><p><b id="directionalLeanValue">NONE</b><span id="leanText">WAIT não implica ausência de direção.</span></p><p><b id="manualPositionValue">NONE</b><span id="manualPositionMeta">Nenhum marcador visual confirmado.</span></p><dl><div><dt>VALOR NA TELA</dt><dd id="contextStake">—</dd></div><div><dt>LATÊNCIA</dt><dd id="latencyValue">—</dd></div><div><dt>CHART VIEW</dt><dd id="chartViewQuality">N/A</dd></div></dl></section>
+          <section class="guidance" id="agentGuidance" hidden><span class="kicker">ORIENTAÇÃO DO AGENTE</span><p id="guidanceText"></p><small id="guidanceReason"></small></section>
+        </div>
+        <section class="research-training"><span class="kicker">MÉTRICAS COMPLETAS DE TREINO</span><div class="training-grid"><div><span>PERFIS C/B/A</span><b id="profileStatsDiag">—</b></div><div><span>DRAW / UNKNOWN</span><b id="trainingDrawUnknown2">0 / 0</b></div><div><span>PENDENTES</span><b id="trainingPending2">0</b></div><div><span>CALIBRAÇÃO</span><b id="calibrationValue2">INSUFFICIENT_SAMPLE</b></div></div></section>
+        <ul id="observationsList" class="observations"><li>O agente começa a observar logo após o compartilhamento.</li></ul>
+        <p id="analysisAge" class="fine analysis-age">—</p>
+        <p class="fine"><span id="fableState" class="badge">OFFLINE</span> Fable 5.1 shadow</p>
+        <section class="live-access"><div class="lower-head"><div><span class="kicker">CODEX LIVE ACCESS</span><h2>Relay somente leitura</h2></div><span id="liveAccessStatus" class="badge">OFFLINE</span></div><div class="training-grid"><div><span>RELAY / DB / SESSÃO</span><b id="liveAccessMeta">—</b></div><div><span>CLIENTES / AMOSTRAS</span><b id="liveAccessSamples">0 / 0</b></div><div><span>ÚLTIMO INGEST / ACCESS</span><b id="liveAccessLast">—</b></div><div><span>DECISÃO / SETTLEMENT</span><b id="liveAccessDecision">—</b></div></div><p id="liveAccessNote">Frames aceitos são crop-only. Nenhum segredo administrativo é exibido ou persistido.</p><div class="controls"><label>Preset <select id="livePreset"><option value="OPENCODE_FULL_DIAGNOSTIC">OPENCODE FULL DIAGNOSTIC</option><option value="READ_ONLY">READ ONLY</option></select></label><label>Expira (dias) <input id="liveExpiration" type="number" min="0" value="0" /></label><button id="liveGenerateKey" class="secondary">GERAR CHAVE</button><button id="liveRotateKey" class="quiet">ROTACIONAR</button><button id="liveCopyInstructions" class="quiet">COPIAR INSTRUÇÕES</button><button id="liveCopyPrompt" class="quiet">COPIAR PROMPT</button><button id="liveRevokeKey" class="quiet" hidden>REVOGAR CHAVE</button></div><pre id="liveKeyOutput" hidden></pre><details class="fine"><summary>DOCUMENTAÇÃO DA API</summary><p>Auth: Bearer tc_live_… · SSE: GET /api/live/stream · Sessões: /api/live/session · Export: /api/live/export. Apenas leitura; não há endpoint de corretora.</p></details></section>
+      </div>
+    </main>
   </div>
-  <div id="page-history" class="page" hidden>
-    <div class="lower-head"><div><span class="kicker">HISTÓRICO</span><h2>Sinais shadow V1/V2/V3/V8</h2></div><span id="historyPageCount" class="badge">0</span></div>
-    <div class="controls"><label>Estratégia <select id="historyFilterStrategy"><option value="">TODAS</option><option value="V1">V1</option><option value="V2">V2</option><option value="V3">V3</option><option value="V8">V8</option></select></label><label>Resultado <select id="historyFilterResult"><option value="">TODOS</option><option value="WIN">WIN</option><option value="LOSS">LOSS</option><option value="DRAW">DRAW</option></select></label><button id="historyRefresh" class="quiet" type="button">ATUALIZAR</button></div>
-    <div class="history-table-wrap"><table class="history-table"><thead><tr><th>DATA/HORA</th><th>ESTRATÉGIA</th><th>HORIZONTE</th><th>DIR</th><th>ENTRY</th><th>SETTLEMENT</th><th>RESULTADO</th><th>HASH</th></tr></thead><tbody id="historyTableBody"><tr><td colspan="8" class="fine">Carregando…</td></tr></tbody></table></div>
-  </div>
-  <div id="page-training" class="page" hidden>
-    <div class="lower-head"><div><span class="kicker">TREINAMENTO DO AGENTE</span><h2>TRAINING 24H · CHAMPION / CANDIDATE</h2></div><span id="trainingPageState" class="badge">TRAINING 24H</span></div>
-    <div class="promo-grid"><div><span>CHAMPION</span><b id="promoChampion">—</b></div><div><span>CANDIDATE</span><b id="promoCandidate">—</b></div><div><span>TRADES CANDIDATE</span><b id="promoCandidateN">0 / 5000</b></div><div><span>ÚLTIMA DECISÃO</span><b id="promoDecision">SEM_DECISAO</b></div></div>
-    <p id="promoReason" class="fine">Gate congelado: 5000 trades OOS + Wilson lower + baseline + estabilidade. Candidate nunca altera o agente operacional sem passar no gate.</p>
-    <div class="history-table-wrap" style="margin-top:12px"><table class="history-table"><thead><tr><th>DATA</th><th>CANDIDATE</th><th>CHAMPION</th><th>DECISÃO</th><th>MOTIVO</th></tr></thead><tbody id="promotionAuditBody"><tr><td colspan="5" class="fine">Sem decisões de promoção ainda.</td></tr></tbody></table></div>
-  </div>
-  <div id="page-settings" class="page" hidden>
-    <div class="lower-head"><div><span class="kicker">CONFIGURAÇÕES</span><h2>Modo operacional</h2></div><span class="badge">SHADOW</span></div>
-    <p class="fine">MANUAL: o agente operacional aceita somente sinais da variante selecionada (família + horizonte + hash), a partir do próximo sinal; operação ativa permanece imutável. AUTOMÁTICO: política determinística conservadora escolhe entre as variantes congeladas com base nas estatísticas shadow (N, WR, Wilson lower); sem elegíveis, mantém a seleção.</p>
-    <p class="fine">Compartilhar Tela: use o item na barra lateral. Nenhuma ordem é enviada à corretora em nenhum modo.</p>
-  </div>
-  </div>
-  </div>
+
   <dialog id="analysisDialog"><button id="closeDetails" class="quiet">FECHAR</button><pre id="analysisDetails"></pre></dialog>
   <dialog id="adminDialog"><div id="adminGenerateStep"><span class="kicker">OPENCODE FULL DIAGNOSTIC</span><p>Expiração: <input id="adminExpiration" type="number" min="0" value="0" /> dias (0 = sem expiração)</p><p class="fine">Scopes somente de leitura e pesquisa. Nenhum scope de broker ou ordem.</p><div class="controls"><button id="adminGenerateConfirm" class="secondary">GERAR API KEY</button><button id="adminRotateConfirm" class="quiet">ROTACIONAR</button><button id="adminRevokeConfirm" class="quiet" hidden>REVOGAR ATUAL</button><button id="adminClose" class="quiet">FECHAR</button></div><div id="adminKeyBox" hidden><span class="kicker">API KEY GERADA</span><pre id="adminKeyValue"></pre><p class="fine">Copie esta chave agora. Ela não poderá ser exibida novamente.</p><div class="controls"><button id="adminCopyKey" class="secondary">COPIAR CHAVE</button></div></div></div></dialog>
   <script type="module" src="/app.js"></script>
