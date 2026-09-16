@@ -591,6 +591,7 @@ export class IqMultiRuntime extends EventEmitter {
     }
     const serverSec = (this.client.serverNow() ?? this.now()) / 1000;
     const expiration = computeExpiration(serverSec, Math.max(1, Math.round(Number(horizonSeconds) / 60)));
+    if (expiration.optionKind === "turbo" && Array.isArray(ctx.instrumentTypes) && ctx.instrumentTypes.length && !ctx.instrumentTypes.includes("turbo")) throw new IqWsError("INSTRUMENT_NOT_AVAILABLE_FOR_HORIZON", `${key}: turbo indisponivel (${ctx.instrumentTypes.join(",")})`);
     const entryPrice = last?.close ?? null;
     const directionWire = decisionAction === "BUY" ? "CALL" : "PUT";
     const pending = {

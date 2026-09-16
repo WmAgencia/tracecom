@@ -267,6 +267,14 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(resolver.get("GBPUSD:OTC").payout).toBe(92);
     expect(resolver.get("GBPUSD:OTC").payoutSource).toBe("commission-changed");
   });
+  it("mercado sem turbo bloqueia ordem de horizonte curto (fail-closed, sem trocar instrumento)", async () => {
+    const runtime = multiFixture();
+    const ctx = seedMarket(runtime, "USDJPY:NORMAL", { activeId: 201 });
+    ctx.instrumentTypes = ["binary"];
+    runtime.arm(2, { confirmation: true });
+    await expect(runtime.requestOrder({ marketKey: "USDJPY:NORMAL", direction: "BUY", stake: 1, horizonSeconds: 60, idempotencyKey: "k-no-turbo" })).rejects.toThrowError(/INSTRUMENT_NOT_AVAILABLE_FOR_HORIZON/);
+    expect(runtime.__sent).toHaveLength(0);
+  });
   it("event bus: payload nunca sobrescreve o campo type do evento", () => {
     const runtime = multiFixture();
     runtime.ingestEvent("balances", { connectionId: CONNECTION_ID, receivedAt: Date.now(), msg: [{ id: 555, type: 4, currency: "USD", amount: 100, is_default: true }] });
