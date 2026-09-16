@@ -141,6 +141,17 @@ export class IqAuthSession {
     return this.ssid;
   }
 
+  restore({ ssid, emailMasked = null, connectedAt = null } = {}) {
+    if (typeof ssid !== "string" || ssid.length < 4) return false;
+    this.ssid = ssid;
+    this.emailMasked = emailMasked;
+    this.connectedAt = connectedAt;
+    this.twoFactorToken = null;
+    this.state = "CONNECTED_READ_ONLY";
+    this.lastError = null;
+    return true;
+  }
+
   disconnect() {
     this.ssid = null;
     this.twoFactorToken = null;
