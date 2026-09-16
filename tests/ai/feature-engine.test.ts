@@ -9,7 +9,7 @@ const { adxWilder, atrWilder, buildFeatureContext, donchian, freshnessGate, micr
   donchian: (candles: Array<{ high: number; low: number; close: number }>, period?: number) => { upper: number; middle: number; lower: number; width: number; position: number } | null;
   microstructure: (candles: Array<{ open: number; high: number; low: number; close: number }>, window?: number) => Record<string, unknown> | null;
   buildFeatureContext: (input: Record<string, unknown>) => Record<string, unknown>;
-  freshnessGate: (context: Record<string, unknown>, maxAgeMs?: number) => { fresh: boolean; reason: string };
+  freshnessGate: (context: Record<string, unknown>, maxAgeMs?: number, horizonSeconds?: number) => { fresh: boolean; reason: string; maxAgeMs?: number; ageMs?: number };
 };
 
 const candle = (open: number, high: number, low: number, close: number, start = 0) => ({ open, high, low, close, start });
