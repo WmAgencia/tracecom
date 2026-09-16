@@ -1,0 +1,1480 @@
+{
+ "generated_at": "2026-09-16T00:49:15.936Z",
+ "method": "classicas da internet, parametros publicados, SEM tuning, construcao causal",
+ "datasets": {
+  "IQOPTION_EURUSD_BINARY_10H": [
+   {
+    "id": "rsi14_20_80",
+    "source": "RSI14 20/80 deep",
+    "n": 137,
+    "w": 79,
+    "l": 58,
+    "wr": 57.66,
+    "buyN": 67,
+    "buyWR": 47.76,
+    "sellN": 70,
+    "sellWR": 67.14,
+    "indepN": 11,
+    "indepWR": 63.64,
+    "ci95": [
+     49.29,
+     65.62
+    ]
+   },
+   {
+    "id": "rsi_div",
+    "source": "RSI div (10 barras)",
+    "n": 185,
+    "w": 105,
+    "l": 80,
+    "wr": 56.76,
+    "buyN": 80,
+    "buyWR": 66.25,
+    "sellN": 105,
+    "sellWR": 49.52,
+    "indepN": 8,
+    "indepWR": 50,
+    "ci95": [
+     49.55,
+     63.69
+    ]
+   },
+   {
+    "id": "orb_hour",
+    "source": "ORB: range dos 1os 60s da hora",
+    "n": 166,
+    "w": 91,
+    "l": 75,
+    "wr": 54.82,
+    "buyN": 69,
+    "buyWR": 59.42,
+    "sellN": 97,
+    "sellWR": 51.55,
+    "indepN": 8,
+    "indepWR": 62.5,
+    "ci95": [
+     47.22,
+     62.2
+    ]
+   },
+   {
+    "id": "keltner_rsi",
+    "source": "FXOpen: Keltner + RSI",
+    "n": 2405,
+    "w": 1295,
+    "l": 1110,
+    "wr": 53.85,
+    "buyN": 1150,
+    "buyWR": 53.91,
+    "sellN": 1255,
+    "sellWR": 53.78,
+    "indepN": 121,
+    "indepWR": 47.11,
+    "ci95": [
+     51.85,
+     55.83
+    ]
+   },
+   {
+    "id": "keltner_reversion",
+    "source": "KC(20,2) reversion",
+    "n": 2481,
+    "w": 1322,
+    "l": 1159,
+    "wr": 53.28,
+    "buyN": 1176,
+    "buyWR": 53.66,
+    "sellN": 1305,
+    "sellWR": 52.95,
+    "indepN": 123,
+    "indepWR": 47.97,
+    "ci95": [
+     51.32,
+     55.24
+    ]
+   },
+   {
+    "id": "rsi14_30_70",
+    "source": "RSI14 30/70 reversion",
+    "n": 1089,
+    "w": 576,
+    "l": 513,
+    "wr": 52.89,
+    "buyN": 577,
+    "buyWR": 54.25,
+    "sellN": 512,
+    "sellWR": 51.37,
+    "indepN": 56,
+    "indepWR": 50,
+    "ci95": [
+     49.92,
+     55.84
+    ]
+   },
+   {
+    "id": "macd_div",
+    "source": "MACD div (10 barras)",
+    "n": 581,
+    "w": 306,
+    "l": 275,
+    "wr": 52.67,
+    "buyN": 248,
+    "buyWR": 59.68,
+    "sellN": 333,
+    "sellWR": 47.45,
+    "indepN": 29,
+    "indepWR": 48.28,
+    "ci95": [
+     48.6,
+     56.7
+    ]
+   },
+   {
+    "id": "stoch_143_zones",
+    "source": "Stoch(14,3) cross em zonas",
+    "n": 642,
+    "w": 338,
+    "l": 304,
+    "wr": 52.65,
+    "buyN": 303,
+    "buyWR": 56.11,
+    "sellN": 339,
+    "sellWR": 49.56,
+    "indepN": 35,
+    "indepWR": 62.86,
+    "ci95": [
+     48.78,
+     56.48
+    ]
+   },
+   {
+    "id": "pinbar_sr",
+    "source": "Pin bar em topo/fundo 24h(288)",
+    "n": 46,
+    "w": 24,
+    "l": 22,
+    "wr": 52.17,
+    "buyN": 21,
+    "buyWR": 76.19,
+    "sellN": 25,
+    "sellWR": 32,
+    "indepN": 1,
+    "indepWR": 0,
+    "ci95": [
+     38.14,
+     65.88
+    ]
+   },
+   {
+    "id": "three_soldiers",
+    "source": "3 soldados/corvos",
+    "n": 743,
+    "w": 386,
+    "l": 357,
+    "wr": 51.95,
+    "buyN": 372,
+    "buyWR": 53.23,
+    "sellN": 371,
+    "sellWR": 50.67,
+    "indepN": 52,
+    "indepWR": 57.69,
+    "ci95": [
+     48.36,
+     55.52
+    ]
+   },
+   {
+    "id": "cci_mom",
+    "source": "CCI(20) +-200 momentum",
+    "n": 426,
+    "w": 220,
+    "l": 206,
+    "wr": 51.64,
+    "buyN": 236,
+    "buyWR": 49.58,
+    "sellN": 190,
+    "sellWR": 54.21,
+    "indepN": 23,
+    "indepWR": 60.87,
+    "ci95": [
+     46.9,
+     56.35
+    ]
+   },
+   {
+    "id": "inside_bar",
+    "source": "Inside bar breakout",
+    "n": 1080,
+    "w": 557,
+    "l": 523,
+    "wr": 51.57,
+    "buyN": 541,
+    "buyWR": 54.53,
+    "sellN": 539,
+    "sellWR": 48.61,
+    "indepN": 59,
+    "indepWR": 67.8,
+    "ci95": [
+     48.59,
+     54.54
+    ]
+   },
+   {
+    "id": "williams_r",
+    "source": "Williams %R(14) -80/-20",
+    "n": 3777,
+    "w": 1925,
+    "l": 1852,
+    "wr": 50.97,
+    "buyN": 1783,
+    "buyWR": 53.56,
+    "sellN": 1994,
+    "sellWR": 48.65,
+    "indepN": 205,
+    "indepWR": 48.78,
+    "ci95": [
+     49.37,
+     52.56
+    ]
+   },
+   {
+    "id": "stoch_533_rev",
+    "source": "Stoch(5,3,3) 20/80 reversion",
+    "n": 3942,
+    "w": 2003,
+    "l": 1939,
+    "wr": 50.81,
+    "buyN": 1918,
+    "buyWR": 53.7,
+    "sellN": 2024,
+    "sellWR": 48.07,
+    "indepN": 220,
+    "indepWR": 48.18,
+    "ci95": [
+     49.25,
+     52.37
+    ]
+   },
+   {
+    "id": "bb_breakout",
+    "source": "BB(20,2) breakout follow",
+    "n": 822,
+    "w": 415,
+    "l": 407,
+    "wr": 50.49,
+    "buyN": 440,
+    "buyWR": 45.91,
+    "sellN": 382,
+    "sellWR": 55.76,
+    "indepN": 44,
+    "indepWR": 56.82,
+    "ci95": [
+     47.07,
+     53.89
+    ]
+   },
+   {
+    "id": "turtle_d20",
+    "source": "Donchian 20 breakout",
+    "n": 851,
+    "w": 429,
+    "l": 422,
+    "wr": 50.41,
+    "buyN": 420,
+    "buyWR": 48.1,
+    "sellN": 431,
+    "sellWR": 52.67,
+    "indepN": 43,
+    "indepWR": 58.14,
+    "ci95": [
+     47.06,
+     53.76
+    ]
+   },
+   {
+    "id": "supertrend_rsi",
+    "source": "Supertrend + RSI<70/>30",
+    "n": 338,
+    "w": 170,
+    "l": 168,
+    "wr": 50.3,
+    "buyN": 169,
+    "buyWR": 52.66,
+    "sellN": 169,
+    "sellWR": 47.93,
+    "indepN": 23,
+    "indepWR": 69.57,
+    "ci95": [
+     44.99,
+     55.59
+    ]
+   },
+   {
+    "id": "supertrend_10_3",
+    "source": "SuperTrend(10,3) flip",
+    "n": 345,
+    "w": 172,
+    "l": 173,
+    "wr": 49.86,
+    "buyN": 172,
+    "buyWR": 51.74,
+    "sellN": 173,
+    "sellWR": 47.98,
+    "indepN": 23,
+    "indepWR": 69.57,
+    "ci95": [
+     44.61,
+     55.1
+    ]
+   },
+   {
+    "id": "cci_rev",
+    "source": "CCI(20) +-100 reversion",
+    "n": 2890,
+    "w": 1439,
+    "l": 1451,
+    "wr": 49.79,
+    "buyN": 1374,
+    "buyWR": 49.64,
+    "sellN": 1516,
+    "sellWR": 49.93,
+    "indepN": 155,
+    "indepWR": 47.1,
+    "ci95": [
+     47.97,
+     51.61
+    ]
+   },
+   {
+    "id": "macd_signal_cross",
+    "source": "MACD signal cross",
+    "n": 537,
+    "w": 267,
+    "l": 270,
+    "wr": 49.72,
+    "buyN": 267,
+    "buyWR": 54.31,
+    "sellN": 270,
+    "sellWR": 45.19,
+    "indepN": 36,
+    "indepWR": 50,
+    "ci95": [
+     45.51,
+     53.94
+    ]
+   },
+   {
+    "id": "macd_hist_zero",
+    "source": "MACD(12,26,9) hist cross 0",
+    "n": 536,
+    "w": 266,
+    "l": 270,
+    "wr": 49.63,
+    "buyN": 266,
+    "buyWR": 54.14,
+    "sellN": 270,
+    "sellWR": 45.19,
+    "indepN": 36,
+    "indepWR": 50,
+    "ci95": [
+     45.41,
+     53.85
+    ]
+   },
+   {
+    "id": "adx_di_trend",
+    "source": "ADX(14)>25 + direcao",
+    "n": 4300,
+    "w": 2134,
+    "l": 2166,
+    "wr": 49.63,
+    "buyN": 2270,
+    "buyWR": 51.37,
+    "sellN": 2030,
+    "sellWR": 47.68,
+    "indepN": 229,
+    "indepWR": 52.4,
+    "ci95": [
+     48.13,
+     51.12
+    ]
+   },
+   {
+    "id": "bb_reversion_2",
+    "source": "BB(20,2) reversion",
+    "n": 822,
+    "w": 407,
+    "l": 415,
+    "wr": 49.51,
+    "buyN": 382,
+    "buyWR": 44.24,
+    "sellN": 440,
+    "sellWR": 54.09,
+    "indepN": 44,
+    "indepWR": 43.18,
+    "ci95": [
+     46.11,
+     52.93
+    ]
+   },
+   {
+    "id": "rsi4_bb_scalp",
+    "source": "FXOpen: RSI(4) 20/80 + Banda BB",
+    "n": 705,
+    "w": 348,
+    "l": 357,
+    "wr": 49.36,
+    "buyN": 332,
+    "buyWR": 44.58,
+    "sellN": 373,
+    "sellWR": 53.62,
+    "indepN": 40,
+    "indepWR": 42.5,
+    "ci95": [
+     45.68,
+     53.05
+    ]
+   },
+   {
+    "id": "macd_rsi_combo",
+    "source": "MACD hist + RSI50 (>0 & >50)",
+    "n": 4969,
+    "w": 2431,
+    "l": 2538,
+    "wr": 48.92,
+    "buyN": 2604,
+    "buyWR": 50.77,
+    "sellN": 2365,
+    "sellWR": 46.89,
+    "indepN": 263,
+    "indepWR": 50.57,
+    "ci95": [
+     47.53,
+     50.31
+    ]
+   },
+   {
+    "id": "psar_flip",
+    "source": "PSAR flip",
+    "n": 535,
+    "w": 261,
+    "l": 274,
+    "wr": 48.79,
+    "buyN": 267,
+    "buyWR": 54.68,
+    "sellN": 268,
+    "sellWR": 42.91,
+    "indepN": 31,
+    "indepWR": 54.84,
+    "ci95": [
+     44.57,
+     53.01
+    ]
+   },
+   {
+    "id": "roc10_follow",
+    "source": "ROC(10) momentum follow",
+    "n": 6557,
+    "w": 3184,
+    "l": 3373,
+    "wr": 48.56,
+    "buyN": 3430,
+    "buyWR": 51.08,
+    "sellN": 3127,
+    "sellWR": 45.79,
+    "indepN": 352,
+    "indepWR": 50.85,
+    "ci95": [
+     47.35,
+     49.77
+    ]
+   },
+   {
+    "id": "ema200_pullback",
+    "source": "EMA200 pullback a EMA21",
+    "n": 723,
+    "w": 351,
+    "l": 372,
+    "wr": 48.55,
+    "buyN": 386,
+    "buyWR": 49.74,
+    "sellN": 337,
+    "sellWR": 47.18,
+    "indepN": 36,
+    "indepWR": 52.78,
+    "ci95": [
+     44.92,
+     52.19
+    ]
+   },
+   {
+    "id": "turtle_d55",
+    "source": "Donchian 55 breakout",
+    "n": 481,
+    "w": 233,
+    "l": 248,
+    "wr": 48.44,
+    "buyN": 236,
+    "buyWR": 44.07,
+    "sellN": 245,
+    "sellWR": 52.65,
+    "indepN": 23,
+    "indepWR": 65.22,
+    "ci95": [
+     44,
+     52.9
+    ]
+   },
+   {
+    "id": "heikin_flip",
+    "source": "Heikin-Ashi flip (2x)",
+    "n": 3926,
+    "w": 1900,
+    "l": 2026,
+    "wr": 48.4,
+    "buyN": 1956,
+    "buyWR": 50.66,
+    "sellN": 1970,
+    "sellWR": 46.14,
+    "indepN": 218,
+    "indepWR": 48.62,
+    "ci95": [
+     46.83,
+     49.96
+    ]
+   },
+   {
+    "id": "ema_9_21_cross",
+    "source": "EMA 9/21 cross",
+    "n": 314,
+    "w": 148,
+    "l": 166,
+    "wr": 47.13,
+    "buyN": 157,
+    "buyWR": 45.22,
+    "sellN": 157,
+    "sellWR": 49.04,
+    "indepN": 12,
+    "indepWR": 58.33,
+    "ci95": [
+     41.68,
+     52.66
+    ]
+   },
+   {
+    "id": "ema_50_200_cross",
+    "source": "Golden/Death cross 50/200",
+    "n": 58,
+    "w": 27,
+    "l": 31,
+    "wr": 46.55,
+    "buyN": 29,
+    "buyWR": 37.93,
+    "sellN": 29,
+    "sellWR": 55.17,
+    "indepN": 9,
+    "indepWR": 44.44,
+    "ci95": [
+     34.33,
+     59.2
+    ]
+   },
+   {
+    "id": "bb_reversion_25",
+    "source": "BB(20,2.5) reversion",
+    "n": 260,
+    "w": 120,
+    "l": 140,
+    "wr": 46.15,
+    "buyN": 117,
+    "buyWR": 41.88,
+    "sellN": 143,
+    "sellWR": 49.65,
+    "indepN": 15,
+    "indepWR": 33.33,
+    "ci95": [
+     40.19,
+     52.23
+    ]
+   },
+   {
+    "id": "ichimoku_kumo_break",
+    "source": "Preco rompe a nuvem",
+    "n": 309,
+    "w": 142,
+    "l": 167,
+    "wr": 45.95,
+    "buyN": 150,
+    "buyWR": 52,
+    "sellN": 159,
+    "sellWR": 40.25,
+    "indepN": 14,
+    "indepWR": 35.71,
+    "ci95": [
+     40.48,
+     51.53
+    ]
+   },
+   {
+    "id": "ttm_squeeze",
+    "source": "TTM Squeeze (BB dentro KC) breakout",
+    "n": 499,
+    "w": 228,
+    "l": 271,
+    "wr": 45.69,
+    "buyN": 298,
+    "buyWR": 45.3,
+    "sellN": 201,
+    "sellWR": 46.27,
+    "indepN": 28,
+    "indepWR": 57.14,
+    "ci95": [
+     41.37,
+     50.08
+    ]
+   },
+   {
+    "id": "session_open_break",
+    "source": "Rompe range 5min da sessao (hora UTC par)",
+    "n": 1123,
+    "w": 498,
+    "l": 625,
+    "wr": 44.35,
+    "buyN": 667,
+    "buyWR": 46.18,
+    "sellN": 456,
+    "sellWR": 41.67,
+    "indepN": 58,
+    "indepWR": 48.28,
+    "ci95": [
+     41.46,
+     47.27
+    ]
+   },
+   {
+    "id": "ichimoku_tk_above",
+    "source": "TK cross acima da nuvem",
+    "n": 130,
+    "w": 57,
+    "l": 73,
+    "wr": 43.85,
+    "buyN": 75,
+    "buyWR": 44,
+    "sellN": 55,
+    "sellWR": 43.64,
+    "indepN": 10,
+    "indepWR": 20,
+    "ci95": [
+     35.61,
+     52.43
+    ]
+   },
+   {
+    "id": "connors_rsi2_deep",
+    "source": "Connors deep RSI2<5/>95",
+    "n": 468,
+    "w": 202,
+    "l": 266,
+    "wr": 43.16,
+    "buyN": 230,
+    "buyWR": 46.09,
+    "sellN": 238,
+    "sellWR": 40.34,
+    "indepN": 27,
+    "indepWR": 51.85,
+    "ci95": [
+     38.75,
+     47.69
+    ]
+   },
+   {
+    "id": "connors_rsi2",
+    "source": "Connors/Alvarez, RSI(2), SMA200+F5",
+    "n": 781,
+    "w": 335,
+    "l": 446,
+    "wr": 42.89,
+    "buyN": 391,
+    "buyWR": 47.31,
+    "sellN": 390,
+    "sellWR": 38.46,
+    "indepN": 39,
+    "indepWR": 38.46,
+    "ci95": [
+     39.47,
+     46.39
+    ]
+   },
+   {
+    "id": "connors_rsi2_3bars",
+    "source": "Connors pullback 3 barras",
+    "n": 230,
+    "w": 92,
+    "l": 138,
+    "wr": 40,
+    "buyN": 116,
+    "buyWR": 41.38,
+    "sellN": 114,
+    "sellWR": 38.6,
+    "indepN": 13,
+    "indepWR": 23.08,
+    "ci95": [
+     33.88,
+     46.45
+    ]
+   },
+   {
+    "id": "engulfing_bb",
+    "source": "Engulfing em extremo BB",
+    "n": 0,
+    "w": 0,
+    "l": 0,
+    "wr": null,
+    "buyN": 0,
+    "buyWR": null,
+    "sellN": 0,
+    "sellWR": null,
+    "indepN": 0,
+    "indepWR": null,
+    "ci95": null
+   }
+  ],
+  "IQOPTION_EURUSD_OTC_10H": [
+   {
+    "id": "rsi_div",
+    "source": "RSI div (10 barras)",
+    "n": 152,
+    "w": 86,
+    "l": 66,
+    "wr": 56.58,
+    "buyN": 82,
+    "buyWR": 54.88,
+    "sellN": 70,
+    "sellWR": 58.57,
+    "indepN": 8,
+    "indepWR": 62.5,
+    "ci95": [
+     48.63,
+     64.2
+    ]
+   },
+   {
+    "id": "pinbar_sr",
+    "source": "Pin bar em topo/fundo 24h(288)",
+    "n": 36,
+    "w": 20,
+    "l": 16,
+    "wr": 55.56,
+    "buyN": 20,
+    "buyWR": 50,
+    "sellN": 16,
+    "sellWR": 62.5,
+    "indepN": 2,
+    "indepWR": 50,
+    "ci95": [
+     39.58,
+     70.46
+    ]
+   },
+   {
+    "id": "ichimoku_tk_above",
+    "source": "TK cross acima da nuvem",
+    "n": 117,
+    "w": 63,
+    "l": 54,
+    "wr": 53.85,
+    "buyN": 60,
+    "buyWR": 48.33,
+    "sellN": 57,
+    "sellWR": 59.65,
+    "indepN": 5,
+    "indepWR": 40,
+    "ci95": [
+     44.83,
+     62.61
+    ]
+   },
+   {
+    "id": "rsi14_30_70",
+    "source": "RSI14 30/70 reversion",
+    "n": 682,
+    "w": 354,
+    "l": 328,
+    "wr": 51.91,
+    "buyN": 375,
+    "buyWR": 47.2,
+    "sellN": 307,
+    "sellWR": 57.65,
+    "indepN": 38,
+    "indepWR": 44.74,
+    "ci95": [
+     48.16,
+     55.63
+    ]
+   },
+   {
+    "id": "cci_mom",
+    "source": "CCI(20) +-200 momentum",
+    "n": 334,
+    "w": 173,
+    "l": 161,
+    "wr": 51.8,
+    "buyN": 169,
+    "buyWR": 44.38,
+    "sellN": 165,
+    "sellWR": 59.39,
+    "indepN": 15,
+    "indepWR": 46.67,
+    "ci95": [
+     46.45,
+     57.1
+    ]
+   },
+   {
+    "id": "psar_flip",
+    "source": "PSAR flip",
+    "n": 682,
+    "w": 353,
+    "l": 329,
+    "wr": 51.76,
+    "buyN": 340,
+    "buyWR": 52.35,
+    "sellN": 342,
+    "sellWR": 51.17,
+    "indepN": 38,
+    "indepWR": 52.63,
+    "ci95": [
+     48.01,
+     55.49
+    ]
+   },
+   {
+    "id": "ichimoku_kumo_break",
+    "source": "Preco rompe a nuvem",
+    "n": 400,
+    "w": 205,
+    "l": 195,
+    "wr": 51.25,
+    "buyN": 196,
+    "buyWR": 50,
+    "sellN": 204,
+    "sellWR": 52.45,
+    "indepN": 21,
+    "indepWR": 47.62,
+    "ci95": [
+     46.36,
+     56.11
+    ]
+   },
+   {
+    "id": "cci_rev",
+    "source": "CCI(20) +-100 reversion",
+    "n": 3003,
+    "w": 1538,
+    "l": 1465,
+    "wr": 51.22,
+    "buyN": 1512,
+    "buyWR": 49.01,
+    "sellN": 1491,
+    "sellWR": 53.45,
+    "indepN": 165,
+    "indepWR": 51.52,
+    "ci95": [
+     49.43,
+     53
+    ]
+   },
+   {
+    "id": "ttm_squeeze",
+    "source": "TTM Squeeze (BB dentro KC) breakout",
+    "n": 770,
+    "w": 394,
+    "l": 376,
+    "wr": 51.17,
+    "buyN": 375,
+    "buyWR": 45.87,
+    "sellN": 395,
+    "sellWR": 56.2,
+    "indepN": 48,
+    "indepWR": 47.92,
+    "ci95": [
+     47.64,
+     54.68
+    ]
+   },
+   {
+    "id": "bb_reversion_2",
+    "source": "BB(20,2) reversion",
+    "n": 833,
+    "w": 426,
+    "l": 407,
+    "wr": 51.14,
+    "buyN": 421,
+    "buyWR": 47.51,
+    "sellN": 412,
+    "sellWR": 54.85,
+    "indepN": 50,
+    "indepWR": 54,
+    "ci95": [
+     47.75,
+     54.52
+    ]
+   },
+   {
+    "id": "macd_div",
+    "source": "MACD div (10 barras)",
+    "n": 513,
+    "w": 261,
+    "l": 252,
+    "wr": 50.88,
+    "buyN": 262,
+    "buyWR": 53.05,
+    "sellN": 251,
+    "sellWR": 48.61,
+    "indepN": 27,
+    "indepWR": 51.85,
+    "ci95": [
+     46.56,
+     55.18
+    ]
+   },
+   {
+    "id": "supertrend_10_3",
+    "source": "SuperTrend(10,3) flip",
+    "n": 252,
+    "w": 128,
+    "l": 124,
+    "wr": 50.79,
+    "buyN": 126,
+    "buyWR": 51.59,
+    "sellN": 126,
+    "sellWR": 50,
+    "indepN": 19,
+    "indepWR": 36.84,
+    "ci95": [
+     44.66,
+     56.91
+    ]
+   },
+   {
+    "id": "keltner_reversion",
+    "source": "KC(20,2) reversion",
+    "n": 1677,
+    "w": 847,
+    "l": 830,
+    "wr": 50.51,
+    "buyN": 870,
+    "buyWR": 47.82,
+    "sellN": 807,
+    "sellWR": 53.41,
+    "indepN": 90,
+    "indepWR": 47.78,
+    "ci95": [
+     48.12,
+     52.9
+    ]
+   },
+   {
+    "id": "bb_reversion_25",
+    "source": "BB(20,2.5) reversion",
+    "n": 204,
+    "w": 103,
+    "l": 101,
+    "wr": 50.49,
+    "buyN": 105,
+    "buyWR": 44.76,
+    "sellN": 99,
+    "sellWR": 56.57,
+    "indepN": 13,
+    "indepWR": 53.85,
+    "ci95": [
+     43.68,
+     57.28
+    ]
+   },
+   {
+    "id": "ema_9_21_cross",
+    "source": "EMA 9/21 cross",
+    "n": 351,
+    "w": 177,
+    "l": 174,
+    "wr": 50.43,
+    "buyN": 175,
+    "buyWR": 48,
+    "sellN": 176,
+    "sellWR": 52.84,
+    "indepN": 22,
+    "indepWR": 36.36,
+    "ci95": [
+     45.22,
+     55.62
+    ]
+   },
+   {
+    "id": "supertrend_rsi",
+    "source": "Supertrend + RSI<70/>30",
+    "n": 250,
+    "w": 126,
+    "l": 124,
+    "wr": 50.4,
+    "buyN": 125,
+    "buyWR": 51.2,
+    "sellN": 125,
+    "sellWR": 49.6,
+    "indepN": 19,
+    "indepWR": 36.84,
+    "ci95": [
+     44.24,
+     56.54
+    ]
+   },
+   {
+    "id": "stoch_533_rev",
+    "source": "Stoch(5,3,3) 20/80 reversion",
+    "n": 3680,
+    "w": 1854,
+    "l": 1826,
+    "wr": 50.38,
+    "buyN": 1829,
+    "buyWR": 49.37,
+    "sellN": 1851,
+    "sellWR": 51.38,
+    "indepN": 218,
+    "indepWR": 52.75,
+    "ci95": [
+     48.77,
+     51.99
+    ]
+   },
+   {
+    "id": "williams_r",
+    "source": "Williams %R(14) -80/-20",
+    "n": 3498,
+    "w": 1760,
+    "l": 1738,
+    "wr": 50.31,
+    "buyN": 1780,
+    "buyWR": 47.64,
+    "sellN": 1718,
+    "sellWR": 53.08,
+    "indepN": 208,
+    "indepWR": 50,
+    "ci95": [
+     48.66,
+     51.97
+    ]
+   },
+   {
+    "id": "keltner_rsi",
+    "source": "FXOpen: Keltner + RSI",
+    "n": 1664,
+    "w": 835,
+    "l": 829,
+    "wr": 50.18,
+    "buyN": 869,
+    "buyWR": 47.87,
+    "sellN": 795,
+    "sellWR": 52.7,
+    "indepN": 90,
+    "indepWR": 47.78,
+    "ci95": [
+     47.78,
+     52.58
+    ]
+   },
+   {
+    "id": "connors_rsi2_deep",
+    "source": "Connors deep RSI2<5/>95",
+    "n": 300,
+    "w": 150,
+    "l": 150,
+    "wr": 50,
+    "buyN": 143,
+    "buyWR": 55.24,
+    "sellN": 157,
+    "sellWR": 45.22,
+    "indepN": 22,
+    "indepWR": 54.55,
+    "ci95": [
+     44.38,
+     55.62
+    ]
+   },
+   {
+    "id": "rsi4_bb_scalp",
+    "source": "FXOpen: RSI(4) 20/80 + Banda BB",
+    "n": 642,
+    "w": 321,
+    "l": 321,
+    "wr": 50,
+    "buyN": 317,
+    "buyWR": 46.69,
+    "sellN": 325,
+    "sellWR": 53.23,
+    "indepN": 38,
+    "indepWR": 52.63,
+    "ci95": [
+     46.14,
+     53.86
+    ]
+   },
+   {
+    "id": "roc10_follow",
+    "source": "ROC(10) momentum follow",
+    "n": 6980,
+    "w": 3481,
+    "l": 3499,
+    "wr": 49.87,
+    "buyN": 3402,
+    "buyWR": 48.94,
+    "sellN": 3578,
+    "sellWR": 50.75,
+    "indepN": 394,
+    "indepWR": 51.78,
+    "ci95": [
+     48.7,
+     51.04
+    ]
+   },
+   {
+    "id": "macd_hist_zero",
+    "source": "MACD(12,26,9) hist cross 0",
+    "n": 591,
+    "w": 294,
+    "l": 297,
+    "wr": 49.75,
+    "buyN": 297,
+    "buyWR": 47.14,
+    "sellN": 294,
+    "sellWR": 52.38,
+    "indepN": 36,
+    "indepWR": 55.56,
+    "ci95": [
+     45.73,
+     53.77
+    ]
+   },
+   {
+    "id": "macd_signal_cross",
+    "source": "MACD signal cross",
+    "n": 591,
+    "w": 294,
+    "l": 297,
+    "wr": 49.75,
+    "buyN": 297,
+    "buyWR": 47.14,
+    "sellN": 294,
+    "sellWR": 52.38,
+    "indepN": 36,
+    "indepWR": 55.56,
+    "ci95": [
+     45.73,
+     53.77
+    ]
+   },
+   {
+    "id": "turtle_d20",
+    "source": "Donchian 20 breakout",
+    "n": 1136,
+    "w": 564,
+    "l": 572,
+    "wr": 49.65,
+    "buyN": 560,
+    "buyWR": 46.79,
+    "sellN": 576,
+    "sellWR": 52.43,
+    "indepN": 69,
+    "indepWR": 55.07,
+    "ci95": [
+     46.75,
+     52.55
+    ]
+   },
+   {
+    "id": "turtle_d55",
+    "source": "Donchian 55 breakout",
+    "n": 696,
+    "w": 345,
+    "l": 351,
+    "wr": 49.57,
+    "buyN": 332,
+    "buyWR": 42.77,
+    "sellN": 364,
+    "sellWR": 55.77,
+    "indepN": 35,
+    "indepWR": 51.43,
+    "ci95": [
+     45.87,
+     53.28
+    ]
+   },
+   {
+    "id": "inside_bar",
+    "source": "Inside bar breakout",
+    "n": 1684,
+    "w": 834,
+    "l": 850,
+    "wr": 49.52,
+    "buyN": 856,
+    "buyWR": 49.53,
+    "sellN": 828,
+    "sellWR": 49.52,
+    "indepN": 95,
+    "indepWR": 47.37,
+    "ci95": [
+     47.14,
+     51.91
+    ]
+   },
+   {
+    "id": "macd_rsi_combo",
+    "source": "MACD hist + RSI50 (>0 & >50)",
+    "n": 5126,
+    "w": 2531,
+    "l": 2595,
+    "wr": 49.38,
+    "buyN": 2541,
+    "buyWR": 47.5,
+    "sellN": 2585,
+    "sellWR": 51.22,
+    "indepN": 291,
+    "indepWR": 52.23,
+    "ci95": [
+     48.01,
+     50.74
+    ]
+   },
+   {
+    "id": "heikin_flip",
+    "source": "Heikin-Ashi flip (2x)",
+    "n": 4228,
+    "w": 2086,
+    "l": 2142,
+    "wr": 49.34,
+    "buyN": 2110,
+    "buyWR": 48.39,
+    "sellN": 2118,
+    "sellWR": 50.28,
+    "indepN": 237,
+    "indepWR": 46.41,
+    "ci95": [
+     47.83,
+     50.84
+    ]
+   },
+   {
+    "id": "stoch_143_zones",
+    "source": "Stoch(14,3) cross em zonas",
+    "n": 649,
+    "w": 319,
+    "l": 330,
+    "wr": 49.15,
+    "buyN": 338,
+    "buyWR": 46.45,
+    "sellN": 311,
+    "sellWR": 52.09,
+    "indepN": 35,
+    "indepWR": 54.29,
+    "ci95": [
+     45.32,
+     52.99
+    ]
+   },
+   {
+    "id": "bb_breakout",
+    "source": "BB(20,2) breakout follow",
+    "n": 833,
+    "w": 407,
+    "l": 426,
+    "wr": 48.86,
+    "buyN": 412,
+    "buyWR": 45.15,
+    "sellN": 421,
+    "sellWR": 52.49,
+    "indepN": 50,
+    "indepWR": 46,
+    "ci95": [
+     45.48,
+     52.25
+    ]
+   },
+   {
+    "id": "adx_di_trend",
+    "source": "ADX(14)>25 + direcao",
+    "n": 4168,
+    "w": 2025,
+    "l": 2143,
+    "wr": 48.58,
+    "buyN": 2063,
+    "buyWR": 47.21,
+    "sellN": 2105,
+    "sellWR": 49.93,
+    "indepN": 223,
+    "indepWR": 50.67,
+    "ci95": [
+     47.07,
+     50.1
+    ]
+   },
+   {
+    "id": "orb_hour",
+    "source": "ORB: range dos 1os 60s da hora",
+    "n": 110,
+    "w": 53,
+    "l": 57,
+    "wr": 48.18,
+    "buyN": 59,
+    "buyWR": 47.46,
+    "sellN": 51,
+    "sellWR": 49.02,
+    "indepN": 9,
+    "indepWR": 55.56,
+    "ci95": [
+     39.06,
+     57.42
+    ]
+   },
+   {
+    "id": "connors_rsi2",
+    "source": "Connors/Alvarez, RSI(2), SMA200+F5",
+    "n": 655,
+    "w": 315,
+    "l": 340,
+    "wr": 48.09,
+    "buyN": 308,
+    "buyWR": 50.32,
+    "sellN": 347,
+    "sellWR": 46.11,
+    "indepN": 46,
+    "indepWR": 60.87,
+    "ci95": [
+     44.29,
+     51.92
+    ]
+   },
+   {
+    "id": "three_soldiers",
+    "source": "3 soldados/corvos",
+    "n": 1574,
+    "w": 756,
+    "l": 818,
+    "wr": 48.03,
+    "buyN": 780,
+    "buyWR": 48.21,
+    "sellN": 794,
+    "sellWR": 47.86,
+    "indepN": 109,
+    "indepWR": 44.95,
+    "ci95": [
+     45.57,
+     50.5
+    ]
+   },
+   {
+    "id": "session_open_break",
+    "source": "Rompe range 5min da sessao (hora UTC par)",
+    "n": 1159,
+    "w": 556,
+    "l": 603,
+    "wr": 47.97,
+    "buyN": 619,
+    "buyWR": 41.84,
+    "sellN": 540,
+    "sellWR": 55,
+    "indepN": 64,
+    "indepWR": 45.31,
+    "ci95": [
+     45.11,
+     50.85
+    ]
+   },
+   {
+    "id": "ema_50_200_cross",
+    "source": "Golden/Death cross 50/200",
+    "n": 48,
+    "w": 23,
+    "l": 25,
+    "wr": 47.92,
+    "buyN": 23,
+    "buyWR": 52.17,
+    "sellN": 25,
+    "sellWR": 44,
+    "indepN": 0,
+    "indepWR": null,
+    "ci95": [
+     34.47,
+     61.67
+    ]
+   },
+   {
+    "id": "ema200_pullback",
+    "source": "EMA200 pullback a EMA21",
+    "n": 894,
+    "w": 425,
+    "l": 469,
+    "wr": 47.54,
+    "buyN": 466,
+    "buyWR": 45.92,
+    "sellN": 428,
+    "sellWR": 49.3,
+    "indepN": 45,
+    "indepWR": 60,
+    "ci95": [
+     44.28,
+     50.82
+    ]
+   },
+   {
+    "id": "connors_rsi2_3bars",
+    "source": "Connors pullback 3 barras",
+    "n": 140,
+    "w": 63,
+    "l": 77,
+    "wr": 45,
+    "buyN": 62,
+    "buyWR": 50,
+    "sellN": 78,
+    "sellWR": 41.03,
+    "indepN": 10,
+    "indepWR": 60,
+    "ci95": [
+     37,
+     53.26
+    ]
+   },
+   {
+    "id": "rsi14_20_80",
+    "source": "RSI14 20/80 deep",
+    "n": 53,
+    "w": 21,
+    "l": 32,
+    "wr": 39.62,
+    "buyN": 48,
+    "buyWR": 33.33,
+    "sellN": 5,
+    "sellWR": 100,
+    "indepN": 3,
+    "indepWR": 0,
+    "ci95": [
+     27.59,
+     53.06
+    ]
+   },
+   {
+    "id": "engulfing_bb",
+    "source": "Engulfing em extremo BB",
+    "n": 0,
+    "w": 0,
+    "l": 0,
+    "wr": null,
+    "buyN": 0,
+    "buyWR": null,
+    "sellN": 0,
+    "sellWR": null,
+    "indepN": 0,
+    "indepWR": null,
+    "ci95": null
+   }
+  ]
+ }
+}
