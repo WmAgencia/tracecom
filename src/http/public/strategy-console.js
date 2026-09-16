@@ -1,7 +1,8 @@
 /* strategy-console.js — Area Operacional, selecao MANUAL/AUTO, banca, historico e treinamento.
  * Consome apenas endpoints reais (/api/strategies/*). Nenhuma execucao de corretora. */
-const LIMIT_PCT = 1.0; // limite por operacao = 1% da banca (sem martingale)
+const LIMIT_PCT = 5.0; // limite por operacao = 5% da banca (sem martingale; nao aumenta apos LOSS)
 const REFRESH_MS = 15_000;
+const formatBRL = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const state = { control: null, stats: null, page: "operational", historyFilter: { family: "", result: "" } };
 const $id = (id) => document.getElementById(id);
 const setText = (id, value) => { const node = $id(id); if (node) node.textContent = value; };
@@ -25,7 +26,7 @@ function bankroll() {
 function renderBankroll() {
   const total = bankroll();
   const limit = (total * LIMIT_PCT) / 100;
-  setText("bankrollLimit", `R$ ${limit.toFixed(2)}`);
+  setText("bankrollLimit", formatBRL(limit));
   const input = $id("bankrollTotal"); if (input && String(input.value) !== String(total)) input.value = String(total);
   const legacy = $id("sessionBudget"); if (legacy && String(legacy.value) !== String(total)) legacy.value = String(total);
 }
@@ -114,6 +115,53 @@ async function loadStats() {
   }
 }
 
+async function loadAiStatus() {
+  try {
+    const body = await jget("/api/ai/provider");
+    setText("aiStatus", body.status === "CONFIGURED" ? `CONECTADO · ${body.provider ?? "openCodeGo"}` : "NÃO CONFIGURADO");
+    setText("aiMasked", body.maskedKey ? `Chave armazenada (${body.maskedKey}) — nunca exibida por inteiro.` : "");
+  } catch { setText("aiStatus", "ERRO"); }
+}
+async function saveAiKey() {
+  const input = $id("aiApiKey"); if (!input) return;
+  const value = String(input.value || "").trim();
+  if (!value) return;
+  try {
+    await jput("/api/ai/provider", { apiKey: value });
+    input.value = "";
+    await loadAiStatus();
+  } catch (error) { setText("aiStatus", `ERRO · ${String(error?.message || error).slice(0, 60)}`); }
+}
+function formatDuration(ms) {
+  const seconds = Math.max(0, Math.floor(Number(ms || 0) / 1000));
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ${minutes % 60}m`;
+}
+function formatExpiry(seconds) {
+  const value = Number(seconds);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  if (value < 60) return `${value}s`;
+  if (value % 60 === 0) return `${value / 60}min`;
+  return `${value}s`;
+}
+function renderSessionMetrics() {
+  const snapshot = window.tracecomOperationalSnapshot?.();
+  if (!snapshot) return;
+  const captured = Boolean(snapshot.captured);
+  setText("metricFrames", captured ? `${snapshot.frames}/${snapshot.framesTotal}` : "—");
+  setText("metricTime", captured && snapshot.sessionAnalyzedMs > 0 ? formatDuration(snapshot.sessionAnalyzedMs) : "—");
+  setText("metricCandles", captured ? String(snapshot.sessionValidCandles) : "—");
+  const bias = captured ? snapshot.bias : null;
+  setText("metricBias", !captured ? "—" : bias === "ALTA" ? "↑ ALTA" : bias === "BAIXA" ? "↓ BAIXA" : "→ NEUTRO");
+  const asset = snapshot.asset ? `${snapshot.asset}${snapshot.assetMarketType === "OTC" ? " OTC" : ""}` : null;
+  setText("configAsset", asset || (captured ? "IDENTIFICANDO…" : "—"));
+  setText("configValue", snapshot.detectedAmount ? formatBRL(snapshot.detectedAmount) : (captured ? "IDENTIFICANDO…" : "—"));
+  const expiry = formatExpiry(snapshot.detectedExpirationSeconds) || formatExpiry(snapshot.brokerExpirationSeconds);
+  setText("configExpiry", expiry || (captured ? "IDENTIFICANDO…" : "—"));
+}
 async function loadHistory() {
   const body = $id("historyTableBody"); if (!body) return;
   try {
@@ -153,10 +201,14 @@ function bindUi() {
   const historyStrategy = $id("historyFilterStrategy"); if (historyStrategy) historyStrategy.addEventListener("change", () => { state.historyFilter.family = historyStrategy.value; void loadHistory(); });
   const historyResult = $id("historyFilterResult"); if (historyResult) historyResult.addEventListener("change", () => { state.historyFilter.result = historyResult.value; void loadHistory(); });
   const refresh = $id("historyRefresh"); if (refresh) refresh.addEventListener("click", () => void loadHistory());
+  const aiSave = $id("aiSaveKey"); if (aiSave) aiSave.addEventListener("click", () => void saveAiKey());
   renderBankroll();
+  renderSessionMetrics();
   navigate("operational");
   void loadStats();
   void loadHistory();
+  void loadAiStatus();
+  setInterval(renderSessionMetrics, 3_000);
   setInterval(() => { if (state.page === "operational" || state.page === "training" || state.page === "settings") void loadStats(); }, REFRESH_MS);
   setInterval(() => { if (state.page === "history") void loadHistory(); }, 30_000);
 }

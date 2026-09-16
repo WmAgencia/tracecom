@@ -569,6 +569,18 @@ async function fetchStrategyStats(): Promise<Record<string, unknown>> {
 }
 
 
+const AI_PROVIDER_CONFIG_PATH = "ai-provider/config.json";
+async function readAiProviderConfig(): Promise<Record<string, unknown> | null> {
+  try {
+    const object = await get(AI_PROVIDER_CONFIG_PATH, { access: "private", useCache: false });
+    if (!object || object.statusCode !== 200) return null;
+    const bytes = await new Response(object.stream).arrayBuffer();
+    const parsed = JSON.parse(Buffer.from(bytes).toString("utf8")) as Record<string, unknown>;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch { return null; }
+}
+function maskApiKey(key: string): string { const trimmed = key.trim(); return trimmed.length <= 4 ? "••••" : `••••${trimmed.slice(-4)}`; }
+
 async function fetchRelayBundle(sessionId: string): Promise<Record<string, unknown> | null> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
   const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
@@ -694,6 +706,23 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       const controller = await operationalController(sessionId);
       if (!controller) { json(404, { error: "operational_session_not_found", recovery: "OPERATION_RECOVERY_FAILED" }); return; }
       json(200, { ...controller.snapshot(), sessionId, shadowOnly: true, brokerAutomation: "NONE" });
+      return;
+    }
+    if (path === "/api/ai/provider" && req.method === "GET") {
+      const config = await readAiProviderConfig();
+      if (!config || typeof config.apiKey !== "string" || config.apiKey.length < 8) { json(200, { status: "NOT_CONFIGURED", provider: "openCodeGo", model: null, maskedKey: null, updatedAt: null }); return; }
+      json(200, { status: "CONFIGURED", provider: typeof config.provider === "string" ? config.provider : "openCodeGo", model: typeof config.model === "string" ? config.model : null, maskedKey: maskApiKey(config.apiKey), updatedAt: typeof config.updatedAt === "string" ? config.updatedAt : null, shadowOnly: true });
+      return;
+    }
+    if (path === "/api/ai/provider" && req.method === "PUT") {
+      const apiKey = String(operationalInput.apiKey ?? "").trim();
+      if (apiKey.length < 20 || apiKey.length > 300 || /\s/.test(apiKey)) { json(400, { error: "invalid_api_key" }); return; }
+      try {
+        const existing = (await readAiProviderConfig()) ?? {};
+        const record = { ...existing, provider: "openCodeGo", apiKey, updatedAt: new Date().toISOString() };
+        await put(AI_PROVIDER_CONFIG_PATH, JSON.stringify(record), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 } as never);
+        json(200, { status: "CONFIGURED", provider: "openCodeGo", maskedKey: maskApiKey(apiKey), updatedAt: record.updatedAt, shadowOnly: true });
+      } catch { json(502, { error: "provider_store_unavailable" }); }
       return;
     }
     if (path === "/api/strategies/stats" && req.method === "GET") {

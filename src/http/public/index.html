@@ -15,7 +15,7 @@
         <button type="button" class="nav-item active" data-page="operational"><span class="nav-ico">◎</span>Área Operacional</button>
         <button type="button" class="nav-item" data-page="history"><span class="nav-ico">▤</span>Histórico</button>
         <button type="button" class="nav-item" data-page="training"><span class="nav-ico">✦</span>Treinamento do Agente</button>
-        <button type="button" class="nav-item" data-page="share"><span class="nav-ico">◱</span>Compartilhar Tela</button>
+        <button type="button" class="nav-item" data-action="share"><span class="nav-ico">◱</span>Compartilhar Tela</button>
         <button type="button" class="nav-item" data-page="settings"><span class="nav-ico">⚙</span>Configurações</button>
       </nav>
       <div class="sidebar-status"><i id="connectionLed"></i><span id="connectionText">VERIFICANDO SERVIÇO</span><b>SEM ORDENS</b></div>
@@ -37,6 +37,12 @@
               <span id="visionBadge" class="badge">VISION STANDBY</span>
             </div>
             <div class="market-footer"><span id="frameText">Nenhum frame</span><span id="cropText">Detector aguardando captura</span><button id="recropButton" class="quiet" hidden>AJUSTAR ÁREA</button></div>
+            <div class="session-metrics" aria-label="Métricas da sessão">
+              <div><span>FRAMES</span><b id="metricFrames">—</b></div>
+              <div><span>TEMPO ANALISADO</span><b id="metricTime">—</b></div>
+              <div><span>CANDLES</span><b id="metricCandles">—</b></div>
+              <div><span>VIÉS</span><b id="metricBias">—</b></div>
+            </div>
           </div>
 
           <aside class="signal-panel" aria-label="Leitura operacional">
@@ -56,8 +62,17 @@
               <small id="confidenceProvenance" class="fine">CALIBRANDO — sem seleção.</small>
             </div>
             <section id="operationPanel" class="operation-summary">
-              <p><b id="opStateValue">READY</b><span id="opDirectionValue">Sem operação ativa</span></p>
-              <dl><div><dt>ENTRY</dt><dd id="opEntryValue">—</dd></div><div><dt>RESULTADO</dt><dd id="opResultValue">—</dd></div></dl>
+              <p><b id="opStateValue">AGUARDANDO OPERAÇÃO</b><span id="opDirectionValue">Sem operação ativa</span></p>
+              <dl><div><dt>ENTRADA</dt><dd id="opEntryValue">—</dd></div><div><dt>RESULTADO</dt><dd id="opResultValue">—</dd></div></dl>
+            </section>
+            <section class="detected-config" aria-label="Configuração detectada">
+              <span class="kicker">CONFIGURAÇÃO DETECTADA</span>
+              <dl>
+                <div><dt>ATIVO</dt><dd id="configAsset">IDENTIFICANDO…</dd></div>
+                <div><dt>VALOR</dt><dd id="configValue">IDENTIFICANDO…</dd></div>
+                <div><dt>EXPIRAÇÃO</dt><dd id="configExpiry">IDENTIFICANDO…</dd></div>
+              </dl>
+              <small class="fine">Leitura visual do broker; nenhuma alteração de campo ou ordem.</small>
             </section>
           </aside>
         </section>
@@ -106,7 +121,14 @@
 
       <!-- ============ PÁGINA: CONFIGURAÇÕES (dados técnicos/diagnóstico) ============ -->
       <div id="page-settings" class="page" hidden>
-        <div class="page-head"><span class="kicker">CONFIGURAÇÕES</span><h1>Modo operacional e diagnóstico</h1></div>
+        <div class="page-head"><span class="kicker">CONFIGURAÇÕES</span><h1>IA / API</h1></div>
+        <section class="ai-config" aria-label="Configuração do provider de IA">
+          <label for="aiApiKey">CHAVE DE API</label>
+          <input id="aiApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="••••••••••••••••" />
+          <div class="ai-config-actions"><button id="aiSaveKey" class="primary" type="button">SALVAR</button><span class="fine" id="aiStatusDetail">A chave é persistida somente no servidor; nunca no navegador, bundle ou logs.</span></div>
+          <div class="ai-status">STATUS <b id="aiStatus">NÃO CONFIGURADO</b><small id="aiMasked" class="fine"></small></div>
+        </section>
+        <div id="legacyTelemetry" hidden>
         <section class="settings-strip"><span class="kicker">SELEÇÃO ATIVA</span><span class="sidebar-selection" id="sidebarSelection">—</span><label class="profile-select">PERFIL <select id="profileSelect"><option value="CONSERVATIVE">Conservador</option><option value="BALANCED" selected>Balanceado</option><option value="AGGRESSIVE">Agressivo</option></select></label></section>
         <p class="fine"><b>MANUAL:</b> o agente operacional aceita somente sinais da variante selecionada (família + horizonte + hash), a partir do próximo sinal; operação ativa permanece imutável. <b>AUTOMÁTICO:</b> política determinística conservadora escolhe entre as variantes congeladas (N, WR, Wilson lower); sem elegíveis, mantém a seleção.</p>
         <div class="research-grid">
@@ -122,6 +144,7 @@
         <p id="analysisAge" class="fine analysis-age">—</p>
         <p class="fine"><span id="fableState" class="badge">OFFLINE</span> Fable 5.1 shadow</p>
         <section class="live-access"><div class="lower-head"><div><span class="kicker">CODEX LIVE ACCESS</span><h2>Relay somente leitura</h2></div><span id="liveAccessStatus" class="badge">OFFLINE</span></div><div class="training-grid"><div><span>RELAY / DB / SESSÃO</span><b id="liveAccessMeta">—</b></div><div><span>CLIENTES / AMOSTRAS</span><b id="liveAccessSamples">0 / 0</b></div><div><span>ÚLTIMO INGEST / ACCESS</span><b id="liveAccessLast">—</b></div><div><span>DECISÃO / SETTLEMENT</span><b id="liveAccessDecision">—</b></div></div><p id="liveAccessNote">Frames aceitos são crop-only. Nenhum segredo administrativo é exibido ou persistido.</p><div class="controls"><label>Preset <select id="livePreset"><option value="OPENCODE_FULL_DIAGNOSTIC">OPENCODE FULL DIAGNOSTIC</option><option value="READ_ONLY">READ ONLY</option></select></label><label>Expira (dias) <input id="liveExpiration" type="number" min="0" value="0" /></label><button id="liveGenerateKey" class="secondary">GERAR CHAVE</button><button id="liveRotateKey" class="quiet">ROTACIONAR</button><button id="liveCopyInstructions" class="quiet">COPIAR INSTRUÇÕES</button><button id="liveCopyPrompt" class="quiet">COPIAR PROMPT</button><button id="liveRevokeKey" class="quiet" hidden>REVOGAR CHAVE</button></div><pre id="liveKeyOutput" hidden></pre><details class="fine"><summary>DOCUMENTAÇÃO DA API</summary><p>Auth: Bearer tc_live_… · SSE: GET /api/live/stream · Sessões: /api/live/session · Export: /api/live/export. Apenas leitura; não há endpoint de corretora.</p></details></section>
+        </div>
       </div>
     </main>
   </div>

@@ -27,9 +27,10 @@ function ensureOperationalSession() { if (!state.operationalSessionId) { state.o
 function applyOperationalSnapshot(snapshot) { if (!snapshot || typeof snapshot !== "object") return; state.channel = snapshot; state.operationalCursor = Math.max(state.operationalCursor || 0, Number(snapshot.nextSequence || 1) - 1); localStorage.setItem(OPERATIONAL_CURSOR_KEY, String(state.operationalCursor)); renderOperational(); }
 async function restoreOperationalSnapshot() { if (!state.operationalSessionId) return; try { const snapshot = await api(`/api/operational/${encodeURIComponent(state.operationalSessionId)}`); applyOperationalSnapshot(snapshot); const replay = await api(`/api/operational/${encodeURIComponent(state.operationalSessionId)}/events?after=${state.operationalCursor}`); state.operationalCursor = Number(replay.cursor || state.operationalCursor); localStorage.setItem(OPERATIONAL_CURSOR_KEY, String(state.operationalCursor)); } catch (error) { if (String(error?.message || error).includes("operational_session_not_found")) { localStorage.removeItem(OPERATIONAL_SESSION_KEY); localStorage.removeItem(OPERATIONAL_CURSOR_KEY); state.operationalSessionId = null; state.operationalCursor = 0; } else channelLog("OPERATIONAL_RESTORE_PENDING", { reason: String(error?.message || error) }); } }
 async function operationalMutation(path, payload) { const snapshot = await api(path, { method: "POST", body: JSON.stringify({ sessionId: ensureOperationalSession(), ...payload }) }); applyOperationalSnapshot(snapshot); return snapshot; }
+const OPERATIONAL_STATE_LABELS = { IDLE: "AGUARDANDO OPERAÇÃO", READY: "AGUARDANDO OPERAÇÃO", SIGNAL_LOCKED: "SINAL DETECTADO", ENTRY_COUNTDOWN: "ENTRADA EM", WAITING_ENTRY_CONFIRMATION: "AGUARDANDO SUA ENTRADA", POSITION_CONFIRMED: "POSIÇÃO CONFIRMADA", POSITION_DETECTION_UNCERTAIN: "CONFIRMAÇÃO INCERTA", IN_POSITION: "EM OPERAÇÃO", WAITING_SETTLEMENT: "EM OPERAÇÃO", SETTLED: "FINALIZADA", INVALIDATED: "CANCELADA" };
 function renderOperational() {
   const channel = state.channel || {}, signal = channel.signal, now = Date.now(); if (!$("opStateValue")) return;
-  text("opStateValue", channel.state || "IDLE");
+  text("opStateValue", OPERATIONAL_STATE_LABELS[channel.state] || "AGUARDANDO OPERAÇÃO");
   if (signal && signal.outcome) text("opDirectionValue", `${signal.direction} · ${signal.outcome}`);
   else if (signal && channel.state === "WAITING_ENTRY_CONFIRMATION") text("opDirectionValue", `${signal.direction} · aguardando confirmação manual`);
   else if (signal && signal.entryPrice !== null) text("opDirectionValue", `${signal.direction} ATIVO · até ${new Date(signal.settlementAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`);
@@ -39,7 +40,7 @@ function renderOperational() {
   if (signal && signal.entryPrice === null) text("opCountdownValue", `${Math.max(0, Math.ceil((signal.entryAt - now) / 1000))}s`);
   else if (signal && signal.outcome === null) text("opCountdownValue", `${Math.max(0, Math.ceil((signal.settlementAt - now) / 1000))}s`);
   else text("opCountdownValue", "—");
-  if ($("opResultValue")) text("opResultValue", signal?.outcome || "—");
+  if ($("opResultValue")) text("opResultValue", signal?.outcome || (signal && signal.entryPrice !== null ? "AGUARDANDO" : "—"));
 }
 async function channelCandidate(fast, candleId, frameId) {
   const channel = state.channel || {}, now = Date.now();
@@ -67,7 +68,7 @@ async function channelCandidate(fast, candleId, frameId) {
   if (!decisive || !counterOk) { if (!counterOk) channelLog("COUNTER_TREND_SIGNAL_BLOCKED", { direction, macroTrend: fast.macroTrend }); return; }
   const signalId = `op_${now}_${Math.random().toString(36).slice(2, 8)}`, decisionId = state.decisionId || `decision_${candleId}`;
   try {
-    const snapshot = await operationalMutation("/api/operational/lock", { signalId, idempotencyKey: `lock:${state.liveSessionId || "web"}:${strategySignalBucket || candleId}:${direction}`, direction, originSymbol: state.marketContext.assetCanonical, now, countdownMs: OP_ENTRY_MS, confirmationMs: 20_000, horizonMs, strategyVariantId, strategyHash, strategySource });
+    const snapshot = await operationalMutation("/api/operational/lock", { signalId, idempotencyKey: `lock:${state.liveSessionId || "web"}:${strategySignalBucket || candleId}:${direction}`, direction, originSymbol: state.marketContext.assetCanonical, now, countdownMs: OP_ENTRY_MS, confirmationMs: 20_000, horizonMs, strategyVariantId, strategyHash, strategySource, brokerHorizonSeconds: Number(state.marketContext?.tradeExpirationSeconds) || null });
     if (snapshot.signal?.signalId !== signalId) return;
     diagTransition("OperationalChannel", "IDLE", snapshot.state, "server_lock", { signalId, traceId: state.currentTraceId, marketEventId: candleId });
     void liveEmit("OPERATIONAL_SIGNAL_LOCKED", { signalId, decisionId, marketEventId: candleId, frameId, candleId, direction, profile: fast.selectedProfile, rawConfidence: fast.rawConfidence, strategyVariantId, strategyHash, strategySource, issuedAt: snapshot.signal.lockedAt, countdownEndsAt: snapshot.signal.countdownEndsAt, settlementAt: snapshot.signal.settlementAt, traceId: state.currentTraceId });
@@ -147,7 +148,34 @@ function saveHistory() { localStorage.setItem("tracecom:vision-history", JSON.st
 function setCapture(status, label) { led("captureLed", status); text("captureText", label); text("visionBadge", status === "live" ? "VISION OBSERVANDO" : label); }
 function setFable(label) { text("fableState", label); $("fableState").classList.toggle("online", label === "ONLINE"); }
 function updatePipeline() { text("pipelineState", state.stream && state.crop ? "OBSERVANDO" : "AGUARDANDO"); text("healthCrop", state.crop ? "CROPS SANITIZADOS" : "CROP LOCAL"); }
-function setStage(stage, detail = "") { state.stage = stage; text("cropText", detail ? `${stage} · ${detail}` : stage); console.info(`[VISION] ${stage}`, detail); }
+const OPERATIONAL_STAGE_TEXT = { SCREEN_FRAME_CAPTURED: "captura ativa", CHART_REGION_DETECTED: "gráfico detectado", FRAME_INVALID: "aguardando frame válido", FAST_PATH_NOT_OPERATIONAL: "aguardando dados do gráfico", FAST_PATH_TIMEOUT: "aguardando dados do gráfico", FAST_PATH_STARTED: "analisando…" };
+function setStage(stage, detail = "") { state.stage = stage; console.info(`[VISION] ${stage}`, detail); const friendly = OPERATIONAL_STAGE_TEXT[stage]; if (friendly) { text("cropText", detail && !stage.startsWith("FAST_PATH") ? `${friendly} · ${detail}` : friendly); return; } if (!stage.startsWith("FAST_PATH") && !stage.startsWith("ANALYSIS")) text("cropText", detail ? `${stage} · ${detail}` : stage); }
+function deriveSessionBias(analysis) { const trend = String(analysis?.trend || analysis?.directionalLean || analysis?.macroTrend || "").toUpperCase(); if (trend.includes("UP") || trend.includes("ALTA") || trend.includes("BULL")) return "ALTA"; if (trend.includes("DOWN") || trend.includes("BAIXA") || trend.includes("BEAR")) return "BAIXA"; return "NEUTRO"; }
+function updateSessionMetrics(now = Date.now()) {
+  if (!state.stream) return;
+  const valid = state.marketContext?.validationStatus === "VALID" && Boolean(state.lastAnalysis);
+  if (!valid) { state.sessionMonitorLastAt = null; return; }
+  const last = state.sessionMonitorLastAt;
+  if (last && now - last <= 2_000) state.sessionAnalyzedMs = (state.sessionAnalyzedMs || 0) + (now - last);
+  state.sessionMonitorLastAt = now;
+  if (!state.detectedConfig) state.detectedConfig = { amount: null, amountAt: 0, expirationSeconds: null, expirationAt: 0 };
+  const observation = state.lastAnalysis?.visionObservation || null;
+  if (observation) {
+    if (Number.isFinite(Number(observation.investmentValue))) { state.detectedConfig.amount = Number(observation.investmentValue); state.detectedConfig.amountAt = now; }
+    if (Number.isFinite(Number(observation.expirationSeconds))) { state.detectedConfig.expirationSeconds = Number(observation.expirationSeconds); state.detectedConfig.expirationAt = now; }
+  }
+  state.sessionBias = deriveSessionBias(state.lastAnalysis);
+}
+window.tracecomOperationalSnapshot = () => ({
+  captured: Boolean(state.stream), contextValid: state.marketContext?.validationStatus === "VALID",
+  sessionValidCandles: (() => { const buckets = new Set(); for (const observation of state.priceObservations) { if (Number.isFinite(Number(observation.timestamp))) buckets.add(Math.floor(Number(observation.timestamp) / (CANDLE_SECONDS * 1000))); } return buckets.size; })(), sessionAnalyzedMs: state.sessionAnalyzedMs || 0,
+  frames: state.frames.length, framesTotal: 4, bias: state.sessionBias || null, biasProvenance: "fast-path trend/regime (causal, sem dados futuros)",
+  asset: state.marketContext?.assetCanonical || null, assetMarketType: state.marketContext?.marketType || null,
+  assetConfidence: Number(state.marketContext?.confidence || 0),
+  detectedAmount: state.detectedConfig?.amount ?? null, detectedExpirationSeconds: state.detectedConfig?.expirationSeconds ?? null,
+  brokerExpirationSeconds: Number(state.marketContext?.tradeExpirationSeconds) || null,
+  hasAnalysis: Boolean(state.lastAnalysis), stage: state.stage,
+});
 async function liveEmit(type, payload = {}, keepalive = false) {
   if (!state.liveSessionId) return;
   const event = { sessionId: state.liveSessionId, type, sequenceId: `${state.liveSessionId}:${++state.liveSequence}`, traceId: state.currentTraceId || `trace_${type}_${Date.now()}`, payload, session: { source: "VISION_WEB", shadowOnly: true } };
@@ -210,6 +238,7 @@ function detectChartRegion(video, surface = "browser") {
 
 async function shareScreen() {
   stopScreen();
+  if (!navigator.mediaDevices?.getDisplayMedia) { state.captureCancelled = true; return; }
   try {
     const stream = await navigator.mediaDevices.getDisplayMedia({
       video: { frameRate: { ideal: 12, max: 20 }, width: { ideal: 1920 }, height: { ideal: 1080 } },
@@ -222,6 +251,7 @@ async function shareScreen() {
     const captureSurface = stream.getVideoTracks()[0]?.getSettings?.().displaySurface ?? "unknown";
     diagCapture("browser", "info", "CAPTURE_SURFACE", String(captureSurface));
     state.stream = stream; state.frames = []; state.observations = []; state.priceObservations = []; state.manualPositionConfirmations = 0; state.marketContext = null; state.contextSegmentId = `seg_${Date.now()}`; state.lastCandleId = null; state.lastAnalysis = null; state.hasSuccessfulAnalysis = false;
+    state.captureCancelled = false; state.sessionValidCandles = 0; state.sessionAnalyzedMs = 0; state.sessionMonitorStartedAt = Date.now(); state.sessionMonitorLastAt = null; state.sessionBias = null; state.detectedConfig = { amount: null, amountAt: 0, expirationSeconds: null, expirationAt: 0, asset: null, assetAt: 0 };
     state.liveSessionId = `vision_${crypto.randomUUID()}`; state.liveSequence = 0; void liveEmit("SESSION_STARTED", { startedAt: new Date().toISOString() });
     const video = $("screenVideo"); video.srcObject = stream; video.hidden = false; $("previewEmpty").hidden = true;
     $("shareButton").textContent = "RECOMPARTILHAR"; $("stopShareButton").hidden = false; $("startTrainingButton").disabled = false;
@@ -238,7 +268,7 @@ async function shareScreen() {
        setCapture("live", "CAPTURA AO VIVO"); updatePipeline(); startPriceTracking(); startObservation();
     };
     if (video.videoWidth) ready(); else video.addEventListener("loadedmetadata", ready, { once: true });
-  } catch (error) { if (error?.name !== "NotAllowedError") setCapture("bad", "ERRO DE CAPTURA"); text("decisionSummary", error?.name === "NotAllowedError" ? "O compartilhamento foi cancelado." : String(error?.message || error)); }
+  } catch (error) { if (error?.name !== "NotAllowedError") setCapture("bad", "ERRO DE CAPTURA"); text("decisionSummary", error?.name === "NotAllowedError" ? "O compartilhamento foi cancelado." : String(error?.message || error)); console.info("SHARE_CANCELLED_OR_UNAVAILABLE", JSON.stringify({ reason: String(error?.name || error?.message || error).slice(0, 80) })); }
 }
 
 function stopScreen() {
