@@ -6,6 +6,7 @@
 export const EXECUTION_ACCOUNT = "PRACTICE";
 export const PRACTICE_ONLY = true; // invariante desta implementacao
 export const DEFAULT_STAKE_CAP = 1.0; // limite adicional de validacao (stake minimo do ambiente PRACTICE)
+export const MAX_PRACTICE_STAKE_BRL = 100; // HARD CAP — backend rejeita acima disso mesmo com payload adulterado
 export const ORDER_STATES = ["REQUESTED", "ACKNOWLEDGED", "OPEN", "SETTLED", "REJECTED", "UNKNOWN"];
 
 export class ConnectorError extends Error { constructor(code, detail = "") { super(detail ? `${code}: ${detail}` : code); this.code = code; } }
@@ -96,4 +97,46 @@ export function compareSettlement(brokerResult, causalResult) {
   if (broker === "UNKNOWN" || causal === "UNKNOWN") return { broker, causal, mismatch: false, reason: "INSUFFICIENT_EVIDENCE" };
   if (broker !== causal) return { broker, causal, mismatch: true, reason: "SETTLEMENT_MISMATCH" };
   return { broker, causal, mismatch: false, reason: "MATCH" };
+}
+
+/** ARM/DISARM — conectar NAO e operar. Pre-condicoes server-side + auto-disarm. */
+export class ExecutionArmState {
+  constructor() { this.state = "DISCONNECTED"; this.armed = false; this.connectedAccountType = null; this.marketDataHealthy = false; }
+  onConnected(accountType) { this.connectedAccountType = assertPracticeAccount(accountType); this.state = "CONNECTED_PRACTICE"; this.armed = false; return this.snapshot(); }
+  onMarketData(healthy) { this.marketDataHealthy = healthy === true; if (!this.marketDataHealthy) this.disarm("MARKET_DATA_UNHEALTHY"); return this.snapshot(); }
+  arm(userLimitBrl, { explicitConfirmation } = {}) {
+    if (this.state !== "CONNECTED_PRACTICE" || !this.marketDataHealthy) throw new ConnectorError("ARM_PRECONDITIONS_NOT_MET");
+    if (explicitConfirmation !== true) throw new ConnectorError("EXPLICIT_CONFIRMATION_REQUIRED");
+    const limit = resolveStakeLimit(userLimitBrl, { brokerCurrency: "BRL" });
+    this.armed = true; this.state = "ARMED";
+    return { ...this.snapshot(), limit };
+  }
+  disarm(reason = "MANUAL") { this.armed = false; this.lastDisarmReason = reason; this.state = this.connectedAccountType ? "CONNECTED_PRACTICE" : "DISCONNECTED"; return { ...this.snapshot(), disarmReason: reason }; }
+  onDisconnected() { this.connectedAccountType = null; this.marketDataHealthy = false; this.armed = false; this.lastDisarmReason = "DISCONNECTED"; this.state = "DISCONNECTED"; return this.snapshot(); }
+  snapshot() { return { state: this.state, armed: this.armed, connectedAccountType: this.connectedAccountType, marketDataHealthy: this.marketDataHealthy, practiceOnly: PRACTICE_ONLY, maxPracticeStakeBrl: MAX_PRACTICE_STAKE_BRL, disarmReason: this.lastDisarmReason ?? null }; }
+}
+
+/** Limite configuravel (BRL) com hard cap; moeda estrangeira exige FX explicito ou CURRENCY_LIMIT_UNRESOLVED. */
+export function resolveStakeLimit(userLimitBrl, { fxToBrokerCurrency = null, brokerCurrency = "BRL" } = {}) {
+  const user = Number(userLimitBrl);
+  if (!Number.isFinite(user) || user <= 0) throw new ConnectorError("INVALID_USER_LIMIT");
+  const capped = Math.min(user, MAX_PRACTICE_STAKE_BRL);
+  if (brokerCurrency === "BRL") return { brokerCurrency, userLimitBrl: capped, effective: capped, rate: 1, hardCapBrl: MAX_PRACTICE_STAKE_BRL };
+  const rate = Number(fxToBrokerCurrency);
+  if (!Number.isFinite(rate) || rate <= 0) throw new ConnectorError("CURRENCY_LIMIT_UNRESOLVED", `${brokerCurrency} sem FX confiavel`);
+  return { brokerCurrency, userLimitBrl: capped, effective: capped * rate, rate, hardCapBrl: MAX_PRACTICE_STAKE_BRL };
+}
+
+/** Gate final: Decision -> Execution. WAIT/UNAVAILABLE/STALE NUNCA geram ordem. */
+export function executionGate(request, runtime) {
+  if (!runtime?.armState || runtime.armState.armed !== true) throw new ConnectorError("EXECUTION_NOT_ARMED");
+  if (runtime.armState.connectedAccountType !== "PRACTICE") throw new ConnectorError("REAL_ACCOUNT_EXECUTION_FORBIDDEN");
+  if (request?.action === "WAIT") throw new ConnectorError("WAIT_NEVER_EXECUTES");
+  if (request?.action === "UNAVAILABLE" || request?.action === "STALE") throw new ConnectorError("DECISION_NOT_EXECUTABLE");
+  if (request?.action !== "BUY" && request?.action !== "SELL") throw new ConnectorError("INVALID_DIRECTION");
+  const limit = resolveStakeLimit(runtime.userLimitBrl, { fxToBrokerCurrency: runtime.fxRate ?? null, brokerCurrency: runtime.brokerCurrency ?? "BRL" });
+  const stake = Number(request?.stake);
+  if (!Number.isFinite(stake) || stake <= 0) throw new ConnectorError("INVALID_STAKE");
+  if (stake > limit.effective) throw new ConnectorError("USER_LIMIT_EXCEEDED", `${stake} > ${limit.effective} ${limit.brokerCurrency}`);
+  return { ...validatePracticeOrder({ ...request, direction: request.action, stake }, { now: runtime.now, killSwitch: runtime.killSwitch, idempotency: runtime.idempotency, stakeCap: MAX_PRACTICE_STAKE_BRL, accountType: runtime.accountType ?? "PRACTICE", expectedAsset: runtime.expectedAsset }), currency: limit };
 }
