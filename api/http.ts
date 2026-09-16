@@ -761,6 +761,21 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       json(200, { status: "CONFIGURED", provider: "openCodeGo", model: config && typeof config.model === "string" ? config.model : model, maskedKey: maskApiKey(apiKey), updatedAt: new Date().toISOString(), shadowOnly: true });
       return;
     }
+    if (path.startsWith("/api/iq/") && (req.method === "GET" || req.method === "POST")) {
+      const known = ["/api/iq/connect", "/api/iq/verify-2fa", "/api/iq/status", "/api/iq/disconnect"];
+      if (!known.includes(path)) { json(404, { error: "not_found" }); return; }
+      if (path === "/api/iq/status") {
+        try { const status = await relayAdminGet(path); json(200, { ...status, practiceOnly: true, brokerAutomation: "NONE" }); } catch { json(200, { state: "DISCONNECTED", hasSession: false, lastError: "RELAY_UNAVAILABLE", practiceOnly: true }); }
+        return;
+      }
+      const payload: Record<string, string> = path === "/api/iq/connect" ? { email: String(operationalInput.email ?? "").trim(), password: String(operationalInput.password ?? "") } : path === "/api/iq/verify-2fa" ? { code: String(operationalInput.code ?? "").trim() } : {};
+      if (path === "/api/iq/connect" && (!payload.email || !payload.password)) { json(400, { error: "email_password_required" }); return; }
+      if (path === "/api/iq/verify-2fa" && !payload.code) { json(400, { error: "code_required" }); return; }
+      const result = await relayAdminPost(path, payload, 20_000);
+      if (!result) { json(502, { error: "iq_relay_unavailable" }); return; }
+      json(200, { state: result.state ?? "ERROR", twoFactorRequired: result.twoFactorRequired === true, email: result.email ?? null, connectedAt: result.connectedAt ?? null, lastError: result.lastError ?? null, hasSession: result.hasSession === true, practiceOnly: true, brokerAutomation: "NONE" });
+      return;
+    }
     if (path === "/api/strategies/stats" && req.method === "GET") {
       if (!process.env.TRACECOM_LIVE_RELAY_URL) { json(503, { error: "relay_not_configured" }); return; }
       try { json(200, await fetchStrategyStats()); } catch (error) { json(502, { error: error instanceof Error ? error.message : "strategy_stats_failed" }); }

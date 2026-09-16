@@ -16,6 +16,7 @@
         <button type="button" class="nav-item" data-page="history"><span class="nav-ico">▤</span>Histórico</button>
         <button type="button" class="nav-item" data-page="training"><span class="nav-ico">✦</span>Treinamento do Agente</button>
         <button type="button" class="nav-item" data-action="share"><span class="nav-ico">◱</span>Compartilhar Tela</button>
+        <button type="button" class="nav-item" data-page="iq"><span class="nav-ico">⌁</span>IQ Option</button>
         <button type="button" class="nav-item" data-page="settings"><span class="nav-ico">⚙</span>Configurações</button>
       </nav>
       <div class="sidebar-status"><i id="connectionLed"></i><span id="connectionText">VERIFICANDO SERVIÇO</span><b>SEM ORDENS</b></div>
@@ -117,6 +118,26 @@
         <div class="controls capture-controls"><button id="shareButton" class="primary">COMPARTILHAR (ABA/JANELA/TELA)</button><button id="stopShareButton" class="quiet" hidden>PARAR</button><label>Capital da sessão <input id="sessionBudget" type="number" min="0" step="1" value="500" inputmode="decimal" /></label></div>
         <div class="market-status" aria-label="Status do mercado"><div><span>ATIVO</span><b id="statusAsset">—</b></div><div><span>PREÇO</span><b id="currentPriceValue">—</b></div><div><span>VELA / EXPIRAÇÃO</span><b>5s / 60s</b></div><div><span>PIPELINE</span><b id="pipelineState">AGUARDANDO</b></div><div class="privacy-status"><span>PRIVACIDADE</span><b id="healthCrop">CROP LOCAL</b></div></div>
         <section class="stake"><span class="kicker">SUGESTÃO SHADOW</span><strong id="suggestedStake">R$ —</strong><p id="sizingNote">Informe o capital da sessão. Nada é enviado à IQ Option.</p></section>
+      </div>
+
+      <!-- ============ PÁGINA: IQ OPTION (conexão READ-ONLY · PRACTICE) ============ -->
+      <div id="page-iq" class="page" hidden>
+        <div class="page-head"><span class="kicker">IQ OPTION</span><h1>Conexão READ-ONLY · PRACTICE</h1><span id="iqStateBadge" class="badge">DESCONECTADO</span></div>
+        <section class="ai-config" aria-label="Conexão IQ Option">
+          <label for="iqEmail">E-MAIL</label>
+          <input id="iqEmail" type="email" autocomplete="off" spellcheck="false" placeholder="seu e-mail IQ Option" />
+          <label for="iqPassword">SENHA</label>
+          <input id="iqPassword" type="password" autocomplete="new-password" placeholder="••••••••" />
+          <div class="ai-config-actions"><button id="iqConnect" class="primary" type="button">CONECTAR À IQ OPTION</button><span class="fine">Enviado por HTTPS direto ao servidor; nunca fica no navegador, storage ou logs.</span></div>
+          <div id="iqTwoFactorRow" hidden>
+            <label for="iqTwoFactorCode">CÓDIGO 2FA</label>
+            <input id="iqTwoFactorCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" />
+            <div class="ai-config-actions"><button id="iqVerify2fa" class="secondary" type="button">VERIFICAR CÓDIGO</button></div>
+          </div>
+          <div class="ai-status">STATUS <b id="iqStatus">DESCONECTADO</b><small id="iqStatusDetail" class="fine"></small></div>
+          <div class="ai-config-actions"><button id="iqDisconnect" class="quiet" type="button" hidden>DESCONECTAR</button></div>
+          <p class="fine"><b>READ-ONLY</b> nesta fase (market data/ordens em seguida) · execução automática exigirá ARM explícito · <b>PRACTICE somente</b> — conta REAL permanece com execução permanentemente bloqueada.</p>
+        </section>
       </div>
 
       <!-- ============ PÁGINA: CONFIGURAÇÕES (dados técnicos/diagnóstico) ============ -->

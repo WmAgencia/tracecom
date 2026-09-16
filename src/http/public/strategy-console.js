@@ -8,6 +8,7 @@ const $id = (id) => document.getElementById(id);
 const setText = (id, value) => { const node = $id(id); if (node) node.textContent = value; };
 async function jget(path) { const response = await fetch(path, { headers: { accept: "application/json" } }); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`); return body; }
 async function jput(path, payload) { const response = await fetch(path, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) }); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`); return body; }
+async function jpost(path, payload) { const response = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) }); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`); return body; }
 const pct = (value) => (value === null || value === undefined || !Number.isFinite(Number(value)) ? "—" : `${Number(value).toFixed(1)}%`);
 
 function navigate(page) {
@@ -15,6 +16,7 @@ function navigate(page) {
   document.querySelectorAll(".page").forEach((node) => { node.hidden = node.id !== `page-${page}`; });
   document.querySelectorAll(".nav-item[data-page]").forEach((node) => node.classList.toggle("active", node.dataset.page === page));
   if (page === "history") void loadHistory();
+  if (page === "iq") void loadIqStatus();
   if (page === "training") void loadStats();
   if (page === "operational" || page === "settings") void loadStats();
 }
@@ -115,6 +117,38 @@ async function loadStats() {
   }
 }
 
+const IQ_STATE_LABELS = { DISCONNECTED: "DESCONECTADO", CONNECTING: "CONECTANDO", TWO_FACTOR_REQUIRED: "2FA NECESSÁRIO", CONNECTED_READ_ONLY: "CONECTADO — PRACTICE", ERROR: "ERRO" };
+function renderIq(status) {
+  const state = String(status?.state ?? "DISCONNECTED");
+  setText("iqStateBadge", IQ_STATE_LABELS[state] ?? "ERRO");
+  setText("iqStatus", IQ_STATE_LABELS[state] ?? "ERRO");
+  const detail = status?.lastError ? String(status.lastError) : status?.email ? `${status.email}${status.connectedAt ? " · sessão ativa" : ""}` : "Nenhuma sessão ativa.";
+  setText("iqStatusDetail", detail);
+  const twoFactorRow = $id("iqTwoFactorRow"); if (twoFactorRow) twoFactorRow.hidden = state !== "TWO_FACTOR_REQUIRED";
+  const disconnect = $id("iqDisconnect"); if (disconnect) disconnect.hidden = status?.hasSession !== true;
+}
+async function loadIqStatus() {
+  try { renderIq(await jget("/api/iq/status")); } catch { renderIq({ state: "DISCONNECTED", lastError: "Serviço indisponível no momento." }); }
+}
+async function connectIq() {
+  const emailInput = $id("iqEmail"), passwordInput = $id("iqPassword");
+  const email = String(emailInput?.value ?? "").trim();
+  const password = String(passwordInput?.value ?? "");
+  if (!email || !password) { renderIq({ state: "ERROR", lastError: "Informe e-mail e senha." }); return; }
+  setText("iqStateBadge", "CONECTANDO"); setText("iqStatus", "CONECTANDO");
+  try {
+    const result = await jpost("/api/iq/connect", { email, password });
+    if (passwordInput) passwordInput.value = "";
+    renderIq(result);
+  } catch (error) { renderIq({ state: "ERROR", lastError: String(error?.message || error).slice(0, 120) }); }
+}
+async function verifyIq() {
+  const codeInput = $id("iqTwoFactorCode");
+  const code = String(codeInput?.value ?? "").trim();
+  if (!code) { renderIq({ state: "TWO_FACTOR_REQUIRED", lastError: "Informe o código 2FA." }); return; }
+  try { const result = await jpost("/api/iq/verify-2fa", { code }); if (codeInput) codeInput.value = ""; renderIq(result); } catch (error) { renderIq({ state: "TWO_FACTOR_REQUIRED", lastError: String(error?.message || error).slice(0, 120) }); }
+}
+async function disconnectIq() { try { renderIq(await jpost("/api/iq/disconnect", {})); } catch { renderIq({ state: "DISCONNECTED" }); } }
 async function loadAiStatus() {
   try {
     const body = await jget("/api/ai/provider");
@@ -202,6 +236,10 @@ function bindUi() {
   const historyResult = $id("historyFilterResult"); if (historyResult) historyResult.addEventListener("change", () => { state.historyFilter.result = historyResult.value; void loadHistory(); });
   const refresh = $id("historyRefresh"); if (refresh) refresh.addEventListener("click", () => void loadHistory());
   const aiSave = $id("aiSaveKey"); if (aiSave) aiSave.addEventListener("click", () => void saveAiKey());
+  const iqConnectButton = $id("iqConnect"); if (iqConnectButton) iqConnectButton.addEventListener("click", () => void connectIq());
+  const iqVerifyButton = $id("iqVerify2fa"); if (iqVerifyButton) iqVerifyButton.addEventListener("click", () => void verifyIq());
+  const iqDisconnectButton = $id("iqDisconnect"); if (iqDisconnectButton) iqDisconnectButton.addEventListener("click", () => void disconnectIq());
+  void loadIqStatus();
   renderBankroll();
   renderSessionMetrics();
   navigate("operational");
