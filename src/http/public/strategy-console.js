@@ -77,8 +77,8 @@ function renderControl() {
     else if (!selection) provenance.textContent = "CALIBRANDO — sem seleção.";
     else {
       const variant = familyVariantStats(selection);
-      if (!variant || variant.independentN < 30) provenance.textContent = `CALIBRANDO — n=${variant?.independentN ?? 0} (mínimo 30)`;
-      else provenance.textContent = `CALIBRADA — Wilson lower ${pct(variant.wilsonLower)} · n=${variant.independentN} · hash ${selection.entryLogicHash}`;
+      if (!variant || variant.independentN < 30) { provenance.textContent = `CALIBRANDO — n=${variant?.independentN ?? 0} (mínimo 30)`; setText("confidenceValue", "CALIBRANDO"); const bar = $id("confidenceBar"); if (bar) bar.style.transform = "scaleX(0)"; }
+      else { provenance.textContent = `CALIBRADA — Wilson lower ${pct(variant.wilsonLower)} · n=${variant.independentN}`; const bar = $id("confidenceBar"); if (bar) bar.style.transform = `scaleX(${Math.min(1, Math.max(0, Number(variant.wilsonLower) || 0))})`; setText("confidenceValue", pct(variant.wilsonLower)); }
     }
   }
 }
@@ -110,7 +110,7 @@ async function loadStats() {
     renderControl();
     renderPromotion();
   } catch (error) {
-    const list = $id("strategyList"); if (list) list.innerHTML = `<p class="fine">Shadow engine indisponível: ${String(error?.message || error)}</p>`;
+    const list = $id("strategyList"); if (list) list.innerHTML = `<p class="fine">Shadow engine indisponível no momento. As variantes aparecem aqui automaticamente quando a conexão estiver ativa.</p>`;
   }
 }
 

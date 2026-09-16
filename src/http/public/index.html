@@ -18,12 +18,7 @@
         <button type="button" class="nav-item" data-page="share"><span class="nav-ico">◱</span>Compartilhar Tela</button>
         <button type="button" class="nav-item" data-page="settings"><span class="nav-ico">⚙</span>Configurações</button>
       </nav>
-      <div class="sidebar-foot">
-        <span class="sidebar-foot-label">SELEÇÃO ATIVA</span>
-        <span class="sidebar-selection" id="sidebarSelection">—</span>
-        <label class="profile-select">PERFIL <select id="profileSelect"><option value="CONSERVATIVE">Conservador</option><option value="BALANCED" selected>Balanceado</option><option value="AGGRESSIVE">Agressivo</option></select></label>
-        <div class="header-state"><i id="connectionLed"></i><span id="connectionText">VERIFICANDO SERVIÇO</span><b>SEM ORDENS</b></div>
-      </div>
+      <div class="sidebar-status"><i id="connectionLed"></i><span id="connectionText">VERIFICANDO SERVIÇO</span><b>SEM ORDENS</b></div>
     </aside>
 
     <main class="main">
@@ -112,6 +107,7 @@
       <!-- ============ PÁGINA: CONFIGURAÇÕES (dados técnicos/diagnóstico) ============ -->
       <div id="page-settings" class="page" hidden>
         <div class="page-head"><span class="kicker">CONFIGURAÇÕES</span><h1>Modo operacional e diagnóstico</h1></div>
+        <section class="settings-strip"><span class="kicker">SELEÇÃO ATIVA</span><span class="sidebar-selection" id="sidebarSelection">—</span><label class="profile-select">PERFIL <select id="profileSelect"><option value="CONSERVATIVE">Conservador</option><option value="BALANCED" selected>Balanceado</option><option value="AGGRESSIVE">Agressivo</option></select></label></section>
         <p class="fine"><b>MANUAL:</b> o agente operacional aceita somente sinais da variante selecionada (família + horizonte + hash), a partir do próximo sinal; operação ativa permanece imutável. <b>AUTOMÁTICO:</b> política determinística conservadora escolhe entre as variantes congeladas (N, WR, Wilson lower); sem elegíveis, mantém a seleção.</p>
         <div class="research-grid">
           <div class="probability-strip"><div><span>BUY</span><b id="pBuyValue">N/A</b></div><div><span>SELL</span><b id="pSellValue">N/A</b></div><div><span>WAIT</span><b id="pWaitValue">N/A</b></div></div>
