@@ -7,7 +7,7 @@
 import crypto from "node:crypto";
 
 export const OPENCODE_GO_BASE = "https://opencode.ai/zen/go/v1";
-export const VISION_TIMEOUT_MS = 30_000; // evidencia: texto 3-8s; vision JSON com crop real pode passar de 20s → 30s (limite, nunca infinito)
+export const VISION_TIMEOUT_MS = 40_000; // evidencia: crop real 250KB + JSON completo >30s; rota deep_background tolera 40s (limite, nunca infinito)
 export const TEXT_TIMEOUT_MS = 20_000;
 export const DEFAULT_MODEL = "qwen3.7-plus";
 
@@ -31,7 +31,7 @@ export function buildVisionRequest({ model, imageDataUrl, prompt, sessionId }) {
   return {
     url: `${OPENCODE_GO_BASE}/chat/completions`,
     headers: { "content-type": "application/json", "x-opencode-session": sessionId },
-    body: { model, max_tokens: 420, messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: imageDataUrl } }] }] },
+    body: { model, max_tokens: 700, messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: imageDataUrl } }] }] },
   };
 }
 
@@ -60,6 +60,9 @@ export function safeProviderError(text, max = 200) {
 }
 function numberOrNull(value) { if (value === null || value === undefined) return null; const raw = String(value).replace(",", ".").trim(); if (!raw) return null; const parsed = Number(raw); return Number.isFinite(parsed) ? parsed : null; }
 function boolOrNull(value) { return typeof value === "boolean" ? value : null; }
+function enumOrNull(value, allowed) { const normalized = typeof value === "string" ? value.toUpperCase() : ""; return allowed.includes(normalized) ? normalized : null; }
+function bounded100(value) { const parsed = numberOrNull(value); return parsed === null ? null : Math.max(0, Math.min(100, Math.round(parsed))); }
+function stringList(value, max = 6) { return Array.isArray(value) ? value.filter((item) => typeof item === "string" && item.trim()).slice(0, max).map((item) => item.trim().slice(0, 200)) : []; }
 
 /** Normaliza para o contrato de MarketObservation consumido pelo pipeline (UNKNOWN/null preservados). */
 export function normalizeObservation(parsed, provenance) {
@@ -83,6 +86,29 @@ export function normalizeObservation(parsed, provenance) {
     visualQuality: { candlesReadable: boolOrNull(visual.candlesReadable), assetReadable: boolOrNull(visual.assetReadable), priceReadable: boolOrNull(visual.priceReadable) },
     manualPosition: { hasOpenPosition: manual.hasOpenPosition === true, state: textOrNull(manual.state, 32) || "NO_POSITION", direction: manual.direction === "BUY" || manual.direction === "SELL" ? manual.direction : "UNKNOWN", confidence: numberOrNull(manual.confidence), evidence: Array.isArray(manual.evidence) ? manual.evidence.filter((item) => typeof item === "string").slice(0, 6) : [] },
     evidence: Array.isArray(parsed.evidence) ? parsed.evidence.filter((item) => typeof item === "string").slice(0, 8) : [],
+    ask: numberOrNull(parsed.ask),
+    bid: numberOrNull(parsed.bid),
+    sentiment: { up: numberOrNull(parsed.sentiment?.up ?? null), down: numberOrNull(parsed.sentiment?.down ?? null) },
+    analysis: (() => {
+      const regime = parsed.regime && typeof parsed.regime === "object" ? parsed.regime : {};
+      const donchian = parsed.donchian && typeof parsed.donchian === "object" ? parsed.donchian : {};
+      const rsi = parsed.rsi && typeof parsed.rsi === "object" ? parsed.rsi : {};
+      const atr = parsed.atr && typeof parsed.atr === "object" ? parsed.atr : {};
+      const adx = parsed.adx && typeof parsed.adx === "object" ? parsed.adx : {};
+      const micro = parsed.microstructure && typeof parsed.microstructure === "object" ? parsed.microstructure : {};
+      const decision = parsed.decision && typeof parsed.decision === "object" ? parsed.decision : {};
+      const action = decision.action === "BUY" || decision.action === "SELL" ? decision.action : "WAIT";
+      return {
+        candleTimeframeSeconds: 5, contextMinutes: 15, horizonSeconds: 60,
+        regime: { type: enumOrNull(regime.type, ["UPTREND", "DOWNTREND", "RANGE", "TRANSITION", "UNCERTAIN"]) ?? "UNCERTAIN", confidence: bounded100(regime.confidence) },
+        donchian: { location: enumOrNull(donchian.location, ["UPPER", "MIDDLE", "LOWER", "BREAKOUT_UP", "BREAKOUT_DOWN", "UNKNOWN"]) ?? "UNKNOWN", channelDirection: enumOrNull(donchian.channelDirection, ["UP", "DOWN", "FLAT", "UNKNOWN"]) ?? "UNKNOWN", breakout: enumOrNull(donchian.breakout, ["NONE", "WICK", "BODY", "CONFIRMED", "FAILED", "UNKNOWN"]) ?? "UNKNOWN" },
+        rsi: { value: numberOrNull(rsi.value), zone: enumOrNull(rsi.zone, ["OVERSOLD", "LOW", "NEUTRAL", "HIGH", "OVERBOUGHT", "UNKNOWN"]) ?? "UNKNOWN", direction: enumOrNull(rsi.direction, ["RISING", "FALLING", "FLAT", "UNKNOWN"]) ?? "UNKNOWN", divergence: enumOrNull(rsi.divergence, ["BULLISH", "BEARISH", "NONE", "UNKNOWN"]) ?? "UNKNOWN" },
+        atr: { state: enumOrNull(atr.state, ["EXPANDING", "NORMAL", "CONTRACTING", "UNKNOWN"]) ?? "UNKNOWN" },
+        adx: { strength: enumOrNull(adx.strength, ["WEAK", "MODERATE", "STRONG", "UNKNOWN"]) ?? "UNKNOWN", trendState: enumOrNull(adx.trendState, ["STRENGTHENING", "WEAKENING", "UNCERTAIN", "UNKNOWN"]) ?? "UNKNOWN", directionalBias: enumOrNull(adx.directionalBias, ["BULLISH", "BEARISH", "NEUTRAL", "UNKNOWN"]) ?? "UNKNOWN" },
+        microstructure: { state: enumOrNull(micro.state, ["BULLISH", "BEARISH", "RANGE", "REVERSAL", "UNCERTAIN"]) ?? "UNCERTAIN", trigger: textOrNull(micro.trigger, 160) },
+        decision: { action, analysisConfidence: bounded100(decision.analysisConfidence) ?? 0, estimatedWinProbability: null, referencePrice: numberOrNull(decision.referencePrice), primaryReason: textOrNull(decision.primaryReason, 240) ?? "", supportingEvidence: stringList(decision.supportingEvidence), contradictingEvidence: stringList(decision.contradictingEvidence), primaryRisk: textOrNull(decision.primaryRisk, 200) ?? "", waitReason: textOrNull(decision.waitReason, 200), secondaryBias: textOrNull(decision.secondaryBias, 80), whatWouldChange: textOrNull(decision.whatWouldChange, 200) },
+      };
+    })(),
     availability: hasUseful ? "PARTIAL" : "UNAVAILABLE",
     imageProvided: true,
     parseMode: "DIRECT",
@@ -115,13 +141,22 @@ async function callProvider(request, apiKey, timeoutMs) {
   } finally { clearTimeout(timer); }
 }
 
+/** Contrato operacional do agente de visao TraceCom (WAIT-first; sem dados futuros). */
+export const VISION_PROMPT = [
+  "You are the TraceCom operational visual analyst. Analyze ONLY visible, causal evidence from this sanitized IQ Option crop (5s candles, ~15min context, 60s horizon). Follow the order strictly: REGIME->STRUCTURE->LOCATION->MOMENTUM->VOLATILITY->TREND_STRENGTH->MICROSTRUCTURE->TRIGGER->DECISION.",
+  "Context is NOT entry; bias is NOT entry; trend is NOT entry. Emit BUY/SELL ONLY with a clear recent TRIGGER and confluence; otherwise WAIT (WAIT is a valid and preferred decision when evidence is weak).",
+  "Donchian is for location/structure only (never touch=entry; never chase extended moves - exhaustion risk near bands). RSI(14) is momentum only (70/30 are not buttons; watch slope/divergences). ATR measures volatility, never direction (expanding|normal|contracting; climax risk after extended moves). ADX(14) measures strength only (+DI/-DI give direction; weak/converging = reduce continuation confidence). Microstructure = last 6-18 candles (bodies, wicks, sequence, rejection, absorption). Breakouts: WICK vs BODY vs CONFIRMED vs FAILED. Pullback needs resumption evidence. IQ Option sentiment ACIMA/ABAIXO: record with LOW weight, never a trigger.",
+  "Confidence = quality of evidence, NOT win probability. estimatedWinProbability must be null. Never invent price/values; null when not visible. Never use future information; freeze analysis before outcome.",
+  "RETURN JSON ONLY (no markdown). Shape: {\"symbol\":string|null,\"marketType\":\"OTC\"|\"FIXED\"|null,\"timeframeSeconds\":number|null,\"price\":number|null,\"ask\":number|null,\"bid\":number|null,\"investmentValue\":number|null,\"expirationSeconds\":number|null,\"sentiment\":{\"up\":number|null,\"down\":number|null},\"regime\":{\"type\":\"UPTREND\"|\"DOWNTREND\"|\"RANGE\"|\"TRANSITION\"|\"UNCERTAIN\",\"confidence\":number|null},\"donchian\":{\"location\":\"UPPER\"|\"MIDDLE\"|\"LOWER\"|\"BREAKOUT_UP\"|\"BREAKOUT_DOWN\"|\"UNKNOWN\",\"channelDirection\":\"UP\"|\"DOWN\"|\"FLAT\"|\"UNKNOWN\",\"breakout\":\"NONE\"|\"WICK\"|\"BODY\"|\"CONFIRMED\"|\"FAILED\"|\"UNKNOWN\"},\"rsi\":{\"value\":number|null,\"zone\":\"OVERSOLD\"|\"LOW\"|\"NEUTRAL\"|\"HIGH\"|\"OVERBOUGHT\"|\"UNKNOWN\",\"direction\":\"RISING\"|\"FALLING\"|\"FLAT\"|\"UNKNOWN\",\"divergence\":\"BULLISH\"|\"BEARISH\"|\"NONE\"|\"UNKNOWN\"},\"atr\":{\"state\":\"EXPANDING\"|\"NORMAL\"|\"CONTRACTING\"|\"UNKNOWN\"},\"adx\":{\"strength\":\"WEAK\"|\"MODERATE\"|\"STRONG\"|\"UNKNOWN\",\"trendState\":\"STRENGTHENING\"|\"WEAKENING\"|\"UNCERTAIN\"|\"UNKNOWN\",\"directionalBias\":\"BULLISH\"|\"BEARISH\"|\"NEUTRAL\"|\"UNKNOWN\"},\"microstructure\":{\"state\":\"BULLISH\"|\"BEARISH\"|\"RANGE\"|\"REVERSAL\"|\"UNCERTAIN\",\"trigger\":string|null},\"decision\":{\"action\":\"BUY\"|\"SELL\"|\"WAIT\",\"analysisConfidence\":number,\"estimatedWinProbability\":null,\"referencePrice\":number|null,\"primaryReason\":string,\"supportingEvidence\":string[],\"contradictingEvidence\":string[],\"primaryRisk\":string,\"waitReason\":string|null,\"secondaryBias\":string|null,\"whatWouldChange\":string|null},\"manualPosition\":{\"hasOpenPosition\":boolean,\"state\":string,\"direction\":\"BUY\"|\"SELL\"|\"UNKNOWN\",\"confidence\":number|null,\"evidence\":string[]},\"visualQuality\":{\"candlesReadable\":boolean,\"assetReadable\":boolean,\"priceReadable\":boolean},\"evidence\":string[]}",
+].join("\n");
+
 export async function runVisionProvider(pool, { imageDataUrl, frameId = null, requestId = null, sessionContext = {} }) {
   const config = await loadProviderConfig(pool);
   const sessionId = sessionFor({ ...sessionContext, requestId });
   const provenanceBase = { provider: "openCodeGo", model: config ? resolveModel(config) : null, requestId, frameId, sessionId, timestamp: new Date().toISOString(), status: "PENDING", latencyMs: null };
   if (!config || config.provider !== "openCodeGo") return failedObservation({ ...provenanceBase, status: "ERROR" }, "PROVIDER_NOT_CONFIGURED");
   const model = resolveModel(config);
-  const prompt = "RETURN JSON ONLY (no prose). Sanitized IQ Option chart crop. Shape: {\"symbol\":string|null,\"marketType\":\"OTC\"|\"FIXED\"|null,\"timeframeSeconds\":number|null,\"price\":number|null,\"investmentValue\":number|null,\"expirationSeconds\":number|null,\"trend\":string|null,\"structure\":string|null,\"momentum\":string|null,\"volatility\":string|null,\"visibleCandleCount\":number|null,\"visualQuality\":{\"candlesReadable\":boolean,\"assetReadable\":boolean,\"priceReadable\":boolean},\"manualPosition\":{\"hasOpenPosition\":boolean,\"state\":string,\"direction\":\"BUY\"|\"SELL\"|\"UNKNOWN\",\"confidence\":number|null,\"evidence\":string[]},\"evidence\":string[]}. null when not visible; never guess; no markdown.";
+  const prompt = VISION_PROMPT;
   const request = buildVisionRequest({ model, imageDataUrl, prompt, sessionId });
   try {
     const result = await callProvider(request, config.apiKey, VISION_TIMEOUT_MS);

@@ -124,11 +124,47 @@ describe("parser fail-closed e UNKNOWN/null preservado", () => {
   });
 });
 
+describe("contrato do agente de visao (especificacao operacional TraceCom)", () => {
+  const prompt = (goModule as Record<string, unknown>).VISION_PROMPT as string;
+  it("embute a ordem obrigatoria e as regras anti-alucinacao", () => {
+    expect(prompt).toContain("REGIME->STRUCTURE->LOCATION->MOMENTUM->VOLATILITY->TREND_STRENGTH->MICROSTRUCTURE->TRIGGER->DECISION");
+    expect(prompt).toContain("WAIT (WAIT is a valid");
+    expect(prompt).toContain("estimatedWinProbability must be null");
+    expect(prompt).toContain("never chase extended moves");
+    expect(prompt).toContain("LOW weight, never a trigger");
+    expect(prompt).toContain("null when not visible");
+  });
+  it("decision WAIT por padrao e estimatedWinProbability sempre null (confianca != probabilidade)", () => {
+    const base = normalizeObservation({ symbol: "EUR/USD" }, { provider: "openCodeGo", model: "qwen3.7-plus", requestId: "c1", status: "OK", latencyMs: 1000, sessionId: "tc", frameId: null, timestamp: "t", parseMode: "DIRECT" });
+    const analysis = base.analysis as Record<string, unknown>;
+    const decision = analysis.decision as Record<string, unknown>;
+    expect(decision.action).toBe("WAIT");
+    expect(decision.analysisConfidence).toBe(0);
+    expect(decision.estimatedWinProbability).toBeNull();
+    const risky = normalizeObservation({ symbol: "EUR/USD", decision: { action: "BUY", analysisConfidence: 150, estimatedWinProbability: 0.85 } }, { provider: "openCodeGo", model: "qwen3.7-plus", requestId: "c2", status: "OK", latencyMs: 1000, sessionId: "tc", frameId: null, timestamp: "t", parseMode: "DIRECT" });
+    const riskyDecision = (risky.analysis as Record<string, unknown>).decision as Record<string, unknown>;
+    expect(riskyDecision.action).toBe("BUY");
+    expect(riskyDecision.analysisConfidence).toBe(100);
+    expect(riskyDecision.estimatedWinProbability).toBeNull();
+  });
+  it("enums invalidos caem para UNKNOWN/UNCERTAIN (fail-closed) e validos sao preservados", () => {
+    const observation = normalizeObservation({ symbol: "EUR/USD", regime: { type: "BREAKOUT_MAGIC" }, donchian: { location: "LOWER", breakout: "CONFIRMED" }, rsi: { zone: "OVERHEATED" }, adx: { strength: "STRONG", directionalBias: "BEARISH" }, atr: { state: "EXPANDING" } }, { provider: "openCodeGo", model: "qwen3.7-plus", requestId: "c3", status: "OK", latencyMs: 1000, sessionId: "tc", frameId: null, timestamp: "t", parseMode: "DIRECT" });
+    const analysis = observation.analysis as Record<string, any>;
+    expect(analysis.regime.type).toBe("UNCERTAIN");
+    expect(analysis.donchian.location).toBe("LOWER");
+    expect(analysis.donchian.breakout).toBe("CONFIRMED");
+    expect(analysis.rsi.zone).toBe("UNKNOWN");
+    expect(analysis.adx.strength).toBe("STRONG");
+    expect(analysis.adx.directionalBias).toBe("BEARISH");
+    expect(analysis.atr.state).toBe("EXPANDING");
+  });
+});
+
 describe("timeouts — coerentes com evidência real (texto 3-8s; vision JSON pode passar de 20s)", () => {
-  it("vision 30s e texto 20s documentados (margem >3x o pior caso observado; nunca infinito)", () => {
-    expect(VISION_TIMEOUT_MS).toBe(30_000);
+  it("vision 40s e texto 20s documentados (rota deep_background; nunca infinito)", () => {
+    expect(VISION_TIMEOUT_MS).toBe(40_000);
     expect(TEXT_TIMEOUT_MS).toBe(20_000);
     expect(VISION_TIMEOUT_MS).toBeGreaterThan(4_900 * 3);
-    expect(VISION_TIMEOUT_MS).toBeLessThanOrEqual(30_000); // nunca request infinito
+    expect(VISION_TIMEOUT_MS).toBeLessThanOrEqual(45_000); // nunca request infinito
   });
 });
