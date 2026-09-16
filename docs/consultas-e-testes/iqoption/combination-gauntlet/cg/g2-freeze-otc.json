@@ -1,0 +1,1879 @@
+{
+ "frozen_at": "2026-09-16T00:35:58.721Z",
+ "K": 139,
+ "topComps": [
+  "exrsi",
+  "humr",
+  "v7relaxed",
+  "enperm",
+  "z240",
+  "fb25",
+  "tlbrk70",
+  "tlbrk50",
+  "cp"
+ ],
+ "hypotheses": [
+  {
+   "id": "G2_AND3_exrsi_humr_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "humr",
+     "v7relaxed"
+    ]
+   },
+   "hash": "58257da1e3e97c03"
+  },
+  {
+   "id": "G2_AND3_exrsi_humr_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "humr",
+     "enperm"
+    ]
+   },
+   "hash": "4454dabde7ab144c"
+  },
+  {
+   "id": "G2_AND3_exrsi_humr_z240",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "humr",
+     "z240"
+    ]
+   },
+   "hash": "c7be1a4b546af7e5"
+  },
+  {
+   "id": "G2_AND3_exrsi_humr_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "humr",
+     "fb25"
+    ]
+   },
+   "hash": "798cb3be30e53e14"
+  },
+  {
+   "id": "G2_AND3_exrsi_humr_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "humr",
+     "tlbrk70"
+    ]
+   },
+   "hash": "036ff5c69bdc588e"
+  },
+  {
+   "id": "G2_AND3_exrsi_humr_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "humr",
+     "tlbrk50"
+    ]
+   },
+   "hash": "9aed0739544c3159"
+  },
+  {
+   "id": "G2_AND3_exrsi_humr_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "humr",
+     "cp"
+    ]
+   },
+   "hash": "6f95f013a64821fd"
+  },
+  {
+   "id": "G2_AND3_exrsi_v7relaxed_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "v7relaxed",
+     "enperm"
+    ]
+   },
+   "hash": "60e6627b304b40d2"
+  },
+  {
+   "id": "G2_AND3_exrsi_v7relaxed_z240",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "v7relaxed",
+     "z240"
+    ]
+   },
+   "hash": "90001c820bc0e68b"
+  },
+  {
+   "id": "G2_AND3_exrsi_v7relaxed_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "v7relaxed",
+     "fb25"
+    ]
+   },
+   "hash": "d279ee7e6dc3110d"
+  },
+  {
+   "id": "G2_AND3_exrsi_v7relaxed_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "v7relaxed",
+     "tlbrk70"
+    ]
+   },
+   "hash": "f0bbcf4be30baf80"
+  },
+  {
+   "id": "G2_AND3_exrsi_v7relaxed_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "v7relaxed",
+     "tlbrk50"
+    ]
+   },
+   "hash": "505d7c6c3eb299e2"
+  },
+  {
+   "id": "G2_AND3_exrsi_v7relaxed_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "v7relaxed",
+     "cp"
+    ]
+   },
+   "hash": "dc4645b90a91b1b3"
+  },
+  {
+   "id": "G2_AND3_exrsi_enperm_z240",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "enperm",
+     "z240"
+    ]
+   },
+   "hash": "6cdb1f3b032b2c2d"
+  },
+  {
+   "id": "G2_AND3_exrsi_enperm_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "enperm",
+     "fb25"
+    ]
+   },
+   "hash": "0bba8eefc8a68d97"
+  },
+  {
+   "id": "G2_AND3_exrsi_enperm_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "enperm",
+     "tlbrk70"
+    ]
+   },
+   "hash": "550e869920484cb5"
+  },
+  {
+   "id": "G2_AND3_exrsi_enperm_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "enperm",
+     "tlbrk50"
+    ]
+   },
+   "hash": "3c8cc1d09d9b98d6"
+  },
+  {
+   "id": "G2_AND3_exrsi_enperm_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "enperm",
+     "cp"
+    ]
+   },
+   "hash": "80c64bd2516e63de"
+  },
+  {
+   "id": "G2_AND3_exrsi_z240_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "z240",
+     "fb25"
+    ]
+   },
+   "hash": "434f5e69d5bf7342"
+  },
+  {
+   "id": "G2_AND3_exrsi_z240_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "z240",
+     "tlbrk70"
+    ]
+   },
+   "hash": "b85f1446c7ab85c1"
+  },
+  {
+   "id": "G2_AND3_exrsi_z240_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "z240",
+     "tlbrk50"
+    ]
+   },
+   "hash": "736db5b1c9cba71a"
+  },
+  {
+   "id": "G2_AND3_exrsi_z240_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "z240",
+     "cp"
+    ]
+   },
+   "hash": "34dd7d48d6ffa807"
+  },
+  {
+   "id": "G2_AND3_exrsi_fb25_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "fb25",
+     "tlbrk70"
+    ]
+   },
+   "hash": "a92886384f9b0973"
+  },
+  {
+   "id": "G2_AND3_exrsi_fb25_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "fb25",
+     "tlbrk50"
+    ]
+   },
+   "hash": "ee55f5b89714843a"
+  },
+  {
+   "id": "G2_AND3_exrsi_fb25_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "fb25",
+     "cp"
+    ]
+   },
+   "hash": "114f290714f9d5d1"
+  },
+  {
+   "id": "G2_AND3_exrsi_tlbrk70_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "tlbrk70",
+     "tlbrk50"
+    ]
+   },
+   "hash": "0752896875090421"
+  },
+  {
+   "id": "G2_AND3_exrsi_tlbrk70_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "tlbrk70",
+     "cp"
+    ]
+   },
+   "hash": "3d253b6738ff2da8"
+  },
+  {
+   "id": "G2_AND3_exrsi_tlbrk50_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "tlbrk50",
+     "cp"
+    ]
+   },
+   "hash": "d7f129dcf07c0460"
+  },
+  {
+   "id": "G2_AND3_humr_v7relaxed_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "v7relaxed",
+     "enperm"
+    ]
+   },
+   "hash": "f2565b564946433b"
+  },
+  {
+   "id": "G2_AND3_humr_v7relaxed_z240",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "v7relaxed",
+     "z240"
+    ]
+   },
+   "hash": "35f3d7a9f463854d"
+  },
+  {
+   "id": "G2_AND3_humr_v7relaxed_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "v7relaxed",
+     "fb25"
+    ]
+   },
+   "hash": "05546117523e5ad3"
+  },
+  {
+   "id": "G2_AND3_humr_v7relaxed_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "v7relaxed",
+     "tlbrk70"
+    ]
+   },
+   "hash": "f9ff2ca7cb4216bd"
+  },
+  {
+   "id": "G2_AND3_humr_v7relaxed_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "v7relaxed",
+     "tlbrk50"
+    ]
+   },
+   "hash": "12d797031fa3bc4e"
+  },
+  {
+   "id": "G2_AND3_humr_v7relaxed_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "v7relaxed",
+     "cp"
+    ]
+   },
+   "hash": "7f47d2f24a1da875"
+  },
+  {
+   "id": "G2_AND3_humr_enperm_z240",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "enperm",
+     "z240"
+    ]
+   },
+   "hash": "f3e22b2416e44600"
+  },
+  {
+   "id": "G2_AND3_humr_enperm_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "enperm",
+     "fb25"
+    ]
+   },
+   "hash": "59a334ab8b676ca3"
+  },
+  {
+   "id": "G2_AND3_humr_enperm_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "enperm",
+     "tlbrk70"
+    ]
+   },
+   "hash": "53dd79bad4036e78"
+  },
+  {
+   "id": "G2_AND3_humr_enperm_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "enperm",
+     "tlbrk50"
+    ]
+   },
+   "hash": "e02bb90bb303dee7"
+  },
+  {
+   "id": "G2_AND3_humr_enperm_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "enperm",
+     "cp"
+    ]
+   },
+   "hash": "d3bf10e721516a4b"
+  },
+  {
+   "id": "G2_AND3_humr_z240_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "z240",
+     "fb25"
+    ]
+   },
+   "hash": "e91e30a64d75eb12"
+  },
+  {
+   "id": "G2_AND3_humr_z240_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "z240",
+     "tlbrk70"
+    ]
+   },
+   "hash": "498f703b486b7203"
+  },
+  {
+   "id": "G2_AND3_humr_z240_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "z240",
+     "tlbrk50"
+    ]
+   },
+   "hash": "e6ac82e7384c72c6"
+  },
+  {
+   "id": "G2_AND3_humr_z240_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "z240",
+     "cp"
+    ]
+   },
+   "hash": "eff03e1977dc5d9b"
+  },
+  {
+   "id": "G2_AND3_humr_fb25_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "fb25",
+     "tlbrk70"
+    ]
+   },
+   "hash": "890af6dc7b48b807"
+  },
+  {
+   "id": "G2_AND3_humr_fb25_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "fb25",
+     "tlbrk50"
+    ]
+   },
+   "hash": "ac9327deb9afa34f"
+  },
+  {
+   "id": "G2_AND3_humr_fb25_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "fb25",
+     "cp"
+    ]
+   },
+   "hash": "ecf10ad67d79effd"
+  },
+  {
+   "id": "G2_AND3_humr_tlbrk70_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "tlbrk70",
+     "tlbrk50"
+    ]
+   },
+   "hash": "7fc7b8176cf3dd04"
+  },
+  {
+   "id": "G2_AND3_humr_tlbrk70_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "tlbrk70",
+     "cp"
+    ]
+   },
+   "hash": "86c4b1049d7f553f"
+  },
+  {
+   "id": "G2_AND3_humr_tlbrk50_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "humr",
+     "tlbrk50",
+     "cp"
+    ]
+   },
+   "hash": "c4e874e53ce32ae9"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_enperm_z240",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "enperm",
+     "z240"
+    ]
+   },
+   "hash": "dc9250842e2003a0"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_enperm_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "enperm",
+     "fb25"
+    ]
+   },
+   "hash": "0a277cac4b4366af"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_enperm_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "enperm",
+     "tlbrk70"
+    ]
+   },
+   "hash": "0041916ebf9fae6b"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_enperm_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "enperm",
+     "tlbrk50"
+    ]
+   },
+   "hash": "58bdbf0aa133caea"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_enperm_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "enperm",
+     "cp"
+    ]
+   },
+   "hash": "7eec54bbae1d2aa3"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_z240_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "z240",
+     "fb25"
+    ]
+   },
+   "hash": "5ef87955df0f3dd0"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_z240_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "z240",
+     "tlbrk70"
+    ]
+   },
+   "hash": "a2eb5b09ea101cc8"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_z240_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "z240",
+     "tlbrk50"
+    ]
+   },
+   "hash": "6ff4967348c2662f"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_z240_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "z240",
+     "cp"
+    ]
+   },
+   "hash": "5f614770d8b7dff5"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_fb25_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "fb25",
+     "tlbrk70"
+    ]
+   },
+   "hash": "4d91f74cd0f5b686"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_fb25_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "fb25",
+     "tlbrk50"
+    ]
+   },
+   "hash": "69e7758729ededb3"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_fb25_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "fb25",
+     "cp"
+    ]
+   },
+   "hash": "fad4135d4264fd41"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_tlbrk70_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "tlbrk70",
+     "tlbrk50"
+    ]
+   },
+   "hash": "bef0074b987fbb6d"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_tlbrk70_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "tlbrk70",
+     "cp"
+    ]
+   },
+   "hash": "15b6672de9b3b9a1"
+  },
+  {
+   "id": "G2_AND3_v7relaxed_tlbrk50_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7relaxed",
+     "tlbrk50",
+     "cp"
+    ]
+   },
+   "hash": "4300a8c188c5d982"
+  },
+  {
+   "id": "G2_AND3_enperm_z240_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "z240",
+     "fb25"
+    ]
+   },
+   "hash": "654907280d6ab1bf"
+  },
+  {
+   "id": "G2_AND3_enperm_z240_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "z240",
+     "tlbrk70"
+    ]
+   },
+   "hash": "d26145a3b65c6c5d"
+  },
+  {
+   "id": "G2_AND3_enperm_z240_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "z240",
+     "tlbrk50"
+    ]
+   },
+   "hash": "6938c09aabebbcd2"
+  },
+  {
+   "id": "G2_AND3_enperm_z240_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "z240",
+     "cp"
+    ]
+   },
+   "hash": "f0000f0868634f39"
+  },
+  {
+   "id": "G2_AND3_enperm_fb25_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "fb25",
+     "tlbrk70"
+    ]
+   },
+   "hash": "1f35aab3fd0b2976"
+  },
+  {
+   "id": "G2_AND3_enperm_fb25_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "fb25",
+     "tlbrk50"
+    ]
+   },
+   "hash": "3560b3cbc4cf6e44"
+  },
+  {
+   "id": "G2_AND3_enperm_fb25_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "fb25",
+     "cp"
+    ]
+   },
+   "hash": "25e42bec8b4dccd1"
+  },
+  {
+   "id": "G2_AND3_enperm_tlbrk70_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "tlbrk70",
+     "tlbrk50"
+    ]
+   },
+   "hash": "0c7888dd8181ad08"
+  },
+  {
+   "id": "G2_AND3_enperm_tlbrk70_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "tlbrk70",
+     "cp"
+    ]
+   },
+   "hash": "934f9ea529f1ca4d"
+  },
+  {
+   "id": "G2_AND3_enperm_tlbrk50_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "tlbrk50",
+     "cp"
+    ]
+   },
+   "hash": "5558ef3f52b71497"
+  },
+  {
+   "id": "G2_AND3_z240_fb25_tlbrk70",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "fb25",
+     "tlbrk70"
+    ]
+   },
+   "hash": "c2c48305706ae252"
+  },
+  {
+   "id": "G2_AND3_z240_fb25_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "fb25",
+     "tlbrk50"
+    ]
+   },
+   "hash": "14c6c64c2cdd3f73"
+  },
+  {
+   "id": "G2_AND3_z240_fb25_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "fb25",
+     "cp"
+    ]
+   },
+   "hash": "8fb6d090585e3150"
+  },
+  {
+   "id": "G2_AND3_z240_tlbrk70_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "tlbrk70",
+     "tlbrk50"
+    ]
+   },
+   "hash": "87a6b72bc96ced4d"
+  },
+  {
+   "id": "G2_AND3_z240_tlbrk70_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "tlbrk70",
+     "cp"
+    ]
+   },
+   "hash": "7be586ae3f207600"
+  },
+  {
+   "id": "G2_AND3_z240_tlbrk50_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "tlbrk50",
+     "cp"
+    ]
+   },
+   "hash": "c623f5c994441332"
+  },
+  {
+   "id": "G2_AND3_fb25_tlbrk70_tlbrk50",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "tlbrk70",
+     "tlbrk50"
+    ]
+   },
+   "hash": "4c92bbeb63a03ca6"
+  },
+  {
+   "id": "G2_AND3_fb25_tlbrk70_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "tlbrk70",
+     "cp"
+    ]
+   },
+   "hash": "fc0c40237623e3cc"
+  },
+  {
+   "id": "G2_AND3_fb25_tlbrk50_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "tlbrk50",
+     "cp"
+    ]
+   },
+   "hash": "3a4d9f8a1e2ed704"
+  },
+  {
+   "id": "G2_AND3_tlbrk70_tlbrk50_cp",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "tlbrk70",
+     "tlbrk50",
+     "cp"
+    ]
+   },
+   "hash": "b9b840b43c7dfbc6"
+  },
+  {
+   "id": "G1_GATE_exrsi_h11_18+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "h11_18"
+    },
+    "m": "enlow"
+   },
+   "hash": "7206e0a579356582"
+  },
+  {
+   "id": "G1_GATE_exrsi_h11_18+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "h11_18"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "6f2b51a77f5713c8"
+  },
+  {
+   "id": "G1_GATE_exrsi_h11_18+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "h11_18"
+    },
+    "m": "cpActive"
+   },
+   "hash": "e6b178cbd7e318cb"
+  },
+  {
+   "id": "G1_GATE_exrsi_h11_18+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "h11_18"
+    },
+    "m": "burst"
+   },
+   "hash": "2c9c0275406af8bd"
+  },
+  {
+   "id": "G1_GATE_exrsi_h11_18+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "h11_18"
+    },
+    "m": "lowvol"
+   },
+   "hash": "9374196cbd6f4cf7"
+  },
+  {
+   "id": "G1_GATE_humr_h11_18+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "humr",
+     "m": "h11_18"
+    },
+    "m": "enlow"
+   },
+   "hash": "af3e0157ef82d384"
+  },
+  {
+   "id": "G1_GATE_humr_h11_18+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "humr",
+     "m": "h11_18"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "c345a0c9978a37d2"
+  },
+  {
+   "id": "G1_GATE_humr_h11_18+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "humr",
+     "m": "h11_18"
+    },
+    "m": "cpActive"
+   },
+   "hash": "0d48ff4fedb39876"
+  },
+  {
+   "id": "G1_GATE_humr_h11_18+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "humr",
+     "m": "h11_18"
+    },
+    "m": "burst"
+   },
+   "hash": "31991d97b10637cf"
+  },
+  {
+   "id": "G1_GATE_humr_h11_18+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "humr",
+     "m": "h11_18"
+    },
+    "m": "lowvol"
+   },
+   "hash": "bc47dd721d36b380"
+  },
+  {
+   "id": "G1_OR_v7relaxed_z240+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7relaxed",
+     "b": "z240"
+    },
+    "m": "enlow"
+   },
+   "hash": "b938b15edcd3360d"
+  },
+  {
+   "id": "G1_OR_v7relaxed_z240+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7relaxed",
+     "b": "z240"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "5b57059521b832cf"
+  },
+  {
+   "id": "G1_OR_v7relaxed_z240+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7relaxed",
+     "b": "z240"
+    },
+    "m": "cpActive"
+   },
+   "hash": "74f9339da003ba15"
+  },
+  {
+   "id": "G1_OR_v7relaxed_z240+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7relaxed",
+     "b": "z240"
+    },
+    "m": "burst"
+   },
+   "hash": "b268dba203fc2633"
+  },
+  {
+   "id": "G1_OR_v7relaxed_z240+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7relaxed",
+     "b": "z240"
+    },
+    "m": "h11_18"
+   },
+   "hash": "92a4fb465098efda"
+  },
+  {
+   "id": "G1_OR_v7relaxed_z240+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7relaxed",
+     "b": "z240"
+    },
+    "m": "lowvol"
+   },
+   "hash": "db58c720b64cf089"
+  },
+  {
+   "id": "G1_GATE_enperm_h11_18+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "enperm",
+     "m": "h11_18"
+    },
+    "m": "enlow"
+   },
+   "hash": "2bbcbd90cf8bd0ec"
+  },
+  {
+   "id": "G1_GATE_enperm_h11_18+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "enperm",
+     "m": "h11_18"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "0830b37a21056d07"
+  },
+  {
+   "id": "G1_GATE_enperm_h11_18+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "enperm",
+     "m": "h11_18"
+    },
+    "m": "cpActive"
+   },
+   "hash": "2b25bde0d59e4ef0"
+  },
+  {
+   "id": "G1_GATE_enperm_h11_18+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "enperm",
+     "m": "h11_18"
+    },
+    "m": "burst"
+   },
+   "hash": "53b4f6660d8db86c"
+  },
+  {
+   "id": "G1_GATE_enperm_h11_18+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "enperm",
+     "m": "h11_18"
+    },
+    "m": "lowvol"
+   },
+   "hash": "d79e580a0da0aa09"
+  },
+  {
+   "id": "G1_GATE_exrsi_hurstMR+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "hurstMR"
+    },
+    "m": "enlow"
+   },
+   "hash": "54479d7dd9deb95d"
+  },
+  {
+   "id": "G1_GATE_exrsi_hurstMR+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "hurstMR"
+    },
+    "m": "cpActive"
+   },
+   "hash": "3477d5e8c7284f8c"
+  },
+  {
+   "id": "G1_GATE_exrsi_hurstMR+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "hurstMR"
+    },
+    "m": "burst"
+   },
+   "hash": "6f81a2bb02018b20"
+  },
+  {
+   "id": "G1_GATE_exrsi_hurstMR+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "hurstMR"
+    },
+    "m": "h11_18"
+   },
+   "hash": "26e093fcb228a988"
+  },
+  {
+   "id": "G1_GATE_exrsi_hurstMR+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "hurstMR"
+    },
+    "m": "lowvol"
+   },
+   "hash": "1bfb621bb7a8a944"
+  },
+  {
+   "id": "G1_OR_z240_humr+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "humr"
+    },
+    "m": "enlow"
+   },
+   "hash": "7a0869e9164dddcd"
+  },
+  {
+   "id": "G1_OR_z240_humr+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "humr"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "7f05fce9173b50e5"
+  },
+  {
+   "id": "G1_OR_z240_humr+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "humr"
+    },
+    "m": "cpActive"
+   },
+   "hash": "6c244718dde750d0"
+  },
+  {
+   "id": "G1_OR_z240_humr+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "humr"
+    },
+    "m": "burst"
+   },
+   "hash": "4302f40df7bad424"
+  },
+  {
+   "id": "G1_OR_z240_humr+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "humr"
+    },
+    "m": "h11_18"
+   },
+   "hash": "1c6411ae110b51c2"
+  },
+  {
+   "id": "G1_OR_z240_humr+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "humr"
+    },
+    "m": "lowvol"
+   },
+   "hash": "0785091fff602978"
+  },
+  {
+   "id": "G1_AND_fb25_humr+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "enlow"
+   },
+   "hash": "5caf1a82ae57bccb"
+  },
+  {
+   "id": "G1_AND_fb25_humr+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "7b8d09883b0b0f14"
+  },
+  {
+   "id": "G1_AND_fb25_humr+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "cpActive"
+   },
+   "hash": "9bd91d53ddc3e7cf"
+  },
+  {
+   "id": "G1_AND_fb25_humr+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "burst"
+   },
+   "hash": "ed61c121b0194feb"
+  },
+  {
+   "id": "G1_AND_fb25_humr+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "h11_18"
+   },
+   "hash": "9a86300353650020"
+  },
+  {
+   "id": "G1_AND_fb25_humr+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "lowvol"
+   },
+   "hash": "0998c0e3539be5fb"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_humr+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "enlow"
+   },
+   "hash": "b5a30b56a2e0d3a7"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_humr+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "390fcd6dec4f0066"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_humr+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "cpActive"
+   },
+   "hash": "e20792c52fc2175b"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_humr+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "burst"
+   },
+   "hash": "b7e9eefdde223bc5"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_humr+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "h11_18"
+   },
+   "hash": "4dd5ca978e482f79"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_humr+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "fb25",
+     "b": "humr"
+    },
+    "m": "lowvol"
+   },
+   "hash": "ddd108f0a4ed6d02"
+  },
+  {
+   "id": "G1_OR_tlbrk70_z240+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "tlbrk70",
+     "b": "z240"
+    },
+    "m": "enlow"
+   },
+   "hash": "515386ebec1feef4"
+  },
+  {
+   "id": "G1_OR_tlbrk70_z240+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "tlbrk70",
+     "b": "z240"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "26294638c4155ad4"
+  },
+  {
+   "id": "G1_OR_tlbrk70_z240+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "tlbrk70",
+     "b": "z240"
+    },
+    "m": "cpActive"
+   },
+   "hash": "ae50706575a01d33"
+  },
+  {
+   "id": "G1_OR_tlbrk70_z240+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "tlbrk70",
+     "b": "z240"
+    },
+    "m": "burst"
+   },
+   "hash": "1ff7b6c5fd026e5d"
+  },
+  {
+   "id": "G1_OR_tlbrk70_z240+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "tlbrk70",
+     "b": "z240"
+    },
+    "m": "h11_18"
+   },
+   "hash": "bf15f2bcca2ceb6d"
+  },
+  {
+   "id": "G1_OR_tlbrk70_z240+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "tlbrk70",
+     "b": "z240"
+    },
+    "m": "lowvol"
+   },
+   "hash": "c308d3050091acff"
+  },
+  {
+   "id": "G1_GATE_fb25_hurstMR+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "fb25",
+     "m": "hurstMR"
+    },
+    "m": "enlow"
+   },
+   "hash": "fe103a262af5b598"
+  },
+  {
+   "id": "G1_GATE_fb25_hurstMR+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "fb25",
+     "m": "hurstMR"
+    },
+    "m": "cpActive"
+   },
+   "hash": "27946ffcc5438b33"
+  },
+  {
+   "id": "G1_GATE_fb25_hurstMR+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "fb25",
+     "m": "hurstMR"
+    },
+    "m": "burst"
+   },
+   "hash": "c634ada63fcbbcea"
+  },
+  {
+   "id": "G1_GATE_fb25_hurstMR+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "fb25",
+     "m": "hurstMR"
+    },
+    "m": "h11_18"
+   },
+   "hash": "e3a7e5012805d7fe"
+  },
+  {
+   "id": "G1_GATE_fb25_hurstMR+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "fb25",
+     "m": "hurstMR"
+    },
+    "m": "lowvol"
+   },
+   "hash": "d8336bc5e220e773"
+  }
+ ]
+}

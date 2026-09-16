@@ -1,0 +1,546 @@
+{
+ "frozen_at": "2026-09-16T00:35:59.054Z",
+ "K": 30,
+ "hypotheses": [
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+hurstMR+enlow",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "hurstMR"
+    },
+    "m": "enlow"
+   },
+   "hash": "5ff1ab64105727f8"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+hurstMR+cpActive",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "hurstMR"
+    },
+    "m": "cpActive"
+   },
+   "hash": "327bd8ee7288a401"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+hurstMR+burst",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "hurstMR"
+    },
+    "m": "burst"
+   },
+   "hash": "0f8c210834dd8653"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+hurstMR+h11_18",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "hurstMR"
+    },
+    "m": "h11_18"
+   },
+   "hash": "23d0a27f1c377c93"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+hurstMR+lowvol",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "hurstMR"
+    },
+    "m": "lowvol"
+   },
+   "hash": "0f616d634146a1f1"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_hurstMR+h11_18+enlow",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "hurstMR"
+     },
+     "m": "h11_18"
+    },
+    "m": "enlow"
+   },
+   "hash": "9791520da2db149e"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_hurstMR+h11_18+hurstMR",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "hurstMR"
+     },
+     "m": "h11_18"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "068a8e7ea1f02b4f"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_hurstMR+h11_18+cpActive",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "hurstMR"
+     },
+     "m": "h11_18"
+    },
+    "m": "cpActive"
+   },
+   "hash": "860243cc09dd2278"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_hurstMR+h11_18+burst",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "hurstMR"
+     },
+     "m": "h11_18"
+    },
+    "m": "burst"
+   },
+   "hash": "491356a10c97120d"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_hurstMR+h11_18+lowvol",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "hurstMR"
+     },
+     "m": "h11_18"
+    },
+    "m": "lowvol"
+   },
+   "hash": "52c6fee38082650d"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+enlow+hurstMR",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "enlow"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "d6519d37a6e0d2d0"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+enlow+cpActive",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "enlow"
+    },
+    "m": "cpActive"
+   },
+   "hash": "1e1af7a2c442ca3c"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+enlow+burst",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "enlow"
+    },
+    "m": "burst"
+   },
+   "hash": "45af5b47fe0bada5"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+enlow+h11_18",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "enlow"
+    },
+    "m": "h11_18"
+   },
+   "hash": "15fc39cac013ed20"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+enlow+lowvol",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "enlow"
+    },
+    "m": "lowvol"
+   },
+   "hash": "3df384d4544f6d3b"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+lowvol+enlow",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "lowvol"
+    },
+    "m": "enlow"
+   },
+   "hash": "2a4c80866ea0bd22"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+lowvol+hurstMR",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "lowvol"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "2c0f39df13143bf4"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+lowvol+cpActive",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "lowvol"
+    },
+    "m": "cpActive"
+   },
+   "hash": "d8f9c5b7fa0a97ce"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+lowvol+burst",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "lowvol"
+    },
+    "m": "burst"
+   },
+   "hash": "fc5108854004c244"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+lowvol+h11_18",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "lowvol"
+    },
+    "m": "h11_18"
+   },
+   "hash": "d13311a975a153db"
+  },
+  {
+   "id": "G3_G1_GATE_humr_h11_18+enlow+hurstMR",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "humr",
+      "m": "h11_18"
+     },
+     "m": "enlow"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "4ba1fc232a54f6f0"
+  },
+  {
+   "id": "G3_G1_GATE_humr_h11_18+enlow+cpActive",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "humr",
+      "m": "h11_18"
+     },
+     "m": "enlow"
+    },
+    "m": "cpActive"
+   },
+   "hash": "985405c284bc8136"
+  },
+  {
+   "id": "G3_G1_GATE_humr_h11_18+enlow+burst",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "humr",
+      "m": "h11_18"
+     },
+     "m": "enlow"
+    },
+    "m": "burst"
+   },
+   "hash": "29a8041dbfbc7f8f"
+  },
+  {
+   "id": "G3_G1_GATE_humr_h11_18+enlow+h11_18",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "humr",
+      "m": "h11_18"
+     },
+     "m": "enlow"
+    },
+    "m": "h11_18"
+   },
+   "hash": "28dc1cc92b1e1f6a"
+  },
+  {
+   "id": "G3_G1_GATE_humr_h11_18+enlow+lowvol",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "humr",
+      "m": "h11_18"
+     },
+     "m": "enlow"
+    },
+    "m": "lowvol"
+   },
+   "hash": "4f78fbbc43df11a2"
+  },
+  {
+   "id": "G3_G1_GATE_humr_h11_18+hurstMR+enlow",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "humr",
+      "m": "h11_18"
+     },
+     "m": "hurstMR"
+    },
+    "m": "enlow"
+   },
+   "hash": "5beb7ce97919dc06"
+  },
+  {
+   "id": "G3_G1_GATE_humr_h11_18+hurstMR+cpActive",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "humr",
+      "m": "h11_18"
+     },
+     "m": "hurstMR"
+    },
+    "m": "cpActive"
+   },
+   "hash": "889e557478b48a92"
+  },
+  {
+   "id": "G3_G1_GATE_humr_h11_18+hurstMR+burst",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "humr",
+      "m": "h11_18"
+     },
+     "m": "hurstMR"
+    },
+    "m": "burst"
+   },
+   "hash": "04f6a1119b9a640b"
+  },
+  {
+   "id": "G3_G1_GATE_humr_h11_18+hurstMR+h11_18",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "humr",
+      "m": "h11_18"
+     },
+     "m": "hurstMR"
+    },
+    "m": "h11_18"
+   },
+   "hash": "24e025b20ea68dd7"
+  },
+  {
+   "id": "G3_G1_GATE_humr_h11_18+hurstMR+lowvol",
+   "op": "GATE3",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "humr",
+      "m": "h11_18"
+     },
+     "m": "hurstMR"
+    },
+    "m": "lowvol"
+   },
+   "hash": "e010dc6194773624"
+  }
+ ]
+}

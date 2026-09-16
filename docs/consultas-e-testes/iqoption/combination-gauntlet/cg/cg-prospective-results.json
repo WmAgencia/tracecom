@@ -1,0 +1,1896 @@
+{
+ "generated_at": "2026-09-16T00:36:32.948Z",
+ "tranche": "P1",
+ "window": {
+  "from": "2026-09-15T23:07:25.000Z",
+  "to": "2026-09-16T00:01:32.942Z",
+  "hours": 0.9
+ },
+ "note": "finalistas congelados em cg/finalists-freeze-*.json ANTES desta janela; T+60 e T+300",
+ "datasets": {
+  "IQOPTION_EURUSD_BINARY_P1": {
+   "ticks": 5148,
+   "pages": 2,
+   "candles": 650,
+   "rows": 610,
+   "indep": 34,
+   "baseP60": 53.75,
+   "baseP300": 55.8,
+   "finalists": [
+    {
+     "id": "G1_AND_z240_enperm",
+     "gen": "G1",
+     "hash": "e37cc47e95ba0167",
+     "spec": {
+      "op": "AND",
+      "a": "z240",
+      "b": "enperm"
+     },
+     "discovery": {
+      "signals": 2073,
+      "sigPerHour": 20.7,
+      "w": 1155,
+      "l": 918,
+      "draws": 0,
+      "wr": 55.72,
+      "buyN": 857,
+      "buyWR": 56.24,
+      "sellN": 1216,
+      "sellWR": 55.35,
+      "indepN": 119,
+      "indepWR": 57.98,
+      "indepW": 69,
+      "edge_pp": 5.63,
+      "wilsonLo": 53.57,
+      "ci95": [
+       53.57,
+       57.84
+      ],
+      "maxWinStreak": 33,
+      "maxLossStreak": 36
+     },
+     "val": {
+      "signals": 532,
+      "sigPerHour": 15.9,
+      "w": 253,
+      "l": 279,
+      "draws": 0,
+      "wr": 47.56,
+      "buyN": 409,
+      "buyWR": 45.72,
+      "sellN": 123,
+      "sellWR": 53.66,
+      "indepN": 28,
+      "indepWR": 35.71,
+      "indepW": 10,
+      "edge_pp": -1.48,
+      "wilsonLo": 43.35,
+      "ci95": [
+       43.35,
+       51.8
+      ],
+      "maxWinStreak": 18,
+      "maxLossStreak": 22
+     },
+     "prospective_60": {
+      "signals": 29,
+      "sigPerHour": 34.2,
+      "w": 11,
+      "l": 18,
+      "draws": 2,
+      "unknown": 0,
+      "wr": 37.93,
+      "buyN": 29,
+      "buyWR": 37.93,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": -15.82,
+      "z": -1.71,
+      "ci95": [
+       22.69,
+       56
+      ],
+      "maxWinStreak": 5,
+      "maxLossStreak": 13
+     },
+     "prospective_300": {
+      "signals": 31,
+      "sigPerHour": 36.6,
+      "w": 20,
+      "l": 11,
+      "draws": 0,
+      "unknown": 0,
+      "wr": 64.52,
+      "buyN": 31,
+      "buyWR": 64.52,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": 8.72,
+      "z": 0.98,
+      "ci95": [
+       46.95,
+       78.88
+      ],
+      "maxWinStreak": 13,
+      "maxLossStreak": 11
+     }
+    },
+    {
+     "id": "G1_CONFIRM_z240_enperm",
+     "gen": "G1",
+     "hash": "b043bb1d4225f7ca",
+     "spec": {
+      "op": "CONFIRM",
+      "a": "z240",
+      "b": "enperm"
+     },
+     "discovery": {
+      "signals": 2073,
+      "sigPerHour": 20.7,
+      "w": 1155,
+      "l": 918,
+      "draws": 0,
+      "wr": 55.72,
+      "buyN": 857,
+      "buyWR": 56.24,
+      "sellN": 1216,
+      "sellWR": 55.35,
+      "indepN": 119,
+      "indepWR": 57.98,
+      "indepW": 69,
+      "edge_pp": 5.63,
+      "wilsonLo": 53.57,
+      "ci95": [
+       53.57,
+       57.84
+      ],
+      "maxWinStreak": 33,
+      "maxLossStreak": 36
+     },
+     "val": {
+      "signals": 532,
+      "sigPerHour": 15.9,
+      "w": 253,
+      "l": 279,
+      "draws": 0,
+      "wr": 47.56,
+      "buyN": 409,
+      "buyWR": 45.72,
+      "sellN": 123,
+      "sellWR": 53.66,
+      "indepN": 28,
+      "indepWR": 35.71,
+      "indepW": 10,
+      "edge_pp": -1.48,
+      "wilsonLo": 43.35,
+      "ci95": [
+       43.35,
+       51.8
+      ],
+      "maxWinStreak": 18,
+      "maxLossStreak": 22
+     },
+     "prospective_60": {
+      "signals": 29,
+      "sigPerHour": 34.2,
+      "w": 11,
+      "l": 18,
+      "draws": 2,
+      "unknown": 0,
+      "wr": 37.93,
+      "buyN": 29,
+      "buyWR": 37.93,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": -15.82,
+      "z": -1.71,
+      "ci95": [
+       22.69,
+       56
+      ],
+      "maxWinStreak": 5,
+      "maxLossStreak": 13
+     },
+     "prospective_300": {
+      "signals": 31,
+      "sigPerHour": 36.6,
+      "w": 20,
+      "l": 11,
+      "draws": 0,
+      "unknown": 0,
+      "wr": 64.52,
+      "buyN": 31,
+      "buyWR": 64.52,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": 8.72,
+      "z": 0.98,
+      "ci95": [
+       46.95,
+       78.88
+      ],
+      "maxWinStreak": 13,
+      "maxLossStreak": 11
+     }
+    },
+    {
+     "id": "G1_AND_z240_enperm+enlow",
+     "gen": "G2",
+     "hash": "9dc1b8034c6f09b6",
+     "spec": {
+      "op": "GATE2",
+      "parent": {
+       "op": "AND",
+       "a": "z240",
+       "b": "enperm"
+      },
+      "m": "enlow"
+     },
+     "discovery": {
+      "signals": 2073,
+      "sigPerHour": 20.7,
+      "w": 1155,
+      "l": 918,
+      "draws": 0,
+      "wr": 55.72,
+      "buyN": 857,
+      "buyWR": 56.24,
+      "sellN": 1216,
+      "sellWR": 55.35,
+      "indepN": 119,
+      "indepWR": 57.98,
+      "indepW": 69,
+      "edge_pp": 5.63,
+      "wilsonLo": 53.57,
+      "ci95": [
+       53.57,
+       57.84
+      ],
+      "maxWinStreak": 33,
+      "maxLossStreak": 36
+     },
+     "val": {
+      "signals": 532,
+      "sigPerHour": 15.9,
+      "w": 253,
+      "l": 279,
+      "draws": 0,
+      "wr": 47.56,
+      "buyN": 409,
+      "buyWR": 45.72,
+      "sellN": 123,
+      "sellWR": 53.66,
+      "indepN": 28,
+      "indepWR": 35.71,
+      "indepW": 10,
+      "edge_pp": -1.48,
+      "wilsonLo": 43.35,
+      "ci95": [
+       43.35,
+       51.8
+      ],
+      "maxWinStreak": 18,
+      "maxLossStreak": 22
+     },
+     "prospective_60": {
+      "signals": 29,
+      "sigPerHour": 34.2,
+      "w": 11,
+      "l": 18,
+      "draws": 2,
+      "unknown": 0,
+      "wr": 37.93,
+      "buyN": 29,
+      "buyWR": 37.93,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": -15.82,
+      "z": -1.71,
+      "ci95": [
+       22.69,
+       56
+      ],
+      "maxWinStreak": 5,
+      "maxLossStreak": 13
+     },
+     "prospective_300": {
+      "signals": 31,
+      "sigPerHour": 36.6,
+      "w": 20,
+      "l": 11,
+      "draws": 0,
+      "unknown": 0,
+      "wr": 64.52,
+      "buyN": 31,
+      "buyWR": 64.52,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": 8.72,
+      "z": 0.98,
+      "ci95": [
+       46.95,
+       78.88
+      ],
+      "maxWinStreak": 13,
+      "maxLossStreak": 11
+     }
+    },
+    {
+     "id": "G1_AND_z240_enperm+lowvol",
+     "gen": "G2",
+     "hash": "41059dd6d35dc650",
+     "spec": {
+      "op": "GATE2",
+      "parent": {
+       "op": "AND",
+       "a": "z240",
+       "b": "enperm"
+      },
+      "m": "lowvol"
+     },
+     "discovery": {
+      "signals": 2073,
+      "sigPerHour": 20.7,
+      "w": 1155,
+      "l": 918,
+      "draws": 0,
+      "wr": 55.72,
+      "buyN": 857,
+      "buyWR": 56.24,
+      "sellN": 1216,
+      "sellWR": 55.35,
+      "indepN": 119,
+      "indepWR": 57.98,
+      "indepW": 69,
+      "edge_pp": 5.63,
+      "wilsonLo": 53.57,
+      "ci95": [
+       53.57,
+       57.84
+      ],
+      "maxWinStreak": 33,
+      "maxLossStreak": 36
+     },
+     "val": {
+      "signals": 532,
+      "sigPerHour": 15.9,
+      "w": 253,
+      "l": 279,
+      "draws": 0,
+      "wr": 47.56,
+      "buyN": 409,
+      "buyWR": 45.72,
+      "sellN": 123,
+      "sellWR": 53.66,
+      "indepN": 28,
+      "indepWR": 35.71,
+      "indepW": 10,
+      "edge_pp": -1.48,
+      "wilsonLo": 43.35,
+      "ci95": [
+       43.35,
+       51.8
+      ],
+      "maxWinStreak": 18,
+      "maxLossStreak": 22
+     },
+     "prospective_60": {
+      "signals": 29,
+      "sigPerHour": 34.2,
+      "w": 11,
+      "l": 18,
+      "draws": 2,
+      "unknown": 0,
+      "wr": 37.93,
+      "buyN": 29,
+      "buyWR": 37.93,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": -15.82,
+      "z": -1.71,
+      "ci95": [
+       22.69,
+       56
+      ],
+      "maxWinStreak": 5,
+      "maxLossStreak": 13
+     },
+     "prospective_300": {
+      "signals": 31,
+      "sigPerHour": 36.6,
+      "w": 20,
+      "l": 11,
+      "draws": 0,
+      "unknown": 0,
+      "wr": 64.52,
+      "buyN": 31,
+      "buyWR": 64.52,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": 8.72,
+      "z": 0.98,
+      "ci95": [
+       46.95,
+       78.88
+      ],
+      "maxWinStreak": 13,
+      "maxLossStreak": 11
+     }
+    },
+    {
+     "id": "G3_G1_AND_z240_enperm+enlow+lowvol",
+     "gen": "G3",
+     "hash": "0c86809e87a53625",
+     "spec": {
+      "op": "GATE3",
+      "parent": {
+       "op": "GATE2",
+       "parent": {
+        "op": "AND",
+        "a": "z240",
+        "b": "enperm"
+       },
+       "m": "enlow"
+      },
+      "m": "lowvol"
+     },
+     "discovery": {
+      "signals": 2073,
+      "sigPerHour": 20.7,
+      "w": 1155,
+      "l": 918,
+      "draws": 0,
+      "wr": 55.72,
+      "buyN": 857,
+      "buyWR": 56.24,
+      "sellN": 1216,
+      "sellWR": 55.35,
+      "indepN": 119,
+      "indepWR": 57.98,
+      "indepW": 69,
+      "edge_pp": 5.63,
+      "wilsonLo": 53.57,
+      "ci95": [
+       53.57,
+       57.84
+      ],
+      "maxWinStreak": 33,
+      "maxLossStreak": 36
+     },
+     "val": {
+      "signals": 532,
+      "sigPerHour": 15.9,
+      "w": 253,
+      "l": 279,
+      "draws": 0,
+      "wr": 47.56,
+      "buyN": 409,
+      "buyWR": 45.72,
+      "sellN": 123,
+      "sellWR": 53.66,
+      "indepN": 28,
+      "indepWR": 35.71,
+      "indepW": 10,
+      "edge_pp": -1.48,
+      "wilsonLo": 43.35,
+      "ci95": [
+       43.35,
+       51.8
+      ],
+      "maxWinStreak": 18,
+      "maxLossStreak": 22
+     },
+     "prospective_60": {
+      "signals": 29,
+      "sigPerHour": 34.2,
+      "w": 11,
+      "l": 18,
+      "draws": 2,
+      "unknown": 0,
+      "wr": 37.93,
+      "buyN": 29,
+      "buyWR": 37.93,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": -15.82,
+      "z": -1.71,
+      "ci95": [
+       22.69,
+       56
+      ],
+      "maxWinStreak": 5,
+      "maxLossStreak": 13
+     },
+     "prospective_300": {
+      "signals": 31,
+      "sigPerHour": 36.6,
+      "w": 20,
+      "l": 11,
+      "draws": 0,
+      "unknown": 0,
+      "wr": 64.52,
+      "buyN": 31,
+      "buyWR": 64.52,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": 8.72,
+      "z": 0.98,
+      "ci95": [
+       46.95,
+       78.88
+      ],
+      "maxWinStreak": 13,
+      "maxLossStreak": 11
+     }
+    },
+    {
+     "id": "G4_META_G3_G1_AND_z240_enperm+enlow+lowvol",
+     "gen": "G4",
+     "hash": "feb62dd4a655287a",
+     "spec": {
+      "op": "META",
+      "base": "G3_G1_AND_z240_enperm+enlow+lowvol",
+      "baseSpec": {
+       "op": "GATE3",
+       "parent": {
+        "op": "GATE2",
+        "parent": {
+         "op": "AND",
+         "a": "z240",
+         "b": "enperm"
+        },
+        "m": "enlow"
+       },
+       "m": "lowvol"
+      },
+      "threshold": 0.6,
+      "weights": {
+       "w": [
+        0.5522657039985024,
+        0.029843294849283677,
+        -0.010533931106542249,
+        0.13559293897494606,
+        -0.0467299287721815,
+        0.04572182752394245,
+        0.19900206529654874,
+        -0.2949647351813721,
+        0.2878651372852123,
+        0.12045449371654715,
+        0.1388145002751639,
+        -0.17622207476217902
+       ],
+       "b0": -0.021883286675825894,
+       "mu": [
+        -0.17317896767969126,
+        0.2799148410852036,
+        1.4630467473088198,
+        0.6766596153437288,
+        0.48910431425072975,
+        0.000031371756329637525,
+        0.21927591525572965,
+        3.707284129281228,
+        0.40030836013098187,
+        0.0007758873515493274,
+        1.0519116748099102,
+        0.4388165299887469
+       ],
+       "sg": [
+        0.9848903721498038,
+        0.3177169787552193,
+        0.12708973005785074,
+        0.11071667840931455,
+        0.07500887328386799,
+        0.000041234428968315817,
+        0.21059376193207754,
+        3.548132276024381,
+        2.244268895132832,
+        0.008924484035438647,
+        0.8679760735379684,
+        0.2829527507395981
+       ]
+      },
+      "feats": [
+       "dir",
+       "absImb",
+       "H",
+       "Hp",
+       "hurst",
+       "cpDiff",
+       "vol12x1e4",
+       "tickRate",
+       "z60",
+       "r6x100",
+       "spreadRatio",
+       "hour/24"
+      ]
+     },
+     "discovery": {
+      "signals": 296,
+      "sigPerHour": 3,
+      "w": 193,
+      "l": 103,
+      "draws": 0,
+      "wr": 65.2,
+      "buyN": 276,
+      "buyWR": 67.39,
+      "sellN": 20,
+      "sellWR": 35,
+      "indepN": 16,
+      "indepWR": 62.5,
+      "indepW": 10,
+      "edge_pp": 15.65,
+      "wilsonLo": 59.61,
+      "ci95": [
+       59.61,
+       70.4
+      ],
+      "maxWinStreak": 25,
+      "maxLossStreak": 17
+     },
+     "val": {
+      "signals": 195,
+      "sigPerHour": 5.8,
+      "w": 86,
+      "l": 109,
+      "draws": 0,
+      "wr": 44.1,
+      "buyN": 195,
+      "buyWR": 44.1,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 11,
+      "indepWR": 27.27,
+      "indepW": 3,
+      "edge_pp": -4.11,
+      "wilsonLo": 37.31,
+      "ci95": [
+       37.31,
+       51.12
+      ],
+      "maxWinStreak": 14,
+      "maxLossStreak": 16
+     },
+     "prospective_60": {
+      "signals": 1,
+      "sigPerHour": 1.2,
+      "w": 1,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": 100,
+      "buyN": 1,
+      "buyWR": 100,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": 46.25,
+      "z": 0.93,
+      "ci95": [
+       20.65,
+       100
+      ],
+      "maxWinStreak": 1,
+      "maxLossStreak": 0
+     },
+     "prospective_300": {
+      "signals": 1,
+      "sigPerHour": 1.2,
+      "w": 1,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": 100,
+      "buyN": 1,
+      "buyWR": 100,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": 44.2,
+      "z": 0.89,
+      "ci95": [
+       20.65,
+       100
+      ],
+      "maxWinStreak": 1,
+      "maxLossStreak": 0
+     }
+    },
+    {
+     "id": "G4_RS_hurst_entropy",
+     "gen": "G4",
+     "hash": "1e57ee6b66fbf667",
+     "spec": {
+      "op": "REGIME_SWITCH",
+      "arch": "hurstMR->z240;persist->exrsi;Hgt2.85 WAIT;else miimb"
+     },
+     "discovery": {
+      "signals": 20601,
+      "sigPerHour": 205.5,
+      "w": 10158,
+      "l": 10443,
+      "draws": 0,
+      "wr": 49.31,
+      "buyN": 10663,
+      "buyWR": 49.2,
+      "sellN": 9938,
+      "sellWR": 49.43,
+      "indepN": 1137,
+      "indepWR": 49.6,
+      "indepW": 564,
+      "edge_pp": -0.67,
+      "wilsonLo": 48.63,
+      "ci95": [
+       48.63,
+       49.99
+      ],
+      "maxWinStreak": 16,
+      "maxLossStreak": 35
+     },
+     "val": {
+      "signals": 4620,
+      "sigPerHour": 138.4,
+      "w": 2264,
+      "l": 2356,
+      "draws": 0,
+      "wr": 49,
+      "buyN": 2549,
+      "buyWR": 47.7,
+      "sellN": 2071,
+      "sellWR": 50.6,
+      "indepN": 265,
+      "indepWR": 49.43,
+      "indepW": 131,
+      "edge_pp": -0.81,
+      "wilsonLo": 47.56,
+      "ci95": [
+       47.56,
+       50.45
+      ],
+      "maxWinStreak": 16,
+      "maxLossStreak": 16
+     },
+     "prospective_60": {
+      "signals": 182,
+      "sigPerHour": 214.8,
+      "w": 88,
+      "l": 94,
+      "draws": 18,
+      "unknown": 9,
+      "wr": 48.35,
+      "buyN": 102,
+      "buyWR": 50,
+      "sellN": 80,
+      "sellWR": 46.25,
+      "indepN": 8,
+      "indepWR": 50,
+      "edge_pp": -2.1,
+      "z": -0.57,
+      "ci95": [
+       41.2,
+       55.57
+      ],
+      "maxWinStreak": 10,
+      "maxLossStreak": 8
+     },
+     "prospective_300": {
+      "signals": 180,
+      "sigPerHour": 212.5,
+      "w": 110,
+      "l": 70,
+      "draws": 1,
+      "unknown": 28,
+      "wr": 61.11,
+      "buyN": 104,
+      "buyWR": 67.31,
+      "sellN": 76,
+      "sellWR": 52.63,
+      "indepN": 6,
+      "indepWR": 66.67,
+      "edge_pp": 10.21,
+      "z": 2.74,
+      "ci95": [
+       53.83,
+       67.93
+      ],
+      "maxWinStreak": 18,
+      "maxLossStreak": 9
+     }
+    },
+    {
+     "id": "G0_v7relaxed",
+     "gen": "G0",
+     "hash": "5d9df6f0b572a913",
+     "spec": {
+      "single": "v7relaxed"
+     },
+     "discovery": {
+      "signals": 1903,
+      "sigPerHour": 19,
+      "w": 884,
+      "l": 1019,
+      "draws": 0,
+      "wr": 46.45,
+      "buyN": 1092,
+      "buyWR": 43.77,
+      "sellN": 811,
+      "sellWR": 50.06,
+      "indepN": 105,
+      "indepWR": 48.57,
+      "indepW": 51,
+      "edge_pp": -3.47,
+      "wilsonLo": 44.22,
+      "ci95": [
+       44.22,
+       48.7
+      ],
+      "maxWinStreak": 16,
+      "maxLossStreak": 27
+     },
+     "val": {
+      "signals": 403,
+      "sigPerHour": 12.1,
+      "w": 200,
+      "l": 203,
+      "draws": 0,
+      "wr": 49.63,
+      "buyN": 226,
+      "buyWR": 49.56,
+      "sellN": 177,
+      "sellWR": 49.72,
+      "indepN": 17,
+      "indepWR": 23.53,
+      "indepW": 4,
+      "edge_pp": -0.16,
+      "wilsonLo": 44.77,
+      "ci95": [
+       44.77,
+       54.49
+      ],
+      "maxWinStreak": 25,
+      "maxLossStreak": 15
+     },
+     "prospective_60": {
+      "signals": 29,
+      "sigPerHour": 34.2,
+      "w": 6,
+      "l": 23,
+      "draws": 3,
+      "unknown": 1,
+      "wr": 20.69,
+      "buyN": 15,
+      "buyWR": 26.67,
+      "sellN": 14,
+      "sellWR": 14.29,
+      "indepN": 2,
+      "indepWR": 50,
+      "edge_pp": -29.44,
+      "z": -3.17,
+      "ci95": [
+       9.85,
+       38.39
+      ],
+      "maxWinStreak": 3,
+      "maxLossStreak": 12
+     },
+     "prospective_300": {
+      "signals": 32,
+      "sigPerHour": 37.8,
+      "w": 11,
+      "l": 21,
+      "draws": 0,
+      "unknown": 1,
+      "wr": 34.38,
+      "buyN": 15,
+      "buyWR": 20,
+      "sellN": 17,
+      "sellWR": 47.06,
+      "indepN": 2,
+      "indepWR": 50,
+      "edge_pp": -15.26,
+      "z": -1.73,
+      "ci95": [
+       20.41,
+       51.69
+      ],
+      "maxWinStreak": 7,
+      "maxLossStreak": 12
+     }
+    }
+   ],
+   "baselines": {
+    "always_buy_60": {
+     "signals": 547,
+     "sigPerHour": 645.6,
+     "w": 294,
+     "l": 253,
+     "draws": 51,
+     "unknown": 12,
+     "wr": 53.75,
+     "buyN": 547,
+     "buyWR": 53.75,
+     "sellN": 0,
+     "sellWR": null,
+     "indepN": 33,
+     "indepWR": 45.45,
+     "edge_pp": 0,
+     "z": 0,
+     "ci95": [
+      49.56,
+      57.89
+     ],
+     "maxWinStreak": 61,
+     "maxLossStreak": 45
+    },
+    "always_sell_60": {
+     "signals": 547,
+     "sigPerHour": 645.6,
+     "w": 253,
+     "l": 294,
+     "draws": 51,
+     "unknown": 12,
+     "wr": 46.25,
+     "buyN": 0,
+     "buyWR": null,
+     "sellN": 547,
+     "sellWR": 46.25,
+     "indepN": 33,
+     "indepWR": 54.55,
+     "edge_pp": 0,
+     "z": 0,
+     "ci95": [
+      42.11,
+      50.44
+     ],
+     "maxWinStreak": 45,
+     "maxLossStreak": 61
+    }
+   }
+  },
+  "IQOPTION_EURUSD_OTC_P1": {
+   "ticks": 12805,
+   "pages": 4,
+   "candles": 650,
+   "rows": 610,
+   "indep": 34,
+   "baseP60": 46.7,
+   "baseP300": 43.25,
+   "finalists": [
+    {
+     "id": "G1_GATE_exrsi_h11_18",
+     "gen": "G1",
+     "hash": "e8e4bd3b1da2d2b6",
+     "spec": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "discovery": {
+      "signals": 8024,
+      "sigPerHour": 80,
+      "w": 4211,
+      "l": 3813,
+      "draws": 0,
+      "wr": 52.48,
+      "buyN": 5499,
+      "buyWR": 51.54,
+      "sellN": 2525,
+      "sellWR": 54.53,
+      "indepN": 452,
+      "indepWR": 48.89,
+      "indepW": 221,
+      "edge_pp": 2.28,
+      "wilsonLo": 51.39,
+      "ci95": [
+       51.39,
+       53.57
+      ],
+      "maxWinStreak": 34,
+      "maxLossStreak": 57
+     },
+     "val": {
+      "signals": 2853,
+      "sigPerHour": 85.4,
+      "w": 1477,
+      "l": 1376,
+      "draws": 0,
+      "wr": 51.77,
+      "buyN": 2010,
+      "buyWR": 50.9,
+      "sellN": 843,
+      "sellWR": 53.86,
+      "indepN": 165,
+      "indepWR": 47.88,
+      "indepW": 79,
+      "edge_pp": 1.77,
+      "wilsonLo": 49.94,
+      "ci95": [
+       49.94,
+       53.6
+      ],
+      "maxWinStreak": 36,
+      "maxLossStreak": 49
+     },
+     "prospective_60": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     },
+     "prospective_300": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     }
+    },
+    {
+     "id": "G1_GATE_humr_h11_18",
+     "gen": "G1",
+     "hash": "5751bdde1c2f37c0",
+     "spec": {
+      "op": "GATE",
+      "a": "humr",
+      "m": "h11_18"
+     },
+     "discovery": {
+      "signals": 2139,
+      "sigPerHour": 21.3,
+      "w": 1140,
+      "l": 999,
+      "draws": 0,
+      "wr": 53.3,
+      "buyN": 948,
+      "buyWR": 54.43,
+      "sellN": 1191,
+      "sellWR": 52.39,
+      "indepN": 109,
+      "indepWR": 55.96,
+      "indepW": 61,
+      "edge_pp": 3.36,
+      "wilsonLo": 51.18,
+      "ci95": [
+       51.18,
+       55.4
+      ],
+      "maxWinStreak": 23,
+      "maxLossStreak": 28
+     },
+     "val": {
+      "signals": 854,
+      "sigPerHour": 25.6,
+      "w": 435,
+      "l": 419,
+      "draws": 0,
+      "wr": 50.94,
+      "buyN": 499,
+      "buyWR": 47.09,
+      "sellN": 355,
+      "sellWR": 56.34,
+      "indepN": 55,
+      "indepWR": 41.82,
+      "indepW": 23,
+      "edge_pp": 0.94,
+      "wilsonLo": 47.59,
+      "ci95": [
+       47.59,
+       54.28
+      ],
+      "maxWinStreak": 18,
+      "maxLossStreak": 26
+     },
+     "prospective_60": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     },
+     "prospective_300": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     }
+    },
+    {
+     "id": "G1_GATE_exrsi_h11_18+hurstMR",
+     "gen": "G2",
+     "hash": "6f2b51a77f5713c8",
+     "spec": {
+      "op": "GATE2",
+      "parent": {
+       "op": "GATE",
+       "a": "exrsi",
+       "m": "h11_18"
+      },
+      "m": "hurstMR"
+     },
+     "discovery": {
+      "signals": 1728,
+      "sigPerHour": 17.2,
+      "w": 951,
+      "l": 777,
+      "draws": 0,
+      "wr": 55.03,
+      "buyN": 1230,
+      "buyWR": 54.96,
+      "sellN": 498,
+      "sellWR": 55.22,
+      "indepN": 90,
+      "indepWR": 53.33,
+      "indepW": 48,
+      "edge_pp": 4.81,
+      "wilsonLo": 52.68,
+      "ci95": [
+       52.68,
+       57.37
+      ],
+      "maxWinStreak": 19,
+      "maxLossStreak": 28
+     },
+     "val": {
+      "signals": 727,
+      "sigPerHour": 21.8,
+      "w": 362,
+      "l": 365,
+      "draws": 0,
+      "wr": 49.79,
+      "buyN": 567,
+      "buyWR": 47.44,
+      "sellN": 160,
+      "sellWR": 58.13,
+      "indepN": 50,
+      "indepWR": 38,
+      "indepW": 19,
+      "edge_pp": -0.2,
+      "wilsonLo": 46.17,
+      "ci95": [
+       46.17,
+       53.42
+      ],
+      "maxWinStreak": 14,
+      "maxLossStreak": 35
+     },
+     "prospective_60": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     },
+     "prospective_300": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     }
+    },
+    {
+     "id": "G1_GATE_exrsi_hurstMR+h11_18",
+     "gen": "G2",
+     "hash": "26e093fcb228a988",
+     "spec": {
+      "op": "GATE2",
+      "parent": {
+       "op": "GATE",
+       "a": "exrsi",
+       "m": "hurstMR"
+      },
+      "m": "h11_18"
+     },
+     "discovery": {
+      "signals": 1728,
+      "sigPerHour": 17.2,
+      "w": 951,
+      "l": 777,
+      "draws": 0,
+      "wr": 55.03,
+      "buyN": 1230,
+      "buyWR": 54.96,
+      "sellN": 498,
+      "sellWR": 55.22,
+      "indepN": 90,
+      "indepWR": 53.33,
+      "indepW": 48,
+      "edge_pp": 4.81,
+      "wilsonLo": 52.68,
+      "ci95": [
+       52.68,
+       57.37
+      ],
+      "maxWinStreak": 19,
+      "maxLossStreak": 28
+     },
+     "val": {
+      "signals": 727,
+      "sigPerHour": 21.8,
+      "w": 362,
+      "l": 365,
+      "draws": 0,
+      "wr": 49.79,
+      "buyN": 567,
+      "buyWR": 47.44,
+      "sellN": 160,
+      "sellWR": 58.13,
+      "indepN": 50,
+      "indepWR": 38,
+      "indepW": 19,
+      "edge_pp": -0.2,
+      "wilsonLo": 46.17,
+      "ci95": [
+       46.17,
+       53.42
+      ],
+      "maxWinStreak": 14,
+      "maxLossStreak": 35
+     },
+     "prospective_60": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     },
+     "prospective_300": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     }
+    },
+    {
+     "id": "G3_G1_GATE_exrsi_h11_18+hurstMR+enlow",
+     "gen": "G3",
+     "hash": "5ff1ab64105727f8",
+     "spec": {
+      "op": "GATE3",
+      "parent": {
+       "op": "GATE2",
+       "parent": {
+        "op": "GATE",
+        "a": "exrsi",
+        "m": "h11_18"
+       },
+       "m": "hurstMR"
+      },
+      "m": "enlow"
+     },
+     "discovery": {
+      "signals": 1728,
+      "sigPerHour": 17.2,
+      "w": 951,
+      "l": 777,
+      "draws": 0,
+      "wr": 55.03,
+      "buyN": 1230,
+      "buyWR": 54.96,
+      "sellN": 498,
+      "sellWR": 55.22,
+      "indepN": 90,
+      "indepWR": 53.33,
+      "indepW": 48,
+      "edge_pp": 4.81,
+      "wilsonLo": 52.68,
+      "ci95": [
+       52.68,
+       57.37
+      ],
+      "maxWinStreak": 19,
+      "maxLossStreak": 28
+     },
+     "val": {
+      "signals": 727,
+      "sigPerHour": 21.8,
+      "w": 362,
+      "l": 365,
+      "draws": 0,
+      "wr": 49.79,
+      "buyN": 567,
+      "buyWR": 47.44,
+      "sellN": 160,
+      "sellWR": 58.13,
+      "indepN": 50,
+      "indepWR": 38,
+      "indepW": 19,
+      "edge_pp": -0.2,
+      "wilsonLo": 46.17,
+      "ci95": [
+       46.17,
+       53.42
+      ],
+      "maxWinStreak": 14,
+      "maxLossStreak": 35
+     },
+     "prospective_60": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     },
+     "prospective_300": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     }
+    },
+    {
+     "id": "G4_META_G3_G1_GATE_exrsi_h11_18+hurstMR+enlow",
+     "gen": "G4",
+     "hash": "dd05d5215d886692",
+     "spec": {
+      "op": "META",
+      "base": "G3_G1_GATE_exrsi_h11_18+hurstMR+enlow",
+      "baseSpec": {
+       "op": "GATE3",
+       "parent": {
+        "op": "GATE2",
+        "parent": {
+         "op": "GATE",
+         "a": "exrsi",
+         "m": "h11_18"
+        },
+        "m": "hurstMR"
+       },
+       "m": "enlow"
+      },
+      "threshold": 0.6,
+      "weights": {
+       "w": [
+        0.17840316930675132,
+        -0.04979483598512671,
+        0.11219095348383518,
+        0.20952052525228235,
+        0.0575232980487974,
+        -0.006538230106380682,
+        0.07996942959028298,
+        0.06965347223678875,
+        0.18569343202250999,
+        -0.13804935744073205,
+        -0.03151742522996039,
+        -0.12823239317022156
+       ],
+       "b0": 0.08267376951896831,
+       "mu": [
+        0.4236111111111111,
+        0.21349853388466958,
+        1.150021708484836,
+        0.7906251890287622,
+        0.4077566497200826,
+        0.0001290704536811759,
+        0.9895933055242389,
+        3.9423611111111123,
+        -0.38120268299363985,
+        -0.005773209715530491,
+        1.0000000000000098,
+        0.594473379629632
+       ],
+       "sg": [
+        0.9058441513545296,
+        0.16427907101857825,
+        0.09271063703326923,
+        0.0454498907619953,
+        0.03680863228864412,
+        0.00009850618787214871,
+        0.22161977456638574,
+        0.36063470176521045,
+        1.702653689901955,
+        0.027853609688205615,
+        2.3959068910349118e-12,
+        0.08449755311672529
+       ]
+      },
+      "feats": [
+       "dir",
+       "absImb",
+       "H",
+       "Hp",
+       "hurst",
+       "cpDiff",
+       "vol12x1e4",
+       "tickRate",
+       "z60",
+       "r6x100",
+       "spreadRatio",
+       "hour/24"
+      ]
+     },
+     "discovery": {
+      "signals": 341,
+      "sigPerHour": 3.4,
+      "w": 219,
+      "l": 122,
+      "draws": 0,
+      "wr": 64.22,
+      "buyN": 327,
+      "buyWR": 65.14,
+      "sellN": 14,
+      "sellWR": 42.86,
+      "indepN": 16,
+      "indepWR": 75,
+      "indepW": 12,
+      "edge_pp": 13.74,
+      "wilsonLo": 59,
+      "ci95": [
+       59,
+       69.13
+      ],
+      "maxWinStreak": 18,
+      "maxLossStreak": 11
+     },
+     "val": {
+      "signals": 154,
+      "sigPerHour": 4.6,
+      "w": 81,
+      "l": 73,
+      "draws": 0,
+      "wr": 52.6,
+      "buyN": 145,
+      "buyWR": 53.1,
+      "sellN": 9,
+      "sellWR": 44.44,
+      "indepN": 9,
+      "indepWR": 33.33,
+      "indepW": 3,
+      "edge_pp": 2.61,
+      "wilsonLo": 44.74,
+      "ci95": [
+       44.74,
+       60.32
+      ],
+      "maxWinStreak": 12,
+      "maxLossStreak": 11
+     },
+     "prospective_60": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     },
+     "prospective_300": {
+      "signals": 0,
+      "sigPerHour": 0,
+      "w": 0,
+      "l": 0,
+      "draws": 0,
+      "unknown": 0,
+      "wr": null,
+      "buyN": 0,
+      "buyWR": null,
+      "sellN": 0,
+      "sellWR": null,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": null,
+      "z": null,
+      "ci95": null,
+      "maxWinStreak": 0,
+      "maxLossStreak": 0
+     }
+    },
+    {
+     "id": "G4_RS_hurst_entropy",
+     "gen": "G4",
+     "hash": "1e57ee6b66fbf667",
+     "spec": {
+      "op": "REGIME_SWITCH",
+      "arch": "hurstMR->z240;persist->exrsi;Hgt2.85 WAIT;else miimb"
+     },
+     "discovery": {
+      "signals": 34428,
+      "sigPerHour": 343.3,
+      "w": 17350,
+      "l": 17078,
+      "draws": 0,
+      "wr": 50.4,
+      "buyN": 18325,
+      "buyWR": 51.15,
+      "sellN": 16103,
+      "sellWR": 49.54,
+      "indepN": 1975,
+      "indepWR": 50.28,
+      "indepW": 993,
+      "edge_pp": 0.36,
+      "wilsonLo": 49.87,
+      "ci95": [
+       49.87,
+       50.92
+      ],
+      "maxWinStreak": 18,
+      "maxLossStreak": 37
+     },
+     "val": {
+      "signals": 11673,
+      "sigPerHour": 349.6,
+      "w": 5835,
+      "l": 5838,
+      "draws": 0,
+      "wr": 49.99,
+      "buyN": 6136,
+      "buyWR": 50.26,
+      "sellN": 5537,
+      "sellWR": 49.68,
+      "indepN": 660,
+      "indepWR": 46.52,
+      "indepW": 307,
+      "edge_pp": -0.01,
+      "wilsonLo": 49.08,
+      "ci95": [
+       49.08,
+       50.89
+      ],
+      "maxWinStreak": 17,
+      "maxLossStreak": 21
+     },
+     "prospective_60": {
+      "signals": 284,
+      "sigPerHour": 335.2,
+      "w": 142,
+      "l": 142,
+      "draws": 5,
+      "unknown": 6,
+      "wr": 50,
+      "buyN": 134,
+      "buyWR": 45.52,
+      "sellN": 150,
+      "sellWR": 54,
+      "indepN": 17,
+      "indepWR": 58.82,
+      "edge_pp": -0.19,
+      "z": -0.06,
+      "ci95": [
+       44.22,
+       55.78
+      ],
+      "maxWinStreak": 9,
+      "maxLossStreak": 11
+     },
+     "prospective_300": {
+      "signals": 263,
+      "sigPerHour": 310.4,
+      "w": 140,
+      "l": 123,
+      "draws": 1,
+      "unknown": 31,
+      "wr": 53.23,
+      "buyN": 120,
+      "buyWR": 45,
+      "sellN": 143,
+      "sellWR": 60.14,
+      "indepN": 15,
+      "indepWR": 66.67,
+      "edge_pp": 2.64,
+      "z": 0.86,
+      "ci95": [
+       47.2,
+       59.17
+      ],
+      "maxWinStreak": 7,
+      "maxLossStreak": 10
+     }
+    },
+    {
+     "id": "G0_v7relaxed",
+     "gen": "G0",
+     "hash": "5d9df6f0b572a913",
+     "spec": {
+      "single": "v7relaxed"
+     },
+     "discovery": {
+      "signals": 1778,
+      "sigPerHour": 17.7,
+      "w": 900,
+      "l": 878,
+      "draws": 0,
+      "wr": 50.62,
+      "buyN": 1136,
+      "buyWR": 50.35,
+      "sellN": 642,
+      "sellWR": 51.09,
+      "indepN": 99,
+      "indepWR": 44.44,
+      "indepW": 44,
+      "edge_pp": 0.47,
+      "wilsonLo": 48.3,
+      "ci95": [
+       48.3,
+       52.94
+      ],
+      "maxWinStreak": 14,
+      "maxLossStreak": 13
+     },
+     "val": {
+      "signals": 638,
+      "sigPerHour": 19.1,
+      "w": 350,
+      "l": 288,
+      "draws": 0,
+      "wr": 54.86,
+      "buyN": 401,
+      "buyWR": 55.36,
+      "sellN": 237,
+      "sellWR": 54.01,
+      "indepN": 38,
+      "indepWR": 65.79,
+      "indepW": 25,
+      "edge_pp": 4.86,
+      "wilsonLo": 50.98,
+      "ci95": [
+       50.98,
+       58.68
+      ],
+      "maxWinStreak": 21,
+      "maxLossStreak": 16
+     },
+     "prospective_60": {
+      "signals": 16,
+      "sigPerHour": 18.9,
+      "w": 7,
+      "l": 9,
+      "draws": 0,
+      "unknown": 0,
+      "wr": 43.75,
+      "buyN": 11,
+      "buyWR": 54.55,
+      "sellN": 5,
+      "sellWR": 20,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": -5.01,
+      "z": -0.4,
+      "ci95": [
+       23.1,
+       66.82
+      ],
+      "maxWinStreak": 4,
+      "maxLossStreak": 5
+     },
+     "prospective_300": {
+      "signals": 16,
+      "sigPerHour": 18.9,
+      "w": 9,
+      "l": 7,
+      "draws": 0,
+      "unknown": 0,
+      "wr": 56.25,
+      "buyN": 11,
+      "buyWR": 54.55,
+      "sellN": 5,
+      "sellWR": 60,
+      "indepN": 0,
+      "indepWR": null,
+      "edge_pp": 8.78,
+      "z": 0.7,
+      "ci95": [
+       33.18,
+       76.9
+      ],
+      "maxWinStreak": 4,
+      "maxLossStreak": 3
+     }
+    }
+   ],
+   "baselines": {
+    "always_buy_60": {
+     "signals": 591,
+     "sigPerHour": 697.6,
+     "w": 276,
+     "l": 315,
+     "draws": 7,
+     "unknown": 12,
+     "wr": 46.7,
+     "buyN": 591,
+     "buyWR": 46.7,
+     "sellN": 0,
+     "sellWR": null,
+     "indepN": 34,
+     "indepWR": 41.18,
+     "edge_pp": 0,
+     "z": 0,
+     "ci95": [
+      42.71,
+      50.73
+     ],
+     "maxWinStreak": 27,
+     "maxLossStreak": 34
+    },
+    "always_sell_60": {
+     "signals": 591,
+     "sigPerHour": 697.6,
+     "w": 315,
+     "l": 276,
+     "draws": 7,
+     "unknown": 12,
+     "wr": 53.3,
+     "buyN": 0,
+     "buyWR": null,
+     "sellN": 591,
+     "sellWR": 53.3,
+     "indepN": 34,
+     "indepWR": 58.82,
+     "edge_pp": 0,
+     "z": 0,
+     "ci95": [
+      49.27,
+      57.29
+     ],
+     "maxWinStreak": 34,
+     "maxLossStreak": 27
+    }
+   }
+  }
+ }
+}

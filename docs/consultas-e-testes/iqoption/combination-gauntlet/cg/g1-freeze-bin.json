@@ -1,0 +1,4566 @@
+{
+ "frozen_at": "2026-09-16T00:35:55.568Z",
+ "K": 456,
+ "hypotheses": [
+  {
+   "id": "G1_AND_tlbrk70_tlbrk50",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "tlbrk50"
+   },
+   "hash": "441fb74ef81137c2"
+  },
+  {
+   "id": "G1_OR_tlbrk70_tlbrk50",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "tlbrk50"
+   },
+   "hash": "4c86e25fd6c5bb13"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_tlbrk50",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "tlbrk50"
+   },
+   "hash": "35329908af5a4b6a"
+  },
+  {
+   "id": "G1_AND_tlbrk70_fb25",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "fb25"
+   },
+   "hash": "537a514dd6ffabb7"
+  },
+  {
+   "id": "G1_OR_tlbrk70_fb25",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "fb25"
+   },
+   "hash": "222c385407c8fd22"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_fb25",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "fb25"
+   },
+   "hash": "05f2784ccd52dc41"
+  },
+  {
+   "id": "G1_AND_tlbrk70_v7relaxed",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "v7relaxed"
+   },
+   "hash": "00a9b884f290a154"
+  },
+  {
+   "id": "G1_OR_tlbrk70_v7relaxed",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "v7relaxed"
+   },
+   "hash": "43c1695be4fd44a3"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_v7relaxed",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "v7relaxed"
+   },
+   "hash": "f6d3579a341a6cb0"
+  },
+  {
+   "id": "G1_AND_tlbrk70_v7and",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "v7and"
+   },
+   "hash": "212010e15824fe51"
+  },
+  {
+   "id": "G1_OR_tlbrk70_v7and",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "v7and"
+   },
+   "hash": "2f7e50d8cc227573"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_v7and",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "v7and"
+   },
+   "hash": "3652f0baa5f6db85"
+  },
+  {
+   "id": "G1_AND_tlbrk70_v1",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "v1"
+   },
+   "hash": "21889e92965a025f"
+  },
+  {
+   "id": "G1_OR_tlbrk70_v1",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "v1"
+   },
+   "hash": "c206afe456605383"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_v1",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "v1"
+   },
+   "hash": "be61b4a389d64e3f"
+  },
+  {
+   "id": "G1_AND_tlbrk70_v3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "v3"
+   },
+   "hash": "80fa6ce40807ded2"
+  },
+  {
+   "id": "G1_OR_tlbrk70_v3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "v3"
+   },
+   "hash": "e4cbb6abc8d86464"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_v3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "v3"
+   },
+   "hash": "887f3370e2613401"
+  },
+  {
+   "id": "G1_AND_tlbrk70_v6",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "v6"
+   },
+   "hash": "6e2594ee07fcb01a"
+  },
+  {
+   "id": "G1_OR_tlbrk70_v6",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "v6"
+   },
+   "hash": "ff9307dd88f0579b"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_v6",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "v6"
+   },
+   "hash": "1a286e0f05899d75"
+  },
+  {
+   "id": "G1_AND_tlbrk70_z240",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "z240"
+   },
+   "hash": "c7f4b0c222cb2697"
+  },
+  {
+   "id": "G1_OR_tlbrk70_z240",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "z240"
+   },
+   "hash": "dd52104407eb71e8"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_z240",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "z240"
+   },
+   "hash": "f9bee692a5f103c9"
+  },
+  {
+   "id": "G1_AND_tlbrk70_exrsi",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "exrsi"
+   },
+   "hash": "0e58c99fc49c2ac2"
+  },
+  {
+   "id": "G1_OR_tlbrk70_exrsi",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "exrsi"
+   },
+   "hash": "f016beac5f14fb4b"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_exrsi",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "exrsi"
+   },
+   "hash": "e29b7fd53c974770"
+  },
+  {
+   "id": "G1_AND_tlbrk70_cp",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "cp"
+   },
+   "hash": "0ac7a92def734017"
+  },
+  {
+   "id": "G1_OR_tlbrk70_cp",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "cp"
+   },
+   "hash": "0d739f663dd5001a"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_cp",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "cp"
+   },
+   "hash": "b9cf5050d305b2f9"
+  },
+  {
+   "id": "G1_AND_tlbrk70_acfade",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "acfade"
+   },
+   "hash": "d13b5b7147ea743d"
+  },
+  {
+   "id": "G1_OR_tlbrk70_acfade",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "acfade"
+   },
+   "hash": "704a45e0822331eb"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_acfade",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "acfade"
+   },
+   "hash": "c395f41ef32452e4"
+  },
+  {
+   "id": "G1_AND_tlbrk70_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "miimb"
+   },
+   "hash": "c487df7165fddec4"
+  },
+  {
+   "id": "G1_OR_tlbrk70_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "miimb"
+   },
+   "hash": "078cf82a163facd7"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "miimb"
+   },
+   "hash": "46418a66f82a26f1"
+  },
+  {
+   "id": "G1_AND_tlbrk70_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "enperm"
+   },
+   "hash": "67c92960e50cb372"
+  },
+  {
+   "id": "G1_OR_tlbrk70_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "enperm"
+   },
+   "hash": "b30a5a45562ecba1"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "enperm"
+   },
+   "hash": "4dbbbd3de6e803e7"
+  },
+  {
+   "id": "G1_AND_tlbrk70_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "humr"
+   },
+   "hash": "c7b26b3ce09994e6"
+  },
+  {
+   "id": "G1_OR_tlbrk70_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "humr"
+   },
+   "hash": "ce67a9445d5e13e5"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "humr"
+   },
+   "hash": "20cd5bd2830f630f"
+  },
+  {
+   "id": "G1_AND_tlbrk70_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk70",
+    "b": "mk3"
+   },
+   "hash": "8e05ad8fc3eb5e53"
+  },
+  {
+   "id": "G1_OR_tlbrk70_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk70",
+    "b": "mk3"
+   },
+   "hash": "f466fdda9deaeccd"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk70_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk70",
+    "b": "mk3"
+   },
+   "hash": "9d203bf3a8b19d38"
+  },
+  {
+   "id": "G1_AND_tlbrk50_fb25",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "fb25"
+   },
+   "hash": "07eb111246343622"
+  },
+  {
+   "id": "G1_OR_tlbrk50_fb25",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "fb25"
+   },
+   "hash": "e498a527ef44b1c3"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_fb25",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "fb25"
+   },
+   "hash": "35a767f87f0e078a"
+  },
+  {
+   "id": "G1_AND_tlbrk50_v7relaxed",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "v7relaxed"
+   },
+   "hash": "bd4cb51de43e3042"
+  },
+  {
+   "id": "G1_OR_tlbrk50_v7relaxed",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "v7relaxed"
+   },
+   "hash": "052ab7ee9f0266b0"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_v7relaxed",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "v7relaxed"
+   },
+   "hash": "08734537cbf5bc81"
+  },
+  {
+   "id": "G1_AND_tlbrk50_v7and",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "v7and"
+   },
+   "hash": "0a558664d1276052"
+  },
+  {
+   "id": "G1_OR_tlbrk50_v7and",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "v7and"
+   },
+   "hash": "de50a1746191351a"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_v7and",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "v7and"
+   },
+   "hash": "07e1c22d8112fa33"
+  },
+  {
+   "id": "G1_AND_tlbrk50_v1",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "v1"
+   },
+   "hash": "ea9296ab39247712"
+  },
+  {
+   "id": "G1_OR_tlbrk50_v1",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "v1"
+   },
+   "hash": "8d61797162580b60"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_v1",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "v1"
+   },
+   "hash": "62b3d2985d2cd9cb"
+  },
+  {
+   "id": "G1_AND_tlbrk50_v3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "v3"
+   },
+   "hash": "d45e4e1eb3018c64"
+  },
+  {
+   "id": "G1_OR_tlbrk50_v3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "v3"
+   },
+   "hash": "80f96041acde7d36"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_v3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "v3"
+   },
+   "hash": "f228bc13a0b2c9e7"
+  },
+  {
+   "id": "G1_AND_tlbrk50_v6",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "v6"
+   },
+   "hash": "31ea42f74b1eca2c"
+  },
+  {
+   "id": "G1_OR_tlbrk50_v6",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "v6"
+   },
+   "hash": "3cc08423f39ba03a"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_v6",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "v6"
+   },
+   "hash": "252fe0060878272e"
+  },
+  {
+   "id": "G1_AND_tlbrk50_z240",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "z240"
+   },
+   "hash": "62b7a28363e2d3c2"
+  },
+  {
+   "id": "G1_OR_tlbrk50_z240",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "z240"
+   },
+   "hash": "edaae055016b1047"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_z240",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "z240"
+   },
+   "hash": "1c8c1c92ec3371f6"
+  },
+  {
+   "id": "G1_AND_tlbrk50_exrsi",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "exrsi"
+   },
+   "hash": "29f1259526278897"
+  },
+  {
+   "id": "G1_OR_tlbrk50_exrsi",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "exrsi"
+   },
+   "hash": "5d22d4f38f1052a3"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_exrsi",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "exrsi"
+   },
+   "hash": "abffd9ba476bf6e6"
+  },
+  {
+   "id": "G1_AND_tlbrk50_cp",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "cp"
+   },
+   "hash": "636185d3df6a1413"
+  },
+  {
+   "id": "G1_OR_tlbrk50_cp",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "cp"
+   },
+   "hash": "06651ab6cd397e6c"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_cp",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "cp"
+   },
+   "hash": "285a4e3cd034c173"
+  },
+  {
+   "id": "G1_AND_tlbrk50_acfade",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "acfade"
+   },
+   "hash": "e7c6d70e73a5dbab"
+  },
+  {
+   "id": "G1_OR_tlbrk50_acfade",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "acfade"
+   },
+   "hash": "72a1333fd577eaa0"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_acfade",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "acfade"
+   },
+   "hash": "f7cea0b4e9196b17"
+  },
+  {
+   "id": "G1_AND_tlbrk50_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "miimb"
+   },
+   "hash": "3418c3dc0aead7e3"
+  },
+  {
+   "id": "G1_OR_tlbrk50_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "miimb"
+   },
+   "hash": "f4eb5f11d2be9ffd"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "miimb"
+   },
+   "hash": "60c17fc5baed4e29"
+  },
+  {
+   "id": "G1_AND_tlbrk50_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "enperm"
+   },
+   "hash": "5d6380e35430283a"
+  },
+  {
+   "id": "G1_OR_tlbrk50_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "enperm"
+   },
+   "hash": "93f0e16cb0ff3458"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "enperm"
+   },
+   "hash": "30d0177d458c300e"
+  },
+  {
+   "id": "G1_AND_tlbrk50_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "humr"
+   },
+   "hash": "540313f977574507"
+  },
+  {
+   "id": "G1_OR_tlbrk50_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "humr"
+   },
+   "hash": "3b9d6fb0ef4ce3a2"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "humr"
+   },
+   "hash": "ddb7ad474c2bd420"
+  },
+  {
+   "id": "G1_AND_tlbrk50_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "tlbrk50",
+    "b": "mk3"
+   },
+   "hash": "cbcd4ea64b7e22cd"
+  },
+  {
+   "id": "G1_OR_tlbrk50_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "tlbrk50",
+    "b": "mk3"
+   },
+   "hash": "3e851b6445d16121"
+  },
+  {
+   "id": "G1_CONFIRM_tlbrk50_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "tlbrk50",
+    "b": "mk3"
+   },
+   "hash": "152a95088cdd1041"
+  },
+  {
+   "id": "G1_AND_fb25_v7relaxed",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "v7relaxed"
+   },
+   "hash": "22fe51aa4c755334"
+  },
+  {
+   "id": "G1_OR_fb25_v7relaxed",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "v7relaxed"
+   },
+   "hash": "bc50b71300e74353"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_v7relaxed",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "v7relaxed"
+   },
+   "hash": "d0afc67b168eaeee"
+  },
+  {
+   "id": "G1_AND_fb25_v7and",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "v7and"
+   },
+   "hash": "7394796940a1392e"
+  },
+  {
+   "id": "G1_OR_fb25_v7and",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "v7and"
+   },
+   "hash": "09b259f2f2c1b385"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_v7and",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "v7and"
+   },
+   "hash": "eea9b26c8b2d011f"
+  },
+  {
+   "id": "G1_AND_fb25_v1",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "v1"
+   },
+   "hash": "cf95f0ceffc914d3"
+  },
+  {
+   "id": "G1_OR_fb25_v1",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "v1"
+   },
+   "hash": "69bfb6f034902ce6"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_v1",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "v1"
+   },
+   "hash": "169f5a9de3fff021"
+  },
+  {
+   "id": "G1_AND_fb25_v3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "v3"
+   },
+   "hash": "dbae49f21f1519ea"
+  },
+  {
+   "id": "G1_OR_fb25_v3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "v3"
+   },
+   "hash": "752ec097bf57f40c"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_v3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "v3"
+   },
+   "hash": "a9243da347884dad"
+  },
+  {
+   "id": "G1_AND_fb25_v6",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "v6"
+   },
+   "hash": "0a34881fe92d66a7"
+  },
+  {
+   "id": "G1_OR_fb25_v6",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "v6"
+   },
+   "hash": "4d075d821dd6a38e"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_v6",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "v6"
+   },
+   "hash": "8448b426c59c5fbf"
+  },
+  {
+   "id": "G1_AND_fb25_z240",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "z240"
+   },
+   "hash": "f5e81ddb02af7531"
+  },
+  {
+   "id": "G1_OR_fb25_z240",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "z240"
+   },
+   "hash": "06d0081434f1b9d1"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_z240",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "z240"
+   },
+   "hash": "803eafc003159aba"
+  },
+  {
+   "id": "G1_AND_fb25_exrsi",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "exrsi"
+   },
+   "hash": "0b4b1bc47296679b"
+  },
+  {
+   "id": "G1_OR_fb25_exrsi",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "exrsi"
+   },
+   "hash": "6ed5a3900672b1cc"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_exrsi",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "exrsi"
+   },
+   "hash": "1d96b8e230d7ca2b"
+  },
+  {
+   "id": "G1_AND_fb25_cp",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "cp"
+   },
+   "hash": "ef5c59d4a006e69c"
+  },
+  {
+   "id": "G1_OR_fb25_cp",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "cp"
+   },
+   "hash": "27c2c940ab58851a"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_cp",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "cp"
+   },
+   "hash": "ff6fdcbf454b4138"
+  },
+  {
+   "id": "G1_AND_fb25_acfade",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "acfade"
+   },
+   "hash": "e8ff7ce120d5da8b"
+  },
+  {
+   "id": "G1_OR_fb25_acfade",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "acfade"
+   },
+   "hash": "489c0d451b2da343"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_acfade",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "acfade"
+   },
+   "hash": "7078eabe6a27e167"
+  },
+  {
+   "id": "G1_AND_fb25_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "miimb"
+   },
+   "hash": "74c824171a9ff095"
+  },
+  {
+   "id": "G1_OR_fb25_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "miimb"
+   },
+   "hash": "e7239f222e90e17a"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "miimb"
+   },
+   "hash": "d0ae8661f312ba5e"
+  },
+  {
+   "id": "G1_AND_fb25_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "enperm"
+   },
+   "hash": "babcd7361a299294"
+  },
+  {
+   "id": "G1_OR_fb25_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "enperm"
+   },
+   "hash": "e3a949d71585d7c3"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "enperm"
+   },
+   "hash": "9947daf9c05658e8"
+  },
+  {
+   "id": "G1_AND_fb25_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "humr"
+   },
+   "hash": "c962b89b8b09992a"
+  },
+  {
+   "id": "G1_OR_fb25_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "humr"
+   },
+   "hash": "09d810cad851515d"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "humr"
+   },
+   "hash": "0e5fc51fcdef16e2"
+  },
+  {
+   "id": "G1_AND_fb25_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "fb25",
+    "b": "mk3"
+   },
+   "hash": "d45c1fdda4f18e29"
+  },
+  {
+   "id": "G1_OR_fb25_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "fb25",
+    "b": "mk3"
+   },
+   "hash": "6192e9a35906b2e7"
+  },
+  {
+   "id": "G1_CONFIRM_fb25_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "fb25",
+    "b": "mk3"
+   },
+   "hash": "85c3805d52b0579b"
+  },
+  {
+   "id": "G1_AND_v7relaxed_v7and",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "v7and"
+   },
+   "hash": "8b3bceb0b7897c7e"
+  },
+  {
+   "id": "G1_OR_v7relaxed_v7and",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "v7and"
+   },
+   "hash": "cda97866f8065ec7"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_v7and",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "v7and"
+   },
+   "hash": "fdad1d228da2bcf2"
+  },
+  {
+   "id": "G1_AND_v7relaxed_v1",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "v1"
+   },
+   "hash": "8ffc326cfd0b0e4f"
+  },
+  {
+   "id": "G1_OR_v7relaxed_v1",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "v1"
+   },
+   "hash": "88f3d50eec11d57c"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_v1",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "v1"
+   },
+   "hash": "d3e374c2713bb06b"
+  },
+  {
+   "id": "G1_AND_v7relaxed_v3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "v3"
+   },
+   "hash": "676104e754a4759c"
+  },
+  {
+   "id": "G1_OR_v7relaxed_v3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "v3"
+   },
+   "hash": "f9c78083fb742c74"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_v3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "v3"
+   },
+   "hash": "dc68772ef12caabb"
+  },
+  {
+   "id": "G1_AND_v7relaxed_v6",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "v6"
+   },
+   "hash": "d971ae77d513f2b3"
+  },
+  {
+   "id": "G1_OR_v7relaxed_v6",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "v6"
+   },
+   "hash": "88e093f37ab1e942"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_v6",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "v6"
+   },
+   "hash": "e04d38fad35a5149"
+  },
+  {
+   "id": "G1_AND_v7relaxed_z240",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "z240"
+   },
+   "hash": "6fa5e49977f92749"
+  },
+  {
+   "id": "G1_OR_v7relaxed_z240",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "z240"
+   },
+   "hash": "d066b401e46d91c7"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_z240",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "z240"
+   },
+   "hash": "0a5b56e5196b02fa"
+  },
+  {
+   "id": "G1_AND_v7relaxed_exrsi",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "exrsi"
+   },
+   "hash": "c6e8c598a0824cd9"
+  },
+  {
+   "id": "G1_OR_v7relaxed_exrsi",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "exrsi"
+   },
+   "hash": "bbc96d8f23b557dc"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_exrsi",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "exrsi"
+   },
+   "hash": "599d4d8c538b4f3e"
+  },
+  {
+   "id": "G1_AND_v7relaxed_cp",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "cp"
+   },
+   "hash": "e5c1258b2602e45f"
+  },
+  {
+   "id": "G1_OR_v7relaxed_cp",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "cp"
+   },
+   "hash": "ec948515df450b1a"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_cp",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "cp"
+   },
+   "hash": "e70142fecd24d646"
+  },
+  {
+   "id": "G1_AND_v7relaxed_acfade",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "acfade"
+   },
+   "hash": "408a36a0dd81be21"
+  },
+  {
+   "id": "G1_OR_v7relaxed_acfade",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "acfade"
+   },
+   "hash": "811f9217a13e4f1c"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_acfade",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "acfade"
+   },
+   "hash": "6357aaebad19179e"
+  },
+  {
+   "id": "G1_AND_v7relaxed_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "miimb"
+   },
+   "hash": "2974af4d340208d6"
+  },
+  {
+   "id": "G1_OR_v7relaxed_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "miimb"
+   },
+   "hash": "6f35e1a5c3b36ce5"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "miimb"
+   },
+   "hash": "7b145c8bb3553935"
+  },
+  {
+   "id": "G1_AND_v7relaxed_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "enperm"
+   },
+   "hash": "68695236dbb493f2"
+  },
+  {
+   "id": "G1_OR_v7relaxed_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "enperm"
+   },
+   "hash": "ccd5d9b92e401c99"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "enperm"
+   },
+   "hash": "b300e253de55013a"
+  },
+  {
+   "id": "G1_AND_v7relaxed_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "humr"
+   },
+   "hash": "e8045a2c078ee112"
+  },
+  {
+   "id": "G1_OR_v7relaxed_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "humr"
+   },
+   "hash": "f52f10de17953b26"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "humr"
+   },
+   "hash": "8b943eaf030f67af"
+  },
+  {
+   "id": "G1_AND_v7relaxed_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7relaxed",
+    "b": "mk3"
+   },
+   "hash": "a8a2a15fbc2a68a0"
+  },
+  {
+   "id": "G1_OR_v7relaxed_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7relaxed",
+    "b": "mk3"
+   },
+   "hash": "3851829384211588"
+  },
+  {
+   "id": "G1_CONFIRM_v7relaxed_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7relaxed",
+    "b": "mk3"
+   },
+   "hash": "25138a8f89f81cea"
+  },
+  {
+   "id": "G1_AND_v7and_v1",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7and",
+    "b": "v1"
+   },
+   "hash": "ea3ee5d719e70fb1"
+  },
+  {
+   "id": "G1_OR_v7and_v1",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7and",
+    "b": "v1"
+   },
+   "hash": "436a4e39e4abe743"
+  },
+  {
+   "id": "G1_CONFIRM_v7and_v1",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7and",
+    "b": "v1"
+   },
+   "hash": "920a1837eb1cdb31"
+  },
+  {
+   "id": "G1_AND_v7and_v3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7and",
+    "b": "v3"
+   },
+   "hash": "17dfa7da8d70ecb3"
+  },
+  {
+   "id": "G1_OR_v7and_v3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7and",
+    "b": "v3"
+   },
+   "hash": "10ced2c8a496ee9c"
+  },
+  {
+   "id": "G1_CONFIRM_v7and_v3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7and",
+    "b": "v3"
+   },
+   "hash": "f797e9853220f46a"
+  },
+  {
+   "id": "G1_AND_v7and_v6",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7and",
+    "b": "v6"
+   },
+   "hash": "3d6e52450ba32b24"
+  },
+  {
+   "id": "G1_OR_v7and_v6",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7and",
+    "b": "v6"
+   },
+   "hash": "cab260c4655991ea"
+  },
+  {
+   "id": "G1_CONFIRM_v7and_v6",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7and",
+    "b": "v6"
+   },
+   "hash": "aa58f9300ad82d41"
+  },
+  {
+   "id": "G1_AND_v7and_z240",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7and",
+    "b": "z240"
+   },
+   "hash": "4c67daf4c47dab4e"
+  },
+  {
+   "id": "G1_OR_v7and_z240",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7and",
+    "b": "z240"
+   },
+   "hash": "e1c4533d27ce3f20"
+  },
+  {
+   "id": "G1_CONFIRM_v7and_z240",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7and",
+    "b": "z240"
+   },
+   "hash": "1d90a5292eb0f44a"
+  },
+  {
+   "id": "G1_AND_v7and_exrsi",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7and",
+    "b": "exrsi"
+   },
+   "hash": "ce2d20d8d7b0b5b3"
+  },
+  {
+   "id": "G1_OR_v7and_exrsi",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7and",
+    "b": "exrsi"
+   },
+   "hash": "a396425e7286c450"
+  },
+  {
+   "id": "G1_CONFIRM_v7and_exrsi",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7and",
+    "b": "exrsi"
+   },
+   "hash": "bf29f104695feddf"
+  },
+  {
+   "id": "G1_AND_v7and_cp",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7and",
+    "b": "cp"
+   },
+   "hash": "532c50ff844c6bb2"
+  },
+  {
+   "id": "G1_OR_v7and_cp",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7and",
+    "b": "cp"
+   },
+   "hash": "9d6271cee4a65a9d"
+  },
+  {
+   "id": "G1_CONFIRM_v7and_cp",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7and",
+    "b": "cp"
+   },
+   "hash": "f4c35460ca5ee15a"
+  },
+  {
+   "id": "G1_AND_v7and_acfade",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7and",
+    "b": "acfade"
+   },
+   "hash": "97d4e632b06fee4f"
+  },
+  {
+   "id": "G1_OR_v7and_acfade",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7and",
+    "b": "acfade"
+   },
+   "hash": "c46abb4938913cd8"
+  },
+  {
+   "id": "G1_CONFIRM_v7and_acfade",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7and",
+    "b": "acfade"
+   },
+   "hash": "5164d8de7bbb450f"
+  },
+  {
+   "id": "G1_AND_v7and_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7and",
+    "b": "miimb"
+   },
+   "hash": "d6a2710f8164fdf0"
+  },
+  {
+   "id": "G1_OR_v7and_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7and",
+    "b": "miimb"
+   },
+   "hash": "25c6f59b99f441ee"
+  },
+  {
+   "id": "G1_CONFIRM_v7and_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7and",
+    "b": "miimb"
+   },
+   "hash": "fdead7c7aa777b2a"
+  },
+  {
+   "id": "G1_AND_v7and_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7and",
+    "b": "enperm"
+   },
+   "hash": "40beac5782e467c0"
+  },
+  {
+   "id": "G1_OR_v7and_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7and",
+    "b": "enperm"
+   },
+   "hash": "e9f4a70bebb9faa4"
+  },
+  {
+   "id": "G1_CONFIRM_v7and_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7and",
+    "b": "enperm"
+   },
+   "hash": "4bf1f96a4482ed11"
+  },
+  {
+   "id": "G1_AND_v7and_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7and",
+    "b": "humr"
+   },
+   "hash": "d0a74b61a3d12d73"
+  },
+  {
+   "id": "G1_OR_v7and_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7and",
+    "b": "humr"
+   },
+   "hash": "313f7e33c033963e"
+  },
+  {
+   "id": "G1_CONFIRM_v7and_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7and",
+    "b": "humr"
+   },
+   "hash": "dce7370f5376c89f"
+  },
+  {
+   "id": "G1_AND_v7and_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v7and",
+    "b": "mk3"
+   },
+   "hash": "cf7e94a63b34ef78"
+  },
+  {
+   "id": "G1_OR_v7and_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v7and",
+    "b": "mk3"
+   },
+   "hash": "b3455b86aefc7986"
+  },
+  {
+   "id": "G1_CONFIRM_v7and_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v7and",
+    "b": "mk3"
+   },
+   "hash": "d53e5bff68d08f26"
+  },
+  {
+   "id": "G1_AND_v1_v3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v1",
+    "b": "v3"
+   },
+   "hash": "482507208e4dda2f"
+  },
+  {
+   "id": "G1_OR_v1_v3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v1",
+    "b": "v3"
+   },
+   "hash": "e0a1420abf099168"
+  },
+  {
+   "id": "G1_CONFIRM_v1_v3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v1",
+    "b": "v3"
+   },
+   "hash": "1bc0699e1fe64988"
+  },
+  {
+   "id": "G1_AND_v1_v6",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v1",
+    "b": "v6"
+   },
+   "hash": "f7fecdb47b9c1e96"
+  },
+  {
+   "id": "G1_OR_v1_v6",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v1",
+    "b": "v6"
+   },
+   "hash": "8a3ff976faaa22b2"
+  },
+  {
+   "id": "G1_CONFIRM_v1_v6",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v1",
+    "b": "v6"
+   },
+   "hash": "9d4d857745796313"
+  },
+  {
+   "id": "G1_AND_v1_z240",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v1",
+    "b": "z240"
+   },
+   "hash": "8061f171e81bc73e"
+  },
+  {
+   "id": "G1_OR_v1_z240",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v1",
+    "b": "z240"
+   },
+   "hash": "15ce4a9ac08c8377"
+  },
+  {
+   "id": "G1_CONFIRM_v1_z240",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v1",
+    "b": "z240"
+   },
+   "hash": "a46b255773929a46"
+  },
+  {
+   "id": "G1_AND_v1_exrsi",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v1",
+    "b": "exrsi"
+   },
+   "hash": "3dcb63047110c0c1"
+  },
+  {
+   "id": "G1_OR_v1_exrsi",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v1",
+    "b": "exrsi"
+   },
+   "hash": "3d587eec549b5f58"
+  },
+  {
+   "id": "G1_CONFIRM_v1_exrsi",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v1",
+    "b": "exrsi"
+   },
+   "hash": "54d41fddbed86f14"
+  },
+  {
+   "id": "G1_AND_v1_cp",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v1",
+    "b": "cp"
+   },
+   "hash": "06822fe2066d7d44"
+  },
+  {
+   "id": "G1_OR_v1_cp",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v1",
+    "b": "cp"
+   },
+   "hash": "8754aae391876077"
+  },
+  {
+   "id": "G1_CONFIRM_v1_cp",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v1",
+    "b": "cp"
+   },
+   "hash": "2fafc840210d91cb"
+  },
+  {
+   "id": "G1_AND_v1_acfade",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v1",
+    "b": "acfade"
+   },
+   "hash": "866ca633d5f2ed15"
+  },
+  {
+   "id": "G1_OR_v1_acfade",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v1",
+    "b": "acfade"
+   },
+   "hash": "f5b32f2da3315af3"
+  },
+  {
+   "id": "G1_CONFIRM_v1_acfade",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v1",
+    "b": "acfade"
+   },
+   "hash": "35ba7726a635ef05"
+  },
+  {
+   "id": "G1_AND_v1_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v1",
+    "b": "miimb"
+   },
+   "hash": "b368ee7cf327ffbb"
+  },
+  {
+   "id": "G1_OR_v1_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v1",
+    "b": "miimb"
+   },
+   "hash": "5b01b3eb8fec9619"
+  },
+  {
+   "id": "G1_CONFIRM_v1_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v1",
+    "b": "miimb"
+   },
+   "hash": "53df9357bba08d91"
+  },
+  {
+   "id": "G1_AND_v1_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v1",
+    "b": "enperm"
+   },
+   "hash": "f064f97f57419a21"
+  },
+  {
+   "id": "G1_OR_v1_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v1",
+    "b": "enperm"
+   },
+   "hash": "cf65611d9ef854b8"
+  },
+  {
+   "id": "G1_CONFIRM_v1_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v1",
+    "b": "enperm"
+   },
+   "hash": "b7161dbba84ea942"
+  },
+  {
+   "id": "G1_AND_v1_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v1",
+    "b": "humr"
+   },
+   "hash": "699a8acc40d8662a"
+  },
+  {
+   "id": "G1_OR_v1_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v1",
+    "b": "humr"
+   },
+   "hash": "3fb9e383b66c4c0f"
+  },
+  {
+   "id": "G1_CONFIRM_v1_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v1",
+    "b": "humr"
+   },
+   "hash": "1892ebbf29aca17f"
+  },
+  {
+   "id": "G1_AND_v1_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v1",
+    "b": "mk3"
+   },
+   "hash": "446d21511edbd1a0"
+  },
+  {
+   "id": "G1_OR_v1_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v1",
+    "b": "mk3"
+   },
+   "hash": "bd8083e72e7c09a2"
+  },
+  {
+   "id": "G1_CONFIRM_v1_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v1",
+    "b": "mk3"
+   },
+   "hash": "5f484dc02e8fb2af"
+  },
+  {
+   "id": "G1_AND_v3_v6",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v3",
+    "b": "v6"
+   },
+   "hash": "64d240c1a171aabb"
+  },
+  {
+   "id": "G1_OR_v3_v6",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v3",
+    "b": "v6"
+   },
+   "hash": "e834cf3c48932aac"
+  },
+  {
+   "id": "G1_CONFIRM_v3_v6",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v3",
+    "b": "v6"
+   },
+   "hash": "f923920a9652853e"
+  },
+  {
+   "id": "G1_AND_v3_z240",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v3",
+    "b": "z240"
+   },
+   "hash": "7565106e484ba6a8"
+  },
+  {
+   "id": "G1_OR_v3_z240",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v3",
+    "b": "z240"
+   },
+   "hash": "df66ebef80c83974"
+  },
+  {
+   "id": "G1_CONFIRM_v3_z240",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v3",
+    "b": "z240"
+   },
+   "hash": "2ec9561a489a3d93"
+  },
+  {
+   "id": "G1_AND_v3_exrsi",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v3",
+    "b": "exrsi"
+   },
+   "hash": "355d2a66894ee911"
+  },
+  {
+   "id": "G1_OR_v3_exrsi",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v3",
+    "b": "exrsi"
+   },
+   "hash": "af5e546e78220426"
+  },
+  {
+   "id": "G1_CONFIRM_v3_exrsi",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v3",
+    "b": "exrsi"
+   },
+   "hash": "90754cceadeabe44"
+  },
+  {
+   "id": "G1_AND_v3_cp",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v3",
+    "b": "cp"
+   },
+   "hash": "0ed96351f7faba5e"
+  },
+  {
+   "id": "G1_OR_v3_cp",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v3",
+    "b": "cp"
+   },
+   "hash": "db78b68bce1bf4d1"
+  },
+  {
+   "id": "G1_CONFIRM_v3_cp",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v3",
+    "b": "cp"
+   },
+   "hash": "ae47d005bb785a35"
+  },
+  {
+   "id": "G1_AND_v3_acfade",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v3",
+    "b": "acfade"
+   },
+   "hash": "386c84c3aa195ed1"
+  },
+  {
+   "id": "G1_OR_v3_acfade",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v3",
+    "b": "acfade"
+   },
+   "hash": "60b98cbe418dc5fe"
+  },
+  {
+   "id": "G1_CONFIRM_v3_acfade",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v3",
+    "b": "acfade"
+   },
+   "hash": "793e7cc9addce7d4"
+  },
+  {
+   "id": "G1_AND_v3_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v3",
+    "b": "miimb"
+   },
+   "hash": "a023b37577eee9ee"
+  },
+  {
+   "id": "G1_OR_v3_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v3",
+    "b": "miimb"
+   },
+   "hash": "3df21392c242ab27"
+  },
+  {
+   "id": "G1_CONFIRM_v3_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v3",
+    "b": "miimb"
+   },
+   "hash": "ca470468eaa4d7b2"
+  },
+  {
+   "id": "G1_AND_v3_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v3",
+    "b": "enperm"
+   },
+   "hash": "64e821b3d9994988"
+  },
+  {
+   "id": "G1_OR_v3_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v3",
+    "b": "enperm"
+   },
+   "hash": "6e01666845983772"
+  },
+  {
+   "id": "G1_CONFIRM_v3_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v3",
+    "b": "enperm"
+   },
+   "hash": "f5cb628ebafd12ff"
+  },
+  {
+   "id": "G1_AND_v3_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v3",
+    "b": "humr"
+   },
+   "hash": "2c063a373bc8fc51"
+  },
+  {
+   "id": "G1_OR_v3_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v3",
+    "b": "humr"
+   },
+   "hash": "4a099cec0b609468"
+  },
+  {
+   "id": "G1_CONFIRM_v3_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v3",
+    "b": "humr"
+   },
+   "hash": "fe554b06c7ca01f2"
+  },
+  {
+   "id": "G1_AND_v3_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v3",
+    "b": "mk3"
+   },
+   "hash": "877e05702df08ad7"
+  },
+  {
+   "id": "G1_OR_v3_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v3",
+    "b": "mk3"
+   },
+   "hash": "fc8946356055f609"
+  },
+  {
+   "id": "G1_CONFIRM_v3_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v3",
+    "b": "mk3"
+   },
+   "hash": "c40d6ecfe3143aaf"
+  },
+  {
+   "id": "G1_AND_v6_z240",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v6",
+    "b": "z240"
+   },
+   "hash": "6284168e919d54ea"
+  },
+  {
+   "id": "G1_OR_v6_z240",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v6",
+    "b": "z240"
+   },
+   "hash": "837c7554d8ceacfe"
+  },
+  {
+   "id": "G1_CONFIRM_v6_z240",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v6",
+    "b": "z240"
+   },
+   "hash": "dac6cd30d5a8cfe7"
+  },
+  {
+   "id": "G1_AND_v6_exrsi",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v6",
+    "b": "exrsi"
+   },
+   "hash": "fa56dada77f1c01d"
+  },
+  {
+   "id": "G1_OR_v6_exrsi",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v6",
+    "b": "exrsi"
+   },
+   "hash": "6d337a47a2757966"
+  },
+  {
+   "id": "G1_CONFIRM_v6_exrsi",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v6",
+    "b": "exrsi"
+   },
+   "hash": "a1763b39f4dd9883"
+  },
+  {
+   "id": "G1_AND_v6_cp",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v6",
+    "b": "cp"
+   },
+   "hash": "fa57740dd15e0cb9"
+  },
+  {
+   "id": "G1_OR_v6_cp",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v6",
+    "b": "cp"
+   },
+   "hash": "4413e2910970a88a"
+  },
+  {
+   "id": "G1_CONFIRM_v6_cp",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v6",
+    "b": "cp"
+   },
+   "hash": "c1c8a1dc289cc709"
+  },
+  {
+   "id": "G1_AND_v6_acfade",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v6",
+    "b": "acfade"
+   },
+   "hash": "bb772a1b2de410bc"
+  },
+  {
+   "id": "G1_OR_v6_acfade",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v6",
+    "b": "acfade"
+   },
+   "hash": "ea5c590a88f2669d"
+  },
+  {
+   "id": "G1_CONFIRM_v6_acfade",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v6",
+    "b": "acfade"
+   },
+   "hash": "edf43335a7bd5e9e"
+  },
+  {
+   "id": "G1_AND_v6_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v6",
+    "b": "miimb"
+   },
+   "hash": "11d35cfd303c1a38"
+  },
+  {
+   "id": "G1_OR_v6_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v6",
+    "b": "miimb"
+   },
+   "hash": "2687534249cef455"
+  },
+  {
+   "id": "G1_CONFIRM_v6_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v6",
+    "b": "miimb"
+   },
+   "hash": "4da7e125e4aebe7f"
+  },
+  {
+   "id": "G1_AND_v6_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v6",
+    "b": "enperm"
+   },
+   "hash": "026eb702fc68e26c"
+  },
+  {
+   "id": "G1_OR_v6_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v6",
+    "b": "enperm"
+   },
+   "hash": "191feecca4dfed53"
+  },
+  {
+   "id": "G1_CONFIRM_v6_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v6",
+    "b": "enperm"
+   },
+   "hash": "f194416f0074cb0b"
+  },
+  {
+   "id": "G1_AND_v6_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v6",
+    "b": "humr"
+   },
+   "hash": "326f33136587968d"
+  },
+  {
+   "id": "G1_OR_v6_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v6",
+    "b": "humr"
+   },
+   "hash": "bcacd87ef4c91cc5"
+  },
+  {
+   "id": "G1_CONFIRM_v6_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v6",
+    "b": "humr"
+   },
+   "hash": "5fc6e129e1d58684"
+  },
+  {
+   "id": "G1_AND_v6_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "v6",
+    "b": "mk3"
+   },
+   "hash": "3b8aaa666cdad31c"
+  },
+  {
+   "id": "G1_OR_v6_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "v6",
+    "b": "mk3"
+   },
+   "hash": "8516515bcef55731"
+  },
+  {
+   "id": "G1_CONFIRM_v6_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "v6",
+    "b": "mk3"
+   },
+   "hash": "c95270608f5aee95"
+  },
+  {
+   "id": "G1_AND_z240_exrsi",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "z240",
+    "b": "exrsi"
+   },
+   "hash": "9f1fce0e2d4f0d73"
+  },
+  {
+   "id": "G1_OR_z240_exrsi",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "z240",
+    "b": "exrsi"
+   },
+   "hash": "d136b3939a2b60a0"
+  },
+  {
+   "id": "G1_CONFIRM_z240_exrsi",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "z240",
+    "b": "exrsi"
+   },
+   "hash": "286a52a1e3041939"
+  },
+  {
+   "id": "G1_AND_z240_cp",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "z240",
+    "b": "cp"
+   },
+   "hash": "36184daae36f01ed"
+  },
+  {
+   "id": "G1_OR_z240_cp",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "z240",
+    "b": "cp"
+   },
+   "hash": "f4b9a18027270e53"
+  },
+  {
+   "id": "G1_CONFIRM_z240_cp",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "z240",
+    "b": "cp"
+   },
+   "hash": "31cb7a2b133501a6"
+  },
+  {
+   "id": "G1_AND_z240_acfade",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "z240",
+    "b": "acfade"
+   },
+   "hash": "658741dd27542bec"
+  },
+  {
+   "id": "G1_OR_z240_acfade",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "z240",
+    "b": "acfade"
+   },
+   "hash": "1eee4961077b11b5"
+  },
+  {
+   "id": "G1_CONFIRM_z240_acfade",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "z240",
+    "b": "acfade"
+   },
+   "hash": "016e931dade2e209"
+  },
+  {
+   "id": "G1_AND_z240_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "z240",
+    "b": "miimb"
+   },
+   "hash": "3e780022accc0a99"
+  },
+  {
+   "id": "G1_OR_z240_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "z240",
+    "b": "miimb"
+   },
+   "hash": "314fa731740aaaa2"
+  },
+  {
+   "id": "G1_CONFIRM_z240_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "z240",
+    "b": "miimb"
+   },
+   "hash": "0f07edd458cecb86"
+  },
+  {
+   "id": "G1_AND_z240_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "z240",
+    "b": "enperm"
+   },
+   "hash": "e37cc47e95ba0167"
+  },
+  {
+   "id": "G1_OR_z240_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "z240",
+    "b": "enperm"
+   },
+   "hash": "b8accc2da0b1e80e"
+  },
+  {
+   "id": "G1_CONFIRM_z240_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "z240",
+    "b": "enperm"
+   },
+   "hash": "b043bb1d4225f7ca"
+  },
+  {
+   "id": "G1_AND_z240_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "z240",
+    "b": "humr"
+   },
+   "hash": "ca44c127cc96382f"
+  },
+  {
+   "id": "G1_OR_z240_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "z240",
+    "b": "humr"
+   },
+   "hash": "8b151fb107b1e185"
+  },
+  {
+   "id": "G1_CONFIRM_z240_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "z240",
+    "b": "humr"
+   },
+   "hash": "081e0740fc772e75"
+  },
+  {
+   "id": "G1_AND_z240_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "z240",
+    "b": "mk3"
+   },
+   "hash": "01e116395309235c"
+  },
+  {
+   "id": "G1_OR_z240_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "z240",
+    "b": "mk3"
+   },
+   "hash": "0d5c474b8570eddd"
+  },
+  {
+   "id": "G1_CONFIRM_z240_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "z240",
+    "b": "mk3"
+   },
+   "hash": "52a4ce3c23a005af"
+  },
+  {
+   "id": "G1_AND_exrsi_cp",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "exrsi",
+    "b": "cp"
+   },
+   "hash": "41d1ac1747462268"
+  },
+  {
+   "id": "G1_OR_exrsi_cp",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "exrsi",
+    "b": "cp"
+   },
+   "hash": "cc1faa3772fa58b3"
+  },
+  {
+   "id": "G1_CONFIRM_exrsi_cp",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "exrsi",
+    "b": "cp"
+   },
+   "hash": "3aa139e23514a2be"
+  },
+  {
+   "id": "G1_AND_exrsi_acfade",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "exrsi",
+    "b": "acfade"
+   },
+   "hash": "86a8d94a4bfc6acc"
+  },
+  {
+   "id": "G1_OR_exrsi_acfade",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "exrsi",
+    "b": "acfade"
+   },
+   "hash": "304a1146968f4b82"
+  },
+  {
+   "id": "G1_CONFIRM_exrsi_acfade",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "exrsi",
+    "b": "acfade"
+   },
+   "hash": "006a529fa7418d12"
+  },
+  {
+   "id": "G1_AND_exrsi_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "exrsi",
+    "b": "miimb"
+   },
+   "hash": "95e99cf314973155"
+  },
+  {
+   "id": "G1_OR_exrsi_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "exrsi",
+    "b": "miimb"
+   },
+   "hash": "2d32f91cc700ab21"
+  },
+  {
+   "id": "G1_CONFIRM_exrsi_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "exrsi",
+    "b": "miimb"
+   },
+   "hash": "2f0b2f718c3f23ea"
+  },
+  {
+   "id": "G1_AND_exrsi_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "exrsi",
+    "b": "enperm"
+   },
+   "hash": "2e068365ea5668cb"
+  },
+  {
+   "id": "G1_OR_exrsi_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "exrsi",
+    "b": "enperm"
+   },
+   "hash": "7eb77cc9f607f08a"
+  },
+  {
+   "id": "G1_CONFIRM_exrsi_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "exrsi",
+    "b": "enperm"
+   },
+   "hash": "72b95d02fe9039fa"
+  },
+  {
+   "id": "G1_AND_exrsi_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "exrsi",
+    "b": "humr"
+   },
+   "hash": "e1fcc213ac4b1c7a"
+  },
+  {
+   "id": "G1_OR_exrsi_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "exrsi",
+    "b": "humr"
+   },
+   "hash": "0b5664cb6138d71d"
+  },
+  {
+   "id": "G1_CONFIRM_exrsi_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "exrsi",
+    "b": "humr"
+   },
+   "hash": "4796b44d6442741b"
+  },
+  {
+   "id": "G1_AND_exrsi_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "exrsi",
+    "b": "mk3"
+   },
+   "hash": "0df13c8ec18f0da1"
+  },
+  {
+   "id": "G1_OR_exrsi_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "exrsi",
+    "b": "mk3"
+   },
+   "hash": "36c38ab076534c26"
+  },
+  {
+   "id": "G1_CONFIRM_exrsi_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "exrsi",
+    "b": "mk3"
+   },
+   "hash": "ee3f5cac92b287b0"
+  },
+  {
+   "id": "G1_AND_cp_acfade",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "cp",
+    "b": "acfade"
+   },
+   "hash": "a8ca449eecdf5575"
+  },
+  {
+   "id": "G1_OR_cp_acfade",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "cp",
+    "b": "acfade"
+   },
+   "hash": "8e7717462e58052b"
+  },
+  {
+   "id": "G1_CONFIRM_cp_acfade",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "cp",
+    "b": "acfade"
+   },
+   "hash": "a01ed6d963663746"
+  },
+  {
+   "id": "G1_AND_cp_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "cp",
+    "b": "miimb"
+   },
+   "hash": "fdafc053a035a141"
+  },
+  {
+   "id": "G1_OR_cp_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "cp",
+    "b": "miimb"
+   },
+   "hash": "5d0b724c30aad54d"
+  },
+  {
+   "id": "G1_CONFIRM_cp_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "cp",
+    "b": "miimb"
+   },
+   "hash": "5399a3462b251fa1"
+  },
+  {
+   "id": "G1_AND_cp_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "cp",
+    "b": "enperm"
+   },
+   "hash": "a0e37360e6fdb53d"
+  },
+  {
+   "id": "G1_OR_cp_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "cp",
+    "b": "enperm"
+   },
+   "hash": "941842b332babae2"
+  },
+  {
+   "id": "G1_CONFIRM_cp_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "cp",
+    "b": "enperm"
+   },
+   "hash": "a527f970ad310426"
+  },
+  {
+   "id": "G1_AND_cp_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "cp",
+    "b": "humr"
+   },
+   "hash": "12aa68ddf482c047"
+  },
+  {
+   "id": "G1_OR_cp_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "cp",
+    "b": "humr"
+   },
+   "hash": "e28b086ea6824741"
+  },
+  {
+   "id": "G1_CONFIRM_cp_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "cp",
+    "b": "humr"
+   },
+   "hash": "85b8c3d9f51ac8d3"
+  },
+  {
+   "id": "G1_AND_cp_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "cp",
+    "b": "mk3"
+   },
+   "hash": "9a99551d96853b3d"
+  },
+  {
+   "id": "G1_OR_cp_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "cp",
+    "b": "mk3"
+   },
+   "hash": "baf3cb7646f67146"
+  },
+  {
+   "id": "G1_CONFIRM_cp_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "cp",
+    "b": "mk3"
+   },
+   "hash": "7e1f69b74cbaad9e"
+  },
+  {
+   "id": "G1_AND_acfade_miimb",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "acfade",
+    "b": "miimb"
+   },
+   "hash": "268e6e8cc9faa9bb"
+  },
+  {
+   "id": "G1_OR_acfade_miimb",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "acfade",
+    "b": "miimb"
+   },
+   "hash": "40db7b66817a6a14"
+  },
+  {
+   "id": "G1_CONFIRM_acfade_miimb",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "acfade",
+    "b": "miimb"
+   },
+   "hash": "46bb471cc2960d5f"
+  },
+  {
+   "id": "G1_AND_acfade_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "acfade",
+    "b": "enperm"
+   },
+   "hash": "fa78af83ad10a90f"
+  },
+  {
+   "id": "G1_OR_acfade_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "acfade",
+    "b": "enperm"
+   },
+   "hash": "1a21df5811579933"
+  },
+  {
+   "id": "G1_CONFIRM_acfade_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "acfade",
+    "b": "enperm"
+   },
+   "hash": "fee3dc29c149f591"
+  },
+  {
+   "id": "G1_AND_acfade_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "acfade",
+    "b": "humr"
+   },
+   "hash": "3549d4fd8de84b03"
+  },
+  {
+   "id": "G1_OR_acfade_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "acfade",
+    "b": "humr"
+   },
+   "hash": "ddd12175b6670ec8"
+  },
+  {
+   "id": "G1_CONFIRM_acfade_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "acfade",
+    "b": "humr"
+   },
+   "hash": "052c0c3d59e3cbf2"
+  },
+  {
+   "id": "G1_AND_acfade_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "acfade",
+    "b": "mk3"
+   },
+   "hash": "51ab9922348302a8"
+  },
+  {
+   "id": "G1_OR_acfade_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "acfade",
+    "b": "mk3"
+   },
+   "hash": "d29d02c9e61607e7"
+  },
+  {
+   "id": "G1_CONFIRM_acfade_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "acfade",
+    "b": "mk3"
+   },
+   "hash": "c4beed99645d5b0e"
+  },
+  {
+   "id": "G1_AND_miimb_enperm",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "miimb",
+    "b": "enperm"
+   },
+   "hash": "65333515f0aca2d9"
+  },
+  {
+   "id": "G1_OR_miimb_enperm",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "miimb",
+    "b": "enperm"
+   },
+   "hash": "933663a02d203168"
+  },
+  {
+   "id": "G1_CONFIRM_miimb_enperm",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "miimb",
+    "b": "enperm"
+   },
+   "hash": "09b4c3470e60e2be"
+  },
+  {
+   "id": "G1_AND_miimb_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "miimb",
+    "b": "humr"
+   },
+   "hash": "acadd7ca57af13f4"
+  },
+  {
+   "id": "G1_OR_miimb_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "miimb",
+    "b": "humr"
+   },
+   "hash": "6f14e25b25781dac"
+  },
+  {
+   "id": "G1_CONFIRM_miimb_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "miimb",
+    "b": "humr"
+   },
+   "hash": "080d9a16330e23dc"
+  },
+  {
+   "id": "G1_AND_miimb_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "miimb",
+    "b": "mk3"
+   },
+   "hash": "deb63144342dd9b1"
+  },
+  {
+   "id": "G1_OR_miimb_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "miimb",
+    "b": "mk3"
+   },
+   "hash": "c188a28d1accba3a"
+  },
+  {
+   "id": "G1_CONFIRM_miimb_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "miimb",
+    "b": "mk3"
+   },
+   "hash": "4e247653a08945c3"
+  },
+  {
+   "id": "G1_AND_enperm_humr",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "enperm",
+    "b": "humr"
+   },
+   "hash": "1e3c97834a43cf08"
+  },
+  {
+   "id": "G1_OR_enperm_humr",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "enperm",
+    "b": "humr"
+   },
+   "hash": "3bc4333f8082dd4a"
+  },
+  {
+   "id": "G1_CONFIRM_enperm_humr",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "enperm",
+    "b": "humr"
+   },
+   "hash": "578835b0942200dc"
+  },
+  {
+   "id": "G1_AND_enperm_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "enperm",
+    "b": "mk3"
+   },
+   "hash": "bf9266d4dcfd2c92"
+  },
+  {
+   "id": "G1_OR_enperm_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "enperm",
+    "b": "mk3"
+   },
+   "hash": "a0de9e868fc6ec53"
+  },
+  {
+   "id": "G1_CONFIRM_enperm_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "enperm",
+    "b": "mk3"
+   },
+   "hash": "12b5dc6a14c885aa"
+  },
+  {
+   "id": "G1_AND_humr_mk3",
+   "op": "AND",
+   "spec": {
+    "op": "AND",
+    "a": "humr",
+    "b": "mk3"
+   },
+   "hash": "650193647febb559"
+  },
+  {
+   "id": "G1_OR_humr_mk3",
+   "op": "OR",
+   "spec": {
+    "op": "OR",
+    "a": "humr",
+    "b": "mk3"
+   },
+   "hash": "a6d65590e7fa0255"
+  },
+  {
+   "id": "G1_CONFIRM_humr_mk3",
+   "op": "CONFIRM",
+   "spec": {
+    "op": "CONFIRM",
+    "a": "humr",
+    "b": "mk3"
+   },
+   "hash": "cbb68db65755b25e"
+  },
+  {
+   "id": "G1_GATE_tlbrk70_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk70",
+    "m": "enlow"
+   },
+   "hash": "bc195f145f074f61"
+  },
+  {
+   "id": "G1_GATE_tlbrk70_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk70",
+    "m": "hurstMR"
+   },
+   "hash": "08857617749358b8"
+  },
+  {
+   "id": "G1_GATE_tlbrk70_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk70",
+    "m": "cpActive"
+   },
+   "hash": "bac76ba7ec772755"
+  },
+  {
+   "id": "G1_GATE_tlbrk70_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk70",
+    "m": "burst"
+   },
+   "hash": "e2310b26519adad5"
+  },
+  {
+   "id": "G1_GATE_tlbrk70_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk70",
+    "m": "h11_18"
+   },
+   "hash": "6ee05cbc473a17d6"
+  },
+  {
+   "id": "G1_GATE_tlbrk70_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk70",
+    "m": "lowvol"
+   },
+   "hash": "e0b3af6cbc1b5f52"
+  },
+  {
+   "id": "G1_GATE_tlbrk50_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk50",
+    "m": "enlow"
+   },
+   "hash": "812c10530cbcf1d1"
+  },
+  {
+   "id": "G1_GATE_tlbrk50_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk50",
+    "m": "hurstMR"
+   },
+   "hash": "1dee5c45eb79be96"
+  },
+  {
+   "id": "G1_GATE_tlbrk50_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk50",
+    "m": "cpActive"
+   },
+   "hash": "92d57ef4943e2c34"
+  },
+  {
+   "id": "G1_GATE_tlbrk50_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk50",
+    "m": "burst"
+   },
+   "hash": "9dd009b708567f97"
+  },
+  {
+   "id": "G1_GATE_tlbrk50_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk50",
+    "m": "h11_18"
+   },
+   "hash": "858485c196074057"
+  },
+  {
+   "id": "G1_GATE_tlbrk50_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "tlbrk50",
+    "m": "lowvol"
+   },
+   "hash": "0f8e6890fc79237e"
+  },
+  {
+   "id": "G1_GATE_fb25_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "fb25",
+    "m": "enlow"
+   },
+   "hash": "0d3bab61a4297760"
+  },
+  {
+   "id": "G1_GATE_fb25_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "fb25",
+    "m": "hurstMR"
+   },
+   "hash": "29d9f70119b94399"
+  },
+  {
+   "id": "G1_GATE_fb25_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "fb25",
+    "m": "cpActive"
+   },
+   "hash": "9cf83c21edc56066"
+  },
+  {
+   "id": "G1_GATE_fb25_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "fb25",
+    "m": "burst"
+   },
+   "hash": "de4134b4d175bd9b"
+  },
+  {
+   "id": "G1_GATE_fb25_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "fb25",
+    "m": "h11_18"
+   },
+   "hash": "f4d82351bf029457"
+  },
+  {
+   "id": "G1_GATE_fb25_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "fb25",
+    "m": "lowvol"
+   },
+   "hash": "eca283e461dec14c"
+  },
+  {
+   "id": "G1_GATE_v7relaxed_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7relaxed",
+    "m": "enlow"
+   },
+   "hash": "0b2b203d304d5cb1"
+  },
+  {
+   "id": "G1_GATE_v7relaxed_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7relaxed",
+    "m": "hurstMR"
+   },
+   "hash": "79b74de8891772aa"
+  },
+  {
+   "id": "G1_GATE_v7relaxed_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7relaxed",
+    "m": "cpActive"
+   },
+   "hash": "8554fa0edc7e8cf2"
+  },
+  {
+   "id": "G1_GATE_v7relaxed_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7relaxed",
+    "m": "burst"
+   },
+   "hash": "e4e640023d016137"
+  },
+  {
+   "id": "G1_GATE_v7relaxed_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7relaxed",
+    "m": "h11_18"
+   },
+   "hash": "c9c14aa4f736f72a"
+  },
+  {
+   "id": "G1_GATE_v7relaxed_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7relaxed",
+    "m": "lowvol"
+   },
+   "hash": "0432def32608e714"
+  },
+  {
+   "id": "G1_GATE_v7and_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7and",
+    "m": "enlow"
+   },
+   "hash": "dff74a30e3278f61"
+  },
+  {
+   "id": "G1_GATE_v7and_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7and",
+    "m": "hurstMR"
+   },
+   "hash": "a89ba4a507a66f6a"
+  },
+  {
+   "id": "G1_GATE_v7and_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7and",
+    "m": "cpActive"
+   },
+   "hash": "c6c3d308ce3962ce"
+  },
+  {
+   "id": "G1_GATE_v7and_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7and",
+    "m": "burst"
+   },
+   "hash": "8c77a4347b6ce910"
+  },
+  {
+   "id": "G1_GATE_v7and_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7and",
+    "m": "h11_18"
+   },
+   "hash": "7792fa407d1f6ddd"
+  },
+  {
+   "id": "G1_GATE_v7and_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v7and",
+    "m": "lowvol"
+   },
+   "hash": "64639b39b4573b74"
+  },
+  {
+   "id": "G1_GATE_v1_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v1",
+    "m": "enlow"
+   },
+   "hash": "2cc6a5826f2f7985"
+  },
+  {
+   "id": "G1_GATE_v1_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v1",
+    "m": "hurstMR"
+   },
+   "hash": "3cd8b60760f359c3"
+  },
+  {
+   "id": "G1_GATE_v1_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v1",
+    "m": "cpActive"
+   },
+   "hash": "ab414d80be5d2731"
+  },
+  {
+   "id": "G1_GATE_v1_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v1",
+    "m": "burst"
+   },
+   "hash": "f309c1848d470e32"
+  },
+  {
+   "id": "G1_GATE_v1_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v1",
+    "m": "h11_18"
+   },
+   "hash": "5d1c1968b19e6b44"
+  },
+  {
+   "id": "G1_GATE_v1_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v1",
+    "m": "lowvol"
+   },
+   "hash": "441b7ddab56f8d07"
+  },
+  {
+   "id": "G1_GATE_v3_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v3",
+    "m": "enlow"
+   },
+   "hash": "c99c91c989d57668"
+  },
+  {
+   "id": "G1_GATE_v3_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v3",
+    "m": "hurstMR"
+   },
+   "hash": "8427b1f739f4e7a1"
+  },
+  {
+   "id": "G1_GATE_v3_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v3",
+    "m": "cpActive"
+   },
+   "hash": "4e688fc14e16e54b"
+  },
+  {
+   "id": "G1_GATE_v3_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v3",
+    "m": "burst"
+   },
+   "hash": "21590bfed7c88346"
+  },
+  {
+   "id": "G1_GATE_v3_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v3",
+    "m": "h11_18"
+   },
+   "hash": "a168e5fbcd8ab36a"
+  },
+  {
+   "id": "G1_GATE_v3_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v3",
+    "m": "lowvol"
+   },
+   "hash": "35a97ccd3e3f8f04"
+  },
+  {
+   "id": "G1_GATE_v6_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v6",
+    "m": "enlow"
+   },
+   "hash": "e310571065bae76e"
+  },
+  {
+   "id": "G1_GATE_v6_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v6",
+    "m": "hurstMR"
+   },
+   "hash": "25a7426e56150b57"
+  },
+  {
+   "id": "G1_GATE_v6_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v6",
+    "m": "cpActive"
+   },
+   "hash": "c27e1b6cab8de23b"
+  },
+  {
+   "id": "G1_GATE_v6_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v6",
+    "m": "burst"
+   },
+   "hash": "5a19d7e67b375c9f"
+  },
+  {
+   "id": "G1_GATE_v6_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v6",
+    "m": "h11_18"
+   },
+   "hash": "ad94d1b04d738520"
+  },
+  {
+   "id": "G1_GATE_v6_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "v6",
+    "m": "lowvol"
+   },
+   "hash": "db68df30ad627a61"
+  },
+  {
+   "id": "G1_GATE_z240_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "z240",
+    "m": "enlow"
+   },
+   "hash": "ae0f84ef1814f68f"
+  },
+  {
+   "id": "G1_GATE_z240_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "z240",
+    "m": "hurstMR"
+   },
+   "hash": "a83a72ccbfaf887a"
+  },
+  {
+   "id": "G1_GATE_z240_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "z240",
+    "m": "cpActive"
+   },
+   "hash": "432926a60b71ba53"
+  },
+  {
+   "id": "G1_GATE_z240_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "z240",
+    "m": "burst"
+   },
+   "hash": "2975b4de86f27693"
+  },
+  {
+   "id": "G1_GATE_z240_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "z240",
+    "m": "h11_18"
+   },
+   "hash": "c7755ad5ef34d576"
+  },
+  {
+   "id": "G1_GATE_z240_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "z240",
+    "m": "lowvol"
+   },
+   "hash": "b1556cdccdf575bd"
+  },
+  {
+   "id": "G1_GATE_exrsi_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "exrsi",
+    "m": "enlow"
+   },
+   "hash": "ad4e3948995204d4"
+  },
+  {
+   "id": "G1_GATE_exrsi_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "exrsi",
+    "m": "hurstMR"
+   },
+   "hash": "57ef8853b7e266a0"
+  },
+  {
+   "id": "G1_GATE_exrsi_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "exrsi",
+    "m": "cpActive"
+   },
+   "hash": "bf0f7ddc6dc856d9"
+  },
+  {
+   "id": "G1_GATE_exrsi_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "exrsi",
+    "m": "burst"
+   },
+   "hash": "75e1fc496f3c5c9f"
+  },
+  {
+   "id": "G1_GATE_exrsi_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "exrsi",
+    "m": "h11_18"
+   },
+   "hash": "e8e4bd3b1da2d2b6"
+  },
+  {
+   "id": "G1_GATE_exrsi_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "exrsi",
+    "m": "lowvol"
+   },
+   "hash": "69d866f72c4c8d23"
+  },
+  {
+   "id": "G1_GATE_cp_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "cp",
+    "m": "enlow"
+   },
+   "hash": "4d83bff924b4ce7c"
+  },
+  {
+   "id": "G1_GATE_cp_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "cp",
+    "m": "hurstMR"
+   },
+   "hash": "30c65c1ef1d94c0f"
+  },
+  {
+   "id": "G1_GATE_cp_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "cp",
+    "m": "cpActive"
+   },
+   "hash": "4b4aeed0184d94ee"
+  },
+  {
+   "id": "G1_GATE_cp_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "cp",
+    "m": "burst"
+   },
+   "hash": "f11e4fee28806b10"
+  },
+  {
+   "id": "G1_GATE_cp_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "cp",
+    "m": "h11_18"
+   },
+   "hash": "8807678f07bdd267"
+  },
+  {
+   "id": "G1_GATE_cp_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "cp",
+    "m": "lowvol"
+   },
+   "hash": "c77b1af97639d410"
+  },
+  {
+   "id": "G1_GATE_acfade_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "acfade",
+    "m": "enlow"
+   },
+   "hash": "03f274c30b535aa9"
+  },
+  {
+   "id": "G1_GATE_acfade_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "acfade",
+    "m": "hurstMR"
+   },
+   "hash": "952ae9f7a5c4f635"
+  },
+  {
+   "id": "G1_GATE_acfade_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "acfade",
+    "m": "cpActive"
+   },
+   "hash": "7a2f503a2d86a47e"
+  },
+  {
+   "id": "G1_GATE_acfade_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "acfade",
+    "m": "burst"
+   },
+   "hash": "f1ce9c14a9e88fe9"
+  },
+  {
+   "id": "G1_GATE_acfade_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "acfade",
+    "m": "h11_18"
+   },
+   "hash": "e9a6dc6f03d7804b"
+  },
+  {
+   "id": "G1_GATE_acfade_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "acfade",
+    "m": "lowvol"
+   },
+   "hash": "cb4bd77d4e3a8bad"
+  },
+  {
+   "id": "G1_GATE_miimb_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "miimb",
+    "m": "enlow"
+   },
+   "hash": "a746c34ce844fcf4"
+  },
+  {
+   "id": "G1_GATE_miimb_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "miimb",
+    "m": "hurstMR"
+   },
+   "hash": "530eabf3bbc37625"
+  },
+  {
+   "id": "G1_GATE_miimb_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "miimb",
+    "m": "cpActive"
+   },
+   "hash": "4cc8b53921cc3349"
+  },
+  {
+   "id": "G1_GATE_miimb_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "miimb",
+    "m": "burst"
+   },
+   "hash": "64bb2b29a4bc6307"
+  },
+  {
+   "id": "G1_GATE_miimb_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "miimb",
+    "m": "h11_18"
+   },
+   "hash": "9ae78e941a9121d7"
+  },
+  {
+   "id": "G1_GATE_miimb_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "miimb",
+    "m": "lowvol"
+   },
+   "hash": "d24d299b04ba46ee"
+  },
+  {
+   "id": "G1_GATE_enperm_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "enperm",
+    "m": "enlow"
+   },
+   "hash": "9a7861f620b3af64"
+  },
+  {
+   "id": "G1_GATE_enperm_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "enperm",
+    "m": "hurstMR"
+   },
+   "hash": "0bcc0b199c44fe98"
+  },
+  {
+   "id": "G1_GATE_enperm_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "enperm",
+    "m": "cpActive"
+   },
+   "hash": "14f173f7a5e65bab"
+  },
+  {
+   "id": "G1_GATE_enperm_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "enperm",
+    "m": "burst"
+   },
+   "hash": "0ecb83831113c09f"
+  },
+  {
+   "id": "G1_GATE_enperm_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "enperm",
+    "m": "h11_18"
+   },
+   "hash": "2f421fff98db8c80"
+  },
+  {
+   "id": "G1_GATE_enperm_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "enperm",
+    "m": "lowvol"
+   },
+   "hash": "b950a9dde885161d"
+  },
+  {
+   "id": "G1_GATE_humr_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "humr",
+    "m": "enlow"
+   },
+   "hash": "d4691b2375123cc4"
+  },
+  {
+   "id": "G1_GATE_humr_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "humr",
+    "m": "hurstMR"
+   },
+   "hash": "d4e880cc2ff62af6"
+  },
+  {
+   "id": "G1_GATE_humr_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "humr",
+    "m": "cpActive"
+   },
+   "hash": "004947e0c2f8c771"
+  },
+  {
+   "id": "G1_GATE_humr_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "humr",
+    "m": "burst"
+   },
+   "hash": "ce81b2e6dc91d93b"
+  },
+  {
+   "id": "G1_GATE_humr_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "humr",
+    "m": "h11_18"
+   },
+   "hash": "5751bdde1c2f37c0"
+  },
+  {
+   "id": "G1_GATE_humr_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "humr",
+    "m": "lowvol"
+   },
+   "hash": "47798604a96a4cd5"
+  },
+  {
+   "id": "G1_GATE_mk3_enlow",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "mk3",
+    "m": "enlow"
+   },
+   "hash": "00c9b953a0c29bfc"
+  },
+  {
+   "id": "G1_GATE_mk3_hurstMR",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "mk3",
+    "m": "hurstMR"
+   },
+   "hash": "01a9e4a40cd3cb76"
+  },
+  {
+   "id": "G1_GATE_mk3_cpActive",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "mk3",
+    "m": "cpActive"
+   },
+   "hash": "202bd0a700b998a2"
+  },
+  {
+   "id": "G1_GATE_mk3_burst",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "mk3",
+    "m": "burst"
+   },
+   "hash": "3b8fefe3a257476b"
+  },
+  {
+   "id": "G1_GATE_mk3_h11_18",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "mk3",
+    "m": "h11_18"
+   },
+   "hash": "9d88cceac4b77e5f"
+  },
+  {
+   "id": "G1_GATE_mk3_lowvol",
+   "op": "GATE",
+   "spec": {
+    "op": "GATE",
+    "a": "mk3",
+    "m": "lowvol"
+   },
+   "hash": "b12e55aa738f4258"
+  }
+ ]
+}

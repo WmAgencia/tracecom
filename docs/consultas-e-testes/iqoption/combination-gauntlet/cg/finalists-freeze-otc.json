@@ -1,0 +1,556 @@
+{
+ "frozen_at": "2026-09-16T00:35:59.261Z",
+ "market": "IQOPTION_EURUSD_OTC_7D",
+ "finalists": [
+  {
+   "id": "G1_GATE_exrsi_h11_18",
+   "gen": "G1",
+   "op": "GATE",
+   "hash": "e8e4bd3b1da2d2b6",
+   "spec": {
+    "op": "GATE",
+    "a": "exrsi",
+    "m": "h11_18"
+   },
+   "train": {
+    "signals": 8024,
+    "sigPerHour": 80,
+    "w": 4211,
+    "l": 3813,
+    "draws": 0,
+    "wr": 52.48,
+    "buyN": 5499,
+    "buyWR": 51.54,
+    "sellN": 2525,
+    "sellWR": 54.53,
+    "indepN": 452,
+    "indepWR": 48.89,
+    "indepW": 221,
+    "edge_pp": 2.28,
+    "wilsonLo": 51.39,
+    "ci95": [
+     51.39,
+     53.57
+    ],
+    "maxWinStreak": 34,
+    "maxLossStreak": 57
+   },
+   "val": {
+    "signals": 2853,
+    "sigPerHour": 85.4,
+    "w": 1477,
+    "l": 1376,
+    "draws": 0,
+    "wr": 51.77,
+    "buyN": 2010,
+    "buyWR": 50.9,
+    "sellN": 843,
+    "sellWR": 53.86,
+    "indepN": 165,
+    "indepWR": 47.88,
+    "indepW": 79,
+    "edge_pp": 1.77,
+    "wilsonLo": 49.94,
+    "ci95": [
+     49.94,
+     53.6
+    ],
+    "maxWinStreak": 36,
+    "maxLossStreak": 49
+   },
+   "componentVectors": "runtime"
+  },
+  {
+   "id": "G1_GATE_humr_h11_18",
+   "gen": "G1",
+   "op": "GATE",
+   "hash": "5751bdde1c2f37c0",
+   "spec": {
+    "op": "GATE",
+    "a": "humr",
+    "m": "h11_18"
+   },
+   "train": {
+    "signals": 2139,
+    "sigPerHour": 21.3,
+    "w": 1140,
+    "l": 999,
+    "draws": 0,
+    "wr": 53.3,
+    "buyN": 948,
+    "buyWR": 54.43,
+    "sellN": 1191,
+    "sellWR": 52.39,
+    "indepN": 109,
+    "indepWR": 55.96,
+    "indepW": 61,
+    "edge_pp": 3.36,
+    "wilsonLo": 51.18,
+    "ci95": [
+     51.18,
+     55.4
+    ],
+    "maxWinStreak": 23,
+    "maxLossStreak": 28
+   },
+   "val": {
+    "signals": 854,
+    "sigPerHour": 25.6,
+    "w": 435,
+    "l": 419,
+    "draws": 0,
+    "wr": 50.94,
+    "buyN": 499,
+    "buyWR": 47.09,
+    "sellN": 355,
+    "sellWR": 56.34,
+    "indepN": 55,
+    "indepWR": 41.82,
+    "indepW": 23,
+    "edge_pp": 0.94,
+    "wilsonLo": 47.59,
+    "ci95": [
+     47.59,
+     54.28
+    ],
+    "maxWinStreak": 18,
+    "maxLossStreak": 26
+   },
+   "componentVectors": "runtime"
+  },
+  {
+   "id": "G1_GATE_exrsi_h11_18+hurstMR",
+   "gen": "G2",
+   "op": "GATE2",
+   "hash": "6f2b51a77f5713c8",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "h11_18"
+    },
+    "m": "hurstMR"
+   },
+   "train": {
+    "signals": 1728,
+    "sigPerHour": 17.2,
+    "w": 951,
+    "l": 777,
+    "draws": 0,
+    "wr": 55.03,
+    "buyN": 1230,
+    "buyWR": 54.96,
+    "sellN": 498,
+    "sellWR": 55.22,
+    "indepN": 90,
+    "indepWR": 53.33,
+    "indepW": 48,
+    "edge_pp": 4.81,
+    "wilsonLo": 52.68,
+    "ci95": [
+     52.68,
+     57.37
+    ],
+    "maxWinStreak": 19,
+    "maxLossStreak": 28
+   },
+   "val": {
+    "signals": 727,
+    "sigPerHour": 21.8,
+    "w": 362,
+    "l": 365,
+    "draws": 0,
+    "wr": 49.79,
+    "buyN": 567,
+    "buyWR": 47.44,
+    "sellN": 160,
+    "sellWR": 58.13,
+    "indepN": 50,
+    "indepWR": 38,
+    "indepW": 19,
+    "edge_pp": -0.2,
+    "wilsonLo": 46.17,
+    "ci95": [
+     46.17,
+     53.42
+    ],
+    "maxWinStreak": 14,
+    "maxLossStreak": 35
+   },
+   "componentVectors": "runtime"
+  },
+  {
+   "id": "G1_GATE_exrsi_hurstMR+h11_18",
+   "gen": "G2",
+   "op": "GATE2",
+   "hash": "26e093fcb228a988",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "exrsi",
+     "m": "hurstMR"
+    },
+    "m": "h11_18"
+   },
+   "train": {
+    "signals": 1728,
+    "sigPerHour": 17.2,
+    "w": 951,
+    "l": 777,
+    "draws": 0,
+    "wr": 55.03,
+    "buyN": 1230,
+    "buyWR": 54.96,
+    "sellN": 498,
+    "sellWR": 55.22,
+    "indepN": 90,
+    "indepWR": 53.33,
+    "indepW": 48,
+    "edge_pp": 4.81,
+    "wilsonLo": 52.68,
+    "ci95": [
+     52.68,
+     57.37
+    ],
+    "maxWinStreak": 19,
+    "maxLossStreak": 28
+   },
+   "val": {
+    "signals": 727,
+    "sigPerHour": 21.8,
+    "w": 362,
+    "l": 365,
+    "draws": 0,
+    "wr": 49.79,
+    "buyN": 567,
+    "buyWR": 47.44,
+    "sellN": 160,
+    "sellWR": 58.13,
+    "indepN": 50,
+    "indepWR": 38,
+    "indepW": 19,
+    "edge_pp": -0.2,
+    "wilsonLo": 46.17,
+    "ci95": [
+     46.17,
+     53.42
+    ],
+    "maxWinStreak": 14,
+    "maxLossStreak": 35
+   },
+   "componentVectors": "runtime"
+  },
+  {
+   "id": "G3_G1_GATE_exrsi_h11_18+hurstMR+enlow",
+   "gen": "G3",
+   "op": "GATE3",
+   "hash": "5ff1ab64105727f8",
+   "spec": {
+    "op": "GATE3",
+    "parent": {
+     "op": "GATE2",
+     "parent": {
+      "op": "GATE",
+      "a": "exrsi",
+      "m": "h11_18"
+     },
+     "m": "hurstMR"
+    },
+    "m": "enlow"
+   },
+   "train": {
+    "signals": 1728,
+    "sigPerHour": 17.2,
+    "w": 951,
+    "l": 777,
+    "draws": 0,
+    "wr": 55.03,
+    "buyN": 1230,
+    "buyWR": 54.96,
+    "sellN": 498,
+    "sellWR": 55.22,
+    "indepN": 90,
+    "indepWR": 53.33,
+    "indepW": 48,
+    "edge_pp": 4.81,
+    "wilsonLo": 52.68,
+    "ci95": [
+     52.68,
+     57.37
+    ],
+    "maxWinStreak": 19,
+    "maxLossStreak": 28
+   },
+   "val": {
+    "signals": 727,
+    "sigPerHour": 21.8,
+    "w": 362,
+    "l": 365,
+    "draws": 0,
+    "wr": 49.79,
+    "buyN": 567,
+    "buyWR": 47.44,
+    "sellN": 160,
+    "sellWR": 58.13,
+    "indepN": 50,
+    "indepWR": 38,
+    "indepW": 19,
+    "edge_pp": -0.2,
+    "wilsonLo": 46.17,
+    "ci95": [
+     46.17,
+     53.42
+    ],
+    "maxWinStreak": 14,
+    "maxLossStreak": 35
+   },
+   "componentVectors": "runtime"
+  },
+  {
+   "id": "G4_META_G3_G1_GATE_exrsi_h11_18+hurstMR+enlow",
+   "gen": "G4",
+   "op": "META",
+   "hash": "59cdf0aa2d1be8d8",
+   "spec": {
+    "op": "META",
+    "base": "G3_G1_GATE_exrsi_h11_18+hurstMR+enlow",
+    "baseSpec": {
+     "op": "GATE3",
+     "parent": {
+      "op": "GATE2",
+      "parent": {
+       "op": "GATE",
+       "a": "exrsi",
+       "m": "h11_18"
+      },
+      "m": "hurstMR"
+     },
+     "m": "enlow"
+    },
+    "threshold": 0.6,
+    "weights": {
+     "w": [
+      0.17840316930675132,
+      -0.04979483598512671,
+      0.11219095348383518,
+      0.20952052525228235,
+      0.0575232980487974,
+      -0.006538230106380682,
+      0.07996942959028298,
+      0.06965347223678875,
+      0.18569343202250999,
+      -0.13804935744073205,
+      -0.03151742522996039,
+      -0.12823239317022156
+     ],
+     "b0": 0.08267376951896831,
+     "mu": [
+      0.4236111111111111,
+      0.21349853388466958,
+      1.150021708484836,
+      0.7906251890287622,
+      0.4077566497200826,
+      0.0001290704536811759,
+      0.9895933055242389,
+      3.9423611111111123,
+      -0.38120268299363985,
+      -0.005773209715530491,
+      1.0000000000000098,
+      0.594473379629632
+     ],
+     "sg": [
+      0.9058441513545296,
+      0.16427907101857825,
+      0.09271063703326923,
+      0.0454498907619953,
+      0.03680863228864412,
+      0.00009850618787214871,
+      0.22161977456638574,
+      0.36063470176521045,
+      1.702653689901955,
+      0.027853609688205615,
+      2.3959068910349118e-12,
+      0.08449755311672529
+     ]
+    },
+    "feats": [
+     "dir",
+     "absImb",
+     "H",
+     "Hp",
+     "hurst",
+     "cpDiff",
+     "vol12x1e4",
+     "tickRate",
+     "z60",
+     "r6x100",
+     "spreadRatio",
+     "hour/24"
+    ]
+   },
+   "train": {
+    "signals": 341,
+    "sigPerHour": 3.4,
+    "w": 219,
+    "l": 122,
+    "draws": 0,
+    "wr": 64.22,
+    "buyN": 327,
+    "buyWR": 65.14,
+    "sellN": 14,
+    "sellWR": 42.86,
+    "indepN": 16,
+    "indepWR": 75,
+    "indepW": 12,
+    "edge_pp": 13.74,
+    "wilsonLo": 59,
+    "ci95": [
+     59,
+     69.13
+    ],
+    "maxWinStreak": 18,
+    "maxLossStreak": 11
+   },
+   "val": {
+    "signals": 154,
+    "sigPerHour": 4.6,
+    "w": 81,
+    "l": 73,
+    "draws": 0,
+    "wr": 52.6,
+    "buyN": 145,
+    "buyWR": 53.1,
+    "sellN": 9,
+    "sellWR": 44.44,
+    "indepN": 9,
+    "indepWR": 33.33,
+    "indepW": 3,
+    "edge_pp": 2.61,
+    "wilsonLo": 44.74,
+    "ci95": [
+     44.74,
+     60.32
+    ],
+    "maxWinStreak": 12,
+    "maxLossStreak": 11
+   },
+   "componentVectors": "runtime"
+  },
+  {
+   "id": "G4_RS_hurst_entropy",
+   "gen": "G4",
+   "op": "REGIME_SWITCH",
+   "hash": "fe613c7eda7786f8",
+   "spec": {
+    "op": "REGIME_SWITCH",
+    "arch": "hurstMR->z240;persist->exrsi;Hgt2.85 WAIT;else miimb"
+   },
+   "train": {
+    "signals": 34428,
+    "sigPerHour": 343.3,
+    "w": 17350,
+    "l": 17078,
+    "draws": 0,
+    "wr": 50.4,
+    "buyN": 18325,
+    "buyWR": 51.15,
+    "sellN": 16103,
+    "sellWR": 49.54,
+    "indepN": 1975,
+    "indepWR": 50.28,
+    "indepW": 993,
+    "edge_pp": 0.36,
+    "wilsonLo": 49.87,
+    "ci95": [
+     49.87,
+     50.92
+    ],
+    "maxWinStreak": 18,
+    "maxLossStreak": 37
+   },
+   "val": {
+    "signals": 11673,
+    "sigPerHour": 349.6,
+    "w": 5835,
+    "l": 5838,
+    "draws": 0,
+    "wr": 49.99,
+    "buyN": 6136,
+    "buyWR": 50.26,
+    "sellN": 5537,
+    "sellWR": 49.68,
+    "indepN": 660,
+    "indepWR": 46.52,
+    "indepW": 307,
+    "edge_pp": -0.01,
+    "wilsonLo": 49.08,
+    "ci95": [
+     49.08,
+     50.89
+    ],
+    "maxWinStreak": 17,
+    "maxLossStreak": 21
+   },
+   "componentVectors": "runtime"
+  },
+  {
+   "id": "G0_v7relaxed",
+   "gen": "G0",
+   "op": "SINGLE",
+   "hash": "5d9df6f0b572a913",
+   "spec": {
+    "single": "v7relaxed"
+   },
+   "train": {
+    "signals": 1778,
+    "sigPerHour": 17.7,
+    "w": 900,
+    "l": 878,
+    "draws": 0,
+    "wr": 50.62,
+    "buyN": 1136,
+    "buyWR": 50.35,
+    "sellN": 642,
+    "sellWR": 51.09,
+    "indepN": 99,
+    "indepWR": 44.44,
+    "indepW": 44,
+    "edge_pp": 0.47,
+    "wilsonLo": 48.3,
+    "ci95": [
+     48.3,
+     52.94
+    ],
+    "maxWinStreak": 14,
+    "maxLossStreak": 13
+   },
+   "val": {
+    "signals": 638,
+    "sigPerHour": 19.1,
+    "w": 350,
+    "l": 288,
+    "draws": 0,
+    "wr": 54.86,
+    "buyN": 401,
+    "buyWR": 55.36,
+    "sellN": 237,
+    "sellWR": 54.01,
+    "indepN": 38,
+    "indepWR": 65.79,
+    "indepW": 25,
+    "edge_pp": 4.86,
+    "wilsonLo": 50.98,
+    "ci95": [
+     50.98,
+     58.68
+    ],
+    "maxWinStreak": 21,
+    "maxLossStreak": 16
+   },
+   "componentVectors": "runtime"
+  }
+ ],
+ "hash_fix_note": "critic: META/RS hashes align with full frozen spec (weights included); strategies unchanged"
+}

@@ -1,0 +1,1921 @@
+{
+ "frozen_at": "2026-09-16T00:35:56.568Z",
+ "K": 142,
+ "topComps": [
+  "z240",
+  "v6",
+  "v7and",
+  "fb25",
+  "acfade",
+  "enperm",
+  "exrsi",
+  "v1",
+  "v7relaxed"
+ ],
+ "hypotheses": [
+  {
+   "id": "G2_AND3_z240_v6_v7and",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v6",
+     "v7and"
+    ]
+   },
+   "hash": "719068ecad17e97b"
+  },
+  {
+   "id": "G2_AND3_z240_v6_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v6",
+     "fb25"
+    ]
+   },
+   "hash": "1fefa57540a16f5e"
+  },
+  {
+   "id": "G2_AND3_z240_v6_acfade",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v6",
+     "acfade"
+    ]
+   },
+   "hash": "0fc9ec3816cc56dc"
+  },
+  {
+   "id": "G2_AND3_z240_v6_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v6",
+     "enperm"
+    ]
+   },
+   "hash": "05a1f30cdbde5515"
+  },
+  {
+   "id": "G2_AND3_z240_v6_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v6",
+     "exrsi"
+    ]
+   },
+   "hash": "be8896006111be3d"
+  },
+  {
+   "id": "G2_AND3_z240_v6_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v6",
+     "v1"
+    ]
+   },
+   "hash": "5977758d84301101"
+  },
+  {
+   "id": "G2_AND3_z240_v6_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v6",
+     "v7relaxed"
+    ]
+   },
+   "hash": "f263da5309a6c0f5"
+  },
+  {
+   "id": "G2_AND3_z240_v7and_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v7and",
+     "fb25"
+    ]
+   },
+   "hash": "fabf35edc5ed9d0c"
+  },
+  {
+   "id": "G2_AND3_z240_v7and_acfade",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v7and",
+     "acfade"
+    ]
+   },
+   "hash": "41524af25a0282a3"
+  },
+  {
+   "id": "G2_AND3_z240_v7and_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v7and",
+     "enperm"
+    ]
+   },
+   "hash": "179bfd4435dc4815"
+  },
+  {
+   "id": "G2_AND3_z240_v7and_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v7and",
+     "exrsi"
+    ]
+   },
+   "hash": "8a24036272c41243"
+  },
+  {
+   "id": "G2_AND3_z240_v7and_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v7and",
+     "v1"
+    ]
+   },
+   "hash": "ccd3b00c40ef2ffb"
+  },
+  {
+   "id": "G2_AND3_z240_v7and_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v7and",
+     "v7relaxed"
+    ]
+   },
+   "hash": "ae80696cf9b8100d"
+  },
+  {
+   "id": "G2_AND3_z240_fb25_acfade",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "fb25",
+     "acfade"
+    ]
+   },
+   "hash": "84d77902a76547dc"
+  },
+  {
+   "id": "G2_AND3_z240_fb25_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "fb25",
+     "enperm"
+    ]
+   },
+   "hash": "e533de38c82fcae8"
+  },
+  {
+   "id": "G2_AND3_z240_fb25_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "fb25",
+     "exrsi"
+    ]
+   },
+   "hash": "6efcb8e4c72806d6"
+  },
+  {
+   "id": "G2_AND3_z240_fb25_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "fb25",
+     "v1"
+    ]
+   },
+   "hash": "041c2b5391b62524"
+  },
+  {
+   "id": "G2_AND3_z240_fb25_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "fb25",
+     "v7relaxed"
+    ]
+   },
+   "hash": "576db6d61c71cb00"
+  },
+  {
+   "id": "G2_AND3_z240_acfade_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "acfade",
+     "enperm"
+    ]
+   },
+   "hash": "238a04f460d54e8c"
+  },
+  {
+   "id": "G2_AND3_z240_acfade_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "acfade",
+     "exrsi"
+    ]
+   },
+   "hash": "b025ebfaef167264"
+  },
+  {
+   "id": "G2_AND3_z240_acfade_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "acfade",
+     "v1"
+    ]
+   },
+   "hash": "5f3433038ddb19df"
+  },
+  {
+   "id": "G2_AND3_z240_acfade_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "acfade",
+     "v7relaxed"
+    ]
+   },
+   "hash": "07ad5ce699304cdd"
+  },
+  {
+   "id": "G2_AND3_z240_enperm_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "enperm",
+     "exrsi"
+    ]
+   },
+   "hash": "a518718b8be62d9b"
+  },
+  {
+   "id": "G2_AND3_z240_enperm_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "enperm",
+     "v1"
+    ]
+   },
+   "hash": "2e629db2255dd0e7"
+  },
+  {
+   "id": "G2_AND3_z240_enperm_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "enperm",
+     "v7relaxed"
+    ]
+   },
+   "hash": "3e0c565dbaefb666"
+  },
+  {
+   "id": "G2_AND3_z240_exrsi_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "exrsi",
+     "v1"
+    ]
+   },
+   "hash": "aada9084fda11cc1"
+  },
+  {
+   "id": "G2_AND3_z240_exrsi_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "exrsi",
+     "v7relaxed"
+    ]
+   },
+   "hash": "e2ba5bf47ee60f6d"
+  },
+  {
+   "id": "G2_AND3_z240_v1_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "z240",
+     "v1",
+     "v7relaxed"
+    ]
+   },
+   "hash": "4ed31c132fd7b71e"
+  },
+  {
+   "id": "G2_AND3_v6_v7and_fb25",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "v7and",
+     "fb25"
+    ]
+   },
+   "hash": "f73f8fb96ff23ca6"
+  },
+  {
+   "id": "G2_AND3_v6_v7and_acfade",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "v7and",
+     "acfade"
+    ]
+   },
+   "hash": "15449f959033de3b"
+  },
+  {
+   "id": "G2_AND3_v6_v7and_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "v7and",
+     "enperm"
+    ]
+   },
+   "hash": "94962bc4d3e05cd2"
+  },
+  {
+   "id": "G2_AND3_v6_v7and_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "v7and",
+     "exrsi"
+    ]
+   },
+   "hash": "ffc40a04566275c7"
+  },
+  {
+   "id": "G2_AND3_v6_v7and_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "v7and",
+     "v1"
+    ]
+   },
+   "hash": "b877bd60e1947561"
+  },
+  {
+   "id": "G2_AND3_v6_v7and_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "v7and",
+     "v7relaxed"
+    ]
+   },
+   "hash": "0221d6f50e00a562"
+  },
+  {
+   "id": "G2_AND3_v6_fb25_acfade",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "fb25",
+     "acfade"
+    ]
+   },
+   "hash": "c4846c19eb8f5125"
+  },
+  {
+   "id": "G2_AND3_v6_fb25_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "fb25",
+     "enperm"
+    ]
+   },
+   "hash": "72bfb64dd5f60bcc"
+  },
+  {
+   "id": "G2_AND3_v6_fb25_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "fb25",
+     "exrsi"
+    ]
+   },
+   "hash": "e4a599dbbdf4c7e0"
+  },
+  {
+   "id": "G2_AND3_v6_fb25_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "fb25",
+     "v1"
+    ]
+   },
+   "hash": "317f7c92656af581"
+  },
+  {
+   "id": "G2_AND3_v6_fb25_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "fb25",
+     "v7relaxed"
+    ]
+   },
+   "hash": "68beffae6ff5becf"
+  },
+  {
+   "id": "G2_AND3_v6_acfade_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "acfade",
+     "enperm"
+    ]
+   },
+   "hash": "72eba98220c23988"
+  },
+  {
+   "id": "G2_AND3_v6_acfade_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "acfade",
+     "exrsi"
+    ]
+   },
+   "hash": "18656d0495abf366"
+  },
+  {
+   "id": "G2_AND3_v6_acfade_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "acfade",
+     "v1"
+    ]
+   },
+   "hash": "e941c41fc8d9a89c"
+  },
+  {
+   "id": "G2_AND3_v6_acfade_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "acfade",
+     "v7relaxed"
+    ]
+   },
+   "hash": "3779f5882d9023f0"
+  },
+  {
+   "id": "G2_AND3_v6_enperm_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "enperm",
+     "exrsi"
+    ]
+   },
+   "hash": "90cefeeb81b56da7"
+  },
+  {
+   "id": "G2_AND3_v6_enperm_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "enperm",
+     "v1"
+    ]
+   },
+   "hash": "1961f4a04438c6b3"
+  },
+  {
+   "id": "G2_AND3_v6_enperm_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "enperm",
+     "v7relaxed"
+    ]
+   },
+   "hash": "f03ba23b03efff0a"
+  },
+  {
+   "id": "G2_AND3_v6_exrsi_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "exrsi",
+     "v1"
+    ]
+   },
+   "hash": "fa969d50e4fc4727"
+  },
+  {
+   "id": "G2_AND3_v6_exrsi_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "exrsi",
+     "v7relaxed"
+    ]
+   },
+   "hash": "f52a085932617f41"
+  },
+  {
+   "id": "G2_AND3_v6_v1_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v6",
+     "v1",
+     "v7relaxed"
+    ]
+   },
+   "hash": "79c95f2d636f882a"
+  },
+  {
+   "id": "G2_AND3_v7and_fb25_acfade",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "fb25",
+     "acfade"
+    ]
+   },
+   "hash": "265e67a2cc67dca0"
+  },
+  {
+   "id": "G2_AND3_v7and_fb25_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "fb25",
+     "enperm"
+    ]
+   },
+   "hash": "7db283af97ed313d"
+  },
+  {
+   "id": "G2_AND3_v7and_fb25_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "fb25",
+     "exrsi"
+    ]
+   },
+   "hash": "778c0e1f39f83531"
+  },
+  {
+   "id": "G2_AND3_v7and_fb25_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "fb25",
+     "v1"
+    ]
+   },
+   "hash": "9193f4a68548c92c"
+  },
+  {
+   "id": "G2_AND3_v7and_fb25_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "fb25",
+     "v7relaxed"
+    ]
+   },
+   "hash": "15f6cb45906a7e89"
+  },
+  {
+   "id": "G2_AND3_v7and_acfade_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "acfade",
+     "enperm"
+    ]
+   },
+   "hash": "b0c2151f415541eb"
+  },
+  {
+   "id": "G2_AND3_v7and_acfade_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "acfade",
+     "exrsi"
+    ]
+   },
+   "hash": "7fc3c32872690319"
+  },
+  {
+   "id": "G2_AND3_v7and_acfade_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "acfade",
+     "v1"
+    ]
+   },
+   "hash": "57ee507682d601cd"
+  },
+  {
+   "id": "G2_AND3_v7and_acfade_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "acfade",
+     "v7relaxed"
+    ]
+   },
+   "hash": "be5113eefb02c84d"
+  },
+  {
+   "id": "G2_AND3_v7and_enperm_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "enperm",
+     "exrsi"
+    ]
+   },
+   "hash": "c35a86f459ffdc17"
+  },
+  {
+   "id": "G2_AND3_v7and_enperm_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "enperm",
+     "v1"
+    ]
+   },
+   "hash": "e41a7467547b5577"
+  },
+  {
+   "id": "G2_AND3_v7and_enperm_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "enperm",
+     "v7relaxed"
+    ]
+   },
+   "hash": "30e149a66102925a"
+  },
+  {
+   "id": "G2_AND3_v7and_exrsi_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "exrsi",
+     "v1"
+    ]
+   },
+   "hash": "13f6b99414bff213"
+  },
+  {
+   "id": "G2_AND3_v7and_exrsi_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "exrsi",
+     "v7relaxed"
+    ]
+   },
+   "hash": "e6b8f85763c7b50c"
+  },
+  {
+   "id": "G2_AND3_v7and_v1_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "v7and",
+     "v1",
+     "v7relaxed"
+    ]
+   },
+   "hash": "0294a23c5d792d6f"
+  },
+  {
+   "id": "G2_AND3_fb25_acfade_enperm",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "acfade",
+     "enperm"
+    ]
+   },
+   "hash": "365ecfa50ce89a5c"
+  },
+  {
+   "id": "G2_AND3_fb25_acfade_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "acfade",
+     "exrsi"
+    ]
+   },
+   "hash": "a3b0376fd630c314"
+  },
+  {
+   "id": "G2_AND3_fb25_acfade_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "acfade",
+     "v1"
+    ]
+   },
+   "hash": "39d3bf6fb1b46410"
+  },
+  {
+   "id": "G2_AND3_fb25_acfade_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "acfade",
+     "v7relaxed"
+    ]
+   },
+   "hash": "fdafed8b5b85096c"
+  },
+  {
+   "id": "G2_AND3_fb25_enperm_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "enperm",
+     "exrsi"
+    ]
+   },
+   "hash": "1adc87d6646e6cd9"
+  },
+  {
+   "id": "G2_AND3_fb25_enperm_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "enperm",
+     "v1"
+    ]
+   },
+   "hash": "beb57eebb2ff44e3"
+  },
+  {
+   "id": "G2_AND3_fb25_enperm_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "enperm",
+     "v7relaxed"
+    ]
+   },
+   "hash": "8c4fb4ca96a4bea7"
+  },
+  {
+   "id": "G2_AND3_fb25_exrsi_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "exrsi",
+     "v1"
+    ]
+   },
+   "hash": "349ac82cfeb1f2d4"
+  },
+  {
+   "id": "G2_AND3_fb25_exrsi_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "exrsi",
+     "v7relaxed"
+    ]
+   },
+   "hash": "b55be4f096c6a21a"
+  },
+  {
+   "id": "G2_AND3_fb25_v1_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "fb25",
+     "v1",
+     "v7relaxed"
+    ]
+   },
+   "hash": "0654e0abbd46b311"
+  },
+  {
+   "id": "G2_AND3_acfade_enperm_exrsi",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "acfade",
+     "enperm",
+     "exrsi"
+    ]
+   },
+   "hash": "0b05c9364619be32"
+  },
+  {
+   "id": "G2_AND3_acfade_enperm_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "acfade",
+     "enperm",
+     "v1"
+    ]
+   },
+   "hash": "9bf2223407c347c7"
+  },
+  {
+   "id": "G2_AND3_acfade_enperm_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "acfade",
+     "enperm",
+     "v7relaxed"
+    ]
+   },
+   "hash": "747facc20b212c66"
+  },
+  {
+   "id": "G2_AND3_acfade_exrsi_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "acfade",
+     "exrsi",
+     "v1"
+    ]
+   },
+   "hash": "992bc579262cc2ca"
+  },
+  {
+   "id": "G2_AND3_acfade_exrsi_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "acfade",
+     "exrsi",
+     "v7relaxed"
+    ]
+   },
+   "hash": "6f4918a5f63a33d6"
+  },
+  {
+   "id": "G2_AND3_acfade_v1_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "acfade",
+     "v1",
+     "v7relaxed"
+    ]
+   },
+   "hash": "8bf737cd58f5190d"
+  },
+  {
+   "id": "G2_AND3_enperm_exrsi_v1",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "exrsi",
+     "v1"
+    ]
+   },
+   "hash": "64195cfd2f9da372"
+  },
+  {
+   "id": "G2_AND3_enperm_exrsi_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "exrsi",
+     "v7relaxed"
+    ]
+   },
+   "hash": "ddadd7f3dcff9d6d"
+  },
+  {
+   "id": "G2_AND3_enperm_v1_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "enperm",
+     "v1",
+     "v7relaxed"
+    ]
+   },
+   "hash": "f238f8c30f0068d3"
+  },
+  {
+   "id": "G2_AND3_exrsi_v1_v7relaxed",
+   "op": "AND3",
+   "spec": {
+    "op": "AND3",
+    "comps": [
+     "exrsi",
+     "v1",
+     "v7relaxed"
+    ]
+   },
+   "hash": "d10864b6819f2e86"
+  },
+  {
+   "id": "G1_AND_z240_enperm+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "enlow"
+   },
+   "hash": "9dc1b8034c6f09b6"
+  },
+  {
+   "id": "G1_AND_z240_enperm+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "33604e8c027db46a"
+  },
+  {
+   "id": "G1_AND_z240_enperm+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "cpActive"
+   },
+   "hash": "9bcfe42d1f4dc459"
+  },
+  {
+   "id": "G1_AND_z240_enperm+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "burst"
+   },
+   "hash": "edc85d14434e0204"
+  },
+  {
+   "id": "G1_AND_z240_enperm+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "h11_18"
+   },
+   "hash": "7bc76bbf9ced798e"
+  },
+  {
+   "id": "G1_AND_z240_enperm+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "AND",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "lowvol"
+   },
+   "hash": "41059dd6d35dc650"
+  },
+  {
+   "id": "G1_CONFIRM_z240_enperm+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "enlow"
+   },
+   "hash": "bcf9eb336783594b"
+  },
+  {
+   "id": "G1_CONFIRM_z240_enperm+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "48b0b5afa497c0cf"
+  },
+  {
+   "id": "G1_CONFIRM_z240_enperm+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "cpActive"
+   },
+   "hash": "16c91bc30c28e1df"
+  },
+  {
+   "id": "G1_CONFIRM_z240_enperm+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "burst"
+   },
+   "hash": "df2a6d78fcb5a198"
+  },
+  {
+   "id": "G1_CONFIRM_z240_enperm+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "h11_18"
+   },
+   "hash": "da98a6207ea86bce"
+  },
+  {
+   "id": "G1_CONFIRM_z240_enperm+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "enperm"
+    },
+    "m": "lowvol"
+   },
+   "hash": "edcc763ea90e27d5"
+  },
+  {
+   "id": "G1_OR_z240_mk3+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "mk3"
+    },
+    "m": "enlow"
+   },
+   "hash": "c72b979608c7a4d5"
+  },
+  {
+   "id": "G1_OR_z240_mk3+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "mk3"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "3bcd798fc134a7de"
+  },
+  {
+   "id": "G1_OR_z240_mk3+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "mk3"
+    },
+    "m": "cpActive"
+   },
+   "hash": "ed56228b8594b096"
+  },
+  {
+   "id": "G1_OR_z240_mk3+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "mk3"
+    },
+    "m": "burst"
+   },
+   "hash": "f15ef517b4f9d48b"
+  },
+  {
+   "id": "G1_OR_z240_mk3+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "mk3"
+    },
+    "m": "h11_18"
+   },
+   "hash": "f112b0491f97a5e8"
+  },
+  {
+   "id": "G1_OR_z240_mk3+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "z240",
+     "b": "mk3"
+    },
+    "m": "lowvol"
+   },
+   "hash": "aa74881239e34660"
+  },
+  {
+   "id": "G1_GATE_z240_enlow+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "z240",
+     "m": "enlow"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "c05df296ea08355d"
+  },
+  {
+   "id": "G1_GATE_z240_enlow+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "z240",
+     "m": "enlow"
+    },
+    "m": "cpActive"
+   },
+   "hash": "df657084049e7a8f"
+  },
+  {
+   "id": "G1_GATE_z240_enlow+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "z240",
+     "m": "enlow"
+    },
+    "m": "burst"
+   },
+   "hash": "96937b9dfd3455bb"
+  },
+  {
+   "id": "G1_GATE_z240_enlow+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "z240",
+     "m": "enlow"
+    },
+    "m": "h11_18"
+   },
+   "hash": "111a023ecb4e9e1f"
+  },
+  {
+   "id": "G1_GATE_z240_enlow+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "z240",
+     "m": "enlow"
+    },
+    "m": "lowvol"
+   },
+   "hash": "5f618119abd5001f"
+  },
+  {
+   "id": "G1_GATE_z240_lowvol+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "z240",
+     "m": "lowvol"
+    },
+    "m": "enlow"
+   },
+   "hash": "9cef3b9eca684aaf"
+  },
+  {
+   "id": "G1_GATE_z240_lowvol+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "z240",
+     "m": "lowvol"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "274b69bca3c3ece4"
+  },
+  {
+   "id": "G1_GATE_z240_lowvol+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "z240",
+     "m": "lowvol"
+    },
+    "m": "cpActive"
+   },
+   "hash": "de2c1264d437c73c"
+  },
+  {
+   "id": "G1_GATE_z240_lowvol+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "z240",
+     "m": "lowvol"
+    },
+    "m": "burst"
+   },
+   "hash": "680cbf09d0cafb4a"
+  },
+  {
+   "id": "G1_GATE_z240_lowvol+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "GATE",
+     "a": "z240",
+     "m": "lowvol"
+    },
+    "m": "h11_18"
+   },
+   "hash": "331989864ad34ec1"
+  },
+  {
+   "id": "G1_OR_v6_z240+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v6",
+     "b": "z240"
+    },
+    "m": "enlow"
+   },
+   "hash": "aeb05d2f7365e5a9"
+  },
+  {
+   "id": "G1_OR_v6_z240+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v6",
+     "b": "z240"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "c493485b10a15261"
+  },
+  {
+   "id": "G1_OR_v6_z240+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v6",
+     "b": "z240"
+    },
+    "m": "cpActive"
+   },
+   "hash": "beb9ad74dc3b72be"
+  },
+  {
+   "id": "G1_OR_v6_z240+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v6",
+     "b": "z240"
+    },
+    "m": "burst"
+   },
+   "hash": "e17d759ee861a461"
+  },
+  {
+   "id": "G1_OR_v6_z240+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v6",
+     "b": "z240"
+    },
+    "m": "h11_18"
+   },
+   "hash": "67d12e32c4f86173"
+  },
+  {
+   "id": "G1_OR_v6_z240+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v6",
+     "b": "z240"
+    },
+    "m": "lowvol"
+   },
+   "hash": "bc48eff30600c48e"
+  },
+  {
+   "id": "G1_OR_v7and_z240+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7and",
+     "b": "z240"
+    },
+    "m": "enlow"
+   },
+   "hash": "911a2263177867f8"
+  },
+  {
+   "id": "G1_OR_v7and_z240+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7and",
+     "b": "z240"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "e218a74bbb32b49a"
+  },
+  {
+   "id": "G1_OR_v7and_z240+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7and",
+     "b": "z240"
+    },
+    "m": "cpActive"
+   },
+   "hash": "43a891fdbe80481b"
+  },
+  {
+   "id": "G1_OR_v7and_z240+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7and",
+     "b": "z240"
+    },
+    "m": "burst"
+   },
+   "hash": "2cc8455351aefc78"
+  },
+  {
+   "id": "G1_OR_v7and_z240+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7and",
+     "b": "z240"
+    },
+    "m": "h11_18"
+   },
+   "hash": "69e8436687ede719"
+  },
+  {
+   "id": "G1_OR_v7and_z240+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "v7and",
+     "b": "z240"
+    },
+    "m": "lowvol"
+   },
+   "hash": "da693c941f3ed1c4"
+  },
+  {
+   "id": "G1_CONFIRM_z240_miimb+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "miimb"
+    },
+    "m": "enlow"
+   },
+   "hash": "7689c88ac794bc02"
+  },
+  {
+   "id": "G1_CONFIRM_z240_miimb+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "miimb"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "02e54c8cae7a31e3"
+  },
+  {
+   "id": "G1_CONFIRM_z240_miimb+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "miimb"
+    },
+    "m": "cpActive"
+   },
+   "hash": "452e6bebecc314ff"
+  },
+  {
+   "id": "G1_CONFIRM_z240_miimb+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "miimb"
+    },
+    "m": "burst"
+   },
+   "hash": "fac55d68b33472d8"
+  },
+  {
+   "id": "G1_CONFIRM_z240_miimb+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "miimb"
+    },
+    "m": "h11_18"
+   },
+   "hash": "068e3b5ff0d56d6c"
+  },
+  {
+   "id": "G1_CONFIRM_z240_miimb+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "CONFIRM",
+     "a": "z240",
+     "b": "miimb"
+    },
+    "m": "lowvol"
+   },
+   "hash": "9ea9f4132c8e08cf"
+  },
+  {
+   "id": "G1_OR_fb25_z240+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "z240"
+    },
+    "m": "enlow"
+   },
+   "hash": "ea6e85dd2cde9174"
+  },
+  {
+   "id": "G1_OR_fb25_z240+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "z240"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "88ba96c095b54e0b"
+  },
+  {
+   "id": "G1_OR_fb25_z240+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "z240"
+    },
+    "m": "cpActive"
+   },
+   "hash": "f277a6ee1ea31b57"
+  },
+  {
+   "id": "G1_OR_fb25_z240+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "z240"
+    },
+    "m": "burst"
+   },
+   "hash": "37b612602979a284"
+  },
+  {
+   "id": "G1_OR_fb25_z240+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "z240"
+    },
+    "m": "h11_18"
+   },
+   "hash": "7825adba04a20019"
+  },
+  {
+   "id": "G1_OR_fb25_z240+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "z240"
+    },
+    "m": "lowvol"
+   },
+   "hash": "132dc37da6553177"
+  },
+  {
+   "id": "G1_OR_fb25_enperm+enlow",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "enperm"
+    },
+    "m": "enlow"
+   },
+   "hash": "7d448aa7056dfae9"
+  },
+  {
+   "id": "G1_OR_fb25_enperm+hurstMR",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "enperm"
+    },
+    "m": "hurstMR"
+   },
+   "hash": "b818e3832978a0ef"
+  },
+  {
+   "id": "G1_OR_fb25_enperm+cpActive",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "enperm"
+    },
+    "m": "cpActive"
+   },
+   "hash": "d49f89076ba474d0"
+  },
+  {
+   "id": "G1_OR_fb25_enperm+burst",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "enperm"
+    },
+    "m": "burst"
+   },
+   "hash": "867af05af10a8073"
+  },
+  {
+   "id": "G1_OR_fb25_enperm+h11_18",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "enperm"
+    },
+    "m": "h11_18"
+   },
+   "hash": "45d07393912a71c1"
+  },
+  {
+   "id": "G1_OR_fb25_enperm+lowvol",
+   "op": "GATE2",
+   "spec": {
+    "op": "GATE2",
+    "parent": {
+     "op": "OR",
+     "a": "fb25",
+     "b": "enperm"
+    },
+    "m": "lowvol"
+   },
+   "hash": "61138ada11f88a99"
+  }
+ ]
+}
