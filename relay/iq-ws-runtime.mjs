@@ -61,6 +61,7 @@ export class IqWsRuntime extends EventEmitter {
     this.lastContext = null; this.lastFeatureAt = null;
     this.latency = { serverToReceived: [], receivedToNormalized: [], normalizedToFeature: [], orderAck: [] };
     this.pendingOrder = null; this.lastExecution = null; this.executionsCache = [];
+    this.reconcile = { lastRunAt: null, checked: 0, settled: 0, unknown: 0, error: null };
     this.userLimitBrl = null; this.balanceFailure = null; this.dbReady = null;
   }
 
@@ -182,12 +183,13 @@ export class IqWsRuntime extends EventEmitter {
   /** Ordens REQUESTED/ACKNOWLEDGED antigas (ex.: relay reiniciou com ordem em voo): nunca reenvia;
    *  consulta get-options e liquida com o resultado real; sem brokerOrderId persistido -> UNKNOWN. */
   async reconcileOrphans() {
-    if (!this.pool || !this.client || !this.session.connected) return { checked: 0, settled: 0, unknown: 0 };
-    if (!await this.#ensureDb()) return { checked: 0, settled: 0, unknown: 0 };
+    const mark = (patch) => { this.reconcile = { ...this.reconcile, lastRunAt: this.now(), ...patch }; };
+    if (!this.pool || !this.client || !this.session.connected) { mark({ checked: 0, settled: 0, unknown: 0, error: "NOT_CONNECTED" }); return { checked: 0, settled: 0, unknown: 0 }; }
+    if (!await this.#ensureDb()) { mark({ checked: 0, settled: 0, unknown: 0, error: "DB_UNAVAILABLE" }); return { checked: 0, settled: 0, unknown: 0 }; }
     let rows = [];
     try { rows = (await this.pool.query("SELECT execution_id, idempotency_key, broker_order_id, direction, symbol, active_id, stake, expiration_at, entry_price FROM iq_executions WHERE state IN ('REQUESTED','ACKNOWLEDGED') AND requested_at < now() - interval '2 minutes' ORDER BY requested_at DESC LIMIT 10")).rows; }
-    catch (error) { this.#safe(() => this.log("IQ_WS_RECONCILE_QUERY_FAILED", String(error?.message ?? error).slice(0, 120))); return { checked: 0, settled: 0, unknown: 0 }; }
-    if (!rows.length) return { checked: 0, settled: 0, unknown: 0 };
+    catch (error) { this.#safe(() => this.log("IQ_WS_RECONCILE_QUERY_FAILED", String(error?.message ?? error).slice(0, 120))); mark({ checked: 0, settled: 0, unknown: 0, error: "QUERY_FAILED" }); return { checked: 0, settled: 0, unknown: 0 }; }
+    if (!rows.length) { mark({ checked: 0, settled: 0, unknown: 0, error: null }); return { checked: 0, settled: 0, unknown: 0 }; }
     const result = { checked: rows.length, settled: 0, unknown: 0 };
     let closed = [];
     try {
@@ -210,6 +212,7 @@ export class IqWsRuntime extends EventEmitter {
       this.#safe(() => this.log("IQ_WS_RECONCILED", JSON.stringify({ executionId: row.execution_id, brokerOrderId: String(row.broker_order_id), brokerResult: broker.result })));
       this.lastExecution = this.lastExecution ?? { executionId: row.execution_id, brokerOrderId: String(row.broker_order_id), state: "SETTLED", brokerResult: broker.result, causalResult: "UNKNOWN", mismatch: comparison.mismatch, profit: broker.profit, at: this.now(), reason: comparison.reason };
     }
+    mark({ checked: result.checked, settled: result.settled, unknown: result.unknown, error: null });
     return result;
   }
 
@@ -581,6 +584,8 @@ export class IqWsRuntime extends EventEmitter {
         healthy: health.healthy,
         healthReasons: health.reasons,
         candleDiagnostics: this.candleDiagnostics,
+        reconcile: this.reconcile,
+        recentCandles: list.slice(-12).map((candle) => ({ bucketStart: candle.bucketStart, bucketEnd: candle.bucketEnd, open: candle.open, high: candle.high, low: candle.low, close: candle.close, serverTimestamp: candle.serverTimestamp, receivedAt: candle.receivedAt, segmentId: candle.segmentId })),
         features: this.lastContext ? {
           builtAt: this.lastContext.builtAt,
           fresh: this.lastContext.fresh.fresh,
