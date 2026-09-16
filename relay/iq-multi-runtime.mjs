@@ -1012,11 +1012,13 @@ export class IqMultiRuntime extends EventEmitter {
     const results = [];
     try {
       for (const stage of stages) {
+        if (this.stress.cancelRequested) { results.push({ stage, cancelled: true }); break; }
         for (const ctx of this.markets.values()) { if (ctx.enabled && !candidates.slice(0, stage).includes(ctx)) { try { this.setMarket(ctx.marketKey, { enabled: false }, { persist: false }); } catch { /* noop */ } } }
         for (const ctx of candidates.slice(0, stage)) { if (!ctx.enabled) { try { this.setMarket(ctx.marketKey, { enabled: true }, { persist: false }); } catch (error) { this.#safe(() => this.log("IQ_MULTI_STRESS_ENABLE_FAILED", `${ctx.marketKey}:${String(error?.code ?? error.message)}`)); } } }
         const baseline = Object.fromEntries(candidates.slice(0, stage).map((ctx) => [ctx.marketKey, { messages: ctx.stats.messages, candles: ctx.stats.candlesProcessed, rejected: ctx.stats.rejected, duplicates: ctx.stats.duplicates, reorder: ctx.stats.reorder, gaps: ctx.stats.gaps, reconnects: this.reconnects }]));
         const started = this.now(); const cpuStart = process.cpuUsage();
         await sleep(secondsPerStage * 1000);
+        if (this.stress.cancelRequested) { results.push({ stage, cancelled: true }); break; }
         const cpuEnd = process.cpuUsage(cpuStart);
         const perMarket = candidates.slice(0, stage).map((ctx) => ({
           marketKey: ctx.marketKey, activeId: ctx.activeId, candles: ctx.candles.size,
@@ -1035,10 +1037,17 @@ export class IqMultiRuntime extends EventEmitter {
         const shouldBeEnabled = originalEnabled.includes(ctx.marketKey);
         if (ctx.enabled !== shouldBeEnabled) { try { this.setMarket(ctx.marketKey, { enabled: shouldBeEnabled }, { persist: true }); } catch { /* noop */ } }
       }
-      this.stress = { running: false, startedAt: this.stress.startedAt, stages, secondsPerStage, report: { finishedAt: this.now(), results }, originalEnabled };
-      this.#safe(() => this.log("IQ_MULTI_STRESS_DONE", JSON.stringify({ stages, results: results.map((row) => ({ stage: row.stage, markets: row.markets?.length ?? 0, cpuUserMs: row.cpuUserMs, memoryMb: row.memoryMb })) })));
+      this.stress = { running: false, startedAt: this.stress.startedAt, stages, secondsPerStage, report: { finishedAt: this.now(), cancelled: this.stress.cancelRequested === true, results }, originalEnabled };
+      this.#safe(() => this.log("IQ_MULTI_STRESS_DONE", JSON.stringify({ stages, cancelled: this.stress.report.cancelled, results: results.map((row) => ({ stage: row.stage, markets: row.markets?.length ?? 0, cpuUserMs: row.cpuUserMs, memoryMb: row.memoryMb })) })));
     }
   }
 
-  stressReport() { return { running: this.stress.running, startedAt: this.stress.startedAt ?? null, stages: this.stress.stages ?? null, secondsPerStage: this.stress.secondsPerStage ?? null, report: this.stress.report ?? null }; }
+  stopStress(reason = "CANCEL") {
+    if (!this.stress.running) return { stopped: false, reason: "NOT_RUNNING" };
+    this.stress = { ...this.stress, cancelRequested: true };
+    this.#emitEvent("stress.cancel", { reason });
+    return { stopped: true, reason };
+  }
+
+  stressReport() { return { running: this.stress.running, startedAt: this.stress.startedAt ?? null, stages: this.stress.stages ?? null, secondsPerStage: this.stress.secondsPerStage ?? null, cancelRequested: this.stress.cancelRequested === true, report: this.stress.report ?? null }; }
 }
