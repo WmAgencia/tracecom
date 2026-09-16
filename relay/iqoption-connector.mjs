@@ -17,7 +17,7 @@ export function assertPracticeAccount(accountType) {
   return "PRACTICE";
 }
 
-export class KillSwitch { constructor(initial = false) { this.enabled = !initial; } engage() { this.enabled = false; } release() { this.enabled = true; } status() { return { executionEnabled: this.enabled, practiceOnly: PRACTICE_ONLY }; } }
+export class KillSwitch { constructor(enabled = true) { this.enabled = enabled; } engage() { this.enabled = false; } release() { this.enabled = true; } status() { return { executionEnabled: this.enabled, practiceOnly: PRACTICE_ONLY }; } }
 
 export class IdempotencyStore {
   constructor() { this.byKey = new Map(); }

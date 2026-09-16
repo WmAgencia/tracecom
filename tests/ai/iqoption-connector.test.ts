@@ -9,7 +9,7 @@ const {
 } = connector as unknown as Record<string, any>;
 
 const baseRequest = { direction: "BUY", decisionId: "dec-1", stake: 1, asset: "EUR/USD", horizonSeconds: 60, decisionAgeMs: 2_000, marketOpen: true, idempotencyKey: "idem-1" };
-const context = (overrides: Record<string, unknown> = {}) => ({ accountType: "PRACTICE", expectedAsset: "EUR/USD", killSwitch: new KillSwitch(true), idempotency: new IdempotencyStore(), stakeCap: 1, ...overrides });
+const context = (overrides: Record<string, unknown> = {}) => ({ accountType: "PRACTICE", expectedAsset: "EUR/USD", killSwitch: new KillSwitch(), idempotency: new IdempotencyStore(), stakeCap: 1, ...overrides });
 
 describe("REAL ACCOUNT BLOCK — enforcement server-side inegociavel", () => {
   it("REAL + BUY → REAL_ACCOUNT_EXECUTION_FORBIDDEN", () => {
@@ -53,12 +53,12 @@ describe("IDEMPOTENCIA — uma decisao = no maximo UMA ordem", () => {
 
 describe("KILL SWITCH + stake + fresh", () => {
   it("kill switch ativo bloqueia; release permite novamente", () => {
-    const killSwitch = new KillSwitch(true);
-    expect(() => validatePracticeOrder({ ...baseRequest }, context({ killSwitch }))).toThrowError(/KILL_SWITCH_ACTIVE/);
-    killSwitch.release();
+    const killSwitch = new KillSwitch();
     expect(validatePracticeOrder({ ...baseRequest }, context({ killSwitch })).direction).toBe("CALL");
     killSwitch.engage();
     expect(() => validatePracticeOrder({ ...baseRequest, idempotencyKey: "idem-3" }, context({ killSwitch }))).toThrowError(/KILL_SWITCH_ACTIVE/);
+    killSwitch.release();
+    expect(validatePracticeOrder({ ...baseRequest, idempotencyKey: "idem-4" }, context({ killSwitch })).direction).toBe("CALL");
   });
   it("stake cap, stale decision, asset, mercado fechado e horizonte invalido → fail-closed", () => {
     expect(() => validatePracticeOrder({ ...baseRequest, stake: 5 }, context())).toThrowError(/STAKE_CAP_EXCEEDED/);
