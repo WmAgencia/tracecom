@@ -48,7 +48,7 @@ describe("AUTH — login/2FA/SSID state machine", () => {
     expect(String((error as { message?: string } | null)?.message ?? "")).not.toContain("hunter2");
     const network = new IqAuthSession({ fetchImpl: async () => { throw new Error("fetch failed ssid=NET-LEAK"); } });
     let networkError = null; try { await network.login({ email: "u@x.com", password: "pw" }); } catch (caught) { networkError = caught; }
-    expect(String(networkError?.message ?? "")).not.toContain("NET-LEAK");
+    expect(String((networkError as { message?: string } | null)?.message ?? "")).not.toContain("NET-LEAK");
     await expect(new IqAuthSession({ fetchImpl: async () => response(200) }).login({ email: "bad", password: "" })).rejects.toThrowError(/INVALID_CREDENTIALS_INPUT/);
   });
 });
