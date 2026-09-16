@@ -721,7 +721,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       try {
         const existing = (await readAiProviderConfig()) ?? {};
         const record = { ...existing, provider: "openCodeGo", apiKey, model: model ?? (typeof existing.model === "string" ? existing.model : null), updatedAt: new Date().toISOString() };
-        await put(AI_PROVIDER_CONFIG_PATH, JSON.stringify(record), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 } as never);
+        await del(AI_PROVIDER_CONFIG_PATH).catch(() => undefined);
+        await put(AI_PROVIDER_CONFIG_PATH, JSON.stringify(record), { access: "private", addRandomSuffix: false, contentType: "application/json", cacheControlMaxAge: 0 } as never);
         json(200, { status: "CONFIGURED", provider: "openCodeGo", model: record.model, maskedKey: maskApiKey(apiKey), updatedAt: record.updatedAt, shadowOnly: true });
       } catch { json(502, { error: "provider_store_unavailable" }); }
       return;
