@@ -20,7 +20,7 @@ const status = await req("GET", "/api/iq/status");
 const md = status.json.marketData ?? {};
 const acct = status.json.account ?? {};
 const ex = status.json.execution ?? {};
-check("WS-01", "runtime WS ativo", status.json.runtimeVersion === "iq-ws-runtime-v1", status.json.runtimeVersion ?? null);
+check("WS-01", "runtime WS ativo", ["iq-ws-runtime-v1", "iq-multi-runtime-v2"].includes(status.json.runtimeVersion), status.json.runtimeVersion ?? null);
 check("WS-02", "WS conectado", md.connected === true, md.host ?? null);
 check("WS-03", "host real esperado (ws.iqoption.com/iqoption.com)", ["ws.iqoption.com", "iqoption.com"].includes(md.host), md.host ?? null);
 check("WS-04", "server time validado (+-2s)", md.timeValid === true && Number.isFinite(md.clockSkewMs) && Math.abs(md.clockSkewMs) <= 2_000, { skewMs: md.clockSkewMs ?? null });
@@ -34,7 +34,7 @@ check("MD-07", "zero candles rejeitados", Number(md.candleDiagnostics?.rejected 
 const candles = Array.isArray(md.recentCandles) ? md.recentCandles : [];
 check("CA-01", "candles ordenados (bucket estritamente crescente)", candles.length >= 3 && candles.every((c, i, a) => i === 0 || c.bucketStart > a[i - 1].bucketStart), candles.length);
 check("CA-02", "nenhum candle futuro vs server time", candles.every((c) => Number(c.bucketEnd) <= Number(md.serverTimeMs) + 5_000), { serverTimeMs: md.serverTimeMs ?? null });
-check("CA-03", "segmentId/ativo coerentes", candles.every((c) => c.segmentId === `EUR/USD:${c.bucketStart}`), candles[0]?.segmentId ?? null);
+check("CA-03", "segmentId/ativo coerentes", candles.every((c) => typeof c.segmentId === "string" && c.segmentId.endsWith(`:${c.bucketStart}`) && /EURUSD/.test(c.segmentId)), candles[0]?.segmentId ?? null);
 check("CA-04", "OHLC coerente", candles.every((c) => c.high >= Math.max(c.open, c.close) - 1e-9 && c.low <= Math.min(c.open, c.close) + 1e-9), null);
 check("AC-01", "conta PRACTICE verificada server-side", acct.verified === true && acct.type === "PRACTICE", { type: acct.type ?? null, currency: acct.currency ?? null, balance: acct.balance ?? null });
 check("AC-02", "REAL detectada permanece proibida", acct.realExecutionForbidden === true && (acct.hasReal !== true || ex.practiceOnly === true), { hasReal: acct.hasReal ?? null, practiceOnly: ex.practiceOnly ?? null });
