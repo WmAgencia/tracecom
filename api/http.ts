@@ -708,7 +708,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
     if (path === "/api/strategies/selection" && req.method === "GET") {
       const { selection, latestSignals } = await fetchStrategySelection();
-      const brokerHorizonSeconds = Number.isFinite(Number(q.get("brokerHorizonSeconds"))) ? Number(q.get("brokerHorizonSeconds")) : null;
+      const brokerParam = q.get("brokerHorizonSeconds");
+      const brokerHorizonSeconds = brokerParam === null || brokerParam.trim() === "" || !Number.isFinite(Number(brokerParam)) ? null : Number(brokerParam);
       json(200, { selection, latestSignals, compatibility: selection ? horizonCompatibility(selection, brokerHorizonSeconds) : null, shadowOnly: true });
       return;
     }

@@ -62,10 +62,10 @@ export function makeAutoSelection(chosen: StrategySelection, reason: string): St
 }
 
 /** Bloqueio por incompatibilidade de horizonte com o broker (validade visivel). */
-export function horizonCompatibility(selection: StrategySelection, brokerHorizonSeconds: number | null | undefined): { compatible: boolean; reason: string } {
-  if (brokerHorizonSeconds == null || !Number.isFinite(brokerHorizonSeconds)) return { compatible: true, reason: "BROKER_HORIZON_UNKNOWN" };
-  if (brokerHorizonSeconds === selection.horizonSeconds) return { compatible: true, reason: "MATCH" };
-  return { compatible: false, reason: "HORIZON_INCOMPATIBLE" };
+export function horizonCompatibility(selection: StrategySelection, brokerHorizonSeconds: number | null | undefined): { compatible: boolean; reason: string; brokerHorizonSeconds: number | null } {
+  if (brokerHorizonSeconds == null || !Number.isFinite(brokerHorizonSeconds)) return { compatible: true, reason: "BROKER_HORIZON_UNKNOWN", brokerHorizonSeconds: null };
+  if (brokerHorizonSeconds === selection.horizonSeconds) return { compatible: true, reason: "MATCH", brokerHorizonSeconds };
+  return { compatible: false, reason: "HORIZON_INCOMPATIBLE", brokerHorizonSeconds };
 }
 
 export interface GateContext {

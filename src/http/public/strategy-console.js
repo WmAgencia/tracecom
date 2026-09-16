@@ -41,7 +41,7 @@ function renderControl() {
   const compatibility = control.compatibility;
   const warning = $id("horizonWarning");
   if (warning) {
-    if (compatibility && compatibility.compatible === false) { warning.hidden = false; warning.textContent = `HORIZONTE INCOMPATÍVEL — selecionada ${selection?.horizonSeconds}s; broker detectado ${compatibility.brokerHorizonSeconds ?? "?"}s. Operação bloqueada até compatibilizar (shadow continua).`; }
+    if (compatibility && compatibility.compatible === false && compatibility.reason === "HORIZON_INCOMPATIBLE") { warning.hidden = false; warning.textContent = `HORIZONTE INCOMPATÍVEL — selecionada ${selection?.horizonSeconds}s; broker detectado ${compatibility.brokerHorizonSeconds ?? "?"}s. Operação bloqueada até compatibilizar (shadow continua).`; }
     else { warning.hidden = true; }
   }
   const list = $id("strategyList"); if (!list) return;
