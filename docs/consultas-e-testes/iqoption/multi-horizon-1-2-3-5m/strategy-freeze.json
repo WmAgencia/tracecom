@@ -1,0 +1,433 @@
+{
+ "generated_at": "2026-09-16T01:03:39.183Z",
+ "note": "universo congelado ANTES de avaliar; 10h = DISCOVERY (nada validado); settlement = close exato em T+H; entry = close em T",
+ "hypotheses": [
+  {
+   "id": "mi_imb_follow_10",
+   "fam": "A_micro",
+   "rule": "imb>0.10 follow",
+   "hash": "ac97732c220086e4"
+  },
+  {
+   "id": "mi_imb_follow_20",
+   "fam": "A_micro",
+   "rule": "imb>0.20 follow",
+   "hash": "42c7554d0d027394"
+  },
+  {
+   "id": "mi_imb_fade_15",
+   "fam": "A_micro",
+   "rule": "imb>0.15 fade",
+   "hash": "a78be48cbee235a8"
+  },
+  {
+   "id": "mi_burst_follow",
+   "fam": "A_micro",
+   "rule": "tickBurst + r3 sign",
+   "hash": "16ad0713f3f27a08"
+  },
+  {
+   "id": "mom_follow_15s",
+   "fam": "A_micro",
+   "rule": "ret3 follow",
+   "hash": "b37f5d2d548e0d22"
+  },
+  {
+   "id": "mom_fade_15s",
+   "fam": "A_micro",
+   "rule": "ret3 fade",
+   "hash": "2fcbb2bcd9ed7468"
+  },
+  {
+   "id": "mom_follow_30s",
+   "fam": "A_micro",
+   "rule": "ret6 follow",
+   "hash": "c832d078058a6273"
+  },
+  {
+   "id": "mom_fade_30s",
+   "fam": "A_micro",
+   "rule": "ret6 fade",
+   "hash": "c2a78093fad44566"
+  },
+  {
+   "id": "mom_follow_60s",
+   "fam": "A_micro",
+   "rule": "ret12 follow",
+   "hash": "5ec0a012a8496cd2"
+  },
+  {
+   "id": "mom_fade_60s",
+   "fam": "A_micro",
+   "rule": "ret12 fade",
+   "hash": "fd8f34c75c74353d"
+  },
+  {
+   "id": "mom_follow_120s",
+   "fam": "A_micro",
+   "rule": "ret24 follow",
+   "hash": "dbcba17b80c34384"
+  },
+  {
+   "id": "mom_fade_120s",
+   "fam": "A_micro",
+   "rule": "ret24 fade",
+   "hash": "ec8cc73d6ffd0d3a"
+  },
+  {
+   "id": "streak_follow_3",
+   "fam": "A_micro",
+   "rule": "streak>=3 follow",
+   "hash": "bca6271dda037006"
+  },
+  {
+   "id": "streak_fade_3",
+   "fam": "A_micro",
+   "rule": "streak>=3 fade",
+   "hash": "fcd3be5278cfa69f"
+  },
+  {
+   "id": "streak_follow_4",
+   "fam": "A_micro",
+   "rule": "streak>=4 follow",
+   "hash": "e21541148ae859a8"
+  },
+  {
+   "id": "streak_fade_4",
+   "fam": "A_micro",
+   "rule": "streak>=4 fade",
+   "hash": "da6c47a264eddc92"
+  },
+  {
+   "id": "streak_follow_5",
+   "fam": "A_micro",
+   "rule": "streak>=5 follow",
+   "hash": "0e90fbe96bf7909c"
+  },
+  {
+   "id": "streak_fade_5",
+   "fam": "A_micro",
+   "rule": "streak>=5 fade",
+   "hash": "093819076cae939a"
+  },
+  {
+   "id": "rsi4_rev",
+   "fam": "A_micro",
+   "rule": "RSI4 20/80 rev",
+   "hash": "0c2e2cb48ab308ab"
+  },
+  {
+   "id": "fast_z30_rev",
+   "fam": "A_micro",
+   "rule": "z60 rev 2.0",
+   "hash": "9960e659579d9220"
+  },
+  {
+   "id": "bb_fast_rev",
+   "fam": "A_micro",
+   "rule": "close vs BB20 2sd rev",
+   "hash": "d43e947ae5e2ea5b"
+  },
+  {
+   "id": "wick_rej",
+   "fam": "A_micro",
+   "rule": "wick rejection no extremo de 60 candles",
+   "hash": "2406c1a48779abc0"
+  },
+  {
+   "id": "failed_cont_up",
+   "fam": "A_micro",
+   "rule": "r6>0 & close<prev & upperwick>0.4 -> SELL",
+   "hash": "f7ffa757234310b0"
+  },
+  {
+   "id": "failed_cont_dn",
+   "fam": "A_micro",
+   "rule": "r6<0 & close>prev & lowerwick>0.4 -> BUY",
+   "hash": "003f231209c4063a"
+  },
+  {
+   "id": "mom_confirmed_60",
+   "fam": "B_120",
+   "rule": "ret12 sign & ret6 same",
+   "hash": "221a8dcb56ed61bc"
+  },
+  {
+   "id": "mom_conf_vol",
+   "fam": "B_120",
+   "rule": "mom_confirmed & vol12<0.001",
+   "hash": "032b434841457aef"
+  },
+  {
+   "id": "z120_rev_2",
+   "fam": "B_120",
+   "rule": "z120 rev 2.0",
+   "hash": "023c63918ecdb85f"
+  },
+  {
+   "id": "sr_rej",
+   "fam": "B_120",
+   "rule": "rejeicao perto de pivot 96",
+   "hash": "fb24a011b563e8ba"
+  },
+  {
+   "id": "ema_stack_follow",
+   "fam": "B_120",
+   "rule": "e9>e21>e50 follow",
+   "hash": "880be7f3c31b6e0f"
+  },
+  {
+   "id": "ema_stack_fade",
+   "fam": "B_120",
+   "rule": "e9>e21>e50 fade",
+   "hash": "dd651689fc181caf"
+  },
+  {
+   "id": "reg_resid_rev",
+   "fam": "B_120",
+   "rule": "residuo reg36 rev",
+   "hash": "d9a2c74d16952c85"
+  },
+  {
+   "id": "keltner_rev",
+   "fam": "B_120",
+   "rule": "KC20 2xATR rev",
+   "hash": "4ed056053d1228ae"
+  },
+  {
+   "id": "vol_low_rev",
+   "fam": "B_120",
+   "rule": "lowVol + z60 rev",
+   "hash": "4d00d3b315ade151"
+  },
+  {
+   "id": "vol_high_follow",
+   "fam": "B_120",
+   "rule": "highVol + ret6 follow",
+   "hash": "0b483669bff50cd3"
+  },
+  {
+   "id": "micro_confirm_mom",
+   "fam": "B_120",
+   "rule": "ret6 & imb same sign",
+   "hash": "ae55d5923938e908"
+  },
+  {
+   "id": "struct_follow",
+   "fam": "C_180",
+   "rule": "HH/HL ou LH/LL follow",
+   "hash": "9571e1ab67066f52"
+  },
+  {
+   "id": "struct_fade",
+   "fam": "C_180",
+   "rule": "estrutura fade",
+   "hash": "082ef9944cfa1f21"
+  },
+  {
+   "id": "tl_break",
+   "fam": "C_180",
+   "rule": "trendline break",
+   "hash": "4cd47901848ee166"
+  },
+  {
+   "id": "tl_reject",
+   "fam": "C_180",
+   "rule": "trendline rejection (2 pivots)",
+   "hash": "2c42485b74968cc5"
+  },
+  {
+   "id": "fib_zone_ctx",
+   "fam": "C_180",
+   "rule": "inZone upSwing ctx",
+   "hash": "027cd66b7872ac67"
+  },
+  {
+   "id": "don36_follow",
+   "fam": "C_180",
+   "rule": "Donchian36 breakout",
+   "hash": "13489539db448f3a"
+  },
+  {
+   "id": "fb25_rev",
+   "fam": "C_180",
+   "rule": "false break 0.25ATR rev",
+   "hash": "dae78bdedca24c0b"
+  },
+  {
+   "id": "retest_cont",
+   "fam": "C_180",
+   "rule": "retest continuation",
+   "hash": "a8545dbd0112c990"
+  },
+  {
+   "id": "adx_trend_follow",
+   "fam": "C_180",
+   "rule": "ADX>25 + ema stack follow",
+   "hash": "92dc1f3c2ec26a55"
+  },
+  {
+   "id": "adx_chop_rev",
+   "fam": "C_180",
+   "rule": "ADX<20 + z60 rev",
+   "hash": "60968d5d8159aa45"
+  },
+  {
+   "id": "st_flip",
+   "fam": "C_180",
+   "rule": "Supertrend flip follow",
+   "hash": "963aaeaca21fafb6"
+  },
+  {
+   "id": "er_trend",
+   "fam": "C_180",
+   "rule": "ER36>0.5 follow ret36",
+   "hash": "0eddbb3ce64ab9e2"
+  },
+  {
+   "id": "er_chop_rev",
+   "fam": "C_180",
+   "rule": "ER36<0.3 rev z60",
+   "hash": "295d770a5f4f3b11"
+  },
+  {
+   "id": "persist_er_trend",
+   "fam": "D_300",
+   "rule": "ER60>0.4 follow ret60",
+   "hash": "1f4531a7f4a16075"
+  },
+  {
+   "id": "persist_struct",
+   "fam": "D_300",
+   "rule": "estrutura + ret60 same",
+   "hash": "0441e8cc6276fd05"
+  },
+  {
+   "id": "regime_lowvol_follow",
+   "fam": "D_300",
+   "rule": "lowVol + ret120 follow",
+   "hash": "81c4b7e4cc10bbbe"
+  },
+  {
+   "id": "regime_highvol_rev",
+   "fam": "D_300",
+   "rule": "highVol + z60 rev",
+   "hash": "286ab0520a792780"
+  },
+  {
+   "id": "mtf_align",
+   "fam": "D_300",
+   "rule": "ret12 & ret60 same sign follow",
+   "hash": "5eabdb92c816b4fc"
+  },
+  {
+   "id": "mtf_opp_rev",
+   "fam": "D_300",
+   "rule": "ret12 vs ret60 opposite rev",
+   "hash": "eec0427e71414b9a"
+  },
+  {
+   "id": "hurst_persist",
+   "fam": "D_300",
+   "rule": "H>0.55 follow ret120",
+   "hash": "c6416797a9ef8063"
+  },
+  {
+   "id": "hurst_mr",
+   "fam": "D_300",
+   "rule": "H<0.45 rev z60",
+   "hash": "400c80681a1a8807"
+  },
+  {
+   "id": "don60_follow",
+   "fam": "D_300",
+   "rule": "Donchian60 breakout",
+   "hash": "743319e87f98b7b2"
+  },
+  {
+   "id": "reg_channel_break",
+   "fam": "D_300",
+   "rule": "reg60 slope>0 & close>line+0.3ATR",
+   "hash": "b9d3a0d6c8d8bcf2"
+  },
+  {
+   "id": "expansion_follow",
+   "fam": "D_300",
+   "rule": "sd12/sd60>1.5 & ret12 sign",
+   "hash": "c3d451fc5c2bcbec"
+  },
+  {
+   "id": "sess_mom",
+   "fam": "D_300",
+   "rule": "h11-18 + ret60 follow",
+   "hash": "88729560d0354a62"
+  },
+  {
+   "id": "micro_pullback_in_macro",
+   "fam": "E_mtf",
+   "rule": "ret3 contra ret60 follow macro",
+   "hash": "811b43616c815c50"
+  },
+  {
+   "id": "micro_rev_at_extreme",
+   "fam": "E_mtf",
+   "rule": "z60 extreme contra macro",
+   "hash": "9fd1f4d3b46e7b9d"
+  },
+  {
+   "id": "exhaustion_at_support",
+   "fam": "E_mtf",
+   "rule": "z60<-2 & ret300>0 BUY",
+   "hash": "d624337c345ff24b"
+  },
+  {
+   "id": "breakout_with_macro",
+   "fam": "E_mtf",
+   "rule": "don36 break & ret60 same",
+   "hash": "039aff001e1dd4fa"
+  },
+  {
+   "id": "breakout_against_macro",
+   "fam": "E_mtf",
+   "rule": "don36 break contra ret60",
+   "hash": "9d3b690681d3064a"
+  },
+  {
+   "id": "prod_V1",
+   "fam": "F_fib",
+   "rule": "spec historica congelada",
+   "hash": "2557104530934bc8"
+  },
+  {
+   "id": "prod_V3",
+   "fam": "F_fib",
+   "rule": "spec historica congelada",
+   "hash": "84c3b3a1ffab60a6"
+  },
+  {
+   "id": "prod_V6",
+   "fam": "F_fib",
+   "rule": "spec historica congelada",
+   "hash": "222f120f85020d8d"
+  },
+  {
+   "id": "prod_V7-AND",
+   "fam": "F_fib",
+   "rule": "spec historica congelada",
+   "hash": "7e6cdccaa80bf248"
+  },
+  {
+   "id": "prod_V7-Relaxado",
+   "fam": "F_fib",
+   "rule": "spec historica congelada",
+   "hash": "f384748efe0ec303"
+  },
+  {
+   "id": "prod_V8",
+   "fam": "F_fib",
+   "rule": "spec historica congelada",
+   "hash": "14cfebcda8611e7d"
+  }
+ ],
+ "K": 71
+}

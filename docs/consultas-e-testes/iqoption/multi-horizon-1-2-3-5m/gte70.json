@@ -1,0 +1,196 @@
+{
+ "count": 10,
+ "note": "DISCOVERY (10h conhecidas); n<50 = SAMPLE TOO SMALL",
+ "entries": [
+  {
+   "id": "vol_high_follow",
+   "market": "OTC",
+   "fam": "B_120",
+   "horizon": 60,
+   "n": 12,
+   "signals": 12,
+   "sigPerHour": 1.2,
+   "wr": 91.67,
+   "buyWR": 0,
+   "sellWR": 100,
+   "indepN": 1,
+   "indepWR": 100,
+   "ci95": [
+    64.61,
+    98.51
+   ],
+   "sample": "SAMPLE TOO SMALL"
+  },
+  {
+   "id": "vol_high_follow",
+   "market": "OTC",
+   "fam": "B_120",
+   "horizon": 120,
+   "n": 12,
+   "signals": 12,
+   "sigPerHour": 1.2,
+   "wr": 91.67,
+   "buyWR": 0,
+   "sellWR": 100,
+   "indepN": 1,
+   "indepWR": 100,
+   "ci95": [
+    64.61,
+    98.51
+   ],
+   "sample": "SAMPLE TOO SMALL"
+  },
+  {
+   "id": "vol_high_follow",
+   "market": "OTC",
+   "fam": "B_120",
+   "horizon": 180,
+   "n": 12,
+   "signals": 12,
+   "sigPerHour": 1.2,
+   "wr": 91.67,
+   "buyWR": 0,
+   "sellWR": 100,
+   "indepN": 1,
+   "indepWR": 100,
+   "ci95": [
+    64.61,
+    98.51
+   ],
+   "sample": "SAMPLE TOO SMALL"
+  },
+  {
+   "id": "mi_burst_follow",
+   "market": "OTC",
+   "fam": "A_micro",
+   "horizon": 60,
+   "n": 10,
+   "signals": 10,
+   "sigPerHour": 1,
+   "wr": 80,
+   "buyWR": 0,
+   "sellWR": 100,
+   "indepN": 1,
+   "indepWR": 100,
+   "ci95": [
+    49.02,
+    94.33
+   ],
+   "sample": "SAMPLE TOO SMALL"
+  },
+  {
+   "id": "mi_burst_follow",
+   "market": "OTC",
+   "fam": "A_micro",
+   "horizon": 120,
+   "n": 10,
+   "signals": 10,
+   "sigPerHour": 1,
+   "wr": 80,
+   "buyWR": 0,
+   "sellWR": 100,
+   "indepN": 1,
+   "indepWR": 100,
+   "ci95": [
+    49.02,
+    94.33
+   ],
+   "sample": "SAMPLE TOO SMALL"
+  },
+  {
+   "id": "mi_burst_follow",
+   "market": "OTC",
+   "fam": "A_micro",
+   "horizon": 180,
+   "n": 10,
+   "signals": 10,
+   "sigPerHour": 1,
+   "wr": 80,
+   "buyWR": 0,
+   "sellWR": 100,
+   "indepN": 1,
+   "indepWR": 100,
+   "ci95": [
+    49.02,
+    94.33
+   ],
+   "sample": "SAMPLE TOO SMALL"
+  },
+  {
+   "id": "prod_V6",
+   "market": "OTC",
+   "fam": "F_fib",
+   "horizon": 60,
+   "n": 3,
+   "signals": 3,
+   "sigPerHour": 0.3,
+   "wr": 100,
+   "buyWR": 100,
+   "sellWR": null,
+   "indepN": 0,
+   "indepWR": null,
+   "ci95": [
+    43.85,
+    100
+   ],
+   "sample": "SAMPLE TOO SMALL"
+  },
+  {
+   "id": "prod_V6",
+   "market": "OTC",
+   "fam": "F_fib",
+   "horizon": 120,
+   "n": 3,
+   "signals": 3,
+   "sigPerHour": 0.3,
+   "wr": 100,
+   "buyWR": 100,
+   "sellWR": null,
+   "indepN": 0,
+   "indepWR": null,
+   "ci95": [
+    43.85,
+    100
+   ],
+   "sample": "SAMPLE TOO SMALL"
+  },
+  {
+   "id": "prod_V6",
+   "market": "OTC",
+   "fam": "F_fib",
+   "horizon": 180,
+   "n": 3,
+   "signals": 3,
+   "sigPerHour": 0.3,
+   "wr": 100,
+   "buyWR": 100,
+   "sellWR": null,
+   "indepN": 0,
+   "indepWR": null,
+   "ci95": [
+    43.85,
+    100
+   ],
+   "sample": "SAMPLE TOO SMALL"
+  },
+  {
+   "id": "prod_V6",
+   "market": "OTC",
+   "fam": "F_fib",
+   "horizon": 300,
+   "n": 3,
+   "signals": 3,
+   "sigPerHour": 0.3,
+   "wr": 100,
+   "buyWR": 100,
+   "sellWR": null,
+   "indepN": 0,
+   "indepWR": null,
+   "ci95": [
+    43.85,
+    100
+   ],
+   "sample": "SAMPLE TOO SMALL"
+  }
+ ]
+}

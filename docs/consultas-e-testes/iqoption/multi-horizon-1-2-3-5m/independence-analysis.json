@@ -1,0 +1,20 @@
+{
+ "BINARY": {
+  "spacing": {
+   "60": "60s",
+   "120": "120s",
+   "180": "180s",
+   "300": "300s"
+  },
+  "note": "conservador >= horizonte"
+ },
+ "OTC": {
+  "spacing": {
+   "60": "60s",
+   "120": "120s",
+   "180": "180s",
+   "300": "300s"
+  },
+  "note": "conservador >= horizonte"
+ }
+}
