@@ -493,7 +493,8 @@ export class IqMultiRuntime extends EventEmitter {
       this.#emitEvent("market.signal", { marketKey: ctx.marketKey, action, bucketStart: ctx.lastSignal.bucketStart });
       if (this.config.autoExecute === true) void this.#autoExecute(ctx, action);
     } else {
-      this.#setAgent(ctx, "WAIT", reason);
+      if (ctx.positionState?.status === "OPEN" || ctx.positionState?.status === "ORDERING") this.#setAgent(ctx, ctx.positionState.status === "OPEN" ? "IN_POSITION" : "ORDERING", "POSITION_OPEN");
+      else this.#setAgent(ctx, "WAIT", reason);
       if (this.now() - (ctx.lastWaitEmit ?? 0) > 5_000) { ctx.lastWaitEmit = this.now(); this.#emitEvent("market.wait", { marketKey: ctx.marketKey, reason }); }
     }
   }

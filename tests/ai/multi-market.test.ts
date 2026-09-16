@@ -112,6 +112,7 @@ describe("PORTFOLIO GATE — stake/caps", () => {
     expect(gate.evaluate(base).allowed).toBe(true);
     expect(gate.evaluate({ ...base, requestedMode: "REAL" }).allowed).toBe(false);
     expect(gate.evaluate({ ...base, decision: { action: "WAIT", ageMs: 0 } }).allowed).toBe(false);
+    expect(gate.evaluate({ ...base, market: { ...base.market, paused: true } }).reasons).toContain("market_not_paused");
     const eleven = Array.from({ length: 11 }, (_, index) => `M${index}:NORMAL`);
     expect(gate.evaluate({ ...base, activeMarketKeys: eleven }).reasons).toContain("active_markets_respected");
     expect(gate.evaluate({ ...base, stake: 150, globalMaxStake: 200, market: { ...base.market, maxStake: 200 } }).reasons).toContain("hard_cap_respected");

@@ -33,6 +33,7 @@ export class PortfolioExecutionGate {
 
     add("market_configured", Boolean(market && entry), market ? market.marketKey : null);
     add("market_enabled", market?.enabled === true, market ? { enabled: market.enabled === true, paused: market.paused === true } : null);
+    add("market_not_paused", market?.paused !== true, market ? { paused: market.paused === true } : null);
     add("market_available", market?.availability === "OPEN" && market?.activeId !== null && market?.activeId !== undefined, market ? { availability: market.availability, activeId: market.activeId ?? null } : null);
     add("market_type_correct", Boolean(entry) && entry.marketType === market?.marketType, entry && market ? { expected: entry.marketType, actual: market.marketType } : null);
     add("active_id_valid", Number.isFinite(Number(market?.activeId)) && Number(market.activeId) > 0, market?.activeId ?? null);
