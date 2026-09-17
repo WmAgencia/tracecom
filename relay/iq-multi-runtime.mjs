@@ -801,9 +801,9 @@ export class IqMultiRuntime extends EventEmitter {
     return record;
   }
 
-  auditTrail({ correlationId = null, marketKey = null, limit = 100 } = {}) {
+  auditTrail({ correlationId = null, marketKey = null, stage = null, limit = 100 } = {}) {
     const bounded = Math.max(1, Math.min(500, Number(limit) || 100));
-    const rows = [...this.audit].reverse().filter((row) => (!correlationId || row.correlationId === correlationId) && (!marketKey || row.marketKey === marketKey)).slice(0, bounded);
+    const rows = [...this.audit].reverse().filter((row) => (!correlationId || row.correlationId === correlationId) && (!marketKey || row.marketKey === marketKey) && (!stage || row.stage === stage)).slice(0, bounded);
     return { audit: rows, total: this.audit.length };
   }
 

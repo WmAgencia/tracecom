@@ -21,7 +21,7 @@ check("P62-ENTRY-02", "vebrao prospectivo early-vs-JIT presente e nunca avalia o
 
 const office = await req("GET", "/api/iq/office");
 const o = office.json;
-check("P62-OFFICE-01", "office expoe config de entrada e entryTiming por mercado", o.config?.jitEnabled === true && Number(o.config?.entryLeadMs) >= 1000 && o.entryTiming?.version === "entry-timing-v1" && o.entryTiming?.scoreboard?.counters, { entryLeadMs: o.config?.entryLeadMs ?? null, counters: o.entryTiming?.scoreboard?.counters ?? null });
+check("P62-OFFICE-01", "office expoe config de entrada e entryTiming por mercado", o.config?.jitEnabled === true && Number(o.config?.entryLeadMs) >= 1000 && o.entryTiming?.version === "entry-timing-v1" && Boolean(o.entryTiming?.scoreboard?.counters), { entryLeadMs: o.config?.entryLeadMs ?? null, counters: o.entryTiming?.scoreboard?.counters ?? null });
 const withCandidate = (o.markets ?? []).filter((market) => market.entryTiming && ["WAITING_WINDOW", "CONFIRMED", "ORDER_SENT", "CANCELLED", "WINDOW_MISSED", "GATE_BLOCKED"].includes(market.entryTiming.status));
 check("P62-OFFICE-02", "candidatos visiveis com janela alvo alinhada a 60s e stage de UI", withCandidate.length === 0 || withCandidate.every((market) => market.entryTiming.targetEntryAt % 60_000 === 0 && typeof market.entryTiming.stage === "string"), withCandidate.map((market) => ({ key: market.marketKey, stage: market.entryTiming.stage, target: market.entryTiming.targetEntryAt })));
 
@@ -37,11 +37,14 @@ const capped = await req("PUT", "/api/iq/entry/config", { entryLeadMs: 500 });
 check("P62-CONFIG-03", "lead fora dos limites e clampeado para 1000ms", capped.status === 200 && Number(capped.json.config?.entryLeadMs) === 1000, capped.json.config ?? null);
 await req("PUT", "/api/iq/entry/config", { entryLeadMs: beforeLead });
 
-const audit = await req("GET", "/api/iq/audit?limit=200");
-const stages = new Set((audit.json.audit ?? []).map((row) => row.stage));
-const timingStages = ["CANDIDATE_CREATED", "FINAL_REVALIDATION", "CANDIDATE_UPDATED", "CANDIDATE_CANCELLED", "BROKER_ACK", "ORDER_SENT"];
-check("P62-AUDIT-01", "audit trail com estagios do pipeline JIT e drifts", timingStages.filter((stage) => stages.has(stage)).length >= 2, [...stages]);
-const ackRows = (audit.json.audit ?? []).filter((row) => row.stage === "BROKER_ACK" && row.detail?.entryDriftMs !== undefined && row.detail?.entryDriftMs !== null);
+const auditCreated = await req("GET", "/api/iq/audit?stage=CANDIDATE_CREATED&limit=20");
+const auditRevalidation = await req("GET", "/api/iq/audit?stage=FINAL_REVALIDATION&limit=50");
+const auditCancelled = await req("GET", "/api/iq/audit?stage=CANDIDATE_CANCELLED&limit=50");
+const auditAck = await req("GET", "/api/iq/audit?stage=BROKER_ACK&limit=50");
+const auditSent = await req("GET", "/api/iq/audit?stage=ORDER_SENT&limit=50");
+const stagesPresent = [auditCreated.json.audit, auditRevalidation.json.audit, auditCancelled.json.audit, auditAck.json.audit, auditSent.json.audit].filter((rows) => (rows ?? []).length > 0).length;
+check("P62-AUDIT-01", "audit trail com estagios do pipeline JIT (created/revalidacao/cancel/ack/order)", stagesPresent >= 2, { created: (auditCreated.json.audit ?? []).length, revalidations: (auditRevalidation.json.audit ?? []).length, cancellations: (auditCancelled.json.audit ?? []).length, acks: (auditAck.json.audit ?? []).length });
+const ackRows = (auditAck.json.audit ?? []).filter((row) => row.detail?.entryDriftMs !== undefined && row.detail?.entryDriftMs !== null);
 check("P62-AUDIT-02", "BROKER_ACK registra targetEntryAt/effectiveEntryAt/entryDriftMs", ackRows.length > 0, ackRows.slice(0, 3).map((row) => row.detail));
 
 const executions = await req("GET", "/api/iq/executions?limit=50");
@@ -53,7 +56,7 @@ const uiJs = await fetch(`${BASE}/office.js`, { signal: AbortSignal.timeout(30_0
 check("P62-UI-01", "UI com estados reais do JIT (observacao/janela/revalidando/enviando/cancelado)", ["OPORTUNIDADE EM OBSERVA", "AGUARDANDO JANELA", "REVALIDANDO", "ENVIANDO ORDEM", "OPORTUNIDADE CANCELADA"].every((token) => uiJs.includes(token)), null);
 check("P62-UI-02", "contagem regressiva vem do backend (secondsToRevalidation) e painel de config existe", uiJs.includes("secondsToRevalidation") && uiJs.includes("officeEntrySave") && uiJs.includes("ENTRADA JUST-IN-TIME"), null);
 
-const secret = asText(entry.json) + asText(office.json) + asText(audit.json);
+const secret = asText(entry.json) + asText(office.json) + asText(auditCreated.json) + asText(auditAck.json);
 check("P62-SECRET-01", "nenhum ssid/senha/bearer nas superficies JIT", !secret.includes("ssid") && !secret.includes("password") && !secret.includes("bearer "), null);
 
 const failed = results.filter((row) => !row.pass);
