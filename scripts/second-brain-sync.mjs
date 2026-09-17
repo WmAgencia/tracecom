@@ -31,7 +31,7 @@ async function loadEnvLocal() {
   for (const file of [".env.local", ".env"]) {
     const raw = await fs.readFile(path.join(process.cwd(), file), "utf8").catch(() => null);
     if (!raw) continue;
-    const line = raw.split(/\r?\n/).find((row) => row.startsWith("SECOND_BRAIN_VAULT_PATH="));
+    const line = raw.replace(/^\uFEFF/, "").split(/\r?\n/).find((row) => row.trim().startsWith("SECOND_BRAIN_VAULT_PATH="));
     if (line) return line.slice(line.indexOf("=") + 1).trim().replace(/^"|"$/g, "");
   }
   return null;
