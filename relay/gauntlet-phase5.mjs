@@ -22,7 +22,12 @@ check("P5-UNIVERSE-01", "15 estacoes (NORMAL 10 + OTC 5) e limite de 10 preserva
 const intel = await req("GET", "/api/iq/intelligence");
 const intelStatus = intel.json.version ?? {};
 check("P5-INTEL-01", "Central de Inteligencia funcional com dominios reais", intel.status === 200 && ["MACRO", "NEWS", "MARKET", "RISK", "SECURITY", "RESEARCH"].every((domain) => intelStatus[domain]), Object.keys(intelStatus));
-check("P5-INTEL-02", "MACRO/NEWS = NO_FEED honesto (nunca noticia inventada)", intelStatus.MACRO?.status === "NO_FEED" && intelStatus.NEWS?.status === "NO_FEED", { macro: intelStatus.MACRO?.status ?? null, news: intelStatus.NEWS?.status ?? null });
+const honestFeed = (domain) => {
+  const status = intelStatus[domain] ?? {};
+  if (status.status === "OK") return status.sourceType === "EXTERNAL" && status.source && status.source !== "none";
+  return ["NO_FEED", "STALE"].includes(status.status);
+};
+check("P5-INTEL-02", "MACRO/NEWS honestos: OK somente com fonte externa real; caso contrario NO_FEED/STALE (nunca inventado)", honestFeed("MACRO") && honestFeed("NEWS"), { macro: intelStatus.MACRO?.status ?? null, news: intelStatus.NEWS?.status ?? null, macroSource: intelStatus.MACRO?.source ?? null, newsSource: intelStatus.NEWS?.source ?? null });
 check("P5-INTEL-03", "MERCADO/RISCO/SEGURANCA/PESQUISA com fonte interna e dataQuality", ["MARKET", "RISK", "SECURITY", "RESEARCH"].every((domain) => ["OK", "STALE"].includes(intelStatus[domain]?.status) && intelStatus[domain]?.sourceType === "INTERNAL"), { market: intelStatus.MARKET?.status ?? null, security: intelStatus.SECURITY?.dataQuality ?? null });
 
 const pairs = (o.markets ?? []).filter((market) => market.enabled).map((market) => market.agents).filter(Boolean);
