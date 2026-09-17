@@ -816,7 +816,7 @@ export class IqMultiRuntime extends EventEmitter {
   }
   agentMemory(agentId) { return this.journal.agentMemory(agentId); }
   async writeDailyReport(date = null) { return this.journal.writeDailyReport(date ?? new Date(this.now()).toISOString().slice(0, 10)); }
-  hypotheses() { return { items: this.hypotheses.list(), defaults: this.hypotheses.config }; }
+  hypothesesStatus() { return { items: this.hypotheses.list(), defaults: this.hypotheses.config }; }
   createHypothesis(input = {}) { return this.hypotheses.create(input); }
   evaluateHypothesis(id) { return this.hypotheses.evaluate(id); }
 

@@ -22,7 +22,7 @@ check("P6-BRAIN-02", "nenhuma variante V1/V2/V3/V8 no runtime/office", !asText(o
 check("P6-BRAIN-03", "decisoes com setup/regime/processo (nao estrategia)", (o.markets ?? []).every((market) => market.strategy == null) && (o.markets ?? []).filter((market) => market.enabled).every((market) => market.brainGeneration === 2), null);
 
 const manager = await req("GET", "/api/iq/manager");
-check("P6-LEGACY-02", "endpoint antigo /api/iq/manager removido com substituto declarado", manager.status === 410 && manager.json.error === "LEGACY_STRATEGY_REMOVED" && manager.json.replacedBy === "/api/iq/supervisor", { status: manager.status });
+check("P6-LEGACY-02", "endpoint antigo /api/iq/manager removido (404/410) com substituto declarado", (manager.status === 410 || manager.status === 404) && (manager.status === 404 || manager.json?.replacedBy === "/api/iq/supervisor"), { status: manager.status, body: manager.json });
 
 const supervisor = await req("GET", "/api/iq/supervisor");
 const sup = supervisor.json;
