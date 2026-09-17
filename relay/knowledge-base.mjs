@@ -20,7 +20,7 @@ export const tokenize = (text) => String(text ?? "").toLowerCase().normalize("NF
 
 /** Frontmatter simples (key: value) + body. */
 export function parseNote(raw) {
-  const text = String(raw ?? "");
+  const text = String(raw ?? "").replace(/^\uFEFF/, "");
   const match = text.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!match) return { meta: {}, body: text };
   const meta = {};
