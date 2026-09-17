@@ -20,8 +20,11 @@ import process from "node:process";
 
 const BASE = (process.env.TRACECOM_BASE || "https://tracecom.consecom.com.br").replace(/\/$/, "");
 const DRY = process.argv.includes("--dry");
+const PUSH = process.argv.includes("--push");
 const SCOPE = "TraceCom/";
 const PROTECTED = ["00 - Core Brain", "15 - Validated Knowledge"];
+const LIBRARY_REPO = path.join(process.cwd(), "relay", "knowledge", "TraceCom");
+const VAULT_TO_REPO_SKIP = ["00 - Core Brain", "10 - Agents", "11 - Trade Journal", "12 - Daily Reports", "14 - Hypotheses", "15 - Validated Knowledge"];
 
 async function loadEnvLocal() {
   if (process.env.SECOND_BRAIN_VAULT_PATH) return process.env.SECOND_BRAIN_VAULT_PATH;
@@ -186,5 +189,57 @@ const knowledge = await getJson("/api/iq/knowledge");
 const secondBrain = knowledge.body.secondBrain ?? {};
 await writeNote(`${SCOPE}16 - Coverage Matrix/LIBRARY_STATUS.md`, `---\ntitle: Biblioteca de Conhecimento (runtime)\ntype: entity\ncategory: COVERAGE\nstatus: SOURCE_KNOWLEDGE\navailableAt: ${Date.now()}\n---\n\n- notas indexadas: ${knowledge.body.notes ?? 0}\n- versao: ${knowledge.body.knowledgeVersion ?? "-"}\n- escopo: ${knowledge.body.scope ?? SCOPE}\n- segundo cerebro (runtime): ${secondBrain.mode ?? "OFFLINE"}\n- categorias: ${Object.entries(knowledge.body.categories ?? {}).map(([key, value]) => `${key} ${value}`).join(" - ") || "-"}\n\nObservacao: a biblioteca curada vive no repositorio (\`relay/knowledge/TraceCom/\`); este arquivo e apenas o espelho de status.\n`);
 
-const summary = { base: BASE, vault: root, dry: DRY, at, notes: writes.filter((row) => row.action === "WRITE").length, appends: writes.filter((row) => row.action === "APPEND").length, kept: writes.filter((row) => row.action === "KEEP").length, protectedBlocked: writes.filter((row) => row.action === "BLOCKED_PROTECTED").length, trades: trades.length, hypotheses: (hypotheses.body.items ?? []).length, reviews: reviews.length };
+/* ------------------------------------ BIBLIOTECA: SEED (repo -> vault) ------------------------------------ */
+async function seedLibrary() {
+  const walk = async (dir, relative) => {
+    const rows = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+    for (const row of rows) {
+      const inner = relative ? `${relative}/${row.name}` : row.name;
+      if (row.isDirectory()) { await walk(path.join(dir, row.name), inner); continue; }
+      if (!row.name.endsWith(".md")) continue;
+      const target = path.join(root, inner);
+      const exists = await fs.stat(target).catch(() => null);
+      if (exists) continue;
+      const content = await fs.readFile(path.join(dir, row.name), "utf8").catch(() => null);
+      if (content === null) continue;
+      writes.push({ relative: `${SCOPE}${inner}`, action: "SEED", bytes: Buffer.byteLength(content) });
+      if (!DRY) { await fs.mkdir(path.dirname(target), { recursive: true }); await fs.writeFile(target, content, "utf8"); }
+    }
+  };
+  await walk(LIBRARY_REPO, "");
+}
+
+/* ------------------------------------ BIBLIOTECA: PUSH (vault -> repo) ------------------------------------ */
+async function pushLibrary() {
+  const pushed = [];
+  const walk = async (dir, relative) => {
+    const rows = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+    for (const row of rows) {
+      const inner = relative ? `${relative}/${row.name}` : row.name;
+      if (row.isDirectory()) {
+        if (!relative && VAULT_TO_REPO_SKIP.includes(row.name)) continue;
+        await walk(path.join(dir, row.name), inner);
+        continue;
+      }
+      if (!row.name.endsWith(".md")) continue;
+      if (!relative && (row.name === "README.md" || row.name.startsWith("_"))) continue;
+      if (row.name.startsWith("_") || row.name === "LIBRARY_STATUS.md") continue;
+      const vaultContent = await fs.readFile(path.join(dir, row.name), "utf8").catch(() => null);
+      if (vaultContent === null) continue;
+      const repoTarget = path.join(LIBRARY_REPO, relative, row.name);
+      const repoContent = await fs.readFile(repoTarget, "utf8").catch(() => null);
+      if (repoContent === vaultContent) continue;
+      pushed.push({ relative: `${SCOPE}${inner}`, action: repoContent === null ? "PUSH_NEW" : "PUSH_EDIT", bytes: Buffer.byteLength(vaultContent) });
+      if (!DRY) { await fs.mkdir(path.dirname(repoTarget), { recursive: true }); await fs.writeFile(repoTarget, vaultContent, "utf8"); }
+    }
+  };
+  await walk(root, "");
+  return pushed;
+}
+
+await seedLibrary();
+const pushed = PUSH ? await pushLibrary() : [];
+for (const row of pushed) writes.push(row);
+
+const summary = { base: BASE, vault: root, dry: DRY, push: PUSH, at, notes: writes.filter((row) => row.action === "WRITE").length, appends: writes.filter((row) => row.action === "APPEND").length, kept: writes.filter((row) => row.action === "KEEP").length, seeded: writes.filter((row) => row.action === "SEED").length, pushed: pushed.length, protectedBlocked: writes.filter((row) => row.action === "BLOCKED_PROTECTED").length, trades: trades.length, hypotheses: (hypotheses.body.items ?? []).length, reviews: reviews.length };
 console.log(JSON.stringify({ ...summary, writes }, null, 2));

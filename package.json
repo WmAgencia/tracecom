@@ -28,7 +28,8 @@
     "decide": "tsx src/cli/decide.ts",
     "news": "tsx src/cli/news.ts",
     "serve": "tsx src/cli/serve.ts",
-    "second-brain:sync": "node scripts/second-brain-sync.mjs"
+    "second-brain:sync": "node scripts/second-brain-sync.mjs",
+    "second-brain:push": "node scripts/second-brain-sync.mjs --push"
   },
   "dependencies": {
     "@vercel/blob": "2.8.0",
