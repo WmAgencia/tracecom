@@ -938,7 +938,7 @@ export class IqMultiRuntime extends EventEmitter {
       ctx.positionState.indicative = null;
       this.#setAgent(ctx, "IN_POSITION", source);
     }
-    const position = { marketKey: pending.marketKey, mode: pending.mode, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, expirationSec: pending.expirationSec, openedAt: this.now(), executionId: pending.executionId, source, connectionId: pending.connectionId };
+    const position = { marketKey: pending.marketKey, mode: pending.mode, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, expirationSec: pending.expirationSec, openedAt: this.now(), executionId: pending.executionId, source, connectionId: pending.connectionId, correlationId: pending.correlationId ?? null };
     this.openPositions.set(pending.marketKey, position);
     this.orderIndex.set(String(brokerOrderId), pending.marketKey);
     this.pendingOrders.delete(pending.marketKey);
