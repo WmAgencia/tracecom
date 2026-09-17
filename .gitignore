@@ -66,3 +66,4 @@ start-server.sh
 !.env.example
 
 .vercel
+relay/gauntlet-*.json
