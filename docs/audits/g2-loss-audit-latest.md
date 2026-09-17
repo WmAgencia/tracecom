@@ -233,3 +233,12 @@
 | exec_1789622062806_8pb7ab | 09-17 05:15 | EURUSD:OTC | SELL | 100.00 | 85 | 1.161015 | 1.160615 | WIN | 85.00 | TRANSITION | NO_VALID_SETUP | — | — | — | UNKNOWN | UNCLEAR_DECISION_QUALITY | INSUFFICIENT_CONTEXT |
 | exec_1789622028812_43h5xo | 09-17 05:15 | GBPUSD:OTC | SELL | 100.00 | 86 | 1.337465 | 1.337695 | LOSS | -100.00 | TRANSITION | NO_VALID_SETUP | — | — | — | UNKNOWN | UNCLEAR_DECISION_QUALITY | INSUFFICIENT_CONTEXT |
 | exec_1789622117034_hphl7z | 09-17 05:16 | EURUSD:OTC | BUY | 100.00 | 85 | 1.160735 | 1.161075 | WIN | 85.00 | UNCLEAR | NO_VALID_SETUP | — | — | — | UNKNOWN | UNCLEAR_DECISION_QUALITY | INSUFFICIENT_CONTEXT |
+
+
+---
+
+## Anexo B — Verificacao pos-correcao (2026-09-17)
+
+- Deploy com instrumentacao t0 verificado em producao: o trade `exec_1789623360540_8jjnw4` (GBPUSD:OTC, LOSS) registrou `snapshotSource=T0_DECISION_SNAPSHOT`, `processLog` com 12 estagios, `setup=TREND_PULLBACK`, `trigger=pullback_com_estrutura_mantida`, `rsi=52.0` e rating real (`ACCEPTABLE_DECISION`).
+- O meta de execucao agora preserva `setup`, `strategySource`, `stakeSource` e `stakeRequested` apos o settlement (antes era sobrescrito).
+- Consequencia: a proxima auditoria (N>=30) tera contexto t0 completo; nenhuma conclusao desta amostra historica deve ser tratada como definitiva.
