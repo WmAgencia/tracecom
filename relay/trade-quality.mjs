@@ -16,6 +16,9 @@
  */
 export const TRADE_QUALITY_VERSION = "trade-quality-v1";
 export const ARM_IDS = ["A_G2_JIT", "B_QUALITY_GATE", "C_STABILITY", "D_CRITIC", "E_MICROSTRUCTURE", "F_COMBINED"];
+export const DEFAULT_MIN_TRADE_QUALITY_SCORE = 75;
+export const MIN_TRADE_QUALITY_SCORE_LIMIT = 50;
+export const MAX_TRADE_QUALITY_SCORE_LIMIT = 95;
 export const BREAK_EVEN_WR = (payout) => { const fraction = Number(payout) > 1 ? Number(payout) / 100 : Number(payout); return Number.isFinite(fraction) && fraction > 0 ? Number((1 / (1 + fraction)).toFixed(4)) : null; };
 
 const num = (value) => (value === null || value === undefined || value === "" ? null : (Number.isFinite(Number(value)) ? Number(value) : null));
@@ -103,6 +106,98 @@ export function evaluateShadowArms(features = {}) {
   add("E_MICROSTRUCTURE", !(adverseAcceleration || weakBody || atrSpike || extended), adverseAcceleration ? "ADVERSE_ACCELERATION" : weakBody ? "WEAK_BODY" : atrSpike ? "ATR_SPIKE" : extended ? "OVEREXTENSION" : null);
   add("F_COMBINED", ["B_QUALITY_GATE", "C_STABILITY", "D_CRITIC", "E_MICROSTRUCTURE"].every((arm) => arms[arm].decision === "ACCEPT"), ["B_QUALITY_GATE", "C_STABILITY", "D_CRITIC", "E_MICROSTRUCTURE"].find((arm) => arms[arm].decision === "ABSTAIN") ?? null);
   return arms;
+}
+
+/* ------------------------------------------------------------------ score 0-100 (rubrica, nao probabilidade) */
+
+/**
+ * tradeQualityScore 0-100 — RUBRICA deterministica (checklist de engenharia).
+ * NAO e probabilidade; estimatedWinProbability permanece null. Threshold operacional default: 75.
+ * Cada componente tem peso e justificativa; todos calculados apenas com dados t0.
+ */
+export function scoreTradeQuality(features = {}) {
+  const checks = [];
+  const add = (id, points, max, ok, detail = null) => { checks.push({ id, points: ok ? points : 0, max, ok: ok === true, detail }); return ok ? points : 0; };
+  let score = 0;
+  const direction = features.direction;
+  const diAgrees = features.plusDI !== null && features.minusDI !== null && (direction === "BUY" ? features.plusDI > features.minusDI : features.minusDI > features.plusDI);
+  const accelAgrees = features.acceleration !== null && (direction === "BUY" ? features.acceleration > 0 : features.acceleration < 0);
+  const velocityAgrees = features.velocity !== null && (direction === "BUY" ? features.velocity > 0 : features.velocity < 0);
+  const streakAgrees = features.streak !== null && (direction === "BUY" ? features.streak >= 0 : features.streak <= 0);
+  const structureAgrees = features.structureLabel !== null && (direction === "BUY" ? ["HH_HL", "UP"].includes(features.structureLabel) : ["LH_LL", "DOWN"].includes(features.structureLabel));
+  const regimeOk = !["CHAOTIC", "UNCLEAR", "TRANSITION"].includes(features.regime);
+  const regimeTrend = String(features.regime ?? "").startsWith("TREND");
+  const adxOk = features.adx !== null && features.adx >= 20;
+  const adxNotFalling = features.adxSlope === null || features.adxSlope >= -0.5;
+  const criticClean = features.criticVerdict === "CONFIRM" && (features.criticRiskFlags ?? []).length === 0 && (features.criticContradictions ?? []).length === 0;
+  const rsiSafe = features.rsi !== null && (direction === "BUY" ? features.rsi <= 70 : features.rsi >= 30);
+  const rsiBeyond = features.rsi !== null && (direction === "BUY" ? features.rsi >= 30 : features.rsi <= 70);
+  const pos = features.donchianPosition;
+  const posNotMid = pos !== null && Math.abs(pos - 0.5) >= 0.15;
+  const posFavors = pos !== null && (direction === "BUY" ? pos <= 0.8 : pos >= 0.2);
+  const againstATR = direction === "BUY" ? features.distanceLowerATR : features.distanceUpperATR;
+  const withATR = direction === "BUY" ? features.distanceUpperATR : features.distanceLowerATR;
+  const notExtended = (againstATR ?? 0) <= 2.0;
+  const headroom = (withATR ?? 0) >= 0.3;
+  const displacementOk = features.entryDisplacementATR === null || Math.abs(features.entryDisplacementATR) <= 0.35;
+  const displacementAdverse = features.entryDisplacementATR !== null && (direction === "BUY" ? features.entryDisplacementATR > 0.35 : features.entryDisplacementATR < -0.35);
+  const fresh = features.fresh !== false;
+
+  score += add("setup_trigger", 8, 8, Boolean(features.setup) && features.setup !== "NO_VALID_SETUP" && Boolean(features.trigger), { setup: features.setup, trigger: features.trigger });
+  score += add("regime_ok", 8, 8, regimeOk, features.regime);
+  score += add("regime_trend", 4, 4, regimeTrend, { regime: features.regime, note: "bonus; setups de tendencia rendem mais em TREND" });
+  score += add("structure_agrees", 6, 6, structureAgrees, features.structureLabel);
+  score += add("di_agrees", 6, 6, diAgrees, { plusDI: features.plusDI, minusDI: features.minusDI });
+  score += add("adx_strength", 6, 6, adxOk, features.adx);
+  score += add("adx_not_falling", 4, 4, adxNotFalling, features.adxSlope);
+  score += add("critic_clean", 6, 6, criticClean, { verdict: features.criticVerdict, flags: features.criticRiskFlags });
+  score += add("location_not_mid", 6, 6, posNotMid, pos);
+  score += add("location_favors_room", 6, 6, posFavors, pos);
+  score += add("not_overextended", 8, 8, notExtended, { againstATR });
+  score += add("headroom", 4, 4, headroom, { withATR });
+  score += add("entry_displacement", 8, 8, displacementOk, features.entryDisplacementATR);
+  score += add("rsi_not_extreme", 8, 8, rsiSafe, features.rsi);
+  score += add("accel_agrees", 8, 8, accelAgrees, features.acceleration);
+  score += add("velocity_agrees", 4, 4, velocityAgrees, features.velocity);
+  score += add("streak_agrees", 4, 4, streakAgrees, features.streak);
+  score += add("data_fresh", 3, 3, fresh, features.fresh === undefined ? "nao informado" : features.fresh);
+  score += add("knowledge_used", 3, 3, (features.knowledgeContextIds ?? []).length > 0, null);
+  void rsiBeyond;
+  return {
+    version: TRADE_QUALITY_VERSION, score: Math.max(0, Math.min(100, Math.round(score))), max: 100, checks,
+    adverseDisplacement: displacementAdverse,
+    note: "Rubrica deterministica (checklist). NAO e probabilidade; nao confundir com calibracao.",
+  };
+}
+
+/** Entry Location Quality: setup valido mas preco ja andou => WAIT. */
+export function entryLocationCheck(features = {}) {
+  const reasons = [];
+  const direction = features.direction;
+  const displacement = features.entryDisplacementATR;
+  if (displacement !== null) {
+    const adverse = direction === "BUY" ? displacement > 0.5 : displacement < -0.5;
+    const chased = Math.abs(displacement) > 1.0;
+    if (adverse && chased) reasons.push("ENTRY_DISPLACEMENT_CHASED");
+    else if (adverse) reasons.push("ENTRY_DISPLACEMENT_ADVERSE");
+  }
+  const against = direction === "BUY" ? features.distanceLowerATR : features.distanceUpperATR;
+  if ((against ?? 0) > 2.5) reasons.push("OVEREXTENDED_FROM_CHANNEL");
+  if (features.rsi !== null && (direction === "BUY" ? features.rsi >= 75 : features.rsi <= 25)) reasons.push("RSI_EXTREME_AT_ENTRY");
+  return { ok: reasons.length === 0, reason: reasons[0] ?? null, reasons, code: reasons.length ? "VALID_SETUP_BUT_BAD_ENTRY_PRICE" : null };
+}
+
+/** Veto final de microestrutura (ultimos segundos): apenas PASS/VETO, nunca cria direcao. */
+export function finalMicrostructureVeto({ direction, atr = null, lastTick = null, lastClose = null }) {
+  if (!lastTick || !Number.isFinite(Number(lastTick.price)) || !Number.isFinite(Number(lastClose))) return { veto: false, reason: null, detail: { note: "sem tick/close" } };
+  const atrValue = Number(atr);
+  if (!Number.isFinite(atrValue) || atrValue <= 0) return { veto: false, reason: null, detail: { note: "sem ATR" } };
+  const delta = Number(lastTick.price) - Number(lastClose);
+  const adverse = direction === "BUY" ? delta < 0 : delta > 0;
+  const adverseATR = Math.abs(delta) / atrValue;
+  if (adverse && adverseATR >= 0.25) return { veto: true, reason: "ADVERSE_TICK_DISPLACEMENT", detail: { delta, adverseATR: Number(adverseATR.toFixed(4)) } };
+  if (adverse && Number(lastTick.ageMs) <= 3_000 && adverseATR >= 0.15) return { veto: true, reason: "RAPID_ADVERSE_TICK", detail: { delta, adverseATR: Number(adverseATR.toFixed(4)), ageMs: lastTick.ageMs } };
+  return { veto: false, reason: null, detail: { delta, adverseATR: Number(adverseATR.toFixed(4)) } };
 }
 
 /* ------------------------------------------------------------------ selective curve / temporal split */

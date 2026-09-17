@@ -32,7 +32,7 @@ import { TradingJournal, HypothesisRegistry, PerformanceSupervisor, reviewTrade 
 import { ApprenticeDesk } from "./apprentice.mjs";
 import { ExternalFeedSync } from "./external-feeds.mjs";
 import { ENTRY_TIMING_VERSION, DEFAULT_ENTRY_LEAD_MS, DEFAULT_MAX_DRIFT_MS, MIN_ENTRY_LEAD_MS, MAX_ENTRY_LEAD_MS, nextEntryWindow, dynamicEntryLeadMs, compareCandidateSnapshots, comparableSnapshot, makeCandidate, revalidateCandidate, EntryTimingExperiment } from "./entry-timing.mjs";
-import { TRADE_QUALITY_VERSION, ARM_IDS, evaluateShadowArms, featuresFromSnapshot, performanceHealth, BREAK_EVEN_WR } from "./trade-quality.mjs";
+import { TRADE_QUALITY_VERSION, ARM_IDS, DEFAULT_MIN_TRADE_QUALITY_SCORE, MIN_TRADE_QUALITY_SCORE_LIMIT, MAX_TRADE_QUALITY_SCORE_LIMIT, evaluateShadowArms, featuresFromSnapshot, performanceHealth, BREAK_EVEN_WR, scoreTradeQuality, entryLocationCheck, finalMicrostructureVeto } from "./trade-quality.mjs";
 import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, DEFAULT_GLOBAL_MAX_STAKE, concentrationExposure } from "./market-universe.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
@@ -70,7 +70,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.reconnects = 0; this.connectionStartedAt = null;
     this.session = { connected: false, host: null, connectionId: null, serverTimeMs: null, clockSkewMs: null, timeValid: false, connectedAt: null };
     this.account = { practice: { verified: false, balanceId: null, balance: null, currency: null }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: null, type: "UNKNOWN" };
-    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS };
+    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE };
     this.markets = new Map();
     for (const entry of UNIVERSE) {
       const key = marketKey(entry.canonical, entry.marketType);
@@ -100,6 +100,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.metrics = { messages: 0, candles: 0, reorder: 0, duplicates: 0, rejected: 0, startedAt: null, cpuBase: process.cpuUsage(), reconnects: 0 };
     this.reconcile = { lastRunAt: null, checked: 0, settled: 0, unknown: 0, error: null };
     this.configLoaded = false;
+    this.availabilityTimer = null;
     this.equityCurveCache = []; this.equityRefreshedAt = 0;
     this.lastTickEmit = new Map();
   }
@@ -133,6 +134,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   stop(reason = "STOP_REQUESTED") {
     this.running = false; this.stopRequested = true;
+    if (this.availabilityTimer) { clearTimeout(this.availabilityTimer); this.availabilityTimer = null; }
     const waiter = this.#disconnectedWaiter; if (waiter) { this.#disconnectedWaiter = null; waiter(); }
     try { this.client?.close(reason); } catch { /* noop */ }
     this.client = null;
@@ -241,17 +243,14 @@ export class IqMultiRuntime extends EventEmitter {
 
   async #bootstrap(client) {
     await this.#loadPersistedConfig();
-    try {
-      const { response } = await client.getInitializationData();
-      this.resolver.ingestInitializationData(response.msg);
-      this.#applyResolver({ reason: "BOOTSTRAP" });
-    } catch (error) { this.#safe(() => this.log("IQ_MULTI_INIT_DATA_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 120))); }
+    await this.#refreshBrokerAvailability(client, "BOOTSTRAP");
     try { const { response } = await client.getBalances(); this.#applyBalances(response.msg); } catch (error) { this.#safe(() => this.log("IQ_MULTI_BALANCES_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 120))); }
     try {
       const { response } = await client.getOptions({ limit: 30, instrumentType: "binary,turbo", balanceId: this.account.practice.balanceId ?? this.account.real.balanceId });
       this.resolver.ingestAuxiliary(response.msg);
       this.#applyResolver({ reason: "BOOTSTRAP_OPTIONS" });
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_OPTIONS_BOOTSTRAP_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 80))); }
+    this.#startAvailabilityLoop();
     try {
       for (const instrument of ["binary-option", "turbo-option"]) client.send("subscribeMessage", { name: "commission-changed", params: { routingFilters: { instrument_type: instrument } }, version: "1.0" });
       this.#safe(() => this.log("IQ_MULTI_PAYOUT_SUBSCRIBED", "binary-option,turbo-option"));
@@ -305,8 +304,45 @@ export class IqMultiRuntime extends EventEmitter {
 
   /* ------------------------------- resolver/markets ------------------------------- */
 
-  #applyResolver({ reason }) {
-    let changed = 0;
+  /**
+   * Disponibilidade operacional SEMPRE do broker em tempo real (nunca de horario teorico nem de cache):
+   * get-initialization-data traz `is_suspended` por ativo; get-options complementa payout. NORMAL e OTC
+   * continuam 100% separados (o resolver nao faz fallback entre eles).
+   */
+  async #refreshBrokerAvailability(client = this.client, reason = "PERIODIC") {
+    if (!client || !this.session.connected) return false;
+    try {
+      const { response } = await client.getInitializationData();
+      this.resolver.ingestInitializationData(response.msg);
+      this.#applyResolver({ reason });
+      const { response: options } = await client.getOptions({ limit: 30, instrumentType: "binary,turbo", balanceId: this.account.practice.balanceId ?? this.account.real.balanceId });
+      this.resolver.ingestAuxiliary(options.msg);
+      this.#applyResolver({ reason: `${reason}_OPTIONS` });
+      return true;
+    } catch (error) {
+      this.#safe(() => this.log("IQ_MULTI_AVAILABILITY_REFRESH_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 120)));
+      return false;
+    }
+  }
+
+  /** Loop de disponibilidade: 60s normal; 20s enquanto algum mercado habilitado nao estiver OPEN (suspensao/manutencao). */
+  #startAvailabilityLoop() {
+    if (this.availabilityTimer) return;
+    const tick = async () => {
+      if (this.stopRequested) return;
+      const enabled = [...this.markets.values()].filter((ctx) => ctx.enabled);
+      const needsFast = enabled.some((ctx) => ctx.availability !== "OPEN");
+      const interval = needsFast ? 20_000 : 60_000;
+      const ok = await this.#refreshBrokerAvailability(this.client, needsFast ? "SUSPENDED_FAST" : "PERIODIC");
+      if (ok && needsFast) this.#emitEvent("markets.availability_refreshed", { open: this.marketsOpenCount() });
+      this.availabilityTimer = setTimeout(tick, interval);
+      this.availabilityTimer.unref?.();
+    };
+    this.availabilityTimer = setTimeout(tick, 30_000);
+    this.availabilityTimer.unref?.();
+  }
+
+  #applyResolver({ reason }) {    let changed = 0;
     for (const ctx of this.markets.values()) {
       const resolved = this.resolver.get(ctx.marketKey);
       if (!resolved) continue;
@@ -707,12 +743,27 @@ export class IqMultiRuntime extends EventEmitter {
     const shadowTiming = { candidateAgeMs: Math.max(0, now - candidate.createdAt), directionChanges: candidate.changes?.changes?.filter((change) => change.field === "action").length ?? 0, candidateChangedBeforeEntry: candidate.changes?.changed === true, candidatePrice: candidate.initialFull?.price ?? candidate.initial?.price ?? null };
     const shadowFeatures = featuresFromSnapshot(candidate.initialFull ?? {}, { direction: candidate.action, payout: ctx.payout, timing: shadowTiming });
     const shadowArms = evaluateShadowArms(shadowFeatures);
-    this.#emitEvent("shadow.arms", { marketKey: ctx.marketKey, candidateId: candidate.id, arms: Object.fromEntries(Object.entries(shadowArms).map(([arm, value]) => [arm, value.decision])) });
-    this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "SHADOW_ARMS", { candidateId: candidate.id, arms: shadowArms }, { persist: true });
+    // Rubrica de qualidade (0-100) + Entry Location Quality + Veto final de microestrutura (nunca cria direcao).
+    const qualityTiming = { ...shadowTiming, entryPrice: ctx.lastCandle?.close ?? null, fresh: fresh?.fresh !== false, knowledgeContextIds: ctx.decisionState?.knowledge?.ids ?? [] };
+    const qualityFeatures = featuresFromSnapshot(candidate.initialFull ?? {}, { direction: candidate.action, payout: ctx.payout, timing: qualityTiming });
+    const quality = scoreTradeQuality(qualityFeatures);
+    const location = entryLocationCheck(qualityFeatures);
+    const microVeto = finalMicrostructureVeto({ direction: candidate.action, atr: qualityFeatures.atr, lastTick: ctx.lastTick ? { price: ctx.lastTick.price, ageMs: ctx.lastTick.ageMs ?? null } : null, lastClose: ctx.lastCandle?.close ?? null });
+    candidate.quality = { score: quality.score, checks: quality.checks, adverseDisplacement: quality.adverseDisplacement };
+    candidate.entryLocation = location;
+    candidate.microVeto = microVeto;
+    this.#emitEvent("shadow.arms", { marketKey: ctx.marketKey, candidateId: candidate.id, arms: Object.fromEntries(Object.entries(shadowArms).map(([arm, value]) => [arm, value.decision])), qualityScore: quality.score });
+    this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "SHADOW_ARMS", { candidateId: candidate.id, arms: shadowArms, qualityScore: quality.score, minTradeQualityScore: this.config.minTradeQualityScore, entryLocation: location, microVeto }, { persist: true });
+    if (this.config.qualityGateEnabled === true) {
+      if (!location.ok) { this.#cancelCandidate(ctx, "VALID_SETUP_BUT_BAD_ENTRY_PRICE", { reasons: location.reasons, score: quality.score }); return; }
+      if (microVeto.veto) { this.#cancelCandidate(ctx, `MICROSTRUCTURE_${microVeto.reason}`, microVeto.detail ?? {}); return; }
+      if (quality.score < this.#minTradeQualityScore()) { this.#cancelCandidate(ctx, "QUALITY_SCORE_BELOW_THRESHOLD", { score: quality.score, threshold: this.#minTradeQualityScore(), failedChecks: quality.checks.filter((check) => !check.ok).map((check) => check.id) }); return; }
+    }
     const entryTiming = {
       candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, targetExpirySec: Math.round(candidate.targetExpiryAt / 1000),
       submitAt: candidate.submitAt, entryLeadMs: candidate.entryLeadMs, revalidatedAt: now, candidateChangedBeforeEntry: candidate.changes.changed, changedFields: candidate.changes.changes,
       initialSnapshot: candidate.initialFull, revalidationChecks: revalidation.checks, shadowArms, candidatePrice: candidate.initialFull?.price ?? null,
+      qualityScore: candidate.quality?.score ?? null, qualityChecks: candidate.quality?.checks ?? null, entryLocation: candidate.entryLocation ?? null, microVeto: candidate.microVeto ?? null,
     };
     const record = await this.#handleSignal(ctx, action, trader, this.#candleList(ctx), entryTiming);
     if (record?.disposition === "EXECUTED") { candidate.status = "ORDER_SENT"; this.#setAgent(ctx, "IN_POSITION", "ORDER_SENT"); }
@@ -755,6 +806,8 @@ export class IqMultiRuntime extends EventEmitter {
 
   #entryMaxDriftMs() { const value = Number(this.config.entryWindowMaxDriftMs); return Number.isFinite(value) && value >= 0 ? value : DEFAULT_MAX_DRIFT_MS; }
 
+  #minTradeQualityScore() { const value = Number(this.config.minTradeQualityScore); return Number.isFinite(value) ? Math.max(MIN_TRADE_QUALITY_SCORE_LIMIT, Math.min(MAX_TRADE_QUALITY_SCORE_LIMIT, Math.round(value))) : DEFAULT_MIN_TRADE_QUALITY_SCORE; }
+
   #commitCandidate(ctx, reason, detail = {}) {
     const candidate = ctx.candidate;
     if (!candidate) return null;
@@ -779,18 +832,19 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   setEntryTimingConfig(patch = {}) {
-    const allowed = ["jitEnabled", "entryLeadMs", "entryWindowMaxDriftMs"];
+    const allowed = ["jitEnabled", "entryLeadMs", "entryWindowMaxDriftMs", "qualityGateEnabled", "minTradeQualityScore"];
     const next = {};
     for (const [key, value] of Object.entries(patch)) {
       if (!allowed.includes(key)) continue;
-      if (key === "jitEnabled") next.jitEnabled = value === true;
+      if (key === "jitEnabled" || key === "qualityGateEnabled") next[key] = value === true;
+      else if (key === "minTradeQualityScore") next[key] = Math.max(MIN_TRADE_QUALITY_SCORE_LIMIT, Math.min(MAX_TRADE_QUALITY_SCORE_LIMIT, Math.round(Number(value))));
       else if (Number.isFinite(Number(value))) next[key] = key === "entryLeadMs" ? Math.max(MIN_ENTRY_LEAD_MS, Math.min(MAX_ENTRY_LEAD_MS, Math.round(Number(value)))) : Math.max(0, Math.round(Number(value)));
     }
     Object.assign(this.config, next);
     this.config.revision = Number(this.config.revision || 0) + 1;
     void this.#persistConfig();
-    this.#emitEvent("entry.config", { config: { jitEnabled: this.config.jitEnabled, entryLeadMs: this.config.entryLeadMs, entryWindowMaxDriftMs: this.config.entryWindowMaxDriftMs } });
-    return { jitEnabled: this.config.jitEnabled, entryLeadMs: this.config.entryLeadMs, entryWindowMaxDriftMs: this.config.entryWindowMaxDriftMs };
+    this.#emitEvent("entry.config", { config: { jitEnabled: this.config.jitEnabled, entryLeadMs: this.config.entryLeadMs, entryWindowMaxDriftMs: this.config.entryWindowMaxDriftMs, qualityGateEnabled: this.config.qualityGateEnabled, minTradeQualityScore: this.#minTradeQualityScore() } });
+    return { jitEnabled: this.config.jitEnabled, entryLeadMs: this.config.entryLeadMs, entryWindowMaxDriftMs: this.config.entryWindowMaxDriftMs, qualityGateEnabled: this.config.qualityGateEnabled === true, minTradeQualityScore: this.#minTradeQualityScore() };
   }
 
   entryTimingStatus() {
@@ -1421,8 +1475,8 @@ export class IqMultiRuntime extends EventEmitter {
   async #persistConfig() {
     try {
       if (!this.pool || !await this.#ensureDb("iq_runtime_config")) return false;
-      await this.pool.query("INSERT INTO iq_runtime_config(id,mode,global_max_stake,default_stake,calculated_bankroll_stake,auto_execute,selection_json,resolver_json,research_json,supervisor_json,apprentice_json,hypotheses_json,jit_enabled,entry_lead_ms,entry_window_max_drift_ms,revision,updated_at) VALUES(1,$1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9::jsonb,$10::jsonb,$11::jsonb,$12,$13,$14,$15,now()) ON CONFLICT(id) DO UPDATE SET mode=EXCLUDED.mode, global_max_stake=EXCLUDED.global_max_stake, default_stake=EXCLUDED.default_stake, calculated_bankroll_stake=EXCLUDED.calculated_bankroll_stake, auto_execute=EXCLUDED.auto_execute, selection_json=EXCLUDED.selection_json, resolver_json=EXCLUDED.resolver_json, research_json=EXCLUDED.research_json, supervisor_json=EXCLUDED.supervisor_json, apprentice_json=EXCLUDED.apprentice_json, hypotheses_json=EXCLUDED.hypotheses_json, jit_enabled=EXCLUDED.jit_enabled, entry_lead_ms=EXCLUDED.entry_lead_ms, entry_window_max_drift_ms=EXCLUDED.entry_window_max_drift_ms, revision=EXCLUDED.revision, updated_at=now()",
-        [this.config.mode, this.config.globalMaxStake, this.config.defaultStake, this.config.calculatedBankrollStake, this.config.autoExecute, JSON.stringify({ legacy: "LEGACY_STRATEGY_AUDIT", brainGeneration: BRAIN_GENERATION }), JSON.stringify(this.resolver.toJSON()), JSON.stringify({ ...this.research.toJSON(), entryTiming: this.jit.toJSON() }), JSON.stringify(this.supervisor.toJSON()), JSON.stringify(this.apprentice.toJSON()), JSON.stringify({ items: this.hypotheses.list() }), this.config.jitEnabled === true, this.config.entryLeadMs, this.#entryMaxDriftMs(), Number(this.config.revision || 0)]);
+      await this.pool.query("INSERT INTO iq_runtime_config(id,mode,global_max_stake,default_stake,calculated_bankroll_stake,auto_execute,selection_json,resolver_json,research_json,supervisor_json,apprentice_json,hypotheses_json,jit_enabled,entry_lead_ms,entry_window_max_drift_ms,quality_gate_enabled,min_trade_quality_score,revision,updated_at) VALUES(1,$1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9::jsonb,$10::jsonb,$11::jsonb,$12,$13,$14,$15,$16,$17,now()) ON CONFLICT(id) DO UPDATE SET mode=EXCLUDED.mode, global_max_stake=EXCLUDED.global_max_stake, default_stake=EXCLUDED.default_stake, calculated_bankroll_stake=EXCLUDED.calculated_bankroll_stake, auto_execute=EXCLUDED.auto_execute, selection_json=EXCLUDED.selection_json, resolver_json=EXCLUDED.resolver_json, research_json=EXCLUDED.research_json, supervisor_json=EXCLUDED.supervisor_json, apprentice_json=EXCLUDED.apprentice_json, hypotheses_json=EXCLUDED.hypotheses_json, jit_enabled=EXCLUDED.jit_enabled, entry_lead_ms=EXCLUDED.entry_lead_ms, entry_window_max_drift_ms=EXCLUDED.entry_window_max_drift_ms, quality_gate_enabled=EXCLUDED.quality_gate_enabled, min_trade_quality_score=EXCLUDED.min_trade_quality_score, revision=EXCLUDED.revision, updated_at=now()",
+        [this.config.mode, this.config.globalMaxStake, this.config.defaultStake, this.config.calculatedBankrollStake, this.config.autoExecute, JSON.stringify({ legacy: "LEGACY_STRATEGY_AUDIT", brainGeneration: BRAIN_GENERATION }), JSON.stringify(this.resolver.toJSON()), JSON.stringify({ ...this.research.toJSON(), entryTiming: this.jit.toJSON() }), JSON.stringify(this.supervisor.toJSON()), JSON.stringify(this.apprentice.toJSON()), JSON.stringify({ items: this.hypotheses.list() }), this.config.jitEnabled === true, this.config.entryLeadMs, this.#entryMaxDriftMs(), this.config.qualityGateEnabled === true, this.#minTradeQualityScore(), Number(this.config.revision || 0)]);
       return true;
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_CONFIG_PERSIST_FAILED", String(error?.message ?? error).slice(0, 120))); return false; }
   }
@@ -1442,6 +1496,8 @@ export class IqMultiRuntime extends EventEmitter {
         if (row.jit_enabled !== null && row.jit_enabled !== undefined) this.config.jitEnabled = row.jit_enabled === true;
         if (Number.isFinite(Number(row.entry_lead_ms))) this.config.entryLeadMs = Math.max(MIN_ENTRY_LEAD_MS, Math.min(MAX_ENTRY_LEAD_MS, Math.round(Number(row.entry_lead_ms))));
         if (Number.isFinite(Number(row.entry_window_max_drift_ms))) this.config.entryWindowMaxDriftMs = Math.max(0, Math.round(Number(row.entry_window_max_drift_ms)));
+        if (row.quality_gate_enabled !== null && row.quality_gate_enabled !== undefined) this.config.qualityGateEnabled = row.quality_gate_enabled === true;
+        if (Number.isFinite(Number(row.min_trade_quality_score))) this.config.minTradeQualityScore = Math.max(MIN_TRADE_QUALITY_SCORE_LIMIT, Math.min(MAX_TRADE_QUALITY_SCORE_LIMIT, Math.round(Number(row.min_trade_quality_score))));
         if (row.resolver_json) this.resolver.loadFrom(row.resolver_json);
         if (row.research_json && sameGeneration) this.research.loadFrom(row.research_json);
         if (row.research_json?.entryTiming) this.jit.loadFrom(row.research_json.entryTiming);
@@ -1554,7 +1610,7 @@ export class IqMultiRuntime extends EventEmitter {
       version: RUNTIME_VERSION, at: this.now(), serverTime: this.session.serverTimeMs,
       connection: { ...this.session, reconnects: this.reconnects, healthy: this.connectionHealth().healthy },
       mode: this.config.mode, modeState: this.modeState(),
-      config: { globalMaxStake: this.config.globalMaxStake, defaultStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, hardCap: this.config.hardCap, maxActiveMarkets: this.config.maxActiveMarkets, autoExecute: this.config.autoExecute, revision: this.config.revision, brainGeneration: BRAIN_GENERATION, jitEnabled: this.config.jitEnabled === true, entryLeadMs: this.config.entryLeadMs, entryWindowMaxDriftMs: this.#entryMaxDriftMs() },
+      config: { globalMaxStake: this.config.globalMaxStake, defaultStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, hardCap: this.config.hardCap, maxActiveMarkets: this.config.maxActiveMarkets, autoExecute: this.config.autoExecute, revision: this.config.revision, brainGeneration: BRAIN_GENERATION, jitEnabled: this.config.jitEnabled === true, entryLeadMs: this.config.entryLeadMs, entryWindowMaxDriftMs: this.#entryMaxDriftMs(), qualityGateEnabled: this.config.qualityGateEnabled === true, minTradeQualityScore: this.#minTradeQualityScore() },
       activeCount: this.activeMarketKeys().length, activeLimit: this.config.maxActiveMarkets, universeCount: this.markets.size,
       portfolio: { ...portfolio, equityCurve: this.equityCurveCache ?? [] },
       markets,

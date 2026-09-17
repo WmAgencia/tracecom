@@ -37,6 +37,7 @@ function fixture({ markets = ["EURUSD:OTC"], serverOffsetMs = 0 }: { markets?: s
   runtime.connection = { connectionId: "conn-jit", host: "ws.iqoption.com", serverTimeMs: clock.nowMs, clockSkewMs: 0, timeValid: true };
   runtime.account = { practice: { verified: true, balanceId: 555, balance: 10_000, currency: "USD" }, real: { available: true, balanceId: 777, balance: 500, currency: "USD" }, hasReal: true, checkedAt: clock.nowMs, type: "PRACTICE" };
   runtime.config.autoExecute = true; runtime.config.globalMaxStake = 100; runtime.config.calculatedBankrollStake = 1;
+  runtime.config.qualityGateEnabled = false; // testes de fiacao JIT usam brains sinteticos; o gate tem testes proprios
   runtime.__sent = [];
   runtime.client = {
     serverNow: () => clock.nowMs + clock.serverOffsetMs,
@@ -304,6 +305,35 @@ describe("JIT no runtime — candidato, revalidacao e commit", () => {
     const blocked = await runtime.simulateSignal("EURUSD:OTC", "BUY");
     expect(blocked.disposition).toBe("BLOCKED");
     runtime.stop("END");
+  });
+
+  it("tradeQualityScore: abaixo do threshold cancela, com threshold baixo executa (gate nunca cria direcao)", async () => {
+    const blockedFixture = fixture();
+    blockedFixture.ready("EURUSD:OTC");
+    blockedFixture.runtime.config.qualityGateEnabled = true;
+    blockedFixture.runtime.config.minTradeQualityScore = 95;
+    blockedFixture.overrides.set("EURUSD:OTC", () => brain("BUY"));
+    blockedFixture.step();
+    const blockedCtx = blockedFixture.runtime.markets.get("EURUSD:OTC");
+    blockedFixture.clock.nowMs = blockedCtx.candidate.submitAt - 50;
+    blockedFixture.step();
+    await sleep(20);
+    expect(blockedFixture.runtime.__sent).toHaveLength(0);
+    expect(blockedCtx.lastCandidate.cancelReason).toBe("QUALITY_SCORE_BELOW_THRESHOLD");
+    expect(blockedCtx.lastCandidate.quality.score).toBeLessThan(95);
+
+    const allowedFixture = fixture();
+    allowedFixture.ready("EURUSD:OTC");
+    allowedFixture.runtime.config.qualityGateEnabled = true;
+    allowedFixture.runtime.config.minTradeQualityScore = 50;
+    allowedFixture.overrides.set("EURUSD:OTC", () => brain("BUY"));
+    allowedFixture.step();
+    const allowedCtx = allowedFixture.runtime.markets.get("EURUSD:OTC");
+    allowedFixture.clock.nowMs = allowedCtx.candidate.submitAt - 50;
+    allowedFixture.step();
+    await sleep(20);
+    expect(allowedFixture.runtime.__sent).toHaveLength(1);
+    allowedFixture.runtime.stop("END");
   });
 
   it("PRACTICE only: nenhuma superficie habilita REAL", () => {

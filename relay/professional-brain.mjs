@@ -209,6 +209,15 @@ export function criticBrainAssessment({ trader, features, context, structureFeat
   const riskFlags = [];
   let verdict = "CONFIRM";
   const sameAction = independent.action === trader?.action;
+  const direction = trader?.action;
+  const rsi = context?.deterministicIndicators?.rsi14?.value ?? null;
+  const adx = context?.deterministicIndicators?.adx14?.value ?? null;
+  const plusDI = context?.deterministicIndicators?.plusDI?.value ?? null;
+  const minusDI = context?.deterministicIndicators?.minusDI?.value ?? null;
+  const atrRatio = structureFeatures?.volatility?.atrRatio ?? null;
+  const againstATR = direction === "BUY" ? (trader?.location?.distanceToLowerATR ?? null) : direction === "SELL" ? (trader?.location?.distanceToUpperATR ?? null) : null;
+  const withATR = direction === "BUY" ? (trader?.location?.distanceToUpperATR ?? null) : direction === "SELL" ? (trader?.location?.distanceToLowerATR ?? null) : null;
+  void sameAction;
   if (freshness?.fresh !== true) { verdict = "VETO"; riskFlags.push("dados_nao_frescos"); }
   if (!features || !structureFeatures) { verdict = "VETO"; riskFlags.push("features_indisponiveis"); }
   if (verdict !== "VETO") {
@@ -217,9 +226,33 @@ export function criticBrainAssessment({ trader, features, context, structureFeat
     if ((trader?.momentum?.acceleration ?? 0) !== 0 && trader.action !== "WAIT" && Math.sign(trader.momentum.acceleration) !== (trader.action === "BUY" ? 1 : -1)) contradictions.push("aceleracao_contra_a_entrada");
     if (["CHAOTIC", "UNCLEAR"].includes(regime)) { verdict = "VETO"; riskFlags.push(`regime_${String(regime).toLowerCase()}`); }
     if ((trader?.setup === "BREAKOUT_CONTINUATION") && (structureFeatures?.candleShape?.bodyRatio ?? 0) < 0.5) contradictions.push("rompimento_sem_corpo_dominante");
+    // Fase 6.4 — auditoria adversarial ensinada pelo curriculo (fontes: Fidelity, StockCharts, CMT, CME, TradingView):
+    // o Critic deve refutar entrada atrasada/esticada/fraca; sao contradicoes (CONTEST), nunca criam direcao.
+    if ((direction === "BUY" || direction === "SELL") && rsi !== null) {
+      if (direction === "BUY" && rsi >= 70) contradictions.push("rsi_extremo_contra_entrada");
+      if (direction === "SELL" && rsi <= 30) contradictions.push("rsi_extremo_contra_entrada");
+      if (direction === "BUY" && rsi >= 78) contradictions.push("rsi_exausto_mesmo_a_favor");
+      if (direction === "SELL" && rsi <= 22) contradictions.push("rsi_exausto_mesmo_a_favor");
+      if (direction === "BUY" && rsi < 45) contradictions.push("rsi_sem_momentum_para_compra");
+      if (direction === "SELL" && rsi > 55) contradictions.push("rsi_sem_momentum_para_venda");
+    }
+    if ((direction === "BUY" || direction === "SELL") && plusDI !== null && minusDI !== null) {
+      const diAgainst = direction === "BUY" ? minusDI > plusDI : plusDI > minusDI;
+      if (diAgainst) contradictions.push("conflito_di_contra_entrada");
+    }
+    if ((direction === "BUY" || direction === "SELL") && adx !== null && adx < 18) contradictions.push("adx_fraco_para_setup");
+    if ((direction === "BUY" || direction === "SELL") && atrRatio !== null && atrRatio > 2.5) contradictions.push("volatilidade_spike_na_entrada");
+    if ((direction === "BUY" || direction === "SELL") && (againstATR ?? 0) > 2.0) contradictions.push("preco_esticado_contra_a_entrada");
+    if (trader?.setup === "BREAKOUT_CONTINUATION" && (withATR ?? 0) > 2.5) contradictions.push("rompimento_ja_percorrido");
+    if (["RANGE", "TRANSITION"].includes(regime) && direction === "BUY" && (trader?.location?.donchianPosition ?? 0.5) >= 0.85) contradictions.push("compra_no_topo_do_range");
+    if (["RANGE", "TRANSITION"].includes(regime) && direction === "SELL" && (trader?.location?.donchianPosition ?? 0.5) <= 0.15) contradictions.push("venda_no_fundo_do_range");
     if (intelligence?.news?.importance >= 0.9) riskFlags.push("noticia_alto_impacto");
   }
-  checklist.push({ item: "regime", ok: REGIMES.includes(regime) }, { item: "trigger", ok: Boolean(trader?.trigger) || trader?.action === "WAIT" }, { item: "contraevidencia_considerada", ok: true }, { item: "sem_extensao_excessiva", ok: (trader?.location?.distanceToUpperATR ?? 0) <= 3 && (trader?.location?.distanceToLowerATR ?? 0) <= 3 });
+  checklist.push({ item: "regime", ok: REGIMES.includes(regime) }, { item: "trigger", ok: Boolean(trader?.trigger) || trader?.action === "WAIT" }, { item: "contraevidencia_considerada", ok: true }, { item: "sem_extensao_excessiva", ok: (trader?.location?.distanceToUpperATR ?? 0) <= 3 && (trader?.location?.distanceToLowerATR ?? 0) <= 3 },
+    { item: "sem_entrada_atrasada", ok: (direction === "BUY" ? (trader?.location?.distanceLowerATR ?? 0) : (trader?.location?.distanceUpperATR ?? 0)) <= 2.5 },
+    { item: "forca_direcional_adequada", ok: (adx ?? 20) >= 18 },
+    { item: "di_alinhado_com_acao", ok: plusDI === null || minusDI === null || (direction === "BUY" ? plusDI > minusDI : direction === "SELL" ? minusDI > plusDI : true) },
+    { item: "rsi_com_espaco", ok: rsi === null || (direction === "BUY" ? rsi < 78 : direction === "SELL" ? rsi > 22 : true) });
   for (const entry of checklist) if (!entry.ok && verdict !== "VETO") { verdict = "CONTEST"; contradictions.push(`checklist_falhou:${entry.item}`); }
   const finalRecommendation = verdict === "CONFIRM" ? trader?.action ?? "WAIT" : "WAIT";
   return {

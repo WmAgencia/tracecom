@@ -39,6 +39,7 @@ export class RuntimeAssetResolver {
     this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
     this.now = now;
     this.mapping = new Map();
+    this.optionsRefreshCount = 0;
     this.sectionsSeen = [];
     this.sampleActiveKeys = [];
     this.payoutByActiveId = new Map();
@@ -147,10 +148,19 @@ export class RuntimeAssetResolver {
       });
     }
     this.lastResolvedAt = now;
+    for (const row of this.mapping.values()) row.staleSnapshot = false;
     this.lastError = null;
   }
 
-  get(key) { return this.mapping.get(key) ?? null; }
+  get(key) {
+    const row = this.mapping.get(key) ?? null;
+    if (!row) return null;
+    // Snapshot persistido nao e verdade operacional: SUSPENDED/NOT_FOUND de cache vira UNKNOWN ate o broker confirmar.
+    if (row.staleSnapshot === true && (row.availability === "SUSPENDED" || row.availability === "NOT_FOUND" || row.availability === "DISABLED")) {
+      return { ...row, availability: "UNKNOWN", suspended: false };
+    }
+    return row;
+  }
   resolvedCount() { return [...this.mapping.values()].filter((row) => row.activeId !== null).length; }
 
   status() {

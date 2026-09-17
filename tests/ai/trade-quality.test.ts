@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 // @ts-expect-error - relay ESM sem tipagem (validado em runtime)
 const quality = await import("../../relay/trade-quality.mjs");
-const { extractFeatures, evaluateShadowArms, triggerStrength, selectiveCurve, temporalSplit, fitLogistic, auc, criticAudit, stabilityStudy, priceChaseStudy, performanceHealth, BREAK_EVEN_WR, ARM_IDS } = quality as unknown as Record<string, any>;
+const { extractFeatures, evaluateShadowArms, triggerStrength, selectiveCurve, temporalSplit, fitLogistic, auc, criticAudit, stabilityStudy, priceChaseStudy, performanceHealth, BREAK_EVEN_WR, ARM_IDS, scoreTradeQuality, entryLocationCheck, finalMicrostructureVeto, DEFAULT_MIN_TRADE_QUALITY_SCORE } = quality as unknown as Record<string, any>;
 
 const baseSnapshot = (overrides: Record<string, any> = {}) => ({
   source: "T0_DECISION_SNAPSHOT", regime: "TREND_UP", setup: "TREND_PULLBACK", trigger: "pullback_com_estrutura_mantida",
@@ -100,6 +100,42 @@ describe("TRADE QUALITY — temporal split, modelo e curva", () => {
     expect(model.auc).toBeGreaterThan(0.8);
     expect(auc([{ score: 0.9, label: 1 }, { score: 0.1, label: 0 }])).toBe(1);
     expect(auc([])).toBeNull();
+  });
+});
+
+describe("TRADE QUALITY — score 0-100, entry location e veto de microestrutura", () => {
+  it("score alto com evidencia alinhada e abaixo do threshold com evidencia fraca", () => {
+    const strong = extractFeatures(trade({ result: "WIN", pnl: 8.5 }), { candidatePrice: 1.1, entryPrice: 1.1005 });
+    strong.knowledgeContextIds = ["TraceCom/02 - Setups/TREND_PULLBACK"];
+    const strongScore = scoreTradeQuality(strong);
+    expect(strongScore.score).toBeGreaterThanOrEqual(75);
+    expect(strongScore.max).toBe(100);
+    expect(Object.keys(strongScore)).not.toContain("estimatedWinProbability");
+    const weak = { ...strong, trigger: null, regime: "TRANSITION", structureLabel: "RANGE", plusDI: 10, minusDI: 30, adx: 12, rsi: 78, streak: -3, acceleration: -0.001, donchianPosition: 0.5, knowledgeContextIds: [] };
+    expect(scoreTradeQuality(weak).score).toBeLessThan(DEFAULT_MIN_TRADE_QUALITY_SCORE);
+    expect(DEFAULT_MIN_TRADE_QUALITY_SCORE).toBe(75);
+  });
+
+  it("entry location: setup valido mas preco ja andou => VALID_SETUP_BUT_BAD_ENTRY_PRICE", () => {
+    const features = extractFeatures(trade({ result: "WIN", pnl: 8.5 }), { candidatePrice: 1.1, entryPrice: 1.1015 });
+    expect(features.entryDisplacementATR).toBeCloseTo(1.5, 3);
+    const location = entryLocationCheck(features);
+    expect(location.ok).toBe(false);
+    expect(location.code).toBe("VALID_SETUP_BUT_BAD_ENTRY_PRICE");
+    expect(location.reasons).toContain("ENTRY_DISPLACEMENT_CHASED");
+    const cleanLocation = entryLocationCheck(extractFeatures(trade({ result: "WIN", pnl: 8.5 }), { candidatePrice: 1.1, entryPrice: 1.1005 }));
+    expect(cleanLocation.ok).toBe(true);
+  });
+
+  it("veto de microestrutura so veta (nunca cria direcao) e registra motivo", () => {
+    const veto = finalMicrostructureVeto({ direction: "BUY", atr: 0.001, lastTick: { price: 1.0995, ageMs: 100 }, lastClose: 1.1 });
+    expect(veto.veto).toBe(true);
+    expect(veto.reason).toBe("ADVERSE_TICK_DISPLACEMENT");
+    const pass = finalMicrostructureVeto({ direction: "SELL", atr: 0.001, lastTick: { price: 1.0995, ageMs: 100 }, lastClose: 1.1 });
+    expect(pass.veto).toBe(false);
+    expect(finalMicrostructureVeto({ direction: "BUY", atr: null, lastTick: { price: 1.0, ageMs: 1 }, lastClose: 1.1 }).veto).toBe(false);
+    const resultKeys = Object.keys(veto).sort();
+    expect(resultKeys).toEqual(["detail", "reason", "veto"]);
   });
 });
 

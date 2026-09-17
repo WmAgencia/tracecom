@@ -39,6 +39,23 @@ profissionais e padroes reconhecidos; C = obras de referencia classicas (somente
 | SRC-BOOK-THARP-001 | C | Van K. Tharp - Trade Your Way to Financial Freedom (2006) | https://www.cfainstitute.org | Position sizing, expectativa e psicologia de desempenho |
 | SRC-BOOK-DOUGLAS-001 | C | Mark Douglas - Trading in the Zone (2000) | https://www.cfainstitute.org | Mentalidade probabilistica e disciplina de execucao |
 
+| SRC-FIDELITY-IND | B | Fidelity Learning Center - Technical Indicator Guide | https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide | Guia institucional de indicadores tecnicos (visao geral) |
+| SRC-FIDELITY-RSI | B | Fidelity - Relative Strength Index (RSI) | https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/RSI | Formula, uso e limitacoes do RSI segundo a Fidelity |
+| SRC-FIDELITY-ATR | B | Fidelity - Average True Range (ATR) | https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/atr | Definicao de TR/ATR e smoothing de Wilder |
+| SRC-FIDELITY-DMI | B | Fidelity - Directional Movement Index (DMI/ADX) | https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/dmi | Passos de calculo do +DI/-DI/DX/ADX |
+| SRC-TALIB-ADX | B | TA-Lib - ADX/DMI documentation | https://ta-lib.org/functions/ | Referencia de implementacao de ADX, RSI, ATR e Donchian |
+| SRC-SCHWAB-ADX-RSI | B | Charles Schwab - ADX and RSI education | https://www.schwab.com/learn/story/adx-rsi-using-indicators-together | Uso combinado de ADX com RSI e leitura de tendencia |
+| SRC-CMT-EDU | B | CMT Association - Education | https://cmtassociation.org/education/ | Corpo de conhecimento profissional (tendencia, momentum, regime) |
+| SRC-CMT-ADX | B | CMT Association - ADX e regimes | https://cmtassociation.org/education/ | ADX como medida de forca do regime; cuidados de interpretacao |
+| SRC-CMT-RSI | B | CMT Association - RSI avancado | https://cmtassociation.org/education/ | RSI: extremos, divergencia e erros comuns |
+| SRC-STOCKCHARTS-RSI | B | StockCharts ChartSchool - RSI | https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi | Formula, zonas de 70/30 e falhas em tendencia |
+| SRC-STOCKCHARTS-ADX | B | StockCharts ChartSchool - ADX | https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ADX/DI: calculo, cruzamentos e whipsaw |
+| SRC-CME-TA | A | CME Group - Technical Analysis education | https://www.cmegroup.com/education/courses/introduction-to-technical-analysis.html | Fundamentos institucionais de analise tecnica |
+| SRC-CME-SR | A | CME Group - Support and Resistance | https://www.cmegroup.com/education/courses/introduction-to-technical-analysis/support-and-resistance.html | Definicao, identificacao e armadilhas de S/R |
+| SRC-TRADINGVIEW-DONCHIAN | B | TradingView - Donchian Channels | https://www.tradingview.com/support/solutions/43000502253-donchian-channels/ | Definicao, janela e leitura dos canais de Donchian |
+| SRC-IQ-HOURS | A | IQ Option - Trading hours and sessions | https://iqoption.com/en/trading-hours | Horarios e sessoes oficiais (consultar in-platform; pagina pode ser dinamica) |
+| SRC-IQ-OTC | A | IQ Option - OTC assets | https://blog.iqoption.com/en/what-is-otc-trading-a-guide-for-weekend-and-off-hours-traders/ | OTC: o que e, quando roda e por que disponibilidade vem do broker |
+
 ## Regras de Uso
 - Toda nota deve referenciar apenas IDs definidos nesta tabela.
 - URLs de livros apontam para paginas institucionais, nao para textos integrais.
