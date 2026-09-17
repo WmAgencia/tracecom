@@ -804,7 +804,10 @@ export class IqMultiRuntime extends EventEmitter {
   handleShadowSettlement({ marketKey, variantId, result, pnl }) {
     const ctx = this.markets.get(marketKey);
     if (!ctx || !ctx.enabled) return;
-    const champion = this.manager.state.get(marketKey)?.championVariantId ?? ctx.strategyVariantId ?? this.config.selection.variantId;
+    // Troca manual do operador (strategyVariantId) tem precedencia e ressincroniza o champion do gestor.
+    const managerState = this.manager.ensureMarket(marketKey, ctx.strategyVariantId ?? this.config.selection.variantId);
+    if (ctx.strategyVariantId && ctx.strategyVariantId !== managerState.championVariantId) managerState.championVariantId = ctx.strategyVariantId;
+    const champion = managerState.championVariantId ?? ctx.strategyVariantId ?? this.config.selection.variantId;
     if (variantId !== champion) return;
     const trigger = this.manager.onSettlement(marketKey, { result, pnl });
     if (trigger.trigger) void this.#runStrategyReview(ctx);
