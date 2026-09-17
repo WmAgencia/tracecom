@@ -81,7 +81,7 @@ check("P4-STAKE-04", "revisao de configuracao presente (anti-stale)", Number(o.c
 await req("POST", "/api/iq/config/global-stake", { value: originalDefault });
 if (target) await req("PUT", "/api/iq/market", { marketKey: target, configuredStake: originalTargetStake });
 check("P4-STAKE-05", "valor restaurado apos o teste (estado do operador preservado)", true, { originalDefault, originalTargetStake });
-check("P4-STRATEGY-01", "variante de estrategia congelada por mercado exposta", (o.markets ?? []).every((m) => ["V3-45", "V3-60", "V3-120", "V3-180", "V3-300", "V8-45", "V8-60", "V2-60", "V2-120", "V1-300"].includes(String(m.strategyEffective))), (o.markets ?? []).map((m) => m.strategyEffective).filter((value, index, list) => list.indexOf(value) === index));
+check("P4-STRATEGY-01", "variantes antigas removidas do runtime ativo (LEGACY_STRATEGY_AUDIT; brain G2 por mercado)", (o.markets ?? []).every((m) => m.strategyVariantId === undefined || m.strategyVariantId === null || m.strategyVariantId === "") && (o.markets ?? []).every((m) => m.strategyEffective === undefined || m.strategyEffective === null || m.strategyEffective === "") && (o.markets ?? []).every((m) => m.brainGeneration === 2), null);
 check("P4-UNIVERSE-03", "15 estacoes visiveis (NORMAL 10 + OTC 5) com fechados presentes", (o.markets ?? []).length === 15 && (o.markets ?? []).some((m) => m.availability !== "OPEN") && (o.markets ?? []).filter((m) => m.enabled).length <= 10, { closed: (o.markets ?? []).filter((m) => m.availability !== "OPEN").map((m) => m.marketKey) });
 
 const armNoConfirm2 = await req("POST", "/api/iq/arm", { limitBrl: 2 });
