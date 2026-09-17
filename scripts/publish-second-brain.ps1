@@ -35,6 +35,16 @@ if ($pushed -eq 0 -and -not $Force) {
 
 Write-Output "[2/3] Commit/push do conhecimento no GitHub (quando houver git)..."
 $git = (Get-Command git -ErrorAction SilentlyContinue) | Select-Object -First 1
+if (-not $git) {
+  $fallbacks = @(
+    "C:\Program Files\Git\cmd\git.exe",
+    "C:\Program Files (x86)\Git\cmd\git.exe",
+    "$env:LOCALAPPDATA\Programs\Git\cmd\git.exe",
+    "$env:USERPROFILE\AppData\Local\Temp\opencode\mingit\cmd\git.exe"
+  )
+  $found = $fallbacks | Where-Object { Test-Path $_ } | Select-Object -First 1
+  if ($found) { $git = [pscustomobject]@{ Source = $found } }
+}
 if ($git) {
   & $git.Source add relay/knowledge
   $staged = & $git.Source diff --cached --name-only

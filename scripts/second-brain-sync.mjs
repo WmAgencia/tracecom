@@ -228,7 +228,8 @@ async function pushLibrary() {
       if (vaultContent === null) continue;
       const repoTarget = path.join(LIBRARY_REPO, relative, row.name);
       const repoContent = await fs.readFile(repoTarget, "utf8").catch(() => null);
-      if (repoContent === vaultContent) continue;
+      const normalize = (value) => (value === null ? null : value.replaceAll("\r\n", "\n").replace(/^\uFEFF/, ""));
+      if (normalize(repoContent) === normalize(vaultContent)) continue;
       pushed.push({ relative: `${SCOPE}${inner}`, action: repoContent === null ? "PUSH_NEW" : "PUSH_EDIT", bytes: Buffer.byteLength(vaultContent) });
       if (!DRY) { await fs.mkdir(path.dirname(repoTarget), { recursive: true }); await fs.writeFile(repoTarget, vaultContent, "utf8"); }
     }
