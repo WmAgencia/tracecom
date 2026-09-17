@@ -30,7 +30,8 @@
     "serve": "tsx src/cli/serve.ts",
     "second-brain:sync": "node scripts/second-brain-sync.mjs",
     "second-brain:push": "node scripts/second-brain-sync.mjs --push",
-    "audit:g2": "node scripts/g2-loss-audit.mjs"
+    "audit:g2": "node scripts/g2-loss-audit.mjs",
+    "stress:55": "node scripts/stress-55.mjs"
   },
   "dependencies": {
     "@vercel/blob": "2.8.0",

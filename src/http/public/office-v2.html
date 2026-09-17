@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TRACE/COM · Pixel Office V2</title>
+  <style>
+    :root { --bg: #0a0e1c; --panel: #131a2e; --line: #24304e; --ink: #d7deee; --muted: #8695b8; --ok: #46d17a; --bad: #ff5a5a; --warn: #ffc857; --accent: #7fb2ff; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: "Segoe UI", system-ui, sans-serif; }
+    #officeV2Root { display: flex; flex-direction: column; height: 100%; }
+    .v2-topbar { display: flex; align-items: center; gap: 14px; padding: 8px 14px; background: linear-gradient(180deg, #121a30, #0d1424); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+    .v2-brand b { font-size: 15px; letter-spacing: 1px; }
+    .v2-brand b em { color: var(--accent); font-style: normal; }
+    .v2-brand small { display: block; color: var(--muted); font-size: 10px; letter-spacing: 1.5px; }
+    .v2-chips { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+    .v2-chip { display: flex; flex-direction: column; gap: 1px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: #0e1526; min-width: 84px; }
+    .v2-chip small { color: var(--muted); font-size: 9px; letter-spacing: 1px; }
+    .v2-chip b { font-size: 12px; font-variant-numeric: tabular-nums; }
+    .v2-chip.ok b { color: var(--ok); }
+    .v2-chip.bad b { color: var(--bad); }
+    .v2-actions { display: flex; gap: 6px; }
+    .v2-actions button { background: #1a2440; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; font-size: 11px; letter-spacing: 1px; cursor: pointer; }
+    .v2-actions button:hover { background: #23305a; border-color: var(--accent); }
+    .v2-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+    #officeV2Canvas { display: block; cursor: grab; image-rendering: pixelated; }
+    .v2-status { position: absolute; left: 10px; bottom: 8px; font-size: 10px; letter-spacing: 0.5px; color: var(--muted); background: rgba(8, 12, 24, 0.75); border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px; max-width: 70vw; }
+    .v2-status[data-tone="ok"] { color: var(--ok); }
+    .v2-status[data-tone="warn"] { color: var(--warn); }
+    .v2-status[data-tone="bad"] { color: var(--bad); }
+    .office-v2-panel { position: absolute; top: 10px; right: 10px; bottom: 10px; width: 340px; max-width: 92vw; overflow: auto; background: rgba(13, 20, 38, 0.96); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); padding: 12px 14px; }
+    .office-v2-panel header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+    .office-v2-panel h2 { margin: 2px 0; font-size: 16px; }
+    .office-v2-panel small { color: var(--muted); font-size: 10px; }
+    .v2-panel-kicker { color: var(--muted); font-size: 9px; letter-spacing: 1.5px; }
+    .office-v2-panel header button { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 4px; font-size: 10px; padding: 4px 8px; cursor: pointer; }
+    .v2-panel-body h3 { margin: 12px 0 4px; font-size: 10px; letter-spacing: 1.5px; color: var(--accent); border-bottom: 1px dashed var(--line); padding-bottom: 3px; }
+    .v2-row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; font-size: 11px; }
+    .v2-row span { color: var(--muted); }
+    .v2-row b { text-align: right; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <div id="officeV2Root">
+    <header class="v2-topbar">
+      <div class="v2-brand"><b>TRACE<em>/</em>COM</b><small>PIXEL OFFICE V2 · ISO TRADING FLOOR</small></div>
+      <div class="v2-chips" id="v2Chips"></div>
+      <div class="v2-actions">
+        <button type="button" id="v2Fit" title="Enquadrar todo o escritório">FIT</button>
+        <button type="button" id="v2Center" title="Centralizar no salão">CENTER</button>
+        <button type="button" id="v2Focus" title="Focar no posto selecionado">FOCUS</button>
+        <button type="button" id="v2ZoomIn" title="Aproximar">+</button>
+        <button type="button" id="v2ZoomOut" title="Afastar">−</button>
+      </div>
+    </header>
+    <main class="v2-stage">
+      <canvas id="officeV2Canvas"></canvas>
+      <aside class="office-v2-panel" id="officeV2Panel" hidden></aside>
+      <div class="v2-status" id="officeV2Status">INICIANDO…</div>
+    </main>
+  </div>
+  <script type="module">
+    import { bootOfficeV2 } from "/office-v2.js";
+    const params = new URLSearchParams(location.search);
+    window.__OFFICE_V2_APP__ = bootOfficeV2({
+      canvas: "#officeV2Canvas",
+      panel: "#officeV2Panel",
+      status: "#officeV2Status",
+      chips: "#v2Chips",
+      pollUrl: params.get("office") || "/api/iq/office",
+      pollIntervalMs: Number(params.get("interval")) || 9000,
+      fixture: Boolean(window.__OFFICE_V2_FIXTURE__),
+    });
+  </script>
+</body>
+</html>
