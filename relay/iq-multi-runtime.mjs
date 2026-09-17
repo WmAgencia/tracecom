@@ -31,7 +31,7 @@ import { SecondBrainAdapter } from "./second-brain.mjs";
 import { TradingJournal, HypothesisRegistry, PerformanceSupervisor, reviewTrade } from "./professor.mjs";
 import { ApprenticeDesk } from "./apprentice.mjs";
 import { ExternalFeedSync } from "./external-feeds.mjs";
-import { ENTRY_TIMING_VERSION, DEFAULT_ENTRY_LEAD_MS, DEFAULT_MAX_DRIFT_MS, MIN_ENTRY_LEAD_MS, MAX_ENTRY_LEAD_MS, nextEntryWindow, dynamicEntryLeadMs, compareCandidateSnapshots, makeCandidate, revalidateCandidate, EntryTimingExperiment } from "./entry-timing.mjs";
+import { ENTRY_TIMING_VERSION, DEFAULT_ENTRY_LEAD_MS, DEFAULT_MAX_DRIFT_MS, MIN_ENTRY_LEAD_MS, MAX_ENTRY_LEAD_MS, nextEntryWindow, dynamicEntryLeadMs, compareCandidateSnapshots, comparableSnapshot, makeCandidate, revalidateCandidate, EntryTimingExperiment } from "./entry-timing.mjs";
 import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, DEFAULT_GLOBAL_MAX_STAKE, concentrationExposure } from "./market-universe.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
@@ -652,7 +652,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (action !== candidate.action) { this.#cancelCandidate(ctx, action === "WAIT" ? "CANDIDATE_LOGIC_CHANGED_TO_WAIT" : "CANDIDATE_LOGIC_CHANGED_DIRECTION", { candidate: candidate.action, final: action }); return; }
     if (serverNow > candidate.targetEntryAt + this.#entryMaxDriftMs()) { this.#cancelCandidate(ctx, "ENTRY_WINDOW_MISSED", { serverNow, targetEntryAt: candidate.targetEntryAt }); return; }
 
-    const finalComparable = this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
+    const finalComparable = comparableSnapshot(this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now }));
     if (!candidate.changes.changed) {
       const comparison = compareCandidateSnapshots(candidate.initial, finalComparable);
       if (comparison.changed) {
