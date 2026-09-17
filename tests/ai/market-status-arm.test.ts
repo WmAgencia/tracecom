@@ -104,6 +104,19 @@ describe("ARM — recusa estruturada e aceitacao mesmo em manutencao do broker",
     expect(() => runtime.arm(10, { confirmation: true })).not.toThrow();
   });
 
+  it("re-ARM idempotente: segundo ARM com confirmacao nao falha e atualiza limite", () => {
+    const runtime = fixture();
+    runtime.markets.get("EURUSD:OTC").enabled = true;
+    runtime.resolver.ingestInitializationData(initData({ "76": { name: "EURUSD-OTC", enabled: true, is_suspended: true } }));
+    runtime.ingestAuxiliary({});
+    const first = runtime.arm(10, { confirmation: true });
+    expect(first.armed).toBe(true);
+    const second = runtime.arm(25, { confirmation: true });
+    expect(second.armed).toBe(true);
+    expect(second.userLimitBrl).toBe(25);
+    expect(() => runtime.arm(25, { confirmation: false })).toThrowError(/EXPLICIT_CONFIRMATION_REQUIRED/);
+  });
+
   it("UI mostra a razao real da recusa e o aviso de broker fechado (sem mascarar)", async () => {
     const fs = await import("node:fs");
     const office = fs.readFileSync("src/http/public/office.js", "utf8");

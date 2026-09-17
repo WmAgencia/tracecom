@@ -105,6 +105,12 @@ export class ExecutionArmState {
   onConnected(accountType) { this.connectedAccountType = assertPracticeAccount(accountType); this.state = "CONNECTED_PRACTICE"; this.armed = false; return this.snapshot(); }
   onMarketData(healthy) { this.marketDataHealthy = healthy === true; if (!this.marketDataHealthy) this.disarm("MARKET_DATA_UNHEALTHY"); return this.snapshot(); }
   arm(userLimitBrl, { explicitConfirmation } = {}) {
+    // Re-ARM idempotente: se ja esta armado, atualiza apenas o limite (nunca falha por precondicao enganosa).
+    if (this.state === "ARMED" && this.armed === true) {
+      if (explicitConfirmation !== true) throw new ConnectorError("EXPLICIT_CONFIRMATION_REQUIRED");
+      const rearmLimit = resolveStakeLimit(userLimitBrl, { brokerCurrency: "BRL" });
+      return { ...this.snapshot(), limit: rearmLimit, rearm: true };
+    }
     if (this.state !== "CONNECTED_PRACTICE" || !this.marketDataHealthy) throw new ConnectorError("ARM_PRECONDITIONS_NOT_MET");
     if (explicitConfirmation !== true) throw new ConnectorError("EXPLICIT_CONFIRMATION_REQUIRED");
     const limit = resolveStakeLimit(userLimitBrl, { brokerCurrency: "BRL" });
