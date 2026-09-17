@@ -1012,7 +1012,7 @@ export class IqMultiRuntime extends EventEmitter {
       return { accepted: rows.length, wins, losses, draws, wr: decided.length ? Number((wins / decided.length).toFixed(4)) : null, normalizedPnl, expectancyPerTrade: decided.length ? Number((normalizedPnl / decided.length).toFixed(4)) : null };
     };
     const arms = Object.fromEntries(ARM_IDS.map((arm) => [arm, summarize(trades.filter((trade) => trade.entryTiming.shadowArms[arm]?.decision === "ACCEPT"))]));
-    const payoutAvg = trades.length ? Number((trades.reduce((sum, trade) => sum + (Number(trade.payout) || 0), 0) / trades.length).toFixed(2)) : null;
+    const payoutAvg = trades.length ? Number((trades.reduce((sum, trade) => sum + (Number(trade.payout) || 0), 0) / trades.length).toFixed(2)) : (() => { const payouts = [...this.markets.values()].filter((ctx) => ctx.enabled && Number.isFinite(Number(ctx.payout)) && Number(ctx.payout) > 0).map((ctx) => Number(ctx.payout)); return payouts.length ? Number((payouts.reduce((sum, value) => sum + value, 0) / payouts.length).toFixed(2)) : null; })();
     const health = performanceHealth({ trades: trades.map((trade) => ({ result: trade.result, normalizedPnl: (Number(trade.pnl) || 0) / (Number(trade.stake) || 1) })), coverage: this.jit.counters.candidates ? trades.length / this.jit.counters.candidates : null });
     const outcomes = trades.filter((trade) => trade.review?.initialDecisionQuality || trade.review?.finalDecisionQuality).map((trade) => ({ tradeId: trade.tradeId, initial: trade.review?.initialDecisionQuality ?? null, final: trade.review?.finalDecisionQuality ?? trade.review?.decisionQuality ?? null, outcome: trade.result }));
     return {

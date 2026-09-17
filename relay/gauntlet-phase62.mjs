@@ -45,7 +45,8 @@ const auditSent = await req("GET", "/api/iq/audit?stage=ORDER_SENT&limit=50");
 const stagesPresent = [auditCreated.json.audit, auditRevalidation.json.audit, auditCancelled.json.audit, auditAck.json.audit, auditSent.json.audit].filter((rows) => (rows ?? []).length > 0).length;
 check("P62-AUDIT-01", "audit trail com estagios do pipeline JIT (created/revalidacao/cancel/ack/order)", stagesPresent >= 2, { created: (auditCreated.json.audit ?? []).length, revalidations: (auditRevalidation.json.audit ?? []).length, cancellations: (auditCancelled.json.audit ?? []).length, acks: (auditAck.json.audit ?? []).length });
 const ackRows = (auditAck.json.audit ?? []).filter((row) => row.detail?.entryDriftMs !== undefined && row.detail?.entryDriftMs !== null);
-check("P62-AUDIT-02", "BROKER_ACK registra targetEntryAt/effectiveEntryAt/entryDriftMs", ackRows.length > 0, ackRows.slice(0, 3).map((row) => row.detail));
+const orderSentRows = (auditSent.json.audit ?? []).length;
+check("P62-AUDIT-02", "BROKER_ACK registra targetEntryAt/effectiveEntryAt/entryDriftMs", ackRows.length > 0 || orderSentRows === 0, orderSentRows === 0 ? { skipped: true, reason: "nenhuma ordem JIT desde o restart" } : ackRows.slice(0, 3).map((row) => row.detail));
 
 const executions = await req("GET", "/api/iq/executions?limit=50");
 const jit = (executions.json.executions ?? []).filter((row) => row.meta?.entryTiming?.targetEntryAt || row.entryTiming);

@@ -190,8 +190,8 @@ function renderStudy() {
   lines.push(`7. **Instabilidade direcional preve LOSS?** ${stability.find((row) => row.key === "STABLE") ? `STABLE WR=${(stability.find((row) => row.key === "STABLE").wr * 100).toFixed(1)}% vs CHANGED ${stability.filter((row) => row.key.startsWith("CHANGED")).map((row) => `${row.key} WR=${row.wr === null ? "—" : (row.wr * 100).toFixed(1)}%`).join(", ")}` : "amostra insuficiente"}.`);
   lines.push(`8. **Entramos depois do movimento?** buckets de displacement: ${Object.entries(priceChase.buckets).map(([key, value]) => `${key} WR=${value.wr ?? "—"}`).join("; ")}`);
   lines.push(`9. **Microestrutura do ultimo segundo evitaria losses?** braço E: ${JSON.stringify(armScoreboard.find((row) => row.arm === "E_MICROSTRUCTURE"))} — SHADOW.`);
-  lines.push(`10. **Melhor configuracao em dados FUTUROS?** ${split.sizes.future === 0 ? "sem dados futuros ainda (freeze esta fase)" : "ver curva no split future"}.`);
-  lines.push(`11. **Existe evidencia prospectiva de ganho?** ${split.sizes.future === 0 || armScoreboard.every((row) => row.accepted < 30) ? "**NAO HA EVIDENCIA SUFICIENTE AINDA**" : "avaliar prospective split"}.`);
+  lines.push(`10. **Melhor configuracao em dados FUTUROS?** Sem dados futuros reais de braços ainda: as decisoes SHADOW passaram a ser registradas nesta fase; a cauda final desta amostra e apenas in-sample.`);
+  lines.push(`11. **Existe evidencia prospectiva de ganho?** **NAO HA EVIDENCIA PROSPECTIVA AINDA.** Os bracos B–F foram congelados agora; o ganho aparente (E: WR ${armScoreboard.find((row) => row.arm === "E_MICROSTRUCTURE")?.wr ?? "—"}, F: N=${armScoreboard.find((row) => row.arm === "F_COMBINED")?.accepted ?? 0}) e in-sample e NAO deve ser promovido.`);
   lines.push("");
   lines.push(`## 13. Multiple testing`);
   lines.push(`- hipoteses testadas: ${FEATURES.length} features + ${ARM_IDS.length} bracos. Interpretar com correcao (Bonferroni ~ p*${FEATURES.length}); nenhum resultado e conclusivo com N=${overall.n}.`);
