@@ -32,6 +32,7 @@ import { TradingJournal, HypothesisRegistry, PerformanceSupervisor, reviewTrade 
 import { ApprenticeDesk } from "./apprentice.mjs";
 import { ExternalFeedSync } from "./external-feeds.mjs";
 import { ENTRY_TIMING_VERSION, DEFAULT_ENTRY_LEAD_MS, DEFAULT_MAX_DRIFT_MS, MIN_ENTRY_LEAD_MS, MAX_ENTRY_LEAD_MS, nextEntryWindow, dynamicEntryLeadMs, compareCandidateSnapshots, comparableSnapshot, makeCandidate, revalidateCandidate, EntryTimingExperiment } from "./entry-timing.mjs";
+import { TRADE_QUALITY_VERSION, ARM_IDS, evaluateShadowArms, featuresFromSnapshot, performanceHealth, BREAK_EVEN_WR } from "./trade-quality.mjs";
 import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, DEFAULT_GLOBAL_MAX_STAKE, concentrationExposure } from "./market-universe.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
@@ -116,7 +117,7 @@ export class IqMultiRuntime extends EventEmitter {
       indicative: { state: "NEUTRAL", delta: null, indicativePnl: null, updatedAt: null },
       latency: { serverToReceived: [], receivedToNormalized: [], normalizedToFeature: [], orderAck: [] },
       stats: { messages: 0, candlesProcessed: 0, duplicates: 0, reorder: 0, gaps: 0, rejected: 0, lastBucketStart: null },
-      agentState: "OFFLINE", agentSince: null, lastSignal: null, lastDecision: null, lastTrade: null,
+      agentState: "OFFLINE", agentSince: null, lastSignal: null, lastDecision: null, lastTrade: null, indicatorHistory: [],
     };
   }
 
@@ -589,6 +590,9 @@ export class IqMultiRuntime extends EventEmitter {
     }
     ctx.agents = { correlationId, at: now, brainGeneration: BRAIN_GENERATION, regime, features, structureFeatures, trader, critic, consensus, intelligenceContext, knowledgeContext };
     this.agentState.set(ctx.marketKey, ctx.agents);
+    // Trajetorias (Fase 6.3): ring buffer por mercado para slopes de RSI/ADX/DI/ATR/Donchian (somente observabilidade).
+    ctx.indicatorHistory.push({ at: now, rsi: trader?.momentum?.rsi14 ?? null, adx: trader?.strength?.adx14 ?? null, diSpread: trader?.strength?.diSpread ?? null, atrRatio: trader?.volatility?.atrRatio ?? null, donchianPosition: trader?.location?.donchianPosition ?? null });
+    if (ctx.indicatorHistory.length > 60) ctx.indicatorHistory.splice(0, ctx.indicatorHistory.length - 60);
     this.agentLatency.push(trader.latencyMs + critic.latencyMs + consensus.latencyMs);
     if (this.agentLatency.length > this.maxLatencySamples) this.agentLatency.splice(0, this.agentLatency.length - this.maxLatencySamples);
     this.#emitEvent("agent.trader", { marketKey: ctx.marketKey, correlationId, action: trader.action, confidence: trader.analysisConfidence, regime, setup: trader.setup, brainGeneration: BRAIN_GENERATION });
@@ -699,10 +703,16 @@ export class IqMultiRuntime extends EventEmitter {
     if (!revalidation.ok) { this.#cancelCandidate(ctx, revalidation.reason ?? "CANDIDATE_REVALIDATION_FAILED", { checks: revalidation.checks }); return; }
     candidate.status = "CONFIRMED"; candidate.confirmedAt = now;
     this.#emitEvent("candidate.confirmed", { marketKey: ctx.marketKey, candidateId: candidate.id, action, secondsToEntry: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
+    // SHADOW (Fase 6.3): decide bracos de qualidade com o snapshot t0; NUNCA altera a direcao nem bloqueia.
+    const shadowTiming = { candidateAgeMs: Math.max(0, now - candidate.createdAt), directionChanges: candidate.changes?.changes?.filter((change) => change.field === "action").length ?? 0, candidateChangedBeforeEntry: candidate.changes?.changed === true, candidatePrice: candidate.initialFull?.price ?? candidate.initial?.price ?? null };
+    const shadowFeatures = featuresFromSnapshot(candidate.initialFull ?? {}, { direction: candidate.action, payout: ctx.payout, timing: shadowTiming });
+    const shadowArms = evaluateShadowArms(shadowFeatures);
+    this.#emitEvent("shadow.arms", { marketKey: ctx.marketKey, candidateId: candidate.id, arms: Object.fromEntries(Object.entries(shadowArms).map(([arm, value]) => [arm, value.decision])) });
+    this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "SHADOW_ARMS", { candidateId: candidate.id, arms: shadowArms }, { persist: true });
     const entryTiming = {
       candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, targetExpirySec: Math.round(candidate.targetExpiryAt / 1000),
       submitAt: candidate.submitAt, entryLeadMs: candidate.entryLeadMs, revalidatedAt: now, candidateChangedBeforeEntry: candidate.changes.changed, changedFields: candidate.changes.changes,
-      initialSnapshot: candidate.initialFull, revalidationChecks: revalidation.checks,
+      initialSnapshot: candidate.initialFull, revalidationChecks: revalidation.checks, shadowArms, candidatePrice: candidate.initialFull?.price ?? null,
     };
     const record = await this.#handleSignal(ctx, action, trader, this.#candleList(ctx), entryTiming);
     if (record?.disposition === "EXECUTED") { candidate.status = "ORDER_SENT"; this.#setAgent(ctx, "IN_POSITION", "ORDER_SENT"); }
@@ -719,8 +729,22 @@ export class IqMultiRuntime extends EventEmitter {
       consensus: { status: consensus?.status ?? null, reason: consensus?.reason ?? null },
       knowledgeContextIds: ctx.decisionState?.knowledge?.ids ?? [], knowledgeVersion: ctx.decisionState?.knowledge?.version ?? null,
       freshness: { fresh: ctx.featureState?.fresh === true, reason: ctx.featureState?.freshnessReason ?? null, tickAgeMs: ctx.lastTickAt === null ? null : now - ctx.lastTickAt },
-      basis: { candles: "CLOSED_CANDLE", tick: "INTRABAR_REALTIME_DATA" },
+      price: ctx.lastCandle?.close ?? null,
+      trajectory: this.#trajectory(ctx),
+      brainGeneration: BRAIN_GENERATION,
     };
+  }
+
+  /** Slopes por avaliacao (ring buffer local; apenas contexto observavel em t0). */
+  #trajectory(ctx) {
+    const history = (ctx.indicatorHistory ?? []).slice(-10);
+    const slope = (pick) => {
+      const values = history.map(pick).filter((value) => Number.isFinite(value));
+      if (values.length < 3) return null;
+      const first = values[0], last = values[values.length - 1];
+      return Number(((last - first) / (values.length - 1)).toFixed(4));
+    };
+    return { rsiSlope: slope((row) => row.rsi), adxSlope: slope((row) => row.adx), diSpreadSlope: slope((row) => row.diSpread), atrSlope: slope((row) => row.atrRatio), donchianDelta: slope((row) => row.donchianPosition), samples: history.length };
   }
 
   #entryLeadMs() {
@@ -974,7 +998,30 @@ export class IqMultiRuntime extends EventEmitter {
     return review;
   }
 
-  supervisorStatus() { return this.supervisor.status(); }
+    supervisorStatus() { return this.supervisor.status(); }
+
+  /** SHADOW (Fase 6.3): estatisticas por braco de qualidade; nunca altera decisoes. */
+  qualityStatus() {
+    const trades = this.journal.trades.filter((trade) => trade.entryTiming?.shadowArms && (trade.result === "WIN" || trade.result === "LOSS" || trade.result === "DRAW"));
+    const summarize = (rows) => {
+      const decided = rows.filter((row) => row.result === "WIN" || row.result === "LOSS" || row.result === "DRAW");
+      const wins = decided.filter((row) => row.result === "WIN").length;
+      const losses = decided.filter((row) => row.result === "LOSS").length;
+      const draws = decided.filter((row) => row.result === "DRAW").length;
+      const normalizedPnl = Number(rows.reduce((sum, row) => sum + ((Number(row.pnl) || 0) / (Number(row.stake) || 1)), 0).toFixed(4));
+      return { accepted: rows.length, wins, losses, draws, wr: decided.length ? Number((wins / decided.length).toFixed(4)) : null, normalizedPnl, expectancyPerTrade: decided.length ? Number((normalizedPnl / decided.length).toFixed(4)) : null };
+    };
+    const arms = Object.fromEntries(ARM_IDS.map((arm) => [arm, summarize(trades.filter((trade) => trade.entryTiming.shadowArms[arm]?.decision === "ACCEPT"))]));
+    const payoutAvg = trades.length ? Number((trades.reduce((sum, trade) => sum + (Number(trade.payout) || 0), 0) / trades.length).toFixed(2)) : null;
+    const health = performanceHealth({ trades: trades.map((trade) => ({ result: trade.result, normalizedPnl: (Number(trade.pnl) || 0) / (Number(trade.stake) || 1) })), coverage: this.jit.counters.candidates ? trades.length / this.jit.counters.candidates : null });
+    const outcomes = trades.filter((trade) => trade.review?.initialDecisionQuality || trade.review?.finalDecisionQuality).map((trade) => ({ tradeId: trade.tradeId, initial: trade.review?.initialDecisionQuality ?? null, final: trade.review?.finalDecisionQuality ?? trade.review?.decisionQuality ?? null, outcome: trade.result }));
+    return {
+      version: TRADE_QUALITY_VERSION, shadowOnly: true, mode: this.config.mode, stake: Number(this.config.defaultStake),
+      trades: trades.length, breakEvenWR: payoutAvg ? BREAK_EVEN_WR(payoutAvg) : null, avgPayout: payoutAvg,
+      arms, health, outcomes,
+      counters: this.jit.counters, note: "Bracos SHADOW; nenhuma alteracao de direcao ou bloqueio operacional. Evidencia prospectiva comeca na data de implantacao.",
+    };
+  }
   setSupervisorConfig(patch = {}) {
     const allowed = ["minSamples", "maxDrawdown", "maxConsecutiveLosses", "minDecisionQuality", "reviewCooldownMs"];
     const next = { ...this.supervisor.config };
@@ -1093,7 +1140,7 @@ export class IqMultiRuntime extends EventEmitter {
       stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, activeId: ctx.activeId, symbol: ctx.display, expirationSec: expiration.expiration, optionKind: expiration.optionKind,
       entryPrice, requestedAt: this.now(), connectionId: this.connection?.connectionId ?? null, autoDisarmAfterAck: autoDisarmAfterAck === true, source, ackResolved: false, settling: false,
       correlationId: ctx.agents?.correlationId ?? `corr_exec_${record.executionId}`,
-      entryTiming: entryTiming ? { candidateId: entryTiming.candidateId, targetEntryAt: entryTiming.targetEntryAt, targetExpiryAt: entryTiming.targetExpiryAt, targetExpirySec: Number(entryTiming.targetExpirySec ?? Math.round(entryTiming.targetExpiryAt / 1000)), submitAt: entryTiming.submitAt, submitAtMs, entryLeadMs: entryTiming.entryLeadMs, revalidatedAt: entryTiming.revalidatedAt, candidateChangedBeforeEntry: entryTiming.candidateChangedBeforeEntry === true } : null,
+      entryTiming: entryTiming ? { candidateId: entryTiming.candidateId, targetEntryAt: entryTiming.targetEntryAt, targetExpiryAt: entryTiming.targetExpiryAt, targetExpirySec: Number(entryTiming.targetExpirySec ?? Math.round(entryTiming.targetExpiryAt / 1000)), submitAt: entryTiming.submitAt, submitAtMs, entryLeadMs: entryTiming.entryLeadMs, revalidatedAt: entryTiming.revalidatedAt, candidateChangedBeforeEntry: entryTiming.candidateChangedBeforeEntry === true, shadowArms: entryTiming.shadowArms ?? null, directionChanges: (entryTiming.changedFields ?? []).filter((change) => change.field === "action").length } : null,
     };
     this.#auditRecord(pending.correlationId, key, "ORDER_SENT", { executionId: record.executionId, direction: directionWire, stake: finalStake, requestedStake: resolvedStake.requestedStake, stakeSource: resolvedStake.source, mode, source, expiration: expiration.expiration, optionKind: expiration.optionKind, candidateId: entryTiming?.candidateId ?? null, targetEntryAt: entryTiming?.targetEntryAt ?? null, submitAtMs, entryLeadMs: entryTiming?.entryLeadMs ?? null }, { persist: true });
     const ackPromise = new Promise((resolve) => { pending.ackResolve = resolve; });
