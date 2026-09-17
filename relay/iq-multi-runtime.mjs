@@ -615,14 +615,13 @@ export class IqMultiRuntime extends EventEmitter {
     if (action === "BUY" || action === "SELL") {
       ctx.lastSignal = { action, at: this.now(), bucketStart: ctx.lastCandle?.bucketStart ?? null, setup: trader.setup };
       this.#emitEvent("market.signal", { marketKey: ctx.marketKey, action, bucketStart: ctx.lastSignal.bucketStart, setup: trader.setup, consensus: consensus.status, correlationId });
-      void this.#entryPipeline(ctx, { action, trader, critic, consensus, fresh: effectiveFresh, knowledgeContext, intelligenceContext, now, correlationId });
     } else {
-      if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_LOGIC_CHANGED_TO_WAIT", { action });
       if (ctx.positionState?.status === "OPEN" || ctx.positionState?.status === "ORDERING") this.#setAgent(ctx, ctx.positionState.status === "OPEN" ? "IN_POSITION" : "ORDERING", "POSITION_OPEN");
-      else this.#setAgent(ctx, "WAIT", reason);
+      else if (!ctx.candidate) this.#setAgent(ctx, "WAIT", reason);
       if (this.now() - (ctx.lastWaitEmit ?? 0) > 5_000) { ctx.lastWaitEmit = this.now(); this.#emitEvent("market.wait", { marketKey: ctx.marketKey, reason, waitReason: trader.waitReason, setup: trader.setup, consensus: consensus.status }); }
       this.#expireSignals(ctx);
     }
+    void this.#entryPipeline(ctx, { action, trader, critic, consensus, fresh: effectiveFresh, knowledgeContext, intelligenceContext, now, correlationId });
   }
 
   /* ------------------------------- entrada just-in-time (Fase 6.2) ------------------------------- */
@@ -631,8 +630,9 @@ export class IqMultiRuntime extends EventEmitter {
   async #entryPipeline(ctx, { action, trader, critic, consensus, fresh, now, correlationId }) {
     if (this.pendingOrders.has(ctx.marketKey) || this.openPositions.has(ctx.marketKey)) { this.#setAgent(ctx, "IN_POSITION", "POSITION_OPEN"); return; }
     const serverNow = this.client?.serverNow?.() ?? now;
-    if (this.config.jitEnabled !== true) { this.#setAgent(ctx, "SIGNAL", "JIT_DISABLED"); void this.#handleSignal(ctx, action, trader, this.#candleList(ctx)); return; }
+    if (this.config.jitEnabled !== true) { if (action !== "BUY" && action !== "SELL") return; this.#setAgent(ctx, "SIGNAL", "JIT_DISABLED"); void this.#handleSignal(ctx, action, trader, this.#candleList(ctx)); return; }
     if (!ctx.candidate) {
+      if (action !== "BUY" && action !== "SELL") return;
       const leadMs = this.#entryLeadMs();
       const window = nextEntryWindow({ serverNowMs: serverNow, leadMs, horizonMs: BRAIN_HORIZON_SECONDS * 1000 });
       const snapshot = this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
@@ -649,19 +649,17 @@ export class IqMultiRuntime extends EventEmitter {
     const candidate = ctx.candidate;
     candidate.evaluations += 1;
     candidate.updatedAt = now;
-    if (action !== candidate.action) { this.#cancelCandidate(ctx, action === "WAIT" ? "CANDIDATE_LOGIC_CHANGED_TO_WAIT" : "CANDIDATE_LOGIC_CHANGED_DIRECTION", { candidate: candidate.action, final: action }); return; }
-    if (serverNow > candidate.targetEntryAt + this.#entryMaxDriftMs()) { this.#cancelCandidate(ctx, "ENTRY_WINDOW_MISSED", { serverNow, targetEntryAt: candidate.targetEntryAt }); return; }
-
-    const finalComparable = comparableSnapshot(this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now }));
-    if (!candidate.changes.changed) {
-      const comparison = compareCandidateSnapshots(candidate.initial, finalComparable);
-      if (comparison.changed) {
-        candidate.changes = comparison;
-        this.#emitEvent("candidate.updated", { marketKey: ctx.marketKey, candidateId: candidate.id, changed: comparison.changes.map((change) => change.field) });
-        this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "CANDIDATE_UPDATED", { candidateId: candidate.id, changes: comparison.changes }, { persist: true });
-      }
+    // Secao 6/9: mudanca intermediaria NAO cancela; marca candidateChangedBeforeEntry e segue analisando.
+    // A decisao e SEMPRE a revalidacao final em submitAt (T-entryLeadMs).
+    const finalFull = this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
+    const finalComparable = comparableSnapshot(finalFull);
+    const comparison = compareCandidateSnapshots(candidate.initial, finalComparable);
+    if (comparison.changed && (!candidate.changes.changed || comparison.changes.length !== candidate.changes.changes.length)) {
+      candidate.changes = comparison;
+      this.#emitEvent("candidate.updated", { marketKey: ctx.marketKey, candidateId: candidate.id, changed: comparison.changes.map((change) => change.field), interimAction: action });
+      this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "CANDIDATE_UPDATED", { candidateId: candidate.id, changes: comparison.changes, interimAction: action }, { persist: true });
     }
-
+    if (serverNow > candidate.targetEntryAt + this.#entryMaxDriftMs()) { this.#cancelCandidate(ctx, "ENTRY_WINDOW_MISSED", { serverNow, targetEntryAt: candidate.targetEntryAt }); return; }
     if (serverNow < candidate.submitAt) { this.#setAgent(ctx, "SIGNAL", `CANDIDATE_${candidate.action}`); return; }
 
     // T - entryLeadMs: revalidacao final com o snapshot MAIS RECENTE (nunca o snapshot do candidato).
@@ -1163,7 +1161,7 @@ export class IqMultiRuntime extends EventEmitter {
       ctx.positionState.indicative = null;
       this.#setAgent(ctx, "IN_POSITION", source);
       if (entryTimingAck && (ctx.candidate?.id === entryTimingAck.candidateId || ctx.lastCandidate?.id === entryTimingAck.candidateId)) {
-        if (ctx.candidate?.id === entryTimingAck.candidateId) { ctx.candidate.status = "POSITION_OPEN"; ctx.candidate.entryDriftMs = entryTimingAck.entryDriftMs; ctx.candidate.ackedAt = ackedAt; }
+        if (ctx.candidate?.id === entryTimingAck.candidateId) { ctx.candidate.status = "POSITION_OPEN"; ctx.candidate.entryDriftMs = entryTimingAck.entryDriftMs; ctx.candidate.ackedAt = ackedAt; ctx.lastCandidate = { ...ctx.candidate, initialFull: undefined }; ctx.candidate = null; }
         if (ctx.lastCandidate?.id === entryTimingAck.candidateId) { ctx.lastCandidate.entryDriftMs = entryTimingAck.entryDriftMs; }
       }
     }

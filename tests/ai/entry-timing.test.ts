@@ -206,6 +206,32 @@ describe("JIT no runtime — candidato, revalidacao e commit", () => {
     }
   });
 
+  it("mudanca intermediaria NAO cancela: WAIT no meio e BUY na janela final entra", async () => {
+    const { runtime, clock, overrides, ready, step } = fixture();
+    ready("EURUSD:OTC");
+    overrides.set("EURUSD:OTC", () => brain("BUY"));
+    step();
+    const ctx = runtime.markets.get("EURUSD:OTC");
+    expect(ctx.candidate).toBeTruthy();
+    // T-50s: mercado vira WAIT por alguns candles (nao cancela; apenas registra mudanca)
+    clock.nowMs += 5_000;
+    overrides.set("EURUSD:OTC", () => brain("WAIT"));
+    step();
+    await sleep(10);
+    expect(ctx.candidate).toBeTruthy();
+    expect(runtime.__sent).toHaveLength(0);
+    expect(ctx.candidate.changes.changed).toBe(true);
+    expect(ctx.candidate.changes.changes.some((change: any) => change.field === "action")).toBe(true);
+    // T-1.45s: volta a BUY e revalida ok -> entrada
+    clock.nowMs = ctx.candidate.submitAt - 50;
+    overrides.set("EURUSD:OTC", () => brain("BUY"));
+    step();
+    await sleep(20);
+    expect(runtime.__sent).toHaveLength(1);
+    expect(["CONFIRMED", "ORDER_SENT"]).toContain(ctx.candidate.status);
+    expect(runtime.pendingOrders.has("EURUSD:OTC")).toBe(true);
+  });
+
   it("janela perdida: nao persegue entrada e cancela com ENTRY_WINDOW_MISSED", async () => {
     const { runtime, clock, overrides, ready, step } = fixture();
     ready("EURUSD:OTC");
