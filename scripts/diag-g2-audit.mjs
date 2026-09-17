@@ -27,8 +27,8 @@ try {
   out.legacy = legacy.rows[0] ?? {};
 
   const audit = await pool.query(
-    "SELECT correlation_id, market_key, stage, detail, created_at FROM iq_audit_trail WHERE stage IN ('SETTLEMENT','PROFESSOR_REVIEW','SUPERVISOR_REVIEW','AGENTS') ORDER BY id DESC LIMIT 1200");
-  out.audit = audit.rows;
+    "SELECT correlation_id, market_key, stage, detail, created_at FROM iq_audit_trail WHERE stage NOT IN ('AGENTS') ORDER BY id DESC LIMIT 4000");
+  out.audit = audit.rows.reverse();
 } catch (error) {
   out.errors.push(String(error?.code ?? error?.message ?? error).slice(0, 200));
 }

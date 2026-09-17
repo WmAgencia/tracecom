@@ -638,6 +638,7 @@ export class IqMultiRuntime extends EventEmitter {
       const snapshot = this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
       const candidate = makeCandidate({ marketKey: ctx.marketKey, marketType: ctx.marketType, action, now, serverNow, window, snapshot, correlationId });
       ctx.candidate = candidate;
+      this.#scheduleEntryFinalize(ctx, candidate, serverNow);
       this.jit.recordCandidate({ marketKey: ctx.marketKey, marketType: ctx.marketType, candidateId: candidate.id, action, entryPrice: ctx.lastCandle?.close ?? null, payout: ctx.payout, atMs: now, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, regime: snapshot.regime, setup: snapshot.setup, trigger: snapshot.trigger });
       this.#setAgent(ctx, "SIGNAL", `CANDIDATE_${action}`);
       this.#emitEvent("candidate.created", { marketKey: ctx.marketKey, candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, secondsToWindow: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
@@ -661,15 +662,41 @@ export class IqMultiRuntime extends EventEmitter {
     }
     if (serverNow > candidate.targetEntryAt + this.#entryMaxDriftMs()) { this.#cancelCandidate(ctx, "ENTRY_WINDOW_MISSED", { serverNow, targetEntryAt: candidate.targetEntryAt }); return; }
     if (serverNow < candidate.submitAt) { this.#setAgent(ctx, "SIGNAL", `CANDIDATE_${candidate.action}`); return; }
+    return this.#finalizeEntry(ctx, { action, trader, critic, consensus, fresh, now, correlationId, source: "TICK" });
+  }
 
-    // T - entryLeadMs: revalidacao final com o snapshot MAIS RECENTE (nunca o snapshot do candidato).
-    const finalDecision = { action, regime: ctx.decisionState?.regime ?? null, setup: trader.setup, trigger: trader.trigger, criticVerdict: critic.traderAssessment, consensusStatus: consensus.status };
+  /** Timer no instante exato de submitAt (server time) para nao depender do tick de candle. */
+  #scheduleEntryFinalize(ctx, candidate, serverNow) {
+    const delay = Math.max(0, Math.min(BRAIN_HORIZON_SECONDS * 2000, candidate.submitAt - serverNow));
+    candidate.finalizeTimer = setTimeout(() => { candidate.finalizeTimer = null; void this.#finalizeCandidate(ctx); }, delay);
+    candidate.finalizeTimer.unref?.();
+  }
+
+  /** Revalidacao no timer: usa o snapshot MAIS RECENTE disponivel (ultima avaliacao), nunca o do candidato. */
+  async #finalizeCandidate(ctx) {
+    const agents = ctx.agents;
+    if (!ctx.candidate || ctx.candidate.finalized) return;
+    if (!agents) { this.#cancelCandidate(ctx, "CANDIDATE_NO_LATEST_ANALYSIS", {}); return; }
+    const now = this.now();
+    const fresh = { fresh: Boolean(ctx.featureState?.fresh) && ctx.lastTickAt !== null && now - ctx.lastTickAt <= MARKET_TICK_AGE_MS, tickAgeMs: ctx.lastTickAt === null ? null : now - ctx.lastTickAt, reason: ctx.featureState?.freshnessReason ?? "NO_FEATURE" };
+    const action = ctx.decisionState?.action ?? agents.consensus?.action ?? "WAIT";
+    return this.#finalizeEntry(ctx, { action, trader: agents.trader, critic: agents.critic, consensus: agents.consensus, fresh, now, correlationId: agents.correlationId, source: "TIMER" });
+  }
+
+  /** Revalidacao final (T-entryLeadMs): decide COMMIT ou CANCEL. Nunca inverte sozinho. */
+  async #finalizeEntry(ctx, { action, trader, critic, consensus, fresh, now, correlationId, source = "TICK" }) {
+    const candidate = ctx.candidate;
+    if (!candidate || candidate.finalized) return;
+    const serverNow = this.client?.serverNow?.() ?? now;
+    if (serverNow > candidate.targetEntryAt + this.#entryMaxDriftMs()) { this.#cancelCandidate(ctx, "ENTRY_WINDOW_MISSED", { serverNow, targetEntryAt: candidate.targetEntryAt }); return; }
+    candidate.finalized = true;
+    if (candidate.finalizeTimer) { clearTimeout(candidate.finalizeTimer); candidate.finalizeTimer = null; }
+    const finalDecision = { action, regime: ctx.decisionState?.regime ?? null, setup: trader?.setup ?? null, trigger: trader?.trigger ?? null, criticVerdict: critic?.traderAssessment ?? null, consensusStatus: consensus?.status ?? null };
     const revalidation = revalidateCandidate({ candidate: { action: candidate.action, regime: candidate.initial.regime, setup: candidate.initial.setup }, final: finalDecision, freshness: fresh, config: this.config });
     candidate.revalidatedAt = now; candidate.status = "REVALIDATING"; candidate.confirmation = revalidation;
-    this.#emitEvent("candidate.revalidated", { marketKey: ctx.marketKey, candidateId: candidate.id, ok: revalidation.ok, reason: revalidation.reason });
+    this.#emitEvent("candidate.revalidated", { marketKey: ctx.marketKey, candidateId: candidate.id, ok: revalidation.ok, reason: revalidation.reason, source });
     this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "FINAL_REVALIDATION", { candidateId: candidate.id, ok: revalidation.ok, reason: revalidation.reason, checks: revalidation.checks, candidateChangedBeforeEntry: candidate.changes.changed, changedFields: candidate.changes.changes, finalDecision, entryLeadMs: candidate.entryLeadMs, serverNow }, { persist: true });
     if (!revalidation.ok) { this.#cancelCandidate(ctx, revalidation.reason ?? "CANDIDATE_REVALIDATION_FAILED", { checks: revalidation.checks }); return; }
-
     candidate.status = "CONFIRMED"; candidate.confirmedAt = now;
     this.#emitEvent("candidate.confirmed", { marketKey: ctx.marketKey, candidateId: candidate.id, action, secondsToEntry: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
     const entryTiming = {
@@ -707,6 +734,7 @@ export class IqMultiRuntime extends EventEmitter {
   #commitCandidate(ctx, reason, detail = {}) {
     const candidate = ctx.candidate;
     if (!candidate) return null;
+    if (candidate.finalizeTimer) { clearTimeout(candidate.finalizeTimer); candidate.finalizeTimer = null; }
     candidate.status = "CANCELLED"; candidate.cancelReason = reason; candidate.closedAt = this.now();
     ctx.lastCandidate = { ...candidate, initialFull: undefined };
     ctx.candidate = null;

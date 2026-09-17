@@ -11,10 +11,14 @@ const since = sinceArg ? Date.parse(sinceArg) : 0;
 const raw = JSON.parse(await fs.readFile("audit-g2-data.json", "utf8"));
 
 const auditByCorrelation = new Map();
+const candidateCreatedAt = new Map();
+const candidateCancelled = new Map();
 for (const row of raw.audit ?? []) {
   const list = auditByCorrelation.get(row.correlation_id) ?? [];
   list.push(row);
   auditByCorrelation.set(row.correlation_id, list);
+  if (row.stage === "CANDIDATE_CREATED" && row.detail?.candidateId) candidateCreatedAt.set(row.detail.candidateId, Date.parse(row.created_at));
+  if (row.stage === "CANDIDATE_CANCELLED" && row.detail?.candidateId) candidateCancelled.set(row.detail.candidateId, { at: Date.parse(row.created_at), reason: row.detail.reason ?? "UNKNOWN" });
 }
 const stageTime = (correlationId, stage, field = "created_at") => {
   const row = (auditByCorrelation.get(correlationId) ?? []).find((item) => item.stage === stage);
@@ -45,7 +49,7 @@ for (const row of raw.journal ?? []) {
     candidateId: timing?.candidateId ?? row.payload?.entryTiming?.candidateId ?? null,
     t0SnapshotSource: row.payload?.snapshotSource ?? null,
     timestamps: {
-      candidateCreatedAt: chain.CANDIDATE_CREATED?.at ?? null,
+      candidateCreatedAt: (timing?.candidateId ? candidateCreatedAt.get(timing.candidateId) : null) ?? chain.CANDIDATE_CREATED?.at ?? null,
       finalRevalidationAt: chain.FINAL_REVALIDATION?.at ?? null,
       submitAtPlanned: timing?.submitAt ?? null,
       orderSentAt: chain.ORDER_SENT?.at ?? null,
