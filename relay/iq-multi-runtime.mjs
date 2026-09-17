@@ -122,6 +122,7 @@ export class IqMultiRuntime extends EventEmitter {
   start() {
     if (this.running) return { started: false, reason: "ALREADY_RUNNING" };
     this.running = true; this.stopRequested = false;
+    void this.knowledge.rebuild();
     void this.#runLoop();
     return { started: true, version: RUNTIME_VERSION };
   }
