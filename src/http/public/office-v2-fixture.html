@@ -65,7 +65,7 @@
     </header>
     <main class="v2-stage">
       <canvas id="officeV2Canvas"></canvas>
-      <div class="v2-scenario-note" id="v2ScenarioNote">Cenário A — 55 mercados abertos</div>
+      <div class="v2-scenario-note" id="v2ScenarioNote">Cenário A — 55 mercados abertos · FIXTURE SINTÉTICO (sem backend)</div>
       <aside class="office-v2-panel" id="officeV2Panel" hidden></aside>
       <div class="v2-status" id="officeV2Status">FIXTURE PRONTO</div>
     </main>
@@ -102,7 +102,7 @@
       const [canonical, display, marketType] = entry;
       const rng = mulberry32(hashString(`${canonical}:${marketType}:${seed}`));
       const open = index < openCount;
-      const enabled = open && index < 12;
+      const enabled = open;
       const agentState = open
         ? pick(rng, ["WAIT", "WAIT", "ANALYZING", "WAIT", "SIGNAL", "IN_POSITION", "ORDERING", "ERROR", "WAIT"])
         : "UNAVAILABLE";
@@ -110,7 +110,7 @@
       const activeId = open ? 1 + Math.floor(rng() * 320) : null;
       const stake = 2;
       const resultRoll = rng();
-      const result = open && resultRoll > 0.42 ? pick(rng, ["WIN", "WIN", "LOSS", "WIN", "LOSS", "DRAW"]) : null;
+      const result = open && resultRoll > 0.3 ? pick(rng, ["WIN", "WIN", "WIN", "LOSS", "LOSS", "DRAW"]) : null;
       const profit = result === "WIN" ? round2(stake * ((payout ?? 80) / 100)) : result === "LOSS" ? -stake : 0;
       const settledAt = result ? Date.now() - Math.floor(rng() * 60000) : null;
       const positionOpen = agentState === "IN_POSITION";
@@ -220,6 +220,8 @@
           openPositions: markets.filter((market) => market.positionState.status === "OPEN").map((market) => ({ marketKey: market.marketKey, direction: market.positionState.direction, stake: market.positionState.stake, entryPrice: market.positionState.entryPrice, brokerOrderId: market.positionState.brokerOrderId, openedAt: market.positionState.openedAt, indicative: market.indicative })),
           exposure: [], concentrationWarnings: [],
           settled: { wins, losses, draws, pnl, trades: settledMarkets.length },
+          weekly: { pnl: openMarkets > 0 ? 1842.3 : 0 },
+          monthly: { pnl: openMarkets > 0 ? 6721.55 : 0 },
           practiceBalance: 10000, realBalance: 0, equityCurve,
         },
         markets,
@@ -239,10 +241,10 @@
     }
 
     const SCENARIOS = {
-      A: { openCount: 55, seed: 11, note: "Cenário A — 55 mercados abertos" },
-      B: { openCount: 37, seed: 22, note: "Cenário B — 37 mercados abertos" },
-      C: { openCount: 10, seed: 33, note: "Cenário C — 10 mercados abertos" },
-      D: { openCount: 0, seed: 44, note: "Cenário D — nenhum mercado aberto" },
+      A: { openCount: 55, seed: 11, note: "Cenário A — 55 mercados abertos · FIXTURE SINTÉTICO (sem backend)" },
+      B: { openCount: 37, seed: 22, note: "Cenário B — 37 mercados abertos · FIXTURE SINTÉTICO" },
+      C: { openCount: 10, seed: 33, note: "Cenário C — 10 mercados abertos · FIXTURE SINTÉTICO" },
+      D: { openCount: 0, seed: 44, note: "Cenário D — nenhum mercado aberto · FIXTURE SINTÉTICO" },
     };
 
     window.__OFFICE_V2_FIXTURE__ = { office: buildOffice(SCENARIOS.A.openCount, SCENARIOS.A.seed, SCENARIOS.A.note), scenario: "A", scenarios: SCENARIOS };

@@ -16,6 +16,11 @@ const {
   buildOfficeWorld,
   planStationLayout,
   sectorForMarket,
+  sectorBand,
+  sectorRibbonBands,
+  SECTOR_RIBBON_LABELS,
+  SIDE_PANELS,
+  OfficeWorld,
   rectContains,
   OfficeGrid,
   PathfindingSystem,
@@ -24,6 +29,8 @@ const {
   computePlateLayout,
   pnlIndicatorModel,
   deskPnlIndicator,
+  deskBadgeModel,
+  isDeskActive,
   marketDetailRows,
   AgentStateMachine,
   SupervisorPatrol,
@@ -288,5 +295,130 @@ describe("OFFICE V2 — placa, supervisor e detalhe", () => {
     expect(values).toContain("—");
     expect(rows.some((row: any) => row.label === "RSI14" && row.value === "—")).toBe(true);
     expect(rows.some((row: any) => row.label === "Nome IQ" && row.value === "—")).toBe(true);
+  });
+});
+
+describe("OFFICE V2 — fitas de setor, pilhas laterais e badges", () => {
+  it("mapeia cada família para a banda de referência com split esquerda/direita", () => {
+    expect(sectorBand("OTC_24H")).toEqual({ bandId: "BAND_OTC_CRYPTO", side: "left", label: "OTC - 24H" });
+    expect(sectorBand("CRYPTO")).toEqual({ bandId: "BAND_OTC_CRYPTO", side: "right", label: "CRIPTOMOEDAS" });
+    expect(sectorBand("INDICES")).toEqual({ bandId: "BAND_INDICES_COMMODITIES", side: "left", label: "ÍNDICES" });
+    expect(sectorBand("COMMODITIES")).toEqual({ bandId: "BAND_INDICES_COMMODITIES", side: "right", label: "COMMODITIES" });
+    expect(sectorBand("FOREX_MAJORS").side).toBe("full");
+    expect(sectorBand("OTHER").side).toBe("full");
+  });
+
+  it("os rótulos das fitas batem exatamente com a referência", () => {
+    const expected = ["FOREX MAJORS", "FOREX CRUZADOS", "OTC - 24H", "CRIPTOMOEDAS", "ÍNDICES", "COMMODITIES", "OUTROS ATIVOS"];
+    expect(SECTOR_RIBBON_LABELS).toEqual(expected);
+    expect(new Set(SECTOR_RIBBON_LABELS).size).toBe(expected.length);
+  });
+
+  it("sectorRibbonBands agrupa OTC+CRIPTO e ÍNDICES+COMMODITIES em metades contíguas", () => {
+    const layout = planStationLayout(fixtureMarkets());
+    const bands = sectorRibbonBands(layout.sectors);
+    const otcCrypto = bands.find((band: any) => band.id === "BAND_OTC_CRYPTO");
+    expect(otcCrypto.split).toBe(true);
+    expect(otcCrypto.members.map((member: any) => member.side)).toEqual(["left", "right"]);
+    expect(otcCrypto.leftHalf.w).toBeGreaterThan(0);
+    expect(otcCrypto.rightHalf.w).toBeGreaterThan(0);
+    expect(otcCrypto.leftHalf.x + otcCrypto.leftHalf.w).toBeCloseTo(otcCrypto.rightHalf.x, 6);
+    expect(otcCrypto.rows.length).toBeGreaterThan(0);
+    const idxComm = bands.find((band: any) => band.id === "BAND_INDICES_COMMODITIES");
+    expect(idxComm.split).toBe(true);
+    expect(idxComm.members.map((member: any) => member.side)).toEqual(["left", "right"]);
+    const full = bands.find((band: any) => band.id === "BAND_FOREX_MAJORS");
+    expect(full.split).toBe(false);
+    expect(full.members).toHaveLength(1);
+  });
+
+  it("badge flutuante de P&L só aparece em resultado liquidado e mesa ativa", () => {
+    const win = deskBadgeModel({ enabled: true, availability: "OPEN", settlementState: { lastResult: "WIN", lastProfit: 1.7 } });
+    expect(win.visible).toBe(true);
+    expect(win.tone).toBe("POSITIVE");
+    expect(win.color).toBe("#4fbf6a");
+    expect(win.text.startsWith("+R$")).toBe(true);
+    const loss = deskBadgeModel({ enabled: true, availability: "OPEN", settlementState: { lastResult: "LOSS", lastProfit: -2 } });
+    expect(loss.visible).toBe(true);
+    expect(loss.tone).toBe("NEGATIVE");
+    const draw = deskBadgeModel({ enabled: true, availability: "OPEN", settlementState: { lastResult: "DRAW", lastProfit: 0 } });
+    expect(draw.visible).toBe(true);
+    expect(draw.text).toBe("R$ 0,00");
+    const indicative = deskBadgeModel({ enabled: true, availability: "OPEN", positionState: { status: "OPEN" }, indicative: { state: "FAVORABLE", indicativePnl: 9.9 } });
+    expect(indicative.visible).toBe(false);
+    expect(indicative.tone).toBe("NONE");
+  });
+
+  it("mesa vazia (não-OPEN/desabilitada) não mostra badge nem agentes", () => {
+    expect(isDeskActive({ enabled: true, availability: "OPEN" })).toBe(true);
+    expect(isDeskActive({ enabled: false, availability: "OPEN" })).toBe(false);
+    expect(isDeskActive({ enabled: true, availability: "CLOSED" })).toBe(false);
+    expect(isDeskActive({ enabled: true, availability: "SUSPENDED" })).toBe(false);
+    expect(isDeskActive({ enabled: true, availability: "NOT_OFFERED" })).toBe(false);
+    expect(isDeskActive({ enabled: true, availability: "UNKNOWN" })).toBe(false);
+    const settledButClosed = deskBadgeModel({ enabled: true, availability: "CLOSED", settlementState: { lastResult: "WIN", lastProfit: 5 } });
+    expect(settledButClosed.visible).toBe(false);
+    expect(settledButClosed.active).toBe(false);
+    const markets = fixtureMarkets();
+    markets[0] = { ...markets[0], availability: "CLOSED", enabled: false, settlementState: { lastResult: "WIN", lastProfit: 5 } };
+    const world = new OfficeWorld(fixtureOffice({ markets }));
+    const station = world.stations[0];
+    expect(station.market.availability).toBe("CLOSED");
+    expect(station.trader.state).toBe("OFFLINE");
+    expect(station.critic.state).toBe("OFFLINE");
+  });
+
+  it("quadro do dia expõe abertos/fechados/total e lucro semanal/mensal (— quando ausente)", () => {
+    const model = pnlIndicatorModel(fixtureOffice({
+      portfolio: {
+        settled: { wins: 16, losses: 5, draws: 0, pnl: 578.76, trades: 21 },
+        weekly: { pnl: 1842.3 },
+        monthly: { pnl: 6721.55 },
+        equityCurve: [],
+      },
+    }));
+    expect(model.openMarkets).toBe(55);
+    expect(model.closedMarkets).toBe(0);
+    expect(model.totalMarkets).toBe(55);
+    expect(model.weeklyText).toBe("+R$ 1.842,30");
+    expect(model.monthlyText).toBe("+R$ 6.721,55");
+    expect(model.winRateText).toBe("76.2%");
+    const absent = pnlIndicatorModel({ portfolio: { settled: { pnl: 0, wins: 0, losses: 0, draws: 0, trades: 0 } } });
+    expect(absent.weeklyText).toBe("—");
+    expect(absent.monthlyText).toBe("—");
+  });
+
+  it("maior win/loss vêm apenas de resultados liquidados reais", () => {
+    const model = pnlIndicatorModel(fixtureOffice({
+      markets: [
+        { marketKey: "A", enabled: true, availability: "OPEN", settlementState: { lastResult: "WIN", lastProfit: 24.5 } },
+        { marketKey: "B", enabled: true, availability: "OPEN", settlementState: { lastResult: "WIN", lastProfit: 8.5 } },
+        { marketKey: "C", enabled: true, availability: "OPEN", settlementState: { lastResult: "LOSS", lastProfit: -10 } },
+        { marketKey: "D", enabled: true, availability: "OPEN", positionState: { status: "OPEN" }, indicative: { indicativePnl: 99 } },
+      ],
+    }));
+    expect(model.bestWinText).toBe("+R$ 24,50");
+    expect(model.bestLossText).toBe("-R$ 10,00");
+    expect(pnlIndicatorModel({}).bestWinText).toBe("—");
+  });
+
+  it("pilhas laterais trazem os títulos e subtítulos da referência", () => {
+    const leftTitles = SIDE_PANELS.left.map((panel: any) => panel.title);
+    expect(leftTitles).toContain("TRACE/COM");
+    expect(leftTitles).toContain("PROFESSOR & PESQUISA");
+    expect(leftTitles).toContain("SALA DE REUNIÃO");
+    expect(leftTitles).toContain("DATA CENTER");
+    expect(SIDE_PANELS.left.some((panel: any) => String(panel.subtitle).includes("DISCIPLINA · DADOS · RESULTADOS"))).toBe(true);
+    expect(SIDE_PANELS.left.some((panel: any) => String(panel.subtitle).includes("DADOS TESTES APRENDIZADO EVOLUÇÃO"))).toBe(true);
+    expect(SIDE_PANELS.left.some((panel: any) => String(panel.subtitle).includes("ESTABILIDADE CONEXÃO EXECUÇÃO SEM INTERRUPÇÕES"))).toBe(true);
+    const rightTitles = SIDE_PANELS.right.map((panel: any) => panel.title);
+    expect(rightTitles).toContain("DISCIPLINA TRANSFORMA ESTRATÉGIA EM LIBERDADE");
+    expect(rightTitles).toContain("PAUSA TAMBÉM É ESTRATÉGIA");
+    expect(rightTitles).toContain("ÁREA DE LAZER");
+    expect(rightTitles).toContain("COZINHA");
+    expect(rightTitles).toContain("TERRAÇO");
+    expect(SIDE_PANELS.right.some((panel: any) => String(panel.subtitle).includes("sinuca videogame conversa"))).toBe(true);
+    expect(SIDE_PANELS.right.some((panel: any) => String(panel.subtitle).includes("café energia disciplina bom humor"))).toBe(true);
+    expect(SIDE_PANELS.right.some((panel: any) => String(panel.subtitle).includes("RESPIRA ANALISA DECIDE MELHOR"))).toBe(true);
   });
 });

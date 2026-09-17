@@ -166,6 +166,119 @@ export function sectorDefinition(sectorId) {
   return DEFAULT_SECTORS.find((sector) => sector.id === sectorId) ?? DEFAULT_SECTORS[DEFAULT_SECTORS.length - 1];
 }
 
+/**
+ * Reference ribbon bands. The authoritative image has, on two of its rows, TWO
+ * ribbons sharing one band: OTC - 24H (left) + CRIPTOMOEDAS (right) and
+ * ÍNDICES (left) + COMMODITIES (right). Membership is by family, never by a
+ * hardcoded asset name, so the live 55-market universe maps itself in.
+ */
+export const SECTOR_BANDS = [
+  { id: "BAND_FOREX_MAJORS", label: "FOREX MAJORS", members: [{ sectorId: "FOREX_MAJORS", side: "full" }] },
+  { id: "BAND_FOREX_CROSSES", label: "FOREX CRUZADOS", members: [{ sectorId: "FOREX_CROSSES", side: "full" }] },
+  {
+    id: "BAND_OTC_CRYPTO",
+    label: "OTC - 24H",
+    members: [
+      { sectorId: "OTC_24H", side: "left" },
+      { sectorId: "CRYPTO", side: "right" },
+    ],
+  },
+  {
+    id: "BAND_INDICES_COMMODITIES",
+    label: "ÍNDICES",
+    members: [
+      { sectorId: "INDICES", side: "left" },
+      { sectorId: "COMMODITIES", side: "right" },
+    ],
+  },
+  { id: "BAND_OTHER", label: "OUTROS ATIVOS", members: [{ sectorId: "OTHER", side: "full" }] },
+];
+
+export const SECTOR_BAND_ORDER = SECTOR_BANDS.map((band) => band.id);
+
+/** Reference ribbon labels in reading order (exactly the names on the image). */
+export const SECTOR_RIBBON_LABELS = SECTOR_BANDS.flatMap((band) => band.members.map((member) => sectorDefinition(member.sectorId).label));
+
+/**
+ * Reference side-panel stacks (wall signage). Purely decorative captions; the
+ * simulation never reads them. Kept as data so the renderer stays procedural.
+ */
+export const SIDE_PANELS = {
+  left: [
+    { id: "brand", title: "TRACE/COM", subtitle: "DISCIPLINA · DADOS · RESULTADOS", tone: "gold" },
+    { id: "focus", title: "FOCO DISCIPLINA PROCESSO RESULTADO", subtitle: "", tone: "dark" },
+    { id: "longterm", title: "TRADER É UM JOGO DE LONGO PRAZO", subtitle: "", tone: "dark" },
+    { id: "research", title: "PROFESSOR & PESQUISA", subtitle: "DADOS TESTES APRENDIZADO EVOLUÇÃO", tone: "gold" },
+    { id: "meeting", title: "SALA DE REUNIÃO", subtitle: "", tone: "dark" },
+    { id: "planning", title: "PLANEJAMENTO ESTRATÉGIA PERFORMANCE PRÓXIMOS PASSOS", subtitle: "", tone: "dark" },
+    { id: "datacenter", title: "DATA CENTER", subtitle: "ESTABILIDADE CONEXÃO EXECUÇÃO SEM INTERRUPÇÕES", tone: "dark" },
+  ],
+  right: [
+    { id: "discipline", title: "DISCIPLINA TRANSFORMA ESTRATÉGIA EM LIBERDADE", subtitle: "", tone: "red" },
+    { id: "global", title: "MERCADO GLOBAL 24H OPORTUNIDADES EM TEMPO REAL", subtitle: "", tone: "map" },
+    { id: "bull", title: "", subtitle: "", tone: "bull" },
+    { id: "pause", title: "PAUSA TAMBÉM É ESTRATÉGIA", subtitle: "", tone: "dark" },
+    { id: "leisure", title: "ÁREA DE LAZER", subtitle: "sinuca videogame conversa — RELAXAR VOLTAR MAIS FORTE", tone: "dark" },
+    { id: "kitchen", title: "COZINHA", subtitle: "café energia disciplina bom humor", tone: "dark" },
+    { id: "terrace", title: "TERRAÇO", subtitle: "RESPIRA ANALISA DECIDE MELHOR", tone: "dark" },
+  ],
+};
+
+/** Grid anchors for the side-panel stacks (kept off the desk hall + board). */
+export const SIDE_PANEL_ANCHORS = {
+  left: [
+    { x: 4, y: 34 }, { x: 4, y: 41 }, { x: 4, y: 48 }, { x: 4, y: 55 },
+    { x: 4, y: 62 }, { x: 4, y: 69 }, { x: 4, y: 76 },
+  ],
+  right: [
+    { x: 105, y: 4 }, { x: 105, y: 11 }, { x: 105, y: 18 }, { x: 105, y: 25 },
+    { x: 105, y: 32 }, { x: 105, y: 42 }, { x: 105, y: 52 },
+  ],
+};
+
+export function sectorBand(sectorId) {
+  for (const band of SECTOR_BANDS) {
+    const member = band.members.find((entry) => entry.sectorId === sectorId);
+    if (member) return { bandId: band.id, side: member.side, label: sectorDefinition(sectorId).label };
+  }
+  return { bandId: null, side: "full", label: sectorDefinition(sectorId).label };
+}
+
+/**
+ * Pure ribbon model: groups planned sectors into the reference bands and
+ * resolves the screen-space rect + left/right halves the renderer paints.
+ */
+export function sectorRibbonBands(sectors) {
+  const list = Array.isArray(sectors) ? sectors : [];
+  const byId = new Map(list.map((sector) => [sector.id, sector]));
+  const bands = [];
+  for (const definition of SECTOR_BANDS) {
+    const members = [];
+    for (const entry of definition.members) {
+      const sector = byId.get(entry.sectorId);
+      if (sector) members.push({ sector, side: entry.side });
+    }
+    if (members.length === 0) continue;
+    const left = Math.min(...members.map((member) => member.sector.header.x));
+    const right = Math.max(...members.map((member) => member.sector.header.x + member.sector.header.w));
+    const top = Math.min(...members.map((member) => member.sector.header.y));
+    const bottom = Math.max(...members.map((member) => member.sector.floor.y + member.sector.floor.h));
+    const center = (left + right) / 2;
+    bands.push({
+      id: definition.id,
+      label: definition.label,
+      split: members.length > 1,
+      members: members.map((member) => ({ sectorId: member.sector.id, label: member.sector.label, side: member.side, accent: member.sector.accent })),
+      rect: { x: left, y: top, w: right - left, h: Math.max(1, bottom - top) },
+      ribbon: { x: left, y: top, w: right - left, h: 1 },
+      leftHalf: { x: left, y: top, w: center - left, h: 1 },
+      rightHalf: { x: center, y: top, w: right - center, h: 1 },
+      rows: members.flatMap((member) => member.sector.rows.map((row) => ({ y: row.y, sectorId: member.sector.id, side: member.side }))).sort((a, b) => a.y - b.y),
+    });
+  }
+  return bands;
+}
+
 /* ------------------------------------------------------------------ *
  * 4. WORLD LAYOUT — central hall + side rooms (reference blueprint)
  * ------------------------------------------------------------------ */
@@ -176,6 +289,7 @@ export const WORLD_LAYOUT = {
   hallX: 22,
   hallY: 16,
   board: { x: 30, y: 3, w: 30, h: 4 },
+  socialBand: { x: 24, y: 8, w: 58, h: 7 },
   mapPanel: { x: 80, y: 2, w: 24, h: 8 },
   research: { x: 80, y: 12, w: 24, h: 20 },
   meeting: { x: 80, y: 36, w: 24, h: 14 },
@@ -234,12 +348,15 @@ export function planStationLayout(markets, options = {}) {
     }
     cursorY = rowY;
     const maxCols = Math.min(desksPerRow, items.length);
+    const band = sectorBand(definition.id);
     sectors.push({
       id: definition.id,
       label: definition.label,
       accent: definition.accent,
       floorColor: definition.floor,
       sign: definition.sign,
+      bandId: band.bandId,
+      bandSide: band.side,
       header: { x: hallX - 1, y: headerY - 1, w: maxCols * SLOT_W + 2, h: 1 },
       labelPos: { x: hallX, y: headerY + 1 },
       floor: { x: hallX - 2, y: headerY - 2, w: maxCols * SLOT_W + 4, h: cursorY - headerY + 4 },
@@ -394,6 +511,55 @@ export class DataCenterArea {
   }
 }
 
+export class SocialBandArea {
+  constructor(rect) {
+    this.id = "socialBand";
+    this.label = "BOM TRADE TAMBÉM SE CELEBRA!";
+    this.rect = rect;
+    this.floorColor = "#142642";
+    this.furniture = [
+      { kind: "rug", rect: { x: 26, y: 9, w: 9, h: 5 }, blocksWalk: false },
+      { kind: "sofa", rect: { x: 27, y: 9, w: 3, h: 1 }, blocksWalk: true },
+      { kind: "sofa", rect: { x: 31.5, y: 9, w: 3, h: 1 }, blocksWalk: true },
+      { kind: "coffeeTable", rect: { x: 29, y: 11, w: 2, h: 1 }, blocksWalk: true },
+      { kind: "poolTable", rect: { x: 38, y: 9, w: 4, h: 3 }, blocksWalk: true },
+      { kind: "rug", rect: { x: 49, y: 10, w: 9, h: 5 }, blocksWalk: false },
+      { kind: "sofa", rect: { x: 50, y: 10, w: 3, h: 1 }, blocksWalk: true },
+      { kind: "sofa", rect: { x: 54.5, y: 10, w: 3, h: 1 }, blocksWalk: true },
+      { kind: "coffeeTable", rect: { x: 52, y: 12, w: 2, h: 1 }, blocksWalk: true },
+      { kind: "counter", rect: { x: 61, y: 9, w: 8, h: 1 }, blocksWalk: true },
+      { kind: "stool", rect: { x: 62, y: 11, w: 1, h: 1 }, blocksWalk: false },
+      { kind: "stool", rect: { x: 65, y: 11, w: 1, h: 1 }, blocksWalk: false },
+      { kind: "stool", rect: { x: 68, y: 11, w: 1, h: 1 }, blocksWalk: false },
+      { kind: "table", rect: { x: 72, y: 10, w: 6, h: 2 }, blocksWalk: true },
+      { kind: "chair", rect: { x: 73, y: 9, w: 1, h: 1 }, blocksWalk: true },
+      { kind: "chair", rect: { x: 75, y: 9, w: 1, h: 1 }, blocksWalk: true },
+      { kind: "chair", rect: { x: 73, y: 12.5, w: 1, h: 1 }, blocksWalk: true },
+      { kind: "chair", rect: { x: 75, y: 12.5, w: 1, h: 1 }, blocksWalk: true },
+    ];
+    this.billboards = [
+      { kind: "hangingSign", anchor: { x: 34, y: 8.2 }, label: "BOM TRADE TAMBÉM SE CELEBRA!" },
+      { kind: "hangingSign", anchor: { x: 65, y: 8.2 }, label: "CAFÉ IDEIAS TRADES RESULTADOS" },
+    ];
+    this.spots = [
+      { id: "spot:band:social:1", kind: "social", x: 28, y: 10, capacity: 1, label: "Sofá social" },
+      { id: "spot:band:social:2", kind: "social", x: 32.5, y: 10, capacity: 1, label: "Sofá social" },
+      { id: "spot:band:pool:1", kind: "pool", x: 39, y: 10, capacity: 1, label: "Sinuca" },
+      { id: "spot:band:pool:2", kind: "pool", x: 41, y: 10, capacity: 1, label: "Sinuca" },
+      { id: "spot:band:social:3", kind: "social", x: 51, y: 11, capacity: 1, label: "Sofá social" },
+      { id: "spot:band:social:4", kind: "social", x: 55.5, y: 11, capacity: 1, label: "Sofá social" },
+      { id: "spot:band:coffee:1", kind: "coffee", x: 62, y: 11, capacity: 1, label: "Café" },
+      { id: "spot:band:coffee:2", kind: "coffee", x: 65, y: 11, capacity: 1, label: "Café" },
+      { id: "spot:band:meeting:1", kind: "social", x: 73, y: 10, capacity: 1, label: "Mesa social" },
+      { id: "spot:band:meeting:2", kind: "social", x: 75, y: 10, capacity: 1, label: "Mesa social" },
+      { id: "spot:band:meeting:3", kind: "social", x: 73, y: 13, capacity: 1, label: "Mesa social" },
+      { id: "spot:band:meeting:4", kind: "social", x: 75, y: 13, capacity: 1, label: "Mesa social" },
+    ];
+    this.plants = [{ x: 25, y: 13 }, { x: 36, y: 13 }, { x: 47, y: 13 }, { x: 59, y: 13 }, { x: 70, y: 13 }, { x: 79, y: 13 }];
+    this.signAnchor = { x: 25, y: 8 };
+  }
+}
+
 export class WorldMapPanel {
   constructor(rect) {
     this.id = "worldMap";
@@ -410,6 +576,7 @@ export class WorldMapPanel {
 
 export function buildAreas(layout = WORLD_LAYOUT) {
   return [
+    new SocialBandArea(layout.socialBand ?? WORLD_LAYOUT.socialBand),
     new ResearchArea(layout.research),
     new MeetingRoomArea(layout.meeting),
     new LeisureArea(layout.leisure),
@@ -821,6 +988,31 @@ export class SupervisorPatrol {
  * 9. PNL — settled results only, never indicative
  * ------------------------------------------------------------------ */
 
+export function firstFinite(candidates) {
+  for (const candidate of candidates ?? []) {
+    const numeric = Number(candidate);
+    if (Number.isFinite(numeric)) return numeric;
+  }
+  return null;
+}
+
+const INACTIVE_STATES = new Set(["CLOSED", "UNAVAILABLE", "NOT_FOUND", "SUSPENDED", "NOT_OFFERED", "UNKNOWN", "DISABLED", "OFFLINE"]);
+
+/**
+ * A desk only "exists" for agents + P&L badge when the market is really open.
+ * DISABLED / SUSPENDED / NOT_OFFERED / UNKNOWN / CLOSED desks are empty.
+ */
+export function isDeskActive(market) {
+  if (!market || typeof market !== "object") return false;
+  if (market.enabled === false) return false;
+  const availability = String(market.availability ?? "").toUpperCase();
+  if (availability === "OPEN") return true;
+  if (INACTIVE_STATES.has(availability)) return false;
+  const status = String(market.status ?? market.tradingStatus ?? "").toUpperCase();
+  if (INACTIVE_STATES.has(status)) return false;
+  return market.enabled === true;
+}
+
 export function pnlIndicatorModel(input) {
   const office = input ?? {};
   const settled = office?.portfolio?.settled ?? office?.settled ?? null;
@@ -836,6 +1028,32 @@ export function pnlIndicatorModel(input) {
   const winRate = decided > 0 ? wins / decided : null;
   const markets = Array.isArray(office?.markets) ? office.markets : [];
   const openMarkets = markets.filter((market) => market?.enabled === true && market?.availability === "OPEN").length;
+  const totalMarkets = markets.length;
+  const closedMarkets = Math.max(0, totalMarkets - openMarkets);
+  let bestWin = null;
+  let bestLoss = null;
+  for (const market of markets) {
+    const state = market?.settlementState ?? {};
+    const result = state.lastResult ?? market?.lastTrade?.result ?? null;
+    const raw = Number(state.lastProfit ?? market?.lastTrade?.profit);
+    if (!Number.isFinite(raw)) continue;
+    if (result === "WIN") bestWin = bestWin === null ? Math.abs(raw) : Math.max(bestWin, Math.abs(raw));
+    if (result === "LOSS") bestLoss = bestLoss === null ? -Math.abs(raw) : Math.min(bestLoss, -Math.abs(raw));
+  }
+  const weeklyPnl = firstFinite([
+    office?.portfolio?.weekly?.pnl,
+    office?.portfolio?.weeklyPnl,
+    office?.portfolio?.settled?.weeklyPnl,
+    office?.weeklyPnl,
+    office?.stats?.weeklyPnl,
+  ]);
+  const monthlyPnl = firstFinite([
+    office?.portfolio?.monthly?.pnl,
+    office?.portfolio?.monthlyPnl,
+    office?.portfolio?.settled?.monthlyPnl,
+    office?.monthlyPnl,
+    office?.stats?.monthlyPnl,
+  ]);
   const compliance = office?.aux?.compliance ?? {};
   const armState = compliance?.armState?.state ?? (compliance?.armState?.armed === true ? "ARMED" : "DISARMED");
   return {
@@ -848,8 +1066,18 @@ export function pnlIndicatorModel(input) {
     draws,
     trades,
     winRate,
-    winRateText: winRate === null ? "—" : formatPercent(winRate, 0),
+    winRateText: winRate === null ? "—" : formatPercent(winRate, 1),
+    bestWin,
+    bestWinText: formatBRL(bestWin, { signed: true }),
+    bestLoss,
+    bestLossText: formatBRL(bestLoss, { signed: true }),
     openMarkets,
+    closedMarkets,
+    totalMarkets,
+    weeklyPnl,
+    weeklyText: formatBRL(weeklyPnl, { signed: true }),
+    monthlyPnl,
+    monthlyText: formatBRL(monthlyPnl, { signed: true }),
     activeCount: Number(office?.activeCount) || 0,
     activeLimit: Number(office?.activeLimit) || 0,
     armState: String(armState ?? "—"),
@@ -872,10 +1100,22 @@ export function deskPnlIndicator(market) {
   return { result, pnl, text: formatBRL(pnl, { signed: true }), tone };
 }
 
+/**
+ * Floating P&L badge above a desk pair. Settled results ONLY, and only while
+ * the desk is actually open — empty desks (disabled/suspended/…) never show a
+ * badge even if they carry a stale settlement.
+ */
+export function deskBadgeModel(market) {
+  const active = isDeskActive(market);
+  const indicator = deskPnlIndicator(market);
+  const visible = active && indicator.tone !== "NONE";
+  return { active, visible, ...indicator, color: visible ? toneColor(indicator.tone) : null };
+}
+
 export function toneColor(tone) {
-  if (tone === "POSITIVE") return "#46d17a";
-  if (tone === "NEGATIVE") return "#ff5a5a";
-  if (tone === "ZERO") return "#cfd6e4";
+  if (tone === "POSITIVE") return PALETTE.positive;
+  if (tone === "NEGATIVE") return PALETTE.negative;
+  if (tone === "ZERO") return PALETTE.neutral;
   return "#8b93a8";
 }
 
@@ -1072,20 +1312,22 @@ export class AssetWoodPlate {
 
 export const PALETTE = {
   void: "#0a0e1c",
-  floorA: "#222b45",
-  floorB: "#1d253d",
-  corridor: "#2b3550",
-  hall: "#26304b",
-  wall: "#3b2b22",
+  navy: "#0e1b2e",
+  floorA: "#0e1b2e",
+  floorB: "#0c1728",
+  tileLine: "#17283f",
+  corridor: "#16273f",
+  hall: "#101f33",
+  wall: "#3a2a20",
   wallTop: "#4d3a2c",
   wallTrim: "#6d4c33",
-  wood: "#a9743f",
-  woodDark: "#6e4522",
-  woodMid: "#8a5a2c",
-  woodLight: "#c58a52",
-  plateWood: "#8a5a2c",
-  plateDark: "#4f2c12",
-  plateLight: "#d9a869",
+  wood: "#8a5a34",
+  woodDark: "#6b4326",
+  woodMid: "#7a4d2c",
+  woodLight: "#a9743f",
+  plateWood: "#7a4d2c",
+  plateDark: "#3f2410",
+  plateLight: "#d9a441",
   metal: "#8d99b5",
   metalDark: "#5a6478",
   screenOn: "#6fd3ff",
@@ -1095,10 +1337,10 @@ export const PALETTE = {
   skin: "#e8b48a",
   skin2: "#c98d63",
   skin3: "#8a5a3c",
-  traderShirt: "#3f6fd8",
-  traderShirt2: "#3157ab",
-  criticShirt: "#8b5cf6",
-  criticShirt2: "#6d3fd4",
+  traderShirt: "#2f4f8a",
+  traderShirt2: "#24406f",
+  criticShirt: "#7c4fd0",
+  criticShirt2: "#6337ad",
   hair: "#2f2418",
   hair2: "#4a3320",
   hair3: "#6b4a2a",
@@ -1106,31 +1348,34 @@ export const PALETTE = {
   pants2: "#2c3345",
   suit: "#2b3448",
   suit2: "#1f2736",
-  tie: "#e0b84f",
+  tie: "#d9a441",
   plant: "#3f9b58",
   plant2: "#2f7a44",
   plant3: "#57bd72",
   pot: "#a45a3a",
   pot2: "#7d4229",
-  sofa: "#7a4a6a",
-  sofa2: "#5f3852",
-  sofa3: "#94608a",
-  rug1: "#7d3a48",
-  rug2: "#38467d",
-  rugTrim: "#c9a44f",
-  pool: "#2f8f5b",
-  poolRail: "#7d4229",
+  sofa: "#e8d9b5",
+  sofa2: "#c9b48c",
+  sofa3: "#f2e8cf",
+  rug1: "#7d2b2b",
+  rug2: "#26466b",
+  rugTrim: "#d9a441",
+  pool: "#2e8b57",
+  poolRail: "#6b4326",
   kitchen: "#c8ccd8",
   kitchenDark: "#9aa0b2",
   server: "#22283a",
   server2: "#2d3550",
-  green: "#46d17a",
-  red: "#ff5a5a",
+  green: "#4fbf6a",
+  red: "#d9534f",
   neutral: "#cfd6e4",
-  amber: "#ffc857",
-  boardBg: "#101a30",
-  boardFrame: "#6e4522",
-  boardFrame2: "#8a5a2c",
+  amber: "#d9a441",
+  gold: "#d9a441",
+  positive: "#4fbf6a",
+  negative: "#d9534f",
+  boardBg: "#0b1728",
+  boardFrame: "#6b4326",
+  boardFrame2: "#8a5a34",
   ink: "#e8d7b0",
 };
 
@@ -1537,7 +1782,7 @@ export class AssetDesk {
  * ------------------------------------------------------------------ */
 
 export function computeWorldBounds(gridWidth, gridHeight, options = {}) {
-  const wallHeight = Number(options.wallHeight) || 130;
+  const wallHeight = Number(options.wallHeight) || 185;
   const pad = Number(options.pad) || 48;
   const minX = -gridHeight * HALF_W - pad;
   const maxX = gridWidth * HALF_W + pad;
@@ -1590,8 +1835,10 @@ export function buildOfficeWorld(office, options = {}) {
   const plants = [];
   for (const area of areas) for (const plant of area.plants) plants.push({ x: plant.x, y: plant.y, areaId: area.id });
   for (const sector of planned.sectors) {
-    plants.push({ x: layout.hallX - 2, y: sector.header.y + 1, areaId: "hall" });
-    plants.push({ x: layout.hallX + sector.floor.w - 3, y: sector.header.y + 1, areaId: "hall" });
+    for (const row of sector.rows) {
+      plants.push({ x: layout.hallX - 2, y: row.y + 1, areaId: "hall" });
+      plants.push({ x: layout.hallX + sector.floor.w - 3, y: row.y + 1, areaId: "hall" });
+    }
   }
   const obstacles = [];
   for (const area of areas) {
@@ -1647,87 +1894,164 @@ export function buildOfficeWorld(office, options = {}) {
 
 export class BigDailyResultBoard {
   constructor(options = {}) {
-    this.width = Number(options.width) || 470;
-    this.height = Number(options.height) || 214;
+    this.width = Number(options.width) || 540;
+    this.height = Number(options.height) || 248;
   }
 
   draw(ctx, anchor, model, time) {
-    const x = Math.round(anchor.x - this.width / 2);
-    const y = Math.round(anchor.y - this.height - 16);
-    pxRect(ctx, x - 7, y - 7, this.width + 14, this.height + 14, PALETTE.boardFrame);
-    pxRect(ctx, x - 3, y - 3, this.width + 6, this.height + 6, PALETTE.boardFrame2);
-    pxRect(ctx, x, y, this.width, this.height, PALETTE.boardBg);
-    pxRect(ctx, x, y, this.width, 2, "#2d3f66");
+    const width = this.width;
+    const height = this.height;
+    const x = Math.round(anchor.x - width / 2);
+    const y = Math.round(anchor.y - height - 16);
+    pxRect(ctx, x - 8, y - 8, width + 16, height + 16, PALETTE.boardFrame);
+    pxRect(ctx, x - 4, y - 4, width + 8, height + 8, PALETTE.boardFrame2);
+    pxRect(ctx, x, y, width, height, PALETTE.boardBg);
+    pxRect(ctx, x, y, width, 2, "#24395e");
+    pxRect(ctx, x, y + height - 2, width, 2, "#050b16");
+
+    // Title
     ctx.textAlign = "left";
-    ctx.font = "bold 15px \"Courier New\", monospace";
+    ctx.textBaseline = "alphabetic";
+    ctx.font = "bold 16px \"Courier New\", monospace";
     ctx.fillStyle = "#9fb6e8";
-    ctx.fillText("RESULTADO DO DIA", x + 16, y + 26);
-    pxRect(ctx, x + 16, y + 32, this.width - 32, 1, "#2d3f66");
-    ctx.font = "bold 44px \"Courier New\", monospace";
+    ctx.fillText("RESULTADO DO DIA", x + 18, y + 27);
+    pxRect(ctx, x + 18, y + 34, width - 36, 1, "#24395e");
+
+    // Huge settled number — the largest text in the office
     ctx.textAlign = "center";
+    ctx.font = "bold 46px \"Courier New\", monospace";
     ctx.fillStyle = toneColor(model.tone);
-    ctx.fillText(model.text, x + this.width / 2, y + 84);
+    ctx.fillText(model.text, x + width * 0.34, y + 84);
     const blink = Math.floor((time ?? 0) / 700) % 2 === 0;
     if (model.tone !== "ZERO" && model.tone !== "EMPTY" && blink) {
-      ctx.globalAlpha = 0.25;
-      ctx.fillText(model.text, x + this.width / 2, y + 84);
+      ctx.globalAlpha = 0.22;
+      ctx.fillText(model.text, x + width * 0.34, y + 84);
       ctx.globalAlpha = 1;
     }
-    ctx.textAlign = "left";
-    ctx.font = "bold 9px \"Courier New\", monospace";
+
+    // Left column — daily metrics
+    const leftX = x + 18;
     const stats = [
-      ["WIN", String(model.wins)],
-      ["LOSS", String(model.losses)],
-      ["DRAW", String(model.draws)],
-      ["WR", model.winRateText],
-      ["OPERAÇÕES", String(model.trades)],
-      ["OPEN MARKETS", String(model.openMarkets)],
+      ["Operações Hoje", String(model.trades), PALETTE.ink],
+      ["Wins", String(model.wins), PALETTE.positive],
+      ["Losses", String(model.losses), PALETTE.negative],
+      ["Win Rate", model.winRateText, PALETTE.ink],
+      ["Maior Win", model.bestWinText, PALETTE.positive],
+      ["Maior Loss", model.bestLossText, PALETTE.negative],
     ];
-    stats.forEach(([label, value], index) => {
-      const columnWidth = (this.width - 32) / 3;
-      const columnX = x + 16 + (index % 3) * columnWidth;
-      const rowY = y + 108 + Math.floor(index / 3) * 26;
-      ctx.fillStyle = "#6f7fa8";
-      ctx.fillText(label, columnX, rowY);
-      ctx.fillStyle = index === 0 ? PALETTE.green : index === 1 ? PALETTE.red : PALETTE.ink;
-      ctx.font = "bold 13px \"Courier New\", monospace";
-      ctx.fillText(value, columnX, rowY + 14);
+    stats.forEach(([label, value, color], index) => {
+      const rowY = y + 112 + index * 18;
+      ctx.textAlign = "left";
       ctx.font = "bold 9px \"Courier New\", monospace";
+      ctx.fillStyle = "#6f7fa8";
+      ctx.fillText(label.toUpperCase(), leftX, rowY);
+      ctx.textAlign = "right";
+      ctx.font = "bold 11px \"Courier New\", monospace";
+      ctx.fillStyle = color;
+      ctx.fillText(value, leftX + 138, rowY);
     });
-    ctx.fillStyle = model.practice ? PALETTE.amber : PALETTE.red;
-    ctx.fillText(model.practice ? "PRACTICE" : "REAL", x + 16, y + this.height - 34);
+
+    // Center equity chart
+    const chartX = x + 176;
+    const chartY = y + 104;
+    const chartW = width - 176 - 150;
+    const chartH = 92;
+    this.#drawEquityChart(ctx, chartX, chartY, chartW, chartH, model.equity);
+
+    // Right — MERCADOS box + weekly/monthly
+    const boxX = x + width - 140;
+    const boxY = y + 104;
+    const boxW = 122;
+    const boxH = 58;
+    pxRect(ctx, boxX, boxY, boxW, boxH, "#0a1424");
+    pxRect(ctx, boxX, boxY, boxW, 14, "#1d3459");
+    ctx.textAlign = "center";
+    ctx.font = "bold 9px \"Courier New\", monospace";
+    ctx.fillStyle = "#9fb6e8";
+    ctx.fillText("MERCADOS", boxX + boxW / 2, boxY + 10);
+    const marketRows = [
+      ["Abertos", String(model.openMarkets), PALETTE.positive],
+      ["Fechados", String(model.closedMarkets), PALETTE.neutral],
+      ["Total", String(model.totalMarkets), PALETTE.ink],
+    ];
+    marketRows.forEach(([label, value, color], index) => {
+      const rowY = boxY + 25 + index * 11;
+      ctx.textAlign = "left";
+      ctx.font = "bold 8px \"Courier New\", monospace";
+      ctx.fillStyle = "#6f7fa8";
+      ctx.fillText(label, boxX + 8, rowY);
+      ctx.textAlign = "right";
+      ctx.font = "bold 9px \"Courier New\", monospace";
+      ctx.fillStyle = color;
+      ctx.fillText(value, boxX + boxW - 8, rowY);
+    });
+    ctx.textAlign = "left";
+    ctx.font = "bold 8px \"Courier New\", monospace";
     ctx.fillStyle = "#6f7fa8";
-    ctx.fillText(`ARM ${model.armState}`, x + 92, y + this.height - 34);
-    ctx.fillText(`AGENTES ${model.activeCount}/${model.activeLimit}`, x + 210, y + this.height - 34);
-    this.#drawSparkline(ctx, x + 16, y + this.height - 26, this.width - 32, 18, model.equity);
+    ctx.fillText("LUCRO SEMANAL", boxX, boxY + 78);
+    ctx.font = "bold 11px \"Courier New\", monospace";
+    ctx.fillStyle = model.weeklyPnl === null ? "#6f7fa8" : model.weeklyPnl >= 0 ? PALETTE.positive : PALETTE.negative;
+    ctx.fillText(model.weeklyText, boxX + 92, boxY + 78);
+    ctx.font = "bold 8px \"Courier New\", monospace";
+    ctx.fillStyle = "#6f7fa8";
+    ctx.fillText("LUCRO MENSAL", boxX, boxY + 94);
+    ctx.font = "bold 11px \"Courier New\", monospace";
+    ctx.fillStyle = model.monthlyPnl === null ? "#6f7fa8" : model.monthlyPnl >= 0 ? PALETTE.positive : PALETTE.negative;
+    ctx.fillText(model.monthlyText, boxX + 92, boxY + 94);
+
+    // Footer status
+    ctx.textAlign = "left";
+    ctx.font = "bold 8px \"Courier New\", monospace";
+    ctx.fillStyle = model.practice ? PALETTE.amber : PALETTE.red;
+    ctx.fillText(model.practice ? "PRACTICE" : "REAL", x + 18, y + height - 10);
+    ctx.fillStyle = "#6f7fa8";
+    ctx.fillText(`ARM ${model.armState}`, x + 92, y + height - 10);
+    ctx.fillText(`AGENTES ${model.activeCount}/${model.activeLimit}`, x + 214, y + height - 10);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
   }
 
-  #drawSparkline(ctx, x, y, width, height, equity) {
-    pxRect(ctx, x, y, width, height, "#0b1326");
-    if (!Array.isArray(equity) || equity.length < 2) {
-      ctx.fillStyle = "#42507a";
+  #drawEquityChart(ctx, x, y, width, height, equity) {
+    pxRect(ctx, x, y, width, height, "#081120");
+    pxRect(ctx, x, y, width, 1, "#1d3459");
+    const values = Array.isArray(equity) ? equity.map((point) => Number(point?.cumulative)).filter((value) => Number.isFinite(value)) : [];
+    const axis = ["09:00", "12:00", "15:00", "18:00"];
+    if (values.length >= 2) {
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const span = max - min || 1;
+      ctx.strokeStyle = "rgba(90, 120, 170, 0.18)";
+      ctx.lineWidth = 1;
+      for (let row = 1; row < 4; row += 1) {
+        const gy = Math.round(y + (row / 4) * (height - 14));
+        ctx.beginPath();
+        ctx.moveTo(x + 1, gy);
+        ctx.lineTo(x + width - 1, gy);
+        ctx.stroke();
+      }
+      const up = values[values.length - 1] >= values[0];
+      ctx.strokeStyle = up ? PALETTE.positive : PALETTE.negative;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      values.forEach((value, index) => {
+        const px = x + (index / (values.length - 1)) * (width - 4) + 2;
+        const py = y + height - 16 - ((value - min) / span) * (height - 22);
+        if (index === 0) ctx.moveTo(Math.round(px), Math.round(py));
+        else ctx.lineTo(Math.round(px), Math.round(py));
+      });
+      ctx.stroke();
+    } else {
+      ctx.textAlign = "left";
       ctx.font = "8px \"Courier New\", monospace";
-      ctx.fillText("EQUITY —", x + 6, y + 12);
-      return;
+      ctx.fillStyle = "#42507a";
+      ctx.fillText("EQUITY —", x + 6, y + 14);
     }
-    const values = equity.map((point) => Number(point?.cumulative)).filter((value) => Number.isFinite(value));
-    if (values.length < 2) return;
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const span = max - min || 1;
-    ctx.strokeStyle = values[values.length - 1] >= values[0] ? PALETTE.green : PALETTE.red;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    values.forEach((value, index) => {
-      const px = x + (index / (values.length - 1)) * (width - 2) + 1;
-      const py = y + height - 2 - ((value - min) / span) * (height - 4);
-      if (index === 0) ctx.moveTo(Math.round(px), Math.round(py));
-      else ctx.lineTo(Math.round(px), Math.round(py));
-    });
-    ctx.stroke();
-    ctx.fillStyle = "#42507a";
+    ctx.textAlign = "left";
     ctx.font = "7px \"Courier New\", monospace";
-    ctx.fillText("EQUITY (SETTLED)", x + 4, y + 8);
+    ctx.fillStyle = "#5f6f98";
+    axis.forEach((label, index) => {
+      ctx.fillText(label, x + 2 + index * ((width - 20) / (axis.length - 1)), y + height - 4);
+    });
   }
 }
 
@@ -1832,6 +2156,169 @@ function drawSignpost(ctx, point, label) {
   ctx.textAlign = "left";
 }
 
+function wrapTextByChars(text, maxChars) {
+  const source = String(text ?? "").trim();
+  if (!source) return [];
+  if (source.length <= maxChars) return [source];
+  const words = source.split(" ");
+  const lines = [];
+  let current = "";
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length <= maxChars) current = candidate;
+    else {
+      if (current) lines.push(current);
+      current = word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+function drawHangingSign(ctx, point, label) {
+  const x = Math.round(point.x);
+  const y = Math.round(point.y);
+  const width = Math.max(96, label.length * 5 + 20);
+  pxRect(ctx, x - width / 2 + 6, y - 26, 1, 12, PALETTE.metalDark);
+  pxRect(ctx, x + width / 2 - 7, y - 26, 1, 12, PALETTE.metalDark);
+  pxRect(ctx, x - width / 2, y - 16, width, 16, "#3a2a20");
+  pxRect(ctx, x - width / 2 + 2, y - 14, width - 4, 12, PALETTE.woodMid);
+  pxRect(ctx, x - width / 2 + 2, y - 14, width - 4, 1, PALETTE.gold);
+  ctx.font = "bold 8px \"Courier New\", monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#2c1806";
+  ctx.fillText(label, x, y - 8);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+}
+
+function drawBullStatue(ctx, point) {
+  const x = Math.round(point.x);
+  const y = Math.round(point.y);
+  pxRect(ctx, x - 10, y - 4, 20, 4, "#3a2a20");
+  const gold = PALETTE.gold;
+  const goldDark = "#a8792a";
+  pxRect(ctx, x - 8, y - 16, 14, 10, gold);
+  pxRect(ctx, x - 8, y - 16, 14, 2, "#f0c869");
+  pxRect(ctx, x - 6, y - 7, 2, 4, goldDark);
+  pxRect(ctx, x + 4, y - 7, 2, 4, goldDark);
+  pxRect(ctx, x + 5, y - 22, 7, 7, gold);
+  pxRect(ctx, x + 6, y - 21, 2, 2, "#2c1806");
+  pxRect(ctx, x + 4, y - 25, 3, 2, "#f0c869");
+  pxRect(ctx, x + 11, y - 25, 3, 2, "#f0c869");
+  pxRect(ctx, x - 10, y - 18, 2, 6, goldDark);
+}
+
+function drawArcadeCabinet(ctx, point, time) {
+  const x = Math.round(point.x);
+  const y = Math.round(point.y);
+  pxRect(ctx, x - 8, y - 30, 16, 30, "#3a2a45");
+  pxRect(ctx, x - 6, y - 28, 12, 12, "#101a2c");
+  const frame = Math.floor((time ?? 0) / 400) % 3;
+  const colors = ["#d9534f", "#4fbf6a", "#6fd3ff"];
+  pxRect(ctx, x - 5, y - 26, 10, 8, colors[frame]);
+  pxRect(ctx, x - 5, y - 14, 10, 3, "#22283a");
+  pxRect(ctx, x - 3, y - 11, 2, 2, PALETTE.red);
+  pxRect(ctx, x + 1, y - 11, 2, 2, PALETTE.amber);
+}
+
+function drawSidePanel(ctx, point, panel) {
+  const x = Math.round(point.x);
+  const y = Math.round(point.y);
+  if (panel.tone === "bull") {
+    drawBullStatue(ctx, { x, y: y - 12 });
+    return;
+  }
+  const width = 122;
+  const titleLines = wrapTextByChars(panel.title, 20);
+  const subtitleLines = wrapTextByChars(panel.subtitle, 24);
+  const height = 20 + titleLines.length * 11 + subtitleLines.length * 9;
+  const tone = panel.tone;
+  const bg = tone === "red" ? "#7d2b2b" : tone === "map" ? "#16305a" : tone === "gold" ? "#241a10" : "#101a2c";
+  const accent = tone === "red" ? "#f0a0a0" : tone === "map" ? "#7fb2ff" : PALETTE.gold;
+  pxRect(ctx, x - width / 2, y - height, width, height, "#0a1220");
+  pxRect(ctx, x - width / 2 + 2, y - height + 2, width - 4, height - 4, bg);
+  pxRect(ctx, x - width / 2 + 2, y - height + 2, width - 4, 2, accent);
+  pxRect(ctx, x - width / 2 + 2, y - 2, width - 4, 2, accent);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  let cursor = y - height + 15;
+  if (panel.id === "brand") {
+    ctx.font = "bold 14px \"Courier New\", monospace";
+    ctx.fillStyle = "#f0e6cc";
+    ctx.fillText("TRACE", x - 12, cursor);
+    ctx.fillStyle = accent;
+    ctx.fillText("/", x + 1, cursor);
+    ctx.fillStyle = "#f0e6cc";
+    ctx.fillText("COM", x + 22, cursor);
+    cursor += 12;
+  } else {
+    ctx.font = "bold 9px \"Courier New\", monospace";
+    ctx.fillStyle = "#e8d7b0";
+    for (const line of titleLines) {
+      ctx.fillText(line, x, cursor);
+      cursor += 11;
+    }
+  }
+  ctx.font = "7px \"Courier New\", monospace";
+  ctx.fillStyle = "#9fb0d0";
+  for (const line of subtitleLines) {
+    ctx.fillText(line, x, cursor);
+    cursor += 9;
+  }
+  if (panel.id === "pause") drawArcadeCabinet(ctx, { x: x + width / 2 + 10, y: y + 6 }, 0);
+  ctx.textAlign = "left";
+}
+
+function drawSectorRibbon(ctx, band) {
+  fillIsoRect(ctx, band.ribbon, "#12233f", "#2f5a9e");
+  pxPath(ctx, [
+    isoProject(band.ribbon.x, band.ribbon.y + 1),
+    isoProject(band.ribbon.x + band.ribbon.w, band.ribbon.y + 1),
+    isoProject(band.ribbon.x + band.ribbon.w, band.ribbon.y + 1.2),
+    isoProject(band.ribbon.x, band.ribbon.y + 1.2),
+  ], PALETTE.gold);
+  for (const member of band.members) {
+    const half = member.side === "right" ? band.rightHalf : member.side === "left" ? band.leftHalf : band.ribbon;
+    const center = isoProject(half.x + half.w / 2, half.y + 0.5);
+    ctx.font = "bold 11px \"Courier New\", monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+    ctx.fillText(member.label, Math.round(center.x) + 1, Math.round(center.y) + 1);
+    ctx.fillStyle = member.accent;
+    ctx.fillText(member.label, Math.round(center.x), Math.round(center.y));
+  }
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+}
+
+function drawBottomBand(ctx, layout) {
+  const hall = layout.hall;
+  const bottom = hall.y + hall.h;
+  const centerX = hall.x + hall.w / 2;
+  const carpet = { x: centerX - 11, y: bottom + 1, w: 22, h: 3 };
+  fillIsoRect(ctx, carpet, "#3a1f24");
+  fillIsoRect(ctx, { x: carpet.x + 1, y: carpet.y + 0.6, w: carpet.w - 2, h: carpet.h - 1.2 }, "#5e2b32");
+  fillIsoRect(ctx, { x: carpet.x + 2, y: carpet.y + 1, w: carpet.w - 4, h: carpet.h - 2 }, "#3a1f24");
+  const label = isoProject(centerX, carpet.y + 1.5);
+  ctx.save();
+  ctx.translate(Math.round(label.x), Math.round(label.y));
+  ctx.rotate(Math.atan2(HALF_H, HALF_W));
+  ctx.textAlign = "center";
+  ctx.font = "bold 12px \"Courier New\", monospace";
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.fillText("TRACE/COM", 1, 1);
+  ctx.fillStyle = PALETTE.gold;
+  ctx.fillText("TRACE/COM", 0, 0);
+  ctx.font = "bold 7px \"Courier New\", monospace";
+  ctx.fillStyle = "#c9b48c";
+  ctx.fillText("VISION · SHADOW · RESULT", 0, 10);
+  ctx.restore();
+  ctx.textAlign = "left";
+}
+
 function drawFloorLabel(ctx, sector) {
   const point = isoProject(sector.labelPos.x, sector.labelPos.y);
   ctx.save();
@@ -1888,6 +2375,7 @@ function drawBillboard(ctx, item, time) {
     case "chartPin": drawChartPin(ctx, point); break;
     case "screen": drawMeetingScreen(ctx, point); break;
     case "worldMap": drawWorldMap(ctx, point, time); break;
+    case "hangingSign": drawHangingSign(ctx, point, item.label ?? ""); break;
     default: break;
   }
 }
@@ -1898,7 +2386,7 @@ function drawBillboard(ctx, item, time) {
 
 export function deriveActorState(market, role, now = Date.now()) {
   if (!market) return "OFFLINE";
-  if (market.enabled === false || market.availability === "CLOSED" || market.availability === "UNAVAILABLE" || market.availability === "NOT_FOUND") return "OFFLINE";
+  if (!isDeskActive(market)) return "OFFLINE";
   if (market.agentState === "OFFLINE" || market.agentState === "UNAVAILABLE") return "OFFLINE";
   const state = market.settlementState ?? {};
   const settledAt = Number(state.lastAt) || 0;
@@ -2267,15 +2755,33 @@ export class OfficeRenderer {
       ctx.globalAlpha = 0.85;
       fillIsoRect(ctx, sector.floor, sector.floorColor);
       ctx.globalAlpha = 1;
-      fillIsoRect(ctx, sector.header, "#1b2338", sector.accent);
-      drawFloorLabel(ctx, sector);
     }
+    for (const band of sectorRibbonBands(layout.sectors)) drawSectorRibbon(ctx, band);
     for (const area of layout.areas) fillIsoRect(ctx, area.rect, area.floorColor);
+    ctx.strokeStyle = "rgba(48, 82, 128, 0.16)";
+    ctx.lineWidth = 1;
+    for (let gy = 0; gy <= layout.gridHeight; gy += 1) {
+      const a = isoProject(0, gy);
+      const b = isoProject(layout.gridWidth, gy);
+      ctx.beginPath();
+      ctx.moveTo(Math.round(a.x), Math.round(a.y));
+      ctx.lineTo(Math.round(b.x), Math.round(b.y));
+      ctx.stroke();
+    }
+    for (let gx = 0; gx <= layout.gridWidth; gx += 1) {
+      const a = isoProject(gx, 0);
+      const b = isoProject(gx, layout.gridHeight);
+      ctx.beginPath();
+      ctx.moveTo(Math.round(a.x), Math.round(a.y));
+      ctx.lineTo(Math.round(b.x), Math.round(b.y));
+      ctx.stroke();
+    }
     for (const area of layout.areas) {
       for (const item of area.furniture) if (item.kind === "rug") drawRug(ctx, item.rect, item.rect.x + item.rect.y);
     }
     const entrance = { x: layout.hall.x + layout.hall.w / 2 - 4, y: layout.hall.y + layout.hall.h, w: 8, h: 2 };
     fillIsoRect(ctx, entrance, "#3a2f3f");
+    drawBottomBand(ctx, layout);
     ctx.fillStyle = "#8a7a5a";
     ctx.font = "bold 9px \"Courier New\", monospace";
     this.#drawWall(ctx, layout);
@@ -2329,6 +2835,19 @@ export class OfficeRenderer {
       { x: right.x, y: right.y + 4 },
       { x: left.x - 10, y: left.y + 4 },
     ], PALETTE.wallTrim);
+    for (let index = 0; index <= 8; index += 1) {
+      const t = index / 8;
+      const sx = Math.round(right.x * t + left.x * (1 - t));
+      const sy = Math.round(right.y * t + left.y * (1 - t));
+      pxRect(ctx, sx - 2, sy - 74, 4, 8, PALETTE.woodMid);
+      pxRect(ctx, sx - 1, sy - 77, 2, 3, PALETTE.gold);
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = PALETTE.amber;
+      ctx.beginPath();
+      ctx.arc(sx, sy - 68, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
   }
 
   #drawLightPools(ctx, layout) {
@@ -2417,12 +2936,28 @@ export class OfficeRenderer {
       depth: world.layout.board.rect.x + world.layout.board.rect.y - 6,
       draw: (ctx) => world.board.draw(ctx, world.layout.board.anchor, pnlIndicatorModel(world.office), time),
     });
-    for (const sector of world.layout.sectors) {
-      list.push({
-        depth: sector.header.x + sector.header.y - 1,
-        draw: (ctx) => drawSignpost(ctx, isoProject(sector.header.x + 0.5, sector.header.y + 1.5), sector.sign),
+    for (const side of ["left", "right"]) {
+      const panels = SIDE_PANELS[side] ?? [];
+      const anchors = SIDE_PANEL_ANCHORS[side] ?? [];
+      panels.forEach((panel, index) => {
+        const anchor = anchors[index] ?? anchors[anchors.length - 1] ?? { x: 0, y: 0 };
+        list.push({
+          depth: anchor.x + anchor.y - 0.3,
+          draw: (ctx) => drawSidePanel(ctx, isoProject(anchor.x, anchor.y), panel),
+        });
       });
     }
+    const hallBottom = world.layout.hall.y + world.layout.hall.h;
+    const hallLeft = world.layout.hall.x + 3;
+    const hallRight = world.layout.hall.x + world.layout.hall.w - 3;
+    list.push({
+      depth: hallLeft + hallBottom + 1,
+      draw: (ctx) => drawSignpost(ctx, isoProject(hallLeft, hallBottom + 1), "DISCIPLINA HOJE RESULTADOS SEMPRE"),
+    });
+    list.push({
+      depth: hallRight + hallBottom + 1,
+      draw: (ctx) => drawSignpost(ctx, isoProject(hallRight, hallBottom + 1), "PEQUENAS DECISÕES GRANDES RESULTADOS"),
+    });
     return list;
   }
 
@@ -2449,28 +2984,47 @@ export class OfficeRenderer {
     this.#drawSelection(ctx);
     this.#drawWarmOverlay(ctx, zoom);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.#drawVignette(ctx);
+  }
+
+  #drawVignette(ctx) {
+    const viewport = this.viewport;
+    const cx = viewport.width / 2;
+    const cy = viewport.height / 2;
+    const inner = Math.min(viewport.width, viewport.height) * 0.35;
+    const outer = Math.max(viewport.width, viewport.height) * 0.78;
+    const gradient = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
+    gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0.4)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, viewport.width, viewport.height);
   }
 
   #drawPnlChips(ctx, time) {
     const world = this.world;
     if (!world) return;
     for (const station of world.stations) {
-      const model = deskPnlIndicator(station.market);
-      if (model.tone === "NONE") continue;
-      const settledAt = Number(station.market?.settlementState?.lastAt) || 0;
-      const age = settledAt > 0 ? Date.now() - settledAt : 0;
-      if (settledAt > 0 && age > 9000) continue;
-      const point = isoProject(station.data.desk.x + station.data.desk.w / 2, station.data.desk.y - 0.4);
+      const model = deskBadgeModel(station.market);
+      if (!model.visible) continue;
+      const desk = station.data.desk;
+      const point = isoProject(desk.x + desk.w / 2, desk.y - 0.6);
       const x = Math.round(point.x);
       const y = Math.round(point.y);
-      const width = model.text.length * 6 + 8;
-      pxRect(ctx, x - width / 2, y - 14, width, 11, "rgba(8, 12, 26, 0.85)");
-      pxRect(ctx, x - width / 2, y - 14, width, 1, toneColor(model.tone));
-      ctx.font = "bold 8px \"Courier New\", monospace";
+      const width = Math.max(46, model.text.length * 7 + 14);
+      const height = 15;
+      const top = y - height - 20;
+      pxRect(ctx, x - width / 2 + 2, top + 2, width, height, "rgba(0, 0, 0, 0.35)");
+      pxRect(ctx, x - width / 2, top, width, height, "#0b1424");
+      pxRect(ctx, x - width / 2, top, width, 2, model.color);
+      pxRect(ctx, x - width / 2, top + height - 1, width, 1, "rgba(0, 0, 0, 0.5)");
+      pxRect(ctx, x - 2, top + height, 4, 3, "#0b1424");
+      ctx.font = "bold 9px \"Courier New\", monospace";
       ctx.textAlign = "center";
-      ctx.fillStyle = toneColor(model.tone);
-      ctx.fillText(model.text, x, y - 6);
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = model.color;
+      ctx.fillText(model.text, x, top + height / 2 + 1);
       ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
     }
   }
 
