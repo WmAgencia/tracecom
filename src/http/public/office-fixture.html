@@ -33,11 +33,11 @@
     /* Fixture: cobre estados amigáveis, slots livres, OTC/NORMAL, sinais executados/bloqueados. Nada toca o backend. */
     const market = (key, display, marketType, activeId, agentState, extra = {}) => ({
       marketKey: key, marketType, canonical: key.split(":")[0], symbol: display.replace(" OTC", ""), display, enabled: extra.enabled !== false, paused: extra.paused === true,
-      maxStake: 100, configuredStake: extra.configuredStake ?? (marketType === "OTC" ? 10 : 10), strategy: (extra.strategyVariant ?? "V3-60").split("-")[0], strategyVariantId: extra.strategyVariant ?? "V3-60", strategyEffective: extra.strategyVariant ?? "V3-60", strategySource: extra.strategyVariant ? "MARKET" : "GLOBAL", revision: extra.revision ?? 3, activeId, instrumentTypes: ["binary", "turbo"], availability: extra.availability ?? "OPEN", payout: extra.payout ?? 85, payoutSource: "fixture",
+      maxStake: 100, configuredStake: extra.configuredStake ?? (marketType === "OTC" ? 10 : 10), setup: extra.setup ?? "TREND_PULLBACK", regime: extra.regime ?? "TREND_UP", brainGeneration: 2, revision: extra.revision ?? 3, activeId, instrumentTypes: ["binary", "turbo"], availability: extra.availability ?? "OPEN", payout: extra.payout ?? 85, payoutSource: "fixture",
       connectionHealth: { connected: agentState !== "OFFLINE" && extra.availability !== "NOT_FOUND", lastMessageAt: Date.now(), gaps: 0 }, serverTime: Date.now(),
       lastTick: { price: 1.1 + activeId / 1000, ageMs: 320, source: "IQ_OPTION_WS", segmentId: `${key}:${Date.now() - 2500}`, bucketStart: Date.now() - 2500, bucketEnd: Date.now() + 2500, serverTimestamp: Date.now() - 320, receivedAt: Date.now() - 320 },
       candles5s: 120, featureState: { builtAt: Date.now() - 500, fresh: true, freshnessReason: "OK", rsi14: 48.2, atr14: 0.00015, adx14: 22.4, donchianPosition: 0.42, microstructureStreak: -1 },
-      decisionState: { action: agentState === "SIGNAL" ? "BUY" : "WAIT", reason: "STRATEGY_SIGNAL", confidence: 0.42, family: "V3", horizonSeconds: 60, evaluatedAt: Date.now() - 400, trigger: { rsi14: 48.2, s: 0.21, vol12: 0.0004, r24: 0.0002 } },
+      decisionState: { action: agentState === "SIGNAL" ? "BUY" : "WAIT", reason: agentState === "SIGNAL" ? "CONSENSUS_CONFIRMED" : "SEM_SETUP_VALIDO", confidence: 0.42, setup: extra.setup ?? "TREND_PULLBACK", regime: extra.regime ?? "TREND_UP", horizonSeconds: 60, knowledge: { used: true, ids: ["TraceCom/02 - Setups/TREND_PULLBACK"], version: "kb_fixture" }, evaluatedAt: Date.now() - 400, trigger: agentState === "SIGNAL" ? "pullback concluido" : null },
       positionState: { status: extra.positionStatus ?? "IDLE", direction: extra.direction ?? null, entryPrice: extra.entryPrice ?? null, stake: extra.stake ?? null, brokerOrderId: extra.brokerOrderId ?? null, requestId: null, expirationSec: null, openedAt: extra.openedAt ?? null, settledAt: null, result: extra.result ?? null, profit: extra.profit ?? null, mode: "PRACTICE" },
       settlementState: { lastResult: extra.result ?? null, lastProfit: extra.profit ?? null, lastAt: extra.openedAt ?? null, daily: { wins: extra.result === "WIN" ? 1 : 0, losses: extra.result === "LOSS" ? 1 : 0, draws: 0, settledPnl: extra.profit ?? 0, trades: extra.result ? 1 : 0 } },
       indicative: extra.indicative ?? { state: "NEUTRAL", delta: null, indicativePnl: null, updatedAt: null },
@@ -46,7 +46,7 @@
       agentState, agentSince: Date.now() - 3000, agentReason: "FIXTURE", lastSignal: null, lastDecision: null,
       agents: {
         at: Date.now() - 400, correlationId: `corr_fixture_${activeId}`,
-        selection: { family: (extra.strategyVariant ?? "V3-60").split("-")[0], horizonSeconds: 60, variantId: extra.strategyVariant ?? "V3-60" },
+        setup: extra.setup ?? "TREND_PULLBACK",
         trader: { action: extra.traderAction ?? "WAIT", confidence: 0.42, regime: "TRANSITION", bias: { channelBias: "MID", streakBias: "UP", position: 0.42 }, primaryRisk: "adx_fraco", supporting: ["rsi14=52.0"], contradicting: ["adx_fraco=17.2"], latencyMs: 1 },
         critic: { independentAction: extra.traderAction ?? "WAIT", verdict: extra.criticVerdict ?? "CONFIRM", contradictions: ["preco_no_meio_do_canal"], riskFlags: [], finalRecommendation: extra.traderAction ?? "WAIT", latencyMs: 1 },
         consensus: { action: extra.consensusAction ?? extra.traderAction ?? "WAIT", status: extra.consensusStatus ?? (extra.traderAction ? "CONFIRMED" : "NO_CONSENSUS"), reason: extra.traderAction ? "TRADER_E_CRITIC_ALINHADOS" : "SEM_CONSENSO", rules: [], confidence: extra.traderAction ? 0.42 : 0, estimatedWinProbability: null, latencyMs: 1 },
@@ -68,8 +68,8 @@
     ];
     for (const [key, display, type, activeId, availability] of [["AUDUSD:NORMAL", "AUD/USD", "NORMAL", 6, "NOT_FOUND"], ["USDCAD:NORMAL", "USD/CAD", "NORMAL", 7, "NOT_FOUND"], ["AUDJPY:NORMAL", "AUD/JPY", "NORMAL", 8, "NOT_FOUND"], ["EURGBP:NORMAL", "EUR/GBP", "NORMAL", 9, "NOT_FOUND"], ["GBPJPY:NORMAL", "GBP/JPY", "NORMAL", 10, "NOT_FOUND"]]) markets.push(market(key, display, type, activeId, "UNAVAILABLE", { enabled: false, availability, payout: null }));
     const signals = [
-      { id: 5, marketKey: "GBPUSD:OTC", display: "GBP/USD OTC", marketType: "OTC", action: "BUY", at: Date.now() - 20_000, disposition: "EXECUTED", reason: "AUTORIZADO", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 10, stakeSource: "MARKET_CONFIGURED", stakeAdjustment: { applied: false, reason: null, from: 10, to: 10 }, strategyVariantId: "V8-60", brokerOrderId: "FX-3001", result: null, profit: null },
-      { id: 4, marketKey: "EURGBP:OTC", display: "EUR/GBP OTC", marketType: "OTC", action: "BUY", at: Date.now() - 40_000, disposition: "EXECUTED", reason: "AUTORIZADO", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 3, stakeSource: "MARKET_CONFIGURED", stakeAdjustment: { applied: true, reason: "MARKET_MAX", from: 10, to: 3 }, strategyVariantId: "V3-60", brokerOrderId: "FX-2002", result: null, profit: null },
+      { id: 5, marketKey: "GBPUSD:OTC", display: "GBP/USD OTC", marketType: "OTC", action: "BUY", at: Date.now() - 20_000, disposition: "EXECUTED", reason: "AUTORIZADO", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 10, stakeSource: "MARKET_CONFIGURED", stakeAdjustment: { applied: false, reason: null, from: 10, to: 10 }, setup: "MOMENTUM_CONTINUATION", brokerOrderId: "FX-3001", result: null, profit: null },
+      { id: 4, marketKey: "EURGBP:OTC", display: "EUR/GBP OTC", marketType: "OTC", action: "BUY", at: Date.now() - 40_000, disposition: "EXECUTED", reason: "AUTORIZADO", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 3, stakeSource: "MARKET_CONFIGURED", stakeAdjustment: { applied: true, reason: "MARKET_MAX", from: 10, to: 3 }, setup: "TREND_PULLBACK", brokerOrderId: "FX-2002", result: null, profit: null },
       { id: 3, marketKey: "GBPJPY:OTC", display: "GBP/JPY OTC", marketType: "OTC", action: "SELL", at: Date.now() - 90_000, disposition: "BLOCKED", reason: "AUTO_DESLIGADO", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 10, brokerOrderId: null },
       { id: 2, marketKey: "EURUSD:OTC", display: "EUR/USD OTC", marketType: "OTC", action: "BUY", at: Date.now() - 180_000, disposition: "BLOCKED", reason: "SISTEMA_DESARMADO", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 10, brokerOrderId: null },
       { id: 1, marketKey: "AUDUSD:NORMAL", display: "AUD/USD", marketType: "NORMAL", action: "BUY", at: Date.now() - 320_000, disposition: "BLOCKED", reason: "GATE_MARKET_AVAILABLE", stakeConfigured: 10, stakeRequested: 10, stakeFinal: 10, brokerOrderId: null },
@@ -82,7 +82,7 @@
         connection: { connected: true, host: "ws.iqoption.com", timeValid: true, clockSkewMs: 0, reconnects: 0, healthy: true, connectionId: "fixture" },
         mode: "PRACTICE",
         modeState: { mode: "PRACTICE", practice: { verified: true, balance: 10_000, currency: "USD" }, real: { available: true, balance: 0, currency: "BRL" }, realMode: { realModeEnabled: false, phraseRequired: "OPERAR CONTA REAL", maxStake: null, lastRevokeReason: "RESTART" } },
-        config: { globalMaxStake: 100, defaultStake: 10, calculatedBankrollStake: 1, hardCap: 100, maxActiveMarkets: 10, autoExecute: true, revision: 9, selection: { family: "V3", horizonSeconds: 60, variantId: "V3-60" } },
+        config: { globalMaxStake: 100, defaultStake: 10, calculatedBankrollStake: 1, hardCap: 100, maxActiveMarkets: 10, autoExecute: true, revision: 9, brainGeneration: 2 },
         activeCount: 10, activeLimit: 10, universeCount: 15,
         portfolio: {
           openPositions: [
@@ -135,26 +135,29 @@
           MARKET: { status: "OK", version: 9, ageMs: 1_200, source: "tracecom-runtime", sourceType: "INTERNAL", dataQuality: "OK", payload: { activeMarkets: 10, avgAtrNormalized: 0.00042, avgAdx: 21.5, bullish: 3, bearish: 2 }, marketsAffected: [], currenciesAffected: [] },
           RISK: { status: "OK", version: 9, ageMs: 1_200, source: "tracecom-portfolio", sourceType: "INTERNAL", dataQuality: "OK", payload: { openPositions: 3, stakeAtRisk: 6, concentrationWarnings: 0, dailySettledPnl: 6.42 }, marketsAffected: [], currenciesAffected: [] },
           SECURITY: { status: "OK", version: 9, ageMs: 1_200, source: "tracecom-integrity", sourceType: "INTERNAL", dataQuality: "OK", payload: { connectionHealthy: true, timeValid: true, rejectedCandles: 0, dataQuality: "OK" }, marketsAffected: [], currenciesAffected: [] },
-          RESEARCH: { status: "OK", version: 9, ageMs: 1_200, source: "tracecom-research", sourceType: "INTERNAL", dataQuality: "OK", payload: { variants: 10, shadowMarkets: 10, managerMode: "SHADOW_RECOMMENDATION" }, marketsAffected: [], currenciesAffected: [] },
+          RESEARCH: { status: "OK", version: 9, ageMs: 1_200, source: "tracecom-research", sourceType: "INTERNAL", dataQuality: "OK", payload: { setups: 10, shadowMarkets: 10, brainGeneration: 2, supervisor: 3 }, marketsAffected: [], currenciesAffected: [] },
         },
-        manager: {
-          version: "strategy-manager-v1", mode: "SHADOW_RECOMMENDATION", autoSwitchEnabled: false,
-          config: { mode: "SHADOW_RECOMMENDATION", autoSwitchEnabled: false, reviewEverySettlements: 10, minTotalSamples: 60, minRecentSamples: 30, minPerformanceDelta: 0.08, maxDrawdown: 8, minPayoutQuality: 75, cooldownSettlements: 30, minTimeBetweenSwitchesMs: 21600000 },
-          markets: [],
+        knowledge: { version: "trading-knowledge-retriever-v1", knowledgeVersion: "kb_fixture", notes: 38, builtAt: Date.now() - 120_000, lastError: null, categories: { REGIME: 7, SETUP: 9, INDICATOR: 5 }, scope: "TraceCom/", secondBrain: { version: "second-brain-adapter-v1", mode: "OFFLINE", scope: "TraceCom/", configured: false, credentials: { tokenPresent: false, vaultPathPresent: false, baseUrlPresent: false }, policy: { readScope: "TraceCom/", writeProtected: ["00 - Core Brain", "15 - Validated Knowledge"], autoPromotionToValidatedForbidden: true } } },
+        journal: { trades: 24, decisions: 180 },
+        hypotheses: 2,
+        brain: { generation: 2, version: "professional-brain-v2", principles: 7, setups: 10, process: ["DATA_INTEGRITY", "REGIME", "STRUCTURE", "LOCATION", "MOMENTUM", "STRENGTH", "VOLATILITY", "MICROSTRUCTURE", "SETUP", "TRIGGER", "CONTRADICTIONS", "DECISION"] },
+        supervisor: {
+          version: "performance-supervisor-v1",
+          config: { minSamples: 20, maxDrawdown: 8, maxConsecutiveLosses: 6, minDecisionQuality: 0.5, reviewCooldownMs: 1800000 },
           reviews: [
-            { type: "REVIEW", marketKey: "EURGBP:OTC", decision: "RECOMMEND_SWITCH", champion: "V3-60", challenger: "V8-60", reason: "CRITERIOS_SATISFEITOS", at: Date.now() - 120_000 },
-            { type: "REVIEW", marketKey: "GBPUSD:OTC", decision: "KEEP", champion: "V3-60", challenger: "V2-60", reason: "AMOSTRA_INSUFICIENTE", at: Date.now() - 300_000 },
-            { type: "REVIEW", marketKey: "GBPJPY:OTC", decision: "KEEP", champion: "V3-60", challenger: "V8-45", reason: "CRITERIO_FALHOU:stability", at: Date.now() - 600_000 },
+            { id: 3, at: Date.now() - 120_000, agentId: "trader:EURGBP:OTC", marketKey: "EURGBP:OTC", status: "REVIEW_REQUIRED", reasons: ["DRAWDOWN_EXCEDIDO", "QUALIDADE_DECISORIA_BAIXA"], stats: { trades: 32, wins: 12, losses: 20, pnl: -9.4, goodDecisions: 13, badDecisions: 19 }, review: null },
+            { id: 2, at: Date.now() - 300_000, agentId: "trader:GBPUSD:OTC", marketKey: "GBPUSD:OTC", status: "OK", reasons: [], stats: { trades: 24, wins: 13, losses: 11, pnl: 1.2, goodDecisions: 16, badDecisions: 8 }, review: null },
+            { id: 1, at: Date.now() - 600_000, agentId: "trader:GBPJPY:OTC", marketKey: "GBPJPY:OTC", status: "REVIEW_PENDING_COOLDOWN", reasons: ["SEQUENCIA_DE_PERDAS"], stats: { trades: 21, wins: 8, losses: 13, pnl: -5.1, goodDecisions: 9, badDecisions: 12 }, review: null },
           ],
+          note: "Monitora qualidade; NAO troca metodologia nem inventa estrategia.",
         },
         research: {
           agentLatency: { count: 120, p50: 1, p95: 3, p99: 5, max: 9 },
-          champions: { "EURUSD:OTC": "V3-60", "GBPUSD:OTC": "V3-60", "EURGBP:OTC": "V3-60" },
-          perMarket: [
-            { marketKey: "EURUSD:OTC", marketType: "OTC", championVariantId: "V3-60", champion: { variantId: "V3-60", trades: 84, winRate: 0.56, pnl: 5.2, recent: { pnlPerTrade: 0.09 } }, challenger: { variantId: "V8-60", trades: 61, winRate: 0.54, pnl: 3.1, recent: { pnlPerTrade: 0.05 } }, nextReviewIn: 6 },
-            { marketKey: "GBPUSD:OTC", marketType: "OTC", championVariantId: "V3-60", champion: { variantId: "V3-60", trades: 72, winRate: 0.52, pnl: 1.4, recent: { pnlPerTrade: 0.02 } }, challenger: { variantId: "V2-60", trades: 33, winRate: 0.55, pnl: 2.0, recent: { pnlPerTrade: 0.11 } }, nextReviewIn: 4 },
-          ],
-          ab: { version: "ab-experiment-v1", arms: { A_FROZEN: { trades: 40, wins: 21, losses: 17, draws: 2, noTrade: 0, winRate: 0.525, pnl: 2.1, pnlPerTrade: 0.053 }, B_TRADER: { trades: 40, wins: 21, losses: 17, draws: 2, noTrade: 0, winRate: 0.525, pnl: 2.1, pnlPerTrade: 0.053 }, C_TRADER_CRITIC: { trades: 31, wins: 18, losses: 11, draws: 2, noTrade: 9, winRate: 0.581, pnl: 4.4, pnlPerTrade: 0.142 }, D_PLUS_INTELLIGENCE: { trades: 29, wins: 17, losses: 10, draws: 2, noTrade: 11, winRate: 0.586, pnl: 4.5, pnlPerTrade: 0.155 }, E_ADAPTIVE: { trades: 33, wins: 19, losses: 12, draws: 2, noTrade: 7, winRate: 0.576, pnl: 4.9, pnlPerTrade: 0.148 } }, totalRecords: 40 },
+          setups: {
+            "EURUSD:OTC": { marketKey: "EURUSD:OTC", version: 12, waits: 84, openShadow: 1, trades: 21, regimes: [{ regime: "TREND_UP", trades: 12, wins: 7, losses: 5, winRate: 0.5833 }], setups: [{ setup: "TREND_PULLBACK", opportunities: 14, trades: 9, wins: 6, losses: 3, draws: 0, winRate: 0.6667, pnl: 2.1, pnlPerTrade: 0.2333, avgPayout: 85, losingStreak: 0, maxLosingStreak: 1, maxDrawdown: 0.85, waits: 5, blocked: 0, recent: { sample: 6, wins: 4, losses: 2, winRate: 0.6667 } }, { setup: "BREAKOUT_CONTINUATION", opportunities: 9, trades: 6, wins: 3, losses: 3, draws: 0, winRate: 0.5, pnl: 0.2, pnlPerTrade: 0.0333, avgPayout: 85, losingStreak: 1, maxLosingStreak: 2, maxDrawdown: 1.9, waits: 3, blocked: 0, recent: { sample: 6, wins: 3, losses: 3, winRate: 0.5 } }] },
+            "GBPUSD:OTC": { marketKey: "GBPUSD:OTC", version: 9, waits: 61, openShadow: 0, trades: 15, regimes: [{ regime: "RANGE", trades: 8, wins: 4, losses: 4, winRate: 0.5 }], setups: [{ setup: "RANGE_REVERSAL", opportunities: 11, trades: 7, wins: 4, losses: 3, draws: 0, winRate: 0.5714, pnl: 0.9, pnlPerTrade: 0.1286, avgPayout: 86, losingStreak: 0, maxLosingStreak: 1, maxDrawdown: 1, waits: 3, blocked: 1, recent: { sample: 5, wins: 3, losses: 2, winRate: 0.6 } }] },
+          },
+          ab: { version: "ab-experiment-v2", arms: { A_TRADER: { trades: 40, wins: 21, losses: 17, draws: 2, noTrade: 0, winRate: 0.525, pnl: 2.1, pnlPerTrade: 0.053 }, B_TRADER_CRITIC: { trades: 31, wins: 18, losses: 11, draws: 2, noTrade: 9, winRate: 0.581, pnl: 4.4, pnlPerTrade: 0.142 }, C_PLUS_INTELLIGENCE: { trades: 29, wins: 17, losses: 10, draws: 2, noTrade: 11, winRate: 0.586, pnl: 4.5, pnlPerTrade: 0.155 }, D_APPRENTICE: { trades: 33, wins: 19, losses: 12, draws: 2, noTrade: 7, winRate: 0.576, pnl: 4.9, pnlPerTrade: 0.148 } }, totalRecords: 40 },
         },
         reconcile: { lastRunAt: Date.now() - 60_000, checked: 0, settled: 0, unknown: 0, error: null },
         metrics: { messages: 9000, candles: 1200, rejected: 0, reconnects: 0, memoryMb: 64, cpuUserMs: 500, uptimeSec: 3600 },

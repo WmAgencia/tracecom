@@ -8,7 +8,7 @@ const { traderDecision, criticAssessment, consensusDecision, detectRegime, struc
 const { computeFrozenFeatures, FROZEN_VARIANTS } = frozen as unknown as Record<string, any>;
 
 const base = 1_700_000_000_000;
-function makeCandles(count = 80, mutate = () => 0) {
+function makeCandles(count = 80, mutate: (index: number) => number = () => 0) {
   return Array.from({ length: count }, (_, index) => {
     const close = 1.1 + index * 0.00002 + mutate(index);
     return { start: base + index * 5_000, bucketStart: base + index * 5_000, open: close - 0.00001, high: close + 0.00002, low: close - 0.00002, close };

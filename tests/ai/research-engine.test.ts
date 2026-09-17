@@ -1,90 +1,97 @@
-/** Fase 5 — Research Engine: shadow das 10 estrategias congeladas, causalidade e scoreboard isolado por mercado. */
-import { readFileSync } from "node:fs";
+/** FASE 6 — Setup Research Engine v2 + A/B prospectivo v2.
+ * Shadow por SETUP do Professional Brain; liquidacao causal; nenhuma variante V1/V2/V3/V8. */
 import { describe, expect, it } from "vitest";
 // @ts-expect-error - relay ESM sem tipagem (validado em runtime)
-const research = await import("../../relay/research-engine.mjs");
-const { ResearchEngine, ABExperiment, SHADOW_VARIANTS, summarizeStats } = research as unknown as Record<string, any>;
+const engineModule = await import("../../relay/research-engine.mjs");
+const { SetupResearchEngine, ABExperiment, BRAIN_HORIZON_SECONDS, SETUP_KEYS, summarizeSetupStats, SETUP_RESEARCH_VERSION } = engineModule as unknown as Record<string, any>;
 
-const fixture = JSON.parse(readFileSync(new URL("../fixtures/frozen-candles-10h.json", import.meta.url), "utf8")) as { candles: Array<{ bucket: number; open: number; high: number; low: number; close: number }> };
-const base = 1_700_000_000_000;
-const candles = () => fixture.candles.map((candle) => ({ start: candle.bucket, bucketStart: candle.bucket, open: candle.open, high: candle.high, low: candle.low, close: candle.close }));
+const candle = (bucketStart: number, close: number) => ({ bucketStart, start: bucketStart, open: close, high: close + 0.001, low: close - 0.001, close });
 
-describe("RESEARCH ENGINE — shadow causal, sem look-ahead", () => {
-  it("as 10 variantes congeladas rodam em shadow e liquidam somente em candle futuro (causal)", () => {
-    const engine = new ResearchEngine({ now: () => base + 10_000_000 }) as any;
-    expect(SHADOW_VARIANTS).toHaveLength(10);
-    const list = candles();
-    let opens = 0, settles = 0;
-    for (let index = 0; index < list.length; index += 1) {
-      const out = engine.observeCandle({ marketKey: "EURUSD:OTC", marketType: "OTC", candles: list, index, payout: 85, atMs: list[index].bucketStart });
-      opens += out.opened; settles += out.settled;
-    }
-    expect(opens).toBeGreaterThan(0);
-    expect(settles).toBeGreaterThan(0);
+describe("SETUP RESEARCH ENGINE v2 — shadow causal por setup", () => {
+  it("abre apenas com brain acionavel e liquida somente no candle do horizonte (nunca antes)", () => {
+    const engine = new SetupResearchEngine({ now: () => 0 }) as any;
+    const candles = [candle(0, 1.1)];
+    const brain = { setup: "TREND_PULLBACK", action: "BUY", regime: "TREND_UP", trigger: "pullback concluido" };
+    const opened = engine.observeCandle({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", candles, index: 0, brain, payout: 85, atMs: 0 });
+    expect(opened).toMatchObject({ opened: 1, settled: 0 });
+    const boardOpen = engine.scoreboard("EURUSD:NORMAL");
+    expect(boardOpen.openShadow).toBe(1);
+    expect(boardOpen.setups.find((row: any) => row.setup === "TREND_PULLBACK").opportunities).toBe(1);
+    // candle antes do horizonte NAO liquida
+    const early = engine.observeCandle({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", candles: [candle(30_000, 1.2)], index: 0, brain: null, atMs: 30_000 });
+    expect(early.settled).toBe(0);
+    expect(engine.scoreboard("EURUSD:NORMAL").openShadow).toBe(1);
+    // candle no horizonte liquida causalmente (BUY + close maior = WIN)
+    const settled = engine.observeCandle({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", candles: [candle(BRAIN_HORIZON_SECONDS * 1000, 1.2)], index: 0, brain: null, atMs: 61_000 });
+    expect(settled.settled).toBe(1);
+    const stats = engine.scoreboard("EURUSD:NORMAL").setups.find((row: any) => row.setup === "TREND_PULLBACK");
+    expect(stats).toMatchObject({ trades: 1, wins: 1, losses: 0 });
+    expect(stats.pnl).toBeGreaterThan(0);
+    expect(engine.scoreboard("EURUSD:NORMAL").openShadow).toBe(0);
+  });
+
+  it("WAIT nao abre trade e e contabilizado como espera; NO_VALID_SETUP tambem e rastreado", () => {
+    const engine = new SetupResearchEngine({ now: () => 0 }) as any;
+    const candles = [candle(0, 1.1)];
+    engine.observeCandle({ marketKey: "EURUSD:OTC", marketType: "OTC", candles, index: 0, brain: { setup: "RANGE_REVERSAL", action: "WAIT", regime: "RANGE", trigger: null }, payout: 80, atMs: 0 });
+    engine.observeCandle({ marketKey: "EURUSD:OTC", marketType: "OTC", candles, index: 0, brain: { setup: "NO_VALID_SETUP", action: "WAIT", regime: "UNCLEAR", trigger: null }, payout: 80, atMs: 0 });
     const board = engine.scoreboard("EURUSD:OTC");
-    expect(board.variants).toHaveLength(10);
-    for (const row of board.variants) {
-      expect(row.trades).toBeGreaterThanOrEqual(0);
-      expect(row.opportunities).toBeGreaterThan(0);
-      expect(row.pnl).toBeLessThanOrEqual(row.trades * 1);
-    }
-    const trades = engine.recentTrades("EURUSD:OTC", 200);
-    for (const trade of trades) expect(trade.settlementBucket).toBeGreaterThanOrEqual(trade.entryBucket + Number(String(trade.variantId).split("-").pop() ?? 0) * 1000);
+    expect(board.openShadow).toBe(0);
+    expect(board.waits).toBe(2);
+    expect(board.setups.find((row: any) => row.setup === "NO_VALID_SETUP").waits).toBe(1);
   });
+
   it("mercados NAO compartilham placar (NORMAL != OTC e A != B)", () => {
-    const engine = new ResearchEngine({ now: () => base }) as any;
-    const list = candles();
-    for (let index = 0; index < 60; index += 1) engine.observeCandle({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", candles: list, index, payout: 80 });
-    const a = engine.scoreboard("EURUSD:NORMAL");
-    const b = engine.scoreboard("EURUSD:OTC");
-    expect(a.trades).toBeGreaterThan(0);
-    expect(b.trades).toBe(0);
-    expect(a.variants.every((row: any) => row.trades >= 0)).toBe(true);
+    const engine = new SetupResearchEngine({ now: () => 0 }) as any;
+    engine.observeCandle({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", candles: [candle(0, 1.1)], index: 0, brain: { setup: "BREAKOUT_CONTINUATION", action: "BUY", regime: "EXPANSION", trigger: "rompimento" }, payout: 85, atMs: 0 });
+    expect(engine.scoreboard("EURUSD:NORMAL").openShadow).toBe(1);
+    expect(engine.scoreboard("EURUSD:OTC").openShadow).toBe(0);
+    expect(engine.scoreboard("GBPUSD:NORMAL").openShadow).toBe(0);
+    expect(SETUP_KEYS).not.toContain("V1-60");
+    expect(SETUP_RESEARCH_VERSION).toBe("setup-research-engine-v2");
   });
-  it("settlement so ocorre quando o candle atinge o horizonte da variante (nunca antes)", () => {
-    const engine = new ResearchEngine({ now: () => base }) as any;
-    const list = candles();
-    let openedAt = null;
-    for (let index = 0; index < list.length; index += 1) {
-      const before = engine.scoreboard("GBPUSD:OTC").variants.reduce((sum: number, row: any) => sum + row.trades, 0);
-      const out = engine.observeCandle({ marketKey: "GBPUSD:OTC", marketType: "OTC", candles: list, index, payout: 85 });
-      if (out.opened > 0 && openedAt === null) openedAt = list[index].bucketStart;
-      const after = engine.scoreboard("GBPUSD:OTC").variants.reduce((sum: number, row: any) => sum + row.trades, 0);
-      if (openedAt !== null && list[index].bucketStart < openedAt + 45_000) expect(after).toBe(before <= after ? after : after); // sem liquidacao precoce
-    }
-    expect(openedAt).not.toBeNull();
-  });
-  it("toJSON/loadFrom preserva placar para restart", () => {
-    const engine = new ResearchEngine({ now: () => base }) as any;
-    const list = candles();
-    for (let index = 0; index < 80; index += 1) engine.observeCandle({ marketKey: "EURUSD:OTC", marketType: "OTC", candles: list, index, payout: 85 });
+
+  it("toJSON/loadFrom preserva placar e trades para restart", () => {
+    const engine = new SetupResearchEngine({ now: () => 0 }) as any;
+    engine.observeCandle({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", candles: [candle(0, 1.1)], index: 0, brain: { setup: "TREND_PULLBACK", action: "SELL", regime: "TREND_DOWN", trigger: "x" }, payout: 85, atMs: 0 });
+    engine.observeCandle({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", candles: [candle(60_000, 1.0)], index: 0, brain: null, atMs: 61_000 });
     const snapshot = engine.toJSON();
-    const reloaded = new ResearchEngine({ now: () => base }) as any;
+    const reloaded = new SetupResearchEngine({ now: () => 0 }) as any;
     expect(reloaded.loadFrom(snapshot)).toBe(true);
-    expect(reloaded.scoreboard("EURUSD:OTC").variants).toEqual(engine.scoreboard("EURUSD:OTC").variants);
+    expect(reloaded.loadFrom(null)).toBe(false);
+    const stats = reloaded.scoreboard("EURUSD:NORMAL").setups.find((row: any) => row.setup === "TREND_PULLBACK");
+    expect(stats).toMatchObject({ trades: 1, wins: 1 });
+    expect(reloaded.recentTrades("EURUSD:NORMAL", 10)).toHaveLength(1);
+  });
+
+  it("summarizeSetupStats calcula WR, PnL/trade, drawdown e streak", () => {
+    const summary = summarizeSetupStats({ opportunities: 10, trades: 6, wins: 2, losses: 4, draws: 0, pnl: -2.2, payoutSum: 170 * 3, payoutCount: 3, losingStreak: 3, maxLosingStreak: 3, equity: -2.2, peak: 0.85, maxDrawdown: 3.05, lastResults: ["WIN", "LOSS", "LOSS", "LOSS", "WIN", "LOSS"], waits: 4, blocked: 1 }, { recentWindow: 4 });
+    expect(summary.winRate).toBeCloseTo(0.3333, 3);
+    expect(summary.pnlPerTrade).toBeCloseTo(-0.3667, 3);
+    expect(summary.avgPayout).toBeCloseTo(170, 1);
+    expect(summary.maxDrawdown).toBeCloseTo(3.05, 2);
+    expect(summary.maxLosingStreak).toBe(3);
+    expect(summary.recent).toMatchObject({ sample: 4, wins: 1, losses: 3 });
+    expect(summary.waits).toBe(4);
   });
 });
 
-describe("A/B PROSPECTIVO — arquiteturas A-E comparadas no mesmo snapshot causal", () => {
-  it("registra 5 bracos e liquida causalmente sem usar futuro", () => {
-    const experiment = new ABExperiment({ now: () => base }) as any;
-    const list = candles();
-    const record = experiment.record({ marketKey: "EURUSD:OTC", marketType: "OTC", atMs: list[10].bucketStart, variantId: "V3-60", horizonSeconds: 60, entryPrice: list[10].close, settlementAfterMs: list[10].bucketStart + 60_000, payout: 85, actions: { A_FROZEN: "BUY", B_TRADER: "BUY", C_TRADER_CRITIC: "WAIT", D_PLUS_INTELLIGENCE: "WAIT", E_ADAPTIVE: "SELL" } });
-    expect(record.actions.A_FROZEN).toBe("BUY");
-    for (let index = 0; index < list.length; index += 1) experiment.settle({ marketKey: "EURUSD:OTC", candles: list, index });
-    expect(record.settled).toBe(true);
-    const scoreboard = experiment.scoreboard();
-    expect(Object.keys(scoreboard.arms)).toEqual(["A_FROZEN", "B_TRADER", "C_TRADER_CRITIC", "D_PLUS_INTELLIGENCE", "E_ADAPTIVE"]);
-    expect(scoreboard.arms.C_TRADER_CRITIC.noTrade).toBe(1);
-    expect(scoreboard.arms.A_FROZEN.trades).toBe(1);
-  });
-  it("summarizeStats calcula WR, PnL/trade, drawdown e streak corretamente", () => {
-    const stats = { opportunities: 10, signals: 4, trades: 4, wins: 2, losses: 2, draws: 0, pnl: 0.2, payoutSum: 340, payoutCount: 4, losingStreak: 1, maxLosingStreak: 2, equity: 0.2, peak: 0.5, maxDrawdown: 0.3, lastResults: ["WIN", "WIN", "LOSS", "LOSS"] };
-    const summary = summarizeStats(stats, { recentWindow: 4 }) as any;
-    expect(summary.winRate).toBe(0.5);
-    expect(summary.pnlPerTrade).toBe(0.05);
-    expect(summary.avgPayout).toBe(85);
-    expect(summary.recent.sample).toBe(4);
-    expect(summary.maxDrawdown).toBe(0.3);
+describe("A/B PROSPECTIVO v2 — arquiteturas A-D comparadas no mesmo snapshot causal", () => {
+  it("registra 4 bracos (A_TRADER/B_TRADER_CRITIC/C_PLUS_INTELLIGENCE/D_APPRENTICE) e liquida causalmente", () => {
+    const ab = new ABExperiment({ now: () => 0 }) as any;
+    const record = ab.record({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", atMs: 0, setup: "TREND_PULLBACK", entryPrice: 1.1, settlementAfterMs: 60_000, payout: 85, actions: { A_TRADER: "BUY", B_TRADER_CRITIC: "SELL", C_PLUS_INTELLIGENCE: "WAIT", D_APPRENTICE: "BUY" } });
+    expect(record.actions).toMatchObject({ A_TRADER: "BUY", B_TRADER_CRITIC: "SELL", C_PLUS_INTELLIGENCE: "WAIT", D_APPRENTICE: "BUY" });
+    expect(ab.settle({ marketKey: "EURUSD:NORMAL", candles: [candle(30_000, 1.2)], index: 0 })).toBe(0);
+    expect(ab.settle({ marketKey: "GBPUSD:NORMAL", candles: [candle(60_000, 1.2)], index: 0 })).toBe(0);
+    expect(ab.settle({ marketKey: "EURUSD:NORMAL", candles: [candle(60_000, 1.2)], index: 0 })).toBe(1);
+    const board = ab.scoreboard();
+    expect(board.version).toBe("ab-experiment-v2");
+    expect(board.arms.A_TRADER).toMatchObject({ trades: 1, wins: 1, noTrade: 0 });
+    expect(board.arms.B_TRADER_CRITIC).toMatchObject({ trades: 1, losses: 1 });
+    expect(board.arms.C_PLUS_INTELLIGENCE).toMatchObject({ trades: 0, noTrade: 1 });
+    expect(board.arms.D_APPRENTICE).toMatchObject({ trades: 1, wins: 1 });
+    // nao liquida duas vezes
+    expect(ab.settle({ marketKey: "EURUSD:NORMAL", candles: [candle(120_000, 1.4)], index: 0 })).toBe(0);
+    expect(board.totalRecords).toBe(1);
   });
 });

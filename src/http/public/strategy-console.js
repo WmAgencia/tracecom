@@ -34,76 +34,20 @@ function renderBankroll() {
 }
 
 function renderControl() {
-  const control = state.control ?? {};
-  const selection = control.selection ?? null;
-  const stats = state.stats ?? {};
-  const variants = Array.isArray(stats.variants) ? stats.variants : [];
-  const mode = selection?.mode === "AUTO" ? "AUTOMÁTICO" : "MANUAL";
-  setText("strategyModeBadge", mode);
-  setText("sidebarSelection", selection ? `${selection.variantId} · ${mode}` : "Sem seleção");
-  const compatibility = control.compatibility;
-  const warning = $id("horizonWarning");
-  if (warning) {
-    if (compatibility && compatibility.compatible === false && compatibility.reason === "HORIZON_INCOMPATIBLE") { warning.hidden = false; warning.textContent = `HORIZONTE INCOMPATÍVEL — selecionada ${selection?.horizonSeconds}s; broker detectado ${compatibility.brokerHorizonSeconds ?? "?"}s. Operação bloqueada até compatibilizar (shadow continua).`; }
-    else { warning.hidden = true; }
-  }
-  const list = $id("strategyList"); if (!list) return;
-  const families = ["V3", "V8", "V2", "V1"];
-  const labels = { V3: "V3 + Fibonacci", V8: "V8 Structure + Fibonacci", V2: "V2 + Fibonacci", V1: "V1 + Fibonacci" };
-  const rows = [];
-  const autoSelected = selection?.mode === "AUTO";
-  rows.push(`<button type="button" class="strategy-row auto ${autoSelected ? "selected" : ""}" data-auto="1"><b>◉ AUTOMÁTICO</b><span class="fine">O agente seleciona automaticamente entre as estratégias elegíveis (N mínimo, WR e Wilson lower; conservador — mantém a atual se nada elegível).</span></button>`);
-  for (const family of families) {
-    const familyVariants = variants.filter((variant) => variant.family === family);
-    const horizons = [45, 60, 120, 180, 300].filter((h) => familyVariants.some((v) => v.horizonSeconds === h));
-    if (!horizons.length) { const def = { V3: [45, 60, 120, 180, 300], V8: [45, 60], V2: [60, 120], V1: [300] }[family] ?? []; horizons.push(...def); }
-    const header = `<div class="strategy-family"><b>${labels[family]}</b><span class="fine">${horizons.length} horizonte${horizons.length > 1 ? "s" : ""} · WR e N reais do shadow engine</span></div>`;
-    const buttons = horizons.map((horizon) => {
-      const variant = familyVariants.find((v) => v.horizonSeconds === horizon) ?? null;
-      const wr = variant ? pct(variant.wr) : "—";
-      const n = variant ? variant.independentN : 0;
-      const selected = selection && selection.family === family && selection.horizonSeconds === horizon && !autoSelected;
-      const warn = variant && variant.independentN < 30 ? " sample-badge" : "";
-      return `<button type="button" class="strategy-horizon ${selected ? "selected" : ""}" data-family="${family}" data-horizon="${horizon}" title="N=${n} (independentes)"><span>${horizon < 60 ? `${horizon}s` : `${horizon / 60}min`}</span><b>${wr}</b><em class="fine${warn}">n ${n}</em></button>`;
-    }).join("");
-    rows.push(`<div class="strategy-variant">${header}<div class="strategy-horizons">${buttons}</div></div>`);
-  }
-  list.innerHTML = rows.join("");
-  list.querySelectorAll(".strategy-horizon").forEach((button) => button.addEventListener("click", () => void selectVariant(button.dataset.family, Number(button.dataset.horizon))));
-  const autoButton = list.querySelector("[data-auto]"); if (autoButton) autoButton.addEventListener("click", () => void selectVariant(selection?.family ?? "V3", selection?.horizonSeconds ?? 60, "AUTO"));
   const notice = $id("selectionNotice");
-  if (notice && !notice.dataset.sticky) { const selectedVariant = selection?.variantId ?? "—"; notice.hidden = false; notice.textContent = `Selecionada: ${selectedVariant} · aplicada a partir do próximo sinal se houver operação ativa.`; }
-  // Provenance de confianca (metrica real: Wilson lower da variante selecionada).
+  if (notice && !notice.dataset.sticky) { notice.hidden = false; notice.textContent = "Runtime brain G2: setups do Professional Brain substituem as variantes V1/V2/V3/V8 (LEGACY_STRATEGY_AUDIT apenas histórico)."; }
+  setText("strategyModeBadge", "BRAIN G2");
+  setText("sidebarSelection", "Brain G2 · setups");
+  const warning = $id("horizonWarning"); if (warning) warning.hidden = true;
+  const list = $id("strategyList");
+  if (list) list.innerHTML = `<p class="fine">Nenhuma variante antiga participa da decisão. O runtime opera por SETUP (TREND_PULLBACK, BREAKOUT_CONTINUATION, ...) com regime, estrutura e consenso Trader+Crítico; o placar por setup é shadow e não altera a metodologia. Histórico antigo permanece consultável como LEGACY_STRATEGY_AUDIT.</p>`;
   const provenance = $id("confidenceProvenance");
-  if (provenance) {
-    if (autoSelected) provenance.textContent = "CONFIANÇA: modo automático — calibração por variante selecionada.";
-    else if (!selection) provenance.textContent = "CALIBRANDO — sem seleção.";
-    else {
-      const variant = familyVariantStats(selection);
-      if (!variant || variant.independentN < 30) { provenance.textContent = `CALIBRANDO — n=${variant?.independentN ?? 0} (mínimo 30)`; setText("confidenceValue", "CALIBRANDO"); const bar = $id("confidenceBar"); if (bar) bar.style.transform = "scaleX(0)"; }
-      else { provenance.textContent = `CALIBRADA — Wilson lower ${pct(variant.wilsonLower)} · n=${variant.independentN}`; const bar = $id("confidenceBar"); if (bar) bar.style.transform = `scaleX(${Math.min(1, Math.max(0, Number(variant.wilsonLower) || 0))})`; setText("confidenceValue", pct(variant.wilsonLower)); }
-    }
-  }
-}
-function familyVariantStats(selection) {
-  const variants = state.stats?.variants;
-  if (!Array.isArray(variants)) return null;
-  const variant = variants.find((entry) => entry.family === selection.family && entry.horizonSeconds === selection.horizonSeconds);
-  if (!variant) return null;
-  const decided = (variant.independentWins ?? 0) + (variant.independentLosses ?? 0);
-  const wr = decided > 0 ? (variant.independentWins / decided) * 100 : null;
-  return { ...variant, wr: wr === null ? null : +wr.toFixed(2) };
+  if (provenance) provenance.textContent = "CONFIANÇA: determinística pelo processo (nunca probabilidade inventada).";
 }
 
-async function selectVariant(family, horizonSeconds, mode = "MANUAL") {
+async function selectVariant() {
   const notice = $id("selectionNotice");
-  try {
-    const result = await jput("/api/strategies/selection", { family, horizonSeconds, mode, reason: `ui:${mode}`, actor: "ui" });
-    if (notice) { notice.hidden = false; notice.dataset.sticky = "1"; notice.textContent = `${result.selection?.variantId ?? `${family}-${horizonSeconds}`} selecionada · ${mode === "AUTO" ? "modo automático ativo" : "aplicada a partir do próximo sinal"}.`; }
-    await loadStats();
-  } catch (error) {
-    if (notice) { notice.hidden = false; notice.textContent = `Falha ao selecionar: ${String(error?.message || error)}`; }
-  }
+  if (notice) { notice.hidden = false; notice.textContent = "Seleção de variantes removida na Fase 6 (LEGACY_STRATEGY_AUDIT)."; }
 }
 
 async function loadStats() {
@@ -237,7 +181,7 @@ async function loadIqTraining() {
       return `<tr>
         <td>${market.display}</td>
         <td><span class="office-badge ${market.marketType === "OTC" ? "otc" : "normal"}">${market.marketType}</span></td>
-        <td>${market.strategyEffective ?? market.strategy ?? "—"}</td>
+        <td>${market.setup ?? "—"}</td>
         <td>${market.payout ?? "—"}%</td>
         <td>${signalStats.total ?? 0}</td>
         <td>${signalStats.executed ?? 0}</td>
@@ -251,29 +195,26 @@ async function loadIqTraining() {
     body.innerHTML = office.markets.map(row).join("") || `<tr><td colspan="11" class="fine">Nenhum mercado configurado.</td></tr>`;
   } catch (error) { body.innerHTML = `<tr><td colspan="11" class="fine">Treinamento indisponível: ${String(error?.message || error)}</td></tr>`; }
 }
-const AB_ARM_LABELS = { A_FROZEN: "A · Estratégia congelada", B_TRADER: "B · Trader", C_TRADER_CRITIC: "C · Trader + Crítico", D_PLUS_INTELLIGENCE: "D · + Inteligência global", E_ADAPTIVE: "E · Gestor adaptativo" };
+const AB_ARM_LABELS = { A_TRADER: "A · Trader", B_TRADER_CRITIC: "B · Trader + Crítico", C_PLUS_INTELLIGENCE: "C · + Inteligência global", D_APPRENTICE: "D · Aprendiz (mentorado)" };
 async function loadIqLab() {
   const body = $id("iqLabBody"), abBody = $id("iqAbBody"), techBody = $id("iqTechniquesBody"); if (!body && !abBody && !techBody) return;
   try {
-    const [research, manager, apprentice] = await Promise.all([jget("/api/iq/research/scoreboard"), jget("/api/iq/manager"), jget("/api/iq/apprentice").catch(() => ({ aggregate: [], techniques: [] }))]);
-    setText("iqLabUpdated", `GESTOR: ${manager.mode === "AUTO_STRATEGY_SWITCH" ? "TROCA AUTOMÁTICA" : "SOMENTE RECOMENDAÇÃO"}`);
-    const markets = research.scoreboard?.markets ?? [];
+    const [research, supervisor, apprentice] = await Promise.all([jget("/api/iq/research/scoreboard"), jget("/api/iq/supervisor"), jget("/api/iq/apprentice").catch(() => ({ aggregate: [], techniques: [] }))]);
+    setText("iqLabUpdated", `SUPERVISOR: ${(supervisor.reviews ?? []).length} revisões · ${supervisor.config?.minSamples ?? 20} amostra mín`);
+    const markets = research.scoreboard ?? [];
     const pct = (value) => (value === null || value === undefined ? "—" : `${(Number(value) * 100).toFixed(1)}%`);
-    if (body) body.innerHTML = markets.filter((market) => {
-      const perMarket = (research.perMarket ?? []).find((row) => row.marketKey === market.marketKey);
-      return perMarket || (market.variants ?? []).some((row) => row.trades > 0);
-    }).map((market) => {
-      const perMarket = (research.perMarket ?? []).find((row) => row.marketKey === market.marketKey) ?? {};
-      const champion = perMarket.champion ?? market.variants.find((row) => row.variantId === (perMarket.championVariantId ?? research.champions?.[market.marketKey]));
-      const challenger = perMarket.challenger ?? null;
-      const delta = champion && challenger ? Number((challenger.recent?.pnlPerTrade ?? 0) - (champion.recent?.pnlPerTrade ?? 0)).toFixed(4) : null;
+    if (body) body.innerHTML = markets.map((market) => {
+      const opportunities = Object.values(market.setups ?? {}).reduce((sum, item) => sum + (item.opportunities ?? 0), 0);
+      const trades = Object.values(market.setups ?? {}).reduce((sum, item) => sum + (item.trades ?? 0), 0);
+      const wins = Object.values(market.setups ?? {}).reduce((sum, item) => sum + (item.wins ?? 0), 0);
+      const losses = Object.values(market.setups ?? {}).reduce((sum, item) => sum + (item.losses ?? 0), 0);
+      const pnl = Object.values(market.setups ?? {}).reduce((sum, item) => sum + (item.pnl ?? 0), 0);
+      const decided = wins + losses;
       return `<tr>
         <td>${market.marketKey}</td><td>${market.marketKey.includes(":OTC") ? "OTC" : "NORMAL"}</td>
-        <td>${perMarket.championVariantId ?? "—"}</td><td>${champion?.trades ?? 0}</td><td>${pct(champion?.winRate)}</td><td>${champion?.pnl ?? 0}</td>
-        <td>${challenger?.variantId ?? "—"}</td><td>${challenger?.trades ?? 0}</td><td>${pct(challenger?.winRate)}</td><td>${delta ?? "—"}</td>
-        <td>${perMarket.nextReviewIn ?? "—"}</td>
+        <td>${opportunities}</td><td>${market.waits ?? 0}</td><td>${trades}</td><td>${pct(decided ? wins / decided : null)}</td><td>${pnl.toFixed(2)}</td>
       </tr>`;
-    }).join("") || `<tr><td colspan="11" class="fine">Aguardando primeiros shadow trades (cada mercado acumula amostra antes de revisar).</td></tr>`;
+    }).join("") || `<tr><td colspan="7" class="fine">Aguardando primeiras oportunidades (placar por setup/regime, shadow).</td></tr>`;
     if (abBody) abBody.innerHTML = Object.entries(research.ab?.arms ?? {}).map(([arm, stats]) => `<tr>
       <td>${AB_ARM_LABELS[arm] ?? arm}</td><td>${stats.trades}</td><td>${stats.wins}/${stats.losses}/${stats.draws}</td><td>${pct(stats.winRate)}</td><td>${stats.pnl}</td><td>${stats.noTrade}</td>
     </tr>`).join("") || `<tr><td colspan="6" class="fine">Aguardando oportunidades comparáveis…</td></tr>`;
@@ -393,7 +334,7 @@ function renderPromotion() {
   setText("promoCandidateN", stateRow ? `${stateRow.candidate_training_n ?? 0} / 5000 trades novos` : "0 / 5000");
   setText("promoDecision", stateRow?.last_decision ?? "SEM_DECISAO");
   const reasons = stateRow?.last_decision_reason;
-  setText("promoReason", reasons || "Gate congelado: 5000 trades OOS + Wilson lower + baseline + estabilidade.");
+  setText("promoReason", `LEGACY_STRATEGY_AUDIT (Fase 6): registro historico das variantes antigas. A promocao atual acontece por HIPOTESE -> Promotion Gate -> Validated Knowledge no Segundo Cerebro.${reasons ? ` Ultima decisao legada: ${reasons}` : ""}`);
   setText("trainingPageState", "TRAINING 24H");
   const audit = promotion?.audit;
   const auditBody = $id("promotionAuditBody");

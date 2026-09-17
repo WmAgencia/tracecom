@@ -106,7 +106,7 @@ describe("PORTFOLIO GATE — stake/caps", () => {
       market: { marketKey: "EURUSD:NORMAL", marketType: "NORMAL", enabled: true, availability: "OPEN", activeId: 1, maxStake: 2, payout: 85 },
       marketKey: "EURUSD:NORMAL", requestedMode: "PRACTICE", realAuthorized: false,
       connection: { connected: true, timeValid: true }, serverTime: { ms: Date.now(), skewMs: 0 }, freshness: { fresh: true, tickAgeMs: 100 },
-      decision: { action: "BUY", ageMs: 0 }, strategy: { valid: true, variantId: "V3-60" }, price: 1.1, stake: 2, globalMaxStake: 2, horizonSeconds: 60,
+      decision: { action: "BUY", ageMs: 0 }, strategy: { valid: true, variantId: "TREND_PULLBACK" }, price: 1.1, stake: 2, globalMaxStake: 2, horizonSeconds: 60,
       openPositions: [], pendingOrderKeys: [], usedIdempotencyKeys: [], activeMarketKeys: ["EURUSD:NORMAL"], killSwitch: { executionEnabled: true }, idempotencyKey: "k1",
     };
     expect(gate.evaluate(base).allowed).toBe(true);
@@ -351,23 +351,25 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(target.disposition).toBe("EXPIRED");
     expect(String(target.reason)).toContain("EXPIRADO");
   });
-  it("ESTRATEGIA por variante: persiste, nao reverte e e usada na decisao; variante invalida rejeitada", async () => {
+  it("FASE 6: estrategias antigas removidas do runtime (LEGACY_STRATEGY_REMOVED) e brain generation 2 exposto", async () => {
     const runtime = multiFixture();
     const ctx = seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101 });
     runtime.config.autoExecute = true; runtime.arm(2, { confirmation: true });
-    expect(() => runtime.setMarket("EURUSD:NORMAL", { strategyVariantId: "V9-999" }, { persist: false })).toThrowError(/INVALID_STRATEGY_VARIANT/);
-    const saved = runtime.setMarket("EURUSD:NORMAL", { strategyVariantId: "V8-60" }, { persist: false });
-    expect(saved).toMatchObject({ strategyVariantId: "V8-60", strategy: "V8", strategyEffective: "V8-60", revision: expect.any(Number) });
-    expect(ctx.strategyVariantId).toBe("V8-60");
-    ctx.lastCandle = { ...ctx.lastCandle, bucketStart: Number(ctx.lastCandle.bucketStart) + 10_000 };
+    expect(() => runtime.setMarket("EURUSD:NORMAL", { strategyVariantId: "V8-60" }, { persist: false })).toThrowError(/LEGACY_STRATEGY_REMOVED/);
+    expect(() => runtime.setMarket("EURUSD:NORMAL", { strategy: "V3" }, { persist: false })).toThrowError(/LEGACY_STRATEGY_REMOVED/);
+    expect(ctx.strategyVariantId).toBeNull();
+    const office = runtime.office();
+    expect(office.brain).toMatchObject({ generation: 2, version: "professional-brain-v2" });
+    expect(office.brain.setups).toBeGreaterThanOrEqual(9);
+    expect(office.brain.principles).toBeGreaterThanOrEqual(5);
     const record = await runtime.simulateSignal("EURUSD:NORMAL", "BUY");
-    expect(record).toMatchObject({ strategy: "V8", strategyVariantId: "V8-60", horizonSeconds: 60, strategySource: "MARKET" });
-    const reread = runtime.office().markets.find((market: any) => market.marketKey === "EURUSD:NORMAL");
-    expect(reread).toMatchObject({ strategyVariantId: "V8-60", strategyEffective: "V8-60" });
+    expect(record.strategyVariantId).toBeNull();
+    expect(record.strategySource).toBe("PROFESSIONAL_BRAIN_G2");
+    expect(record.setup).toBeTruthy();
   });
-  it("PERSISTENCIA: reload restaura configuredStake, defaultStake, strategyVariantId e revision", async () => {
+  it("PERSISTENCIA: reload restaura configuredStake/defaultStake/revision e ignora strategy_variant_id legado", async () => {
     const stored = {
-      config: { mode: "PRACTICE", global_max_stake: 100, default_stake: 7, calculated_bankroll_stake: 1, auto_execute: false, selection_json: { family: "V3", horizonSeconds: 60, variantId: "V3-60" }, resolver_json: null, revision: 42 },
+      config: { mode: "PRACTICE", global_max_stake: 100, default_stake: 7, calculated_bankroll_stake: 1, auto_execute: false, selection_json: { legacy: "LEGACY_STRATEGY_AUDIT", brainGeneration: 2 }, resolver_json: null, revision: 42 },
       markets: [{ market_key: "EURUSD:NORMAL", enabled: true, paused: false, max_stake: 100, configured_stake: 7, strategy_variant_id: "V8-60", strategy: "V8", revision: 12, active_id: 101, instrument_types: ["binary"], availability: "OPEN", payout: 85 }],
     };
     const pool = { query: async (sql: string) => {
@@ -381,9 +383,11 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(runtime.config.defaultStake).toBe(7);
     expect(runtime.config.revision).toBe(42);
     const ctx = runtime.markets.get("EURUSD:NORMAL");
-    expect(ctx).toMatchObject({ configuredStake: 7, strategyVariantId: "V8-60", strategy: "V8", revision: 12, maxStake: 100 });
+    expect(ctx).toMatchObject({ configuredStake: 7, revision: 12, maxStake: 100 });
+    expect(ctx.strategyVariantId).toBeNull();
+    expect(ctx.strategy).toBeNull();
     const reread = runtime.office().markets.find((market: any) => market.marketKey === "EURUSD:NORMAL");
-    expect(reread).toMatchObject({ configuredStake: 7, strategyEffective: "V8-60" });
+    expect(reread).toMatchObject({ configuredStake: 7, brainGeneration: 2 });
   });
   it("MERCADO FECHADO nao opera e continua existindo no escritorio (15 estacoes, max 10 ativos)", async () => {
     const runtime = multiFixture();
@@ -416,38 +420,48 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(intelligence.NEWS.status).toBe("NO_FEED");
     expect(["OK", "STALE"]).toContain(intelligence.SECURITY.status);
     expect(runtime.office().research.agentLatency.count).toBeGreaterThan(0);
-    expect(runtime.office().manager.mode).toBe("SHADOW_RECOMMENDATION");
+    expect(runtime.office().supervisor.version).toBe("performance-supervisor-v1");
   });
-  it("FASE 5: research shadow roda por mercado com placar isolado e A/B registrado", () => {
+  it("FASE 6: research shadow roda por mercado com placar por setup isolado e A/B v2 registrado", () => {
     const runtime = multiFixture();
     seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101, candles: 80, close: 1.2 });
     const scoreboard = runtime.researchScoreboard({ marketKey: "EURUSD:NORMAL" });
-    expect(scoreboard.board.variants).toHaveLength(10);
+    expect(scoreboard.board.marketKey).toBe("EURUSD:NORMAL");
+    expect(Array.isArray(scoreboard.board.setups)).toBe(true);
+    expect(scoreboard.board.setups.some((row: any) => row.setup === "TREND_PULLBACK")).toBe(true);
     const other = runtime.researchScoreboard({ marketKey: "USDJPY:NORMAL" });
-    expect(other.board.variants.every((row: any) => row.trades === 0)).toBe(true);
-    expect(runtime.office().research.ab.arms.A_FROZEN).toBeTruthy();
+    expect(other.board.trades).toBe(0);
+    const all = runtime.researchScoreboard();
+    expect(all.ab.arms.A_TRADER).toBeTruthy();
+    expect(all.ab.arms.D_APPRENTICE).toBeTruthy();
+    expect(String(all.note)).toContain("nenhuma variante V1/V2/V3/V8");
   });
-  it("FASE 5: REAL forca Strategy Manager a modo seguro (nunca auto-switch em REAL)", () => {
+  it("FASE 6: REAL nao altera metodologia; supervisor monitora e nao tem modo de troca", () => {
     const runtime = multiFixture();
-    runtime.manager.setConfig({ mode: "AUTO_STRATEGY_SWITCH", autoSwitchEnabled: true });
+    expect(runtime.setSupervisorConfig({ minSamples: 12 }).minSamples).toBe(12);
     runtime.realMode.requestConfirmation({ phrase: "OPERAR CONTA REAL", acknowledgeRisk: true, realBalance: 100, realBalanceId: 777, maxStake: 2 });
     runtime.setMode("REAL");
-    expect(runtime.manager.config.mode).toBe("SHADOW_RECOMMENDATION");
-    expect(runtime.manager.config.autoSwitchEnabled).toBe(false);
-    expect(() => runtime.setManagerConfig({ mode: "AUTO_STRATEGY_SWITCH" })).toThrowError(/REAL_STRATEGY_SWITCH_FORBIDDEN/);
+    expect(runtime.config.mode).toBe("REAL");
+    expect(String(runtime.supervisorStatus().note)).toContain("NAO troca metodologia");
+    runtime.setSupervisorConfig({ mode: "AUTO_STRATEGY_SWITCH" });
+    expect((runtime.supervisor.config as any).mode).toBeUndefined();
+    expect(runtime.supervisorStatus().config.minSamples).toBe(12);
   });
-  it("FASE 5: persistencia inclui research/manager (restart preserva placar e champion)", async () => {
+  it("FASE 6: persistencia inclui research/supervisor (restart preserva placar, reviews e limita a geracao)", async () => {
     const runtime = multiFixture();
-    runtime.manager.setConfig({ mode: "AUTO_STRATEGY_SWITCH", autoSwitchEnabled: true });
-    runtime.manager.ensureMarket("EURUSD:NORMAL", "V8-60");
-    runtime.research.observeCandle({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", candles: [{ bucketStart: 1, start: 1, open: 1, high: 1.1, low: 0.9, close: 1.05 }], index: 0, payout: 85 });
-    const configSnapshot = runtime.manager.toJSON();
+    runtime.research.observeCandle({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", candles: [{ bucketStart: 0, start: 0, open: 1, high: 1.1, low: 0.9, close: 1.05 }], index: 0, brain: { setup: "TREND_PULLBACK", action: "BUY", regime: "TREND_UP", trigger: "x" }, payout: 85, atMs: 0 });
+    runtime.research.observeCandle({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", candles: [{ bucketStart: 60_000, start: 60_000, open: 1, high: 1.2, low: 1, close: 1.15 }], index: 0, brain: null, atMs: 61_000 });
+    runtime.supervisor.evaluate({ agentId: "trader:EURUSD:NORMAL", marketKey: "EURUSD:NORMAL", stats: { trades: 30, wins: 10, losses: 20, draws: 0, pnl: -10, goodDecisions: 10, badDecisions: 20, consecutiveLosses: 7, badDecisionWins: 0, goodDecisionLosses: 3 }, review: null });
     const researchSnapshot = runtime.research.toJSON();
-    const reloadedManager = new (runtime.manager.constructor)({ now: () => Date.now() }) as any;
+    const supervisorSnapshot = runtime.supervisor.toJSON();
     const reloadedResearch = new (runtime.research.constructor)({ now: () => Date.now() }) as any;
-    expect(reloadedManager.loadFrom(configSnapshot)).toBe(true);
+    const reloadedSupervisor = new (runtime.supervisor.constructor)({ now: () => Date.now() }) as any;
     expect(reloadedResearch.loadFrom(researchSnapshot)).toBe(true);
-    expect(reloadedManager.status().markets.find((row: any) => row.marketKey === "EURUSD:NORMAL").championVariantId).toBe("V8-60");
+    expect(reloadedSupervisor.loadFrom(supervisorSnapshot)).toBe(true);
+    const stats = reloadedResearch.scoreboard("EURUSD:NORMAL").setups.find((row: any) => row.setup === "TREND_PULLBACK");
+    expect(stats).toMatchObject({ trades: 1, wins: 1 });
+    expect(reloadedSupervisor.status().reviews[0]).toMatchObject({ status: "REVIEW_REQUIRED" });
+    expect(reloadedSupervisor.status().reviews[0].reasons).toContain("DRAWDOWN_EXCEDIDO");
   });
   it("FASE 5.1: mesa do aprendiz integrada (shadow-only, sem ordens) e feeds com fallback NO_FEED", () => {
     const runtime = multiFixture();
@@ -462,24 +476,33 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(["NO_FEED", "STALE", "OK"]).toContain(feeds.state.MACRO.status);
     expect(feeds.tradingImpact).toBe("CONTEXT_ONLY_NEVER_ORDERS");
   });
-  it("FASE 5.1: gatilho do gestor por settlements shadow do champion conduz a revisoes reais", async () => {
+  it("FASE 6: journal registra trades por agente e supervisor pede REVIEW_REQUIRED (nunca troca estrategia)", async () => {
     const runtime = multiFixture();
-    seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101 });
-    const reviewsBefore = runtime.manager.status().reviews.length;
-    for (let index = 0; index < 10; index += 1) runtime.handleShadowSettlement({ marketKey: "EURUSD:NORMAL", variantId: "V3-60", result: index % 3 === 0 ? "LOSS" : "WIN", pnl: index % 3 === 0 ? -1 : 0.85 });
-    await sleep(50);
-    expect(runtime.manager.status().reviews.length).toBeGreaterThan(reviewsBefore);
-    const review = runtime.manager.status().reviews.find((row: any) => row.type === "REVIEW" || row.decision);
-    expect(review).toBeTruthy();
-    expect(["KEEP", "RECOMMEND_SWITCH", "SWITCH"]).toContain(review.decision ?? "KEEP");
+    runtime.setSupervisorConfig({ minSamples: 10 });
+    for (let index = 0; index < 10; index += 1) {
+      await runtime.journal.recordTrade({ tradeId: `t${index}`, agentId: "trader:EURUSD:NORMAL", marketKey: "EURUSD:NORMAL", marketType: "NORMAL", settlementAt: Date.now(), result: "LOSS", profit: -1, stake: 1, direction: "CALL", snapshot: { setup: "TREND_PULLBACK", regime: "TREND_UP", marketKey: "EURUSD:NORMAL", action: "BUY", trigger: "x" }, review: { decisionQuality: "BAD_DECISION", outcome: "LOSS", mistakes: [{ code: "ENTRADA_ATRASADA", detail: "x" }], lesson: { text: "l" } } });
+    }
+    const memory = runtime.agentMemory("trader:EURUSD:NORMAL");
+    expect(memory.stats.trades).toBe(10);
+    expect(memory.stats.losses).toBe(10);
+    expect(memory.mistakes.length).toBeGreaterThan(0);
+    const review = runtime.supervisor.evaluate({ agentId: "trader:EURUSD:NORMAL", marketKey: "EURUSD:NORMAL", stats: memory.stats, review: null });
+    expect(review.status).toBe("REVIEW_REQUIRED");
+    expect(review.reasons).toContain("DRAWDOWN_EXCEDIDO");
+    expect(runtime.office().supervisor.reviews.length).toBeGreaterThan(0);
   });
-  it("FASE 5.1: E_ADAPTIVE usa a variante preferida pelo gestor (recomendacao pendente > champion)", () => {
+  it("FASE 6: knowledge base point-in-time com escopo TraceCom e cache por marketKey", async () => {
     const runtime = multiFixture();
-    runtime.manager.setConfig({ mode: "AUTO_STRATEGY_SWITCH", autoSwitchEnabled: true });
-    runtime.manager.ensureMarket("EURUSD:NORMAL", "V3-60");
-    const challenger = { variantId: "V8-60", trades: 220, recent: { sample: 60, pnlPerTrade: 0.3 }, pnlPerTrade: 0.24, maxDrawdown: 2, avgPayout: 85, wins: 150, losses: 70, draws: 0 };
-    runtime.manager.evaluate({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", board: { marketKey: "EURUSD:NORMAL", version: 1, variants: [{ variantId: "V3-60", trades: 200, recent: { sample: 60, pnlPerTrade: 0.12 }, pnlPerTrade: 0.1, maxDrawdown: 2, avgPayout: 85, wins: 110, losses: 90, draws: 0 }, challenger], openShadow: 0, trades: 0 }, challenger, mode: "AUTO_STRATEGY_SWITCH", practiceOnly: true });
-    expect(runtime.manager.preferredVariant("EURUSD:NORMAL")).toBe("V8-60");
+    const rebuild = await runtime.knowledgeRebuild();
+    expect(rebuild.notes).toBeGreaterThanOrEqual(30);
+    const status = runtime.knowledgeStatus();
+    expect(status.scope).toBe("TraceCom/");
+    expect(status.notes).toBeGreaterThanOrEqual(30);
+    const search = runtime.knowledgeSearch({ regime: "TREND_UP", setup: "TREND_PULLBACK", atMs: 1789600001000, limit: 5 });
+    expect(search.scope).toBe("TRACECOM");
+    expect(search.results.length).toBeGreaterThan(0);
+    const future = runtime.knowledgeSearch({ text: "rsi", atMs: 1000, limit: 5 });
+    expect(future.results).toHaveLength(0);
   });
   it("event bus: payload nunca sobrescreve o campo type do evento", () => {
     const runtime = multiFixture();

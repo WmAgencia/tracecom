@@ -13,18 +13,22 @@
  *  - Nenhum segredo em log/status/eventos.
  */
 import crypto from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { EventEmitter } from "node:events";
 import { IqWsClient, IqWsError, IQ_WS_CANDIDATE_HOSTS, CANDLE_SIZE_SECONDS, classifyBalances, computeExpiration, normalizeCandle, parseSettlement, toEpochMs, EXPECTED_EURUSD_ACTIVE_ID_FROM_REPO, EXPECTED_EURUSD_OTC_ACTIVE_ID_FROM_REPO } from "./iqoption-ws.mjs";
 import { buildFeatureContext, freshnessGate } from "./feature-engine.mjs";
 import { executionGate, applyBrokerAcknowledgement, compareSettlement, ExecutionArmState, IdempotencyStore, KillSwitch, MAX_PRACTICE_STAKE_BRL } from "./iqoption-connector.mjs";
-import { computeFrozenFeatures, evaluateFrozen, FROZEN_VARIANTS } from "./frozen-strategies.mjs";
 import { RealModeController } from "./real-mode.mjs";
 import { PortfolioExecutionGate, resolveFinalStake } from "./portfolio-gate.mjs";
 import { RuntimeAssetResolver } from "./asset-resolver.mjs";
 import { GlobalIntelligenceState, INTELLIGENCE_DOMAINS } from "./intelligence.mjs";
-import { ResearchEngine, ABExperiment } from "./research-engine.mjs";
-import { traderDecision, criticAssessment, consensusDecision } from "./agent-pair.mjs";
-import { StrategyManager } from "./strategy-manager.mjs";
+import { SetupResearchEngine, ABExperiment, BRAIN_HORIZON_SECONDS } from "./research-engine.mjs";
+import { BRAIN_GENERATION, BRAIN_VERSION, traderBrainDecision, criticBrainAssessment, consensusBrainDecision, CORE_BRAIN } from "./professional-brain.mjs";
+import { computeStructureFeatures, classifyRegime, STRUCTURE_VERSION } from "./price-structure.mjs";
+import { TradingKnowledgeRetriever } from "./knowledge-base.mjs";
+import { SecondBrainAdapter } from "./second-brain.mjs";
+import { TradingJournal, HypothesisRegistry, PerformanceSupervisor, reviewTrade } from "./professor.mjs";
 import { ApprenticeDesk } from "./apprentice.mjs";
 import { ExternalFeedSync } from "./external-feeds.mjs";
 import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, DEFAULT_GLOBAL_MAX_STAKE, concentrationExposure } from "./market-universe.mjs";
@@ -63,7 +67,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.reconnects = 0; this.connectionStartedAt = null;
     this.session = { connected: false, host: null, connectionId: null, serverTimeMs: null, clockSkewMs: null, timeValid: false, connectedAt: null };
     this.account = { practice: { verified: false, balanceId: null, balance: null, currency: null }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: null, type: "UNKNOWN" };
-    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, selection: { family: "V3", horizonSeconds: 60, variantId: "V3-60" } };
+    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION };
     this.markets = new Map();
     for (const entry of UNIVERSE) {
       const key = marketKey(entry.canonical, entry.marketType);
@@ -74,9 +78,14 @@ export class IqMultiRuntime extends EventEmitter {
     this.orderIndex = new Map();
     this.signalLog = []; this.signalStats = new Map(); this.signalSeq = 0;
     this.intelligence = new GlobalIntelligenceState({ now });
-    this.research = new ResearchEngine({ now, onSettle: (event) => this.handleShadowSettlement(event) });
+    this.secondBrain = new SecondBrainAdapter({ log: this.log });
+    this.knowledge = new TradingKnowledgeRetriever({ rootDir: path.join(path.dirname(fileURLToPath(import.meta.url)), "knowledge"), secondBrain: this.secondBrain, now, log: this.log });
+    this.research = new SetupResearchEngine({ now });
     this.ab = new ABExperiment({ now });
-    this.manager = new StrategyManager({ now });
+    this.journal = new TradingJournal({ pool, now, secondBrain: this.secondBrain, log: this.log });
+    this.hypotheses = new HypothesisRegistry({ now, secondBrain: this.secondBrain, log: this.log });
+    this.supervisor = new PerformanceSupervisor({ now, log: this.log });
+    this.knowledgeRebuiltAt = null;
     this.apprentice = new ApprenticeDesk({ now, onEvent: (type, payload) => { this.#emitEvent(type, payload); const ctx = this.markets.get(payload?.marketKey); if (ctx) this.#auditRecord(`appr_${payload?.lessonId ?? payload?.to ?? this.now()}`, payload.marketKey, type === "apprentice.promotion" ? "APPRENTICE_PROMOTION" : "APPRENTICE_LESSON", payload, { persist: true }); this.#safe(() => this.log("IQ_MULTI_APPRENTICE", JSON.stringify({ type, ...payload }))); } });
     this.feeds = new ExternalFeedSync({ universe: UNIVERSE, log: this.log, apply: (kind, items) => this.#applyExternalItems(kind, items) });
     this.agentState = new Map();
@@ -133,7 +142,7 @@ export class IqMultiRuntime extends EventEmitter {
   onSessionRemoved() { this.stop("SESSION_DISCONNECTED"); }
 
   /** Recarrega configuracao persistida (diagnostico/teste; restart real usa o mesmo caminho no boot). */
-  async reloadConfiguration() { this.configLoaded = false; await this.#loadPersistedConfig(); return { defaultStake: this.config.defaultStake, revision: this.config.revision, markets: [...this.markets.values()].filter((ctx) => ctx.enabled).map((ctx) => ({ marketKey: ctx.marketKey, configuredStake: ctx.configuredStake, strategyVariantId: ctx.strategyVariantId })) }; }
+  async reloadConfiguration() { this.configLoaded = false; await this.#loadPersistedConfig(); return { defaultStake: this.config.defaultStake, revision: this.config.revision, markets: [...this.markets.values()].filter((ctx) => ctx.enabled).map((ctx) => ({ marketKey: ctx.marketKey, configuredStake: ctx.configuredStake, setup: ctx.decisionState?.setup ?? null })) }; }
 
   async #runLoop() {
     let attempt = 0;
@@ -350,21 +359,11 @@ export class IqMultiRuntime extends EventEmitter {
       if (Number.isFinite(Number(ctx.configuredStake)) && value < Number(ctx.configuredStake)) throw new IqWsError("MARKET_CAP_BELOW_CONFIGURED_STAKE", `${value} < ${ctx.configuredStake}`);
       ctx.maxStake = value;
     }
-    if (next.strategyVariantId !== undefined) {
-      const variantId = String(next.strategyVariantId);
-      const variant = FROZEN_VARIANTS.find((entry) => entry.variantId === variantId);
-      if (!variant) throw new IqWsError("INVALID_STRATEGY_VARIANT", variantId);
-      ctx.strategyVariantId = variant.variantId; ctx.strategy = variant.family;
-    } else if (next.strategy !== undefined) {
-      const family = String(next.strategy);
-      const variant = FROZEN_VARIANTS.find((entry) => entry.family === family && entry.horizonSeconds === (ctx.strategyVariantId ? Number(String(ctx.strategyVariantId).split("-").pop()) : 60)) ?? FROZEN_VARIANTS.find((entry) => entry.family === family);
-      if (!variant) throw new IqWsError("INVALID_STRATEGY", family);
-      ctx.strategyVariantId = variant.variantId; ctx.strategy = variant.family;
-    }
+    if (next.strategyVariantId !== undefined || next.strategy !== undefined) throw new IqWsError("LEGACY_STRATEGY_REMOVED", "V1/V2/V3/V8 foram removidas do runtime (LEGACY_STRATEGY_AUDIT; apenas historico).");
     if (next.enabled === undefined && next.paused === undefined && next.maxStake === undefined && next.configuredStake === undefined && next.strategy === undefined && next.strategyVariantId === undefined) throw new IqWsError("EMPTY_PATCH");
     ctx.revision = Number(ctx.revision || 0) + 1;
     if (persist) void this.#persistMarket(ctx);
-    this.#emitEvent("market.config", { marketKey: key, enabled: ctx.enabled, paused: ctx.paused, maxStake: ctx.maxStake, configuredStake: ctx.configuredStake, strategyVariantId: ctx.strategyVariantId, revision: ctx.revision });
+    this.#emitEvent("market.config", { marketKey: key, enabled: ctx.enabled, paused: ctx.paused, maxStake: ctx.maxStake, configuredStake: ctx.configuredStake, revision: ctx.revision });
     return this.#publicMarket(ctx);
   }
 
@@ -399,7 +398,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (next === "REAL" && !this.realMode.authorized()) throw new IqWsError("REAL_MODE_NOT_CONFIRMED");
     try { this.armState.disarm("MODE_SWITCH"); } catch { /* noop */ }
     if (next === "PRACTICE") this.realMode.revoke("MODE_SWITCH_TO_PRACTICE");
-    if (next === "REAL") this.manager.setConfig({ mode: "SHADOW_RECOMMENDATION", autoSwitchEnabled: false });
+    // Fase 6: sem Strategy Manager; Performance Supervisor nao altera metodologia em REAL.
     this.config.mode = next;
     void this.#persistConfig();
     this.#emitEvent("mode.changed", { mode: next, armed: false });
@@ -521,7 +520,7 @@ export class IqMultiRuntime extends EventEmitter {
       ctx.lastResearchBucket = bucket;
       this.research.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, payout: ctx.payout, atMs: now });
       this.ab.settle({ marketKey: ctx.marketKey, candles: list, index: list.length - 1 });
-      this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: ctx.featureState?.context ? computeFrozenFeatures(list, list.length - 1) : null, context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
+      this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
     this.#evaluateDecision(ctx, list);
@@ -539,67 +538,76 @@ export class IqMultiRuntime extends EventEmitter {
     this.intelligence.publish("MARKET", { activeMarkets: active.length, avgAtrNormalized: avg((row) => row.atrNormalized?.value), avgAdx: avg((row) => row.adx14?.value), bullish: active.filter((ctx) => ctx.decisionState?.action === "BUY").length, bearish: active.filter((ctx) => ctx.decisionState?.action === "SELL").length }, { source: "tracecom-runtime", sourceType: "INTERNAL", marketsAffected: active.map((ctx) => ctx.marketKey), importance: 0.4 });
     this.intelligence.publish("RISK", { openPositions: positions.length, stakeAtRisk: positions.reduce((sum, position) => sum + (Number(position.stake) || 0), 0), concentrationWarnings: concentration.warnings.length, dailySettledPnl: this.portfolioSnapshot().settled.pnl }, { source: "tracecom-portfolio", sourceType: "INTERNAL", importance: 0.5 });
     this.intelligence.publish("SECURITY", { connectionHealthy: this.connectionHealth().healthy, timeValid: this.session.timeValid, rejectedCandles: this.metrics.rejected, dataQuality: this.connectionHealth().healthy && this.session.timeValid ? "OK" : "PARTIAL" }, { source: "tracecom-integrity", sourceType: "INTERNAL", importance: 0.6, dataQuality: this.connectionHealth().healthy && this.session.timeValid ? "OK" : "PARTIAL" });
-    this.intelligence.publish("RESEARCH", { variants: FROZEN_VARIANTS.length, shadowMarkets: this.research.markets.size, managerMode: this.manager.config.mode }, { source: "tracecom-research", sourceType: "INTERNAL", importance: 0.3 });
+    this.intelligence.publish("RESEARCH", { setups: CORE_BRAIN.setups ? Object.keys(CORE_BRAIN.setups).length : 0, shadowMarkets: this.research.markets.size, brainGeneration: BRAIN_GENERATION, supervisor: this.supervisor.status().reviews.length }, { source: "tracecom-research", sourceType: "INTERNAL", importance: 0.3 });
   }
 
-  /** Variante efetiva do mercado: individual persistida > selecao global (congeladas). */
-  #variantSelection(ctx) {
-    if (ctx.strategyVariantId) {
-      const variant = FROZEN_VARIANTS.find((entry) => entry.variantId === ctx.strategyVariantId);
-      if (variant) return { family: variant.family, horizonSeconds: variant.horizonSeconds, variantId: variant.variantId, source: "MARKET" };
-    }
-    const global = FROZEN_VARIANTS.find((entry) => entry.variantId === this.config.selection.variantId) ?? { family: this.config.selection.family, horizonSeconds: this.config.selection.horizonSeconds, variantId: `${this.config.selection.family}-${this.config.selection.horizonSeconds}` };
-    return { family: global.family, horizonSeconds: global.horizonSeconds, variantId: global.variantId, source: "GLOBAL" };
+  #agentId(ctx) { return `trader:${ctx.marketKey}`; }
+
+  /** Features causais para o brain (momentum normalizado, r24, vol12) — derivadas do Feature Engine, sem variantes antigas. */
+  #brainFeatures(list, context) {
+    const closes = list.map((candle) => candle.close);
+    const rsi = context?.deterministicIndicators?.rsi14?.value ?? null;
+    const s = rsi === null ? 0 : (55 - rsi) / 45;
+    const r24 = closes.length > 24 && closes[closes.length - 25] ? (closes[closes.length - 1] - closes[closes.length - 25]) / closes[closes.length - 25] : 0;
+    const returns = [];
+    for (let index = Math.max(1, closes.length - 12); index < closes.length; index += 1) returns.push((closes[index] - closes[index - 1]) / closes[index - 1]);
+    const mean = returns.length ? returns.reduce((sum, value) => sum + value, 0) / returns.length : 0;
+    const vol12 = returns.length ? Math.sqrt(returns.reduce((sum, value) => sum + (value - mean) ** 2, 0) / returns.length) : 0;
+    return { rsi14: rsi, s: Number(s.toFixed(4)), r24: Number(r24.toFixed(6)), vol12: Number(vol12.toFixed(6)) };
   }
 
   #evaluateDecision(ctx, list) {
-    const selection = this.#variantSelection(ctx);
     const now = this.now();
     const correlationId = `corr_${++this.correlationSeq}`;
+    // Fase 6: sem variantes antigas. Dados causais -> estrutura -> brain profissional.
     let features = null;
-    if (list.length > MIN_CANDLES_FEATURE) features = computeFrozenFeatures(list, list.length - 1);
+    let structureFeatures = null;
+    if (list.length > MIN_CANDLES_FEATURE) {
+      structureFeatures = computeStructureFeatures(list, list.length - 1);
+      features = this.#brainFeatures(list, ctx.featureState?.context ?? null);
+    }
     const context = ctx.featureState?.context ?? null;
     const fresh = { fresh: ctx.featureState?.fresh === true, reason: ctx.featureState?.freshnessReason ?? "NO_FEATURE", tickAgeMs: ctx.lastTickAt === null ? null : now - ctx.lastTickAt };
+    const regime = structureFeatures ? classifyRegime({ features, structureFeatures, context }) : "UNCLEAR";
     const intelligenceContext = this.intelligence.contextForMarket(ctx.marketKey, ctx.marketType, { atMs: now });
-    const versions = { contextVersion: `${selection.variantId}:${ctx.revision}`, marketDataVersion: ctx.lastCandle?.bucketStart ?? null };
-    const trader = traderDecision({ marketKey: ctx.marketKey, marketType: ctx.marketType, selection, features, context, payout: ctx.payout, freshness: fresh, intelligence: intelligenceContext, versions });
-    const critic = criticAssessment({ marketKey: ctx.marketKey, marketType: ctx.marketType, selection, features, context, payout: ctx.payout, freshness: fresh, intelligence: intelligenceContext, trader, versions });
-    const consensus = consensusDecision({ trader, critic, freshness: fresh, intelligence: intelligenceContext, versions });
-    ctx.agents = { correlationId, at: now, selection, trader, critic, consensus };
+    const knowledgeContext = this.knowledge.contextForMarket(ctx.marketKey, { regime, setup: null, atMs: now });
+    const trader = traderBrainDecision({ marketKey: ctx.marketKey, marketType: ctx.marketType, features, context, structureFeatures, regime, freshness: fresh, intelligence: intelligenceContext, knowledgeContext });
+    const critic = criticBrainAssessment({ trader, features, context, structureFeatures, regime, freshness: fresh, intelligence: intelligenceContext });
+    const consensus = consensusBrainDecision({ trader, critic, freshness: fresh });
+    ctx.agents = { correlationId, at: now, brainGeneration: BRAIN_GENERATION, regime, features, structureFeatures, trader, critic, consensus, intelligenceContext, knowledgeContext };
     this.agentState.set(ctx.marketKey, ctx.agents);
     this.agentLatency.push(trader.latencyMs + critic.latencyMs + consensus.latencyMs);
     if (this.agentLatency.length > this.maxLatencySamples) this.agentLatency.splice(0, this.agentLatency.length - this.maxLatencySamples);
-    this.#emitEvent("agent.trader", { marketKey: ctx.marketKey, correlationId, action: trader.action, confidence: trader.analysisConfidence, regime: trader.regime, variantId: selection.variantId });
+    this.#emitEvent("agent.trader", { marketKey: ctx.marketKey, correlationId, action: trader.action, confidence: trader.analysisConfidence, regime, setup: trader.setup, brainGeneration: BRAIN_GENERATION });
     this.#emitEvent("agent.critic", { marketKey: ctx.marketKey, correlationId, independentAction: critic.independentAction, verdict: critic.traderAssessment, riskFlags: critic.riskFlags.length });
     this.#emitEvent("agent.consensus", { marketKey: ctx.marketKey, correlationId, action: consensus.action, status: consensus.status, reason: consensus.reason });
-    this.#auditRecord(correlationId, ctx.marketKey, "AGENTS", { trader: trader.action, criticVerdict: critic.traderAssessment, criticIndependent: critic.independentAction, consensus: consensus.action, consensusStatus: consensus.status, variantId: selection.variantId, contextVersion: versions.contextVersion, marketDataVersion: versions.marketDataVersion });
-    if (features) {
-      const frozenAction = evaluateFrozen(selection.family, features) ?? "WAIT";
-      const managerState = this.manager.state.get(ctx.marketKey);
-      const adaptiveVariantId = this.manager.preferredVariant(ctx.marketKey) ?? managerState?.championVariantId ?? selection.variantId;
-      const adaptiveVariant = FROZEN_VARIANTS.find((variant) => variant.variantId === adaptiveVariantId) ?? selection;
-      const adaptiveAction = evaluateFrozen(adaptiveVariant.family, features) ?? "WAIT";
-      this.ab.record({ marketKey: ctx.marketKey, marketType: ctx.marketType, atMs: now, variantId: selection.variantId, horizonSeconds: selection.horizonSeconds, entryPrice: ctx.lastCandle?.close ?? null, settlementAfterMs: (ctx.lastCandle?.bucketStart ?? now) + selection.horizonSeconds * 1000, payout: ctx.payout, actions: { A_FROZEN: frozenAction, B_TRADER: trader.action, C_TRADER_CRITIC: consensus.action, D_PLUS_INTELLIGENCE: consensus.action, E_ADAPTIVE: adaptiveAction } });
-    }
+    this.#auditRecord(correlationId, ctx.marketKey, "AGENTS", { brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION, trader: trader.action, setup: trader.setup, criticVerdict: critic.traderAssessment, criticIndependent: critic.independentAction, consensus: consensus.action, consensusStatus: consensus.status, regime, knowledgeIds: knowledgeContext.knowledgeIds, knowledgeUsed: knowledgeContext.used });
+    // Research shadow por SETUP + A/B v2 (mesmo snapshot causal).
+    this.research.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, brain: { setup: trader.setup, action: consensus.action, regime, trigger: trader.trigger }, payout: ctx.payout, atMs: now });
+    this.ab.settle({ marketKey: ctx.marketKey, candles: list, index: list.length - 1 });
+    this.ab.record({ marketKey: ctx.marketKey, marketType: ctx.marketType, atMs: now, setup: trader.setup, entryPrice: ctx.lastCandle?.close ?? null, settlementAfterMs: (ctx.lastCandle?.bucketStart ?? now) + BRAIN_HORIZON_SECONDS * 1000, payout: ctx.payout, actions: { A_TRADER: trader.action, B_TRADER_CRITIC: consensus.action, C_PLUS_INTELLIGENCE: consensus.action === "WAIT" || intelligenceContext?.news?.importance < 0.9 ? consensus.action : "WAIT", D_APPRENTICE: trader.action } });
     const action = consensus.action;
     const reason = consensus.status === "CONFIRMED" ? "CONSENSUS_CONFIRMED" : consensus.reason;
     const confidence = consensus.analysisConfidence;
     ctx.decisionState = {
-      action, reason, confidence, family: selection.family, horizonSeconds: selection.horizonSeconds, evaluatedAt: now, featuresAvailable: Boolean(features),
-      trigger: features ? { rsi14: features.rsi14, s: features.s, vol12: features.vol12, r24: features.r24 } : null,
+      action, reason, confidence, setup: trader.setup, regime, horizonSeconds: BRAIN_HORIZON_SECONDS, evaluatedAt: now, featuresAvailable: Boolean(structureFeatures),
+      trigger: trader.trigger, waitReason: trader.waitReason,
       consensus: { status: consensus.status, reason: consensus.reason, traderAction: trader.action, criticIndependent: critic.independentAction, criticVerdict: critic.traderAssessment },
+      processLog: trader.processLog, knowledge: { used: knowledgeContext.used, ids: knowledgeContext.knowledgeIds, version: knowledgeContext.knowledgeVersion, latencyMs: knowledgeContext.retrievalLatencyMs },
+      brainGeneration: BRAIN_GENERATION,
     };
     ctx.lastDecision = ctx.decisionState;
-    this.#emitEvent("market.decision", { marketKey: ctx.marketKey, action, reason, confidence, consensus: consensus.status });
+    this.journal.recordDecision({ agentId: this.#agentId(ctx), marketKey: ctx.marketKey, marketType: ctx.marketType, decisionAt: now, snapshot: { ...ctx.decisionState, critic: { verdict: critic.traderAssessment, independent: critic.independentAction }, consensus: { status: consensus.status, action: consensus.action }, knowledgeContextIds: knowledgeContext.knowledgeIds } });
+    this.#emitEvent("market.decision", { marketKey: ctx.marketKey, action, reason, confidence, setup: trader.setup, regime, consensus: consensus.status });
     if (action === "BUY" || action === "SELL") {
-      ctx.lastSignal = { action, at: this.now(), bucketStart: ctx.lastCandle?.bucketStart ?? null, family: selection.family };
+      ctx.lastSignal = { action, at: this.now(), bucketStart: ctx.lastCandle?.bucketStart ?? null, setup: trader.setup };
       this.#setAgent(ctx, "SIGNAL", reason);
-      this.#emitEvent("market.signal", { marketKey: ctx.marketKey, action, bucketStart: ctx.lastSignal.bucketStart, consensus: consensus.status, correlationId });
-      void this.#handleSignal(ctx, action, selection, list);
+      this.#emitEvent("market.signal", { marketKey: ctx.marketKey, action, bucketStart: ctx.lastSignal.bucketStart, setup: trader.setup, consensus: consensus.status, correlationId });
+      void this.#handleSignal(ctx, action, trader, list);
     } else {
       if (ctx.positionState?.status === "OPEN" || ctx.positionState?.status === "ORDERING") this.#setAgent(ctx, ctx.positionState.status === "OPEN" ? "IN_POSITION" : "ORDERING", "POSITION_OPEN");
       else this.#setAgent(ctx, "WAIT", reason);
-      if (this.now() - (ctx.lastWaitEmit ?? 0) > 5_000) { ctx.lastWaitEmit = this.now(); this.#emitEvent("market.wait", { marketKey: ctx.marketKey, reason, consensus: consensus.status }); }
+      if (this.now() - (ctx.lastWaitEmit ?? 0) > 5_000) { ctx.lastWaitEmit = this.now(); this.#emitEvent("market.wait", { marketKey: ctx.marketKey, reason, waitReason: trader.waitReason, setup: trader.setup, consensus: consensus.status }); }
       this.#expireSignals(ctx);
     }
   }
@@ -657,7 +665,7 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   /** Registra TODO sinal com destino observavel: EXECUTED | BLOCKED | EXPIRED | DUPLICATE + motivo humano. */
-  async #handleSignal(ctx, action, selection, list) {
+  async #handleSignal(ctx, action, brain, list) {
     const now = this.now();
     const bucket = ctx.lastCandle?.bucketStart ?? null;
     const idempotencyKey = `${ctx.marketKey}:${bucket}:${action}`;
@@ -671,14 +679,15 @@ export class IqMultiRuntime extends EventEmitter {
     }
     const resolved = resolveFinalStake({ marketConfiguredStake: ctx.configuredStake, configuredStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, marketMaxStake: ctx.maxStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap });
     const last = list[list.length - 1] ?? ctx.lastCandle ?? null;
-    const horizonSeconds = selection.horizonSeconds ?? this.config.selection.horizonSeconds;
+    const horizonSeconds = BRAIN_HORIZON_SECONDS;
     const freshness = { fresh: Boolean(ctx.featureState?.fresh) && ctx.lastTickAt !== null && now - ctx.lastTickAt <= MARKET_TICK_AGE_MS, tickAgeMs: ctx.lastTickAt === null ? null : now - ctx.lastTickAt, reason: ctx.featureState?.freshnessReason ?? "NO_FEATURE" };
     const realAuthorized = this.config.mode === "REAL" && this.realMode.authorized();
+    const brainValid = Boolean(brain?.setup && brain.setup !== "NO_VALID_SETUP");
     const gate = this.gate.evaluate({
       market: { ...ctx, marketKey: ctx.marketKey }, marketKey: ctx.marketKey, requestedMode: this.config.mode, realAuthorized,
       connection: { connected: this.session.connected, timeValid: this.session.timeValid, host: this.session.host },
       serverTime: { ms: this.client?.serverNow() ?? now, skewMs: this.session.clockSkewMs },
-      freshness, decision: { action, ageMs: 0, horizonSeconds, reason: ctx.decisionState.reason }, strategy: { valid: Boolean(selection.family), variantId: selection.variantId, reason: null },
+      freshness, decision: { action, ageMs: 0, horizonSeconds, reason: ctx.decisionState.reason }, strategy: { valid: brainValid, variantId: brain?.setup ?? null, reason: brainValid ? null : "SEM_SETUP" },
       price: last?.close ?? null, stake: resolved.finalStake, configuredStake: this.config.defaultStake, globalMaxStake: this.config.globalMaxStake, calculatedBankrollStake: this.config.calculatedBankrollStake,
       openPositions: [...this.openPositions.values()], pendingOrderKeys: [...this.pendingOrders.keys()], usedIdempotencyKeys: [...this.idempotency.byKey.keys()], activeMarketKeys: this.activeMarketKeys(),
       killSwitch: this.killSwitch.status(), idempotencyKey, horizonSeconds,
@@ -694,7 +703,7 @@ export class IqMultiRuntime extends EventEmitter {
     else if (!gate.allowed) { disposition = "BLOCKED"; reason = `GATE_${gate.code}`; }
     const record = {
       id: ++this.signalSeq, marketKey: ctx.marketKey, marketType: ctx.marketType, canonical: ctx.canonical, display: ctx.display, activeId: ctx.activeId,
-      action, strategy: selection.family, strategyVariantId: selection.variantId, strategySource: selection.source, at: now, bucketStart: bucket, horizonSeconds,
+      action, setup: brain?.setup ?? null, regime: brain?.regime ?? null, strategyVariantId: null, strategySource: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, at: now, bucketStart: bucket, horizonSeconds,
       stakeConfigured: resolved.requestedStake, stakeRequested: resolved.requestedStake, stakeCalculated: Number(this.config.calculatedBankrollStake), stakeFinal: resolved.finalStake, cappedBy: resolved.cappedBy, stakeSource: resolved.source, stakeAdjustment: resolved.adjustment,
       payout: ctx.payout, auto: this.config.autoExecute === true, armed: this.armState.armed === true, mode: this.config.mode,
       disposition, reason, idempotencyKey, gate: { allowed: gate.allowed, code: gate.code, reasons: gate.reasons, failed: gate.checks.filter((check) => !check.ok).map((check) => check.name) },
@@ -708,7 +717,8 @@ export class IqMultiRuntime extends EventEmitter {
     this.#safe(() => this.log("IQ_MULTI_SIGNAL_DISPOSITION", JSON.stringify({ signalId: record.id, marketKey: ctx.marketKey, action, disposition, reason, stakeFinal: record.stakeFinal, auto: record.auto, armed: record.armed })));
     if (disposition === "BLOCKED" || disposition === "DUPLICATE") return record;
     try {
-      const result = await this.requestOrder({ marketKey: ctx.marketKey, direction: action, stake: null, decisionId: `auto_${ctx.marketKey}_${bucket}`, idempotencyKey, source: "AUTO_DECISION", horizonSeconds, decisionAgeMs: Math.max(0, this.now() - now) });
+      const orderSource = brain?.setup === "SYNTHETIC_TEST" ? "DIAGNOSTIC_SIGNAL" : "AUTO_DECISION";
+      const result = await this.requestOrder({ marketKey: ctx.marketKey, direction: action, stake: null, decisionId: `auto_${ctx.marketKey}_${bucket}`, idempotencyKey, source: orderSource, horizonSeconds, decisionAgeMs: Math.max(0, this.now() - now) });
       if (result.duplicate) { record.disposition = "DUPLICATE"; record.reason = "IDEMPOTENCIA"; stats.executed = Math.max(0, stats.executed - 1); stats.duplicate += 1; }
       else {
         record.executionId = result.executionId ?? null; record.brokerOrderId = result.brokerOrderId ?? null; record.ackAt = result.state === "ACKNOWLEDGED" ? this.now() : null;
@@ -746,47 +756,16 @@ export class IqMultiRuntime extends EventEmitter {
     const ctx = this.markets.get(marketKey);
     if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
     if (action !== "BUY" && action !== "SELL") throw new IqWsError("INVALID_DIRECTION", String(action));
-    const selection = { ...this.#variantSelection(ctx), ...(strategy ? { family: strategy, variantId: `${strategy}-${this.#variantSelection(ctx).horizonSeconds}` } : {}) };
-    return this.#handleSignal(ctx, action, selection, this.#candleList(ctx));
+    const setupFromBrain = ctx.decisionState?.setup && ctx.decisionState.setup !== "NO_VALID_SETUP" ? ctx.decisionState.setup : null;
+    const brain = { setup: strategy ?? setupFromBrain ?? "SYNTHETIC_TEST", regime: ctx.decisionState?.regime ?? null };
+    return this.#handleSignal(ctx, action, brain, this.#candleList(ctx));
   }
 
   expireSignals() { for (const ctx of this.markets.values()) this.#expireSignals(ctx); return this.signalLog.filter((row) => row.disposition === "EXPIRED").length; }
 
-  /* ------------------------------- intelligence / research / manager ------------------------------- */
+  /* ------------------------------- intelligence / research / supervisor / knowledge ------------------------------- */
 
-  /** Revisao champion x challengers (deterministica). AUTO so troca em PRACTICE com flag ligada. */
-  async #runStrategyReview(ctx) {
-    const championId = ctx.strategyVariantId ?? this.config.selection.variantId;
-    const { board, strongest } = this.research.challengerFor(ctx.marketKey, championId);
-    const outcome = this.manager.evaluate({ marketKey: ctx.marketKey, marketType: ctx.marketType, board, challenger: strongest, mode: this.manager.config.mode, practiceOnly: this.config.mode !== "REAL" });
-    if (outcome.review?.evidence) outcome.review.evidence.scoreboardVersion = board?.version ?? null;
-    const correlationId = `corr_${++this.correlationSeq}`;
-    this.#auditRecord(correlationId, ctx.marketKey, "STRATEGY_MANAGER", { decision: outcome.review.decision, reason: outcome.review.reason, champion: outcome.review.champion, challenger: outcome.review.challenger, applied: outcome.applied }, { persist: true });
-    this.#emitEvent("manager.review", { marketKey: ctx.marketKey, correlationId, decision: outcome.review.decision, reason: outcome.review.reason, champion: outcome.review.champion, challenger: outcome.review.challenger, delta: outcome.review.evidence?.delta ?? null });
-    this.#safe(() => this.log("IQ_MULTI_MANAGER_REVIEW", JSON.stringify({ marketKey: ctx.marketKey, decision: outcome.review.decision, reason: outcome.review.reason, champion: outcome.review.champion, challenger: outcome.review.challenger, applied: outcome.applied })));
-    void this.#persistReview(ctx, outcome.review, outcome.applied);
-    if (outcome.applied && outcome.champion && outcome.champion !== ctx.strategyVariantId) {
-      const variant = FROZEN_VARIANTS.find((entry) => entry.variantId === outcome.champion);
-      ctx.strategyVariantId = outcome.champion;
-      ctx.strategy = variant?.family ?? ctx.strategy;
-      ctx.revision = Number(ctx.revision || 0) + 1;
-      void this.#persistMarket(ctx);
-      this.#emitEvent("manager.switch", { marketKey: ctx.marketKey, from: outcome.review.champion, to: outcome.champion, reason: outcome.review.reason, evidence: outcome.review.evidence });
-      this.#safe(() => this.log("IQ_MULTI_MANAGER_SWITCH", JSON.stringify({ marketKey: ctx.marketKey, from: outcome.review.champion, to: outcome.champion })));
-    }
-    return outcome;
-  }
-
-  async #persistReview(ctx, review, applied) {
-    try {
-      if (!this.pool || !await this.#ensureDb()) return false;
-      await this.pool.query("INSERT INTO iq_strategy_reviews(review_id,market_key,market_type,mode,champion,challenger,decision,reason,checks,evidence,applied) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11)",
-        [`review_${review.id}_${review.at}`, review.marketKey, review.marketType, review.mode, review.champion, review.challenger, review.decision, review.reason, JSON.stringify(review.checks ?? []), JSON.stringify(review.evidence ?? {}), applied === true]);
-      return true;
-    } catch (error) { this.#safe(() => this.log("IQ_MULTI_REVIEW_PERSIST_FAILED", String(error?.message ?? error).slice(0, 120))); return false; }
-  }
-
-  intelligenceStatus() { return { version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS], feeds: this.feeds.status() }; }
+  intelligenceStatus() { return { version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS], feeds: this.feeds.status(), knowledge: this.knowledge.status(), secondBrain: this.secondBrain.status(), brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION }; }
 
   /** Publica itens externos reais (nunca inventados; item sem publishedAt nao entra). */
   #applyExternalItems(kind, items) {
@@ -800,18 +779,45 @@ export class IqMultiRuntime extends EventEmitter {
     return applied;
   }
 
-  /** Settlement shadow do champion alimenta o gatilho do Strategy Manager (evidencia prospectiva causal). */
-  handleShadowSettlement({ marketKey, variantId, result, pnl }) {
-    const ctx = this.markets.get(marketKey);
-    if (!ctx || !ctx.enabled) return;
-    // Troca manual do operador (strategyVariantId) tem precedencia e ressincroniza o champion do gestor.
-    const managerState = this.manager.ensureMarket(marketKey, ctx.strategyVariantId ?? this.config.selection.variantId);
-    if (ctx.strategyVariantId && ctx.strategyVariantId !== managerState.championVariantId) managerState.championVariantId = ctx.strategyVariantId;
-    const champion = managerState.championVariantId ?? ctx.strategyVariantId ?? this.config.selection.variantId;
-    if (variantId !== champion) return;
-    const trigger = this.manager.onSettlement(marketKey, { result, pnl });
-    if (trigger.trigger) void this.#runStrategyReview(ctx);
+  /** Supervisor monitora qualidade e solicita REVIEW_REQUIRED; NAO troca metodologia nem inventa estrategia. */
+  async #runSupervisorCheck(ctx) {
+    const agentId = this.#agentId(ctx);
+    const memory = this.journal.agentMemory(agentId);
+    const review = this.supervisor.evaluate({ agentId, marketKey: ctx.marketKey, stats: memory.stats, review: this.hypotheses.list().filter((item) => item.marketKey === ctx.marketKey).slice(0, 3) });
+    if (review.status !== "OK") {
+      this.#emitEvent("supervisor.review", { marketKey: ctx.marketKey, agentId, status: review.status, reasons: review.reasons });
+      this.#auditRecord(`sup_${review.id}`, ctx.marketKey, "SUPERVISOR", { status: review.status, reasons: review.reasons }, { persist: true });
+      this.#safe(() => this.log("IQ_MULTI_SUPERVISOR_REVIEW", JSON.stringify({ marketKey: ctx.marketKey, status: review.status, reasons: review.reasons })));
+    }
+    return review;
   }
+
+  supervisorStatus() { return this.supervisor.status(); }
+  setSupervisorConfig(patch = {}) {
+    const allowed = ["minSamples", "maxDrawdown", "maxConsecutiveLosses", "minDecisionQuality", "reviewCooldownMs"];
+    const next = { ...this.supervisor.config };
+    for (const [key, value] of Object.entries(patch)) { if (allowed.includes(key) && Number.isFinite(Number(value)) && Number(value) >= 0) next[key] = Number(value); }
+    this.supervisor.config = next;
+    this.config.revision = Number(this.config.revision || 0) + 1;
+    void this.#persistConfig();
+    this.#emitEvent("supervisor.config", { config: next });
+    return { ...next };
+  }
+
+  knowledgeStatus() { return this.knowledge.status(); }
+  async knowledgeRebuild() { const result = await this.knowledge.rebuild(); this.knowledgeRebuiltAt = this.now(); return result; }
+  knowledgeSearch(query = {}) { return this.knowledge.search(query); }
+  async secondBrainProbe() { return this.secondBrain.probe(); }
+
+  journalSummary() {
+    const agentIds = [...this.journal.agentStats.keys()];
+    return { version: "trade-journal-v1", agents: agentIds.map((agentId) => ({ agentId, stats: this.journal.agentMemory(agentId).stats })), recentTrades: this.journal.trades.slice(-30).reverse(), daily: this.journal.dailyReport() };
+  }
+  agentMemory(agentId) { return this.journal.agentMemory(agentId); }
+  async writeDailyReport(date = null) { return this.journal.writeDailyReport(date ?? new Date(this.now()).toISOString().slice(0, 10)); }
+  hypotheses() { return { items: this.hypotheses.list(), defaults: this.hypotheses.config }; }
+  createHypothesis(input = {}) { return this.hypotheses.create(input); }
+  evaluateHypothesis(id) { return this.hypotheses.evaluate(id); }
 
   apprenticeStatus() { return this.apprentice.scoreboard(); }
   apprenticeTrades(limit = 30) { return { trades: this.apprentice.recentTrades(limit), execution: "SHADOW_ONLY" }; }
@@ -831,30 +837,10 @@ export class IqMultiRuntime extends EventEmitter {
     return { ...next };
   }
 
-  researchScoreboard({ marketKey = null } = {}) {
-    if (marketKey) {
-      const champion = this.manager.state.get(marketKey)?.championVariantId ?? this.markets.get(marketKey)?.strategyVariantId ?? this.config.selection.variantId;
-      const { board, strongest } = this.research.challengerFor(marketKey, champion);
-      return { marketKey, champion, challenger: strongest, board, recentTrades: this.research.recentTrades(marketKey, 30) };
-    }
-    return {
-      champions: Object.fromEntries([...this.markets.values()].map((ctx) => [ctx.marketKey, this.manager.state.get(ctx.marketKey)?.championVariantId ?? ctx.strategyVariantId ?? this.config.selection.variantId])),
-      scoreboard: this.research.scoreboardAll(), ab: this.ab.scoreboard(),
-    };
-  }
-  managerStatus() { return this.manager.status(); }
-  setManagerConfig(patch = {}) {
-    if (patch.mode === "AUTO_STRATEGY_SWITCH" && this.config.mode === "REAL") throw new IqWsError("REAL_STRATEGY_SWITCH_FORBIDDEN");
-    const config = this.manager.setConfig(patch);
-    if (config.mode === "AUTO_STRATEGY_SWITCH" && this.config.mode !== "PRACTICE") throw new IqWsError("AUTO_SWITCH_PRACTICE_ONLY");
-    this.config.revision = Number(this.config.revision || 0) + 1;
-    void this.#persistConfig();
-    this.#emitEvent("manager.config", { mode: config.mode, autoSwitchEnabled: config.autoSwitchEnabled });
-    return config;
+  researchScoreboard({ marketKey = null } = {}) {    if (marketKey) return { marketKey, board: this.research.scoreboard(marketKey), recentTrades: this.research.recentTrades(marketKey, 30) };
+    return { scoreboard: this.research.scoreboardAll(), ab: this.ab.scoreboard(), note: "Setups do Professional Brain; nenhuma variante V1/V2/V3/V8." };
   }
 
-
-  async #autoExecute(ctx, action) { return this.#handleSignal(ctx, action, this.#variantSelection(ctx), this.#candleList(ctx)); }
 
   portfolioSnapshot() {
     const openPositions = [...this.openPositions.values()];
@@ -884,12 +870,15 @@ export class IqMultiRuntime extends EventEmitter {
     if (existingRecord) return { duplicate: true, marketKey: key, state: existingRecord.state, executionId: existingRecord.executionId, brokerOrderId: existingRecord.brokerOrderId, idempotencyKey: requestedKey };
     const decisionAction = direction === "BUY" || direction === "CALL" ? "BUY" : direction === "SELL" || direction === "PUT" ? "SELL" : null;
     if (!decisionAction) throw new IqWsError("INVALID_DIRECTION", String(direction));
-    const selection = { ...this.#variantSelection(ctx) };
+    const setupFromState = ctx.decisionState?.setup && ctx.decisionState.setup !== "NO_VALID_SETUP" ? ctx.decisionState.setup : null;
+    const brainSetup = { setup: setupFromState ?? "SYNTHETIC_TEST", regime: ctx.decisionState?.regime ?? null };
+    // Ordem manual/API e acao deliberada do operador; o gate de setup vale para decisoes AUTO do brain.
+    const setupValid = source !== "AUTO_DECISION" || (brainSetup.setup !== "NO_VALID_SETUP" && brainSetup.setup !== "SYNTHETIC_TEST");
     const gateResult = this.gate.evaluate({
       market: { ...ctx, maxStake: ctx.maxStake, marketKey: key }, marketKey: key, requestedMode: this.config.mode, realAuthorized,
       connection: { connected: this.session.connected, timeValid: this.session.timeValid, host: this.session.host },
       serverTime: { ms: this.client.serverNow(), skewMs: this.session.clockSkewMs },
-      freshness, decision: { action: decisionAction, ageMs: Number(decisionAgeMs) || 0, horizonSeconds, reason: ctx.decisionState.reason }, strategy: { valid: Boolean(selection.family), variantId: selection.variantId, reason: null },
+      freshness, decision: { action: decisionAction, ageMs: Number(decisionAgeMs) || 0, horizonSeconds, reason: ctx.decisionState.reason }, strategy: { valid: setupValid, variantId: brainSetup.setup, reason: setupValid ? null : "SEM_SETUP_VALIDO" },
       price: last?.close ?? null, stake: finalStake, configuredStake: this.config.defaultStake, globalMaxStake: this.config.globalMaxStake, calculatedBankrollStake: this.config.calculatedBankrollStake,
       openPositions: [...this.openPositions.values()], pendingOrderKeys: [...this.pendingOrders.keys()], usedIdempotencyKeys: [...this.idempotency.byKey.keys()], activeMarketKeys: this.activeMarketKeys(), killSwitch: this.killSwitch.status(), idempotencyKey: requestedKey, horizonSeconds,
     });
@@ -926,7 +915,7 @@ export class IqMultiRuntime extends EventEmitter {
     ctx.positionState = { status: "ORDERING", direction: directionWire, entryPrice, stake: finalStake, brokerOrderId: null, requestId: requestedKey, expirationSec: expiration.expiration, openedAt: this.now(), settledAt: null, result: null, profit: null, mode };
     this.#setAgent(ctx, "ORDERING", source);
     this.#emitEvent("order.pending", { marketKey: key, direction: directionWire, stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, mode, expirationSec: expiration.expiration });
-    await this.#persistExecution({ executionId: record.executionId, idempotencyKey: requestedKey, decisionId: record.payload?.decisionId ?? decisionId ?? null, marketKey: key, mode, connectionId: pending.connectionId, accountType: mode, brokerOrderId: null, symbol: ctx.display, activeId: ctx.activeId, direction: directionWire, stake: finalStake, currency: mode === "REAL" ? this.account.real.currency : this.account.practice.currency, state: "REQUESTED", requestId: requestedKey, expirationAt: nowIso(expiration.expiration * 1000), entryPrice, payout: ctx.payout, optionKind: expiration.optionKind, meta: { source, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, strategyVariantId: selection.variantId, strategySource: selection.source } });
+    await this.#persistExecution({ executionId: record.executionId, idempotencyKey: requestedKey, decisionId: record.payload?.decisionId ?? decisionId ?? null, marketKey: key, mode, connectionId: pending.connectionId, accountType: mode, brokerOrderId: null, symbol: ctx.display, activeId: ctx.activeId, direction: directionWire, stake: finalStake, currency: mode === "REAL" ? this.account.real.currency : this.account.practice.currency, state: "REQUESTED", requestId: requestedKey, expirationAt: nowIso(expiration.expiration * 1000), entryPrice, payout: ctx.payout, optionKind: expiration.optionKind, meta: { source, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, setup: brainSetup.setup, strategyVariantId: null, strategySource: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}` } });
     try {
       const balanceId = mode === "REAL" ? this.account.real.balanceId : this.account.practice.balanceId;
       this.client.placeOrder({ price: finalStake, activeId: ctx.activeId, direction: directionWire, expiration: expiration.expiration, optionTypeId: expiration.optionTypeId, balanceId, requestId: requestedKey });
@@ -1048,8 +1037,13 @@ export class IqMultiRuntime extends EventEmitter {
     await this.#persistExecution({ executionId: position.executionId, brokerOrderId: String(brokerOrderId), state: "SETTLED", settledAt: nowIso(settledAt), brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, meta: { settlementReason: comparison.reason, causal: settlement.detail, marketKey: key } });
     this.#emitEvent("position.settled", { marketKey: key, brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, correlationId: position.correlationId ?? null });
     this.#auditRecord(position.correlationId ?? `corr${position.executionId}`, key, "SETTLEMENT", { brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit }, { persist: true });
-    const triggerInfo = this.manager.onSettlement(key, { result: broker.result, pnl: Number(broker.profit) || 0 });
-    if (triggerInfo.trigger) void this.#runStrategyReview(ctx);
+    // Fase 6: Professor avalia qualidade (snapshot t0) antes/depois do outcome; Journal registra memoria estruturada.
+    const snapshot = position.decisionSnapshot ?? { marketKey: key, regime: ctx.decisionState?.regime ?? null, setup: ctx.decisionState?.setup ?? null, action: position.action ?? null, trigger: ctx.decisionState?.trigger ?? null, location: ctx.decisionState?.location ?? null, momentum: ctx.decisionState?.momentum ?? null, strength: ctx.decisionState?.strength ?? null, volatility: ctx.decisionState?.volatility ?? null, contradictingEvidence: ctx.decisionState?.contradictingEvidence ?? [], supportingEvidence: ctx.decisionState?.supportingEvidence ?? [], processLog: ctx.decisionState?.processLog ?? [], knowledgeContextIds: ctx.decisionState?.knowledge?.ids ?? [], knowledgeVersion: ctx.decisionState?.knowledge?.version ?? null, critic: ctx.decisionState?.consensus ?? null };
+    const review = reviewTrade({ snapshot, outcome: broker.result, result: broker.result });
+    this.#emitEvent("professor.review", { marketKey: key, correlationId: position.correlationId ?? null, decisionQuality: review.decisionQuality, outcome: review.outcome, mistakes: review.mistakes.map((mistake) => mistake.code), wouldWaitBeBetter: review.wouldWaitBeBetter });
+    this.#auditRecord(position.correlationId ?? `corr${position.executionId}`, key, "PROFESSOR_REVIEW", { decisionQuality: review.decisionQuality, outcome: review.outcome, mistakes: review.mistakes.map((mistake) => mistake.code), wouldWaitBeBetter: review.wouldWaitBeBetter }, { persist: true });
+    void this.journal.recordTrade({ tradeId: position.executionId, decisionId: ctx.decisionState?.decisionId ?? null, correlationId: position.correlationId ?? null, agentId: this.#agentId(ctx), marketKey: key, marketType: ctx.marketType, entryAt: position.openedAt ?? null, settlementAt: settledAt, payout: ctx.payout, stake: position.stake, direction: position.direction, result: broker.result, profit: broker.profit, snapshot, review, intelligence: ctx.agents?.intelligenceContext ?? null });
+    void this.#runSupervisorCheck(ctx);
     this.#safe(() => this.log("IQ_MULTI_ORDER_SETTLED", JSON.stringify({ marketKey: key, brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit })));
     if (comparison.mismatch) this.#safe(() => this.log("IQ_MULTI_SETTLEMENT_MISMATCH", JSON.stringify({ marketKey: key, executionId: position.executionId, broker: broker.result, causal: settlement.result })));
     if (this.killSwitch.status().executionEnabled === true && ctx.enabled && !ctx.paused) this.#setAgent(ctx, ctx.availability === "OPEN" ? "WAIT" : "UNAVAILABLE", "POST_SETTLEMENT");
@@ -1158,8 +1152,8 @@ export class IqMultiRuntime extends EventEmitter {
   async #persistConfig() {
     try {
       if (!this.pool || !await this.#ensureDb("iq_runtime_config")) return false;
-      await this.pool.query("INSERT INTO iq_runtime_config(id,mode,global_max_stake,default_stake,calculated_bankroll_stake,auto_execute,selection_json,resolver_json,research_json,manager_json,apprentice_json,revision,updated_at) VALUES(1,$1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9::jsonb,$10::jsonb,$11,now()) ON CONFLICT(id) DO UPDATE SET mode=EXCLUDED.mode, global_max_stake=EXCLUDED.global_max_stake, default_stake=EXCLUDED.default_stake, calculated_bankroll_stake=EXCLUDED.calculated_bankroll_stake, auto_execute=EXCLUDED.auto_execute, selection_json=EXCLUDED.selection_json, resolver_json=EXCLUDED.resolver_json, research_json=EXCLUDED.research_json, manager_json=EXCLUDED.manager_json, apprentice_json=EXCLUDED.apprentice_json, revision=EXCLUDED.revision, updated_at=now()",
-        [this.config.mode, this.config.globalMaxStake, this.config.defaultStake, this.config.calculatedBankrollStake, this.config.autoExecute, JSON.stringify(this.config.selection), JSON.stringify(this.resolver.toJSON()), JSON.stringify(this.research.toJSON()), JSON.stringify(this.manager.toJSON()), JSON.stringify(this.apprentice.toJSON()), Number(this.config.revision || 0)]);
+      await this.pool.query("INSERT INTO iq_runtime_config(id,mode,global_max_stake,default_stake,calculated_bankroll_stake,auto_execute,selection_json,resolver_json,research_json,supervisor_json,apprentice_json,hypotheses_json,revision,updated_at) VALUES(1,$1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9::jsonb,$10::jsonb,$11::jsonb,$12,now()) ON CONFLICT(id) DO UPDATE SET mode=EXCLUDED.mode, global_max_stake=EXCLUDED.global_max_stake, default_stake=EXCLUDED.default_stake, calculated_bankroll_stake=EXCLUDED.calculated_bankroll_stake, auto_execute=EXCLUDED.auto_execute, selection_json=EXCLUDED.selection_json, resolver_json=EXCLUDED.resolver_json, research_json=EXCLUDED.research_json, supervisor_json=EXCLUDED.supervisor_json, apprentice_json=EXCLUDED.apprentice_json, hypotheses_json=EXCLUDED.hypotheses_json, revision=EXCLUDED.revision, updated_at=now()",
+        [this.config.mode, this.config.globalMaxStake, this.config.defaultStake, this.config.calculatedBankrollStake, this.config.autoExecute, JSON.stringify({ legacy: "LEGACY_STRATEGY_AUDIT", brainGeneration: BRAIN_GENERATION }), JSON.stringify(this.resolver.toJSON()), JSON.stringify(this.research.toJSON()), JSON.stringify(this.supervisor.toJSON()), JSON.stringify(this.apprentice.toJSON()), JSON.stringify({ items: this.hypotheses.list() }), Number(this.config.revision || 0)]);
       return true;
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_CONFIG_PERSIST_FAILED", String(error?.message ?? error).slice(0, 120))); return false; }
   }
@@ -1175,12 +1169,13 @@ export class IqMultiRuntime extends EventEmitter {
         this.config.calculatedBankrollStake = Number(row.calculated_bankroll_stake) || this.config.calculatedBankrollStake;
         this.config.autoExecute = row.auto_execute === true;
         this.config.revision = Number(row.revision) || 0;
-        if (row.selection_json && typeof row.selection_json === "object") this.config.selection = { ...this.config.selection, ...row.selection_json };
+        const sameGeneration = Number(row.selection_json?.brainGeneration) === BRAIN_GENERATION;
         if (row.resolver_json) this.resolver.loadFrom(row.resolver_json);
-        if (row.research_json) this.research.loadFrom(row.research_json);
-        if (row.manager_json) this.manager.loadFrom(row.manager_json);
-        if (row.apprentice_json) this.apprentice.loadFrom(row.apprentice_json);
-        if (row.mode === "REAL") { this.config.mode = "REAL"; this.realMode.revoke("RESTART"); this.manager.setConfig({ mode: "SHADOW_RECOMMENDATION", autoSwitchEnabled: false }); }
+        if (row.research_json && sameGeneration) this.research.loadFrom(row.research_json);
+        if (row.supervisor_json) this.supervisor.loadFrom(row.supervisor_json);
+        if (row.hypotheses_json && Array.isArray(row.hypotheses_json.items)) for (const item of row.hypotheses_json.items) this.hypotheses.items.set(item.id, item);
+        if (row.apprentice_json && sameGeneration) this.apprentice.loadFrom(row.apprentice_json);
+        if (row.mode === "REAL") { this.config.mode = "REAL"; this.realMode.revoke("RESTART"); }
       }
       const markets = (await this.pool.query("SELECT * FROM iq_markets")).rows;
       for (const market of markets) {
@@ -1189,8 +1184,7 @@ export class IqMultiRuntime extends EventEmitter {
         ctx.enabled = market.enabled === true; ctx.paused = market.paused === true;
         ctx.maxStake = Number(market.max_stake) || ctx.maxStake;
         ctx.configuredStake = Number.isFinite(Number(market.configured_stake)) ? Number(market.configured_stake) : ctx.configuredStake;
-        ctx.strategy = market.strategy ?? null;
-        ctx.strategyVariantId = market.strategy_variant_id ?? ctx.strategyVariantId;
+        /* Fase 6: strategy/strategy_variant_id legados nao sao carregados (LEGACY_STRATEGY_AUDIT). */
         ctx.revision = Number(market.revision) || 0;
         if (market.active_id !== null && market.active_id !== undefined) ctx.activeId = Number(market.active_id);
         if (Array.isArray(market.instrument_types)) ctx.instrumentTypes = market.instrument_types;
@@ -1247,9 +1241,9 @@ export class IqMultiRuntime extends EventEmitter {
     return {
       marketKey: ctx.marketKey, marketType: ctx.marketType, canonical: ctx.canonical, symbol: ctx.symbol, display: ctx.display,
       enabled: ctx.enabled, paused: ctx.paused, maxStake: ctx.maxStake, configuredStake: ctx.configuredStake, strategy: ctx.strategy ?? null,
-      strategyVariantId: ctx.strategyVariantId ?? null, strategyEffective: this.#variantSelection(ctx).variantId, strategySource: this.#variantSelection(ctx).source, revision: Number(ctx.revision || 0),
+      setup: ctx.decisionState?.setup ?? null, regime: ctx.decisionState?.regime ?? null, revision: Number(ctx.revision || 0), brainGeneration: BRAIN_GENERATION,
       agents: ctx.agents ? {
-        at: ctx.agents.at, correlationId: ctx.agents.correlationId, variantId: ctx.agents.selection?.variantId ?? null,
+        at: ctx.agents.at, correlationId: ctx.agents.correlationId, setup: ctx.agents.trader?.setup ?? null,
         trader: { action: ctx.agents.trader.action, confidence: ctx.agents.trader.analysisConfidence, regime: ctx.agents.trader.regime, bias: ctx.agents.trader.structuralBias, primaryRisk: ctx.agents.trader.primaryRisk, supporting: ctx.agents.trader.supportingEvidence, contradicting: ctx.agents.trader.contradictingEvidence, latencyMs: ctx.agents.trader.latencyMs },
         critic: { independentAction: ctx.agents.critic.independentAction, verdict: ctx.agents.critic.traderAssessment, contradictions: ctx.agents.critic.contradictions, riskFlags: ctx.agents.critic.riskFlags, finalRecommendation: ctx.agents.critic.finalRecommendation, latencyMs: ctx.agents.critic.latencyMs },
         consensus: { action: ctx.agents.consensus.action, status: ctx.agents.consensus.status, reason: ctx.agents.consensus.reason, rules: ctx.agents.consensus.rules, confidence: ctx.agents.consensus.analysisConfidence, estimatedWinProbability: null, latencyMs: ctx.agents.consensus.latencyMs },
@@ -1263,7 +1257,7 @@ export class IqMultiRuntime extends EventEmitter {
       stats: ctx.stats,
       agentState: ctx.agentState, agentSince: ctx.agentSince, agentReason: ctx.agentReason ?? null,
       lastSignal: ctx.lastSignal, lastDecision: ctx.lastDecision, lastTrade: ctx.lastTrade,
-      selectionReason: ctx.selectionReason ?? null,
+      selectionReason: ctx.selectionReason ?? null, brainGeneration: BRAIN_GENERATION,
     };
   }
 
@@ -1286,7 +1280,7 @@ export class IqMultiRuntime extends EventEmitter {
       version: RUNTIME_VERSION, at: this.now(), serverTime: this.session.serverTimeMs,
       connection: { ...this.session, reconnects: this.reconnects, healthy: this.connectionHealth().healthy },
       mode: this.config.mode, modeState: this.modeState(),
-      config: { globalMaxStake: this.config.globalMaxStake, defaultStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, hardCap: this.config.hardCap, maxActiveMarkets: this.config.maxActiveMarkets, autoExecute: this.config.autoExecute, revision: this.config.revision, selection: this.config.selection },
+      config: { globalMaxStake: this.config.globalMaxStake, defaultStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, hardCap: this.config.hardCap, maxActiveMarkets: this.config.maxActiveMarkets, autoExecute: this.config.autoExecute, revision: this.config.revision, brainGeneration: BRAIN_GENERATION },
       activeCount: this.activeMarketKeys().length, activeLimit: this.config.maxActiveMarkets, universeCount: this.markets.size,
       portfolio: { ...portfolio, equityCurve: this.equityCurveCache ?? [] },
       markets,
@@ -1300,18 +1294,16 @@ export class IqMultiRuntime extends EventEmitter {
       },
       resolver: { lastResolvedAt: this.resolver.lastResolvedAt, resolvedCount: this.resolver.resolvedCount(), sampleActiveKeys: this.resolver.sampleActiveKeys, lastError: this.resolver.lastError },
       intelligence: this.intelligence.status(),
+      knowledge: { ...this.knowledge.status(), secondBrain: this.secondBrain.status() },
+      journal: { trades: this.journal.trades.length, decisions: this.journal.decisions.length },
+      hypotheses: this.hypotheses.list().length,
       feeds: this.feeds.status(),
       apprentice: this.apprentice.scoreboard(),
-      manager: this.manager.status(),
+      supervisor: this.supervisor.status(),
+      brain: { generation: BRAIN_GENERATION, version: BRAIN_VERSION, principles: CORE_BRAIN.principles.length, setups: Object.keys(CORE_BRAIN.setups).length, process: CORE_BRAIN.process },
       research: {
         agentLatency: latencySummary(this.agentLatency),
-        champions: Object.fromEntries([...this.markets.values()].filter((ctx) => ctx.enabled).map((ctx) => [ctx.marketKey, this.manager.state.get(ctx.marketKey)?.championVariantId ?? ctx.strategyVariantId ?? this.config.selection.variantId])),
-        perMarket: [...this.markets.values()].filter((ctx) => ctx.enabled).map((ctx) => {
-          const championId = this.manager.state.get(ctx.marketKey)?.championVariantId ?? ctx.strategyVariantId ?? this.config.selection.variantId;
-          const { board, strongest } = this.research.challengerFor(ctx.marketKey, championId);
-          const champion = board.variants.find((row) => row.variantId === championId) ?? null;
-          return { marketKey: ctx.marketKey, marketType: ctx.marketType, championVariantId: championId, champion, challenger: strongest, boardVersion: board.version, nextReviewIn: Math.max(0, this.manager.config.reviewEverySettlements - (this.manager.state.get(ctx.marketKey)?.settlementsSinceReview ?? 0)) };
-        }),
+        setups: Object.fromEntries([...this.markets.values()].filter((ctx) => ctx.enabled).map((ctx) => [ctx.marketKey, this.research.scoreboard(ctx.marketKey)])),
         ab: this.ab.scoreboard(),
       },
       signals: [...this.signalLog].reverse().slice(0, 40),

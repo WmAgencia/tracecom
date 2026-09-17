@@ -24,30 +24,31 @@ describe("Escritório — contrato de controles (nenhum botão decorativo)", () 
     for (const id of CONTROL_IDS.filter((value) => !["officeLimitInput", "officeCanvas", "officeOverlay", "officeAux", "officeActivity"].includes(value))) {
       expect(handlerSelector, `controle sem handler: ${id}`).toContain(`#${id}`);
     }
-    for (const hook of ["data-market-toggle", "data-market-pause", "data-market-stake", "data-market-strategy-save", "data-choose-toggle", "data-toggle-details", "data-aux", "data-close"]) {
+    for (const hook of ["data-market-toggle", "data-market-pause", "data-market-stake", "data-choose-toggle", "data-toggle-details", "data-aux", "data-close"]) {
       expect(handlerSelector, `hook sem handler: ${hook}`).toContain(hook);
     }
-    expect(handlerSelector, "controle do gestor sem handler").toContain("#officeManagerSave");
-    expect(officeJs).toContain("officeManagerMode");
-    expect(officeJs).toContain("officeManagerAuto");
+    expect(handlerSelector, "controle do supervisor sem handler").toContain("#officeSupervisorSave");
+    expect(officeJs).toContain("officeSupervisorSamples");
+    expect(officeJs).toContain("officeSupervisorDrawdown");
     expect(officeJs).toContain("data-market-stake-input");
-    expect(officeJs).toContain("data-market-strategy");
+    expect(officeJs).not.toContain("data-market-strategy");
   });
-  it("Central de Inteligencia, duplas e Gestor estao representados (backend decide primeiro)", () => {
+  it("Central de Inteligencia, duplas e Supervisor estao representados (backend decide primeiro)", () => {
     expect(officeJs).toContain("CENTRAL DE INTELIGÊNCIA");
     expect(officeJs).toContain("drawIntelligenceCentral");
     expect(officeJs).toContain("TRADER");
     expect(officeJs).toContain("CRÍTICO");
     expect(officeJs).toContain("consensusBadge");
-    expect(officeJs).toContain("GESTOR · ");
-    expect(officeJs).toContain("manager.review");
-    expect(officeJs).toContain("manager.switch");
-    expect(officeJs).toContain("ALTERANDO");
-    expect(officeJs).toContain("MANTENDO");
-    for (const endpoint of ["/api/iq/intelligence", "/api/iq/research/scoreboard", "/api/iq/manager/config", "/api/iq/apprentice", "/api/iq/apprentice/config"]) {
+    expect(officeJs).toContain("SUPERVISOR · ");
+    expect(officeJs).toContain("supervisor.review");
+    expect(officeJs).toContain("REVIEW_REQUIRED");
+    expect(officeJs).toContain("ANALISE PROFISSIONAL (BRAIN G2)");
+    for (const endpoint of ["/api/iq/intelligence", "/api/iq/research/scoreboard", "/api/iq/supervisor/config", "/api/iq/journal", "/api/iq/knowledge", "/api/iq/hypotheses", "/api/iq/second-brain", "/api/iq/apprentice", "/api/iq/apprentice/config"]) {
       expect(proxy, `proxy sem ${endpoint}`).toContain(endpoint);
       expect(server, `relay sem ${endpoint}`).toContain(endpoint);
     }
+    expect(proxy).not.toContain("/api/iq/manager");
+    expect(server).not.toContain("wsRuntime.managerStatus");
     expect(indexHtml).toContain("iqLabBody");
     expect(indexHtml).toContain("iqAbBody");
     expect(indexHtml).toContain("iqTechniquesBody");
@@ -76,11 +77,13 @@ describe("Escritório — contrato de controles (nenhum botão decorativo)", () 
       expect(server, `relay sem ${endpoint}`).toContain(endpoint);
     }
   });
-  it("anti-race de configuracao presente (revisoes) e variantes congeladas limitadas", () => {
+  it("anti-race de configuracao presente (revisoes) e nenhuma variante antiga na UI", () => {
     expect(officeJs).toContain("mergePinned");
     expect(officeJs).toContain("state.pinned");
     expect(officeJs).toContain("revision");
-    for (const variant of ["V3-45", "V3-60", "V3-120", "V3-180", "V3-300", "V8-45", "V8-60", "V2-60", "V2-120", "V1-300"]) expect(officeJs).toContain(variant);
+    for (const variant of ["V3-45", "V3-60", "V3-120", "V3-180", "V3-300", "V8-45", "V8-60", "V2-60", "V2-120", "V1-300"]) expect(officeJs).not.toContain(variant);
+    expect(officeJs).toContain("brainGeneration");
+    expect(officeJs).toContain("SEGUNDO CEREBRO (OBSIDIAN)");
     expect(officeJs).not.toContain("\"V9-");
     expect(officeJs).not.toContain("V5-");
   });
@@ -97,8 +100,8 @@ describe("Escritório — contrato de controles (nenhum botão decorativo)", () 
   });
   it("a UI nunca mostra configuracao diferente do runtime: salva e sincroniza com o backend", () => {
     expect(officeJs).toContain("configuredStake");
-    expect(officeJs).toContain("strategyVariantId");
-    expect(officeJs).toContain("Estratégia salva");
+    expect(officeJs).toContain("market.setup");
+    expect(officeJs).toContain("Supervisor:");
     expect(officeJs).toContain("Não foi possível salvar");
     expect(officeJs).toContain("valem para a próxima operação");
     expect(indexHtml).toContain("VALOR POR OPERAÇÃO");

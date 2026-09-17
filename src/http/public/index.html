@@ -104,7 +104,7 @@
             <span class="kicker">LEITURA OPERACIONAL</span>
             <div id="decisionBox" class="decision-box state-wait">
               <strong id="decisionValue">WAIT</strong>
-              <p id="decisionSummary">Aguardando sinal da estratégia selecionada.</p>
+              <p id="decisionSummary">Aguardando sinal do Professional Brain (G2).</p>
             </div>
             <section id="operationClock" class="operation-clock" aria-live="polite">
               <div class="clock-block"><span id="clockState" class="clock-label">AGUARDANDO</span><b id="clockValue">—</b><small id="clockText" class="fine">A próxima análise inicia automaticamente.</small></div>
@@ -139,20 +139,20 @@
           <span class="fine">Sem martingale · execução manual · nenhuma ordem enviada.</span>
         </section>
 
-        <section class="console-strategies" aria-label="Estratégias congeladas">
-          <div class="lower-head"><div><span class="kicker">SELEÇÃO OPERACIONAL</span><h2>Estratégias</h2></div><span id="strategyModeBadge" class="badge">MANUAL</span></div>
+        <section class="console-strategies" aria-label="Setups do Professional Brain G2">
+          <div class="lower-head"><div><span class="kicker">SELEÇÃO OPERACIONAL</span><h2>Brain G2 · Setups</h2></div><span id="strategyModeBadge" class="badge">BRAIN G2</span></div>
           <p id="selectionNotice" class="fine" hidden></p>
           <p id="horizonWarning" class="fine warn" hidden></p>
-          <div id="strategyList" class="strategy-list"><p class="fine">Carregando estatísticas reais do shadow engine…</p></div>
-          <p class="fine">WR e N vêm do shadow engine (V1/V2/V3/V8 rodando em paralelo). A variante selecionada controla o agente a partir do próximo sinal.</p>
+          <div id="strategyList" class="strategy-list"><p class="fine">Variantes V1/V2/V3/V8 removidas do runtime ativo (LEGACY_STRATEGY_AUDIT apenas historico). O placar por SETUP e shadow e nao altera a metodologia.</p></div>
+          <p class="fine">O placar por SETUP/regime roda em shadow por mercado. O Supervisor nao troca metodologia; o Professor avalia a qualidade de cada decisao.</p>
         </section>
       </div>
 
       <!-- ============ PÁGINA: HISTÓRICO ============ -->
       <div id="page-history" class="page" hidden>
         <div class="page-head"><span class="kicker">HISTÓRICO</span><h1>Operações e sinais shadow</h1><span id="historyPageCount" class="badge">0</span></div>
-        <div class="controls"><label>Estratégia <select id="historyFilterStrategy"><option value="">TODAS</option><option value="V1">V1</option><option value="V2">V2</option><option value="V3">V3</option><option value="V8">V8</option></select></label><label>Resultado <select id="historyFilterResult"><option value="">TODOS</option><option value="WIN">WIN</option><option value="LOSS">LOSS</option><option value="DRAW">DRAW</option></select></label><button id="historyRefresh" class="quiet" type="button">ATUALIZAR</button></div>
-        <div class="history-table-wrap"><table class="history-table"><thead><tr><th>DATA/HORA</th><th>ESTRATÉGIA</th><th>HORIZONTE</th><th>DIR</th><th>ENTRY</th><th>SETTLEMENT</th><th>RESULTADO</th><th>HASH</th></tr></thead><tbody id="historyTableBody"><tr><td colspan="8" class="fine">Carregando…</td></tr></tbody></table></div>
+        <div class="controls"><label>Resultado <select id="historyFilterResult"><option value="">TODOS</option><option value="WIN">WIN</option><option value="LOSS">LOSS</option><option value="DRAW">DRAW</option></select></label><button id="historyRefresh" class="quiet" type="button">ATUALIZAR</button></div>
+        <div class="history-table-wrap"><table class="history-table"><thead><tr><th>DATA/HORA</th><th>SETUP</th><th>HORIZONTE</th><th>DIR</th><th>ENTRY</th><th>SETTLEMENT</th><th>RESULTADO</th><th>HASH</th></tr></thead><tbody id="historyTableBody"><tr><td colspan="8" class="fine">Carregando.</td></tr></tbody></table></div>
         <article class="history-card"><div class="lower-head"><div><span class="kicker">SESSÃO (LOCAL)</span><h2>Sinais recentes do agente</h2></div><span id="historyCount" class="badge">0</span></div><div id="historyList" class="history-list"><p>Nenhum sinal ainda.</p></div></article>
         <article class="history-card"><div class="lower-head"><div><span class="kicker">MULTIATIVO · NORMAL/OTC</span><h2>Sinais e destino de execução</h2></div><span id="iqSignalsCount" class="badge">0</span></div>
           <p class="fine">Todo sinal tem destino observável: EXECUTED (virou ordem), BLOCKED (motivo), EXPIRED (ficou velho) ou DUPLICATE. Nenhum BUY/SELL desaparece sem explicação.</p>
@@ -163,12 +163,12 @@
       <!-- ============ PÁGINA: TREINAMENTO DOS AGENTES ============ -->
       <div id="page-training" class="page" hidden>
         <div class="page-head"><span class="kicker">TREINAMENTO DOS AGENTES</span><h1>POR MERCADO · CHAMPION / CANDIDATE</h1><span id="trainingPageState" class="badge">TRAINING 24H</span></div>
-        <section class="history-card"><div class="lower-head"><div><span class="kicker">MULTIATIVO</span><h2>Desempenho por mercado (estratégias congeladas)</h2></div><span id="iqTrainingUpdated" class="badge">—</span></div>
-          <p class="fine">Sinais encontrados, quantos viraram ordem, quantos foram bloqueados e por quê. Nenhuma estratégia é alterada por esta página.</p>
-          <div class="history-table-wrap"><table class="history-table"><thead><tr><th>MERCADO</th><th>TIPO</th><th>ESTRATÉGIA</th><th>PAYOUT</th><th>SINAIS</th><th>EXECUTADOS</th><th>BLOQUEADOS</th><th>EXPIRADOS</th><th>W/L/D</th><th>RESULTADO</th><th>STATUS</th></tr></thead><tbody id="iqTrainingMarketsBody"><tr><td colspan="11" class="fine">Aguardando dados do escritório…</td></tr></tbody></table></div>
+        <section class="history-card"><div class="lower-head"><div><span class="kicker">MULTIATIVO</span><h2>Desempenho por mercado (brain G2)</h2></div><span id="iqTrainingUpdated" class="badge">-</span></div>
+          <p class="fine">Sinais encontrados, quantos viraram ordem, quantos foram bloqueados e por que. Nenhuma metodologia e alterada por esta pagina.</p>
+          <div class="history-table-wrap"><table class="history-table"><thead><tr><th>MERCADO</th><th>TIPO</th><th>SETUP</th><th>PAYOUT</th><th>SINAIS</th><th>EXECUTADOS</th><th>BLOQUEADOS</th><th>EXPIRADOS</th><th>W/L/D</th><th>RESULTADO</th><th>STATUS</th></tr></thead><tbody id="iqTrainingMarketsBody"><tr><td colspan="11" class="fine">Aguardando dados do escritorio.</td></tr></tbody></table></div>
         </section>
         <section class="history-card"><div class="lower-head"><div><span class="kicker">LABORATÓRIO</span><h2>Champion vs Challengers (shadow prospectivo)</h2></div><span id="iqLabUpdated" class="badge">—</span></div>
-          <p class="fine">Todas as 10 estratégias congeladas rodam em shadow por mercado. O gestor só troca com amostra e vantagem consistentes (anti-overfitting/anti-flapping).</p>
+          <p class="fine">O placar por SETUP/regime roda em shadow por mercado; o Supervisor apenas monitora e pede revisao (nunca troca metodologia). Nenhuma variante V1/V2/V3/V8 existe no runtime (brain G2).</p>
           <div class="history-table-wrap"><table class="history-table"><thead><tr><th>MERCADO</th><th>TIPO</th><th>CAMPEÃ</th><th>AMOSTRA</th><th>WR</th><th>PnL</th><th>DESAFIADORA</th><th>AMOSTRA</th><th>WR</th><th>Δ PnL/TRADE</th><th>PRÓX. REVISÃO</th></tr></thead><tbody id="iqLabBody"><tr><td colspan="11" class="fine">Aguardando research…</td></tr></tbody></table></div>
           <div class="office-section-title">EXPERIMENTO A/B — ARQUITETURAS (mesmo snapshot causal)</div>
           <div class="history-table-wrap"><table class="history-table"><thead><tr><th>ARQUITETURA</th><th>TRADES</th><th>W/L/E</th><th>WR</th><th>PnL</th><th>SEM OPERAR</th></tr></thead><tbody id="iqAbBody"><tr><td colspan="6" class="fine">Aguardando oportunidades comparáveis…</td></tr></tbody></table></div>

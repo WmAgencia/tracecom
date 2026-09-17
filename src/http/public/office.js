@@ -15,7 +15,7 @@ const OfficeUI = (() => {
   const signed = (value) => (Number.isFinite(Number(value)) ? `${Number(value) >= 0 ? "+" : "−"}R$ ${Math.abs(Number(value)).toFixed(2)}` : "—");
   const money = (value, currency = "") => (Number.isFinite(Number(value)) ? `${currency ? currency + " " : ""}${Number(value).toFixed(2)}` : "—");
   const timeOf = (ms) => (Number.isFinite(Number(ms)) ? new Date(Number(ms)).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "--:--");
-  const STRATEGY_VARIANTS = ["V3-45", "V3-60", "V3-120", "V3-180", "V3-300", "V8-45", "V8-60", "V2-60", "V2-120", "V1-300"];
+
 
   const TILE_W = 84, TILE_H = 38, TILE_Z = 26;
   const SLOTS = [
@@ -28,7 +28,7 @@ const OfficeUI = (() => {
     camera: { x: 0, y: 0, zoom: 1 }, defaultCamera: null, dragging: false, dragMoved: false, lastPointer: { x: 0, y: 0 },
     flashes: new Map(), deskAnim: new Map(), initialized: false, showTechActivity: false,
     pinned: new Map(), drawerDirty: false, toast: null,
-    manager: { gx: 7.2, gy: 8, slotIndex: 2, state: "OBSERVANDO", label: null, until: 0, lastWander: 0 },
+    supervisor: { gx: 7.2, gy: 8, slotIndex: 2, state: "OBSERVANDO", label: null, until: 0, lastWander: 0 },
   };
   let canvas = null, ctx = null, overlay = null;
 
@@ -219,7 +219,7 @@ const OfficeUI = (() => {
     block(g, plate.x - badgeW / 2, plate.y + 24 * z, badgeW, badgeH, market.marketType === "OTC" ? "#3a2a10" : "#16264a");
     g.strokeStyle = market.marketType === "OTC" ? "#96702c" : "#3b5da8"; g.strokeRect(Math.round(plate.x - badgeW / 2), Math.round(plate.y + 24 * z), Math.round(badgeW), Math.round(badgeH));
     text(g, market.marketType, plate.x, plate.y + 24 * z + badgeH / 2, { size: 10, color: market.marketType === "OTC" ? "#ffd08a" : "#9fc6ff", bold: true });
-    text(g, `payout ${market.payout ?? "—"} · ${brl(market.configuredStake)} · ${market.strategyEffective ?? "—"}`, plate.x, plate.y + ph + 9 * z, { size: 9, color: "#7f93b8" });
+    text(g, `payout ${market.payout ?? "-"}  -  ${brl(market.configuredStake)}  -  ${market.setup ?? market.regime ?? "-"}`, plate.x, plate.y + ph + 9 * z, { size: 9, color: "#7f93b8" });
     block(g, plate.x + pw / 2 - 8 * z, plate.y + 5 * z, 5 * z, 5 * z, market.connectionHealth?.connected ? "#37d67a" : "#ff5d5d");
     const agentPos = project(cx + 0.15, cy + 1.05, 0.04);
     const traderPos = project(cx - 0.2, cy + 1.05, 0.04);
@@ -302,7 +302,7 @@ const OfficeUI = (() => {
       { key: "MARKET", label: "MERCADO", value: intel.MARKET?.status === "OK" ? `${office.activeCount} mercados · vol ${Number(intel.MARKET.payload?.avgAtrNormalized ?? 0).toFixed(4)}` : "SEM DADOS", ok: intel.MARKET?.status === "OK" },
       { key: "RISK", label: "RISCO", value: intel.RISK?.status === "OK" ? `${office.portfolio?.openPositions?.length ?? 0} em risco · ${brl(office.aux?.risk?.stakeAtRisk ?? 0)}` : "SEM DADOS", ok: intel.RISK?.status === "OK" },
       { key: "SECURITY", label: "SEGURANÇA", value: intel.SECURITY?.status === "OK" ? "DADOS ÍNTEGROS" : "DADOS PARCIAIS", ok: intel.SECURITY?.status === "OK" },
-      { key: "RESEARCH", label: "PESQUISA", value: `${((research.champions && Object.keys(research.champions).length) || 0)} mercados · 10 estratégias`, ok: intel.RESEARCH?.status === "OK" },
+      { key: "RESEARCH", label: "PESQUISA", value: `${Object.keys(research.setups ?? {}).length} mesas  -  ${office?.brain?.setups ?? 0} setups G2`, ok: intel.RESEARCH?.status === "OK" },
     ];
     text(g, "CENTRAL DE INTELIGÊNCIA", project(7.2, -6.2, 0.6).x, project(7.2, -6.2, 0.6).y, { size: 12, color: "#7fb0ff", bold: true });
     domains.forEach((domain, index) => {
@@ -327,24 +327,23 @@ const OfficeUI = (() => {
     if (consensus.status === "STALE") return { text: "AGUARDANDO", color: "#9fb2d6" };
     return { text: "SEM CONSENSO", color: "#ffd76a" };
   }
-  function drawManager(g, frame) {
-    const office = state.office;
-    const manager = state.manager;
-    const slot = SLOTS[manager.slotIndex] ?? SLOTS[0];
-    manager.gx += (slot.gx + 1.2 - manager.gx) * 0.06;
-    manager.gy += (slot.gy + 2.6 - manager.gy) * 0.06;
-    const position = project(manager.gx, manager.gy, 0.04);
-    drawAgent(g, position.x, position.y, Math.max(1.6, 2.4 * zoom()), { shirt: "#7a3fd0", shirtLight: "#a06ef0", pants: "#241a3a", skin: "#f0c39a", hair: "#171223" }, manager.state === "REVISANDO" ? "think" : "typing", frame);
-    const color = manager.state === "ALTERANDO" ? "#8ce4a0" : manager.state === "REVISANDO" ? "#ffd76a" : "#b794ff";
-    const label = manager.label ?? manager.state;
+  function drawSupervisor(g, frame) {
+    const supervisor = state.supervisor;
+    const slot = SLOTS[supervisor.slotIndex] ?? SLOTS[0];
+    supervisor.gx += (slot.gx + 1.2 - supervisor.gx) * 0.06;
+    supervisor.gy += (slot.gy + 2.6 - supervisor.gy) * 0.06;
+    const position = project(supervisor.gx, supervisor.gy, 0.04);
+    drawAgent(g, position.x, position.y, Math.max(1.6, 2.4 * zoom()), { shirt: "#7a3fd0", shirtLight: "#a06ef0", pants: "#241a3a", skin: "#f0c39a", hair: "#171223" }, supervisor.state === "REVISANDO" ? "think" : "typing", frame);
+    const color = supervisor.state === "REVISANDO" ? "#ffd76a" : "#b794ff";
+    const label = supervisor.label ?? supervisor.state;
     const z = zoom();
     g.font = `bold ${Math.max(8, Math.round(9.5 * z))}px "Courier New", monospace`;
-    const width = Math.max(96 * z, g.measureText(label).width + 20 * z), height = 20 * z;
+    const width = Math.max(120 * z, g.measureText(label).width + 20 * z), height = 20 * z;
     const x = Math.min(Math.max(position.x, width / 2 + 6), (canvas?.clientWidth ?? 1000) - width / 2 - 6);
     const y = Math.max(position.y - 40 * z, height + 8);
     block(g, x - width / 2, y - height, width, height, "#0d0718f2");
     g.strokeStyle = color; g.lineWidth = Math.max(1.2, 1.4 * z); g.strokeRect(Math.round(x - width / 2), Math.round(y - height), Math.round(width), Math.round(height));
-    g.fillStyle = color; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(`GESTOR · ${label}`, x, y - height / 2 + z);
+    g.fillStyle = color; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(`SUPERVISOR ·  ${label}`, x, y - height / 2 + z);
   }
   function drawBubble(g, bubble) {
     const z = zoom();
@@ -369,12 +368,12 @@ const OfficeUI = (() => {
     ctx.clearRect(0, 0, width, height);
     ctx.imageSmoothingEnabled = false;
     const frame = Math.floor(timestamp / 380);
-    if (Date.now() > state.manager.until) {
-      state.manager.state = "OBSERVANDO"; state.manager.label = null;
-      if (Date.now() - state.manager.lastWander > 15_000) {
-        state.manager.lastWander = Date.now();
+    if (Date.now() > state.supervisor.until) {
+      state.supervisor.state = "OBSERVANDO"; state.supervisor.label = null;
+      if (Date.now() - state.supervisor.lastWander > 15_000) {
+        state.supervisor.lastWander = Date.now();
         const enabled = (state.office?.markets ?? []).map((market, index) => ({ market, index })).filter((row) => row.market.enabled);
-        if (enabled.length) state.manager.slotIndex = enabled[Math.floor(Math.random() * enabled.length)]?.index ?? state.manager.slotIndex;
+        if (enabled.length) state.supervisor.slotIndex = enabled[Math.floor(Math.random() * enabled.length)]?.index ?? state.supervisor.slotIndex;
       }
     }
     const targets = [], bubbles = [];
@@ -396,7 +395,7 @@ const OfficeUI = (() => {
     for (const [index, market] of markets.entries()) { drawSlotPlate(ctx, index, market); drawDesk(ctx, market, index, targets, bubbles, frame); }
     drawApprenticeDesk(ctx, frame, targets, bubbles);
     for (const bubble of bubbles) drawBubble(ctx, bubble);
-    drawManager(ctx, frame);
+    drawSupervisor(ctx, frame);
     canvas.__targets = targets;
     ctx.fillStyle = "#4da3ff22";
     for (let index = 0; index < 20; index += 1) { const px = ((index * 97 + frame * 3) % width); const py = ((index * 53 + Math.sin(index + frame / 6) * 12 + height * 0.3) % height); ctx.fillRect(Math.round(px), Math.round(py), 2, 2); }
@@ -500,15 +499,14 @@ const OfficeUI = (() => {
     else if (event.type === "connection.disconnected") activityLine("IQ Option desconectada — sistema pausado automaticamente.", "blocked", event.at);
     else if (event.type === "connection.ready") activityLine("IQ Option conectada.", "", event.at);
     else if (event.type === "mode.changed") activityLine(`Conta alterada para ${event.mode === "REAL" ? "real" : "de teste"} — sistema parado por segurança.`, "", event.at);
-    else if (event.type === "manager.review" || event.type === "manager.switch") {
+    else if (event.type === "supervisor.review") {
       const index = (state.office?.markets ?? []).findIndex((row) => row.marketKey === event.marketKey);
-      if (index >= 0) state.manager.slotIndex = index;
-      const switching = event.type === "manager.switch" || event.decision === "SWITCH";
-      state.manager.state = switching ? "ALTERANDO" : event.decision === "KEEP" ? "MANTENDO" : "REVISANDO";
-      state.manager.label = switching ? `${event.from ?? "?"} → ${event.to ?? "?"}` : event.decision === "KEEP" ? `MANTENDO ${event.champion ?? ""}`.trim() : `REVISANDO ${event.challenger ?? ""}`.trim();
-      state.manager.until = Date.now() + 12_000;
-      const reason = reasonText(event.reason);
-      activityLine(`Gestor de estratégias ${switching ? "ALTEROU" : event.decision === "RECOMMEND_SWITCH" ? "RECOMENDOU" : "manteve"} ${event.marketKey}: ${event.champion ?? "—"} → ${event.challenger ?? "—"} (${reason}).`, switching ? "" : "blocked", event.at);
+      if (index >= 0) state.supervisor.slotIndex = index;
+      const escalated = (event.reasons ?? []).length > 0;
+      state.supervisor.state = escalated ? "REVISANDO" : "OBSERVANDO";
+      state.supervisor.label = escalated ? `REVIEW_REQUIRED ${event.marketKey}` : `MONITORANDO ${event.marketKey}`;
+      state.supervisor.until = Date.now() + 12_000;
+      activityLine(`<b>SUPERVISOR</b> ${escalated ? `pediu revisao de ${event.marketKey}: ${(event.reasons ?? []).map((reason) => reasonText(reason)).join(", ")}` : `monitorou ${event.marketKey} sem alertas`}. Metodologia intacta.`, escalated ? "blocked" : "", event.at);
     }
     else if (event.type === "apprentice.lesson") {
       const market = state.office?.markets?.find((row) => row.marketKey === event.marketKey);
@@ -593,7 +591,7 @@ const OfficeUI = (() => {
         <div><span>STATUS</span><b>${status}</b></div>
         <div><span>PAYOUT</span><b>${market.payout ?? "—"}%</b></div>
         <div><span>VALOR POR OPERAÇÃO</span><b>${brl(market.configuredStake ?? state.office.config.defaultStake)}</b></div>
-        <div><span>ESTRATÉGIA</span><b>${market.strategyEffective ?? "—"}${market.strategySource === "MARKET" ? " (individual)" : " (global)"}</b></div>
+        <div><span>SETUP / REGIME</span><b>${market.setup ?? "-"}  -  ${market.regime ?? "-"}</b></div>
         <div><span>OPERAÇÕES HOJE</span><b>${daily.trades ?? 0}</b></div>
         <div><span>GANHOS / PERDAS</span><b>${daily.wins ?? 0} / ${daily.losses ?? 0}</b></div>
         <div><span>RESULTADO</span><b>${signed(daily.settledPnl ?? 0)}</b></div>
@@ -608,8 +606,7 @@ const OfficeUI = (() => {
       <div class="office-actions">
         <label class="office-field">VALOR R$ <input type="number" min="1" max="100" step="1" value="${Number(market.configuredStake ?? state.office.config.defaultStake) || 1}" data-market-stake-input="${market.marketKey}" /></label>
         <button class="office-btn" data-market-stake="${market.marketKey}">SALVAR VALOR</button>
-        <label class="office-field">ESTRATÉGIA <select data-market-strategy="${market.marketKey}">${STRATEGY_VARIANTS.map((variant) => `<option value="${variant}" ${(market.strategyEffective ?? "") === variant ? "selected" : ""}>${variant}</option>`).join("")}</select></label>
-        <button class="office-btn" data-market-strategy-save="${market.marketKey}">SALVAR ESTRATÉGIA</button>
+        <input type="hidden" data-noop="1" />
       </div>
       <p class="fine">Alterações valem para a próxima operação; uma operação em andamento mantém o valor combinado. Limite máximo de segurança: ${brl(state.office.config.hardCap)}.</p>
       <div class="office-section-title">AGENTES (TRADER + CRÍTICO + CONSENSO)</div>
@@ -635,15 +632,15 @@ const OfficeUI = (() => {
         <div><span>MERCADO / RISCO</span><b>${state.office.intelligence?.MARKET?.status ?? "—"} / ${state.office.intelligence?.RISK?.status ?? "—"}</b></div>
         <div><span>SEGURANÇA</span><b>${state.office.intelligence?.SECURITY?.payload?.dataQuality ?? "—"}</b></div>
       </div>
-      <div class="office-section-title">ESTRATÉGIA (CHAMPION / CHALLENGER)</div>
-      ${(() => { const row = (state.office.research?.perMarket ?? []).find((entry) => entry.marketKey === market.marketKey); return row ? `<div class="office-kv">
-        <div><span>CAMPEÃ</span><b>${row.championVariantId}</b></div>
-        <div><span>DESAFIADORA</span><b>${row.challenger?.variantId ?? "—"} (${row.challenger?.trades ?? 0} trades)</b></div>
-        <div><span>AMOSTRA CAMPEÃ</span><b>${row.champion?.trades ?? 0} trades · WR ${row.champion?.winRate === null || row.champion?.winRate === undefined ? "—" : `${(row.champion.winRate * 100).toFixed(1)}%`}</b></div>
-        <div><span>PRÓXIMA REVISÃO</span><b>em ${row.nextReviewIn} settlements</b></div>
-        <div><span>ÚLTIMA DECISÃO DO GESTOR</span><b>${(state.office.manager?.reviews ?? []).find((review) => review.marketKey === market.marketKey && review.type !== "OUTCOME")?.decision ?? "—"}</b></div>
-        <div><span>MODO DO GESTOR</span><b>${state.office.manager?.mode ?? "—"}${state.office.manager?.autoSwitchEnabled ? " (auto)" : ""}</b></div>
-      </div>` : "<p class='fine'>Sem placar de research ainda.</p>"; })()}
+      <div class="office-section-title">ANALISE PROFISSIONAL (BRAIN G2)</div>
+      ${(() => { const row = (state.office.research?.setups ?? {})[market.marketKey]; const opportunities = row ? Object.values(row.setups ?? {}).reduce((sum, item) => sum + (item.opportunities ?? 0), 0) : 0; return `<div class="office-kv">
+        <div><span>GERACAO / SETUP</span><b>G${market.brainGeneration ?? state.office.brain?.generation ?? 2}  -  ${market.setup ?? "-"}</b></div>
+        <div><span>REGIME</span><b>${market.regime ?? "-"}</b></div>
+        <div><span>CONSENSO</span><b>${market.agents?.consensus?.status ?? "-"}  -  ${market.agents?.consensus?.action ?? "-"}</b></div>
+        <div><span>OPORTUNIDADES (SHADOW)</span><b>${opportunities}</b></div>
+        <div><span>ESPERAS REGISTRADAS</span><b>${row?.waits ?? 0}</b></div>
+        <div><span>CONHECIMENTO USADO</span><b>${(decision.knowledge?.ids ?? []).length} notas  -  ${decision.knowledge?.version ?? "-"}</b></div>
+      </div><p class="fine">Nenhuma variante antiga (V1/V2/V3/V8) participa da decisao; o placar e shadow por setup/regime.</p>`; })()}
       <button class="office-details-toggle" data-toggle-details="1">DETALHES AVANÇADOS</button>
       <div class="office-details" id="officeMarketDetails" hidden>
         <div class="office-kv">
@@ -707,9 +704,11 @@ const OfficeUI = (() => {
     else if (kind === "market") content = `<div class="office-kv"><div><span>MERCADOS ATIVOS</span><b>${office.intelligence?.MARKET?.payload?.activeMarkets ?? office.activeCount}</b></div><div><span>VOL. MÉDIA (ATR/PRECO)</span><b>${office.intelligence?.MARKET?.payload?.avgAtrNormalized ?? "—"}</b></div><div><span>ADX MÉDIO</span><b>${office.intelligence?.MARKET?.payload?.avgAdx ?? "—"}</b></div><div><span>VIÉS AGREGADO</span><b>${office.intelligence?.MARKET?.payload?.bullish ?? 0} compra · ${office.intelligence?.MARKET?.payload?.bearish ?? 0} venda</b></div></div><p class="fine">Sessões e relações entre mercados: dados internos do runtime.</p>`;
     else if (kind === "security") content = `<div class="office-kv"><div><span>CONEXÃO</span><b>${office.intelligence?.SECURITY?.payload?.connectionHealthy ? "saudável" : "degradada"}</b></div><div><span>SERVER TIME</span><b>${office.intelligence?.SECURITY?.payload?.timeValid ? "sincronizado" : "dessincronizado"}</b></div><div><span>CANDLES REJEITADOS</span><b>${office.intelligence?.SECURITY?.payload?.rejectedCandles ?? 0}</b></div><div><span>QUALIDADE</span><b>${office.intelligence?.SECURITY?.payload?.dataQuality ?? "—"}</b></div></div><p class="fine">NORMAL/OTC permanecem separados; freshness e provenance monitorados por mercado.</p>`;
     else if (kind === "research") {
-      const perMarket = office.research?.perMarket ?? [];
-      content = `<div class="office-kv"><div><span>VARIANTES EM SHADOW</span><b>10</b></div><div><span>MERCADOS MONITORADOS</span><b>${perMarket.length}</b></div><div><span>MODO DO GESTOR</span><b>${office.manager?.mode ?? "—"}</b></div><div><span>LATÊNCIA AGENTES p50/p95</span><b>${office.research?.agentLatency?.p50 ?? 0} / ${office.research?.agentLatency?.p95 ?? 0} ms</b></div></div>
-      <div class="office-list">${perMarket.slice(0, 8).map((row) => `<div class="office-list-row"><div><b>${row.marketKey}</b><small>campeã ${row.championVariantId} · desafiadora ${row.challenger?.variantId ?? "—"} (amostra ${row.challenger?.trades ?? 0})</small></div><div class="right"><span class="office-badge">próxima revisão em ${row.nextReviewIn}</span></div></div>`).join("") || "<p class='fine'>Sem mercados ativos.</p>"}</div>`;
+      const setups = office.research?.setups ?? {};
+      const ab = office.research?.ab?.arms ?? {};
+      content = `<div class="office-kv"><div><span>MESAS COM SHADOW DE SETUP</span><b>${Object.keys(setups).length}</b></div><div><span>SETUPS NO BRAIN G2</span><b>${office.brain?.setups ?? 0}</b></div><div><span>SUPERVISOR</span><b>${office.supervisor?.reviews?.length ?? 0} revisoes</b></div><div><span>LATENCIA AGENTES p50/p95</span><b>${office.research?.agentLatency?.p50 ?? 0} / ${office.research?.agentLatency?.p95 ?? 0} ms</b></div></div>
+      <div class="office-list">${Object.entries(setups).slice(0, 8).map(([key, board]) => `<div class="office-list-row"><div><b>${key}</b><small>${Object.values(board.setups ?? {}).reduce((sum, item) => sum + (item.opportunities ?? 0), 0)} oportunidades  -  ${board.waits ?? 0} esperas  -  ${board.trades ?? 0} liquidadas</small></div><div class="right"><span class="office-badge">shadow</span></div></div>`).join("") || "<p class='fine'>Sem mercados ativos.</p>"}</div>
+      <div class="office-list"><div class="office-list-row"><div><b>A/B v2</b><small>A_TRADER ${ab.A_TRADER?.trades ?? 0}  -  B_TRADER_CRITIC ${ab.B_TRADER_CRITIC?.trades ?? 0}  -  C_PLUS_INTELLIGENCE ${ab.C_PLUS_INTELLIGENCE?.trades ?? 0}  -  D_APPRENTICE ${ab.D_APPRENTICE?.trades ?? 0}</small></div><div class="right"><span class="office-badge">mesmo snapshot causal</span></div></div></div>`;
     }
     else content = `<p class="fine">Ainda não configurado. Nenhuma informação é inventada enquanto o feed não existir.</p>`;
     overlay.innerHTML = drawerShell(titles[kind] ?? kind.toUpperCase(), "CENTRAL DE INTELIGÊNCIA", "muted", content);
@@ -777,21 +776,24 @@ const OfficeUI = (() => {
         <div><span>MENSAGENS / CANDLES</span><b>${metrics.messages ?? 0} / ${metrics.candles ?? 0}</b></div>
         <div><span>LATÊNCIA AGENTES p50/p95</span><b>${office.research?.agentLatency?.p50 ?? 0} / ${office.research?.agentLatency?.p95 ?? 0} ms</b></div>
       </div>
-      <div class="office-section-title">GESTOR DE ESTRATÉGIAS</div>
+      <div class="office-section-title">SUPERVISOR DE DESEMPENHO</div>
       <div class="office-actions">
-        <label class="office-field">MODO
-          <select id="officeManagerMode">
-            <option value="SHADOW_RECOMMENDATION" ${office.manager?.mode !== "AUTO_STRATEGY_SWITCH" ? "selected" : ""}>Somente recomendar (shadow)</option>
-            <option value="AUTO_STRATEGY_SWITCH" ${office.manager?.mode === "AUTO_STRATEGY_SWITCH" ? "selected" : ""}>Troca automática (somente conta de teste)</option>
-          </select>
-        </label>
-        <label class="office-field"><input type="checkbox" id="officeManagerAuto" ${office.manager?.autoSwitchEnabled ? "checked" : ""} /> permitir troca automática</label>
-        <label class="office-field">REVISAR A CADA <input type="number" min="5" max="200" step="1" id="officeManagerEvery" value="${office.manager?.config?.reviewEverySettlements ?? 10}" /> settlements</label>
-        <button class="office-btn" id="officeManagerSave">SALVAR CONFIGURAÇÃO DO GESTOR</button>
+        <label class="office-field">AMOSTRA MIN <input type="number" min="10" max="500" step="1" id="officeSupervisorSamples" value="${office.supervisor?.config?.minSamples ?? 20}" /></label>
+        <label class="office-field">DRAWDOWN MAX <input type="number" min="1" max="100" step="1" id="officeSupervisorDrawdown" value="${office.supervisor?.config?.maxDrawdown ?? 8}" /></label>
+        <label class="office-field">PERDAS SEGUIDAS <input type="number" min="2" max="50" step="1" id="officeSupervisorLosses" value="${office.supervisor?.config?.maxConsecutiveLosses ?? 6}" /></label>
+        <button class="office-btn" id="officeSupervisorSave">SALVAR SUPERVISOR</button>
       </div>
-      <p class="fine">Critérios: amostras mínimas ${office.manager?.config?.minTotalSamples ?? 60}/${office.manager?.config?.minRecentSamples ?? 30}, vantagem mínima ${office.manager?.config?.minPerformanceDelta ?? 0.08}, drawdown máx ${office.manager?.config?.maxDrawdown ?? 8}, payout mín ${office.manager?.config?.minPayoutQuality ?? 75}%, cooldown ${office.manager?.config?.cooldownSettlements ?? 30} settlements. Troca automática é proibida em REAL.</p>
-      <div class="office-section-title">ÚLTIMAS REVISÕES</div>
-      <div class="office-list">${(office.manager?.reviews ?? []).slice(0, 6).map((review) => `<div class="office-list-row"><div><b>${review.marketKey} · ${review.decision}</b><small>${review.champion} → ${review.challenger ?? "—"} · ${reasonText(review.reason)}</small></div><div class="right"><span class="office-badge">${review.type ?? "REVIEW"}</span></div></div>`).join("") || "<p class='fine'>Nenhuma revisão ainda (a cada 10 settlements do mercado).</p>"}</div>
+      <p class="fine">O supervisor apenas monitora e pede REVIEW_REQUIRED; ele NUNCA troca metodologia nem inventa estrategia. Nenhuma variante V1/V2/V3/V8 existe no runtime (brain G2).</p>
+      <div class="office-section-title">SEGUNDO CEREBRO (OBSIDIAN)</div>
+      <div class="office-kv">
+        <div><span>MODO</span><b>${office.knowledge?.secondBrain?.mode ?? "OFFLINE"}</b></div>
+        <div><span>ESCOPO</span><b>${office.knowledge?.secondBrain?.scope ?? "TraceCom/"}</b></div>
+        <div><span>NOTAS INDEXADAS</span><b>${office.knowledge?.notes ?? 0}</b></div>
+        <div><span>VERSAO DO CONHECIMENTO</span><b>${office.knowledge?.knowledgeVersion ?? "-"}</b></div>
+        <div><span>JOURNAL / HIPOTESES</span><b>${office.journal?.trades ?? 0} trades  -  ${office.hypotheses ?? 0} hipoteses</b></div>
+      </div>
+      <div class="office-section-title">ULTIMAS REVISOES DO SUPERVISOR</div>
+      <div class="office-list">${(office.supervisor?.reviews ?? []).slice(0, 6).map((review) => `<div class="office-list-row"><div><b>${review.marketKey}  -  ${review.status}</b><small>${(review.reasons ?? []).map((reason) => reasonText(reason)).join(", ") || "sem alertas"}</small></div><div class="right"><span class="office-badge">${review.status}</span></div></div>`).join("") || "<p class='fine'>Nenhuma revisao ainda.</p>"}</div>
       <div class="office-actions">
         <button class="office-btn" id="officeStressRun">Rodar teste de estresse (1/3/5/10)</button>
         <button class="office-btn ghost" id="officeRawLog">${state.showTechActivity ? "Ver atividade amigável" : "Ver log técnico"}</button>
@@ -823,8 +825,8 @@ const OfficeUI = (() => {
     canvas.addEventListener("wheel", (event) => { event.preventDefault(); const rect = canvas.getBoundingClientRect(); const px = event.clientX - rect.left, py = event.clientY - rect.top; const factor = event.deltaY < 0 ? 1.1 : 0.9; const value = Math.min(1.8, Math.max(0.36, state.camera.zoom * factor)); const ratio = value / state.camera.zoom; state.camera.x = px - (px - state.camera.x) * ratio; state.camera.y = py - (py - state.camera.y) * ratio; state.camera.zoom = value; }, { passive: false });
     canvas.addEventListener("dblclick", () => { if (state.defaultCamera) state.camera = { ...state.defaultCamera }; });
     if (overlay) {
-      overlay.addEventListener("input", (event) => { if (event.target.closest("[data-market-stake-input],[data-market-strategy]")) state.drawerDirty = true; });
-      overlay.addEventListener("change", (event) => { if (event.target.closest("[data-market-stake-input],[data-market-strategy]")) state.drawerDirty = true; });
+      overlay.addEventListener("input", (event) => { if (event.target.closest("[data-market-stake-input]")) state.drawerDirty = true; });
+      overlay.addEventListener("change", (event) => { if (event.target.closest("[data-market-stake-input]")) state.drawerDirty = true; });
     }
   }
   async function startSystem() {
@@ -847,7 +849,7 @@ const OfficeUI = (() => {
   }
   function bindButtons() {
     document.addEventListener("click", async (event) => {
-      const target = event.target.closest("[data-close],[data-aux],[data-choose-toggle],[data-toggle-details],[data-market-toggle],[data-market-pause],[data-market-stake],[data-market-strategy-save],#officeAccountPractice,#officeAccountReal,#officeSystemStart,#officeSystemStop,#officeEmergency,#officeApplyLimit,#officeChooseMarkets,#officeAdvanced,#officeActivityTech,#officeRealConfirm,#officeRealRevoke,#officeStressRun,#officeRawLog,#officeZoomIn,#officeZoomOut,#officeCameraReset,#officeFocus,#officeManagerSave,#officeApprenticeSave");
+      const target = event.target.closest("[data-close],[data-aux],[data-choose-toggle],[data-toggle-details],[data-market-toggle],[data-market-pause],[data-market-stake],#officeAccountPractice,#officeAccountReal,#officeSystemStart,#officeSystemStop,#officeEmergency,#officeApplyLimit,#officeChooseMarkets,#officeAdvanced,#officeActivityTech,#officeRealConfirm,#officeRealRevoke,#officeStressRun,#officeRawLog,#officeZoomIn,#officeZoomOut,#officeCameraReset,#officeFocus,#officeSupervisorSave,#officeApprenticeSave");
       if (!target) return;
       const id = target.id;
       try {
@@ -874,13 +876,13 @@ const OfficeUI = (() => {
         if (id === "officeCameraReset") { if (state.defaultCamera) state.camera = { ...state.defaultCamera }; return; }
         if (id === "officeFocus") { const market = state.office?.markets?.find((row) => row.marketKey === state.selectedMarket) ?? state.office?.markets?.find((row) => row.enabled); const index = (state.office?.markets ?? []).findIndex((row) => row.marketKey === market?.marketKey); const slot = SLOTS[index]; if (slot) centerOn(slot.gx + 1.8, slot.gy + 1.8); return; }
         if (id === "officeStressRun") { await post("/api/iq/stress/run", { stages: [1, 3, 5, 10], secondsPerStage: 20 }); activityLine("Teste de estresse iniciado (1/3/5/10 mercados).", ""); return advancedDrawer(); }
-        if (id === "officeManagerSave") {
-          const mode = String($("officeManagerMode")?.value ?? "SHADOW_RECOMMENDATION");
-          const autoSwitchEnabled = $("officeManagerAuto")?.checked === true;
-          const reviewEverySettlements = Math.max(5, Math.min(200, Number($("officeManagerEvery")?.value) || 10));
-          const result = await put("/api/iq/manager/config", { mode, autoSwitchEnabled, reviewEverySettlements });
-          activityLine(`Gestor de estratégias: modo ${result.config?.mode ?? mode}${autoSwitchEnabled ? " com troca automática" : " (somente recomendação)"} · revisão a cada ${reviewEverySettlements} settlements.`, "");
-          state.toast = { kind: "good", text: "Configuração do gestor salva." };
+        if (id === "officeSupervisorSave") {
+          const minSamples = Math.max(10, Math.min(500, Number($("officeSupervisorSamples")?.value) || 20));
+          const maxDrawdown = Math.max(1, Math.min(100, Number($("officeSupervisorDrawdown")?.value) || 8));
+          const maxConsecutiveLosses = Math.max(2, Math.min(50, Number($("officeSupervisorLosses")?.value) || 6));
+          const result = await put("/api/iq/supervisor/config", { minSamples, maxDrawdown, maxConsecutiveLosses });
+          activityLine(`Supervisor: amostra minima ${result.config?.minSamples ?? minSamples}, drawdown maximo ${result.config?.maxDrawdown ?? maxDrawdown}, perdas seguidas ${result.config?.maxConsecutiveLosses ?? maxConsecutiveLosses}. Metodologia intacta.`, "");
+          state.toast = { kind: "good", text: "Configuracao do supervisor salva." };
           return advancedDrawer();
         }
         if (id === "officeApprenticeSave") {
@@ -905,21 +907,11 @@ const OfficeUI = (() => {
           activityLine(`${response.market?.display ?? key} valor por operação definido em ${brl(response.market?.configuredStake ?? value)}.`, "");
           return refreshOffice();
         }
-        if (target.dataset.marketStrategySave) {
-          const key = target.dataset.marketStrategySave;
-          const value = String(document.querySelector(`[data-market-strategy="${CSS.escape(key)}"]`)?.value ?? "");
-          const response = await put("/api/iq/market", { marketKey: key, strategyVariantId: value });
-          pinMarket(response.market);
-          state.drawerDirty = false;
-          state.toast = { kind: "good", text: `Estratégia salva: ${response.market?.strategyEffective ?? value}.` };
-          activityLine(`${response.market?.display ?? key} estratégia alterada para ${response.market?.strategyEffective ?? value}.`, "");
-          return refreshOffice();
-        }
       } catch (error) {
-        const key = state.selectedMarket ?? target.dataset.marketStrategySave ?? target.dataset.marketStake;
+        const key = state.selectedMarket ?? target.dataset.marketStake;
         const effective = state.office?.markets?.find((row) => row.marketKey === key);
         state.drawerDirty = false;
-        state.toast = { kind: "bad", text: `Não foi possível salvar. Configuração ativa: ${effective ? `${effective.strategyEffective ?? "—"} · ${brl(effective.configuredStake)}` : reasonText(String(error?.message || error))}` };
+        state.toast = { kind: "bad", text: `Não foi possível salvar. Configuração ativa: ${effective ? `${effective.setup ?? "—"} · ${brl(effective.configuredStake)}` : reasonText(String(error?.message || error))}` };
         activityLine(`Ação não concluída: ${reasonText(String(error?.message || error))}.`, "blocked");
         if (state.selectedMarket) marketDrawer(state.selectedMarket, true);
         renderActivity();
