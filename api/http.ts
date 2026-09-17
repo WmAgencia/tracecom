@@ -794,7 +794,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         const query = path === "/api/iq/executions"
           ? `?limit=${Math.max(1, Math.min(200, Number(q.get("limit")) || 50))}${q.get("marketKey") ? `&marketKey=${encodeURIComponent(q.get("marketKey") as string)}` : ""}`
           : path === "/api/iq/events" ? `?after=${Number(q.get("after")) || 0}&limit=${Math.max(1, Math.min(500, Number(q.get("limit")) || 200))}`
-          : path === "/api/iq/audit" ? `?limit=${Math.max(1, Math.min(500, Number(q.get("limit")) || 100))}${q.get("correlationId") ? `&correlationId=${encodeURIComponent(q.get("correlationId") as string)}` : ""}${q.get("marketKey") ? `&marketKey=${encodeURIComponent(q.get("marketKey") as string)}` : ""}`
+          : path === "/api/iq/audit" ? `?limit=${Math.max(1, Math.min(500, Number(q.get("limit")) || 100))}${q.get("correlationId") ? `&correlationId=${encodeURIComponent(q.get("correlationId") as string)}` : ""}${q.get("marketKey") ? `&marketKey=${encodeURIComponent(q.get("marketKey") as string)}` : ""}${q.get("stage") ? `&stage=${encodeURIComponent(q.get("stage") as string)}` : ""}`
           : path === "/api/iq/research/scoreboard" && q.get("marketKey") ? `?marketKey=${encodeURIComponent(q.get("marketKey") as string)}`
           : path === "/api/iq/signals" ? `?limit=${Math.max(1, Math.min(200, Number(q.get("limit")) || 50))}${q.get("marketKey") ? `&marketKey=${encodeURIComponent(q.get("marketKey") as string)}` : ""}`
           : path === "/api/iq/apprentice/trades" ? `?limit=${Math.max(1, Math.min(200, Number(q.get("limit")) || 30))}`
