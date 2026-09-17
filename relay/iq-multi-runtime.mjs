@@ -605,7 +605,7 @@ export class IqMultiRuntime extends EventEmitter {
     let features = null;
     let structureFeatures = null;
     if (list.length > MIN_CANDLES_FEATURE) {
-      structureFeatures = computeStructureFeatures(list, list.length - 1);
+      structureFeatures = computeStructureFeatures(list, list.length - 1, { atr: ctx.featureState?.context?.deterministicIndicators?.atr14?.value ?? null });
       features = this.#brainFeatures(list, ctx.featureState?.context ?? null);
     }
     const context = ctx.featureState?.context ?? null;

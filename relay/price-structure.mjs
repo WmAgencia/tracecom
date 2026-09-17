@@ -4,6 +4,8 @@
  * Tudo aqui e matematicamente definido e usa APENAS candles ate o indice informado (nunca futuro).
  * O LLM/agente NUNCA recalcula estes valores; apenas interpreta.
  */
+import { atrWilder } from "./feature-engine.mjs";
+
 export const STRUCTURE_VERSION = "price-structure-v1";
 
 export const SWING_LOOKBACK = 2;
@@ -42,12 +44,15 @@ export function classifyStructure(candles, index) {
 }
 
 /** Conjunto completo de features de estrutura/localizacao/eventos (causal). */
-export function computeStructureFeatures(candles, index) {
+export function computeStructureFeatures(candles, index, { atr: atrFromEngine = null } = {}) {
   const list = Array.isArray(candles) ? candles.slice(0, index + 1) : [];
   if (list.length < 30) return null;
   const candle = list[list.length - 1];
   const closes = list.map((row) => row.close);
-  const atr = averageRange(list, 14);
+  // Fonte unica de ATR: o Feature Engine (Wilder). Fallback local apenas se o contexto nao foi fornecido.
+  const engineAtr = Number(atrFromEngine);
+  const atr = Number.isFinite(engineAtr) && engineAtr > 0 ? engineAtr : averageRange(list, 14);
+  const atrSource = Number.isFinite(engineAtr) && engineAtr > 0 ? "FEATURE_ENGINE_ATR14" : "LOCAL_AVERAGE_RANGE_FALLBACK";
   if (!atr) return null;
   const structure = classifyStructure(list, list.length - 1);
 
@@ -86,9 +91,9 @@ export function computeStructureFeatures(candles, index) {
   if (structure.label === "UP" && structure.lastLow) pullbackUp = candle.close > structure.lastLow.price && candle.close < structure.lastHigh?.price;
   if (structure.label === "DOWN" && structure.lastHigh) pullbackDown = candle.close < structure.lastHigh.price && candle.close > structure.lastLow?.price;
 
-  // volatilidade relativa
+  // volatilidade relativa: baseline com a MESMA formula do Feature Engine (Wilder), sem duplicar implementacao.
   const atrHistory = [];
-  for (let cursor = Math.max(15, list.length - 21); cursor < list.length - 1; cursor += 1) { const value = averageRange(list.slice(0, cursor + 1), 14); if (value) atrHistory.push(value); }
+  for (let cursor = Math.max(15, list.length - 21); cursor < list.length - 1; cursor += 1) { const value = atrWilder(list.slice(0, cursor + 1), 14); if (value) atrHistory.push(value); }
   const atrBaseline = atrHistory.length ? atrHistory.reduce((sum, value) => sum + value, 0) / atrHistory.length : atr;
   const atrRatio = atrBaseline > 0 ? atr / atrBaseline : 1;
   const compression = atrRatio < 0.7;
@@ -108,7 +113,7 @@ export function computeStructureFeatures(candles, index) {
     events: { breakoutUp, breakoutDown, failedBreakoutUp, failedBreakoutDown, retestUp, retestDown, pullbackUp, pullbackDown, rejectionUp, rejectionDown, compression, expansion },
     candleShape: { bodyRatio: range > 0 ? Number((body / range).toFixed(3)) : 0, upperWick: Number(upperWick.toFixed(3)), lowerWick: Number(lowerWick.toFixed(3)), relativeRange: Number((range / atr).toFixed(3)) },
     velocity: { velocity: Number(velocity.toFixed(6)), priorVelocity: Number(priorVelocity.toFixed(6)), acceleration: Number(acceleration.toFixed(6)) },
-    volatility: { atr, atrRatio: Number(atrRatio.toFixed(3)), compression, expansion },
+    volatility: { atr, atrSource, atrRatio: Number(atrRatio.toFixed(3)), compression, expansion },
     swings: structure.swings.slice(-6).map((swing) => ({ type: swing.type, price: swing.price, bucketStart: swing.bucketStart })),
   };
 }
