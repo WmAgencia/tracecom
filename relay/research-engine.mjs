@@ -37,9 +37,10 @@ export function summarizeStats(stats, { recentWindow = 30 } = {}) {
 }
 
 export class ResearchEngine {
-  constructor({ now = () => Date.now(), recentWindow = 30 } = {}) {
+  constructor({ now = () => Date.now(), recentWindow = 30, onSettle = null } = {}) {
     this.now = now;
     this.recentWindow = recentWindow;
+    this.onSettle = onSettle;
     this.markets = new Map(); // marketKey -> { stats: Map<variantId, stats>, open: Map<variantId, trade>, trades: [], version }
     this.sequence = 0;
   }
@@ -71,6 +72,7 @@ export class ResearchEngine {
         if (state.trades.length > 2000) state.trades.splice(0, state.trades.length - 2000);
         state.open.delete(variantId);
         settled += 1;
+        if (typeof this.onSettle === "function") { try { this.onSettle({ marketKey, marketType, variantId, result, pnl, at: candle.bucketStart }); } catch { /* callback nunca derruba o pipeline */ } }
       }
     }
     if (!features) return { opportunities: 0, opened, settled };

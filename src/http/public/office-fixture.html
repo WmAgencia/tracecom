@@ -106,6 +106,28 @@
           executionGate: { state: "ARMED", armed: true, pendingOrders: 1, allowedMarkets: markets.filter((row) => row.enabled).map((row) => row.marketKey), blockedMarkets: [], reasons: [] },
           portfolioControl: { activeMarkets: markets.filter((row) => row.enabled).map((row) => row.marketKey), openPositions: 3, settledPnl: 6.42, wins: 14, losses: 9, draws: 1, agentsOnline: 9 },
         },
+        apprentice: {
+          version: "apprentice-v1", execution: "SHADOW_ONLY", currentTechniqueId: "T3_MOMENTUM.g2_7",
+          settlementsSinceSwitch: 12,
+          config: { enabled: true, execution: "SHADOW_ONLY", reviewEverySettlements: 20, minCandidateSamples: 20, minPerformanceDelta: 0.1, maxDrawdown: 8, maxCandidates: 3, cooldownSettlements: 25, maxLessonsPerWindow: 6, lessonWindowSettlements: 40 },
+          techniques: [
+            { id: "T1_RSI_REVERSION", label: "Reversão em RSI extremo", status: "RETIRED", generation: 1, params: {} },
+            { id: "T3_MOMENTUM.g2_7", label: "Momentum confirmado (aprendida)", status: "ACTIVE", generation: 2, params: {} },
+            { id: "T2_DONCHIAN_BREAK", label: "Rompimento Donchian", status: "CANDIDATE", generation: 1, params: {} },
+          ],
+          aggregate: [
+            { techniqueId: "T1_RSI_REVERSION", trades: 42, wins: 22, losses: 18, draws: 2, pnl: 1.4, winRate: 0.524, pnlPerTrade: 0.033 },
+            { techniqueId: "T3_MOMENTUM.g2_7", trades: 31, wins: 19, losses: 10, draws: 2, pnl: 5.1, winRate: 0.613, pnlPerTrade: 0.165 },
+            { techniqueId: "T2_DONCHIAN_BREAK", trades: 22, wins: 13, losses: 8, draws: 1, pnl: 2.5, winRate: 0.591, pnlPerTrade: 0.114 },
+          ],
+          byMarket: [], lessons: [
+            { id: 3, marketKey: "EURUSD:OTC", techniqueId: "T1_RSI_REVERSION", at: Date.now() - 90_000, reasons: [{ code: "ADX_FRACO", detail: "ADX 12.4 no momento da entrada" }, { code: "MICRO_CONTRA", detail: "microestrutura -2 contra BUY" }], adjustment: { params: { minAdx: 22, minStreak: 1 } }, candidateId: "T3_MOMENTUM.g2_7" },
+            { id: 2, marketKey: "GBPUSD:OTC", techniqueId: "T1_RSI_REVERSION", at: Date.now() - 400_000, reasons: [{ code: "ENTRADA_ESTICADA", detail: "posição 0.91 no topo do canal" }], adjustment: { params: { donchianBreakout: 0.88 } }, candidateId: null },
+          ],
+          promotions: [
+            { id: 2, at: Date.now() - 120_000, from: "T1_RSI_REVERSION", to: "T3_MOMENTUM.g2_7", delta: 0.132, evidence: {} },
+          ],
+        },
         resolver: { lastResolvedAt: Date.now(), resolvedCount: 15, sampleActiveKeys: [], lastError: null },
         intelligence: {
           MACRO: { status: "NO_FEED", version: 1, ageMs: 3_600_000, source: "none", sourceType: "EXTERNAL", dataQuality: "UNAVAILABLE", marketsAffected: [], currenciesAffected: [] },

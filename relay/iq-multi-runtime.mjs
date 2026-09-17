@@ -25,6 +25,8 @@ import { GlobalIntelligenceState, INTELLIGENCE_DOMAINS } from "./intelligence.mj
 import { ResearchEngine, ABExperiment } from "./research-engine.mjs";
 import { traderDecision, criticAssessment, consensusDecision } from "./agent-pair.mjs";
 import { StrategyManager } from "./strategy-manager.mjs";
+import { ApprenticeDesk } from "./apprentice.mjs";
+import { ExternalFeedSync } from "./external-feeds.mjs";
 import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, DEFAULT_GLOBAL_MAX_STAKE, concentrationExposure } from "./market-universe.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
@@ -72,9 +74,11 @@ export class IqMultiRuntime extends EventEmitter {
     this.orderIndex = new Map();
     this.signalLog = []; this.signalStats = new Map(); this.signalSeq = 0;
     this.intelligence = new GlobalIntelligenceState({ now });
-    this.research = new ResearchEngine({ now });
+    this.research = new ResearchEngine({ now, onSettle: (event) => this.handleShadowSettlement(event) });
     this.ab = new ABExperiment({ now });
     this.manager = new StrategyManager({ now });
+    this.apprentice = new ApprenticeDesk({ now, onEvent: (type, payload) => { this.#emitEvent(type, payload); const ctx = this.markets.get(payload?.marketKey); if (ctx) this.#auditRecord(`appr_${payload?.lessonId ?? payload?.to ?? this.now()}`, payload.marketKey, type === "apprentice.promotion" ? "APPRENTICE_PROMOTION" : "APPRENTICE_LESSON", payload, { persist: true }); this.#safe(() => this.log("IQ_MULTI_APPRENTICE", JSON.stringify({ type, ...payload }))); } });
+    this.feeds = new ExternalFeedSync({ universe: UNIVERSE, log: this.log, apply: (kind, items) => this.#applyExternalItems(kind, items) });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -243,6 +247,7 @@ export class IqMultiRuntime extends EventEmitter {
     // Fontes externas reais ainda nao integradas: registra NO_FEED honesto (nunca inventa noticia/macro).
     this.intelligence.publish("MACRO", { note: "sem integracao externa de macro conectada" }, { source: "none", sourceType: "EXTERNAL", dataQuality: "UNAVAILABLE", status: "NO_FEED" });
     this.intelligence.publish("NEWS", { note: "sem integracao externa de noticias conectada" }, { source: "none", sourceType: "EXTERNAL", dataQuality: "UNAVAILABLE", status: "NO_FEED" });
+    if (process.env.EXTERNAL_FEED_SYNC !== "false") this.feeds.start();
     await this.#loadDailyStats();
     void this.reconcileOrphans();
     void this.refreshEquityCurve();
@@ -516,6 +521,7 @@ export class IqMultiRuntime extends EventEmitter {
       ctx.lastResearchBucket = bucket;
       this.research.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, payout: ctx.payout, atMs: now });
       this.ab.settle({ marketKey: ctx.marketKey, candles: list, index: list.length - 1 });
+      this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: ctx.featureState?.context ? computeFrozenFeatures(list, list.length - 1) : null, context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
     this.#evaluateDecision(ctx, list);
@@ -570,7 +576,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (features) {
       const frozenAction = evaluateFrozen(selection.family, features) ?? "WAIT";
       const managerState = this.manager.state.get(ctx.marketKey);
-      const adaptiveVariantId = managerState?.championVariantId ?? selection.variantId;
+      const adaptiveVariantId = this.manager.preferredVariant(ctx.marketKey) ?? managerState?.championVariantId ?? selection.variantId;
       const adaptiveVariant = FROZEN_VARIANTS.find((variant) => variant.variantId === adaptiveVariantId) ?? selection;
       const adaptiveAction = evaluateFrozen(adaptiveVariant.family, features) ?? "WAIT";
       this.ab.record({ marketKey: ctx.marketKey, marketType: ctx.marketType, atMs: now, variantId: selection.variantId, horizonSeconds: selection.horizonSeconds, entryPrice: ctx.lastCandle?.close ?? null, settlementAfterMs: (ctx.lastCandle?.bucketStart ?? now) + selection.horizonSeconds * 1000, payout: ctx.payout, actions: { A_FROZEN: frozenAction, B_TRADER: trader.action, C_TRADER_CRITIC: consensus.action, D_PLUS_INTELLIGENCE: consensus.action, E_ADAPTIVE: adaptiveAction } });
@@ -780,7 +786,48 @@ export class IqMultiRuntime extends EventEmitter {
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_REVIEW_PERSIST_FAILED", String(error?.message ?? error).slice(0, 120))); return false; }
   }
 
-  intelligenceStatus() { return { version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS] }; }
+  intelligenceStatus() { return { version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS], feeds: this.feeds.status() }; }
+
+  /** Publica itens externos reais (nunca inventados; item sem publishedAt nao entra). */
+  #applyExternalItems(kind, items) {
+    let applied = 0;
+    for (const item of Array.isArray(items) ? items : []) {
+      if (!item?.meta) continue;
+      this.intelligence.publish(kind, item.payload, item.meta);
+      applied += 1;
+    }
+    if (applied) this.#emitEvent("intelligence.external", { kind, items: applied });
+    return applied;
+  }
+
+  /** Settlement shadow do champion alimenta o gatilho do Strategy Manager (evidencia prospectiva causal). */
+  handleShadowSettlement({ marketKey, variantId, result, pnl }) {
+    const ctx = this.markets.get(marketKey);
+    if (!ctx || !ctx.enabled) return;
+    const champion = this.manager.state.get(marketKey)?.championVariantId ?? ctx.strategyVariantId ?? this.config.selection.variantId;
+    if (variantId !== champion) return;
+    const trigger = this.manager.onSettlement(marketKey, { result, pnl });
+    if (trigger.trigger) void this.#runStrategyReview(ctx);
+  }
+
+  apprenticeStatus() { return this.apprentice.scoreboard(); }
+  apprenticeTrades(limit = 30) { return { trades: this.apprentice.recentTrades(limit), execution: "SHADOW_ONLY" }; }
+  setApprenticeConfig(patch = {}) {
+    const allowed = ["enabled", "reviewEverySettlements", "minCandidateSamples", "minPerformanceDelta", "maxCandidates", "cooldownSettlements", "maxLessonsPerWindow", "lessonWindowSettlements"];
+    const next = { ...this.apprentice.config };
+    for (const [key, value] of Object.entries(patch)) {
+      if (!allowed.includes(key)) continue;
+      if (key === "enabled") next.enabled = value === true;
+      else if (Number.isFinite(Number(value))) next[key] = Math.max(1, Number(value));
+    }
+    next.execution = "SHADOW_ONLY";
+    this.apprentice.config = next;
+    this.config.revision = Number(this.config.revision || 0) + 1;
+    void this.#persistConfig();
+    this.#emitEvent("apprentice.config", { enabled: next.enabled, reviewEverySettlements: next.reviewEverySettlements });
+    return { ...next };
+  }
+
   researchScoreboard({ marketKey = null } = {}) {
     if (marketKey) {
       const champion = this.manager.state.get(marketKey)?.championVariantId ?? this.markets.get(marketKey)?.strategyVariantId ?? this.config.selection.variantId;
@@ -1108,8 +1155,8 @@ export class IqMultiRuntime extends EventEmitter {
   async #persistConfig() {
     try {
       if (!this.pool || !await this.#ensureDb("iq_runtime_config")) return false;
-      await this.pool.query("INSERT INTO iq_runtime_config(id,mode,global_max_stake,default_stake,calculated_bankroll_stake,auto_execute,selection_json,resolver_json,research_json,manager_json,revision,updated_at) VALUES(1,$1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9::jsonb,$10,now()) ON CONFLICT(id) DO UPDATE SET mode=EXCLUDED.mode, global_max_stake=EXCLUDED.global_max_stake, default_stake=EXCLUDED.default_stake, calculated_bankroll_stake=EXCLUDED.calculated_bankroll_stake, auto_execute=EXCLUDED.auto_execute, selection_json=EXCLUDED.selection_json, resolver_json=EXCLUDED.resolver_json, research_json=EXCLUDED.research_json, manager_json=EXCLUDED.manager_json, revision=EXCLUDED.revision, updated_at=now()",
-        [this.config.mode, this.config.globalMaxStake, this.config.defaultStake, this.config.calculatedBankrollStake, this.config.autoExecute, JSON.stringify(this.config.selection), JSON.stringify(this.resolver.toJSON()), JSON.stringify(this.research.toJSON()), JSON.stringify(this.manager.toJSON()), Number(this.config.revision || 0)]);
+      await this.pool.query("INSERT INTO iq_runtime_config(id,mode,global_max_stake,default_stake,calculated_bankroll_stake,auto_execute,selection_json,resolver_json,research_json,manager_json,apprentice_json,revision,updated_at) VALUES(1,$1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9::jsonb,$10::jsonb,$11,now()) ON CONFLICT(id) DO UPDATE SET mode=EXCLUDED.mode, global_max_stake=EXCLUDED.global_max_stake, default_stake=EXCLUDED.default_stake, calculated_bankroll_stake=EXCLUDED.calculated_bankroll_stake, auto_execute=EXCLUDED.auto_execute, selection_json=EXCLUDED.selection_json, resolver_json=EXCLUDED.resolver_json, research_json=EXCLUDED.research_json, manager_json=EXCLUDED.manager_json, apprentice_json=EXCLUDED.apprentice_json, revision=EXCLUDED.revision, updated_at=now()",
+        [this.config.mode, this.config.globalMaxStake, this.config.defaultStake, this.config.calculatedBankrollStake, this.config.autoExecute, JSON.stringify(this.config.selection), JSON.stringify(this.resolver.toJSON()), JSON.stringify(this.research.toJSON()), JSON.stringify(this.manager.toJSON()), JSON.stringify(this.apprentice.toJSON()), Number(this.config.revision || 0)]);
       return true;
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_CONFIG_PERSIST_FAILED", String(error?.message ?? error).slice(0, 120))); return false; }
   }
@@ -1129,6 +1176,7 @@ export class IqMultiRuntime extends EventEmitter {
         if (row.resolver_json) this.resolver.loadFrom(row.resolver_json);
         if (row.research_json) this.research.loadFrom(row.research_json);
         if (row.manager_json) this.manager.loadFrom(row.manager_json);
+        if (row.apprentice_json) this.apprentice.loadFrom(row.apprentice_json);
         if (row.mode === "REAL") { this.config.mode = "REAL"; this.realMode.revoke("RESTART"); this.manager.setConfig({ mode: "SHADOW_RECOMMENDATION", autoSwitchEnabled: false }); }
       }
       const markets = (await this.pool.query("SELECT * FROM iq_markets")).rows;
@@ -1249,6 +1297,8 @@ export class IqMultiRuntime extends EventEmitter {
       },
       resolver: { lastResolvedAt: this.resolver.lastResolvedAt, resolvedCount: this.resolver.resolvedCount(), sampleActiveKeys: this.resolver.sampleActiveKeys, lastError: this.resolver.lastError },
       intelligence: this.intelligence.status(),
+      feeds: this.feeds.status(),
+      apprentice: this.apprentice.scoreboard(),
       manager: this.manager.status(),
       research: {
         agentLatency: latencySummary(this.agentLatency),

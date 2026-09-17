@@ -44,13 +44,29 @@ describe("Escritório — contrato de controles (nenhum botão decorativo)", () 
     expect(officeJs).toContain("manager.switch");
     expect(officeJs).toContain("ALTERANDO");
     expect(officeJs).toContain("MANTENDO");
-    for (const endpoint of ["/api/iq/intelligence", "/api/iq/research/scoreboard", "/api/iq/manager/config"]) {
+    for (const endpoint of ["/api/iq/intelligence", "/api/iq/research/scoreboard", "/api/iq/manager/config", "/api/iq/apprentice", "/api/iq/apprentice/config"]) {
       expect(proxy, `proxy sem ${endpoint}`).toContain(endpoint);
       expect(server, `relay sem ${endpoint}`).toContain(endpoint);
     }
     expect(indexHtml).toContain("iqLabBody");
     expect(indexHtml).toContain("iqAbBody");
+    expect(indexHtml).toContain("iqTechniquesBody");
+    expect(indexHtml).toContain("MESA APRENDIZ");
     expect(indexHtml).toContain("EXPERIMENTO A/B");
+  });
+  it("Mesa do Aprendiz representada na UI (mentor + aprendiz, shadow-only)", () => {
+    expect(officeJs).toContain("drawApprenticeDesk");
+    expect(officeJs).toContain("MENTOR");
+    expect(officeJs).toContain("APRENDIZ");
+    expect(officeJs).toContain("AVALIANDO LOSS");
+    expect(officeJs).toContain("PASSOU NOVA TÉCNICA");
+    expect(officeJs).toContain("SOMENTE SHADOW");
+    expect(officeJs).toContain("apprentice.lesson");
+    expect(officeJs).toContain("apprentice.promotion");
+    expect(officeJs).toContain("officeApprenticeSave");
+    expect(proxy).toContain("/api/iq/apprentice/config");
+    expect(server).toContain("/api/iq/apprentice/config");
+    expect(officeJs).not.toContain("apprenticeGate");
   });
   it("UI chama apenas endpoints reais (presentes no proxy Vercel e no relay)", () => {
     const endpoints = ["/api/iq/office", "/api/iq/events", "/api/iq/mode", "/api/iq/kill-switch", "/api/iq/config/global-stake", "/api/iq/config/auto-execute", "/api/iq/arm", "/api/iq/disarm", "/api/iq/market", "/api/iq/real/confirm", "/api/iq/real/revoke", "/api/iq/stress/run"];

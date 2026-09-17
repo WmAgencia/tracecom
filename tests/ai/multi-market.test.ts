@@ -449,6 +449,38 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(reloadedResearch.loadFrom(researchSnapshot)).toBe(true);
     expect(reloadedManager.status().markets.find((row: any) => row.marketKey === "EURUSD:NORMAL").championVariantId).toBe("V8-60");
   });
+  it("FASE 5.1: mesa do aprendiz integrada (shadow-only, sem ordens) e feeds com fallback NO_FEED", () => {
+    const runtime = multiFixture();
+    seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101, candles: 60, close: 1.2 });
+    const apprentice = runtime.office().apprentice;
+    expect(apprentice.execution).toBe("SHADOW_ONLY");
+    expect(apprentice.techniques.length).toBeGreaterThanOrEqual(5);
+    expect(apprentice.lessons).toBeDefined();
+    expect(runtime.__sent).toHaveLength(0);
+    const feeds = runtime.office().feeds;
+    expect(String(feeds.sources.MACRO)).toContain("faireconomy");
+    expect(["NO_FEED", "STALE", "OK"]).toContain(feeds.state.MACRO.status);
+    expect(feeds.tradingImpact).toBe("CONTEXT_ONLY_NEVER_ORDERS");
+  });
+  it("FASE 5.1: gatilho do gestor por settlements shadow do champion conduz a revisoes reais", async () => {
+    const runtime = multiFixture();
+    seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101 });
+    const reviewsBefore = runtime.manager.status().reviews.length;
+    for (let index = 0; index < 10; index += 1) runtime.handleShadowSettlement({ marketKey: "EURUSD:NORMAL", variantId: "V3-60", result: index % 3 === 0 ? "LOSS" : "WIN", pnl: index % 3 === 0 ? -1 : 0.85 });
+    await sleep(50);
+    expect(runtime.manager.status().reviews.length).toBeGreaterThan(reviewsBefore);
+    const review = runtime.manager.status().reviews.find((row: any) => row.type === "REVIEW" || row.decision);
+    expect(review).toBeTruthy();
+    expect(["KEEP", "RECOMMEND_SWITCH", "SWITCH"]).toContain(review.decision ?? "KEEP");
+  });
+  it("FASE 5.1: E_ADAPTIVE usa a variante preferida pelo gestor (recomendacao pendente > champion)", () => {
+    const runtime = multiFixture();
+    runtime.manager.setConfig({ mode: "AUTO_STRATEGY_SWITCH", autoSwitchEnabled: true });
+    runtime.manager.ensureMarket("EURUSD:NORMAL", "V3-60");
+    const challenger = { variantId: "V8-60", trades: 220, recent: { sample: 60, pnlPerTrade: 0.3 }, pnlPerTrade: 0.24, maxDrawdown: 2, avgPayout: 85, wins: 150, losses: 70, draws: 0 };
+    runtime.manager.evaluate({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", board: { marketKey: "EURUSD:NORMAL", version: 1, variants: [{ variantId: "V3-60", trades: 200, recent: { sample: 60, pnlPerTrade: 0.12 }, pnlPerTrade: 0.1, maxDrawdown: 2, avgPayout: 85, wins: 110, losses: 90, draws: 0 }, challenger], openShadow: 0, trades: 0 }, challenger, mode: "AUTO_STRATEGY_SWITCH", practiceOnly: true });
+    expect(runtime.manager.preferredVariant("EURUSD:NORMAL")).toBe("V8-60");
+  });
   it("event bus: payload nunca sobrescreve o campo type do evento", () => {
     const runtime = multiFixture();
     runtime.ingestEvent("balances", { connectionId: CONNECTION_ID, receivedAt: Date.now(), msg: [{ id: 555, type: 4, currency: "USD", amount: 100, is_default: true }] });

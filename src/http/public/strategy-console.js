@@ -253,9 +253,9 @@ async function loadIqTraining() {
 }
 const AB_ARM_LABELS = { A_FROZEN: "A · Estratégia congelada", B_TRADER: "B · Trader", C_TRADER_CRITIC: "C · Trader + Crítico", D_PLUS_INTELLIGENCE: "D · + Inteligência global", E_ADAPTIVE: "E · Gestor adaptativo" };
 async function loadIqLab() {
-  const body = $id("iqLabBody"), abBody = $id("iqAbBody"); if (!body && !abBody) return;
+  const body = $id("iqLabBody"), abBody = $id("iqAbBody"), techBody = $id("iqTechniquesBody"); if (!body && !abBody && !techBody) return;
   try {
-    const [research, manager] = await Promise.all([jget("/api/iq/research/scoreboard"), jget("/api/iq/manager")]);
+    const [research, manager, apprentice] = await Promise.all([jget("/api/iq/research/scoreboard"), jget("/api/iq/manager"), jget("/api/iq/apprentice").catch(() => ({ aggregate: [], techniques: [] }))]);
     setText("iqLabUpdated", `GESTOR: ${manager.mode === "AUTO_STRATEGY_SWITCH" ? "TROCA AUTOMÁTICA" : "SOMENTE RECOMENDAÇÃO"}`);
     const markets = research.scoreboard?.markets ?? [];
     const pct = (value) => (value === null || value === undefined ? "—" : `${(Number(value) * 100).toFixed(1)}%`);
@@ -277,6 +277,16 @@ async function loadIqLab() {
     if (abBody) abBody.innerHTML = Object.entries(research.ab?.arms ?? {}).map(([arm, stats]) => `<tr>
       <td>${AB_ARM_LABELS[arm] ?? arm}</td><td>${stats.trades}</td><td>${stats.wins}/${stats.losses}/${stats.draws}</td><td>${pct(stats.winRate)}</td><td>${stats.pnl}</td><td>${stats.noTrade}</td>
     </tr>`).join("") || `<tr><td colspan="6" class="fine">Aguardando oportunidades comparáveis…</td></tr>`;
+    if (techBody) {
+      const statsByTechnique = Object.fromEntries((apprentice.aggregate ?? []).map((row) => [row.techniqueId, row]));
+      techBody.innerHTML = (apprentice.techniques ?? []).map((technique) => {
+        const stats = statsByTechnique[technique.id] ?? {};
+        return `<tr>
+          <td>${technique.id}${technique.id === apprentice.currentTechniqueId ? " ★" : ""}</td>
+          <td>${technique.status}</td><td>${technique.generation}</td><td>${stats.trades ?? 0}</td><td>${pct(stats.winRate)}</td><td>${stats.pnlPerTrade ?? "—"}</td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="6" class="fine">Aguardando trades do aprendiz…</td></tr>`;
+    }
   } catch (error) {
     if (body) body.innerHTML = `<tr><td colspan="11" class="fine">Laboratório indisponível: ${String(error?.message || error)}</td></tr>`;
   }

@@ -53,6 +53,14 @@ export class StrategyManager {
 
   setChampion(marketKey, variantId) { this.ensureMarket(marketKey, variantId).championVariantId = variantId; }
 
+  /** Variante preferida pelo gestor (recomendacao pendente > champion). Usada pelo braco E do A/B (shadow). */
+  preferredVariant(marketKey) {
+    const state = this.state.get(marketKey);
+    if (!state) return null;
+    const recommended = state.pendingOutcome?.recommendation?.to ?? null;
+    return recommended ?? state.championVariantId ?? null;
+  }
+
   /** Alimentado no settlement do champion operacional (todo settlement conta para o gatilho). */
   onSettlement(marketKey, { result, pnl = 0 } = {}) {
     const state = this.ensureMarket(marketKey, null);

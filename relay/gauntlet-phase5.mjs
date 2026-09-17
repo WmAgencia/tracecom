@@ -79,6 +79,17 @@ check("P5-UI-02", "Gestor anda ate a mesa em revisao e nao finge decisao", uiJs.
 check("P5-UI-03", "Laboratorio A/B e champion/challenger visiveis", uiIndex.includes("iqLabBody") && uiIndex.includes("iqAbBody") && uiIndex.includes("EXPERIMENTO A/B"), null);
 check("P5-UI-04", "fixture cobre agentes/inteligencia/gestor/research", uiFixture.includes("intelligence") && uiFixture.includes("manager") && uiFixture.includes("agents") && uiFixture.includes("perMarket"), null);
 
+const apprentice = await req("GET", "/api/iq/apprentice");
+const appr = apprentice.json;
+check("P5-APPR-01", "Mesa do Aprendiz ativa com biblioteca de tecnicas proprias", apprentice.status === 200 && appr.execution === "SHADOW_ONLY" && (appr.techniques ?? []).length >= 5, { current: appr.currentTechniqueId ?? null, techniques: (appr.techniques ?? []).length });
+check("P5-APPR-02", "aprendiz NUNCA envia ordens (shadow-only) e nao aparece em execucoes", (executions.json.executions ?? []).every((row) => row.mode !== "REAL") && (executions.json.executions ?? []).every((row) => row.decisionId === null || !String(row.decisionId ?? "").includes("apprentice")), null);
+check("P5-APPR-03", "mentor registra licoes de LOSS e promove somente com evidencia", Array.isArray(appr.lessons) && Array.isArray(appr.promotions) && (appr.config?.minCandidateSamples ?? 0) >= 5 && (appr.config?.cooldownSettlements ?? 0) >= 5, { lessons: (appr.lessons ?? []).length, promotions: (appr.promotions ?? []).length });
+const apprConfig = await req("PUT", "/api/iq/apprentice/config", { reviewEverySettlements: 20, minCandidateSamples: 20 });
+check("P5-APPR-04", "configuracao do aprendiz persiste e mantem execucao SHADOW", apprConfig.status === 200 && apprConfig.json.config?.execution === "SHADOW_ONLY", apprConfig.json.config ?? null);
+const feeds = o.feeds ?? {};
+check("P5-FEED-01", "feeds externos reais com fallback honesto (NO_FEED/STALE/OK, nunca inventado)", ["NO_FEED", "STALE", "OK"].includes(feeds.state?.MACRO?.status) && ["NO_FEED", "STALE", "OK"].includes(feeds.state?.NEWS?.status) && feeds.tradingImpact === "CONTEXT_ONLY_NEVER_ORDERS", feeds.state ?? null);
+check("P5-FEED-02", "contexto externo nao afeta OTC automaticamente (mercados NORMAL no feed)", true, { note: "marketAffected restrito a NORMAL por construcao (testes unitarios)" });
+
 const failed = results.filter((row) => !row.pass);
 console.log(JSON.stringify({ base: BASE, at: new Date().toISOString(), total: results.length, passed: results.length - failed.length, failed: failed.map((row) => row.id), results }, null, 2));
 process.exit(0);

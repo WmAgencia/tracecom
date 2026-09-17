@@ -248,6 +248,48 @@ const OfficeUI = (() => {
     bubbles.push({ x: (traderPos.x + criticPos.x) / 2, y: agentPos.y - 46 * z, ...bubbleInfo(market) });
     g.globalAlpha = 1;
   }
+  const APPRENTICE_SLOT = { gx: 20.2, gy: 3.6 };
+  function drawApprenticeDesk(g, frame, targets, bubbles) {
+    const apprentice = state.office?.apprentice;
+    if (!apprentice) return;
+    const z = zoom();
+    const cx = APPRENTICE_SLOT.gx + 1.8, cy = APPRENTICE_SLOT.gy + 1.8;
+    const top = project(cx, cy, 0.6);
+    const w = TILE_W * 2.4 * z, h = TILE_H * 2.4 * z, depth = 20 * z;
+    diamond(g, top.x, top.y, w, h, "#1a1430", "#5b4a8f");
+    g.fillStyle = "#140f24";
+    g.beginPath(); g.moveTo(top.x - w / 2, top.y); g.lineTo(top.x, top.y + h / 2); g.lineTo(top.x, top.y + h / 2 + depth); g.lineTo(top.x - w / 2, top.y + depth); g.closePath(); g.fill();
+    g.fillStyle = "#100c1c";
+    g.beginPath(); g.moveTo(top.x + w / 2, top.y); g.lineTo(top.x, top.y + h / 2); g.lineTo(top.x, top.y + h / 2 + depth); g.lineTo(top.x + w / 2, top.y + depth); g.closePath(); g.fill();
+    const monitor = project(cx - 0.5, cy - 0.5, 0.6);
+    block(g, monitor.x - 22 * z, monitor.y - 20 * z, 44 * z, 26 * z, "#050a14");
+    block(g, monitor.x - 19 * z, monitor.y - 17 * z, 38 * z, 21 * z, "#6a4fd0");
+    const plate = project(cx + 0.9, cy + 1.9, 0.35);
+    const pw = 150 * z, ph = 40 * z;
+    block(g, plate.x - pw / 2, plate.y, pw, ph, "#140f24");
+    g.strokeStyle = "#7a5fd0"; g.lineWidth = Math.max(1.4, 1.6 * z); g.strokeRect(Math.round(plate.x - pw / 2), Math.round(plate.y), Math.round(pw), Math.round(ph));
+    text(g, "MESA APRENDIZ", plate.x, plate.y + 11 * z, { size: 10, color: "#c9b6ff", bold: true });
+    text(g, `TÉCNICA ATUAL: ${apprentice.currentTechniqueId ?? "—"}`, plate.x, plate.y + 23 * z, { size: 8, color: "#9f8fd0" });
+    text(g, "LABORATÓRIO · SOMENTE SHADOW (sem ordens)", plate.x, plate.y + ph + 8 * z, { size: 7.5, color: "#7f93b8" });
+    const mentorPos = project(cx - 0.35, cy + 1.15, 0.04);
+    const learnerPos = project(cx + 0.75, cy + 1.15, 0.04);
+    const pixel = Math.max(1.5, 2.1 * z);
+    const sinceLesson = apprentice.lessons?.[0] ? Date.now() - Number(apprentice.lessons[0].at) : Infinity;
+    const sincePromotion = apprentice.promotions?.[0] ? Date.now() - Number(apprentice.promotions[0].at) : Infinity;
+    drawAgent(g, mentorPos.x, mentorPos.y, pixel, { shirt: "#6a4fd0", shirtLight: "#8f74e8", pants: "#241f3a", skin: "#f0c39a", hair: "#1d1a2b" }, sinceLesson < 15_000 ? "think" : "typing", frame);
+    drawAgent(g, learnerPos.x, learnerPos.y, pixel, { shirt: "#3fa06a", shirtLight: "#5fc98a", pants: "#1d2f26", skin: "#f0c39a", hair: "#2b2b33" }, sincePromotion < 15_000 ? "win" : "typing", frame + 2);
+    text(g, "MENTOR", mentorPos.x, mentorPos.y + 14 * z, { size: 7.5, color: "#a08fe0", bold: true });
+    text(g, "APRENDIZ", learnerPos.x, learnerPos.y + 14 * z, { size: 7.5, color: "#7fd0a0", bold: true });
+    const mentorBubble = sincePromotion < 15_000
+      ? { text: "PASSOU NOVA TÉCNICA", kind: "WIN" }
+      : sinceLesson < 15_000 ? { text: "AVALIANDO LOSS", kind: "ANALYZING" } : { text: "PESQUISANDO", kind: "SIGNAL" };
+    const learnerBubble = sincePromotion < 15_000
+      ? { text: "NOVA TÉCNICA!", kind: "WIN" }
+      : { text: `TESTANDO ${String(apprentice.currentTechniqueId ?? "").slice(0, 12)}`, kind: "WAIT" };
+    bubbles.push({ x: mentorPos.x, y: mentorPos.y - 46 * z, ...mentorBubble });
+    bubbles.push({ x: learnerPos.x, y: learnerPos.y - 46 * z, ...learnerBubble });
+    targets.push({ x: top.x - w / 2, y: top.y - 30 * z, w, h: h + depth + 70 * z, type: "apprentice", key: "apprentice" });
+  }
   function drawIntelligenceCentral(g, frame, targets) {
     const z = zoom();
     const office = state.office;
@@ -351,6 +393,7 @@ const OfficeUI = (() => {
       anim.alpha = Math.min(1, anim.alpha + 0.08);
     });
     for (const [index, market] of markets.entries()) { drawSlotPlate(ctx, index, market); drawDesk(ctx, market, index, targets, bubbles, frame); }
+    drawApprenticeDesk(ctx, frame, targets, bubbles);
     for (const bubble of bubbles) drawBubble(ctx, bubble);
     drawManager(ctx, frame);
     canvas.__targets = targets;
@@ -465,6 +508,13 @@ const OfficeUI = (() => {
       state.manager.until = Date.now() + 12_000;
       const reason = reasonText(event.reason);
       activityLine(`Gestor de estratégias ${switching ? "ALTEROU" : event.decision === "RECOMMEND_SWITCH" ? "RECOMENDOU" : "manteve"} ${event.marketKey}: ${event.champion ?? "—"} → ${event.challenger ?? "—"} (${reason}).`, switching ? "" : "blocked", event.at);
+    }
+    else if (event.type === "apprentice.lesson") {
+      const market = state.office?.markets?.find((row) => row.marketKey === event.marketKey);
+      activityLine(`<b>MENTOR</b> avaliou o LOSS de ${market?.display ?? event.marketKey}: ${(event.reasons ?? []).join(", ")}${event.candidateId ? ` — nova técnica candidata ${event.candidateId}` : ""}.`, "blocked", event.at);
+    } else if (event.type === "apprentice.promotion") {
+      const to = String(event.to ?? "");
+      activityLine(`<b>MENTOR</b> passou uma nova técnica ao APRENDIZ: ${event.from ?? "—"} → ${to} (vantagem ${event.delta ?? "—"}, ${event.candidateTrades ?? 0} trades).`, "", event.at);
     }
     else if (event.type === "market.config") activityLine(`${name || event.marketKey} configuração atualizada (revisão ${event.revision ?? "—"}).`, "", event.at);
   }
@@ -609,6 +659,32 @@ const OfficeUI = (() => {
         </div>
       </div>`);
   }
+  function apprenticeDrawer() {
+    const apprentice = state.office?.apprentice; if (!apprentice || !overlay) return;
+    state.selectedMarket = null; state.drawerDirty = false;
+    const lessonText = (lesson) => (lesson.reasons ?? []).map((reason) => `${reason.code}: ${reason.detail}`).join(" · ");
+    overlay.innerHTML = drawerShell("MESA APRENDIZ", "LABORATÓRIO · SHADOW", "muted", `
+      <div class="office-kv">
+        <div><span>TÉCNICA ATUAL</span><b>${apprentice.currentTechniqueId ?? "—"}</b></div>
+        <div><span>EXECUÇÃO</span><b>SOMENTE SHADOW (nunca ordem real)</b></div>
+        <div><span>TÉCNICAS NA BIBLIOTECA</span><b>${(apprentice.techniques ?? []).length}</b></div>
+        <div><span>LIÇÕES REGISTRADAS</span><b>${(apprentice.lessons ?? []).length}</b></div>
+        <div><span>TROCAS DE TÉCNICA</span><b>${(apprentice.promotions ?? []).length}</b></div>
+        <div><span>SETTLEMENTS DESDE A TROCA</span><b>${apprentice.settlementsSinceSwitch ?? "—"}</b></div>
+      </div>
+      <div class="office-section-title">PLACAR DAS TÉCNICAS (prospectivo, shadow)</div>
+      <div class="office-list">${(apprentice.aggregate ?? []).map((row) => `<div class="office-list-row"><div><b>${row.techniqueId}${row.techniqueId === apprentice.currentTechniqueId ? " ★" : ""}</b><small>${row.trades} trades · WR ${row.winRate === null || row.winRate === undefined ? "—" : `${(row.winRate * 100).toFixed(1)}%`} · PnL/trade ${row.pnlPerTrade ?? "—"}</small></div><div class="right"><span class="office-badge ${row.pnl >= 0 ? "good" : "bad"}">${row.pnl}</span></div></div>`).join("") || "<p class='fine'>Sem trades shadow ainda.</p>"}</div>
+      <div class="office-section-title">ÚLTIMAS LIÇÕES DO MENTOR (o que podia ter feito melhor)</div>
+      <div class="office-list">${(apprentice.lessons ?? []).slice(0, 6).map((lesson) => `<div class="office-list-row"><div><b>${lesson.marketKey} · ${lesson.techniqueId}</b><small>${lessonText(lesson)}${lesson.candidateId ? ` → candidata ${lesson.candidateId}` : ""}</small></div><div class="right"><span class="office-badge bad">LOSS</span></div></div>`).join("") || "<p class='fine'>Nenhum LOSS para o mentor avaliar ainda.</p>"}</div>
+      <div class="office-section-title">TÉCNICAS PASSADAS AO APRENDIZ</div>
+      <div class="office-list">${(apprentice.promotions ?? []).slice(0, 5).map((promotion) => `<div class="office-list-row"><div><b>${promotion.from ?? "—"} → ${promotion.to}</b><small>vantagem ${promotion.delta ?? "—"} · ${new Date(Number(promotion.at)).toLocaleString("pt-BR")}</small></div><div class="right"><span class="office-badge good">APRENDIDA</span></div></div>`).join("") || "<p class='fine'>O mentor ainda não passou uma nova técnica (exige evidência prospectiva).</p>"}</div>
+      <div class="office-actions">
+        <label class="office-field">REVISAR A CADA <input type="number" min="5" max="200" step="1" id="officeApprenticeEvery" value="${apprentice.config?.reviewEverySettlements ?? 20}" /> settlements</label>
+        <label class="office-field">AMOSTRA MÍNIMA <input type="number" min="5" max="200" step="1" id="officeApprenticeSamples" value="${apprentice.config?.minCandidateSamples ?? 20}" /></label>
+        <button class="office-btn" id="officeApprenticeSave">SALVAR CONFIGURAÇÃO DO APRENDIZ</button>
+      </div>
+      <p class="fine">O aprendiz testa técnicas próprias apenas em shadow. O mentor só promove uma técnica após amostra, vantagem e cooldown (anti-overfitting/anti-flapping). Nada aqui envia ordens.</p>`);
+  }
   function auxDrawer(kind) {
     const office = state.office; if (!office || !overlay) return;
     state.selectedMarket = null; state.drawerDirty = false;
@@ -729,7 +805,7 @@ const OfficeUI = (() => {
     if (!canvas) return;
     canvas.addEventListener("pointerdown", (event) => { state.dragging = true; state.dragMoved = false; state.lastPointer = { x: event.clientX, y: event.clientY }; canvas.classList.add("dragging"); });
     window.addEventListener("pointerup", (event) => {
-      if (state.dragging && !state.dragMoved) { const target = hitTest(event.clientX, event.clientY); if (target?.type === "desk") marketDrawer(target.key); else if (target?.type === "intel") auxDrawer(target.key); }
+      if (state.dragging && !state.dragMoved) { const target = hitTest(event.clientX, event.clientY); if (target?.type === "desk") marketDrawer(target.key); else if (target?.type === "intel") auxDrawer(target.key); else if (target?.type === "apprentice") apprenticeDrawer(); }
       state.dragging = false; canvas.classList.remove("dragging");
     });
     window.addEventListener("pointermove", (event) => {
@@ -765,7 +841,7 @@ const OfficeUI = (() => {
   }
   function bindButtons() {
     document.addEventListener("click", async (event) => {
-      const target = event.target.closest("[data-close],[data-aux],[data-choose-toggle],[data-toggle-details],[data-market-toggle],[data-market-pause],[data-market-stake],[data-market-strategy-save],#officeAccountPractice,#officeAccountReal,#officeSystemStart,#officeSystemStop,#officeEmergency,#officeApplyLimit,#officeChooseMarkets,#officeAdvanced,#officeActivityTech,#officeRealConfirm,#officeRealRevoke,#officeStressRun,#officeRawLog,#officeZoomIn,#officeZoomOut,#officeCameraReset,#officeFocus,#officeManagerSave");
+      const target = event.target.closest("[data-close],[data-aux],[data-choose-toggle],[data-toggle-details],[data-market-toggle],[data-market-pause],[data-market-stake],[data-market-strategy-save],#officeAccountPractice,#officeAccountReal,#officeSystemStart,#officeSystemStop,#officeEmergency,#officeApplyLimit,#officeChooseMarkets,#officeAdvanced,#officeActivityTech,#officeRealConfirm,#officeRealRevoke,#officeStressRun,#officeRawLog,#officeZoomIn,#officeZoomOut,#officeCameraReset,#officeFocus,#officeManagerSave,#officeApprenticeSave");
       if (!target) return;
       const id = target.id;
       try {
@@ -800,6 +876,13 @@ const OfficeUI = (() => {
           activityLine(`Gestor de estratégias: modo ${result.config?.mode ?? mode}${autoSwitchEnabled ? " com troca automática" : " (somente recomendação)"} · revisão a cada ${reviewEverySettlements} settlements.`, "");
           state.toast = { kind: "good", text: "Configuração do gestor salva." };
           return advancedDrawer();
+        }
+        if (id === "officeApprenticeSave") {
+          const reviewEverySettlements = Math.max(5, Math.min(200, Number($("officeApprenticeEvery")?.value) || 20));
+          const minCandidateSamples = Math.max(5, Math.min(200, Number($("officeApprenticeSamples")?.value) || 20));
+          const result = await put("/api/iq/apprentice/config", { reviewEverySettlements, minCandidateSamples });
+          activityLine(`Aprendiz: revisão a cada ${result.config?.reviewEverySettlements} settlements, amostra mínima ${result.config?.minCandidateSamples}. Execução permanece SHADOW.`, "");
+          return apprenticeDrawer();
         }
         if (id === "officeRealConfirm") { const maxStake = Number($("officeRealStake")?.value) || 1; const phrase = String($("officeRealPhrase")?.value ?? ""); const acknowledgeRisk = $("officeRealAck")?.checked === true; await post("/api/iq/real/confirm", { maxStake, phrase, acknowledgeRisk }); activityLine(`Conta real confirmada no servidor (limite ${brl(maxStake)}).`, ""); closeDrawers(); return refreshOffice(); }
         if (id === "officeRealRevoke") { await post("/api/iq/real/revoke", {}); activityLine("Conta real desativada.", ""); closeDrawers(); return refreshOffice(); }
