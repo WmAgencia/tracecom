@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TRACE/COM · Pixel Office V2 — Blueprint</title>
+  <style>
+    :root { --bg: #070c16; --ink: #d7deee; --muted: #8695b8; --line: #24304e; --accent: #7fb2ff; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font-family: "Segoe UI", system-ui, sans-serif; }
+    #stage { position: fixed; inset: 0; }
+    #canvas { display: block; cursor: grab; image-rendering: pixelated; touch-action: none; }
+    #canvas.dragging { cursor: grabbing; }
+    #hud { position: fixed; left: 12px; top: 12px; display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(10, 16, 30, 0.82); border: 1px solid var(--line); border-radius: 8px; font-size: 11px; letter-spacing: 0.6px; }
+    #hud b { color: var(--accent); }
+    #hud small { color: var(--muted); }
+    #hud button { background: #16233f; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
+    #hud button:hover { border-color: var(--accent); }
+    #status { position: fixed; left: 12px; bottom: 12px; font-size: 10px; color: var(--muted); background: rgba(10, 16, 30, 0.72); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; }
+  </style>
+</head>
+<body>
+  <div id="stage"><canvas id="canvas"></canvas></div>
+  <div id="hud">
+    <span><b>TRACE/COM</b> <small>PIXEL OFFICE V2 · BLUEPRINT</small></span>
+    <span id="mode">FULL</span>
+    <button type="button" id="fit">FIT</button>
+  </div>
+  <div id="status">arraste para mover · roda do mouse para zoom</div>
+  <script type="module">
+    import {
+      BASE_WIDTH,
+      BASE_HEIGHT,
+      MASTER_STATION,
+      drawBlueprint,
+      drawMasterStation,
+      buildStaticBlueprintState,
+    } from "./office-v2-blueprint.js";
+
+    const params = new URLSearchParams(location.search);
+    const masterMode = params.get("master") === "1";
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const modeLabel = document.getElementById("mode");
+    const status = document.getElementById("status");
+
+    const state = buildStaticBlueprintState();
+    const bounds = masterMode
+      ? { x: MASTER_STATION.x - 16, y: MASTER_STATION.y - 26, w: MASTER_STATION.w + 32, h: MASTER_STATION.h + 44 }
+      : { x: 0, y: 0, w: BASE_WIDTH, h: BASE_HEIGHT };
+
+    let scale = 1;
+    let offset = { x: 0, y: 0 };
+    let dragging = false;
+    let last = { x: 0, y: 0 };
+
+    function fit() {
+      const factor = Math.min(window.innerWidth / bounds.w, window.innerHeight / bounds.h) * 0.96;
+      scale = Math.max(0.1, factor);
+      offset = {
+        x: (window.innerWidth - bounds.w * scale) / 2,
+        y: (window.innerHeight - bounds.h * scale) / 2,
+      };
+      render();
+    }
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(window.innerWidth * dpr);
+      canvas.height = Math.round(window.innerHeight * dpr);
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      render();
+    }
+
+    function render() {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+      ctx.fillStyle = "#070c16";
+      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+      ctx.save();
+      ctx.translate(offset.x, offset.y);
+      ctx.scale(scale, scale);
+      ctx.translate(-bounds.x, -bounds.y);
+      if (masterMode) drawMasterStation(ctx, MASTER_STATION.x, MASTER_STATION.y, { scale: 1 });
+      else drawBlueprint(ctx, state);
+      ctx.restore();
+      status.textContent = `${masterMode ? "master EUR/USD" : "full blueprint"} · zoom ${(scale * 100).toFixed(0)}%`;
+    }
+
+    canvas.addEventListener("pointerdown", (event) => {
+      dragging = true;
+      last = { x: event.clientX, y: event.clientY };
+      canvas.classList.add("dragging");
+      canvas.setPointerCapture(event.pointerId);
+    });
+    canvas.addEventListener("pointermove", (event) => {
+      if (!dragging) return;
+      offset.x += event.clientX - last.x;
+      offset.y += event.clientY - last.y;
+      last = { x: event.clientX, y: event.clientY };
+      render();
+    });
+    canvas.addEventListener("pointerup", (event) => {
+      dragging = false;
+      canvas.classList.remove("dragging");
+      canvas.releasePointerCapture(event.pointerId);
+    });
+    canvas.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const worldX = (event.clientX - offset.x) / scale + bounds.x;
+      const worldY = (event.clientY - offset.y) / scale + bounds.y;
+      const factor = event.deltaY < 0 ? 1.15 : 1 / 1.15;
+      scale = Math.min(8, Math.max(0.15, scale * factor));
+      offset.x = event.clientX - (worldX - bounds.x) * scale;
+      offset.y = event.clientY - (worldY - bounds.y) * scale;
+      render();
+    }, { passive: false });
+
+    document.getElementById("fit").addEventListener("click", fit);
+    window.addEventListener("resize", resize);
+    modeLabel.textContent = masterMode ? "MASTER" : "FULL";
+    resize();
+    fit();
+  </script>
+</body>
+</html>
