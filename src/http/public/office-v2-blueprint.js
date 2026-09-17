@@ -42,6 +42,7 @@ export const PALETTE = {
   floor: "#0d1b2e",
   floorAlt: "#0f2033",
   floorWarm: "#1a2334",
+  floorDeep: "#0a1524",
   tileLine: "#14263d",
   tileLineWarm: "#22334a",
   wall: "#101a2b",
@@ -51,16 +52,31 @@ export const PALETTE = {
   goldHi: "#e8c877",
   goldDark: "#8a6a24",
 
+  woodFloor: "#4a3220",
+  woodFloorHi: "#573c26",
+  woodFloorMid: "#3c2818",
+  woodFloorDark: "#2a1a0e",
+  woodFloorSeam: "#170d05",
+  wallWarm: "#2a1e14",
+  wallWarmHi: "#3a2a1c",
+  leather: "#6b4a2f",
+  leatherHi: "#8a6038",
+  leatherDark: "#432c1a",
+  sofaLeather: "#3a2c22",
+  sofaLeatherHi: "#5a4636",
+  cream: "#d8c6a2",
+
   wood: "#b07a45",
   woodHi: "#c99a63",
   woodMid: "#8a5a34",
   woodDark: "#5c3a22",
   woodShadow: "#3d2413",
 
-  bandBlue: "#1f4f8f",
-  bandBlueHi: "#3a7bd5",
-  bandGreen: "#2f7d4f",
-  bandGreenHi: "#49a86c",
+  bandBlue: "#2a4070",
+  bandBlueHi: "#3d5a8e",
+  panelHeader: "#16304f",
+  bandGreen: "#256644",
+  bandGreenHi: "#3d8f5f",
 
   green: "#3fbf5f",
   greenDark: "#237a3b",
@@ -70,10 +86,10 @@ export const PALETTE = {
   sofa: "#d9c7a3",
   sofaHi: "#efe3c6",
   sofaDark: "#b8a37c",
-  felt: "#2f8b57",
-  feltDark: "#1f5f3a",
-  rugRed: "#7a2f2a",
-  rugRedHi: "#a04239",
+  felt: "#25704a",
+  feltDark: "#174a2d",
+  rugRed: "#642823",
+  rugRedHi: "#83382f",
   rugBlue: "#22406b",
   rugBlueHi: "#315a91",
   rugCream: "#cbb894",
@@ -967,26 +983,29 @@ export function chair(ctx, x, y, options = {}) {
   pxRect(ctx, x + w - 3, y + h - 4, 2, 4, dark);
 }
 
-/** Visible chair back placed behind a seated agent. */
+/** Visible chair back placed behind a seated agent (dark navy office chair). */
 function chairBack(ctx, x, y, options = {}) {
-  const w = options.w ?? 20;
-  const h = options.h ?? 26;
-  pxRect(ctx, x + 1, y + 2, w - 2, h - 2, PALETTE.woodShadow);
-  pxRect(ctx, x + 2, y + 3, w - 4, h - 4, PALETTE.woodMid);
-  pxRect(ctx, x + 2, y + 3, w - 4, 1, PALETTE.wood);
-  pxRect(ctx, x + 3, y + 8, w - 6, 1, PALETTE.woodShadow);
-  pxRect(ctx, x + 3, y + 13, w - 6, 1, PALETTE.woodShadow);
-  pxRect(ctx, x, y, 3, h, PALETTE.woodDark);
-  pxRect(ctx, x + w - 3, y, 3, h, PALETTE.woodDark);
-  pxRect(ctx, x, y, 3, 1, PALETTE.woodHi);
-  pxRect(ctx, x + w - 3, y, 3, 1, PALETTE.woodHi);
+  const w = options.w ?? 30;
+  const h = options.h ?? 34;
+  const shell = options.shell ?? "#1b2743";
+  const shellHi = options.shellHi ?? "#2c3d63";
+  const rim = options.rim ?? "#0e1730";
+  pxRect(ctx, x + 1, y + 2, w - 2, h - 2, rim);
+  pxRect(ctx, x + 2, y + 3, w - 4, h - 4, shell);
+  pxRect(ctx, x + 2, y + 3, w - 4, 2, shellHi);
+  pxRect(ctx, x + 3, y + 10, w - 6, 1, "rgba(0,0,0,0.30)");
+  pxRect(ctx, x + 3, y + 20, w - 6, 1, "rgba(0,0,0,0.30)");
+  pxRect(ctx, x, y, 3, h, rim);
+  pxRect(ctx, x + w - 3, y, 3, h, rim);
+  pxRect(ctx, x, y, 3, 2, shellHi);
+  pxRect(ctx, x + w - 3, y, 3, 2, shellHi);
 }
 
 /**
- * Seated, proportional agent (~32px tall, head:body ~1:2.5). Drawn from the
- * top-left of its bounding box; the desk top is drawn later and occludes only
- * the very bottom of the torso, so head + torso + arms read clearly above the
- * desk line as a seated figure.
+ * Seated, proportional agent at reference scale (~30px wide, head ~14px).
+ * Drawn from the top-left of its bounding box; the desk top is drawn later and
+ * occludes only the very bottom of the torso, so head + shoulders + arms read
+ * clearly above the desk line as a seated person.
  */
 function drawSeatedAgent(ctx, x, y, options = {}) {
   const skin = options.skin ?? PALETTE.skin;
@@ -999,59 +1018,69 @@ function drawSeatedAgent(ctx, x, y, options = {}) {
   const glasses = options.glasses === true;
   const face = "#2b2118";
 
-  // arms behind the torso, with hands resting on the desk line
-  pxRect(ctx, x + 1, y + 12, 3, 15, shirt2);
-  pxRect(ctx, x + 14, y + 12, 3, 15, shirt2);
-  pxRect(ctx, x + 1, y + 26, 3, 3, skin);
-  pxRect(ctx, x + 14, y + 26, 3, 3, skin);
+  // arms behind the torso, hands resting on the desk line
+  pxRect(ctx, x + 1, y + 24, 5, 20, shirt2);
+  pxRect(ctx, x + 24, y + 24, 5, 20, shirt2);
+  pxRect(ctx, x + 1, y + 41, 5, 4, skin);
+  pxRect(ctx, x + 24, y + 41, 5, 4, skin);
 
   // torso
-  pxRect(ctx, x + 4, y + 11, 10, 21, shirt);
-  pxRect(ctx, x + 4, y + 11, 10, 1, shirt2);
-  pxRect(ctx, x + 3, y + 13, 1, 18, shirt2);
-  pxRect(ctx, x + 14, y + 13, 1, 18, shirt2);
-  pxRect(ctx, x + 4, y + 31, 10, 1, shirt2);
-  // collar
-  pxRect(ctx, x + 6, y + 11, 6, 1, skin);
-  pxRect(ctx, x + 6, y + 12, 2, 3, shirt2);
-  pxRect(ctx, x + 10, y + 12, 2, 3, shirt2);
+  pxRect(ctx, x + 6, y + 22, 18, 26, shirt);
+  pxRect(ctx, x + 6, y + 22, 18, 2, shirt2);
+  pxRect(ctx, x + 5, y + 24, 2, 22, shirt2);
+  pxRect(ctx, x + 23, y + 24, 2, 22, shirt2);
+  pxRect(ctx, x + 6, y + 47, 18, 1, shirt2);
+  // collar + placket
+  pxRect(ctx, x + 11, y + 22, 8, 2, skin);
+  pxRect(ctx, x + 12, y + 23, 6, 3, shirt2);
   if (tie) {
-    pxRect(ctx, x + 7, y + 12, 4, 1, tie);
-    pxRect(ctx, x + 8, y + 13, 2, 11, tie);
+    pxRect(ctx, x + 13, y + 24, 4, 2, tie);
+    pxRect(ctx, x + 14, y + 26, 2, 16, tie);
   }
   // neck + head
-  pxRect(ctx, x + 7, y + 8, 4, 4, skinShade);
-  pxRect(ctx, x + 5, y + 1, 8, 8, skin);
-  pxRect(ctx, x + 4, y + 4, 1, 3, skin);
-  pxRect(ctx, x + 13, y + 4, 1, 3, skin);
-  pxRect(ctx, x + 7, y + 4, 1, 2, face);
-  pxRect(ctx, x + 10, y + 4, 1, 2, face);
-  pxRect(ctx, x + 8, y + 7, 2, 1, "#8a4a3a");
+  pxRect(ctx, x + 12, y + 17, 6, 6, skinShade);
+  pxRect(ctx, x + 8, y + 2, 14, 16, skin);
+  pxRect(ctx, x + 7, y + 6, 1, 8, skin);
+  pxRect(ctx, x + 22, y + 6, 1, 8, skin);
+  // brows + eyes
+  pxRect(ctx, x + 11, y + 6, 2, 1, hair);
+  pxRect(ctx, x + 18, y + 6, 2, 1, hair);
+  pxRect(ctx, x + 11, y + 8, 2, 3, face);
+  pxRect(ctx, x + 18, y + 8, 2, 3, face);
+  // nose + mouth
+  pxRect(ctx, x + 15, y + 11, 1, 2, skinShade);
+  pxRect(ctx, x + 13, y + 14, 5, 1, "#8a4a3a");
   // hair variants
   if (style === 0) {
-    pxRect(ctx, x + 5, y, 8, 2, hair);
-    pxRect(ctx, x + 4, y + 1, 10, 2, hair);
+    pxRect(ctx, x + 8, y + 1, 14, 2, hair);
+    pxRect(ctx, x + 7, y + 2, 16, 4, hair);
+    pxRect(ctx, x + 7, y + 2, 2, 8, hair);
+    pxRect(ctx, x + 21, y + 2, 2, 8, hair);
   } else if (style === 1) {
-    pxRect(ctx, x + 5, y, 8, 1, hair);
-    pxRect(ctx, x + 4, y + 1, 10, 2, hair);
-    pxRect(ctx, x + 4, y + 2, 2, 4, hair);
+    pxRect(ctx, x + 8, y, 14, 3, hair);
+    pxRect(ctx, x + 7, y + 2, 16, 3, hair);
+    pxRect(ctx, x + 7, y + 4, 3, 10, hair);
   } else if (style === 2) {
-    pxRect(ctx, x + 5, y, 8, 2, hair);
-    pxRect(ctx, x + 4, y + 1, 10, 3, hair);
-    pxRect(ctx, x + 4, y + 4, 1, 9, hair);
-    pxRect(ctx, x + 13, y + 4, 1, 9, hair);
+    pxRect(ctx, x + 8, y + 1, 14, 3, hair);
+    pxRect(ctx, x + 7, y + 3, 16, 5, hair);
+    pxRect(ctx, x + 7, y + 6, 2, 12, hair);
+    pxRect(ctx, x + 21, y + 6, 2, 12, hair);
   } else {
-    pxRect(ctx, x + 6, y + 1, 6, 1, hair);
-    pxRect(ctx, x + 5, y + 2, 1, 2, hair);
-    pxRect(ctx, x + 12, y + 2, 1, 2, hair);
+    pxRect(ctx, x + 9, y + 2, 12, 2, hair);
+    pxRect(ctx, x + 8, y + 3, 3, 3, hair);
+    pxRect(ctx, x + 19, y + 3, 3, 3, hair);
+    pxRect(ctx, x + 13, y + 1, 4, 2, hair);
   }
   if (glasses) {
-    pxRect(ctx, x + 6, y + 4, 6, 1, PALETTE.metal);
-    pxRect(ctx, x + 6, y + 4, 1, 3, PALETTE.metal);
-    pxRect(ctx, x + 11, y + 4, 1, 3, PALETTE.metal);
-    pxRect(ctx, x + 8, y + 5, 2, 1, PALETTE.metal);
+    pxRect(ctx, x + 10, y + 7, 5, 1, PALETTE.metal);
+    pxRect(ctx, x + 17, y + 7, 5, 1, PALETTE.metal);
+    pxRect(ctx, x + 10, y + 7, 1, 4, PALETTE.metal);
+    pxRect(ctx, x + 14, y + 7, 1, 4, PALETTE.metal);
+    pxRect(ctx, x + 17, y + 7, 1, 4, PALETTE.metal);
+    pxRect(ctx, x + 21, y + 7, 1, 4, PALETTE.metal);
+    pxRect(ctx, x + 15, y + 8, 2, 1, PALETTE.metal);
   }
-  return { width: 18, height: 32 };
+  return { width: 30, height: 48 };
 }
 
 export function trader(ctx, x, y, options = {}) {
@@ -1513,26 +1542,47 @@ export function stairs(ctx, x, y, w, h, options = {}) {
 }
 
 export function world_map(ctx, x, y, w, h, options = {}) {
-  pxRect(ctx, x, y, w, h, "#0a1c30");
-  pxRect(ctx, x, y, w, h, "rgba(20,60,100,0.35)");
-  for (let gx = x + 8; gx < x + w; gx += 14) pxRect(ctx, gx, y, 1, h, "rgba(80,140,200,0.18)");
-  for (let gy = y + 8; gy < y + h; gy += 12) pxRect(ctx, x, gy, w, 1, "rgba(80,140,200,0.18)");
-  const land = "#3f8f4f";
-  const land2 = "#57a85f";
-  const blobs = [
-    [0.16, 0.34, 0.22, 0.3], [0.24, 0.7, 0.1, 0.22], [0.48, 0.3, 0.16, 0.34],
-    [0.52, 0.68, 0.12, 0.2], [0.7, 0.3, 0.24, 0.32], [0.86, 0.72, 0.1, 0.16],
-  ];
-  for (const [fx, fy, fw, fh] of blobs) {
-    const bx = x + w * fx;
-    const by = y + h * fy;
-    const bw = w * fw;
-    const bh = h * fh;
+  pxRect(ctx, x, y, w, h, "#08131f");
+  pxRect(ctx, x, y, w, h, "rgba(24,66,110,0.30)");
+  const land = options.land ?? "#2c6aa4";
+  const landHi = options.landHi ?? "#3d86c4";
+  const blob = (fx, fy, fw, fh) => {
+    const bx = x + Math.round(w * fx);
+    const by = y + Math.round(h * fy);
+    const bw = Math.max(2, Math.round(w * fw));
+    const bh = Math.max(2, Math.round(h * fh));
     pxRect(ctx, bx, by, bw, bh, land);
-    pxRect(ctx, bx + 2, by + 2, bw - 4, bh - 4, land2);
-    pxRect(ctx, bx, by, bw, 1, "#6fc07a");
-  }
-  const dots = [[0.2, 0.4], [0.24, 0.5], [0.5, 0.36], [0.53, 0.46], [0.74, 0.36], [0.8, 0.44], [0.86, 0.5]];
+    if (bw > 2 && bh > 2) pxRect(ctx, bx + 1, by + 1, bw - 2, bh - 2, landHi);
+  };
+  // North America
+  blob(0.10, 0.12, 0.17, 0.17);
+  blob(0.05, 0.24, 0.12, 0.13);
+  blob(0.16, 0.28, 0.11, 0.15);
+  blob(0.21, 0.09, 0.11, 0.08);
+  // Central America
+  blob(0.20, 0.42, 0.07, 0.06);
+  // South America
+  blob(0.24, 0.50, 0.10, 0.15);
+  blob(0.26, 0.63, 0.08, 0.16);
+  blob(0.28, 0.78, 0.05, 0.10);
+  // Europe
+  blob(0.44, 0.12, 0.11, 0.10);
+  blob(0.47, 0.21, 0.08, 0.08);
+  // Africa
+  blob(0.44, 0.34, 0.13, 0.15);
+  blob(0.47, 0.47, 0.10, 0.17);
+  blob(0.50, 0.63, 0.07, 0.12);
+  // Asia
+  blob(0.56, 0.10, 0.23, 0.16);
+  blob(0.68, 0.24, 0.17, 0.12);
+  blob(0.60, 0.30, 0.11, 0.09);
+  blob(0.62, 0.39, 0.06, 0.08);
+  blob(0.74, 0.36, 0.09, 0.06);
+  // Australia
+  blob(0.78, 0.62, 0.11, 0.11);
+  blob(0.88, 0.70, 0.04, 0.05);
+  // trade markers
+  const dots = [[0.18, 0.30], [0.28, 0.60], [0.50, 0.30], [0.54, 0.55], [0.72, 0.30], [0.82, 0.66]];
   for (const [fx, fy] of dots) {
     pxRect(ctx, x + w * fx - 1, y + h * fy - 1, 3, 3, PALETTE.amber);
     pxRect(ctx, x + w * fx, y + h * fy, 1, 1, PALETTE.white);
@@ -1640,29 +1690,28 @@ export function drawStation(ctx, x, y, station = {}) {
   const seed = hashString(station.symbol ?? "X");
   const badge = stationBadgeModel(station);
 
-  // keep the desk front low enough that head + torso + arms stay above the
-  // desk line: the agent baseline is ~30px below the cell top.
-  const deskTop = y + Math.min(30, Math.round(h * 0.5));
+  // keep the desk low so head + shoulders + arms stay above the desk line
+  const deskTop = y + Math.round(h * 0.64);
   const deskH = y + h - deskTop;
-  const depth = Math.min(12, Math.max(8, Math.round(deskH * 0.3)));
-  const agentY = y + 1;
-  const agentLeft = x + Math.round(w / 2) - 27;
-  const agentRight = x + Math.round(w / 2) + 9;
+  const depth = Math.min(7, Math.max(5, Math.round(deskH * 0.22)));
+  const agentY = y + 8;
+  const agentLeft = x + Math.round(w / 2) - 33;
+  const agentRight = x + Math.round(w / 2) + 3;
 
   // ground contact shadow
   pxRect(ctx, x + 3, y + h, w - 6, 2, "rgba(0,0,0,0.4)");
   pxRect(ctx, x + 12, y + h + 2, w - 24, 1, "rgba(0,0,0,0.22)");
 
   if (active) {
-    chairBack(ctx, agentLeft - 2, y + 8, { w: 20, h: 26 });
-    chairBack(ctx, agentRight - 2, y + 8, { w: 20, h: 26 });
+    chairBack(ctx, agentLeft - 1, y + 4, { w: 32, h: 36 });
+    chairBack(ctx, agentRight - 1, y + 4, { w: 32, h: 36 });
     trader(ctx, agentLeft, agentY, { variant: seed % 6 });
     critic(ctx, agentRight, agentY, { variant: (seed >> 3) % 6 });
   }
 
   wood_desk(ctx, x, deskTop, w, deskH, { depth, inset: 6 });
 
-  if (active) monitor(ctx, x + Math.round(w / 2) - 10, deskTop + 1, { w: 20, h: Math.max(10, depth - 2) });
+  if (active) monitor(ctx, x + Math.round(w / 2) - 10, deskTop + 1, { w: 20, h: Math.max(8, depth - 2) });
 
   const frontY = deskTop + depth;
   const plaqueY = frontY + 2;
@@ -1752,25 +1801,77 @@ export function buildStaticBlueprintState(overrides = {}) {
  * 13. SCENE REGIONS
  * ------------------------------------------------------------------ */
 
+/**
+ * Physical warm-wood plank floor. Horizontal boards with staggered vertical
+ * seams, a lit top edge and a dark seam at the bottom of every board so the
+ * surface reads as a real material rather than a flat colour field.
+ */
+function drawWoodFloor(ctx, x, y, w, h, options = {}) {
+  if (w <= 0 || h <= 0) return;
+  const plankH = options.plankH ?? 13;
+  const plankW = options.plankW ?? 92;
+  const tints = [PALETTE.woodFloor, PALETTE.woodFloorHi, PALETTE.woodFloorMid, PALETTE.woodFloor, PALETTE.woodFloorMid, PALETTE.woodFloorHi];
+  let row = 0;
+  for (let py = y; py < y + h; py += plankH, row += 1) {
+    const ph = Math.min(plankH, y + h - py);
+    if (ph <= 0) break;
+    pxRect(ctx, x, py, w, ph, tints[row % tints.length]);
+    pxRect(ctx, x, py, w, 1, "rgba(255,208,150,0.07)");
+    pxRect(ctx, x, py + ph - 1, w, 1, PALETTE.woodFloorSeam);
+    const offset = (row % 2) * Math.round(plankW / 2);
+    for (let sx = x - offset + plankW; sx < x + w; sx += plankW) {
+      pxRect(ctx, sx, py, 1, ph, PALETTE.woodFloorSeam);
+    }
+    for (let gx = x + 6; gx < x + w; gx += 26) {
+      pxRect(ctx, gx, py + 3 + ((row * 5 + gx) % 6), 9, 1, "rgba(30,18,8,0.16)");
+    }
+  }
+}
+
 function drawFloor(ctx) {
+  // base: cool dark trading-hall floor
   pxRect(ctx, 0, 0, BASE_WIDTH, BASE_HEIGHT, PALETTE.floor);
-  // warm amber ambient wash over the floor
+  // warm amber ambient wash over the whole hall
   const wash = ctx.createRadialGradient(BASE_WIDTH / 2, BASE_HEIGHT * 0.58, 80, BASE_WIDTH / 2, BASE_HEIGHT * 0.58, BASE_WIDTH * 0.78);
   wash.addColorStop(0, "rgba(240,180,96,0.13)");
   wash.addColorStop(0.55, "rgba(220,150,80,0.06)");
   wash.addColorStop(1, "rgba(240,180,96,0)");
   ctx.fillStyle = wash;
   ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
-  // warm tile grid
-  for (let x = 0; x < BASE_WIDTH; x += 32) pxRect(ctx, x, 0, 1, BASE_HEIGHT, PALETTE.tileLine);
-  for (let y = 0; y < BASE_HEIGHT; y += 32) pxRect(ctx, 0, y, BASE_WIDTH, 1, PALETTE.tileLine);
-  for (let x = 16; x < BASE_WIDTH; x += 32) pxRect(ctx, x, 0, 1, BASE_HEIGHT, "rgba(240,190,110,0.035)");
-  for (let y = 16; y < BASE_HEIGHT; y += 32) pxRect(ctx, 0, y, BASE_WIDTH, 1, "rgba(240,190,110,0.035)");
+
+  // warm timber rooms: top-left lounge, top-right lounge, bottom terrace band
+  drawWoodFloor(ctx, 0, 116, 524, 222);
+  drawWoodFloor(ctx, 286, 0, 238, 338);
+  drawWoodFloor(ctx, 908, 0, 628, 338);
+  drawWoodFloor(ctx, 0, 900, BASE_WIDTH, 124);
+  // dark ceiling beam across the top
+  pxRect(ctx, 0, 0, BASE_WIDTH, 6, "#1a1208");
+  pxRect(ctx, 0, 6, BASE_WIDTH, 2, "#3a2a1c");
+  // warm glow pooling on the timber
+  lightPool(ctx, 262, 250, 260, PALETTE.amber, 0.05);
+  lightPool(ctx, 1220, 250, 240, PALETTE.amber, 0.05);
+  lightPool(ctx, 768, 960, 340, PALETTE.amber, 0.06);
+
+  // trading-hall tile grid, only over the middle bands
+  const gridTop = 338;
+  const gridBottom = 900;
+  for (let x = 0; x < BASE_WIDTH; x += 32) pxRect(ctx, x, gridTop, 1, gridBottom - gridTop, PALETTE.tileLine);
+  for (let y = gridTop; y < gridBottom; y += 32) pxRect(ctx, 0, y, BASE_WIDTH, 1, PALETTE.tileLine);
+  for (let x = 16; x < BASE_WIDTH; x += 32) pxRect(ctx, x, gridTop, 1, gridBottom - gridTop, "rgba(240,190,110,0.03)");
+  for (let y = gridTop + 16; y < gridBottom; y += 32) pxRect(ctx, 0, y, BASE_WIDTH, 1, "rgba(240,190,110,0.03)");
   for (let tx = 0; tx < BASE_WIDTH; tx += 32) {
-    for (let ty = 0; ty < BASE_HEIGHT; ty += 32) {
+    for (let ty = gridTop; ty < gridBottom; ty += 32) {
       if (((tx / 32) + (ty / 32)) % 2 === 0) warmOverlay(ctx, tx, ty, 32, 32, PALETTE.floorAlt, 0.4);
     }
   }
+
+  // dark structural beam dividing the upper rooms from the trading hall
+  pxRect(ctx, 0, 330, BASE_WIDTH, 8, "#160f0a");
+  pxRect(ctx, 0, 330, BASE_WIDTH, 2, "#3a2a1c");
+  pxRect(ctx, 0, 336, BASE_WIDTH, 2, "#080605");
+  // baseboard between the trading hall and the bottom terrace
+  pxRect(ctx, 0, 894, BASE_WIDTH, 8, "#160f0a");
+  pxRect(ctx, 0, 894, BASE_WIDTH, 2, "#3a2a1c");
   pxRect(ctx, 0, 0, BASE_WIDTH, 4, "#0a1420");
   pxRect(ctx, 0, BASE_HEIGHT - 4, BASE_WIDTH, 4, "#0a1420");
 }
@@ -1808,14 +1909,14 @@ function drawLogo(ctx) {
 
 function drawQuadroLongTerm(ctx) {
   const { x, y, w, h } = { x: 14, y: 96, w: 176 - 14, h: 176 - 96 };
-  drawWallPanel(ctx, x, y, w, h, { bg: "#0d1a2c" });
+  drawWallPanel(ctx, x, y, w, h, { bg: "#1c1a16" });
   drawPixelParagraph(ctx, "TRADER E UM JOGO DE LONGO PRAZO", x + w / 2, y + 12, w - 16, {
     scale: 1,
     align: "center",
-    color: PALETTE.goldHi,
+    color: "#d8c8a0",
     lineHeight: 11,
   });
-  pxRect(ctx, x + 12, y + h - 26, w - 24, 14, "#0a1526");
+  pxRect(ctx, x + 12, y + h - 26, w - 24, 14, "#0f0e0c");
   drawPixelText(ctx, "PROCESSO > SORTE", x + w / 2, y + h - 22, { scale: 1, align: "center", color: PALETTE.metal });
 }
 
@@ -1824,12 +1925,15 @@ function drawQuadroFocus(ctx) {
   const y = 18;
   const w = 392 - 300;
   const h = 142 - 18;
-  drawWallPanel(ctx, x, y, w, h, { bg: "#12233f" });
+  pxRect(ctx, x, y, w, h, PALETTE.woodDark);
+  pxRect(ctx, x + 1, y + 1, w - 2, h - 2, PALETTE.goldDark);
+  pxRect(ctx, x + 4, y + 4, w - 8, h - 8, "#3a2a1a");
+  pxRect(ctx, x + 4, y + 4, w - 8, 1, "rgba(255,220,170,0.14)");
   const words = ["FOCO", "DISCIPLINA", "PROCESSO", "RESULTADO"];
-  const colors = [PALETTE.goldHi, PALETTE.green, PALETTE.screenOn, PALETTE.amber];
+  const colors = [PALETTE.goldHi, PALETTE.amberSoft, PALETTE.goldHi, PALETTE.amber];
   words.forEach((word, index) => {
     drawPixelText(ctx, word, x + w / 2, y + 12 + index * 26, { scale: 1, align: "center", color: colors[index] });
-    if (index < words.length - 1) pxRect(ctx, x + 14, y + 22 + index * 26, w - 28, 1, "rgba(120,150,200,0.25)");
+    if (index < words.length - 1) pxRect(ctx, x + 14, y + 22 + index * 26, w - 28, 1, "rgba(180,140,80,0.28)");
   });
 }
 
@@ -1839,7 +1943,7 @@ function drawProfessorPanel(ctx) {
   const w = 132 - 12;
   const h = 392 - 184;
   const panel = drawWallPanel(ctx, x, y, w, h, { bg: "#0c1626" });
-  pxRect(ctx, panel.innerX, panel.innerY, panel.innerW, 20, PALETTE.bandBlue);
+  pxRect(ctx, panel.innerX, panel.innerY, panel.innerW, 20, PALETTE.panelHeader);
   drawPixelText(ctx, "PROFESSOR", x + w / 2, panel.innerY + 3, { scale: 1, align: "center", color: PALETTE.white });
   drawPixelText(ctx, "& PESQUISA", x + w / 2, panel.innerY + 11, { scale: 1, align: "center", color: PALETTE.white });
   bookshelf(ctx, panel.innerX + 2, panel.innerY + 26, 40, 62, { shelves: 3, seed: 3 });
@@ -1863,7 +1967,7 @@ function drawMeetingRoomPanel(ctx) {
   const w = 132 - 12;
   const h = 562 - 398;
   const panel = drawWallPanel(ctx, x, y, w, h, { bg: "#0c1626" });
-  pxRect(ctx, panel.innerX, panel.innerY, panel.innerW, 18, PALETTE.bandBlue);
+  pxRect(ctx, panel.innerX, panel.innerY, panel.innerW, 18, PALETTE.panelHeader);
   drawPixelText(ctx, "SALA DE REUNIAO", x + w / 2, panel.innerY + 6, { scale: 1, align: "center", color: PALETTE.white });
   const tableX = panel.innerX + 10;
   const tableY = panel.innerY + 40;
@@ -1900,7 +2004,7 @@ function drawDataCenterPanel(ctx) {
   const w = 132 - 12;
   const h = 772 - 654;
   const panel = drawWallPanel(ctx, x, y, w, h, { bg: "#0a1220" });
-  pxRect(ctx, panel.innerX, panel.innerY, panel.innerW, 16, PALETTE.bandBlue);
+  pxRect(ctx, panel.innerX, panel.innerY, panel.innerW, 16, PALETTE.panelHeader);
   drawPixelText(ctx, "DATA CENTER", x + w / 2, panel.innerY + 5, { scale: 1, align: "center", color: PALETTE.white });
   for (let rack = 0; rack < 2; rack += 1) {
     const rx = panel.innerX + rack * 30;
@@ -1949,9 +2053,9 @@ function drawMarketsBoxes(ctx, daily) {
 
 function drawWorldMapPanel(ctx) {
   const x = 1058;
-  const y = 8;
+  const y = 28;
   const w = 1268 - 1058;
-  const h = 152 - 8;
+  const h = 152 - 28;
   const panel = drawWallPanel(ctx, x, y, w, h, { bg: "#0a1526" });
   pxRect(ctx, x + 3, y + 3, w - 6, 16, PALETTE.bandBlue);
   drawPixelText(ctx, "MAPA MUNDIAL", x + w / 2, y + 7, { scale: 1, align: "center", color: PALETTE.white });
@@ -1988,11 +2092,11 @@ function drawRedDisciplinePanel(ctx) {
   const y = 18;
   const w = 1530 - 1436;
   const h = 124 - 18;
-  drawWallPanel(ctx, x, y, w, h, { bg: PALETTE.redDark, border: PALETTE.gold });
+  drawWallPanel(ctx, x, y, w, h, { bg: "#1a1208", border: PALETTE.gold });
   drawPixelParagraph(ctx, "DISCIPLINA TRANSFORMA ESTRATEGIA EM LIBERDADE", x + w / 2, y + 10, w - 14, {
     scale: 1,
     align: "center",
-    color: PALETTE.white,
+    color: PALETTE.goldHi,
     lineHeight: 11,
   });
 }
@@ -2034,36 +2138,69 @@ function drawBullStatue(ctx) {
 }
 
 function drawLeftLounge(ctx) {
-  const x = 300;
-  const y = 116;
-  const w = 230;
-  const h = 218;
-  // cream sofas on a patterned rug, people seated, plants + lamp
-  patterned_rug(ctx, x + 8, y + 10, w - 16, h - 20, { color: PALETTE.rugBlue, inner: PALETTE.rugBlueHi, accent: PALETTE.rugCream, border: PALETTE.gold });
-  sofa(ctx, x + 18, y + 4, w - 36, { h: 30 });
-  trader(ctx, x + 62, y + 12, { variant: 2, shirt: "#3a4a7a", tie: null });
-  critic(ctx, x + w - 80, y + 12, { variant: 4, glasses: false });
-  armchair(ctx, x + 4, y + 66, { w: 34, h: 30 });
-  sofa(ctx, x + 30, y + h - 36, w - 60, { h: 28 });
-  trader(ctx, x + 74, y + h - 28, { variant: 0, shirt: "#3a4a7a", tie: null });
-  coffee_table(ctx, x + w / 2 - 28, y + 112, 56, { h: 16 });
-  plant_large(ctx, x + 2, y + h - 28, { scale: 1 });
-  plant_small(ctx, x + w - 16, y + 4, { scale: 1 });
-  lamp(ctx, x + w - 10, y + 46, { height: 30, pool: 40, alpha: 0.15 });
+  const x = 286;
+  const y = 124;
+  const w = 238;
+  const h = 212;
+  const dark = { color: PALETTE.sofaLeather, outline: "#241a13", color3: PALETTE.sofaLeatherHi };
+  const tan = { color: "#8a6038", outline: "#5a3c22", color3: "#a87a48" };
+
+  // big patterned rug under the seating group
+  patterned_rug(ctx, x + 2, y + 58, w - 4, h - 70, { color: PALETTE.rugRed, inner: PALETTE.rugRedHi, accent: PALETTE.rugCream, border: PALETTE.gold });
+
+  // upper group: two armchairs + coffee table
+  armchair(ctx, x + 36, y + 2, { w: 36, h: 32, ...tan });
+  trader(ctx, x + 46, y + 10, { variant: 2, shirt: "#b04030", tie: null });
+  coffee_table(ctx, x + 96, y + 34, 62, { h: 16 });
+  armchair(ctx, x + 168, y + 2, { w: 36, h: 32, ...tan });
+  plant_small(ctx, x + 176, y - 6, {});
+  lamp(ctx, x + 218, y + 6, { height: 36, pool: 46, alpha: 0.13 });
+
+  // middle: dark leather three-seat sofa with three seated people
+  sofa(ctx, x + 18, y + 66, 180, { h: 32, ...dark });
+  trader(ctx, x + 44, y + 74, { variant: 0, shirt: PALETTE.traderNavy, tie: "#c9a24b" });
+  critic(ctx, x + 84, y + 74, { variant: 2, shirt: "#2f7d4f", tie: null, glasses: false });
+  trader(ctx, x + 124, y + 74, { variant: 4, shirt: PALETTE.traderNavy, tie: "#2f7d4f" });
+
+  // lower: wooden coffee table + side table + rug + seated person
+  coffee_table(ctx, x + 66, y + 140, 84, { h: 16 });
+  pxRect(ctx, x + 92, y + 134, 14, 6, PALETTE.rugBlue);
+  pxRect(ctx, x + 116, y + 136, 8, 4, PALETTE.white);
+  pxRect(ctx, x + 174, y + 148, 30, 14, PALETTE.woodMid);
+  pxRect(ctx, x + 174, y + 148, 30, 2, PALETTE.woodHi);
+  pxRect(ctx, x + 176, y + 162, 3, 6, PALETTE.woodShadow);
+  pxRect(ctx, x + 199, y + 162, 3, 6, PALETTE.woodShadow);
+  trader(ctx, x + 8, y + 158, { variant: 3, shirt: "#6b4a2f", tie: null, glasses: false });
+
+  // plants framing the room
+  plant_large(ctx, x - 8, y + 168, {});
+  plant_small(ctx, x + 2, y + 2, {});
+  plant_small(ctx, x + 202, y + 108, {});
+  plant_large(ctx, x + 206, y + 150, {});
+  plant_small(ctx, x + 116, y + 196, {});
+  plant_small(ctx, x + 40, y + 198, {});
+  plant_small(ctx, x - 4, y + 96, {});
+
+  // bookshelf + small work nook on the left edge of the room
+  bookshelf(ctx, x - 22, y + 30, 22, 54, { shelves: 3, seed: 21 });
+  bookshelf(ctx, x - 22, y + 96, 22, 44, { shelves: 2, seed: 23 });
+  research_desk(ctx, x - 20, y + 152, 62, 22);
+  trader(ctx, x - 4, y + 140, { variant: 5, shirt: "#3a4a7a", tie: null, glasses: true });
 }
 
 function drawPoolArea(ctx) {
-  const x = 556;
-  const y = 224;
-  const w = 168;
-  const h = 100;
-  rug(ctx, x - 10, y - 8, w + 20, h + 18, { color: PALETTE.rugBlue, inner: PALETTE.rugBlueHi });
+  const x = 560;
+  const y = 256;
+  const w = 148;
+  const h = 68;
+  patterned_rug(ctx, x - 8, y - 6, w + 16, h + 14, { color: PALETTE.rugCream, inner: PALETTE.rugCreamHi, accent: PALETTE.rugRed, border: PALETTE.woodDark });
   pool_table(ctx, x, y, w, h, {});
-  lamp(ctx, x + w / 2, y - 6, { height: 30, pool: 54, alpha: 0.18 });
+  lamp(ctx, x + w / 2, y - 10, { height: 30, pool: 50, alpha: 0.16 });
   // players around the table
-  trader(ctx, x - 14, y + 8, { variant: 3, shirt: "#3a4a7a", tie: null });
-  critic(ctx, x + w - 4, y + 34, { variant: 1, glasses: false });
-  trader(ctx, x + 40, y + h + 2, { variant: 5, shirt: "#3a4a7a", tie: null });
+  trader(ctx, x - 24, y + 2, { variant: 3, shirt: "#3a4a7a", tie: null });
+  critic(ctx, x + w + 2, y + 16, { variant: 1, glasses: false });
+  trader(ctx, x + 22, y + h + 4, { variant: 5, shirt: "#3a4a7a", tie: null });
+  critic(ctx, x + w - 46, y + h + 2, { variant: 4, glasses: false });
 
   const plaqueX = 738;
   const plaqueY = 232;
@@ -2081,51 +2218,103 @@ function drawPoolArea(ctx) {
   pxRect(ctx, plaqueX - 18, 296, 14, 2, PALETTE.wood);
   plant_small(ctx, plaqueX - 16, 320, { scale: 1 });
   plant_large(ctx, plaqueX + plaqueW + 2, 300, { scale: 1 });
+  plant_large(ctx, 540, 300, { scale: 1 });
+  plant_small(ctx, 530, 210, { scale: 1 });
 }
 
 function drawRightLounge(ctx) {
-  const x = 838;
-  const y = 220;
-  const w = 172;
-  const h = 112;
-  patterned_rug(ctx, x + 8, y + 10, w - 16, h - 20, { color: PALETTE.rugRed, inner: PALETTE.rugRedHi, accent: PALETTE.rugCream, border: PALETTE.gold });
-  sofa(ctx, x + 12, y + 4, w - 24, { h: 28 });
-  trader(ctx, x + w / 2 - 30, y + 12, { variant: 5, shirt: "#3a4a7a", tie: null });
-  critic(ctx, x + w / 2 + 6, y + 12, { variant: 2, glasses: false });
-  armchair(ctx, x + 6, y + h - 40, { w: 32, h: 28 });
-  coffee_table(ctx, x + w / 2 - 20, y + h - 54, 40, { h: 14 });
-  plant_small(ctx, x + w - 16, y + h - 18, { scale: 1 });
-  lamp(ctx, x + 6, y + 58, { height: 28, pool: 36, alpha: 0.14 });
+  const x = 840;
+  const y = 240;
+  const w = 200;
+  const h = 96;
+  const leather = { color: PALETTE.leather, outline: PALETTE.leatherDark, color3: PALETTE.leatherHi };
+  patterned_rug(ctx, x + 2, y + 30, w - 6, h - 34, { color: PALETTE.rugRed, inner: PALETTE.rugRedHi, accent: PALETTE.rugCream, border: PALETTE.gold });
+  // back sofa (brown leather) with a seated trader
+  sofa(ctx, x + 4, y + 2, 118, { h: 28, ...leather });
+  trader(ctx, x + 38, y + 10, { variant: 5, shirt: "#3a4a7a", tie: null });
+  // front armchairs + coffee table
+  armchair(ctx, x + 2, y + 62, { w: 34, h: 30, ...leather });
+  armchair(ctx, x + 96, y + 62, { w: 34, h: 30, ...leather });
+  coffee_table(ctx, x + 52, y + 62, 52, { h: 14 });
+  // wall TV showing a green equity chart
+  pxRect(ctx, x + 128, y + 4, 70, 44, "#0a1526");
+  pxRect(ctx, x + 130, y + 6, 66, 40, "#0b1a2c");
+  pxRect(ctx, x + 134, y + 14, 40, 2, PALETTE.screenGreen);
+  pxRect(ctx, x + 134, y + 22, 28, 2, PALETTE.screenGreen);
+  pxRect(ctx, x + 134, y + 30, 34, 2, PALETTE.screenGreen);
+  pxRect(ctx, x + 180, y + 12, 12, 10, PALETTE.screenOn);
+  // plants + lamp
+  plant_large(ctx, x + 116, y + 2, {});
+  plant_small(ctx, x + 176, y + 78, {});
+  lamp(ctx, x + 6, y + 2, { height: 30, pool: 40, alpha: 0.15 });
 }
 
 function drawCafeKitchen(ctx) {
-  const counterX = 1130;
-  const counterY = 250;
-  const counterW = 1230 - 1130;
-  const counterH = 320 - 250;
-  kitchen_counter(ctx, counterX, counterY, counterW, counterH, {});
-  // stools
+  // back bar shelf with bottles
+  bookshelf(ctx, 1150, 196, 100, 54, { shelves: 3, seed: 7 });
+  for (let index = 0; index < 5; index += 1) {
+    pxRect(ctx, 1156 + index * 18, 202, 8, 7, index % 2 === 0 ? PALETTE.white : PALETTE.amber);
+  }
+  // wooden bar counter with bottles
+  const counterX = 1100;
+  const counterY = 252;
+  const counterW = 54;
+  const counterH = 54;
+  pxRect(ctx, counterX + 2, counterY + counterH, counterW - 4, 2, "rgba(0,0,0,0.35)");
+  pxRect(ctx, counterX, counterY, counterW, counterH, PALETTE.woodDark);
+  pxRect(ctx, counterX, counterY, counterW, 5, PALETTE.woodHi);
+  pxRect(ctx, counterX, counterY, counterW, 1, "#e8c877");
+  pxRect(ctx, counterX, counterY + 5, counterW, 1, PALETTE.woodShadow);
+  for (let index = 1; index < 3; index += 1) pxRect(ctx, counterX + Math.round((counterW * index) / 3), counterY + 6, 1, counterH - 6, PALETTE.woodShadow);
+  pxRect(ctx, counterX + 8, counterY + 16, 8, 2, PALETTE.metalDark);
+  pxRect(ctx, counterX + 34, counterY + 16, 8, 2, PALETTE.metalDark);
+  const bottleColors = [PALETTE.green, PALETTE.amber, PALETTE.rugRed, PALETTE.screenOn, PALETTE.criticPurple];
   for (let index = 0; index < 3; index += 1) {
-    const sx = counterX + 10 + index * 32;
-    pxRect(ctx, sx, counterY + counterH, 8, 8, PALETTE.metalDark);
-    pxRect(ctx, sx, counterY + counterH - 4, 10, 4, PALETTE.wood);
+    const bx = counterX + 8 + index * 15;
+    pxRect(ctx, bx, counterY - 11, 5, 11, bottleColors[index % bottleColors.length]);
+    pxRect(ctx, bx + 1, counterY - 14, 3, 3, PALETTE.metalDark);
   }
-  bookshelf(ctx, 1230, 200, 1330 - 1230, 260 - 200, { shelves: 3, seed: 7 });
-  for (let index = 0; index < 4; index += 1) {
-    pxRect(ctx, 1236 + index * 22, 206, 14, 6, index % 2 === 0 ? PALETTE.white : PALETTE.amber);
+  // stools
+  for (let index = 0; index < 2; index += 1) {
+    const sx = counterX + 10 + index * 26;
+    pxRect(ctx, sx, counterY + counterH, 8, 8, PALETTE.woodShadow);
+    pxRect(ctx, sx - 1, counterY + counterH - 4, 10, 4, PALETTE.wood);
   }
-  fridge(ctx, 1300, 250, 1340 - 1300, 320 - 250, {});
-  const signX = 1178;
-  const signY = 202;
-  const signW = 1244 - 1178;
-  const signH = 262 - 202;
-  drawWallPanel(ctx, signX, signY, signW, signH, { bg: "#12233f" });
-  drawPixelParagraph(ctx, "CAFE / IDEIAS / TRADES / RESULTADOS", signX + signW / 2, signY + 8, signW - 10, {
+  // white fridge
+  pxRect(ctx, 1306, 252, 34, 60, "#b8c0c8");
+  pxRect(ctx, 1306, 252, 34, 1, "#dde4ea");
+  pxRect(ctx, 1306, 252 + 22, 34, 2, PALETTE.metalDark);
+  pxRect(ctx, 1334, 258, 3, 14, PALETTE.metalDark);
+  pxRect(ctx, 1334, 282, 3, 24, PALETTE.metalDark);
+  pxRect(ctx, 1306, 311, 34, 1, PALETTE.metalDark);
+  // chalkboard sign
+  const signX = 1170;
+  const signY = 220;
+  const signW = 78;
+  const signH = 68;
+  pxRect(ctx, signX, signY, signW, signH, PALETTE.woodDark);
+  pxRect(ctx, signX + 1, signY + 1, signW - 2, signH - 2, PALETTE.wood);
+  pxRect(ctx, signX + 4, signY + 4, signW - 8, signH - 8, "#141816");
+  drawPixelParagraph(ctx, "CAFE IDEIAS TRADES RESULTADOS", signX + signW / 2, signY + 10, signW - 14, {
     scale: 1,
     align: "center",
-    color: PALETTE.goldHi,
-    lineHeight: 9,
+    color: "#d8d0b8",
+    lineHeight: 11,
   });
+  // small round table + two people
+  const tableX = 1108;
+  const tableY = 318;
+  pxRect(ctx, tableX, tableY, 34, 4, PALETTE.wood);
+  pxRect(ctx, tableX, tableY, 34, 1, PALETTE.woodHi);
+  pxRect(ctx, tableX + 15, tableY + 4, 4, 14, PALETTE.woodDark);
+  trader(ctx, tableX - 14, tableY - 22, { variant: 4, shirt: "#7a3a4a", tie: null, glasses: false });
+  critic(ctx, tableX + 34, tableY - 22, { variant: 2, shirt: "#2f6a8a", tie: null, glasses: false });
+  // plants + lamp
+  plant_large(ctx, 1064, 300, {});
+  plant_small(ctx, 1148, 320, {});
+  plant_small(ctx, 1348, 316, {});
+  lamp(ctx, 1260, 322, { height: 30, pool: 44, alpha: 0.16 });
+  lamp(ctx, 1120, 216, { height: 28, pool: 40, alpha: 0.15 });
 }
 
 function drawMeetingTable(ctx) {
@@ -2133,14 +2322,16 @@ function drawMeetingTable(ctx) {
   const y = 228;
   const w = 1502 - 1340;
   const h = 322 - 228;
-  rug(ctx, x + 8, y + 8, w - 16, h - 16, { color: PALETTE.rugBlue, inner: PALETTE.rugBlueHi });
-  const tableW = 96;
+  // warm dining nook on timber: table, two diners, lamp, plants, framed art
+  const tableW = 104;
   const tableX = x + (w - tableW) / 2;
-  const tableY = y + 28;
-  pxRect(ctx, tableX, tableY, tableW, 34, PALETTE.wood);
-  pxRect(ctx, tableX, tableY, tableW, 2, PALETTE.woodHi);
-  pxRect(ctx, tableX, tableY + 34, tableW, 2, PALETTE.woodShadow);
-  const seats = [[-14, 4], [46, 4], [-14, 48], [46, 48]];
+  const tableY = y + 4;
+  pxRect(ctx, tableX, tableY, tableW, 36, PALETTE.woodDark);
+  pxRect(ctx, tableX, tableY, tableW, 3, PALETTE.woodMid);
+  pxRect(ctx, tableX, tableY + 36, tableW, 2, "#2a1a0e");
+  pxRect(ctx, tableX + 4, tableY + 8, 22, 14, PALETTE.white);
+  pxRect(ctx, tableX + tableW - 26, tableY + 10, 18, 12, PALETTE.rugRed);
+  const seats = [[-16, 6], [tableW + 2, 6], [-16, 44], [tableW + 2, 44]];
   seats.forEach(([dx, dy], index) => {
     const ax = tableX + dx;
     const ay = tableY + dy;
@@ -2148,6 +2339,12 @@ function drawMeetingTable(ctx) {
     pxRect(ctx, ax, ay + 5, 14, 7, PALETTE.skin);
     pxRect(ctx, ax, ay + 12, 14, 12, index % 2 === 0 ? PALETTE.traderNavy : PALETTE.criticPurple);
   });
+  lamp(ctx, x + 12, y + 74, { height: 32, pool: 46, alpha: 0.17 });
+  plant_large(ctx, x + w - 18, y + 76, {});
+  plant_small(ctx, x + 8, y + 6, {});
+  pxRect(ctx, x + w - 40, y + 6, 30, 24, PALETTE.woodDark);
+  pxRect(ctx, x + w - 38, y + 8, 26, 20, "#1b3a5e");
+  pxRect(ctx, x + w - 30, y + 18, 10, 8, PALETTE.bandGreen);
 }
 
 function drawRightColumn(ctx) {
@@ -2160,7 +2357,7 @@ function drawRightColumn(ctx) {
     { y: 796, h: 1000 - 796, title: "TERRACO", sub: "RESPIRA ANALISA DECIDE MELHOR", accent: PALETTE.bandGreen },
   ];
   panels.forEach((entry, index) => {
-    const panel = drawWallPanel(ctx, x, entry.y, w, entry.h, { bg: "#0c1626" });
+    const panel = drawWallPanel(ctx, x, entry.y, w, entry.h, { bg: "#101010" });
     pxRect(ctx, x + 3, entry.y + 3, w - 6, 24, entry.accent);
     drawPixelParagraph(ctx, entry.title, x + w / 2, entry.y + 6, w - 12, {
       scale: 1,
@@ -2174,25 +2371,58 @@ function drawRightColumn(ctx) {
       color: PALETTE.goldHi,
       lineHeight: 10,
     });
+    // every panel interior is a warm timber room
+    pxRect(ctx, panel.innerX, panel.innerY + 24, panel.innerW, panel.innerH - 24, PALETTE.woodFloorMid);
     if (index === 0) {
-      pxRect(ctx, panel.innerX + 6, entry.y + 58, 34, 44, "#1a2440");
-      pxRect(ctx, panel.innerX + 10, entry.y + 64, 26, 24, PALETTE.screenOn);
-      pxRect(ctx, panel.innerX + 16, entry.y + 72, 4, 4, PALETTE.white);
-      pxRect(ctx, panel.innerX + 30, entry.y + 72, 4, 4, PALETTE.red);
+      lamp(ctx, panel.innerX + 6, entry.y + 58, { height: 26, pool: 32, alpha: 0.16 });
+      pxRect(ctx, panel.innerX + 16, entry.y + 54, 14, 40, "#241a2e");
+      pxRect(ctx, panel.innerX + 18, entry.y + 58, 10, 14, "#8a2f4a");
+      pxRect(ctx, panel.innerX + 34, entry.y + 54, 14, 40, "#1e2438");
+      pxRect(ctx, panel.innerX + 36, entry.y + 58, 10, 14, "#2f5f8a");
+      pxRect(ctx, panel.innerX + 20, entry.y + 78, 6, 3, PALETTE.amber);
+      pxRect(ctx, panel.innerX + 38, entry.y + 78, 6, 3, PALETTE.screenGreen);
+      pool_table(ctx, panel.innerX + 6, entry.y + 96, panel.innerW - 12, 34, {});
     } else if (index === 1) {
-      pool_table(ctx, panel.innerX + 4, entry.y + 54, panel.innerW - 8, 44, {});
-      pxRect(ctx, panel.innerX + 2, entry.y + 112, 18, 14, PALETTE.metalDark);
-      pxRect(ctx, panel.innerX + 4, entry.y + 116, 14, 8, PALETTE.screenOn);
+      pool_table(ctx, panel.innerX + 8, entry.y + 58, panel.innerW - 16, 40, {});
+      pxRect(ctx, panel.innerX + 4, entry.y + 110, 16, 12, PALETTE.woodDark);
+      pxRect(ctx, panel.innerX + 5, entry.y + 111, 14, 10, "#1c3557");
+      plant_small(ctx, panel.innerX + 6, entry.y + 44, {});
     } else if (index === 2) {
-      kitchen_counter(ctx, panel.innerX, entry.y + 62, panel.innerW, 36, {});
-      pxRect(ctx, panel.innerX + 6, entry.y + 100, 24, 18, PALETTE.metal);
-      pxRect(ctx, panel.innerX + 8, entry.y + 104, 20, 10, PALETTE.metalDark);
+      pxRect(ctx, panel.innerX + 4, entry.y + 56, panel.innerW - 8, 22, "#12100c");
+      drawPixelParagraph(ctx, "CAFE ENERGIA DISCIPLINA BOM HUMOR", x + w / 2, entry.y + 60, panel.innerW - 14, {
+        scale: 1,
+        align: "center",
+        color: "#d8d0b8",
+        lineHeight: 10,
+      });
+      // wooden counter
+      pxRect(ctx, panel.innerX + 2, entry.y + 88, panel.innerW - 4, 30, PALETTE.woodDark);
+      pxRect(ctx, panel.innerX + 2, entry.y + 88, panel.innerW - 4, 4, PALETTE.woodHi);
+      pxRect(ctx, panel.innerX + 2, entry.y + 88, panel.innerW - 4, 1, "#e8c877");
+      pxRect(ctx, panel.innerX + 8, entry.y + 84, 8, 5, PALETTE.amber);
+      pxRect(ctx, panel.innerX + 26, entry.y + 84, 8, 5, PALETTE.green);
+      pxRect(ctx, panel.innerX + 50, entry.y + 76, 22, 42, "#b8c0c8");
+      pxRect(ctx, panel.innerX + 50, entry.y + 76, 22, 1, "#dde4ea");
     } else {
-      pxRect(ctx, panel.innerX, entry.y + 52, panel.innerW, entry.h - 70, "#0a1c30");
-      for (let index2 = 0; index2 < 5; index2 += 1) pxRect(ctx, panel.innerX + 6 + index2 * 22, entry.y + 56, 16, 30, "#12283f");
-      pxRect(ctx, panel.innerX + 4, entry.y + 96, 10, 12, PALETTE.hair2);
-      pxRect(ctx, panel.innerX + 4, entry.y + 100, 10, 8, PALETTE.skin);
-      pxRect(ctx, panel.innerX + 4, entry.y + 106, 10, 12, "#5c6a86");
+      // terrace: night skyline through a window + a figure + plant
+      pxRect(ctx, panel.innerX, entry.y + 52, panel.innerW, 40, "#0a1c30");
+      for (let index2 = 0; index2 < 7; index2 += 1) {
+        pxRect(ctx, panel.innerX + 4 + index2 * 16, entry.y + 56, 11, 32, index2 % 2 === 0 ? "#12283f" : "#0f2136");
+      }
+      for (let index2 = 0; index2 < 22; index2 += 1) {
+        pxRect(ctx, panel.innerX + 5 + (index2 * 13) % (panel.innerW - 12), entry.y + 58 + (index2 * 7) % 26, 2, 2, PALETTE.amber);
+      }
+      pxRect(ctx, panel.innerX + 4, entry.y + 94, 12, 14, PALETTE.hair2);
+      pxRect(ctx, panel.innerX + 4, entry.y + 99, 12, 8, PALETTE.skin);
+      pxRect(ctx, panel.innerX + 4, entry.y + 106, 12, 16, "#5c6a86");
+      pxRect(ctx, panel.innerX + 4, entry.y + 120, 12, 4, PALETTE.woodFloorMid);
+      plant_large(ctx, panel.innerX + 20, entry.y + 116, {});
+      drawPixelParagraph(ctx, "RESPIRA ANALISA VOLTA MELHOR", x + w / 2, entry.y + entry.h - 44, w - 14, {
+        scale: 1,
+        align: "center",
+        color: PALETTE.goldHi,
+        lineHeight: 11,
+      });
     }
   });
 }
@@ -2238,8 +2468,33 @@ function drawRibbon(ctx, band) {
   });
 }
 
+/**
+ * Warm timber ledge/wall that runs along the top of every desk band. The
+ * reference shows a lit wood counter behind each row, not a flat navy gap.
+ */
+function drawBandLedge(ctx, band) {
+  const y = Math.round(band.ribbon.y - 10);
+  const h = Math.max(16, Math.round(band.deskY - y - 12));
+  const w = BASE_WIDTH;
+  pxRect(ctx, 0, y, w, h, "#5c4130");
+  pxRect(ctx, 0, y, w, 2, "#7a5a42");
+  pxRect(ctx, 0, y + h - 2, w, 2, "#2a1c10");
+  for (let sx = 0; sx < w; sx += 74) pxRect(ctx, sx, y + 2, 1, h - 4, "#3f2a1c");
+  const railY = y + Math.round(h * 0.55);
+  pxRect(ctx, 0, railY, w, 2, "#8a6a4a");
+  pxRect(ctx, 0, railY + 2, w, 1, "#2a1c10");
+  const specks = ["#c9a24b", "#3f8f4f", "#c94b3a", "#3a7bd5", "#e0a03a"];
+  let index = 0;
+  for (let x = 8; x < w - 4; x += 29) {
+    const sy = y + 4 + ((x * 7 + index * 5) % Math.max(1, h - 10));
+    pxRect(ctx, x, sy, 2, 2, specks[(index + (band.label.length % 5)) % specks.length]);
+    index += 1;
+  }
+}
+
 function drawTradingFloor(ctx, state) {
   const bySymbol = new Map((state.stations ?? []).map((station) => [station.symbol, station]));
+  for (const band of SECTOR_BANDS) drawBandLedge(ctx, band);
   for (const band of SECTOR_BANDS) drawRibbon(ctx, band);
   for (const slot of STATION_LAYOUT.slots) {
     if (slot.y >= BASE_HEIGHT) continue;
@@ -2276,7 +2531,7 @@ export function drawExpandedWorld(ctx, state) {
 
 function drawBottomBand(ctx) {
   const sign = (x, y, w, h, text, color) => {
-    drawWallPanel(ctx, x, y, w, h, { bg: "#12233f" });
+    drawWallPanel(ctx, x, y, w, h, { bg: "#0e1a2c" });
     drawPixelParagraph(ctx, text, x + w / 2, y + 10, w - 14, { scale: 1, align: "center", color, lineHeight: 12 });
   };
   sign(202, 926, 372 - 202, 992 - 926, "DISCIPLINA HOJE RESULTADOS SEMPRE", PALETTE.goldHi);
@@ -2284,28 +2539,39 @@ function drawBottomBand(ctx) {
   stairs(ctx, 400, 890, 520 - 400, 1005 - 890, { direction: "right" });
   stairs(ctx, 1030, 890, 1150 - 1030, 1005 - 890, { direction: "left" });
 
+  // centre lounge: big red patterned rug, brown leather sofas, plants
+  patterned_rug(ctx, 528, 902, 496, 118, { color: PALETTE.rugRed, inner: PALETTE.rugRedHi, accent: PALETTE.rugCream, border: PALETTE.gold });
+  const leather = { color: PALETTE.leather, outline: PALETTE.leatherDark, color3: PALETTE.leatherHi };
+  sofa(ctx, 556, 908, 154, { h: 32, ...leather });
+  sofa(ctx, 850, 908, 154, { h: 32, ...leather });
+  armchair(ctx, 596, 966, { w: 34, h: 30, ...leather });
+  armchair(ctx, 928, 966, { w: 34, h: 30, ...leather });
+  coffee_table(ctx, 704, 958, 72, { h: 16 });
+  trader(ctx, 588, 918, { variant: 1, shirt: "#3a4a7a", tie: null });
+  critic(ctx, 880, 918, { variant: 3, glasses: false });
+  // small dog on the right sofa
+  pxRect(ctx, 944, 916, 16, 9, PALETTE.hair3);
+  pxRect(ctx, 942, 912, 6, 6, PALETTE.hair3);
+  pxRect(ctx, 956, 912, 4, 5, PALETTE.hair3);
+  pxRect(ctx, 946, 918, 3, 2, "#2b2118");
+
+  plant_large(ctx, 686, 1014, {});
+  plant_large(ctx, 846, 1014, {});
+  plant_small(ctx, 522, 1010, {});
+  plant_small(ctx, 1012, 1010, {});
+  lamp(ctx, 500, 972, { height: 30, pool: 40, alpha: 0.15 });
+  lamp(ctx, 1044, 972, { height: 30, pool: 40, alpha: 0.15 });
+
   const bx = 680;
   const by = 942;
   const bw = 872 - 680;
   const bh = 1012 - 942;
-  rug(ctx, bx - 24, by - 8, bw + 48, bh + 12, { color: PALETTE.rugRed, inner: PALETTE.rugRedHi });
+  pxRect(ctx, bx - 3, by - 3, bw + 6, bh + 6, PALETTE.goldDark);
   pxRect(ctx, bx, by, bw, bh, "#0a1526");
-  pxRect(ctx, bx, by, bw, 2, PALETTE.border);
-  pxRect(ctx, bx, by + bh - 2, bw, 2, PALETTE.border);
+  pxRect(ctx, bx + 2, by + 2, bw - 4, 2, PALETTE.border);
+  pxRect(ctx, bx + 2, by + bh - 4, bw - 4, 2, PALETTE.border);
   drawPixelText(ctx, "TRACE/COM", bx + bw / 2, by + 8, { scale: 2, align: "center", color: PALETTE.white });
   drawPixelText(ctx, "VISION · SHADOW · RESULT", bx + bw / 2, by + 30, { scale: 1, align: "center", color: PALETTE.goldHi });
-
-  const sofasX = 520;
-  const sofasY = 890;
-  const sofasW = 1030 - 520;
-  patterned_rug(ctx, sofasX + 20, sofasY + 16, sofasW - 40, 96, { color: PALETTE.rugBlue, inner: PALETTE.rugBlueHi, accent: PALETTE.rugCream });
-  sofa(ctx, sofasX + 30, sofasY + 22, 140, { h: 28 });
-  sofa(ctx, sofasX + sofasW - 170, sofasY + 22, 140, { h: 28 });
-  armchair(ctx, sofasX + 40, sofasY + 74, { w: 34, h: 28 });
-  armchair(ctx, sofasX + sofasW - 74, sofasY + 74, { w: 34, h: 28 });
-  coffee_table(ctx, sofasX + sofasW / 2 - 30, sofasY + 60, 60, { h: 16 });
-  trader(ctx, sofasX + 60, sofasY + 30, { variant: 1, shirt: "#3a4a7a", tie: null });
-  critic(ctx, sofasX + sofasW - 92, sofasY + 30, { variant: 3, glasses: false });
 }
 
 /** Dense warm set dressing so no large flat region is left empty. */
@@ -2386,24 +2652,31 @@ function drawDecorations(ctx) {
   poster(186, 184, 96, 62, PALETTE.rugRed, "chart");
   poster(420, 18, 92, 62, PALETTE.bandGreen, "landscape");
   poster(1044, 168, 92, 62, PALETTE.bandBlue, "chart");
-  poster(1044, 246, 92, 62, PALETTE.rugRed, "landscape");
   poster(1352, 18, 78, 62, PALETTE.bandBlue, "chart");
 
+  // right-side lounge: leather sofa + wall TV + plants filling the void
+  sofa(ctx, 1044, 262, 54, { h: 26, color: PALETTE.sofaLeather, outline: "#241a13", color3: PALETTE.sofaLeatherHi });
+  pxRect(ctx, 1036, 200, 66, 40, "#0a1526");
+  pxRect(ctx, 1038, 202, 62, 36, "#0b1a2c");
+  pxRect(ctx, 1042, 216, 40, 2, PALETTE.screenGreen);
+  pxRect(ctx, 1042, 222, 28, 2, PALETTE.screenGreen);
+  pxRect(ctx, 1042, 228, 34, 2, PALETTE.screenGreen);
+  pxRect(ctx, 1080, 208, 14, 10, PALETTE.screenOn);
   // right-side infill between the panel stack and the trading floor
-  plant_small(ctx, 1050, 268, {});
-  plant_large(ctx, 1082, 300, {});
+  plant_small(ctx, 1050, 300, {});
+  plant_large(ctx, 1084, 300, {});
   lamp(ctx, 1268, 332, { height: 30, pool: 42, alpha: 0.14 });
-  sideTable(1352, 286);
   plant_small(ctx, 1394, 306, {});
   bookshelf(ctx, 1350, 300, 26, 34, { shelves: 2, seed: 17 });
 
   // bottom-left corner lounge nook
-  rug(ctx, 24, 914, 150, 86, { color: PALETTE.rugBlue, inner: PALETTE.rugBlueHi });
+  rug(ctx, 24, 914, 150, 86, { color: PALETTE.rugRed, inner: PALETTE.rugRedHi });
   bookshelf(ctx, 28, 906, 26, 58, { shelves: 3, seed: 11 });
   sideTable(96, 926);
   plant_large(ctx, 66, 962, {});
   plant_small(ctx, 150, 990, {});
-  armchair(ctx, 96, 950, { w: 32, h: 28 });
+  armchair(ctx, 96, 950, { w: 32, h: 28, color: PALETTE.sofaLeather, outline: "#241a13", color3: PALETTE.sofaLeatherHi });
+  lamp(ctx, 40, 986, { height: 30, pool: 40, alpha: 0.16 });
 
   // bottom-right corner lounge nook
   rug(ctx, 1362, 914, 150, 86, { color: PALETTE.rugRed, inner: PALETTE.rugRedHi });
@@ -2418,11 +2691,81 @@ function drawDecorations(ctx) {
  * 14. ORCHESTRATOR
  * ------------------------------------------------------------------ */
 
+/** Solid backdrops behind the left/right panel stacks so labels never float over the floor. */
+function drawPanelBackdrops(ctx) {
+  const rects = [
+    [14, 14, 218, 78],
+    [14, 96, 162, 80],
+    [300, 18, 92, 124],
+    [12, 184, 120, 208],
+    [12, 398, 120, 164],
+    [12, 568, 120, 80],
+    [12, 654, 120, 118],
+    [1400, 330, 132, 140],
+    [1400, 500, 132, 160],
+    [1400, 668, 132, 122],
+    [1400, 796, 132, 204],
+  ];
+  for (const [x, y, w, h] of rects) {
+    pxRect(ctx, x, y, w, h, PALETTE.wallPanel);
+    pxRect(ctx, x, y, w, 3, PALETTE.wallWarmHi);
+    ctx.strokeStyle = PALETTE.goldDark;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  }
+}
+
+/** Local light pools + subtle warm ambient + vignette (light comes from objects, not a global filter). */
+function drawLighting(ctx) {
+  ctx.save();
+  ctx.globalCompositeOperation = "overlay";
+  ctx.fillStyle = "rgba(255,176,88,0.08)";
+  ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+  ctx.restore();
+
+  const pools = [
+    [716, 96, 250, "rgba(120,200,255,0.16)"],
+    [1163, 80, 140, "rgba(120,200,255,0.14)"],
+    [120, 34, 130, "rgba(255,190,110,0.22)"],
+    [248, 150, 130, "rgba(255,190,110,0.20)"],
+    [60, 260, 120, "rgba(255,190,110,0.18)"],
+    [410, 210, 180, "rgba(255,190,110,0.18)"],
+    [640, 277, 160, "rgba(255,200,120,0.15)"],
+    [920, 275, 160, "rgba(255,190,110,0.17)"],
+    [1230, 250, 160, "rgba(255,200,120,0.20)"],
+    [1420, 275, 160, "rgba(255,190,110,0.17)"],
+    [1466, 400, 130, "rgba(255,190,110,0.15)"],
+    [1466, 580, 130, "rgba(255,190,110,0.15)"],
+    [1466, 730, 130, "rgba(255,190,110,0.15)"],
+    [1466, 900, 130, "rgba(255,190,110,0.15)"],
+    [776, 977, 190, "rgba(255,190,110,0.17)"],
+  ];
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  for (const [x, y, r, color] of pools) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  ctx.restore();
+
+  const v = ctx.createRadialGradient(768, 500, 250, 768, 500, 940);
+  v.addColorStop(0, "rgba(0,0,0,0)");
+  v.addColorStop(1, "rgba(0,0,0,0.40)");
+  ctx.save();
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+  ctx.restore();
+}
+
 export function drawBlueprint(ctx, state) {
   const scene = state ?? buildStaticBlueprintState();
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   drawFloor(ctx);
+  drawPanelBackdrops(ctx);
   // wall/panel stacks first so desks always render above them
   drawRightColumn(ctx);
   drawQuadroFocus(ctx);
@@ -2445,6 +2788,7 @@ export function drawBlueprint(ctx, state) {
   drawTradingFloor(ctx, scene);
   drawBottomBand(ctx);
   drawLogo(ctx);
+  drawLighting(ctx);
   ctx.restore();
   return { width: BASE_WIDTH, height: BASE_HEIGHT };
 }
