@@ -12,11 +12,30 @@ import { UNIVERSE, marketKey } from "./market-universe.mjs";
 
 export const RESOLVER_VERSION = "runtime-asset-resolver-v1";
 
+/** Aliases reais descobertos na sessao IQ (Fase 7). NUNCA inventar IDs: apenas nomes->canonico. */
+export const NAME_ALIASES = {
+  USNDAQ100: "US100", USSPX500: "US500", GERMANY30: "GER30", JAPAN225: "JP225", EURO50: "EU50",
+  FRANCE40: "FR40", HONGKONG33: "HK33", SPAIN35: "SP35", UK100: "UK100", AUS200: "AUS200",
+  USOUSD: "WTI", UKOUSD: "BRENT", XNGUSD: "NATGAS", XAUUSD: "XAUUSD", XAGUSD: "XAGUSD",
+};
+
+/**
+ * Nomes IQ reais (Fase 7): prefixo de servidor (`front.`), sufixos de familia
+ * (`-OTC` OTC; `-op` e `:N` NORMAL) e aliases. Compostos (com `/`) sao rejeitados:
+ * nunca associar um instrumento composto a um ativo simples.
+ */
 export function canonicalFromName(rawName) {
   const cleaned = String(rawName ?? "").split(".").pop() ?? "";
+  if (cleaned.includes("/")) return { canonical: null, otc: false }; // composto (ex.: GER30/UK100-OTC)
   const otc = /otc/i.test(cleaned);
-  const canonical = cleaned.replace(/[-_\s]?otc/ig, "").replace(/[^A-Za-z]/g, "").toUpperCase();
-  return { canonical, otc };
+  const base = cleaned
+    .replace(/[-_\s]?otc/ig, "")
+    .replace(/[-_\s]?op$/i, "")
+    .replace(/[-_\s]?:n$/i, "")
+    .replace(/[^A-Za-z0-9]/g, "")
+    .toUpperCase();
+  if (!base) return { canonical: null, otc };
+  return { canonical: NAME_ALIASES[base] ?? base, otc };
 }
 
 function extractPayout(active) {

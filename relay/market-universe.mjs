@@ -9,14 +9,19 @@
  *    UNAVAILABLE/MARKET_CLOSED; OTC so opera se estiver explicitamente configurado e ativo.
  *  - MAX_ACTIVE_MARKETS = 10 (NORMAL + OTC somados).
  */
-export const MAX_ACTIVE_MARKETS = 10;
+export const MAX_ACTIVE_MARKETS = 55;
 export const MAX_OPEN_POSITIONS_PER_MARKET = 1;
 export const HARD_CAP_STAKE = 100;
 export const DEFAULT_GLOBAL_MAX_STAKE = 2;
 
 export const MARKET_TYPES = ["NORMAL", "OTC"];
 
+/**
+ * UNIVERSO FASE 7 — 55 mercados (alvo humano). O nome interno da IQ e descoberto em runtime
+ * (NORMAL: sufixos -op / :N; OTC: sufixo -OTC). NUNCA hardcodar activeId.
+ */
 export const UNIVERSE = [
+  // GRUPO A — 10 FX NORMAL (IQ expoe como <PAR>-op)
   { canonical: "EURUSD", symbol: "EUR/USD", display: "EUR/USD", marketType: "NORMAL", currencies: ["EUR", "USD"] },
   { canonical: "USDJPY", symbol: "USD/JPY", display: "USD/JPY", marketType: "NORMAL", currencies: ["USD", "JPY"] },
   { canonical: "GBPUSD", symbol: "GBP/USD", display: "GBP/USD", marketType: "NORMAL", currencies: ["GBP", "USD"] },
@@ -27,11 +32,55 @@ export const UNIVERSE = [
   { canonical: "EURGBP", symbol: "EUR/GBP", display: "EUR/GBP", marketType: "NORMAL", currencies: ["EUR", "GBP"] },
   { canonical: "AUDJPY", symbol: "AUD/JPY", display: "AUD/JPY", marketType: "NORMAL", currencies: ["AUD", "JPY"] },
   { canonical: "GBPJPY", symbol: "GBP/JPY", display: "GBP/JPY", marketType: "NORMAL", currencies: ["GBP", "JPY"] },
+  // GRUPO B — 5 OTC existentes
   { canonical: "EURUSD", symbol: "EUR/USD", display: "EUR/USD OTC", marketType: "OTC", currencies: ["EUR", "USD"] },
   { canonical: "GBPUSD", symbol: "GBP/USD", display: "GBP/USD OTC", marketType: "OTC", currencies: ["GBP", "USD"] },
   { canonical: "USDJPY", symbol: "USD/JPY", display: "USD/JPY OTC", marketType: "OTC", currencies: ["USD", "JPY"] },
   { canonical: "EURGBP", symbol: "EUR/GBP", display: "EUR/GBP OTC", marketType: "OTC", currencies: ["EUR", "GBP"] },
   { canonical: "GBPJPY", symbol: "GBP/JPY", display: "GBP/JPY OTC", marketType: "OTC", currencies: ["GBP", "JPY"] },
+  // GRUPO C — 25 novos FX OTC
+  { canonical: "AUDUSD", symbol: "AUD/USD", display: "AUD/USD OTC", marketType: "OTC", currencies: ["AUD", "USD"] },
+  { canonical: "USDCAD", symbol: "USD/CAD", display: "USD/CAD OTC", marketType: "OTC", currencies: ["USD", "CAD"] },
+  { canonical: "USDCHF", symbol: "USD/CHF", display: "USD/CHF OTC", marketType: "OTC", currencies: ["USD", "CHF"] },
+  { canonical: "EURJPY", symbol: "EUR/JPY", display: "EUR/JPY OTC", marketType: "OTC", currencies: ["EUR", "JPY"] },
+  { canonical: "AUDJPY", symbol: "AUD/JPY", display: "AUD/JPY OTC", marketType: "OTC", currencies: ["AUD", "JPY"] },
+  { canonical: "EURAUD", symbol: "EUR/AUD", display: "EUR/AUD OTC", marketType: "OTC", currencies: ["EUR", "AUD"] },
+  { canonical: "EURCHF", symbol: "EUR/CHF", display: "EUR/CHF OTC", marketType: "OTC", currencies: ["EUR", "CHF"] },
+  { canonical: "EURCAD", symbol: "EUR/CAD", display: "EUR/CAD OTC", marketType: "OTC", currencies: ["EUR", "CAD"] },
+  { canonical: "EURNZD", symbol: "EUR/NZD", display: "EUR/NZD OTC", marketType: "OTC", currencies: ["EUR", "NZD"] },
+  { canonical: "AUDCAD", symbol: "AUD/CAD", display: "AUD/CAD OTC", marketType: "OTC", currencies: ["AUD", "CAD"] },
+  { canonical: "AUDCHF", symbol: "AUD/CHF", display: "AUD/CHF OTC", marketType: "OTC", currencies: ["AUD", "CHF"] },
+  { canonical: "AUDNZD", symbol: "AUD/NZD", display: "AUD/NZD OTC", marketType: "OTC", currencies: ["AUD", "NZD"] },
+  { canonical: "CADJPY", symbol: "CAD/JPY", display: "CAD/JPY OTC", marketType: "OTC", currencies: ["CAD", "JPY"] },
+  { canonical: "CADCHF", symbol: "CAD/CHF", display: "CAD/CHF OTC", marketType: "OTC", currencies: ["CAD", "CHF"] },
+  { canonical: "GBPAUD", symbol: "GBP/AUD", display: "GBP/AUD OTC", marketType: "OTC", currencies: ["GBP", "AUD"] },
+  { canonical: "GBPCAD", symbol: "GBP/CAD", display: "GBP/CAD OTC", marketType: "OTC", currencies: ["GBP", "CAD"] },
+  { canonical: "GBPCHF", symbol: "GBP/CHF", display: "GBP/CHF OTC", marketType: "OTC", currencies: ["GBP", "CHF"] },
+  { canonical: "GBPNZD", symbol: "GBP/NZD", display: "GBP/NZD OTC", marketType: "OTC", currencies: ["GBP", "NZD"] },
+  { canonical: "NZDCAD", symbol: "NZD/CAD", display: "NZD/CAD OTC", marketType: "OTC", currencies: ["NZD", "CAD"] },
+  { canonical: "NZDJPY", symbol: "NZD/JPY", display: "NZD/JPY OTC", marketType: "OTC", currencies: ["NZD", "JPY"] },
+  { canonical: "NZDCHF", symbol: "NZD/CHF", display: "NZD/CHF OTC", marketType: "OTC", currencies: ["NZD", "CHF"] },
+  { canonical: "USDMXN", symbol: "USD/MXN", display: "USD/MXN OTC", marketType: "OTC", currencies: ["USD", "MXN"] },
+  { canonical: "USDBRL", symbol: "USD/BRL", display: "USD/BRL OTC", marketType: "OTC", currencies: ["USD", "BRL"] },
+  { canonical: "USDTRY", symbol: "USD/TRY", display: "USD/TRY OTC", marketType: "OTC", currencies: ["USD", "TRY"] },
+  { canonical: "USDZAR", symbol: "USD/ZAR", display: "USD/ZAR OTC", marketType: "OTC", currencies: ["USD", "ZAR"] },
+  // GRUPO D — 10 indices/commodities (IQ expoe NORMAL como <NOME>:N)
+  { canonical: "XAUUSD", symbol: "XAU/USD", display: "GOLD", marketType: "NORMAL", currencies: [] },
+  { canonical: "XAGUSD", symbol: "XAG/USD", display: "SILVER", marketType: "NORMAL", currencies: [] },
+  { canonical: "US30", symbol: "US30", display: "US30", marketType: "NORMAL", currencies: [] },
+  { canonical: "US100", symbol: "US100", display: "US100", marketType: "NORMAL", currencies: [] },
+  { canonical: "US500", symbol: "US500", display: "US500", marketType: "NORMAL", currencies: [] },
+  { canonical: "US2000", symbol: "US2000", display: "US2000", marketType: "NORMAL", currencies: [] },
+  { canonical: "GER30", symbol: "GER30", display: "GER30", marketType: "NORMAL", currencies: [] },
+  { canonical: "UK100", symbol: "UK100", display: "UK100", marketType: "NORMAL", currencies: [] },
+  { canonical: "JP225", symbol: "JP225", display: "JP225", marketType: "NORMAL", currencies: [] },
+  { canonical: "AUS200", symbol: "AUS200", display: "AUS200", marketType: "NORMAL", currencies: [] },
+  // GRUPO E — 5 ativos adicionais
+  { canonical: "EU50", symbol: "EU50", display: "EU50", marketType: "NORMAL", currencies: [] },
+  { canonical: "HK33", symbol: "HK33", display: "HK33", marketType: "NORMAL", currencies: [] },
+  { canonical: "FR40", symbol: "FR40", display: "FR40", marketType: "NORMAL", currencies: [] },
+  { canonical: "SP35", symbol: "SP35", display: "SP35", marketType: "NORMAL", currencies: [] },
+  { canonical: "BTCUSD", symbol: "BTC/USD", display: "BTC/USD OTC", marketType: "OTC", currencies: [] },
 ];
 
 export function marketKey(canonical, marketType) { return `${String(canonical).toUpperCase()}:${String(marketType).toUpperCase() === "OTC" ? "OTC" : "NORMAL"}`; }

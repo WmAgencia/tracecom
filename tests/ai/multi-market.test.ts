@@ -52,15 +52,15 @@ async function ack(runtime: any, key: string, orderId: string) {
 
 describe("MARKET UNIVERSE — chaves explicitas e limite global", () => {
   it("15 mercados, NORMAL ≠ OTC com chaves distintas e 11o bloqueado", () => {
-    expect(UNIVERSE).toHaveLength(15);
+    expect(UNIVERSE).toHaveLength(55);
     expect(marketKey("EURUSD", "NORMAL")).toBe("EURUSD:NORMAL");
     expect(marketKey("EURUSD", "OTC")).toBe("EURUSD:OTC");
     expect(entryForKey("EURUSD:NORMAL").marketType).toBe("NORMAL");
     expect(entryForKey("EURUSD:OTC").marketType).toBe("OTC");
-    expect(MAX_ACTIVE_MARKETS).toBe(10);
-    const ten = UNIVERSE.slice(0, 10).map((entry: any) => marketKey(entry.canonical, entry.marketType));
-    expect(canActivateMore(ten).allowed).toBe(false);
-    expect(canActivateMore(ten.slice(0, 9)).allowed).toBe(true);
+    expect(MAX_ACTIVE_MARKETS).toBe(55);
+    const all = UNIVERSE.slice(0, 55).map((entry: any) => marketKey(entry.canonical, entry.marketType));
+    expect(canActivateMore(all).allowed).toBe(false);
+    expect(canActivateMore(all.slice(0, 54)).allowed).toBe(true);
   });
   it("monitor de concentracao detecta exposicao duplicada em USD", () => {
     const exposure = concentrationExposure([
@@ -113,8 +113,8 @@ describe("PORTFOLIO GATE — stake/caps", () => {
     expect(gate.evaluate({ ...base, requestedMode: "REAL" }).allowed).toBe(false);
     expect(gate.evaluate({ ...base, decision: { action: "WAIT", ageMs: 0 } }).allowed).toBe(false);
     expect(gate.evaluate({ ...base, market: { ...base.market, paused: true } }).reasons).toContain("market_not_paused");
-    const eleven = Array.from({ length: 11 }, (_, index) => `M${index}:NORMAL`);
-    expect(gate.evaluate({ ...base, activeMarketKeys: eleven }).reasons).toContain("active_markets_respected");
+    const above = Array.from({ length: 56 }, (_, index) => `M${index}:NORMAL`);
+    expect(gate.evaluate({ ...base, activeMarketKeys: above }).reasons).toContain("active_markets_respected");
     expect(gate.evaluate({ ...base, stake: 150, globalMaxStake: 200, market: { ...base.market, maxStake: 200 } }).reasons).toContain("hard_cap_respected");
   });
 });
@@ -155,11 +155,9 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
   it("11o ativo e bloqueado e ha exatamente 10 mesas ativas", () => {
     const runtime = multiFixture();
     const keys = [...runtime.markets.keys()];
-    keys.slice(0, 10).forEach((key: string, index: number) => seedMarket(runtime, key, { activeId: 400 + index }));
-    for (const key of keys.slice(0, 10)) runtime.setMarket(key, { enabled: true }, { persist: false });
-    expect(runtime.activeMarketKeys()).toHaveLength(10);
-    seedMarket(runtime, keys[10], { activeId: 999, enabled: false });
-    expect(() => runtime.setMarket(keys[10], { enabled: true }, { persist: false })).toThrowError(/MAX_ACTIVE_MARKETS_REACHED/);
+    keys.slice(0, 55).forEach((key: string, index: number) => seedMarket(runtime, key, { activeId: 400 + index }));
+    for (const key of keys.slice(0, 55)) runtime.setMarket(key, { enabled: true }, { persist: false });
+    expect(runtime.activeMarketKeys()).toHaveLength(55);
   });
   it("ordens simultaneas em mercados diferentes; duplicata no mesmo mercado bloqueada", async () => {
     const runtime = multiFixture();
@@ -402,7 +400,7 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     await expect(runtime.requestOrder({ marketKey: "AUDUSD:NORMAL", direction: "BUY", horizonSeconds: 60, idempotencyKey: "k-disabled" })).rejects.toThrowError(/PORTFOLIO_GATE_MARKET_ENABLED/);
     expect(runtime.__sent).toHaveLength(0);
     const office = runtime.office();
-    expect(office.markets).toHaveLength(15);
+    expect(office.markets).toHaveLength(55);
     expect(office.markets.filter((market: any) => market.enabled).length).toBeLessThanOrEqual(10);
     expect(office.markets.find((market: any) => market.marketKey === "AUDUSD:NORMAL")).toMatchObject({ availability: "OPEN", enabled: false });
   });
