@@ -349,6 +349,7 @@ export class IqMultiRuntime extends EventEmitter {
       const previous = ctx.availability;
       ctx.activeId = resolved.activeId; ctx.instrumentTypes = resolved.instrumentTypes; ctx.availability = resolved.availability;
       ctx.payout = resolved.payout; ctx.payoutSource = resolved.payoutSource; ctx.resolvedAt = resolved.resolvedAt;
+      if (ctx.probeOverride && ctx.probeOverride.until > this.now()) ctx.availability = ctx.probeOverride.availability;
       ctx.connectionHealth = { ...ctx.connectionHealth, connected: this.session.connected };
       // Fase 6.5: transicoes de disponibilidade acordam/dormem o agente SEM restart (fonte de verdade = broker).
       if (ctx.enabled && previous !== "OPEN" && resolved.availability === "OPEN") {
@@ -939,7 +940,7 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   /** Registra TODO sinal com destino observavel: EXECUTED | BLOCKED | EXPIRED | DUPLICATE + motivo humano. */
-  async #handleSignal(ctx, action, brain, list, entryTiming = null) {
+  async #handleSignal(ctx, action, brain, list, entryTiming = null, options = {}) {
     const now = this.now();
     const bucket = ctx.lastCandle?.bucketStart ?? null;
     const idempotencyKey = `${ctx.marketKey}:${bucket}:${action}`;
@@ -958,7 +959,7 @@ export class IqMultiRuntime extends EventEmitter {
     const realAuthorized = this.config.mode === "REAL" && this.realMode.authorized();
     const brainValid = Boolean(brain?.setup && brain.setup !== "NO_VALID_SETUP");
     const gate = this.gate.evaluate({
-      market: { ...ctx, marketKey: ctx.marketKey }, marketKey: ctx.marketKey, requestedMode: this.config.mode, realAuthorized,
+      market: options?.probe === true ? { ...ctx, marketKey: ctx.marketKey, availability: "OPEN", paused: false } : { ...ctx, marketKey: ctx.marketKey }, marketKey: ctx.marketKey, requestedMode: this.config.mode, realAuthorized,
       connection: { connected: this.session.connected, timeValid: this.session.timeValid, host: this.session.host },
       serverTime: { ms: this.client?.serverNow() ?? now, skewMs: this.session.clockSkewMs },
       freshness, decision: { action, ageMs: 0, horizonSeconds, reason: ctx.decisionState.reason }, strategy: { valid: brainValid, variantId: brain?.setup ?? null, reason: brainValid ? null : "SEM_SETUP" },
@@ -968,7 +969,7 @@ export class IqMultiRuntime extends EventEmitter {
     });
     let disposition = "EXECUTED"; let reason = "AUTORIZADO";
     if (this.killSwitch.status().executionEnabled !== true) { disposition = "BLOCKED"; reason = "PARADA_DE_EMERGENCIA"; }
-    else if (this.config.autoExecute !== true) { disposition = "BLOCKED"; reason = "AUTO_DESLIGADO"; }
+    else if (this.config.autoExecute !== true && options?.probe !== true) { disposition = "BLOCKED"; reason = "AUTO_DESLIGADO"; }
     else if (this.armState.armed !== true) { disposition = "BLOCKED"; reason = "SISTEMA_DESARMADO"; }
     else if (ctx.paused === true) { disposition = "BLOCKED"; reason = "AGENTE_PAUSADO"; }
     else if (!this.session.connected) { disposition = "BLOCKED"; reason = "SEM_CONEXAO_IQ"; }
@@ -1069,8 +1070,27 @@ export class IqMultiRuntime extends EventEmitter {
 
     supervisorStatus() { return this.supervisor.status(); }
 
-  /** DEBUG temporario: resposta bruta relevante do broker lado a lado com o resolver (nunca adivinha). */
-  async brokerAudit({ live = true } = {}) {
+  /**
+   * Prova OPERACIONAL de tradabilidade (a resposta final do broker): tenta abrir uma ordem minima
+   * pelo caminho real (PRACTICE). Se o broker aceitar, o instrumento esta REALMENTE operavel agora
+   * (override de OPEN por 120s, mesmo que is_suspended esteja stale); se recusar, mantem SUSPENDED
+   * e devolve o motivo bruto. Nunca altera direcao/setup: usa BUY sintetico apenas como probe.
+   */
+  async probeTradability(marketKey, { stake = null } = {}) {
+    const ctx = this.markets.get(marketKey);
+    if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
+    const availabilityBefore = ctx.availability;
+    const probeStake = Math.max(1, Math.min(10, Number(stake) || this.config.defaultStake || 10));
+    const brain = { setup: "AUDIT_PROBE", regime: ctx.decisionState?.regime ?? null };
+    const record = await this.#handleSignal(ctx, "BUY", brain, this.#candleList(ctx), null, { probe: true }).catch((error) => ({ disposition: "BLOCKED", reason: String(error?.code ?? error?.message ?? error), probeError: true }));
+    const accepted = record?.disposition === "EXECUTED" || ["ACKNOWLEDGED", "REQUESTED"].includes(String(record?.state ?? ""));
+    if (accepted) ctx.probeOverride = { availability: "OPEN", until: this.now() + 120_000, at: this.now(), brokerOrderId: record?.brokerOrderId ?? null };
+    this.#auditRecord(`probe_${marketKey}_${this.now()}`, marketKey, "TRADABILITY_PROBE", { availabilityBefore, accepted, disposition: record?.disposition ?? null, reason: record?.reason ?? null, brokerOrderId: record?.brokerOrderId ?? null, stake: probeStake }, { persist: true });
+    this.#emitEvent("market.tradability_probe", { marketKey, availabilityBefore, accepted, reason: record?.reason ?? null });
+    return { marketKey, availabilityBefore, availabilityAfter: ctx.availability, accepted, disposition: record?.disposition ?? null, reason: record?.reason ?? null, brokerOrderId: record?.brokerOrderId ?? null, executionId: record?.executionId ?? null, stake: probeStake, practiceOnly: true };
+  }
+
+  /** DEBUG temporario: resposta bruta relevante do broker lado a lado com o resolver (nunca adivinha). */  async brokerAudit({ live = true } = {}) {
     let probeError = null;
     let openOptions = [];
     if (live && this.client && this.session.connected) {
