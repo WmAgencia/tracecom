@@ -22,7 +22,7 @@ const resolverAge = o.resolver?.lastResolvedAt ? Date.now() - Number(o.resolver.
 check("P65-STATUS-03", "resolver re-resolvido ha <= 180s (reabertura automatica sem restart)", resolverAge !== null && resolverAge <= 180_000, { ageMs: resolverAge });
 
 const armNoConfirm = await req("POST", "/api/iq/arm", { limitBrl: 10 });
-check("P65-ARM-01", "ARM sem confirmacao retorna 400 ESTRUTURADO com code/reason/details (sem mascarar)", armNoConfirm.status === 400 && armNoConfirm.json.error === "EXPLICIT_CONFIRMATION_REQUIRED" && typeof armNoConfirm.json.reason === "string" && armNoConfirm.json.details?.markets, armNoConfirm.json.error ?? null);
+check("P65-ARM-01", "ARM sem confirmacao retorna 400 ESTRUTURADO com code/reason/details (sem mascarar)", armNoConfirm.status === 400 && armNoConfirm.json.error === "EXPLICIT_CONFIRMATION_REQUIRED" && typeof armNoConfirm.json.reason === "string" && Boolean(armNoConfirm.json.details?.markets), armNoConfirm.json.error ?? null);
 const arm = await req("POST", "/api/iq/arm", { limitBrl: 10, confirmation: "ARM_PRACTICE" });
 check("P65-ARM-02", "ARM aceito com confirmacao e retorna estado estruturado (armed/warning/markets)", arm.status === 200 && arm.json.armed === true && (arm.json.warning === null || arm.json.warning === "NO_OPEN_MARKET_NOW") && Array.isArray(arm.json.markets), { armed: arm.json.armed ?? null, warning: arm.json.warning ?? null, openMarkets: arm.json.openMarkets ?? null });
 const openCount = Number(arm.json.openMarkets ?? 0);
