@@ -94,6 +94,7 @@ export class TradingJournal {
       intelligence: entry.intelligence ?? null, knowledgeContextIds: entry.snapshot?.knowledgeContextIds ?? [], knowledgeVersion: entry.snapshot?.knowledgeVersion ?? null,
       outcome: entry.result ?? "UNKNOWN", decisionQuality: entry.review?.decisionQuality ?? "UNKNOWN", review: entry.review ?? null,
       snapshot: entry.snapshot ?? null, snapshotSource: entry.snapshot?.source ?? "SETTLEMENT_FALLBACK",
+      initialSnapshot: entry.initialSnapshot ?? null, initialReview: entry.initialReview ?? null, entryTiming: entry.entryTiming ?? null,
       createdAt: this.now(),
     };
     this.trades.push(record);

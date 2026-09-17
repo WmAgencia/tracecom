@@ -54,6 +54,16 @@ const OfficeUI = (() => {
     INSTRUMENT_NOT_AVAILABLE_FOR_HORIZON: "instrumento indisponível para este prazo",
     MARKET_AVAILABLE: "mercado indisponível na IQ Option neste momento",
     MARKET_ENABLED: "agente desativado pelo operador",
+    CANDIDATE_LOGIC_CHANGED_TO_WAIT: "a leitura virou WAIT antes da janela",
+    CANDIDATE_LOGIC_CHANGED_DIRECTION: "a direção mudou antes da janela",
+    CANDIDATE_REGIME_CHANGED: "regime mudou antes da entrada",
+    CANDIDATE_SETUP_INVALIDATED: "setup deixou de ser válido",
+    CANDIDATE_TRIGGER_GONE: "trigger desapareceu",
+    CANDIDATE_CRITIC_VETO: "crítico vetou na revalidação final",
+    CANDIDATE_CONSENSUS_LOST: "consenso não confirmou na revalidação",
+    CANDIDATE_DATA_STALE: "dados não estavam frescos na revalidação",
+    ENTRY_WINDOW_MISSED: "janela de entrada perdida (não persegue preço)",
+    ENTRY_EXPIRATION_MISMATCH: "expiração do broker diferente da janela alvo",
   };
   const reasonText = (reason) => {
     if (!reason) return "motivo não informado";
@@ -243,6 +253,14 @@ const OfficeUI = (() => {
       g.strokeStyle = consensus.color; g.lineWidth = Math.max(1.2, 1.3 * z); g.strokeRect(Math.round(badgePos.x - bw / 2), Math.round(badgePos.y - bh), Math.round(bw), Math.round(bh));
       text(g, consensus.text, badgePos.x, badgePos.y - bh / 2, { size: 8.5, color: consensus.color, bold: true });
     }
+    const entryBadge = entryStageBadge(market);
+    if (entryBadge) {
+      const badgePos = project(cx + 1.5, cy + 1.15, 0.35);
+      const bw = 118 * z, bh = 15 * z;
+      block(g, badgePos.x - bw / 2, badgePos.y - bh, bw, bh, "#07101ff2");
+      g.strokeStyle = entryBadge.color; g.lineWidth = Math.max(1.2, 1.3 * z); g.strokeRect(Math.round(badgePos.x - bw / 2), Math.round(badgePos.y - bh), Math.round(bw), Math.round(bh));
+      text(g, entryBadge.text, badgePos.x, badgePos.y - bh / 2, { size: 8, color: entryBadge.color, bold: true });
+    }
     if (isClosed(market)) drawZzz(g, agentPos.x + 8 * z, agentPos.y - 26 * z, frame);
     targets.push({ x: top.x - w / 2, y: top.y - 30 * z, w, h: h + depth + 70 * z, type: "desk", key: market.marketKey });
     bubbles.push({ x: (traderPos.x + criticPos.x) / 2, y: agentPos.y - 46 * z, ...bubbleInfo(market) });
@@ -326,6 +344,23 @@ const OfficeUI = (() => {
     if (consensus.status === "VETOED") return { text: "VETADO", color: "#ff8f8f" };
     if (consensus.status === "STALE") return { text: "AGUARDANDO", color: "#9fb2d6" };
     return { text: "SEM CONSENSO", color: "#ffd76a" };
+  }
+  function entryStageBadge(market) {
+    const entry = market?.entryTiming;
+    if (!entry || !entry.stage) return null;
+    const stage = String(entry.stage);
+    if (stage === "AGUARDANDO JANELA") return { text: `AGUARDANDO JANELA · ${entry.secondsToRevalidation ?? 0}s`, color: "#9fc6ff" };
+    if (stage === "REVALIDANDO") return { text: "REVALIDANDO...", color: "#ffd76a" };
+    if (stage === "ENVIANDO ORDEM") return { text: "ENVIANDO ORDEM", color: "#8ce4a0" };
+    if (stage === "OPORTUNIDADE CANCELADA") return { text: `CANCELADO · ${String(entry.cancelReason ?? "").replaceAll("_", " ").slice(0, 22)}`, color: "#ff8f8f" };
+    if (stage === "OPORTUNIDADE PERDIDA") return { text: "JANELA PERDIDA", color: "#ff8f8f" };
+    return { text: "OPORTUNIDADE EM OBSERVAÇÃO", color: "#b794ff" };
+  }
+  function entryCountdown(entry) {
+    if (!entry || entry.secondsToRevalidation === null || entry.secondsToRevalidation === undefined) return null;
+    if (entry.stage === "REVALIDANDO" || entry.stage === "ENVIANDO ORDEM") return "Revalidando...";
+    if (entry.secondsToRevalidation <= 0) return "Entrada agora";
+    return `Revalidação em ${entry.secondsToRevalidation}s`;
   }
   function drawSupervisor(g, frame) {
     const supervisor = state.supervisor;
@@ -494,7 +529,11 @@ const OfficeUI = (() => {
       activityLine(`${name} finalizou: ${event.brokerResult === "WIN" ? "WIN" : event.brokerResult === "LOSS" ? "LOSS" : "EMPATE"} ${signed(event.profit)}.`, win ? "" : "loss", event.at);
       state.flashes.set(event.marketKey, { result: event.brokerResult, profit: event.profit });
       setTimeout(() => state.flashes.delete(event.marketKey), 6_000);
-    } else if (event.type === "order.ack") activityLine(`${name} ordem confirmada pela IQ Option (nº ${event.brokerOrderId}).`, "", event.at);
+    }     else if (event.type === "order.ack") activityLine(`${name} ordem confirmada pela IQ Option (nº ${event.brokerOrderId})${Number.isFinite(Number(event.entryDriftMs)) && event.entryDriftMs !== null ? ` - entrada ${event.entryDriftMs >= 0 ? "+" : ""}${event.entryDriftMs}ms vs janela` : ""}.`, "", event.at);
+    else if (event.type === "candidate.created") activityLine(`<b>OPORTUNIDADE EM OBSERVAÇÃO</b> ${name} ${event.action} - janela ${timeOf(event.targetEntryAt)} (lead ${event.entryLeadMs}ms). Nenhuma ordem enviada.`, "", event.at);
+    else if (event.type === "candidate.updated") activityLine(`<b>OPORTUNIDADE EM OBSERVAÇÃO</b> ${name} contexto mudou: ${(event.changed ?? []).join(", ")}.`, "", event.at);
+    else if (event.type === "candidate.confirmed") activityLine(`<b>REVALIDAÇÃO FINAL</b> ${name} confirmou ${event.action}; enviando na janela (~${event.secondsToEntry}s).`, "", event.at);
+    else if (event.type === "candidate.cancelled") activityLine(`<b>OPORTUNIDADE CANCELADA</b> ${name}: ${reasonText(event.reason)}.`, "blocked", event.at);
     else if (event.type === "order.rejected") activityLine(`${name} ordem recusada: ${reasonText(event.reason)}.`, "blocked", event.at);
     else if (event.type === "connection.disconnected") activityLine("IQ Option desconectada — sistema pausado automaticamente.", "blocked", event.at);
     else if (event.type === "connection.ready") activityLine("IQ Option conectada.", "", event.at);
@@ -592,6 +631,8 @@ const OfficeUI = (() => {
         <div><span>PAYOUT</span><b>${market.payout ?? "—"}%</b></div>
         <div><span>VALOR POR OPERAÇÃO</span><b>${brl(market.configuredStake ?? state.office.config.defaultStake)}</b></div>
         <div><span>SETUP / REGIME</span><b>${market.setup ?? "-"}  -  ${market.regime ?? "-"}</b></div>
+        <div><span>ENTRADA (JIT)</span><b>${entryCountdown(market.entryTiming) ?? market.entryTiming?.stage ?? "-"}</b></div>
+        <div><span>JANELA / LEAD</span><b>${market.entryTiming?.targetEntryAt ? timeOf(market.entryTiming.targetEntryAt) : "-"} - ${market.entryTiming?.entryLeadMs ?? "-"}ms</b></div>
         <div><span>OPERAÇÕES HOJE</span><b>${daily.trades ?? 0}</b></div>
         <div><span>GANHOS / PERDAS</span><b>${daily.wins ?? 0} / ${daily.losses ?? 0}</b></div>
         <div><span>RESULTADO</span><b>${signed(daily.settledPnl ?? 0)}</b></div>
@@ -793,7 +834,15 @@ const OfficeUI = (() => {
         <div><span>JOURNAL / HIPOTESES</span><b>${office.journal?.trades ?? 0} trades  -  ${office.hypotheses ?? 0} hipoteses</b></div>
       </div>
       <div class="office-section-title">ULTIMAS REVISOES DO SUPERVISOR</div>
-      <div class="office-list">${(office.supervisor?.reviews ?? []).slice(0, 6).map((review) => `<div class="office-list-row"><div><b>${review.marketKey}  -  ${review.status}</b><small>${(review.reasons ?? []).map((reason) => reasonText(reason)).join(", ") || "sem alertas"}</small></div><div class="right"><span class="office-badge">${review.status}</span></div></div>`).join("") || "<p class='fine'>Nenhuma revisao ainda.</p>"}</div>
+      <div class="office-list">${(office.supervisor?.reviews ?? []).slice(0, 6).map((review) => `<div class="office-list-row"><div><b>${review.marketKey} - ${review.status}</b><small>${(review.reasons ?? []).map((reason) => reasonText(reason)).join(", ") || "sem alertas"}</small></div><div class="right"><span class="office-badge">${review.status}</span></div></div>`).join("") || "<p class='fine'>Nenhuma revisao ainda.</p>"}</div>
+      <div class="office-section-title">ENTRADA JUST-IN-TIME</div>
+      <div class="office-actions">
+        <label class="office-field">LEAD (ms) <input type="number" min="1000" max="2000" step="50" id="officeEntryLead" value="${office.config?.entryLeadMs ?? 1500}" /></label>
+        <label class="office-field">DRIFT MAX (ms) <input type="number" min="0" max="10000" step="100" id="officeEntryDrift" value="${office.config?.entryWindowMaxDriftMs ?? 2500}" /></label>
+        <label class="office-field"><input type="checkbox" id="officeEntryJit" ${office.config?.jitEnabled === true ? "checked" : ""} /> exigir revalidacao (JIT)</label>
+        <button class="office-btn" id="officeEntrySave">SALVAR ENTRADA</button>
+      </div>
+      <p class="fine">A ordem sai ~1-2s antes da janela alvo (fronteira de 60s no server time da IQ) depois de revalidar Brain/Critico/Consenso. Mudou a leitura? cancela. Atrasou? nao entra.</p>
       <div class="office-actions">
         <button class="office-btn" id="officeStressRun">Rodar teste de estresse (1/3/5/10)</button>
         <button class="office-btn ghost" id="officeRawLog">${state.showTechActivity ? "Ver atividade amigável" : "Ver log técnico"}</button>
@@ -849,7 +898,7 @@ const OfficeUI = (() => {
   }
   function bindButtons() {
     document.addEventListener("click", async (event) => {
-      const target = event.target.closest("[data-close],[data-aux],[data-choose-toggle],[data-toggle-details],[data-market-toggle],[data-market-pause],[data-market-stake],#officeAccountPractice,#officeAccountReal,#officeSystemStart,#officeSystemStop,#officeEmergency,#officeApplyLimit,#officeChooseMarkets,#officeAdvanced,#officeActivityTech,#officeRealConfirm,#officeRealRevoke,#officeStressRun,#officeRawLog,#officeZoomIn,#officeZoomOut,#officeCameraReset,#officeFocus,#officeSupervisorSave,#officeApprenticeSave");
+      const target = event.target.closest("[data-close],[data-aux],[data-choose-toggle],[data-toggle-details],[data-market-toggle],[data-market-pause],[data-market-stake],#officeAccountPractice,#officeAccountReal,#officeSystemStart,#officeSystemStop,#officeEmergency,#officeApplyLimit,#officeChooseMarkets,#officeAdvanced,#officeActivityTech,#officeRealConfirm,#officeRealRevoke,#officeStressRun,#officeRawLog,#officeZoomIn,#officeZoomOut,#officeCameraReset,#officeFocus,#officeSupervisorSave,#officeEntrySave,#officeApprenticeSave");
       if (!target) return;
       const id = target.id;
       try {
@@ -883,6 +932,14 @@ const OfficeUI = (() => {
           const result = await put("/api/iq/supervisor/config", { minSamples, maxDrawdown, maxConsecutiveLosses });
           activityLine(`Supervisor: amostra minima ${result.config?.minSamples ?? minSamples}, drawdown maximo ${result.config?.maxDrawdown ?? maxDrawdown}, perdas seguidas ${result.config?.maxConsecutiveLosses ?? maxConsecutiveLosses}. Metodologia intacta.`, "");
           state.toast = { kind: "good", text: "Configuracao do supervisor salva." };
+          return advancedDrawer();
+        }
+        if (id === "officeEntrySave") {
+          const entryLeadMs = Math.max(1000, Math.min(2000, Number($("officeEntryLead")?.value) || 1500));
+          const entryWindowMaxDriftMs = Math.max(0, Math.min(10000, Number($("officeEntryDrift")?.value) || 2500));
+          const jitEnabled = $("officeEntryJit")?.checked === true;
+          const result = await put("/api/iq/entry/config", { jitEnabled, entryLeadMs, entryWindowMaxDriftMs });
+          activityLine(`Entrada JIT: lead ${result.config?.entryLeadMs ?? entryLeadMs}ms, drift max ${result.config?.entryWindowMaxDriftMs ?? entryWindowMaxDriftMs}ms, revalidacao ${result.config?.jitEnabled ? "obrigatoria" : "desligada"}.`, "");
           return advancedDrawer();
         }
         if (id === "officeApprenticeSave") {

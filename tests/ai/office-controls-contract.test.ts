@@ -28,8 +28,11 @@ describe("Escritório — contrato de controles (nenhum botão decorativo)", () 
       expect(handlerSelector, `hook sem handler: ${hook}`).toContain(hook);
     }
     expect(handlerSelector, "controle do supervisor sem handler").toContain("#officeSupervisorSave");
+    expect(handlerSelector, "controle da entrada sem handler").toContain("#officeEntrySave");
     expect(officeJs).toContain("officeSupervisorSamples");
     expect(officeJs).toContain("officeSupervisorDrawdown");
+    expect(officeJs).toContain("officeEntryLead");
+    expect(officeJs).toContain("officeEntryJit");
     expect(officeJs).toContain("data-market-stake-input");
     expect(officeJs).not.toContain("data-market-strategy");
   });
@@ -43,7 +46,10 @@ describe("Escritório — contrato de controles (nenhum botão decorativo)", () 
     expect(officeJs).toContain("supervisor.review");
     expect(officeJs).toContain("REVIEW_REQUIRED");
     expect(officeJs).toContain("ANALISE PROFISSIONAL (BRAIN G2)");
-    for (const endpoint of ["/api/iq/intelligence", "/api/iq/research/scoreboard", "/api/iq/supervisor/config", "/api/iq/journal", "/api/iq/knowledge", "/api/iq/hypotheses", "/api/iq/second-brain", "/api/iq/apprentice", "/api/iq/apprentice/config"]) {
+    expect(officeJs).toContain("ENTRADA JUST-IN-TIME");
+    expect(officeJs).toContain("AGUARDANDO JANELA");
+    expect(officeJs).toContain("REVALIDANDO");
+    for (const endpoint of ["/api/iq/intelligence", "/api/iq/research/scoreboard", "/api/iq/entry", "/api/iq/entry/config", "/api/iq/supervisor/config", "/api/iq/journal", "/api/iq/knowledge", "/api/iq/hypotheses", "/api/iq/second-brain", "/api/iq/apprentice", "/api/iq/apprentice/config"]) {
       expect(proxy, `proxy sem ${endpoint}`).toContain(endpoint);
       expect(server, `relay sem ${endpoint}`).toContain(endpoint);
     }
