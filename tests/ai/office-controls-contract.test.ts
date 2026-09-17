@@ -27,8 +27,30 @@ describe("Escritório — contrato de controles (nenhum botão decorativo)", () 
     for (const hook of ["data-market-toggle", "data-market-pause", "data-market-stake", "data-market-strategy-save", "data-choose-toggle", "data-toggle-details", "data-aux", "data-close"]) {
       expect(handlerSelector, `hook sem handler: ${hook}`).toContain(hook);
     }
+    expect(handlerSelector, "controle do gestor sem handler").toContain("#officeManagerSave");
+    expect(officeJs).toContain("officeManagerMode");
+    expect(officeJs).toContain("officeManagerAuto");
     expect(officeJs).toContain("data-market-stake-input");
     expect(officeJs).toContain("data-market-strategy");
+  });
+  it("Central de Inteligencia, duplas e Gestor estao representados (backend decide primeiro)", () => {
+    expect(officeJs).toContain("CENTRAL DE INTELIGÊNCIA");
+    expect(officeJs).toContain("drawIntelligenceCentral");
+    expect(officeJs).toContain("TRADER");
+    expect(officeJs).toContain("CRÍTICO");
+    expect(officeJs).toContain("consensusBadge");
+    expect(officeJs).toContain("GESTOR · ");
+    expect(officeJs).toContain("manager.review");
+    expect(officeJs).toContain("manager.switch");
+    expect(officeJs).toContain("ALTERANDO");
+    expect(officeJs).toContain("MANTENDO");
+    for (const endpoint of ["/api/iq/intelligence", "/api/iq/research/scoreboard", "/api/iq/manager/config"]) {
+      expect(proxy, `proxy sem ${endpoint}`).toContain(endpoint);
+      expect(server, `relay sem ${endpoint}`).toContain(endpoint);
+    }
+    expect(indexHtml).toContain("iqLabBody");
+    expect(indexHtml).toContain("iqAbBody");
+    expect(indexHtml).toContain("EXPERIMENTO A/B");
   });
   it("UI chama apenas endpoints reais (presentes no proxy Vercel e no relay)", () => {
     const endpoints = ["/api/iq/office", "/api/iq/events", "/api/iq/mode", "/api/iq/kill-switch", "/api/iq/config/global-stake", "/api/iq/config/auto-execute", "/api/iq/arm", "/api/iq/disarm", "/api/iq/market", "/api/iq/real/confirm", "/api/iq/real/revoke", "/api/iq/stress/run"];

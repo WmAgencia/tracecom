@@ -402,6 +402,53 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(office.markets.filter((market: any) => market.enabled).length).toBeLessThanOrEqual(10);
     expect(office.markets.find((market: any) => market.marketKey === "AUDUSD:NORMAL")).toMatchObject({ availability: "OPEN", enabled: false });
   });
+  it("FASE 5: pares de agentes + consensus deterministico alimentam a decisao (nunca probabilidade inventada)", () => {
+    const runtime = multiFixture();
+    seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101, candles: 60, close: 1.2 });
+    const market = runtime.office().markets.find((row: any) => row.marketKey === "EURUSD:NORMAL");
+    expect(market.agents).toBeTruthy();
+    expect(market.agents.consensus.estimatedWinProbability).toBeNull();
+    expect(["BUY", "SELL", "WAIT"]).toContain(market.agents.consensus.action);
+    expect(["CONFIRMED", "NO_CONSENSUS", "VETOED", "WAIT", "STALE"]).toContain(market.agents.consensus.status);
+    expect(market.decisionState.consensus).toMatchObject({ status: market.agents.consensus.status, traderAction: market.agents.trader.action });
+    const intelligence = runtime.office().intelligence;
+    expect(intelligence.MACRO.status).toBe("NO_FEED");
+    expect(intelligence.NEWS.status).toBe("NO_FEED");
+    expect(["OK", "STALE"]).toContain(intelligence.SECURITY.status);
+    expect(runtime.office().research.agentLatency.count).toBeGreaterThan(0);
+    expect(runtime.office().manager.mode).toBe("SHADOW_RECOMMENDATION");
+  });
+  it("FASE 5: research shadow roda por mercado com placar isolado e A/B registrado", () => {
+    const runtime = multiFixture();
+    seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101, candles: 80, close: 1.2 });
+    const scoreboard = runtime.researchScoreboard({ marketKey: "EURUSD:NORMAL" });
+    expect(scoreboard.board.variants).toHaveLength(10);
+    const other = runtime.researchScoreboard({ marketKey: "USDJPY:NORMAL" });
+    expect(other.board.variants.every((row: any) => row.trades === 0)).toBe(true);
+    expect(runtime.office().research.ab.arms.A_FROZEN).toBeTruthy();
+  });
+  it("FASE 5: REAL forca Strategy Manager a modo seguro (nunca auto-switch em REAL)", () => {
+    const runtime = multiFixture();
+    runtime.manager.setConfig({ mode: "AUTO_STRATEGY_SWITCH", autoSwitchEnabled: true });
+    runtime.realMode.requestConfirmation({ phrase: "OPERAR CONTA REAL", acknowledgeRisk: true, realBalance: 100, realBalanceId: 777, maxStake: 2 });
+    runtime.setMode("REAL");
+    expect(runtime.manager.config.mode).toBe("SHADOW_RECOMMENDATION");
+    expect(runtime.manager.config.autoSwitchEnabled).toBe(false);
+    expect(() => runtime.setManagerConfig({ mode: "AUTO_STRATEGY_SWITCH" })).toThrowError(/REAL_STRATEGY_SWITCH_FORBIDDEN/);
+  });
+  it("FASE 5: persistencia inclui research/manager (restart preserva placar e champion)", async () => {
+    const runtime = multiFixture();
+    runtime.manager.setConfig({ mode: "AUTO_STRATEGY_SWITCH", autoSwitchEnabled: true });
+    runtime.manager.ensureMarket("EURUSD:NORMAL", "V8-60");
+    runtime.research.observeCandle({ marketKey: "EURUSD:NORMAL", marketType: "NORMAL", candles: [{ bucketStart: 1, start: 1, open: 1, high: 1.1, low: 0.9, close: 1.05 }], index: 0, payout: 85 });
+    const configSnapshot = runtime.manager.toJSON();
+    const researchSnapshot = runtime.research.toJSON();
+    const reloadedManager = new (runtime.manager.constructor)({ now: () => Date.now() }) as any;
+    const reloadedResearch = new (runtime.research.constructor)({ now: () => Date.now() }) as any;
+    expect(reloadedManager.loadFrom(configSnapshot)).toBe(true);
+    expect(reloadedResearch.loadFrom(researchSnapshot)).toBe(true);
+    expect(reloadedManager.status().markets.find((row: any) => row.marketKey === "EURUSD:NORMAL").championVariantId).toBe("V8-60");
+  });
   it("event bus: payload nunca sobrescreve o campo type do evento", () => {
     const runtime = multiFixture();
     runtime.ingestEvent("balances", { connectionId: CONNECTION_ID, receivedAt: Date.now(), msg: [{ id: 555, type: 4, currency: "USD", amount: 100, is_default: true }] });

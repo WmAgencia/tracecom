@@ -17,7 +17,7 @@ function navigate(page) {
   document.querySelectorAll(".nav-item[data-page]").forEach((node) => node.classList.toggle("active", node.dataset.page === page));
   if (page === "history") { void loadHistory(); void loadIqSignals(); }
   if (page === "iq") { void loadIqStatus(); void loadIqExecutions(); }
-  if (page === "training") { void loadStats(); void loadIqTraining(); }
+  if (page === "training") { void loadStats(); void loadIqTraining(); void loadIqLab(); }
   if (page === "operational" || page === "settings") void loadStats();
 }
 
@@ -251,6 +251,36 @@ async function loadIqTraining() {
     body.innerHTML = office.markets.map(row).join("") || `<tr><td colspan="11" class="fine">Nenhum mercado configurado.</td></tr>`;
   } catch (error) { body.innerHTML = `<tr><td colspan="11" class="fine">Treinamento indisponível: ${String(error?.message || error)}</td></tr>`; }
 }
+const AB_ARM_LABELS = { A_FROZEN: "A · Estratégia congelada", B_TRADER: "B · Trader", C_TRADER_CRITIC: "C · Trader + Crítico", D_PLUS_INTELLIGENCE: "D · + Inteligência global", E_ADAPTIVE: "E · Gestor adaptativo" };
+async function loadIqLab() {
+  const body = $id("iqLabBody"), abBody = $id("iqAbBody"); if (!body && !abBody) return;
+  try {
+    const [research, manager] = await Promise.all([jget("/api/iq/research/scoreboard"), jget("/api/iq/manager")]);
+    setText("iqLabUpdated", `GESTOR: ${manager.mode === "AUTO_STRATEGY_SWITCH" ? "TROCA AUTOMÁTICA" : "SOMENTE RECOMENDAÇÃO"}`);
+    const markets = research.scoreboard?.markets ?? [];
+    const pct = (value) => (value === null || value === undefined ? "—" : `${(Number(value) * 100).toFixed(1)}%`);
+    if (body) body.innerHTML = markets.filter((market) => {
+      const perMarket = (research.perMarket ?? []).find((row) => row.marketKey === market.marketKey);
+      return perMarket || (market.variants ?? []).some((row) => row.trades > 0);
+    }).map((market) => {
+      const perMarket = (research.perMarket ?? []).find((row) => row.marketKey === market.marketKey) ?? {};
+      const champion = perMarket.champion ?? market.variants.find((row) => row.variantId === (perMarket.championVariantId ?? research.champions?.[market.marketKey]));
+      const challenger = perMarket.challenger ?? null;
+      const delta = champion && challenger ? Number((challenger.recent?.pnlPerTrade ?? 0) - (champion.recent?.pnlPerTrade ?? 0)).toFixed(4) : null;
+      return `<tr>
+        <td>${market.marketKey}</td><td>${market.marketKey.includes(":OTC") ? "OTC" : "NORMAL"}</td>
+        <td>${perMarket.championVariantId ?? "—"}</td><td>${champion?.trades ?? 0}</td><td>${pct(champion?.winRate)}</td><td>${champion?.pnl ?? 0}</td>
+        <td>${challenger?.variantId ?? "—"}</td><td>${challenger?.trades ?? 0}</td><td>${pct(challenger?.winRate)}</td><td>${delta ?? "—"}</td>
+        <td>${perMarket.nextReviewIn ?? "—"}</td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="11" class="fine">Aguardando primeiros shadow trades (cada mercado acumula amostra antes de revisar).</td></tr>`;
+    if (abBody) abBody.innerHTML = Object.entries(research.ab?.arms ?? {}).map(([arm, stats]) => `<tr>
+      <td>${AB_ARM_LABELS[arm] ?? arm}</td><td>${stats.trades}</td><td>${stats.wins}/${stats.losses}/${stats.draws}</td><td>${pct(stats.winRate)}</td><td>${stats.pnl}</td><td>${stats.noTrade}</td>
+    </tr>`).join("") || `<tr><td colspan="6" class="fine">Aguardando oportunidades comparáveis…</td></tr>`;
+  } catch (error) {
+    if (body) body.innerHTML = `<tr><td colspan="11" class="fine">Laboratório indisponível: ${String(error?.message || error)}</td></tr>`;
+  }
+}
 async function connectIq() {
   const emailInput = $id("iqEmail"), passwordInput = $id("iqPassword");
   const email = String(emailInput?.value ?? "").trim();
@@ -396,6 +426,6 @@ function bindUi() {
   setInterval(() => { if (state.page === "history") void loadHistory(); }, 30_000);
   setInterval(() => { if (state.page === "iq") { void loadIqStatus(); void loadIqExecutions(); } }, 5_000);
   setInterval(() => { if (state.page === "history") void loadIqSignals(); }, 15_000);
-  setInterval(() => { if (state.page === "training") void loadIqTraining(); }, 20_000);
+  setInterval(() => { if (state.page === "training") { void loadIqTraining(); void loadIqLab(); } }, 20_000);
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindUi); else bindUi();
