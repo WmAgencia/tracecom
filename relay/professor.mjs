@@ -93,6 +93,7 @@ export class TradingJournal {
       traderDecision: entry.snapshot?.action ?? null, criticDecision: entry.snapshot?.critic ?? null, consensus: entry.snapshot?.consensus ?? null,
       intelligence: entry.intelligence ?? null, knowledgeContextIds: entry.snapshot?.knowledgeContextIds ?? [], knowledgeVersion: entry.snapshot?.knowledgeVersion ?? null,
       outcome: entry.result ?? "UNKNOWN", decisionQuality: entry.review?.decisionQuality ?? "UNKNOWN", review: entry.review ?? null,
+      snapshot: entry.snapshot ?? null, snapshotSource: entry.snapshot?.source ?? "SETTLEMENT_FALLBACK",
       createdAt: this.now(),
     };
     this.trades.push(record);

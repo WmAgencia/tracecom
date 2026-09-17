@@ -40,6 +40,9 @@ Thumbs.db
 .railway/
 *.local
 
+# Dump de auditoria (dados de producao; regeneravel via scripts/diag-g2-audit.mjs)
+audit-g2-data.json
+
 # Generated shadow-validation runs (the latest signed-off report is versioned)
 diagnostic-results/shadow-validation-*.json
 diagnostic-results/shadow-validation-*.md

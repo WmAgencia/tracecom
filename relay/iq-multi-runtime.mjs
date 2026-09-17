@@ -582,7 +582,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.#emitEvent("agent.trader", { marketKey: ctx.marketKey, correlationId, action: trader.action, confidence: trader.analysisConfidence, regime, setup: trader.setup, brainGeneration: BRAIN_GENERATION });
     this.#emitEvent("agent.critic", { marketKey: ctx.marketKey, correlationId, independentAction: critic.independentAction, verdict: critic.traderAssessment, riskFlags: critic.riskFlags.length });
     this.#emitEvent("agent.consensus", { marketKey: ctx.marketKey, correlationId, action: consensus.action, status: consensus.status, reason: consensus.reason });
-    this.#auditRecord(correlationId, ctx.marketKey, "AGENTS", { brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION, trader: trader.action, setup: trader.setup, criticVerdict: critic.traderAssessment, criticIndependent: critic.independentAction, consensus: consensus.action, consensusStatus: consensus.status, regime, knowledgeIds: knowledgeContext.knowledgeIds, knowledgeUsed: knowledgeContext.used });
+    this.#auditRecord(correlationId, ctx.marketKey, "AGENTS", { brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION, trader: trader.action, setup: trader.setup, criticVerdict: critic.traderAssessment, criticIndependent: critic.independentAction, consensus: consensus.action, consensusStatus: consensus.status, regime, knowledgeIds: knowledgeContext.knowledgeIds, knowledgeUsed: knowledgeContext.used }, { persist: consensus.action === "BUY" || consensus.action === "SELL" });
     // Research shadow por SETUP + A/B v2 (mesmo snapshot causal).
     this.research.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, brain: { setup: trader.setup, action: consensus.action, regime, trigger: trader.trigger }, payout: ctx.payout, atMs: now });
     this.ab.settle({ marketKey: ctx.marketKey, candles: list, index: list.length - 1 });
@@ -942,6 +942,30 @@ export class IqMultiRuntime extends EventEmitter {
     return { duplicate: false, marketKey: key, executionId: record.executionId, idempotencyKey: requestedKey, requestId: requestedKey, mode, ...outcome };
   }
 
+  /** Snapshot t0 (decisionSnapshot) capturado no ACK: prova auditavel do que o Brain viu na decisao. */
+  #decisionSnapshot(ctx, pending = {}) {
+    const trader = ctx.agents?.trader ?? null;
+    const critic = ctx.agents?.critic ?? null;
+    return {
+      source: "T0_DECISION_SNAPSHOT",
+      marketKey: ctx.marketKey, marketType: ctx.marketType, capturedAt: this.now(),
+      decisionAt: ctx.decisionState?.evaluatedAt ?? null, decisionId: pending.decisionId ?? null, correlationId: pending.correlationId ?? ctx.agents?.correlationId ?? null,
+      action: pending.direction === "CALL" ? "BUY" : pending.direction === "PUT" ? "SELL" : (trader?.action ?? null),
+      regime: ctx.decisionState?.regime ?? null, setup: ctx.decisionState?.setup ?? null, trigger: ctx.decisionState?.trigger ?? null,
+      waitReason: ctx.decisionState?.waitReason ?? null, confidence: ctx.decisionState?.confidence ?? null,
+      structure: trader?.structure ?? null, location: trader?.location ?? null, momentum: trader?.momentum ?? null, strength: trader?.strength ?? null,
+      volatility: trader?.volatility ?? null, microstructure: trader?.microstructure ?? null,
+      supportingEvidence: trader?.supportingEvidence ?? [], contradictingEvidence: trader?.contradictingEvidence ?? [],
+      primaryRisk: trader?.primaryRisk ?? null, analysisConfidence: trader?.analysisConfidence ?? null, processLog: trader?.processLog ?? [],
+      features: ctx.agents?.features ?? null,
+      critic: critic ? { verdict: critic.traderAssessment, independentAction: critic.independentAction, contradictions: critic.contradictions, riskFlags: critic.riskFlags, finalRecommendation: critic.finalRecommendation } : null,
+      consensus: ctx.decisionState?.consensus ?? null,
+      knowledgeContextIds: ctx.decisionState?.knowledge?.ids ?? [], knowledgeVersion: ctx.decisionState?.knowledge?.version ?? null, knowledgeUsed: ctx.decisionState?.knowledge?.used ?? false,
+      freshness: { fresh: ctx.featureState?.fresh === true, reason: ctx.featureState?.freshnessReason ?? null, tickAgeMs: ctx.lastTickAt === null ? null : this.now() - ctx.lastTickAt },
+      brainGeneration: BRAIN_GENERATION,
+    };
+  }
+
   #onOrderEvent(event, kind) {
     const msg = event.msg ?? {};
     const candidates = [...this.pendingOrders.values()].filter((pending) => pending.connectionId === event.connectionId);
@@ -978,7 +1002,7 @@ export class IqMultiRuntime extends EventEmitter {
       ctx.positionState.indicative = null;
       this.#setAgent(ctx, "IN_POSITION", source);
     }
-    const position = { marketKey: pending.marketKey, mode: pending.mode, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, expirationSec: pending.expirationSec, openedAt: this.now(), executionId: pending.executionId, source, connectionId: pending.connectionId, correlationId: pending.correlationId ?? null };
+    const position = { marketKey: pending.marketKey, mode: pending.mode, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, expirationSec: pending.expirationSec, openedAt: this.now(), executionId: pending.executionId, source, connectionId: pending.connectionId, correlationId: pending.correlationId ?? null, decisionSnapshot: ctx ? this.#decisionSnapshot(ctx, pending) : null };
     this.openPositions.set(pending.marketKey, position);
     this.orderIndex.set(String(brokerOrderId), pending.marketKey);
     this.pendingOrders.delete(pending.marketKey);
@@ -1039,7 +1063,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.#emitEvent("position.settled", { marketKey: key, brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, correlationId: position.correlationId ?? null });
     this.#auditRecord(position.correlationId ?? `corr${position.executionId}`, key, "SETTLEMENT", { brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit }, { persist: true });
     // Fase 6: Professor avalia qualidade (snapshot t0) antes/depois do outcome; Journal registra memoria estruturada.
-    const snapshot = position.decisionSnapshot ?? { marketKey: key, regime: ctx.decisionState?.regime ?? null, setup: ctx.decisionState?.setup ?? null, action: position.action ?? null, trigger: ctx.decisionState?.trigger ?? null, location: ctx.decisionState?.location ?? null, momentum: ctx.decisionState?.momentum ?? null, strength: ctx.decisionState?.strength ?? null, volatility: ctx.decisionState?.volatility ?? null, contradictingEvidence: ctx.decisionState?.contradictingEvidence ?? [], supportingEvidence: ctx.decisionState?.supportingEvidence ?? [], processLog: ctx.decisionState?.processLog ?? [], knowledgeContextIds: ctx.decisionState?.knowledge?.ids ?? [], knowledgeVersion: ctx.decisionState?.knowledge?.version ?? null, critic: ctx.decisionState?.consensus ?? null };
+    const snapshot = position.decisionSnapshot ?? { source: "SETTLEMENT_FALLBACK", marketKey: key, regime: ctx.decisionState?.regime ?? null, setup: ctx.decisionState?.setup ?? null, action: position.action ?? null, trigger: ctx.decisionState?.trigger ?? null, location: ctx.decisionState?.location ?? null, momentum: ctx.decisionState?.momentum ?? null, strength: ctx.decisionState?.strength ?? null, volatility: ctx.decisionState?.volatility ?? null, contradictingEvidence: ctx.decisionState?.contradictingEvidence ?? [], supportingEvidence: ctx.decisionState?.supportingEvidence ?? [], processLog: ctx.decisionState?.processLog ?? [], knowledgeContextIds: ctx.decisionState?.knowledge?.ids ?? [], knowledgeVersion: ctx.decisionState?.knowledge?.version ?? null, critic: ctx.decisionState?.consensus ?? null };
     const review = reviewTrade({ snapshot, outcome: broker.result, result: broker.result });
     this.#emitEvent("professor.review", { marketKey: key, correlationId: position.correlationId ?? null, decisionQuality: review.decisionQuality, outcome: review.outcome, mistakes: review.mistakes.map((mistake) => mistake.code), wouldWaitBeBetter: review.wouldWaitBeBetter });
     this.#auditRecord(position.correlationId ?? `corr${position.executionId}`, key, "PROFESSOR_REVIEW", { decisionQuality: review.decisionQuality, outcome: review.outcome, mistakes: review.mistakes.map((mistake) => mistake.code), wouldWaitBeBetter: review.wouldWaitBeBetter }, { persist: true });
@@ -1117,7 +1141,7 @@ export class IqMultiRuntime extends EventEmitter {
     try {
       if (!await this.#ensureDb()) return false;
       const updated = await this.pool.query(
-        `UPDATE iq_executions SET idempotency_key=COALESCE($2,idempotency_key), decision_id=COALESCE($3,decision_id), market_key=COALESCE($4,market_key), mode=COALESCE($5,mode), connection_id=COALESCE($6,connection_id), account_type=COALESCE($7,account_type), broker_order_id=COALESCE($8,broker_order_id), symbol=COALESCE($9,symbol), active_id=COALESCE($10,active_id), direction=COALESCE($11,direction), stake=COALESCE($12,stake), currency=COALESCE($13,currency), state=$14, request_id=COALESCE($15,request_id), expiration_at=COALESCE($16,expiration_at), entry_price=COALESCE($17,entry_price), acked_at=COALESCE($18,acked_at), settled_at=COALESCE($19,settled_at), broker_result=COALESCE($20,broker_result), causal_result=COALESCE($21,causal_result), settlement_mismatch=($22 OR settlement_mismatch), profit=COALESCE($23,profit), error=COALESCE($24,error), payout=COALESCE($25,payout), option_kind=COALESCE($26,option_kind), meta=COALESCE($27,meta), updated_at=now() WHERE execution_id=$1`,
+        `UPDATE iq_executions SET idempotency_key=COALESCE($2,idempotency_key), decision_id=COALESCE($3,decision_id), market_key=COALESCE($4,market_key), mode=COALESCE($5,mode), connection_id=COALESCE($6,connection_id), account_type=COALESCE($7,account_type), broker_order_id=COALESCE($8,broker_order_id), symbol=COALESCE($9,symbol), active_id=COALESCE($10,active_id), direction=COALESCE($11,direction), stake=COALESCE($12,stake), currency=COALESCE($13,currency), state=$14, request_id=COALESCE($15,request_id), expiration_at=COALESCE($16,expiration_at), entry_price=COALESCE($17,entry_price), acked_at=COALESCE($18,acked_at), settled_at=COALESCE($19,settled_at), broker_result=COALESCE($20,broker_result), causal_result=COALESCE($21,causal_result), settlement_mismatch=($22 OR settlement_mismatch), profit=COALESCE($23,profit), error=COALESCE($24,error), payout=COALESCE($25,payout), option_kind=COALESCE($26,option_kind), meta=COALESCE(iq_executions.meta,'{}'::jsonb) || COALESCE($27::jsonb,'{}'::jsonb), updated_at=now() WHERE execution_id=$1`,
         [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.marketKey ?? null, row.mode ?? null, row.connectionId ?? null, row.accountType ?? null, row.brokerOrderId ?? null, row.symbol ?? null, row.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, row.payout ?? null, row.optionKind ?? null, row.meta ? JSON.stringify(row.meta) : null],
       );
       if ((updated.rowCount ?? 0) === 0) {
