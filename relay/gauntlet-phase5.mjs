@@ -59,8 +59,12 @@ check("P5-AUDIT-01", "audit trail com correlacao (agentes/ordens/settlement)", a
 check("P5-AUDIT-02", "AGENTS registrado com correlationId", stages.has("AGENTS") || (o.markets ?? []).some((market) => market.agents?.correlationId), [...stages]);
 const researchTrades = await req("GET", "/api/iq/research/scoreboard?marketKey=EURUSD:OTC");
 const trades = researchTrades.json.recentTrades ?? [];
+const boardTrades = (researchTrades.json.board?.variants ?? []).reduce((sum, row) => sum + (row.trades ?? 0), 0);
 const causal = trades.every((trade) => Number(trade.settlementBucket) >= Number(trade.entryBucket) + Number(String(trade.variantId).split("-").pop() ?? 0) * 1000);
-check("P5-CAUSALITY-01", "shadow trades liquidados causalmente (nunca look-ahead)", causal, { trades: trades.length });
+check("P5-CAUSALITY-01", "shadow trades liquidados causalmente (nunca look-ahead) e amostra visivel por marketKey", causal && (boardTrades === 0 || trades.length > 0), { trades: trades.length, boardTrades });
+const sampleAudit = (audit.json.audit ?? [])[0] ?? null;
+const filteredAudit = sampleAudit ? await req("GET", `/api/iq/audit?correlationId=${encodeURIComponent(sampleAudit.correlationId)}&limit=50`) : { status: 200, json: { audit: [] } };
+check("P5-AUDIT-03", "filtro por correlationId retorna apenas a cadeia pedida", !sampleAudit || ((filteredAudit.json.audit ?? []).length > 0 && (filteredAudit.json.audit ?? []).every((row) => row.correlationId === sampleAudit.correlationId)), { correlationId: sampleAudit?.correlationId ?? null, rows: (filteredAudit.json.audit ?? []).length });
 
 const executions = await req("GET", "/api/iq/executions?limit=20");
 check("P5-REAL-01", "nenhuma ordem REAL executada", (executions.json.executions ?? []).every((row) => row.mode !== "REAL" && row.accountType !== "REAL"), null);

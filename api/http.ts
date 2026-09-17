@@ -793,7 +793,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         if (!getPaths.includes(path)) { json(405, { error: "method_not_allowed" }); return; }
         const query = path === "/api/iq/executions"
           ? `?limit=${Math.max(1, Math.min(200, Number(q.get("limit")) || 50))}${q.get("marketKey") ? `&marketKey=${encodeURIComponent(q.get("marketKey") as string)}` : ""}`
-          : path === "/api/iq/events" ? `?after=${Number(q.get("after")) || 0}&limit=${Math.max(1, Math.min(500, Number(q.get("limit")) || 200))}` : "";
+          : path === "/api/iq/events" ? `?after=${Number(q.get("after")) || 0}&limit=${Math.max(1, Math.min(500, Number(q.get("limit")) || 200))}`
+          : path === "/api/iq/audit" ? `?limit=${Math.max(1, Math.min(500, Number(q.get("limit")) || 100))}${q.get("correlationId") ? `&correlationId=${encodeURIComponent(q.get("correlationId") as string)}` : ""}${q.get("marketKey") ? `&marketKey=${encodeURIComponent(q.get("marketKey") as string)}` : ""}`
+          : path === "/api/iq/research/scoreboard" && q.get("marketKey") ? `?marketKey=${encodeURIComponent(q.get("marketKey") as string)}`
+          : path === "/api/iq/signals" ? `?limit=${Math.max(1, Math.min(200, Number(q.get("limit")) || 50))}${q.get("marketKey") ? `&marketKey=${encodeURIComponent(q.get("marketKey") as string)}` : ""}`
+          : "";
         const result = await relayAdminJson("GET", `${path}${query}`);
         if (!result) { if (path === "/api/iq/status") { json(200, { state: "DISCONNECTED", hasSession: false, lastError: "RELAY_UNAVAILABLE", practiceOnly: true }); return; } json(502, { error: "iq_relay_unavailable" }); return; }
         json(result.status, { ...result.body, ...(path === "/api/iq/office" ? {} : { practiceOnly: true }), brokerAutomation: "WS_ONLY_PRACTICE" });
