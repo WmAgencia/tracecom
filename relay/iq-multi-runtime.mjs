@@ -851,7 +851,7 @@ export class IqMultiRuntime extends EventEmitter {
     const now = this.now();
     const serverNow = this.client?.serverNow?.() ?? now;
     const markets = [...this.markets.values()].filter((ctx) => ctx.candidate || ctx.lastCandidate).map((ctx) => this.#publicEntryTiming(ctx, serverNow));
-    return { version: ENTRY_TIMING_VERSION, jitEnabled: this.config.jitEnabled === true, entryLeadMs: this.config.entryLeadMs, entryWindowMaxDriftMs: this.#entryMaxDriftMs(), markets, scoreboard: this.jit.scoreboard() };
+    return { version: ENTRY_TIMING_VERSION, jitEnabled: this.config.jitEnabled === true, entryLeadMs: this.config.entryLeadMs, entryWindowMaxDriftMs: this.#entryMaxDriftMs(), qualityGateEnabled: this.config.qualityGateEnabled === true, minTradeQualityScore: this.#minTradeQualityScore(), markets, scoreboard: this.jit.scoreboard() };
   }
 
   #publicEntryTiming(ctx, serverNow) {

@@ -25,7 +25,7 @@ check("P64-GATE-04", "threshold e clampado em 50..95 (nunca aceita valor arbitra
 await req("PUT", "/api/iq/entry/config", { minTradeQualityScore: 75 });
 
 const knowledge = await req("GET", "/api/iq/knowledge");
-check("P64-CURRICULUM-01", "curriculo profissional indexado (>= 44 notas) com provenance", knowledge.status === 200 && (knowledge.json.notes ?? 0) >= 44 && knowledge.json.knowledgeVersion, { notes: knowledge.json.notes ?? 0, version: knowledge.json.knowledgeVersion ?? null });
+check("P64-CURRICULUM-01", "curriculo profissional indexado (>= 44 notas) com provenance", knowledge.status === 200 && (knowledge.json.notes ?? 0) >= 44 && Boolean(knowledge.json.knowledgeVersion), { notes: knowledge.json.notes ?? 0, version: knowledge.json.knowledgeVersion ?? null });
 
 const resolver = o.resolver ?? {};
 const age = resolver.lastResolvedAt ? Date.now() - Number(resolver.lastResolvedAt) : null;
