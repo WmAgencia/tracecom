@@ -460,6 +460,13 @@ export class IqWsClient extends EventEmitter {
     });
   }
 
+  /** get-instruments v4 (catalogo por produto: turbo-option/binary-option/digital-option/blitz-option). */
+  getInstruments({ type = "turbo-option", timeoutMs = 12_000 } = {}) {
+    return this.request("sendMessage", { name: "get-instruments", version: "4.0", body: { type } }, {
+      predicate: (message) => message.name === "instruments" || message.name === "api_game_getinstruments_result" || message.name === "get-instruments-result", timeoutMs, timeoutCode: "GET_INSTRUMENTS_TIMEOUT",
+    });
+  }
+
   /** Ordem PRACTICE pela buyv3. Retorna requestId; ACK chega por eventos (option/buyComplete/result). */
   placeOrder({ price, activeId, direction, expiration, optionTypeId, balanceId, requestId }) {
     const id = requestId ?? this.uuid().replace(/-/g, "").slice(0, 12);

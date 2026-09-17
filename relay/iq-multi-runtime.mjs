@@ -1122,7 +1122,7 @@ export class IqMultiRuntime extends EventEmitter {
     return { marketKey, availabilityBefore, availabilityAfter: ctx.availability, accepted, disposition: record?.disposition ?? null, reason: record?.reason ?? null, brokerOrderId: record?.brokerOrderId ?? null, executionId: record?.executionId ?? null, stake: probeStake, infraProbe: true, excludedFromStats: true, practiceOnly: true };
   }
 
-  /** DEBUG temporario: resposta bruta relevante do broker lado a lado com o resolver (nunca adivinha). */  async brokerAudit({ live = true } = {}) {
+  /** DEBUG temporario: resposta bruta relevante do broker lado a lado com o resolver (nunca adivinha). */  async brokerAudit({ live = true, deep = false } = {}) {
     let probeError = null;
     let openOptions = [];
     if (live && this.client && this.session.connected) {
@@ -1141,11 +1141,34 @@ export class IqMultiRuntime extends EventEmitter {
     const evidence = this.resolver.evidence(markets);
     const openOptionsByActive = {};
     for (const option of openOptions) { if (Number.isFinite(option.activeId)) openOptionsByActive[option.activeId] = (openOptionsByActive[option.activeId] ?? 0) + 1; }
+    let deepEvidence = null;
+    if (deep && live && this.client && this.session.connected) {
+      const normalize = (value) => String(value ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const ourSymbols = new Set();
+      for (const ctx of this.markets.values()) { ourSymbols.add(normalize(`${ctx.canonical}${ctx.marketType === "OTC" ? "OTC" : ""}`)); ourSymbols.add(normalize(`${ctx.canonical}-OTC`)); ourSymbols.add(normalize(ctx.canonical)); }
+      const instruments = {};
+      for (const type of ["turbo-option", "binary-option", "digital-option", "blitz-option"]) {
+        try {
+          const { response } = await this.client.getInstruments({ type });
+          const msg = response?.msg ?? {};
+          const rows = Array.isArray(msg) ? msg : (msg.instruments ?? msg.instruments_list ?? msg.data ?? []);
+          const matches = rows.filter((row) => ourSymbols.has(normalize(row?.name ?? row?.instrument ?? row?.ticker))).slice(0, 30);
+          instruments[type] = { count: rows.length, msgKeys: Object.keys(msg).slice(0, 10), matches: matches.map((row) => ({ name: row?.name ?? row?.instrument ?? null, id: row?.id ?? row?.active_id ?? row?.instrument_id ?? null, enabled: row?.enabled ?? null, suspended: row?.is_suspended ?? null, expiration: row?.expiration ?? row?.expirations ?? null })) };
+        } catch (error) { instruments[type] = { error: String(error?.code ?? error?.message ?? error).slice(0, 60) }; }
+      }
+      const optionsLiveness = {};
+      for (const instrumentType of ["turbo", "binary", "digital", "blitz"]) {
+        try { const { response } = await this.client.getOptions({ limit: 20, instrumentType, balanceId: this.account.practice.balanceId ?? this.account.real.balanceId }); optionsLiveness[instrumentType] = { msgKeys: Object.keys(response?.msg ?? {}).slice(0, 10), openOptions: (response?.msg?.open_options ?? []).length }; }
+        catch (error) { optionsLiveness[instrumentType] = { error: String(error?.code ?? error?.message ?? error).slice(0, 60) }; }
+      }
+      deepEvidence = { instruments, optionsLiveness };
+    }
     return {
       version: "broker-audit-v1", at: this.now(), live, probeError,
       connected: this.session.connected, timeValid: this.session.timeValid, host: this.session.host,
       resolver: this.resolver.status(), evidence,
       openOptions: { count: openOptions.length, byActive: openOptionsByActive, sample: openOptions.slice(0, 12) },
+      deep: deepEvidence,
       runtimeMarkets: [...this.markets.values()].map((ctx) => ({ marketKey: ctx.marketKey, enabled: ctx.enabled, availability: ctx.availability, activeId: ctx.activeId, instrumentTypes: ctx.instrumentTypes, agentState: ctx.agentState, lastTickAgeMs: ctx.lastTickAt === null ? null : this.now() - ctx.lastTickAt, candles: ctx.candles.size })),
     };
   }
