@@ -49,6 +49,9 @@ export class RuntimeAssetResolver {
     this.auxMessages = 0;
     this.lastAuxShape = null;
     this.sampleOptionShape = null;
+    this.rawSections = [];
+    this.rawCatalog = [];
+    this.digitalByCanonical = new Map();
   }
 
   ingestInitializationData(msg) {
@@ -56,7 +59,9 @@ export class RuntimeAssetResolver {
       const source = msg?.result ?? msg ?? {};
       this.sectionsSeen = Object.keys(source).filter((key) => source[key] && typeof source[key] === "object");
       const rows = [];
-      for (const section of ["binary", "turbo"]) {
+      const catalog = [];
+      this.rawSections = this.sectionsSeen.filter((key) => source?.[key]?.actives && typeof source[key].actives === "object");
+      for (const section of this.rawSections) {
         const actives = source?.[section]?.actives ?? {};
         for (const [id, active] of Object.entries(actives)) {
           this.rawActivesSeen += 1;
@@ -66,6 +71,9 @@ export class RuntimeAssetResolver {
           if (!canonical) continue;
           const payout = extractPayout(active);
           if (payout) this.payoutByActiveId.set(Number(id), payout.value);
+          catalog.push({ section, activeId: Number(id), name: String(active?.name ?? ""), canonical, otc, enabled: active?.enabled === true, suspended: active?.is_suspended === true, payout: payout?.value ?? null });
+          if (section === "digital") { if (!this.digitalByCanonical.has(canonical)) this.digitalByCanonical.set(canonical, []); this.digitalByCanonical.get(canonical).push({ activeId: Number(id), otc, enabled: active?.enabled === true, suspended: active?.is_suspended === true }); continue; }
+          if (section !== "binary" && section !== "turbo") continue;
           rows.push({
             activeId: Number(id), canonical, otc, section, marketType: otc ? "OTC" : "NORMAL",
             name: String(active?.name ?? ""), enabled: active?.enabled === true, suspended: active?.is_suspended === true,
@@ -73,6 +81,7 @@ export class RuntimeAssetResolver {
           });
         }
       }
+      this.rawCatalog = catalog.slice(0, 500);
       this.#merge(rows);
       return this.status();
     } catch (error) { this.lastError = String(error?.message ?? error).slice(0, 160); return this.status(); }
@@ -131,18 +140,23 @@ export class RuntimeAssetResolver {
       const sections = [...new Set(matches.map((row) => row.section))];
       if (!selected) {
         // Broker NAO lista o instrumento em nenhuma secao: NOT_OFFERED (nunca confundir com mercado fechado/suspenso).
+        const digital = this.digitalByCanonical.get(entry.canonical) ?? [];
         this.mapping.set(key, {
           marketKey: key, symbol: entry.symbol, display: entry.display, marketType: entry.marketType, canonical: entry.canonical,
           activeId: null, instrumentTypes: [], availability: "NOT_OFFERED", enabledLive: false, suspended: false, offered: false,
+          product: digital.length ? "DIGITAL_ONLY" : "NONE",
+          digitalCandidates: digital.length, digitalOpen: digital.some((row) => row.enabled && !row.suspended),
           payout: null, payoutSource: null, resolvedAt: now, candidates: [],
         });
         continue;
       }
       const payout = selected.payout ?? this.payoutByActiveId.get(selected.activeId) ?? null;
+      const digital = this.digitalByCanonical.get(entry.canonical) ?? [];
       this.mapping.set(key, {
         marketKey: key, symbol: entry.symbol, display: entry.display, marketType: entry.marketType, canonical: entry.canonical,
         activeId: selected.activeId, instrumentTypes: sections, availability: open.length ? "OPEN" : selected.enabled ? "SUSPENDED" : "DISABLED",
-        enabledLive: selected.enabled, suspended: selected.suspended, offered: true,
+        enabledLive: selected.enabled, suspended: selected.suspended, offered: true, product: "BINARY_TURBO",
+        digitalCandidates: digital.length, digitalOpen: digital.some((row) => row.enabled && !row.suspended),
         payout, payoutSource: payout === null ? null : (selected.payoutSource ?? "auxiliary"),
         resolvedAt: now,
         candidates: matches.map((row) => ({ activeId: row.activeId, section: row.section, enabled: row.enabled, suspended: row.suspended })),
@@ -161,6 +175,16 @@ export class RuntimeAssetResolver {
       return { ...row, availability: "UNKNOWN", suspended: false };
     }
     return row;
+  }
+
+  /** Evidencia bruta lado a lado com o resolver (nunca adivinha: mostra o que a IQ retornou). */
+  evidence(marketKeys = null) {
+    const rows = [...this.mapping.values()].filter((row) => !marketKeys || marketKeys.includes(row.marketKey)).map((row) => ({
+      marketKey: row.marketKey, type: row.marketType, canonical: row.canonical,
+      resolver: { availability: row.availability, activeId: row.activeId, offered: row.offered ?? null, product: row.product ?? null, instrumentTypes: row.instrumentTypes ?? [], candidates: row.candidates ?? [], digitalCandidates: row.digitalCandidates ?? 0, digitalOpen: row.digitalOpen ?? false, payout: row.payout ?? null },
+      brokerRaw: this.rawCatalog.filter((entry) => entry.canonical === row.canonical).map((entry) => ({ section: entry.section, activeId: entry.activeId, name: entry.name, otc: entry.otc, enabled: entry.enabled, suspended: entry.suspended, payout: entry.payout })),
+    }));
+    return { sections: this.rawSections, sectionsSeen: this.sectionsSeen, sampleOptionShape: this.sampleOptionShape, sampleActiveKeys: this.sampleActiveKeys, lastAuxShape: this.lastAuxShape, lastResolvedAt: this.lastResolvedAt, rows };
   }
   resolvedCount() { return [...this.mapping.values()].filter((row) => row.activeId !== null).length; }
 

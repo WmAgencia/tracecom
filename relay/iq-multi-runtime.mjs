@@ -1069,6 +1069,35 @@ export class IqMultiRuntime extends EventEmitter {
 
     supervisorStatus() { return this.supervisor.status(); }
 
+  /** DEBUG temporario: resposta bruta relevante do broker lado a lado com o resolver (nunca adivinha). */
+  async brokerAudit({ live = true } = {}) {
+    let probeError = null;
+    let openOptions = [];
+    if (live && this.client && this.session.connected) {
+      try {
+        const { response } = await this.client.getInitializationData();
+        this.resolver.ingestInitializationData(response.msg);
+        this.#applyResolver({ reason: "BROKER_AUDIT" });
+      } catch (error) { probeError = `INIT:${String(error?.code ?? error?.message ?? error).slice(0, 80)}`; }
+      try {
+        const { response } = await this.client.getOptions({ limit: 60, instrumentType: "binary,turbo,digital", balanceId: this.account.practice.balanceId ?? this.account.real.balanceId });
+        this.resolver.ingestAuxiliary(response.msg);
+        openOptions = (response.msg?.open_options ?? []).map((row) => ({ activeId: Number(row?.active_id ?? row?.activeId ?? null), instrumentType: row?.instrument_type ?? null, optionTypeId: row?.option_type_id ?? null, expired: row?.expired ?? null }));
+      } catch (error) { probeError = `${probeError ? probeError + ";" : ""}OPTIONS:${String(error?.code ?? error?.message ?? error).slice(0, 80)}`; }
+    }
+    const markets = [...this.markets.keys()];
+    const evidence = this.resolver.evidence(markets);
+    const openOptionsByActive = {};
+    for (const option of openOptions) { if (Number.isFinite(option.activeId)) openOptionsByActive[option.activeId] = (openOptionsByActive[option.activeId] ?? 0) + 1; }
+    return {
+      version: "broker-audit-v1", at: this.now(), live, probeError,
+      connected: this.session.connected, timeValid: this.session.timeValid, host: this.session.host,
+      resolver: this.resolver.status(), evidence,
+      openOptions: { count: openOptions.length, byActive: openOptionsByActive, sample: openOptions.slice(0, 12) },
+      runtimeMarkets: [...this.markets.values()].map((ctx) => ({ marketKey: ctx.marketKey, enabled: ctx.enabled, availability: ctx.availability, activeId: ctx.activeId, instrumentTypes: ctx.instrumentTypes, agentState: ctx.agentState, lastTickAgeMs: ctx.lastTickAt === null ? null : this.now() - ctx.lastTickAt, candles: ctx.candles.size })),
+    };
+  }
+
   /** SHADOW (Fase 6.3): estatisticas por braco de qualidade; nunca altera decisoes. */
   qualityStatus() {
     const trades = this.journal.trades.filter((trade) => trade.entryTiming?.shadowArms && (trade.result === "WIN" || trade.result === "LOSS" || trade.result === "DRAW"));
