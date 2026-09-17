@@ -117,6 +117,51 @@ describe("ARM — recusa estruturada e aceitacao mesmo em manutencao do broker",
     expect(() => runtime.arm(25, { confirmation: false })).toThrowError(/EXPLICIT_CONFIRMATION_REQUIRED/);
   });
 
+  it("tradabilityCheck NUNCA cria ordem; probe de ordem exige createPosition explicito", async () => {
+    const runtime = fixture();
+    runtime.markets.get("EURUSD:OTC").enabled = true;
+    runtime.resolver.ingestInitializationData(initData({ "76": { name: "front.EURUSD-OTC", enabled: true, is_suspended: true } }));
+    runtime.ingestAuxiliary({});
+    runtime.arm(10, { confirmation: true });
+    const check = await runtime.tradabilityCheck("EURUSD:OTC");
+    expect(check.ordering).toBe(false);
+    expect(check.tradable).toBe(false);
+    expect(check.evidence.brokerSuspended).toBe(true);
+    const probeDefault = await runtime.probeTradability("EURUSD:OTC");
+    expect(probeDefault.ordering).toBe(false);
+    expect(runtime.pendingOrders.size).toBe(0);
+    expect(runtime.openPositions.size).toBe(0);
+  });
+
+  it("trade de infraestrutura (infraProbe) NAO entra em journal, qualidade, WR ou PnL", async () => {
+    const runtime = fixture();
+    const position = { marketKey: "EURUSD:OTC", mode: "PRACTICE", direction: "CALL", stake: 10, entryPrice: 1.1, brokerOrderId: "PROBE-1", expirationSec: Math.floor(Date.now() / 1000) + 60, openedAt: Date.now(), executionId: "exec_probe_1", source: "AUDIT_PROBE", connectionId: "conn-status", correlationId: "corr_probe_1", infraProbe: true, decisionSnapshot: { source: "T0_DECISION_SNAPSHOT" } };
+    runtime.openPositions.set("EURUSD:OTC", position);
+    runtime.orderIndex.set("PROBE-1", "EURUSD:OTC");
+    runtime.ingestEvent("socket-option-closed", { connectionId: "conn-status", receivedAt: Date.now(), msg: { id: "PROBE-1", win: "win", sum: 10, win_amount: 18.5 } });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    expect(runtime.journal.trades).toHaveLength(0);
+    expect(runtime.qualityStatus().trades).toBe(0);
+    expect(runtime.jit.counters.candidates).toBe(0);
+    const audit = runtime.auditTrail({ limit: 10 }).audit.filter((row: any) => row.stage === "INFRA_PROBE_SETTLED" || row.stage === "PROFESSOR_REVIEW");
+    expect(audit.some((row: any) => row.stage === "INFRA_PROBE_SETTLED")).toBe(true);
+    expect(audit.some((row: any) => row.stage === "PROFESSOR_REVIEW")).toBe(false);
+  });
+
+  it("transicao para OPEN registra REOPEN_VALIDATION com broker/resolver/agente/feed/ARM", () => {
+    const runtime = fixture();
+    runtime.markets.get("EURUSD:OTC").enabled = true;
+    runtime.resolver.ingestInitializationData(initData({ "76": { name: "front.EURUSD-OTC", enabled: true, is_suspended: true } }));
+    runtime.ingestAuxiliary({});
+    runtime.resolver.ingestInitializationData(initData({ "76": { name: "front.EURUSD-OTC", enabled: true, is_suspended: false } }));
+    runtime.ingestAuxiliary({});
+    const reopened = runtime.eventsAfter(0, 300).events.find((event: any) => event.type === "market.reopened" && event.marketKey === "EURUSD:OTC");
+    expect(reopened).toBeTruthy();
+    expect(reopened.validation).toMatchObject({ brokerOpen: true, resolverOpen: true, agentAwake: true, reason: "SUSPENDED->OPEN" });
+    expect(reopened.validation.serverNow).toBeGreaterThan(0);
+    expect(reopened.validation.evidence.activeId).toBe(76);
+  });
+
   it("UI mostra a razao real da recusa e o aviso de broker fechado (sem mascarar)", async () => {
     const fs = await import("node:fs");
     const office = fs.readFileSync("src/http/public/office.js", "utf8");

@@ -353,10 +353,19 @@ export class IqMultiRuntime extends EventEmitter {
       ctx.connectionHealth = { ...ctx.connectionHealth, connected: this.session.connected };
       // Fase 6.5: transicoes de disponibilidade acordam/dormem o agente SEM restart (fonte de verdade = broker).
       if (ctx.enabled && previous !== "OPEN" && resolved.availability === "OPEN") {
+        const serverNow = this.client?.serverNow?.() ?? this.now();
+        const feedFresh = ctx.lastTickAt !== null && this.now() - ctx.lastTickAt <= MARKET_TICK_AGE_MS;
+        const validation = {
+          brokerOpen: resolved.enabledLive === true && resolved.suspended === false, resolverOpen: resolved.availability === "OPEN",
+          agentAwake: true, feedFresh, armed: this.armState.armed === true, serverNow,
+          evidence: { activeId: resolved.activeId, product: resolved.product ?? null, instrumentTypes: resolved.instrumentTypes ?? [], offered: resolved.offered ?? null, candidates: resolved.candidates ?? [], payout: resolved.payout ?? null },
+          reason: `${previous}->OPEN`,
+        };
         this.#setAgent(ctx, "WAIT", "MARKET_REOPENED_BY_BROKER");
-        this.#emitEvent("market.reopened", { marketKey: ctx.marketKey, activeId: ctx.activeId, reason });
-        this.#auditRecord(`reopen_${ctx.marketKey}_${this.now()}`, ctx.marketKey, "MARKET_REOPENED", { reason, activeId: ctx.activeId, previous }, { persist: true });
-        this.#safe(() => this.log("IQ_MULTI_MARKET_REOPENED", JSON.stringify({ marketKey: ctx.marketKey, activeId: ctx.activeId, reason })));
+        this.#emitEvent("market.reopened", { marketKey: ctx.marketKey, activeId: ctx.activeId, reason, serverNow, validation });
+        this.#auditRecord(`reopen_${ctx.marketKey}_${this.now()}`, ctx.marketKey, "MARKET_REOPENED", validation, { persist: true });
+        this.#auditRecord(`reopen_check_${ctx.marketKey}_${this.now()}`, ctx.marketKey, "REOPEN_VALIDATION", validation, { persist: true });
+        this.#safe(() => this.log("IQ_MULTI_MARKET_REOPENED", JSON.stringify({ marketKey: ctx.marketKey, activeId: ctx.activeId, reason, feedFresh, armed: validation.armed })));
       } else if (ctx.enabled && resolved.availability !== "OPEN" && (previous !== resolved.availability || ctx.agentState === "OFFLINE") && !this.openPositions.has(ctx.marketKey)) {
         this.#setAgent(ctx, "UNAVAILABLE", `MARKET_${resolved.availability}`);
         this.#emitEvent("market.unavailable", { marketKey: ctx.marketKey, availability: resolved.availability, reason });
@@ -982,7 +991,7 @@ export class IqMultiRuntime extends EventEmitter {
       stakeConfigured: resolved.requestedStake, stakeRequested: resolved.requestedStake, stakeCalculated: Number(this.config.calculatedBankrollStake), stakeFinal: resolved.finalStake, cappedBy: resolved.cappedBy, stakeSource: resolved.source, stakeAdjustment: resolved.adjustment,
       payout: ctx.payout, auto: this.config.autoExecute === true, armed: this.armState.armed === true, mode: this.config.mode,
       entryTiming: entryTiming ? { candidateId: entryTiming.candidateId, targetEntryAt: entryTiming.targetEntryAt, targetExpiryAt: entryTiming.targetExpiryAt, submitAt: entryTiming.submitAt, entryLeadMs: entryTiming.entryLeadMs, revalidatedAt: entryTiming.revalidatedAt, candidateChangedBeforeEntry: entryTiming.candidateChangedBeforeEntry, changedFields: entryTiming.changedFields ?? [] } : null,
-      disposition, reason, idempotencyKey, gate: { allowed: gate.allowed, code: gate.code, reasons: gate.reasons, failed: gate.checks.filter((check) => !check.ok).map((check) => check.name) },
+      disposition, reason, idempotencyKey, infraProbe: options?.infra === true, excludedFromStats: options?.infra === true, gate: { allowed: gate.allowed, code: gate.code, reasons: gate.reasons, failed: gate.checks.filter((check) => !check.ok).map((check) => check.name) },
       executionId: null, brokerOrderId: null, ackAt: null, settledAt: null, result: null, profit: null, duplicateOf: existing?.id ?? null,
     };
     this.signalLog.push(record);
@@ -994,7 +1003,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (disposition === "BLOCKED" || disposition === "DUPLICATE") return record;
     try {
       const orderSource = brain?.setup === "SYNTHETIC_TEST" ? "DIAGNOSTIC_SIGNAL" : "AUTO_DECISION";
-      const result = await this.requestOrder({ marketKey: ctx.marketKey, direction: action, stake: null, decisionId: `auto_${ctx.marketKey}_${bucket}`, idempotencyKey, source: orderSource, horizonSeconds, decisionAgeMs: Math.max(0, this.now() - now), entryTiming });
+      const result = await this.requestOrder({ marketKey: ctx.marketKey, direction: action, stake: null, decisionId: `auto_${ctx.marketKey}_${bucket}`, idempotencyKey, source: orderSource, horizonSeconds, decisionAgeMs: Math.max(0, this.now() - now), entryTiming, infraProbe: options?.infra === true });
       if (result.duplicate) { record.disposition = "DUPLICATE"; record.reason = "IDEMPOTENCIA"; stats.executed = Math.max(0, stats.executed - 1); stats.duplicate += 1; }
       else {
         record.executionId = result.executionId ?? null; record.brokerOrderId = result.brokerOrderId ?? null; record.ackAt = result.state === "ACKNOWLEDGED" ? this.now() : null;
@@ -1071,23 +1080,46 @@ export class IqMultiRuntime extends EventEmitter {
     supervisorStatus() { return this.supervisor.status(); }
 
   /**
-   * Prova OPERACIONAL de tradabilidade (a resposta final do broker): tenta abrir uma ordem minima
-   * pelo caminho real (PRACTICE). Se o broker aceitar, o instrumento esta REALMENTE operavel agora
-   * (override de OPEN por 120s, mesmo que is_suspended esteja stale); se recusar, mantem SUSPENDED
-   * e devolve o motivo bruto. Nunca altera direcao/setup: usa BUY sintetico apenas como probe.
+   * Verificacao de tradabilidade SEM criar posicao (padrao): usa somente estado oficial da sessao
+   * (initialization-data: enabled/is_suspended), liveness do get-options e opcoes abertas do ativo.
+   * Nenhuma ordem e enviada; nada entra em journal/WR/PnL.
    */
-  async probeTradability(marketKey, { stake = null } = {}) {
+  async tradabilityCheck(marketKey) {
+    const ctx = this.markets.get(marketKey);
+    if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
+    const resolved = this.resolver.get(marketKey) ?? {};
+    const evidence = { brokerEnabled: resolved.enabledLive ?? null, brokerSuspended: resolved.suspended ?? null, offered: resolved.offered ?? null, product: resolved.product ?? null, activeId: resolved.activeId ?? null, instrumentTypes: resolved.instrumentTypes ?? [] };
+    let optionsLiveness = "NOT_CHECKED";
+    let openOptionsForActive = 0;
+    if (this.client && this.session.connected) {
+      try {
+        const { response } = await this.client.getOptions({ limit: 30, instrumentType: "binary,turbo", balanceId: this.account.practice.balanceId ?? this.account.real.balanceId });
+        optionsLiveness = "OK";
+        openOptionsForActive = (response.msg?.open_options ?? []).filter((row) => Number(row?.active_id ?? row?.activeId) === Number(ctx.activeId)).length;
+      } catch (error) { optionsLiveness = `ERROR:${String(error?.code ?? error?.message ?? error).slice(0, 60)}`; }
+    }
+    const brokerOpen = evidence.brokerEnabled === true && evidence.brokerSuspended === false;
+    const tradable = brokerOpen === true ? true : (evidence.offered === true || evidence.offered === false ? false : null);
+    return { marketKey, tradable, ordering: false, availability: ctx.availability, evidence: { ...evidence, optionsLiveness, openOptionsForActive, sessionConnected: this.session.connected, timeValid: this.session.timeValid }, checkedAt: this.now() };
+  }
+
+  /**
+   * Probe de ORDEM (debug manual explicito, nunca periodico): tenta uma ordem minima PRACTICE e, se
+   * aceita, marca OPEN por 120s. Marcado como infra: NUNCA entra em journal/WR/PnL/Professor/dataset.
+   */
+  async probeTradability(marketKey, { stake = null, createPosition = false } = {}) {
+    if (createPosition !== true) return this.tradabilityCheck(marketKey);
     const ctx = this.markets.get(marketKey);
     if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
     const availabilityBefore = ctx.availability;
     const probeStake = Math.max(1, Math.min(10, Number(stake) || this.config.defaultStake || 10));
-    const brain = { setup: "AUDIT_PROBE", regime: ctx.decisionState?.regime ?? null };
-    const record = await this.#handleSignal(ctx, "BUY", brain, this.#candleList(ctx), null, { probe: true }).catch((error) => ({ disposition: "BLOCKED", reason: String(error?.code ?? error?.message ?? error), probeError: true }));
+    const brain = { setup: "INFRA_PROBE", regime: ctx.decisionState?.regime ?? null };
+    const record = await this.#handleSignal(ctx, "BUY", brain, this.#candleList(ctx), null, { probe: true, infra: true }).catch((error) => ({ disposition: "BLOCKED", reason: String(error?.code ?? error?.message ?? error), probeError: true }));
     const accepted = record?.disposition === "EXECUTED" || ["ACKNOWLEDGED", "REQUESTED"].includes(String(record?.state ?? ""));
     if (accepted) ctx.probeOverride = { availability: "OPEN", until: this.now() + 120_000, at: this.now(), brokerOrderId: record?.brokerOrderId ?? null };
-    this.#auditRecord(`probe_${marketKey}_${this.now()}`, marketKey, "TRADABILITY_PROBE", { availabilityBefore, accepted, disposition: record?.disposition ?? null, reason: record?.reason ?? null, brokerOrderId: record?.brokerOrderId ?? null, stake: probeStake }, { persist: true });
-    this.#emitEvent("market.tradability_probe", { marketKey, availabilityBefore, accepted, reason: record?.reason ?? null });
-    return { marketKey, availabilityBefore, availabilityAfter: ctx.availability, accepted, disposition: record?.disposition ?? null, reason: record?.reason ?? null, brokerOrderId: record?.brokerOrderId ?? null, executionId: record?.executionId ?? null, stake: probeStake, practiceOnly: true };
+    this.#auditRecord(`probe_${marketKey}_${this.now()}`, marketKey, "TRADABILITY_ORDER_PROBE", { availabilityBefore, accepted, disposition: record?.disposition ?? null, reason: record?.reason ?? null, brokerOrderId: record?.brokerOrderId ?? null, stake: probeStake, infraProbe: true, excludedFromStats: true }, { persist: true });
+    this.#emitEvent("market.tradability_probe", { marketKey, availabilityBefore, accepted, reason: record?.reason ?? null, infraProbe: true });
+    return { marketKey, availabilityBefore, availabilityAfter: ctx.availability, accepted, disposition: record?.disposition ?? null, reason: record?.reason ?? null, brokerOrderId: record?.brokerOrderId ?? null, executionId: record?.executionId ?? null, stake: probeStake, infraProbe: true, excludedFromStats: true, practiceOnly: true };
   }
 
   /** DEBUG temporario: resposta bruta relevante do broker lado a lado com o resolver (nunca adivinha). */  async brokerAudit({ live = true } = {}) {
@@ -1199,7 +1231,7 @@ export class IqMultiRuntime extends EventEmitter {
     return { openPositions: openPositions.map((position) => ({ marketKey: position.marketKey, direction: position.direction, stake: position.stake, entryPrice: position.entryPrice, brokerOrderId: position.brokerOrderId, openedAt: position.openedAt, indicative: position.indicative ?? null })), exposure: exposure.exposures, concentrationWarnings: exposure.warnings, settled: { ...settled, pnl: Number(settled.pnl.toFixed(4)) }, practiceBalance: this.account.practice.balance, realBalance: this.account.real.balance };
   }
 
-  async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = 60, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null } = {}) {
+  async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = 60, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false } = {}) {
     const ctx = this.markets.get(key);
     if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(key));
     if (!this.client || !this.session.connected) throw new IqWsError("WS_DISCONNECTED");
@@ -1258,6 +1290,7 @@ export class IqMultiRuntime extends EventEmitter {
       stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, activeId: ctx.activeId, symbol: ctx.display, expirationSec: expiration.expiration, optionKind: expiration.optionKind,
       entryPrice, requestedAt: this.now(), connectionId: this.connection?.connectionId ?? null, autoDisarmAfterAck: autoDisarmAfterAck === true, source, ackResolved: false, settling: false,
       correlationId: ctx.agents?.correlationId ?? `corr_exec_${record.executionId}`,
+      infraProbe: infraProbe === true,
       entryTiming: entryTiming ? { candidateId: entryTiming.candidateId, targetEntryAt: entryTiming.targetEntryAt, targetExpiryAt: entryTiming.targetExpiryAt, targetExpirySec: Number(entryTiming.targetExpirySec ?? Math.round(entryTiming.targetExpiryAt / 1000)), submitAt: entryTiming.submitAt, submitAtMs, entryLeadMs: entryTiming.entryLeadMs, revalidatedAt: entryTiming.revalidatedAt, candidateChangedBeforeEntry: entryTiming.candidateChangedBeforeEntry === true, shadowArms: entryTiming.shadowArms ?? null, directionChanges: (entryTiming.changedFields ?? []).filter((change) => change.field === "action").length } : null,
     };
     this.#auditRecord(pending.correlationId, key, "ORDER_SENT", { executionId: record.executionId, direction: directionWire, stake: finalStake, requestedStake: resolvedStake.requestedStake, stakeSource: resolvedStake.source, mode, source, expiration: expiration.expiration, optionKind: expiration.optionKind, candidateId: entryTiming?.candidateId ?? null, targetEntryAt: entryTiming?.targetEntryAt ?? null, submitAtMs, entryLeadMs: entryTiming?.entryLeadMs ?? null }, { persist: true });
@@ -1266,7 +1299,7 @@ export class IqMultiRuntime extends EventEmitter {
     ctx.positionState = { status: "ORDERING", direction: directionWire, entryPrice, stake: finalStake, brokerOrderId: null, requestId: requestedKey, expirationSec: expiration.expiration, openedAt: this.now(), settledAt: null, result: null, profit: null, mode };
     this.#setAgent(ctx, "ORDERING", source);
     this.#emitEvent("order.pending", { marketKey: key, direction: directionWire, stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, mode, expirationSec: expiration.expiration });
-    await this.#persistExecution({ executionId: record.executionId, idempotencyKey: requestedKey, decisionId: record.payload?.decisionId ?? decisionId ?? null, marketKey: key, mode, connectionId: pending.connectionId, accountType: mode, brokerOrderId: null, symbol: ctx.display, activeId: ctx.activeId, direction: directionWire, stake: finalStake, currency: mode === "REAL" ? this.account.real.currency : this.account.practice.currency, state: "REQUESTED", requestId: requestedKey, expirationAt: nowIso(expiration.expiration * 1000), entryPrice, payout: ctx.payout, optionKind: expiration.optionKind, meta: { source, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, setup: brainSetup.setup, strategyVariantId: null, strategySource: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, entryTiming: pending.entryTiming ? { candidateId: pending.entryTiming.candidateId, targetEntryAt: pending.entryTiming.targetEntryAt, targetExpiryAt: pending.entryTiming.targetExpiryAt, submitAt: pending.entryTiming.submitAt, submitAtMs, entryLeadMs: pending.entryTiming.entryLeadMs, revalidatedAt: pending.entryTiming.revalidatedAt, candidateChangedBeforeEntry: pending.entryTiming.candidateChangedBeforeEntry } : null } });
+    await this.#persistExecution({ executionId: record.executionId, idempotencyKey: requestedKey, decisionId: record.payload?.decisionId ?? decisionId ?? null, marketKey: key, mode, connectionId: pending.connectionId, accountType: mode, brokerOrderId: null, symbol: ctx.display, activeId: ctx.activeId, direction: directionWire, stake: finalStake, currency: mode === "REAL" ? this.account.real.currency : this.account.practice.currency, state: "REQUESTED", requestId: requestedKey, expirationAt: nowIso(expiration.expiration * 1000), entryPrice, payout: ctx.payout, optionKind: expiration.optionKind, meta: { source, infraProbe: infraProbe === true, excludedFromStats: infraProbe === true, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, setup: brainSetup.setup, strategyVariantId: null, strategySource: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, entryTiming: pending.entryTiming ? { candidateId: pending.entryTiming.candidateId, targetEntryAt: pending.entryTiming.targetEntryAt, targetExpiryAt: pending.entryTiming.targetExpiryAt, submitAt: pending.entryTiming.submitAt, submitAtMs, entryLeadMs: pending.entryTiming.entryLeadMs, revalidatedAt: pending.entryTiming.revalidatedAt, candidateChangedBeforeEntry: pending.entryTiming.candidateChangedBeforeEntry } : null } });
     try {
       const balanceId = mode === "REAL" ? this.account.real.balanceId : this.account.practice.balanceId;
       this.client.placeOrder({ price: finalStake, activeId: ctx.activeId, direction: directionWire, expiration: expiration.expiration, optionTypeId: expiration.optionTypeId, balanceId, requestId: requestedKey });
@@ -1358,7 +1391,7 @@ export class IqMultiRuntime extends EventEmitter {
         if (ctx.lastCandidate?.id === entryTimingAck.candidateId) { ctx.lastCandidate.entryDriftMs = entryTimingAck.entryDriftMs; }
       }
     }
-    const position = { marketKey: pending.marketKey, mode: pending.mode, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, expirationSec: pending.expirationSec, openedAt: ackedAt, executionId: pending.executionId, source, connectionId: pending.connectionId, correlationId: pending.correlationId ?? null, entryTiming: entryTimingAck, decisionSnapshot: ctx ? { ...this.#decisionSnapshot(ctx, pending), entryTiming: entryTimingAck } : null };
+    const position = { marketKey: pending.marketKey, mode: pending.mode, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, expirationSec: pending.expirationSec, openedAt: ackedAt, executionId: pending.executionId, source, connectionId: pending.connectionId, correlationId: pending.correlationId ?? null, infraProbe: pending.infraProbe === true, entryTiming: entryTimingAck, decisionSnapshot: ctx ? { ...this.#decisionSnapshot(ctx, pending), entryTiming: entryTimingAck } : null };
     this.openPositions.set(pending.marketKey, position);
     this.orderIndex.set(String(brokerOrderId), pending.marketKey);
     this.pendingOrders.delete(pending.marketKey);
@@ -1420,6 +1453,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.#auditRecord(position.correlationId ?? `corr${position.executionId}`, key, "SETTLEMENT", { brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit }, { persist: true });
     // Fase 6: Professor avalia qualidade (snapshot t0) antes/depois do outcome; Journal registra memoria estruturada.
     const snapshot = position.decisionSnapshot ?? { source: "SETTLEMENT_FALLBACK", marketKey: key, regime: ctx.decisionState?.regime ?? null, setup: ctx.decisionState?.setup ?? null, action: position.action ?? null, trigger: ctx.decisionState?.trigger ?? null, location: ctx.decisionState?.location ?? null, momentum: ctx.decisionState?.momentum ?? null, strength: ctx.decisionState?.strength ?? null, volatility: ctx.decisionState?.volatility ?? null, contradictingEvidence: ctx.decisionState?.contradictingEvidence ?? [], supportingEvidence: ctx.decisionState?.supportingEvidence ?? [], processLog: ctx.decisionState?.processLog ?? [], knowledgeContextIds: ctx.decisionState?.knowledge?.ids ?? [], knowledgeVersion: ctx.decisionState?.knowledge?.version ?? null, critic: ctx.decisionState?.consensus ?? null };
+    if (position.infraProbe === true) { this.#auditRecord(position.correlationId ?? `probe_${position.executionId}`, key, "INFRA_PROBE_SETTLED", { brokerOrderId, result: broker.result, profit: broker.profit, excludedFromStats: true }, { persist: true }); this.#safe(() => this.log("IQ_INFRA_PROBE_SETTLED", JSON.stringify({ marketKey: key, brokerOrderId, result: broker.result }))); return; }
     const review = reviewTrade({ snapshot, outcome: broker.result, result: broker.result });
     const initialSnapshot = position.entryTiming?.initialSnapshot ?? null;
     const initialReview = initialSnapshot ? reviewTrade({ snapshot: initialSnapshot, outcome: broker.result, result: broker.result }) : null;
