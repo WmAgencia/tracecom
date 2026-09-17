@@ -822,7 +822,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (path === "/api/iq/market" && !String(payload.marketKey ?? "")) { json(400, { error: "market_key_required" }); return; }
       if (path === "/api/iq/config/global-stake" && (!Number.isFinite(Number(payload.value)) || Number(payload.value) <= 0 || Number(payload.value) > 100)) { json(400, { error: "invalid_global_stake" }); return; }
       if (path === "/api/iq/real/confirm" && !String(payload.phrase ?? "")) { json(400, { error: "real_confirmation_required" }); return; }
-      const result = await relayAdminJson(path === "/api/iq/market" ? "PUT" : "POST", path, payload, 20_000);
+      const result = await relayAdminJson(path === "/api/iq/market" || path === "/api/iq/manager/config" ? "PUT" : "POST", path, payload, 20_000);
       if (!result) { json(502, { error: "iq_relay_unavailable" }); return; }
       if (!result.ok) { json(result.status >= 400 && result.status < 500 ? result.status : 502, { ...result.body, practiceOnly: true, brokerAutomation: "WS_ONLY_PRACTICE" }); return; }
       json(200, { state: result.body.state ?? (path === "/api/iq/disarm" ? "CONNECTED_PRACTICE" : "OK"), twoFactorRequired: result.body.twoFactorRequired === true, email: result.body.email ?? null, connectedAt: result.body.connectedAt ?? null, lastError: result.body.lastError ?? null, hasSession: result.body.hasSession === true, ...(path === "/api/iq/connect" || path === "/api/iq/verify-2fa" ? {} : result.body), practiceOnly: path === "/api/iq/real/confirm" || path === "/api/iq/mode" ? false : true, brokerAutomation: path === "/api/iq/connect" || path === "/api/iq/verify-2fa" ? "NONE" : "WS_ONLY_PRACTICE" });
