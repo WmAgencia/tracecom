@@ -98,7 +98,7 @@ describe("Escritório — contrato de controles (nenhum botão decorativo)", () 
     for (const key of keys) expect(fixtureHtml, `fixture sem ${key}`).toContain(key);
     for (const marker of ["NOT_FOUND", "UNAVAILABLE", "paused", "SIGNAL", "ORDERING", "IN_POSITION", "FAVORABLE", "UNFAVORABLE", "WIN", "LOSS"]) expect(fixtureHtml).toContain(marker);
     expect(fixtureHtml).toContain("stakeAdjustment");
-    expect(officeJs).toContain("MERCADO FECHADO");
+    expect(officeJs).toContain("SUSPENSO PELA IQ (BROKER)");
     expect(officeJs).toContain("DESATIVADO");
     expect(officeJs).toContain("drawZzz");
     expect(officeJs).toContain("MERCADO NORMAL");

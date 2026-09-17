@@ -5,7 +5,7 @@ const OfficeUI = (() => {
   const api = async (path, options) => {
     const response = await fetch(path, { headers: { accept: "application/json", ...(options?.body ? { "content-type": "application/json" } : {}) }, ...options, body: options?.body ? JSON.stringify(options.body) : undefined });
     const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
+    if (!response.ok) { const error = new Error(body.reason || body.error || `HTTP ${response.status}`); error.code = body.error || null; error.reason = body.reason || null; error.details = body.details || null; error.status = response.status; throw error; }
     return body;
   };
   const get = (path) => api(path);
@@ -40,6 +40,15 @@ const OfficeUI = (() => {
     g.fillStyle = color; g.font = `${bold ? "bold " : ""}${Math.max(7, Math.round(size * zoom()))}px "Courier New", monospace`; g.textAlign = align; g.textBaseline = "middle"; g.fillText(String(value), x, y);
   }
 
+  const AVAILABILITY_TEXT = {
+    OPEN: "MERCADO ABERTO",
+    SUSPENDED: "SUSPENSO PELA IQ (BROKER)",
+    NOT_OFFERED: "NAO OFERECIDO PELA IQ",
+    DISABLED: "DESABILITADO PELA IQ",
+    UNKNOWN: "AGUARDANDO BROKER",
+    NOT_FOUND: "NAO ENCONTRADO NO BROKER",
+  };
+  const availabilityLabel = (value) => AVAILABILITY_TEXT[String(value ?? "UNKNOWN")] ?? String(value ?? "DESCONHECIDO");
   const REASON_TEXT = {
     AUTO_DESLIGADO: "execução automática desligada",
     SISTEMA_DESARMADO: "sistema parado",
@@ -108,7 +117,7 @@ const OfficeUI = (() => {
   const isPaused = (market) => market?.paused === true;
   const isDisabled = (market) => market && market.availability === "OPEN" && market.enabled !== true;
   function bubbleInfo(market) {
-    if (isClosed(market)) return { text: market.availability === "NOT_FOUND" ? "MERCADO FECHADO" : "INDISPONÍVEL", kind: "SLEEP" };
+    if (isClosed(market)) return { text: availabilityLabel(market.availability), kind: "SLEEP" };
     if (isDisabled(market)) return { text: "DESATIVADO", kind: "DISABLED" };
     if (isPaused(market)) return { text: "PAUSADO", kind: "PAUSED" };
     if (market.agentState === "ERROR") return { text: "ERRO", kind: "ERROR" };
@@ -622,7 +631,7 @@ const OfficeUI = (() => {
     const decision = market.decisionState ?? {};
     const closed = isClosed(market);
     const disabled = isDisabled(market);
-    const status = closed ? (market.availability === "NOT_FOUND" ? "Mercado fechado" : "Indisponível") : disabled ? "Desativado" : market.paused ? "Pausado" : market.positionState?.status === "OPEN" ? "Em operação" : market.agentState === "SIGNAL" ? "Oportunidade encontrada" : "Aguardando";
+    const status = closed ? availabilityLabel(market.availability) : disabled ? "Desativado" : market.paused ? "Pausado" : market.positionState?.status === "OPEN" ? "Em operação" : market.agentState === "SIGNAL" ? "Oportunidade encontrada" : "Aguardando";
     const limitReached = state.office.activeCount >= state.office.activeLimit;
     overlay.innerHTML = drawerShell(`${market.symbol}`, market.marketType, market.marketType === "OTC" ? "otc" : "normal", `
       ${toastHtml()}
@@ -760,7 +769,7 @@ const OfficeUI = (() => {
       const closed = isClosed(market);
       const limitReached = office.activeCount >= office.activeLimit;
       return `<div class="office-market-row">
-        <div><b>${market.display}</b><small>${closed ? (market.availability === "NOT_FOUND" ? "mercado fechado" : "indisponível") : market.marketType === "OTC" ? `disponível · payout ${market.payout ?? "—"}% · ${brl(market.configuredStake ?? office.config.defaultStake)}/op` : `disponível · ${brl(market.configuredStake ?? office.config.defaultStake)}/op`}</small></div>
+        <div><b>${market.display}</b><small>${closed ? availabilityLabel(market.availability).toLowerCase() : market.marketType === "OTC" ? `disponível · payout ${market.payout ?? "—"}% · ${brl(market.configuredStake ?? office.config.defaultStake)}/op` : `disponível · ${brl(market.configuredStake ?? office.config.defaultStake)}/op`}</small></div>
         <div class="right"><button class="office-btn ${market.enabled ? "warn" : "primary"}" data-choose-toggle="${market.marketKey}" ${!market.enabled && (limitReached || closed) ? "disabled" : ""}>${market.enabled ? "DESLIGAR" : closed ? "FECHADO" : "ATIVAR"}</button></div>
       </div>`;
     };
@@ -883,9 +892,20 @@ const OfficeUI = (() => {
     try {
       await post("/api/iq/config/global-stake", { value: limit });
       await post("/api/iq/config/auto-execute", { enabled: true });
-      await post("/api/iq/arm", { limitBrl: limit, confirmation: "ARM_PRACTICE" });
-      activityLine(`Sistema iniciado: operação automática ligada com valor de ${brl(limit)} por operação.`, "");
-    } catch (error) { activityLine(`Não foi possível iniciar o sistema: ${reasonText(String(error?.message || error))}.`, "blocked"); }
+      const arm = await post("/api/iq/arm", { limitBrl: limit, confirmation: "ARM_PRACTICE" });
+      if (arm?.warning === "NO_OPEN_MARKET_NOW") {
+        const list = (arm.markets ?? []).map((market) => `${market.marketKey}=${availabilityLabel(market.availability)}`).join(", ");
+        activityLine(`Sistema ARMADO, mas o broker não reporta mercado OPEN agora (${list}). O TraceCom entrará automaticamente quando a IQ reabrir (sem reiniciar).`, "blocked");
+      } else {
+        activityLine(`Sistema iniciado: operação automática ligada com valor de ${brl(limit)} por operação (${arm?.openMarkets ?? 0} mercado(s) OPEN).`, "");
+      }
+    } catch (error) {
+      const code = error?.code ?? null;
+      const reason = error?.reason ? reasonText(String(error.reason)) : reasonText(String(error?.message || error));
+      const details = error?.details ?? null;
+      const markets = details?.markets ? ` · mercados: ${details.markets.map((market) => `${market.marketKey}=${availabilityLabel(market.availability)}`).join(", ")}` : "";
+      activityLine(`ARM recusado [${code ?? "ERRO"}]: ${reason}${markets}.`, "blocked");
+    }
     return refreshOffice();
   }
   async function stopSystem() {

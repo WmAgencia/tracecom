@@ -130,9 +130,10 @@ export class RuntimeAssetResolver {
       const selected = open[0] ?? matches[0] ?? null;
       const sections = [...new Set(matches.map((row) => row.section))];
       if (!selected) {
+        // Broker NAO lista o instrumento em nenhuma secao: NOT_OFFERED (nunca confundir com mercado fechado/suspenso).
         this.mapping.set(key, {
           marketKey: key, symbol: entry.symbol, display: entry.display, marketType: entry.marketType, canonical: entry.canonical,
-          activeId: null, instrumentTypes: [], availability: "NOT_FOUND", enabledLive: false, suspended: false,
+          activeId: null, instrumentTypes: [], availability: "NOT_OFFERED", enabledLive: false, suspended: false, offered: false,
           payout: null, payoutSource: null, resolvedAt: now, candidates: [],
         });
         continue;
@@ -141,7 +142,7 @@ export class RuntimeAssetResolver {
       this.mapping.set(key, {
         marketKey: key, symbol: entry.symbol, display: entry.display, marketType: entry.marketType, canonical: entry.canonical,
         activeId: selected.activeId, instrumentTypes: sections, availability: open.length ? "OPEN" : selected.enabled ? "SUSPENDED" : "DISABLED",
-        enabledLive: selected.enabled, suspended: selected.suspended,
+        enabledLive: selected.enabled, suspended: selected.suspended, offered: true,
         payout, payoutSource: payout === null ? null : (selected.payoutSource ?? "auxiliary"),
         resolvedAt: now,
         candidates: matches.map((row) => ({ activeId: row.activeId, section: row.section, enabled: row.enabled, suspended: row.suspended })),
@@ -156,7 +157,7 @@ export class RuntimeAssetResolver {
     const row = this.mapping.get(key) ?? null;
     if (!row) return null;
     // Snapshot persistido nao e verdade operacional: SUSPENDED/NOT_FOUND de cache vira UNKNOWN ate o broker confirmar.
-    if (row.staleSnapshot === true && (row.availability === "SUSPENDED" || row.availability === "NOT_FOUND" || row.availability === "DISABLED")) {
+    if (row.staleSnapshot === true && (row.availability === "SUSPENDED" || row.availability === "NOT_FOUND" || row.availability === "NOT_OFFERED" || row.availability === "DISABLED")) {
       return { ...row, availability: "UNKNOWN", suspended: false };
     }
     return row;

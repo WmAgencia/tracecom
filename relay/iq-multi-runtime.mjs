@@ -341,15 +341,25 @@ export class IqMultiRuntime extends EventEmitter {
     this.availabilityTimer = setTimeout(tick, 30_000);
     this.availabilityTimer.unref?.();
   }
-
-  #applyResolver({ reason }) {    let changed = 0;
+  #applyResolver({ reason }) {
+    let changed = 0;
     for (const ctx of this.markets.values()) {
       const resolved = this.resolver.get(ctx.marketKey);
       if (!resolved) continue;
+      const previous = ctx.availability;
       ctx.activeId = resolved.activeId; ctx.instrumentTypes = resolved.instrumentTypes; ctx.availability = resolved.availability;
       ctx.payout = resolved.payout; ctx.payoutSource = resolved.payoutSource; ctx.resolvedAt = resolved.resolvedAt;
       ctx.connectionHealth = { ...ctx.connectionHealth, connected: this.session.connected };
-      if (ctx.enabled && ctx.availability !== "OPEN") { ctx.availability = resolved.availability; }
+      // Fase 6.5: transicoes de disponibilidade acordam/dormem o agente SEM restart (fonte de verdade = broker).
+      if (ctx.enabled && previous !== "OPEN" && resolved.availability === "OPEN") {
+        this.#setAgent(ctx, "WAIT", "MARKET_REOPENED_BY_BROKER");
+        this.#emitEvent("market.reopened", { marketKey: ctx.marketKey, activeId: ctx.activeId, reason });
+        this.#auditRecord(`reopen_${ctx.marketKey}_${this.now()}`, ctx.marketKey, "MARKET_REOPENED", { reason, activeId: ctx.activeId, previous }, { persist: true });
+        this.#safe(() => this.log("IQ_MULTI_MARKET_REOPENED", JSON.stringify({ marketKey: ctx.marketKey, activeId: ctx.activeId, reason })));
+      } else if (ctx.enabled && resolved.availability !== "OPEN" && (previous !== resolved.availability || ctx.agentState === "OFFLINE") && !this.openPositions.has(ctx.marketKey)) {
+        this.#setAgent(ctx, "UNAVAILABLE", `MARKET_${resolved.availability}`);
+        this.#emitEvent("market.unavailable", { marketKey: ctx.marketKey, availability: resolved.availability, reason });
+      }
       changed += 1;
     }
     this.#safe(() => this.log("IQ_MULTI_RESOLVED", JSON.stringify({ reason, resolved: this.resolver.resolvedCount(), open: this.marketsOpenCount(), sampleKeys: this.resolver.sampleActiveKeys })));
@@ -465,14 +475,19 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("KILL_SWITCH_ACTIVE");
     const health = this.connectionHealth();
     if (!health.healthy) throw new IqWsError("CONNECTION_UNHEALTHY", health.reasons.join(","));
-    if (!this.marketsOpenCount()) throw new IqWsError("NO_ACTIVE_MARKET");
+    const enabled = [...this.markets.values()].filter((ctx) => ctx.enabled);
+    if (!enabled.length) throw new IqWsError("NO_ACTIVE_MARKET", "nenhum mercado habilitado pelo operador");
+    // Fase 6.5: ARM nao depende de mercado OPEN agora (o broker pode estar em manutencao).
+    // A execucao continua bloqueada pelo PortfolioExecutionGate ate existir mercado realmente OPEN.
     if (!this.armState.connectedAccountType) this.armState.onConnected("PRACTICE");
     this.armState.onMarketData(true);
     const limit = Number(limitBrl);
     const arm = this.armState.arm(limit, { explicitConfirmation: confirmation === true });
     this.userLimitBrl = Math.min(limit, this.config.hardCap);
-    this.#emitEvent("execution.armed", { limitBrl: this.userLimitBrl, mode: this.config.mode, actor });
-    return { ...arm, userLimitBrl: this.userLimitBrl, mode: this.config.mode, currency: this.account.practice.currency, fxMode: this.account.practice.currency === "BRL" ? "BRL_NATIVE" : "NOMINAL_BROKER_CURRENCY_CAP" };
+    const openMarkets = enabled.filter((ctx) => ctx.availability === "OPEN");
+    const warning = openMarkets.length ? null : "NO_OPEN_MARKET_NOW";
+    this.#emitEvent("execution.armed", { limitBrl: this.userLimitBrl, mode: this.config.mode, actor, warning, openMarkets: openMarkets.length });
+    return { ...arm, userLimitBrl: this.userLimitBrl, mode: this.config.mode, currency: this.account.practice.currency, fxMode: this.account.practice.currency === "BRL" ? "BRL_NATIVE" : "NOMINAL_BROKER_CURRENCY_CAP", warning, openMarkets: openMarkets.length, marketsEnabled: enabled.length, markets: enabled.map((ctx) => ({ marketKey: ctx.marketKey, availability: ctx.availability })) };
   }
 
   disarm(reason = "MANUAL") { this.#emitEvent("execution.disarmed", { reason }); return this.armState.disarm(reason); }

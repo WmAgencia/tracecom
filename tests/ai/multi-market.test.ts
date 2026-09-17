@@ -84,7 +84,7 @@ describe("RUNTIME ASSET RESOLVER — sem fallback silencioso NORMAL->OTC", () =>
     expect(otc).toMatchObject({ activeId: 76, availability: "OPEN", marketType: "OTC" });
     expect(normal.activeId).not.toBe(otc.activeId);
     resolver.ingestInitializationData({ binary: { actives: { "76": { name: "EURUSD-OTC", enabled: true } } }, turbo: { actives: {} } });
-    expect(resolver.get("EURUSD:NORMAL")).toMatchObject({ activeId: null, availability: "NOT_FOUND" });
+    expect(resolver.get("EURUSD:NORMAL")).toMatchObject({ activeId: null, availability: "NOT_OFFERED" });
     expect(resolver.get("EURUSD:OTC").activeId).toBe(76);
   });
   it("suspenso/dedicado: NORMAL suspenso fica SUSPENDED (nunca vira OTC)", () => {
