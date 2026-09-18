@@ -13,6 +13,7 @@
  * ===================================================================== */
 
 import { formatBRL, formatNumber, formatPercent, formatList } from "./dashboard.js";
+import { buildStakeConfigModel, mountStakeConfig } from "./stake-config.js";
 
 export const MARKET_DETAIL_VERSION = "office-v3-market-detail.1.0.0";
 
@@ -220,10 +221,10 @@ function renderRow(doc, item) {
   return wrapper;
 }
 
-function renderSection(doc, section, index) {
+function renderSection(doc, section, index, active) {
   const body = el(doc, "section", "tc-v3-detail-section");
   setData(body, "tab", section.id);
-  body.hidden = index !== 0;
+  body.hidden = !active;
   body.appendChild(el(doc, "h4", "tc-v3-detail-section-title", section.label));
   const rows = el(doc, "div", "tc-v3-rows");
   for (const item of section.rows) rows.appendChild(renderRow(doc, item));
@@ -231,7 +232,7 @@ function renderSection(doc, section, index) {
   return body;
 }
 
-function renderDetail(doc, panel, market, model) {
+function renderDetail(doc, panel, market, model, office, options) {
   const header = el(doc, "header", "tc-v3-detail-head");
   const titleWrap = el(doc, "div", "tc-v3-detail-titles");
   titleWrap.append(
@@ -243,27 +244,38 @@ function renderDetail(doc, panel, market, model) {
   closeButton.addEventListener("click", () => closeMarketDetail());
   header.append(titleWrap, closeButton);
 
+  panel.appendChild(header);
+
+  mountStakeConfig(panel, market, office, {
+    document: doc,
+    fetchImpl: options?.fetchImpl,
+    onApplied: options?.onStakeApplied,
+  });
+
   const nav = el(doc, "nav", "tc-v3-tabs");
   nav.setAttribute("role", "tablist");
   const bodies = el(doc, "div", "tc-v3-detail-bodies");
   const tabs = [];
   const bodyEls = [];
+  const requestedTab = typeof options?.initialTab === "string" ? options.initialTab : null;
+  const hasRequested = model.sections.some((section) => section.id === requestedTab);
   model.sections.forEach((section, index) => {
-    const tab = el(doc, "button", `tc-v3-tab${index === 0 ? " is-active" : ""}`, section.label);
+    const active = hasRequested ? section.id === requestedTab : index === 0;
+    const tab = el(doc, "button", `tc-v3-tab${active ? " is-active" : ""}`, section.label);
     tab.setAttribute("type", "button");
     tab.setAttribute("role", "tab");
-    tab.setAttribute("aria-selected", index === 0 ? "true" : "false");
+    tab.setAttribute("aria-selected", active ? "true" : "false");
     setData(tab, "tab", section.id);
     tab.addEventListener("click", () => activateTab(tabs, bodyEls, section.id));
     tabs.push(tab);
     nav.appendChild(tab);
 
-    const body = renderSection(doc, section, index);
+    const body = renderSection(doc, section, index, active);
     bodyEls.push(body);
     bodies.appendChild(body);
   });
 
-  panel.append(header, nav, bodies);
+  panel.append(nav, bodies);
 }
 
 /* ------------------------------------------------------------------ *
@@ -279,7 +291,7 @@ export function closeMarketDetail() {
   return true;
 }
 
-export function mountMarketDetail(rootEl, officeJson, marketKey) {
+export function mountMarketDetail(rootEl, officeJson, marketKey, options = {}) {
   if (!rootEl) throw new Error("TC_V3_ROOT_REQUIRED");
   const doc = globalThis.document;
   if (!doc) throw new Error("TC_V3_DOCUMENT_REQUIRED");
@@ -313,7 +325,8 @@ export function mountMarketDetail(rootEl, officeJson, marketKey) {
 
   panel.setAttribute("data-state", "ready");
   const model = buildMarketDetailModel(market, office);
-  renderDetail(doc, panel, market, model);
+  model.stake = buildStakeConfigModel(market, office);
+  renderDetail(doc, panel, market, model, office, options);
   rootEl.appendChild(panel);
   activeDetail = { root: rootEl, panel };
   return model;

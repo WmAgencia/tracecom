@@ -13,7 +13,7 @@ const DEFAULT_ITERATIONS = 240;
 const DEFAULT_SEED_CANDLES = 60;
 const PRICE_STEP = 0.00002;
 const LAG_TIMER_MS = 20;
-const SUSPENDED_COUNT = 20;
+export const SUSPENDED_COUNT = 20;
 
 export function percentile(values, fraction) {
   const sorted = [...values].filter(Number.isFinite).sort((a, b) => a - b);

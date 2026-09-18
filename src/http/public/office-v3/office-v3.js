@@ -6,15 +6,22 @@
  *   world.js    → buildWorldState / drawWorld / hitTestStation / STATION_LAYOUT
  *   life.js     → createLifeSystem + bindWorld/bindAssets / updateLife / drawAgents
  *   camera.js   → createCamera / pan / clamped zoom / smooth zoomToDesk / hit-test
- *   dashboard.js→ mountDashboard (side panel) + `tracecom:market-select`
- *   market-detail.js → mountMarketDetail (desk click + list selection)
+ *   topbar.js   → compact operational top bar (ARM, AUTO, stake — real endpoints)
+ *   market-detail.js → right technical panel + per-market stake (PUT /api/iq/market)
  *
  * Data flow: polls `GET /api/iq/office` (the only network call in this module),
  * rebuilds the world state, syncs agent presence, redraws on one canvas with the
- * correct order (world → agents). Any module/network failure degrades to a
+ * correct order (world → agents). The office occupies the whole viewport: no
+ * duplicated left results board. Any module/network failure degrades to a
  * warning + error banner; the page never throws and never auto-FITs the camera.
  *
- * Rendering only. PRACTICE only. ZERO REAL. No orders, no execution, no stake.
+ * Navigation: SPACE + left drag pans (cursor grab/grabbing, selection disabled),
+ * wheel/trackpad zooms smoothly centered on the cursor. MESAS is a collapsible,
+ * searchable popup (↑↓ + Enter still select a desk).
+ *
+ * Rendering only. PRACTICE only. ZERO REAL. No orders, no execution; stake
+ * changes only through the explicit config endpoints owned by topbar.js and
+ * the per-market module.
  */
 
 const POLL_URL = "/api/iq/office";
@@ -22,24 +29,30 @@ const POLL_BASE_MS = 2000;
 const POLL_MAX_MS = 30000;
 const DRAG_CLICK_THRESHOLD = 4;
 
-const canvas = document.getElementById("office-canvas");
+const doc = typeof document !== "undefined" && document ? document : null;
+const $ = (id) => (doc && typeof doc.getElementById === "function" ? doc.getElementById(id) : null);
+
+const canvas = $("office-canvas");
 const ctx = canvas && typeof canvas.getContext === "function" ? canvas.getContext("2d") : null;
 if (ctx) ctx.imageSmoothingEnabled = false;
 
-const statusEl = document.getElementById("office-status");
-const statusDetailEl = document.getElementById("office-status-detail");
-const modeEl = document.getElementById("hud-mode");
-const cameraEl = document.getElementById("hud-camera");
-const detailEl = document.getElementById("office-detail");
-const detailTitleEl = document.getElementById("detail-title");
-const detailRowsEl = document.getElementById("detail-rows");
-const dashboardEl = document.getElementById("office-dashboard");
-const detailRootEl = document.getElementById("office-detail-root");
-const errorEl = document.getElementById("office-error");
-const tooltipEl = document.getElementById("office-tooltip");
-const stationListEl = document.getElementById("office-station-list");
+const statusEl = $("office-status");
+const statusDetailEl = $("office-status-detail");
+const cameraEl = $("hud-camera");
+const detailEl = $("office-detail");
+const detailTitleEl = $("detail-title");
+const detailRowsEl = $("detail-rows");
+const topbarEl = $("office-topbar");
+const detailRootEl = $("office-detail-root");
+const errorEl = $("office-error");
+const tooltipEl = $("office-tooltip");
+const stationListEl = $("office-station-list");
+const mesasEl = $("office-mesas");
+const mesasToggleEl = $("mesas-toggle");
+const mesasPanelEl = $("mesas-panel");
+const mesasSearchEl = $("mesas-search");
 
-const modules = { assets: null, world: null, life: null, camera: null, dashboard: null, marketDetail: null, blueprintBase: null, overlay: null, baseMode: null };
+const modules = { assets: null, world: null, life: null, camera: null, dashboard: null, marketDetail: null, topbar: null, blueprintBase: null, overlay: null, baseMode: null };
 let worldState = null;
 let worldModule = null;
 let lifeSystem = null;
@@ -55,8 +68,10 @@ let pollBackoff = POLL_BASE_MS;
 let disposed = false;
 let hoveredStationId = null;
 let reduceMotion = false;
-let stationListIndex = 0;
 let stationListSignature = "";
+let selectedMarketKey = null;
+let mesasController = null;
+let panController = null;
 
 /* ------------------------------------------------------------------ *
  * Status / error surfaces (fail-soft)
@@ -112,6 +127,7 @@ async function loadModules() {
     loadModule("camera", "./camera.js"),
     loadModule("dashboard", "./dashboard.js"),
     loadModule("marketDetail", "./market-detail.js"),
+    loadModule("topbar", "./topbar.js"),
     loadModule("blueprintBase", "./blueprint-base.js"),
     loadModule("overlay", "./overlay.js"),
     loadModule("baseMode", "./base-mode.js"),
@@ -135,10 +151,20 @@ function resolveBaseMode() {
   return "reference";
 }
 
+function shouldDrawBase() {
+  if (modules.baseMode && typeof modules.baseMode.shouldDrawBlueprintBase === "function") {
+    return modules.baseMode.shouldDrawBlueprintBase(baseMode);
+  }
+  return baseMode === "reference" || baseMode === "original";
+}
+
 async function loadHybridBase() {
   if (!modules.blueprintBase || typeof modules.blueprintBase.loadBlueprintBase !== "function") return null;
   try {
-    return await modules.blueprintBase.loadBlueprintBase();
+    const asset = typeof modules.blueprintBase.assetForBaseMode === "function"
+      ? modules.blueprintBase.assetForBaseMode(baseMode)
+      : undefined;
+    return await modules.blueprintBase.loadBlueprintBase(asset);
   } catch (error) {
     warnMissing("blueprintBase.loadBlueprintBase", error);
     return null;
@@ -279,7 +305,7 @@ function screenToWorld(screenX, screenY) {
 }
 
 function isHybrid() {
-  return baseMode === "reference" && !!blueprintBase && !!modules.overlay;
+  return shouldDrawBase() && !!blueprintBase && !!modules.overlay;
 }
 
 function overlayAnchorFor(station, index) {
@@ -338,11 +364,11 @@ function zoomToStation(station, index) {
 }
 
 /* ------------------------------------------------------------------ *
- * Market detail (desk click + dashboard list selection)
+ * Market detail (desk click + MESAS selection) — one marketKey at a time
  * ------------------------------------------------------------------ */
 
 function showDetailFallback(station) {
-  if (!detailEl) return;
+  if (!detailEl || !doc) return;
   detailTitleEl.textContent = station.display ?? station.symbol ?? station.marketKey ?? "—";
   detailRowsEl.innerHTML = "";
   const rows = [
@@ -352,11 +378,11 @@ function showDetailFallback(station) {
     { label: "Estado", value: station.active ? "OPERANDO" : "SEM AGENTES" },
   ];
   for (const row of rows) {
-    const div = document.createElement("div");
+    const div = doc.createElement("div");
     div.className = "row";
-    const label = document.createElement("span");
+    const label = doc.createElement("span");
     label.textContent = row.label;
-    const value = document.createElement("span");
+    const value = doc.createElement("span");
     value.textContent = row.value ?? "—";
     div.append(label, value);
     detailRowsEl.append(div);
@@ -365,6 +391,7 @@ function showDetailFallback(station) {
 }
 
 function closeDetail() {
+  selectedMarketKey = null;
   if (modules.marketDetail && typeof modules.marketDetail.closeMarketDetail === "function") {
     try {
       modules.marketDetail.closeMarketDetail();
@@ -372,21 +399,61 @@ function closeDetail() {
       warnMissing("marketDetail.closeMarketDetail", error);
     }
   }
+  if (detailRootEl && typeof detailRootEl.replaceChildren === "function") {
+    try {
+      detailRootEl.replaceChildren();
+    } catch {
+      /* fail-soft */
+    }
+  }
   if (detailEl) detailEl.style.display = "none";
 }
 
-function openDetail(station, marketKey) {
+function openDetail(station, marketKey, options = {}) {
   const key = marketKey ?? station?.marketKey ?? null;
   if (!key) return;
+  selectedMarketKey = key;
   if (modules.marketDetail && typeof modules.marketDetail.mountMarketDetail === "function" && detailRootEl) {
     try {
-      modules.marketDetail.mountMarketDetail(detailRootEl, officeJson ?? {}, key);
+      modules.marketDetail.mountMarketDetail(detailRootEl, officeJson ?? {}, key, {
+        onStakeApplied: requestRefresh,
+        initialTab: options.initialTab ?? activeDetailTab(),
+      });
+      if (detailRootEl.setAttribute) detailRootEl.setAttribute("data-market-key", key);
       return;
     } catch (error) {
       warnMissing("marketDetail.mountMarketDetail", error);
     }
   }
   if (station) showDetailFallback(station);
+}
+
+function activeDetailTab() {
+  if (!detailRootEl || typeof detailRootEl.querySelector !== "function") return null;
+  const tab = detailRootEl.querySelector('[role="tab"][aria-selected="true"]');
+  return tab && tab.dataset ? tab.dataset.tab ?? null : null;
+}
+
+function isDetailEditing() {
+  if (!doc || !detailRootEl) return false;
+  const active = doc.activeElement;
+  if (!active) return false;
+  if (active === detailRootEl) return true;
+  if (detailRootEl.contains && typeof detailRootEl.contains === "function") return detailRootEl.contains(active);
+  return false;
+}
+
+function syncDetailWithSnapshot() {
+  if (!selectedMarketKey) return;
+  const market = Array.isArray(officeJson?.markets)
+    ? officeJson.markets.find((candidate) => candidate && candidate.marketKey === selectedMarketKey)
+    : null;
+  if (!market) {
+    closeDetail();
+    return;
+  }
+  if (isDetailEditing()) return;
+  openDetail(findStation(selectedMarketKey), selectedMarketKey);
 }
 
 function findStation(marketKey) {
@@ -412,17 +479,23 @@ function onMarketSelect(event) {
 }
 
 /* ------------------------------------------------------------------ *
- * Dashboard
+ * Top bar (ARM, AUTO, stake — real endpoints owned by topbar.js)
  * ------------------------------------------------------------------ */
 
-function mountDashboard() {
-  if (!dashboardEl || !modules.dashboard || typeof modules.dashboard.mountDashboard !== "function") return;
+function mountTopbar() {
+  if (!topbarEl || !modules.topbar || typeof modules.topbar.mountTopBar !== "function") return;
   try {
-    modules.dashboard.mountDashboard(dashboardEl, officeJson);
+    modules.topbar.mountTopBar(topbarEl, officeJson ?? {}, { onRefresh: requestRefresh });
   } catch (error) {
-    warnMissing("dashboard.mountDashboard", error);
-    modules.dashboard = null;
+    warnMissing("topbar.mountTopBar", error);
+    modules.topbar = null;
   }
+}
+
+function requestRefresh() {
+  if (disposed) return;
+  if (pollTimer) window.clearTimeout(pollTimer);
+  void pollOnce();
 }
 
 /* ------------------------------------------------------------------ *
@@ -472,11 +545,8 @@ function applyOfficeJson(json) {
     syncPresence();
   }
 
-  if (modeEl) {
-    const mode = String(json.mode ?? worldState.mode ?? "PRACTICE").toUpperCase();
-    modeEl.textContent = `${mode} · ZERO REAL`;
-  }
-  mountDashboard();
+  mountTopbar();
+  syncDetailWithSnapshot();
   refreshStationList();
 }
 
@@ -486,7 +556,10 @@ function applyOfficeJson(json) {
 
 function renderFrame(now) {
   if (disposed) return;
-  requestAnimationFrame(renderFrame);
+  const win = typeof window !== "undefined" && window ? window : null;
+  if (win && typeof win.requestAnimationFrame === "function") win.requestAnimationFrame(renderFrame);
+  else if (typeof requestAnimationFrame === "function") requestAnimationFrame(renderFrame);
+  else return;
   if (!ctx || !worldState || !worldModule) return;
 
   const dt = lastFrame ? Math.min(120, now - lastFrame) : 16;
@@ -513,7 +586,7 @@ function renderFrame(now) {
   ctx.fillStyle = "#05090f";
   ctx.fillRect(0, 0, viewport.width, viewport.height);
 
-  const hybrid = baseMode === "reference" && blueprintBase && modules.overlay && typeof modules.overlay.drawDynamicOverlay === "function";
+  const hybrid = shouldDrawBase() && blueprintBase && modules.overlay && typeof modules.overlay.drawDynamicOverlay === "function";
   if (hybrid) {
     try {
       ctx.save();
@@ -567,32 +640,289 @@ function renderFrame(now) {
  * Input — pan / zoom / zoom-to-desk / detail
  * ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ *
+ * Pan navigation — SPACE + left drag (design-tool style)
+ * ------------------------------------------------------------------ */
+
+export function bindPanNavigation(elements = {}) {
+  const canvasEl = elements.canvas;
+  const bodyEl = elements.body ?? null;
+  const target = elements.target ?? canvasEl;
+  const getCamera = typeof elements.getCamera === "function" ? elements.getCamera : () => null;
+  const getCameraModule = typeof elements.getCameraModule === "function" ? elements.getCameraModule : () => null;
+  if (!canvasEl || typeof canvasEl.addEventListener !== "function") throw new Error("TC_V3_PAN_CANVAS_REQUIRED");
+  if (!target || typeof target.addEventListener !== "function") throw new Error("TC_V3_PAN_TARGET_REQUIRED");
+
+  const SPACE_CLASS = "pan-ready";
+  const SPACE_BODY_CLASS = "tc-v3-select-off";
+  const PAN_BODY_CLASS = "tc-v3-panning";
+  let spaceDown = false;
+  let panning = false;
+  let moved = false;
+  let downX = 0;
+  let downY = 0;
+
+  function isEditable(node) {
+    const tag = node && node.tagName ? String(node.tagName).toUpperCase() : "";
+    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || node?.isContentEditable === true;
+  }
+
+  function setSpaceDown(value) {
+    spaceDown = value === true;
+    if (canvasEl.classList?.toggle) canvasEl.classList.toggle(SPACE_CLASS, spaceDown);
+    if (bodyEl?.classList?.toggle) bodyEl.classList.toggle(SPACE_BODY_CLASS, spaceDown);
+    if (!spaceDown && !panning && canvasEl.classList?.remove) canvasEl.classList.remove("dragging");
+  }
+
+  function endPan() {
+    if (!panning) return;
+    panning = false;
+    if (canvasEl.classList?.remove) canvasEl.classList.remove("dragging");
+    if (bodyEl?.classList?.remove) bodyEl.classList.remove(PAN_BODY_CLASS);
+    const cameraModule = getCameraModule();
+    if (cameraModule && typeof cameraModule.handleDragEnd === "function") cameraModule.handleDragEnd(getCamera(), {});
+  }
+
+  target.addEventListener("keydown", (event) => {
+    if (event.key !== " " && event.code !== "Space") return;
+    if (isEditable(event.target)) return;
+    if (typeof event.preventDefault === "function") event.preventDefault();
+    setSpaceDown(true);
+  });
+  target.addEventListener("keyup", (event) => {
+    if (event.key !== " " && event.code !== "Space") return;
+    setSpaceDown(false);
+  });
+  target.addEventListener("blur", () => setSpaceDown(false));
+
+  canvasEl.addEventListener("mousedown", (event) => {
+    moved = false;
+    if (!spaceDown) return;
+    if (event.button !== undefined && event.button !== 0) return;
+    panning = true;
+    downX = Number(event.clientX) || 0;
+    downY = Number(event.clientY) || 0;
+    if (canvasEl.classList?.add) canvasEl.classList.add("dragging");
+    if (bodyEl?.classList?.add) bodyEl.classList.add(PAN_BODY_CLASS);
+    if (typeof event.preventDefault === "function") event.preventDefault();
+    const cameraModule = getCameraModule();
+    if (cameraModule && typeof cameraModule.handleDragStart === "function") cameraModule.handleDragStart(getCamera(), event);
+  });
+
+  target.addEventListener("mousemove", (event) => {
+    if (!panning) return;
+    if (Math.hypot((Number(event.clientX) || 0) - downX, (Number(event.clientY) || 0) - downY) > DRAG_CLICK_THRESHOLD) moved = true;
+    const cameraModule = getCameraModule();
+    if (cameraModule && typeof cameraModule.handleDragMove === "function") cameraModule.handleDragMove(getCamera(), event);
+  });
+
+  target.addEventListener("mouseup", () => endPan());
+
+  return {
+    isSpaceDown: () => spaceDown,
+    isSpaceReady: () => spaceDown,
+    isPanning: () => panning,
+    wasMoved: () => moved,
+    endPan,
+    setSpaceDown,
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * MESAS — collapsible, searchable market popup (↑↓ + Enter)
+ * ------------------------------------------------------------------ */
+
+export function filterStationOptions(stations, query) {
+  const list = Array.isArray(stations) ? stations.filter((station) => station && typeof station === "object") : [];
+  const text = String(query ?? "").trim().toLowerCase();
+  if (!text) return list;
+  const tokens = text.split(/\s+/).filter(Boolean);
+  return list.filter((station) => {
+    const haystack = [station.display, station.symbol, station.marketKey, station.canonical, station.availability]
+      .filter((value) => value !== null && value !== undefined)
+      .join(" ")
+      .toLowerCase();
+    return tokens.every((token) => haystack.includes(token));
+  });
+}
+
+export function createMesasController(options = {}) {
+  const controllerDoc = options.document ?? (typeof globalThis.document !== "undefined" ? globalThis.document : null);
+  const toggle = options.toggle ?? null;
+  const panel = options.panel ?? null;
+  const search = options.search ?? null;
+  const list = options.list ?? null;
+  const onSelect = typeof options.onSelect === "function" ? options.onSelect : () => {};
+  let stations = [];
+  let visible = [];
+  let activeIndex = 0;
+  let query = "";
+
+  function setOpen(open) {
+    const next = open === true;
+    if (panel) panel.hidden = !next;
+    if (toggle && typeof toggle.setAttribute === "function") toggle.setAttribute("aria-expanded", next ? "true" : "false");
+    if (toggle?.classList?.toggle) toggle.classList.toggle("is-open", next);
+    if (next && search && typeof search.focus === "function") search.focus();
+    return next;
+  }
+
+  function optionsInList() {
+    if (!list || typeof list.querySelectorAll !== "function") return [];
+    return [...list.querySelectorAll(".station-option")];
+  }
+
+  function paintActive() {
+    for (const [index, option] of optionsInList().entries()) {
+      const active = index === activeIndex;
+      if (option.classList?.toggle) option.classList.toggle("active", active);
+      if (typeof option.setAttribute === "function") option.setAttribute("aria-selected", active ? "true" : "false");
+      option.tabIndex = active ? 0 : -1;
+    }
+  }
+
+  function focusActive() {
+    const option = optionsInList()[activeIndex];
+    if (option && typeof option.focus === "function") option.focus();
+  }
+
+  function selectIndex(index) {
+    const station = visible[index];
+    if (!station) return null;
+    activeIndex = index;
+    paintActive();
+    const key = station.marketKey ?? station.id ?? null;
+    if (key) onSelect(key);
+    setOpen(false);
+    return key;
+  }
+
+  function render() {
+    visible = filterStationOptions(stations, query);
+    activeIndex = Math.min(activeIndex, Math.max(0, visible.length - 1));
+    if (list && controllerDoc) {
+      list.textContent = "";
+      visible.forEach((station, index) => {
+        const option = controllerDoc.createElement("div");
+        option.className = "station-option";
+        if (typeof option.setAttribute === "function") {
+          option.setAttribute("role", "option");
+          option.setAttribute("aria-selected", index === activeIndex ? "true" : "false");
+        }
+        if (station.marketKey) option.dataset.marketKey = station.marketKey;
+        option.dataset.index = String(index);
+        const availability = String(station.availability ?? "").toUpperCase();
+        option.textContent = `${station.display ?? station.symbol ?? station.marketKey ?? "—"} · ${availability}`;
+        if (option.classList?.toggle) option.classList.toggle("active", index === activeIndex);
+        option.addEventListener("click", () => selectIndex(index));
+        list.appendChild(option);
+      });
+      if (!visible.length) {
+        const empty = controllerDoc.createElement("div");
+        empty.className = "station-empty";
+        empty.textContent = "NENHUM MERCADO";
+        list.appendChild(empty);
+      }
+    }
+    return visible;
+  }
+
+  function handleKeydown(event) {
+    if (!visible.length) return;
+    const key = event.key;
+    const fromSearch = event.target === search;
+    if (key === "ArrowDown" || key === "ArrowRight") {
+      if (typeof event.preventDefault === "function") event.preventDefault();
+      activeIndex = (activeIndex + 1) % visible.length;
+      paintActive();
+      if (!fromSearch) focusActive();
+    } else if (key === "ArrowUp" || key === "ArrowLeft") {
+      if (typeof event.preventDefault === "function") event.preventDefault();
+      activeIndex = (activeIndex - 1 + visible.length) % visible.length;
+      paintActive();
+      if (!fromSearch) focusActive();
+    } else if (key === "Home") {
+      if (typeof event.preventDefault === "function") event.preventDefault();
+      activeIndex = 0;
+      paintActive();
+      if (!fromSearch) focusActive();
+    } else if (key === "End") {
+      if (typeof event.preventDefault === "function") event.preventDefault();
+      activeIndex = visible.length - 1;
+      paintActive();
+      if (!fromSearch) focusActive();
+    } else if (key === "Enter" || (key === " " && !fromSearch)) {
+      if (typeof event.preventDefault === "function") event.preventDefault();
+      selectIndex(activeIndex);
+    }
+  }
+
+  if (toggle && typeof toggle.addEventListener === "function") {
+    toggle.addEventListener("click", () => setOpen(panel ? panel.hidden : true));
+  }
+  if (search && typeof search.addEventListener === "function") {
+    search.addEventListener("input", (event) => {
+      query = String(event?.target?.value ?? "").toLowerCase();
+      activeIndex = 0;
+      render();
+    });
+    search.addEventListener("keydown", handleKeydown);
+  }
+  if (list && typeof list.addEventListener === "function") list.addEventListener("keydown", handleKeydown);
+
+  setOpen(false);
+  render();
+
+  return {
+    setStations(next) {
+      stations = Array.isArray(next) ? next : [];
+      activeIndex = Math.min(activeIndex, Math.max(0, stations.length - 1));
+      return render();
+    },
+    setQuery(next) {
+      query = String(next ?? "").toLowerCase();
+      activeIndex = 0;
+      return render();
+    },
+    open: () => setOpen(true),
+    close: () => setOpen(false),
+    toggle: () => setOpen(panel ? panel.hidden : true),
+    isOpen: () => Boolean(panel && panel.hidden === false),
+    getVisible: () => visible.slice(),
+    getVisibleKeys: () => visible.map((station) => station.marketKey ?? station.id ?? null),
+    getActiveIndex: () => activeIndex,
+    selectIndex,
+    handleKeydown,
+    render,
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Input — pan / zoom / zoom-to-desk / detail
+ * ------------------------------------------------------------------ */
+
 function bindInput() {
   if (!canvas) return;
   let downX = 0;
   let downY = 0;
   let moved = false;
+  const eventTarget = typeof window !== "undefined" && window ? window : canvas;
+
+  panController = bindPanNavigation({
+    canvas,
+    body: doc ? doc.body : null,
+    target: eventTarget,
+    getCamera: () => camera,
+    getCameraModule: () => modules.camera,
+  });
 
   canvas.addEventListener("mousedown", (event) => {
     moved = false;
-    downX = event.clientX;
-    downY = event.clientY;
-    canvas.classList.add("dragging");
-    if (camera && modules.camera && typeof modules.camera.handleDragStart === "function") {
-      modules.camera.handleDragStart(camera, event);
-    }
+    downX = event.clientX ?? 0;
+    downY = event.clientY ?? 0;
   });
-  window.addEventListener("mousemove", (event) => {
-    if (Math.hypot(event.clientX - downX, event.clientY - downY) > DRAG_CLICK_THRESHOLD) moved = true;
-    if (camera && modules.camera && typeof modules.camera.handleDragMove === "function") {
-      modules.camera.handleDragMove(camera, event);
-    }
-  });
-  window.addEventListener("mouseup", (event) => {
-    canvas.classList.remove("dragging");
-    if (camera && modules.camera && typeof modules.camera.handleDragEnd === "function") {
-      modules.camera.handleDragEnd(camera, event);
-    }
+  eventTarget.addEventListener("mousemove", (event) => {
+    if (Math.hypot((event.clientX ?? 0) - downX, (event.clientY ?? 0) - downY) > DRAG_CLICK_THRESHOLD) moved = true;
   });
 
   canvas.addEventListener(
@@ -610,7 +940,7 @@ function bindInput() {
   );
 
   canvas.addEventListener("click", (event) => {
-    if (moved || !worldState) return;
+    if (moved || (panController && panController.wasMoved()) || !worldState) return;
     const station = resolveClickedStation(event);
     if (!station) {
       closeDetail();
@@ -621,17 +951,19 @@ function bindInput() {
   });
 
   canvas.addEventListener("mousemove", (event) => {
-    if (moved) return;
+    if (moved || (panController && panController.isPanning())) return;
     updateHover(event);
   });
   canvas.addEventListener("mouseleave", clearHover);
 
-  const closeButton = document.getElementById("detail-close");
+  const closeButton = $("detail-close");
   if (closeButton) closeButton.addEventListener("click", closeDetail);
-  window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeDetail();
-  });
-  window.addEventListener("resize", resize);
+  if (eventTarget.addEventListener) {
+    eventTarget.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeDetail();
+    });
+    eventTarget.addEventListener("resize", resize);
+  }
 
   const media = typeof window !== "undefined" && typeof window.matchMedia === "function"
     ? window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -643,9 +975,19 @@ function bindInput() {
     else if (typeof media.addListener === "function") media.addListener(onChange);
   }
 
-  bindStationList();
+  mesasController = createMesasController({
+    document: doc,
+    toggle: mesasToggleEl,
+    panel: mesasPanelEl,
+    search: mesasSearchEl,
+    list: stationListEl,
+    getStations: () => (worldState ? worldState.stations : []),
+    onSelect: (marketKey) => selectMarket(marketKey),
+  });
 
-  if (dashboardEl) dashboardEl.addEventListener("tracecom:market-select", onMarketSelect);
+  if (detailRootEl && typeof detailRootEl.addEventListener === "function") {
+    detailRootEl.addEventListener("tracecom:market-select", onMarketSelect);
+  }
   globalThis.__tracecomSelectMarket = (marketKey) => {
     if (typeof marketKey === "string" && marketKey) selectMarket(marketKey);
   };
@@ -688,6 +1030,10 @@ function resolveClickedStation(event) {
 }
 
 function updateHover(event) {
+  if (panController && panController.isSpaceReady()) {
+    hideTooltip();
+    return;
+  }
   const station = stationAtScreen(event.clientX, event.clientY);
   hoveredStationId = station ? station.marketKey ?? station.id ?? null : null;
   if (camera) camera.hoverStationId = hoveredStationId;
@@ -719,89 +1065,15 @@ function hideTooltip() {
 }
 
 /* ------------------------------------------------------------------ *
- * Keyboard station list (accessibility)
+ * MESAS list refresh (collapsible popup controller)
  * ------------------------------------------------------------------ */
 
-function updateStationListActive() {
-  if (!stationListEl) return;
-  const options = stationListEl.querySelectorAll(".station-option");
-  options.forEach((option, index) => {
-    const active = index === stationListIndex;
-    option.classList.toggle("active", active);
-    option.setAttribute("aria-selected", active ? "true" : "false");
-    option.tabIndex = active ? 0 : -1;
-  });
-}
-
 function refreshStationList() {
-  if (!stationListEl || !worldState) return;
+  if (!mesasController || !worldState) return;
   const signature = stationSignature(worldState);
   if (signature === stationListSignature) return;
   stationListSignature = signature;
-  stationListIndex = Math.min(stationListIndex, Math.max(0, worldState.stations.length - 1));
-  stationListEl.textContent = "";
-  worldState.stations.forEach((station, index) => {
-    const option = document.createElement("div");
-    option.className = "station-option";
-    option.setAttribute("role", "option");
-    option.dataset.index = String(index);
-    const availability = String(station.availability ?? "").toUpperCase();
-    option.textContent = `${station.display ?? station.symbol ?? station.marketKey} · ${availability}`;
-    option.addEventListener("click", () => openStationAtIndex(index));
-    stationListEl.append(option);
-  });
-  updateStationListActive();
-}
-
-function focusActiveOption() {
-  if (!stationListEl) return;
-  const option = stationListEl.querySelectorAll(".station-option")[stationListIndex];
-  if (option && typeof option.focus === "function") option.focus();
-}
-
-function openStationAtIndex(index) {
-  if (!worldState) return;
-  const station = worldState.stations[index];
-  if (!station) return;
-  stationListIndex = index;
-  updateStationListActive();
-  selectMarket(station.marketKey ?? station.id);
-}
-
-function bindStationList() {
-  if (!stationListEl) return;
-  stationListEl.addEventListener("keydown", (event) => {
-    const count = worldState ? worldState.stations.length : 0;
-    if (!count) return;
-    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-      event.preventDefault();
-      stationListIndex = (stationListIndex + 1) % count;
-      updateStationListActive();
-      focusActiveOption();
-    } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-      event.preventDefault();
-      stationListIndex = (stationListIndex - 1 + count) % count;
-      updateStationListActive();
-      focusActiveOption();
-    } else if (event.key === "Home") {
-      event.preventDefault();
-      stationListIndex = 0;
-      updateStationListActive();
-      focusActiveOption();
-    } else if (event.key === "End") {
-      event.preventDefault();
-      stationListIndex = count - 1;
-      updateStationListActive();
-      focusActiveOption();
-    } else if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openStationAtIndex(stationListIndex);
-    }
-  });
-  stationListEl.addEventListener("focus", () => {
-    updateStationListActive();
-    focusActiveOption();
-  });
+  mesasController.setStations(worldState.stations);
 }
 
 /* ------------------------------------------------------------------ *
@@ -809,8 +1081,9 @@ function bindStationList() {
  * ------------------------------------------------------------------ */
 
 function resize() {
-  viewport.width = Math.max(320, window.innerWidth);
-  viewport.height = Math.max(240, window.innerHeight);
+  const win = typeof window !== "undefined" && window ? window : null;
+  viewport.width = Math.max(320, win ? win.innerWidth : (canvas ? canvas.width : 1536));
+  viewport.height = Math.max(240, win ? win.innerHeight : (canvas ? canvas.height : 1024));
   if (canvas) {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
@@ -824,7 +1097,9 @@ function resize() {
 
 function schedulePoll() {
   if (disposed) return;
-  pollTimer = window.setTimeout(pollOnce, pollBackoff);
+  const win = typeof window !== "undefined" && window ? window : null;
+  if (!win) return;
+  pollTimer = win.setTimeout(pollOnce, pollBackoff);
 }
 
 async function pollOnce() {
@@ -860,7 +1135,7 @@ async function init() {
   resize();
 
   baseMode = resolveBaseMode();
-  if (baseMode === "reference") blueprintBase = await loadHybridBase();
+  if (shouldDrawBase()) blueprintBase = await loadHybridBase();
 
   const json = await fetchOfficeJson();
   if (json) {
@@ -872,7 +1147,9 @@ async function init() {
   }
 
   hideStatus();
-  requestAnimationFrame(renderFrame);
+  const win = typeof window !== "undefined" && window ? window : null;
+  if (win && typeof win.requestAnimationFrame === "function") win.requestAnimationFrame(renderFrame);
+  else if (typeof requestAnimationFrame === "function") requestAnimationFrame(renderFrame);
   schedulePoll();
 }
 
@@ -885,7 +1162,9 @@ if (canvas && ctx) {
   setStatus("PIXEL OFFICE V3 indisponível", "canvas 2d não encontrado");
 }
 
-window.addEventListener("beforeunload", () => {
-  disposed = true;
-  if (pollTimer) window.clearTimeout(pollTimer);
-});
+if (typeof window !== "undefined" && window && typeof window.addEventListener === "function") {
+  window.addEventListener("beforeunload", () => {
+    disposed = true;
+    if (pollTimer) window.clearTimeout(pollTimer);
+  });
+}

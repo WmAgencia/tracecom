@@ -7,9 +7,9 @@
  *    decisoes, trades, stats, settlement). Nada e compartilhado entre eles.
  *  - NUNCA existe fallback silencioso NORMAL -> OTC. Se o NORMAL estiver fechado o estado e
  *    UNAVAILABLE/MARKET_CLOSED; OTC so opera se estiver explicitamente configurado e ativo.
- *  - MAX_ACTIVE_MARKETS = 10 (NORMAL + OTC somados).
+ *  - MAX_ACTIVE_MARKETS = UNIVERSE.length (NORMAL + OTC somados).
  */
-export const MAX_ACTIVE_MARKETS = 55;
+export const MAX_ACTIVE_MARKETS = 54;
 export const MAX_OPEN_POSITIONS_PER_MARKET = 1;
 export const HARD_CAP_STAKE = 100;
 export const DEFAULT_GLOBAL_MAX_STAKE = 2;
@@ -17,17 +17,19 @@ export const DEFAULT_GLOBAL_MAX_STAKE = 2;
 export const MARKET_TYPES = ["NORMAL", "OTC"];
 
 /**
- * UNIVERSO FASE 7 — 55 mercados (alvo humano). O nome interno da IQ e descoberto em runtime
- * (NORMAL: sufixos -op / :N; OTC: sufixo -OTC). NUNCA hardcodar activeId.
+ * UNIVERSO FASE 7 — 54 mercados (reconciliado na TASK 7 por evidencia real).
+ * O nome interno da IQ e descoberto em runtime (NORMAL: sufixos -op / :N; OTC: sufixo -OTC).
+ * NUNCA hardcodar activeId. Removido USDCHF:NORMAL: existe apenas na secao `blitz`
+ * (activeId 1879), produto NAO suportado pela TraceCom (turbo/binary only) e ausente
+ * dos catalogos turbo/binary/digital do MCP — ver docs/office-v3/universe-reconciliation.md.
  */
 export const UNIVERSE = [
-  // GRUPO A — 10 FX NORMAL (IQ expoe como <PAR>-op)
+  // GRUPO A — 9 FX NORMAL (IQ expoe como <PAR>-op)
   { canonical: "EURUSD", symbol: "EUR/USD", display: "EUR/USD", marketType: "NORMAL", currencies: ["EUR", "USD"] },
   { canonical: "USDJPY", symbol: "USD/JPY", display: "USD/JPY", marketType: "NORMAL", currencies: ["USD", "JPY"] },
   { canonical: "GBPUSD", symbol: "GBP/USD", display: "GBP/USD", marketType: "NORMAL", currencies: ["GBP", "USD"] },
   { canonical: "AUDUSD", symbol: "AUD/USD", display: "AUD/USD", marketType: "NORMAL", currencies: ["AUD", "USD"] },
   { canonical: "USDCAD", symbol: "USD/CAD", display: "USD/CAD", marketType: "NORMAL", currencies: ["USD", "CAD"] },
-  { canonical: "USDCHF", symbol: "USD/CHF", display: "USD/CHF", marketType: "NORMAL", currencies: ["USD", "CHF"] },
   { canonical: "EURJPY", symbol: "EUR/JPY", display: "EUR/JPY", marketType: "NORMAL", currencies: ["EUR", "JPY"] },
   { canonical: "EURGBP", symbol: "EUR/GBP", display: "EUR/GBP", marketType: "NORMAL", currencies: ["EUR", "GBP"] },
   { canonical: "AUDJPY", symbol: "AUD/JPY", display: "AUD/JPY", marketType: "NORMAL", currencies: ["AUD", "JPY"] },

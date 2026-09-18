@@ -3,7 +3,9 @@
  *
  * Small, dependency-light helper that decides which static layer the hybrid
  * renderer uses:
- *   "reference"  → the frozen reference image as the pre-rendered base
+ *   "reference"  → the clean plate (frozen reference with the painted FALSE
+ *                  P&L badges inpainted out) as the pre-rendered base — DEFAULT
+ *   "original"   → the raw frozen reference (painted badges kept) for audit/diff
  *   "procedural" → the procedural world renderer (no base image)
  *
  * Precedence: URL query `?base=...` > env `OFFICE_V3_BASE` > OFFICE_V3_BASE.mode
@@ -45,9 +47,9 @@ function envValue(env, key) {
  * Resolve the base mode.
  *
  * @param {string|URLSearchParams|{get?:Function}|object} [search] URL search
- *   string ("?base=procedural"), URLSearchParams, or a plain object.
+ *   string ("?base=original"), URLSearchParams, or a plain object.
  * @param {object} [env] environment-like object (e.g. `process.env`).
- * @returns {"reference"|"procedural"}
+ * @returns {"reference"|"original"|"procedural"}
  */
 export function resolveBaseMode(search, env) {
   const fromQuery = normalizeMode(queryValue(search, "base"));
@@ -57,10 +59,15 @@ export function resolveBaseMode(search, env) {
   return DEFAULT_BASE_MODE;
 }
 
-/** True only when the static base image should be drawn. */
+/**
+ * True only when the static base image should be drawn. Both "reference"
+ * (clean plate, default) and "original" (raw frozen reference) draw a base;
+ * only "procedural" does not.
+ */
 export function shouldDrawBlueprintBase(mode) {
   if (mode == null) return DEFAULT_BASE_MODE === "reference";
-  return normalizeMode(mode) === "reference";
+  const normalized = normalizeMode(mode);
+  return normalized === "reference" || normalized === "original";
 }
 
 export default { resolveBaseMode, shouldDrawBlueprintBase };

@@ -1,0 +1,5348 @@
+{
+  "version": "universe-reconciliation-v1",
+  "generatedAt": "2026-09-18T16:27:34.185Z",
+  "finishedAt": "2026-09-18T16:28:29.700Z",
+  "startedAt": 1789748854185,
+  "endpoints": {
+    "office": "https://tracecom.consecom.com.br/api/iq/office",
+    "assetMap": "https://tracecom.consecom.com.br/api/iq/asset-map"
+  },
+  "tracecomProducts": [
+    "turbo",
+    "binary"
+  ],
+  "universeBefore": {
+    "count": 55,
+    "maxActiveMarkets": 55
+  },
+  "ws": {
+    "mode": "VAULT_FRESH",
+    "ok": true,
+    "error": null,
+    "vault": {
+      "emailMasked": "A***@gmail.com",
+      "connectedAt": 1789694540201,
+      "connectedAtIso": "2026-09-18T01:22:20.201Z"
+    },
+    "connect": {
+      "requestedAt": "2026-09-18T16:27:35.862Z",
+      "readyAt": "2026-09-18T16:27:37.169Z",
+      "host": "ws.iqoption.com",
+      "serverTimeMs": 1789748857524,
+      "serverTimeIso": "2026-09-18T16:27:37.524Z",
+      "clockSkewMs": 355,
+      "timeValid": true
+    },
+    "init": [
+      {
+        "label": "t0",
+        "requestedAt": "2026-09-18T16:27:37.169Z",
+        "receivedAt": "2026-09-18T16:27:38.774Z",
+        "latencyMs": 1605,
+        "msgName": "initialization-data",
+        "sections": [
+          "turbo",
+          "binary",
+          "blitz"
+        ],
+        "activeCount": 723
+      },
+      {
+        "label": "t4s",
+        "requestedAt": "2026-09-18T16:27:42.787Z",
+        "receivedAt": "2026-09-18T16:27:43.551Z",
+        "latencyMs": 764,
+        "msgName": "initialization-data",
+        "sections": [
+          "turbo",
+          "binary",
+          "blitz"
+        ],
+        "activeCount": 723
+      }
+    ],
+    "sections": {
+      "t0": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "t4s": [
+        "turbo",
+        "binary",
+        "blitz"
+      ]
+    },
+    "activeRowCount": 723,
+    "instruments": {
+      "turbo-option": {
+        "ok": false,
+        "error": "GET_INSTRUMENTS_TIMEOUT"
+      },
+      "binary-option": {
+        "ok": false,
+        "error": "GET_INSTRUMENTS_TIMEOUT"
+      },
+      "digital-option": {
+        "ok": false,
+        "error": "GET_INSTRUMENTS_TIMEOUT"
+      },
+      "blitz-option": {
+        "ok": false,
+        "error": "GET_INSTRUMENTS_TIMEOUT"
+      }
+    },
+    "fallback": null
+  },
+  "mcp": {
+    "turbo": {
+      "base": "https://turbo-options.mcp.iqoption.com",
+      "ok": true,
+      "error": null,
+      "at": "2026-09-18T16:27:35.213Z",
+      "assetCount": 246,
+      "openCount": 115,
+      "closedCount": 131
+    },
+    "binary": {
+      "base": "https://binary-options.mcp.iqoption.com",
+      "ok": true,
+      "error": null,
+      "at": "2026-09-18T16:27:35.210Z",
+      "assetCount": 269,
+      "openCount": 143,
+      "closedCount": 126
+    },
+    "digital": {
+      "base": "https://digital-options.mcp.iqoption.com",
+      "ok": true,
+      "error": null,
+      "at": "2026-09-18T16:27:35.217Z",
+      "assetCount": 139,
+      "openCount": 130,
+      "closedCount": 9
+    },
+    "digitalGetInstruments": [
+      {
+        "marketKey": "AUDJPY:NORMAL",
+        "assetId": 1869,
+        "name": "AUD/JPY",
+        "at": "2026-09-18T16:28:16.503Z",
+        "ok": true,
+        "generated_at": null,
+        "expiration": null,
+        "instrumentCount": 0
+      },
+      {
+        "marketKey": "AUDUSD:NORMAL",
+        "assetId": 1870,
+        "name": "AUD/USD",
+        "at": "2026-09-18T16:28:17.491Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:14:05Z",
+        "expiration": "2026-09-18T16:30:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "AUS200:NORMAL",
+        "assetId": 1481,
+        "name": "AU 200",
+        "at": "2026-09-18T16:28:18.020Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:20Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 2
+      },
+      {
+        "marketKey": "EURGBP:NORMAL",
+        "assetId": 1862,
+        "name": "EUR/GBP",
+        "at": "2026-09-18T16:28:18.491Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "EURJPY:NORMAL",
+        "assetId": 1864,
+        "name": "EUR/JPY",
+        "at": "2026-09-18T16:28:18.976Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "EURNZD:OTC",
+        "assetId": 2122,
+        "name": "EUR/NZD (OTC)",
+        "at": "2026-09-18T16:28:19.458Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "EURUSD:NORMAL",
+        "assetId": 1861,
+        "name": "EUR/USD",
+        "at": "2026-09-18T16:28:19.991Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "FR40:NORMAL",
+        "assetId": 1479,
+        "name": "FR 40",
+        "at": "2026-09-18T16:28:20.459Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:20Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "GBPJPY:NORMAL",
+        "assetId": 1866,
+        "name": "GBP/JPY",
+        "at": "2026-09-18T16:28:20.940Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "GBPUSD:NORMAL",
+        "assetId": 1867,
+        "name": "GBP/USD",
+        "at": "2026-09-18T16:28:21.609Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "GER30:NORMAL",
+        "assetId": 1478,
+        "name": "GER 30",
+        "at": "2026-09-18T16:28:22.112Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:20Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "JP225:NORMAL",
+        "assetId": 1476,
+        "name": "JP 225",
+        "at": "2026-09-18T16:28:22.584Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:20Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 2
+      },
+      {
+        "marketKey": "UK100:NORMAL",
+        "assetId": 1475,
+        "name": "UK 100",
+        "at": "2026-09-18T16:28:23.753Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:20Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "US100:NORMAL",
+        "assetId": 1471,
+        "name": "US 100",
+        "at": "2026-09-18T16:28:24.226Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "US2000:NORMAL",
+        "assetId": 1473,
+        "name": "US 2000",
+        "at": "2026-09-18T16:28:24.695Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:20Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "US30:NORMAL",
+        "assetId": 1472,
+        "name": "US 30",
+        "at": "2026-09-18T16:28:25.190Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "US500:NORMAL",
+        "assetId": 1470,
+        "name": "US 500",
+        "at": "2026-09-18T16:28:25.826Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "USDCAD:NORMAL",
+        "assetId": 1878,
+        "name": "USD/CAD",
+        "at": "2026-09-18T16:28:26.312Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:14:05Z",
+        "expiration": "2026-09-18T16:30:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "USDJPY:NORMAL",
+        "assetId": 1865,
+        "name": "USD/JPY",
+        "at": "2026-09-18T16:28:26.830Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "USDMXN:OTC",
+        "assetId": 2300,
+        "name": "USD/MXN (OTC)",
+        "at": "2026-09-18T16:28:27.295Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "USDTRY:OTC",
+        "assetId": 2124,
+        "name": "USD/TRY (OTC)",
+        "at": "2026-09-18T16:28:27.765Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "USDZAR:OTC",
+        "assetId": 1380,
+        "name": "USD/ZAR (OTC)",
+        "at": "2026-09-18T16:28:28.263Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "XAGUSD:NORMAL",
+        "assetId": 1913,
+        "name": "Silver",
+        "at": "2026-09-18T16:28:28.747Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:30Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      },
+      {
+        "marketKey": "XAUUSD:NORMAL",
+        "assetId": 1912,
+        "name": "Gold",
+        "at": "2026-09-18T16:28:29.232Z",
+        "ok": true,
+        "generated_at": "2026-09-18T16:27:05Z",
+        "expiration": "2026-09-18T16:29:00Z",
+        "instrumentCount": 26
+      }
+    ]
+  },
+  "counts": {
+    "total": 55,
+    "exists": 55,
+    "supported": 54,
+    "currentlyOpen": 25,
+    "keep": 54,
+    "remove": 1,
+    "conflicts": 1
+  },
+  "markets": [
+    {
+      "marketKey": "EURUSD:NORMAL",
+      "canonical": "EURUSD",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1861,
+      "canonicalName": "front.EURUSD-op",
+      "canonicalNames": [
+        "front.EURUSD-op",
+        "EUR/USD"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1861,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1861,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1861,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1861,
+          "name": "EUR/USD",
+          "is_open": true,
+          "profit_percent": 93
+        },
+        "binary": {
+          "asset_id": 1861,
+          "name": "EUR/USD",
+          "is_open": true,
+          "profit_percent": 94
+        },
+        "digital": {
+          "asset_id": 1861,
+          "name": "EUR/USD",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "USDJPY:NORMAL",
+      "canonical": "USDJPY",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1865,
+      "canonicalName": "front.USDJPY-op",
+      "canonicalNames": [
+        "front.USDJPY-op",
+        "USD/JPY"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1865,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1865,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1865,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1865,
+          "name": "USD/JPY",
+          "is_open": true,
+          "profit_percent": 89
+        },
+        "binary": {
+          "asset_id": 1865,
+          "name": "USD/JPY",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1865,
+          "name": "USD/JPY",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "GBPUSD:NORMAL",
+      "canonical": "GBPUSD",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1867,
+      "canonicalName": "front.GBPUSD-op",
+      "canonicalNames": [
+        "front.GBPUSD-op",
+        "GBP/USD"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1867,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1867,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1867,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1867,
+          "name": "GBP/USD",
+          "is_open": true,
+          "profit_percent": 89
+        },
+        "binary": {
+          "asset_id": 1867,
+          "name": "GBP/USD",
+          "is_open": true,
+          "profit_percent": 94
+        },
+        "digital": {
+          "asset_id": 1867,
+          "name": "GBP/USD",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "AUDUSD:NORMAL",
+      "canonical": "AUDUSD",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1870,
+      "canonicalName": "front.AUDUSD-op",
+      "canonicalNames": [
+        "front.AUDUSD-op",
+        "AUD/USD"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1870,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1870,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1870,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1870,
+          "name": "AUD/USD",
+          "is_open": true,
+          "profit_percent": 89
+        },
+        "binary": {
+          "asset_id": 1870,
+          "name": "AUD/USD",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1870,
+          "name": "AUD/USD",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "USDCAD:NORMAL",
+      "canonical": "USDCAD",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1878,
+      "canonicalName": "front.USDCAD-op",
+      "canonicalNames": [
+        "front.USDCAD-op",
+        "USD/CAD"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "binary",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1878,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1878,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": null,
+        "binary": {
+          "asset_id": 1878,
+          "name": "USD/CAD",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1878,
+          "name": "USD/CAD",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "USDCHF:NORMAL",
+      "canonical": "USDCHF",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "blitz"
+      ],
+      "supportedProducts": [],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": false,
+      "activeId": 1879,
+      "canonicalName": "front.USDCHF-op",
+      "canonicalNames": [
+        "front.USDCHF-op"
+      ],
+      "currentlyOffered": false,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "blitz",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1879,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": null,
+        "binary": null,
+        "digital": null
+      },
+      "decision": "REMOVE",
+      "reason": "PRODUCT_UNSUPPORTED",
+      "conflicts": [
+        "WS_ONLY_UNSUPPORTED_SECTION"
+      ],
+      "productNotes": []
+    },
+    {
+      "marketKey": "EURJPY:NORMAL",
+      "canonical": "EURJPY",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1864,
+      "canonicalName": "front.EURJPY-op",
+      "canonicalNames": [
+        "front.EURJPY-op",
+        "EUR/JPY"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1864,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1864,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1864,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1864,
+          "name": "EUR/JPY",
+          "is_open": true,
+          "profit_percent": 89
+        },
+        "binary": {
+          "asset_id": 1864,
+          "name": "EUR/JPY",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1864,
+          "name": "EUR/JPY",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "EURGBP:NORMAL",
+      "canonical": "EURGBP",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1862,
+      "canonicalName": "front.EURGBP-op",
+      "canonicalNames": [
+        "front.EURGBP-op",
+        "EUR/GBP"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1862,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1862,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1862,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1862,
+          "name": "EUR/GBP",
+          "is_open": true,
+          "profit_percent": 89
+        },
+        "binary": {
+          "asset_id": 1862,
+          "name": "EUR/GBP",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1862,
+          "name": "EUR/GBP",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "AUDJPY:NORMAL",
+      "canonical": "AUDJPY",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1869,
+      "canonicalName": "front.AUDJPY-op",
+      "canonicalNames": [
+        "front.AUDJPY-op",
+        "AUD/JPY"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": false,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1869,
+          "section": "turbo",
+          "enabled": false,
+          "suspended": false
+        },
+        {
+          "activeId": 1869,
+          "section": "binary",
+          "enabled": false,
+          "suspended": false
+        },
+        {
+          "activeId": 1869,
+          "section": "blitz",
+          "enabled": false,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1869,
+          "name": "AUD/JPY",
+          "is_open": false,
+          "profit_percent": 89
+        },
+        "binary": {
+          "asset_id": 1869,
+          "name": "AUD/JPY",
+          "is_open": false,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1869,
+          "name": "AUD/JPY",
+          "is_open": false,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "GBPJPY:NORMAL",
+      "canonical": "GBPJPY",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1866,
+      "canonicalName": "front.GBPJPY-op",
+      "canonicalNames": [
+        "front.GBPJPY-op",
+        "GBP/JPY"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1866,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1866,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1866,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1866,
+          "name": "GBP/JPY",
+          "is_open": true,
+          "profit_percent": 89
+        },
+        "binary": {
+          "asset_id": 1866,
+          "name": "GBP/JPY",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1866,
+          "name": "GBP/JPY",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "EURUSD:OTC",
+      "canonical": "EURUSD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 76,
+      "canonicalName": "front.EURUSD-OTC",
+      "canonicalNames": [
+        "front.EURUSD-OTC",
+        "EUR/USD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 76,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 76,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 76,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 76,
+          "name": "EUR/USD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 76,
+          "name": "EUR/USD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "GBPUSD:OTC",
+      "canonical": "GBPUSD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 81,
+      "canonicalName": "front.GBPUSD-OTC",
+      "canonicalNames": [
+        "front.GBPUSD-OTC",
+        "GBP/USD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 81,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 81,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 81,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 81,
+          "name": "GBP/USD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 81,
+          "name": "GBP/USD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "USDJPY:OTC",
+      "canonical": "USDJPY",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 85,
+      "canonicalName": "front.USDJPY-OTC",
+      "canonicalNames": [
+        "front.USDJPY-OTC",
+        "USD/JPY (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "binary",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 85,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 85,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": null,
+        "binary": {
+          "asset_id": 85,
+          "name": "USD/JPY (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "EURGBP:OTC",
+      "canonical": "EURGBP",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 77,
+      "canonicalName": "front.EURGBP-OTC",
+      "canonicalNames": [
+        "front.EURGBP-OTC",
+        "EUR/GBP (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 77,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 77,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 77,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 77,
+          "name": "EUR/GBP (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 77,
+          "name": "EUR/GBP (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "GBPJPY:OTC",
+      "canonical": "GBPJPY",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 84,
+      "canonicalName": "front.GBPJPY-OTC",
+      "canonicalNames": [
+        "front.GBPJPY-OTC",
+        "GBP/JPY (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 84,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 84,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 84,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 84,
+          "name": "GBP/JPY (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 84,
+          "name": "GBP/JPY (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "AUDUSD:OTC",
+      "canonical": "AUDUSD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2111,
+      "canonicalName": "front.AUDUSD-OTC",
+      "canonicalNames": [
+        "front.AUDUSD-OTC",
+        "AUD/USD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2111,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2111,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2111,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2111,
+          "name": "AUD/USD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2111,
+          "name": "AUD/USD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "USDCAD:OTC",
+      "canonical": "USDCAD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2112,
+      "canonicalName": "front.USDCAD-OTC",
+      "canonicalNames": [
+        "front.USDCAD-OTC",
+        "USD/CAD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2112,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2112,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2112,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2112,
+          "name": "USD/CAD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2112,
+          "name": "USD/CAD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "USDCHF:OTC",
+      "canonical": "USDCHF",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 78,
+      "canonicalName": "front.USDCHF-OTC",
+      "canonicalNames": [
+        "front.USDCHF-OTC",
+        "USD/CHF (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 78,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 78,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 78,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 78,
+          "name": "USD/CHF (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 78,
+          "name": "USD/CHF (OTC)",
+          "is_open": false,
+          "profit_percent": 90
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "EURJPY:OTC",
+      "canonical": "EURJPY",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 79,
+      "canonicalName": "front.EURJPY-OTC",
+      "canonicalNames": [
+        "front.EURJPY-OTC",
+        "EUR/JPY (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 79,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 79,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 79,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 79,
+          "name": "EUR/JPY (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 79,
+          "name": "EUR/JPY (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "AUDJPY:OTC",
+      "canonical": "AUDJPY",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2113,
+      "canonicalName": "front.AUDJPY-OTC",
+      "canonicalNames": [
+        "front.AUDJPY-OTC",
+        "AUD/JPY (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2113,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2113,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2113,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2113,
+          "name": "AUD/JPY (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2113,
+          "name": "AUD/JPY (OTC)",
+          "is_open": false,
+          "profit_percent": 90
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "EURAUD:OTC",
+      "canonical": "EURAUD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2120,
+      "canonicalName": "front.EURAUD-OTC",
+      "canonicalNames": [
+        "front.EURAUD-OTC",
+        "EUR/AUD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2120,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2120,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2120,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2120,
+          "name": "EUR/AUD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2120,
+          "name": "EUR/AUD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "EURCHF:OTC",
+      "canonical": "EURCHF",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2131,
+      "canonicalName": "front.EURCHF-OTC",
+      "canonicalNames": [
+        "front.EURCHF-OTC",
+        "EUR/CHF (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2131,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2131,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2131,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2131,
+          "name": "EUR/CHF (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2131,
+          "name": "EUR/CHF (OTC)",
+          "is_open": false,
+          "profit_percent": 90
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "EURCAD:OTC",
+      "canonical": "EURCAD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2117,
+      "canonicalName": "front.EURCAD-OTC",
+      "canonicalNames": [
+        "front.EURCAD-OTC",
+        "EUR/CAD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2117,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2117,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2117,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2117,
+          "name": "EUR/CAD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2117,
+          "name": "EUR/CAD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "EURNZD:OTC",
+      "canonical": "EURNZD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 2122,
+      "canonicalName": "front.EURNZD-OTC",
+      "canonicalNames": [
+        "front.EURNZD-OTC",
+        "EUR/NZD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2122,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 2122,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 2122,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2122,
+          "name": "EUR/NZD (OTC)",
+          "is_open": true,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2122,
+          "name": "EUR/NZD (OTC)",
+          "is_open": true,
+          "profit_percent": 86
+        },
+        "digital": {
+          "asset_id": 2122,
+          "name": "EUR/NZD (OTC)",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "AUDCAD:OTC",
+      "canonical": "AUDCAD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 86,
+      "canonicalName": "front.AUDCAD-OTC",
+      "canonicalNames": [
+        "front.AUDCAD-OTC",
+        "AUD/CAD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 86,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 86,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 86,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 86,
+          "name": "AUD/CAD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 86,
+          "name": "AUD/CAD (OTC)",
+          "is_open": false,
+          "profit_percent": 89
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "AUDCHF:OTC",
+      "canonical": "AUDCHF",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2129,
+      "canonicalName": "front.AUDCHF-OTC",
+      "canonicalNames": [
+        "front.AUDCHF-OTC",
+        "AUD/CHF (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2129,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2129,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2129,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2129,
+          "name": "AUD/CHF (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2129,
+          "name": "AUD/CHF (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "AUDNZD:OTC",
+      "canonical": "AUDNZD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2130,
+      "canonicalName": "front.AUDNZD-OTC",
+      "canonicalNames": [
+        "front.AUDNZD-OTC",
+        "AUD/NZD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2130,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2130,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2130,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2130,
+          "name": "AUD/NZD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2130,
+          "name": "AUD/NZD (OTC)",
+          "is_open": false,
+          "profit_percent": 90
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "CADJPY:OTC",
+      "canonical": "CADJPY",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2136,
+      "canonicalName": "front.CADJPY-OTC",
+      "canonicalNames": [
+        "front.CADJPY-OTC",
+        "CAD/JPY (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2136,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2136,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2136,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2136,
+          "name": "CAD/JPY (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2136,
+          "name": "CAD/JPY (OTC)",
+          "is_open": false,
+          "profit_percent": 90
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "CADCHF:OTC",
+      "canonical": "CADCHF",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2119,
+      "canonicalName": "front.CADCHF-OTC",
+      "canonicalNames": [
+        "front.CADCHF-OTC",
+        "CAD/CHF (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2119,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2119,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2119,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2119,
+          "name": "CAD/CHF (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2119,
+          "name": "CAD/CHF (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "GBPAUD:OTC",
+      "canonical": "GBPAUD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2116,
+      "canonicalName": "front.GBPAUD-OTC",
+      "canonicalNames": [
+        "front.GBPAUD-OTC",
+        "GBP/AUD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2116,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2116,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2116,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2116,
+          "name": "GBP/AUD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2116,
+          "name": "GBP/AUD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "GBPCAD:OTC",
+      "canonical": "GBPCAD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2114,
+      "canonicalName": "front.GBPCAD-OTC",
+      "canonicalNames": [
+        "front.GBPCAD-OTC",
+        "GBP/CAD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2114,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2114,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2114,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2114,
+          "name": "GBP/CAD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2114,
+          "name": "GBP/CAD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "GBPCHF:OTC",
+      "canonical": "GBPCHF",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2115,
+      "canonicalName": "front.GBPCHF-OTC",
+      "canonicalNames": [
+        "front.GBPCHF-OTC",
+        "GBP/CHF (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2115,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2115,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2115,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2115,
+          "name": "GBP/CHF (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2115,
+          "name": "GBP/CHF (OTC)",
+          "is_open": false,
+          "profit_percent": 90
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "GBPNZD:OTC",
+      "canonical": "GBPNZD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2132,
+      "canonicalName": "front.GBPNZD-OTC",
+      "canonicalNames": [
+        "front.GBPNZD-OTC",
+        "GBP/NZD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2132,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2132,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2132,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2132,
+          "name": "GBP/NZD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2132,
+          "name": "GBP/NZD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "NZDCAD:OTC",
+      "canonical": "NZDCAD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2137,
+      "canonicalName": "front.NZDCAD-OTC",
+      "canonicalNames": [
+        "front.NZDCAD-OTC",
+        "NZD/CAD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2137,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2137,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2137,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2137,
+          "name": "NZD/CAD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2137,
+          "name": "NZD/CAD (OTC)",
+          "is_open": false,
+          "profit_percent": 90
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "NZDJPY:OTC",
+      "canonical": "NZDJPY",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2138,
+      "canonicalName": "front.NZDJPY-OTC",
+      "canonicalNames": [
+        "front.NZDJPY-OTC",
+        "NZD/JPY (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2138,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2138,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2138,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2138,
+          "name": "NZD/JPY (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2138,
+          "name": "NZD/JPY (OTC)",
+          "is_open": false,
+          "profit_percent": 90
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "NZDCHF:OTC",
+      "canonical": "NZDCHF",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [],
+      "supported": true,
+      "activeId": 2202,
+      "canonicalName": "front.NZDCHF-OTC",
+      "canonicalNames": [
+        "front.NZDCHF-OTC",
+        "NZDCHF (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2202,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2202,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2202,
+          "name": "NZDCHF (OTC)",
+          "is_open": false,
+          "profit_percent": 87
+        },
+        "binary": {
+          "asset_id": 2202,
+          "name": "NZDCHF (OTC)",
+          "is_open": false,
+          "profit_percent": 90
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "USDMXN:OTC",
+      "canonical": "USDMXN",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 2300,
+      "canonicalName": "front.USDMXN-OTC",
+      "canonicalNames": [
+        "front.USDMXN-OTC",
+        "USD/MXN (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2300,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 2300,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 2300,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2300,
+          "name": "USD/MXN (OTC)",
+          "is_open": true,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2300,
+          "name": "USD/MXN (OTC)",
+          "is_open": true,
+          "profit_percent": 90
+        },
+        "digital": {
+          "asset_id": 2300,
+          "name": "USD/MXN (OTC)",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "USDBRL:OTC",
+      "canonical": "USDBRL",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2298,
+      "canonicalName": "front.USDBRL-OTC",
+      "canonicalNames": [
+        "front.USDBRL-OTC",
+        "USD/BRL (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2298,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 2298,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2298,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2298,
+          "name": "USD/BRL (OTC)",
+          "is_open": true,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2298,
+          "name": "USD/BRL (OTC)",
+          "is_open": false,
+          "profit_percent": 90
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": [
+        "TURBO_BINARY_STATE_DIFF"
+      ]
+    },
+    {
+      "marketKey": "USDTRY:OTC",
+      "canonical": "USDTRY",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 2124,
+      "canonicalName": "front.USDTRY-OTC",
+      "canonicalNames": [
+        "front.USDTRY-OTC",
+        "USD/TRY (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2124,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 2124,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 2124,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2124,
+          "name": "USD/TRY (OTC)",
+          "is_open": true,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 2124,
+          "name": "USD/TRY (OTC)",
+          "is_open": true,
+          "profit_percent": 90
+        },
+        "digital": {
+          "asset_id": 2124,
+          "name": "USD/TRY (OTC)",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "USDZAR:OTC",
+      "canonical": "USDZAR",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1380,
+      "canonicalName": "front.USDZAR-OTC",
+      "canonicalNames": [
+        "front.USDZAR-OTC",
+        "USD/ZAR (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1380,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1380,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1380,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1380,
+          "name": "USD/ZAR (OTC)",
+          "is_open": true,
+          "profit_percent": 86
+        },
+        "binary": {
+          "asset_id": 1380,
+          "name": "USD/ZAR (OTC)",
+          "is_open": true,
+          "profit_percent": 90
+        },
+        "digital": {
+          "asset_id": 1380,
+          "name": "USD/ZAR (OTC)",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "XAUUSD:NORMAL",
+      "canonical": "XAUUSD",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1912,
+      "canonicalName": "front.XAUUSD-op",
+      "canonicalNames": [
+        "front.XAUUSD-op",
+        "Gold"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1912,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1912,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1912,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1912,
+          "name": "Gold",
+          "is_open": true,
+          "profit_percent": 89
+        },
+        "binary": {
+          "asset_id": 1912,
+          "name": "Gold",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1912,
+          "name": "Gold",
+          "is_open": true,
+          "asset_type": "Commodity"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "XAGUSD:NORMAL",
+      "canonical": "XAGUSD",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1913,
+      "canonicalName": "front.XAGUSD-op",
+      "canonicalNames": [
+        "front.XAGUSD-op",
+        "Silver"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1913,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1913,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1913,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1913,
+          "name": "Silver",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "binary": {
+          "asset_id": 1913,
+          "name": "Silver",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1913,
+          "name": "Silver",
+          "is_open": true,
+          "asset_type": "Commodity"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "US30:NORMAL",
+      "canonical": "US30",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1472,
+      "canonicalName": "front.US30:N",
+      "canonicalNames": [
+        "front.US30:N",
+        "US 30"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1472,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1472,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1472,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1472,
+          "name": "US 30",
+          "is_open": true,
+          "profit_percent": 90
+        },
+        "binary": {
+          "asset_id": 1472,
+          "name": "US 30",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1472,
+          "name": "US 30",
+          "is_open": true,
+          "asset_type": "Index"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "US100:NORMAL",
+      "canonical": "US100",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1471,
+      "canonicalName": "front.USNDAQ100:N",
+      "canonicalNames": [
+        "front.USNDAQ100:N",
+        "US 100"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1471,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1471,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1471,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1471,
+          "name": "US 100",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "binary": {
+          "asset_id": 1471,
+          "name": "US 100",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1471,
+          "name": "US 100",
+          "is_open": true,
+          "asset_type": "Index"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "US500:NORMAL",
+      "canonical": "US500",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1470,
+      "canonicalName": "front.USSPX500:N",
+      "canonicalNames": [
+        "front.USSPX500:N",
+        "US 500"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1470,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1470,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1470,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1470,
+          "name": "US 500",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "binary": {
+          "asset_id": 1470,
+          "name": "US 500",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1470,
+          "name": "US 500",
+          "is_open": true,
+          "asset_type": "Index"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "US2000:NORMAL",
+      "canonical": "US2000",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1473,
+      "canonicalName": "front.US2000:N",
+      "canonicalNames": [
+        "front.US2000:N",
+        "US 2000"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1473,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1473,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1473,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1473,
+          "name": "US 2000",
+          "is_open": true,
+          "profit_percent": 89
+        },
+        "binary": {
+          "asset_id": 1473,
+          "name": "US 2000",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1473,
+          "name": "US 2000",
+          "is_open": true,
+          "asset_type": "Index"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "GER30:NORMAL",
+      "canonical": "GER30",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1478,
+      "canonicalName": "front.GERMANY30:N",
+      "canonicalNames": [
+        "front.GERMANY30:N",
+        "GER 30"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1478,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1478,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1478,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1478,
+          "name": "GER 30",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "binary": {
+          "asset_id": 1478,
+          "name": "GER 30",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1478,
+          "name": "GER 30",
+          "is_open": true,
+          "asset_type": "Index"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "UK100:NORMAL",
+      "canonical": "UK100",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1475,
+      "canonicalName": "front.UK100:N",
+      "canonicalNames": [
+        "front.UK100:N",
+        "UK 100"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1475,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1475,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1475,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1475,
+          "name": "UK 100",
+          "is_open": true,
+          "profit_percent": 90
+        },
+        "binary": {
+          "asset_id": 1475,
+          "name": "UK 100",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1475,
+          "name": "UK 100",
+          "is_open": true,
+          "asset_type": "Index"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "JP225:NORMAL",
+      "canonical": "JP225",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1476,
+      "canonicalName": "front.JAPAN225:N",
+      "canonicalNames": [
+        "front.JAPAN225:N",
+        "JP 225"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1476,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1476,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1476,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1476,
+          "name": "JP 225",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "binary": {
+          "asset_id": 1476,
+          "name": "JP 225",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1476,
+          "name": "JP 225",
+          "is_open": true,
+          "asset_type": "Index"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "AUS200:NORMAL",
+      "canonical": "AUS200",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1481,
+      "canonicalName": "front.AUS200:N",
+      "canonicalNames": [
+        "front.AUS200:N",
+        "AU 200"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1481,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1481,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1481,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1481,
+          "name": "AU 200",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "binary": {
+          "asset_id": 1481,
+          "name": "AU 200",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1481,
+          "name": "AU 200",
+          "is_open": true,
+          "asset_type": "Index"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "EU50:NORMAL",
+      "canonical": "EU50",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 1480,
+      "canonicalName": "front.EURO50:N",
+      "canonicalNames": [
+        "front.EURO50:N",
+        "EU 50"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1480,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 1480,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 1480,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1480,
+          "name": "EU 50",
+          "is_open": false,
+          "profit_percent": 89
+        },
+        "binary": {
+          "asset_id": 1480,
+          "name": "EU 50",
+          "is_open": false,
+          "profit_percent": 91
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "HK33:NORMAL",
+      "canonical": "HK33",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 1477,
+      "canonicalName": "front.HONGKONG33:N",
+      "canonicalNames": [
+        "front.HONGKONG33:N",
+        "HK 33"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1477,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1477,
+          "section": "binary",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 1477,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1477,
+          "name": "HK 33",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "binary": {
+          "asset_id": 1477,
+          "name": "HK 33",
+          "is_open": false,
+          "profit_percent": 91
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": [
+        "TURBO_BINARY_STATE_DIFF"
+      ]
+    },
+    {
+      "marketKey": "FR40:NORMAL",
+      "canonical": "FR40",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz",
+        "digital"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz",
+        "digital"
+      ],
+      "supported": true,
+      "activeId": 1479,
+      "canonicalName": "front.FRANCE40:N",
+      "canonicalNames": [
+        "front.FRANCE40:N",
+        "FR 40"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": true,
+      "wsState": {
+        "enabled": true,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1479,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1479,
+          "section": "binary",
+          "enabled": true,
+          "suspended": false
+        },
+        {
+          "activeId": 1479,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": false
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1479,
+          "name": "FR 40",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "binary": {
+          "asset_id": 1479,
+          "name": "FR 40",
+          "is_open": true,
+          "profit_percent": 91
+        },
+        "digital": {
+          "asset_id": 1479,
+          "name": "FR 40",
+          "is_open": true,
+          "asset_type": "Index"
+        }
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "SP35:NORMAL",
+      "canonical": "SP35",
+      "marketType": "NORMAL",
+      "exists": true,
+      "products": [
+        "turbo",
+        "binary",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo",
+        "binary"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 1474,
+      "canonicalName": "front.SPAIN35:N",
+      "canonicalNames": [
+        "front.SPAIN35:N",
+        "SP 35"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": false,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 1474,
+          "section": "turbo",
+          "enabled": false,
+          "suspended": true
+        },
+        {
+          "activeId": 1474,
+          "section": "binary",
+          "enabled": false,
+          "suspended": true
+        },
+        {
+          "activeId": 1474,
+          "section": "blitz",
+          "enabled": false,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 1474,
+          "name": "SP 35",
+          "is_open": false,
+          "profit_percent": 89
+        },
+        "binary": {
+          "asset_id": 1474,
+          "name": "SP 35",
+          "is_open": false,
+          "profit_percent": 91
+        },
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    },
+    {
+      "marketKey": "BTCUSD:OTC",
+      "canonical": "BTCUSD",
+      "marketType": "OTC",
+      "exists": true,
+      "products": [
+        "turbo",
+        "blitz"
+      ],
+      "supportedProducts": [
+        "turbo"
+      ],
+      "unsupportedProducts": [
+        "blitz"
+      ],
+      "supported": true,
+      "activeId": 2270,
+      "canonicalName": "front.BTCUSD-OTC-op",
+      "canonicalNames": [
+        "front.BTCUSD-OTC-op",
+        "BTC/USD (OTC)"
+      ],
+      "currentlyOffered": true,
+      "currentlyOpen": false,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      },
+      "wsCandidates": [
+        {
+          "activeId": 2270,
+          "section": "turbo",
+          "enabled": true,
+          "suspended": true
+        },
+        {
+          "activeId": 2270,
+          "section": "blitz",
+          "enabled": true,
+          "suspended": true
+        }
+      ],
+      "mcp": {
+        "turbo": {
+          "asset_id": 2270,
+          "name": "BTC/USD (OTC)",
+          "is_open": false,
+          "profit_percent": 86
+        },
+        "binary": null,
+        "digital": null
+      },
+      "decision": "KEEP",
+      "reason": "PROVEN",
+      "conflicts": [],
+      "productNotes": []
+    }
+  ],
+  "finalUniverse": [
+    {
+      "canonical": "EURUSD",
+      "marketType": "NORMAL",
+      "marketKey": "EURUSD:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1861,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "USDJPY",
+      "marketType": "NORMAL",
+      "marketKey": "USDJPY:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1865,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "GBPUSD",
+      "marketType": "NORMAL",
+      "marketKey": "GBPUSD:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1867,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "AUDUSD",
+      "marketType": "NORMAL",
+      "marketKey": "AUDUSD:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1870,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "USDCAD",
+      "marketType": "NORMAL",
+      "marketKey": "USDCAD:NORMAL",
+      "products": [
+        "binary"
+      ],
+      "activeId": 1878,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "EURJPY",
+      "marketType": "NORMAL",
+      "marketKey": "EURJPY:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1864,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "EURGBP",
+      "marketType": "NORMAL",
+      "marketKey": "EURGBP:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1862,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "AUDJPY",
+      "marketType": "NORMAL",
+      "marketKey": "AUDJPY:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1869,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "GBPJPY",
+      "marketType": "NORMAL",
+      "marketKey": "GBPJPY:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1866,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "EURUSD",
+      "marketType": "OTC",
+      "marketKey": "EURUSD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 76,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "GBPUSD",
+      "marketType": "OTC",
+      "marketKey": "GBPUSD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 81,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "USDJPY",
+      "marketType": "OTC",
+      "marketKey": "USDJPY:OTC",
+      "products": [
+        "binary"
+      ],
+      "activeId": 85,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "EURGBP",
+      "marketType": "OTC",
+      "marketKey": "EURGBP:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 77,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "GBPJPY",
+      "marketType": "OTC",
+      "marketKey": "GBPJPY:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 84,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "AUDUSD",
+      "marketType": "OTC",
+      "marketKey": "AUDUSD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2111,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "USDCAD",
+      "marketType": "OTC",
+      "marketKey": "USDCAD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2112,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "USDCHF",
+      "marketType": "OTC",
+      "marketKey": "USDCHF:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 78,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "EURJPY",
+      "marketType": "OTC",
+      "marketKey": "EURJPY:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 79,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "AUDJPY",
+      "marketType": "OTC",
+      "marketKey": "AUDJPY:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2113,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "EURAUD",
+      "marketType": "OTC",
+      "marketKey": "EURAUD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2120,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "EURCHF",
+      "marketType": "OTC",
+      "marketKey": "EURCHF:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2131,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "EURCAD",
+      "marketType": "OTC",
+      "marketKey": "EURCAD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2117,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "EURNZD",
+      "marketType": "OTC",
+      "marketKey": "EURNZD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2122,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "AUDCAD",
+      "marketType": "OTC",
+      "marketKey": "AUDCAD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 86,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "AUDCHF",
+      "marketType": "OTC",
+      "marketKey": "AUDCHF:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2129,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "AUDNZD",
+      "marketType": "OTC",
+      "marketKey": "AUDNZD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2130,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "CADJPY",
+      "marketType": "OTC",
+      "marketKey": "CADJPY:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2136,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "CADCHF",
+      "marketType": "OTC",
+      "marketKey": "CADCHF:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2119,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "GBPAUD",
+      "marketType": "OTC",
+      "marketKey": "GBPAUD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2116,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "GBPCAD",
+      "marketType": "OTC",
+      "marketKey": "GBPCAD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2114,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "GBPCHF",
+      "marketType": "OTC",
+      "marketKey": "GBPCHF:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2115,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "GBPNZD",
+      "marketType": "OTC",
+      "marketKey": "GBPNZD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2132,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "NZDCAD",
+      "marketType": "OTC",
+      "marketKey": "NZDCAD:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2137,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "NZDJPY",
+      "marketType": "OTC",
+      "marketKey": "NZDJPY:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2138,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "NZDCHF",
+      "marketType": "OTC",
+      "marketKey": "NZDCHF:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2202,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "USDMXN",
+      "marketType": "OTC",
+      "marketKey": "USDMXN:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2300,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "USDBRL",
+      "marketType": "OTC",
+      "marketKey": "USDBRL:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2298,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "USDTRY",
+      "marketType": "OTC",
+      "marketKey": "USDTRY:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 2124,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "USDZAR",
+      "marketType": "OTC",
+      "marketKey": "USDZAR:OTC",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1380,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "XAUUSD",
+      "marketType": "NORMAL",
+      "marketKey": "XAUUSD:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1912,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "XAGUSD",
+      "marketType": "NORMAL",
+      "marketKey": "XAGUSD:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1913,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "US30",
+      "marketType": "NORMAL",
+      "marketKey": "US30:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1472,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "US100",
+      "marketType": "NORMAL",
+      "marketKey": "US100:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1471,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "US500",
+      "marketType": "NORMAL",
+      "marketKey": "US500:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1470,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "US2000",
+      "marketType": "NORMAL",
+      "marketKey": "US2000:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1473,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "GER30",
+      "marketType": "NORMAL",
+      "marketKey": "GER30:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1478,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "UK100",
+      "marketType": "NORMAL",
+      "marketKey": "UK100:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1475,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "JP225",
+      "marketType": "NORMAL",
+      "marketKey": "JP225:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1476,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "AUS200",
+      "marketType": "NORMAL",
+      "marketKey": "AUS200:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1481,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "EU50",
+      "marketType": "NORMAL",
+      "marketKey": "EU50:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1480,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "HK33",
+      "marketType": "NORMAL",
+      "marketKey": "HK33:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1477,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "FR40",
+      "marketType": "NORMAL",
+      "marketKey": "FR40:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1479,
+      "currentlyOpen": true
+    },
+    {
+      "canonical": "SP35",
+      "marketType": "NORMAL",
+      "marketKey": "SP35:NORMAL",
+      "products": [
+        "turbo",
+        "binary"
+      ],
+      "activeId": 1474,
+      "currentlyOpen": false
+    },
+    {
+      "canonical": "BTCUSD",
+      "marketType": "OTC",
+      "marketKey": "BTCUSD:OTC",
+      "products": [
+        "turbo"
+      ],
+      "activeId": 2270,
+      "currentlyOpen": false
+    }
+  ],
+  "removed": [
+    {
+      "marketKey": "USDCHF:NORMAL",
+      "reason": "PRODUCT_UNSUPPORTED",
+      "products": [
+        "blitz"
+      ],
+      "conflicts": [
+        "WS_ONLY_UNSUPPORTED_SECTION"
+      ],
+      "productNotes": []
+    }
+  ],
+  "keptSuspended": [
+    {
+      "marketKey": "AUDJPY:NORMAL",
+      "activeId": 1869,
+      "wsState": {
+        "enabled": false,
+        "suspended": false,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "EURUSD:OTC",
+      "activeId": 76,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "GBPUSD:OTC",
+      "activeId": 81,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "USDJPY:OTC",
+      "activeId": 85,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "binary",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "EURGBP:OTC",
+      "activeId": 77,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "GBPJPY:OTC",
+      "activeId": 84,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "AUDUSD:OTC",
+      "activeId": 2111,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "USDCAD:OTC",
+      "activeId": 2112,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "USDCHF:OTC",
+      "activeId": 78,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "EURJPY:OTC",
+      "activeId": 79,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "AUDJPY:OTC",
+      "activeId": 2113,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "EURAUD:OTC",
+      "activeId": 2120,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "EURCHF:OTC",
+      "activeId": 2131,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "EURCAD:OTC",
+      "activeId": 2117,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "AUDCAD:OTC",
+      "activeId": 86,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "AUDCHF:OTC",
+      "activeId": 2129,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "AUDNZD:OTC",
+      "activeId": 2130,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "CADJPY:OTC",
+      "activeId": 2136,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "CADCHF:OTC",
+      "activeId": 2119,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "GBPAUD:OTC",
+      "activeId": 2116,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "GBPCAD:OTC",
+      "activeId": 2114,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "GBPCHF:OTC",
+      "activeId": 2115,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "GBPNZD:OTC",
+      "activeId": 2132,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "NZDCAD:OTC",
+      "activeId": 2137,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "NZDJPY:OTC",
+      "activeId": 2138,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "NZDCHF:OTC",
+      "activeId": 2202,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "EU50:NORMAL",
+      "activeId": 1480,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "SP35:NORMAL",
+      "activeId": 1474,
+      "wsState": {
+        "enabled": false,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    },
+    {
+      "marketKey": "BTCUSD:OTC",
+      "activeId": 2270,
+      "wsState": {
+        "enabled": true,
+        "suspended": true,
+        "section": "turbo",
+        "availability": null
+      }
+    }
+  ],
+  "unresolved": [
+    {
+      "marketKey": "USDCHF:NORMAL",
+      "reason": "PRODUCT_UNSUPPORTED",
+      "products": [
+        "blitz"
+      ],
+      "conflicts": [
+        "WS_ONLY_UNSUPPORTED_SECTION"
+      ],
+      "productNotes": []
+    }
+  ]
+}

@@ -70,11 +70,11 @@ function fixtureOffice(extra: Record<string, unknown> = {}) {
 }
 
 describe("OFFICE V2 — mundo e layout", () => {
-  it("gera 55 postos a partir dos 55 mercados do runtime", () => {
+  it("gera N postos a partir dos N mercados do runtime", () => {
+    const total = UNIVERSE.length;
     const world = buildOfficeWorld(fixtureOffice());
-    expect(UNIVERSE).toHaveLength(55);
-    expect(world.stations).toHaveLength(55);
-    expect(new Set(world.stations.map((station: any) => station.marketKey)).size).toBe(55);
+    expect(world.stations).toHaveLength(total);
+    expect(new Set(world.stations.map((station: any) => station.marketKey)).size).toBe(total);
   });
 
   it("atribui setores por família/tipo (NORMAL, OTC, índices, commodities, cripto)", () => {
@@ -87,7 +87,7 @@ describe("OFFICE V2 — mundo e layout", () => {
     expect(sectorForMarket({ canonical: "ZZZ9", marketType: "NORMAL" })).toBe("OTHER");
     const world = buildOfficeWorld(fixtureOffice());
     const counts = Object.fromEntries(world.sectors.map((sector: any) => [sector.id, sector.count]));
-    expect(counts.FOREX_MAJORS).toBe(6);
+    expect(counts.FOREX_MAJORS).toBe(5);
     expect(counts.FOREX_CROSSES).toBe(4);
     expect(counts.OTC_24H).toBe(30);
     expect(counts.INDICES).toBe(12);
@@ -125,7 +125,7 @@ describe("OFFICE V2 — mundo e layout", () => {
 
   it("layout agrupa setores em linhas de no máximo 10 mesas dentro do salão", () => {
     const layout = planStationLayout(fixtureMarkets());
-    expect(layout.stations).toHaveLength(55);
+    expect(layout.stations).toHaveLength(UNIVERSE.length);
     expect(layout.desksPerRow).toBe(10);
     for (const sector of layout.sectors) {
       for (const row of sector.rows) expect(row.stationIds.length).toBeLessThanOrEqual(10);
@@ -377,9 +377,9 @@ describe("OFFICE V2 — fitas de setor, pilhas laterais e badges", () => {
         equityCurve: [],
       },
     }));
-    expect(model.openMarkets).toBe(55);
+    expect(model.openMarkets).toBe(UNIVERSE.length);
     expect(model.closedMarkets).toBe(0);
-    expect(model.totalMarkets).toBe(55);
+    expect(model.totalMarkets).toBe(UNIVERSE.length);
     expect(model.weeklyText).toBe("+R$ 1.842,30");
     expect(model.monthlyText).toBe("+R$ 6.721,55");
     expect(model.winRateText).toBe("76.2%");

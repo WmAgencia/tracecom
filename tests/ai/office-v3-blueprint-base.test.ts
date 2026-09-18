@@ -179,8 +179,7 @@ describe("OFFICE V3 — STATION_ANCHORS (blueprint)", () => {
     expect(STATION_ANCHORS["EURUSD:NORMAL"].desk).toEqual({ x: 211, y: 392, w: 100, h: 52 });
   });
 
-  it("existe âncora para todos os 55 mercados do universo", () => {
-    expect(UNIVERSE).toHaveLength(55);
+  it("existe âncora para todos os mercados do universo reconciliado", () => {
     for (const entry of UNIVERSE) {
       const key = marketKey(entry.canonical, entry.marketType);
       expect(STATION_ANCHORS[key], `sem âncora: ${key}`).toBeTruthy();

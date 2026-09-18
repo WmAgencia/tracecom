@@ -7,10 +7,14 @@
  * control. Pure ESM, no DOM dependency.
  */
 
-export const CAMERA_VERSION = "office-v3-camera.1.0.0";
+export const CAMERA_VERSION = "office-v3-camera.1.1.0";
 export const ZOOM_MIN = 0.25;
 export const ZOOM_MAX = 4;
 export const ZOOM_STEP = 1.15;
+export const WHEEL_LINE_HEIGHT = 16;
+export const WHEEL_PAGE_HEIGHT = 400;
+export const WHEEL_SENSITIVITY = 0.0016;
+export const WHEEL_DELTA_LIMIT = 480;
 export const ZOOM_TO_DESK_MS = 400;
 export const OVERVIEW_WIDTH = 1536;
 export const OVERVIEW_HEIGHT = 1024;
@@ -25,6 +29,21 @@ function clampZoomValue(value, min, max) {
 
 function clampNumber(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+/** Normalizes wheel/trackpad deltas (pixel, line or page mode) to pixels. */
+export function normalizeWheelDelta(evt) {
+  const raw = Number(evt?.deltaY) || 0;
+  const mode = Number(evt?.deltaMode) || 0;
+  if (mode === 1) return raw * WHEEL_LINE_HEIGHT;
+  if (mode === 2) return raw * (Number(evt?.view) || 1) * WHEEL_PAGE_HEIGHT;
+  return raw;
+}
+
+/** Continuous (smooth) zoom factor for a normalized wheel delta. */
+export function zoomFactorForDelta(delta) {
+  const clamp = clampNumber(Number(delta) || 0, -WHEEL_DELTA_LIMIT, WHEEL_DELTA_LIMIT);
+  return Math.exp(-clamp * WHEEL_SENSITIVITY);
 }
 
 function easeInOutCubic(t) {
@@ -216,7 +235,7 @@ export function clampToBounds(camera) {
   return camera;
 }
 
-export function zoomAtScreen(camera, sx, sy, requestedZoom) {
+export function zoomAtScreen(camera, sx, sy, requestedZoom, options = {}) {
   if (!camera) return camera;
   const before = screenToWorld(camera, sx, sy);
   camera.zoom = clampZoomValue(requestedZoom, camera.minZoom, camera.maxZoom);
@@ -224,7 +243,7 @@ export function zoomAtScreen(camera, sx, sy, requestedZoom) {
   camera.x += before.x - after.x;
   camera.y += before.y - after.y;
   camera.target = null;
-  clampToBounds(camera);
+  if (options.clamp !== false) clampToBounds(camera);
   return camera;
 }
 
@@ -240,12 +259,29 @@ function pointerY(evt, camera) {
   return camera ? camera.viewport.height / 2 : 0;
 }
 
+/**
+ * Drag pointers must always use viewport/client coordinates: offsetX changes
+ * with the event target and would drift the pan when the pointer leaves the
+ * canvas. Client coordinates keep base image, overlays and hitboxes aligned.
+ */
+function dragPointerX(evt, fallback) {
+  const candidates = [evt?.clientX, evt?.x, evt?.offsetX, evt?.screenX];
+  for (const candidate of candidates) if (Number.isFinite(Number(candidate))) return Number(candidate);
+  return fallback;
+}
+
+function dragPointerY(evt, fallback) {
+  const candidates = [evt?.clientY, evt?.y, evt?.offsetY, evt?.screenY];
+  for (const candidate of candidates) if (Number.isFinite(Number(candidate))) return Number(candidate);
+  return fallback;
+}
+
 export function handleWheel(camera, evt) {
   if (!camera || !evt) return camera;
-  const delta = Number(evt.deltaY) || 0;
+  const delta = normalizeWheelDelta(evt);
   if (delta === 0) return camera;
   if (typeof evt.preventDefault === "function") evt.preventDefault();
-  const factor = delta < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
+  const factor = zoomFactorForDelta(delta);
   const sx = pointerX(evt, camera);
   const sy = pointerY(evt, camera);
   return zoomAtScreen(camera, sx, sy, camera.zoom * factor);
@@ -256,14 +292,17 @@ export function handleDragStart(camera, evt) {
   camera.dragging = true;
   camera.target = null;
   camera.dragOrigin = { x: camera.x, y: camera.y };
-  camera.lastPointer = { x: pointerX(evt, camera), y: pointerY(evt, camera) };
+  camera.lastPointer = {
+    x: dragPointerX(evt, camera.viewport.width / 2),
+    y: dragPointerY(evt, camera.viewport.height / 2),
+  };
   return camera;
 }
 
 export function handleDragMove(camera, evt) {
   if (!camera || !camera.dragging || !camera.lastPointer) return camera;
-  const px = pointerX(evt, camera);
-  const py = pointerY(evt, camera);
+  const px = dragPointerX(evt, camera.lastPointer.x);
+  const py = dragPointerY(evt, camera.lastPointer.y);
   const dx = px - camera.lastPointer.x;
   const dy = py - camera.lastPointer.y;
   const zoom = Math.max(1e-6, Number(camera.zoom) || 1);
@@ -356,6 +395,9 @@ export default {
   resetCamera,
   screenToWorld,
   worldToScreen,
+  zoomAtScreen,
+  normalizeWheelDelta,
+  zoomFactorForDelta,
   handleWheel,
   handleDragStart,
   handleDragMove,

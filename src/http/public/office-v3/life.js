@@ -11,9 +11,17 @@
  *   world.js : BASE_WIDTH, BASE_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT,
  *              STATION_LAYOUT, buildWorldState, drawWorld, hitTestStation
  *   assets.js: PALETTE_V3, drawSprite, drawCharacter, drawTile
+ *
+ * AGENT REGISTRY (single source of truth, exported hook):
+ *   `marketKey -> { traderAgentId, criticAgentId, currentLocation, state }`
+ *   built deterministically (seed) by `createLifeSystem`/`updateLife`, read by
+ *   other modules through `getAgentRegistry(life)` / `getAgentLocations(life)`.
+ *   Invariants (1 market = 1 trader + 1 critic, one location per agent, every
+ *   agent id rendered exactly once per frame) are validated each update; they
+ *   throw in strict/test mode and degrade to a single `console.warn` in prod.
  */
 
-export const LIFE_VERSION = "office-v3-life.1.0.0";
+export const LIFE_VERSION = "office-v3-life.1.1.0";
 export const TILE = 16;
 export const AGENT_SPEED = 84;
 export const SUPERVISOR_SPEED = 58;
@@ -24,6 +32,12 @@ export const DEFAULT_WORLD_WIDTH = 2560;
 export const DEFAULT_WORLD_HEIGHT = 1600;
 export const DEFAULT_SEED = "tracecom-office-v3";
 export const SUPERVISOR_OBSERVE_MS = 900;
+
+export const AGENT_REGISTRY_VERSION = "office-v3-agent-registry.1.0.0";
+export const LOCATION_DESK = "desk";
+export const LOCATION_SOCIAL = "social";
+export const LOCATION_WALKING = "walking";
+export const LOCATION_UNKNOWN = "unknown";
 
 export const AGENT_ROLES = ["trader", "critic"];
 
@@ -106,6 +120,94 @@ function snapTileY(y) {
 
 function tileOf(x, y) {
   return { x: Math.floor(x / TILE), y: Math.floor(y / TILE) };
+}
+
+/* ------------------------------------------------------------------ *
+ * Agent registry helpers — one market = one trader + one critic.
+ * ------------------------------------------------------------------ */
+
+function marketKeyOfStation(station) {
+  if (!station || typeof station !== "object") return null;
+  const raw = station.marketKey ?? station.id ?? null;
+  if (raw === null || raw === undefined || raw === "") return null;
+  return String(raw);
+}
+
+export function zoneAt(world, x, y) {
+  if (!world || !Array.isArray(world.socialZones)) return null;
+  for (const zone of world.socialZones) {
+    const rect = zone?.rect ?? zone;
+    if (!rect) continue;
+    if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) return zone;
+  }
+  return null;
+}
+
+function strictInvariants(life) {
+  if (life && life.strict === true) return true;
+  if (life && life.strict === false) return false;
+  if (typeof globalThis !== "undefined" && globalThis.__OFFICE_V3_STRICT__ === true) return true;
+  if (typeof process !== "undefined" && process && process.env && process.env.NODE_ENV === "test") return true;
+  return false;
+}
+
+function reportInvariant(life, code, details) {
+  const message = `[life-invariant:${code}] ${details}`;
+  if (strictInvariants(life)) throw new Error(message);
+  if (typeof console !== "undefined" && typeof console.warn === "function") {
+    const warned = life && life.invariantWarnings instanceof Set ? life.invariantWarnings : null;
+    if (warned && warned.has(code)) return false;
+    if (warned) warned.add(code);
+    console.warn(message);
+  }
+  return false;
+}
+
+/**
+ * Single location per agent, by construction:
+ *   atDesk  -> "desk"
+ *   moving  -> "walking"
+ *   settled -> "social" (inside a social zone / at a social spot)
+ */
+export function classifyAgentLocation(life, agent) {
+  if (!agent) return { kind: LOCATION_UNKNOWN, zoneId: null, zoneKind: null, spotId: null, x: 0, y: 0 };
+  if (agent.atDesk === true) {
+    return { kind: LOCATION_DESK, zoneId: null, zoneKind: null, spotId: null, x: agent.x, y: agent.y };
+  }
+  if (agent.traveling === true) {
+    return { kind: LOCATION_WALKING, zoneId: null, zoneKind: null, spotId: agent.spotId ?? null, x: agent.x, y: agent.y };
+  }
+  const zone = zoneAt(life?.world, agent.x, agent.y);
+  return {
+    kind: LOCATION_SOCIAL,
+    zoneId: zone?.id ?? null,
+    zoneKind: zone?.kind ?? agent.activityKind ?? null,
+    spotId: agent.spotId ?? null,
+    x: agent.x,
+    y: agent.y,
+  };
+}
+
+function aggregateLocation(traderLocation, criticLocation) {
+  if (!traderLocation || !criticLocation) return LOCATION_UNKNOWN;
+  if (traderLocation === criticLocation) return traderLocation;
+  return LOCATION_WALKING;
+}
+
+function fallbackIdleTile(grid, loiterTiles, width, height) {
+  if (Array.isArray(loiterTiles) && loiterTiles.length > 0) {
+    const tile = loiterTiles[0];
+    return { x: tile.x, y: tile.y, zoneId: tile.zoneId ?? null, kind: tile.kind ?? "idle" };
+  }
+  const centerX = Math.floor(width / TILE / 2);
+  for (let ty = Math.floor(height / TILE) - 2; ty >= 1; ty -= 1) {
+    for (let dx = 0; dx < centerX; dx += 1) {
+      for (const tx of [centerX - dx, centerX + dx]) {
+        if (grid.isWalkable(tx, ty)) return { x: tx, y: ty, zoneId: null, kind: "idle" };
+      }
+    }
+  }
+  return null;
 }
 
 /* ------------------------------------------------------------------ *
@@ -615,7 +717,9 @@ function normalizeWorldState(worldState, options) {
     })
     .filter(Boolean);
 
-  return { width, height, grid, stations, colliders, socialZones, spots, loiterTiles, patrol, raw: fallback };
+  const idleFallback = fallbackIdleTile(grid, loiterTiles, width, height);
+
+  return { width, height, grid, stations, colliders, socialZones, spots, loiterTiles, patrol, idleFallback, raw: fallback };
 }
 
 /* ------------------------------------------------------------------ *
@@ -667,12 +771,13 @@ function stateForActivity(activity) {
 }
 
 function createAgent(role, station, seatIndex, index, seed) {
+  const marketKey = marketKeyOfStation(station) ?? stationKey(station) ?? `station:${index}`;
   return {
-    id: `${role}:${station.marketKey}`,
+    id: `${role}:${marketKey}`,
     role,
     index,
     stationId: stationKey(station),
-    marketKey: station.marketKey,
+    marketKey,
     seatIndex,
     home: { x: 0, y: 0 },
     x: 0,
@@ -689,10 +794,11 @@ function createAgent(role, station, seatIndex, index, seed) {
     atDesk: false,
     working: false,
     traveling: false,
+    retryAt: 0,
     frame: 0,
     facing: 1,
-    spotCursor: hashString(`${seed}:${role}:${station.marketKey}`),
-    loiterSeed: hashString(`${seed}:loiter:${role}:${station.marketKey}`),
+    spotCursor: hashString(`${seed}:${role}:${marketKey}`),
+    loiterSeed: hashString(`${seed}:loiter:${role}:${marketKey}`),
     loiterStep: 0,
   };
 }
@@ -750,7 +856,17 @@ function chooseSocialDestination(life, agent) {
     const tile = tiles[position];
     return { kind: "loiter", spotId: null, activity: tile.kind === "pool" ? "social" : tile.kind, x: tile.x * TILE + TILE / 2, y: tile.y * TILE + TILE / 2 };
   }
-  return { kind: "loiter", spotId: null, activity: "idle", x: agent.home.x, y: agent.home.y };
+  const idle = life.world.idleFallback;
+  if (idle) {
+    return {
+      kind: "loiter",
+      spotId: null,
+      activity: idle.kind === "pool" ? "social" : idle.kind ?? "idle",
+      x: idle.x * TILE + TILE / 2,
+      y: idle.y * TILE + TILE / 2,
+    };
+  }
+  return { kind: "loiter", spotId: null, activity: "idle", x: agent.x, y: agent.y };
 }
 
 function settleAtDestination(life, agent, destination, now) {
@@ -779,6 +895,15 @@ function walkTo(life, agent, destination) {
   const goal = { x: Math.floor(destination.x / TILE), y: Math.floor(destination.y / TILE) };
   const path = findTilePath(life.world.grid, start, goal);
   if (!path || path.length === 0) {
+    if (destination.kind === "desk") {
+      // Never teleport back to a desk: keep the agent where it is and retry
+      // deterministically after a short cooldown (reopen must be a walk).
+      agent.path = [];
+      agent.pathIndex = 0;
+      agent.traveling = false;
+      agent.retryAt = life.time + 400;
+      return false;
+    }
     settleAtDestination(life, agent, destination, life.time);
     return false;
   }
@@ -985,6 +1110,157 @@ function computeStats(life) {
   };
 }
 
+function enforceLifeInvariants(life, report) {
+  if (!report || report.ok) return report;
+  for (const violation of report.violations) reportInvariant(life, violation.code, JSON.stringify(violation));
+  return report;
+}
+
+/**
+ * Invariant checks (strict/test mode throws through `refreshAgentRegistry`):
+ *  - every market has exactly one trader + one critic, ids unique;
+ *  - every agent has exactly one location (never desk + spot);
+ *  - a working/seated agent is never inside a social zone;
+ *  - a closed market has no seated/working agent;
+ *  - occupancy reservations match the agent's `spotId`.
+ */
+export function validateLifeInvariants(life) {
+  const violations = [];
+  const push = (code, details) => violations.push({ code, ...details });
+  if (!life || !Array.isArray(life.agents) || !life.world) return { ok: true, violations };
+  const stationKeys = new Set();
+  for (const station of life.world.stations ?? []) {
+    const key = marketKeyOfStation(station);
+    if (key) stationKeys.add(key);
+  }
+  const seen = new Set();
+  for (const agent of life.agents) {
+    if (!agent || !agent.id) {
+      push("AGENT_WITHOUT_ID", { agentId: String(agent?.id ?? "") });
+      continue;
+    }
+    if (seen.has(agent.id)) push("DUPLICATE_AGENT_ID", { agentId: agent.id });
+    seen.add(agent.id);
+    const atDesk = agent.atDesk === true;
+    const working = agent.working === true;
+    const traveling = agent.traveling === true;
+    const marketKey = agent.marketKey ?? null;
+    if (marketKey && !stationKeys.has(marketKey)) push("AGENT_MARKET_WITHOUT_STATION", { agentId: agent.id, marketKey });
+    if (atDesk && agent.spotId) push("DUAL_LOCATION_DESK_SPOT", { agentId: agent.id, spotId: agent.spotId });
+    if (atDesk && traveling) push("DUAL_LOCATION_DESK_WALK", { agentId: agent.id });
+    if (working && !atDesk) push("WORKING_WITHOUT_DESK", { agentId: agent.id });
+    const zone = zoneAt(life.world, agent.x, agent.y);
+    if (working && zone) push("WORKING_IN_SOCIAL_ZONE", { agentId: agent.id, zoneId: zone.id ?? null });
+    if (life.occupancy) {
+      const reserved = life.occupancy.spotOf(agent.id);
+      if (agent.spotId && reserved !== agent.spotId) push("SPOT_RESERVATION_MISMATCH", { agentId: agent.id, spotId: agent.spotId, reserved });
+      if (!agent.spotId && reserved) push("ORPHAN_SPOT_RESERVATION", { agentId: agent.id, spotId: reserved });
+    }
+  }
+  const byMarket = new Map();
+  for (const agent of life.agents) {
+    const key = agent?.marketKey ?? null;
+    if (!key) continue;
+    if (!byMarket.has(key)) byMarket.set(key, []);
+    byMarket.get(key).push(agent);
+  }
+  const pending = life.pendingPresence === true;
+  for (const station of life.world.stations ?? []) {
+    const key = marketKeyOfStation(station);
+    if (!key) continue;
+    const pair = byMarket.get(key) ?? [];
+    if (pair.length !== 2) push("MARKET_PAIR_SIZE", { marketKey: key, count: pair.length });
+    const traders = pair.filter((agent) => agent.role === "trader").length;
+    const critics = pair.filter((agent) => agent.role === "critic").length;
+    if (pair.length === 2 && (traders !== 1 || critics !== 1)) push("MARKET_PAIR_ROLES", { marketKey: key, traders, critics });
+    const open = life.resolveOpen ? life.resolveOpen(station) === true : isStationOpen(station);
+    for (const agent of pair) {
+      const desired = open ? "DESK" : "SOCIAL";
+      if (!pending && agent.assignment !== desired) {
+        push("ASSIGNMENT_MISMATCH", { marketKey: key, agentId: agent.id, assignment: agent.assignment, desired });
+      }
+      if (!open && (agent.atDesk || agent.working)) push("CLOSED_MARKET_AT_DESK", { marketKey: key, agentId: agent.id });
+    }
+  }
+  return { ok: violations.length === 0, violations };
+}
+
+/**
+ * Rebuilds `life.registry` (marketKey -> pair) and `life.agentLocations`
+ * (agentId -> single location) from the live agents, then enforces invariants.
+ */
+export function refreshAgentRegistry(life, options = {}) {
+  if (!life) return { ok: true, violations: [] };
+  const locations = new Map();
+  for (const agent of life.agents ?? []) {
+    if (!agent || !agent.id) continue;
+    const location = classifyAgentLocation(life, agent);
+    locations.set(agent.id, {
+      agentId: agent.id,
+      role: agent.role ?? null,
+      marketKey: agent.marketKey ?? null,
+      stationId: agent.stationId ?? null,
+      location: location.kind,
+      zoneId: location.zoneId ?? null,
+      zoneKind: location.zoneKind ?? null,
+      spotId: agent.spotId ?? null,
+      atDesk: agent.atDesk === true,
+      working: agent.working === true,
+      traveling: agent.traveling === true,
+      x: agent.x,
+      y: agent.y,
+    });
+  }
+  const markets = new Map();
+  for (const station of life.world?.stations ?? []) {
+    const key = marketKeyOfStation(station);
+    if (!key) continue;
+    const pair = life.marketPairs?.get(key) ?? null;
+    const traderAgentId = pair?.traderAgentId ?? null;
+    const criticAgentId = pair?.criticAgentId ?? null;
+    const traderLocation = traderAgentId ? locations.get(traderAgentId)?.location ?? null : null;
+    const criticLocation = criticAgentId ? locations.get(criticAgentId)?.location ?? null : null;
+    const open = life.resolveOpen ? life.resolveOpen(station) === true : isStationOpen(station);
+    markets.set(key, {
+      marketKey: key,
+      traderAgentId,
+      criticAgentId,
+      currentLocation: aggregateLocation(traderLocation, criticLocation),
+      state: open ? "OPEN" : "CLOSED",
+      traderLocation,
+      criticLocation,
+      stationId: station.id ?? key,
+    });
+  }
+  life.registry = markets;
+  life.agentLocations = locations;
+  const report = validateLifeInvariants(life);
+  if (options.enforce !== false) enforceLifeInvariants(life, report);
+  return report;
+}
+
+/**
+ * THE hook other modules should read: `marketKey -> { traderAgentId,
+ * criticAgentId, currentLocation, state }` (plus `traderLocation`,
+ * `criticLocation`, `stationId`). Deterministic for a given seed + update count.
+ */
+export function getAgentRegistry(life) {
+  if (!life) return {};
+  refreshAgentRegistry(life);
+  const output = {};
+  for (const [key, entry] of life.registry) output[key] = { ...entry };
+  return output;
+}
+
+/** `agentId -> { agentId, role, marketKey, location, zoneId, spotId, ... }` (one location each). */
+export function getAgentLocations(life) {
+  if (!life) return {};
+  refreshAgentRegistry(life);
+  const output = {};
+  for (const [agentId, entry] of life.agentLocations) output[agentId] = { ...entry };
+  return output;
+}
+
 export function createLifeSystem(worldState, options = {}) {
   const seed = String(options.seed ?? DEFAULT_SEED);
   const world = normalizeWorldState(worldState, options);
@@ -996,8 +1272,23 @@ export function createLifeSystem(worldState, options = {}) {
     if (station.id) stationById.set(station.id, station);
     if (station.marketKey) stationByKey.set(station.marketKey, station);
   }
+  const marketPairs = new Map();
+  const agentById = new Map();
+  for (const agent of agents) {
+    if (!agentById.has(agent.id)) agentById.set(agent.id, agent);
+    const key = agent.marketKey ?? agent.stationId ?? null;
+    if (!key) continue;
+    let pair = marketPairs.get(key);
+    if (!pair) {
+      pair = { marketKey: key, traderAgentId: null, criticAgentId: null, stationId: agent.stationId ?? null };
+      marketPairs.set(key, pair);
+    }
+    if (agent.role === "trader") pair.traderAgentId = agent.id;
+    else if (agent.role === "critic") pair.criticAgentId = agent.id;
+  }
   const life = {
     version: LIFE_VERSION,
+    registryVersion: AGENT_REGISTRY_VERSION,
     seed,
     rng: mulberry32(hashString(seed)),
     world,
@@ -1006,7 +1297,14 @@ export function createLifeSystem(worldState, options = {}) {
     agents,
     stationById,
     stationByKey,
+    marketPairs,
+    agentById,
+    registry: new Map(),
+    agentLocations: new Map(),
     presence: new Map(),
+    pendingPresence: false,
+    strict: options.strict === true ? true : options.strict === false ? false : undefined,
+    invariantWarnings: new Set(),
     supervisor: createSupervisor(world, seed),
     time: 0,
     disposed: false,
@@ -1022,6 +1320,7 @@ export function createLifeSystem(worldState, options = {}) {
     spawnAgent(life, agent, station, 0);
   }
   life.stats = computeStats(life);
+  refreshAgentRegistry(life);
   return life;
 }
 
@@ -1029,8 +1328,20 @@ export function setPresence(life, stationId, active) {
   if (!life) return false;
   const station = life.stationById.get(stationId) ?? life.stationByKey.get(stationId) ?? null;
   if (!station) return false;
-  life.presence.set(stationKey(station), active === true);
+  const key = stationKey(station);
+  const next = active === true;
+  if (life.presence.get(key) !== next) life.pendingPresence = true;
+  life.presence.set(key, next);
   return true;
+}
+
+/** Same effect as `setPresence`, but resolved by `marketKey` first (registry key). */
+export function setMarketPresence(life, marketKey, open) {
+  if (!life || marketKey === null || marketKey === undefined) return false;
+  const key = String(marketKey);
+  const station = life.stationByKey.get(key) ?? life.stationById.get(key) ?? null;
+  if (!station) return false;
+  return setPresence(life, stationKey(station), open);
 }
 
 export function updateLife(life, dtMs) {
@@ -1045,38 +1356,49 @@ export function updateLife(life, dtMs) {
   for (const agent of life.agents) {
     const station = life.stationById.get(agent.stationId) ?? life.stationByKey.get(agent.marketKey) ?? null;
     const desired = life.resolveOpen(station) ? "DESK" : "SOCIAL";
-    if (desired !== agent.assignment) {
+    // A stalled desk return (no path this frame) retries after a cooldown,
+    // instead of teleporting the agent onto the chair.
+    const deskStalled =
+      desired === "DESK" && agent.assignment === "DESK" && !agent.atDesk && !agent.traveling && now >= (agent.retryAt ?? 0);
+    if (desired !== agent.assignment || deskStalled) {
       if (desired === "DESK") planDesk(life, agent, now);
       else planSocial(life, agent, now);
     }
     advanceAgent(life, agent, dt, now);
   }
   updateSupervisor(life, dt, now);
+  life.pendingPresence = false;
   life.stats = computeStats(life);
+  refreshAgentRegistry(life);
   return life;
 }
 
 export function getAgentStates(life) {
   if (!life) return [];
-  return life.agents.map((agent) => ({
-    id: agent.id,
-    role: agent.role,
-    stationId: agent.stationId,
-    marketKey: agent.marketKey,
-    state: agent.state,
-    pose: agent.pose,
-    x: agent.x,
-    y: agent.y,
-    home: { x: agent.home.x, y: agent.home.y },
-    assignment: agent.assignment,
-    spotId: agent.spotId,
-    activityKind: agent.activityKind,
-    atDesk: agent.atDesk,
-    working: agent.working,
-    traveling: agent.traveling,
-    idle: !agent.working,
-    pathLength: agent.path.length,
-  }));
+  return life.agents.map((agent) => {
+    const location = classifyAgentLocation(life, agent);
+    return {
+      id: agent.id,
+      role: agent.role,
+      stationId: agent.stationId,
+      marketKey: agent.marketKey,
+      state: agent.state,
+      pose: agent.pose,
+      x: agent.x,
+      y: agent.y,
+      home: { x: agent.home.x, y: agent.home.y },
+      assignment: agent.assignment,
+      spotId: agent.spotId,
+      activityKind: agent.activityKind,
+      atDesk: agent.atDesk,
+      working: agent.working,
+      traveling: agent.traveling,
+      idle: !agent.working,
+      pathLength: agent.path.length,
+      location: location.kind,
+      zoneId: location.zoneId,
+    };
+  });
 }
 
 export function getSupervisorState(life) {
@@ -1182,8 +1504,21 @@ export function drawAgents(ctx, life, camera = null) {
   items.sort((a, b) => a.sortY - b.sortY || (a.sortX ?? 0) - (b.sortX ?? 0));
 
   let drawn = 0;
+  let duplicates = 0;
+  // Every agentId is rendered at most once per frame; a visual clone is an
+  // invariant violation (throws in strict/test mode, warns in production).
+  const drawnIds = new Set();
   const drawOne = (entity, renderY) => {
     if (!isAgentVisible(camera, entity.x, renderY)) return;
+    const entityId = entity?.id ?? null;
+    if (entityId !== null) {
+      if (drawnIds.has(entityId)) {
+        duplicates += 1;
+        reportInvariant(life, "DUPLICATE_AGENT_DRAW", `agent ${entityId} drawn twice in one frame`);
+        return;
+      }
+      drawnIds.add(entityId);
+    }
     const options = { role: entity.role, frame: entity.frame, facing: entity.facing, scale: 1, id: entity.id, seed: entity.seed };
     if (assets && typeof assets.drawCharacter === "function") {
       assets.drawCharacter(ctx, entity.pose, entity.x, renderY, options);
@@ -1199,6 +1534,7 @@ export function drawAgents(ctx, life, camera = null) {
       drawOne(item.entity, item.renderY);
     }
   }
+  life.lastDrawStats = { drawn, unique: drawnIds.size, duplicates };
   return drawn;
 }
 
@@ -1211,12 +1547,20 @@ if (autoLoad && typeof autoLoad.then === "function") {
 
 export default {
   LIFE_VERSION,
+  AGENT_REGISTRY_VERSION,
   TILE,
   createLifeSystem,
   updateLife,
   drawAgents,
   getAgentStates,
   setPresence,
+  setMarketPresence,
+  getAgentRegistry,
+  getAgentLocations,
+  validateLifeInvariants,
+  refreshAgentRegistry,
+  classifyAgentLocation,
+  zoneAt,
   getSupervisorState,
   buildFallbackWorldState,
   findTilePath,

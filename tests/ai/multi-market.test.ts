@@ -51,16 +51,25 @@ async function ack(runtime: any, key: string, orderId: string) {
 }
 
 describe("MARKET UNIVERSE — chaves explicitas e limite global", () => {
-  it("15 mercados, NORMAL ≠ OTC com chaves distintas e 11o bloqueado", () => {
-    expect(UNIVERSE).toHaveLength(55);
+  it("N mercados reconciliados, NORMAL ≠ OTC com chaves distintas e N+1o bloqueado", () => {
+    const total = UNIVERSE.length;
+    expect(total).toBe(MAX_ACTIVE_MARKETS);
+    expect(total).toBeGreaterThan(0);
     expect(marketKey("EURUSD", "NORMAL")).toBe("EURUSD:NORMAL");
     expect(marketKey("EURUSD", "OTC")).toBe("EURUSD:OTC");
     expect(entryForKey("EURUSD:NORMAL").marketType).toBe("NORMAL");
     expect(entryForKey("EURUSD:OTC").marketType).toBe("OTC");
-    expect(MAX_ACTIVE_MARKETS).toBe(55);
-    const all = UNIVERSE.slice(0, 55).map((entry: any) => marketKey(entry.canonical, entry.marketType));
+    const all = UNIVERSE.map((entry: any) => marketKey(entry.canonical, entry.marketType));
     expect(canActivateMore(all).allowed).toBe(false);
-    expect(canActivateMore(all.slice(0, 54)).allowed).toBe(true);
+    expect(canActivateMore(all.slice(0, total - 1)).allowed).toBe(true);
+  });
+  it("TASK 7: universo reconciliado nao tem chaves duplicadas e nao mapeia NORMAL->OTC", () => {
+    const keys = UNIVERSE.map((entry: any) => marketKey(entry.canonical, entry.marketType));
+    expect(new Set(keys).size).toBe(UNIVERSE.length);
+    // USDCHF:NORMAL removido por evidencia (existe so na secao blitz; produto nao suportado).
+    // NORMAL/OTC permanece isolado: a remocao do NORMAL NAO afeta o OTC.
+    expect(entryForKey("USDCHF:NORMAL")).toBeNull();
+    expect(entryForKey("USDCHF:OTC")?.marketType).toBe("OTC");
   });
   it("monitor de concentracao detecta exposicao duplicada em USD", () => {
     const exposure = concentrationExposure([
@@ -157,12 +166,13 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(eurusdOtc.lastCandle.close).toBe(1.305);
     expect(eurusdNormal.lastCandle.close).toBe(1.205);
   });
-  it("11o ativo e bloqueado e ha exatamente 10 mesas ativas", () => {
+  it("mercado excedente e bloqueado pelo limite global de ativos", () => {
     const runtime = multiFixture();
     const keys = [...runtime.markets.keys()];
-    keys.slice(0, 55).forEach((key: string, index: number) => seedMarket(runtime, key, { activeId: 400 + index }));
-    for (const key of keys.slice(0, 55)) runtime.setMarket(key, { enabled: true }, { persist: false });
-    expect(runtime.activeMarketKeys()).toHaveLength(55);
+    keys.forEach((key: string, index: number) => seedMarket(runtime, key, { activeId: 400 + index }));
+    for (const key of keys) runtime.setMarket(key, { enabled: true }, { persist: false });
+    expect(runtime.activeMarketKeys()).toHaveLength(keys.length);
+    expect(keys.length).toBe(MAX_ACTIVE_MARKETS);
   });
   it("ordens simultaneas em mercados diferentes; duplicata no mesmo mercado bloqueada", async () => {
     const runtime = multiFixture();
@@ -405,7 +415,7 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     await expect(runtime.requestOrder({ marketKey: "AUDUSD:NORMAL", direction: "BUY", horizonSeconds: 60, idempotencyKey: "k-disabled" })).rejects.toThrowError(/PORTFOLIO_GATE_MARKET_ENABLED/);
     expect(runtime.__sent).toHaveLength(0);
     const office = runtime.office();
-    expect(office.markets).toHaveLength(55);
+    expect(office.markets).toHaveLength(UNIVERSE.length);
     expect(office.markets.filter((market: any) => market.enabled).length).toBeLessThanOrEqual(10);
     expect(office.markets.find((market: any) => market.marketKey === "AUDUSD:NORMAL")).toMatchObject({ availability: "OPEN", enabled: false });
   });

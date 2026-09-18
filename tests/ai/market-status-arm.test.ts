@@ -24,9 +24,9 @@ describe("MARKET STATUS — fonte de verdade e o broker (nunca horario teorico)"
     const resolver = new RuntimeAssetResolver() as any;
     resolver.ingestInitializationData(initData({ "76": { name: "EURUSD-OTC", enabled: true, is_suspended: false } }));
     expect(resolver.get("EURUSD:OTC").availability).toBe("OPEN");
-    expect(resolver.get("USDCHF:NORMAL").availability).toBe("NOT_OFFERED");
-    expect(resolver.get("USDCHF:NORMAL").offered).toBe(false);
-    expect(resolver.get("USDCHF:NORMAL").activeId).toBeNull();
+    expect(resolver.get("USDJPY:NORMAL").availability).toBe("NOT_OFFERED");
+    expect(resolver.get("USDJPY:NORMAL").offered).toBe(false);
+    expect(resolver.get("USDJPY:NORMAL").activeId).toBeNull();
   });
 
   it("suspensao e reopen do broker alteram a disponibilidade sem restart e acordam/dormem o agente", () => {

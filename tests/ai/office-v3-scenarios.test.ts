@@ -49,6 +49,11 @@ bindWorld(world);
 
 const PAGE_SOURCE_PATH = fileURLToPath(new URL("../../src/http/public/office-v3/office-v3.js", import.meta.url));
 const PAGE_SOURCE = readFileSync(PAGE_SOURCE_PATH, "utf8");
+const TOPBAR_SOURCE_PATH = fileURLToPath(new URL("../../src/http/public/office-v3/topbar.js", import.meta.url));
+const TOPBAR_SOURCE = readFileSync(TOPBAR_SOURCE_PATH, "utf8");
+const STAKE_CONFIG_SOURCE_PATH = fileURLToPath(new URL("../../src/http/public/office-v3/stake-config.js", import.meta.url));
+const STAKE_CONFIG_SOURCE = readFileSync(STAKE_CONFIG_SOURCE_PATH, "utf8");
+const ORDER_ENDPOINTS = ["/api/iq/test-order", "/api/iq/real/confirm", "/api/iq/mode", "placeOrder", "submitOrder", "sendOrder"];
 
 const TOTAL_STATIONS = 55;
 const AGENTS_PER_STATION = 2;
@@ -217,9 +222,23 @@ describe("OFFICE V3 — guarda de integração (somente leitura/render)", () => 
     expect(PAGE_SOURCE).not.toContain('method: "POST"');
   });
 
-  it("não existe endpoint de ordem/execução/stake no módulo da página", () => {
-    for (const forbidden of ["/api/iq/order", "/api/iq/execute", "/api/iq/stake", "/order", "/execute", "/stake", "placeOrder", "submitOrder", "sendOrder"]) {
+  it("não existe endpoint de ordem/execução/REAL no módulo da página", () => {
+    for (const forbidden of ORDER_ENDPOINTS) {
       expect(PAGE_SOURCE.includes(forbidden), `endpoint proibido presente: ${forbidden}`).toBe(false);
+    }
+  });
+
+  it("os módulos de controle usam apenas endpoints reais e nenhum dispara ordem/REAL", () => {
+    expect(TOPBAR_SOURCE).toContain("/api/iq/arm");
+    expect(TOPBAR_SOURCE).toContain("/api/iq/disarm");
+    expect(TOPBAR_SOURCE).toContain("/api/iq/config/auto-execute");
+    expect(TOPBAR_SOURCE).toContain("/api/iq/config/global-stake");
+    expect(STAKE_CONFIG_SOURCE).toContain("/api/iq/market");
+    expect(STAKE_CONFIG_SOURCE).toContain('method: "PUT"');
+    for (const source of [TOPBAR_SOURCE, STAKE_CONFIG_SOURCE]) {
+      for (const forbidden of ORDER_ENDPOINTS) {
+        expect(source.includes(forbidden), `endpoint proibido presente: ${forbidden}`).toBe(false);
+      }
     }
   });
 
@@ -228,7 +247,7 @@ describe("OFFICE V3 — guarda de integração (somente leitura/render)", () => 
   });
 
   it("a página importa todos os módulos V3 e usa buildWorldState + drawWorld", () => {
-    for (const specifier of ["./assets.js", "./world.js", "./life.js", "./camera.js", "./dashboard.js", "./market-detail.js"]) {
+    for (const specifier of ["./assets.js", "./world.js", "./life.js", "./camera.js", "./dashboard.js", "./market-detail.js", "./topbar.js"]) {
       expect(PAGE_SOURCE.includes(specifier), `import ausente: ${specifier}`).toBe(true);
     }
     expect(PAGE_SOURCE.includes("buildWorldState")).toBe(true);

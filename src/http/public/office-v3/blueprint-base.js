@@ -6,8 +6,12 @@
  * `overlay.js`), aligned to the blueprint coordinates. This is the only
  * technique that can approach 100% visual identity for the static scene.
  *
- * Honest trade-off: the base image always shows painted agents. A CLOSED desk
- * cannot remove them, so the overlay scrims/tags the desk instead (see
+ * DEFAULT ASSET = `blueprint-clean.png`: the reference with the painted FALSE
+ * P&L badges above every desk inpainted out (see scripts/office-v3-clean-plate.mjs),
+ * because dynamic P&L is drawn per real station state by `overlay.js`. The raw
+ * frozen reference remains available via `?base=original` (or env
+ * `OFFICE_V3_BASE=original`) for audit/diff. A CLOSED desk still cannot remove
+ * the painted agents, so the overlay scrims/tags the desk instead (see
  * docs/office-v3/blueprint-base.md). The dynamic art is ours.
  *
  * Dependency-free and DOM-guarded: browser uses `new Image()`, Node uses
@@ -19,9 +23,14 @@
 
 export const BASE_WIDTH = 1536;
 export const BASE_HEIGHT = 1024;
-export const BASE_MODES = Object.freeze(["reference", "procedural"]);
+export const BASE_MODES = Object.freeze(["reference", "original", "procedural"]);
 export const DEFAULT_BASE_MODE = "reference";
-export const BASE_ASSET = "./blueprint-reference.png";
+export const BASE_ASSET = "./blueprint-clean.png";
+export const ORIGINAL_ASSET = "./blueprint-reference.png";
+export const BASE_ASSETS = Object.freeze({
+  reference: BASE_ASSET,
+  original: ORIGINAL_ASSET,
+});
 export const NODE_CANVAS_CANDIDATES = Object.freeze([
   "C:/Users/junin/AppData/Local/Temp/opencode/render-kit/node_modules/@napi-rs/canvas",
   "@napi-rs/canvas",
@@ -29,17 +38,26 @@ export const NODE_CANVAS_CANDIDATES = Object.freeze([
 
 /**
  * Authoritative config for the hybrid base layer. Overridable by env
- * `OFFICE_V3_BASE` and by URL query `?base=procedural` (see base-mode.js).
+ * `OFFICE_V3_BASE` and by URL query `?base=original` / `?base=procedural`
+ * (see base-mode.js). `mode: "reference"` means the clean plate.
  */
 export const OFFICE_V3_BASE = Object.freeze({
   mode: DEFAULT_BASE_MODE,
   width: BASE_WIDTH,
   height: BASE_HEIGHT,
   asset: BASE_ASSET,
+  originalAsset: ORIGINAL_ASSET,
   envKey: "OFFICE_V3_BASE",
   queryKey: "base",
   modes: BASE_MODES,
 });
+
+/** Asset path for a resolved base mode. Unknown/undefined falls back to the clean plate. */
+export function assetForBaseMode(mode) {
+  if (mode == null) return BASE_ASSET;
+  const key = String(mode).trim().toLowerCase();
+  return BASE_ASSETS[key] ?? BASE_ASSET;
+}
 
 function hasDom() {
   return typeof document !== "undefined" && typeof Image !== "undefined";
@@ -49,10 +67,14 @@ function isNodeRuntime() {
   return typeof process !== "undefined" && !!(process.versions && process.versions.node);
 }
 
-async function resolveDefaultSource() {
-  if (hasDom()) return BASE_ASSET;
+async function resolveSource(src) {
+  const value = src || BASE_ASSET;
+  if (hasDom()) return value;
+  if (!isNodeRuntime()) return value;
   const { fileURLToPath } = await import("node:url");
-  return fileURLToPath(new URL(BASE_ASSET, import.meta.url));
+  if (/^file:/i.test(value)) return fileURLToPath(value);
+  if (/^[a-zA-Z]:[\\/]/.test(value) || value.startsWith("/") || value.startsWith("\\\\")) return value;
+  return fileURLToPath(new URL(value, import.meta.url));
 }
 
 async function loadNodeImage(source) {
@@ -87,12 +109,14 @@ function loadDomImage(source) {
 /**
  * Loads the frozen reference image handle.
  *
- * @param {string} [src] explicit path/URL; defaults to the served
- *   `blueprint-reference.png` (browser) or the same file on disk (Node).
+ * @param {string} [src] explicit path/URL; defaults to the served clean plate
+ *   `blueprint-clean.png` (browser) or the same file on disk (Node). Relative
+ *   paths are resolved against this module in Node. Pass `ORIGINAL_ASSET`
+ *   (or `assetForBaseMode("original")`) for the raw false-badge reference.
  * @returns {Promise<any>} an image handle usable with `drawImage`.
  */
 export async function loadBlueprintBase(src) {
-  const source = src || (await resolveDefaultSource());
+  const source = await resolveSource(src);
   if (hasDom()) return loadDomImage(source);
   if (isNodeRuntime()) return loadNodeImage(source);
   throw new Error("loadBlueprintBase: ambiente sem DOM e sem Node canvas.");
@@ -121,6 +145,9 @@ export default {
   BASE_MODES,
   DEFAULT_BASE_MODE,
   BASE_ASSET,
+  ORIGINAL_ASSET,
+  BASE_ASSETS,
+  assetForBaseMode,
   OFFICE_V3_BASE,
   loadBlueprintBase,
   drawBlueprintBase,
