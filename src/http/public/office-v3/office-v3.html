@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>TRACE/COM · PIXEL OFFICE V3</title>
+    <link rel="stylesheet" href="./styles-v3.css" />
+    <style>
+      :root {
+        --navy: #0d1b2e;
+        --gold: #c9a24b;
+        --gold-hi: #e8c877;
+        --green: #3fbf5f;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: var(--navy);
+        color: #e8d7b0;
+        font-family: "Consolas", "Menlo", monospace;
+        overflow: hidden;
+      }
+      #office-canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        image-rendering: pixelated;
+        cursor: grab;
+      }
+      #office-canvas.dragging { cursor: grabbing; }
+      .hud {
+        position: fixed;
+        z-index: 10;
+        pointer-events: none;
+        text-shadow: 0 1px 0 #000;
+      }
+      .hud.top-left { top: 10px; left: 12px; }
+      .hud.top-right { top: 10px; right: 12px; text-align: right; }
+      .hud.bottom-left { bottom: 10px; left: 12px; font-size: 11px; opacity: 0.85; }
+      .brand { color: var(--gold-hi); font-size: 15px; letter-spacing: 1px; }
+      .sub { font-size: 10px; color: #9ab8dc; }
+      .badge {
+        display: inline-block;
+        border: 1px solid var(--gold);
+        color: var(--gold-hi);
+        padding: 2px 8px;
+        font-size: 11px;
+        margin-left: 6px;
+      }
+      .badge.practice { border-color: var(--green); color: var(--green); }
+      #office-status {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 8px;
+        background: rgba(13, 27, 46, 0.92);
+        color: var(--gold-hi);
+        z-index: 20;
+        transition: opacity 0.4s ease;
+      }
+      #office-status.hidden { opacity: 0; pointer-events: none; }
+      #office-status small { color: #9ab8dc; }
+      #office-detail {
+        position: fixed;
+        right: 12px;
+        bottom: 12px;
+        width: 260px;
+        background: rgba(8, 18, 31, 0.94);
+        border: 1px solid var(--gold);
+        padding: 10px 12px;
+        font-size: 12px;
+        z-index: 15;
+        display: none;
+      }
+      #office-detail h3 { margin: 0 0 6px; color: var(--gold-hi); font-size: 13px; }
+      #office-detail .row { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; border-bottom: 1px solid rgba(120, 150, 200, 0.14); }
+      #office-detail .row span:last-child { color: #fff; }
+      #office-detail .close { position: absolute; top: 6px; right: 8px; cursor: pointer; color: #9ab8dc; pointer-events: auto; }
+      #office-dashboard {
+        position: fixed;
+        left: 12px;
+        top: 64px;
+        width: 288px;
+        max-height: 62vh;
+        overflow: auto;
+        z-index: 12;
+        pointer-events: auto;
+      }
+      #office-detail-root {
+        position: fixed;
+        right: 12px;
+        bottom: 12px;
+        width: 360px;
+        max-width: calc(100vw - 24px);
+        max-height: 74vh;
+        overflow: auto;
+        z-index: 16;
+        pointer-events: auto;
+      }
+      #office-detail-root:empty { display: none; }
+      #office-error {
+        position: fixed;
+        left: 50%;
+        top: 56px;
+        transform: translateX(-50%);
+        max-width: 560px;
+        padding: 8px 14px;
+        z-index: 18;
+        background: rgba(122, 28, 28, 0.94);
+        border: 1px solid #e08585;
+        color: #ffe6e6;
+        font-size: 12px;
+        border-radius: 6px;
+        pointer-events: none;
+        text-align: center;
+      }
+      #office-error[hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <canvas id="office-canvas"></canvas>
+
+    <div class="hud top-left">
+      <div class="brand">TRACE/COM · PIXEL OFFICE V3</div>
+      <div class="sub">DISCIPLINA · DADOS · RESULTADOS</div>
+    </div>
+    <div class="hud top-right">
+      <span class="badge practice" id="hud-mode">PRACTICE · ZERO REAL</span>
+      <div class="sub" id="hud-camera">zoom 100%</div>
+    </div>
+    <div class="hud bottom-left">arraste para mover · scroll para zoom · clique numa mesa</div>
+    <div id="office-dashboard"></div>
+    <div id="office-detail-root"></div>
+    <div id="office-error" hidden></div>
+
+    <div id="office-detail">
+      <span class="close" id="detail-close">×</span>
+      <h3 id="detail-title">—</h3>
+      <div id="detail-rows"></div>
+    </div>
+
+    <div id="office-status">
+      <div>Carregando PIXEL OFFICE V3…</div>
+      <small id="office-status-detail">montando o mundo</small>
+    </div>
+
+    <script type="module" src="./office-v3.js"></script>
+  </body>
+</html>
