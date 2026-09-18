@@ -158,7 +158,7 @@ async function appendIndex(base, entries) {
 async function uploadOne(base, file, meta, indexEntries) {
   const size = fs.statSync(file).size;
   const sha256 = await sha256File(file);
-  const objectPath = `${PREFIX}/${meta.dateKey}/${path.basename(file)}`;
+  const objectPath = `${PREFIX}/${meta.dateKey}/${meta.stamp}-${path.basename(file)}`;
   const record = {
     at: new Date().toISOString(),
     source: path.basename(file),
@@ -215,13 +215,14 @@ async function uploadPending(base, archiveDir, summary) {
   const archived = [...(summary?.audit?.archived ?? []), summary?.frames?.archived ?? null, summary?.events?.archived ?? null, summary?.accessLogs?.archived ?? null].filter(Boolean);
   for (const a of archived) if (a.file) summaryRows.set(a.file, { rows: a.rows ?? a.lines ?? null, label: a.label ?? null });
   const dateKey = new Date().toISOString().slice(0, 10);
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
   const files = fs.readdirSync(archiveDir).filter((f) => f.endsWith(".jsonl.gz")).sort();
   const indexEntries = [];
   const done = [];
   for (const name of files) {
     const file = path.join(archiveDir, name);
     const meta = summaryRows.get(file) ?? manifestRows.get(name) ?? {};
-    const record = await uploadOne(base, file, { dateKey, rows: meta.rows, label: meta.label }, indexEntries);
+    const record = await uploadOne(base, file, { dateKey, stamp, rows: meta.rows, label: meta.label }, indexEntries);
     done.push({ object: record.object, bytes: record.bytes, sha256: record.sha256, parts: record.parts.length });
   }
   const manifestFile = path.join(archiveDir, "archive-manifest.json");
