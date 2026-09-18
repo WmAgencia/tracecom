@@ -37,13 +37,15 @@ const dashboardEl = document.getElementById("office-dashboard");
 const detailRootEl = document.getElementById("office-detail-root");
 const errorEl = document.getElementById("office-error");
 
-const modules = { assets: null, world: null, life: null, camera: null, dashboard: null, marketDetail: null };
+const modules = { assets: null, world: null, life: null, camera: null, dashboard: null, marketDetail: null, blueprintBase: null, overlay: null, baseMode: null };
 let worldState = null;
 let worldModule = null;
 let lifeSystem = null;
 let officeJson = null;
 let camera = null;
 let lifeSignature = "";
+let blueprintBase = null;
+let baseMode = "reference";
 let viewport = { width: 0, height: 0 };
 let lastFrame = 0;
 let pollTimer = 0;
@@ -104,8 +106,37 @@ async function loadModules() {
     loadModule("camera", "./camera.js"),
     loadModule("dashboard", "./dashboard.js"),
     loadModule("marketDetail", "./market-detail.js"),
+    loadModule("blueprintBase", "./blueprint-base.js"),
+    loadModule("overlay", "./overlay.js"),
+    loadModule("baseMode", "./base-mode.js"),
   ]);
   worldModule = modules.world;
+}
+
+/* ------------------------------------------------------------------ *
+ * Hybrid base mode (frozen reference as static layer)
+ * ------------------------------------------------------------------ */
+
+function resolveBaseMode() {
+  try {
+    if (modules.baseMode && typeof modules.baseMode.resolveBaseMode === "function") {
+      const search = typeof window !== "undefined" && window.location ? window.location.search : "";
+      return modules.baseMode.resolveBaseMode(search, {});
+    }
+  } catch (error) {
+    warnMissing("baseMode.resolveBaseMode", error);
+  }
+  return "reference";
+}
+
+async function loadHybridBase() {
+  if (!modules.blueprintBase || typeof modules.blueprintBase.loadBlueprintBase !== "function") return null;
+  try {
+    return await modules.blueprintBase.loadBlueprintBase();
+  } catch (error) {
+    warnMissing("blueprintBase.loadBlueprintBase", error);
+    return null;
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -447,26 +478,41 @@ function renderFrame(now) {
   ctx.fillStyle = "#05090f";
   ctx.fillRect(0, 0, viewport.width, viewport.height);
 
-  try {
-    worldModule.drawWorld(ctx, worldState, camera, { agents: !lifeSystem });
-  } catch (error) {
-    console.warn("[office-v3] drawWorld falhou", error);
-  }
-
-  if (lifeSystem && modules.life && typeof modules.life.drawAgents === "function") {
+  const hybrid = baseMode === "reference" && blueprintBase && modules.overlay && typeof modules.overlay.drawDynamicOverlay === "function";
+  if (hybrid) {
     try {
-      ctx.save();
-      if (modules.camera && typeof modules.camera.applyCamera === "function") {
-        modules.camera.applyCamera(ctx, camera);
-      } else {
-        ctx.scale(camera.zoom, camera.zoom);
-        ctx.translate(-camera.x, -camera.y);
+      if (modules.blueprintBase && typeof modules.blueprintBase.drawBlueprintBase === "function") {
+        modules.blueprintBase.drawBlueprintBase(ctx, blueprintBase);
       }
-      modules.life.drawAgents(ctx, lifeSystem, camera);
-      ctx.restore();
+      modules.overlay.drawDynamicOverlay(ctx, worldState, lifeSystem, camera, {
+        drawCharacter: modules.assets && modules.assets.drawCharacter,
+      });
     } catch (error) {
-      warnMissing("life.drawAgents", error);
-      lifeSystem = null;
+      console.warn("[office-v3] render híbrido falhou — fallback procedural", error);
+      blueprintBase = null;
+    }
+  } else {
+    try {
+      worldModule.drawWorld(ctx, worldState, camera, { agents: !lifeSystem });
+    } catch (error) {
+      console.warn("[office-v3] drawWorld falhou", error);
+    }
+
+    if (lifeSystem && modules.life && typeof modules.life.drawAgents === "function") {
+      try {
+        ctx.save();
+        if (modules.camera && typeof modules.camera.applyCamera === "function") {
+          modules.camera.applyCamera(ctx, camera);
+        } else {
+          ctx.scale(camera.zoom, camera.zoom);
+          ctx.translate(-camera.x, -camera.y);
+        }
+        modules.life.drawAgents(ctx, lifeSystem, camera);
+        ctx.restore();
+      } catch (error) {
+        warnMissing("life.drawAgents", error);
+        lifeSystem = null;
+      }
     }
   }
 
@@ -623,6 +669,9 @@ async function init() {
 
   camera = createCameraState();
   resize();
+
+  baseMode = resolveBaseMode();
+  if (baseMode === "reference") blueprintBase = await loadHybridBase();
 
   const json = await fetchOfficeJson();
   if (json) {
