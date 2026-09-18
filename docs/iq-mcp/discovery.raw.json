@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-09-18T01:06:27.361Z",
+  "authenticated": false,
+  "servers": {
+    "binary": {
+      "base": "https://binary-options.mcp.iqoption.com",
+      "reachable": false,
+      "authenticated": false,
+      "protocolVersion": null,
+      "serverInfo": null,
+      "capabilities": null,
+      "tools": [],
+      "resources": [],
+      "prompts": [],
+      "error": "NO_TOKEN"
+    },
+    "turbo": {
+      "base": "https://turbo-options.mcp.iqoption.com",
+      "reachable": false,
+      "authenticated": false,
+      "protocolVersion": null,
+      "serverInfo": null,
+      "capabilities": null,
+      "tools": [],
+      "resources": [],
+      "prompts": [],
+      "error": "NO_TOKEN"
+    },
+    "blitz": {
+      "base": "https://blitz-options.mcp.iqoption.com",
+      "reachable": false,
+      "authenticated": false,
+      "protocolVersion": null,
+      "serverInfo": null,
+      "capabilities": null,
+      "tools": [],
+      "resources": [],
+      "prompts": [],
+      "error": "NO_TOKEN"
+    },
+    "digital": {
+      "base": "https://digital-options.mcp.iqoption.com",
+      "reachable": false,
+      "authenticated": false,
+      "protocolVersion": null,
+      "serverInfo": null,
+      "capabilities": null,
+      "tools": [],
+      "resources": [],
+      "prompts": [],
+      "error": "NO_TOKEN"
+    },
+    "marginal-cfd": {
+      "base": "https://marginal-cfd.mcp.iqoption.com",
+      "reachable": false,
+      "authenticated": false,
+      "protocolVersion": null,
+      "serverInfo": null,
+      "capabilities": null,
+      "tools": [],
+      "resources": [],
+      "prompts": [],
+      "error": "NO_TOKEN"
+    },
+    "marginal-crypto": {
+      "base": "https://marginal-crypto.mcp.iqoption.com",
+      "reachable": false,
+      "authenticated": false,
+      "protocolVersion": null,
+      "serverInfo": null,
+      "capabilities": null,
+      "tools": [],
+      "resources": [],
+      "prompts": [],
+      "error": "NO_TOKEN"
+    },
+    "marginal-forex": {
+      "base": "https://marginal-forex.mcp.iqoption.com",
+      "reachable": false,
+      "authenticated": false,
+      "protocolVersion": null,
+      "serverInfo": null,
+      "capabilities": null,
+      "tools": [],
+      "resources": [],
+      "prompts": [],
+      "error": "NO_TOKEN"
+    }
+  }
+}
