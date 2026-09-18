@@ -33,6 +33,9 @@ export const DEFAULT_WORLD_HEIGHT = 1600;
 export const DEFAULT_SEED = "tracecom-office-v3";
 export const SUPERVISOR_OBSERVE_MS = 900;
 
+/** Pixel-pack agents sit slightly higher so the torso stays readable above the desk sprite. */
+const PIXEL_AGENT_SEAT_LIFT = 11;
+
 export const AGENT_REGISTRY_VERSION = "office-v3-agent-registry.1.0.0";
 export const LOCATION_DESK = "desk";
 export const LOCATION_HIDDEN = "hidden";
@@ -1222,6 +1225,8 @@ export function getSupervisorState(life) {
 
 let cachedAssets = null;
 let cachedWorld = null;
+let cachedPixelAssets = null;
+let pixelAgentFailure = false;
 
 function guardedImport(specifier) {
   const path = "./" + specifier;
@@ -1240,6 +1245,16 @@ export function bindAssets(assets) {
 
 export function bindWorld(world) {
   cachedWorld = world ?? null;
+}
+
+/** Binds the loaded pixel-art pack for agent sprites (null keeps procedural). */
+export function bindPixelAssets(assets) {
+  cachedPixelAssets = assets && assets.ready === true ? assets : null;
+  pixelAgentFailure = false;
+}
+
+export function getPixelAssets() {
+  return cachedPixelAssets;
 }
 
 export function getBoundAssets() {
@@ -1310,6 +1325,7 @@ export function drawAgents(ctx, life, camera = null) {
   // Every agentId is rendered at most once per frame; a visual clone is an
   // invariant violation (throws in strict/test mode, warns in production).
   const drawnIds = new Set();
+  const renderedAgents = [];
   const drawOne = (entity, renderY) => {
     if (!isAgentVisible(camera, entity.x, renderY)) return;
     const entityId = entity?.id ?? null;
@@ -1321,22 +1337,56 @@ export function drawAgents(ctx, life, camera = null) {
       }
       drawnIds.add(entityId);
     }
+    // Pixel-art pack first: exactly one AgentSprite per registered agent
+    // (trader art per market, critic art fixed). Any failure keeps the
+    // procedural character — the pair is never dropped from the frame.
+    const pixel = life.pixelAssets ?? cachedPixelAssets;
+    if (pixel && pixel.ready === true && typeof pixel.agentForRole === "function" && pixelAgentFailure !== true) {
+      try {
+        const station = life.stationById?.get(entity.stationId) ?? null;
+        const marketType = station?.market?.marketType ?? station?.marketType ?? null;
+        const sprite = pixel.agentForRole(entity.role, entity.marketKey, marketType, entity.id);
+        if (sprite) {
+          const state = entity.working === true ? "work" : entity.pose ?? "sit";
+          const now = Number(life.time) || 0;
+          const ok = sprite.draw(ctx, { x: entity.x, y: renderY - PIXEL_AGENT_SEAT_LIFT, scale: 1, state, dir: "front", now });
+          if (ok) {
+            renderedAgents.push({ id: entity.id, role: entity.role, marketKey: entity.marketKey });
+            drawn += 1;
+            return;
+          }
+        }
+      } catch (error) {
+        pixelAgentFailure = true;
+        reportInvariant(life, "PIXEL_AGENT_FALLBACK", `agent ${entityId ?? "?"}: ${String(error?.message ?? error)}`);
+      }
+    }
     const options = { role: entity.role, frame: entity.frame, facing: entity.facing, scale: 1, id: entity.id, seed: entity.seed };
     if (assets && typeof assets.drawCharacter === "function") {
       assets.drawCharacter(ctx, entity.pose, entity.x, renderY, options);
     } else {
       fallbackCharacter(ctx, entity.pose, entity.x, renderY, options);
     }
+    renderedAgents.push({ id: entity.id, role: entity.role, marketKey: entity.marketKey });
     drawn += 1;
   };
   for (const item of items) {
     if (item.front) {
-      if (world && typeof world.drawDeskFront === "function") world.drawDeskFront(ctx, item.front);
+      if (world && typeof world.drawDeskFront === "function") world.drawDeskFront(ctx, item.front, { timeMs: Number(life.time) || 0 });
     } else {
       drawOne(item.entity, item.renderY);
     }
   }
-  life.lastDrawStats = { drawn, unique: drawnIds.size, duplicates };
+  const registered = Array.isArray(life.agents) ? life.agents.length : 0;
+  const workingAgents = Array.isArray(life.agents) ? life.agents.filter((agent) => agent && agent.working === true && agent.hidden !== true).length : 0;
+  life.lastDrawStats = {
+    drawn,
+    unique: drawnIds.size,
+    duplicates,
+    registered,
+    working: workingAgents,
+    agents: renderedAgents,
+  };
   return drawn;
 }
 
@@ -1361,6 +1411,8 @@ export default {
   setMarketPresence,
   getAgentRegistry,
   getAgentLocations,
+  bindPixelAssets,
+  getPixelAssets,
   validateLifeInvariants,
   refreshAgentRegistry,
   classifyAgentLocation,

@@ -1,0 +1,30 @@
+{
+  "id": "armchair",
+  "category": "furniture",
+  "name": "Poltrona",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "armchair.png",
+  "width": 88,
+  "height": 68,
+  "anchor": {
+    "x": 45,
+    "y": 28
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "chair",
+    "lounge"
+  ],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 0.9,
+  "notes": ""
+}

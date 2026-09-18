@@ -1,0 +1,27 @@
+{
+  "id": "wall_panel_tile",
+  "category": "walls",
+  "name": "Textura de Parede",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "wall_panel_tile.png",
+  "width": 168,
+  "height": 128,
+  "anchor": {
+    "x": 0,
+    "y": 0
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0,
+    "d": 0
+  },
+  "heightZ": 0,
+  "notes": ""
+}

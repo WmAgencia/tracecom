@@ -1,0 +1,27 @@
+{
+  "id": "prop_pizza",
+  "category": "props",
+  "name": "Caixa de Pizza",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "prop_pizza.png",
+  "width": 63,
+  "height": 37,
+  "anchor": {
+    "x": 32,
+    "y": 9
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0.7,
+    "d": 0.7
+  },
+  "heightZ": 0.16,
+  "notes": ""
+}

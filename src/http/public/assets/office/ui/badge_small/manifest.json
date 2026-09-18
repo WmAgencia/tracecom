@@ -1,0 +1,27 @@
+{
+  "id": "badge_small",
+  "category": "ui",
+  "name": "Selo Pequeno",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "badge_small.png",
+  "width": 56,
+  "height": 16,
+  "anchor": {
+    "x": 28,
+    "y": 8
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0,
+    "d": 0
+  },
+  "heightZ": 0,
+  "notes": ""
+}

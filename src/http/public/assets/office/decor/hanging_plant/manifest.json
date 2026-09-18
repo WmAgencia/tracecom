@@ -1,0 +1,27 @@
+{
+  "id": "hanging_plant",
+  "category": "decor",
+  "name": "Planta Pendurada",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "hanging_plant.png",
+  "width": 34,
+  "height": 40,
+  "anchor": {
+    "x": 17,
+    "y": 2
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0,
+    "d": 0
+  },
+  "heightZ": 0,
+  "notes": ""
+}

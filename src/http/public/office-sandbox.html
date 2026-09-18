@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TRACE/COM · Sandbox de Assets do Escritório</title>
+  <style>
+    :root { --bg: #060a14; --panel: #0b1322; --line: rgba(122,162,255,.2); --ink: #dbe6ff; --muted: #7f93b8; --mono: "Courier New", monospace; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(120% 90% at 50% 0%, #0d1526 0%, #070b16 60%, #04070f 100%); color: var(--ink); font: 12px var(--mono); }
+    header { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--line); background: #070c18f2; backdrop-filter: blur(4px); }
+    header h1 { margin: 0 12px 0 0; font: 700 14px var(--mono); letter-spacing: .12em; }
+    header h1 em { color: #4da3ff; font-style: normal; }
+    .ctl { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+    .ctl input[type="range"] { width: 130px; }
+    .ctl input[type="text"] { width: 110px; background: #0a1220; color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 5px 7px; font: 11px var(--mono); }
+    .ctl button { border: 1px solid var(--line); background: #101b30; color: var(--ink); border-radius: 8px; padding: 6px 10px; font: 700 10px var(--mono); cursor: pointer; }
+    .ctl button.on { background: #1d3f8f; border-color: #3566d6; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 18px 0; }
+    .tabs button { border: 1px solid var(--line); background: #0a1220; color: var(--muted); border-radius: 999px; padding: 7px 14px; font: 700 10px var(--mono); letter-spacing: .08em; cursor: pointer; }
+    .tabs button.on { background: #1d3f8f; color: #eaf2ff; border-color: #3566d6; }
+    main { padding: 14px 18px 60px; }
+    section { display: none; }
+    section.on { display: block; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+    .card { border: 1px solid var(--line); border-radius: 12px; background: linear-gradient(160deg, #0e1628cc, #080d18cc); padding: 10px; min-width: 0; }
+    .card canvas { display: block; margin: 0 auto; image-rendering: pixelated; }
+    .card h3 { margin: 8px 0 2px; font: 700 11px var(--mono); color: var(--ink); word-break: break-all; }
+    .card p { margin: 2px 0; color: var(--muted); font-size: 10px; line-height: 1.45; word-break: break-word; }
+    .card .swatches { display: flex; gap: 4px; margin-top: 6px; }
+    .card .swatches i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #0008; }
+    .stage-card { grid-column: 1 / -1; }
+    .stage-card canvas { width: 100%; max-width: 1100px; height: auto; }
+    .hint { color: var(--muted); font-size: 10px; margin: 0 0 12px; }
+    .badge { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; font-size: 9px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TRACE<em>/</em>COM <span style="color:#7f93b8">· SANDBOX DE ASSETS</span></h1>
+    <label class="ctl">ESCALA <input id="scale" type="range" min="0.5" max="3" step="0.25" value="2" /><b id="scaleValue">2x</b></label>
+    <div class="ctl"><button id="toggleAnchors">ANCORAS</button><button id="toggleGrid" class="on">GRID</button><button id="toggleBg" class="on">FUNDO</button></div>
+    <div class="ctl"><button id="linkOffice">ABRIR ESCRITÓRIO</button><span id="status">carregando assets…</span></div>
+  </header>
+
+  <div class="tabs">
+    <button data-tab="agents" class="on">AGENTES</button>
+    <button data-tab="furniture">MÓVEIS & PROPS</button>
+    <button data-tab="station">ESTAÇÃO</button>
+    <button data-tab="lounge">LOUNGE</button>
+    <button data-tab="kitchen">COPA</button>
+    <button data-tab="meeting">REUNIÃO</button>
+    <button data-tab="font">FONTE</button>
+  </div>
+
+  <main>
+    <section id="tab-agents" class="on">
+      <p class="hint">Agentes animados com estados idle / sit / walk / work / observe, três direções e variações de cor/cabelo. Os mesmos componentes usados no escritório.</p>
+      <div class="ctl" style="margin-bottom:10px">
+        <span>ESTADO</span>
+        <span id="agentStates"></span>
+        <span>DIREÇÃO</span>
+        <span id="agentDirs"></span>
+        <button id="agentFlip">ESPELHAR LADO</button>
+      </div>
+      <div id="agentsGrid" class="grid"></div>
+    </section>
+    <section id="tab-furniture">
+      <p class="hint">Catálogo completo com id, categoria, dimensões, anchor, footprint e altura. Ative ANCORAS para ver o ponto de encaixe na grade.</p>
+      <div id="furnitureGrid" class="grid"></div>
+    </section>
+    <section id="tab-station">
+      <p class="hint">Estação padrão TraceCom: mesa de madeira + placa frontal com o ativo + Trader e Crítico sentados. O agente que caminha valida o z-order em tempo real.</p>
+      <div class="ctl" style="margin-bottom:10px">
+        <span>ATIVO</span><input id="stationSymbol" type="text" value="EUR/USD" />
+        <span>TIPO</span><button id="stationType" class="on">OTC</button>
+        <span>ESTADO</span><span id="stationStates"></span>
+        <button id="stationWalker" class="on">AGENTE CAMINHANDO</button>
+      </div>
+      <div class="grid"><div class="card stage-card"><canvas id="stationCanvas"></canvas><h3>StationSet + StationPlate + AgentSprite</h3><p id="stationMeta"></p></div></div>
+    </section>
+    <section id="tab-lounge">
+      <p class="hint">Lounge: tapete, sofá, poltrona, mesa de centro, sinuca, plantas e luminária. Agentes em idle/walk para validar profundidade.</p>
+      <div class="grid"><div class="card stage-card"><canvas id="loungeCanvas"></canvas><h3>LoungeSet</h3><p id="loungeMeta"></p></div></div>
+    </section>
+    <section id="tab-kitchen">
+      <p class="hint">Copa: balcão, pia, frigobar e bebedouro no mesmo estilo isométrico.</p>
+      <div class="grid"><div class="card stage-card"><canvas id="kitchenCanvas"></canvas><h3>KitchenSet</h3><p id="kitchenMeta"></p></div></div>
+    </section>
+    <section id="tab-meeting">
+      <p class="hint">Sala de reunião: mesa, quadro branco, cadeiras e agentes sociais sentados.</p>
+      <div class="grid"><div class="card stage-card"><canvas id="meetingCanvas"></canvas><h3>MeetingRoomSet</h3><p id="meetingMeta"></p></div></div>
+    </section>
+    <section id="tab-font">
+      <p class="hint">Fonte bitmap 5x7 própria do escritório: sem webfont, sem blur, texto sempre nítido em escala inteira.</p>
+      <div class="grid"><div class="card stage-card"><canvas id="fontCanvas"></canvas><h3>PixelText</h3><p id="fontMeta"></p></div></div>
+    </section>
+  </main>
+
+  <script src="/office-assets.js"></script>
+  <script src="/office-sandbox.js"></script>
+</body>
+</html>

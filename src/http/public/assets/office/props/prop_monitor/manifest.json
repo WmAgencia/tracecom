@@ -1,0 +1,27 @@
+{
+  "id": "prop_monitor",
+  "category": "props",
+  "name": "Monitor",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "prop_monitor.png",
+  "width": 55,
+  "height": 50,
+  "anchor": {
+    "x": 24,
+    "y": 25
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0.7,
+    "d": 0.5
+  },
+  "heightZ": 0.8,
+  "notes": ""
+}

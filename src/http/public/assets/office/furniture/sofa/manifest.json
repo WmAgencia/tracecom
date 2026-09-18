@@ -1,0 +1,30 @@
+{
+  "id": "sofa",
+  "category": "furniture",
+  "name": "Sofá",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "sofa.png",
+  "width": 130,
+  "height": 88,
+  "anchor": {
+    "x": 45,
+    "y": 29
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "sofa",
+    "lounge"
+  ],
+  "footprint": {
+    "w": 2,
+    "d": 1
+  },
+  "heightZ": 0.95,
+  "notes": ""
+}

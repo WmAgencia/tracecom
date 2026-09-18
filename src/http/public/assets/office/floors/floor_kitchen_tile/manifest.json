@@ -1,0 +1,27 @@
+{
+  "id": "floor_kitchen_tile",
+  "category": "floors",
+  "name": "Piso Copa",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "floor_kitchen_tile.png",
+  "width": 84,
+  "height": 38,
+  "anchor": {
+    "x": 42,
+    "y": 19
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 0,
+  "notes": ""
+}

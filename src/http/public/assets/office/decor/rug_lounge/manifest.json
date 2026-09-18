@@ -1,0 +1,27 @@
+{
+  "id": "rug_lounge",
+  "category": "decor",
+  "name": "Tapete",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "rug_lounge.png",
+  "width": 258,
+  "height": 121,
+  "anchor": {
+    "x": 130,
+    "y": 4
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 3,
+    "d": 3
+  },
+  "heightZ": 0.02,
+  "notes": ""
+}

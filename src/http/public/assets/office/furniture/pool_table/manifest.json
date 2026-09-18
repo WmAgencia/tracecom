@@ -1,0 +1,31 @@
+{
+  "id": "pool_table",
+  "category": "furniture",
+  "name": "Mesa de Sinuca",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "pool_table.png",
+  "width": 216,
+  "height": 129,
+  "anchor": {
+    "x": 88,
+    "y": 29
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "pool",
+    "lounge",
+    "game"
+  ],
+  "footprint": {
+    "w": 3,
+    "d": 2
+  },
+  "heightZ": 0.85,
+  "notes": ""
+}

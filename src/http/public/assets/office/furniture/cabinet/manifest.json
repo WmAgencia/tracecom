@@ -1,0 +1,30 @@
+{
+  "id": "cabinet",
+  "category": "furniture",
+  "name": "Armário",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "cabinet.png",
+  "width": 88,
+  "height": 78,
+  "anchor": {
+    "x": 45,
+    "y": 38
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "cabinet",
+    "storage"
+  ],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 1.3,
+  "notes": ""
+}

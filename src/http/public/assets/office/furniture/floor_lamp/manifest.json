@@ -1,0 +1,31 @@
+{
+  "id": "floor_lamp",
+  "category": "furniture",
+  "name": "Luminária",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "floor_lamp.png",
+  "width": 90,
+  "height": 92,
+  "anchor": {
+    "x": 46,
+    "y": 48
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "lamp",
+    "light",
+    "decor"
+  ],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 1.6,
+  "notes": ""
+}

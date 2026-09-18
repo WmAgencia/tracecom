@@ -1,0 +1,27 @@
+{
+  "id": "floor_office_a",
+  "category": "floors",
+  "name": "Piso Escritório A",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "floor_office_a.png",
+  "width": 84,
+  "height": 38,
+  "anchor": {
+    "x": 42,
+    "y": 19
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 0,
+  "notes": ""
+}

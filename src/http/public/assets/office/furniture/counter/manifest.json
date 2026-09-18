@@ -1,0 +1,30 @@
+{
+  "id": "counter",
+  "category": "furniture",
+  "name": "Balcão da Copa",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "counter.png",
+  "width": 130,
+  "height": 89,
+  "anchor": {
+    "x": 45,
+    "y": 30
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "kitchen",
+    "counter"
+  ],
+  "footprint": {
+    "w": 2,
+    "d": 1
+  },
+  "heightZ": 0.95,
+  "notes": ""
+}

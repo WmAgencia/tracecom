@@ -1,0 +1,30 @@
+{
+  "id": "partition",
+  "category": "furniture",
+  "name": "Divisória",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "partition.png",
+  "width": 105,
+  "height": 79,
+  "anchor": {
+    "x": 19,
+    "y": 32
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "partition",
+    "divider"
+  ],
+  "footprint": {
+    "w": 2,
+    "d": 0.4
+  },
+  "heightZ": 1.05,
+  "notes": ""
+}

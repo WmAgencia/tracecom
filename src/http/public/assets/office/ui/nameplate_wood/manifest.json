@@ -1,0 +1,27 @@
+{
+  "id": "nameplate_wood",
+  "category": "ui",
+  "name": "Placa de Madeira",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "nameplate_wood.png",
+  "width": 104,
+  "height": 30,
+  "anchor": {
+    "x": 52,
+    "y": 15
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0,
+    "d": 0
+  },
+  "heightZ": 0,
+  "notes": ""
+}

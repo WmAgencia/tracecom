@@ -1,0 +1,30 @@
+{
+  "id": "meeting_table",
+  "category": "furniture",
+  "name": "Mesa de Reunião",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "meeting_table.png",
+  "width": 216,
+  "height": 120,
+  "anchor": {
+    "x": 88,
+    "y": 22
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "table",
+    "meeting"
+  ],
+  "footprint": {
+    "w": 3,
+    "d": 2
+  },
+  "heightZ": 0.62,
+  "notes": ""
+}

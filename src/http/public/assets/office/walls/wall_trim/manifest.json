@@ -1,0 +1,27 @@
+{
+  "id": "wall_trim",
+  "category": "walls",
+  "name": "Rodapé",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "wall_trim.png",
+  "width": 168,
+  "height": 12,
+  "anchor": {
+    "x": 0,
+    "y": 0
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0,
+    "d": 0
+  },
+  "heightZ": 0,
+  "notes": ""
+}

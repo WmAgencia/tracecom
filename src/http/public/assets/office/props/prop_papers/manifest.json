@@ -1,0 +1,27 @@
+{
+  "id": "prop_papers",
+  "category": "props",
+  "name": "Papéis",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "prop_papers.png",
+  "width": 42,
+  "height": 27,
+  "anchor": {
+    "x": 19,
+    "y": 8
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0.5,
+    "d": 0.4
+  },
+  "heightZ": 0.12,
+  "notes": ""
+}

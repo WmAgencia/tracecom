@@ -1,0 +1,31 @@
+{
+  "id": "bookshelf",
+  "category": "furniture",
+  "name": "Estante",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "bookshelf.png",
+  "width": 88,
+  "height": 89,
+  "anchor": {
+    "x": 45,
+    "y": 49
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "shelf",
+    "storage",
+    "books"
+  ],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 1.7,
+  "notes": ""
+}

@@ -1,0 +1,31 @@
+{
+  "id": "whiteboard",
+  "category": "furniture",
+  "name": "Quadro Branco",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "whiteboard.png",
+  "width": 97,
+  "height": 87,
+  "anchor": {
+    "x": 11,
+    "y": 44
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "board",
+    "wall",
+    "planning"
+  ],
+  "footprint": {
+    "w": 2,
+    "d": 0.2
+  },
+  "heightZ": 1.5,
+  "notes": ""
+}

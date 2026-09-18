@@ -1,0 +1,30 @@
+{
+  "id": "plant_tall",
+  "category": "furniture",
+  "name": "Planta Alta",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "plant_tall.png",
+  "width": 90,
+  "height": 94,
+  "anchor": {
+    "x": 46,
+    "y": 53
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "plant",
+    "decor"
+  ],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 1.75,
+  "notes": ""
+}

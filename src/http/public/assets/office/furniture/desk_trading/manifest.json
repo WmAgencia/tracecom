@@ -1,0 +1,31 @@
+{
+  "id": "desk_trading",
+  "category": "furniture",
+  "name": "Mesa de Trading",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "desk_trading.png",
+  "width": 174,
+  "height": 102,
+  "anchor": {
+    "x": 88,
+    "y": 23
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "desk",
+    "workstation",
+    "madeira"
+  ],
+  "footprint": {
+    "w": 2,
+    "d": 2
+  },
+  "heightZ": 0.66,
+  "notes": "Mesa principal de estação. Placa de nome é desenhada pelo renderer sobre o painel frontal."
+}

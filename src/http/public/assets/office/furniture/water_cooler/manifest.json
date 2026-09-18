@@ -1,0 +1,30 @@
+{
+  "id": "water_cooler",
+  "category": "furniture",
+  "name": "Bebedouro",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "water_cooler.png",
+  "width": 88,
+  "height": 83,
+  "anchor": {
+    "x": 45,
+    "y": 44
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "kitchen",
+    "water"
+  ],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 1.5,
+  "notes": ""
+}

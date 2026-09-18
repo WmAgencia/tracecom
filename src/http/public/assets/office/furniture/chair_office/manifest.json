@@ -1,0 +1,30 @@
+{
+  "id": "chair_office",
+  "category": "furniture",
+  "name": "Cadeira de Escritório",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "chair_office.png",
+  "width": 88,
+  "height": 72,
+  "anchor": {
+    "x": 45,
+    "y": 32
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "chair",
+    "seat"
+  ],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 1.15,
+  "notes": "Cadeira padrão da estação; assento azul combina com os agentes."
+}

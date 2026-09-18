@@ -1,0 +1,27 @@
+{
+  "id": "intel_board",
+  "category": "ui",
+  "name": "Painel Central",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "intel_board.png",
+  "width": 196,
+  "height": 92,
+  "anchor": {
+    "x": 98,
+    "y": 46
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0,
+    "d": 0
+  },
+  "heightZ": 0,
+  "notes": ""
+}

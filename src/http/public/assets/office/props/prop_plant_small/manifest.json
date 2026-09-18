@@ -1,0 +1,27 @@
+{
+  "id": "prop_plant_small",
+  "category": "props",
+  "name": "Planta Pequena",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "prop_plant_small.png",
+  "width": 46,
+  "height": 41,
+  "anchor": {
+    "x": 24,
+    "y": 20
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0.5,
+    "d": 0.5
+  },
+  "heightZ": 0.55,
+  "notes": ""
+}

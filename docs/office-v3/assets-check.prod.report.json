@@ -1,0 +1,326 @@
+{
+  "at": "2026-09-18T21:58:53.615Z",
+  "engine": "playwright+chrome",
+  "realBrowser": true,
+  "baseUrl": "https://tracecom.consecom.com.br/",
+  "screenshots": [
+    "assets-prod-pack-boot.png",
+    "assets-prod-pack-desk-focus.png",
+    "assets-prod-pack-nonworking-empty.png",
+    "assets-prod-procedural-before.png"
+  ],
+  "total": 25,
+  "passed": 25,
+  "failed": 0,
+  "results": [
+    {
+      "scenario": 1,
+      "assertion": "pack: pack pixel ativo",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "pixelActive": true,
+        "packCounts": {
+          "agents": 7,
+          "furniture": 19,
+          "props": 8,
+          "floors": 4,
+          "walls": 2,
+          "decor": 5,
+          "ui": 4
+        }
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: registered = 2 x mercados do registry",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "registered": 108,
+        "markets": 54,
+        "possible": 108
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: rendered = 2 x WORKING (1 trader + 1 critic por mesa)",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "rendered": 60,
+        "working": 60,
+        "workingMarkets": 30
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: todos os renderizados formam par exato trader+critic",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "renderedMarkets": 30,
+        "exactPairs": true
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: zero duplicacao no frame",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "duplicates": 0,
+        "unique": 60,
+        "rendered": 60
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: nenhum mercado com >2 agentes",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "overTwo": 0
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: canvas renderizado",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "distinctColors": 38
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: 7 agent sprites carregados (trader x3 + critic + supervisor + social x2)",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "agents": [
+          {
+            "id": "agent_trader_blue",
+            "role": "trader",
+            "frames": 12,
+            "rows": 3
+          },
+          {
+            "id": "agent_trader_amber",
+            "role": "trader",
+            "frames": 12,
+            "rows": 3
+          },
+          {
+            "id": "agent_trader_teal",
+            "role": "trader",
+            "frames": 12,
+            "rows": 3
+          },
+          {
+            "id": "agent_critic",
+            "role": "critic",
+            "frames": 12,
+            "rows": 3
+          },
+          {
+            "id": "agent_supervisor",
+            "role": "supervisor",
+            "frames": 12,
+            "rows": 3
+          },
+          {
+            "id": "agent_social_green",
+            "role": "social",
+            "frames": 12,
+            "rows": 3
+          },
+          {
+            "id": "agent_social_orange",
+            "role": "social",
+            "frames": 12,
+            "rows": 3
+          }
+        ]
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: cada marketKey WORKING tem 1 sprite trader + 1 sprite critic",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "workingKeys": 30,
+        "contaminated": []
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: nenhum marketKey nao-WORKING renderizado (CLOSED/SUSPENDED/DISABLED/UNKNOWN/FEED_OFFLINE)",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "nonWorkingRendered": []
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: zoom na mesa WORKING mantem exatamente o par do marketKey",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "workingKey": "EURUSD:OTC",
+        "focusedEntry": {
+          "trader": 1,
+          "critic": 1,
+          "total": 2
+        },
+        "duplicates": 0
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: painel direito abre com o snapshot (sem regressao)",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "detailPanels": 1
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "pack: disabled (EURUSD:NORMAL) nao renderiza agentes",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "entry": null,
+        "derived": "DISABLED"
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "regressao: Ctrl+wheel continua dando zoom",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "before": 3.846153846153846,
+        "after": 4
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "regressao: Space+drag continua movendo a camera",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "panned": {
+          "x": 548.4,
+          "y": 329
+        },
+        "before": {
+          "x": 512,
+          "y": 310.4
+        }
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "fallback: pack pixel desativado (fallback procedural)",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "pixelActive": false,
+        "packCounts": null
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "fallback: registered = 2 x mercados do registry",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "registered": 108,
+        "markets": 54,
+        "possible": 108
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "fallback: rendered = 2 x WORKING (1 trader + 1 critic por mesa)",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "rendered": 60,
+        "working": 60,
+        "workingMarkets": 30
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "fallback: todos os renderizados formam par exato trader+critic",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "renderedMarkets": 30,
+        "exactPairs": true
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "fallback: zero duplicacao no frame",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "duplicates": 0,
+        "unique": 60,
+        "rendered": 60
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "fallback: nenhum mercado com >2 agentes",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "overTwo": 0
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "fallback: canvas renderizado",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "distinctColors": 38
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "fallback: assets=off desativa o pack",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "pixelActive": false
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "fallback: mesmos numeros de agentes (nada some)",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "rendered": 60,
+        "working": 60
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "fallback: canvas procedural continua renderizando",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "distinctColors": 38
+      }
+    }
+  ]
+}

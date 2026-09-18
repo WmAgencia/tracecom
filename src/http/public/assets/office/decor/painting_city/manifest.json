@@ -1,0 +1,27 @@
+{
+  "id": "painting_city",
+  "category": "decor",
+  "name": "Quadro Cidade",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "painting_city.png",
+  "width": 38,
+  "height": 30,
+  "anchor": {
+    "x": 19,
+    "y": 29
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0,
+    "d": 0
+  },
+  "heightZ": 0,
+  "notes": ""
+}

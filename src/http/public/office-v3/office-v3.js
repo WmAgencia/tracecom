@@ -337,8 +337,49 @@ async function loadModules() {
     loadModule("blueprintBase", "./blueprint-base.js"),
     loadModule("overlay", "./overlay.js"),
     loadModule("baseMode", "./base-mode.js"),
+    loadModule("pixelAssets", "./pixel-assets.js"),
   ]);
   worldModule = modules.world;
+}
+
+/* ------------------------------------------------------------------ *
+ * Pixel-art pack (assets/office) — loaded in background; procedural
+ * fallback stays active until (and if) the pack is ready. `?assets=off`
+ * forces the procedural renderer (before/after evidence + fallback proof).
+ * ------------------------------------------------------------------ */
+
+let pixelAssetRegistry = null;
+let pixelAssetsBooted = false;
+
+function pixelAssetsEnabled() {
+  try {
+    const win = typeof window !== "undefined" ? window : null;
+    const search = win?.location?.search ?? "";
+    return !/[?&]assets=off\b/.test(search);
+  } catch {
+    return true;
+  }
+}
+
+async function bootPixelAssets() {
+  if (pixelAssetsBooted) return pixelAssetRegistry;
+  pixelAssetsBooted = true;
+  if (!pixelAssetsEnabled()) return null;
+  if (!modules.pixelAssets || typeof modules.pixelAssets.loadPixelAssets !== "function") return null;
+  try {
+    const registry = await modules.pixelAssets.loadPixelAssets({ base: "/assets/office" });
+    if (!registry || registry.ready !== true) return null;
+    pixelAssetRegistry = registry;
+    if (modules.world && typeof modules.world.bindPixelAssets === "function") modules.world.bindPixelAssets(registry);
+    if (modules.life && typeof modules.life.bindPixelAssets === "function") {
+      modules.life.bindPixelAssets(registry);
+      if (lifeSystem) lifeSystem.pixelAssets = registry;
+    }
+    return registry;
+  } catch (error) {
+    console.warn("[office-v3] pack pixel-art indisponível — fallback procedural", error);
+    return null;
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -763,6 +804,10 @@ function createLife() {
     const life = modules.life.createLifeSystem(worldState, {});
     if (typeof modules.life.bindWorld === "function") modules.life.bindWorld(worldModule);
     if (typeof modules.life.bindAssets === "function") modules.life.bindAssets(modules.assets);
+    if (pixelAssetRegistry) {
+      life.pixelAssets = pixelAssetRegistry;
+      if (typeof modules.life.bindPixelAssets === "function") modules.life.bindPixelAssets(pixelAssetRegistry);
+    }
     return life;
   } catch (error) {
     warnMissing("life.createLifeSystem", error);
@@ -1399,6 +1444,41 @@ function installDebugHooks() {
     logs: () => getGlobalLogs(),
     marketLogs: (marketKey) => getMarketLogs(marketKey),
     eventsCursor: () => eventsCursor,
+    pixelAssets: () => pixelAssetRegistry,
+    pixelAssetsActive: () => Boolean(modules.world && typeof modules.world.pixelAssetsActive === "function" && modules.world.pixelAssetsActive()),
+    lastDrawStats: () => (lifeSystem && lifeSystem.lastDrawStats) || null,
+    /**
+     * Reconciliation of the four agent numbers (audit, read-only):
+     * registered = life registry pairs; possible = 2 x markets;
+     * working = 2 x WORKING markets; rendered = last frame drawAgents count.
+     */
+    agentAudit: () => {
+      const stations = worldState && Array.isArray(worldState.stations) ? worldState.stations : [];
+      const life = lifeSystem;
+      const stats = (life && life.lastDrawStats) || null;
+      const workingMarkets = stations.filter((station) => stationWorkingPresence(station)).length;
+      const renderedByMarket = {};
+      for (const entry of stats?.agents ?? []) {
+        const key = entry?.marketKey ?? "?";
+        if (!renderedByMarket[key]) renderedByMarket[key] = { trader: 0, critic: 0, total: 0 };
+        if (entry?.role === "trader") renderedByMarket[key].trader += 1;
+        else if (entry?.role === "critic") renderedByMarket[key].critic += 1;
+        renderedByMarket[key].total += 1;
+      }
+      return {
+        registered: Array.isArray(life?.agents) ? life.agents.length : 0,
+        possible: stations.length * 2,
+        markets: stations.length,
+        workingMarkets,
+        working: workingMarkets * 2,
+        rendered: stats?.drawn ?? 0,
+        renderedUnique: stats?.unique ?? 0,
+        duplicates: stats?.duplicates ?? 0,
+        hidden: Array.isArray(life?.agents) ? life.agents.filter((agent) => agent?.hidden === true).length : 0,
+        renderedByMarket,
+        pixelAssets: pixelAssetRegistry ? { ready: true, count: pixelAssetRegistry.counts } : null,
+      };
+    },
   };
 }
 
@@ -1551,6 +1631,7 @@ async function init() {
     setStatus("PIXEL OFFICE V3 indisponível", "world.js não pôde ser carregado");
     return;
   }
+  void bootPixelAssets();
 
   camera = createCameraState();
   resize();

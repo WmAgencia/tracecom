@@ -1,0 +1,30 @@
+{
+  "id": "plant",
+  "category": "furniture",
+  "name": "Planta em Vaso",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "plant.png",
+  "width": 90,
+  "height": 80,
+  "anchor": {
+    "x": 46,
+    "y": 39
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "plant",
+    "decor"
+  ],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 1.2,
+  "notes": ""
+}

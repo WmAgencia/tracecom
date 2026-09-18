@@ -1,8 +1,8 @@
 {
-  "at": "2026-09-18T20:53:30.254Z",
+  "at": "2026-09-18T21:33:27.416Z",
   "engine": "playwright+chrome",
   "realBrowser": true,
-  "baseUrl": "http://127.0.0.1:60829",
+  "baseUrl": "http://127.0.0.1:51067",
   "scenarios": [
     0,
     1,
@@ -61,7 +61,7 @@
       "pass": true,
       "evidence": "browser-s0-boot.png",
       "detail": {
-        "distinctColors": 332
+        "distinctColors": 412
       }
     },
     {

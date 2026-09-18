@@ -1,0 +1,30 @@
+{
+  "id": "coffee_table",
+  "category": "furniture",
+  "name": "Mesa de Centro",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "coffee_table.png",
+  "width": 130,
+  "height": 74,
+  "anchor": {
+    "x": 45,
+    "y": 15
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "table",
+    "lounge"
+  ],
+  "footprint": {
+    "w": 2,
+    "d": 1
+  },
+  "heightZ": 0.4,
+  "notes": ""
+}

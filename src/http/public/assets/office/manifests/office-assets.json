@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "generatedBy": "scripts/office-assets/generate.mjs",
+  "base": "/assets/office",
+  "categories": {
+    "agents": [
+      "/assets/office/agents/agent_trader_blue/manifest.json",
+      "/assets/office/agents/agent_trader_amber/manifest.json",
+      "/assets/office/agents/agent_trader_teal/manifest.json",
+      "/assets/office/agents/agent_critic/manifest.json",
+      "/assets/office/agents/agent_supervisor/manifest.json",
+      "/assets/office/agents/agent_social_green/manifest.json",
+      "/assets/office/agents/agent_social_orange/manifest.json"
+    ],
+    "furniture": [
+      "/assets/office/furniture/desk_trading/manifest.json",
+      "/assets/office/furniture/chair_office/manifest.json",
+      "/assets/office/furniture/sofa/manifest.json",
+      "/assets/office/furniture/coffee_table/manifest.json",
+      "/assets/office/furniture/armchair/manifest.json",
+      "/assets/office/furniture/bookshelf/manifest.json",
+      "/assets/office/furniture/cabinet/manifest.json",
+      "/assets/office/furniture/whiteboard/manifest.json",
+      "/assets/office/furniture/meeting_table/manifest.json",
+      "/assets/office/furniture/pool_table/manifest.json",
+      "/assets/office/furniture/counter/manifest.json",
+      "/assets/office/furniture/sink/manifest.json",
+      "/assets/office/furniture/fridge/manifest.json",
+      "/assets/office/furniture/plant/manifest.json",
+      "/assets/office/furniture/plant_tall/manifest.json",
+      "/assets/office/furniture/floor_lamp/manifest.json",
+      "/assets/office/furniture/partition/manifest.json",
+      "/assets/office/furniture/water_cooler/manifest.json",
+      "/assets/office/furniture/side_table/manifest.json"
+    ],
+    "props": [
+      "/assets/office/props/prop_mug/manifest.json",
+      "/assets/office/props/prop_papers/manifest.json",
+      "/assets/office/props/prop_laptop/manifest.json",
+      "/assets/office/props/prop_monitor/manifest.json",
+      "/assets/office/props/prop_plant_small/manifest.json",
+      "/assets/office/props/prop_bin/manifest.json",
+      "/assets/office/props/prop_book_stack/manifest.json",
+      "/assets/office/props/prop_pizza/manifest.json"
+    ],
+    "floors": [
+      "/assets/office/floors/floor_office_a/manifest.json",
+      "/assets/office/floors/floor_office_b/manifest.json",
+      "/assets/office/floors/floor_lounge_wood/manifest.json",
+      "/assets/office/floors/floor_kitchen_tile/manifest.json"
+    ],
+    "walls": [
+      "/assets/office/walls/wall_panel_tile/manifest.json",
+      "/assets/office/walls/wall_trim/manifest.json"
+    ],
+    "decor": [
+      "/assets/office/decor/rug_lounge/manifest.json",
+      "/assets/office/decor/painting_city/manifest.json",
+      "/assets/office/decor/painting_chart/manifest.json",
+      "/assets/office/decor/wall_clock/manifest.json",
+      "/assets/office/decor/hanging_plant/manifest.json"
+    ],
+    "ui": [
+      "/assets/office/ui/nameplate_wood/manifest.json",
+      "/assets/office/ui/station_plate/manifest.json",
+      "/assets/office/ui/badge_small/manifest.json",
+      "/assets/office/ui/intel_board/manifest.json"
+    ]
+  },
+  "font": "/assets/office/ui/pixel_font/manifest.json",
+  "counts": {
+    "agents": 7,
+    "furniture": 19,
+    "props": 8,
+    "floors": 4,
+    "walls": 2,
+    "decor": 5,
+    "ui": 5
+  }
+}

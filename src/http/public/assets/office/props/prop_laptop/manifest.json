@@ -1,0 +1,27 @@
+{
+  "id": "prop_laptop",
+  "category": "props",
+  "name": "Notebook",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "prop_laptop.png",
+  "width": 63,
+  "height": 46,
+  "anchor": {
+    "x": 28,
+    "y": 18
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0.8,
+    "d": 0.6
+  },
+  "heightZ": 0.5,
+  "notes": ""
+}

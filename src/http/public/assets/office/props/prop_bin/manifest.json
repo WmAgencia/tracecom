@@ -1,0 +1,27 @@
+{
+  "id": "prop_bin",
+  "category": "props",
+  "name": "Lixeira",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "prop_bin.png",
+  "width": 55,
+  "height": 49,
+  "anchor": {
+    "x": 28,
+    "y": 24
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0.6,
+    "d": 0.6
+  },
+  "heightZ": 0.75,
+  "notes": ""
+}

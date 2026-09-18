@@ -1,0 +1,30 @@
+{
+  "id": "fridge",
+  "category": "furniture",
+  "name": "Frigobar",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "fridge.png",
+  "width": 88,
+  "height": 90,
+  "anchor": {
+    "x": 45,
+    "y": 50
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "kitchen",
+    "fridge"
+  ],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 1.75,
+  "notes": ""
+}

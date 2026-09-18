@@ -717,20 +717,120 @@ export function drawLogsBox(ctx, worldState) {
 export const DESK_TOP_DEPTH = 18;
 export const DESK_SEAT_LINE = DESK_TOP_DEPTH + 7;
 
+/* ------------------------------------------------------------------ *
+ * 7b. PIXEL ASSET PACK (DeskSprite / StationSet) with procedural fallback
+ *
+ * The pack is bound by office-v3.js after it loads; until it is ready (or when
+ * it fails) everything keeps the procedural drawing below. Asset drawing never
+ * changes hit-test, anchors, camera or focus geometry.
+ * ------------------------------------------------------------------ */
+
+export const PIXEL_STATION_SPRITES = Object.freeze({
+  desk: "desk_trading",
+  chair: "chair_office",
+  monitor: "prop_monitor",
+  mug: "prop_mug",
+});
+
+const PIXEL_DESK_EXTRA_WIDTH = 34;
+const PIXEL_DESK_ANCHOR_Y = 5;
+const PIXEL_DESK_MONITOR_Y = 40;
+const PIXEL_DESK_MUG_Y = 36;
+const PIXEL_DESK_PLAQUE_Y = 55;
+
+let pixelAssetsBinding = null;
+let pixelRenderFailed = false;
+
+/** Binds the loaded pixel pack (or null). Resets the failure latch. */
+export function bindPixelAssets(assets) {
+  pixelAssetsBinding = assets && assets.ready === true ? assets : null;
+  pixelRenderFailed = false;
+}
+
+export function getPixelAssets() {
+  return pixelAssetsBinding;
+}
+
+export function pixelAssetsActive() {
+  return pixelRenderFailed === false && Boolean(pixelAssetsBinding && pixelAssetsBinding.ready === true);
+}
+
+/** Engraved plaque kept from the procedural station, drawn over the desk sprite. */
+function drawPixelPlaque(ctx, x, y, maxWidth, text) {
+  const value = String(text ?? "").toUpperCase();
+  if (!value) return null;
+  const pw = Math.min(Math.max(54, Math.round(value.length * 7 + 14)), Math.max(54, Math.round(maxWidth - 24)));
+  const ph = 16;
+  const pxx = Math.round(x - pw / 2);
+  const pyy = Math.round(y - ph / 2);
+  pxRectLocal(ctx, pxx, pyy, pw, ph, PALETTE_V3.woodShadow);
+  pxRectLocal(ctx, pxx + 1, pyy + 1, pw - 2, ph - 2, "#c99a63");
+  pxRectLocal(ctx, pxx + 1, pyy + 1, pw - 2, 1, "#e0bd8a");
+  pxRectLocal(ctx, pxx + 1, pyy + ph - 2, pw - 2, 1, "#2a1a0e");
+  pxRectLocal(ctx, pxx + 2, pyy + 2, 1, ph - 4, "rgba(255,240,210,0.45)");
+  let scale = 2;
+  while (scale > 1 && measurePixelText(value, scale, 1) > pw - 8) scale -= 1;
+  drawPixelText(ctx, value, pxx + pw / 2, pyy + Math.round((ph - 7 * scale) / 2), {
+    scale,
+    align: "center",
+    color: "#2c1806",
+    shadow: "rgba(255,220,170,0.28)",
+  });
+  return { x: pxx, y: pyy, w: pw, h: ph, text: value };
+}
+
+/** Chairs of the station drawn from the pack (before the agents). */
+function drawPixelChairs(ctx, station) {
+  const assets = pixelAssetsBinding;
+  const desk = station?.desk;
+  if (!assets || !desk) return false;
+  const sprite = assets.sprite(PIXEL_STATION_SPRITES.chair);
+  if (!sprite || !sprite.image) return false;
+  const scale = ((desk.w + PIXEL_DESK_EXTRA_WIDTH) / 174) * 0.8;
+  const centerX = Number.isFinite(Number(station.cell?.centerX)) ? Number(station.cell.centerX) : desk.x + desk.w / 2;
+  const seats = station.active === true ? [centerX - 19, centerX + 19] : [centerX];
+  for (const seatX of seats) if (sprite.draw(ctx, { x: seatX, y: desk.y + 24, scale }) !== true) return false;
+  return true;
+}
+
+/** Full desk sprite + props + engraved plaque, drawn AFTER the seated agents. */
+function drawPixelDeskFront(ctx, station, front, options = {}) {
+  const assets = pixelAssetsBinding;
+  const desk = station?.desk;
+  if (!assets || !desk) return false;
+  const sprite = assets.sprite(PIXEL_STATION_SPRITES.desk);
+  if (!sprite || !sprite.image) return false;
+  const manifestWidth = Number(sprite.manifest?.width) || desk.w;
+  const scale = (desk.w + PIXEL_DESK_EXTRA_WIDTH) / manifestWidth;
+  const centerX = Number.isFinite(Number(station.cell?.centerX)) ? Number(station.cell.centerX) : desk.x + desk.w / 2;
+  if (sprite.draw(ctx, { x: centerX, y: desk.y + PIXEL_DESK_ANCHOR_Y, scale }) !== true) return false;
+  if (station.active === true) {
+    const monitor = assets.sprite(PIXEL_STATION_SPRITES.monitor);
+    if (monitor && monitor.image) monitor.draw(ctx, { x: centerX, y: desk.y + PIXEL_DESK_MONITOR_Y, scale: scale * 0.95 });
+    const mug = assets.sprite(PIXEL_STATION_SPRITES.mug);
+    if (mug && mug.image) mug.draw(ctx, { x: centerX + 32, y: desk.y + PIXEL_DESK_MUG_Y, scale: scale * 0.9 });
+    drawTerminalActivity(ctx, station, Number(options.timeMs) || 0, { offsetY: 22 });
+  }
+  const plaqueText = front?.plaque ?? stationPlaque(station);
+  if (plaqueText) drawPixelPlaque(ctx, centerX, desk.y + PIXEL_DESK_PLAQUE_Y, desk.w + PIXEL_DESK_EXTRA_WIDTH, plaqueText);
+  return true;
+}
+
 /** Very subtle terminal activity: 2-3 pixels + a soft breathing glow (T6). */
-function drawTerminalActivity(ctx, station, timeMs) {
+function drawTerminalActivity(ctx, station, timeMs, options = {}) {
   const cell = station.cell;
   const desk = station.desk;
   const cx = cell.centerX;
   const phase = Number(timeMs) || 0;
   const seed = Number(station.index) || 0;
+  const offsetY = Number(options.offsetY) || 0;
   const glow = 0.07 + 0.035 * (0.5 + 0.5 * Math.sin(phase / 620 + seed));
-  lightPoolLocal(ctx, cx, desk.y + 10, 54, PALETTE_V3.screenOn, glow);
+  lightPoolLocal(ctx, cx, desk.y + 10 + offsetY, 54, PALETTE_V3.screenOn, glow);
   const step = Math.floor(phase / 380);
   for (let pixel = 0; pixel < 3; pixel += 1) {
     const value = (step * 2654435761 + seed * 40503 + pixel * 97) >>> 0;
     const px = cx - 15 + (value % 26);
-    const py = desk.y + 4 + ((value >>> 8) % 12);
+    const py = desk.y + 4 + offsetY + ((value >>> 8) % 12);
     const brightness = 0.35 + ((value >>> 16) % 4) * 0.12;
     ctx.save();
     ctx.globalAlpha = brightness;
@@ -749,40 +849,62 @@ function drawStation(ctx, station, showAgents = true, options = {}) {
 
   drawCastShadow(ctx, desk.x, desk.y, desk.w, desk.h);
 
-  // desk TOP / back surface first
-  drawSprite(ctx, "desk_top", desk.x, desk.y, { w: desk.w, h: desk.h, depth: DESK_TOP_DEPTH });
+  const pixel = pixelAssetsActive();
 
-  // chairs drawn over the top surface so the backrest is visible behind each agent
-  if (active) {
-    drawSprite(ctx, "chair", cx - 46, seatLine - 30, { w: 30, h: 34 });
-    drawSprite(ctx, "chair", cx + 16, seatLine - 30, { w: 30, h: 34 });
+  if (pixel) {
+    // Pack mode: chairs here (behind the agents); desk + props + plaque are
+    // drawn by the front pass so they occlude the seated agents' lower body.
+    let chairsOk = false;
+    try {
+      chairsOk = drawPixelChairs(ctx, station);
+    } catch (error) {
+      pixelRenderFailed = true;
+      console.warn("[office-v3] cadeira do pack falhou — fallback procedural", error);
+    }
+    if (!chairsOk) {
+      if (active) {
+        drawSprite(ctx, "chair", cx - 46, seatLine - 30, { w: 30, h: 34 });
+        drawSprite(ctx, "chair", cx + 16, seatLine - 30, { w: 30, h: 34 });
+      } else {
+        drawSprite(ctx, "chair", cx - 16, seatLine - 22, { w: 30, h: 34 });
+      }
+    }
   } else {
-    drawSprite(ctx, "chair", cx - 16, seatLine - 22, { w: 30, h: 34 });
-  }
+    // desk TOP / back surface first
+    drawSprite(ctx, "desk_top", desk.x, desk.y, { w: desk.w, h: desk.h, depth: DESK_TOP_DEPTH });
 
-  // seated agents sit BEHIND the desk, drawn over the top surface
-  if (showAgents && active) {
-    drawCharacter(ctx, "work", cx - 30, seatLine, { role: "trader", seed: station.trader?.seed, id: `${station.id}:trader` });
-    drawCharacter(ctx, "work", cx + 30, seatLine, { role: "critic", seed: station.critic?.seed, id: `${station.id}:critic` });
-  }
+    // chairs drawn over the top surface so the backrest is visible behind each agent
+    if (active) {
+      drawSprite(ctx, "chair", cx - 46, seatLine - 30, { w: 30, h: 34 });
+      drawSprite(ctx, "chair", cx + 16, seatLine - 30, { w: 30, h: 34 });
+    } else {
+      drawSprite(ctx, "chair", cx - 16, seatLine - 22, { w: 30, h: 34 });
+    }
 
-  // props on the desk top
-  if (active) {
-    drawSprite(ctx, "monitor", cx - 17, desk.y + 2, { w: 34, h: 22 });
-    drawSprite(ctx, "computer_tower", desk.x + 8, desk.y - 30, { w: 20, h: 34 });
-    drawSprite(ctx, "keyboard", cx - 19, desk.y + 20, { w: 38, h: 10 });
-    drawTerminalActivity(ctx, station, timeMs);
-  } else if (station.reserved) {
-    drawSprite(ctx, "keyboard", cx - 19, desk.y + 20, { w: 38, h: 10 });
-  }
+    // seated agents sit BEHIND the desk, drawn over the top surface
+    if (showAgents && active) {
+      drawCharacter(ctx, "work", cx - 30, seatLine, { role: "trader", seed: station.trader?.seed, id: `${station.id}:trader` });
+      drawCharacter(ctx, "work", cx + 30, seatLine, { role: "critic", seed: station.critic?.seed, id: `${station.id}:critic` });
+    }
 
-  // desk FRONT + plaque + legs + shadow occludes the seated agents' lower body
-  drawSprite(ctx, "desk_front", desk.x, desk.y, {
-    w: desk.w,
-    h: desk.h,
-    depth: DESK_TOP_DEPTH,
-    plaque: active || station.plaque.text ? station.plaque.text : null,
-  });
+    // props on the desk top
+    if (active) {
+      drawSprite(ctx, "monitor", cx - 17, desk.y + 2, { w: 34, h: 22 });
+      drawSprite(ctx, "computer_tower", desk.x + 8, desk.y - 30, { w: 20, h: 34 });
+      drawSprite(ctx, "keyboard", cx - 19, desk.y + 20, { w: 38, h: 10 });
+      drawTerminalActivity(ctx, station, timeMs);
+    } else if (station.reserved) {
+      drawSprite(ctx, "keyboard", cx - 19, desk.y + 20, { w: 38, h: 10 });
+    }
+
+    // desk FRONT + plaque + legs + shadow occludes the seated agents' lower body
+    drawSprite(ctx, "desk_front", desk.x, desk.y, {
+      w: desk.w,
+      h: desk.h,
+      depth: DESK_TOP_DEPTH,
+      plaque: active || station.plaque.text ? station.plaque.text : null,
+    });
+  }
 
   // Real settlement badge (T7): WIN/LOSS/DRAW over the station for ~12s after
   // the brokerage settlement timestamp, then back to the subtle animation.
@@ -815,13 +937,22 @@ export function collectDeskFronts(worldState, camera = null) {
       depth: DESK_TOP_DEPTH,
       plaque: station.active === true || station.plaque?.text ? station.plaque?.text ?? null : null,
       sortY: desk.y + desk.h,
+      station,
     });
   }
   return fronts;
 }
 
-export function drawDeskFront(ctx, front) {
+export function drawDeskFront(ctx, front, options = {}) {
   if (!front) return;
+  if (pixelAssetsActive() && front.station) {
+    try {
+      if (drawPixelDeskFront(ctx, front.station, front, options)) return;
+    } catch (error) {
+      pixelRenderFailed = true;
+      console.warn("[office-v3] desk sprite do pack falhou — fallback procedural", error);
+    }
+  }
   drawSprite(ctx, "desk_front", front.x, front.y, { w: front.w, h: front.h, depth: front.depth, plaque: front.plaque });
 }
 

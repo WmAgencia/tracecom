@@ -1,0 +1,106 @@
+{
+  "id": "agent_trader_amber",
+  "category": "agents",
+  "name": "Trader Âmbar",
+  "role": "trader",
+  "type": "spritesheet",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "file": "spritesheet.png",
+  "frameWidth": 32,
+  "frameHeight": 48,
+  "columns": 12,
+  "rows": 3,
+  "directions": [
+    "front",
+    "side",
+    "back"
+  ],
+  "mirrored": {
+    "side": true,
+    "note": "linha side desenhada virada para a direita; renderer espelha para a esquerda"
+  },
+  "animations": {
+    "idle": {
+      "start": 0,
+      "frames": 2,
+      "fps": 3,
+      "loop": true,
+      "rows": {
+        "front": 0,
+        "side": 1,
+        "back": 2
+      }
+    },
+    "walk": {
+      "start": 2,
+      "frames": 4,
+      "fps": 8,
+      "loop": true,
+      "rows": {
+        "front": 0,
+        "side": 1,
+        "back": 2
+      }
+    },
+    "work": {
+      "start": 6,
+      "frames": 2,
+      "fps": 4,
+      "loop": true,
+      "rows": {
+        "front": 0,
+        "side": 1,
+        "back": 2
+      }
+    },
+    "sit": {
+      "start": 8,
+      "frames": 2,
+      "fps": 3,
+      "loop": true,
+      "rows": {
+        "front": 0,
+        "side": 1,
+        "back": 2
+      }
+    },
+    "observe": {
+      "start": 10,
+      "frames": 2,
+      "fps": 2,
+      "loop": true,
+      "rows": {
+        "front": 0,
+        "side": 1,
+        "back": 2
+      }
+    }
+  },
+  "states": [
+    "idle",
+    "walk",
+    "work",
+    "sit",
+    "observe"
+  ],
+  "anchor": {
+    "x": 16,
+    "y": 44,
+    "note": "pés/centro do corpo (32,44)"
+  },
+  "depthOffset": 0,
+  "palette": {
+    "shirt": "#c98a2e",
+    "pants": "#2c3448",
+    "hair": "#2a2320",
+    "skin": "#c68a5e"
+  },
+  "notes": "Trader Âmbar — arte original TraceCom gerada por scripts/office-assets.",
+  "width": 384,
+  "height": 144,
+  "tags": [
+    "agent",
+    "trader"
+  ]
+}

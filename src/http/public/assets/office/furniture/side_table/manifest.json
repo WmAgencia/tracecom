@@ -1,0 +1,30 @@
+{
+  "id": "side_table",
+  "category": "furniture",
+  "name": "Mesa Lateral",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "side_table.png",
+  "width": 88,
+  "height": 57,
+  "anchor": {
+    "x": 45,
+    "y": 18
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "table",
+    "decor"
+  ],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 0.5,
+  "notes": ""
+}

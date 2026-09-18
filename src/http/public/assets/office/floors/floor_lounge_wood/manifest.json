@@ -1,0 +1,27 @@
+{
+  "id": "floor_lounge_wood",
+  "category": "floors",
+  "name": "Piso Madeira (Lounge)",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "floor_lounge_wood.png",
+  "width": 84,
+  "height": 38,
+  "anchor": {
+    "x": 42,
+    "y": 19
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 0,
+  "notes": ""
+}

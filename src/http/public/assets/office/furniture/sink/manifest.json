@@ -1,0 +1,30 @@
+{
+  "id": "sink",
+  "category": "furniture",
+  "name": "Pia",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "sink.png",
+  "width": 88,
+  "height": 69,
+  "anchor": {
+    "x": 45,
+    "y": 29
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [
+    "kitchen",
+    "sink"
+  ],
+  "footprint": {
+    "w": 1,
+    "d": 1
+  },
+  "heightZ": 0.95,
+  "notes": ""
+}

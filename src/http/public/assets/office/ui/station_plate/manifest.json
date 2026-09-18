@@ -1,0 +1,27 @@
+{
+  "id": "station_plate",
+  "category": "ui",
+  "name": "Placa de Estação",
+  "source": "tracecom-original",
+  "license": "MIT",
+  "type": "asset",
+  "file": "station_plate.png",
+  "width": 124,
+  "height": 48,
+  "anchor": {
+    "x": 62,
+    "y": 24
+  },
+  "depthOffset": 0,
+  "states": [
+    "default"
+  ],
+  "animations": [],
+  "tags": [],
+  "footprint": {
+    "w": 0,
+    "d": 0
+  },
+  "heightZ": 0,
+  "notes": ""
+}
