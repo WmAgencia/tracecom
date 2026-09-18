@@ -465,6 +465,30 @@ describe("classificadores H1/H2/H3 e degradation observer (descritivos)", () => 
     expect(readFileSync("scripts/db-retention.mjs", "utf8")).toContain("iq_trade_market_windows");
   });
 
+  it("persistencia serializada: UPDATE de markExecution so roda depois do INSERT inicial", async () => {
+    const events: string[] = [];
+    let insertResolved = false;
+    const pool = {
+      query: async (sql: string) => {
+        if (sql.includes("INSERT INTO iq_shadow_observations")) {
+          await new Promise((resolve) => setTimeout(resolve, 30));
+          insertResolved = true;
+          events.push("insert:resolved");
+        } else if (sql.includes("UPDATE iq_shadow_observations")) {
+          events.push(`update:insertResolved=${insertResolved}`);
+        }
+        return { rows: [] };
+      },
+    };
+    const instance: AnyRecord = new ShadowLab({ pool, now: () => 1000 });
+    const observation = observeWith(instance, { candidateId: "cand_race" });
+    instance.markExecution({ observationId: observation.id, currentExecution: "REJECT", reason: "GATE" });
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    expect(events).toContain("insert:resolved");
+    expect(events).toContain("update:insertResolved=true");
+    expect(events.indexOf("insert:resolved")).toBeLessThan(events.findIndex((event) => event.startsWith("update:")));
+  });
+
   it("persistencia: placeholders das queries casam 1:1 com os parametros (sem parametro orfao)", async () => {
     const calls: AnyRecord[] = [];
     const pool = { query: async (sql: string, params: any[]) => { calls.push({ sql, params }); return { rows: [] }; }, connect: async () => ({ query: async () => ({ rows: [] }), release() {} }), end: async () => {} };

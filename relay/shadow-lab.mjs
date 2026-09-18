@@ -887,7 +887,8 @@ export class ShadowLab {
     deepFreeze(observation.degradation);
     deepFreeze(observation.h3Critic);
     this.#remember(observation);
-    void this.#persistObservation(observation);
+    // Persistencia serializada: qualquer UPDATE aguarda o INSERT inicial (evita update em linha inexistente).
+    observation.persistPromise = this.#persistObservation(observation);
     if (observation.preWindow.length) void this.#persistWindow(observation, "PRE", observation.preWindow);
     return observation;
   }
@@ -928,7 +929,7 @@ export class ShadowLab {
     const patch = { currentExecution: applyShadowAdvisory(currentExecution), currentExecutionReason: reason ?? null, executionId: executionId ?? observation?.executionId ?? null, updatedAt: at ?? this.now() };
     if (entryPrice !== null && entryPrice !== undefined) patch.actualEntryPrice = num(entryPrice);
     if (observation) Object.assign(observation, patch);
-    void this.#updateObservation({ observationId: observation?.id ?? observationId, candidateId, executionId, patch });
+    void this.#updateObservation({ observationId: observation?.id ?? observationId, candidateId, executionId, patch, awaitPersist: observation?.persistPromise ?? null });
     return observation ? { observationId: observation.id, currentExecution: observation.currentExecution } : null;
   }
 
@@ -957,7 +958,7 @@ export class ShadowLab {
     });
     observation.entryAt = entryAt ?? observation.entryAt;
     observation.updatedAt = this.now();
-    void this.#updateObservation({ observationId: observation.id, patch: { h1Location: observation.h1Location, h2Displacement: displacement, counterfactual: observation.counterfactual, entryAt: observation.entryAt } });
+    void this.#updateObservation({ observationId: observation.id, patch: { h1Location: observation.h1Location, h2Displacement: displacement, counterfactual: observation.counterfactual, entryAt: observation.entryAt }, awaitPersist: observation.persistPromise ?? null });
     return { observationId: observation.id, entryLocation, displacement };
   }
 
@@ -988,7 +989,7 @@ export class ShadowLab {
       const postRows = [...postWindow.offsets, ...(postWindow.expiryCandle ? [postWindow.expiryCandle] : [])];
       if (postRows.length) void this.#persistWindow(observation, "POST", postRows);
     }
-    await this.#updateObservation({ observationId: observation?.id ?? observationId, candidateId, executionId, patch });
+    await this.#updateObservation({ observationId: observation?.id ?? observationId, candidateId, executionId, patch, awaitPersist: observation?.persistPromise ?? null });
     return observation ? { observationId: observation.id, basis: "BROKER_EXECUTED", result: brokerResult } : null;
   }
 
@@ -1017,7 +1018,7 @@ export class ShadowLab {
       observation.settlementPrice = settlement;
       observation.updatedAt = nowMs ?? this.now();
       settled += 1;
-      void this.#updateObservation({ observationId: observation.id, patch: { settlementBasis: observation.settlementBasis, theoreticalResult: result, theoreticalPnl: observation.theoreticalPnl, settlementPrice: settlement } });
+      void this.#updateObservation({ observationId: observation.id, patch: { settlementBasis: observation.settlementBasis, theoreticalResult: result, theoreticalPnl: observation.theoreticalPnl, settlementPrice: settlement }, awaitPersist: observation.persistPromise ?? null });
     }
     return settled;
   }
@@ -1084,8 +1085,9 @@ export class ShadowLab {
     } catch (error) { this.#recordPersistFailure(error); }
   }
 
-  async #updateObservation({ observationId = null, candidateId = null, executionId = null, patch = {} } = {}) {
+  async #updateObservation({ observationId = null, candidateId = null, executionId = null, patch = {}, awaitPersist = null } = {}) {
     if (!patch || !Object.keys(patch).length) return;
+    if (awaitPersist) { try { await awaitPersist; } catch { /* INSERT falhou; UPDATE sera no-op */ } }
     if (this.store?.update) { try { await this.store.update({ observationId, candidateId, executionId, patch }); this.#markPersistOk(); } catch (error) { this.#recordPersistFailure(error); } return; }
     if (!this.pool?.query) return;
     const sets = [];
