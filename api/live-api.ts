@@ -240,10 +240,10 @@ export async function handleLiveApi(req: IncomingMessage, res: ServerResponse, p
       outlier: { maxRelativeDeviation: Number(process.env.PRICE_OUTLIER_MAX_DEVIATION) || .005, madGate: true },
       scheduler: { deepIntervalMs: 30_000, oneInFlight: true, latestStateWins: true },
       agents: { specialists: ["PRICE_ACTION", "CANDLE_MOMENTUM", "QUANT_GEOMETRY", "RISK_CONTRARIAN"], advocates: ["BULL_ADVOCATE", "BEAR_ADVOCATE"], fusion: true, arbiter: true },
-      models: { vision: process.env.TRACECOM_VISION_MODEL || "claude-opus-5", fable: process.env.FABLE_MODEL || "claude-fable-5-1" },
+      models: { vision: process.env.TRACECOM_VISION_MODEL || process.env.AI_MODEL?.trim() || "deepseek-v4.1-flash", fable: process.env.FABLE_MODEL || process.env.AI_MODEL?.trim() || "deepseek-v4.1-flash" },
       versions: { apiVersion: "vision-observation-fable-text-v1", settlementPolicy: "settleTrade-v1", promptVersions: { vision: "sanitized-crop-base64-v1", fable: "vision-observation-fable-text-v1" }, calibration: "empirical-buckets-v1" },
       rateLimits: { stream: 20, frame: 30, ingest: 240, keys: 60, default: 60 },
-      secrets: { nexxusApiKey: { secretPresent: secretPresent("NEXXUS_API_KEY") }, fableApiKey: { secretPresent: secretPresent("FABLE_API_KEY") }, relayAdmin: { secretPresent: secretPresent("TRACECOM_LIVE_RELAY_ADMIN_SECRET") }, database: { secretPresent: secretPresent("DATABASE_URL") } },
+      secrets: { openCodeGoApiKey: { secretPresent: secretPresent("OPENCODE_GO_API_KEY") }, nexxusApiKey: { secretPresent: secretPresent("NEXXUS_API_KEY") }, fableApiKey: { secretPresent: secretPresent("FABLE_API_KEY") }, relayAdmin: { secretPresent: secretPresent("TRACECOM_LIVE_RELAY_ADMIN_SECRET") }, database: { secretPresent: secretPresent("DATABASE_URL") } },
     });
     return true;
   }

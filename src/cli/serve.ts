@@ -50,7 +50,13 @@ async function main(): Promise<void> {
   const rt = createMarketRuntime(config, {
     symbols,
   });
-  const fableTrader = config.fable.apiKey ? new FableTraderClient({ apiKey: config.fable.apiKey, baseUrl: config.fable.baseUrl, model: config.fable.model }) : undefined;
+  // Trader de visão: OpenCode Go (default) quando há chave; Anthropic/Nexxus é
+  // legado e só roda com AI_PROVIDER=anthropic + FABLE_API_KEY.
+  const fableTrader = config.ai.provider === "openCodeGo" && config.ai.apiKey
+    ? new FableTraderClient({ apiKey: config.ai.apiKey, baseUrl: config.ai.openCodeGo.baseUrl, model: config.ai.model, provider: "openCodeGo" })
+    : config.ai.provider === "anthropic" && config.fable.apiKey
+      ? new FableTraderClient({ apiKey: config.fable.apiKey, baseUrl: config.fable.baseUrl, model: config.fable.model, provider: "anthropic" })
+      : undefined;
 
   const api = new TraceconHttpApi({
     runtime: rt,

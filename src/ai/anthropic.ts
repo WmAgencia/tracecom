@@ -34,6 +34,7 @@
  */
 import type { ToolRecord } from "../tools/registry";
 import type { Logger } from "../observability/logger";
+import { redactSecrets } from "../observability/logger";
 
 /** Mensagens no formato interno do agente (independente do provedor). */
 export type AnthropicChatMessage =
@@ -172,7 +173,7 @@ export class AnthropicClient {
 
       if (!res.ok) {
         const err = new Error(
-          `Anthropic API ${res.status} ${res.statusText}: ${bodyText.slice(0, 500)}`,
+          `Anthropic API ${res.status} ${res.statusText}: ${redactSecrets(bodyText).slice(0, 500)}`,
         );
         span?.fail(err);
         throw err;

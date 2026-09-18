@@ -1,5 +1,5 @@
 /** OpenCode Go pipeline — adapter, session header, fail-closed, null/UNKNOWN, segurança.
- * Provider real validado: openCodeGo / qwen3.7-plus (health PASS 2026-09-16; ~3,0-4,9s). */
+ * Provider primário: openCodeGo / deepseek-v4.1-flash (Anthropic retirado; relay nunca le ANTHROPIC_API_KEY). */
 import { describe, expect, it } from "vitest";
 // @ts-expect-error - relay ESM sem tipagem (validado em runtime)
 const goModule = await import("../../relay/opencode-go.mjs");
@@ -37,8 +37,9 @@ describe("provider resolution — CONFIG controla o runtime", () => {
     expect(shouldUseOpenCodeGo(null)).toBe(false);
     expect(shouldUseOpenCodeGo(undefined)).toBe(false);
   });
-  it("modelo inválido/ausente cai no default validado (qwen3.7-plus), nunca em modelo inventado", () => {
-    expect(resolveModel({ model: "qwen3.7-plus" })).toBe("qwen3.7-plus");
+  it("modelo inválido/ausente cai no default validado (deepseek-v4.1-flash), nunca em modelo inventado", () => {
+    expect(DEFAULT_MODEL).toBe("deepseek-v4.1-flash");
+    expect(resolveModel({ model: "deepseek-v4.1-flash" })).toBe("deepseek-v4.1-flash");
     expect(resolveModel({ model: "gpt-6-v4-vision" })).toBe("gpt-6-v4-vision"); // id válido sintaticamente; descoberta real decide
     expect(resolveModel({ model: "../../etc" })).toBe(DEFAULT_MODEL);
     expect(resolveModel({ model: "" })).toBe(DEFAULT_MODEL);

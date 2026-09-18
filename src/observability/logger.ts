@@ -25,8 +25,29 @@ interface TraceContext {
   readonly engineVersion?: string;
 }
 
+/**
+ * Padrões de segredo que podem aparecer DENTRO de strings (mensagens de erro
+ * de provider, corpos de resposta, traces). Defesa em profundidade: mesmo que
+ * uma mensagem escape do provider sem tratamento, ela é redigida antes de
+ * qualquer log/serialização.
+ */
+const SECRET_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(sk-[A-Za-z0-9_\-]{6,})/g, "sk-***"],
+  [/(eyJ[A-Za-z0-9_\-.]{20,})/g, "jwt-***"],
+  [/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}/gi, "$1 ***"],
+  [/((?:x-api-key|x-relay-admin|x-live-admin-key|api[_-]?key|apikey|authorization)["']?\s*[:=]\s*["']?)[^"',\s}]{8,}/gi, "$1***"],
+];
+
+/** Redige padrões de segredos dentro de texto livre (ex.: corpo de erro HTTP). */
+export function redactSecrets(text: string): string {
+  let out = text;
+  for (const [pattern, replacement] of SECRET_PATTERNS) out = out.replace(pattern, replacement);
+  return out;
+}
+
 /** Remove chaves de API e secrets de qualquer objeto antes de logar. */
 export function redact(value: unknown): unknown {
+  if (typeof value === "string") return redactSecrets(value);
   if (Array.isArray(value)) return value.map(redact);
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
@@ -105,7 +126,7 @@ export function createLogger(config: Pick<EnvConfig, "logLevel" | "nodeEnv">): L
           const durationMs = Date.now() - running.start;
           emit("error", `span:${name}`, undefined, {
             durationMs,
-            error: error instanceof Error ? error.message : String(error),
+            error: redactSecrets(error instanceof Error ? error.message : String(error)),
           });
         },
       };

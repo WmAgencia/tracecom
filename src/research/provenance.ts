@@ -1,4 +1,6 @@
 /** Formal decision provenance + structured WHY objects (pure). */
+import { OPENCODE_GO_DEFAULT_MODEL } from "../ai/opencode-go";
+
 export const THRESHOLD_VERSION = "profiles-experimental-v1";
 export const CONFIG_VERSION = "engine-v2";
 export const PROMPT_VERSION = "sanitized-crop-base64-v1";
@@ -53,7 +55,7 @@ export function buildDecisionProvenance(input: ProvenanceInput) {
     thresholdVersion: THRESHOLD_VERSION,
     configVersion: CONFIG_VERSION,
     promptVersion: PROMPT_VERSION,
-    modelVersions: { vision: "claude-opus-5", fable: "claude-fable-5-1" },
+    modelVersions: { vision: OPENCODE_GO_DEFAULT_MODEL, fable: OPENCODE_GO_DEFAULT_MODEL },
     rawScores: input.rawScores ?? {},
     calibratedScores: input.calibratedScores ?? {},
     decision: input.decision,

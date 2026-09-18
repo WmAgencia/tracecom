@@ -1,4 +1,14 @@
-/** Server-side Fable vision adapter. The API key never reaches the extension. */
+/**
+ * Server-side vision trader adapter.
+ *
+ * Provider PADRÃO: openCodeGo (API OpenAI-compatible). O modo Anthropic
+ * Messages API fica disponível via `provider: "anthropic"` (LEGADO).
+ * A API key nunca chega à extensão nem a logs/erros (redactSecrets).
+ */
+import { redactSecrets } from "../observability/logger";
+import { sessionForOpenCodeGo } from "./opencode-go";
+
+export type FableTraderProvider = "openCodeGo" | "anthropic";
 
 export type FableDecision = "BUY" | "SELL" | "WAIT";
 
@@ -59,12 +69,23 @@ interface FableTraderOptions {
   readonly baseUrl: string;
   readonly model: string;
   readonly timeoutMs?: number;
+  /** Default: openCodeGo. "anthropic" mantém o wire Messages API (legado). */
+  readonly provider?: FableTraderProvider;
 }
 
 const jsonHeaders = {
   "content-type": "application/json",
   "anthropic-version": "2023-06-01",
 };
+
+/** Extrai o texto da resposta OpenAI-compatible (choices[0].message.content). */
+function extractOpenAiText(body: string): string {
+  const parsed = JSON.parse(body) as { choices?: Array<{ message?: { content?: unknown } }> };
+  const content = parsed.choices?.[0]?.message?.content;
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) return content.map((part) => (part && typeof part === "object" && typeof (part as { text?: unknown }).text === "string" ? (part as { text: string }).text : "")).join("\n");
+  return "";
+}
 
 function clamp(value: unknown, fallback: number): number {
   const n = Number(value);
@@ -166,6 +187,7 @@ function imageBlock(chartImage: string | null | undefined): { block: Record<stri
 
 export class FableTraderClient {
   readonly model: string;
+  readonly provider: FableTraderProvider;
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
@@ -175,12 +197,13 @@ export class FableTraderClient {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.model = options.model;
     this.timeoutMs = options.timeoutMs ?? 20_000;
+    this.provider = options.provider ?? "openCodeGo";
   }
 
   async analyze(input: FableTraderInput): Promise<FableTraderResponse> {
     const images = (input.chartImages?.length ? input.chartImages : input.chartImage ? [{ label: "current", dataUrl: input.chartImage }] : [])
       .slice(0, 4)
-      .map((item) => ({ label: item.label, ...imageBlock(item.dataUrl) }))
+      .map((item) => ({ label: item.label, dataUrl: item.dataUrl, ...imageBlock(item.dataUrl) }))
       .filter((item) => item.included);
     const currentImage = images.find((item) => item.label === "current") || images[0];
     const imageUsed = !!currentImage;
@@ -201,23 +224,31 @@ export class FableTraderClient {
       `NORMALIZED_SNAPSHOT=${JSON.stringify(input.snapshot).slice(0, 45_000)}`,
     ].join("\n");
     const content: Record<string, unknown>[] = [{ type: "text", text: prompt }];
+    const openCodeGo = this.provider === "openCodeGo";
     for (const image of images) {
       content.push({ type: "text", text: `TEMPORAL_FRAME=${image.label}` });
-      content.push(image.block);
+      content.push(openCodeGo ? { type: "image_url", image_url: { url: image.dataUrl } } : image.block);
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/v1/messages`, {
+      const response = await fetch(openCodeGo ? `${this.baseUrl}/chat/completions` : `${this.baseUrl}/v1/messages`, {
         method: "POST",
-        headers: { ...jsonHeaders, "x-api-key": this.apiKey },
+        headers: openCodeGo
+          ? {
+              "content-type": "application/json",
+              authorization: `Bearer ${this.apiKey}`,
+              "x-opencode-session": sessionForOpenCodeGo(typeof snapshot.analysisId === "string" ? snapshot.analysisId : undefined),
+            }
+          : { ...jsonHeaders, "x-api-key": this.apiKey },
         body: JSON.stringify({ model: this.model, max_tokens: 1_500, messages: [{ role: "user", content }] }),
         signal: controller.signal,
       });
       const body = await response.text();
-      if (!response.ok) throw new Error(`FABLE_HTTP_${response.status}: ${body.slice(0, 300)}`);
-      const parsed = JSON.parse(body) as { content?: Array<{ type?: string; text?: string }> };
-      const text = (parsed.content ?? []).filter((block) => block.type === "text").map((block) => block.text ?? "").join("\n");
-      return { analysis: normalizeAnalysis(extractJson(text), imageUsed, framesUsed, typeof snapshot.analysisId === "string" ? snapshot.analysisId : "unknown", baseQuality, quantitative.availability === "READY", Number.isFinite(Number(crop.width)) && Number.isFinite(Number(crop.height))), model: { modelId: this.model, displayName: "Fable 5.1" } };
+      if (!response.ok) throw new Error(`FABLE_HTTP_${response.status}: ${redactSecrets(body).slice(0, 300)}`);
+      const text = openCodeGo
+        ? extractOpenAiText(body)
+        : ((JSON.parse(body) as { content?: Array<{ type?: string; text?: string }> }).content ?? []).filter((block) => block.type === "text").map((block) => block.text ?? "").join("\n");
+      return { analysis: normalizeAnalysis(extractJson(text), imageUsed, framesUsed, typeof snapshot.analysisId === "string" ? snapshot.analysisId : "unknown", baseQuality, quantitative.availability === "READY", Number.isFinite(Number(crop.width)) && Number.isFinite(Number(crop.height))), model: { modelId: this.model, displayName: openCodeGo ? `OpenCode Go (${this.model})` : "Fable 5.1" } };
     } finally {
       clearTimeout(timer);
     }

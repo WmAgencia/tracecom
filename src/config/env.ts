@@ -2,18 +2,33 @@
  * Configuração de ambiente da TRACECON.
  *
  * SEGURANÇA: este módulo é a ÚNICA fronteira de acesso às variáveis de
- * ambiente e, consequentemente, às secrets (ANTHROPIC_API_KEY, etc.). Nenhum
- * outro módulo deve ler `process.env` diretamente. Código que roda no
- * navegador (extensão, frontend) NUNCA deverá importar este módulo.
+ * ambiente e, consequentemente, às secrets (OPENCODE_GO_API_KEY,
+ * ANTHROPIC_API_KEY, etc.). Nenhum outro módulo deve ler `process.env`
+ * diretamente. Código que roda no navegador (extensão, frontend) NUNCA deverá
+ * importar este módulo.
  */
 import "dotenv/config";
 import { z } from "zod";
+import { OPENCODE_GO_DEFAULT_MODEL } from "../ai/opencode-go";
 
 const MODES = ["noop", "mocked", "binance", "forex", "auto", "iqoption"] as const;
 
 const envSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
-  // --- Anthropic (IA principal) -----------------------------------------
+  // --- Provider de IA ativo ----------------------------------------------
+  // Default: openCodeGo. anthropic fica disponível, mas NÃO é default e não é
+  // selecionado silenciosamente; exige AI_PROVIDER=anthropic explícito.
+  AI_PROVIDER: z.enum(["openCodeGo", "anthropic", "static"]).default("openCodeGo"),
+  // Modelo do provider ativo. Default por provider: deepseek-v4.1-flash
+  // (openCodeGo) ou ANTHROPIC_MODEL (anthropic).
+  AI_MODEL: z.string().trim().min(1).optional(),
+  // --- OpenCode Go (IA principal / PADRÃO) --------------------------------
+  // API OpenAI-compatible: POST {OPENCODE_GO_BASE_URL}/chat/completions.
+  OPENCODE_GO_API_KEY: z.string().optional(),
+  OPENCODE_GO_BASE_URL: z.string().url().default("https://opencode.ai/zen/go/v1"),
+  OPENCODE_GO_MAX_TOKENS: z.coerce.number().int().positive().default(8192),
+  OPENCODE_GO_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
+  // --- Anthropic (IA LEGADA; só com AI_PROVIDER=anthropic) ----------------
   // Aponta para qualquer base_url compatível com o Anthropic Messages API.
   // Default: api.anthropic.com. Gateways compatíveis (ex.: nexxus-pro)
   // sobrescrevem via ANTHROPIC_BASE_URL.
@@ -55,8 +70,22 @@ const envSchema = z.object({
   TRACECON_API_TOKEN: z.string().optional(),
 });
 
+export type AiProviderName = "openCodeGo" | "anthropic" | "static";
+
 export interface EnvConfig {
   readonly logLevel: "debug" | "info" | "warn" | "error";
+  /** Provider de IA ativo + modelo resolvido + chave ativa (nunca serializada). */
+  readonly ai: {
+    readonly provider: AiProviderName;
+    readonly model: string;
+    /** Chave do provider ativo; null quando ausente (degrada para dry-run). */
+    readonly apiKey: string | null;
+    readonly openCodeGo: {
+      readonly baseUrl: string;
+      readonly maxTokens: number;
+      readonly timeoutMs: number;
+    };
+  };
   readonly anthropic: {
     readonly apiKey: string | null;
     readonly baseUrl: string;
@@ -80,12 +109,19 @@ export interface EnvConfig {
 
 /**
  * Lê e valida o ambiente. Lança erro apenas para violações de schema;
- * `ANTHROPIC_API_KEY` ausente é aceito (não é violação) e resulta em
- * `aiConfigured = false` (modo dry-run, sem inventar dados).
+ * chave de IA ausente (OPENCODE_GO_API_KEY por padrão; ANTHROPIC_API_KEY no
+ * modo legado) é aceita e resulta em `aiConfigured = false` (dry-run, sem
+ * inventar dados). A ausência de chave NUNCA derruba o boot/trading.
  */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): EnvConfig {
   const raw = envSchema.parse({
     LOG_LEVEL: env.LOG_LEVEL,
+    AI_PROVIDER: env.AI_PROVIDER,
+    AI_MODEL: env.AI_MODEL,
+    OPENCODE_GO_API_KEY: env.OPENCODE_GO_API_KEY,
+    OPENCODE_GO_BASE_URL: env.OPENCODE_GO_BASE_URL,
+    OPENCODE_GO_MAX_TOKENS: env.OPENCODE_GO_MAX_TOKENS,
+    OPENCODE_GO_TIMEOUT_MS: env.OPENCODE_GO_TIMEOUT_MS,
     ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
     ANTHROPIC_BASE_URL: env.ANTHROPIC_BASE_URL,
     ANTHROPIC_MODEL: env.ANTHROPIC_MODEL,
@@ -109,9 +145,30 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): EnvConfig {
 
   const apiKey = raw.ANTHROPIC_API_KEY?.trim() || null;
   const baseUrl = raw.ANTHROPIC_BASE_URL.trim().replace(/\/$/, "");
+  const openCodeGoApiKey = raw.OPENCODE_GO_API_KEY?.trim() || null;
+  // Modelo do provider ativo: AI_MODEL explícito vence; senão o default de
+  // cada provider (deepseek-v4.1-flash no OpenCode Go; ANTHROPIC_MODEL legado).
+  const aiModel =
+    raw.AI_MODEL ?? (raw.AI_PROVIDER === "anthropic" ? raw.ANTHROPIC_MODEL : OPENCODE_GO_DEFAULT_MODEL);
+  const activeAiKey =
+    raw.AI_PROVIDER === "openCodeGo"
+      ? openCodeGoApiKey
+      : raw.AI_PROVIDER === "anthropic"
+        ? apiKey
+        : null;
 
   return {
     logLevel: raw.LOG_LEVEL,
+    ai: {
+      provider: raw.AI_PROVIDER,
+      model: aiModel,
+      apiKey: activeAiKey,
+      openCodeGo: {
+        baseUrl: raw.OPENCODE_GO_BASE_URL.replace(/\/$/, ""),
+        maxTokens: raw.OPENCODE_GO_MAX_TOKENS,
+        timeoutMs: raw.OPENCODE_GO_TIMEOUT_MS,
+      },
+    },
     anthropic: {
       apiKey,
       baseUrl,
@@ -136,6 +193,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): EnvConfig {
     marketDataMode: raw.MARKET_DATA_MODE,
     nodeEnv: raw.NODE_ENV,
     apiToken: raw.TRACECON_API_TOKEN?.trim() || null,
-    aiConfigured: apiKey !== null,
+    aiConfigured: activeAiKey !== null,
   };
 }

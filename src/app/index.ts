@@ -66,14 +66,23 @@ export function createApp(env: NodeJS.ProcessEnv = process.env): TraceconApp {
 
   registerMarketDataTools(tools, provider, resolveInstrument);
 
+  // Provider de IA: openCodeGo (default) ou anthropic (legado, explícito).
+  // Sem chave do provider ativo → StaticAiClient (dry-run); o trading nunca cai.
+  const anthropicProvider = config.ai.provider === "anthropic";
   const ai = createAiClient({
-    apiKey: config.anthropic.apiKey,
-    baseUrl: config.anthropic.baseUrl,
-    model: config.anthropic.model,
-    maxTokens: config.anthropic.maxTokens,
-    extendedOutput: config.anthropic.extendedOutput,
-    thinkingEnabled: config.anthropic.thinkingEnabled,
-    thinkingBudget: config.anthropic.thinkingBudget,
+    provider: config.ai.provider,
+    apiKey: config.ai.apiKey,
+    model: config.ai.model,
+    baseUrl: anthropicProvider ? config.anthropic.baseUrl : config.ai.openCodeGo.baseUrl,
+    maxTokens: anthropicProvider ? config.anthropic.maxTokens : config.ai.openCodeGo.maxTokens,
+    timeoutMs: config.ai.openCodeGo.timeoutMs,
+    ...(anthropicProvider
+      ? {
+          extendedOutput: config.anthropic.extendedOutput,
+          thinkingEnabled: config.anthropic.thinkingEnabled,
+          thinkingBudget: config.anthropic.thinkingBudget,
+        }
+      : {}),
     logger,
   });
 
@@ -82,7 +91,7 @@ export function createApp(env: NodeJS.ProcessEnv = process.env): TraceconApp {
     ai,
     tools,
     logger,
-    model: config.anthropic.model,
+    model: config.ai.model,
   });
 
   const store = new Datastore({ path: config.database.path, logger });

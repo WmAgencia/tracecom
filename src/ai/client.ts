@@ -2,11 +2,13 @@
  * Interface do "motor" de IA e seleção da implementação.
  *
  * `AiClient` é o contrato que o AgentEngine usa para conversar com o modelo.
- * Duas implementações existem nesta etapa:
- *   - AnthropicAiClient → IA real (requer ANTHROPIC_API_KEY). Aponta para
- *     `ANTHROPIC_BASE_URL` (compatível com gateways estilo nexxus-pro que
- *     expõem o Anthropic Messages API).
- *   - StaticAiClient   → dry-run sem IA, usado em testes/dev sem key.
+ * Três implementações existem nesta etapa:
+ *   - OpenCodeGoAiClient → IA real PADRÃO (requer OPENCODE_GO_API_KEY). Aponta
+ *     para `OPENCODE_GO_BASE_URL` (API OpenAI-compatible do OpenCode Go) e usa
+ *     o modelo `AI_MODEL` (default: deepseek-v4.1-flash).
+ *   - AnthropicAiClient  → IA real LEGADA (requer ANTHROPIC_API_KEY; só é
+ *     selecionada com AI_PROVIDER=anthropic). Mantida para re-habilitação.
+ *   - StaticAiClient     → dry-run sem IA, usado em testes/dev sem key.
  *
  * O StaticAiClient NÃO inventa dados: se uma ferramenta retornou
  * DATA_UNAVAILABLE ele responde com uma análise WAIT / dados insuficientes
@@ -14,6 +16,7 @@
  * para produzir conclusões reais.
  */
 import { AnthropicClient } from "./anthropic";
+import { OpenCodeGoClient } from "./opencode-go";
 import type { Logger } from "../observability/logger";
 
 export interface ModelResponse {
@@ -39,8 +42,10 @@ export interface ToolArg {
   readonly tool_call_id: string;
 }
 
+export type AiProviderName = "openCodeGo" | "anthropic" | "static";
+
 export interface AiClient {
-  readonly mode: "anthropic" | "static";
+  readonly mode: AiProviderName;
   readonly model: string;
   chat(messages: AgentMessage[], tools?: ToolRecord[]): Promise<ModelResponse>;
 }
@@ -51,7 +56,36 @@ export interface ToolRecord {
   readonly parameters: Record<string, unknown>;
 }
 
-/** Implementação Anthropic real (compatível com gateways que expõem /v1/messages). */
+/**
+ * Implementação OpenCode Go real (API OpenAI-compatible). É o provider PADRÃO:
+ * `createAiClient` a seleciona quando `AI_PROVIDER` é omitido.
+ */
+export class OpenCodeGoAiClient implements AiClient {
+  readonly mode = "openCodeGo" as const;
+  constructor(private readonly inner: OpenCodeGoClient) {}
+  get model(): string {
+    return this.inner.model;
+  }
+  async chat(messages: AgentMessage[], tools?: ToolRecord[]): Promise<ModelResponse> {
+    const wire = messages.map((m) => {
+      if (m.role === "tool") {
+        return { role: "tool" as const, tool_call_id: m.tool_call_id, content: m.content };
+      }
+      if (m.role === "assistant" && m.tool_calls && m.tool_calls.length > 0) {
+        return {
+          role: "assistant" as const,
+          content: m.content ?? null,
+          tool_calls: m.tool_calls,
+        };
+      }
+      return { role: m.role, content: m.content ?? null };
+    });
+    const resp = await this.inner.chat(wire as never, tools);
+    return { content: resp.content, toolCalls: [...resp.toolCalls] };
+  }
+}
+
+/** Implementação Anthropic real LEGADA (compatível com gateways que expõem /v1/messages). */
 export class AnthropicAiClient implements AiClient {
   readonly mode = "anthropic" as const;
   constructor(private readonly inner: AnthropicClient) {}
@@ -99,16 +133,33 @@ export class StaticAiClient implements AiClient {
 }
 
 export function createAiClient(opts: {
+  /** Provider ativo. Default: openCodeGo (OpenCode Go + AI_MODEL). */
+  readonly provider?: AiProviderName;
   readonly apiKey: string | null;
   readonly model: string;
   readonly baseUrl?: string;
   readonly maxTokens?: number;
+  readonly timeoutMs?: number;
   readonly extendedOutput?: boolean;
   readonly thinkingEnabled?: boolean;
   readonly thinkingBudget?: number;
   readonly logger?: Logger;
 }): AiClient {
-  if (opts.apiKey) {
+  const provider = opts.provider ?? "openCodeGo";
+  if (provider === "openCodeGo" && opts.apiKey) {
+    const openCodeGo = new OpenCodeGoClient(
+      {
+        apiKey: opts.apiKey,
+        model: opts.model,
+        ...(opts.baseUrl ? { baseUrl: opts.baseUrl } : {}),
+        ...(opts.maxTokens !== undefined ? { maxTokens: opts.maxTokens } : {}),
+        ...(opts.timeoutMs !== undefined ? { timeoutMs: opts.timeoutMs } : {}),
+      },
+      opts.logger,
+    );
+    return new OpenCodeGoAiClient(openCodeGo);
+  }
+  if (provider === "anthropic" && opts.apiKey) {
     const anthropic = new AnthropicClient(
       {
         apiKey: opts.apiKey,

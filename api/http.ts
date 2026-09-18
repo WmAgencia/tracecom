@@ -89,6 +89,18 @@ function finiteOrNull(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * Defesa em profundidade: remove padrões de chave de textos livres (corpos de
+ * erro de provider, details de resposta). A chave NUNCA deve aparecer em
+ * log, erro ou JSON. (O bundle serverless não importa `src/`.)
+ */
+function redactSecretPatterns(text: string): string {
+  return text
+    .replace(/(sk-[A-Za-z0-9_\-]{6,})/g, "sk-***")
+    .replace(/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}/gi, "$1 ***")
+    .replace(/((?:x-api-key|x-relay-admin|api[_-]?key|authorization)["']?\s*[:=]\s*["']?)[^"',\s}]{8,}/gi, "$1***");
+}
+
 type DebateAgent = { name: string; score: number; evidence: string[]; invalidators: string[]; timedOut: boolean };
 
 async function runStructuredDebate(observation: Record<string, unknown> | null, pBuy: number | null, pSell: number | null, decision: "BUY" | "SELL" | "WAIT") {
@@ -196,8 +208,11 @@ async function temporaryVisionUrls(images: FableImage[]): Promise<{ images: Arra
 }
 
 async function fableVisionTrade(body: unknown): Promise<unknown> {
-  const apiKey = process.env.FABLE_API_KEY?.trim();
-  if (!apiKey) throw new Error("fable_not_configured");
+  // Provider default: openCodeGo (chave server-side no relay). Anthropic é
+  // legado e só roda com AI_PROVIDER=anthropic explícito + FABLE_API_KEY.
+  const legacyAnthropic = (process.env.AI_PROVIDER || "openCodeGo").trim() === "anthropic";
+  const legacyApiKey = process.env.FABLE_API_KEY?.trim() || null;
+  if (legacyAnthropic && !legacyApiKey) throw new Error("anthropic_not_configured");
   if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("bad_request");
   const payload = body as Record<string, unknown>;
   const snapshot = payload.snapshot;
@@ -217,10 +232,14 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
   if (!imageUsed || !receivedImage?.byteLength) throw new Error("VISION_IMAGE_MISSING");
   const baseQuality = Math.min(1, (imageUsed ? 0.55 : 0) + (images.length >= 2 ? 0.15 : 0) + (images.length >= 4 ? 0.1 : 0) + (Number.isFinite(Number(crop.width)) ? 0.1 : 0) + (quantitative.availability === "READY" ? 0.1 : 0));
   const visionEnabled = process.env.TRACECOM_VISION_ENABLED !== "false";
-  const visionModel = process.env.TRACECOM_VISION_MODEL || "claude-opus-5";
+  const defaultAiModel = process.env.AI_MODEL?.trim() || "deepseek-v4.1-flash";
+  const visionModel = process.env.TRACECOM_VISION_MODEL || defaultAiModel;
   const aiConfig = await readAiProviderConfig();
   const openCodeGoActive = aiConfig?.status === "CONFIGURED" && aiConfig.provider === "openCodeGo";
-  const openCodeModel = openCodeGoActive && typeof aiConfig?.model === "string" ? aiConfig.model : "qwen3.7-plus";
+  // Sem fallback silencioso: se nem OpenCode Go nem o modo Anthropic legado
+  // (explícito) estão configurados, falha fechado em vez de trocar de provider.
+  if (!openCodeGoActive && !legacyAnthropic) throw new Error("ai_provider_not_configured");
+  const openCodeModel = openCodeGoActive && typeof aiConfig?.model === "string" ? aiConfig.model : defaultAiModel;
   const pipelineStarted = Date.now();
   let visionLatencyMs: number | null = null;
   if (imageUsed && !visionEnabled) throw new Error("VISION_PROVIDER_NOT_CONFIGURED");
@@ -246,10 +265,10 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     decisionTimestamps = { pipelineStartedAt: pipelineStarted, visionLatencyMs, decisionStartedAt: decisionStarted, decisionCompletedAt: decisionCompleted, decisionLatencyMs: decisionCompleted - decisionStarted, observationAgeMs: decisionProxy?.freshness && typeof decisionProxy.freshness === "object" ? (decisionProxy.freshness as Record<string, unknown>).observationAgeMs ?? null : null };
     console.info("DECISION_AGENT_ACTIVE", JSON.stringify({ action: decisionAgent.action, confidence: decisionAgent.analysisConfidence, fresh: decisionFreshness.fresh, decisionLatencyMs: decisionTimestamps.decisionLatencyMs }));
   }
-  if (visionEnabled && images[0] && !openCodeGoActive) {
+  if (visionEnabled && images[0] && !openCodeGoActive && legacyAnthropic) {
     const visionStarted = Date.now();
     console.info("CLAUDE_VISION_REQUEST_STARTED", JSON.stringify({ requestId: typeof payload.requestId === "string" ? payload.requestId : null, model: visionModel, hasImage: true, imageBytes: receivedImage?.byteLength || 0, imageHash: receivedImage?.hash || null }));
-    const observation = await new NexxusVisionProvider({ apiKey, baseUrl: process.env.NEXXUS_BASE_URL || process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site", model: visionModel }).observe({ imageDataUrl: images[0].dataUrl, frameId: images[0].frameId, context: snapshotObject });
+    const observation = await new NexxusVisionProvider({ apiKey: legacyApiKey!, baseUrl: process.env.NEXXUS_BASE_URL || process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site", model: visionModel }).observe({ imageDataUrl: images[0].dataUrl, frameId: images[0].frameId, context: snapshotObject });
     console.info("VISION_MODEL_RESPONSE_RECEIVED", JSON.stringify({ availability: observation.availability, sources: observation.sources, notes: observation.notes }));
     visionObservation = observation as unknown as Record<string, unknown>;
     console.info("MARKET_OBSERVATION_CREATED", JSON.stringify({ availability: observation.availability, imageProvided: observation.imageProvided === true, imageBytes: observation.imageBytes || 0, imageHash: observation.imageHash || null }));
@@ -275,7 +294,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
   // Fable remains text-only. Claude Vision receives the crop bytes above and
   // contributes only the structured MarketObservation to this request.
   const controller = new AbortController();
-  const model = process.env.FABLE_MODEL || "claude-fable-5-1";
+  const model = process.env.FABLE_MODEL || defaultAiModel;
   const fableTimeoutMs = Math.max(4_500, Math.min(15_000, Number(process.env.FABLE_TIMEOUT_MS) || 12_000));
   const textTimeout = setTimeout(() => controller.abort(), fableTimeoutMs);
   const fableStarted = Date.now();
@@ -293,7 +312,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
     console.info("FABLE_REASONING_STARTED", JSON.stringify({ model, mode: visionObservation ? "text-only" : "legacy-multimodal" }));
     const response = await fetch(`${baseUrl}/v1/messages`, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      headers: { "content-type": "application/json", "x-api-key": legacyApiKey!, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({ model, max_tokens: 1_500, system: "You are Fable 5.1, a cautious quantitative analyst. Do not provide execution instructions or claim data not present in the sanitized chart crops.", messages: [{ role: "user", content }] }),
       signal: controller.signal,
     });
@@ -304,7 +323,7 @@ async function fableVisionTrade(body: unknown): Promise<unknown> {
       // lets support correlate a production failure without exposing payloads.
       let providerRequestId = response.headers.get("request-id") || response.headers.get("x-request-id");
       try { providerRequestId ||= String((JSON.parse(text) as Record<string, unknown>).request_id || ""); } catch { /* non-json upstream */ }
-      throw new Error(`FABLE_HTTP_${response.status}: ${providerRequestId ? `request_id=${providerRequestId} ` : ""}${text.slice(0, 300)}`);
+      throw new Error(`FABLE_HTTP_${response.status}: ${providerRequestId ? `request_id=${providerRequestId} ` : ""}${redactSecretPatterns(text).slice(0, 300)}`);
     }
     const wire = JSON.parse(text) as { content?: Array<{ type?: string; text?: string }> };
     answer = (wire.content ?? []).filter((block) => block.type === "text").map((block) => block.text ?? "").join("\n");
@@ -875,7 +894,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
     if (path === "/api/version" && req.method === "GET") {
-      json(200, { commitSha: process.env.VERCEL_GIT_COMMIT_SHA || "unknown", dataCollectionFreeze: "DATA_COLLECTION_FREEZE", strategyAutoChange: false, buildTimestamp: process.env.VERCEL_GIT_COMMIT_SHA ? (process.env.VERCEL_DEPLOYMENT_ID || "unknown") : "unknown", visionProviderEnabled: process.env.TRACECOM_VISION_ENABLED !== "false", visionModel: process.env.TRACECOM_VISION_MODEL || "claude-opus-5", visionEndpoint: "/v1/messages", fableMode: "text-only", pipelineVersion: "vision-observation-fable-text-v1" });
+      json(200, { commitSha: process.env.VERCEL_GIT_COMMIT_SHA || "unknown", dataCollectionFreeze: "DATA_COLLECTION_FREEZE", strategyAutoChange: false, buildTimestamp: process.env.VERCEL_GIT_COMMIT_SHA ? (process.env.VERCEL_DEPLOYMENT_ID || "unknown") : "unknown", visionProviderEnabled: process.env.TRACECOM_VISION_ENABLED !== "false", visionModel: process.env.TRACECOM_VISION_MODEL || process.env.AI_MODEL?.trim() || "deepseek-v4.1-flash", visionEndpoint: "/v1/messages", fableMode: "text-only", pipelineVersion: "vision-observation-fable-text-v1" });
       return;
     }
 
@@ -900,7 +919,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (!validImage({ label: "price-axis", dataUrl, mimeType: typeof input.mimeType === "string" ? input.mimeType : undefined })) { json(400, { error: "price_crop_invalid" }); return; }
       const apiKey = (process.env.NEXXUS_API_KEY || process.env.FABLE_API_KEY || "").trim();
       if (!apiKey) { json(503, { error: "vision_provider_not_configured" }); return; }
-      const provider = new NexxusVisionProvider({ apiKey, baseUrl: process.env.NEXXUS_BASE_URL || process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site", model: process.env.TRACECOM_VISION_MODEL || "claude-opus-5", timeoutMs: 3_000 });
+      const provider = new NexxusVisionProvider({ apiKey, baseUrl: process.env.NEXXUS_BASE_URL || process.env.FABLE_BASE_URL || "https://api.nexxus-pro.site", model: process.env.TRACECOM_VISION_MODEL || process.env.AI_MODEL?.trim() || "deepseek-v4.1-flash", timeoutMs: 3_000 });
       let observation = await provider.observe({ imageDataUrl: String(dataUrl), frameId: typeof input.frameId === "string" ? input.frameId : null, task: "PRICE_LABEL_ONLY" });
       if (!(Number.isFinite(Number(observation.price)) && Number(observation.priceConfidence) >= .6)) observation = await provider.observe({ imageDataUrl: String(dataUrl), frameId: `${String(input.frameId || "price")}_retry`, task: "PRICE_LABEL_ONLY" });
       const frameId = typeof input.frameId === "string" ? input.frameId : null;
@@ -1074,7 +1093,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
           json(422, {
             error: code,
             upstreamStatus: status,
-            detail: message.slice(0, 420),
+            detail: redactSecretPatterns(message).slice(0, 420),
             analysisStatus: "ERROR",
             requestId,
             stage: "FABLE_REASONING",
@@ -1082,7 +1101,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         } else {
           const timeout = error instanceof Error && (error.name === "AbortError" || message.includes("aborted"));
           const vision = message.startsWith("VISION_") || message.startsWith("vision_");
-          json(503, { error: timeout ? "FABLE_TIMEOUT" : vision ? "VISION_UNAVAILABLE" : "FABLE_UNAVAILABLE", detail: message.slice(0, 420), analysisStatus: "ERROR", requestId, stage: vision ? "VISION_PERCEPTION" : "FABLE_REASONING" });
+          json(503, { error: timeout ? "FABLE_TIMEOUT" : vision ? "VISION_UNAVAILABLE" : "FABLE_UNAVAILABLE", detail: redactSecretPatterns(message).slice(0, 420), analysisStatus: "ERROR", requestId, stage: vision ? "VISION_PERCEPTION" : "FABLE_REASONING" });
         }
       }
       return;

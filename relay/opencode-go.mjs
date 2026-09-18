@@ -9,7 +9,8 @@ import crypto from "node:crypto";
 export const OPENCODE_GO_BASE = "https://opencode.ai/zen/go/v1";
 export const VISION_TIMEOUT_MS = 40_000; // evidencia: crop real 250KB + JSON completo >30s; rota deep_background tolera 40s (limite, nunca infinito)
 export const TEXT_TIMEOUT_MS = 20_000;
-export const DEFAULT_MODEL = "qwen3.7-plus";
+export const DEFAULT_MODEL = "deepseek-v4.1-flash";
+export const DEFAULT_PROVIDER = "openCodeGo";
 
 /** session id derivado da sessao/contexto (sem segredos, sem valor global eterno). */
 export function sessionFor(context = {}) {
@@ -25,6 +26,26 @@ export function shouldUseOpenCodeGo(config) {
 export function resolveModel(config) {
   const model = config && typeof config.model === "string" ? config.model.trim() : "";
   return /^[a-z0-9.\-]{2,64}$/i.test(model) ? model : DEFAULT_MODEL;
+}
+
+/** Mascara a key para qualquer serializacao publica (GET /api/ai/provider, logs). Nunca expoe o valor. */
+export function maskProviderKey(key) {
+  const value = typeof key === "string" ? key : "";
+  return value.length <= 4 ? "••••" : `••••${value.slice(-4)}`;
+}
+
+/**
+ * Resolve a config efetiva do provider: DB (autoritativa) > env (resiliencia a restart/recreate).
+ * Env names lidos: AI_PROVIDER, AI_MODEL, OPENCODE_GO_API_KEY. Sem fallback para Anthropic.
+ */
+export function resolveProviderConfig({ dbConfig = null, env = process.env } = {}) {
+  const dbKey = dbConfig && typeof dbConfig.apiKey === "string" && dbConfig.apiKey.trim().length >= 8 ? dbConfig.apiKey.trim() : "";
+  if (dbKey) return { provider: (typeof dbConfig.provider === "string" && dbConfig.provider.trim()) || DEFAULT_PROVIDER, model: dbConfig.model ?? null, apiKey: dbKey };
+  const envKey = typeof env.OPENCODE_GO_API_KEY === "string" ? env.OPENCODE_GO_API_KEY.trim() : "";
+  if (envKey.length < 8) return null;
+  const provider = typeof env.AI_PROVIDER === "string" && env.AI_PROVIDER.trim() ? env.AI_PROVIDER.trim() : DEFAULT_PROVIDER;
+  const model = typeof env.AI_MODEL === "string" && env.AI_MODEL.trim() ? env.AI_MODEL.trim() : null;
+  return { provider, model, apiKey: envKey };
 }
 
 export function buildVisionRequest({ model, imageDataUrl, prompt, sessionId }) {
@@ -115,8 +136,8 @@ export function failedObservation(provenance, note) {
 
 async function loadProviderConfig(pool) {
   const row = (await pool.query("SELECT provider, model, api_key FROM ai_provider_config WHERE id=1")).rows[0];
-  if (!row || typeof row.api_key !== "string" || row.api_key.length < 8) return null;
-  return { provider: row.provider || "openCodeGo", model: row.model, apiKey: row.api_key };
+  const dbConfig = row && typeof row.api_key === "string" && row.api_key.length >= 8 ? { provider: row.provider || DEFAULT_PROVIDER, model: row.model, apiKey: row.api_key } : null;
+  return resolveProviderConfig({ dbConfig });
 }
 
 async function callProvider(request, apiKey, timeoutMs) {

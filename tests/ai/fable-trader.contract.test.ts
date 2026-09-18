@@ -6,10 +6,10 @@ const image = (label: string) => ({ label, dataUrl: `data:image/jpeg;base64,${Bu
 
 afterEach(() => vi.restoreAllMocks());
 
-describe("Fable vision frame contract", () => {
+describe("Fable vision frame contract (Anthropic legado)", () => {
   it.each([0, 1, 2, 3, 4])("serializes %i frame(s) without inventing image evidence", async (count) => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ content: [{ type: "text", text: JSON.stringify({ decision: count ? "BUY" : "WAIT", confidence: count ? .7 : 0, pBuy: count ? .7 : 0, pSell: 0, pWait: count ? .3 : 1, imageUsed: count > 0, framesUsed: count, visualBias: count ? "BUY" : "NEUTRAL", quantBias: "UNAVAILABLE" }) }] }), { status: 200, headers: { "content-type": "application/json" } }));
-    const result = await new FableTraderClient({ apiKey: "test", baseUrl: "https://provider.invalid", model: "claude-fable-5-1" }).analyze({ snapshot, chartImages: Array.from({ length: count }, (_, i) => image(`f${i}`)) });
+    const result = await new FableTraderClient({ provider: "anthropic", apiKey: "test", baseUrl: "https://provider.invalid", model: "claude-fable-5-1" }).analyze({ snapshot, chartImages: Array.from({ length: count }, (_, i) => image(`f${i}`)) });
     expect(result.analysis.framesUsed).toBe(count);
     expect(result.analysis.imageUsed).toBe(count > 0);
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -21,7 +21,7 @@ describe("Fable vision frame contract", () => {
 
   it("uses the Anthropic messages endpoint and preserves the selected model", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ content: [{ type: "text", text: JSON.stringify({ decision: "WAIT", confidence: 0, pWait: 1, imageUsed: false, visualBias: "NEUTRAL", quantBias: "UNAVAILABLE" }) }] }), { status: 200 }));
-    const client = new FableTraderClient({ apiKey: "test", baseUrl: "https://provider.invalid/", model: "claude-fable-5-1" });
+    const client = new FableTraderClient({ provider: "anthropic", apiKey: "test", baseUrl: "https://provider.invalid/", model: "claude-fable-5-1" });
     await client.analyze({ snapshot, chartImage: image("current").dataUrl });
     const [url, init] = fetchMock.mock.calls[0] ?? [];
     expect(url).toBe("https://provider.invalid/v1/messages");
@@ -31,7 +31,7 @@ describe("Fable vision frame contract", () => {
 
   it("does not invent probabilities or image evidence from malformed structured output", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ content: [{ type: "text", text: "not-json" }] }), { status: 200 }));
-    const result = await new FableTraderClient({ apiKey: "test", baseUrl: "https://provider.invalid", model: "claude-fable-5-1" }).analyze({ snapshot, chartImage: image("current").dataUrl });
+    const result = await new FableTraderClient({ provider: "anthropic", apiKey: "test", baseUrl: "https://provider.invalid", model: "claude-fable-5-1" }).analyze({ snapshot, chartImage: image("current").dataUrl });
     expect(result.analysis.decision).toBe("WAIT");
     expect(result.analysis.pBuy).toBeNull();
     expect(result.analysis.pSell).toBeNull();
@@ -42,14 +42,34 @@ describe("Fable vision frame contract", () => {
 
   it("keeps provider failures as errors instead of converting them into WAIT", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ error: { message: "invalid payload" } }), { status: 400 }));
-    await expect(new FableTraderClient({ apiKey: "test", baseUrl: "https://provider.invalid", model: "claude-fable-5-1" }).analyze({ snapshot, chartImage: image("current").dataUrl })).rejects.toThrow("FABLE_HTTP_400");
+    await expect(new FableTraderClient({ provider: "anthropic", apiKey: "test", baseUrl: "https://provider.invalid", model: "claude-fable-5-1" }).analyze({ snapshot, chartImage: image("current").dataUrl })).rejects.toThrow("FABLE_HTTP_400");
   });
 
   it("preserves visual market metadata and normalizes its probability distribution", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ content: [{ type: "text", text: JSON.stringify({ decision: "BUY", confidence: .8, pBuy: 8, pSell: 1, pWait: 1, imageUsed: true, visualBias: "BUY", quantBias: "BUY", marketContext: { symbol: "EUR/USD", marketType: "OTC", visualTimeframe: "1m", displayedStake: "$20", expiration: "60s", payout: "91%", confidence: .9, sources: ["header", "chart"] } }) }] }), { status: 200 }));
-    const result = await new FableTraderClient({ apiKey: "test", baseUrl: "https://provider.invalid", model: "claude-fable-5-1" }).analyze({ snapshot, chartImage: image("current").dataUrl });
+    const result = await new FableTraderClient({ provider: "anthropic", apiKey: "test", baseUrl: "https://provider.invalid", model: "claude-fable-5-1" }).analyze({ snapshot, chartImage: image("current").dataUrl });
     expect(result.analysis.marketContext).toMatchObject({ symbol: "EUR/USD", marketType: "OTC", visualTimeframe: "1m", expiration: "60s", payout: "91%" });
     expect((result.analysis.pBuy ?? 0) + (result.analysis.pSell ?? 0) + (result.analysis.pWait ?? 0)).toBeCloseTo(1);
     expect(result.analysis.pBuy).toBeCloseTo(.8);
+  });
+});
+
+describe("Fable vision frame contract (OpenCode Go, padrão)", () => {
+  it("usa chat/completions por default, Bearer + session e imagens image_url", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ decision: "BUY", confidence: .7, pBuy: .7, pSell: .1, pWait: .2, imageUsed: true, framesUsed: 1, visualBias: "BUY", quantBias: "UNAVAILABLE" }) }, finish_reason: "stop" }] }), { status: 200 }));
+    const client = new FableTraderClient({ apiKey: "sk-go-test", baseUrl: "https://opencode.ai/zen/go/v1", model: "deepseek-v4.1-flash" });
+    const result = await client.analyze({ snapshot, chartImage: image("current").dataUrl });
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toBe("https://opencode.ai/zen/go/v1/chat/completions");
+    const headers = init?.headers as Record<string, string>;
+    expect(headers.authorization).toBe("Bearer sk-go-test");
+    expect(headers["x-opencode-session"]).toMatch(/^tc-[0-9a-f]{16}$/);
+    expect(headers["x-api-key"]).toBeUndefined();
+    const body = JSON.parse(String(init?.body));
+    expect(body.model).toBe("deepseek-v4.1-flash");
+    const content = body.messages[0].content as Array<{ type: string; image_url?: { url: string } }>;
+    expect(content.filter((part) => part.type === "image_url")).toHaveLength(1);
+    expect(result.analysis.decision).toBe("BUY");
+    expect(result.model.displayName).toContain("OpenCode Go");
   });
 });
