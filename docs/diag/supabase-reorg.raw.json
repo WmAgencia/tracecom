@@ -1,0 +1,2553 @@
+{
+ "generatedAt": "2026-09-18T15:19:45.455Z",
+ "agent": "supabase-correct (storage reorg)",
+ "scope": "TraceCom relay production persistence (Supabase project corrected ref; Railway service tracecom-live-relay)",
+ "mode": "PRACTICE only; zero orders; no trading logic changed",
+ "phase0": {
+  "effectiveDatabaseUrlHost": "aws-0-us-west-2.pooler.supabase.com",
+  "effectiveDatabaseUrlUser": "postgres.<project-ref>",
+  "effectiveDatabase": "postgres",
+  "verdict": "The relay already points to the user's Supabase project (corrected ref). It does NOT point to a different project or to Railway Postgres.",
+  "providedRefDns": {
+   "cladmauwmuoeqongxwb": "NXDOMAIN (ref as pasted is one character short)",
+   "cladmauwmuoeqongxzwb": "resolves (104.18.38.10, 172.64.149.246) and is the project behind the live DATABASE_URL"
+  },
+  "keysValidation": {
+   "publishableKey": "validated against auth/v1/settings -> HTTP 200",
+   "secretKey": "validated against storage/v1/bucket -> HTTP 200 (the full single-line form as pasted worked; no re-join needed)",
+   "legacyAnonJwt": "ref claim is the 19-char ref (missing 'z'); rejected by the real project; not stored anywhere",
+   "legacyServiceRoleJwt": "not provided in full; not needed (direct DB + new keys validated)"
+  },
+  "railwayPostgres": "service 'Postgres' (volume postgres-volume) exists but is CRASHED and unreferenced by tracecom-live-relay env"
+ },
+ "envAudit": {
+  "service": "tracecom-live-relay",
+  "environment": "production",
+  "databaseUrlPresent": true,
+  "variableNames": [
+   "AI_MODEL",
+   "AI_PROVIDER",
+   "ALLOWED_ORIGINS",
+   "API_KEY_PEPPER",
+   "DATABASE_URL",
+   "OPENCODE_GO_API_KEY",
+   "RAILWAY_ENVIRONMENT",
+   "RAILWAY_ENVIRONMENT_ID",
+   "RAILWAY_ENVIRONMENT_NAME",
+   "RAILWAY_PRIVATE_DOMAIN",
+   "RAILWAY_PROJECT_ID",
+   "RAILWAY_PROJECT_NAME",
+   "RAILWAY_PUBLIC_DOMAIN",
+   "RAILWAY_SERVICE_ID",
+   "RAILWAY_SERVICE_NAME",
+   "RAILWAY_SERVICE_TRACECOM_LIVE_RELAY_URL",
+   "RAILWAY_STATIC_URL",
+   "RELAY_API_KEY",
+   "SHADOW_EXPERIMENT_ASSET",
+   "TOKEN_SIGNING_SECRET"
+  ],
+  "supabaseUrlOrServiceKeyReadByCode": false,
+  "changesApplied": "none: DATABASE_URL already points to the correct Supabase; no code reads SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY (only .env.example placeholders)"
+ },
+ "before": {
+  "dbBytes": 1644588179,
+  "dbMiB": 1568.4,
+  "quotaMiB": 500,
+  "readOnly": true,
+  "tables": [
+   {
+    "schema": "public",
+    "name": "iqopt_raw_ticks",
+    "totalMiB": 660.26,
+    "heapMiB": 419.88,
+    "indexMiB": 240.23,
+    "toastMiB": 0.01,
+    "rows": 2160023,
+    "deadRows": 7127
+   },
+   {
+    "schema": "public",
+    "name": "live_frames",
+    "totalMiB": 489.84,
+    "heapMiB": 1.32,
+    "indexMiB": 2.84,
+    "toastMiB": 485.65,
+    "rows": 9234,
+    "deadRows": 2
+   },
+   {
+    "schema": "public",
+    "name": "iq_audit_trail",
+    "totalMiB": 145.4,
+    "heapMiB": 121.92,
+    "indexMiB": 23.41,
+    "toastMiB": 0.01,
+    "rows": 154418,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "iqopt_candles_5s",
+    "totalMiB": 52.97,
+    "heapMiB": 28.77,
+    "indexMiB": 24.16,
+    "toastMiB": 0.01,
+    "rows": 265955,
+    "deadRows": 320
+   },
+   {
+    "schema": "public",
+    "name": "live_events",
+    "totalMiB": 52.12,
+    "heapMiB": 31.23,
+    "indexMiB": 20.85,
+    "toastMiB": 0.01,
+    "rows": 44853,
+    "deadRows": 2
+   },
+   {
+    "schema": "public",
+    "name": "live_access_logs",
+    "totalMiB": 46.91,
+    "heapMiB": 29.95,
+    "indexMiB": 16.92,
+    "toastMiB": 0.01,
+    "rows": 327916,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "iqopt_decisions",
+    "totalMiB": 16.27,
+    "heapMiB": 13.02,
+    "indexMiB": 3.22,
+    "toastMiB": 0.01,
+    "rows": 110343,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "price_observations",
+    "totalMiB": 13.29,
+    "heapMiB": 8.42,
+    "indexMiB": 4.83,
+    "toastMiB": 0.01,
+    "rows": 25179,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "live_ingest_nonces",
+    "totalMiB": 10.26,
+    "heapMiB": 5.94,
+    "indexMiB": 4.28,
+    "toastMiB": 0.01,
+    "rows": 44855,
+    "deadRows": 7
+   },
+   {
+    "schema": "public",
+    "name": "training_sessions",
+    "totalMiB": 8.87,
+    "heapMiB": 0.01,
+    "indexMiB": 0.03,
+    "toastMiB": 8.8,
+    "rows": 1,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "agent_runs",
+    "totalMiB": 8.84,
+    "heapMiB": 6.34,
+    "indexMiB": 2.46,
+    "toastMiB": 0.01,
+    "rows": 8824,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "decision_provenance",
+    "totalMiB": 8.25,
+    "heapMiB": 6.72,
+    "indexMiB": 1.49,
+    "toastMiB": 0.01,
+    "rows": 7354,
+    "deadRows": 19
+   },
+   {
+    "schema": "public",
+    "name": "market_observations",
+    "totalMiB": 6.59,
+    "heapMiB": 3.66,
+    "indexMiB": 2.89,
+    "toastMiB": 0.01,
+    "rows": 12450,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "shadow_trades",
+    "totalMiB": 6.16,
+    "heapMiB": 3.27,
+    "indexMiB": 2.86,
+    "toastMiB": 0.01,
+    "rows": 6878,
+    "deadRows": 826
+   },
+   {
+    "schema": "public",
+    "name": "diagnostic_logs",
+    "totalMiB": 5.97,
+    "heapMiB": 3.78,
+    "indexMiB": 2.15,
+    "toastMiB": 0.01,
+    "rows": 12287,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "trace_spans",
+    "totalMiB": 4.73,
+    "heapMiB": 3.39,
+    "indexMiB": 1.3,
+    "toastMiB": 0.01,
+    "rows": 13244,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "vision_market_samples",
+    "totalMiB": 4.68,
+    "heapMiB": 2.73,
+    "indexMiB": 1.91,
+    "toastMiB": 0.01,
+    "rows": 9225,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "live_decisions",
+    "totalMiB": 4.2,
+    "heapMiB": 2.69,
+    "indexMiB": 1.47,
+    "toastMiB": 0.01,
+    "rows": 8906,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "iqopt_benchmark",
+    "totalMiB": 2.48,
+    "heapMiB": 2.2,
+    "indexMiB": 0.24,
+    "toastMiB": 0.01,
+    "rows": 2036,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "iq_runtime_config",
+    "totalMiB": 1.55,
+    "heapMiB": 0.27,
+    "indexMiB": 0.02,
+    "toastMiB": 1.23,
+    "rows": 1,
+    "deadRows": 4
+   },
+   {
+    "schema": "public",
+    "name": "market_contexts",
+    "totalMiB": 1.44,
+    "heapMiB": 1.03,
+    "indexMiB": 0.37,
+    "toastMiB": 0.01,
+    "rows": 1821,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "fwd_profile_decisions",
+    "totalMiB": 0.64,
+    "heapMiB": 0.42,
+    "indexMiB": 0.19,
+    "toastMiB": 0.01,
+    "rows": 1200,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "iq_trade_journal",
+    "totalMiB": 0.48,
+    "heapMiB": 0.12,
+    "indexMiB": 0.06,
+    "toastMiB": 0.27,
+    "rows": 68,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "operational_sessions",
+    "totalMiB": 0.41,
+    "heapMiB": 0.18,
+    "indexMiB": 0.02,
+    "toastMiB": 0.19,
+    "rows": 31,
+    "deadRows": 7
+   },
+   {
+    "schema": "public",
+    "name": "iq_executions",
+    "totalMiB": 0.41,
+    "heapMiB": 0.2,
+    "indexMiB": 0.17,
+    "toastMiB": 0.01,
+    "rows": 239,
+    "deadRows": 23
+   },
+   {
+    "schema": "public",
+    "name": "fwd_events",
+    "totalMiB": 0.39,
+    "heapMiB": 0.27,
+    "indexMiB": 0.09,
+    "toastMiB": 0.01,
+    "rows": 338,
+    "deadRows": 90
+   },
+   {
+    "schema": "public",
+    "name": "fwd_profile_events",
+    "totalMiB": 0.3,
+    "heapMiB": 0.22,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 261,
+    "deadRows": 58
+   },
+   {
+    "schema": "public",
+    "name": "state_transitions",
+    "totalMiB": 0.24,
+    "heapMiB": 0.16,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 148,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "users",
+    "totalMiB": 0.13,
+    "heapMiB": 0,
+    "indexMiB": 0.12,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "fwd4_trades",
+    "totalMiB": 0.11,
+    "heapMiB": 0.03,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 28,
+    "deadRows": 10
+   },
+   {
+    "schema": "public",
+    "name": "iq_strategy_reviews",
+    "totalMiB": 0.1,
+    "heapMiB": 0.04,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 12,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "one_time_tokens",
+    "totalMiB": 0.09,
+    "heapMiB": 0,
+    "indexMiB": 0.08,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "live_sessions",
+    "totalMiB": 0.09,
+    "heapMiB": 0.03,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 31,
+    "deadRows": 39
+   },
+   {
+    "schema": "auth",
+    "name": "scim_users",
+    "totalMiB": 0.09,
+    "heapMiB": 0,
+    "indexMiB": 0.08,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "quant_decisions",
+    "totalMiB": 0.08,
+    "heapMiB": 0.01,
+    "indexMiB": 0.05,
+    "toastMiB": 0.02,
+    "rows": 1,
+    "deadRows": 1
+   },
+   {
+    "schema": "public",
+    "name": "models",
+    "totalMiB": 0.08,
+    "heapMiB": 0.01,
+    "indexMiB": 0.06,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "iqopt_benchmark_meta",
+    "totalMiB": 0.07,
+    "heapMiB": 0.02,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 18,
+    "deadRows": 1
+   },
+   {
+    "schema": "storage",
+    "name": "objects",
+    "totalMiB": 0.07,
+    "heapMiB": 0,
+    "indexMiB": 0.06,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "iq_markets",
+    "totalMiB": 0.07,
+    "heapMiB": 0.02,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 55,
+    "deadRows": 29
+   },
+   {
+    "schema": "public",
+    "name": "plans",
+    "totalMiB": 0.06,
+    "heapMiB": 0.01,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "users",
+    "totalMiB": 0.06,
+    "heapMiB": 0.01,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "audit_logs",
+    "totalMiB": 0.06,
+    "heapMiB": 0.01,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "refresh_tokens",
+    "totalMiB": 0.06,
+    "heapMiB": 0.01,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "refresh_tokens",
+    "totalMiB": 0.06,
+    "heapMiB": 0,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "providers",
+    "totalMiB": 0.06,
+    "heapMiB": 0.01,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "api_keys",
+    "totalMiB": 0.06,
+    "heapMiB": 0.01,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "payments",
+    "totalMiB": 0.06,
+    "heapMiB": 0.01,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "mfa_factors",
+    "totalMiB": 0.05,
+    "heapMiB": 0,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "custom_oauth_providers",
+    "totalMiB": 0.05,
+    "heapMiB": 0,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "subscriptions",
+    "totalMiB": 0.05,
+    "heapMiB": 0.01,
+    "indexMiB": 0.05,
+    "toastMiB": 0,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "sessions",
+    "totalMiB": 0.05,
+    "heapMiB": 0,
+    "indexMiB": 0.04,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "credit_ledger",
+    "totalMiB": 0.05,
+    "heapMiB": 0.01,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "scim_tokens",
+    "totalMiB": 0.05,
+    "heapMiB": 0,
+    "indexMiB": 0.04,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "provider_secrets",
+    "totalMiB": 0.05,
+    "heapMiB": 0.01,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "shadow_experiments",
+    "totalMiB": 0.05,
+    "heapMiB": 0.01,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 1,
+    "deadRows": 10
+   },
+   {
+    "schema": "auth",
+    "name": "oauth_consents",
+    "totalMiB": 0.05,
+    "heapMiB": 0,
+    "indexMiB": 0.04,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "customers",
+    "totalMiB": 0.05,
+    "heapMiB": 0.01,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "shadow_experiment_checkpoints",
+    "totalMiB": 0.05,
+    "heapMiB": 0.01,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 1,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "frozen_signals",
+    "totalMiB": 0.04,
+    "heapMiB": 0,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "identities",
+    "totalMiB": 0.04,
+    "heapMiB": 0,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "saml_relay_states",
+    "totalMiB": 0.04,
+    "heapMiB": 0,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "oauth_authorizations",
+    "totalMiB": 0.04,
+    "heapMiB": 0,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "usage_events",
+    "totalMiB": 0.04,
+    "heapMiB": 0,
+    "indexMiB": 0.04,
+    "toastMiB": 0,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "request_logs",
+    "totalMiB": 0.04,
+    "heapMiB": 0,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "storage",
+    "name": "migrations",
+    "totalMiB": 0.04,
+    "heapMiB": 0.01,
+    "indexMiB": 0.03,
+    "toastMiB": 0,
+    "rows": 3,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "flow_state",
+    "totalMiB": 0.04,
+    "heapMiB": 0,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "ai_provider_config",
+    "totalMiB": 0.03,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 1,
+    "deadRows": 1
+   },
+   {
+    "schema": "public",
+    "name": "iq_auth_session",
+    "totalMiB": 0.03,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 1,
+    "deadRows": 2
+   },
+   {
+    "schema": "auth",
+    "name": "sso_providers",
+    "totalMiB": 0.03,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "strategy_selection_audit",
+    "totalMiB": 0.03,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 4,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "strategy_selection",
+    "totalMiB": 0.03,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 1,
+    "deadRows": 4
+   },
+   {
+    "schema": "public",
+    "name": "fwd_profile_runs",
+    "totalMiB": 0.03,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 1,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "iqopt_datasets",
+    "totalMiB": 0.03,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 11,
+    "deadRows": 5
+   },
+   {
+    "schema": "public",
+    "name": "live_api_keys",
+    "totalMiB": 0.03,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "schema_migrations",
+    "totalMiB": 0.03,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 27,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "webauthn_challenges",
+    "totalMiB": 0.03,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "drizzle",
+    "name": "__drizzle_migrations",
+    "totalMiB": 0.03,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "webauthn_credentials",
+    "totalMiB": 0.03,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "fwd_event_runs",
+    "totalMiB": 0.03,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 3,
+    "deadRows": 5
+   },
+   {
+    "schema": "public",
+    "name": "iq_legacy_strategy_audit",
+    "totalMiB": 0.03,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 15,
+    "deadRows": 0
+   },
+   {
+    "schema": "realtime",
+    "name": "subscription",
+    "totalMiB": 0.03,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "saml_providers",
+    "totalMiB": 0.03,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "fwd4_runs",
+    "totalMiB": 0.03,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 1,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "sso_domains",
+    "totalMiB": 0.03,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "mfa_amr_claims",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "storage",
+    "name": "vector_indexes",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "storage",
+    "name": "s3_multipart_uploads",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "storage",
+    "name": "buckets_analytics",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "realtime",
+    "name": "schema_migrations",
+    "totalMiB": 0.02,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0,
+    "rows": 1,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "credit_balances",
+    "totalMiB": 0.02,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "storage",
+    "name": "buckets",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "live_settlements",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "oauth_clients",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "oauth_client_states",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "network_hops",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "shadow_jobs",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "ground_truths",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "quant_model_versions",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "mfa_challenges",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "audit_log_entries",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "vault",
+    "name": "secrets",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "mfa_recovery_code_sets",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "mfa_recovery_codes",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "schema_migrations",
+    "totalMiB": 0.02,
+    "heapMiB": 0.01,
+    "indexMiB": 0.02,
+    "toastMiB": 0,
+    "rows": 5,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "promotion_audit",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.01,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "frozen_latest_signal",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.01,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "storage",
+    "name": "buckets_vectors",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.01,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "auth",
+    "name": "instances",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.01,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "storage",
+    "name": "s3_multipart_uploads_parts",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.01,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "stripe_events",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.01,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "public",
+    "name": "promotion_state",
+    "totalMiB": 0.02,
+    "heapMiB": 0,
+    "indexMiB": 0.01,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   },
+   {
+    "schema": "realtime",
+    "name": "messages",
+    "totalMiB": 0,
+    "heapMiB": 0,
+    "indexMiB": 0,
+    "toastMiB": 0,
+    "rows": 0,
+    "deadRows": 0
+   }
+  ]
+ },
+ "after": {
+  "dbBytes": 228428947,
+  "dbMiB": 217.85,
+  "readOnly": {
+   "dro": "off",
+   "tro": "off"
+  },
+  "tables": [
+   {
+    "name": "iq_audit_trail_20260918",
+    "totalMiB": 95.84,
+    "heapMiB": 83.89,
+    "indexMiB": 11.9,
+    "toastMiB": 0.01,
+    "rows": 105274,
+    "deadRows": 0
+   },
+   {
+    "name": "iq_audit_trail_20260917",
+    "totalMiB": 33.84,
+    "heapMiB": 29.63,
+    "indexMiB": 4.17,
+    "toastMiB": 0.01,
+    "rows": 37397,
+    "deadRows": 267
+   },
+   {
+    "name": "price_observations",
+    "totalMiB": 13.29,
+    "heapMiB": 8.42,
+    "indexMiB": 4.83,
+    "toastMiB": 0.01,
+    "rows": 25179,
+    "deadRows": 0
+   },
+   {
+    "name": "agent_runs",
+    "totalMiB": 8.84,
+    "heapMiB": 6.34,
+    "indexMiB": 2.46,
+    "toastMiB": 0.01,
+    "rows": 8824,
+    "deadRows": 0
+   },
+   {
+    "name": "decision_provenance",
+    "totalMiB": 7.67,
+    "heapMiB": 6.56,
+    "indexMiB": 1.1,
+    "toastMiB": 0.01,
+    "rows": 7354,
+    "deadRows": 0
+   },
+   {
+    "name": "live_access_logs",
+    "totalMiB": 6.94,
+    "heapMiB": 5.43,
+    "indexMiB": 1.47,
+    "toastMiB": 0.01,
+    "rows": 66969,
+    "deadRows": 0
+   },
+   {
+    "name": "market_observations",
+    "totalMiB": 6.59,
+    "heapMiB": 3.66,
+    "indexMiB": 2.89,
+    "toastMiB": 0.01,
+    "rows": 12450,
+    "deadRows": 0
+   },
+   {
+    "name": "diagnostic_logs",
+    "totalMiB": 5.97,
+    "heapMiB": 3.78,
+    "indexMiB": 2.15,
+    "toastMiB": 0.01,
+    "rows": 12287,
+    "deadRows": 0
+   },
+   {
+    "name": "trace_spans",
+    "totalMiB": 4.73,
+    "heapMiB": 3.39,
+    "indexMiB": 1.3,
+    "toastMiB": 0.01,
+    "rows": 13244,
+    "deadRows": 0
+   },
+   {
+    "name": "shadow_trades",
+    "totalMiB": 4.69,
+    "heapMiB": 3.18,
+    "indexMiB": 1.5,
+    "toastMiB": 0.01,
+    "rows": 6878,
+    "deadRows": 0
+   },
+   {
+    "name": "vision_market_samples",
+    "totalMiB": 4.68,
+    "heapMiB": 2.73,
+    "indexMiB": 1.91,
+    "toastMiB": 0.01,
+    "rows": 9225,
+    "deadRows": 0
+   },
+   {
+    "name": "live_decisions",
+    "totalMiB": 4.2,
+    "heapMiB": 2.69,
+    "indexMiB": 1.47,
+    "toastMiB": 0.01,
+    "rows": 8906,
+    "deadRows": 0
+   },
+   {
+    "name": "iq_runtime_config",
+    "totalMiB": 1.59,
+    "heapMiB": 0.27,
+    "indexMiB": 0.02,
+    "toastMiB": 1.27,
+    "rows": 1,
+    "deadRows": 5
+   },
+   {
+    "name": "market_contexts",
+    "totalMiB": 1.44,
+    "heapMiB": 1.03,
+    "indexMiB": 0.37,
+    "toastMiB": 0.01,
+    "rows": 1821,
+    "deadRows": 0
+   },
+   {
+    "name": "fwd_profile_decisions",
+    "totalMiB": 0.64,
+    "heapMiB": 0.42,
+    "indexMiB": 0.19,
+    "toastMiB": 0.01,
+    "rows": 1200,
+    "deadRows": 0
+   },
+   {
+    "name": "iq_trade_journal",
+    "totalMiB": 0.48,
+    "heapMiB": 0.12,
+    "indexMiB": 0.06,
+    "toastMiB": 0.27,
+    "rows": 68,
+    "deadRows": 0
+   },
+   {
+    "name": "operational_sessions",
+    "totalMiB": 0.41,
+    "heapMiB": 0.18,
+    "indexMiB": 0.02,
+    "toastMiB": 0.19,
+    "rows": 31,
+    "deadRows": 7
+   },
+   {
+    "name": "iq_executions",
+    "totalMiB": 0.33,
+    "heapMiB": 0.16,
+    "indexMiB": 0.16,
+    "toastMiB": 0.01,
+    "rows": 239,
+    "deadRows": 0
+   },
+   {
+    "name": "fwd_events",
+    "totalMiB": 0.3,
+    "heapMiB": 0.23,
+    "indexMiB": 0.06,
+    "toastMiB": 0.01,
+    "rows": 338,
+    "deadRows": 0
+   },
+   {
+    "name": "state_transitions",
+    "totalMiB": 0.24,
+    "heapMiB": 0.16,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 148,
+    "deadRows": 0
+   },
+   {
+    "name": "fwd_profile_events",
+    "totalMiB": 0.21,
+    "heapMiB": 0.15,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 261,
+    "deadRows": 0
+   },
+   {
+    "name": "fwd4_trades",
+    "totalMiB": 0.11,
+    "heapMiB": 0.03,
+    "indexMiB": 0.05,
+    "toastMiB": 0.01,
+    "rows": 28,
+    "deadRows": 10
+   },
+   {
+    "name": "iq_strategy_reviews",
+    "totalMiB": 0.1,
+    "heapMiB": 0.04,
+    "indexMiB": 0.03,
+    "toastMiB": 0.01,
+    "rows": 12,
+    "deadRows": 0
+   },
+   {
+    "name": "live_sessions",
+    "totalMiB": 0.09,
+    "heapMiB": 0.03,
+    "indexMiB": 0.02,
+    "toastMiB": 0.01,
+    "rows": 31,
+    "deadRows": 39
+   },
+   {
+    "name": "models",
+    "totalMiB": 0.08,
+    "heapMiB": 0.01,
+    "indexMiB": 0.06,
+    "toastMiB": 0.01,
+    "rows": 0,
+    "deadRows": 0
+   }
+  ]
+ },
+ "archives": {
+  "location": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive",
+  "note": "Archives are OUTSIDE the git repo (local temp dir). Move/copy to durable object storage; retention job supports RETENTION_ARCHIVE_DIR.",
+  "manifest": [
+   {
+    "table": "iqopt_raw_ticks",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\iqopt_raw_ticks_2026-09-18T14-43-33-908Z.jsonl.gz",
+    "rows": 2104104,
+    "bytes": 27856908,
+    "verified": 2104104,
+    "sha256": "d4fc6ad5e2ad3ab368becdc5ac5668e3c139cecf8bccbb7af26b43060932295b",
+    "kind": "export",
+    "predicate": null,
+    "at": "2026-09-18T14:43:33.906Z"
+   },
+   {
+    "table": "live_frames",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\live_frames_2026-09-18T14-50-56-617Z.jsonl.gz",
+    "rowsDeleted": 7515,
+    "batches": 19,
+    "bytes": 248606938,
+    "verified": 7515,
+    "sha256": "1aebd890c35d763029dfc993c8da57c640f6043bed2421676a987eda811e0f45",
+    "kind": "export-delete",
+    "predicate": "created_at < now() - interval '48 hours'",
+    "at": "2026-09-18T14:50:56.615Z"
+   },
+   {
+    "table": "iq_audit_trail",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\iq_audit_trail_2026-09-18T14-55-08-712Z.jsonl.gz",
+    "rowsDeleted": 15521,
+    "batches": 39,
+    "bytes": 909214,
+    "verified": 15521,
+    "sha256": "649df8e91d2668c2febbf30f21c2c7999dad51213e781fa27448d5b1d80eeafe",
+    "kind": "export-delete",
+    "predicate": "created_at < now() - interval '24 hours'",
+    "at": "2026-09-18T14:55:08.711Z"
+   },
+   {
+    "table": "live_frames",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\live_frames_2026-09-18T14-55-51-258Z.jsonl.gz",
+    "rowsDeleted": 1719,
+    "batches": 5,
+    "bytes": 70395028,
+    "verified": 1719,
+    "sha256": "7666648189ad9946e006f6aa203226f0823b7f9cd912add41575ce4e8503b672",
+    "kind": "export-delete",
+    "predicate": "created_at < now() - interval '24 hours'",
+    "at": "2026-09-18T14:55:51.257Z"
+   },
+   {
+    "table": "iqopt_candles_5s",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\iqopt_candles_5s_2026-09-18T14-56-59-616Z.jsonl.gz",
+    "rows": 265955,
+    "bytes": 3195210,
+    "verified": 265955,
+    "sha256": "fb32b07f9c81ef814b532a962e39eba254f3ccbc1d125c7f5508aeb50690f9d6",
+    "kind": "export",
+    "predicate": null,
+    "at": "2026-09-18T14:56:59.615Z"
+   },
+   {
+    "table": "iqopt_decisions",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\iqopt_decisions_2026-09-18T14-57-57-834Z.jsonl.gz",
+    "rows": 110343,
+    "bytes": 936833,
+    "verified": 110343,
+    "sha256": "801ca6fb732d9bcefd4b8c9802a53b22ff4a5b5dc9f18222439e9277f8ab6cd8",
+    "kind": "export",
+    "predicate": null,
+    "at": "2026-09-18T14:57:57.833Z"
+   },
+   {
+    "table": "iqopt_benchmark",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\iqopt_benchmark_2026-09-18T14-58-14-787Z.jsonl.gz",
+    "rows": 2036,
+    "bytes": 185717,
+    "verified": 2036,
+    "sha256": "69a4e8d0ff16efd2a68191d75ae30cc53ec340ffaff071eb42a14165bf6149fe",
+    "kind": "export",
+    "predicate": null,
+    "at": "2026-09-18T14:58:14.786Z"
+   },
+   {
+    "table": "iqopt_benchmark_meta",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\iqopt_benchmark_meta_2026-09-18T14-58-19-162Z.jsonl.gz",
+    "rows": 18,
+    "bytes": 4319,
+    "verified": 18,
+    "sha256": "1c065bb79b0c6793a9bf60103ebaf2a73f6fc67f8ba5fb3331c1b820cb1b6052",
+    "kind": "export",
+    "predicate": null,
+    "at": "2026-09-18T14:58:19.160Z"
+   },
+   {
+    "table": "iqopt_datasets",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\iqopt_datasets_2026-09-18T14-58-22-165Z.jsonl.gz",
+    "rows": 11,
+    "bytes": 1053,
+    "verified": 11,
+    "sha256": "0b19f492b07ed8217d4b3aaf1764c57f02e50da1cd0181b6143d52d6ef09c1a1",
+    "kind": "export",
+    "predicate": null,
+    "at": "2026-09-18T14:58:22.164Z"
+   },
+   {
+    "table": "live_events",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\live_events_2026-09-18T14-58-49-786Z.jsonl.gz",
+    "rows": 44853,
+    "bytes": 2166274,
+    "verified": 44853,
+    "sha256": "93f29421fcb3c923f31a8164a49d2b00330afb6184d81420d561f88e804d46ef",
+    "kind": "export",
+    "predicate": null,
+    "at": "2026-09-18T14:58:49.784Z"
+   },
+   {
+    "table": "live_ingest_nonces",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\live_ingest_nonces_2026-09-18T14-59-06-680Z.jsonl.gz",
+    "rows": 44855,
+    "bytes": 1611156,
+    "verified": 44855,
+    "sha256": "d703a13b4ef58dbbff53b5e44610ca40046299de288a22df985491492ffa5e91",
+    "kind": "export",
+    "predicate": null,
+    "at": "2026-09-18T14:59:06.679Z"
+   },
+   {
+    "table": "training_sessions",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\training_sessions_2026-09-18T14-59-42-007Z.jsonl.gz",
+    "rowsDeleted": 1,
+    "batches": 1,
+    "bytes": 113123,
+    "verified": 1,
+    "sha256": "c9f2ff76fed314ae0b6b43540bbf81c3e8f285ec2fc5d8ff8e812b47713103e4",
+    "kind": "export-delete",
+    "predicate": "true",
+    "at": "2026-09-18T14:59:42.006Z"
+   },
+   {
+    "table": "live_access_logs",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\live_access_logs_2026-09-18T14-59-50-848Z.jsonl.gz",
+    "rowsDeleted": 260107,
+    "batches": 651,
+    "bytes": 2698449,
+    "verified": 260107,
+    "sha256": "b852298ae89111fd4cb3f630790f19efb13e19fc441e773965748a46be61c042",
+    "kind": "export-delete",
+    "predicate": "timestamp < now() - interval '48 hours'",
+    "at": "2026-09-18T14:59:50.846Z"
+   }
+  ],
+  "files": [
+   {
+    "file": "iqopt_benchmark_2026-09-18T14-58-14-787Z.jsonl.gz",
+    "bytes": 185717,
+    "mib": 0.18
+   },
+   {
+    "file": "iqopt_benchmark_meta_2026-09-18T14-58-19-162Z.jsonl.gz",
+    "bytes": 4319,
+    "mib": 0
+   },
+   {
+    "file": "iqopt_candles_5s_2026-09-18T14-56-59-616Z.jsonl.gz",
+    "bytes": 3195210,
+    "mib": 3.05
+   },
+   {
+    "file": "iqopt_datasets_2026-09-18T14-58-22-165Z.jsonl.gz",
+    "bytes": 1053,
+    "mib": 0
+   },
+   {
+    "file": "iqopt_decisions_2026-09-18T14-57-57-834Z.jsonl.gz",
+    "bytes": 936833,
+    "mib": 0.89
+   },
+   {
+    "file": "iqopt_raw_ticks_2026-09-18T14-43-33-908Z.jsonl.gz",
+    "bytes": 27856908,
+    "mib": 26.57
+   },
+   {
+    "file": "iq_audit_trail_2026-09-18T14-55-08-712Z.jsonl.gz",
+    "bytes": 909214,
+    "mib": 0.87
+   },
+   {
+    "file": "iq_audit_trail_20260917_trim.jsonl.gz",
+    "bytes": 14341,
+    "mib": 0.01
+   },
+   {
+    "file": "live_access_logs_2026-09-18T14-59-50-848Z.jsonl.gz",
+    "bytes": 2698449,
+    "mib": 2.57
+   },
+   {
+    "file": "live_events_2026-09-18T14-58-49-786Z.jsonl.gz",
+    "bytes": 2166274,
+    "mib": 2.07
+   },
+   {
+    "file": "live_frames_2026-09-18T14-50-56-617Z.jsonl.gz",
+    "bytes": 248606938,
+    "mib": 237.09
+   },
+   {
+    "file": "live_frames_2026-09-18T14-55-51-258Z.jsonl.gz",
+    "bytes": 70395028,
+    "mib": 67.13
+   },
+   {
+    "file": "live_ingest_nonces_2026-09-18T14-59-06-680Z.jsonl.gz",
+    "bytes": 1611156,
+    "mib": 1.54
+   },
+   {
+    "file": "training_sessions_2026-09-18T14-59-42-007Z.jsonl.gz",
+    "bytes": 113123,
+    "mib": 0.11
+   }
+  ],
+  "totalMiB": 342.08
+ },
+ "steps": [
+  {
+   "step": "archive iqopt_raw_ticks",
+   "detail": {
+    "table": "iqopt_raw_ticks",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\iqopt_raw_ticks_2026-09-18T14-43-33-908Z.jsonl.gz",
+    "rows": 2104104,
+    "bytes": 27856908,
+    "verified": 2104104,
+    "sha256": "d4fc6ad5e2ad3ab368becdc5ac5668e3c139cecf8bccbb7af26b43060932295b",
+    "dbRowsMatched": true,
+    "dbRows": 2104104,
+    "predicate": null
+   }
+  },
+  {
+   "step": "drop iqopt_raw_ticks",
+   "freedMiB": 660.26,
+   "dbMiBAfter": 908.14
+  },
+  {
+   "step": "archive live_frames (>48h)",
+   "detail": {
+    "table": "live_frames",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\live_frames_2026-09-18T14-50-56-617Z.jsonl.gz",
+    "rowsDeleted": 7515,
+    "batches": 19,
+    "bytes": 248606938,
+    "verified": 7515,
+    "sha256": "1aebd890c35d763029dfc993c8da57c640f6043bed2421676a987eda811e0f45",
+    "predicate": "created_at < now() - interval '48 hours'"
+   }
+  },
+  {
+   "step": "vacuum full live_frames",
+   "freedMiB": 380.59,
+   "dbMiBAfter": 527.64
+  },
+  {
+   "step": "archive iq_audit_trail (>24h)",
+   "detail": {
+    "table": "iq_audit_trail",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\iq_audit_trail_2026-09-18T14-55-08-712Z.jsonl.gz",
+    "rowsDeleted": 15521,
+    "batches": 39,
+    "bytes": 909214,
+    "verified": 15521,
+    "sha256": "649df8e91d2668c2febbf30f21c2c7999dad51213e781fa27448d5b1d80eeafe",
+    "predicate": "created_at < now() - interval '24 hours'"
+   }
+  },
+  {
+   "step": "archive live_frames (>24h)",
+   "detail": {
+    "table": "live_frames",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\live_frames_2026-09-18T14-55-51-258Z.jsonl.gz",
+    "rowsDeleted": 1719,
+    "batches": 5,
+    "bytes": 70395028,
+    "verified": 1719,
+    "sha256": "7666648189ad9946e006f6aa203226f0823b7f9cd912add41575ce4e8503b672",
+    "predicate": "created_at < now() - interval '24 hours'"
+   }
+  },
+  {
+   "step": "vacuum full live_frames (final trim)",
+   "freedMiB": 109.38,
+   "dbMiBAfter": 418.33
+  },
+  {
+   "step": "vacuum full iq_audit_trail",
+   "freedMiB": 21.28,
+   "dbMiBAfter": 397.07
+  },
+  {
+   "step": "archive+delete training_sessions",
+   "detail": {
+    "table": "training_sessions",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\training_sessions_2026-09-18T14-59-42-007Z.jsonl.gz",
+    "rowsDeleted": 1,
+    "batches": 1,
+    "bytes": 113123,
+    "verified": 1,
+    "sha256": "c9f2ff76fed314ae0b6b43540bbf81c3e8f285ec2fc5d8ff8e812b47713103e4",
+    "predicate": "true"
+   }
+  },
+  {
+   "step": "archive+truncate live_events",
+   "detail": {
+    "table": "live_events",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\live_events_2026-09-18T14-58-49-786Z.jsonl.gz",
+    "rows": 44853,
+    "bytes": 2166274,
+    "verified": 44853,
+    "sha256": "93f29421fcb3c923f31a8164a49d2b00330afb6184d81420d561f88e804d46ef",
+    "dbRowsMatched": true,
+    "dbRows": 44853,
+    "predicate": null
+   },
+   "freedMiB": 52.12,
+   "dbMiBAfter": 273.3
+  },
+  {
+   "step": "archive+truncate live_ingest_nonces",
+   "detail": {
+    "table": "live_ingest_nonces",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\live_ingest_nonces_2026-09-18T14-59-06-680Z.jsonl.gz",
+    "rows": 44855,
+    "bytes": 1611156,
+    "verified": 44855,
+    "sha256": "d703a13b4ef58dbbff53b5e44610ca40046299de288a22df985491492ffa5e91",
+    "dbRowsMatched": true,
+    "dbRows": 44855,
+    "predicate": null
+   },
+   "freedMiB": 10.26,
+   "dbMiBAfter": 263.09
+  },
+  {
+   "step": "archive+delete live_access_logs (>48h)",
+   "detail": {
+    "table": "live_access_logs",
+    "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\live_access_logs_2026-09-18T14-59-50-848Z.jsonl.gz",
+    "rowsDeleted": 260107,
+    "batches": 651,
+    "bytes": 2698449,
+    "verified": 260107,
+    "sha256": "b852298ae89111fd4cb3f630790f19efb13e19fc441e773965748a46be61c042",
+    "predicate": "timestamp < now() - interval '48 hours'"
+   },
+   "freedMiB": 37.99,
+   "dbMiBAfter": 216.92
+  },
+  {
+   "step": "drop unused indexes",
+   "freedMiB": 7.55
+  },
+  {
+   "step": "partition swap iq_audit_trail",
+   "detail": {
+    "firstAttempt": "aborted by integrity guard (new writes made counts move); legacy table kept",
+    "resolution": "subset check: every legacy row present in new table (missing=0); legacy dropped"
+   }
+  },
+  {
+   "step": "partition verify + legacy drop",
+   "detail": {
+    "kind": {
+     "k": "p"
+    },
+    "newCount": 140605,
+    "legacyCount": 140556,
+    "missingInNew": 0,
+    "legacySize": 126189568,
+    "droppedLegacy": true,
+    "partitions": [
+     {
+      "name": "iq_audit_trail_20260916",
+      "bound": "FOR VALUES FROM ('2026-09-16 00:00:00+00') TO ('2026-09-17 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260916_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260916_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260917",
+      "bound": "FOR VALUES FROM ('2026-09-17 00:00:00+00') TO ('2026-09-18 00:00:00+00')",
+      "bytes": "35479552"
+     },
+     {
+      "name": "iq_audit_trail_20260917_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "2400256"
+     },
+     {
+      "name": "iq_audit_trail_20260917_pkey",
+      "bound": null,
+      "bytes": "1974272"
+     },
+     {
+      "name": "iq_audit_trail_20260918",
+      "bound": "FOR VALUES FROM ('2026-09-18 00:00:00+00') TO ('2026-09-19 00:00:00+00')",
+      "bytes": "98328576"
+     },
+     {
+      "name": "iq_audit_trail_20260918_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "7036928"
+     },
+     {
+      "name": "iq_audit_trail_20260918_pkey",
+      "bound": null,
+      "bytes": "5201920"
+     },
+     {
+      "name": "iq_audit_trail_20260919",
+      "bound": "FOR VALUES FROM ('2026-09-19 00:00:00+00') TO ('2026-09-20 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260919_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260919_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260920",
+      "bound": "FOR VALUES FROM ('2026-09-20 00:00:00+00') TO ('2026-09-21 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260920_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260920_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260921",
+      "bound": "FOR VALUES FROM ('2026-09-21 00:00:00+00') TO ('2026-09-22 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260921_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260921_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260922",
+      "bound": "FOR VALUES FROM ('2026-09-22 00:00:00+00') TO ('2026-09-23 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260922_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260922_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260923",
+      "bound": "FOR VALUES FROM ('2026-09-23 00:00:00+00') TO ('2026-09-24 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260923_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260923_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260924",
+      "bound": "FOR VALUES FROM ('2026-09-24 00:00:00+00') TO ('2026-09-25 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260924_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260924_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260925",
+      "bound": "FOR VALUES FROM ('2026-09-25 00:00:00+00') TO ('2026-09-26 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260925_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260925_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260926",
+      "bound": "FOR VALUES FROM ('2026-09-26 00:00:00+00') TO ('2026-09-27 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260926_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260926_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260927",
+      "bound": "FOR VALUES FROM ('2026-09-27 00:00:00+00') TO ('2026-09-28 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260927_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260927_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260928",
+      "bound": "FOR VALUES FROM ('2026-09-28 00:00:00+00') TO ('2026-09-29 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260928_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260928_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260929",
+      "bound": "FOR VALUES FROM ('2026-09-29 00:00:00+00') TO ('2026-09-30 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260929_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260929_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260930",
+      "bound": "FOR VALUES FROM ('2026-09-30 00:00:00+00') TO ('2026-10-01 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20260930_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20260930_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20261001",
+      "bound": "FOR VALUES FROM ('2026-10-01 00:00:00+00') TO ('2026-10-02 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20261001_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20261001_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20261002",
+      "bound": "FOR VALUES FROM ('2026-10-02 00:00:00+00') TO ('2026-10-03 00:00:00+00')",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_20261002_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_20261002_pkey",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_p_default",
+      "bound": "DEFAULT",
+      "bytes": "24576"
+     },
+     {
+      "name": "iq_audit_trail_p_default_correlation_id_id_idx",
+      "bound": null,
+      "bytes": "8192"
+     },
+     {
+      "name": "iq_audit_trail_p_default_pkey",
+      "bound": null,
+      "bytes": "8192"
+     }
+    ],
+    "parentSize": 0,
+    "seq": [
+     {
+      "last_value": "156188"
+     }
+    ],
+    "dbBytes": 226274451
+   }
+  },
+  {
+   "step": "retention cycle (live proof)",
+   "detail": {
+    "at": "2026-09-18T15:08:42.652Z",
+    "dryRun": false,
+    "opts": {
+     "auditHours": 24,
+     "framesHours": 24,
+     "eventsHours": 48,
+     "logsHours": 48,
+     "nonceGraceHours": 24,
+     "partitionDaysAhead": 7,
+     "archiveNonCritical": false,
+     "vacuumFull": false
+    },
+    "ensurePartitions": {
+     "partitioned": true,
+     "created": [],
+     "dryRun": false
+    },
+    "audit": {
+     "cutoff": "2026-09-17T15:08:42.652Z",
+     "partitioned": true,
+     "dropped": [
+      {
+       "name": "iq_audit_trail_20260916",
+       "rows": 0,
+       "bound": "FOR VALUES FROM ('2026-09-16 00:00:00+00') TO ('2026-09-17 00:00:00+00')"
+      }
+     ],
+     "trimmed": 267,
+     "archived": [
+      {
+       "file": "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\supabase-reorg\\archive\\iq_audit_trail_20260917_trim.jsonl.gz",
+       "rows": 267,
+       "lines": 267,
+       "bytes": 14341,
+       "sha256": "ca6c9ec210624092e18279569d1b115b98d8e8c0cc4ce8d9de890d2623c831eb",
+       "label": "iq_audit_trail_20260917_trim"
+      }
+     ]
+    },
+    "frames": {
+     "table": "live_frames",
+     "cutoff": "2026-09-17T15:08:42.652Z",
+     "candidates": 0,
+     "deleted": 0,
+     "archived": null
+    },
+    "events": {
+     "table": "live_events",
+     "cutoff": "2026-09-16T15:08:42.652Z",
+     "candidates": 0,
+     "deleted": 0,
+     "archived": null
+    },
+    "accessLogs": {
+     "table": "live_access_logs",
+     "cutoff": "2026-09-16T15:08:42.652Z",
+     "candidates": 930,
+     "deleted": 930,
+     "archived": null
+    },
+    "nonces": {
+     "candidates": 0,
+     "deleted": 0
+    },
+    "vacuum": [
+     {
+      "table": "iq_audit_trail",
+      "mode": "ANALYZE"
+     },
+     {
+      "table": "live_frames",
+      "mode": "ANALYZE"
+     },
+     {
+      "table": "live_events",
+      "mode": "ANALYZE"
+     },
+     {
+      "table": "live_access_logs",
+      "mode": "ANALYZE"
+     },
+     {
+      "table": "live_ingest_nonces",
+      "mode": "ANALYZE"
+     }
+    ]
+   }
+  },
+  {
+   "step": "drop iqopt_candles_5s",
+   "freedMiB": 52.97,
+   "dbMiBAfter": 344.1
+  },
+  {
+   "step": "drop iqopt_decisions",
+   "freedMiB": 16.27,
+   "dbMiBAfter": 327.82
+  },
+  {
+   "step": "drop iqopt_benchmark",
+   "freedMiB": 2.48,
+   "dbMiBAfter": 325.32
+  },
+  {
+   "step": "drop iqopt_benchmark_meta",
+   "freedMiB": 0.07,
+   "dbMiBAfter": 325.25
+  },
+  {
+   "step": "drop iqopt_datasets",
+   "freedMiB": 0.03,
+   "dbMiBAfter": 325.22
+  }
+ ],
+ "partitioning": {
+  "kind": {
+   "k": "p"
+  },
+  "newCount": 140605,
+  "legacyCount": 140556,
+  "missingInNew": 0,
+  "legacySize": 126189568,
+  "droppedLegacy": true,
+  "partitions": [
+   {
+    "name": "iq_audit_trail_20260916",
+    "bound": "FOR VALUES FROM ('2026-09-16 00:00:00+00') TO ('2026-09-17 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260916_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260916_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260917",
+    "bound": "FOR VALUES FROM ('2026-09-17 00:00:00+00') TO ('2026-09-18 00:00:00+00')",
+    "bytes": "35479552"
+   },
+   {
+    "name": "iq_audit_trail_20260917_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "2400256"
+   },
+   {
+    "name": "iq_audit_trail_20260917_pkey",
+    "bound": null,
+    "bytes": "1974272"
+   },
+   {
+    "name": "iq_audit_trail_20260918",
+    "bound": "FOR VALUES FROM ('2026-09-18 00:00:00+00') TO ('2026-09-19 00:00:00+00')",
+    "bytes": "98328576"
+   },
+   {
+    "name": "iq_audit_trail_20260918_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "7036928"
+   },
+   {
+    "name": "iq_audit_trail_20260918_pkey",
+    "bound": null,
+    "bytes": "5201920"
+   },
+   {
+    "name": "iq_audit_trail_20260919",
+    "bound": "FOR VALUES FROM ('2026-09-19 00:00:00+00') TO ('2026-09-20 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260919_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260919_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260920",
+    "bound": "FOR VALUES FROM ('2026-09-20 00:00:00+00') TO ('2026-09-21 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260920_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260920_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260921",
+    "bound": "FOR VALUES FROM ('2026-09-21 00:00:00+00') TO ('2026-09-22 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260921_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260921_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260922",
+    "bound": "FOR VALUES FROM ('2026-09-22 00:00:00+00') TO ('2026-09-23 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260922_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260922_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260923",
+    "bound": "FOR VALUES FROM ('2026-09-23 00:00:00+00') TO ('2026-09-24 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260923_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260923_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260924",
+    "bound": "FOR VALUES FROM ('2026-09-24 00:00:00+00') TO ('2026-09-25 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260924_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260924_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260925",
+    "bound": "FOR VALUES FROM ('2026-09-25 00:00:00+00') TO ('2026-09-26 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260925_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260925_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260926",
+    "bound": "FOR VALUES FROM ('2026-09-26 00:00:00+00') TO ('2026-09-27 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260926_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260926_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260927",
+    "bound": "FOR VALUES FROM ('2026-09-27 00:00:00+00') TO ('2026-09-28 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260927_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260927_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260928",
+    "bound": "FOR VALUES FROM ('2026-09-28 00:00:00+00') TO ('2026-09-29 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260928_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260928_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260929",
+    "bound": "FOR VALUES FROM ('2026-09-29 00:00:00+00') TO ('2026-09-30 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260929_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260929_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260930",
+    "bound": "FOR VALUES FROM ('2026-09-30 00:00:00+00') TO ('2026-10-01 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20260930_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20260930_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20261001",
+    "bound": "FOR VALUES FROM ('2026-10-01 00:00:00+00') TO ('2026-10-02 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20261001_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20261001_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20261002",
+    "bound": "FOR VALUES FROM ('2026-10-02 00:00:00+00') TO ('2026-10-03 00:00:00+00')",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_20261002_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_20261002_pkey",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_p_default",
+    "bound": "DEFAULT",
+    "bytes": "24576"
+   },
+   {
+    "name": "iq_audit_trail_p_default_correlation_id_id_idx",
+    "bound": null,
+    "bytes": "8192"
+   },
+   {
+    "name": "iq_audit_trail_p_default_pkey",
+    "bound": null,
+    "bytes": "8192"
+   }
+  ],
+  "parentSize": 0,
+  "seq": [
+   {
+    "last_value": "156188"
+   }
+  ],
+  "dbBytes": 226274451
+ },
+ "retentionPolicy": {
+  "auditTrail": "RANGE-partitioned by created_at, daily partitions; keep 24h hot; archive then DROP whole partitions; default partition as safety net",
+  "liveFrames": "keep 24h (no reader since 2026-09-16); object storage recommended if the vision pipeline resumes",
+  "liveEvents": "keep 48h",
+  "liveAccessLogs": "keep 48h",
+  "liveIngestNonces": "delete 24h past expiry",
+  "scheduler": "node scripts/db-retention.mjs (run every 1-6h; example: Railway cron service or GitHub Action with DATABASE_URL secret)",
+  "vacuum": "VACUUM (ANALYZE) every run; VACUUM FULL weekly behind RETENTION_VACUUM_FULL=1 for non-partitioned tables (partitioned audit needs none)",
+  "migration": "relay/migrations/028_iq_audit_trail_partitioning.sql (no-op if already partitioned; aborts if unpartitioned table has rows)"
+ },
+ "phase3": {
+  "at": "2026-09-18T15:18:43.999Z",
+  "base": "railway-public",
+  "results": {
+   "healthBefore": {
+    "status": 200,
+    "ok": true,
+    "db": true,
+    "alerts": [],
+    "persistenceState": "HEALTHY",
+    "auditPersisting": true,
+    "readOnly": false
+   },
+   "persistenceProbe": {
+    "status": 200,
+    "ok": true,
+    "readBackOk": true,
+    "error": null
+   },
+   "providerGet": {
+    "status": 200,
+    "statusField": "CONFIGURED",
+    "model": "deepseek-v4.1-flash",
+    "maskedKey": "ÔÇóÔÇóÔÇóÔÇóGy8m"
+   },
+   "providerPut": {
+    "status": 200,
+    "statusField": "CONFIGURED",
+    "model": "deepseek-v4.1-flash",
+    "maskedKey": "ÔÇóÔÇóÔÇóÔÇóGy8m",
+    "error": null,
+    "note": "re-wrote the existing key unchanged"
+   },
+   "dbState": {
+    "audit_rows": 142653,
+    "audit_max": "2026-09-18 15:18:47.207929+00",
+    "markets": 55,
+    "markets_max": "2026-09-18 15:10:12.111386+00",
+    "config_revision": "150",
+    "config_updated": "2026-09-18 15:17:38.179673+00",
+    "db_bytes": "228428947",
+    "dro": "off"
+   },
+   "healthAfter": {
+    "status": 200,
+    "ok": true,
+    "db": true,
+    "alerts": [],
+    "persistenceState": "HEALTHY",
+    "auditPersisting": true,
+    "readOnly": false
+   }
+  }
+ },
+ "regressionTests": {
+  "file": "tests/ai/db-retention.test.ts",
+  "result": "7/7 pass; full suite 1424 passed / 3 skipped"
+ }
+}
