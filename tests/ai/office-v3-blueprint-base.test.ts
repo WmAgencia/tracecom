@@ -48,7 +48,7 @@ const universeModule = (await import("../../relay/market-universe.mjs")) as Reco
 life.bindAssets(assets);
 life.bindWorld(world);
 
-const { BASE_WIDTH, BASE_HEIGHT, loadBlueprintBase, drawBlueprintBase } = baseModule;
+const { BASE_WIDTH, BASE_HEIGHT, BASE_ASSET, loadBlueprintBase, drawBlueprintBase } = baseModule;
 const { resolveBaseMode, shouldDrawBlueprintBase } = baseModeModule;
 const { STATION_ANCHORS, ANCHOR_COLUMNS, anchorForMarket, drawDynamicOverlay, drawClosedTreatment, drawHoverHighlight, closedLabel } = overlayModule;
 const { buildWorldState } = world;
@@ -90,6 +90,7 @@ function makeState(openCount: number) {
 }
 
 const loadedBase = await loadBlueprintBase();
+const cleanPlateImage = await loadBlueprintBase(BASE_ASSET);
 const referenceImage = await loadBlueprintBase(REFERENCE_PATH);
 
 describe("OFFICE V3 — resolveBaseMode", () => {
@@ -134,7 +135,7 @@ describe("OFFICE V3 — blueprint base", () => {
     expect(BASE_HEIGHT).toBe(1024);
   });
 
-  it("drawBlueprintBase desenha os pixels da referência (mean abs diff < 5)", () => {
+  it("drawBlueprintBase desenha a base padrao (clean plate, mean abs diff < 5)", () => {
     const canvas = createCanvas(BASE_WIDTH, BASE_HEIGHT);
     const ctx = canvas.getContext("2d");
     expect(drawBlueprintBase(ctx, loadedBase)).toBe(true);
@@ -142,7 +143,7 @@ describe("OFFICE V3 — blueprint base", () => {
 
     const refCanvas = createCanvas(BASE_WIDTH, BASE_HEIGHT);
     const refCtx = refCanvas.getContext("2d");
-    refCtx.drawImage(referenceImage, 0, 0);
+    refCtx.drawImage(cleanPlateImage, 0, 0);
     const reference = refCtx.getImageData(0, 0, BASE_WIDTH, BASE_HEIGHT).data;
 
     expect(meanAbsDiff(rendered, reference)).toBeLessThan(5);
@@ -285,7 +286,7 @@ describe("OFFICE V3 — modo procedural ignora a base", () => {
 
     const refCanvas = createCanvas(BASE_WIDTH, BASE_HEIGHT);
     const refCtx = refCanvas.getContext("2d");
-    refCtx.drawImage(referenceImage, 0, 0);
+    refCtx.drawImage(cleanPlateImage, 0, 0);
     const reference = refCtx.getImageData(0, 0, BASE_WIDTH, BASE_HEIGHT).data;
 
     const referenceDiff = meanAbsDiff(render("reference"), reference);

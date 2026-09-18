@@ -82,7 +82,7 @@ if (autoLoad && typeof autoLoad.then === "function") {
 export function createCamera(options = {}) {
   const minZoom = Number.isFinite(Number(options.minZoom)) ? Number(options.minZoom) : ZOOM_MIN;
   const maxZoom = Number.isFinite(Number(options.maxZoom)) ? Number(options.maxZoom) : ZOOM_MAX;
-  return {
+  const camera = {
     version: CAMERA_VERSION,
     x: Number.isFinite(Number(options.x)) ? Number(options.x) : 0,
     y: Number.isFinite(Number(options.y)) ? Number(options.y) : 0,
@@ -109,6 +109,66 @@ export function createCamera(options = {}) {
     clickedStationId: null,
     autoFit: false,
   };
+  if (options.worldState) refreshWorldBounds(camera, options.worldState);
+  return camera;
+}
+
+function worldSpan(camera) {
+  const zoom = Math.max(1e-6, Number(camera?.zoom) || 1);
+  return {
+    width: Math.max(1, Number(camera?.viewport?.width) || OVERVIEW_WIDTH) / zoom,
+    height: Math.max(1, Number(camera?.viewport?.height) || OVERVIEW_HEIGHT) / zoom,
+  };
+}
+
+/** Live viewport refresh (resize) — the clamp always reads it at call time. */
+export function updateViewport(camera, width, height) {
+  if (!camera) return camera;
+  if (Number.isFinite(Number(width)) && Number(width) > 0) camera.viewport.width = Number(width);
+  if (Number.isFinite(Number(height)) && Number(height) > 0) camera.viewport.height = Number(height);
+  return camera;
+}
+
+/**
+ * Recomputes the world bounds from the CURRENT world state. Never keeps stale
+ * Office dimensions: the page calls this on every snapshot before clamping.
+ */
+export function refreshWorldBounds(camera, worldState) {
+  if (!camera || !worldState) return camera;
+  const width = Number(worldState.worldWidth ?? worldState.width);
+  const height = Number(worldState.worldHeight ?? worldState.height);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return camera;
+  camera.bounds = {
+    minX: Number.isFinite(Number(worldState.minX)) ? Number(worldState.minX) : 0,
+    minY: Number.isFinite(Number(worldState.minY)) ? Number(worldState.minY) : 0,
+    maxX: Number.isFinite(Number(worldState.maxX)) ? Number(worldState.maxX) : width,
+    maxY: Number.isFinite(Number(worldState.maxY)) ? Number(worldState.maxY) : height,
+  };
+  return camera;
+}
+
+/**
+ * Clamp formula (world bounds × current zoom × viewport):
+ *   spanX = viewport.width / zoom       spanY = viewport.height / zoom
+ *   x ∈ [minX, maxX − spanX]            y ∈ [minY, maxY − spanY]
+ * When the world is smaller than the visible span the axis is centered, so all
+ * four edges remain reachable/visible at any zoom (including min zoom).
+ */
+export function getClampRange(camera) {
+  if (!camera || !camera.bounds) return null;
+  const span = worldSpan(camera);
+  const bounds = camera.bounds;
+  const minX = Number(bounds.minX) || 0;
+  const minY = Number(bounds.minY) || 0;
+  const maxX = Number.isFinite(Number(bounds.maxX)) ? Number(bounds.maxX) : minX + span.width;
+  const maxY = Number.isFinite(Number(bounds.maxY)) ? Number(bounds.maxY) : minY + span.height;
+  const rangeX = maxX - minX <= span.width
+    ? { min: minX + (maxX - minX - span.width) / 2, max: minX + (maxX - minX - span.width) / 2, centered: true }
+    : { min: minX, max: maxX - span.width, centered: false };
+  const rangeY = maxY - minY <= span.height
+    ? { min: minY + (maxY - minY - span.height) / 2, max: minY + (maxY - minY - span.height) / 2, centered: true }
+    : { min: minY, max: maxY - span.height, centered: false };
+  return { minX: rangeX.min, maxX: rangeX.max, minY: rangeY.min, maxY: rangeY.max, spanX: span.width, spanY: span.height, centeredX: rangeX.centered, centeredY: rangeY.centered, bounds };
 }
 
 export function screenToWorld(camera, sx, sy) {
@@ -221,27 +281,41 @@ export function resetCamera(camera) {
 
 export function clampToBounds(camera) {
   if (!camera || !camera.bounds) return camera;
-  const bounds = camera.bounds;
-  const width = Math.max(1, camera.viewport.width) / camera.zoom;
-  const height = Math.max(1, camera.viewport.height) / camera.zoom;
-  const minX = Number(bounds.minX) || 0;
-  const minY = Number(bounds.minY) || 0;
-  const maxX = Number.isFinite(Number(bounds.maxX)) ? Number(bounds.maxX) : minX + width;
-  const maxY = Number.isFinite(Number(bounds.maxY)) ? Number(bounds.maxY) : minY + height;
-  if (maxX - minX <= width) camera.x = minX + (maxX - minX - width) / 2;
-  else camera.x = clampNumber(camera.x, minX, maxX - width);
-  if (maxY - minY <= height) camera.y = minY + (maxY - minY - height) / 2;
-  else camera.y = clampNumber(camera.y, minY, maxY - height);
+  const range = getClampRange(camera);
+  if (!range) return camera;
+  camera.x = clampNumber(camera.x, range.minX, range.maxX);
+  camera.y = clampNumber(camera.y, range.minY, range.maxY);
   return camera;
 }
 
-export function zoomAtScreen(camera, sx, sy, requestedZoom, options = {}) {
+/**
+ * Cursor-centered zoom: the world point under (sx, sy) stays fixed on screen
+ * (approx. exactly, before the bounds clamp). Canonical entry point for wheel.
+ */
+export function zoomAt(camera, sx, sy, requestedZoom, options = {}) {
   if (!camera) return camera;
   const before = screenToWorld(camera, sx, sy);
   camera.zoom = clampZoomValue(requestedZoom, camera.minZoom, camera.maxZoom);
   const after = screenToWorld(camera, sx, sy);
   camera.x += before.x - after.x;
   camera.y += before.y - after.y;
+  camera.target = null;
+  if (options.clamp !== false) clampToBounds(camera);
+  return camera;
+}
+
+export const zoomAtScreen = zoomAt;
+
+/**
+ * Pan by a screen-space delta (pointer movement). Content follows the pointer:
+ * dragging right (+dx) moves the camera left, so the same world point keeps
+ * moving with the cursor. Base, overlay and hitboxes share this single camera.
+ */
+export function panBy(camera, dxScreen, dyScreen, options = {}) {
+  if (!camera) return camera;
+  const zoom = Math.max(1e-6, Number(camera.zoom) || 1);
+  camera.x -= (Number(dxScreen) || 0) / zoom;
+  camera.y -= (Number(dyScreen) || 0) / zoom;
   camera.target = null;
   if (options.clamp !== false) clampToBounds(camera);
   return camera;
@@ -305,12 +379,8 @@ export function handleDragMove(camera, evt) {
   const py = dragPointerY(evt, camera.lastPointer.y);
   const dx = px - camera.lastPointer.x;
   const dy = py - camera.lastPointer.y;
-  const zoom = Math.max(1e-6, Number(camera.zoom) || 1);
-  camera.x -= dx / zoom;
-  camera.y -= dy / zoom;
   camera.lastPointer = { x: px, y: py };
-  clampToBounds(camera);
-  return camera;
+  return panBy(camera, dx, dy);
 }
 
 export function handleDragEnd(camera, evt) {
@@ -395,7 +465,12 @@ export default {
   resetCamera,
   screenToWorld,
   worldToScreen,
+  zoomAt,
   zoomAtScreen,
+  panBy,
+  refreshWorldBounds,
+  updateViewport,
+  getClampRange,
   normalizeWheelDelta,
   zoomFactorForDelta,
   handleWheel,

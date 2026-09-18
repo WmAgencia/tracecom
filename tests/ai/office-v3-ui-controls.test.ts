@@ -9,7 +9,7 @@
  *
  * Frontend apenas. PRACTICE only. ZERO REAL. Nenhuma ordem é emitida.
  */
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, vi } from "vitest";
 import { readFileSync } from "node:fs";
 
 /* ------------------------------------------------------------------ *
@@ -630,6 +630,250 @@ describe("OFFICE V3 UI — câmera (TASK 3)", () => {
     const hit = world.hitTestStation(worldState, back.x, back.y);
     expect(hit).toBeTruthy();
     expect(hit.marketKey).toBe(station.marketKey);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * TASK 4/5 — pan (SPACE + arraste) e zoom no cursor (matemática)
+ * ------------------------------------------------------------------ */
+
+describe("OFFICE V3 UI — pan/zoom: matemática e captura de ponteiro (TASK 4/5)", () => {
+  function freeCamera() {
+    return camera.createCamera({
+      width: 900,
+      height: 640,
+      bounds: { minX: 0, minY: 0, maxX: 100_000, maxY: 100_000 },
+    });
+  }
+
+  it("zoomAt mantém o ponto do mundo fixo sob o cursor em vários níveis", () => {
+    const cam = freeCamera();
+    cam.x = 500;
+    cam.y = 400;
+    for (const [sx, sy] of [[120, 90], [450, 320], [880, 600]]) {
+      for (const factor of [1.35, 1.6, 0.7]) {
+        const before = camera.screenToWorld(cam, sx, sy);
+        camera.zoomAt(cam, sx, sy, cam.zoom * factor);
+        const after = camera.screenToWorld(cam, sx, sy);
+        expect(after.x).toBeCloseTo(before.x, 6);
+        expect(after.y).toBeCloseTo(before.y, 6);
+      }
+    }
+  });
+
+  it("wheel dá preventDefault no canvas e mantém o mundo sob o cursor", () => {
+    const cam = freeCamera();
+    const preventDefault = vi.fn();
+    const point = { x: 321, y: 219 };
+    const before = camera.screenToWorld(cam, point.x, point.y);
+    camera.handleWheel(cam, { deltaY: -120, offsetX: point.x, offsetY: point.y, preventDefault });
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+    const after = camera.screenToWorld(cam, point.x, point.y);
+    expect(after.x).toBeCloseTo(before.x, 6);
+    expect(after.y).toBeCloseTo(before.y, 6);
+    expect(cam.zoom).toBeGreaterThan(1);
+  });
+
+  it("clamp no zoom 1 alcança as quatro bordas do mundo", () => {
+    const cam = camera.createCamera({ width: 800, height: 600, worldState: { worldWidth: 2560, worldHeight: 2048 } });
+    cam.zoom = 1;
+    cam.x = -9999;
+    cam.y = -9999;
+    camera.clampToBounds(cam);
+    expect(cam.x).toBe(0);
+    expect(cam.y).toBe(0);
+    expect(camera.worldToScreen(cam, 0, 0)).toEqual({ x: 0, y: 0 });
+    cam.x = 9999;
+    cam.y = 9999;
+    camera.clampToBounds(cam);
+    expect(cam.x).toBe(2560 - 800);
+    expect(cam.y).toBe(2048 - 600);
+    expect(camera.worldToScreen(cam, 2560, 2048)).toEqual({ x: 800, y: 600 });
+  });
+
+  it("no zoom máximo ainda alcança as quatro bordas", () => {
+    const cam = camera.createCamera({ width: 800, height: 600, worldState: { worldWidth: 2560, worldHeight: 2048 } });
+    cam.zoom = cam.maxZoom;
+    cam.x = -9999;
+    cam.y = -9999;
+    camera.clampToBounds(cam);
+    expect(cam.x).toBe(0);
+    expect(cam.y).toBe(0);
+    cam.x = 9999;
+    cam.y = 9999;
+    camera.clampToBounds(cam);
+    expect(cam.x).toBeCloseTo(2560 - 800 / cam.maxZoom, 6);
+    expect(cam.y).toBeCloseTo(2048 - 600 / cam.maxZoom, 6);
+    expect(camera.worldToScreen(cam, 2560, 2048).x).toBeCloseTo(800, 6);
+    expect(camera.worldToScreen(cam, 2560, 2048).y).toBeCloseTo(600, 6);
+  });
+
+  it("no zoom mínimo o mundo inteiro (incl. áreas expandidas) fica visível", () => {
+    const cam = camera.createCamera({ width: 1536, height: 1024, worldState: { worldWidth: 2560, worldHeight: 2048 } });
+    cam.zoom = cam.minZoom;
+    cam.x = -99999;
+    cam.y = -99999;
+    camera.clampToBounds(cam);
+    const topLeft = camera.worldToScreen(cam, 0, 0);
+    const bottomRight = camera.worldToScreen(cam, 2560, 2048);
+    expect(topLeft.x).toBeGreaterThanOrEqual(0);
+    expect(topLeft.y).toBeGreaterThanOrEqual(0);
+    expect(bottomRight.x).toBeLessThanOrEqual(1536);
+    expect(bottomRight.y).toBeLessThanOrEqual(1024);
+    const range = camera.getClampRange(cam);
+    expect(range.centeredX).toBe(true);
+    expect(range.centeredY).toBe(true);
+  });
+
+  it("clamp recalcula a partir de bounds vivos, nunca de dimensões antigas", () => {
+    const cam = camera.createCamera({ width: 800, height: 600, bounds: { minX: 0, minY: 0, maxX: 200, maxY: 150 } });
+    cam.zoom = 1;
+    cam.x = 9999;
+    cam.y = 9999;
+    camera.clampToBounds(cam);
+    expect(cam.x).toBe((200 - 800) / 2);
+    expect(cam.y).toBe((150 - 600) / 2);
+    camera.refreshWorldBounds(cam, { worldWidth: 2560, worldHeight: 2048 });
+    cam.x = 9999;
+    cam.y = 9999;
+    camera.clampToBounds(cam);
+    expect(cam.x).toBe(2560 - 800);
+    expect(cam.y).toBe(2048 - 600);
+  });
+
+  it("panBy desloca o mundo exatamente pelo delta em pixels de tela", () => {
+    const cam = freeCamera();
+    cam.zoom = 1.25;
+    cam.x = 1000;
+    cam.y = 800;
+    const before = camera.worldToScreen(cam, 1234, 567);
+    camera.panBy(cam, 40, -25);
+    const after = camera.worldToScreen(cam, 1234, 567);
+    expect(after.x - before.x).toBeCloseTo(40, 6);
+    expect(after.y - before.y).toBeCloseTo(-25, 6);
+  });
+
+  it("round-trip screenToWorld/worldToScreen após zoom no cursor + pan", () => {
+    const cam = freeCamera();
+    camera.zoomAt(cam, 310, 220, 2.2);
+    camera.panBy(cam, -73, 41);
+    for (const point of [{ x: 321, y: 654 }, { x: 0, y: 0 }, { x: 2000, y: 1500 }, { x: 2559, y: 2047 }]) {
+      const screen = camera.worldToScreen(cam, point.x, point.y);
+      const back = camera.screenToWorld(cam, screen.x, screen.y);
+      expect(back.x).toBeCloseTo(point.x, 6);
+      expect(back.y).toBeCloseTo(point.y, 6);
+    }
+  });
+
+  it("SPACE + arraste atualiza a câmera e suprime o clique na mesa", () => {
+    const canvasEl = fakeDoc.createElement("canvas");
+    const bodyEl = new FakeElement("body");
+    const target = new FakeElement("div");
+    const cam = camera.createCamera({ width: 800, height: 600 });
+    const pan = page.bindPanNavigation({ canvas: canvasEl, body: bodyEl, target, getCamera: () => cam, getCameraModule: () => camera });
+
+    target.dispatchEvent({ type: "keydown", key: " ", code: "Space" });
+    expect(canvasEl.classList.contains("pan-ready")).toBe(true);
+    canvasEl.dispatchEvent({ type: "pointerdown", button: 0, pointerId: 3, clientX: 100, clientY: 100 });
+    expect(canvasEl.classList.contains("dragging")).toBe(true);
+    expect(bodyEl.classList.contains("tc-v3-panning")).toBe(true);
+    const x0 = cam.x;
+    target.dispatchEvent({ type: "pointermove", pointerId: 3, clientX: 170, clientY: 80 });
+    expect(cam.x).not.toBe(x0);
+    expect(pan.wasMoved()).toBe(true);
+    target.dispatchEvent({ type: "pointerup", pointerId: 3 });
+    expect(cam.dragging).toBe(false);
+    expect(pan.consumeClickSuppression()).toBe(true);
+    expect(pan.consumeClickSuppression()).toBe(false);
+  });
+
+  it("setPointerCapture/releasePointerCapture usam o pointerId do gesto", () => {
+    const canvasEl = fakeDoc.createElement("canvas") as any;
+    canvasEl.setPointerCapture = vi.fn();
+    canvasEl.releasePointerCapture = vi.fn();
+    const bodyEl = new FakeElement("body");
+    const target = new FakeElement("div");
+    const cam = camera.createCamera({ width: 800, height: 600 });
+    const pan = page.bindPanNavigation({ canvas: canvasEl, body: bodyEl, target, getCamera: () => cam, getCameraModule: () => camera });
+
+    target.dispatchEvent({ type: "keydown", key: " ", code: "Space" });
+    canvasEl.dispatchEvent({ type: "pointerdown", button: 0, pointerId: 7, clientX: 10, clientY: 10 });
+    expect(canvasEl.setPointerCapture).toHaveBeenCalledWith(7);
+    target.dispatchEvent({ type: "pointermove", pointerId: 7, clientX: 90, clientY: 50 });
+    expect(cam.x).not.toBe(0);
+    target.dispatchEvent({ type: "pointerup", pointerId: 7 });
+    expect(canvasEl.releasePointerCapture).toHaveBeenCalledWith(7);
+    expect(pan.isPanning()).toBe(false);
+  });
+
+  it("Space é liberado no blur da janela (nunca fica preso)", () => {
+    const canvasEl = fakeDoc.createElement("canvas");
+    const bodyEl = new FakeElement("body");
+    const target = new FakeElement("div");
+    const cam = camera.createCamera({ width: 800, height: 600 });
+    const pan = page.bindPanNavigation({ canvas: canvasEl, body: bodyEl, target, getCamera: () => cam, getCameraModule: () => camera });
+
+    target.dispatchEvent({ type: "keydown", key: " ", code: "Space" });
+    expect(pan.isSpaceDown()).toBe(true);
+    target.dispatchEvent({ type: "blur" });
+    expect(pan.isSpaceDown()).toBe(false);
+    expect(canvasEl.classList.contains("pan-ready")).toBe(false);
+    expect(bodyEl.classList.contains("tc-v3-select-off")).toBe(false);
+  });
+
+  it("pointercancel solta o Space e encerra o pan em andamento", () => {
+    const canvasEl = fakeDoc.createElement("canvas");
+    const bodyEl = new FakeElement("body");
+    const target = new FakeElement("div");
+    const cam = camera.createCamera({ width: 800, height: 600 });
+    const pan = page.bindPanNavigation({ canvas: canvasEl, body: bodyEl, target, getCamera: () => cam, getCameraModule: () => camera });
+
+    target.dispatchEvent({ type: "keydown", key: " ", code: "Space" });
+    canvasEl.dispatchEvent({ type: "pointerdown", button: 0, pointerId: 9, clientX: 50, clientY: 50 });
+    target.dispatchEvent({ type: "pointermove", pointerId: 9, clientX: 140, clientY: 90 });
+    expect(pan.isPanning()).toBe(true);
+    target.dispatchEvent({ type: "pointercancel", pointerId: 9 });
+    expect(pan.isSpaceDown()).toBe(false);
+    expect(pan.isPanning()).toBe(false);
+    expect(cam.dragging).toBe(false);
+    expect(canvasEl.classList.contains("dragging")).toBe(false);
+    expect(bodyEl.classList.contains("tc-v3-panning")).toBe(false);
+  });
+
+  it("sem SPACE o pointerdown não inicia pan e a câmera não se move", () => {
+    const canvasEl = fakeDoc.createElement("canvas");
+    const bodyEl = new FakeElement("body");
+    const target = new FakeElement("div");
+    const cam = camera.createCamera({ width: 800, height: 600 });
+    const pan = page.bindPanNavigation({ canvas: canvasEl, body: bodyEl, target, getCamera: () => cam, getCameraModule: () => camera });
+    canvasEl.dispatchEvent({ type: "pointerdown", button: 0, pointerId: 1, clientX: 10, clientY: 10 });
+    target.dispatchEvent({ type: "pointermove", pointerId: 1, clientX: 200, clientY: 200 });
+    expect(pan.isPanning()).toBe(false);
+    expect(cam.x).toBe(0);
+    expect(cam.y).toBe(0);
+  });
+
+  it("o clique na mesa é ignorado durante/depois do pan (página consome a supressão)", () => {
+    const source = readFileSync(new URL("../../src/http/public/office-v3/office-v3.js", import.meta.url), "utf8");
+    expect(source).toContain("consumeClickSuppression");
+    expect(source).toContain("wasMoved()");
+    expect(source).toContain("setPointerCapture");
+    expect(source).toContain("pointercancel");
+  });
+
+  it("eventos de mouse continuam suportados como fallback do gesto", () => {
+    const canvasEl = fakeDoc.createElement("canvas");
+    const bodyEl = new FakeElement("body");
+    const target = new FakeElement("div");
+    const cam = camera.createCamera({ width: 800, height: 600 });
+    const pan = page.bindPanNavigation({ canvas: canvasEl, body: bodyEl, target, getCamera: () => cam, getCameraModule: () => camera });
+    target.dispatchEvent({ type: "keydown", key: " ", code: "Space" });
+    canvasEl.dispatchEvent({ type: "mousedown", button: 0, clientX: 20, clientY: 20 });
+    target.dispatchEvent({ type: "mousemove", clientX: 90, clientY: 45 });
+    expect(pan.isPanning()).toBe(true);
+    expect(cam.x).not.toBe(0);
+    target.dispatchEvent({ type: "mouseup" });
+    expect(pan.isPanning()).toBe(false);
   });
 });
 

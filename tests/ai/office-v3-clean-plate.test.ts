@@ -2,14 +2,21 @@
  * OFFICE V3 — CLEAN PLATE tests (headless).
  *
  * The default hybrid base is `blueprint-clean.png`: the frozen reference with
- * the painted FALSE P&L badges inpainted out (scripts/office-v3-clean-plate.mjs).
- * The raw reference stays reachable via `?base=original`. Dynamic P&L belongs
- * exclusively to overlay.js, per real station state.
+ * the painted FALSE P&L badges AND every painted character inpainted out
+ * (scripts/office-v3-clean-plate.mjs). The raw reference stays reachable via
+ * `?base=original`. Dynamic P&L and dynamic life belong exclusively to
+ * overlay.js/life.js, per real station state.
+ *
+ * The full pixel pipeline is regenerated through a native Node child process
+ * (same command operators run), so the suite checks the real CLI: exit code,
+ * deterministic bytes and the honest residual report.
  *
  * Frontend/rendering only. PRACTICE only. ZERO REAL. No orders, no stake.
  */
 import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
+import { existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
@@ -51,10 +58,23 @@ const {
 } = baseModule;
 const { resolveBaseMode, shouldDrawBlueprintBase } = baseModeModule;
 const { ANCHOR_BANDS } = overlayModule;
-const { badgeWindows, detectBadgeMasks, inpaintMasks, scanMaskBadgePixels, outsideMaskDiff, fringeColorClass } = cleanPlate;
+const {
+  badgeWindows,
+  detectBadgeMasks,
+  scanMaskBadgePixels,
+  outsideMaskDiff,
+  fringeColorClass,
+  detectCharacterMasks,
+  scanCharacterClusters,
+  PRESERVE_REGIONS,
+  MANUAL_ANCHORS,
+} = cleanPlate;
 
 const REFERENCE_PATH = fileURLToPath(new URL("../../src/http/public/office-v3/blueprint-reference.png", import.meta.url));
 const CLEAN_PATH = fileURLToPath(new URL("../../src/http/public/office-v3/blueprint-clean.png", import.meta.url));
+const STRIP_PATH = fileURLToPath(new URL("../../docs/office-v3/screenshots/clean-plate-v2.png", import.meta.url));
+const SCRIPT_PATH = fileURLToPath(new URL("../../scripts/office-v3-clean-plate.mjs", import.meta.url));
+const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
 async function loadPixels(path: string) {
   const image = await loadImage(path);
@@ -73,6 +93,36 @@ function meanAbsDiff(a: Uint8ClampedArray | Uint8Array, b: Uint8ClampedArray | U
     count += 3;
   }
   return count ? sum / count : 0;
+}
+
+/** Declared mask rectangles exactly like buildCleanPlate reports them (bbox + 1px). */
+function declaredMasks() {
+  const characters = detectCharacterMasks(original, BASE_WIDTH, BASE_HEIGHT);
+  const badges = detectBadgeMasks(original, BASE_WIDTH, BASE_HEIGHT, windows);
+  return [...characters, ...badges].map((mask: any) => {
+    const x = Math.max(0, mask.x - 1);
+    const y = Math.max(0, mask.y - 1);
+    return {
+      x,
+      y,
+      w: Math.min(BASE_WIDTH, mask.x + mask.w + 1) - x,
+      h: Math.min(BASE_HEIGHT, mask.y + mask.h + 1) - y,
+      kind: mask.kind,
+    };
+  });
+}
+
+function changedPixelsInBox(box: { x: number; y: number; w: number; h: number }, data: Uint8ClampedArray | Uint8Array) {
+  let changed = 0;
+  for (let y = box.y; y < box.y + box.h; y += 1) {
+    for (let x = box.x; x < box.x + box.w; x += 1) {
+      const index = (y * BASE_WIDTH + x) * 4;
+      if (original[index] !== data[index]
+        || original[index + 1] !== data[index + 1]
+        || original[index + 2] !== data[index + 2]) changed += 1;
+    }
+  }
+  return changed;
 }
 
 const original = await loadPixels(REFERENCE_PATH);
@@ -131,31 +181,101 @@ describe("OFFICE V3 — clean plate asset", () => {
     expect(after.fringe).toBe(0);
   });
 
-  it("fora das máscaras nada mudou (paridade byte a byte)", () => {
-    const parity = outsideMaskDiff(original, cleanPlatePixels, BASE_WIDTH, BASE_HEIGHT, masks);
-    expect(parity.changed).toBeGreaterThan(0);
+  it("fora das máscaras declaradas nada mudou (paridade byte a byte)", () => {
+    const parity = outsideMaskDiff(original, cleanPlatePixels, BASE_WIDTH, BASE_HEIGHT, declaredMasks());
+    expect(parity.changed).toBeGreaterThan(200000);
     expect(parity.outside).toBe(0);
     for (const region of parity.regions) expect(region.outside).toBe(0);
   });
 
-  it("a paridade fora das máscaras é < 1% dos pixels", () => {
-    const parity = outsideMaskDiff(original, cleanPlatePixels, BASE_WIDTH, BASE_HEIGHT, masks);
+  it("a paridade fora das máscaras é < 0,1% e a remoção fica abaixo de 20%", () => {
+    const parity = outsideMaskDiff(original, cleanPlatePixels, BASE_WIDTH, BASE_HEIGHT, declaredMasks());
     const total = BASE_WIDTH * BASE_HEIGHT;
-    expect(parity.outside / total).toBeLessThan(0.01);
-    expect(parity.changed / total).toBeLessThan(0.06);
+    expect(parity.outside / total).toBeLessThan(0.001);
+    expect(parity.changed / total).toBeGreaterThan(0.1);
+    expect(parity.changed / total).toBeLessThan(0.2);
     void fringeColorClass;
   });
+});
 
-  it("o script reproduz o blueprint-clean.png fielmente (mesmos pixels)", () => {
-    const regenerated = new Uint8ClampedArray(original);
-    const detected = detectBadgeMasks(regenerated, BASE_WIDTH, BASE_HEIGHT, windows);
-    expect(detected).toHaveLength(masks.length);
-    inpaintMasks(regenerated, BASE_WIDTH, BASE_HEIGHT, detected);
-    let differing = 0;
-    for (let index = 0; index < regenerated.length; index += 1) {
-      if (regenerated[index] !== cleanPlatePixels[index]) differing += 1;
+describe("OFFICE V3 — remoção total dos personagens", () => {
+  it("detecta os personagens pintados na referência (faces + sociais + âncoras)", () => {
+    const clusters = scanCharacterClusters(original, BASE_WIDTH, BASE_HEIGHT);
+    expect(clusters.faces).toBeGreaterThanOrEqual(95);
+    expect(clusters.social).toBeGreaterThanOrEqual(15);
+    const characterMasks = detectCharacterMasks(original, BASE_WIDTH, BASE_HEIGHT);
+    expect(characterMasks.length).toBeGreaterThanOrEqual(120);
+    const kinds = new Set(characterMasks.map((mask: any) => mask.kind));
+    expect(kinds.has("character")).toBe(true);
+    expect(kinds.has("character-social")).toBe(true);
+    expect(kinds.has("character-anchor")).toBe(true);
+  });
+
+  it("não sobrou nenhum cluster de personagem na base limpa", () => {
+    const before = scanCharacterClusters(original, BASE_WIDTH, BASE_HEIGHT);
+    const after = scanCharacterClusters(cleanPlatePixels, BASE_WIDTH, BASE_HEIGHT);
+    expect(before.faces + before.backs + before.social).toBeGreaterThan(100);
+    expect(after.faces).toBe(0);
+    expect(after.backs).toBe(0);
+    expect(after.social).toBe(0);
+  });
+
+  it("as âncoras verificadas (café, cozinha, reunião, terraço) foram 100% reconstruídas", () => {
+    expect(MANUAL_ANCHORS.length).toBeGreaterThanOrEqual(11);
+    for (const anchor of MANUAL_ANCHORS) {
+      const changed = changedPixelsInBox(anchor, cleanPlatePixels);
+      expect(changed).toBe(anchor.w * anchor.h);
     }
-    expect(differing).toBe(0);
+  });
+
+  it("os objetos verificados (sofá, vasos, abajures, janela, teclado) ficaram intactos", () => {
+    const intact = [
+      [1085, 195], [445, 160], [95, 356], [96, 300], [1385, 353], [1036, 281],
+      [556, 931], [133, 800], [366, 976], [483, 981], [709, 942], [853, 918], [472, 80],
+    ];
+    for (const [x, y] of intact) {
+      const region = PRESERVE_REGIONS.find((entry: any) => entry.x === x && entry.y === y);
+      expect(region).toBeTruthy();
+      expect(changedPixelsInBox(region, cleanPlatePixels)).toBe(0);
+    }
+  });
+
+  it("o badge continua removido no pipeline completo", () => {
+    const check = scanMaskBadgePixels(cleanPlatePixels, BASE_WIDTH, BASE_HEIGHT, masks);
+    expect(check.strict).toBe(0);
+    expect(check.fringe).toBe(0);
+  });
+
+  it("o CLI regenera a base de forma determinística (bytes idênticos, exit 0)", () => {
+    const before = readFileSync(CLEAN_PATH);
+    const run = spawnSync(process.execPath, [SCRIPT_PATH], { cwd: REPO_ROOT, encoding: "utf8", timeout: 240000 });
+    expect(run.status).toBe(0);
+    const after = readFileSync(CLEAN_PATH);
+    expect(after.equals(before)).toBe(true);
+  });
+
+  it("o relatório do CLI confirma zero resíduos e uso de difusão", () => {
+    const run = spawnSync(process.execPath, [SCRIPT_PATH], { cwd: REPO_ROOT, encoding: "utf8", timeout: 240000 });
+    expect(run.status).toBe(0);
+    const output = `${run.stdout}\n${run.stderr}`;
+    const seeds = output.match(/seeds face=(\d+) back=(\d+) social=(\d+) anchors=(\d+)/);
+    expect(seeds).toBeTruthy();
+    expect(Number(seeds![1])).toBeGreaterThanOrEqual(95);
+    expect(Number(seeds![3])).toBeGreaterThanOrEqual(15);
+    expect(Number(seeds![4])).toBeGreaterThanOrEqual(11);
+    const residual = output.match(/character seeds=(\d+); fora das mascaras=(\d+)/);
+    expect(residual).toBeTruthy();
+    expect(Number(residual![1])).toBe(0);
+    expect(Number(residual![2])).toBe(0);
+    expect(output).toMatch(/badges strict=0 fringe=0/);
+    expect(output).toMatch(/diffuse=[1-9]\d{4,}/);
+  });
+
+  it("o strip de revisão clean-plate-v2.png existe com as dimensões publicadas", async () => {
+    expect(existsSync(STRIP_PATH)).toBe(true);
+    const strip = await loadImage(STRIP_PATH);
+    expect(strip.width).toBe(884);
+    expect(strip.height).toBe(1080);
   });
 });
 

@@ -253,6 +253,10 @@ function secondOpenMarket() {
     enabled: true,
     availability: "OPEN",
     payout: 78,
+    agentState: "WAIT",
+    candles5s: 87,
+    lastTick: { ageMs: 510 },
+    featureState: { fresh: true, freshnessReason: "OK", rsi14: 52.4, adx14: 19.8, plusDi14: 22.3, minusDi14: 20.1, atr14: 0.00098, donchianPosition: 0.51 },
   };
 }
 

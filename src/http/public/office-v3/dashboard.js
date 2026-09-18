@@ -11,7 +11,9 @@
  *   formatBRL / formatNumber / formatPercent / formatList
  * ===================================================================== */
 
-export const DASHBOARD_VERSION = "office-v3-dashboard.1.0.0";
+import { deriveOfficeStates } from "./state-model.js";
+
+export const DASHBOARD_VERSION = "office-v3-dashboard.1.1.0";
 
 const EMPTY = "—";
 
@@ -93,9 +95,11 @@ export function buildDashboardModel(office) {
   const winRate = wins !== null && losses !== null && decided > 0 ? wins / decided : null;
 
   const markets = Array.isArray(source?.markets) ? source.markets.filter((market) => market && typeof market === "object") : [];
-  const openMarkets = markets.filter((market) => market.enabled === true && market.availability === "OPEN").length;
+  const derivedStates = deriveOfficeStates(source);
+  const openMarkets = derivedStates.counts.working;
+  const feedOfflineMarkets = derivedStates.counts.openButFeedOffline;
   const totalMarkets = markets.length;
-  const closedMarkets = Math.max(0, totalMarkets - openMarkets);
+  const closedMarkets = Math.max(0, totalMarkets - openMarkets - feedOfflineMarkets);
 
   const connection = source?.connection ?? null;
   const mode = source?.mode ?? null;
@@ -144,8 +148,10 @@ export function buildDashboardModel(office) {
     winRate,
     winRateText: winRate === null ? EMPTY : formatPercent(winRate, 1),
     openMarkets,
+    feedOfflineMarkets,
     closedMarkets,
     totalMarkets,
+    stateByKey: derivedStates.byKey,
     mode,
     practice: mode !== "REAL",
     brokerAutomation,
@@ -289,7 +295,7 @@ function renderCards(doc, model) {
     { metric: "draw", label: "DRAW", value: integerText(model.draws), tone: "zero", title: "Resultados liquidados com DRAW (portfolio.settled.draws)" },
     { metric: "winrate", label: "WR", value: model.winRateText, sub: "W / (W + L)", title: "Taxa de acerto sobre operações decididas" },
     { metric: "operations", label: "OPERAÇÕES", value: integerText(model.trades), title: "Operações liquidadas no dia" },
-    { metric: "markets", label: "MERCADOS", value: `${model.openMarkets}/${model.totalMarkets}`, sub: `${model.closedMarkets} fechados · ${model.totalMarkets} total`, data: { open: model.openMarkets, closed: model.closedMarkets, total: model.totalMarkets }, title: "Mercados abertos, fechados e total do universo" },
+    { metric: "markets", label: "MERCADOS", value: `${model.openMarkets}/${model.totalMarkets}`, sub: `${model.closedMarkets} fechados · ${model.feedOfflineMarkets} feed offline · ${model.totalMarkets} total`, data: { open: model.openMarkets, closed: model.closedMarkets, feedOffline: model.feedOfflineMarkets, total: model.totalMarkets }, title: "Mercados operando (estado derivado), fechados, feed offline e total do universo" },
     {
       metric: "system",
       label: "ESTADO DO SISTEMA",
@@ -395,17 +401,20 @@ function renderMarketList(doc, rootEl, office, model) {
   const list = el(doc, "div", "tc-v3-market-list");
   list.hidden = true;
   const markets = Array.isArray(office?.markets) ? office.markets.filter((market) => market && typeof market === "object") : [];
+  const states = deriveOfficeStates(office);
   for (const market of markets) {
+    const derived = market.marketKey && states.byKey[market.marketKey] ? states.byKey[market.marketKey] : null;
     const row = el(doc, "button", "tc-v3-market-row");
     row.setAttribute("type", "button");
     setData(row, "marketKey", market.marketKey);
     setData(row, "availability", market.availability);
     setData(row, "enabled", market.enabled === true ? "1" : "0");
+    setData(row, "state", derived?.state);
     const payout = isFiniteNumber(market.payout) ? ` · ${formatNumber(market.payout, 0)}%` : "";
     row.append(
       el(doc, "span", "tc-v3-market-name", market.display ?? market.symbol ?? market.marketKey ?? EMPTY),
       el(doc, "span", "tc-v3-market-key", market.marketKey ?? EMPTY),
-      el(doc, "span", "tc-v3-market-meta", `${market.marketType ?? EMPTY} · ${market.availability ?? EMPTY}${payout}`),
+      el(doc, "span", "tc-v3-market-meta", `${market.marketType ?? EMPTY} · ${derived ? derived.label : market.availability ?? EMPTY}${payout}`),
     );
     row.addEventListener("click", () => dispatchMarketSelect(rootEl, market.marketKey));
     list.appendChild(row);

@@ -6,6 +6,8 @@
  *   world.js    → buildWorldState / drawWorld / hitTestStation / STATION_LAYOUT
  *   life.js     → createLifeSystem + bindWorld/bindAssets / updateLife / drawAgents
  *   camera.js   → createCamera / pan / clamped zoom / smooth zoomToDesk / hit-test
+ *   state-model.js → ONE derived market state shared by desk, MESAS popup,
+ *                    right panel, agents and badges (broker × enabled × feed)
  *   topbar.js   → compact operational top bar (ARM, AUTO, stake — real endpoints)
  *   market-detail.js → right technical panel + per-market stake (PUT /api/iq/market)
  *
@@ -23,6 +25,8 @@
  * changes only through the explicit config endpoints owned by topbar.js and
  * the per-market module.
  */
+
+import { attachDerivedStates, deriveMarketState } from "./state-model.js";
 
 const POLL_URL = "/api/iq/office";
 const POLL_BASE_MS = 2000;
@@ -101,6 +105,30 @@ function clearError() {
 
 function warnMissing(name, error) {
   console.warn(`[office-v3] módulo/rotina indisponível: ${name} — seguindo com fallback`, error);
+}
+
+/* ------------------------------------------------------------------ *
+ * Derived state — ONE source for desk, MESAS popup, right panel, agents
+ * ------------------------------------------------------------------ */
+
+/** Derived state already attached to the station, or derived on the fly. */
+function derivedForStation(station) {
+  if (station && station.derived) return station.derived;
+  if (!station) return null;
+  try {
+    return deriveMarketState(station.market ?? station, null, officeJson?.connection ?? null);
+  } catch (error) {
+    warnMissing("state-model.deriveMarketState", error);
+    return null;
+  }
+}
+
+/** Single option label for the MESAS popup (derived label, never raw OPEN). */
+export function formatStationOption(station) {
+  const label = station?.display ?? station?.symbol ?? station?.marketKey ?? "—";
+  const derived = derivedForStation(station);
+  const stateLabel = derived?.label ?? String(station?.availability ?? "—").toUpperCase();
+  return `${label} · ${stateLabel}`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -250,6 +278,13 @@ function createCameraState() {
 
 function attachWorldToCamera() {
   if (!camera || !worldState) return;
+  if (modules.camera && typeof modules.camera.refreshWorldBounds === "function") {
+    try {
+      modules.camera.refreshWorldBounds(camera, worldState);
+    } catch (error) {
+      warnMissing("camera.refreshWorldBounds", error);
+    }
+  }
   if (!camera.bounds) {
     camera.bounds = { minX: 0, minY: 0, maxX: worldState.worldWidth, maxY: worldState.worldHeight };
   }
@@ -371,11 +406,14 @@ function showDetailFallback(station) {
   if (!detailEl || !doc) return;
   detailTitleEl.textContent = station.display ?? station.symbol ?? station.marketKey ?? "—";
   detailRowsEl.innerHTML = "";
+  const derived = derivedForStation(station);
   const rows = [
     { label: "Mercado", value: station.marketKey ?? "—" },
-    { label: "Disponibilidade", value: station.availability ?? "—" },
+    { label: "Disponibilidade broker", value: station.availability ?? "—" },
+    { label: "Feed status", value: derived ? `${derived.feedStatus}${derived.feedReason ? ` · ${derived.feedReason}` : ""}` : "—" },
     { label: "Payout", value: station.payout == null ? "—" : `${station.payout}%` },
-    { label: "Estado", value: station.active ? "OPERANDO" : "SEM AGENTES" },
+    { label: "Estado derivado", value: derived?.label ?? "—" },
+    { label: "Agentes", value: derived ? (derived.agentsWorking ? "TRABALHANDO" : "OCIOSO (SOCIAL/IDLE)") : "—" },
   ];
   for (const row of rows) {
     const div = doc.createElement("div");
@@ -516,11 +554,18 @@ function createLife() {
   }
 }
 
+/** Working flag consumed by the agents: shared derived state only. */
+export function stationWorkingPresence(station) {
+  const derived = station?.derived ?? null;
+  return derived ? derived.agentsWorking === true : station?.active === true;
+}
+
+/** Agents work ONLY through the shared derived state (feed-aware). */
 function syncPresence() {
   if (!lifeSystem || !modules.life || typeof modules.life.setPresence !== "function") return;
   try {
     for (const station of worldState.stations) {
-      modules.life.setPresence(lifeSystem, station.id, station.active === true);
+      modules.life.setPresence(lifeSystem, station.id, stationWorkingPresence(station));
     }
   } catch (error) {
     warnMissing("life.setPresence", error);
@@ -531,19 +576,28 @@ function stationSignature(state) {
   return state.stations.map((station) => station.marketKey ?? station.id ?? "?").join("|");
 }
 
+/** Signature that also reacts to derived state changes (feed fresh→stale). */
+function stationStateSignature(state) {
+  return state.stations.map((station) => `${station.marketKey ?? station.id ?? "?"}:${station.derived?.state ?? "?"}`).join("|");
+}
+
 function applyOfficeJson(json) {
   if (!worldModule || typeof worldModule.buildWorldState !== "function") return;
   officeJson = json;
   worldState = worldModule.buildWorldState(json);
+  try {
+    attachDerivedStates(worldState, json);
+  } catch (error) {
+    warnMissing("state-model.attachDerivedStates", error);
+  }
   attachWorldToCamera();
 
   const signature = stationSignature(worldState);
   if (!lifeSystem || signature !== lifeSignature) {
     lifeSystem = createLife();
     lifeSignature = signature;
-  } else {
-    syncPresence();
   }
+  syncPresence();
 
   mountTopbar();
   syncDetailWithSnapshot();
@@ -659,6 +713,8 @@ export function bindPanNavigation(elements = {}) {
   let spaceDown = false;
   let panning = false;
   let moved = false;
+  let suppressClick = false;
+  let activePointerId = null;
   let downX = 0;
   let downY = 0;
 
@@ -674,55 +730,111 @@ export function bindPanNavigation(elements = {}) {
     if (!spaceDown && !panning && canvasEl.classList?.remove) canvasEl.classList.remove("dragging");
   }
 
-  function endPan() {
+  function beginPan(event) {
+    moved = false;
+    panning = true;
+    activePointerId = Number.isFinite(Number(event?.pointerId)) ? Number(event.pointerId) : null;
+    downX = Number(event?.clientX) || 0;
+    downY = Number(event?.clientY) || 0;
+    if (canvasEl.classList?.add) canvasEl.classList.add("dragging");
+    if (bodyEl?.classList?.add) bodyEl.classList.add(PAN_BODY_CLASS);
+    if (typeof event?.preventDefault === "function") event.preventDefault();
+    if (activePointerId !== null && typeof canvasEl.setPointerCapture === "function") {
+      try {
+        canvasEl.setPointerCapture(activePointerId);
+      } catch {
+        /* pointer capture is best-effort */
+      }
+    }
+    const cameraModule = getCameraModule();
+    if (cameraModule && typeof cameraModule.handleDragStart === "function") cameraModule.handleDragStart(getCamera(), event);
+    return true;
+  }
+
+  function movePan(event) {
     if (!panning) return;
+    if (activePointerId !== null && event?.pointerId !== undefined && Number(event.pointerId) !== activePointerId) return;
+    if (typeof event?.preventDefault === "function") event.preventDefault();
+    if (Math.hypot((Number(event?.clientX) || 0) - downX, (Number(event?.clientY) || 0) - downY) > DRAG_CLICK_THRESHOLD) moved = true;
+    const cameraModule = getCameraModule();
+    if (cameraModule && typeof cameraModule.handleDragMove === "function") cameraModule.handleDragMove(getCamera(), event);
+  }
+
+  function endPan(event) {
+    if (!panning) return false;
     panning = false;
+    if (moved) suppressClick = true;
+    const pointerId = activePointerId;
+    activePointerId = null;
+    if (pointerId !== null && typeof canvasEl.releasePointerCapture === "function") {
+      try {
+        canvasEl.releasePointerCapture(pointerId);
+      } catch {
+        /* capture may already be gone */
+      }
+    }
     if (canvasEl.classList?.remove) canvasEl.classList.remove("dragging");
     if (bodyEl?.classList?.remove) bodyEl.classList.remove(PAN_BODY_CLASS);
     const cameraModule = getCameraModule();
-    if (cameraModule && typeof cameraModule.handleDragEnd === "function") cameraModule.handleDragEnd(getCamera(), {});
+    if (cameraModule && typeof cameraModule.handleDragEnd === "function") cameraModule.handleDragEnd(getCamera(), event ?? {});
+    return true;
   }
 
-  target.addEventListener("keydown", (event) => {
+  /** blur/pointercancel always releases BOTH the Space mode and the drag. */
+  function cancelPan(event) {
+    if (panning) endPan(event);
+    setSpaceDown(false);
+  }
+
+  function onKeyDown(event) {
     if (event.key !== " " && event.code !== "Space") return;
     if (isEditable(event.target)) return;
     if (typeof event.preventDefault === "function") event.preventDefault();
     setSpaceDown(true);
-  });
-  target.addEventListener("keyup", (event) => {
+  }
+
+  function onKeyUp(event) {
     if (event.key !== " " && event.code !== "Space") return;
     setSpaceDown(false);
-  });
-  target.addEventListener("blur", () => setSpaceDown(false));
+  }
 
-  canvasEl.addEventListener("mousedown", (event) => {
-    moved = false;
-    if (!spaceDown) return;
+  function onPointerDown(event) {
+    if (!spaceDown || panning) return;
     if (event.button !== undefined && event.button !== 0) return;
-    panning = true;
-    downX = Number(event.clientX) || 0;
-    downY = Number(event.clientY) || 0;
-    if (canvasEl.classList?.add) canvasEl.classList.add("dragging");
-    if (bodyEl?.classList?.add) bodyEl.classList.add(PAN_BODY_CLASS);
-    if (typeof event.preventDefault === "function") event.preventDefault();
-    const cameraModule = getCameraModule();
-    if (cameraModule && typeof cameraModule.handleDragStart === "function") cameraModule.handleDragStart(getCamera(), event);
-  });
+    if (event.isPrimary === false) return;
+    beginPan(event);
+  }
 
-  target.addEventListener("mousemove", (event) => {
-    if (!panning) return;
-    if (Math.hypot((Number(event.clientX) || 0) - downX, (Number(event.clientY) || 0) - downY) > DRAG_CLICK_THRESHOLD) moved = true;
-    const cameraModule = getCameraModule();
-    if (cameraModule && typeof cameraModule.handleDragMove === "function") cameraModule.handleDragMove(getCamera(), event);
-  });
+  function onMouseDown(event) {
+    if (!spaceDown || panning) return;
+    if (event.button !== undefined && event.button !== 0) return;
+    beginPan(event);
+  }
 
-  target.addEventListener("mouseup", () => endPan());
+  target.addEventListener("keydown", onKeyDown);
+  target.addEventListener("keyup", onKeyUp);
+  target.addEventListener("blur", () => cancelPan({}));
+  target.addEventListener("pointercancel", (event) => cancelPan(event));
+  canvasEl.addEventListener("pointerdown", onPointerDown);
+  canvasEl.addEventListener("mousedown", onMouseDown);
+  target.addEventListener("pointermove", movePan);
+  target.addEventListener("mousemove", movePan);
+  target.addEventListener("pointerup", (event) => endPan(event));
+  target.addEventListener("mouseup", (event) => endPan(event));
 
   return {
     isSpaceDown: () => spaceDown,
     isSpaceReady: () => spaceDown,
     isPanning: () => panning,
     wasMoved: () => moved,
+    shouldSuppressClick: () => suppressClick,
+    consumeClickSuppression: () => {
+      const value = suppressClick;
+      suppressClick = false;
+      return value;
+    },
+    activePointerId: () => activePointerId,
+    cancelPan,
     endPan,
     setSpaceDown,
   };
@@ -738,7 +850,8 @@ export function filterStationOptions(stations, query) {
   if (!text) return list;
   const tokens = text.split(/\s+/).filter(Boolean);
   return list.filter((station) => {
-    const haystack = [station.display, station.symbol, station.marketKey, station.canonical, station.availability]
+    const derived = station.derived ?? null;
+    const haystack = [station.display, station.symbol, station.marketKey, station.canonical, station.availability, derived?.label, derived?.shortLabel, derived?.state]
       .filter((value) => value !== null && value !== undefined)
       .join(" ")
       .toLowerCase();
@@ -811,8 +924,9 @@ export function createMesasController(options = {}) {
         }
         if (station.marketKey) option.dataset.marketKey = station.marketKey;
         option.dataset.index = String(index);
-        const availability = String(station.availability ?? "").toUpperCase();
-        option.textContent = `${station.display ?? station.symbol ?? station.marketKey ?? "—"} · ${availability}`;
+        const derived = station.derived ?? null;
+        if (derived?.state) option.dataset.state = derived.state;
+        option.textContent = formatStationOption(station);
         if (option.classList?.toggle) option.classList.toggle("active", index === activeIndex);
         option.addEventListener("click", () => selectIndex(index));
         list.appendChild(option);
@@ -916,14 +1030,18 @@ function bindInput() {
     getCameraModule: () => modules.camera,
   });
 
-  canvas.addEventListener("mousedown", (event) => {
+  const markDown = (event) => {
     moved = false;
     downX = event.clientX ?? 0;
     downY = event.clientY ?? 0;
-  });
-  eventTarget.addEventListener("mousemove", (event) => {
+  };
+  const markMove = (event) => {
     if (Math.hypot((event.clientX ?? 0) - downX, (event.clientY ?? 0) - downY) > DRAG_CLICK_THRESHOLD) moved = true;
-  });
+  };
+  canvas.addEventListener("mousedown", markDown);
+  canvas.addEventListener("pointerdown", markDown);
+  eventTarget.addEventListener("mousemove", markMove);
+  eventTarget.addEventListener("pointermove", markMove);
 
   canvas.addEventListener(
     "wheel",
@@ -940,7 +1058,9 @@ function bindInput() {
   );
 
   canvas.addEventListener("click", (event) => {
-    if (moved || (panController && panController.wasMoved()) || !worldState) return;
+    const panned = Boolean(panController && panController.wasMoved());
+    const suppressed = Boolean(panController && panController.consumeClickSuppression());
+    if (moved || panned || suppressed || !worldState) return;
     const station = resolveClickedStation(event);
     if (!station) {
       closeDetail();
@@ -951,7 +1071,11 @@ function bindInput() {
   });
 
   canvas.addEventListener("mousemove", (event) => {
-    if (moved || (panController && panController.isPanning())) return;
+    if (moved || (panController && (panController.isPanning() || panController.isSpaceReady()))) return;
+    updateHover(event);
+  });
+  canvas.addEventListener("pointermove", (event) => {
+    if (moved || (panController && (panController.isPanning() || panController.isSpaceReady()))) return;
     updateHover(event);
   });
   canvas.addEventListener("mouseleave", clearHover);
@@ -1030,8 +1154,9 @@ function resolveClickedStation(event) {
 }
 
 function updateHover(event) {
-  if (panController && panController.isSpaceReady()) {
+  if (panController && (panController.isSpaceReady() || panController.isPanning())) {
     hideTooltip();
+    if (canvas) canvas.style.cursor = "";
     return;
   }
   const station = stationAtScreen(event.clientX, event.clientY);
@@ -1045,16 +1170,17 @@ function updateHover(event) {
 function clearHover() {
   hoveredStationId = null;
   if (camera) camera.hoverStationId = null;
-  if (canvas) canvas.style.cursor = "grab";
+  if (canvas) canvas.style.cursor = "";
   hideTooltip();
 }
 
 function showTooltip(station, clientX, clientY) {
   if (!tooltipEl) return;
   const label = station.display ?? station.symbol ?? station.marketKey ?? "—";
-  const availability = String(station.availability ?? "—").toUpperCase();
+  const derived = derivedForStation(station);
+  const stateLabel = derived?.label ?? String(station.availability ?? "—").toUpperCase();
   const payout = station.payout == null ? "—" : `${station.payout}%`;
-  tooltipEl.textContent = `${label} · ${availability} · ${payout}`;
+  tooltipEl.textContent = `${label} · ${stateLabel} · ${payout}`;
   tooltipEl.hidden = false;
   tooltipEl.style.left = `${Math.round(clientX + 14)}px`;
   tooltipEl.style.top = `${Math.round(clientY + 14)}px`;
@@ -1070,7 +1196,7 @@ function hideTooltip() {
 
 function refreshStationList() {
   if (!mesasController || !worldState) return;
-  const signature = stationSignature(worldState);
+  const signature = stationStateSignature(worldState);
   if (signature === stationListSignature) return;
   stationListSignature = signature;
   mesasController.setStations(worldState.stations);
@@ -1093,6 +1219,15 @@ function resize() {
     camera.viewport.width = viewport.width;
     camera.viewport.height = viewport.height;
   }
+  if (camera && modules.camera && typeof modules.camera.updateViewport === "function") {
+    try {
+      modules.camera.updateViewport(camera, viewport.width, viewport.height);
+    } catch (error) {
+      warnMissing("camera.updateViewport", error);
+    }
+  }
+  if (camera && worldState) attachWorldToCamera();
+  clampCamera();
 }
 
 function schedulePoll() {

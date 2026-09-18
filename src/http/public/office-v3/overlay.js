@@ -2,13 +2,18 @@
  * TRACE/COM — PIXEL OFFICE V3 · DYNAMIC OVERLAY (hybrid)
  *
  * Draws ONLY the dynamic layers on top of the frozen blueprint base:
- *   - seated Trader + Critic agents for OPEN stations, aligned to each
- *     station's blueprint position;
- *   - floating P&L badges (text only, green/red/neutral);
- *   - a treatment for non-OPEN stations (translucent scrim + FECHADO /
- *     SUSPENSO / INDISPONÍVEL tag) because the base image always shows agents;
+ *   - seated Trader + Critic agents for WORKING stations (broker OPEN +
+ *     enabled + feed fresh), aligned to each station's blueprint position;
+ *   - floating P&L badges (text only, green/red/neutral) only when the shared
+ *     derived state carries a real settled event;
+ *   - a treatment for every non-WORKING station (translucent scrim + the
+ *     derived short label: FECHADO / SUSPENSO / DESABILITADO / FEED OFFLINE)
+ *     because the base image always shows agents;
  *   - hover highlight;
  *   - the supervisor.
+ *
+ * The desk state comes from `station.derived` (state-model.js) whenever
+ * attached; `station.active` is only a legacy fallback for isolated renders.
  *
  * It MUST NOT redraw the static scene (floor, walls, desks, panels, base
  * agents). The base image owns the static pixels.
@@ -304,7 +309,7 @@ function drawSeatedPair(ctx, station, anchor, options) {
 }
 
 function drawPnlBadge(ctx, station, anchor, options) {
-  const badge = station?.badge;
+  const badge = options.badge !== undefined ? options.badge : station?.badge;
   if (!ctx || !badge || !badge.visible) return false;
   ctx.save();
   if (typeof ctx.fillText === "function") {
@@ -376,7 +381,7 @@ export function hitTestAnchor(worldState, x, y) {
  * @returns {{stations:number,open:number,closed:number,agents:number,badges:number,supervisor:number,hover:boolean}}
  */
 export function drawDynamicOverlay(ctx, worldState, life = null, camera = null, options = {}) {
-  const stats = { stations: 0, open: 0, closed: 0, agents: 0, badges: 0, supervisor: 0, hover: false };
+  const stats = { stations: 0, open: 0, closed: 0, agents: 0, badges: 0, supervisor: 0, hover: false, feedOffline: 0 };
   if (!ctx || !worldState) return stats;
 
   const resolveAnchor = typeof options.anchorFor === "function" ? options.anchorFor : anchorForStation;
@@ -388,14 +393,21 @@ export function drawDynamicOverlay(ctx, worldState, life = null, camera = null, 
     const anchor = resolveAnchor(station, index);
     if (!anchor) return;
     const hovered = matchesHover(station, hoverKey);
-    if (station.active === true) {
+    const derived = station.derived ?? null;
+    const working = derived ? derived.agentsWorking === true : station.active === true;
+    if (working) {
       stats.open += 1;
       drawSeatedPair(ctx, station, anchor, options);
       stats.agents += 2;
-      if (drawPnlBadge(ctx, station, anchor, options)) stats.badges += 1;
+      if (drawPnlBadge(ctx, station, anchor, derived ? { ...options, badge: derived.badge } : options)) stats.badges += 1;
     } else {
       stats.closed += 1;
-      drawClosedTreatment(ctx, station, { anchor });
+      if (derived && derived.state === "OPEN_BUT_FEED_OFFLINE") stats.feedOffline += 1;
+      drawClosedTreatment(ctx, station, {
+        anchor,
+        label: derived?.shortLabel,
+        title: derived?.label,
+      });
     }
     if (hovered) {
       drawHoverHighlight(ctx, station, { anchor });

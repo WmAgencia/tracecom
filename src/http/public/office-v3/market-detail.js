@@ -13,6 +13,7 @@
  * ===================================================================== */
 
 import { formatBRL, formatNumber, formatPercent, formatList } from "./dashboard.js";
+import { deriveMarketState } from "./state-model.js";
 import { buildStakeConfigModel, mountStakeConfig } from "./stake-config.js";
 
 export const MARKET_DETAIL_VERSION = "office-v3-market-detail.1.0.0";
@@ -50,6 +51,7 @@ function payoutText(value) {
 
 export function buildMarketDetailModel(market, office = null) {
   const m = market ?? {};
+  const derived = deriveMarketState(m, null, office?.connection ?? null);
   const feature = m.featureState ?? null;
   const decision = m.decisionState ?? null;
   const position = m.positionState ?? null;
@@ -92,6 +94,8 @@ export function buildMarketDetailModel(market, office = null) {
       id: "identity",
       label: "IDENTIDADE",
       rows: [
+        row("state", "Estado", derived.label),
+        row("stateReason", "Por que", derived.explanation),
         row("asset", "Ativo", m.display ?? m.symbol ?? null),
         row("symbol", "Símbolo", m.symbol ?? null),
         row("canonical", "Canônico", m.canonical ?? null),
@@ -99,7 +103,8 @@ export function buildMarketDetailModel(market, office = null) {
         row("marketType", "Tipo", m.marketType ?? null),
         row("product", "Produto", Array.isArray(m.instrumentTypes) && m.instrumentTypes.length ? m.instrumentTypes.join(", ") : null),
         row("activeId", "Active ID", isFiniteNumber(m.activeId) ? String(m.activeId) : null),
-        row("agentState", "Status", m.agentState ?? null),
+        row("agentState", "Status", derived.agentsWorking ? "TRABALHANDO" : "OCIOSO (SOCIAL/IDLE)"),
+        row("agentStateRaw", "Agente (relay)", m.agentState ?? null),
         row("availability", "Disponibilidade", m.availability ?? null),
         row("payout", "Payout", payoutText(m.payout)),
         row("enabled", "Habilitado", m.enabled === true ? "SIM" : m.enabled === false ? "NÃO" : null),
@@ -109,6 +114,7 @@ export function buildMarketDetailModel(market, office = null) {
       id: "feed",
       label: "FEED",
       rows: [
+        row("feedStatus", "Feed status", `${derived.feedStatus}${derived.feedReason ? ` · ${derived.feedReason}` : ""}`),
         row("freshness", "Feed freshness", feedFreshness),
         row("candles5s", "Candles 5s", isFiniteNumber(m.candles5s) ? String(m.candles5s) : null),
         row("lastTick", "Último tick", lastTick),
@@ -181,7 +187,7 @@ export function buildMarketDetailModel(market, office = null) {
     },
   ];
 
-  return { version: MARKET_DETAIL_VERSION, marketKey: m.marketKey ?? null, sections };
+  return { version: MARKET_DETAIL_VERSION, marketKey: m.marketKey ?? null, state: derived, sections };
 }
 
 /* ------------------------------------------------------------------ *

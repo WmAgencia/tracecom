@@ -632,6 +632,8 @@ body {
   image-rendering: pixelated;
   cursor: default;
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 #office-canvas.pan-ready { cursor: grab; }
@@ -845,6 +847,11 @@ body.tc-v3-panning * {
   color: var(--tc-v3-ink-dim);
   letter-spacing: 1px;
 }
+
+#office-station-list .station-option[data-state="WORKING"] { color: var(--tc-v3-positive); }
+#office-station-list .station-option[data-state="OPEN_BUT_FEED_OFFLINE"] { color: var(--tc-v3-warn); }
+
+.tc-v3-row[data-field="state"] .tc-v3-row-value b { color: var(--tc-v3-gold); }
 
 /* ---- right technical panel (only mounted when a market is selected) ---- */
 #office-detail-root {
