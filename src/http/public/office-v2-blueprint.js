@@ -1876,6 +1876,7 @@ function drawFloor(ctx) {
   // trading-hall tile grid, only over the middle bands
   const gridTop = 338;
   const gridBottom = 900;
+  warmOverlay(ctx, 0, gridTop, BASE_WIDTH, gridBottom - gridTop, "#1c3c3a", 0.60);
   for (let x = 0; x < BASE_WIDTH; x += 32) pxRect(ctx, x, gridTop, 1, gridBottom - gridTop, PALETTE.tileLine);
   for (let y = gridTop; y < gridBottom; y += 32) pxRect(ctx, 0, y, BASE_WIDTH, 1, PALETTE.tileLine);
   for (let x = 16; x < BASE_WIDTH; x += 32) pxRect(ctx, x, gridTop, 1, gridBottom - gridTop, "rgba(240,190,110,0.03)");
