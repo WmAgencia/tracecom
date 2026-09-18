@@ -45,32 +45,39 @@ if (!SECRET && process.env.IQ_MCP_TOKEN_FILE) {
 
 const redact = (value) => redactSecret(value, SECRET);
 
+const SESSION = { id: null };
+
 async function rpc(base, method, params, id) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 15000);
   try {
-    const res = await fetch(base, {
-      method: "POST",
-      signal: ctrl.signal,
-      headers: {
-        "content-type": "application/json",
-        accept: "application/json, text/event-stream",
-        authorization: `Bearer ${SECRET}`,
-      },
-      body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
-    });
+    const headers = {
+      "content-type": "application/json",
+      accept: "application/json, text/event-stream",
+      authorization: `Bearer ${SECRET}`,
+    };
+    if (SESSION.id) headers["mcp-session-id"] = SESSION.id;
+    const payload = id === null
+      ? { jsonrpc: "2.0", method, params }
+      : { jsonrpc: "2.0", id, method, params };
+    const res = await fetch(base, { method: "POST", signal: ctrl.signal, headers, body: JSON.stringify(payload) });
+    const sid = res.headers.get("mcp-session-id");
+    if (sid) SESSION.id = sid;
     const text = await res.text();
     const ct = res.headers.get("content-type") || "";
     let parsed = null;
     if (ct.includes("text/event-stream")) {
-      const dataLine = text.split(/\r?\n/).find((l) => l.startsWith("data:"));
-      if (dataLine) {
-        try { parsed = JSON.parse(dataLine.slice(5).trim()); } catch { /* keep raw */ }
+      const dataLines = text.split(/\r?\n/).filter((l) => l.startsWith("data:"));
+      for (const line of dataLines) {
+        try {
+          const candidate = JSON.parse(line.slice(5).trim());
+          if (candidate && (candidate.result || candidate.error || candidate.id !== undefined)) parsed = candidate;
+        } catch { /* keep raw */ }
       }
     } else {
       try { parsed = JSON.parse(text); } catch { /* keep raw */ }
     }
-    return { status: res.status, contentType: ct, body: parsed ?? redact(text).slice(0, 2000) };
+    return { status: res.status, contentType: ct, session: sid || SESSION.id, body: parsed ?? redact(text).slice(0, 2000) };
   } catch (e) {
     return { status: 0, error: `${e.name}:${e.message}` };
   } finally {
@@ -90,6 +97,7 @@ for (const [name, base] of Object.entries(SERVERS)) {
   const entry = { base, reachable: false, authenticated: false, protocolVersion: null, serverInfo: null, capabilities: null, tools: [], resources: [], prompts: [], error: null };
   if (!SECRET) { entry.error = "NO_TOKEN"; result.servers[name] = entry; continue; }
 
+  SESSION.id = null;
   const init = await rpc(base, "initialize", { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "tracecom-discovery", version: "0.0.1" } }, 1);
   if (init.status !== 200) { entry.error = `initialize HTTP ${init.status} ${redact(init.body)}`; result.servers[name] = entry; continue; }
   entry.reachable = true;
@@ -99,6 +107,8 @@ for (const [name, base] of Object.entries(SERVERS)) {
   entry.serverInfo = r.serverInfo || null;
   entry.capabilities = r.capabilities || null;
 
+  await rpc(base, "notifications/initialized", {}, null);
+
   const tools = await rpc(base, "tools/list", {}, 2);
   if (tools.status === 200 && Array.isArray(tools.body?.result?.tools)) {
     entry.tools = tools.body.result.tools.map((t) => ({
@@ -107,6 +117,8 @@ for (const [name, base] of Object.entries(SERVERS)) {
       inputSchema: t.inputSchema || null,
       risk: classify(t),
     }));
+  } else {
+    entry.toolsError = `HTTP ${tools.status} ${redact(JSON.stringify(tools.body)).slice(0, 600)}`;
   }
   const resources = await rpc(base, "resources/list", {}, 3);
   if (resources.status === 200 && Array.isArray(resources.body?.result?.resources)) entry.resources = resources.body.result.resources;
@@ -126,6 +138,7 @@ for (const [name, e] of Object.entries(result.servers)) {
   lines.push(`- serverInfo: \`${redact(e.serverInfo)}\``);
   lines.push(`- capabilities: \`${redact(e.capabilities)}\``);
   if (e.error) lines.push(`- error: ${redact(e.error)}`);
+  if (e.toolsError) lines.push(`- tools/list: ${redact(e.toolsError)}`);
   if (e.tools.length) {
     lines.push("", "| TOOL | RISK | DESCRIPTION |", "|---|---|---|");
     for (const t of e.tools) lines.push(`| ${t.name} | ${t.risk} | ${redact(t.description).replace(/\|/g, "\\|").slice(0, 160)} |`);

@@ -1,90 +1,2582 @@
 {
-  "generatedAt": "2026-09-18T01:06:27.361Z",
-  "authenticated": false,
+  "generatedAt": "2026-09-18T01:13:47.078Z",
+  "authenticated": true,
   "servers": {
     "binary": {
       "base": "https://binary-options.mcp.iqoption.com",
-      "reachable": false,
-      "authenticated": false,
-      "protocolVersion": null,
-      "serverInfo": null,
-      "capabilities": null,
-      "tools": [],
+      "reachable": true,
+      "authenticated": true,
+      "protocolVersion": "2024-11-05",
+      "serverInfo": {
+        "name": "qc-mcp-binary-options",
+        "version": "1.7.8"
+      },
+      "capabilities": {
+        "logging": {},
+        "tools": {
+          "listChanged": true
+        }
+      },
+      "tools": [
+        {
+          "name": "get_candles",
+          "description": "Return recent OHLC price candles for an asset (by asset_id from list_assets) so you can gauge the recent trend before opening a position. Required: asset_id and size (candle width in seconds — one of the supported values). Optional count (default 100, max 1000). Each candle has from/to timestamps and open/close/min/max prices.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Asset id to fetch candles for, from list_assets. Must be positive."
+              },
+              "size": {
+                "type": "integer",
+                "description": "Candle width in seconds. Must be exactly one of: 1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000 (e.g. 60 = 1-minute, 3600 = hourly, 86400 = daily). Any other value is rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "count": {
+                "type": "integer",
+                "description": "Number of most-recent candles to return. Omit or pass 0 for the default of 100; max 1000. Values above 1000 (or negative) are rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "asset_id",
+              "size"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_capabilities",
+          "description": "Report this token's access mode for binary-options: read-write (write tools available to this token), read-only (market data and portfolio only), or none. The mode reflects token scopes; per-account trading restrictions may still apply at call time. Call this to learn why write tools may be absent from the tool list.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_limits",
+          "description": "Report the gateway's rate limits so you can pace calls and avoid rate_limited errors. Limits are enforced per user — shared across all of that user's tokens, not per token — over a rolling window. There is a global gateway cap across every call, plus separate read and write buckets; each tool counts against one bucket (write tools against 'write', everything else against 'read'). This reports the static limits, not live remaining counts; a rate_limited error already carries retry_after_ms and reset_at.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_trade_history",
+          "description": "List your already-closed positions, with paging. Optional skip (records to skip; default 0) and limit (default 50, max 500). Each row has position_id, asset_id/asset_name, direction, amount, open_price/open_time, close_price/close_time, close_reason, the net profit (can be negative), and a result enum: 'win' (expired in profit), 'loss' (expired at a loss), 'equal' (expired flat), or 'canceled' (closed before expiry, e.g. sold early). Page by increasing skip in steps of limit until fewer than limit rows return.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "skip": {
+                "type": "integer",
+                "description": "Number of records to skip from the start, for paging; default 0, must be >= 0 (negative is a validation_error). To page, set skip = page_index * limit.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Maximum records to return. Omit or pass 0 for the default of 50; max 500. A larger or negative value is rejected with a validation_error. Fewer than limit rows means you have reached the end.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_assets",
+          "description": "List tradable assets. Each row has asset_id (pass to place_trade), name, is_open (currently tradable), minimum_amount/maximum_amount for the trade amount, profit_percent (payout percent of a winning trade — pass this exact value to place_trade), the available expirations, and the early-sell (buyback) settings. By default only currently-open assets are returned; set only_enabled=false to include closed ones. Note: if your account is under regulatory trading restrictions this returns a trading_access_denied error — portfolio tools may still work, but new positions cannot be opened.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "only_enabled": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "When true (the default), only assets that are currently tradable (is_open=true) are returned; set false to include closed/suspended assets too."
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "list_balances",
+          "description": "List your trading balances. Each row has balance_id, a type ('regular' = real-money account, 'training' = demo account with imaginary funds), currency, available amount, and bonus_amount. Pass the chosen balance_id to place_trade — there is no default balance. Optional types filter: ALL (default), NORMAL (regular only), TRAINING (demo only).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "string",
+                "description": "Optional balance-type filter (case-insensitive). ALL (default; regular + training), NORMAL (regular only), TRAINING (demo only). Omit for ALL; any other value is rejected with a validation_error."
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_positions",
+          "description": "List your currently open positions on one balance (balance_id from list_balances). Each row carries position_id (pass to sell_position or rollover_position), asset_id/asset_name, direction, amount staked, open_price/open_time, the live current_price, expected_profit (net of the staked amount, negative when losing), sell_profit (net result if sold now), expiration, and seconds_remaining.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to list open positions for, from list_balances."
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "place_trade",
+          "description": "Open a new binary-options position. Pass balance_id (from list_balances), asset_id plus its current profit_percent (both from list_assets), direction 'call' (price will be above the open quote at expiration) or 'put' (below), the amount to stake, and expired — the expiration time as unix seconds (UTC), picked from the asset's expirations list returned by list_assets (do not compute your own boundary — the listed values already respect the asset's period, start alignment and deadtime). Returns the new position_id; review it with list_positions. If the chosen balance is type 'regular' this stakes real money — confirm the trade with the user first; use a 'training' balance to practice. Requires the write scope (see get_capabilities); accounts under regulatory restrictions are blocked with trading_access_denied even with the scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "One of the balance_id values from list_balances. The trade is staked against this balance; a 'regular' balance is real money. There is no default — this must be supplied."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "One of the asset_id values from list_assets."
+              },
+              "direction": {
+                "type": "string",
+                "description": "'call' = the price will be above the open quote at expiration, 'put' = below. Any other value is rejected with a validation_error."
+              },
+              "amount": {
+                "type": "number",
+                "description": "Amount to stake, in the chosen balance's currency. Must be within the asset's minimum_amount/maximum_amount from list_assets and strictly greater than 0."
+              },
+              "profit_percent": {
+                "type": "integer",
+                "description": "The asset's current profit_percent exactly as returned by list_assets. A stale or wrong value is rejected with a validation_error — re-run list_assets to refresh it.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "expired": {
+                "type": "integer",
+                "description": "Expiration time as unix seconds (UTC). Pick one of the values from the asset's expirations list in list_assets — they are already aligned to the asset's start_time/period and past its deadtime. A value not offered there is rejected as misaligned/expired."
+              }
+            },
+            "required": [
+              "balance_id",
+              "asset_id",
+              "direction",
+              "amount",
+              "profit_percent",
+              "expired"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "rollover_position",
+          "description": "Move one of your currently open, currently-losing positions to the next expiration window instead of letting it expire, for a commission charged from the balance. Pass position_id and expiration_time — the position's CURRENT expiration as unix seconds; take the position's expiration field from list_positions (an ISO 8601 timestamp) and convert it to unix seconds. The backend derives the next window from it. Returns the resulting position_id. Fails with 'rollover_unavailable' / 'rollover_rejected' when the asset has no rollover configured, the window has closed, or the position is in the money. WRITE action that spends from the balance — confirm with the user on a 'regular' balance. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "position_id of an open position, from the position_id field of list_positions."
+              },
+              "expiration_time": {
+                "type": "integer",
+                "description": "The position's CURRENT expiration as unix seconds. Take the expiration field of its list_positions row (an ISO 8601 timestamp) and convert it to unix seconds. The next expiration window is derived from this value; a stale value is rejected."
+              }
+            },
+            "required": [
+              "position_id",
+              "expiration_time"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "sell_position",
+          "description": "Close one of your currently open positions early at the current buyback price, before its expiration. Pass a position_id from list_positions (its sell_profit field previews the net result of selling now). Early sale is available only where the asset has buyback_enabled and more than buyback_deadtime_seconds remain before expiration; otherwise the call returns 'sell_rejected' and the position settles at expiration. On success returns a text confirmation. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "position_id of an open position, from the position_id field of list_positions. History rows (get_trade_history) are already closed and cannot be sold."
+              }
+            },
+            "required": [
+              "position_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        }
+      ],
       "resources": [],
       "prompts": [],
-      "error": "NO_TOKEN"
+      "error": null
     },
     "turbo": {
       "base": "https://turbo-options.mcp.iqoption.com",
-      "reachable": false,
-      "authenticated": false,
-      "protocolVersion": null,
-      "serverInfo": null,
-      "capabilities": null,
-      "tools": [],
+      "reachable": true,
+      "authenticated": true,
+      "protocolVersion": "2024-11-05",
+      "serverInfo": {
+        "name": "qc-mcp-turbo-options",
+        "version": "1.7.8"
+      },
+      "capabilities": {
+        "logging": {},
+        "tools": {
+          "listChanged": true
+        }
+      },
+      "tools": [
+        {
+          "name": "get_candles",
+          "description": "Return recent OHLC price candles for an asset (by asset_id from list_assets) so you can gauge the recent trend before opening a position. Required: asset_id and size (candle width in seconds — one of the supported values). Optional count (default 100, max 1000). Each candle has from/to timestamps and open/close/min/max prices.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Asset id to fetch candles for, from list_assets. Must be positive."
+              },
+              "size": {
+                "type": "integer",
+                "description": "Candle width in seconds. Must be exactly one of: 1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000 (e.g. 60 = 1-minute, 3600 = hourly, 86400 = daily). Any other value is rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "count": {
+                "type": "integer",
+                "description": "Number of most-recent candles to return. Omit or pass 0 for the default of 100; max 1000. Values above 1000 (or negative) are rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "asset_id",
+              "size"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_capabilities",
+          "description": "Report this token's access mode for turbo-options: read-write (write tools available to this token), read-only (market data and portfolio only), or none. The mode reflects token scopes; per-account trading restrictions may still apply at call time. Call this to learn why write tools may be absent from the tool list.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_limits",
+          "description": "Report the gateway's rate limits so you can pace calls and avoid rate_limited errors. Limits are enforced per user — shared across all of that user's tokens, not per token — over a rolling window. There is a global gateway cap across every call, plus separate read and write buckets; each tool counts against one bucket (write tools against 'write', everything else against 'read'). This reports the static limits, not live remaining counts; a rate_limited error already carries retry_after_ms and reset_at.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_trade_history",
+          "description": "List your already-closed positions, with paging. Optional skip (records to skip; default 0) and limit (default 50, max 500). Each row has position_id, asset_id/asset_name, direction, amount, open_price/open_time, close_price/close_time, close_reason, the net profit (can be negative), and a result enum: 'win' (expired in profit), 'loss' (expired at a loss), 'equal' (expired flat), or 'canceled' (closed before expiry, e.g. sold early). Page by increasing skip in steps of limit until fewer than limit rows return.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "skip": {
+                "type": "integer",
+                "description": "Number of records to skip from the start, for paging; default 0, must be >= 0 (negative is a validation_error). To page, set skip = page_index * limit.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Maximum records to return. Omit or pass 0 for the default of 50; max 500. A larger or negative value is rejected with a validation_error. Fewer than limit rows means you have reached the end.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_assets",
+          "description": "List tradable assets. Each row has asset_id (pass to place_trade), name, is_open (currently tradable), minimum_amount/maximum_amount for the trade amount, profit_percent (payout percent of a winning trade — pass this exact value to place_trade), the available expirations, and the early-sell (buyback) settings. By default only currently-open assets are returned; set only_enabled=false to include closed ones. Note: if your account is under regulatory trading restrictions this returns a trading_access_denied error — portfolio tools may still work, but new positions cannot be opened.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "only_enabled": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "When true (the default), only assets that are currently tradable (is_open=true) are returned; set false to include closed/suspended assets too."
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "list_balances",
+          "description": "List your trading balances. Each row has balance_id, a type ('regular' = real-money account, 'training' = demo account with imaginary funds), currency, available amount, and bonus_amount. Pass the chosen balance_id to place_trade — there is no default balance. Optional types filter: ALL (default), NORMAL (regular only), TRAINING (demo only).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "string",
+                "description": "Optional balance-type filter (case-insensitive). ALL (default; regular + training), NORMAL (regular only), TRAINING (demo only). Omit for ALL; any other value is rejected with a validation_error."
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_positions",
+          "description": "List your currently open positions on one balance (balance_id from list_balances). Each row carries position_id (pass to sell_position or rollover_position), asset_id/asset_name, direction, amount staked, open_price/open_time, the live current_price, expected_profit (net of the staked amount, negative when losing), sell_profit (net result if sold now), expiration, and seconds_remaining.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to list open positions for, from list_balances."
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "place_trade",
+          "description": "Open a new turbo-options position. Pass balance_id (from list_balances), asset_id plus its current profit_percent (both from list_assets), direction 'call' (price will be above the open quote at expiration) or 'put' (below), the amount to stake, and expired — the expiration time as unix seconds (UTC), picked from the asset's expirations list returned by list_assets (do not compute your own boundary — the listed values already respect the asset's period, start alignment and deadtime). Returns the new position_id; review it with list_positions. If the chosen balance is type 'regular' this stakes real money — confirm the trade with the user first; use a 'training' balance to practice. Requires the write scope (see get_capabilities); accounts under regulatory restrictions are blocked with trading_access_denied even with the scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "One of the balance_id values from list_balances. The trade is staked against this balance; a 'regular' balance is real money. There is no default — this must be supplied."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "One of the asset_id values from list_assets."
+              },
+              "direction": {
+                "type": "string",
+                "description": "'call' = the price will be above the open quote at expiration, 'put' = below. Any other value is rejected with a validation_error."
+              },
+              "amount": {
+                "type": "number",
+                "description": "Amount to stake, in the chosen balance's currency. Must be within the asset's minimum_amount/maximum_amount from list_assets and strictly greater than 0."
+              },
+              "profit_percent": {
+                "type": "integer",
+                "description": "The asset's current profit_percent exactly as returned by list_assets. A stale or wrong value is rejected with a validation_error — re-run list_assets to refresh it.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "expired": {
+                "type": "integer",
+                "description": "Expiration time as unix seconds (UTC). Pick one of the values from the asset's expirations list in list_assets — they are already aligned to the asset's start_time/period and past its deadtime. A value not offered there is rejected as misaligned/expired."
+              }
+            },
+            "required": [
+              "balance_id",
+              "asset_id",
+              "direction",
+              "amount",
+              "profit_percent",
+              "expired"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "rollover_position",
+          "description": "Move one of your currently open, currently-losing positions to the next expiration window instead of letting it expire, for a commission charged from the balance. Pass position_id and expiration_time — the position's CURRENT expiration as unix seconds; take the position's expiration field from list_positions (an ISO 8601 timestamp) and convert it to unix seconds. The backend derives the next window from it. Returns the resulting position_id. Fails with 'rollover_unavailable' / 'rollover_rejected' when the asset has no rollover configured, the window has closed, or the position is in the money. WRITE action that spends from the balance — confirm with the user on a 'regular' balance. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "position_id of an open position, from the position_id field of list_positions."
+              },
+              "expiration_time": {
+                "type": "integer",
+                "description": "The position's CURRENT expiration as unix seconds. Take the expiration field of its list_positions row (an ISO 8601 timestamp) and convert it to unix seconds. The next expiration window is derived from this value; a stale value is rejected."
+              }
+            },
+            "required": [
+              "position_id",
+              "expiration_time"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "sell_position",
+          "description": "Close one of your currently open positions early at the current buyback price, before its expiration. Pass a position_id from list_positions (its sell_profit field previews the net result of selling now). Early sale is available only where the asset has buyback_enabled and more than buyback_deadtime_seconds remain before expiration; otherwise the call returns 'sell_rejected' and the position settles at expiration. On success returns a text confirmation. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "position_id of an open position, from the position_id field of list_positions. History rows (get_trade_history) are already closed and cannot be sold."
+              }
+            },
+            "required": [
+              "position_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        }
+      ],
       "resources": [],
       "prompts": [],
-      "error": "NO_TOKEN"
+      "error": null
     },
     "blitz": {
       "base": "https://blitz-options.mcp.iqoption.com",
-      "reachable": false,
-      "authenticated": false,
-      "protocolVersion": null,
-      "serverInfo": null,
-      "capabilities": null,
-      "tools": [],
+      "reachable": true,
+      "authenticated": true,
+      "protocolVersion": "2024-11-05",
+      "serverInfo": {
+        "name": "qc-mcp-blitz-options",
+        "version": "1.7.8"
+      },
+      "capabilities": {
+        "logging": {},
+        "tools": {
+          "listChanged": true
+        }
+      },
+      "tools": [
+        {
+          "name": "get_candles",
+          "description": "Return recent OHLC price candles for an asset (by asset_id from list_assets) so you can gauge the recent trend before opening a position. Required: asset_id and size (candle width in seconds — one of the supported values). Optional count (default 100, max 1000). Each candle has from/to timestamps and open/close/min/max prices.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Asset id to fetch candles for, from list_assets. Must be positive."
+              },
+              "size": {
+                "type": "integer",
+                "description": "Candle width in seconds. Must be exactly one of: 1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000 (e.g. 60 = 1-minute, 3600 = hourly, 86400 = daily). Any other value is rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "count": {
+                "type": "integer",
+                "description": "Number of most-recent candles to return. Omit or pass 0 for the default of 100; max 1000. Values above 1000 (or negative) are rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "asset_id",
+              "size"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_capabilities",
+          "description": "Report this token's access mode for blitz-options: read-write (write tools available to this token), read-only (market data and portfolio only), or none. The mode reflects token scopes; per-account trading restrictions may still apply at call time. Call this to learn why write tools may be absent from the tool list.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_limits",
+          "description": "Report the gateway's rate limits so you can pace calls and avoid rate_limited errors. Limits are enforced per user — shared across all of that user's tokens, not per token — over a rolling window. There is a global gateway cap across every call, plus separate read and write buckets; each tool counts against one bucket (write tools against 'write', everything else against 'read'). This reports the static limits, not live remaining counts; a rate_limited error already carries retry_after_ms and reset_at.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_trade_history",
+          "description": "List your already-closed positions, with paging. Optional skip (records to skip; default 0) and limit (default 50, max 500). Each row has position_id, asset_id/asset_name, direction, amount, open_price/open_time, close_price/close_time, close_reason, the net profit (can be negative), and a result enum: 'win' (expired in profit), 'loss' (expired at a loss), 'equal' (expired flat), or 'canceled' (closed before expiry, e.g. sold early). Page by increasing skip in steps of limit until fewer than limit rows return.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "skip": {
+                "type": "integer",
+                "description": "Number of records to skip from the start, for paging; default 0, must be >= 0 (negative is a validation_error). To page, set skip = page_index * limit.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Maximum records to return. Omit or pass 0 for the default of 50; max 500. A larger or negative value is rejected with a validation_error. Fewer than limit rows means you have reached the end.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_assets",
+          "description": "List tradable assets. Each row has asset_id (pass to place_trade), name, is_open (currently tradable), minimum_amount/maximum_amount for the trade amount, profit_percent (payout percent of a winning trade — pass this exact value to place_trade), the available expirations, and the early-sell (buyback) settings. By default only currently-open assets are returned; set only_enabled=false to include closed ones. Note: if your account is under regulatory trading restrictions this returns a trading_access_denied error — portfolio tools may still work, but new positions cannot be opened.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "only_enabled": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "When true (the default), only assets that are currently tradable (is_open=true) are returned; set false to include closed/suspended assets too."
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "list_balances",
+          "description": "List your trading balances. Each row has balance_id, a type ('regular' = real-money account, 'training' = demo account with imaginary funds), currency, available amount, and bonus_amount. Pass the chosen balance_id to place_trade — there is no default balance. Optional types filter: ALL (default), NORMAL (regular only), TRAINING (demo only).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "string",
+                "description": "Optional balance-type filter (case-insensitive). ALL (default; regular + training), NORMAL (regular only), TRAINING (demo only). Omit for ALL; any other value is rejected with a validation_error."
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_positions",
+          "description": "List your currently open positions on one balance (balance_id from list_balances). Each row carries position_id (pass to sell_position or rollover_position), asset_id/asset_name, direction, amount staked, open_price/open_time, the live current_price, expected_profit (net of the staked amount, negative when losing), sell_profit (net result if sold now), expiration, and seconds_remaining.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to list open positions for, from list_balances."
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "place_trade",
+          "description": "Open a new blitz-options position. Pass balance_id (from list_balances), asset_id plus its current profit_percent (both from list_assets), direction 'call' (price will be above the open quote at expiration) or 'put' (below), the amount to stake, and expiration_size — the position's duration in seconds, one of the asset's expiration_sizes_seconds. Returns the new position_id; review it with list_positions. If the chosen balance is type 'regular' this stakes real money — confirm the trade with the user first; use a 'training' balance to practice. Requires the write scope (see get_capabilities); accounts under regulatory restrictions are blocked with trading_access_denied even with the scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "One of the balance_id values from list_balances. The trade is staked against this balance; a 'regular' balance is real money. There is no default — this must be supplied."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "One of the asset_id values from list_assets."
+              },
+              "direction": {
+                "type": "string",
+                "description": "'call' = the price will be above the open quote at expiration, 'put' = below. Any other value is rejected with a validation_error."
+              },
+              "amount": {
+                "type": "number",
+                "description": "Amount to stake, in the chosen balance's currency. Must be within the asset's minimum_amount/maximum_amount from list_assets and strictly greater than 0."
+              },
+              "profit_percent": {
+                "type": "integer",
+                "description": "The asset's current profit_percent exactly as returned by list_assets. A stale or wrong value is rejected with a validation_error — re-run list_assets to refresh it.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "expiration_size": {
+                "type": "integer",
+                "description": "Position duration in seconds. Pick one of the asset's expiration_sizes_seconds from list_assets."
+              }
+            },
+            "required": [
+              "balance_id",
+              "asset_id",
+              "direction",
+              "amount",
+              "profit_percent",
+              "expiration_size"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "rollover_position",
+          "description": "Move one of your currently open, currently-losing positions to the next expiration window instead of letting it expire, for a commission charged from the balance. Pass position_id and expiration_time — the position's CURRENT expiration as unix seconds; take the position's expiration field from list_positions (an ISO 8601 timestamp) and convert it to unix seconds. The backend derives the next window from it. Returns the resulting position_id. Fails with 'rollover_unavailable' / 'rollover_rejected' when the asset has no rollover configured, the window has closed, or the position is in the money. WRITE action that spends from the balance — confirm with the user on a 'regular' balance. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "position_id of an open position, from the position_id field of list_positions."
+              },
+              "expiration_time": {
+                "type": "integer",
+                "description": "The position's CURRENT expiration as unix seconds. Take the expiration field of its list_positions row (an ISO 8601 timestamp) and convert it to unix seconds. The next expiration window is derived from this value; a stale value is rejected."
+              }
+            },
+            "required": [
+              "position_id",
+              "expiration_time"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "sell_position",
+          "description": "Close one of your currently open positions early at the current buyback price, before its expiration. Pass a position_id from list_positions (its sell_profit field previews the net result of selling now). Early sale is available only where the asset has buyback_enabled and more than buyback_deadtime_seconds remain before expiration; otherwise the call returns 'sell_rejected' and the position settles at expiration. On success returns a text confirmation. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "position_id of an open position, from the position_id field of list_positions. History rows (get_trade_history) are already closed and cannot be sold."
+              }
+            },
+            "required": [
+              "position_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        }
+      ],
       "resources": [],
       "prompts": [],
-      "error": "NO_TOKEN"
+      "error": null
     },
     "digital": {
       "base": "https://digital-options.mcp.iqoption.com",
-      "reachable": false,
-      "authenticated": false,
-      "protocolVersion": null,
-      "serverInfo": null,
-      "capabilities": null,
-      "tools": [],
+      "reachable": true,
+      "authenticated": true,
+      "protocolVersion": "2024-11-05",
+      "serverInfo": {
+        "name": "qc-mcp-digital-options",
+        "version": "1.7.8"
+      },
+      "capabilities": {
+        "resources": {
+          "subscribe": true
+        },
+        "tools": {
+          "listChanged": true
+        }
+      },
+      "tools": [
+        {
+          "name": "get_candles",
+          "description": "Return recent OHLC price candles for an asset. Required: asset_id (from list_assets) and size (candle width in seconds — one of the supported values). Optional count (default 100, max 1000). Each candle has from/to timestamps and open/close/min/max prices.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Asset id to fetch candles for, from list_assets. Must be positive."
+              },
+              "size": {
+                "type": "integer",
+                "description": "Candle width in seconds. Must be exactly one of: 1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000 (e.g. 60 = 1-minute, 3600 = hourly, 86400 = daily). Any other value is rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "count": {
+                "type": "integer",
+                "description": "Number of most-recent candles to return. Omit or pass 0 for the default of 100; max 1000. Values above 1000 (or negative) are rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "asset_id",
+              "size"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_capabilities",
+          "description": "Report this token's access mode for digital-options: read-write (write tools available to this token), read-only (market data and portfolio only), or none. The mode reflects token scopes; per-account trading restrictions may still apply at call time. Call this to learn why write tools may be absent from the tool list.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_instruments",
+          "description": "Get the tradable instruments for an asset. Required: asset_id (from list_assets). Each instrument is an expiry window carrying a top-level instrument_index plus strike-level entries (each with an instrument_id, strike, and direction 'call' or 'put'). To trade, pass BOTH the instrument_id (strike-level symbol) and that window's instrument_index to place_trade — together they fix direction and expiry. Optional direction='call' or 'put' shrinks the response; omit for both.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "One of the asset_id values from list_assets; must reference an asset you can access."
+              },
+              "direction": {
+                "type": [
+                  "null",
+                  "string"
+                ],
+                "description": "Optional direction filter on the strike-level entries: 'call', 'put', or omitted/empty for both. Any other value is rejected with a validation_error."
+              }
+            },
+            "required": [
+              "asset_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_limits",
+          "description": "Report the gateway's rate limits so you can pace calls and avoid rate_limited errors. Limits are enforced per user — shared across all of that user's tokens, not per token — over a rolling window. There is a global gateway cap across every call, plus separate read and write buckets; each tool counts against one bucket (write tools against 'write', everything else against 'read'). This reports the static limits, not live remaining counts; a rate_limited error already carries retry_after_ms and reset_at.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_prices",
+          "description": "Get the current price grid for an asset. Required: asset_id (from list_assets). Returns one or more price sets, each tagged with an instrument_index and quote_time; each set lists per-strike call_price/put_price plus call_instrument_id/put_instrument_id you can pass straight to place_trade (paired with that set's instrument_index).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "One of the asset_id values from list_assets; must reference an asset you can access."
+              }
+            },
+            "required": [
+              "asset_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_trade_history",
+          "description": "List your already-closed positions, with paging. Optional skip (records to skip; default 0) and limit (default 50, max 500). Each row has position_id, balance_id, asset_id/asset_name, instrument_id, direction, amount, open_price/open_time, close_price/close_time, close_reason, the net profit (can be negative), and a result enum: 'win' (expired in profit), 'loss' (expired at a loss), 'equal' (expired flat), or 'canceled' (closed before expiry, e.g. sold early). Page by increasing skip in steps of limit until fewer than limit rows return.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "skip": {
+                "type": "integer",
+                "description": "Number of records to skip from the start, for paging; default 0, must be >= 0 (negative is a validation_error). To page, set skip = page_index * limit.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Maximum records to return. Omit or pass 0 for the default of 50; max 500. A larger or negative value is rejected with a validation_error. Fewer than limit rows means you have reached the end.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_assets",
+          "description": "List tradable assets. Each row has asset_id (pass to get_instruments, get_candles, get_prices, place_trade), name, asset_type, is_open (market currently open), and price precision. By default only currently-open assets are returned; set only_enabled=false to include closed ones. Optionally filter by asset_type. Note: if your account is under regulatory trading restrictions this returns a trading_access_denied error — market-data and portfolio tools may still work, but new positions cannot be opened.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "only_enabled": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "When true (the default), only assets whose market is currently open (is_open=true) are returned; set false to include closed/suspended assets too."
+              },
+              "asset_type": {
+                "type": [
+                  "null",
+                  "string"
+                ],
+                "description": "Optional case-sensitive asset_type filter; match it against the asset_type field of list_assets rows (typical values: Forex, Index, Commodity, Crypto, Stock). An unrecognized value simply returns no rows — it is not rejected."
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "list_balances",
+          "description": "List your trading balances. Each row has balance_id, a type ('regular' = real-money account, 'training' = demo account with imaginary funds), currency, available amount, and bonus_amount. Pass the chosen balance_id to place_trade and sell_position — there is no default balance. Optional types filter: ALL (default), NORMAL (regular only), TRAINING (demo only).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "string",
+                "description": "Optional balance-type filter (case-insensitive). ALL (default; regular + training), NORMAL (regular only), TRAINING (demo only). Omit for ALL; any other value is rejected with a validation_error."
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_positions",
+          "description": "List your currently open positions across all balances. Each row carries position_id (pass to sell_position to close early), balance_id, asset_id/asset_name, instrument_id, direction, amount invested, open_price/open_time, the live current_price, expected_profit (net of the invested amount, can be negative), sell_profit (net result if sold now, can be negative), expiration, and seconds_remaining. Takes no parameters.",
+          "inputSchema": {
+            "type": "object"
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "place_trade",
+          "description": "Open a new digital-option position. The instrument_id (strike-level symbol) AND instrument_index (numeric window id), both from get_instruments (or a get_prices price row), together fix the direction (call vs put) and the expiry; asset_id comes from list_assets and balance_id from list_balances — all four must refer to the same asset. amount is in the chosen balance's currency and must be > 0 (else validation_error). Returns order_id; call list_positions to find the resulting position. If the chosen balance is type 'regular' this spends real money — confirm the trade with the user first; use a 'training' balance to practice. Requires the digital-options:write scope (see get_capabilities); accounts under regulatory restrictions are blocked with trading_access_denied even with the scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "One of the balance_id values from list_balances. The trade is placed against this balance and spends its funds; a 'regular' balance is real money. There is no default — this must be supplied."
+              },
+              "instrument_id": {
+                "type": "string",
+                "description": "The strike-level instrument symbol (string). Take it from a strike entry's instrument_id under get_instruments, or from a price row's call_instrument_id/put_instrument_id in get_prices. Must be paired with the matching instrument_index from the same instrument window. Fixes direction (call vs put) and expiry."
+              },
+              "instrument_index": {
+                "type": "integer",
+                "description": "Numeric window identifier from get_instruments (top-level instrument_index field). Distinct from instrument_id, which is the strike-level symbol string."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "Choose one of the asset IDs returned by the list_assets tool"
+              },
+              "amount": {
+                "type": "number",
+                "description": "Amount to invest, denominated in the chosen balance's currency (the currency field of the selected list_balances row). Must be strictly greater than 0; a non-positive amount is rejected with a validation_error."
+              }
+            },
+            "required": [
+              "balance_id",
+              "instrument_id",
+              "instrument_index",
+              "asset_id",
+              "amount"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "sell_position",
+          "description": "Close one of your currently open positions early at the current market price, before its expiry. Pass a position_id from list_positions (its sell_profit field previews the net result of closing now). The realised result settles against the same balance the position is held on. On success returns a text confirmation that the position has been closed (no order_id). Requires the digital-options:write scope (see get_capabilities).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "position_id of an open position, from the position_id field of list_positions. History rows (get_trade_history) are already closed and cannot be sold."
+              }
+            },
+            "required": [
+              "position_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        }
+      ],
       "resources": [],
       "prompts": [],
-      "error": "NO_TOKEN"
+      "error": null
     },
     "marginal-cfd": {
       "base": "https://marginal-cfd.mcp.iqoption.com",
-      "reachable": false,
-      "authenticated": false,
-      "protocolVersion": null,
-      "serverInfo": null,
-      "capabilities": null,
-      "tools": [],
+      "reachable": true,
+      "authenticated": true,
+      "protocolVersion": "2024-11-05",
+      "serverInfo": {
+        "name": "qc-mcp-marginal-cfd",
+        "version": "1.7.8"
+      },
+      "capabilities": {
+        "logging": {},
+        "tools": {
+          "listChanged": true
+        }
+      },
+      "tools": [
+        {
+          "name": "calculate_order_size",
+          "description": "Preview the lots/units/margin tuple for a planned marginal-cfd order WITHOUT placing it (read-only). Pass exactly one of lots/units/margin plus leverage and the balance_currency; returns the snapped lots (a multiple of the instrument's quantity_step at or above min_quantity), the re-derived units/margin/notional, and buy/sell prices including spread. Call this before any place_*_order to confirm size and required margin against the balance's free_margin, then pass the returned lots to the order tool. Providing zero or more than one of lots/units/margin is a validation_error.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments to size the order for."
+              },
+              "balance_currency": {
+                "type": "string",
+                "description": "Currency code of the balance the trade will sit on (from list_balances)"
+              },
+              "units": {
+                "type": "number",
+                "description": "Alternative input (provide exactly one of lots/units/margin): instrument units (lots × lot_size)"
+              },
+              "lots": {
+                "type": "number",
+                "description": "Alternative input (provide exactly one of lots/units/margin): position size in lots"
+              },
+              "margin": {
+                "type": "number",
+                "description": "Alternative input (provide exactly one of lots/units/margin): amount of client funds to commit in balance_currency"
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Leverage to assume when deriving margin/notional. Must be positive; should respect the equity-tier cap from get_instruments."
+              }
+            },
+            "required": [
+              "asset_id",
+              "balance_currency",
+              "leverage"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "cancel_pending_order",
+          "description": "Cancel a previously placed pending limit / stop / market-on-open order by order_id (from get_orders). WRITE action; idempotency-protected — a byte-identical retry within the hour returns idempotency_conflict rather than silently repeating, and a non-existent order_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "order_id": {
+                "type": "integer",
+                "description": "Id of the pending order to cancel, from get_orders. Must be positive."
+              }
+            },
+            "required": [
+              "order_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "change_position_stop_loss",
+          "description": "Set, move or cancel the stop-loss order on one of your currently open marginal-cfd positions (position_id from list_positions). level is the stop-loss trigger price: a positive price sets or replaces the stop-loss; 0 cancels the existing one — cancelling removes the position's downside protection, so only do it on explicit user intent. Place the level on the correct side of the current price — BELOW it for a long position, ABOVE it for a short one — and respect the instrument's stop_levels distance from get_instruments: the backend does not reliably validate either, so a mis-placed level may be rejected, silently dropped, or trigger immediately. After the call, confirm the level via list_positions; if replacing an existing stop-loss fails with internal_error, cancel it first (level=0) and then set the new level. Returns the protective order's id and cancelled=true/false; this id is NOT a pending order and cannot be passed to cancel_pending_order. WRITE action, naturally idempotent — repeating the same call sets the same state and never creates anything new; a non-existent position_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "Id of the open position, from list_positions. Must be positive."
+              },
+              "level": {
+                "type": "number",
+                "description": "Trigger price for the protective order. A positive price sets or replaces it; 0 cancels the existing order. Must respect the instrument's stop_levels distance from get_instruments."
+              }
+            },
+            "required": [
+              "position_id",
+              "level"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "change_position_take_profit",
+          "description": "Set, move or cancel the take-profit order on one of your currently open marginal-cfd positions (position_id from list_positions). level is the take-profit trigger price: a positive price sets or replaces the take-profit; 0 cancels the existing one. Place the level on the correct side of the current price — ABOVE it for a long position, BELOW it for a short one — and respect the instrument's stop_levels distance from get_instruments: the backend does not reliably validate either, so a mis-placed level may be rejected, silently dropped, or trigger immediately. After the call, confirm the level via list_positions; if replacing an existing take-profit fails with internal_error, cancel it first (level=0) and then set the new level. Returns the protective order's id and cancelled=true/false; this id is NOT a pending order and cannot be passed to cancel_pending_order. WRITE action, naturally idempotent — repeating the same call sets the same state and never creates anything new; a non-existent position_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "Id of the open position, from list_positions. Must be positive."
+              },
+              "level": {
+                "type": "number",
+                "description": "Trigger price for the protective order. A positive price sets or replaces it; 0 cancels the existing order. Must respect the instrument's stop_levels distance from get_instruments."
+              }
+            },
+            "required": [
+              "position_id",
+              "level"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "close_position",
+          "description": "Close one of your currently open marginal-cfd positions by position_id (from list_positions), realizing its profit/loss. WRITE action; idempotency-protected — a byte-identical retry within the hour returns idempotency_conflict rather than silently repeating, and a non-existent position_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "Id of the open position to close, from list_positions. Must be positive."
+              }
+            },
+            "required": [
+              "position_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "get_candles",
+          "description": "Get historical price candles for an asset (by asset_id from list_assets). Specify a candle size in seconds and an optional count (default 100, max 1000). Each candle has from/to timestamps and open/close/min/max prices.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Asset id to fetch candles for, from list_assets. Must be positive."
+              },
+              "size": {
+                "type": "integer",
+                "description": "Candle width in seconds. Must be exactly one of: 1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000 (e.g. 60 = 1-minute, 3600 = hourly, 86400 = daily). Any other value is rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "count": {
+                "type": "integer",
+                "description": "Number of most-recent candles to return. Omit or pass 0 for the default of 100; max 1000. Values above 1000 (or negative) are rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "asset_id",
+              "size"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_capabilities",
+          "description": "Report this token's access mode for marginal-cfd: read-write (write tools available to this token), read-only (market data and portfolio only), or none. The mode reflects token scopes; per-account trading restrictions may still apply at call time. Call this to learn why write tools may be absent from the tool list.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_instruments",
+          "description": "Get tradable marginal-cfd instruments for the requested asset, together with the leverage profiles they reference",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets. Returns the asset's tradable instruments plus the leverage_profiles (equity-band tiers) and max_leverages that bound the leverage you may request."
+              }
+            },
+            "required": [
+              "asset_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_limits",
+          "description": "Report the gateway's rate limits so you can pace calls and avoid rate_limited errors. Limits are enforced per user — shared across all of that user's tokens, not per token — over a rolling window. There is a global gateway cap across every call, plus separate read and write buckets; each tool counts against one bucket (write tools against 'write', everything else against 'read'). This reports the static limits, not live remaining counts; a rate_limited error already carries retry_after_ms and reset_at.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_orders",
+          "description": "List currently open / pending marginal-cfd orders for a balance",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to query, from list_balances."
+              },
+              "skip": {
+                "type": "integer",
+                "description": "Number of rows to skip for pagination (>= 0, default 0). Increase by limit to page.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Max rows to return; default 50, max 500.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "get_trade_history",
+          "description": "List your closed marginal-cfd positions (trade history) for a balance",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to query, from list_balances."
+              },
+              "skip": {
+                "type": "integer",
+                "description": "Number of rows to skip for pagination (>= 0, default 0). Increase by limit to page.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Max rows to return; default 50, max 500.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_assets",
+          "description": "List underlying assets available for marginal-cfd trading",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "only_enabled": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Set to true to only show currently available assets, false to show everything. Default is true."
+              },
+              "asset_type": {
+                "type": [
+                  "null",
+                  "string"
+                ],
+                "description": "Optional exact-match filter on an asset's category. Use the asset_type value returned by list_assets; only assets whose asset_type equals this string are kept."
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "list_balances",
+          "description": "List marginal-cfd balances with portfolio details (equity, margin, pnl, free margin). Each balance carries a type: 'regular' is real money, 'training' is demo funds. Use the returned balance_id (and its currency) for get_orders / list_positions / get_trade_history and the place_*_order tools — there is no default account. Filter with the types parameter.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "string",
+                "description": "Optional balance-type filter (case-insensitive). ALL (default; regular + training), NORMAL (regular only), TRAINING (demo only). Omit for ALL; any other value is rejected with a validation_error."
+              }
+            },
+            "required": [
+              "types"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_positions",
+          "description": "List currently open marginal-cfd positions for a balance",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to query, from list_balances."
+              },
+              "skip": {
+                "type": "integer",
+                "description": "Number of rows to skip for pagination (>= 0, default 0). Increase by limit to page.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Max rows to return; default 50, max 500.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "place_limit_order",
+          "description": "Place a new marginal-cfd limit order that triggers at limit_price (must be positive). WRITE action; on a 'regular' balance it can spend real money — confirm with the user and pre-check size with calculate_order_size. Stays pending until triggered; review with get_orders and remove with cancel_pending_order. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "side": {
+                "type": "string",
+                "description": "Order side: 'buy' or 'sell'"
+              },
+              "balance_id": {
+                "type": "integer",
+                "description": "Account to trade on, from list_balances. There is no default; on a 'regular' (real-money) balance confirm with the user first."
+              },
+              "instrument_id": {
+                "type": "string",
+                "description": "Tradable instrument id from get_instruments (the instruments[].instrument_id for this asset)."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments; must match the instrument's asset_id."
+              },
+              "lots": {
+                "type": "number",
+                "description": "Position size in lots (a multiple of the instrument's quantity_step, at least its min_quantity). Use calculate_order_size to resolve lots from a target margin or units before placing."
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Requested leverage. Bounded by your equity: must not exceed max_leverage for the balance's current equity tier (leverage_profiles[*].tiers from get_instruments) or the order is rejected with leverage_exceeded."
+              },
+              "take_profit": {
+                "type": "number",
+                "description": "Optional take-profit price. Keep it beyond the instrument's stop_levels.take_profit threshold from get_instruments — a take-profit too close to the price is rejected by the backend. Omit for no take-profit."
+              },
+              "stop_loss": {
+                "type": "number",
+                "description": "Optional stop-loss price. Keep it beyond the instrument's stop_levels.stop_loss threshold from get_instruments — a stop-loss too close to the price is rejected by the backend. Omit for no stop-loss."
+              },
+              "is_margin_isolated": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. true isolates this position's margin from the rest of the account; omit to use the account default."
+              },
+              "keep_position_open": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. Hint to keep the position open through events that would otherwise close it; omit to use the account default."
+              },
+              "limit_price": {
+                "type": "number",
+                "description": "Trigger price for the limit order, in the instrument's quote currency. Must be positive."
+              }
+            },
+            "required": [
+              "side",
+              "balance_id",
+              "instrument_id",
+              "asset_id",
+              "lots",
+              "leverage",
+              "limit_price"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "place_market_order",
+          "description": "Place a new marginal-cfd market order (fills immediately at the current price). WRITE action that opens a position and, on a 'regular' balance, spends real money — confirm with the user first. Pre-check size with calculate_order_size. Optional take_profit/stop_loss must respect the instrument's stop_levels from get_instruments — a level too close to the price is rejected. The gateway verifies the fill: if the backend acknowledges an order id but no position opens, it returns 'not_filled' — if you sent take_profit/stop_loss, widen or drop it (it likely breached stop_levels); otherwise check the asset is open for trading. Do not blindly resend. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "side": {
+                "type": "string",
+                "description": "Order side: 'buy' or 'sell'"
+              },
+              "balance_id": {
+                "type": "integer",
+                "description": "Account to trade on, from list_balances. There is no default; on a 'regular' (real-money) balance confirm with the user first."
+              },
+              "instrument_id": {
+                "type": "string",
+                "description": "Tradable instrument id from get_instruments (the instruments[].instrument_id for this asset)."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments; must match the instrument's asset_id."
+              },
+              "lots": {
+                "type": "number",
+                "description": "Position size in lots (a multiple of the instrument's quantity_step, at least its min_quantity). Use calculate_order_size to resolve lots from a target margin or units before placing."
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Requested leverage. Bounded by your equity: must not exceed max_leverage for the balance's current equity tier (leverage_profiles[*].tiers from get_instruments) or the order is rejected with leverage_exceeded."
+              },
+              "take_profit": {
+                "type": "number",
+                "description": "Optional take-profit price. Keep it beyond the instrument's stop_levels.take_profit threshold from get_instruments — a take-profit too close to the price is rejected by the backend. Omit for no take-profit."
+              },
+              "stop_loss": {
+                "type": "number",
+                "description": "Optional stop-loss price. Keep it beyond the instrument's stop_levels.stop_loss threshold from get_instruments — a stop-loss too close to the price is rejected by the backend. Omit for no stop-loss."
+              },
+              "is_margin_isolated": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. true isolates this position's margin from the rest of the account; omit to use the account default."
+              },
+              "keep_position_open": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. Hint to keep the position open through events that would otherwise close it; omit to use the account default."
+              }
+            },
+            "required": [
+              "side",
+              "balance_id",
+              "instrument_id",
+              "asset_id",
+              "lots",
+              "leverage"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "place_stop_order",
+          "description": "Place a new marginal-cfd stop order that triggers at stop_price (must be positive). WRITE action; on a 'regular' balance it can spend real money — confirm with the user and pre-check size with calculate_order_size. Stays pending until triggered; review with get_orders and remove with cancel_pending_order. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "side": {
+                "type": "string",
+                "description": "Order side: 'buy' or 'sell'"
+              },
+              "balance_id": {
+                "type": "integer",
+                "description": "Account to trade on, from list_balances. There is no default; on a 'regular' (real-money) balance confirm with the user first."
+              },
+              "instrument_id": {
+                "type": "string",
+                "description": "Tradable instrument id from get_instruments (the instruments[].instrument_id for this asset)."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments; must match the instrument's asset_id."
+              },
+              "lots": {
+                "type": "number",
+                "description": "Position size in lots (a multiple of the instrument's quantity_step, at least its min_quantity). Use calculate_order_size to resolve lots from a target margin or units before placing."
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Requested leverage. Bounded by your equity: must not exceed max_leverage for the balance's current equity tier (leverage_profiles[*].tiers from get_instruments) or the order is rejected with leverage_exceeded."
+              },
+              "take_profit": {
+                "type": "number",
+                "description": "Optional take-profit price. Keep it beyond the instrument's stop_levels.take_profit threshold from get_instruments — a take-profit too close to the price is rejected by the backend. Omit for no take-profit."
+              },
+              "stop_loss": {
+                "type": "number",
+                "description": "Optional stop-loss price. Keep it beyond the instrument's stop_levels.stop_loss threshold from get_instruments — a stop-loss too close to the price is rejected by the backend. Omit for no stop-loss."
+              },
+              "is_margin_isolated": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. true isolates this position's margin from the rest of the account; omit to use the account default."
+              },
+              "keep_position_open": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. Hint to keep the position open through events that would otherwise close it; omit to use the account default."
+              },
+              "stop_price": {
+                "type": "number",
+                "description": "Trigger price for the stop order, in the instrument's quote currency. Must be positive."
+              }
+            },
+            "required": [
+              "side",
+              "balance_id",
+              "instrument_id",
+              "asset_id",
+              "lots",
+              "leverage",
+              "stop_price"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        }
+      ],
       "resources": [],
       "prompts": [],
-      "error": "NO_TOKEN"
+      "error": null
     },
     "marginal-crypto": {
       "base": "https://marginal-crypto.mcp.iqoption.com",
-      "reachable": false,
-      "authenticated": false,
-      "protocolVersion": null,
-      "serverInfo": null,
-      "capabilities": null,
-      "tools": [],
+      "reachable": true,
+      "authenticated": true,
+      "protocolVersion": "2024-11-05",
+      "serverInfo": {
+        "name": "qc-mcp-marginal-crypto",
+        "version": "1.7.8"
+      },
+      "capabilities": {
+        "logging": {},
+        "tools": {
+          "listChanged": true
+        }
+      },
+      "tools": [
+        {
+          "name": "calculate_order_size",
+          "description": "Preview the lots/units/margin tuple for a planned marginal-crypto order WITHOUT placing it (read-only). Pass exactly one of lots/units/margin plus leverage and the balance_currency; returns the snapped lots (a multiple of the instrument's quantity_step at or above min_quantity), the re-derived units/margin/notional, and buy/sell prices including spread. Call this before any place_*_order to confirm size and required margin against the balance's free_margin, then pass the returned lots to the order tool. Providing zero or more than one of lots/units/margin is a validation_error.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments to size the order for."
+              },
+              "balance_currency": {
+                "type": "string",
+                "description": "Currency code of the balance the trade will sit on (from list_balances)"
+              },
+              "units": {
+                "type": "number",
+                "description": "Alternative input (provide exactly one of lots/units/margin): instrument units (lots × lot_size)"
+              },
+              "lots": {
+                "type": "number",
+                "description": "Alternative input (provide exactly one of lots/units/margin): position size in lots"
+              },
+              "margin": {
+                "type": "number",
+                "description": "Alternative input (provide exactly one of lots/units/margin): amount of client funds to commit in balance_currency"
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Leverage to assume when deriving margin/notional. Must be positive; should respect the equity-tier cap from get_instruments."
+              }
+            },
+            "required": [
+              "asset_id",
+              "balance_currency",
+              "leverage"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "cancel_pending_order",
+          "description": "Cancel a previously placed pending limit / stop / market-on-open order by order_id (from get_orders). WRITE action; idempotency-protected — a byte-identical retry within the hour returns idempotency_conflict rather than silently repeating, and a non-existent order_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "order_id": {
+                "type": "integer",
+                "description": "Id of the pending order to cancel, from get_orders. Must be positive."
+              }
+            },
+            "required": [
+              "order_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "change_position_stop_loss",
+          "description": "Set, move or cancel the stop-loss order on one of your currently open marginal-crypto positions (position_id from list_positions). level is the stop-loss trigger price: a positive price sets or replaces the stop-loss; 0 cancels the existing one — cancelling removes the position's downside protection, so only do it on explicit user intent. Place the level on the correct side of the current price — BELOW it for a long position, ABOVE it for a short one — and respect the instrument's stop_levels distance from get_instruments: the backend does not reliably validate either, so a mis-placed level may be rejected, silently dropped, or trigger immediately. After the call, confirm the level via list_positions; if replacing an existing stop-loss fails with internal_error, cancel it first (level=0) and then set the new level. Returns the protective order's id and cancelled=true/false; this id is NOT a pending order and cannot be passed to cancel_pending_order. WRITE action, naturally idempotent — repeating the same call sets the same state and never creates anything new; a non-existent position_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "Id of the open position, from list_positions. Must be positive."
+              },
+              "level": {
+                "type": "number",
+                "description": "Trigger price for the protective order. A positive price sets or replaces it; 0 cancels the existing order. Must respect the instrument's stop_levels distance from get_instruments."
+              }
+            },
+            "required": [
+              "position_id",
+              "level"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "change_position_take_profit",
+          "description": "Set, move or cancel the take-profit order on one of your currently open marginal-crypto positions (position_id from list_positions). level is the take-profit trigger price: a positive price sets or replaces the take-profit; 0 cancels the existing one. Place the level on the correct side of the current price — ABOVE it for a long position, BELOW it for a short one — and respect the instrument's stop_levels distance from get_instruments: the backend does not reliably validate either, so a mis-placed level may be rejected, silently dropped, or trigger immediately. After the call, confirm the level via list_positions; if replacing an existing take-profit fails with internal_error, cancel it first (level=0) and then set the new level. Returns the protective order's id and cancelled=true/false; this id is NOT a pending order and cannot be passed to cancel_pending_order. WRITE action, naturally idempotent — repeating the same call sets the same state and never creates anything new; a non-existent position_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "Id of the open position, from list_positions. Must be positive."
+              },
+              "level": {
+                "type": "number",
+                "description": "Trigger price for the protective order. A positive price sets or replaces it; 0 cancels the existing order. Must respect the instrument's stop_levels distance from get_instruments."
+              }
+            },
+            "required": [
+              "position_id",
+              "level"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "close_position",
+          "description": "Close one of your currently open marginal-crypto positions by position_id (from list_positions), realizing its profit/loss. WRITE action; idempotency-protected — a byte-identical retry within the hour returns idempotency_conflict rather than silently repeating, and a non-existent position_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "Id of the open position to close, from list_positions. Must be positive."
+              }
+            },
+            "required": [
+              "position_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "get_candles",
+          "description": "Get historical price candles for an asset (by asset_id from list_assets). Specify a candle size in seconds and an optional count (default 100, max 1000). Each candle has from/to timestamps and open/close/min/max prices.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Asset id to fetch candles for, from list_assets. Must be positive."
+              },
+              "size": {
+                "type": "integer",
+                "description": "Candle width in seconds. Must be exactly one of: 1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000 (e.g. 60 = 1-minute, 3600 = hourly, 86400 = daily). Any other value is rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "count": {
+                "type": "integer",
+                "description": "Number of most-recent candles to return. Omit or pass 0 for the default of 100; max 1000. Values above 1000 (or negative) are rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "asset_id",
+              "size"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_capabilities",
+          "description": "Report this token's access mode for marginal-crypto: read-write (write tools available to this token), read-only (market data and portfolio only), or none. The mode reflects token scopes; per-account trading restrictions may still apply at call time. Call this to learn why write tools may be absent from the tool list.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_instruments",
+          "description": "Get tradable marginal-crypto instruments for the requested asset, together with the leverage profiles they reference",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets. Returns the asset's tradable instruments plus the leverage_profiles (equity-band tiers) and max_leverages that bound the leverage you may request."
+              }
+            },
+            "required": [
+              "asset_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_limits",
+          "description": "Report the gateway's rate limits so you can pace calls and avoid rate_limited errors. Limits are enforced per user — shared across all of that user's tokens, not per token — over a rolling window. There is a global gateway cap across every call, plus separate read and write buckets; each tool counts against one bucket (write tools against 'write', everything else against 'read'). This reports the static limits, not live remaining counts; a rate_limited error already carries retry_after_ms and reset_at.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_orders",
+          "description": "List currently open / pending marginal-crypto orders for a balance",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to query, from list_balances."
+              },
+              "skip": {
+                "type": "integer",
+                "description": "Number of rows to skip for pagination (>= 0, default 0). Increase by limit to page.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Max rows to return; default 50, max 500.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "get_trade_history",
+          "description": "List your closed marginal-crypto positions (trade history) for a balance",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to query, from list_balances."
+              },
+              "skip": {
+                "type": "integer",
+                "description": "Number of rows to skip for pagination (>= 0, default 0). Increase by limit to page.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Max rows to return; default 50, max 500.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_assets",
+          "description": "List underlying assets available for marginal-crypto trading",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "only_enabled": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Set to true to only show currently available assets, false to show everything. Default is true."
+              },
+              "asset_type": {
+                "type": [
+                  "null",
+                  "string"
+                ],
+                "description": "Optional exact-match filter on an asset's category. Use the asset_type value returned by list_assets; only assets whose asset_type equals this string are kept."
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "list_balances",
+          "description": "List marginal-crypto balances with portfolio details (equity, margin, pnl, free margin). Each balance carries a type: 'regular' is real money, 'training' is demo funds. Use the returned balance_id (and its currency) for get_orders / list_positions / get_trade_history and the place_*_order tools — there is no default account. Filter with the types parameter.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "string",
+                "description": "Optional balance-type filter (case-insensitive). ALL (default; regular + training), NORMAL (regular only), TRAINING (demo only). Omit for ALL; any other value is rejected with a validation_error."
+              }
+            },
+            "required": [
+              "types"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_positions",
+          "description": "List currently open marginal-crypto positions for a balance",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to query, from list_balances."
+              },
+              "skip": {
+                "type": "integer",
+                "description": "Number of rows to skip for pagination (>= 0, default 0). Increase by limit to page.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Max rows to return; default 50, max 500.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "place_limit_order",
+          "description": "Place a new marginal-crypto limit order that triggers at limit_price (must be positive). WRITE action; on a 'regular' balance it can spend real money — confirm with the user and pre-check size with calculate_order_size. Stays pending until triggered; review with get_orders and remove with cancel_pending_order. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "side": {
+                "type": "string",
+                "description": "Order side: 'buy' or 'sell'"
+              },
+              "balance_id": {
+                "type": "integer",
+                "description": "Account to trade on, from list_balances. There is no default; on a 'regular' (real-money) balance confirm with the user first."
+              },
+              "instrument_id": {
+                "type": "string",
+                "description": "Tradable instrument id from get_instruments (the instruments[].instrument_id for this asset)."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments; must match the instrument's asset_id."
+              },
+              "lots": {
+                "type": "number",
+                "description": "Position size in lots (a multiple of the instrument's quantity_step, at least its min_quantity). Use calculate_order_size to resolve lots from a target margin or units before placing."
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Requested leverage. Bounded by your equity: must not exceed max_leverage for the balance's current equity tier (leverage_profiles[*].tiers from get_instruments) or the order is rejected with leverage_exceeded."
+              },
+              "take_profit": {
+                "type": "number",
+                "description": "Optional take-profit price. Keep it beyond the instrument's stop_levels.take_profit threshold from get_instruments — a take-profit too close to the price is rejected by the backend. Omit for no take-profit."
+              },
+              "stop_loss": {
+                "type": "number",
+                "description": "Optional stop-loss price. Keep it beyond the instrument's stop_levels.stop_loss threshold from get_instruments — a stop-loss too close to the price is rejected by the backend. Omit for no stop-loss."
+              },
+              "is_margin_isolated": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. true isolates this position's margin from the rest of the account; omit to use the account default."
+              },
+              "keep_position_open": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. Hint to keep the position open through events that would otherwise close it; omit to use the account default."
+              },
+              "limit_price": {
+                "type": "number",
+                "description": "Trigger price for the limit order, in the instrument's quote currency. Must be positive."
+              }
+            },
+            "required": [
+              "side",
+              "balance_id",
+              "instrument_id",
+              "asset_id",
+              "lots",
+              "leverage",
+              "limit_price"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "place_market_order",
+          "description": "Place a new marginal-crypto market order (fills immediately at the current price). WRITE action that opens a position and, on a 'regular' balance, spends real money — confirm with the user first. Pre-check size with calculate_order_size. Optional take_profit/stop_loss must respect the instrument's stop_levels from get_instruments — a level too close to the price is rejected. The gateway verifies the fill: if the backend acknowledges an order id but no position opens, it returns 'not_filled' — if you sent take_profit/stop_loss, widen or drop it (it likely breached stop_levels); otherwise check the asset is open for trading. Do not blindly resend. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "side": {
+                "type": "string",
+                "description": "Order side: 'buy' or 'sell'"
+              },
+              "balance_id": {
+                "type": "integer",
+                "description": "Account to trade on, from list_balances. There is no default; on a 'regular' (real-money) balance confirm with the user first."
+              },
+              "instrument_id": {
+                "type": "string",
+                "description": "Tradable instrument id from get_instruments (the instruments[].instrument_id for this asset)."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments; must match the instrument's asset_id."
+              },
+              "lots": {
+                "type": "number",
+                "description": "Position size in lots (a multiple of the instrument's quantity_step, at least its min_quantity). Use calculate_order_size to resolve lots from a target margin or units before placing."
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Requested leverage. Bounded by your equity: must not exceed max_leverage for the balance's current equity tier (leverage_profiles[*].tiers from get_instruments) or the order is rejected with leverage_exceeded."
+              },
+              "take_profit": {
+                "type": "number",
+                "description": "Optional take-profit price. Keep it beyond the instrument's stop_levels.take_profit threshold from get_instruments — a take-profit too close to the price is rejected by the backend. Omit for no take-profit."
+              },
+              "stop_loss": {
+                "type": "number",
+                "description": "Optional stop-loss price. Keep it beyond the instrument's stop_levels.stop_loss threshold from get_instruments — a stop-loss too close to the price is rejected by the backend. Omit for no stop-loss."
+              },
+              "is_margin_isolated": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. true isolates this position's margin from the rest of the account; omit to use the account default."
+              },
+              "keep_position_open": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. Hint to keep the position open through events that would otherwise close it; omit to use the account default."
+              }
+            },
+            "required": [
+              "side",
+              "balance_id",
+              "instrument_id",
+              "asset_id",
+              "lots",
+              "leverage"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "place_stop_order",
+          "description": "Place a new marginal-crypto stop order that triggers at stop_price (must be positive). WRITE action; on a 'regular' balance it can spend real money — confirm with the user and pre-check size with calculate_order_size. Stays pending until triggered; review with get_orders and remove with cancel_pending_order. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "side": {
+                "type": "string",
+                "description": "Order side: 'buy' or 'sell'"
+              },
+              "balance_id": {
+                "type": "integer",
+                "description": "Account to trade on, from list_balances. There is no default; on a 'regular' (real-money) balance confirm with the user first."
+              },
+              "instrument_id": {
+                "type": "string",
+                "description": "Tradable instrument id from get_instruments (the instruments[].instrument_id for this asset)."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments; must match the instrument's asset_id."
+              },
+              "lots": {
+                "type": "number",
+                "description": "Position size in lots (a multiple of the instrument's quantity_step, at least its min_quantity). Use calculate_order_size to resolve lots from a target margin or units before placing."
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Requested leverage. Bounded by your equity: must not exceed max_leverage for the balance's current equity tier (leverage_profiles[*].tiers from get_instruments) or the order is rejected with leverage_exceeded."
+              },
+              "take_profit": {
+                "type": "number",
+                "description": "Optional take-profit price. Keep it beyond the instrument's stop_levels.take_profit threshold from get_instruments — a take-profit too close to the price is rejected by the backend. Omit for no take-profit."
+              },
+              "stop_loss": {
+                "type": "number",
+                "description": "Optional stop-loss price. Keep it beyond the instrument's stop_levels.stop_loss threshold from get_instruments — a stop-loss too close to the price is rejected by the backend. Omit for no stop-loss."
+              },
+              "is_margin_isolated": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. true isolates this position's margin from the rest of the account; omit to use the account default."
+              },
+              "keep_position_open": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. Hint to keep the position open through events that would otherwise close it; omit to use the account default."
+              },
+              "stop_price": {
+                "type": "number",
+                "description": "Trigger price for the stop order, in the instrument's quote currency. Must be positive."
+              }
+            },
+            "required": [
+              "side",
+              "balance_id",
+              "instrument_id",
+              "asset_id",
+              "lots",
+              "leverage",
+              "stop_price"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        }
+      ],
       "resources": [],
       "prompts": [],
-      "error": "NO_TOKEN"
+      "error": null
     },
     "marginal-forex": {
       "base": "https://marginal-forex.mcp.iqoption.com",
-      "reachable": false,
-      "authenticated": false,
-      "protocolVersion": null,
-      "serverInfo": null,
-      "capabilities": null,
-      "tools": [],
+      "reachable": true,
+      "authenticated": true,
+      "protocolVersion": "2024-11-05",
+      "serverInfo": {
+        "name": "qc-mcp-marginal-forex",
+        "version": "1.7.8"
+      },
+      "capabilities": {
+        "logging": {},
+        "tools": {
+          "listChanged": true
+        }
+      },
+      "tools": [
+        {
+          "name": "calculate_order_size",
+          "description": "Preview the lots/units/margin tuple for a planned marginal-forex order WITHOUT placing it (read-only). Pass exactly one of lots/units/margin plus leverage and the balance_currency; returns the snapped lots (a multiple of the instrument's quantity_step at or above min_quantity), the re-derived units/margin/notional, and buy/sell prices including spread. Call this before any place_*_order to confirm size and required margin against the balance's free_margin, then pass the returned lots to the order tool. Providing zero or more than one of lots/units/margin is a validation_error.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments to size the order for."
+              },
+              "balance_currency": {
+                "type": "string",
+                "description": "Currency code of the balance the trade will sit on (from list_balances)"
+              },
+              "units": {
+                "type": "number",
+                "description": "Alternative input (provide exactly one of lots/units/margin): instrument units (lots × lot_size)"
+              },
+              "lots": {
+                "type": "number",
+                "description": "Alternative input (provide exactly one of lots/units/margin): position size in lots"
+              },
+              "margin": {
+                "type": "number",
+                "description": "Alternative input (provide exactly one of lots/units/margin): amount of client funds to commit in balance_currency"
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Leverage to assume when deriving margin/notional. Must be positive; should respect the equity-tier cap from get_instruments."
+              }
+            },
+            "required": [
+              "asset_id",
+              "balance_currency",
+              "leverage"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "cancel_pending_order",
+          "description": "Cancel a previously placed pending limit / stop / market-on-open order by order_id (from get_orders). WRITE action; idempotency-protected — a byte-identical retry within the hour returns idempotency_conflict rather than silently repeating, and a non-existent order_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "order_id": {
+                "type": "integer",
+                "description": "Id of the pending order to cancel, from get_orders. Must be positive."
+              }
+            },
+            "required": [
+              "order_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "change_position_stop_loss",
+          "description": "Set, move or cancel the stop-loss order on one of your currently open marginal-forex positions (position_id from list_positions). level is the stop-loss trigger price: a positive price sets or replaces the stop-loss; 0 cancels the existing one — cancelling removes the position's downside protection, so only do it on explicit user intent. Place the level on the correct side of the current price — BELOW it for a long position, ABOVE it for a short one — and respect the instrument's stop_levels distance from get_instruments: the backend does not reliably validate either, so a mis-placed level may be rejected, silently dropped, or trigger immediately. After the call, confirm the level via list_positions; if replacing an existing stop-loss fails with internal_error, cancel it first (level=0) and then set the new level. Returns the protective order's id and cancelled=true/false; this id is NOT a pending order and cannot be passed to cancel_pending_order. WRITE action, naturally idempotent — repeating the same call sets the same state and never creates anything new; a non-existent position_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "Id of the open position, from list_positions. Must be positive."
+              },
+              "level": {
+                "type": "number",
+                "description": "Trigger price for the protective order. A positive price sets or replaces it; 0 cancels the existing order. Must respect the instrument's stop_levels distance from get_instruments."
+              }
+            },
+            "required": [
+              "position_id",
+              "level"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "change_position_take_profit",
+          "description": "Set, move or cancel the take-profit order on one of your currently open marginal-forex positions (position_id from list_positions). level is the take-profit trigger price: a positive price sets or replaces the take-profit; 0 cancels the existing one. Place the level on the correct side of the current price — ABOVE it for a long position, BELOW it for a short one — and respect the instrument's stop_levels distance from get_instruments: the backend does not reliably validate either, so a mis-placed level may be rejected, silently dropped, or trigger immediately. After the call, confirm the level via list_positions; if replacing an existing take-profit fails with internal_error, cancel it first (level=0) and then set the new level. Returns the protective order's id and cancelled=true/false; this id is NOT a pending order and cannot be passed to cancel_pending_order. WRITE action, naturally idempotent — repeating the same call sets the same state and never creates anything new; a non-existent position_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "Id of the open position, from list_positions. Must be positive."
+              },
+              "level": {
+                "type": "number",
+                "description": "Trigger price for the protective order. A positive price sets or replaces it; 0 cancels the existing order. Must respect the instrument's stop_levels distance from get_instruments."
+              }
+            },
+            "required": [
+              "position_id",
+              "level"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "close_position",
+          "description": "Close one of your currently open marginal-forex positions by position_id (from list_positions), realizing its profit/loss. WRITE action; idempotency-protected — a byte-identical retry within the hour returns idempotency_conflict rather than silently repeating, and a non-existent position_id returns not_found. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "position_id": {
+                "type": "integer",
+                "description": "Id of the open position to close, from list_positions. Must be positive."
+              }
+            },
+            "required": [
+              "position_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "get_candles",
+          "description": "Get historical price candles for an asset (by asset_id from list_assets). Specify a candle size in seconds and an optional count (default 100, max 1000). Each candle has from/to timestamps and open/close/min/max prices.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Asset id to fetch candles for, from list_assets. Must be positive."
+              },
+              "size": {
+                "type": "integer",
+                "description": "Candle width in seconds. Must be exactly one of: 1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000 (e.g. 60 = 1-minute, 3600 = hourly, 86400 = daily). Any other value is rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "count": {
+                "type": "integer",
+                "description": "Number of most-recent candles to return. Omit or pass 0 for the default of 100; max 1000. Values above 1000 (or negative) are rejected with a validation_error.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "asset_id",
+              "size"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_capabilities",
+          "description": "Report this token's access mode for marginal-forex: read-write (write tools available to this token), read-only (market data and portfolio only), or none. The mode reflects token scopes; per-account trading restrictions may still apply at call time. Call this to learn why write tools may be absent from the tool list.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_instruments",
+          "description": "Get tradable marginal-forex instruments for the requested asset, together with the leverage profiles they reference",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets. Returns the asset's tradable instruments plus the leverage_profiles (equity-band tiers) and max_leverages that bound the leverage you may request."
+              }
+            },
+            "required": [
+              "asset_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_limits",
+          "description": "Report the gateway's rate limits so you can pace calls and avoid rate_limited errors. Limits are enforced per user — shared across all of that user's tokens, not per token — over a rolling window. There is a global gateway cap across every call, plus separate read and write buckets; each tool counts against one bucket (write tools against 'write', everything else against 'read'). This reports the static limits, not live remaining counts; a rate_limited error already carries retry_after_ms and reset_at.",
+          "inputSchema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "get_orders",
+          "description": "List currently open / pending marginal-forex orders for a balance",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to query, from list_balances."
+              },
+              "skip": {
+                "type": "integer",
+                "description": "Number of rows to skip for pagination (>= 0, default 0). Increase by limit to page.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Max rows to return; default 50, max 500.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "get_trade_history",
+          "description": "List your closed marginal-forex positions (trade history) for a balance",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to query, from list_balances."
+              },
+              "skip": {
+                "type": "integer",
+                "description": "Number of rows to skip for pagination (>= 0, default 0). Increase by limit to page.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Max rows to return; default 50, max 500.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_assets",
+          "description": "List underlying assets available for marginal-forex trading",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "only_enabled": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Set to true to only show currently available assets, false to show everything. Default is true."
+              },
+              "asset_type": {
+                "type": [
+                  "null",
+                  "string"
+                ],
+                "description": "Optional exact-match filter on an asset's category. Use the asset_type value returned by list_assets; only assets whose asset_type equals this string are kept."
+              }
+            },
+            "additionalProperties": false
+          },
+          "risk": "SAFE_READ"
+        },
+        {
+          "name": "list_balances",
+          "description": "List marginal-forex balances with portfolio details (equity, margin, pnl, free margin). Each balance carries a type: 'regular' is real money, 'training' is demo funds. Use the returned balance_id (and its currency) for get_orders / list_positions / get_trade_history and the place_*_order tools — there is no default account. Filter with the types parameter.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "string",
+                "description": "Optional balance-type filter (case-insensitive). ALL (default; regular + training), NORMAL (regular only), TRAINING (demo only). Omit for ALL; any other value is rejected with a validation_error."
+              }
+            },
+            "required": [
+              "types"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "list_positions",
+          "description": "List currently open marginal-forex positions for a balance",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "balance_id": {
+                "type": "integer",
+                "description": "The balance to query, from list_balances."
+              },
+              "skip": {
+                "type": "integer",
+                "description": "Number of rows to skip for pagination (>= 0, default 0). Increase by limit to page.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Max rows to return; default 50, max 500.",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "balance_id"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ACCOUNT_READ"
+        },
+        {
+          "name": "place_limit_order",
+          "description": "Place a new marginal-forex limit order that triggers at limit_price (must be positive). WRITE action; on a 'regular' balance it can spend real money — confirm with the user and pre-check size with calculate_order_size. Stays pending until triggered; review with get_orders and remove with cancel_pending_order. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "side": {
+                "type": "string",
+                "description": "Order side: 'buy' or 'sell'"
+              },
+              "balance_id": {
+                "type": "integer",
+                "description": "Account to trade on, from list_balances. There is no default; on a 'regular' (real-money) balance confirm with the user first."
+              },
+              "instrument_id": {
+                "type": "string",
+                "description": "Tradable instrument id from get_instruments (the instruments[].instrument_id for this asset)."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments; must match the instrument's asset_id."
+              },
+              "lots": {
+                "type": "number",
+                "description": "Position size in lots (a multiple of the instrument's quantity_step, at least its min_quantity). Use calculate_order_size to resolve lots from a target margin or units before placing."
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Requested leverage. Bounded by your equity: must not exceed max_leverage for the balance's current equity tier (leverage_profiles[*].tiers from get_instruments) or the order is rejected with leverage_exceeded."
+              },
+              "take_profit": {
+                "type": "number",
+                "description": "Optional take-profit price. Keep it beyond the instrument's stop_levels.take_profit threshold from get_instruments — a take-profit too close to the price is rejected by the backend. Omit for no take-profit."
+              },
+              "stop_loss": {
+                "type": "number",
+                "description": "Optional stop-loss price. Keep it beyond the instrument's stop_levels.stop_loss threshold from get_instruments — a stop-loss too close to the price is rejected by the backend. Omit for no stop-loss."
+              },
+              "is_margin_isolated": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. true isolates this position's margin from the rest of the account; omit to use the account default."
+              },
+              "keep_position_open": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. Hint to keep the position open through events that would otherwise close it; omit to use the account default."
+              },
+              "limit_price": {
+                "type": "number",
+                "description": "Trigger price for the limit order, in the instrument's quote currency. Must be positive."
+              }
+            },
+            "required": [
+              "side",
+              "balance_id",
+              "instrument_id",
+              "asset_id",
+              "lots",
+              "leverage",
+              "limit_price"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "place_market_order",
+          "description": "Place a new marginal-forex market order (fills immediately at the current price). WRITE action that opens a position and, on a 'regular' balance, spends real money — confirm with the user first. Pre-check size with calculate_order_size. Optional take_profit/stop_loss must respect the instrument's stop_levels from get_instruments — a level too close to the price is rejected. The gateway verifies the fill: if the backend acknowledges an order id but no position opens, it returns 'not_filled' — if you sent take_profit/stop_loss, widen or drop it (it likely breached stop_levels); otherwise check the asset is open for trading. Do not blindly resend. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "side": {
+                "type": "string",
+                "description": "Order side: 'buy' or 'sell'"
+              },
+              "balance_id": {
+                "type": "integer",
+                "description": "Account to trade on, from list_balances. There is no default; on a 'regular' (real-money) balance confirm with the user first."
+              },
+              "instrument_id": {
+                "type": "string",
+                "description": "Tradable instrument id from get_instruments (the instruments[].instrument_id for this asset)."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments; must match the instrument's asset_id."
+              },
+              "lots": {
+                "type": "number",
+                "description": "Position size in lots (a multiple of the instrument's quantity_step, at least its min_quantity). Use calculate_order_size to resolve lots from a target margin or units before placing."
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Requested leverage. Bounded by your equity: must not exceed max_leverage for the balance's current equity tier (leverage_profiles[*].tiers from get_instruments) or the order is rejected with leverage_exceeded."
+              },
+              "take_profit": {
+                "type": "number",
+                "description": "Optional take-profit price. Keep it beyond the instrument's stop_levels.take_profit threshold from get_instruments — a take-profit too close to the price is rejected by the backend. Omit for no take-profit."
+              },
+              "stop_loss": {
+                "type": "number",
+                "description": "Optional stop-loss price. Keep it beyond the instrument's stop_levels.stop_loss threshold from get_instruments — a stop-loss too close to the price is rejected by the backend. Omit for no stop-loss."
+              },
+              "is_margin_isolated": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. true isolates this position's margin from the rest of the account; omit to use the account default."
+              },
+              "keep_position_open": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. Hint to keep the position open through events that would otherwise close it; omit to use the account default."
+              }
+            },
+            "required": [
+              "side",
+              "balance_id",
+              "instrument_id",
+              "asset_id",
+              "lots",
+              "leverage"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        },
+        {
+          "name": "place_stop_order",
+          "description": "Place a new marginal-forex stop order that triggers at stop_price (must be positive). WRITE action; on a 'regular' balance it can spend real money — confirm with the user and pre-check size with calculate_order_size. Stays pending until triggered; review with get_orders and remove with cancel_pending_order. Requires the write scope.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "side": {
+                "type": "string",
+                "description": "Order side: 'buy' or 'sell'"
+              },
+              "balance_id": {
+                "type": "integer",
+                "description": "Account to trade on, from list_balances. There is no default; on a 'regular' (real-money) balance confirm with the user first."
+              },
+              "instrument_id": {
+                "type": "string",
+                "description": "Tradable instrument id from get_instruments (the instruments[].instrument_id for this asset)."
+              },
+              "asset_id": {
+                "type": "integer",
+                "description": "Underlying asset id from list_assets / get_instruments; must match the instrument's asset_id."
+              },
+              "lots": {
+                "type": "number",
+                "description": "Position size in lots (a multiple of the instrument's quantity_step, at least its min_quantity). Use calculate_order_size to resolve lots from a target margin or units before placing."
+              },
+              "leverage": {
+                "type": "integer",
+                "description": "Requested leverage. Bounded by your equity: must not exceed max_leverage for the balance's current equity tier (leverage_profiles[*].tiers from get_instruments) or the order is rejected with leverage_exceeded."
+              },
+              "take_profit": {
+                "type": "number",
+                "description": "Optional take-profit price. Keep it beyond the instrument's stop_levels.take_profit threshold from get_instruments — a take-profit too close to the price is rejected by the backend. Omit for no take-profit."
+              },
+              "stop_loss": {
+                "type": "number",
+                "description": "Optional stop-loss price. Keep it beyond the instrument's stop_levels.stop_loss threshold from get_instruments — a stop-loss too close to the price is rejected by the backend. Omit for no stop-loss."
+              },
+              "is_margin_isolated": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. true isolates this position's margin from the rest of the account; omit to use the account default."
+              },
+              "keep_position_open": {
+                "type": [
+                  "null",
+                  "boolean"
+                ],
+                "description": "Optional. Hint to keep the position open through events that would otherwise close it; omit to use the account default."
+              },
+              "stop_price": {
+                "type": "number",
+                "description": "Trigger price for the stop order, in the instrument's quote currency. Must be positive."
+              }
+            },
+            "required": [
+              "side",
+              "balance_id",
+              "instrument_id",
+              "asset_id",
+              "lots",
+              "leverage",
+              "stop_price"
+            ],
+            "additionalProperties": false
+          },
+          "risk": "ORDER_WRITE"
+        }
+      ],
       "resources": [],
       "prompts": [],
-      "error": "NO_TOKEN"
+      "error": null
     }
   }
 }

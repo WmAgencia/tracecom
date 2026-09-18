@@ -38,20 +38,21 @@ export const RISK = Object.freeze({
   UNKNOWN: "UNKNOWN",
 });
 
-const ORDER_WRITE_RE = /(^|[^a-z])(buy|sell|order|open_position|place_|execute|trade|close_position|cancel)/;
-const ACCOUNT_WRITE_RE = /(deposit|withdraw|change_|set_|update_|reset_|switch_)/;
-const ACCOUNT_READ_RE = /(balance|position|account|portfolio|history|statement)/;
+const ORDER_WRITE_RE = /^(place_|buy|sell|close_|cancel_|rollover_|change_)/;
+const ACCOUNT_WRITE_RE = /^(set_|update_|reset_|switch_|deposit|withdraw)/;
+const READ_RE = /^(get_|list_|search_|fetch_|read_|calculate_|report_)/;
+const ACCOUNT_READ_RE = /(balance|position|order|history|account|portfolio|statement)/;
 
 /**
- * Classify an MCP tool by name+description. Unknown names are UNKNOWN and
- * must never be auto-executed.
+ * Classify an MCP tool by its NAME (descriptions mention other tools and would
+ * produce false positives). Unknown names are UNKNOWN and never auto-executed.
  */
 export function classifyTool(tool = {}) {
-  const hay = `${String(tool.name || "").toLowerCase()} ${String(tool.description || "").toLowerCase()}`;
-  if (ORDER_WRITE_RE.test(hay)) return RISK.ORDER_WRITE;
-  if (ACCOUNT_WRITE_RE.test(hay)) return RISK.ACCOUNT_WRITE;
-  if (ACCOUNT_READ_RE.test(hay)) return RISK.ACCOUNT_READ;
-  return RISK.SAFE_READ;
+  const name = String(tool.name || "").toLowerCase().trim();
+  if (ORDER_WRITE_RE.test(name)) return RISK.ORDER_WRITE;
+  if (ACCOUNT_WRITE_RE.test(name)) return RISK.ACCOUNT_WRITE;
+  if (READ_RE.test(name)) return ACCOUNT_READ_RE.test(name) ? RISK.ACCOUNT_READ : RISK.SAFE_READ;
+  return RISK.UNKNOWN;
 }
 
 const READ_ONLY_METHODS = new Set([
@@ -69,6 +70,21 @@ export function assertReadOnlyMethod(method) {
   if (!READ_ONLY_METHODS.has(String(method))) {
     throw new Error(`MCP_READ_ONLY_VIOLATION: ${method} is not allowed during discovery`);
   }
+  return true;
+}
+
+const READ_PROBE_METHODS = new Set([...READ_ONLY_METHODS, "tools/call"]);
+
+/**
+ * Read-probe gate: permits `tools/call` as a transport method, but the caller
+ * MUST additionally pass the tool-level gate (`assertToolAllowed`). Write and
+ * unknown tools remain blocked at the tool layer.
+ */
+export function assertReadProbeMethod(method, toolName, risk, allowlist = []) {
+  if (!READ_PROBE_METHODS.has(String(method))) {
+    throw new Error(`MCP_READ_ONLY_VIOLATION: ${method} is not allowed in read probe`);
+  }
+  if (method === "tools/call") assertToolAllowed(toolName, risk, allowlist);
   return true;
 }
 
