@@ -33,6 +33,7 @@ import { ApprenticeDesk } from "./apprentice.mjs";
 import { ExternalFeedSync } from "./external-feeds.mjs";
 import { ENTRY_TIMING_VERSION, DEFAULT_ENTRY_LEAD_MS, DEFAULT_MAX_DRIFT_MS, MIN_ENTRY_LEAD_MS, MAX_ENTRY_LEAD_MS, nextEntryWindow, dynamicEntryLeadMs, compareCandidateSnapshots, comparableSnapshot, makeCandidate, revalidateCandidate, EntryTimingExperiment } from "./entry-timing.mjs";
 import { TRADE_QUALITY_VERSION, ARM_IDS, DEFAULT_MIN_TRADE_QUALITY_SCORE, MIN_TRADE_QUALITY_SCORE_LIMIT, MAX_TRADE_QUALITY_SCORE_LIMIT, evaluateShadowArms, featuresFromSnapshot, performanceHealth, BREAK_EVEN_WR, scoreTradeQuality, entryLocationCheck, finalMicrostructureVeto } from "./trade-quality.mjs";
+import { ShadowLab, decisionSourceOf, PROSPECTIVE_CHECKPOINT_N } from "./shadow-lab.mjs";
 import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, DEFAULT_GLOBAL_MAX_STAKE, concentrationExposure } from "./market-universe.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
@@ -93,6 +94,8 @@ export class IqMultiRuntime extends EventEmitter {
     this.apprentice = new ApprenticeDesk({ now, onEvent: (type, payload) => { this.#emitEvent(type, payload); const ctx = this.markets.get(payload?.marketKey); if (ctx) this.#auditRecord(`appr_${payload?.lessonId ?? payload?.to ?? this.now()}`, payload.marketKey, type === "apprentice.promotion" ? "APPRENTICE_PROMOTION" : "APPRENTICE_LESSON", payload, { persist: true }); this.#safe(() => this.log("IQ_MULTI_APPRENTICE", JSON.stringify({ type, ...payload }))); } });
     this.feeds = new ExternalFeedSync({ universe: UNIVERSE, log: this.log, apply: (kind, items) => this.#applyExternalItems(kind, items) });
     this.jit = new EntryTimingExperiment({ now });
+    // PROSPECTIVE SHADOW LAB: observacao/contrafactual de pesquisa. NUNCA controla execucao.
+    this.shadowLab = new ShadowLab({ pool, now, log: this.log });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -595,6 +598,8 @@ export class IqMultiRuntime extends EventEmitter {
       this.research.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, payout: ctx.payout, atMs: now });
       this.ab.settle({ marketKey: ctx.marketKey, candles: list, index: list.length - 1 });
       this.jit.settle({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      // SHADOW LAB: settle causal (mesma regra do #causalSettlement) das oportunidades NAO executadas.
+      void this.shadowLab.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
@@ -787,18 +792,40 @@ export class IqMultiRuntime extends EventEmitter {
     candidate.microVeto = microVeto;
     this.#emitEvent("shadow.arms", { marketKey: ctx.marketKey, candidateId: candidate.id, arms: Object.fromEntries(Object.entries(shadowArms).map(([arm, value]) => [arm, value.decision])), qualityScore: quality.score });
     this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "SHADOW_ARMS", { candidateId: candidate.id, arms: shadowArms, qualityScore: quality.score, minTradeQualityScore: this.config.minTradeQualityScore, entryLocation: location, microVeto }, { persist: true });
+    // PROSPECTIVE SHADOW LAB: registra T0/H1/H2/H3/degradacao/contrafactual da oportunidade. Observacional puro.
+    const qualityThreshold = this.#minTradeQualityScore();
+    const gateAccepted = this.config.qualityGateEnabled !== true || (location.ok && !microVeto.veto && quality.score >= qualityThreshold);
+    const gateReason = gateAccepted ? (this.config.qualityGateEnabled !== true ? "QUALITY_GATE_DISABLED" : null)
+      : !location.ok ? "VALID_SETUP_BUT_BAD_ENTRY_PRICE" : microVeto.veto ? `MICROSTRUCTURE_${microVeto.reason}` : "QUALITY_SCORE_BELOW_THRESHOLD";
+    const jitFull = this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
+    const observation = this.shadowLab.observeCandidate({
+      marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, agentId: this.#agentId(ctx),
+      candidateId: candidate.id, correlationId: correlationId ?? candidate.id, decisionSource: "G2_AUTO",
+      candidateAt: candidate.createdAt, decisionAt: now, jitAt: now, sendAt: now, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt,
+      payout: ctx.payout, candidateSnapshot: candidate.initialFull ?? {}, jitSnapshot: jitFull,
+      candidatePrice: candidate.initialFull?.price ?? candidate.initial?.price ?? null, jitPrice: jitFull?.price ?? null, actualEntryPrice: ctx.lastCandle?.close ?? null,
+      direction: candidate.action, atr: qualityFeatures.atr, quality, location, microVeto, revalidation,
+      qualityTiming, candidateTiming: shadowTiming, threshold: qualityThreshold, candles: this.#candleList(ctx),
+      currentExecution: "PENDING", currentExecutionReason: null, gateAccepted, gateReason,
+    });
     if (this.config.qualityGateEnabled === true) {
-      if (!location.ok) { this.#cancelCandidate(ctx, "VALID_SETUP_BUT_BAD_ENTRY_PRICE", { reasons: location.reasons, score: quality.score }); return; }
-      if (microVeto.veto) { this.#cancelCandidate(ctx, `MICROSTRUCTURE_${microVeto.reason}`, microVeto.detail ?? {}); return; }
-      if (quality.score < this.#minTradeQualityScore()) { this.#cancelCandidate(ctx, "QUALITY_SCORE_BELOW_THRESHOLD", { score: quality.score, threshold: this.#minTradeQualityScore(), failedChecks: quality.checks.filter((check) => !check.ok).map((check) => check.id) }); return; }
+      if (!location.ok) { this.shadowLab.markExecution({ observationId: observation?.id ?? null, candidateId: candidate.id, currentExecution: "REJECT", reason: "VALID_SETUP_BUT_BAD_ENTRY_PRICE" }); this.#cancelCandidate(ctx, "VALID_SETUP_BUT_BAD_ENTRY_PRICE", { reasons: location.reasons, score: quality.score }); return; }
+      if (microVeto.veto) { this.shadowLab.markExecution({ observationId: observation?.id ?? null, candidateId: candidate.id, currentExecution: "REJECT", reason: `MICROSTRUCTURE_${microVeto.reason}` }); this.#cancelCandidate(ctx, `MICROSTRUCTURE_${microVeto.reason}`, microVeto.detail ?? {}); return; }
+      if (quality.score < this.#minTradeQualityScore()) { this.shadowLab.markExecution({ observationId: observation?.id ?? null, candidateId: candidate.id, currentExecution: "REJECT", reason: "QUALITY_SCORE_BELOW_THRESHOLD" }); this.#cancelCandidate(ctx, "QUALITY_SCORE_BELOW_THRESHOLD", { score: quality.score, threshold: this.#minTradeQualityScore(), failedChecks: quality.checks.filter((check) => !check.ok).map((check) => check.id) }); return; }
     }
     const entryTiming = {
       candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, targetExpirySec: Math.round(candidate.targetExpiryAt / 1000),
       submitAt: candidate.submitAt, entryLeadMs: candidate.entryLeadMs, revalidatedAt: now, candidateChangedBeforeEntry: candidate.changes.changed, changedFields: candidate.changes.changes,
-      initialSnapshot: candidate.initialFull, revalidationChecks: revalidation.checks, shadowArms, candidatePrice: candidate.initialFull?.price ?? null,
+      initialSnapshot: candidate.initialFull, t0Snapshot: candidate.initialFull, shadowObservationId: observation?.id ?? null,
+      revalidationChecks: revalidation.checks, shadowArms, candidatePrice: candidate.initialFull?.price ?? null,
       qualityScore: candidate.quality?.score ?? null, qualityChecks: candidate.quality?.checks ?? null, entryLocation: candidate.entryLocation ?? null, microVeto: candidate.microVeto ?? null,
     };
     const record = await this.#handleSignal(ctx, action, trader, this.#candleList(ctx), entryTiming);
+    this.shadowLab.markExecution({
+      observationId: observation?.id ?? null, candidateId: candidate.id, executionId: record?.executionId ?? null,
+      currentExecution: record?.disposition === "EXECUTED" ? "EXECUTE" : "REJECT",
+      reason: record?.disposition === "EXECUTED" ? null : (record?.disposition === "DUPLICATE" ? "CANDIDATE_DUPLICATE" : (record?.reason ?? "BLOCKED")),
+    });
     if (record?.disposition === "EXECUTED") { candidate.status = "ORDER_SENT"; this.#setAgent(ctx, "IN_POSITION", "ORDER_SENT"); }
     else if (record?.disposition === "DUPLICATE") { candidate.status = "DUPLICATE"; this.#commitCandidate(ctx, "CANDIDATE_DUPLICATE", { signalId: record?.id ?? null }); }
     else { candidate.status = "GATE_BLOCKED"; this.#cancelCandidate(ctx, `ORDER_${record?.reason ?? "BLOCKED"}`, { signalId: record?.id ?? null, reason: record?.reason ?? null }); }
@@ -1188,6 +1215,20 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
+  /** PROSPECTIVE SHADOW LAB (pesquisa): BROKER_EXECUTED / COUNTERFACTUAL / HISTORICAL / PROSPECTIVE separados. */
+  shadowLabStatus() {
+    const executedTrades = this.journal.trades.map((trade) => ({
+      tradeId: trade.tradeId ?? null, marketKey: trade.marketKey ?? null, result: trade.result ?? null,
+      pnl: trade.profit ?? trade.pnl ?? null, stake: trade.stake ?? null, payout: trade.payout ?? null, direction: trade.direction ?? null,
+      decisionSource: trade.snapshot?.decisionSource ?? null,
+    }));
+    return {
+      ...this.shadowLab.status({ executedTrades }),
+      checkpointN: PROSPECTIVE_CHECKPOINT_N,
+      note: "SHADOW_ONLY; GATE_CORRECTED_SHADOW/H1/H2/H3/degradacao/contrafactual nunca entram no PnL do broker.",
+    };
+  }
+
   /** SHADOW (Fase 6.3): estatisticas por braco de qualidade; nunca altera decisoes. */
   qualityStatus() {
     const trades = this.journal.trades.filter((trade) => trade.entryTiming?.shadowArms && (trade.result === "WIN" || trade.result === "LOSS" || trade.result === "DRAW"));
@@ -1329,7 +1370,7 @@ export class IqMultiRuntime extends EventEmitter {
       entryPrice, requestedAt: this.now(), connectionId: this.connection?.connectionId ?? null, autoDisarmAfterAck: autoDisarmAfterAck === true, source, ackResolved: false, settling: false,
       correlationId: ctx.agents?.correlationId ?? `corr_exec_${record.executionId}`,
       infraProbe: infraProbe === true,
-      entryTiming: entryTiming ? { candidateId: entryTiming.candidateId, targetEntryAt: entryTiming.targetEntryAt, targetExpiryAt: entryTiming.targetExpiryAt, targetExpirySec: Number(entryTiming.targetExpirySec ?? Math.round(entryTiming.targetExpiryAt / 1000)), submitAt: entryTiming.submitAt, submitAtMs, entryLeadMs: entryTiming.entryLeadMs, revalidatedAt: entryTiming.revalidatedAt, candidateChangedBeforeEntry: entryTiming.candidateChangedBeforeEntry === true, shadowArms: entryTiming.shadowArms ?? null, directionChanges: (entryTiming.changedFields ?? []).filter((change) => change.field === "action").length } : null,
+      entryTiming: entryTiming ? { candidateId: entryTiming.candidateId, targetEntryAt: entryTiming.targetEntryAt, targetExpiryAt: entryTiming.targetExpiryAt, targetExpirySec: Number(entryTiming.targetExpirySec ?? Math.round(entryTiming.targetExpiryAt / 1000)), submitAt: entryTiming.submitAt, submitAtMs, entryLeadMs: entryTiming.entryLeadMs, revalidatedAt: entryTiming.revalidatedAt, candidateChangedBeforeEntry: entryTiming.candidateChangedBeforeEntry === true, shadowArms: entryTiming.shadowArms ?? null, t0Snapshot: entryTiming.t0Snapshot ?? entryTiming.initialSnapshot ?? null, shadowObservationId: entryTiming.shadowObservationId ?? null, directionChanges: (entryTiming.changedFields ?? []).filter((change) => change.field === "action").length } : null,
     };
     this.#auditRecord(pending.correlationId, key, "ORDER_SENT", { executionId: record.executionId, direction: directionWire, stake: finalStake, requestedStake: resolvedStake.requestedStake, stakeSource: resolvedStake.source, mode, source, expiration: expiration.expiration, optionKind: expiration.optionKind, candidateId: entryTiming?.candidateId ?? null, targetEntryAt: entryTiming?.targetEntryAt ?? null, submitAtMs, entryLeadMs: entryTiming?.entryLeadMs ?? null }, { persist: true });
     const ackPromise = new Promise((resolve) => { pending.ackResolve = resolve; });
@@ -1363,15 +1404,24 @@ export class IqMultiRuntime extends EventEmitter {
     return { duplicate: false, marketKey: key, executionId: record.executionId, idempotencyKey: requestedKey, requestId: requestedKey, mode, ...outcome };
   }
 
-  /** Snapshot t0 (decisionSnapshot) capturado no ACK: prova auditavel do que o Brain viu na decisao. */
+  /**
+   * Snapshot t0 (decisionSnapshot) capturado no ACK: prova auditavel do que o Brain viu na decisao.
+   * D3: `action` e SEMPRE a decisao do Brain (nunca a direcao da ordem manual); a direcao pedida
+   * pela ordem fica em `manualRequestedDirection`/`executedDirection` e a origem em `decisionSource`.
+   */
   #decisionSnapshot(ctx, pending = {}) {
     const trader = ctx.agents?.trader ?? null;
     const critic = ctx.agents?.critic ?? null;
+    const orderDirection = pending.direction === "CALL" ? "BUY" : pending.direction === "PUT" ? "SELL" : null;
+    const decisionSource = decisionSourceOf({ source: pending.source ?? null, setup: ctx.decisionState?.setup ?? null, infraProbe: pending.infraProbe === true });
+    const brainDecision = ctx.decisionState?.action ?? trader?.action ?? null;
+    const manualRequestedDirection = decisionSource === "MANUAL_UI" || decisionSource === "TEST" ? orderDirection : null;
     return {
       source: "T0_DECISION_SNAPSHOT",
+      decisionSource, brainDecision, manualRequestedDirection, executedDirection: orderDirection,
       marketKey: ctx.marketKey, marketType: ctx.marketType, capturedAt: this.now(),
       decisionAt: ctx.decisionState?.evaluatedAt ?? null, decisionId: pending.decisionId ?? null, correlationId: pending.correlationId ?? ctx.agents?.correlationId ?? null,
-      action: pending.direction === "CALL" ? "BUY" : pending.direction === "PUT" ? "SELL" : (trader?.action ?? null),
+      action: brainDecision,
       regime: ctx.decisionState?.regime ?? null, setup: ctx.decisionState?.setup ?? null, trigger: ctx.decisionState?.trigger ?? null,
       waitReason: ctx.decisionState?.waitReason ?? null, confidence: ctx.decisionState?.confidence ?? null,
       structure: trader?.structure ?? null, location: trader?.location ?? null, momentum: trader?.momentum ?? null, strength: trader?.strength ?? null,
@@ -1429,8 +1479,10 @@ export class IqMultiRuntime extends EventEmitter {
         if (ctx.lastCandidate?.id === entryTimingAck.candidateId) { ctx.lastCandidate.entryDriftMs = entryTimingAck.entryDriftMs; }
       }
     }
-    const position = { marketKey: pending.marketKey, mode: pending.mode, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, expirationSec: pending.expirationSec, openedAt: ackedAt, executionId: pending.executionId, source, connectionId: pending.connectionId, correlationId: pending.correlationId ?? null, infraProbe: pending.infraProbe === true, entryTiming: entryTimingAck, decisionSnapshot: ctx ? { ...this.#decisionSnapshot(ctx, pending), entryTiming: entryTimingAck } : null };
+    const position = { marketKey: pending.marketKey, mode: pending.mode, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, expirationSec: pending.expirationSec, openedAt: ackedAt, executionId: pending.executionId, source, connectionId: pending.connectionId, correlationId: pending.correlationId ?? null, infraProbe: pending.infraProbe === true, t0Snapshot: pending.t0Snapshot ?? entryTimingAck?.t0Snapshot ?? null, entryTiming: entryTimingAck, decisionSnapshot: ctx ? { ...this.#decisionSnapshot(ctx, pending), entryTiming: entryTimingAck } : null };
     this.openPositions.set(pending.marketKey, position);
+    // SHADOW LAB (observacional): completa H1/H2 com o preco de entrada efetivo do runtime.
+    if (entryTimingAck?.candidateId) this.shadowLab.markEntry({ observationId: entryTimingAck.shadowObservationId ?? null, candidateId: entryTimingAck.candidateId, executionId: pending.executionId, actualEntryPrice: pending.entryPrice, entryAt: ackedAt });
     this.orderIndex.set(String(brokerOrderId), pending.marketKey);
     this.pendingOrders.delete(pending.marketKey);
     await this.#persistExecution({ executionId: pending.executionId, brokerOrderId, state: "ACKNOWLEDGED", ackedAt: nowIso(ackedAt), error: null, meta: entryTimingAck ? { effectiveEntryAt: ackedAt, entryDriftMs: entryTimingAck.entryDriftMs, ackMs } : { ackMs } });
@@ -1449,6 +1501,7 @@ export class IqMultiRuntime extends EventEmitter {
   async #failPending(pending, state, reason) {
     if (pending.ackResolved) return;
     pending.ackResolved = true;
+    if (pending.entryTiming?.candidateId) this.shadowLab.markExecution({ observationId: pending.entryTiming.shadowObservationId ?? null, candidateId: pending.entryTiming.candidateId, executionId: pending.executionId, currentExecution: "REJECT", reason: String(reason ?? state).slice(0, 80) });
     this.pendingOrders.delete(pending.marketKey);
     const ctx = this.markets.get(pending.marketKey);
     if (ctx) { ctx.positionState = { ...ctx.positionState, status: state }; this.#setAgent(ctx, state === "REJECTED" ? "ERROR" : state, String(reason).slice(0, 80)); }
@@ -1493,7 +1546,7 @@ export class IqMultiRuntime extends EventEmitter {
     const snapshot = position.decisionSnapshot ?? { source: "SETTLEMENT_FALLBACK", marketKey: key, regime: ctx.decisionState?.regime ?? null, setup: ctx.decisionState?.setup ?? null, action: position.action ?? null, trigger: ctx.decisionState?.trigger ?? null, location: ctx.decisionState?.location ?? null, momentum: ctx.decisionState?.momentum ?? null, strength: ctx.decisionState?.strength ?? null, volatility: ctx.decisionState?.volatility ?? null, contradictingEvidence: ctx.decisionState?.contradictingEvidence ?? [], supportingEvidence: ctx.decisionState?.supportingEvidence ?? [], processLog: ctx.decisionState?.processLog ?? [], knowledgeContextIds: ctx.decisionState?.knowledge?.ids ?? [], knowledgeVersion: ctx.decisionState?.knowledge?.version ?? null, critic: ctx.decisionState?.consensus ?? null };
     if (position.infraProbe === true) { this.#auditRecord(position.correlationId ?? `probe_${position.executionId}`, key, "INFRA_PROBE_SETTLED", { brokerOrderId, result: broker.result, profit: broker.profit, excludedFromStats: true }, { persist: true }); this.#safe(() => this.log("IQ_INFRA_PROBE_SETTLED", JSON.stringify({ marketKey: key, brokerOrderId, result: broker.result }))); return; }
     const review = reviewTrade({ snapshot, outcome: broker.result, result: broker.result });
-    const initialSnapshot = position.entryTiming?.initialSnapshot ?? null;
+    const initialSnapshot = position.t0Snapshot ?? position.entryTiming?.t0Snapshot ?? position.entryTiming?.initialSnapshot ?? null;
     const initialReview = initialSnapshot ? reviewTrade({ snapshot: initialSnapshot, outcome: broker.result, result: broker.result }) : null;
     const reviewWithTiming = initialReview
       ? { ...review, initialDecisionQuality: initialReview.decisionQuality, finalDecisionQuality: review.decisionQuality, entryTiming: { candidateChangedBeforeEntry: position.entryTiming?.candidateChangedBeforeEntry === true, entryLeadMs: position.entryTiming?.entryLeadMs ?? null, entryDriftMs: position.entryTiming?.entryDriftMs ?? null } }
@@ -1502,6 +1555,14 @@ export class IqMultiRuntime extends EventEmitter {
     this.#emitEvent("professor.review", { marketKey: key, correlationId: position.correlationId ?? null, decisionQuality: review.decisionQuality, outcome: review.outcome, mistakes: review.mistakes.map((mistake) => mistake.code), wouldWaitBeBetter: review.wouldWaitBeBetter });
     this.#auditRecord(position.correlationId ?? `corr${position.executionId}`, key, "PROFESSOR_REVIEW", { decisionQuality: review.decisionQuality, outcome: review.outcome, mistakes: review.mistakes.map((mistake) => mistake.code), wouldWaitBeBetter: review.wouldWaitBeBetter }, { persist: true });
     void this.journal.recordTrade({ tradeId: position.executionId, decisionId: ctx.decisionState?.decisionId ?? null, correlationId: position.correlationId ?? null, agentId: this.#agentId(ctx), marketKey: key, marketType: ctx.marketType, entryAt: position.openedAt ?? null, settlementAt: settledAt, payout: ctx.payout, stake: position.stake, direction: position.direction, result: broker.result, profit: broker.profit, snapshot, review: reviewWithTiming, initialReview, initialSnapshot, entryTiming: position.entryTiming ?? null, intelligence: ctx.agents?.intelligenceContext ?? null });
+    // SHADOW LAB (observacional): settlement BROKER_EXECUTED + janela POST diagnostic_only. Nunca entra no P&L do broker.
+    void this.shadowLab.settleExecuted({
+      observationId: position.entryTiming?.shadowObservationId ?? null,
+      candidateId: position.entryTiming?.candidateId ?? null, executionId: position.executionId, tradeId: position.executionId,
+      brokerResult: broker.result, profit: broker.profit, stake: position.stake, payout: ctx.payout,
+      settlementAt: settledAt, entryAt: position.openedAt ?? null, entryPrice: position.entryPrice ?? null, settlementPrice: settlement.detail?.settlement ?? null,
+      candles: this.#candleList(ctx), decisionSource: decisionSourceOf({ source: position.source, infraProbe: position.infraProbe === true }), marketKey: key,
+    });
     void this.#runSupervisorCheck(ctx);
     this.#safe(() => this.log("IQ_MULTI_ORDER_SETTLED", JSON.stringify({ marketKey: key, brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit })));
     if (comparison.mismatch) this.#safe(() => this.log("IQ_MULTI_SETTLEMENT_MISMATCH", JSON.stringify({ marketKey: key, executionId: position.executionId, broker: broker.result, causal: settlement.result })));

@@ -66,6 +66,7 @@ export class TradingJournal {
     this.agentStats = new Map(); // agentId -> stats
     this.daily = new Map(); // YYYY-MM-DD -> stats
     this.dbReady = null;
+    this.journalDecisionSourceColumn = null;
   }
 
   #agent(agentId) { if (!this.agentStats.has(agentId)) this.agentStats.set(agentId, emptyStats()); return this.agentStats.get(agentId); }
@@ -91,6 +92,9 @@ export class TradingJournal {
       setup: entry.snapshot?.setup ?? null, trigger: entry.snapshot?.trigger ?? null,
       supportingEvidence: entry.snapshot?.supportingEvidence ?? [], contradictingEvidence: entry.snapshot?.contradictingEvidence ?? [],
       traderDecision: entry.snapshot?.action ?? null, criticDecision: entry.snapshot?.critic ?? null, consensus: entry.snapshot?.consensus ?? null,
+      decisionSource: entry.snapshot?.decisionSource ?? entry.decisionSource ?? null,
+      brainDecision: entry.snapshot?.brainDecision ?? entry.snapshot?.action ?? null,
+      manualRequestedDirection: entry.snapshot?.manualRequestedDirection ?? null,
       intelligence: entry.intelligence ?? null, knowledgeContextIds: entry.snapshot?.knowledgeContextIds ?? [], knowledgeVersion: entry.snapshot?.knowledgeVersion ?? null,
       outcome: entry.result ?? "UNKNOWN", decisionQuality: entry.review?.decisionQuality ?? "UNKNOWN", review: entry.review ?? null,
       snapshot: entry.snapshot ?? null, snapshotSource: entry.snapshot?.source ?? "SETTLEMENT_FALLBACK",
@@ -118,10 +122,23 @@ export class TradingJournal {
       if (!this.pool) return false;
       if (this.dbReady === null) { const result = await this.pool.query("SELECT to_regclass('public.iq_trade_journal') AS table_name"); this.dbReady = Boolean(result.rows[0]?.table_name); }
       if (!this.dbReady) return false;
-      await this.pool.query(
-        "INSERT INTO iq_trade_journal(trade_id,decision_id,correlation_id,agent_id,market_key,market_type,entry_at,settlement_at,payout,stake,direction,result,regime,structure,location,setup,trigger,trader_decision,critic_decision,consensus,outcome,decision_quality,payload,created_at) VALUES($1,$2,$3,$4,$5,$6,to_timestamp($7/1000.0),to_timestamp($8/1000.0),$9,$10,$11,$12,$13,$14,$15,$16,$17,$18::jsonb,$19::jsonb,$20::jsonb,$21,$22,$23::jsonb,now()) ON CONFLICT(trade_id) DO NOTHING",
-        [record.tradeId ?? `journal_${record.settlementAt}_${record.marketKey}`, record.decisionId, record.correlationId, record.agentId, record.marketKey, record.marketType, record.entryAt ?? record.settlementAt, record.settlementAt, record.payout, record.stake, record.direction, record.result, record.regime, record.structure, record.location, record.setup, record.trigger, JSON.stringify(record.traderDecision), JSON.stringify(record.criticDecision), JSON.stringify(record.consensus), record.outcome, record.decisionQuality, JSON.stringify(record)],
-      );
+      const baseColumns = "trade_id,decision_id,correlation_id,agent_id,market_key,market_type,entry_at,settlement_at,payout,stake,direction,result,regime,structure,location,setup,trigger,trader_decision,critic_decision,consensus,outcome,decision_quality,payload,created_at";
+      const baseValues = "VALUES($1,$2,$3,$4,$5,$6,to_timestamp($7/1000.0),to_timestamp($8/1000.0),$9,$10,$11,$12,$13,$14,$15,$16,$17,$18::jsonb,$19::jsonb,$20::jsonb,$21,$22,$23::jsonb,now())";
+      const baseParams = [record.tradeId ?? `journal_${record.settlementAt}_${record.marketKey}`, record.decisionId, record.correlationId, record.agentId, record.marketKey, record.marketType, record.entryAt ?? record.settlementAt, record.settlementAt, record.payout, record.stake, record.direction, record.result, record.regime, record.structure, record.location, record.setup, record.trigger, JSON.stringify(record.traderDecision), JSON.stringify(record.criticDecision), JSON.stringify(record.consensus), record.outcome, record.decisionQuality, JSON.stringify(record)];
+      if (this.journalDecisionSourceColumn !== false) {
+        try {
+          await this.pool.query(
+            `INSERT INTO iq_trade_journal(${baseColumns},decision_source,brain_decision,manual_requested_direction) VALUES($1,$2,$3,$4,$5,$6,to_timestamp($7/1000.0),to_timestamp($8/1000.0),$9,$10,$11,$12,$13,$14,$15,$16,$17,$18::jsonb,$19::jsonb,$20::jsonb,$21,$22,$23::jsonb,now(),$24,$25,$26) ON CONFLICT(trade_id) DO NOTHING`,
+            [...baseParams, record.decisionSource, record.brainDecision, record.manualRequestedDirection],
+          );
+          this.journalDecisionSourceColumn = true;
+          return true;
+        } catch (error) {
+          if (String(error?.code) !== "42703") throw error;
+          this.journalDecisionSourceColumn = false;
+        }
+      }
+      await this.pool.query(`INSERT INTO iq_trade_journal(${baseColumns}) ${baseValues} ON CONFLICT(trade_id) DO NOTHING`, baseParams);
       return true;
     } catch (error) { this.log("IQ_JOURNAL_PERSIST_FAILED", String(error?.message ?? error).slice(0, 120)); return false; }
   }

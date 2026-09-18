@@ -237,6 +237,18 @@ async function retainIdTable(client, { table, column, hours, nowMs, archiveDir, 
   return result;
 }
 
+/** Non-critical diagnostic windows (PRE/POST SHADOW LAB): plain row retention, no archive needed. */
+async function retainMarketWindows(client, { hours, nowMs, dryRun }) {
+  const cutoff = cutoffMs(nowMs, hours);
+  const tableExists = Number((await client.query(`select count(*)::int n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname='iq_trade_market_windows'`)).rows[0].n) > 0;
+  if (!tableExists) return { table: "iq_trade_market_windows", cutoff: new Date(cutoff).toISOString(), candidates: 0, deleted: 0, skipped: "TABLE_ABSENT" };
+  const total = Number((await client.query(`select count(*)::int n from public.iq_trade_market_windows where created_at < to_timestamp(${cutoff / 1000})`)).rows[0].n);
+  if (total === 0) return { table: "iq_trade_market_windows", cutoff: new Date(cutoff).toISOString(), candidates: 0, deleted: 0 };
+  if (dryRun) return { table: "iq_trade_market_windows", cutoff: new Date(cutoff).toISOString(), candidates: total, deleted: total };
+  const del = await client.query(`delete from public.iq_trade_market_windows where created_at < to_timestamp(${cutoff / 1000})`);
+  return { table: "iq_trade_market_windows", cutoff: new Date(cutoff).toISOString(), candidates: total, deleted: del.rowCount ?? 0 };
+}
+
 /** @param {import('pg').Client} client */
 async function purgeNonces(client, { nowMs, graceHours, dryRun }) {
   const cutoff = cutoffMs(nowMs, graceHours);
@@ -318,6 +330,7 @@ export async function runRetention(cfg) {
     eventsHours: Number(env.EVENTS_RETENTION_HOURS ?? 48),
     logsHours: Number(env.ACCESS_LOGS_RETENTION_HOURS ?? 48),
     nonceGraceHours: Number(env.NONCE_GRACE_HOURS ?? 24),
+    marketWindowHours: Number(env.MARKET_WINDOW_RETENTION_HOURS ?? 168),
     partitionDaysAhead: Number(env.RETENTION_PARTITION_DAYS_AHEAD ?? 7),
     archiveNonCritical: env.RETENTION_ARCHIVE_NON_CRITICAL === "1",
     vacuumFull: env.RETENTION_VACUUM_FULL === "1",
@@ -326,16 +339,17 @@ export async function runRetention(cfg) {
   const client = new pg.Client({ connectionString: cfg.databaseUrl, ssl: { rejectUnauthorized: false } });
   await client.connect();
   await client.query("set statement_timeout=0; set default_transaction_read_only=off; set work_mem='64MB'; set max_parallel_workers_per_gather=0");
-  const summary = { at: new Date(nowMs).toISOString(), dryRun, opts, ensurePartitions: null, audit: null, frames: null, events: null, accessLogs: null, nonces: null, vacuum: [] };
+  const summary = { at: new Date(nowMs).toISOString(), dryRun, opts, ensurePartitions: null, audit: null, frames: null, events: null, accessLogs: null, nonces: null, marketWindows: null, vacuum: [] };
   try {
     summary.ensurePartitions = await ensureAuditPartitions(client, nowMs, opts.partitionDaysAhead, dryRun);
     summary.audit = await retainAuditTrail(client, { nowMs, hours: opts.auditHours, archiveDir, dryRun });
     summary.frames = await retainIdTable(client, { table: "live_frames", column: "created_at", hours: opts.framesHours, nowMs, archiveDir, dryRun, archive: true });
     summary.events = await retainIdTable(client, { table: "live_events", column: "event_timestamp", hours: opts.eventsHours, nowMs, archiveDir, dryRun, archive: opts.archiveNonCritical });
     summary.accessLogs = await retainIdTable(client, { table: "live_access_logs", column: "timestamp", hours: opts.logsHours, nowMs, archiveDir, dryRun, archive: opts.archiveNonCritical });
+    summary.marketWindows = await retainMarketWindows(client, { hours: opts.marketWindowHours, nowMs, dryRun });
     summary.nonces = await purgeNonces(client, { nowMs, graceHours: opts.nonceGraceHours, dryRun });
     if (!dryRun) {
-      const touched = ["iq_audit_trail", "live_frames", "live_events", "live_access_logs", "live_ingest_nonces"];
+      const touched = ["iq_audit_trail", "live_frames", "live_events", "live_access_logs", "live_ingest_nonces", "iq_trade_market_windows"];
       for (const table of touched) {
         try {
           if (opts.vacuumFull && !["iq_audit_trail"].includes(table)) await client.query(`vacuum (full, analyze) public.${table}`);
