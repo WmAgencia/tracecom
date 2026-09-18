@@ -2084,8 +2084,8 @@ function drawDataCenterPanel(ctx) {
 }
 
 function drawMarketsBoxes(ctx, daily) {
-  const x = 914;
-  const w = 1042 - 914;
+  const x = 906;
+  const w = 150;
   const box = (by, bh, title, rows) => {
     const panel = drawWallPanel(ctx, x, by, w, bh, { bg: "#0b1728", border: "#2a4a80" });
     drawPixelText(ctx, title, x + w / 2, by + 10, { scale: 2, align: "center", color: "#7ab0e8" });
@@ -2095,7 +2095,7 @@ function drawMarketsBoxes(ctx, daily) {
       drawPixelText(ctx, value, panel.innerX + panel.innerW, ry, { scale: 1, align: "right", color: color ?? PALETTE.white });
     });
   };
-  box(6, 140 - 6, "MERCADOS", [
+  box(6, 112, "MERCADOS", [
     ["ABERTOS", String(daily.open ?? 37), PALETTE.white],
     ["FECHADOS", String(daily.closed ?? 18), PALETTE.white],
     ["TOTAL", String(daily.total ?? 55), PALETTE.red],
@@ -2104,11 +2104,11 @@ function drawMarketsBoxes(ctx, daily) {
   ]);
   const valueBox = (by, bh, title, value) => {
     drawWallPanel(ctx, x, by, w, bh, { bg: "#0b1728", border: "#2a4a80" });
-    drawPixelText(ctx, title, x + w / 2, by + 12, { scale: 2, align: "center", color: "#7ab0e8" });
-    drawPixelText(ctx, value, x + w / 2, by + bh - 26, { scale: 2, align: "center", color: PALETTE.green });
+    drawPixelText(ctx, title, x + w / 2, by + 7, { scale: 2, align: "center", spacing: 0, color: "#7ab0e8" });
+    drawPixelText(ctx, value, x + w / 2, by + 28, { scale: 2, align: "center", spacing: 0, color: PALETTE.green });
   };
-  valueBox(146, 190 - 146, "LUCRO SEMANAL", `+R$ ${formatBRL(daily.weekly ?? 1842.3)}`);
-  valueBox(196, 240 - 196, "LUCRO MENSAL", `+R$ ${formatBRL(daily.monthly ?? 6721.55)}`);
+  valueBox(118, 50, "LUCRO SEMANAL", `+R$ ${formatBRL(daily.weekly ?? 1842.3)}`);
+  valueBox(174, 54, "LUCRO MENSAL", `+R$ ${formatBRL(daily.monthly ?? 6721.55)}`);
 }
 
 function drawWorldMapPanel(ctx) {
