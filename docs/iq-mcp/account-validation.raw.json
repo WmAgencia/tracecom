@@ -1,0 +1,283 @@
+{
+  "generatedAt": "2026-09-18T01:30:06.891Z",
+  "authenticated": true,
+  "allowlist": [
+    "get_capabilities",
+    "get_limits",
+    "list_balances",
+    "list_positions"
+  ],
+  "servers": {
+    "binary": {
+      "base": "https://binary-options.mcp.iqoption.com",
+      "results": {
+        "get_capabilities": {
+          "mode": "read-write",
+          "product": "binary-options"
+        },
+        "get_limits": {
+          "buckets": [
+            {
+              "bucket": "gateway",
+              "limit": 200,
+              "window_seconds": 60
+            },
+            {
+              "bucket": "read",
+              "limit": 60,
+              "window_seconds": 60
+            },
+            {
+              "bucket": "write",
+              "limit": 10,
+              "window_seconds": 60
+            }
+          ],
+          "product": "binary-options",
+          "scope": "per-user",
+          "tools": {
+            "get_candles": "read",
+            "get_capabilities": "read",
+            "get_limits": "read",
+            "get_trade_history": "read",
+            "list_assets": "read",
+            "list_balances": "read",
+            "list_positions": "read",
+            "place_trade": "write",
+            "rollover_position": "write",
+            "sell_position": "write"
+          }
+        },
+        "list_balances": {
+          "balances": [
+            {
+              "amount": 0,
+              "balance_id": 1250741746,
+              "bonus_amount": 0,
+              "currency": "BRL",
+              "type": "regular"
+            },
+            {
+              "amount": 60,
+              "balance_id": 1250741747,
+              "bonus_amount": 0,
+              "currency": "USD",
+              "type": "training"
+            }
+          ]
+        }
+      },
+      "latencyMs": {
+        "initialize": 731,
+        "get_capabilities": 629,
+        "get_limits": 214,
+        "list_balances": 217,
+        "list_positions:1250741746": 391,
+        "list_positions:1250741747": 372
+      },
+      "errors": {
+        "list_positions": {}
+      },
+      "readStartedAt": "2026-09-18T01:30:06.893Z",
+      "readFinishedAt": "2026-09-18T01:30:09.647Z",
+      "positions": {
+        "1250741746": {
+          "positions": []
+        },
+        "1250741747": {
+          "positions": []
+        }
+      }
+    },
+    "turbo": {
+      "base": "https://turbo-options.mcp.iqoption.com",
+      "results": {
+        "get_capabilities": {
+          "mode": "read-write",
+          "product": "turbo-options"
+        },
+        "get_limits": {
+          "buckets": [
+            {
+              "bucket": "gateway",
+              "limit": 200,
+              "window_seconds": 60
+            },
+            {
+              "bucket": "read",
+              "limit": 60,
+              "window_seconds": 60
+            },
+            {
+              "bucket": "write",
+              "limit": 10,
+              "window_seconds": 60
+            }
+          ],
+          "product": "turbo-options",
+          "scope": "per-user",
+          "tools": {
+            "get_candles": "read",
+            "get_capabilities": "read",
+            "get_limits": "read",
+            "get_trade_history": "read",
+            "list_assets": "read",
+            "list_balances": "read",
+            "list_positions": "read",
+            "place_trade": "write",
+            "rollover_position": "write",
+            "sell_position": "write"
+          }
+        },
+        "list_balances": {
+          "balances": [
+            {
+              "amount": 0,
+              "balance_id": 1250741746,
+              "bonus_amount": 0,
+              "currency": "BRL",
+              "type": "regular"
+            },
+            {
+              "amount": 60,
+              "balance_id": 1250741747,
+              "bonus_amount": 0,
+              "currency": "USD",
+              "type": "training"
+            }
+          ]
+        }
+      },
+      "latencyMs": {
+        "initialize": 602,
+        "get_capabilities": 592,
+        "get_limits": 203,
+        "list_balances": 204,
+        "list_positions:1250741746": 308,
+        "list_positions:1250741747": 343
+      },
+      "errors": {
+        "list_positions": {}
+      },
+      "readStartedAt": "2026-09-18T01:30:09.647Z",
+      "readFinishedAt": "2026-09-18T01:30:12.108Z",
+      "positions": {
+        "1250741746": {
+          "positions": []
+        },
+        "1250741747": {
+          "positions": []
+        }
+      }
+    }
+  },
+  "tracecom": {
+    "url": "https://tracecom.consecom.com.br/api/iq/office",
+    "http": 200,
+    "latencyMs": 494,
+    "startedAt": "2026-09-18T01:30:12.109Z",
+    "finishedAt": "2026-09-18T01:30:12.731Z",
+    "excerpt": {
+      "version": "iq-multi-runtime-v2",
+      "at": 1789695013160,
+      "serverTime": 1789686342360,
+      "mode": "PRACTICE",
+      "modeState": {
+        "mode": "PRACTICE",
+        "practice": {
+          "verified": true,
+          "balance": 60,
+          "currency": "USD"
+        },
+        "real": {
+          "available": true,
+          "balance": 0,
+          "currency": "BRL"
+        },
+        "realMode": {
+          "realModeEnabled": false,
+          "realModeSessionId": null,
+          "confirmedAt": null,
+          "expiresAt": null,
+          "maxStake": null,
+          "realBalanceSeen": null,
+          "lastRevokeReason": "WS_DISCONNECTED",
+          "hardCap": 100,
+          "phraseRequired": "OPERAR CONTA REAL",
+          "audit": []
+        }
+      },
+      "activeCount": 37,
+      "activeLimit": 55,
+      "config": {
+        "globalMaxStake": 100,
+        "defaultStake": 100,
+        "calculatedBankrollStake": 1,
+        "hardCap": 100,
+        "maxActiveMarkets": 55,
+        "autoExecute": false,
+        "revision": 149,
+        "brainGeneration": 2,
+        "jitEnabled": true,
+        "entryLeadMs": 1500,
+        "entryWindowMaxDriftMs": 2500,
+        "qualityGateEnabled": true,
+        "minTradeQualityScore": 75
+      },
+      "stakeDistribution": {
+        "configuredStake": {
+          "100": 55
+        },
+        "maxStake": {
+          "100": 55
+        },
+        "positionStateStake": {
+          "10": 6,
+          "100": 1
+        },
+        "lastTradeStake": {
+          "10": 6,
+          "100": 1
+        }
+      },
+      "legacyAccount": {
+        "verified": true,
+        "type": "PRACTICE",
+        "currency": "USD",
+        "balance": 60,
+        "hasReal": true,
+        "checkedAt": 1789686354775,
+        "balanceFailure": null,
+        "practiceOnly": true,
+        "realExecutionForbidden": true
+      },
+      "executionGate": {
+        "state": "DISARMED",
+        "armed": false,
+        "pendingOrders": 0
+      }
+    }
+  },
+  "relayStatus": {
+    "url": "https://tracecom.consecom.com.br/api/iq/status",
+    "http": 200,
+    "startedAt": "2026-09-18T01:30:12.731Z",
+    "finishedAt": "2026-09-18T01:30:13.005Z",
+    "excerpt": {
+      "state": "CONNECTED_READ_ONLY",
+      "mode": "PRACTICE",
+      "practiceOnly": true,
+      "hasSession": true,
+      "brokerAutomation": "WS_ONLY_PRACTICE"
+    }
+  },
+  "verdict": "SAME_ACCOUNT_CONFIRMED",
+  "divergences": [],
+  "timestamps": {
+    "mcpReadStartedAt": "2026-09-18T01:30:06.893Z",
+    "mcpReadFinishedAt": "2026-09-18T01:30:12.108Z",
+    "tracecomStartedAt": "2026-09-18T01:30:12.109Z",
+    "tracecomFinishedAt": "2026-09-18T01:30:12.731Z",
+    "observedSkewMs": 623
+  }
+}
