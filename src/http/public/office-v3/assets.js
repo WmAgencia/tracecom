@@ -139,6 +139,8 @@ export const TILE_NAMES = [
 
 export const SPRITE_NAMES = [
   "wood_desk",
+  "desk_top",
+  "desk_front",
   "chair",
   "monitor",
   "computer_tower",
@@ -368,6 +370,11 @@ function tryDrawCachedTile(ctx, name, x, y, w, h, options) {
 /* Bounding boxes (relative to the sprite origin) for the cache raster. */
 const SPRITE_BOUNDS = {
   wood_desk: (o) => ({ left: 0, top: 0, right: o.w ?? 150, bottom: (o.h ?? 92) + 8 }),
+  desk_top: (o) => {
+    const depth = o.depth ?? Math.max(14, Math.round((o.h ?? 92) * 0.2));
+    return { left: 0, top: 0, right: o.w ?? 150, bottom: depth + 3 };
+  },
+  desk_front: (o) => ({ left: 0, top: 0, right: o.w ?? 150, bottom: (o.h ?? 92) + 8 }),
   research_desk: (o) => ({ left: 0, top: -26, right: o.w ?? 150, bottom: (o.h ?? 92) + 8 }),
   chair: (o) => ({ left: 0, top: 0, right: o.w ?? 26, bottom: (o.h ?? 30) + 2 }),
   monitor: (o) => ({ left: 0, top: 0, right: o.w ?? 30, bottom: o.h ?? 22 }),
@@ -696,62 +703,73 @@ function drawTileImmediate(ctx, name, x, y, w, h, options = {}) {
  * 6. FURNITURE SPRITES
  * ------------------------------------------------------------------ */
 
-function spriteWoodDesk(ctx, x, y, options = {}) {
+export function deskMetrics(options = {}) {
   const w = options.w ?? 150;
   const h = options.h ?? 92;
-  const depth = options.depth ?? Math.max(12, Math.round(h * 0.22));
-  const frontY = y + depth;
-  const frontH = h - depth;
-  const inset = options.inset ?? 8;
+  const depth = options.depth ?? Math.max(14, Math.round(h * 0.2));
+  const inset = options.inset ?? Math.max(6, Math.round(w * 0.05));
+  return { w, h, depth, inset, frontY: depth, frontH: Math.max(6, h - depth) };
+}
 
-  pxRect(ctx, x + 4, y + h, w - 8, 3, "rgba(0,0,0,0.42)");
-  pxRect(ctx, x + 16, y + h + 3, w - 32, 2, "rgba(0,0,0,0.22)");
+/** Desk TOP/back surface + isometric side faces. Drawn before the seated agents. */
+function spriteDeskTop(ctx, x, y, options = {}) {
+  const { w, depth, inset } = deskMetrics(options);
+  // side faces (darker) dropping from the far edge to the top-face front edge
+  pxPoly(ctx, [{ x: x + inset, y }, { x, y: y + depth }, { x: x + 5, y: y + depth }, { x: x + inset + 5, y }], PALETTE_V3.woodShadow);
+  pxPoly(ctx, [{ x: x + w - inset, y }, { x: x + w, y: y + depth }, { x: x + w - 5, y: y + depth }, { x: x + w - inset - 5, y }], PALETTE_V3.woodShadow);
+  // top face parallelogram
+  pxPoly(ctx, [{ x: x + inset, y }, { x: x + w - inset, y }, { x: x + w, y: y + depth }, { x, y: y + depth }], PALETTE_V3.wood);
+  // plank seams along the top face
+  for (let index = 1; index <= 2; index += 1) {
+    const fy = y + Math.round((depth * index) / 3);
+    pxLine(ctx, x + 3, fy, x + w - 3, fy, "rgba(90,58,34,0.26)");
+  }
+  // light highlight edge (far edge + left chamfer)
+  pxRect(ctx, x + inset, y, w - inset * 2, 1, PALETTE_V3.woodHi);
+  pxRect(ctx, x + inset, y, 1, depth, PALETTE_V3.woodHi);
+  pxRect(ctx, x + inset + 2, y + 1, w - inset * 2 - 4, 1, "rgba(255,214,150,0.22)");
+  return { topH: depth, frontY: y + depth };
+}
 
-  // feet
-  pxRect(ctx, x + 8, y + h - 2, 8, 6, PALETTE_V3.woodShadow);
-  pxRect(ctx, x + w - 16, y + h - 2, 8, 6, PALETTE_V3.woodShadow);
-
-  // side faces
-  pxPoly(ctx, [{ x: x + inset, y }, { x, y: frontY }, { x: x + 4, y: frontY }, { x: x + inset + 4, y }], PALETTE_V3.woodShadow);
-  pxPoly(ctx, [{ x: x + w - inset, y }, { x: x + w, y: frontY }, { x: x + w - 4, y: frontY }, { x: x + w - inset - 4, y }], PALETTE_V3.woodShadow);
-
+/** Desk FRONT face + plaque + legs + contact shadow. Drawn AFTER agents to occlude them. */
+function spriteDeskFront(ctx, x, y, options = {}) {
+  const { w, h, depth, frontY, frontH } = deskMetrics(options);
+  // ground contact shadow
+  pxRect(ctx, x + 5, y + h, w - 10, 3, "rgba(0,0,0,0.42)");
+  pxRect(ctx, x + 18, y + h + 3, w - 36, 2, "rgba(0,0,0,0.2)");
+  // legs / feet
+  pxRect(ctx, x + 8, y + h - 3, 9, 7, PALETTE_V3.woodShadow);
+  pxRect(ctx, x + w - 17, y + h - 3, 9, 7, PALETTE_V3.woodShadow);
   // thick front face
-  pxRect(ctx, x, frontY, w, frontH, PALETTE_V3.woodDark);
-  pxRect(ctx, x, frontY, w, 2, PALETTE_V3.woodMid);
-  pxRect(ctx, x, frontY, 4, frontH, PALETTE_V3.woodMid);
-  pxRect(ctx, x + w - 4, frontY, 4, frontH, PALETTE_V3.woodShadow);
+  pxRect(ctx, x, y + frontY, w, frontH, PALETTE_V3.woodDark);
+  pxRect(ctx, x, y + frontY, w, 2, PALETTE_V3.woodMid);
+  pxRect(ctx, x, y + frontY, 4, frontH, PALETTE_V3.woodMid);
+  pxRect(ctx, x + w - 4, y + frontY, 4, frontH, PALETTE_V3.woodShadow);
   pxRect(ctx, x, y + h - 2, w, 2, "#2a1a0e");
-
-  // drawer seams + handles
-  const panelTop = frontY + 4;
+  // drawer / panel lines
+  const panelTop = y + frontY + 4;
   const panelH = Math.max(4, frontH - 8);
-  for (let index = 1; index <= 3; index += 1) {
-    const gy = panelTop + Math.round((panelH * index) / 4);
+  for (let index = 1; index <= 2; index += 1) {
+    const gy = panelTop + Math.round((panelH * index) / 3);
     pxRect(ctx, x + 10, gy, w - 20, 1, "rgba(0,0,0,0.32)");
     pxRect(ctx, x + 10, gy + 1, w - 20, 1, "rgba(255,220,170,0.06)");
   }
-  pxRect(ctx, x + Math.round(w / 2), panelTop, 1, panelH, "rgba(0,0,0,0.28)");
-  pxRect(ctx, x + Math.round(w * 0.28), panelTop + Math.round(panelH * 0.55), 8, 2, PALETTE_V3.metalDark);
-  pxRect(ctx, x + Math.round(w * 0.72) - 8, panelTop + Math.round(panelH * 0.55), 8, 2, PALETTE_V3.metalDark);
-
-  // isometric top
-  pxPoly(ctx, [{ x: x + inset, y }, { x: x + w - inset, y }, { x: x + w, y: frontY }, { x, y: frontY }], PALETTE_V3.wood);
-  for (let index = 0; index < 3; index += 1) pxRect(ctx, x + inset + 8, y + 3 + index * 4, w - inset * 2 - 16, 1, "rgba(90,58,34,0.22)");
-  pxRect(ctx, x + inset + 1, y, w - inset * 2 - 2, 1, PALETTE_V3.woodHi);
-  pxRect(ctx, x + inset, y, 1, 1, PALETTE_V3.woodHi);
-  pxRect(ctx, x + w - inset - 1, y, 1, 1, PALETTE_V3.woodHi);
+  pxRect(ctx, x + Math.round(w / 2), panelTop, 1, panelH, "rgba(0,0,0,0.26)");
+  pxRect(ctx, x + Math.round(w * 0.26), panelTop + Math.round(panelH * 0.5), 8, 2, PALETTE_V3.metalDark);
+  pxRect(ctx, x + Math.round(w * 0.74) - 8, panelTop + Math.round(panelH * 0.5), 8, 2, PALETTE_V3.metalDark);
 
   const plaqueText = options.plaque ?? options.label ?? null;
   let plaqueRect = null;
   if (plaqueText) {
-    const pw = Math.min(w - 24, Math.max(56, Math.round(String(plaqueText).length * 7 + 14)));
+    const pw = Math.min(w - 20, Math.max(54, Math.round(String(plaqueText).length * 7 + 14)));
     const ph = Math.max(14, Math.min(22, frontH - 8));
     const pxx = x + Math.round((w - pw) / 2);
-    const pyy = frontY + Math.max(2, Math.round((frontH - ph) / 2));
+    const pyy = y + frontY + Math.max(3, Math.round((frontH - ph) / 2));
     pxRect(ctx, pxx, pyy, pw, ph, PALETTE_V3.woodShadow);
     pxRect(ctx, pxx + 1, pyy + 1, pw - 2, ph - 2, "#c99a63");
     pxRect(ctx, pxx + 1, pyy + 1, pw - 2, 1, "#e0bd8a");
     pxRect(ctx, pxx + 1, pyy + ph - 2, pw - 2, 1, "#2a1a0e");
+    pxRect(ctx, pxx + 2, pyy + 2, 1, ph - 4, "rgba(255,240,210,0.45)");
     let scale = 2;
     while (scale > 1 && measurePixelText(String(plaqueText), scale, 1) > pw - 8) scale -= 1;
     const text = String(plaqueText).toUpperCase();
@@ -763,8 +781,13 @@ function spriteWoodDesk(ctx, x, y, options = {}) {
     });
     plaqueRect = { x: pxx, y: pyy, w: pw, h: ph, text };
   }
+  return { topH: depth, frontY: y + frontY, frontH, plaqueRect };
+}
 
-  return { topH: depth, frontY, frontH, plaqueRect };
+function spriteWoodDesk(ctx, x, y, options = {}) {
+  const top = spriteDeskTop(ctx, x, y, options);
+  const front = spriteDeskFront(ctx, x, y, options);
+  return { topH: top.topH, frontY: front.frontY, frontH: front.frontH, plaqueRect: front.plaqueRect };
 }
 
 function spriteChair(ctx, x, y, options = {}) {
@@ -1184,6 +1207,8 @@ function spriteResearchDesk(ctx, x, y, options = {}) {
 
 const SPRITE_DISPATCH = {
   wood_desk: spriteWoodDesk,
+  desk_top: spriteDeskTop,
+  desk_front: spriteDeskFront,
   research_desk: spriteResearchDesk,
   chair: spriteChair,
   monitor: spriteMonitor,

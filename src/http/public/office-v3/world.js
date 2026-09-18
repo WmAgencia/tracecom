@@ -45,25 +45,32 @@ export const WORLD_HEIGHT = 2048;
 export const OFFICE_V3_VERSION = "office-v3-world.1.0.0";
 
 const COLUMN_COUNT = 11;
-const COLUMN_MARGIN = 180;
-const COLUMN_STEP = (WORLD_WIDTH - COLUMN_MARGIN * 2) / (COLUMN_COUNT - 1);
+// The office is laid out at reference scale inside a 1536x1024 "content" window
+// (x 512..2048) so the hero viewport can frame the whole office like the frozen
+// blueprint while the logical world stays 2560x2048 for pan/expansion.
+export const CONTENT_X = 512;
+export const CONTENT_Y = 0;
+export const CONTENT_WIDTH = 1536;
+export const CONTENT_HEIGHT = 1024;
+const COLUMN_STEP = 124;
+const COLUMN_MARGIN = (WORLD_WIDTH - COLUMN_STEP * (COLUMN_COUNT - 1)) / 2;
 const COLUMNS = Array.from({ length: COLUMN_COUNT }, (_, index) => Math.round(COLUMN_MARGIN + index * COLUMN_STEP));
 
-const DESK_WIDTH = 156;
-const DESK_HEIGHT = 100;
-const CELL_HEIGHT = 150;
-const DESK_TOP_OFFSET = 50;
-const BAND_PITCH = 250;
-const BAND_START = 540;
+const DESK_WIDTH = 118;
+const DESK_HEIGHT = 72;
+const CELL_HEIGHT = 112;
+const DESK_TOP_OFFSET = 32;
+const BAND_PITCH = 112;
+const BAND_START = 368;
 
 export const BANDS = [
-  { id: "TOP", label: "SUPERIOR", y1: 0, y2: 490 },
-  { id: "BAND_FOREX_MAJORS", label: "FOREX MAJORS", y1: 490, y2: 740 },
-  { id: "BAND_FOREX_CROSSES", label: "FOREX CRUZADOS", y1: 740, y2: 990 },
-  { id: "BAND_OTC_CRYPTO", label: "OTC - 24H + CRIPTOMOEDAS", y1: 990, y2: 1240 },
-  { id: "BAND_INDICES_COMMODITIES", label: "ÍNDICES + COMMODITIES", y1: 1240, y2: 1490 },
-  { id: "BAND_OTHER", label: "OUTROS ATIVOS", y1: 1490, y2: 1660 },
-  { id: "BOTTOM", label: "INFERIOR", y1: 1660, y2: WORLD_HEIGHT },
+  { id: "TOP", label: "SUPERIOR", y1: 0, y2: 362 },
+  { id: "BAND_FOREX_MAJORS", label: "FOREX MAJORS", y1: 362, y2: 474 },
+  { id: "BAND_FOREX_CROSSES", label: "FOREX CRUZADOS", y1: 474, y2: 586 },
+  { id: "BAND_OTC_CRYPTO", label: "OTC - 24H + CRIPTOMOEDAS", y1: 586, y2: 698 },
+  { id: "BAND_INDICES_COMMODITIES", label: "ÍNDICES + COMMODITIES", y1: 698, y2: 810 },
+  { id: "BAND_OTHER", label: "OUTROS ATIVOS", y1: 810, y2: 900 },
+  { id: "BOTTOM", label: "INFERIOR", y1: 900, y2: WORLD_HEIGHT },
 ];
 
 const BAND_ROWS = [
@@ -322,122 +329,121 @@ function buildAmenities() {
   const actor = (pose, x, y, opts = {}, sortY = null) =>
     items.push({ kind: "character", pose, x, y, opts, sortY: sortY ?? y });
 
-  // ---- TOP BAND : lounge ----
-  tile("rug_cream", 110, 300, 430, 150, {});
-  sprite("sofa", 150, 316, { w: 180, h: 46, color: PALETTE_V3.leather, outline: PALETTE_V3.leatherDark, color3: PALETTE_V3.leatherHi });
-  sprite("armchair", 360, 330, { w: 48, h: 44, color: PALETTE_V3.sofa, outline: PALETTE_V3.sofaDark, color3: PALETTE_V3.sofaHi });
-  sprite("coffee_table", 210, 392, { w: 110, h: 24 });
-  sprite("plant_large", 116, 300, {});
-  sprite("plant_small", 470, 316, {});
-  sprite("lamp", 500, 410, { height: 52, pool: 70, alpha: 0.18 });
-  actor("talk", 190, 360, { seed: hashString("lounge-1"), shirt: "#7a3a4a", role: "trader" });
-  actor("coffee", 300, 366, { seed: hashString("lounge-2"), role: "critic" });
-  actor("idle", 392, 372, { seed: hashString("lounge-3"), shirt: "#2f6a8a", role: "trader" });
+  const X0 = CONTENT_X;
+  const X1 = CONTENT_X + CONTENT_WIDTH;
 
-  // ---- TOP BAND : pool ----
-  tile("rug_red", 560, 300, 350, 150, {});
-  sprite("pool_table", 620, 330, { w: 200, h: 92, frame: "#3a2414", rail: "#5a3a22" });
-  sprite("lamp", 720, 322, { height: 46, pool: 80, alpha: 0.2 });
-  sprite("plant_small", 560, 306, {});
-  actor("pool", 596, 356, { seed: hashString("pool-1"), shirt: "#3a4a7a", role: "trader" });
-  actor("pool", 860, 372, { seed: hashString("pool-2"), role: "critic" });
-  actor("idle", 660, 452, { seed: hashString("pool-3"), shirt: "#3a4a7a", role: "trader" });
-  actor("talk", 800, 452, { seed: hashString("pool-4"), role: "critic" });
+  /* ================= TOP BAND (y 0..362) ================= */
+  // warm wood floor is painted by drawFloor() behind the panels and the board
+  // the left panel stack (logo/posters/professor) is drawn on the ground layer
+  // lounge
+  tile("rug_blue", X0 + 248, 224, 240, 116, {});
+  sprite("sofa", X0 + 258, 236, { w: 150, h: 42, color: PALETTE_V3.leather, outline: PALETTE_V3.leatherDark, color3: PALETTE_V3.leatherHi });
+  sprite("armchair", X0 + 420, 244, { w: 42, h: 40, color: PALETTE_V3.sofa, outline: PALETTE_V3.sofaDark, color3: PALETTE_V3.sofaHi });
+  sprite("coffee_table", X0 + 300, 288, { w: 96, h: 22 });
+  sprite("plant_large", X0 + 246, 224, {});
+  sprite("lamp", X0 + 470, 338, { height: 46, pool: 60, alpha: 0.2 });
+  actor("talk", X0 + 292, 264, { seed: hashString("lounge-1"), shirt: "#7a3a4a", role: "trader" });
+  actor("coffee", X0 + 386, 270, { seed: hashString("lounge-2"), role: "critic" });
 
-  // ---- TOP BAND : café / kitchen ----
-  tile("floor_wood", 930, 292, 400, 162, { plankH: 16 });
-  sprite("kitchen_counter", 960, 348, { w: 150, h: 54 });
-  sprite("fridge", 1130, 330, { w: 44, h: 76 });
-  sprite("water_cooler", 1190, 350, { w: 26, h: 56 });
-  sprite("bookshelf", 960, 296, { w: 120, h: 44, shelves: 2, seed: 7 });
-  sprite("poster", 1240, 300, { w: 56, h: 70, seed: 3 });
-  sprite("plant_small", 1300, 316, {});
-  actor("coffee", 1010, 430, { seed: hashString("cafe-1"), shirt: "#7a4a2a", role: "trader" });
-  actor("talk", 1090, 430, { seed: hashString("cafe-2"), role: "critic" });
-  actor("coffee", 1180, 436, { seed: hashString("cafe-3"), shirt: "#2f7d4f", role: "trader" });
+  // pool table
+  tile("rug_red", X0 + 498, 224, 214, 116, {});
+  sprite("pool_table", X0 + 512, 240, { w: 170, h: 74, frame: "#3a2414", rail: "#5a3a22" });
+  sprite("lamp", X0 + 600, 232, { height: 42, pool: 70, alpha: 0.22 });
+  sprite("plant_small", X0 + 498, 228, {});
+  actor("pool", X0 + 534, 258, { seed: hashString("pool-1"), shirt: "#3a4a7a", role: "trader" });
+  actor("pool", X0 + 670, 268, { seed: hashString("pool-2"), role: "critic" });
 
-  // ---- TOP BAND : meeting ----
-  tile("rug_blue", 1360, 300, 400, 152, {});
-  sprite("coffee_table", 1460, 350, { w: 200, h: 34 });
-  sprite("armchair", 1400, 306, { w: 48, h: 44 });
-  sprite("armchair", 1660, 306, { w: 48, h: 44 });
-  sprite("armchair", 1400, 396, { w: 48, h: 44 });
-  sprite("armchair", 1660, 396, { w: 48, h: 44 });
-  sprite("whiteboard", 1560, 296, { w: 120, h: 46 });
-  actor("sit", 1444, 344, { seed: hashString("meet-1"), role: "trader" });
-  actor("sit", 1656, 344, { seed: hashString("meet-2"), role: "critic" });
-  actor("talk", 1520, 452, { seed: hashString("meet-3"), shirt: "#3a4a7a", role: "trader" });
-  actor("talk", 1600, 452, { seed: hashString("meet-4"), role: "critic" });
+  // cafe / kitchen
+  tile("floor_wood", X0 + 720, 222, 232, 118, { plankH: 16 });
+  sprite("kitchen_counter", X0 + 730, 252, { w: 140, h: 46 });
+  sprite("fridge", X0 + 882, 232, { w: 38, h: 64 });
+  sprite("bookshelf", X0 + 730, 222, { w: 120, h: 36, shelves: 2, seed: 7 });
+  actor("coffee", X0 + 770, 302, { seed: hashString("cafe-1"), shirt: "#7a4a2a", role: "trader" });
+  actor("talk", X0 + 850, 302, { seed: hashString("cafe-2"), role: "critic" });
 
-  // ---- TOP BAND : research ----
-  tile("floor_carpet", 1800, 292, 400, 162, { color: "#1c2c44" });
-  sprite("bookshelf", 1820, 300, { w: 150, h: 110, shelves: 4, seed: 21 });
-  sprite("whiteboard", 2010, 306, { w: 150, h: 74 });
-  sprite("research_desk", 1900, 386, { w: 150, h: 60, plaque: "PESQUISA" });
-  sprite("monitor", 1990, 360, { w: 34, h: 24 });
-  actor("work", 1900, 396, { seed: hashString("res-1"), shirt: "#4a5a86", role: "trader" });
-  actor("observe", 2030, 452, { seed: hashString("res-2"), role: "critic" });
-  actor("coffee", 1840, 452, { seed: hashString("res-3"), role: "trader" });
+  // meeting
+  tile("rug_blue", X0 + 964, 252, 228, 88, {});
+  sprite("coffee_table", X0 + 1002, 278, { w: 150, h: 26 });
+  sprite("armchair", X0 + 972, 256, { w: 40, h: 38 });
+  sprite("armchair", X0 + 1140, 256, { w: 40, h: 38 });
+  actor("sit", X0 + 1002, 272, { seed: hashString("meet-1"), role: "trader" });
+  actor("sit", X0 + 1136, 272, { seed: hashString("meet-2"), role: "critic" });
 
-  // ---- TOP BAND : data center ----
-  tile("floor_tiles", 2220, 292, 300, 162, { size: 28 });
-  sprite("server_rack", 2260, 300, { w: 42, h: 90 });
-  sprite("server_rack", 2320, 300, { w: 42, h: 90 });
-  sprite("server_rack", 2380, 300, { w: 42, h: 90 });
-  sprite("lamp", 2250, 452, { height: 46, pool: 60, alpha: 0.14 });
-  actor("observe", 2360, 456, { seed: hashString("data-1"), role: "critic" });
+  // research
+  tile("floor_carpet", X0 + 1204, 224, 220, 116, { color: "#1c2c44" });
+  sprite("bookshelf", X0 + 1214, 228, { w: 112, h: 92, shelves: 4, seed: 21 });
+  sprite("whiteboard", X0 + 1336, 230, { w: 80, h: 50 });
+  sprite("research_desk", X0 + 1254, 300, { w: 140, h: 46, plaque: "PESQUISA" });
+  sprite("monitor", X0 + 1318, 278, { w: 30, h: 20 });
+  actor("work", X0 + 1254, 304, { seed: hashString("res-1"), shirt: "#4a5a86", role: "trader" });
+  actor("observe", X0 + 1378, 338, { seed: hashString("res-2"), role: "critic" });
 
-  // ---- corridor greening between bands ----
-  for (let col = 0; col < COLUMN_COUNT; col += 2) {
-    const x = COLUMNS[col];
-    sprite("plant_small", x - 6, 660, {}, 704);
-    sprite("plant_small", x - 6, 910, {}, 954);
-    sprite("plant_small", x - 6, 1160, {}, 1204);
-    sprite("plant_small", x - 6, 1410, {}, 1454);
+  // data center
+  tile("floor_tiles", X0 + 1434, 224, 100, 116, { size: 24 });
+  sprite("server_rack", X0 + 1442, 232, { w: 36, h: 80 });
+  sprite("server_rack", X0 + 1484, 232, { w: 36, h: 80 });
+  actor("observe", X0 + 1500, 338, { seed: hashString("data-1"), role: "critic" });
+
+  /* ================= CORRIDOR DENSITY (gaps between bands) ================= */
+  for (let col = 0; col < COLUMN_COUNT; col += 1) {
+    const cx = COLUMNS[col];
+    for (let row = 0; row < 4; row += 1) {
+      const gapY = BAND_START + row * BAND_PITCH - 30;
+      if (col % 2 === 0) sprite("plant_small", cx - 24, gapY + 6, {}, gapY + 28);
+      else sprite("plant_small", cx + 18, gapY + 6, {}, gapY + 28);
+    }
   }
-  sprite("divider", 24, 510, { w: 18, h: 150 }, 670);
-  sprite("divider", WORLD_WIDTH - 42, 510, { w: 18, h: 150 }, 670);
+  // side rails of plants + warm lamps so the floor has no empty navy regions
+  for (let row = 0; row < 5; row += 1) {
+    const y = BAND_START + row * BAND_PITCH;
+    sprite("plant_large", X0 + 4, y + 24, {}, y + 84);
+    sprite("plant_large", X1 - 22, y + 24, {}, y + 84);
+    sprite("lamp", X0 + 28, y + 74, { height: 46, pool: 60, alpha: 0.14 });
+    sprite("lamp", X1 - 42, y + 74, { height: 46, pool: 60, alpha: 0.14 });
+    sprite("bookshelf", X0 + 4, y + 34, { w: 30, h: 54, shelves: 2, seed: row + 3 }, y + 92);
+  }
 
-  // ---- BOTTOM BAND : terrace lounge ----
-  tile("floor_wood", 0, 1660, WORLD_WIDTH, 388, { plankH: 18 });
-  tile("rug_amber", 780, 1700, 1000, 250, {});
-  sprite("sofa", 860, 1720, { w: 200, h: 50, color: PALETTE_V3.leather, outline: PALETTE_V3.leatherDark, color3: PALETTE_V3.leatherHi });
-  sprite("sofa", 1420, 1720, { w: 200, h: 50, color: PALETTE_V3.sofa, outline: PALETTE_V3.sofaDark, color3: PALETTE_V3.sofaHi });
-  sprite("armchair", 1120, 1750, { w: 52, h: 48 });
-  sprite("armchair", 1320, 1750, { w: 52, h: 48 });
-  sprite("coffee_table", 1180, 1810, { w: 180, h: 30 });
-  sprite("pool_table", 900, 1840, { w: 180, h: 84 });
-  sprite("plant_large", 700, 1710, {});
-  sprite("plant_large", 1880, 1710, {});
-  sprite("plant_large", 1000, 1900, {});
-  sprite("plant_large", 1520, 1900, {});
-  sprite("lamp", 820, 1900, { height: 56, pool: 90, alpha: 0.18 });
-  sprite("lamp", 1760, 1900, { height: 56, pool: 90, alpha: 0.18 });
-  sprite("window", 300, 1660, { w: 130, h: 100 });
-  sprite("window", 2140, 1660, { w: 130, h: 100 });
-  sprite("stairs", 120, 1780, { w: 150, h: 170, direction: "right" });
-  sprite("stairs", 2290, 1780, { w: 150, h: 170, direction: "left" });
-  actor("talk", 1120, 1790, { seed: hashString("ter-1"), shirt: "#3a4a7a", role: "trader" });
-  actor("coffee", 1260, 1790, { seed: hashString("ter-2"), role: "critic" });
-  actor("pool", 860, 1880, { seed: hashString("ter-3"), shirt: "#7a3a4a", role: "trader" });
-  actor("idle", 990, 1900, { seed: hashString("ter-4"), role: "critic" });
-  actor("walk", 1600, 1860, { seed: hashString("ter-5"), shirt: "#2f6a8a", role: "trader" });
-  actor("talk", 1680, 1860, { seed: hashString("ter-6"), role: "critic" });
+  /* ================= BOTTOM BAND (y 900..1024) ================= */
+  // wood floor is painted by drawFloor(); add the rug + furnishings here
+  tile("rug_amber", X0 + 372, 924, 792, 100, {});
+  // seating flanking the central TRACE/COM branding (drawn on the ground layer)
+  sprite("sofa", X0 + 380, 930, { w: 170, h: 44, color: PALETTE_V3.leather, outline: PALETTE_V3.leatherDark, color3: PALETTE_V3.leatherHi });
+  sprite("sofa", X0 + 970, 930, { w: 170, h: 44, color: PALETTE_V3.sofa, outline: PALETTE_V3.sofaDark, color3: PALETTE_V3.sofaHi });
+  sprite("coffee_table", X0 + 400, 992, { w: 110, h: 24 });
+  sprite("coffee_table", X0 + 1010, 992, { w: 110, h: 24 });
+  sprite("armchair", X0 + 300, 966, { w: 44, h: 40 });
+  sprite("armchair", X0 + 1150, 966, { w: 44, h: 40 });
+  sprite("pool_table", X0 + 270, 936, { w: 150, h: 72 });
+  sprite("stairs", X0 + 10, 940, { w: 130, h: 150, direction: "right" }, 1090);
+  sprite("stairs", X0 + 1390, 940, { w: 130, h: 150, direction: "left" }, 1090);
+  sprite("window", X0 + 150, 910, { w: 110, h: 84 });
+  sprite("window", X0 + 1230, 910, { w: 110, h: 84 });
+  sprite("plant_large", X0 + 30, 916, {});
+  sprite("plant_large", X0 + 1310, 916, {});
+  sprite("plant_large", X0 + 240, 1000, {});
+  sprite("plant_large", X0 + 1090, 1000, {});
+  sprite("lamp", X0 + 290, 1014, { height: 50, pool: 80, alpha: 0.18 });
+  sprite("lamp", X0 + 1060, 1014, { height: 50, pool: 80, alpha: 0.18 });
+  sprite("poster", X0 + 60, 916, { w: 40, h: 56, seed: 5 });
+  sprite("poster", X0 + 1240, 916, { w: 40, h: 56, seed: 9 });
+  actor("talk", X0 + 470, 974, { seed: hashString("ter-1"), shirt: "#3a4a7a", role: "trader" });
+  actor("coffee", X0 + 1010, 974, { seed: hashString("ter-2"), role: "critic" });
+  actor("pool", X0 + 300, 984, { seed: hashString("ter-3"), shirt: "#7a3a4a", role: "trader" });
+  actor("idle", X0 + 1080, 988, { seed: hashString("ter-4"), role: "critic" });
 
   return items;
 }
 
 function buildLighting() {
   const pools = [];
-  for (let col = 0; col < COLUMN_COUNT; col += 1) {
-    pools.push({ x: COLUMNS[col], y: BAND_START - 40, radius: 150, color: PALETTE_V3.amber, alpha: 0.07 });
-    pools.push({ x: COLUMNS[col], y: BAND_START + BAND_PITCH * 2 - 40, radius: 150, color: PALETTE_V3.amber, alpha: 0.07 });
-    pools.push({ x: COLUMNS[col], y: BAND_START + BAND_PITCH * 4 - 40, radius: 150, color: PALETTE_V3.amber, alpha: 0.07 });
+  const cx = CONTENT_X + CONTENT_WIDTH / 2;
+  for (let row = 0; row < 5; row += 1) {
+    pools.push({ x: cx, y: BAND_START + row * BAND_PITCH + 34, radius: 430, color: PALETTE_V3.amber, alpha: 0.06 });
   }
-  pools.push({ x: 780, y: 150, radius: 420, color: PALETTE_V3.amber, alpha: 0.09 });
-  pools.push({ x: 1280, y: 1830, radius: 520, color: PALETTE_V3.amber, alpha: 0.1 });
-  pools.push({ x: 720, y: 400, radius: 300, color: PALETTE_V3.amber, alpha: 0.08 });
-  pools.push({ x: 1540, y: 380, radius: 320, color: PALETTE_V3.amber, alpha: 0.08 });
+  pools.push({ x: CONTENT_X + 220, y: 200, radius: 300, color: PALETTE_V3.amber, alpha: 0.09 });
+  pools.push({ x: CONTENT_X + 900, y: 230, radius: 320, color: PALETTE_V3.amber, alpha: 0.08 });
+  pools.push({ x: CONTENT_X + 1300, y: 200, radius: 300, color: PALETTE_V3.amber, alpha: 0.08 });
+  pools.push({ x: cx, y: 980, radius: 460, color: PALETTE_V3.amber, alpha: 0.1 });
   return pools;
 }
 
@@ -471,11 +477,14 @@ function pxRectLocal(ctx, x, y, w, h, color) {
 }
 
 function drawFloor(ctx) {
-  drawTile(ctx, "floor_tiles", 0, 0, WORLD_WIDTH, WORLD_HEIGHT, { size: 34 });
+  drawTile(ctx, "floor_tiles", 0, 0, WORLD_WIDTH, WORLD_HEIGHT, { size: 28 });
+  // warm wood across the top social band and the bottom band, navy on the floor
+  drawTile(ctx, "floor_wood", CONTENT_X, 0, CONTENT_WIDTH, 362, { plankH: 18 });
+  drawTile(ctx, "floor_wood", CONTENT_X, 900, CONTENT_WIDTH, 124, { plankH: 18 });
   warmOverlayLocal(ctx, 0, 0, WORLD_WIDTH, WORLD_HEIGHT, "#f0b429", 0.05);
-  warmOverlayLocal(ctx, 0, 490, WORLD_WIDTH, 1170, "#1c3c3a", 0.28);
-  warmOverlayLocal(ctx, 0, 0, WORLD_WIDTH, 490, "#7a4a1e", 0.12);
-  warmOverlayLocal(ctx, 0, 1660, WORLD_WIDTH, WORLD_HEIGHT - 1660, "#7a4a1e", 0.16);
+  warmOverlayLocal(ctx, 0, 362, WORLD_WIDTH, 900 - 362, "#0e2740", 0.24);
+  warmOverlayLocal(ctx, 0, 0, WORLD_WIDTH, 362, "#7a4a1e", 0.12);
+  warmOverlayLocal(ctx, 0, 900, WORLD_WIDTH, WORLD_HEIGHT - 900, "#7a4a1e", 0.16);
 }
 
 function warmOverlayLocal(ctx, x, y, w, h, color, alpha) {
@@ -487,29 +496,69 @@ function warmOverlayLocal(ctx, x, y, w, h, color, alpha) {
 }
 
 function drawWalls(ctx) {
-  drawTile(ctx, "wall_panel", 0, 0, WORLD_WIDTH, 64, { panelW: 56 });
-  drawTile(ctx, "wall_brick", 0, 1660, WORLD_WIDTH, 18, {});
-  for (let x = 80; x < WORLD_WIDTH; x += 300) {
-    drawSprite(ctx, "window", x, 8, { w: 100, h: 48 });
-    drawSprite(ctx, "wall_sconce", x + 200, 40, { pool: 46, alpha: 0.12 });
+  drawTile(ctx, "wall_panel", 0, 0, WORLD_WIDTH, 44, { panelW: 56 });
+  drawTile(ctx, "wall_brick", 0, 900, WORLD_WIDTH, 16, {});
+  for (let x = CONTENT_X + 40; x < CONTENT_X + CONTENT_WIDTH - 30; x += 280) {
+    drawSprite(ctx, "wall_sconce", x, 34, { pool: 40, alpha: 0.12 });
   }
 }
 
 function drawRibbon(ctx, row) {
-  const y = row.deskTop - 92;
-  const label = row.label;
-  const w = Math.max(150, measurePixelText(label, 2, 1) + 34);
-  const x = Math.round(WORLD_WIDTH / 2 - w / 2);
-  const accent = row.accent === "split" ? PALETTE_V3.bandGreen : PALETTE_V3.bandBlue;
-  const accentHi = row.accent === "split" ? PALETTE_V3.bandGreenHi : PALETTE_V3.bandBlueHi;
-  pxRectLocal(ctx, x + 4, y + 4, w, 30, "rgba(0,0,0,0.35)");
-  pxRectLocal(ctx, x, y, w, 30, accent);
-  pxRectLocal(ctx, x, y, w, 2, accentHi);
-  pxRectLocal(ctx, x, y + 28, w, 2, "rgba(0,0,0,0.35)");
-  drawPixelText(ctx, label, x + w / 2, y + 10, { scale: 2, align: "center", color: PALETTE_V3.white, shadow: "rgba(0,0,0,0.5)" });
+  const y = row.deskTop - 42;
   if (row.accent === "split") {
-    pxRectLocal(ctx, Math.round(WORLD_WIDTH / 2) - 1, y, 2, 30, "rgba(255,255,255,0.35)");
+    const parts = SUB_BAND_BY_ROW[row.id] ?? [row.label];
+    const leftCenter = (COLUMNS[0] + COLUMNS[4]) / 2;
+    const rightCenter = (COLUMNS[5] + COLUMNS[COLUMN_COUNT - 1]) / 2;
+    drawRibbonAt(ctx, parts[0], leftCenter, y, PALETTE_V3.bandBlue, PALETTE_V3.bandBlueHi);
+    drawRibbonAt(ctx, parts[1] ?? parts[0], rightCenter, y, PALETTE_V3.bandGreen, PALETTE_V3.bandGreenHi);
+    return;
   }
+  drawRibbonAt(ctx, row.label, Math.round(WORLD_WIDTH / 2), y, PALETTE_V3.bandBlue, PALETTE_V3.bandBlueHi);
+}
+
+function drawRibbonAt(ctx, label, centerX, y, accent, accentHi) {
+  const w = Math.max(120, measurePixelText(label, 2, 1) + 30);
+  const x = Math.round(centerX - w / 2);
+  pxRectLocal(ctx, x + 4, y + 4, w, 24, "rgba(0,0,0,0.35)");
+  pxRectLocal(ctx, x, y, w, 24, accent);
+  pxRectLocal(ctx, x, y, w, 2, accentHi);
+  pxRectLocal(ctx, x, y + 22, w, 2, "rgba(0,0,0,0.35)");
+  drawPixelText(ctx, label, x + w / 2, y + 6, { scale: 2, align: "center", color: PALETTE_V3.white, shadow: "rgba(0,0,0,0.5)" });
+}
+
+function drawLeftPanels(ctx) {
+  const x = CONTENT_X + 8;
+  const w = 224;
+  // "TRADER É UM JOGO DE LONGO PRAZO" poster
+  drawPanel(ctx, x, 104, w, 62, "#12233f", PALETTE_V3.gold);
+  drawPixelParagraph(ctx, "TRADER É UM JOGO DE LONGO PRAZO", x + w / 2, 114, w - 16, { scale: 1, align: "center", color: PALETTE_V3.goldHi, lineHeight: 11 });
+  // "FOCO DISCIPLINA PROCESSO RESULTADO" poster
+  drawPanel(ctx, x, 172, w, 62, "#2a1a10", PALETTE_V3.gold);
+  drawPixelParagraph(ctx, "FOCO DISCIPLINA PROCESSO RESULTADO", x + w / 2, 182, w - 16, { scale: 1, align: "center", color: "#e8c877", lineHeight: 11 });
+  // PROFESSOR & PESQUISA panel
+  drawPanel(ctx, x, 240, w, 118, "#0d1b2e", "#2a4a80");
+  drawPixelText(ctx, "PROFESSOR", x + 12, 250, { scale: 2, color: "#7ab0e8" });
+  drawPixelText(ctx, "& PESQUISA", x + 12, 270, { scale: 1, color: PALETTE_V3.white });
+  const labels = ["DADOS", "TESTES", "APRENDIZADO", "EVOLUÇÃO"];
+  labels.forEach((label, index) => {
+    drawPixelText(ctx, label, x + 12, 292 + index * 14, { scale: 1, color: "#9ab8dc" });
+    if (index < labels.length - 1) pxRectLocal(ctx, x + 12, 302 + index * 14, w - 30, 1, "rgba(120,150,200,0.14)");
+  });
+}
+
+function drawBottomBranding(ctx) {
+  const cx = WORLD_WIDTH / 2;
+  const w = 360;
+  const h = 74;
+  const x = Math.round(cx - w / 2);
+  const y = 948;
+  pxRectLocal(ctx, x - 5, y - 5, w + 10, h + 10, "rgba(0,0,0,0.4)");
+  pxRectLocal(ctx, x, y, w, h, "#0d1b2e");
+  pxRectLocal(ctx, x, y, w, 3, PALETTE_V3.border);
+  pxRectLocal(ctx, x, y + h - 3, w, 3, PALETTE_V3.border);
+  pxRectLocal(ctx, x + 3, y + 3, w - 6, 1, "rgba(255,255,255,0.08)");
+  drawPixelText(ctx, "TRACE/COM", cx, y + 14, { scale: 4, align: "center", color: PALETTE_V3.white });
+  drawPixelText(ctx, "VISION · SHADOW · RESULT", cx, y + 52, { scale: 2, align: "center", color: PALETTE_V3.goldHi });
 }
 
 function drawPanel(ctx, x, y, w, h, bg, border) {
@@ -523,41 +572,41 @@ function drawPanel(ctx, x, y, w, h, bg, border) {
 function drawBackWallItems(ctx, worldState) {
   const board = worldState.board;
   drawDailyBoard(ctx, board);
-  drawMarketsBox(ctx, 1210, 30, board);
-  drawValueBox(ctx, 1460, 30, 210, 70, "LUCRO SEMANAL", board.weeklyText);
-  drawValueBox(ctx, 1460, 112, 210, 70, "LUCRO MENSAL", board.monthlyText);
-  drawGlobalPanel(ctx, 1700, 30, 380, 220, worldState);
-  drawDisciplinePoster(ctx, 2110, 30, 180, 150);
-  drawLogo(ctx, 60, 30);
+  drawMarketsBox(ctx, CONTENT_X + 840, 6, board);
+  drawValueBox(ctx, CONTENT_X + 840, 132, 170, 52, "LUCRO SEMANAL", board.weeklyText);
+  drawValueBox(ctx, CONTENT_X + 840, 190, 170, 52, "LUCRO MENSAL", board.monthlyText);
+  drawGlobalPanel(ctx, CONTENT_X + 1022, 6, 260, 160, worldState);
+  drawDisciplinePoster(ctx, CONTENT_X + 1294, 6, 224, 140);
+  drawLogo(ctx, CONTENT_X + 10, 12);
 }
 
 function drawLogo(ctx, x, y) {
-  const w = 300;
-  const h = 92;
+  const w = 234;
+  const h = 86;
   drawPanel(ctx, x, y, w, h, "#0a1526", PALETTE_V3.border);
-  pxRectLocal(ctx, x + 12, y + 16, 40, 40, PALETTE_V3.goldDark);
-  pxRectLocal(ctx, x + 15, y + 19, 34, 34, PALETTE_V3.gold);
-  pxRectLocal(ctx, x + 20, y + 24, 24, 24, "#0a1526");
-  pxRectLocal(ctx, x + 25, y + 29, 14, 14, PALETTE_V3.gold);
-  drawPixelText(ctx, "TRACE/COM", x + 66, y + 20, { scale: 2, color: PALETTE_V3.white });
-  drawPixelText(ctx, "DISCIPLINA · DADOS · RESULTADOS", x + 66, y + 46, { scale: 1, color: PALETTE_V3.goldHi });
-  drawPixelText(ctx, "PIXEL OFFICE V3", x + 66, y + 60, { scale: 1, color: PALETTE_V3.metal });
+  pxRectLocal(ctx, x + 10, y + 14, 34, 34, PALETTE_V3.goldDark);
+  pxRectLocal(ctx, x + 13, y + 17, 28, 28, PALETTE_V3.gold);
+  pxRectLocal(ctx, x + 17, y + 21, 20, 20, "#0a1526");
+  pxRectLocal(ctx, x + 21, y + 25, 12, 12, PALETTE_V3.gold);
+  drawPixelText(ctx, "TRACE/COM", x + 54, y + 14, { scale: 2, color: PALETTE_V3.white });
+  drawPixelText(ctx, "DISCIPLINA · DADOS · RESULTADOS", x + 54, y + 38, { scale: 1, color: PALETTE_V3.goldHi });
+  drawPixelText(ctx, "PIXEL OFFICE V3", x + 54, y + 52, { scale: 1, color: PALETTE_V3.metal });
 }
 
 function drawDailyBoard(ctx, board) {
-  const x = 400;
-  const y = 20;
-  const w = 760;
-  const h = 250;
+  const x = CONTENT_X + 248;
+  const y = 6;
+  const w = 580;
+  const h = 214;
   drawPanel(ctx, x, y, w, h, "#0b1728", PALETTE_V3.border);
-  pxRectLocal(ctx, x + 6, y + 6, w - 12, 30, PALETTE_V3.panelHeader);
-  drawPixelText(ctx, "RESULTADO DO DIA", x + w / 2, y + 14, { scale: 3, align: "center", color: PALETTE_V3.white });
+  pxRectLocal(ctx, x + 6, y + 6, w - 12, 26, PALETTE_V3.panelHeader);
+  drawPixelText(ctx, "RESULTADO DO DIA", x + w / 2, y + 10, { scale: 3, align: "center", color: PALETTE_V3.white });
 
   const positive = board.tone === "POSITIVE";
   const negative = board.tone === "NEGATIVE";
   const color = positive ? PALETTE_V3.green : negative ? PALETTE_V3.red : PALETTE_V3.metal;
-  drawPixelText(ctx, board.pnlText, x + w / 2, y + 48, { scale: 8, align: "center", color, shadow: "rgba(0,0,0,0.6)" });
-  drawPixelText(ctx, positive ? "GANHO LÍQUIDO HOJE" : negative ? "PERDA LÍQUIDA HOJE" : "SEM RESULTADO LIQUIDADO", x + w / 2, y + 118, {
+  drawPixelText(ctx, board.pnlText, x + w / 2, y + 28, { scale: 8, align: "center", color, shadow: "rgba(0,0,0,0.6)" });
+  drawPixelText(ctx, positive ? "GANHO LÍQUIDO HOJE" : negative ? "PERDA LÍQUIDA HOJE" : "SEM RESULTADO LIQUIDADO", x + w / 2, y + 100, {
     scale: 2,
     align: "center",
     color: PALETTE_V3.metal,
@@ -571,23 +620,23 @@ function drawDailyBoard(ctx, board) {
     ["MAIOR WIN", board.bestWinText],
     ["MAIOR LOSS", board.bestLossText],
   ];
-  const metricX = x + 30;
-  const metricY = y + 148;
+  const metricX = x + 16;
+  const metricY = y + 120;
   metrics.forEach(([label, value], index) => {
-    const rowY = metricY + index * 16;
+    const rowY = metricY + index * 14;
     drawPixelText(ctx, label, metricX, rowY, { scale: 1, color: PALETTE_V3.metal });
-    drawPixelText(ctx, value, metricX + 150, rowY, {
+    drawPixelText(ctx, value, metricX + 130, rowY, {
       scale: 1,
       align: "right",
       color: label === "MAIOR WIN" ? PALETTE_V3.green : label === "MAIOR LOSS" ? PALETTE_V3.red : PALETTE_V3.white,
     });
-    if (index < metrics.length - 1) pxRectLocal(ctx, metricX, rowY + 12, 150, 1, "rgba(120,150,200,0.14)");
+    if (index < metrics.length - 1) pxRectLocal(ctx, metricX, rowY + 11, 130, 1, "rgba(120,150,200,0.14)");
   });
 
   // equity chart — real settled series only, explicit placeholder when absent
-  const chartX = x + 230;
-  const chartY = y + 148;
-  const chartW = 500;
+  const chartX = x + 180;
+  const chartY = y + 120;
+  const chartW = 384;
   const chartH = 84;
   pxRectLocal(ctx, chartX, chartY, chartW, chartH, "#08121f");
   for (let gx = 0; gx <= 4; gx += 1) pxRectLocal(ctx, chartX + (chartW / 4) * gx, chartY, 1, chartH, "rgba(90,130,190,0.16)");
@@ -595,7 +644,7 @@ function drawDailyBoard(ctx, board) {
   if (board.equityPlaceholder) {
     pxRectLocal(ctx, chartX, chartY + Math.round(chartH / 2), chartW, 1, "rgba(120,150,200,0.3)");
     drawPixelText(ctx, "SEM SÉRIE DE RESULTADO", chartX + chartW / 2, chartY + Math.round(chartH / 2) - 4, { scale: 1, align: "center", color: PALETTE_V3.metal });
-    drawPixelText(ctx, "EQUITY · SEM DADOS", chartX, chartY - 12, { scale: 1, color: PALETTE_V3.metal });
+    drawPixelText(ctx, "EQUITY · SEM DADOS", chartX, chartY - 10, { scale: 1, color: PALETTE_V3.metal });
   } else {
     const series = board.equitySeries;
     const min = Math.min(...series);
@@ -616,15 +665,15 @@ function drawDailyBoard(ctx, board) {
       }
       previous = { x: px, y: py };
     });
-    drawPixelText(ctx, "EQUITY · SÉRIE REAL", chartX, chartY - 12, { scale: 1, color: PALETTE_V3.goldHi });
+    drawPixelText(ctx, "EQUITY · SÉRIE REAL", chartX, chartY - 10, { scale: 1, color: PALETTE_V3.goldHi });
   }
 }
 
 function drawMarketsBox(ctx, x, y, board) {
-  const w = 220;
-  const h = 152;
+  const w = 170;
+  const h = 120;
   drawPanel(ctx, x, y, w, h, "#0b1728", "#2a4a80");
-  drawPixelText(ctx, "MERCADOS", x + w / 2, y + 10, { scale: 2, align: "center", color: "#7ab0e8" });
+  drawPixelText(ctx, "MERCADOS", x + w / 2, y + 7, { scale: 2, align: "center", color: "#7ab0e8" });
   const rows = [
     ["ABERTOS", String(board.open), PALETTE_V3.white],
     ["FECHADOS", String(board.closed), PALETTE_V3.white],
@@ -633,28 +682,28 @@ function drawMarketsBox(ctx, x, y, board) {
     ["RISCO", "ZERO REAL", PALETTE_V3.green],
   ];
   rows.forEach(([label, value, color], index) => {
-    const rowY = y + 38 + index * 21;
-    drawPixelText(ctx, label, x + 16, rowY, { scale: 1, color: "#9ab8dc" });
-    drawPixelText(ctx, value, x + w - 16, rowY, { scale: 1, align: "right", color });
-    if (index < rows.length - 1) pxRectLocal(ctx, x + 14, rowY + 15, w - 28, 1, "rgba(120,150,200,0.14)");
+    const rowY = y + 28 + index * 17;
+    drawPixelText(ctx, label, x + 12, rowY, { scale: 1, color: "#9ab8dc" });
+    drawPixelText(ctx, value, x + w - 12, rowY, { scale: 1, align: "right", color });
+    if (index < rows.length - 1) pxRectLocal(ctx, x + 10, rowY + 12, w - 20, 1, "rgba(120,150,200,0.14)");
   });
 }
 
 function drawValueBox(ctx, x, y, w, h, title, value) {
   drawPanel(ctx, x, y, w, h, "#0b1728", "#2a4a80");
-  drawPixelText(ctx, title, x + w / 2, y + 10, { scale: 2, align: "center", color: "#7ab0e8" });
-  drawPixelText(ctx, value, x + w / 2, y + 38, { scale: 2, align: "center", color: value.startsWith("−") ? PALETTE_V3.red : value === "—" ? PALETTE_V3.metal : PALETTE_V3.green });
+  drawPixelText(ctx, title, x + w / 2, y + 5, { scale: 2, align: "center", color: "#7ab0e8" });
+  drawPixelText(ctx, value, x + w / 2, y + 26, { scale: 2, align: "center", color: value.startsWith("−") ? PALETTE_V3.red : value === "—" ? PALETTE_V3.metal : PALETTE_V3.green });
 }
 
 function drawGlobalPanel(ctx, x, y, w, h, worldState) {
   drawPanel(ctx, x, y, w, h, "#101a2b", PALETTE_V3.border);
-  drawPixelParagraph(ctx, "MERCADO GLOBAL 24H", x + 14, y + 12, w - 28, { scale: 2, color: "#7ab0e8", lineHeight: 20 });
-  drawPixelParagraph(ctx, "MAPA AGREGADO · DADOS REAIS", x + 14, y + 48, w - 28, { scale: 1, color: "#8fb4e0", lineHeight: 12 });
+  drawPixelParagraph(ctx, "MERCADO GLOBAL 24H", x + 12, y + 10, w - 24, { scale: 2, color: "#7ab0e8", lineHeight: 18 });
+  drawPixelParagraph(ctx, "MAPA AGREGADO · DADOS REAIS", x + 12, y + 40, w - 24, { scale: 1, color: "#8fb4e0", lineHeight: 11 });
   // simple world map blobs
-  const mx = x + 20;
-  const my = y + 74;
-  const mw = w - 40;
-  const mh = 100;
+  const mx = x + 16;
+  const my = y + 58;
+  const mw = w - 32;
+  const mh = h - 78;
   pxRectLocal(ctx, mx, my, mw, mh, "#08131f");
   const blob = (fx, fy, fw, fh) => {
     pxRectLocal(ctx, mx + mw * fx, my + mh * fy, Math.max(3, mw * fw), Math.max(3, mh * fh), "#1d5a9a");
@@ -669,7 +718,7 @@ function drawGlobalPanel(ctx, x, y, w, h, worldState) {
   for (const [fx, fy] of [[0.18, 0.3], [0.3, 0.6], [0.5, 0.3], [0.53, 0.55], [0.72, 0.3], [0.84, 0.66]]) {
     pxRectLocal(ctx, mx + mw * fx, my + mh * fy, 3, 3, PALETTE_V3.amber);
   }
-  drawPixelText(ctx, `${worldState.stations.length} ATIVOS MONITORADOS`, x + w / 2, y + h - 18, { scale: 1, align: "center", color: PALETTE_V3.goldHi });
+  drawPixelText(ctx, `${worldState.stations.length} ATIVOS MONITORADOS`, x + w / 2, y + h - 14, { scale: 1, align: "center", color: PALETTE_V3.goldHi });
 }
 
 function drawDisciplinePoster(ctx, x, y, w, h) {
@@ -682,50 +731,90 @@ function drawDisciplinePoster(ctx, x, y, w, h) {
   });
 }
 
+export const DESK_TOP_DEPTH = 18;
+export const DESK_SEAT_LINE = DESK_TOP_DEPTH + 7;
+
 function drawStation(ctx, station, showAgents = true) {
   const cell = station.cell;
   const desk = station.desk;
   const cx = cell.centerX;
-  const agentBase = desk.y + 6;
+  const seatLine = desk.y + DESK_SEAT_LINE;
   const active = station.active === true;
 
   drawCastShadow(ctx, desk.x, desk.y, desk.w, desk.h);
 
-  // chairs behind the duo
+  // desk TOP / back surface first
+  drawSprite(ctx, "desk_top", desk.x, desk.y, { w: desk.w, h: desk.h, depth: DESK_TOP_DEPTH });
+
+  // chairs drawn over the top surface so the backrest is visible behind each agent
   if (active) {
-    drawSprite(ctx, "chair", cx - 46, agentBase - 34, { w: 30, h: 34 });
-    drawSprite(ctx, "chair", cx + 16, agentBase - 34, { w: 30, h: 34 });
-    if (showAgents) {
-      drawCharacter(ctx, "work", cx - 30, agentBase, { role: "trader", seed: station.trader?.seed, id: `${station.id}:trader` });
-      drawCharacter(ctx, "work", cx + 30, agentBase, { role: "critic", seed: station.critic?.seed, id: `${station.id}:critic` });
-    }
+    drawSprite(ctx, "chair", cx - 46, seatLine - 30, { w: 30, h: 34 });
+    drawSprite(ctx, "chair", cx + 16, seatLine - 30, { w: 30, h: 34 });
   } else {
-    drawSprite(ctx, "chair", cx - 16, agentBase - 24, { w: 30, h: 34 });
+    drawSprite(ctx, "chair", cx - 16, seatLine - 22, { w: 30, h: 34 });
   }
 
-  // desk (agents drawn first, desk occludes lower torso)
-  drawSprite(ctx, "wood_desk", desk.x, desk.y, {
-    w: desk.w,
-    h: desk.h,
-    depth: 16,
-    plaque: active || station.plaque.text ? station.plaque.text : null,
-  });
+  // seated agents sit BEHIND the desk, drawn over the top surface
+  if (showAgents && active) {
+    drawCharacter(ctx, "work", cx - 30, seatLine, { role: "trader", seed: station.trader?.seed, id: `${station.id}:trader` });
+    drawCharacter(ctx, "work", cx + 30, seatLine, { role: "critic", seed: station.critic?.seed, id: `${station.id}:critic` });
+  }
 
+  // props on the desk top
   if (active) {
     drawSprite(ctx, "monitor", cx - 17, desk.y + 2, { w: 34, h: 22 });
     drawSprite(ctx, "computer_tower", desk.x + 8, desk.y - 30, { w: 20, h: 34 });
     drawSprite(ctx, "keyboard", cx - 19, desk.y + 20, { w: 38, h: 10 });
-    // screen glow pool
     lightPoolLocal(ctx, cx, desk.y + 10, 54, PALETTE_V3.screenOn, 0.1);
   } else if (station.reserved) {
     drawSprite(ctx, "keyboard", cx - 19, desk.y + 20, { w: 38, h: 10 });
   }
 
+  // desk FRONT + plaque + legs + shadow occludes the seated agents' lower body
+  drawSprite(ctx, "desk_front", desk.x, desk.y, {
+    w: desk.w,
+    h: desk.h,
+    depth: DESK_TOP_DEPTH,
+    plaque: active || station.plaque.text ? station.plaque.text : null,
+  });
+
   if (station.badge?.visible) {
     const color = station.badge.color ?? PALETTE_V3.metal;
-    drawPixelText(ctx, station.badge.text, cx, agentBase - 52, { scale: 2, align: "center", color, shadow: "rgba(0,0,0,0.7)" });
+    drawPixelText(ctx, station.badge.text, cx, desk.y - 20, { scale: 2, align: "center", color, shadow: "rgba(0,0,0,0.7)" });
   }
 }
+
+/**
+ * Desk fronts to be re-drawn AFTER the dynamic agents (life.js) so the front
+ * face, plaque, legs and contact shadow occlude the seated agents' lower body.
+ * Returns world-space entries with a painter sort key.
+ */
+export function collectDeskFronts(worldState, camera = null) {
+  const fronts = [];
+  const stations = worldState?.allStations ?? [];
+  const view = camera ? viewRect(camera) : null;
+  for (const station of stations) {
+    const desk = station?.desk;
+    if (!desk) continue;
+    if (view && !intersectsView(view, desk.x - 40, desk.y - 40, desk.w + 80, desk.h + 100, 60)) continue;
+    fronts.push({
+      x: desk.x,
+      y: desk.y,
+      w: desk.w,
+      h: desk.h,
+      depth: DESK_TOP_DEPTH,
+      plaque: station.active === true || station.plaque?.text ? station.plaque?.text ?? null : null,
+      sortY: desk.y + desk.h,
+    });
+  }
+  return fronts;
+}
+
+export function drawDeskFront(ctx, front) {
+  if (!front) return;
+  drawSprite(ctx, "desk_front", front.x, front.y, { w: front.w, h: front.h, depth: front.depth, plaque: front.plaque });
+}
+
 
 function lightPoolLocal(ctx, x, y, radius, color, alpha) {
   if (radius <= 0) return;
@@ -769,12 +858,14 @@ export function drawWorld(ctx, worldState, camera = {}, options = {}) {
     drawFloor(ctx);
     drawWalls(ctx);
     drawBackWallItems(ctx, worldState);
+    drawLeftPanels(ctx);
     for (const row of BAND_ROWS) drawRibbon(ctx, row);
     const tiles = worldState.amenities.filter((item) => item.kind === "tile");
     for (const item of tiles) {
       renderStats.tilesDrawn += 1;
       drawAmenity(ctx, item);
     }
+    drawBottomBranding(ctx);
   }
 
   // objects sorted with the painter's algorithm (bottom edge, then x)
@@ -850,8 +941,10 @@ function buildGroundLayer(worldState) {
   drawFloor(context);
   drawWalls(context);
   drawBackWallItems(context, worldState);
+  drawLeftPanels(context);
   for (const row of BAND_ROWS) drawRibbon(context, row);
   for (const item of worldState.amenities) if (item.kind === "tile") drawAmenity(context, item);
+  drawBottomBranding(context);
   return canvas;
 }
 

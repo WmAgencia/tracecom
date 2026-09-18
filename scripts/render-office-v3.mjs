@@ -29,8 +29,12 @@ import {
   BASE_HEIGHT,
   WORLD_WIDTH,
   WORLD_HEIGHT,
+  CONTENT_X,
+  CONTENT_Y,
   buildWorldState,
   drawWorld,
+  collectDeskFronts,
+  drawDeskFront,
 } from "../src/http/public/office-v3/world.js";
 import {
   createLifeSystem,
@@ -43,7 +47,7 @@ import * as assetsModule from "../src/http/public/office-v3/assets.js";
 import { createCamera, zoomToDesk, updateCamera } from "../src/http/public/office-v3/camera.js";
 
 bindAssets(assetsModule);
-bindWorld({ buildWorldState, drawWorld });
+bindWorld({ buildWorldState, drawWorld, collectDeskFronts, drawDeskFront });
 
 const require = createRequire(import.meta.url);
 const CANVAS_PATH = "C:/Users/junin/AppData/Local/Temp/opencode/render-kit/node_modules/@napi-rs/canvas";
@@ -150,6 +154,9 @@ const OVERVIEW_CAMERA = {
   y: (WORLD_HEIGHT - BASE_HEIGHT / OVERVIEW_ZOOM) / 2,
   zoom: OVERVIEW_ZOOM,
 };
+// The office content is laid out at reference scale inside a 1536x1024 window
+// (CONTENT_X..CONTENT_X+1536). This hero camera frames it 1:1 like the blueprint.
+const CONTENT_CAMERA = { x: CONTENT_X, y: CONTENT_Y, zoom: 1 };
 
 const officeJson = baseOffice(fixtureMarkets());
 const state = buildWorldState(officeJson);
@@ -158,7 +165,7 @@ const lifeSystem = createLifeSystem(state, { seed: "render-office-v3" });
 updateLife(lifeSystem, 16);
 
 /* ---- implementation hero viewport (world larger than viewport on purpose) ---- */
-const implementation = renderScene(state, lifeSystem, { x: 512, y: 0, zoom: 1 }, BASE_WIDTH, BASE_HEIGHT);
+const implementation = renderScene(state, lifeSystem, CONTENT_CAMERA, BASE_WIDTH, BASE_HEIGHT);
 const implementationPath = writeCanvas("implementation-v3.png", implementation);
 
 /* ---- contact sheet: 4 review regions at 1:1 ---- */
@@ -170,10 +177,10 @@ sheetCtx.imageSmoothingEnabled = false;
 sheetCtx.fillStyle = "#05090f";
 sheetCtx.fillRect(0, 0, sheet.width, sheet.height);
 const regions = [
-  { label: "BOARD + SOCIAL", x: 0, y: 0 },
-  { label: "LOUNGE / POOL / CAFE", x: 700, y: 240 },
-  { label: "FOREX MAJORS", x: 180, y: 430 },
-  { label: "TRADING FLOOR", x: 900, y: 900 },
+  { label: "BOARD + SOCIAL", x: CONTENT_X, y: CONTENT_Y },
+  { label: "POOL / CAFE / MEETING", x: CONTENT_X + 248, y: CONTENT_Y + 150 },
+  { label: "FOREX MAJORS", x: CONTENT_X, y: CONTENT_Y + 336 },
+  { label: "TRADING FLOOR", x: CONTENT_X, y: CONTENT_Y + 560 },
 ];
 regions.forEach((region, index) => {
   const cx = (index % 2) * CELL_W;
@@ -216,7 +223,7 @@ const zoomDeskPath = writeCanvas("zoom-desk-v3.png", zoomDesk);
 const scenarioPaths = [];
 for (const openCount of [55, 37, 10, 0]) {
   const scenario = buildScenario(openCount);
-  const canvas = renderScene(scenario.state, scenario.system, OVERVIEW_CAMERA, BASE_WIDTH, BASE_HEIGHT);
+  const canvas = renderScene(scenario.state, scenario.system, CONTENT_CAMERA, BASE_WIDTH, BASE_HEIGHT);
   scenarioPaths.push(writeCanvas(`scenario-${openCount}open.png`, canvas));
 }
 
@@ -229,7 +236,7 @@ const viewports = [
 ];
 const viewportPaths = [];
 for (const viewport of viewports) {
-  const camera = { x: 420, y: 300, zoom: viewport.width < 500 ? 0.9 : 1 };
+  const camera = { x: CONTENT_X, y: CONTENT_Y, zoom: viewport.width < 500 ? 0.9 : 1 };
   const canvas = renderScene(state, lifeSystem, camera, viewport.width, viewport.height);
   const frameCtx = canvas.getContext("2d");
   frameCtx.strokeStyle = "#c9a24b";

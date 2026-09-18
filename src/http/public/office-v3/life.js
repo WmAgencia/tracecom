@@ -19,6 +19,7 @@ export const AGENT_SPEED = 84;
 export const SUPERVISOR_SPEED = 58;
 export const DESK_WIDTH = 118;
 export const DESK_HEIGHT = 72;
+export const DESK_SEAT_LINE = 25;
 export const DEFAULT_WORLD_WIDTH = 2560;
 export const DEFAULT_WORLD_HEIGHT = 1600;
 export const DEFAULT_SEED = "tracecom-office-v3";
@@ -1156,19 +1157,48 @@ function isAgentVisible(camera, x, y) {
 export function drawAgents(ctx, life, camera = null) {
   if (!ctx || !life) return 0;
   const assets = life.assets ?? cachedAssets;
+  const world = cachedWorld;
+  const worldState = life.world?.raw ?? null;
+
+  // One depth-sorted pass: agents + desk fronts. Seated agents are lifted to the
+  // desk's back edge; the desk front is drawn later (higher sortY) and occludes
+  // their lower body, matching the reference two-layer desk.
+  const items = [];
+  for (const agent of life.agents) {
+    const station = life.stationById?.get(agent.stationId);
+    const desk = station?.desk;
+    const seated = agent.atDesk === true && desk;
+    const renderY = seated ? desk.y + DESK_SEAT_LINE : agent.y;
+    items.push({ sortY: renderY, sortX: agent.x, entity: agent, renderY, front: null });
+  }
+  if (life.supervisor) {
+    items.push({ sortY: life.supervisor.y, sortX: life.supervisor.x, entity: life.supervisor, renderY: life.supervisor.y, front: null });
+  }
+  if (world && typeof world.collectDeskFronts === "function" && worldState) {
+    for (const front of world.collectDeskFronts(worldState, camera)) {
+      items.push({ sortY: front.sortY, sortX: front.x, entity: null, renderY: 0, front });
+    }
+  }
+  items.sort((a, b) => a.sortY - b.sortY || (a.sortX ?? 0) - (b.sortX ?? 0));
+
   let drawn = 0;
-  const drawOne = (entity) => {
-    if (!isAgentVisible(camera, entity.x, entity.y)) return;
+  const drawOne = (entity, renderY) => {
+    if (!isAgentVisible(camera, entity.x, renderY)) return;
     const options = { role: entity.role, frame: entity.frame, facing: entity.facing, scale: 1, id: entity.id, seed: entity.seed };
     if (assets && typeof assets.drawCharacter === "function") {
-      assets.drawCharacter(ctx, entity.pose, entity.x, entity.y, options);
+      assets.drawCharacter(ctx, entity.pose, entity.x, renderY, options);
     } else {
-      fallbackCharacter(ctx, entity.pose, entity.x, entity.y, options);
+      fallbackCharacter(ctx, entity.pose, entity.x, renderY, options);
     }
     drawn += 1;
   };
-  for (const agent of life.agents) drawOne(agent);
-  if (life.supervisor) drawOne(life.supervisor);
+  for (const item of items) {
+    if (item.front) {
+      if (world && typeof world.drawDeskFront === "function") world.drawDeskFront(ctx, item.front);
+    } else {
+      drawOne(item.entity, item.renderY);
+    }
+  }
   return drawn;
 }
 
