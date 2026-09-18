@@ -186,8 +186,30 @@ JIT, Execution Gate e stake permanecem os mesmos.
    (testado), mas a janela PRE/POST pode ficar parcial se os candles não estiverem mais em memória.
 6. `C_STABILITY_CORRECTED` é um braço de pesquisa; não foi promovido nem substitui o braço C original
    nos `SHADOW_ARMS` de produção (que permanecem intocados).
+7. A observação começa na **revalidação final** (candidato confirmado/rejeitado pelo gate). Candidatos
+   cancelados antes disso (janela perdida, revalidação falha) não geram observação — fora do escopo
+   “oportunidade aprovada pelo G2”.
+8. Trades anteriores à instrumentação têm `decisionSource=null` no journal; o dashboard os agrupa em
+   `byDecisionSource.UNKNOWN` e **não** os soma ao braço `CURRENT_G2` (que exige tag `G2_AUTO`).
 
-## 15. Como reproduzir / consultar
+## 15. Deploy e coleta (esta rodada)
+
+- Relay: deployment Railway `8e9bab72-c0e9-46c8-8ab7-c4d3f0dad357` (SUCCESS, produção) após migration 029
+  aplicada (`schema_migrations`); `GET /api/iq/office` = **200** (smoke); `GET /api/iq/research/shadow-lab` = **200**
+  via proxy Vercel (`api/http.ts` allowlist atualizada). Vercel prod deployado.
+- Persistência verificada end-to-end contra o Postgres de produção (observe → markExecution → markEntry →
+  settleCausal → settleExecuted, 0 falhas após dois fixes: stride de placeholders da janela e serialização
+  INSERT→UPDATE).
+- **N prospectivo coletado até o fechamento desta rodada: 21 observações** (11 com `current_execution=REJECT`
+  e motivo real do gate; 18 com settlement `CAUSAL_COUNTERFACTUAL`; 14 janelas PRE de 12 candles; 0 trades
+  executados no período observado). Coleta continua; 0/30 no checkpoint — nenhuma conclusão.
+- Amostra observada confirma o instrumento: `currentScore` 63–81 vs `correctedShadowScore` 66–96
+  (delta D1/D2 real), H1/H2/H3 e degradation (STABLE/DEGRADED/SEVERELY_DEGRADED/IMPROVED) gravados por linha.
+- Pendência conhecida: as primeiras 8 observações (antes dos fixes de persistência) podem ter
+  `current_execution=PENDING` mesmo após settlement causal e janela PRE/POST incompleta; T0 e gate comparison
+  dessas linhas estão íntegros.
+
+## 16. Como reproduzir / consultar
 
 ```powershell
 # dashboard offline (read-only, via Railway)
