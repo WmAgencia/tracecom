@@ -1560,8 +1560,8 @@ export function stairs(ctx, x, y, w, h, options = {}) {
 export function world_map(ctx, x, y, w, h, options = {}) {
   pxRect(ctx, x, y, w, h, "#08131f");
   pxRect(ctx, x, y, w, h, "rgba(24,66,110,0.30)");
-  const land = options.land ?? "#2c6aa4";
-  const landHi = options.landHi ?? "#3d86c4";
+  const land = options.land ?? "#1d5a9a";
+  const landHi = options.landHi ?? "#2f78bc";
   const blob = (fx, fy, fw, fh) => {
     const bx = x + Math.round(w * fx);
     const by = y + Math.round(h * fy);
@@ -2085,27 +2085,25 @@ function drawMarketsBoxes(ctx, daily) {
   const x = 914;
   const w = 1042 - 914;
   const box = (by, bh, title, rows) => {
-    const panel = drawWallPanel(ctx, x, by, w, bh, { bg: "#0d1a2c" });
-    pxRect(ctx, x + 3, by + 3, w - 6, 16, PALETTE.bandBlue);
-    drawPixelText(ctx, title, x + w / 2, by + 7, { scale: 1, align: "center", color: PALETTE.white });
+    const panel = drawWallPanel(ctx, x, by, w, bh, { bg: "#0b1728", border: "#2a4a80" });
+    drawPixelText(ctx, title, x + w / 2, by + 10, { scale: 2, align: "center", color: "#7ab0e8" });
     rows.forEach(([label, value, color], index) => {
-      const ry = panel.innerY + 22 + index * 15;
-      drawPixelText(ctx, label, panel.innerX, ry, { scale: 1, color: PALETTE.metal });
+      const ry = panel.innerY + 26 + index * 16;
+      drawPixelText(ctx, label, panel.innerX, ry, { scale: 1, color: "#9ab8dc" });
       drawPixelText(ctx, value, panel.innerX + panel.innerW, ry, { scale: 1, align: "right", color: color ?? PALETTE.white });
     });
   };
   box(6, 140 - 6, "MERCADOS", [
-    ["ABERTOS", String(daily.open ?? 37), PALETTE.green],
-    ["FECHADOS", String(daily.closed ?? 18), PALETTE.red],
-    ["TOTAL", String(daily.total ?? 55), PALETTE.goldHi],
+    ["ABERTOS", String(daily.open ?? 37), PALETTE.white],
+    ["FECHADOS", String(daily.closed ?? 18), PALETTE.white],
+    ["TOTAL", String(daily.total ?? 55), PALETTE.red],
     ["MODO", "PRACTICE", PALETTE.screenOn],
     ["RISCO", "ZERO REAL", PALETTE.green],
   ]);
   const valueBox = (by, bh, title, value) => {
-    drawWallPanel(ctx, x, by, w, bh, { bg: "#0d1a2c" });
-    pxRect(ctx, x + 3, by + 3, w - 6, 14, PALETTE.bandGreen);
-    drawPixelText(ctx, title, x + w / 2, by + 6, { scale: 1, align: "center", color: PALETTE.white });
-    drawPixelText(ctx, value, x + w / 2, by + bh - 18, { scale: 1, align: "center", color: PALETTE.green });
+    drawWallPanel(ctx, x, by, w, bh, { bg: "#0b1728", border: "#2a4a80" });
+    drawPixelText(ctx, title, x + w / 2, by + 12, { scale: 2, align: "center", color: "#7ab0e8" });
+    drawPixelText(ctx, value, x + w / 2, by + bh - 26, { scale: 2, align: "center", color: PALETTE.green });
   };
   valueBox(146, 190 - 146, "LUCRO SEMANAL", `+R$ ${formatBRL(daily.weekly ?? 1842.3)}`);
   valueBox(196, 240 - 196, "LUCRO MENSAL", `+R$ ${formatBRL(daily.monthly ?? 6721.55)}`);
@@ -2116,11 +2114,8 @@ function drawWorldMapPanel(ctx) {
   const y = 28;
   const w = 1268 - 1058;
   const h = 152 - 28;
-  const panel = drawWallPanel(ctx, x, y, w, h, { bg: "#0a1526" });
-  pxRect(ctx, x + 3, y + 3, w - 6, 16, PALETTE.bandBlue);
-  drawPixelText(ctx, "MAPA MUNDIAL", x + w / 2, y + 7, { scale: 1, align: "center", color: PALETTE.white });
-  world_map(ctx, panel.innerX, panel.innerY + 20, panel.innerW, h - 40, {});
-  drawPixelText(ctx, "24H · GLOBAL", x + w / 2, y + h - 12, { scale: 1, align: "center", color: PALETTE.goldHi });
+  const panel = drawWallPanel(ctx, x, y, w, h, { bg: "#08131f", border: "#6a4a28" });
+  world_map(ctx, panel.innerX, panel.innerY, panel.innerW, panel.innerH, {});
 }
 
 function drawGlobalMarketsPanel(ctx) {
@@ -2129,16 +2124,16 @@ function drawGlobalMarketsPanel(ctx) {
   const w = 1438 - 1274;
   const h = 142 - 52;
   const panel = drawWallPanel(ctx, x, y, w, h, { bg: "#101a2b" });
-  drawPixelParagraph(ctx, "MERCADO GLOBAL 24H", x + w / 2, panel.innerY + 2, w - 16, {
-    scale: 1,
-    align: "center",
-    color: PALETTE.screenOn,
-    lineHeight: 10,
+  drawPixelParagraph(ctx, "MERCADO GLOBAL 24H", panel.innerX + 2, panel.innerY + 2, w - 16, {
+    scale: 2,
+    align: "left",
+    color: "#7ab0e8",
+    lineHeight: 18,
   });
-  drawPixelParagraph(ctx, "OPORTUNIDADES EM TEMPO REAL", x + w / 2, panel.innerY + 30, w - 16, {
+  drawPixelParagraph(ctx, "OPORTUNIDADES EM TEMPO REAL", panel.innerX + 2, panel.innerY + 46, w - 16, {
     scale: 1,
-    align: "center",
-    color: PALETTE.goldHi,
+    align: "left",
+    color: "#5a8ac0",
     lineHeight: 10,
   });
   pxRect(ctx, x + 8, y + h - 14, w - 16, 6, "#0a1526");
@@ -2729,7 +2724,6 @@ function drawDecorations(ctx) {
   poster(186, 184, 96, 62, PALETTE.rugRed, "chart");
   poster(420, 18, 92, 62, PALETTE.bandGreen, "landscape");
   poster(1044, 168, 92, 62, PALETTE.bandBlue, "chart");
-  poster(1352, 18, 78, 62, PALETTE.bandBlue, "chart");
 
   // right-side lounge: leather sofa + wall TV + plants filling the void
   sofa(ctx, 1044, 262, 54, { h: 26, color: PALETTE.sofaLeather, outline: "#241a13", color3: PALETTE.sofaLeatherHi });
