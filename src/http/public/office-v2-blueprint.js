@@ -86,8 +86,8 @@ export const PALETTE = {
   sofa: "#d9c7a3",
   sofaHi: "#efe3c6",
   sofaDark: "#b8a37c",
-  felt: "#25704a",
-  feltDark: "#174a2d",
+  felt: "#0a8048",
+  feltDark: "#0a5a34",
   rugRed: "#642823",
   rugRedHi: "#83382f",
   rugBlue: "#22406b",
@@ -1292,9 +1292,11 @@ export function coffee_table(ctx, x, y, w, options = {}) {
 }
 
 export function pool_table(ctx, x, y, w, h, options = {}) {
+  const frame = options.frame ?? PALETTE.woodMid;
+  const rail = options.rail ?? PALETTE.wood;
   pxRect(ctx, x + 3, y + h, w - 6, 2, PALETTE.shadow);
-  pxRect(ctx, x, y, w, h, PALETTE.woodMid);
-  pxRect(ctx, x + 2, y + 2, w - 4, h - 4, PALETTE.wood);
+  pxRect(ctx, x, y, w, h, frame);
+  pxRect(ctx, x + 2, y + 2, w - 4, h - 4, rail);
   pxRect(ctx, x + 6, y + 6, w - 12, h - 12, PALETTE.felt);
   pxRect(ctx, x + 6, y + 6, w - 12, 1, PALETTE.feltDark);
   const pockets = [[8, 8], [w / 2, 7], [w - 8, 8], [8, h - 8], [w / 2, h - 7], [w - 8, h - 8]];
@@ -1385,6 +1387,20 @@ export function wall_sconce(ctx, x, y, options = {}) {
   pxRect(ctx, x - 1, y - 2, 3, 4, PALETTE.goldDark);
   pxRect(ctx, x - 5, y + 2, 11, 3, color);
   pxRect(ctx, x - 5, y + 2, 11, 1, PALETTE.goldHi);
+}
+
+export function wall_lamp(ctx, x, y, w, h, options = {}) {
+  const tube = options.tube ?? "#f0c88a";
+  const core = options.core ?? "#fff0d0";
+  lightPool(ctx, x + w / 2, y + h + 2, options.pool ?? Math.round(w * 0.85), PALETTE.amber, options.alpha ?? 0.14);
+  pxRect(ctx, x - 3, y - 3, w + 6, h + 3, "#2e2116");
+  pxRect(ctx, x - 3, y - 3, w + 6, 1, "#5a4028");
+  pxRect(ctx, x - 3, y + h, w + 6, 1, "#140d06");
+  pxRect(ctx, x, y, w, h, tube);
+  pxRect(ctx, x, y, w, 1, core);
+  pxRect(ctx, x + 2, y + 2, w - 4, Math.max(1, h - 5), core);
+  pxRect(ctx, x, y + h - 2, w, 2, "#b8823f");
+  warmOverlay(ctx, x - 8, y - 8, w + 16, h + 16, "#ffd8a0", 0.12);
 }
 
 export function rug(ctx, x, y, w, h, options = {}) {
@@ -1597,7 +1613,7 @@ export function daily_board(ctx, x, y, w, h, daily = {}) {
   pxRect(ctx, x + 4, y + 4, w - 8, h - 8, "#0b1728");
   pxRect(ctx, x + 4, y + 4, w - 8, 1, "rgba(255,255,255,0.06)");
   pxRect(ctx, x + 6, y + 6, w - 12, 22, "#122340");
-  drawPixelText(ctx, "RESULTADO DO DIA", x + w / 2, y + 11, { scale: 2, align: "center", color: PALETTE.goldHi });
+  drawPixelText(ctx, "RESULTADO DO DIA", x + w / 2, y + 11, { scale: 2, align: "center", color: PALETTE.white });
 
   const bigScale = 5;
   drawPixelText(ctx, signedBRL(pnl), x + w / 2, y + 32, {
@@ -1694,7 +1710,7 @@ export function drawStation(ctx, x, y, station = {}) {
   const deskTop = y + Math.round(h * 0.64);
   const deskH = y + h - deskTop;
   const depth = Math.min(7, Math.max(5, Math.round(deskH * 0.22)));
-  const agentY = y + 8;
+  const agentY = y + 24;
   const agentLeft = x + Math.round(w / 2) - 33;
   const agentRight = x + Math.round(w / 2) + 3;
 
@@ -1703,8 +1719,8 @@ export function drawStation(ctx, x, y, station = {}) {
   pxRect(ctx, x + 12, y + h + 2, w - 24, 1, "rgba(0,0,0,0.22)");
 
   if (active) {
-    chairBack(ctx, agentLeft - 1, y + 4, { w: 32, h: 36 });
-    chairBack(ctx, agentRight - 1, y + 4, { w: 32, h: 36 });
+    chairBack(ctx, agentLeft - 1, y + 18, { w: 32, h: 36 });
+    chairBack(ctx, agentRight - 1, y + 18, { w: 32, h: 36 });
     trader(ctx, agentLeft, agentY, { variant: seed % 6 });
     critic(ctx, agentRight, agentY, { variant: (seed >> 3) % 6 });
   }
@@ -1844,6 +1860,10 @@ function drawFloor(ctx) {
   drawWoodFloor(ctx, 286, 0, 238, 338);
   drawWoodFloor(ctx, 908, 0, 628, 338);
   drawWoodFloor(ctx, 0, 900, BASE_WIDTH, 124);
+  warmOverlay(ctx, 0, 900, BASE_WIDTH, 124, "#c88a4a", 0.20);
+  lightPool(ctx, 300, 1010, 420, PALETTE.amber, 0.16);
+  lightPool(ctx, 768, 1016, 520, PALETTE.amber, 0.16);
+    lightPool(ctx, 1230, 1010, 420, PALETTE.amber, 0.16);
   // dark ceiling beam across the top
   pxRect(ctx, 0, 0, BASE_WIDTH, 6, "#1a1208");
   pxRect(ctx, 0, 6, BASE_WIDTH, 2, "#3a2a1c");
@@ -1942,22 +1962,43 @@ function drawProfessorPanel(ctx) {
   const y = 184;
   const w = 132 - 12;
   const h = 392 - 184;
-  const panel = drawWallPanel(ctx, x, y, w, h, { bg: "#0c1626" });
-  pxRect(ctx, panel.innerX, panel.innerY, panel.innerW, 20, PALETTE.panelHeader);
-  drawPixelText(ctx, "PROFESSOR", x + w / 2, panel.innerY + 3, { scale: 1, align: "center", color: PALETTE.white });
-  drawPixelText(ctx, "& PESQUISA", x + w / 2, panel.innerY + 11, { scale: 1, align: "center", color: PALETTE.white });
-  bookshelf(ctx, panel.innerX + 2, panel.innerY + 26, 40, 62, { shelves: 3, seed: 3 });
-  research_desk(ctx, panel.innerX + 46, panel.innerY + 66, 56, 24);
-  pxRect(ctx, panel.innerX + 70, panel.innerY + 44, 12, 22, PALETTE.metalDark);
-  pxRect(ctx, panel.innerX + 72, panel.innerY + 46, 8, 12, PALETTE.screenOn);
-  pxRect(ctx, panel.innerX + 73, panel.innerY + 40, 6, 5, PALETTE.hair2);
-  pxRect(ctx, panel.innerX + 73, panel.innerY + 44, 6, 6, PALETTE.skin);
-  pxRect(ctx, panel.innerX + 71, panel.innerY + 50, 10, 10, "#5c6a86");
+  // warm timber room shell
+  pxRect(ctx, x, y, w, h, "#6a4a34");
+  pxRect(ctx, x, y, w, 3, "#8a6446");
+  for (let py = y + 4; py < y + h; py += 13) {
+    pxRect(ctx, x, py, w, 1, "#543824");
+    pxRect(ctx, x + ((py / 13) % 2) * 30 + 12, py, 1, 13, "#543824");
+  }
+  lightPool(ctx, x + w / 2, y + 70, 80, PALETTE.amber, 0.10);
+  // navy header sign
+  pxRect(ctx, x + 6, y + 8, w - 12, 32, "#0d1b30");
+  pxRect(ctx, x + 6, y + 8, w - 12, 2, "#3a5a90");
+  pxRect(ctx, x + 6, y + 8, 2, 32, PALETTE.goldDark);
+  drawPixelText(ctx, "PROFESSOR", x + w / 2, y + 15, { scale: 1, align: "center", color: PALETTE.white });
+  drawPixelText(ctx, "& PESQUISA", x + w / 2, y + 25, { scale: 1, align: "center", color: PALETTE.white });
+  // tall bookcase with colourful spines
+  bookshelf(ctx, x + 8, y + 48, 42, 74, { shelves: 3, seed: 3 });
+  // desk with two researchers
+  research_desk(ctx, x + 54, y + 96, 56, 26);
+  pxRect(ctx, x + 62, y + 72, 13, 24, PALETTE.metalDark);
+  pxRect(ctx, x + 64, y + 74, 9, 14, PALETTE.screenOn);
+  pxRect(ctx, x + 64, y + 66, 8, 7, PALETTE.hair2);
+  pxRect(ctx, x + 64, y + 71, 8, 7, PALETTE.skin);
+  pxRect(ctx, x + 62, y + 78, 12, 18, "#4a5a86");
+  pxRect(ctx, x + 88, y + 70, 12, 7, PALETTE.hair4);
+  pxRect(ctx, x + 88, y + 75, 12, 7, PALETTE.skin2);
+  pxRect(ctx, x + 87, y + 82, 14, 16, PALETTE.criticPurple);
+  // side cabinet + plant
+  pxRect(ctx, x + 58, y + 126, 22, 30, PALETTE.woodMid);
+  pxRect(ctx, x + 58, y + 126, 22, 2, PALETTE.woodHi);
+  pxRect(ctx, x + 60, y + 138, 18, 1, PALETTE.woodShadow);
+  plant_small(ctx, x + 100, y + 132, {});
+  // bottom navy sign
+  pxRect(ctx, x + 4, y + h - 82, w - 8, 78, "#0d1b30");
+  pxRect(ctx, x + 4, y + h - 82, w - 8, 2, "#3a5a90");
   const subs = ["DADOS", "TESTES", "APRENDIZADO", "EVOLUCAO"];
   subs.forEach((sub, index) => {
-    const sy = y + h - 78 + index * 18;
-    pxRect(ctx, panel.innerX, sy, panel.innerW, 14, index % 2 === 0 ? "#122340" : "#0e1a2e");
-    drawPixelText(ctx, sub, x + w / 2, sy + 4, { scale: 1, align: "center", color: PALETTE.goldHi });
+    drawPixelText(ctx, sub, x + w / 2, y + h - 74 + index * 17, { scale: 1, align: "center", color: PALETTE.goldHi });
   });
 }
 
@@ -1966,23 +2007,40 @@ function drawMeetingRoomPanel(ctx) {
   const y = 398;
   const w = 132 - 12;
   const h = 562 - 398;
-  const panel = drawWallPanel(ctx, x, y, w, h, { bg: "#0c1626" });
-  pxRect(ctx, panel.innerX, panel.innerY, panel.innerW, 18, PALETTE.panelHeader);
-  drawPixelText(ctx, "SALA DE REUNIAO", x + w / 2, panel.innerY + 6, { scale: 1, align: "center", color: PALETTE.white });
-  const tableX = panel.innerX + 10;
-  const tableY = panel.innerY + 40;
-  const tableW = panel.innerW - 20;
-  pxRect(ctx, tableX, tableY, tableW, 40, PALETTE.wood);
-  pxRect(ctx, tableX, tableY, tableW, 2, PALETTE.woodHi);
-  pxRect(ctx, tableX, tableY + 40, tableW, 2, PALETTE.woodShadow);
-  const people = [[0, -14], [1, -14], [0, 42], [1, 42]];
-  people.forEach(([col, dy], index) => {
-    const ax = tableX + 6 + col * (tableW - 24);
-    const ay = tableY + dy;
-    pxRect(ctx, ax, ay, 12, 6, [PALETTE.hair1, PALETTE.hair2, PALETTE.hair3, PALETTE.hair4][index % 4]);
-    pxRect(ctx, ax, ay + 4, 12, 6, PALETTE.skin);
-    pxRect(ctx, ax, ay + 10, 12, 10, index % 2 === 0 ? PALETTE.traderNavy : PALETTE.criticPurple);
+  // warm timber room shell
+  pxRect(ctx, x, y, w, h, "#6a4a34");
+  pxRect(ctx, x, y, w, 3, "#8a6446");
+  for (let py = y + 4; py < y + h; py += 13) {
+    pxRect(ctx, x, py, w, 1, "#543824");
+    pxRect(ctx, x + ((py / 13) % 2) * 26 + 10, py, 1, 13, "#543824");
+  }
+  lightPool(ctx, x + 96, y + 30, 54, PALETTE.amber, 0.16);
+  pxRect(ctx, x + 6, y + 8, w - 12, 22, "#0d1b30");
+  pxRect(ctx, x + 6, y + 8, w - 12, 2, "#3a5a90");
+  drawPixelText(ctx, "SALA DE REUNIAO", x + w / 2, y + 15, { scale: 1, align: "center", color: PALETTE.white });
+  // two wooden meeting tables with six people
+  const tables = [[y + 44, PALETTE.traderNavy], [y + 92, PALETTE.criticPurple]];
+  tables.forEach(([ty], ti) => {
+    pxRect(ctx, x + 14, ty, w - 28, 34, PALETTE.woodMid);
+    pxRect(ctx, x + 14, ty, w - 28, 2, PALETTE.woodHi);
+    pxRect(ctx, x + 14, ty + 32, w - 28, 2, PALETTE.woodShadow);
+    pxRect(ctx, x + 18, ty + 34, 4, 10, PALETTE.woodShadow);
+    pxRect(ctx, x + w - 22, ty + 34, 4, 10, PALETTE.woodShadow);
+    for (let p = 0; p < 3; p += 1) {
+      const ax = x + 20 + p * 30;
+      const above = p % 2 === 0;
+      const ay = above ? ty - 22 : ty + 36;
+      pxRect(ctx, ax, ay, 14, 7, [PALETTE.hair1, PALETTE.hair2, PALETTE.hair3][(p + ti) % 3]);
+      pxRect(ctx, ax + 1, ay + 5, 12, 8, [PALETTE.skin, PALETTE.skin2, PALETTE.skin3][(p + ti) % 3]);
+      pxRect(ctx, ax, ay + 12, 14, 12, p % 2 === 0 ? PALETTE.traderNavy : "#3a4a7a");
+    }
   });
+  // floor lamp in the corner
+  pxRect(ctx, x + 6, y + 140, 2, 26, PALETTE.metalDark);
+  pxRect(ctx, x + 2, y + 134, 10, 6, PALETTE.amber);
+  pxRect(ctx, x + 2, y + 134, 10, 1, PALETTE.goldHi);
+  lightPool(ctx, x + 7, y + 137, 30, PALETTE.amber, 0.16);
+  plant_small(ctx, x + 104, y + 146, {});
 }
 
 function drawPlanningPanel(ctx) {
@@ -2092,7 +2150,7 @@ function drawRedDisciplinePanel(ctx) {
   const y = 18;
   const w = 1530 - 1436;
   const h = 124 - 18;
-  drawWallPanel(ctx, x, y, w, h, { bg: "#1a1208", border: PALETTE.gold });
+  drawWallPanel(ctx, x, y, w, h, { bg: "#3a2a18", border: PALETTE.gold });
   drawPixelParagraph(ctx, "DISCIPLINA TRANSFORMA ESTRATEGIA EM LIBERDADE", x + w / 2, y + 10, w - 14, {
     scale: 1,
     align: "center",
@@ -2146,7 +2204,9 @@ function drawLeftLounge(ctx) {
   const tan = { color: "#8a6038", outline: "#5a3c22", color3: "#a87a48" };
 
   // big patterned rug under the seating group
-  patterned_rug(ctx, x + 2, y + 58, w - 4, h - 70, { color: PALETTE.rugRed, inner: PALETTE.rugRedHi, accent: PALETTE.rugCream, border: PALETTE.gold });
+  pxRect(ctx, x, y + 40, w, h - 40, "#5a3c28");
+  pxRect(ctx, x, y + 40, w, 2, "#6d4a30");
+  patterned_rug(ctx, x + 10, y + 60, w - 22, h - 78, { color: "#4a2018", inner: "#5e2a20", accent: "#7a5a3a", border: "#2a1a0e" });
 
   // upper group: two armchairs + coffee table
   armchair(ctx, x + 36, y + 2, { w: 36, h: 32, ...tan });
@@ -2193,8 +2253,10 @@ function drawPoolArea(ctx) {
   const y = 256;
   const w = 148;
   const h = 68;
-  patterned_rug(ctx, x - 8, y - 6, w + 16, h + 14, { color: PALETTE.rugCream, inner: PALETTE.rugCreamHi, accent: PALETTE.rugRed, border: PALETTE.woodDark });
-  pool_table(ctx, x, y, w, h, {});
+  pxRect(ctx, x - 10, y - 8, w + 20, h + 18, "#5a3c28");
+  pxRect(ctx, x - 10, y - 8, w + 20, 2, "#6d4a30");
+  pxRect(ctx, x - 10, y + h + 8, w + 20, 2, "#3a2414");
+  pool_table(ctx, x, y, w, h, { frame: "#3a2414", rail: "#5a3a22" });
   lamp(ctx, x + w / 2, y - 10, { height: 30, pool: 50, alpha: 0.16 });
   // players around the table
   trader(ctx, x - 24, y + 2, { variant: 3, shirt: "#3a4a7a", tie: null });
@@ -2228,7 +2290,9 @@ function drawRightLounge(ctx) {
   const w = 200;
   const h = 96;
   const leather = { color: PALETTE.leather, outline: PALETTE.leatherDark, color3: PALETTE.leatherHi };
-  patterned_rug(ctx, x + 2, y + 30, w - 6, h - 34, { color: PALETTE.rugRed, inner: PALETTE.rugRedHi, accent: PALETTE.rugCream, border: PALETTE.gold });
+  pxRect(ctx, x, y, w, h, "#5a3c28");
+  pxRect(ctx, x, y, w, 2, "#6d4a30");
+  patterned_rug(ctx, x + 14, y + 44, w - 40, h - 48, { color: "#4a2018", inner: "#5e2a20", accent: "#7a5a3a", border: "#2a1a0e" });
   // back sofa (brown leather) with a seated trader
   sofa(ctx, x + 4, y + 2, 118, { h: 28, ...leather });
   trader(ctx, x + 38, y + 10, { variant: 5, shirt: "#3a4a7a", tie: null });
@@ -2372,7 +2436,7 @@ function drawRightColumn(ctx) {
       lineHeight: 10,
     });
     // every panel interior is a warm timber room
-    pxRect(ctx, panel.innerX, panel.innerY + 24, panel.innerW, panel.innerH - 24, PALETTE.woodFloorMid);
+    pxRect(ctx, panel.innerX, panel.innerY + 24, panel.innerW, panel.innerH - 24, index === 2 ? "#8a6446" : PALETTE.woodFloorMid);
     if (index === 0) {
       lamp(ctx, panel.innerX + 6, entry.y + 58, { height: 26, pool: 32, alpha: 0.16 });
       pxRect(ctx, panel.innerX + 16, entry.y + 54, 14, 40, "#241a2e");
@@ -2395,6 +2459,12 @@ function drawRightColumn(ctx) {
         color: "#d8d0b8",
         lineHeight: 10,
       });
+      pxRect(ctx, panel.innerX + 96, entry.y + 44, 2, 22, "#3a2a1c");
+      pxRect(ctx, panel.innerX + 88, entry.y + 64, 18, 14, PALETTE.amber);
+      pxRect(ctx, panel.innerX + 88, entry.y + 64, 18, 2, PALETTE.goldHi);
+      pxRect(ctx, panel.innerX + 90, entry.y + 67, 14, 9, "#ffe6b0");
+      lightPool(ctx, panel.innerX + 97, entry.y + 74, 90, PALETTE.amber, 0.40);
+      lightPool(ctx, panel.innerX + 40, entry.y + 70, 70, PALETTE.amber, 0.22);
       // wooden counter
       pxRect(ctx, panel.innerX + 2, entry.y + 88, panel.innerW - 4, 30, PALETTE.woodDark);
       pxRect(ctx, panel.innerX + 2, entry.y + 88, panel.innerW - 4, 4, PALETTE.woodHi);
@@ -2594,7 +2664,8 @@ function drawDecorations(ctx) {
   });
 
   // wall sconces casting warm amber pools
-  for (let sx = 220; sx <= 1440; sx += 122) wall_sconce(ctx, sx, 330, { pool: 34, alpha: 0.12 });
+  const topLamps = [[110, 30], [214, 30], [323, 104], [487, 36], [1081, 42], [1183, 50], [1418, 42]];
+  for (const [lx, lw] of topLamps) wall_lamp(ctx, lx, 6, lw, 16, { pool: Math.round(lw * 1.1), alpha: 0.16 });
   for (let sx = 260; sx <= 1420; sx += 160) wall_sconce(ctx, sx, 902, { pool: 30, alpha: 0.1 });
 
   // floor lamps at the trading-floor corners
@@ -2670,6 +2741,9 @@ function drawDecorations(ctx) {
   bookshelf(ctx, 1350, 300, 26, 34, { shelves: 2, seed: 17 });
 
   // bottom-left corner lounge nook
+  pxRect(ctx, 0, 856, 170, 168, "#6a4a34");
+  pxRect(ctx, 0, 856, 170, 2, "#8a6446");
+  lightPool(ctx, 120, 900, 140, PALETTE.amber, 0.30);
   rug(ctx, 24, 914, 150, 86, { color: PALETTE.rugRed, inner: PALETTE.rugRedHi });
   bookshelf(ctx, 28, 906, 26, 58, { shelves: 3, seed: 11 });
   sideTable(96, 926);
@@ -2679,6 +2753,9 @@ function drawDecorations(ctx) {
   lamp(ctx, 40, 986, { height: 30, pool: 40, alpha: 0.16 });
 
   // bottom-right corner lounge nook
+  pxRect(ctx, 1366, 856, 170, 168, "#6a4a34");
+  pxRect(ctx, 1366, 856, 170, 2, "#8a6446");
+  lightPool(ctx, 1440, 900, 130, PALETTE.amber, 0.26);
   rug(ctx, 1362, 914, 150, 86, { color: PALETTE.rugRed, inner: PALETTE.rugRedHi });
   plant_large(ctx, 1368, 962, {});
   bookshelf(ctx, 1470, 906, 26, 58, { shelves: 3, seed: 13 });
@@ -2718,7 +2795,7 @@ function drawPanelBackdrops(ctx) {
 /** Local light pools + subtle warm ambient + vignette (light comes from objects, not a global filter). */
 function drawLighting(ctx) {
   ctx.save();
-  ctx.globalCompositeOperation = "overlay";
+  ctx.globalCompositeOperation = "source-over";
   ctx.fillStyle = "rgba(255,176,88,0.08)";
   ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
   ctx.restore();
@@ -2753,7 +2830,7 @@ function drawLighting(ctx) {
 
   const v = ctx.createRadialGradient(768, 500, 250, 768, 500, 940);
   v.addColorStop(0, "rgba(0,0,0,0)");
-  v.addColorStop(1, "rgba(0,0,0,0.40)");
+  v.addColorStop(1, "rgba(0,0,0,0.80)");
   ctx.save();
   ctx.fillStyle = v;
   ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
