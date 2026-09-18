@@ -1,0 +1,2770 @@
+{
+ "meta": {
+  "schema": "forensic-5-trades-computed-v1",
+  "sourceEvidence": "docs\\research\\data\\forensic-5-trades.json",
+  "sourceEvidenceGeneratedAt": "2026-09-18T22:18:58.875Z",
+  "computedAt": "2026-09-18T22:21:00.974Z",
+  "engine": "scripts/forensic-5-trade-audit.mjs",
+  "independence": "Quality/arms recomputados com trade-quality.mjs de producao a partir do snapshot ja registrado (T0_DECISION_SNAPSHOT no journal). O valor RECORDED em producao (SHADOW_ARMS) e a fonte primaria; a recomputacao e o counterexample.",
+  "errors": []
+ },
+ "trades": [
+  {
+   "tradeId": "exec_1789761733551_9531r8",
+   "decisionId": "ord_1789761733551",
+   "correlationId": "corr_356988",
+   "marketKey": "EURUSD:OTC",
+   "marketType": "OTC",
+   "source": "ui:smoke",
+   "stakeSource": "MANUAL_OVERRIDE",
+   "autonomous": false,
+   "candidateId": null,
+   "candidateCreatedAt": "1970-01-01T00:00:00.000Z",
+   "candidateAgeMs": null,
+   "targetEntryAt": null,
+   "targetEntryAtIso": "1970-01-01T00:00:00.000Z",
+   "targetExpiryAt": null,
+   "targetExpiryAtIso": "1970-01-01T00:00:00.000Z",
+   "submitAtMs": null,
+   "submitAtIso": "1970-01-01T00:00:00.000Z",
+   "requestedAt": "2026-09-18T20:02:13.837Z",
+   "ackedAt": "2026-09-18T20:02:14.015Z",
+   "expirationAt": "2026-09-18T20:03:00.000Z",
+   "entryAtJournal": "2026-09-18T20:02:14.015Z",
+   "settlementAtJournal": "2026-09-18T20:03:00.113Z",
+   "direction": "CALL",
+   "action": "BUY",
+   "actionMapsToDirection": true,
+   "activeId": 76,
+   "symbol": "EUR/USD OTC",
+   "brokerOrderId": "14274204934",
+   "state": "SETTLED",
+   "stake": 1,
+   "payout": 88,
+   "profit": -1,
+   "brokerResult": "LOSS",
+   "causalResult": "LOSS",
+   "settlementMismatch": false,
+   "result": "LOSS",
+   "regime": "TREND_DOWN",
+   "structure": "DOWN",
+   "structureDetail": "LH+LL",
+   "location": "LOWER_HALF",
+   "setup": "TREND_PULLBACK",
+   "trigger": "pullback_com_estrutura_mantida",
+   "processLog": [
+    {
+     "stage": "DATA_INTEGRITY",
+     "detail": null,
+     "status": "OK"
+    },
+    {
+     "stage": "REGIME",
+     "detail": "TREND_DOWN",
+     "status": "OK"
+    },
+    {
+     "stage": "STRUCTURE",
+     "detail": "DOWN",
+     "status": "OK"
+    },
+    {
+     "stage": "LOCATION",
+     "detail": "LOWER_HALF",
+     "status": "OK"
+    },
+    {
+     "stage": "MOMENTUM",
+     "detail": "45.5",
+     "status": "OK"
+    },
+    {
+     "stage": "STRENGTH",
+     "detail": 28.072332230284267,
+     "status": "OK"
+    },
+    {
+     "stage": "VOLATILITY",
+     "detail": 0.971,
+     "status": "OK"
+    },
+    {
+     "stage": "MICROSTRUCTURE",
+     "detail": 2,
+     "status": "OK"
+    },
+    {
+     "stage": "SETUP",
+     "detail": "TREND_PULLBACK",
+     "status": "OK"
+    },
+    {
+     "stage": "TRIGGER",
+     "detail": "pullback_com_estrutura_mantida",
+     "status": "OK"
+    },
+    {
+     "stage": "CONTRADICTIONS",
+     "detail": [
+      "entrada_excessivamente_estendida"
+     ],
+     "status": "WARN"
+    },
+    {
+     "stage": "DECISION",
+     "detail": "WAIT",
+     "status": "OK"
+    }
+   ],
+   "indicators": {
+    "rsi14": 45.478384697791995,
+    "velocity": 0.000073,
+    "acceleration": 0.000093,
+    "adx14": 28.072332230284267,
+    "plusDI": 19.230971377030095,
+    "minusDI": 28.167796212974633,
+    "diSpread": 8.936824835944538,
+    "diAgainstDirection": true,
+    "atr": 0.00015914640977447071,
+    "atrRatio": 0.971,
+    "atrNormalized": 0.00013864,
+    "donchianPosition": 0.3218,
+    "distanceToLowerATR": 1.759,
+    "distanceToUpperATR": 3.707,
+    "extensionMaxATR": 3.707,
+    "streak": 2,
+    "bodyRatio": 0.4,
+    "upperWick": 0.6,
+    "lowerWick": 0,
+    "features": {
+     "s": 0.2116,
+     "r24": -0.000383,
+     "rsi14": 45.478384697791995,
+     "vol12": 0.00009
+    }
+   },
+   "critic": {
+    "verdict": "CONTEST",
+    "riskFlags": [],
+    "contradictions": [
+     "checklist_falhou:sem_extensao_excessiva"
+    ],
+    "independentAction": "WAIT",
+    "finalRecommendation": "WAIT"
+   },
+   "consensus": {
+    "reason": "TRADER_WAIT",
+    "status": "NO_CONSENSUS",
+    "traderAction": "WAIT",
+    "criticVerdict": "CONTEST",
+    "criticIndependent": "WAIT"
+   },
+   "supportingEvidence": [
+    "setup:TREND_PULLBACK",
+    "trigger:pullback_com_estrutura_mantida",
+    "estrutura:DOWN",
+    "rsi14:45.5",
+    "adx14:28.1"
+   ],
+   "contradictingEvidence": [
+    "entrada_excessivamente_estendida"
+   ],
+   "knowledgeUsed": true,
+   "freshness": {
+    "fresh": true,
+    "reason": "OK",
+    "tickAgeMs": 201
+   },
+   "professor": {
+    "decisionQuality": "ACCEPTABLE_DECISION",
+    "finalDecisionQuality": "ACCEPTABLE_DECISION",
+    "mistakes": [
+     "ENTRADA_ATRASADA"
+    ],
+    "wouldWaitBeBetter": true,
+    "setup": "TREND_PULLBACK",
+    "action": "BUY",
+    "lesson": "Evitar ENTRADA_ATRASADA em EURUSD:OTC: extensao 3.71 ATR do canal."
+   },
+   "trailingQualityGate": {
+    "recorded": null,
+    "recomputedFromJournalSnapshot": {
+     "score": 77,
+     "failedChecks": [
+      "structure_agrees",
+      "di_agrees",
+      "critic_clean",
+      "accel_agrees",
+      "velocity_agrees",
+      "knowledge_used"
+     ],
+     "checks": [
+      {
+       "id": "setup_trigger",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": {
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida"
+       }
+      },
+      {
+       "id": "regime_ok",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": "TREND_DOWN"
+      },
+      {
+       "id": "regime_trend",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": {
+        "regime": "TREND_DOWN",
+        "note": "bonus; setups de tendencia rendem mais em TREND"
+       }
+      },
+      {
+       "id": "structure_agrees",
+       "points": 0,
+       "max": 6,
+       "ok": false,
+       "detail": "DOWN"
+      },
+      {
+       "id": "di_agrees",
+       "points": 0,
+       "max": 6,
+       "ok": false,
+       "detail": {
+        "plusDI": 19.230971377030095,
+        "minusDI": 28.167796212974633
+       }
+      },
+      {
+       "id": "adx_strength",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 28.072332230284267
+      },
+      {
+       "id": "adx_not_falling",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": null
+      },
+      {
+       "id": "critic_clean",
+       "points": 0,
+       "max": 6,
+       "ok": false,
+       "detail": {
+        "verdict": "CONTEST",
+        "flags": []
+       }
+      },
+      {
+       "id": "location_not_mid",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 0.3218
+      },
+      {
+       "id": "location_favors_room",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 0.3218
+      },
+      {
+       "id": "not_overextended",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": {
+        "againstATR": 1.759
+       }
+      },
+      {
+       "id": "headroom",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": {
+        "withATR": 3.707
+       }
+      },
+      {
+       "id": "entry_displacement",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": null
+      },
+      {
+       "id": "rsi_not_extreme",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": 45.478384697791995
+      },
+      {
+       "id": "accel_agrees",
+       "points": 0,
+       "max": 8,
+       "ok": false,
+       "detail": null
+      },
+      {
+       "id": "velocity_agrees",
+       "points": 0,
+       "max": 4,
+       "ok": false,
+       "detail": null
+      },
+      {
+       "id": "streak_agrees",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": 2
+      },
+      {
+       "id": "data_fresh",
+       "points": 3,
+       "max": 3,
+       "ok": true,
+       "detail": "nao informado"
+      },
+      {
+       "id": "knowledge_used",
+       "points": 0,
+       "max": 3,
+       "ok": false,
+       "detail": null
+      }
+     ],
+     "entryLocation": {
+      "ok": true,
+      "reason": null,
+      "reasons": [],
+      "code": null
+     },
+     "arms": {
+      "A_G2_JIT": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "B_QUALITY_GATE": {
+       "decision": "ABSTAIN",
+       "reason": "DI_CONFLICT"
+      },
+      "C_STABILITY": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "D_CRITIC": {
+       "decision": "ABSTAIN",
+       "reason": "CRITIC_NOT_CONFIRM"
+      },
+      "E_MICROSTRUCTURE": {
+       "decision": "ABSTAIN",
+       "reason": "OVEREXTENSION"
+      },
+      "F_COMBINED": {
+       "decision": "ABSTAIN",
+       "reason": "B_QUALITY_GATE"
+      }
+     },
+     "triggerStrength": {
+      "score": 1,
+      "max": 5,
+      "reasons": [
+       "trigger_presente"
+      ]
+     },
+     "recordedArms": null,
+     "armsMatch": null
+    }
+   },
+   "jit": {
+    "entryLeadMs": null,
+    "revalidatedAt": "1970-01-01T00:00:00.000Z",
+    "candidateChangedBeforeEntry": false,
+    "changedFields": [],
+    "directionChanged": false,
+    "driftMs": null,
+    "effectiveEntryAt": null,
+    "displacement": null,
+    "displacementATR": null,
+    "adverseDisplacement": null,
+    "spreadProxyATR": null
+   },
+   "execution": {
+    "ackMs": 463,
+    "decisionToSubmitMs": null,
+    "submitToAckMs": 463,
+    "ackToExpiryMs": 45985,
+    "targetExpiryVsBrokerExpiryMs": null,
+    "causal": {
+     "entry": 1.147895,
+     "direction": "CALL",
+     "settlement": 1.147735
+    },
+    "settlementMove": -0.00016000000000016001,
+    "settlementMoveATR": -1.0054,
+    "favorableAtExpiry": false,
+    "absSettlementMoveATR": 1.0054
+   }
+  },
+  {
+   "tradeId": "exec_1789764899007_b4khil",
+   "decisionId": "auto_AUDCHF:OTC_1789764895000",
+   "correlationId": "corr_450528",
+   "marketKey": "AUDCHF:OTC",
+   "marketType": "OTC",
+   "source": "AUTO_DECISION",
+   "stakeSource": "MARKET_CONFIGURED",
+   "autonomous": true,
+   "candidateId": "cand_AUDCHF_OTC_1789764900000",
+   "candidateCreatedAt": "2026-09-18T20:54:56.137Z",
+   "candidateAgeMs": 2868,
+   "targetEntryAt": 1789764900000,
+   "targetEntryAtIso": "2026-09-18T20:55:00.000Z",
+   "targetExpiryAt": 1789764960000,
+   "targetExpiryAtIso": "2026-09-18T20:56:00.000Z",
+   "submitAtMs": 1789764899007,
+   "submitAtIso": "2026-09-18T20:54:59.007Z",
+   "requestedAt": "2026-09-18T20:54:59.417Z",
+   "ackedAt": "2026-09-18T20:54:59.615Z",
+   "expirationAt": "2026-09-18T20:56:00.000Z",
+   "entryAtJournal": "2026-09-18T20:54:59.615Z",
+   "settlementAtJournal": "2026-09-18T20:56:00.319Z",
+   "direction": "PUT",
+   "action": "SELL",
+   "actionMapsToDirection": true,
+   "activeId": 2129,
+   "symbol": "AUD/CHF OTC",
+   "brokerOrderId": "14274316648",
+   "state": "SETTLED",
+   "stake": 10,
+   "payout": 82,
+   "profit": 8.2,
+   "brokerResult": "WIN",
+   "causalResult": "WIN",
+   "settlementMismatch": false,
+   "result": "WIN",
+   "regime": "TREND_DOWN",
+   "structure": "DOWN",
+   "structureDetail": "LH+LL",
+   "location": "UPPER_HALF",
+   "setup": "TREND_PULLBACK",
+   "trigger": "pullback_com_estrutura_mantida",
+   "processLog": [
+    {
+     "stage": "DATA_INTEGRITY",
+     "detail": null,
+     "status": "OK"
+    },
+    {
+     "stage": "REGIME",
+     "detail": "TREND_DOWN",
+     "status": "OK"
+    },
+    {
+     "stage": "STRUCTURE",
+     "detail": "DOWN",
+     "status": "OK"
+    },
+    {
+     "stage": "LOCATION",
+     "detail": "UPPER_HALF",
+     "status": "OK"
+    },
+    {
+     "stage": "MOMENTUM",
+     "detail": "48.2",
+     "status": "OK"
+    },
+    {
+     "stage": "STRENGTH",
+     "detail": 20.571658120524667,
+     "status": "OK"
+    },
+    {
+     "stage": "VOLATILITY",
+     "detail": 0.855,
+     "status": "OK"
+    },
+    {
+     "stage": "MICROSTRUCTURE",
+     "detail": 0,
+     "status": "OK"
+    },
+    {
+     "stage": "SETUP",
+     "detail": "TREND_PULLBACK",
+     "status": "OK"
+    },
+    {
+     "stage": "TRIGGER",
+     "detail": "pullback_com_estrutura_mantida",
+     "status": "OK"
+    },
+    {
+     "stage": "CONTRADICTIONS",
+     "detail": [],
+     "status": "OK"
+    },
+    {
+     "stage": "DECISION",
+     "detail": "SELL",
+     "status": "OK"
+    }
+   ],
+   "indicators": {
+    "rsi14": 48.22649323022232,
+    "velocity": -0.00001,
+    "acceleration": -0.000007,
+    "adx14": 20.571658120524667,
+    "plusDI": 20.849240619211255,
+    "minusDI": 22.829182315194384,
+    "diSpread": 1.979941695983129,
+    "diAgainstDirection": false,
+    "atr": 0.00004830558384557762,
+    "atrRatio": 0.855,
+    "atrNormalized": 0.00008241,
+    "donchianPosition": 0.7368,
+    "distanceToLowerATR": 2.898,
+    "distanceToUpperATR": 1.035,
+    "extensionMaxATR": 2.898,
+    "streak": 0,
+    "bodyRatio": 0,
+    "upperWick": 0,
+    "lowerWick": 1,
+    "features": {
+     "s": 0.1505,
+     "r24": -0.000205,
+     "rsi14": 48.22649323022232,
+     "vol12": 0.000056
+    }
+   },
+   "critic": {
+    "verdict": "CONFIRM",
+    "riskFlags": [],
+    "contradictions": [],
+    "independentAction": "SELL",
+    "finalRecommendation": "SELL"
+   },
+   "consensus": {
+    "reason": "TRADER_E_CRITIC_ALINHADOS",
+    "status": "CONFIRMED",
+    "traderAction": "SELL",
+    "criticVerdict": "CONFIRM",
+    "criticIndependent": "SELL"
+   },
+   "supportingEvidence": [
+    "setup:TREND_PULLBACK",
+    "trigger:pullback_com_estrutura_mantida",
+    "estrutura:DOWN",
+    "rsi14:48.2",
+    "adx14:20.6"
+   ],
+   "contradictingEvidence": [],
+   "knowledgeUsed": true,
+   "freshness": {
+    "fresh": true,
+    "reason": "OK",
+    "tickAgeMs": 203
+   },
+   "professor": {
+    "decisionQuality": "ACCEPTABLE_DECISION",
+    "finalDecisionQuality": "ACCEPTABLE_DECISION",
+    "mistakes": [
+     "ENTRADA_ATRASADA"
+    ],
+    "wouldWaitBeBetter": true,
+    "setup": "TREND_PULLBACK",
+    "action": "SELL",
+    "lesson": "Evitar ENTRADA_ATRASADA em AUDCHF:OTC: extensao 2.90 ATR do canal."
+   },
+   "trailingQualityGate": {
+    "recorded": {
+     "score": 95,
+     "entryLocation": {
+      "ok": true,
+      "code": null,
+      "reason": null,
+      "reasons": []
+     },
+     "arms": {
+      "A_G2_JIT": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "D_CRITIC": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "F_COMBINED": {
+       "reason": "C_STABILITY",
+       "decision": "ABSTAIN"
+      },
+      "C_STABILITY": {
+       "reason": "DIRECTION_UNSTABLE",
+       "decision": "ABSTAIN"
+      },
+      "B_QUALITY_GATE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "E_MICROSTRUCTURE": {
+       "reason": "OVEREXTENSION",
+       "decision": "ABSTAIN"
+      }
+     },
+     "microVeto": {
+      "veto": false,
+      "detail": {
+       "delta": 0,
+       "adverseATR": 0
+      },
+      "reason": null
+     }
+    },
+    "recomputedFromJournalSnapshot": {
+     "score": 95,
+     "failedChecks": [
+      "accel_agrees",
+      "velocity_agrees",
+      "knowledge_used"
+     ],
+     "checks": [
+      {
+       "id": "setup_trigger",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": {
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida"
+       }
+      },
+      {
+       "id": "regime_ok",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": "TREND_DOWN"
+      },
+      {
+       "id": "regime_trend",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": {
+        "regime": "TREND_DOWN",
+        "note": "bonus; setups de tendencia rendem mais em TREND"
+       }
+      },
+      {
+       "id": "structure_agrees",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": "DOWN"
+      },
+      {
+       "id": "di_agrees",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": {
+        "plusDI": 20.849240619211255,
+        "minusDI": 22.829182315194384
+       }
+      },
+      {
+       "id": "adx_strength",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 20.571658120524667
+      },
+      {
+       "id": "adx_not_falling",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": null
+      },
+      {
+       "id": "critic_clean",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": {
+        "verdict": "CONFIRM",
+        "flags": []
+       }
+      },
+      {
+       "id": "location_not_mid",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 0.7368
+      },
+      {
+       "id": "location_favors_room",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 0.7368
+      },
+      {
+       "id": "not_overextended",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": {
+        "againstATR": 1.035
+       }
+      },
+      {
+       "id": "headroom",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": {
+        "withATR": 2.898
+       }
+      },
+      {
+       "id": "entry_displacement",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": -0.207
+      },
+      {
+       "id": "rsi_not_extreme",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": 48.22649323022232
+      },
+      {
+       "id": "accel_agrees",
+       "points": 0,
+       "max": 8,
+       "ok": false,
+       "detail": null
+      },
+      {
+       "id": "velocity_agrees",
+       "points": 0,
+       "max": 4,
+       "ok": false,
+       "detail": null
+      },
+      {
+       "id": "streak_agrees",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": 0
+      },
+      {
+       "id": "data_fresh",
+       "points": 3,
+       "max": 3,
+       "ok": true,
+       "detail": "nao informado"
+      },
+      {
+       "id": "knowledge_used",
+       "points": 0,
+       "max": 3,
+       "ok": false,
+       "detail": null
+      }
+     ],
+     "entryLocation": {
+      "ok": true,
+      "reason": null,
+      "reasons": [],
+      "code": null
+     },
+     "arms": {
+      "A_G2_JIT": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "B_QUALITY_GATE": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "C_STABILITY": {
+       "decision": "ABSTAIN",
+       "reason": "DIRECTION_UNSTABLE"
+      },
+      "D_CRITIC": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "E_MICROSTRUCTURE": {
+       "decision": "ABSTAIN",
+       "reason": "OVEREXTENSION"
+      },
+      "F_COMBINED": {
+       "decision": "ABSTAIN",
+       "reason": "C_STABILITY"
+      }
+     },
+     "triggerStrength": {
+      "score": 3,
+      "max": 5,
+      "reasons": [
+       "di_a_favor",
+       "critic_confirm",
+       "trigger_presente"
+      ]
+     },
+     "recordedArms": {
+      "A_G2_JIT": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "D_CRITIC": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "F_COMBINED": {
+       "reason": "C_STABILITY",
+       "decision": "ABSTAIN"
+      },
+      "C_STABILITY": {
+       "reason": "DIRECTION_UNSTABLE",
+       "decision": "ABSTAIN"
+      },
+      "B_QUALITY_GATE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "E_MICROSTRUCTURE": {
+       "reason": "OVEREXTENSION",
+       "decision": "ABSTAIN"
+      }
+     },
+     "armsMatch": {
+      "A_G2_JIT": true,
+      "D_CRITIC": true,
+      "F_COMBINED": true,
+      "C_STABILITY": true,
+      "B_QUALITY_GATE": true,
+      "E_MICROSTRUCTURE": true
+     }
+    }
+   },
+   "jit": {
+    "entryLeadMs": 1000,
+    "revalidatedAt": "2026-09-18T20:54:59.005Z",
+    "candidateChangedBeforeEntry": true,
+    "changedFields": [
+     {
+      "field": "rsi",
+      "before": 48.22649323022232,
+      "after": 47.102357607094795
+     },
+     {
+      "field": "adx",
+      "before": 20.332717443067583,
+      "after": 20.571658120524667
+     },
+     {
+      "field": "diSpread",
+      "before": 0.5087835198113773,
+      "after": 1.979941695983129
+     },
+     {
+      "field": "atrRatio",
+      "before": 0.843,
+      "after": 0.855
+     },
+     {
+      "field": "price",
+      "before": 0.586165,
+      "after": 0.586155
+     }
+    ],
+    "directionChanged": false,
+    "driftMs": -385,
+    "effectiveEntryAt": "2026-09-18T20:54:59.615Z",
+    "displacement": -0.000010000000000065512,
+    "displacementATR": -0.207,
+    "adverseDisplacement": true,
+    "spreadProxyATR": -0.207
+   },
+   "execution": {
+    "ackMs": 608,
+    "decisionToSubmitMs": 2,
+    "submitToAckMs": 608,
+    "ackToExpiryMs": 60385,
+    "targetExpiryVsBrokerExpiryMs": 0,
+    "causal": {
+     "entry": 0.586155,
+     "direction": "PUT",
+     "settlement": 0.585975
+    },
+    "settlementMove": -0.00017999999999995797,
+    "settlementMoveATR": -3.7263,
+    "favorableAtExpiry": true,
+    "absSettlementMoveATR": 3.7263
+   }
+  },
+  {
+   "tradeId": "exec_1789765738953_12798x",
+   "decisionId": "auto_CADCHF:OTC_1789765735000",
+   "correlationId": "corr_475015",
+   "marketKey": "CADCHF:OTC",
+   "marketType": "OTC",
+   "source": "AUTO_DECISION",
+   "stakeSource": "MARKET_CONFIGURED",
+   "autonomous": true,
+   "candidateId": "cand_CADCHF_OTC_1789765740000",
+   "candidateCreatedAt": "2026-09-18T21:08:48.486Z",
+   "candidateAgeMs": 10465,
+   "targetEntryAt": 1789765740000,
+   "targetEntryAtIso": "2026-09-18T21:09:00.000Z",
+   "targetExpiryAt": 1789765800000,
+   "targetExpiryAtIso": "2026-09-18T21:10:00.000Z",
+   "submitAtMs": 1789765738953,
+   "submitAtIso": "2026-09-18T21:08:58.953Z",
+   "requestedAt": "2026-09-18T21:08:59.658Z",
+   "ackedAt": "2026-09-18T21:08:59.840Z",
+   "expirationAt": "2026-09-18T21:10:00.000Z",
+   "entryAtJournal": "2026-09-18T21:08:59.840Z",
+   "settlementAtJournal": "2026-09-18T21:10:00.659Z",
+   "direction": "CALL",
+   "action": "BUY",
+   "actionMapsToDirection": true,
+   "activeId": 2119,
+   "symbol": "CAD/CHF OTC",
+   "brokerOrderId": "14274346901",
+   "state": "SETTLED",
+   "stake": 10,
+   "payout": 82,
+   "profit": -10,
+   "brokerResult": "LOSS",
+   "causalResult": "LOSS",
+   "settlementMismatch": false,
+   "result": "LOSS",
+   "regime": "TREND_UP",
+   "structure": "UP",
+   "structureDetail": "HH+HL",
+   "location": "MID",
+   "setup": "TREND_PULLBACK",
+   "trigger": "pullback_com_estrutura_mantida",
+   "processLog": [
+    {
+     "stage": "DATA_INTEGRITY",
+     "detail": null,
+     "status": "OK"
+    },
+    {
+     "stage": "REGIME",
+     "detail": "TREND_UP",
+     "status": "OK"
+    },
+    {
+     "stage": "STRUCTURE",
+     "detail": "UP",
+     "status": "OK"
+    },
+    {
+     "stage": "LOCATION",
+     "detail": "MID",
+     "status": "OK"
+    },
+    {
+     "stage": "MOMENTUM",
+     "detail": "55.2",
+     "status": "OK"
+    },
+    {
+     "stage": "STRENGTH",
+     "detail": 33.98723013901649,
+     "status": "OK"
+    },
+    {
+     "stage": "VOLATILITY",
+     "detail": 0.988,
+     "status": "OK"
+    },
+    {
+     "stage": "MICROSTRUCTURE",
+     "detail": -1,
+     "status": "OK"
+    },
+    {
+     "stage": "SETUP",
+     "detail": "TREND_PULLBACK",
+     "status": "OK"
+    },
+    {
+     "stage": "TRIGGER",
+     "detail": "pullback_com_estrutura_mantida",
+     "status": "OK"
+    },
+    {
+     "stage": "CONTRADICTIONS",
+     "detail": [],
+     "status": "OK"
+    },
+    {
+     "stage": "DECISION",
+     "detail": "BUY",
+     "status": "OK"
+    }
+   ],
+   "indicators": {
+    "rsi14": 55.20718544492441,
+    "velocity": 0,
+    "acceleration": 0.00001,
+    "adx14": 33.98723013901649,
+    "plusDI": 27.4013528654124,
+    "minusDI": 16.104774251593383,
+    "diSpread": 11.296578613819015,
+    "diAgainstDirection": false,
+    "atr": 0.00004428636430560638,
+    "atrRatio": 0.988,
+    "atrNormalized": 0.00007505,
+    "donchianPosition": 0.45,
+    "distanceToLowerATR": 2.032,
+    "distanceToUpperATR": 2.484,
+    "extensionMaxATR": 2.484,
+    "streak": -1,
+    "bodyRatio": 1,
+    "upperWick": 0,
+    "lowerWick": 0,
+    "features": {
+     "s": -0.0046,
+     "r24": 0.000203,
+     "rsi14": 55.20718544492441,
+     "vol12": 0.000052
+    }
+   },
+   "critic": {
+    "verdict": "CONFIRM",
+    "riskFlags": [],
+    "contradictions": [
+     "preco_esticado_contra_a_entrada"
+    ],
+    "independentAction": "BUY",
+    "finalRecommendation": "BUY"
+   },
+   "consensus": {
+    "reason": "TRADER_E_CRITIC_ALINHADOS",
+    "status": "CONFIRMED",
+    "traderAction": "BUY",
+    "criticVerdict": "CONFIRM",
+    "criticIndependent": "BUY"
+   },
+   "supportingEvidence": [
+    "setup:TREND_PULLBACK",
+    "trigger:pullback_com_estrutura_mantida",
+    "estrutura:UP",
+    "rsi14:55.2",
+    "adx14:34.0"
+   ],
+   "contradictingEvidence": [],
+   "knowledgeUsed": true,
+   "freshness": {
+    "fresh": true,
+    "reason": "OK",
+    "tickAgeMs": 826
+   },
+   "professor": {
+    "decisionQuality": "GOOD_DECISION",
+    "finalDecisionQuality": "GOOD_DECISION",
+    "mistakes": [],
+    "wouldWaitBeBetter": false,
+    "setup": "TREND_PULLBACK",
+    "action": "BUY",
+    "lesson": "Processo correto em CADCHF:OTC (TREND_PULLBACK)."
+   },
+   "trailingQualityGate": {
+    "recorded": {
+     "score": 79,
+     "entryLocation": {
+      "ok": true,
+      "code": null,
+      "reason": null,
+      "reasons": []
+     },
+     "arms": {
+      "A_G2_JIT": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "D_CRITIC": {
+       "reason": "CRITIC_CONTRADICTION",
+       "decision": "ABSTAIN"
+      },
+      "F_COMBINED": {
+       "reason": "C_STABILITY",
+       "decision": "ABSTAIN"
+      },
+      "C_STABILITY": {
+       "reason": "DIRECTION_UNSTABLE",
+       "decision": "ABSTAIN"
+      },
+      "B_QUALITY_GATE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "E_MICROSTRUCTURE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      }
+     },
+     "microVeto": {
+      "veto": false,
+      "detail": {
+       "delta": 0,
+       "adverseATR": 0
+      },
+      "reason": null
+     }
+    },
+    "recomputedFromJournalSnapshot": {
+     "score": 71,
+     "failedChecks": [
+      "critic_clean",
+      "location_not_mid",
+      "not_overextended",
+      "accel_agrees",
+      "velocity_agrees",
+      "streak_agrees",
+      "knowledge_used"
+     ],
+     "checks": [
+      {
+       "id": "setup_trigger",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": {
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida"
+       }
+      },
+      {
+       "id": "regime_ok",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": "TREND_UP"
+      },
+      {
+       "id": "regime_trend",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": {
+        "regime": "TREND_UP",
+        "note": "bonus; setups de tendencia rendem mais em TREND"
+       }
+      },
+      {
+       "id": "structure_agrees",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": "UP"
+      },
+      {
+       "id": "di_agrees",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": {
+        "plusDI": 27.4013528654124,
+        "minusDI": 16.104774251593383
+       }
+      },
+      {
+       "id": "adx_strength",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 33.98723013901649
+      },
+      {
+       "id": "adx_not_falling",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": null
+      },
+      {
+       "id": "critic_clean",
+       "points": 0,
+       "max": 6,
+       "ok": false,
+       "detail": {
+        "verdict": "CONFIRM",
+        "flags": []
+       }
+      },
+      {
+       "id": "location_not_mid",
+       "points": 0,
+       "max": 6,
+       "ok": false,
+       "detail": 0.45
+      },
+      {
+       "id": "location_favors_room",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 0.45
+      },
+      {
+       "id": "not_overextended",
+       "points": 0,
+       "max": 8,
+       "ok": false,
+       "detail": {
+        "againstATR": 2.032
+       }
+      },
+      {
+       "id": "headroom",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": {
+        "withATR": 2.484
+       }
+      },
+      {
+       "id": "entry_displacement",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": null
+      },
+      {
+       "id": "rsi_not_extreme",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": 55.20718544492441
+      },
+      {
+       "id": "accel_agrees",
+       "points": 0,
+       "max": 8,
+       "ok": false,
+       "detail": null
+      },
+      {
+       "id": "velocity_agrees",
+       "points": 0,
+       "max": 4,
+       "ok": false,
+       "detail": null
+      },
+      {
+       "id": "streak_agrees",
+       "points": 0,
+       "max": 4,
+       "ok": false,
+       "detail": -1
+      },
+      {
+       "id": "data_fresh",
+       "points": 3,
+       "max": 3,
+       "ok": true,
+       "detail": "nao informado"
+      },
+      {
+       "id": "knowledge_used",
+       "points": 0,
+       "max": 3,
+       "ok": false,
+       "detail": null
+      }
+     ],
+     "entryLocation": {
+      "ok": true,
+      "reason": null,
+      "reasons": [],
+      "code": null
+     },
+     "arms": {
+      "A_G2_JIT": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "B_QUALITY_GATE": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "C_STABILITY": {
+       "decision": "ABSTAIN",
+       "reason": "DIRECTION_UNSTABLE"
+      },
+      "D_CRITIC": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "E_MICROSTRUCTURE": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "F_COMBINED": {
+       "decision": "ABSTAIN",
+       "reason": "C_STABILITY"
+      }
+     },
+     "triggerStrength": {
+      "score": 3,
+      "max": 5,
+      "reasons": [
+       "di_a_favor",
+       "critic_confirm",
+       "trigger_presente"
+      ]
+     },
+     "recordedArms": {
+      "A_G2_JIT": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "D_CRITIC": {
+       "reason": "CRITIC_CONTRADICTION",
+       "decision": "ABSTAIN"
+      },
+      "F_COMBINED": {
+       "reason": "C_STABILITY",
+       "decision": "ABSTAIN"
+      },
+      "C_STABILITY": {
+       "reason": "DIRECTION_UNSTABLE",
+       "decision": "ABSTAIN"
+      },
+      "B_QUALITY_GATE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "E_MICROSTRUCTURE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      }
+     },
+     "armsMatch": {
+      "A_G2_JIT": true,
+      "D_CRITIC": false,
+      "F_COMBINED": true,
+      "C_STABILITY": true,
+      "B_QUALITY_GATE": true,
+      "E_MICROSTRUCTURE": true
+     }
+    }
+   },
+   "jit": {
+    "entryLeadMs": 1058,
+    "revalidatedAt": "2026-09-18T21:08:58.951Z",
+    "candidateChangedBeforeEntry": true,
+    "changedFields": [
+     {
+      "field": "rsi",
+      "before": 56.020832661722466,
+      "after": 55.20718544492441
+     },
+     {
+      "field": "adx",
+      "before": 35.268810097917154,
+      "after": 33.98723013901649
+     },
+     {
+      "field": "diSpread",
+      "before": 12.443420844643079,
+      "after": 11.296578613819015
+     },
+     {
+      "field": "atrRatio",
+      "before": 1.041,
+      "after": 0.988
+     }
+    ],
+    "directionChanged": false,
+    "driftMs": -160,
+    "effectiveEntryAt": "2026-09-18T21:08:59.840Z",
+    "displacement": null,
+    "displacementATR": null,
+    "adverseDisplacement": null,
+    "spreadProxyATR": null
+   },
+   "execution": {
+    "ackMs": 887,
+    "decisionToSubmitMs": 2,
+    "submitToAckMs": 887,
+    "ackToExpiryMs": 60160,
+    "targetExpiryVsBrokerExpiryMs": 0,
+    "causal": {
+     "entry": 0.590125,
+     "direction": "CALL",
+     "settlement": 0.589935
+    },
+    "settlementMove": -0.00019000000000002348,
+    "settlementMoveATR": -4.2903,
+    "favorableAtExpiry": false,
+    "absSettlementMoveATR": 4.2903
+   }
+  },
+  {
+   "tradeId": "exec_1789766458670_rofxu6",
+   "decisionId": "auto_EURAUD:OTC_1789766455000",
+   "correlationId": "corr_495995",
+   "marketKey": "EURAUD:OTC",
+   "marketType": "OTC",
+   "source": "AUTO_DECISION",
+   "stakeSource": "MARKET_CONFIGURED",
+   "autonomous": true,
+   "candidateId": "cand_EURAUD_OTC_1789766460000",
+   "candidateCreatedAt": "2026-09-18T21:20:51.127Z",
+   "candidateAgeMs": 7541,
+   "targetEntryAt": 1789766460000,
+   "targetEntryAtIso": "2026-09-18T21:21:00.000Z",
+   "targetExpiryAt": 1789766520000,
+   "targetExpiryAtIso": "2026-09-18T21:22:00.000Z",
+   "submitAtMs": 1789766458670,
+   "submitAtIso": "2026-09-18T21:20:58.670Z",
+   "requestedAt": "2026-09-18T21:20:59.380Z",
+   "ackedAt": "2026-09-18T21:20:59.567Z",
+   "expirationAt": "2026-09-18T21:22:00.000Z",
+   "entryAtJournal": "2026-09-18T21:20:59.567Z",
+   "settlementAtJournal": "2026-09-18T21:22:00.578Z",
+   "direction": "PUT",
+   "action": "SELL",
+   "actionMapsToDirection": true,
+   "activeId": 2120,
+   "symbol": "EUR/AUD OTC",
+   "brokerOrderId": "14274375990",
+   "state": "SETTLED",
+   "stake": 10,
+   "payout": 82,
+   "profit": -10,
+   "brokerResult": "LOSS",
+   "causalResult": "LOSS",
+   "settlementMismatch": false,
+   "result": "LOSS",
+   "regime": "TREND_DOWN",
+   "structure": "DOWN",
+   "structureDetail": "LH+LL",
+   "location": "MID",
+   "setup": "TREND_PULLBACK",
+   "trigger": "pullback_com_estrutura_mantida",
+   "processLog": [
+    {
+     "stage": "DATA_INTEGRITY",
+     "detail": null,
+     "status": "OK"
+    },
+    {
+     "stage": "REGIME",
+     "detail": "TREND_DOWN",
+     "status": "OK"
+    },
+    {
+     "stage": "STRUCTURE",
+     "detail": "DOWN",
+     "status": "OK"
+    },
+    {
+     "stage": "LOCATION",
+     "detail": "MID",
+     "status": "OK"
+    },
+    {
+     "stage": "MOMENTUM",
+     "detail": "45.4",
+     "status": "OK"
+    },
+    {
+     "stage": "STRENGTH",
+     "detail": 20.331478636241396,
+     "status": "OK"
+    },
+    {
+     "stage": "VOLATILITY",
+     "detail": 0.894,
+     "status": "OK"
+    },
+    {
+     "stage": "MICROSTRUCTURE",
+     "detail": 3,
+     "status": "OK"
+    },
+    {
+     "stage": "SETUP",
+     "detail": "TREND_PULLBACK",
+     "status": "OK"
+    },
+    {
+     "stage": "TRIGGER",
+     "detail": "pullback_com_estrutura_mantida",
+     "status": "OK"
+    },
+    {
+     "stage": "CONTRADICTIONS",
+     "detail": [],
+     "status": "OK"
+    },
+    {
+     "stage": "DECISION",
+     "detail": "SELL",
+     "status": "OK"
+    }
+   ],
+   "indicators": {
+    "rsi14": 45.35584806859001,
+    "velocity": 0.000033,
+    "acceleration": 0.000023,
+    "adx14": 20.331478636241396,
+    "plusDI": 23.705804164306223,
+    "minusDI": 31.894792071026178,
+    "diSpread": 8.188987906719955,
+    "diAgainstDirection": false,
+    "atr": 0.00023631597090756682,
+    "atrRatio": 0.894,
+    "atrNormalized": 0.00014517,
+    "donchianPosition": 0.5426,
+    "distanceToLowerATR": 2.158,
+    "distanceToUpperATR": 1.82,
+    "extensionMaxATR": 2.158,
+    "streak": 3,
+    "bodyRatio": 0.45,
+    "upperWick": 0.55,
+    "lowerWick": 0,
+    "features": {
+     "s": 0.2143,
+     "r24": -0.000313,
+     "rsi14": 45.35584806859001,
+     "vol12": 0.000092
+    }
+   },
+   "critic": {
+    "verdict": "CONFIRM",
+    "riskFlags": [],
+    "contradictions": [
+     "aceleracao_contra_a_entrada"
+    ],
+    "independentAction": "SELL",
+    "finalRecommendation": "SELL"
+   },
+   "consensus": {
+    "reason": "TRADER_E_CRITIC_ALINHADOS",
+    "status": "CONFIRMED",
+    "traderAction": "SELL",
+    "criticVerdict": "CONFIRM",
+    "criticIndependent": "SELL"
+   },
+   "supportingEvidence": [
+    "setup:TREND_PULLBACK",
+    "trigger:pullback_com_estrutura_mantida",
+    "estrutura:DOWN",
+    "rsi14:45.4",
+    "adx14:20.3"
+   ],
+   "contradictingEvidence": [],
+   "knowledgeUsed": true,
+   "freshness": {
+    "fresh": true,
+    "reason": "OK",
+    "tickAgeMs": 55
+   },
+   "professor": {
+    "decisionQuality": "ACCEPTABLE_DECISION",
+    "finalDecisionQuality": "ACCEPTABLE_DECISION",
+    "mistakes": [
+     "MOMENTUM_CONTRA"
+    ],
+    "wouldWaitBeBetter": true,
+    "setup": "TREND_PULLBACK",
+    "action": "SELL",
+    "lesson": "Evitar MOMENTUM_CONTRA em EURAUD:OTC: aceleracao contra a entrada."
+   },
+   "trailingQualityGate": {
+    "recorded": {
+     "score": 75,
+     "entryLocation": {
+      "ok": true,
+      "code": null,
+      "reason": null,
+      "reasons": []
+     },
+     "arms": {
+      "A_G2_JIT": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "D_CRITIC": {
+       "reason": "CRITIC_CONTRADICTION",
+       "decision": "ABSTAIN"
+      },
+      "F_COMBINED": {
+       "reason": "C_STABILITY",
+       "decision": "ABSTAIN"
+      },
+      "C_STABILITY": {
+       "reason": "DIRECTION_UNSTABLE",
+       "decision": "ABSTAIN"
+      },
+      "B_QUALITY_GATE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "E_MICROSTRUCTURE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      }
+     },
+     "microVeto": {
+      "veto": false,
+      "detail": {
+       "delta": 0,
+       "adverseATR": 0
+      },
+      "reason": null
+     }
+    },
+    "recomputedFromJournalSnapshot": {
+     "score": 79,
+     "failedChecks": [
+      "critic_clean",
+      "location_not_mid",
+      "accel_agrees",
+      "velocity_agrees",
+      "streak_agrees",
+      "knowledge_used"
+     ],
+     "checks": [
+      {
+       "id": "setup_trigger",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": {
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida"
+       }
+      },
+      {
+       "id": "regime_ok",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": "TREND_DOWN"
+      },
+      {
+       "id": "regime_trend",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": {
+        "regime": "TREND_DOWN",
+        "note": "bonus; setups de tendencia rendem mais em TREND"
+       }
+      },
+      {
+       "id": "structure_agrees",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": "DOWN"
+      },
+      {
+       "id": "di_agrees",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": {
+        "plusDI": 23.705804164306223,
+        "minusDI": 31.894792071026178
+       }
+      },
+      {
+       "id": "adx_strength",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 20.331478636241396
+      },
+      {
+       "id": "adx_not_falling",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": null
+      },
+      {
+       "id": "critic_clean",
+       "points": 0,
+       "max": 6,
+       "ok": false,
+       "detail": {
+        "verdict": "CONFIRM",
+        "flags": []
+       }
+      },
+      {
+       "id": "location_not_mid",
+       "points": 0,
+       "max": 6,
+       "ok": false,
+       "detail": 0.5426
+      },
+      {
+       "id": "location_favors_room",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 0.5426
+      },
+      {
+       "id": "not_overextended",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": {
+        "againstATR": 1.82
+       }
+      },
+      {
+       "id": "headroom",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": {
+        "withATR": 2.158
+       }
+      },
+      {
+       "id": "entry_displacement",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": 0.2539
+      },
+      {
+       "id": "rsi_not_extreme",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": 45.35584806859001
+      },
+      {
+       "id": "accel_agrees",
+       "points": 0,
+       "max": 8,
+       "ok": false,
+       "detail": null
+      },
+      {
+       "id": "velocity_agrees",
+       "points": 0,
+       "max": 4,
+       "ok": false,
+       "detail": null
+      },
+      {
+       "id": "streak_agrees",
+       "points": 0,
+       "max": 4,
+       "ok": false,
+       "detail": 3
+      },
+      {
+       "id": "data_fresh",
+       "points": 3,
+       "max": 3,
+       "ok": true,
+       "detail": "nao informado"
+      },
+      {
+       "id": "knowledge_used",
+       "points": 0,
+       "max": 3,
+       "ok": false,
+       "detail": null
+      }
+     ],
+     "entryLocation": {
+      "ok": true,
+      "reason": null,
+      "reasons": [],
+      "code": null
+     },
+     "arms": {
+      "A_G2_JIT": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "B_QUALITY_GATE": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "C_STABILITY": {
+       "decision": "ABSTAIN",
+       "reason": "DIRECTION_UNSTABLE"
+      },
+      "D_CRITIC": {
+       "decision": "ABSTAIN",
+       "reason": "CRITIC_CONTRADICTION"
+      },
+      "E_MICROSTRUCTURE": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "F_COMBINED": {
+       "decision": "ABSTAIN",
+       "reason": "C_STABILITY"
+      }
+     },
+     "triggerStrength": {
+      "score": 3,
+      "max": 5,
+      "reasons": [
+       "di_a_favor",
+       "critic_confirm",
+       "trigger_presente"
+      ]
+     },
+     "recordedArms": {
+      "A_G2_JIT": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "D_CRITIC": {
+       "reason": "CRITIC_CONTRADICTION",
+       "decision": "ABSTAIN"
+      },
+      "F_COMBINED": {
+       "reason": "C_STABILITY",
+       "decision": "ABSTAIN"
+      },
+      "C_STABILITY": {
+       "reason": "DIRECTION_UNSTABLE",
+       "decision": "ABSTAIN"
+      },
+      "B_QUALITY_GATE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "E_MICROSTRUCTURE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      }
+     },
+     "armsMatch": {
+      "A_G2_JIT": true,
+      "D_CRITIC": true,
+      "F_COMBINED": true,
+      "C_STABILITY": true,
+      "B_QUALITY_GATE": true,
+      "E_MICROSTRUCTURE": true
+     }
+    }
+   },
+   "jit": {
+    "entryLeadMs": 1337,
+    "revalidatedAt": "2026-09-18T21:20:58.668Z",
+    "candidateChangedBeforeEntry": true,
+    "changedFields": [
+     {
+      "field": "rsi",
+      "before": 42.61116669401918,
+      "after": 43.303862413750444
+     },
+     {
+      "field": "adx",
+      "before": 20.905185620108508,
+      "after": 20.331478636241396
+     },
+     {
+      "field": "diSpread",
+      "before": 13.682172820841156,
+      "after": 8.188987906719955
+     },
+     {
+      "field": "atrRatio",
+      "before": 0.86,
+      "after": 0.894
+     },
+     {
+      "field": "price",
+      "before": 1.627835,
+      "after": 1.627855
+     }
+    ],
+    "directionChanged": false,
+    "driftMs": -433,
+    "effectiveEntryAt": "2026-09-18T21:20:59.567Z",
+    "displacement": 0.00006000000000017103,
+    "displacementATR": 0.2539,
+    "adverseDisplacement": false,
+    "spreadProxyATR": 0.0846
+   },
+   "execution": {
+    "ackMs": 897,
+    "decisionToSubmitMs": 2,
+    "submitToAckMs": 897,
+    "ackToExpiryMs": 60433,
+    "targetExpiryVsBrokerExpiryMs": 0,
+    "causal": {
+     "entry": 1.627895,
+     "direction": "PUT",
+     "settlement": 1.628165
+    },
+    "settlementMove": 0.00026999999999999247,
+    "settlementMoveATR": 1.1425,
+    "favorableAtExpiry": false,
+    "absSettlementMoveATR": 1.1425
+   }
+  },
+  {
+   "tradeId": "exec_1789768678656_s8qvm6",
+   "decisionId": "auto_GBPNZD:OTC_1789768675000",
+   "correlationId": "corr_560702",
+   "marketKey": "GBPNZD:OTC",
+   "marketType": "OTC",
+   "source": "AUTO_DECISION",
+   "stakeSource": "MARKET_CONFIGURED",
+   "autonomous": true,
+   "candidateId": "cand_GBPNZD_OTC_1789768680000",
+   "candidateCreatedAt": "2026-09-18T21:57:56.088Z",
+   "candidateAgeMs": 2567,
+   "targetEntryAt": 1789768680000,
+   "targetEntryAtIso": "2026-09-18T21:58:00.000Z",
+   "targetExpiryAt": 1789768740000,
+   "targetExpiryAtIso": "2026-09-18T21:59:00.000Z",
+   "submitAtMs": 1789768678656,
+   "submitAtIso": "2026-09-18T21:57:58.656Z",
+   "requestedAt": "2026-09-18T21:57:59.275Z",
+   "ackedAt": "2026-09-18T21:57:59.516Z",
+   "expirationAt": "2026-09-18T21:59:00.000Z",
+   "entryAtJournal": "2026-09-18T21:57:59.516Z",
+   "settlementAtJournal": "2026-09-18T21:59:00.488Z",
+   "direction": "CALL",
+   "action": "BUY",
+   "actionMapsToDirection": true,
+   "activeId": 2132,
+   "symbol": "GBP/NZD OTC",
+   "brokerOrderId": "14274454931",
+   "state": "SETTLED",
+   "stake": 10,
+   "payout": 82,
+   "profit": -10,
+   "brokerResult": "LOSS",
+   "causalResult": "LOSS",
+   "settlementMismatch": false,
+   "result": "LOSS",
+   "regime": "TREND_UP",
+   "structure": "UP",
+   "structureDetail": "HH+HL",
+   "location": "UPPER_HALF",
+   "setup": "TREND_PULLBACK",
+   "trigger": "pullback_com_estrutura_mantida",
+   "processLog": [
+    {
+     "stage": "DATA_INTEGRITY",
+     "detail": null,
+     "status": "OK"
+    },
+    {
+     "stage": "REGIME",
+     "detail": "TREND_UP",
+     "status": "OK"
+    },
+    {
+     "stage": "STRUCTURE",
+     "detail": "UP",
+     "status": "OK"
+    },
+    {
+     "stage": "LOCATION",
+     "detail": "UPPER_HALF",
+     "status": "OK"
+    },
+    {
+     "stage": "MOMENTUM",
+     "detail": "54.5",
+     "status": "OK"
+    },
+    {
+     "stage": "STRENGTH",
+     "detail": 20.397323802319438,
+     "status": "OK"
+    },
+    {
+     "stage": "VOLATILITY",
+     "detail": 0.966,
+     "status": "OK"
+    },
+    {
+     "stage": "MICROSTRUCTURE",
+     "detail": 3,
+     "status": "OK"
+    },
+    {
+     "stage": "SETUP",
+     "detail": "TREND_PULLBACK",
+     "status": "OK"
+    },
+    {
+     "stage": "TRIGGER",
+     "detail": "pullback_com_estrutura_mantida",
+     "status": "OK"
+    },
+    {
+     "stage": "CONTRADICTIONS",
+     "detail": [],
+     "status": "OK"
+    },
+    {
+     "stage": "DECISION",
+     "detail": "BUY",
+     "status": "OK"
+    }
+   ],
+   "indicators": {
+    "rsi14": 54.488413540133905,
+    "velocity": 0.000033,
+    "acceleration": 0.000077,
+    "adx14": 20.397323802319438,
+    "plusDI": 28.429852844275654,
+    "minusDI": 15.519603037023211,
+    "diSpread": 12.910249807252443,
+    "diAgainstDirection": false,
+    "atr": 0.00024185211570431343,
+    "atrRatio": 0.966,
+    "atrNormalized": 0.00010401,
+    "donchianPosition": 0.6667,
+    "distanceToLowerATR": 2.233,
+    "distanceToUpperATR": 1.116,
+    "extensionMaxATR": 2.233,
+    "streak": 3,
+    "bodyRatio": 0.053,
+    "upperWick": 0.263,
+    "lowerWick": 0.684,
+    "features": {
+     "s": 0.0114,
+     "r24": -0.000129,
+     "rsi14": 54.488413540133905,
+     "vol12": 0.000077
+    }
+   },
+   "critic": {
+    "verdict": "CONFIRM",
+    "riskFlags": [],
+    "contradictions": [
+     "preco_esticado_contra_a_entrada"
+    ],
+    "independentAction": "BUY",
+    "finalRecommendation": "BUY"
+   },
+   "consensus": {
+    "reason": "TRADER_E_CRITIC_ALINHADOS",
+    "status": "CONFIRMED",
+    "traderAction": "BUY",
+    "criticVerdict": "CONFIRM",
+    "criticIndependent": "BUY"
+   },
+   "supportingEvidence": [
+    "setup:TREND_PULLBACK",
+    "trigger:pullback_com_estrutura_mantida",
+    "estrutura:UP",
+    "rsi14:54.5",
+    "adx14:20.4"
+   ],
+   "contradictingEvidence": [],
+   "knowledgeUsed": true,
+   "freshness": {
+    "fresh": true,
+    "reason": "OK",
+    "tickAgeMs": 1
+   },
+   "professor": {
+    "decisionQuality": "GOOD_DECISION",
+    "finalDecisionQuality": "GOOD_DECISION",
+    "mistakes": [],
+    "wouldWaitBeBetter": false,
+    "setup": "TREND_PULLBACK",
+    "action": "BUY",
+    "lesson": "Processo correto em GBPNZD:OTC (TREND_PULLBACK)."
+   },
+   "trailingQualityGate": {
+    "recorded": {
+     "score": 77,
+     "entryLocation": {
+      "ok": true,
+      "code": null,
+      "reason": null,
+      "reasons": []
+     },
+     "arms": {
+      "A_G2_JIT": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "D_CRITIC": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "F_COMBINED": {
+       "reason": "C_STABILITY",
+       "decision": "ABSTAIN"
+      },
+      "C_STABILITY": {
+       "reason": "DIRECTION_UNSTABLE",
+       "decision": "ABSTAIN"
+      },
+      "B_QUALITY_GATE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "E_MICROSTRUCTURE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      }
+     },
+     "microVeto": {
+      "veto": false,
+      "detail": {
+       "delta": 0,
+       "adverseATR": 0
+      },
+      "reason": null
+     }
+    },
+    "recomputedFromJournalSnapshot": {
+     "score": 73,
+     "failedChecks": [
+      "critic_clean",
+      "not_overextended",
+      "entry_displacement",
+      "accel_agrees",
+      "velocity_agrees",
+      "knowledge_used"
+     ],
+     "checks": [
+      {
+       "id": "setup_trigger",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": {
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida"
+       }
+      },
+      {
+       "id": "regime_ok",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": "TREND_UP"
+      },
+      {
+       "id": "regime_trend",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": {
+        "regime": "TREND_UP",
+        "note": "bonus; setups de tendencia rendem mais em TREND"
+       }
+      },
+      {
+       "id": "structure_agrees",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": "UP"
+      },
+      {
+       "id": "di_agrees",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": {
+        "plusDI": 28.429852844275654,
+        "minusDI": 15.519603037023211
+       }
+      },
+      {
+       "id": "adx_strength",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 20.397323802319438
+      },
+      {
+       "id": "adx_not_falling",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": null
+      },
+      {
+       "id": "critic_clean",
+       "points": 0,
+       "max": 6,
+       "ok": false,
+       "detail": {
+        "verdict": "CONFIRM",
+        "flags": []
+       }
+      },
+      {
+       "id": "location_not_mid",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 0.6667
+      },
+      {
+       "id": "location_favors_room",
+       "points": 6,
+       "max": 6,
+       "ok": true,
+       "detail": 0.6667
+      },
+      {
+       "id": "not_overextended",
+       "points": 0,
+       "max": 8,
+       "ok": false,
+       "detail": {
+        "againstATR": 2.233
+       }
+      },
+      {
+       "id": "headroom",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": {
+        "withATR": 1.116
+       }
+      },
+      {
+       "id": "entry_displacement",
+       "points": 0,
+       "max": 8,
+       "ok": false,
+       "detail": 0.4548
+      },
+      {
+       "id": "rsi_not_extreme",
+       "points": 8,
+       "max": 8,
+       "ok": true,
+       "detail": 54.488413540133905
+      },
+      {
+       "id": "accel_agrees",
+       "points": 0,
+       "max": 8,
+       "ok": false,
+       "detail": null
+      },
+      {
+       "id": "velocity_agrees",
+       "points": 0,
+       "max": 4,
+       "ok": false,
+       "detail": null
+      },
+      {
+       "id": "streak_agrees",
+       "points": 4,
+       "max": 4,
+       "ok": true,
+       "detail": 3
+      },
+      {
+       "id": "data_fresh",
+       "points": 3,
+       "max": 3,
+       "ok": true,
+       "detail": "nao informado"
+      },
+      {
+       "id": "knowledge_used",
+       "points": 0,
+       "max": 3,
+       "ok": false,
+       "detail": null
+      }
+     ],
+     "entryLocation": {
+      "ok": true,
+      "reason": null,
+      "reasons": [],
+      "code": null
+     },
+     "arms": {
+      "A_G2_JIT": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "B_QUALITY_GATE": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "C_STABILITY": {
+       "decision": "ABSTAIN",
+       "reason": "DIRECTION_UNSTABLE"
+      },
+      "D_CRITIC": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "E_MICROSTRUCTURE": {
+       "decision": "ACCEPT",
+       "reason": null
+      },
+      "F_COMBINED": {
+       "decision": "ABSTAIN",
+       "reason": "C_STABILITY"
+      }
+     },
+     "triggerStrength": {
+      "score": 3,
+      "max": 5,
+      "reasons": [
+       "di_a_favor",
+       "critic_confirm",
+       "trigger_presente"
+      ]
+     },
+     "recordedArms": {
+      "A_G2_JIT": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "D_CRITIC": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "F_COMBINED": {
+       "reason": "C_STABILITY",
+       "decision": "ABSTAIN"
+      },
+      "C_STABILITY": {
+       "reason": "DIRECTION_UNSTABLE",
+       "decision": "ABSTAIN"
+      },
+      "B_QUALITY_GATE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      },
+      "E_MICROSTRUCTURE": {
+       "reason": null,
+       "decision": "ACCEPT"
+      }
+     },
+     "armsMatch": {
+      "A_G2_JIT": true,
+      "D_CRITIC": true,
+      "F_COMBINED": true,
+      "C_STABILITY": true,
+      "B_QUALITY_GATE": true,
+      "E_MICROSTRUCTURE": true
+     }
+    }
+   },
+   "jit": {
+    "entryLeadMs": 1347,
+    "revalidatedAt": "2026-09-18T21:57:58.655Z",
+    "candidateChangedBeforeEntry": true,
+    "changedFields": [
+     {
+      "field": "rsi",
+      "before": 51.63714062944682,
+      "after": 55.65814849340866
+     },
+     {
+      "field": "adx",
+      "before": 20.52321579937162,
+      "after": 20.397323802319438
+     },
+     {
+      "field": "diSpread",
+      "before": 13.785937116502033,
+      "after": 12.910249807252443
+     },
+     {
+      "field": "atrRatio",
+      "before": 0.946,
+      "after": 0.966
+     },
+     {
+      "field": "donchian",
+      "before": "MID",
+      "after": "UPPER_HALF"
+     },
+     {
+      "field": "price",
+      "before": 2.325195,
+      "after": 2.325355
+     }
+    ],
+    "directionChanged": false,
+    "driftMs": -484,
+    "effectiveEntryAt": "2026-09-18T21:57:59.516Z",
+    "displacement": 0.00011000000000027654,
+    "displacementATR": 0.4548,
+    "adverseDisplacement": true,
+    "spreadProxyATR": 0.6616
+   },
+   "execution": {
+    "ackMs": 860,
+    "decisionToSubmitMs": 1,
+    "submitToAckMs": 860,
+    "ackToExpiryMs": 60484,
+    "targetExpiryVsBrokerExpiryMs": 0,
+    "causal": {
+     "entry": 2.325305,
+     "direction": "CALL",
+     "settlement": 2.324115
+    },
+    "settlementMove": -0.0011900000000002464,
+    "settlementMoveATR": -4.9204,
+    "favorableAtExpiry": false,
+    "absSettlementMoveATR": 4.9204
+   }
+  }
+ ],
+ "qualityDistribution": {
+  "n": 1120,
+  "min": 59,
+  "max": 95,
+  "mean": 70.74,
+  "atOrAboveThreshold": 296,
+  "belowThreshold": 824,
+  "histogram": {
+   "55": 9,
+   "60": 243,
+   "65": 194,
+   "70": 378,
+   "75": 200,
+   "80": 67,
+   "85": 23,
+   "90": 1,
+   "95": 5
+  }
+ },
+ "arms": {
+  "A_G2_JIT": {
+   "accept": 1120,
+   "abstain": 0,
+   "reasons": {}
+  },
+  "B_QUALITY_GATE": {
+   "accept": 1120,
+   "abstain": 0,
+   "reasons": {}
+  },
+  "C_STABILITY": {
+   "accept": 104,
+   "abstain": 1016,
+   "reasons": {
+    "DIRECTION_UNSTABLE": 1016
+   }
+  },
+  "D_CRITIC": {
+   "accept": 412,
+   "abstain": 708,
+   "reasons": {
+    "CRITIC_CONTRADICTION": 708
+   }
+  },
+  "E_MICROSTRUCTURE": {
+   "accept": 320,
+   "abstain": 800,
+   "reasons": {
+    "OVEREXTENSION": 800
+   }
+  },
+  "F_COMBINED": {
+   "accept": 1,
+   "abstain": 1119,
+   "reasons": {
+    "C_STABILITY": 1016,
+    "D_CRITIC": 5,
+    "E_MICROSTRUCTURE": 98
+   }
+  }
+ },
+ "funnelSummary": {
+  "EURUSD:OTC": {
+   "candidatesCreated": 44,
+   "revalidatedOk": 2,
+   "executed": 1,
+   "cancelled": 44,
+   "gateRejected": 2,
+   "microRejected": 0,
+   "shadowScored": 2,
+   "cancelReasons": {
+    "CANDIDATE_LOGIC_CHANGED_TO_WAIT": 42,
+    "VALID_SETUP_BUT_BAD_ENTRY_PRICE": 2
+   }
+  },
+  "AUDCHF:OTC": {
+   "candidatesCreated": 29,
+   "revalidatedOk": 4,
+   "executed": 1,
+   "cancelled": 28,
+   "gateRejected": 3,
+   "microRejected": 0,
+   "shadowScored": 4,
+   "cancelReasons": {
+    "CANDIDATE_LOGIC_CHANGED_TO_WAIT": 24,
+    "VALID_SETUP_BUT_BAD_ENTRY_PRICE": 3,
+    "CANDIDATE_SETUP_INVALIDATED": 1
+   }
+  },
+  "CADCHF:OTC": {
+   "candidatesCreated": 24,
+   "revalidatedOk": 2,
+   "executed": 1,
+   "cancelled": 23,
+   "gateRejected": 1,
+   "microRejected": 0,
+   "shadowScored": 2,
+   "cancelReasons": {
+    "CANDIDATE_LOGIC_CHANGED_TO_WAIT": 22,
+    "VALID_SETUP_BUT_BAD_ENTRY_PRICE": 1
+   }
+  },
+  "EURAUD:OTC": {
+   "candidatesCreated": 25,
+   "revalidatedOk": 3,
+   "executed": 1,
+   "cancelled": 24,
+   "gateRejected": 2,
+   "microRejected": 0,
+   "shadowScored": 3,
+   "cancelReasons": {
+    "CANDIDATE_LOGIC_CHANGED_TO_WAIT": 21,
+    "QUALITY_SCORE_BELOW_THRESHOLD": 1,
+    "CANDIDATE_LOGIC_CHANGED_DIRECTION": 1,
+    "VALID_SETUP_BUT_BAD_ENTRY_PRICE": 1
+   }
+  },
+  "GBPNZD:OTC": {
+   "candidatesCreated": 32,
+   "revalidatedOk": 3,
+   "executed": 1,
+   "cancelled": 31,
+   "gateRejected": 2,
+   "microRejected": 0,
+   "shadowScored": 3,
+   "cancelReasons": {
+    "CANDIDATE_LOGIC_CHANGED_TO_WAIT": 29,
+    "VALID_SETUP_BUT_BAD_ENTRY_PRICE": 2
+   }
+  }
+ },
+ "revalidationStudy": {
+  "total": 154,
+  "ok": 14,
+  "failed": 140,
+  "failedByRule": {
+   "A_ACTION_UNCHANGED": 139,
+   "C_SETUP_VALID": 124,
+   "F_CONSENSUS_CONFIRMED": 139,
+   "B_REGIME_COMPATIBLE": 108,
+   "D_TRIGGER_PRESENT": 116,
+   "E_CRITIC_NOT_VETO": 37
+  },
+  "reasonCounts": {
+   "CANDIDATE_LOGIC_CHANGED_TO_WAIT": 138,
+   "CANDIDATE_SETUP_INVALIDATED": 1,
+   "CANDIDATE_LOGIC_CHANGED_DIRECTION": 1
+  },
+  "criticVerdicts": {
+   "CONFIRM": 1165
+  },
+  "canceledAfterGate": {
+   "CANDIDATE_LOGIC_CHANGED_TO_WAIT": 138,
+   "VALID_SETUP_BUT_BAD_ENTRY_PRICE": 9,
+   "CANDIDATE_SETUP_INVALIDATED": 1,
+   "QUALITY_SCORE_BELOW_THRESHOLD": 1,
+   "CANDIDATE_LOGIC_CHANGED_DIRECTION": 1
+  },
+  "armAbstainReasons": {
+   "D_CRITIC/CRITIC_CONTRADICTION": 8,
+   "F_COMBINED/C_STABILITY": 14,
+   "C_STABILITY/DIRECTION_UNSTABLE": 14,
+   "E_MICROSTRUCTURE/OVEREXTENSION": 9
+  },
+  "gateRejectedCandidates": [
+   {
+    "candidateId": "cand_EURUSD_OTC_1789764000000",
+    "score": 77,
+    "reasons": [
+     "OVEREXTENDED_FROM_CHANNEL"
+    ],
+    "priceBefore": 1.147855,
+    "priceAfter": 1.147815
+   },
+   {
+    "candidateId": "cand_EURUSD_OTC_1789766040000",
+    "score": 67,
+    "reasons": [
+     "ENTRY_DISPLACEMENT_ADVERSE"
+    ],
+    "priceBefore": 1.148165,
+    "priceAfter": 1.148105
+   },
+   {
+    "candidateId": "cand_AUDCHF_OTC_1789764780000",
+    "score": 69,
+    "reasons": [
+     "OVEREXTENDED_FROM_CHANNEL"
+    ],
+    "priceBefore": 0.586225,
+    "priceAfter": 0.586295
+   },
+   {
+    "candidateId": "cand_AUDCHF_OTC_1789766220000",
+    "score": 81,
+    "reasons": [
+     "OVEREXTENDED_FROM_CHANNEL"
+    ],
+    "priceBefore": null,
+    "priceAfter": null
+   },
+   {
+    "candidateId": "cand_AUDCHF_OTC_1789767060000",
+    "score": 67,
+    "reasons": [
+     "ENTRY_DISPLACEMENT_ADVERSE",
+     "OVEREXTENDED_FROM_CHANNEL"
+    ],
+    "priceBefore": 0.586445,
+    "priceAfter": 0.586465
+   },
+   {
+    "candidateId": "cand_CADCHF_OTC_1789769340000",
+    "score": 67,
+    "reasons": [
+     "ENTRY_DISPLACEMENT_ADVERSE",
+     "OVEREXTENDED_FROM_CHANNEL"
+    ],
+    "priceBefore": 0.587765,
+    "priceAfter": 0.587795
+   },
+   {
+    "candidateId": "cand_EURAUD_OTC_1789763400000",
+    "score": 75,
+    "reasons": [
+     "OVEREXTENDED_FROM_CHANNEL"
+    ],
+    "priceBefore": null,
+    "priceAfter": null
+   },
+   {
+    "candidateId": "cand_GBPNZD_OTC_1789762620000",
+    "score": 63,
+    "reasons": [
+     "ENTRY_DISPLACEMENT_CHASED",
+     "OVEREXTENDED_FROM_CHANNEL"
+    ],
+    "priceBefore": 2.324245,
+    "priceAfter": 2.323935
+   },
+   {
+    "candidateId": "cand_GBPNZD_OTC_1789766580000",
+    "score": 63,
+    "reasons": [
+     "OVEREXTENDED_FROM_CHANNEL"
+    ],
+    "priceBefore": 2.322085,
+    "priceAfter": 2.321915
+   }
+  ]
+ },
+ "selection": {
+  "journalByDay": [
+   {
+    "d": "2026-09-17",
+    "n": 68
+   },
+   {
+    "d": "2026-09-18",
+    "n": 5
+   }
+  ],
+  "executionsSep18": [
+   {
+    "executionId": "exec_1789761733551_9531r8",
+    "marketKey": "EURUSD:OTC",
+    "state": "SETTLED",
+    "result": "LOSS",
+    "requestedAt": "2026-09-18T20:02:13.837Z"
+   },
+   {
+    "executionId": "exec_1789764899007_b4khil",
+    "marketKey": "AUDCHF:OTC",
+    "state": "SETTLED",
+    "result": "WIN",
+    "requestedAt": "2026-09-18T20:54:59.417Z"
+   },
+   {
+    "executionId": "exec_1789765738953_12798x",
+    "marketKey": "CADCHF:OTC",
+    "state": "SETTLED",
+    "result": "LOSS",
+    "requestedAt": "2026-09-18T21:08:59.658Z"
+   },
+   {
+    "executionId": "exec_1789766458670_rofxu6",
+    "marketKey": "EURAUD:OTC",
+    "state": "SETTLED",
+    "result": "LOSS",
+    "requestedAt": "2026-09-18T21:20:59.380Z"
+   },
+   {
+    "executionId": "exec_1789768678656_s8qvm6",
+    "marketKey": "GBPNZD:OTC",
+    "state": "SETTLED",
+    "result": "LOSS",
+    "requestedAt": "2026-09-18T21:57:59.275Z"
+   }
+  ],
+  "nonSettledCount": 22,
+  "nonSettledByState": {
+   "ACKNOWLEDGED": 6,
+   "REJECTED": 15,
+   "UNKNOWN": 1
+  },
+  "mismatchCount": 8,
+  "mismatchesSep18": 0
+ }
+}
