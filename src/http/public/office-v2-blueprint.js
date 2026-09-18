@@ -1859,6 +1859,7 @@ function drawFloor(ctx) {
   drawWoodFloor(ctx, 0, 116, 524, 222);
   drawWoodFloor(ctx, 286, 0, 238, 338);
   drawWoodFloor(ctx, 908, 0, 628, 338);
+  drawWoodFloor(ctx, 524, 224, 384, 114);
   drawWoodFloor(ctx, 0, 900, BASE_WIDTH, 124);
   warmOverlay(ctx, 0, 900, BASE_WIDTH, 124, "#c88a4a", 0.20);
   lightPool(ctx, 300, 1010, 420, PALETTE.amber, 0.16);
@@ -2459,12 +2460,14 @@ function drawRightColumn(ctx) {
         color: "#d8d0b8",
         lineHeight: 10,
       });
-      pxRect(ctx, panel.innerX + 96, entry.y + 44, 2, 22, "#3a2a1c");
-      pxRect(ctx, panel.innerX + 88, entry.y + 64, 18, 14, PALETTE.amber);
-      pxRect(ctx, panel.innerX + 88, entry.y + 64, 18, 2, PALETTE.goldHi);
-      pxRect(ctx, panel.innerX + 90, entry.y + 67, 14, 9, "#ffe6b0");
-      lightPool(ctx, panel.innerX + 97, entry.y + 74, 90, PALETTE.amber, 0.40);
-      lightPool(ctx, panel.innerX + 40, entry.y + 70, 70, PALETTE.amber, 0.22);
+      pxRect(ctx, panel.innerX + 96, entry.y + 34, 2, 26, "#3a2a1c");
+      pxRect(ctx, panel.innerX + 84, entry.y + 56, 26, 26, "#4a3218");
+      pxRect(ctx, panel.innerX + 84, entry.y + 56, 26, 3, "#6a4a28");
+      pxRect(ctx, panel.innerX + 86, entry.y + 59, 22, 20, "#ffd98a");
+      pxRect(ctx, panel.innerX + 88, entry.y + 61, 18, 15, "#fff2c8");
+      pxRect(ctx, panel.innerX + 84, entry.y + 79, 26, 3, "#b8823f");
+      lightPool(ctx, panel.innerX + 97, entry.y + 72, 130, PALETTE.amber, 0.55);
+      lightPool(ctx, panel.innerX + 50, entry.y + 72, 90, PALETTE.amber, 0.28);
       // wooden counter
       pxRect(ctx, panel.innerX + 2, entry.y + 88, panel.innerW - 4, 30, PALETTE.woodDark);
       pxRect(ctx, panel.innerX + 2, entry.y + 88, panel.innerW - 4, 4, PALETTE.woodHi);
@@ -2546,17 +2549,19 @@ function drawBandLedge(ctx, band) {
   const y = Math.round(band.ribbon.y - 10);
   const h = Math.max(16, Math.round(band.deskY - y - 12));
   const w = BASE_WIDTH;
-  pxRect(ctx, 0, y, w, h, "#5c4130");
-  pxRect(ctx, 0, y, w, 2, "#7a5a42");
-  pxRect(ctx, 0, y + h - 2, w, 2, "#2a1c10");
-  for (let sx = 0; sx < w; sx += 74) pxRect(ctx, sx, y + 2, 1, h - 4, "#3f2a1c");
-  const railY = y + Math.round(h * 0.55);
-  pxRect(ctx, 0, railY, w, 2, "#8a6a4a");
-  pxRect(ctx, 0, railY + 2, w, 1, "#2a1c10");
+  pxRect(ctx, 0, y, w, 4, "#16283a");
+  pxRect(ctx, 0, y + 3, w, 1, "#0a1620");
+  const ty = y + 4;
+  const th = h - 4;
+  pxRect(ctx, 0, ty, w, th, "#7a5a44");
+  pxRect(ctx, 0, ty, w, 2, "#96704e");
+  pxRect(ctx, 0, ty + 2, w, 1, "rgba(255,210,160,0.10)");
+  pxRect(ctx, 0, ty + th - 2, w, 2, "#33210f");
+  for (let sx = 6; sx < w; sx += 64) pxRect(ctx, sx, ty + 3, 1, th - 5, "#5e4130");
   const specks = ["#c9a24b", "#3f8f4f", "#c94b3a", "#3a7bd5", "#e0a03a"];
   let index = 0;
   for (let x = 8; x < w - 4; x += 29) {
-    const sy = y + 4 + ((x * 7 + index * 5) % Math.max(1, h - 10));
+    const sy = ty + 3 + ((x * 7 + index * 5) % Math.max(1, th - 6));
     pxRect(ctx, x, sy, 2, 2, specks[(index + (band.label.length % 5)) % specks.length]);
     index += 1;
   }
