@@ -66,6 +66,8 @@ const {
   fringeColorClass,
   detectCharacterMasks,
   scanCharacterClusters,
+  scanDeskAgentResiduals,
+  DESK_AGENT_BOXES,
   PRESERVE_REGIONS,
   MANUAL_ANCHORS,
 } = cleanPlate;
@@ -220,6 +222,22 @@ describe("OFFICE V3 — remoção total dos personagens", () => {
     expect(after.social).toBe(0);
   });
 
+  it("nenhum resíduo de agente pintado nas 100 baias dos desks (regressão GHOST_AGENT)", () => {
+    expect(DESK_AGENT_BOXES).toHaveLength(100);
+    const before = scanDeskAgentResiduals(original, BASE_WIDTH, BASE_HEIGHT);
+    const after = scanDeskAgentResiduals(cleanPlatePixels, BASE_WIDTH, BASE_HEIGHT);
+    expect(before.length).toBeGreaterThanOrEqual(30);
+    expect(after).toEqual([]);
+  });
+
+  it("cada baixa de agente é 100% reconstruída e o rótulo da mesa abaixo fica intacto", () => {
+    for (const box of DESK_AGENT_BOXES) {
+      expect(changedPixelsInBox(box, cleanPlatePixels)).toBeGreaterThanOrEqual(box.w * box.h - 4);
+      const labelStrip = { x: box.x, y: box.y + box.h + 3, w: box.w, h: 10 };
+      expect(changedPixelsInBox(labelStrip, cleanPlatePixels), `rótulo mexido em ${box.band}@${box.agentX}`).toBe(0);
+    }
+  });
+
   it("as âncoras verificadas (café, cozinha, reunião, terraço) foram 100% reconstruídas", () => {
     expect(MANUAL_ANCHORS.length).toBeGreaterThanOrEqual(11);
     for (const anchor of MANUAL_ANCHORS) {
@@ -263,11 +281,13 @@ describe("OFFICE V3 — remoção total dos personagens", () => {
     expect(Number(seeds![1])).toBeGreaterThanOrEqual(95);
     expect(Number(seeds![3])).toBeGreaterThanOrEqual(15);
     expect(Number(seeds![4])).toBeGreaterThanOrEqual(11);
-    const residual = output.match(/character seeds=(\d+); fora das mascaras=(\d+)/);
+    const residual = output.match(/character seeds=(\d+); desk residuals=(\d+); fora das mascaras=(\d+)/);
     expect(residual).toBeTruthy();
     expect(Number(residual![1])).toBe(0);
     expect(Number(residual![2])).toBe(0);
+    expect(Number(residual![3])).toBe(0);
     expect(output).toMatch(/badges strict=0 fringe=0/);
+    expect(output).toMatch(/\(100 baias geometricas de desk\)/);
     expect(output).toMatch(/diffuse=[1-9]\d{4,}/);
   });
 

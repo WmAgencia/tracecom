@@ -10,13 +10,16 @@ estática pré-renderizada**. O TraceCom desenha **apenas as camadas dinâmicas*
 por cima, alinhadas às coordenadas do blueprint (`docs/office-v2/BLUEPRINT.md`).
 
 Essa é a única técnica que consegue se aproximar de **100% de identidade visual
-para a cena estática**: em vez de tentar repintar piso, paredes, mesas, quadros,
-plantas e personagens pintados à mão, nós os herdamos da própria referência.
+para a cena estática**: em vez de tentar repintar piso, paredes, mesas, quadros
+e plantas à mão, nós os herdamos da própria referência. Os personagens e badges
+pintados **não** são herdados: são removidos por inpainting determinístico
+(`blueprint-clean.png`) porque só o runtime pode dizer quem está trabalhando e
+qual foi o P&L real.
 
 ```
 ┌─────────────────────────────────────────────┐
 │ drawBlueprintBase(ctx, base)   ← estático    │  referência 1:1 (1536×1024)
-│   piso, paredes, mesas, painéis, agentes     │  sem escala, sem blur, sem crop
+│   piso, paredes, mesas, painéis, rótulos     │  sem escala, sem blur, sem crop
 ├─────────────────────────────────────────────┤
 │ drawDynamicOverlay(...)        ← dinâmico    │  só o que muda com o estado
 │   agentes OPEN, badges P&L, scrim/tag CLOSED │  alinhado às âncoras do blueprint
@@ -34,7 +37,9 @@ plantas e personagens pintados à mão, nós os herdamos da própria referência
 | `src/http/public/office-v3/blueprint-reference.png` | cópia servida da referência congelada |
 | `scripts/office-v3-base-diff.mjs` | renderiza o híbrido e mede a similaridade |
 | `scripts/office-v3-hybrid-shots.mjs` | screenshots híbridos (overview/zoom/hover/viewports) |
-| `tests/ai/office-v3-blueprint-base.test.ts` | 19 testes headless |
+| `scripts/office-v3-clean-plate.mjs` | gera o clean plate (baias geométricas + detector de resíduo) |
+| `scripts/office-v3-browser-check.mjs` | validação em browser real (7 cenários + screenshots) |
+| `tests/ai/office-v3-blueprint-base.test.ts` | 24 testes headless |
 
 A referência original **não** é tocada; `blueprint-reference.png` é uma cópia
 para o navegador poder carregá-la.
@@ -99,16 +104,26 @@ Valores inválidos são ignorados e caem no padrão, sem lançar.
 
 ## Trade-off honesto
 
-- **Identidade estática ~100%**: a cena estática é literalmente a referência.
-  Medido: **similaridade base-only = 100.000%** (mean abs diff = 0.0000).
-- **Mesas fechadas não removem os agentes pintados.** A base sempre mostra
-  agentes; como não é possível apagá-los, o overlay aplica um **scrim
-  translúcido + tag** (`FECHADO` / `SUSPENSO` / `INDISPONÍVEL`). Não é o mesmo
-  que uma mesa vazia de verdade — é uma limitação consciente da técnica híbrida.
+- **Identidade estática**: piso, paredes, mesas, plantas, quadros e rótulos são
+  literalmente a referência; a única diferença é a remoção intencional de
+  personagens/badges pintados (medido abaixo).
+- **Agentes e badges pintados foram removidos** do `blueprint-clean.png`
+  (125 máscaras de cor + 100 baias geométricas de desk derivadas das próprias
+  `ANCHOR_BANDS`, terminando em `band.y + 25` antes do rótulo gravado).
+  A paridade fora das máscaras continua 0 e os 50 rótulos das mesas foram
+  preservados byte a byte (o pipeline antigo os destruía parcialmente).
+- **Reconstrução social** (lounge, sinuca, café/cozinha, reunião, terraço) usa
+  difusão local e pode deixar suavização visível — não há personagem/sprite
+  remanescente (verificado por detector de faces embutidas nas 100 baias).
+- **Rótulos pintados ≠ universo dinâmico** em parte da arte: a referência
+  rotula NZD/USD, ETH/LTC/XRP/ADA, WTI/BRENT/NATGAS e ações. A ordem de
+  `ANCHOR_MARKETS` foi realinhada ao rótulo pintado sempre que existe
+  contraparte no universo reconciliado (majors, cruzados, OTC 24H, BTC,
+  índices US500/US100/US30/GER30/UK100, GOLD/SILVER); os mercados sem
+  contraparte pintada ocupam as mesas restantes e são identificados por
+  MESAS, tooltip e painel (não pelo texto pintado).
 - **A arte dinâmica é nossa**: os agentes desenhados por cima são os sprites do
-  `assets.js`, não os da referência. Podem não coincidir pixel a pixel com os
-  agentes pintados (daí o pequeno desvio no híbrido). Os badges de P&L do
-  overlay caem sobre os badges pintados (não dá para apagá-los).
+  `assets.js`. Com a base limpa não há mais agente pintado residual.
 - **Pan/zoom**: no híbrido a câmera é aplicada à base + overlay, então
   `zoomToDesk` funciona; em repouso (`zoom=1, x=y=0`) a base fica 1:1, sem
   resize/crop/blur. `prefers-reduced-motion` desliga a animação suave.
@@ -118,28 +133,30 @@ Valores inválidos são ignorados e caem no padrão, sem lançar.
 `node scripts/office-v3-base-diff.mjs` → `docs/office-v3/screenshots/hybrid-base.png`
 
 Cenário do script: 55 mercados, 49 OPEN / 6 CLOSED, 98 agentes + 49 badges.
+A comparação é feita contra a referência bruta: a diferença da coluna
+"base-only" É a remoção intencional dos badges e personagens pintados.
 
 | Camada | mean abs diff | similaridade |
 |---|---|---|
-| base-only (estático) | 0.0000 | **100.000%** |
-| **híbrido (base + overlay)** | **2.3388** | **99.083%** |
+| base-only (clean plate vs referência bruta) | 6.2301 | **97.557%** |
+| **híbrido (base + overlay)** | **7.1181** | **97.209%** |
 
 Tabela 8 regiões (híbrido):
 
 | Região | similaridade | mean abs diff |
 |---|---|---|
-| R1C1 | 99.672% | 0.8353 |
-| R1C2 | 98.980% | 2.6020 |
-| R1C3 | 99.393% | 1.5484 |
-| R1C4 | 99.628% | 0.9483 |
-| R2C1 | 99.223% | 1.9816 |
-| R2C2 | 97.711% | 5.8372 |
-| R2C3 | 98.772% | 3.1322 |
-| R2C4 | 99.284% | 1.8256 |
+| R1C1 | 98.022% | 5.0435 |
+| R1C2 | 97.134% | 7.3086 |
+| R1C3 | 97.979% | 5.1527 |
+| R1C4 | 98.149% | 4.7206 |
+| R2C1 | 97.676% | 5.9269 |
+| R2C2 | 95.651% | 11.0904 |
+| R2C3 | 96.336% | 9.3428 |
+| R2C4 | 96.722% | 8.3597 |
 
-O híbrido fica acima de 95% (pior região 97.7%), o que confirma a identidade
-visual para as partes estáticas. A calibração das âncoras subiu a similaridade
-de **99.025% → 99.083%** (os agentes agora pousam nas mesas pintadas).
+O híbrido fica acima de 95% (pior região 95.65%); a diferença restante é a
+recriação dinâmica de agentes/badges e a suavização das zonas sociais — não há
+mais sprite pintado reconhecível.
 
 ## Verificação
 
@@ -148,8 +165,12 @@ node --check src/http/public/office-v3/blueprint-base.js
 node --check src/http/public/office-v3/base-mode.js
 node --check src/http/public/office-v3/overlay.js
 node --check src/http/public/office-v3/office-v3.js
+node scripts/office-v3-clean-plate.mjs          # regenera a base (determinístico)
 node scripts/office-v3-base-diff.mjs
 node scripts/office-v3-hybrid-shots.mjs
-npx vitest run tests/ai/office-v3-blueprint-base.test.ts
+node scripts/office-v3-browser-check.mjs        # browser real (playwright + chrome)
+npx vitest run tests/ai/office-v3-blueprint-base.test.ts tests/ai/office-v3-clean-plate.test.ts
 npx tsc -p tsconfig.json --noEmit
 ```
+
+Relatório do browser real: `docs/office-v3/browser-check.md` (+ `browser-check.report.json`).

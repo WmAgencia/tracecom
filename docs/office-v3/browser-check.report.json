@@ -1,0 +1,473 @@
+{
+  "at": "2026-09-18T19:16:23.232Z",
+  "engine": "playwright+chrome",
+  "realBrowser": true,
+  "baseUrl": "http://127.0.0.1:64827",
+  "scenarios": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "screenshots": [
+    "browser-s0-boot.png",
+    "browser-s1-pan-before.png",
+    "browser-s1-pan-after.png",
+    "browser-s2-zoom-before.png",
+    "browser-s2-zoom-in.png",
+    "browser-s2-zoom-after.png",
+    "browser-s3-minzoom.png",
+    "browser-s3-maxedge.png",
+    "browser-s3-minedge.png",
+    "browser-s4-panel-open.png",
+    "browser-s4-panel-closed.png",
+    "browser-s5-mesas-popup.png",
+    "browser-s5-mesas.png",
+    "browser-s6-eurjpy.png",
+    "browser-s7-feed-offline.png"
+  ],
+  "total": 43,
+  "passed": 43,
+  "failed": 0,
+  "results": [
+    {
+      "scenario": 0,
+      "assertion": "rollback /classic.html responde 200",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "scenario": 0,
+      "assertion": "mundo com 54 estações do universo reconciliado",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {
+        "stations": 54
+      }
+    },
+    {
+      "scenario": 0,
+      "assertion": "canvas renderizado (não vazio)",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {
+        "distinctColors": 1530
+      }
+    },
+    {
+      "scenario": 0,
+      "assertion": "status de carregamento saiu da tela",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {}
+    },
+    {
+      "scenario": 0,
+      "assertion": "EUR/USD WORKING + agentes",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {
+        "state": "WORKING",
+        "label": "MERCADO ABERTO · OPERANDO",
+        "agentsWorking": true,
+        "feedStatus": "FRESH"
+      }
+    },
+    {
+      "scenario": 0,
+      "assertion": "GBP/USD OPEN_BUT_FEED_OFFLINE + sem agentes",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {
+        "state": "OPEN_BUT_FEED_OFFLINE",
+        "label": "MERCADO ABERTO · FEED OFFLINE",
+        "agentsWorking": false,
+        "feedStatus": "STALE"
+      }
+    },
+    {
+      "scenario": 0,
+      "assertion": "USD/JPY CLOSED e EUR/GBP SUSPENDED",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {
+        "jpy": "CLOSED",
+        "eurgbp": "SUSPENDED"
+      }
+    },
+    {
+      "scenario": 0,
+      "assertion": "overlay desenha exatamente 2 agentes por posto WORKING",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {
+        "agents": 102,
+        "working": 51
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "cursor grab com Space pressionado",
+      "pass": true,
+      "evidence": "browser-s1-pan-before.png",
+      "detail": {
+        "cursor": "grab"
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "arrastar para a esquerda move o escritório (camera.x aumenta)",
+      "pass": true,
+      "evidence": "browser-s1-pan-after.png",
+      "detail": {
+        "from": 243.97862924406985,
+        "to": 380.110975441421
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "arrastar para a direita devolve (camera.x diminui)",
+      "pass": true,
+      "evidence": "browser-s1-pan-after.png",
+      "detail": {
+        "from": 380.110975441421,
+        "to": 243.97862924406988
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "arrastar para cima move (camera.y aumenta)",
+      "pass": true,
+      "evidence": "browser-s1-pan-after.png",
+      "detail": {
+        "from": 152.48664327754366,
+        "to": 251.4919859665263
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "arrastar para baixo devolve (camera.y diminui)",
+      "pass": true,
+      "evidence": "browser-s1-pan-after.png",
+      "detail": {
+        "from": 251.4919859665263,
+        "to": 152.48664327754366
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "sem seleção de texto durante o drag",
+      "pass": true,
+      "evidence": "browser-s1-pan-after.png",
+      "detail": {
+        "selection": [
+          "",
+          "",
+          "",
+          ""
+        ]
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "classe de seleção desligada no body durante o pan",
+      "pass": true,
+      "evidence": "browser-s1-pan-before.png",
+      "detail": {}
+    },
+    {
+      "scenario": 1,
+      "assertion": "cursor grabbing durante o drag",
+      "pass": true,
+      "evidence": "browser-s1-pan-before.png",
+      "detail": {
+        "cursor": "grabbing"
+      }
+    },
+    {
+      "scenario": 1,
+      "assertion": "soltar restaura cursor/estado e não abre mesa por acidente",
+      "pass": true,
+      "evidence": "browser-s1-pan-after.png",
+      "detail": {
+        "panReady": false,
+        "cursor": "default",
+        "dragging": false,
+        "panels": 0
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "zoom in aumenta o zoom",
+      "pass": true,
+      "evidence": "browser-s2-zoom-in.png",
+      "detail": {
+        "from": 1,
+        "to": 1.4681454416819895
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "ponto do mundo sob o cursor fica fixo (zoom in)",
+      "pass": true,
+      "evidence": "browser-s2-zoom-in.png",
+      "detail": {
+        "driftWorldPx": 0
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "zoom out reduz o zoom",
+      "pass": true,
+      "evidence": "browser-s2-zoom-after.png",
+      "detail": {
+        "from": 1.4681454416819895,
+        "to": 1
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "ponto do mundo sob o cursor fica fixo (zoom out)",
+      "pass": true,
+      "evidence": "browser-s2-zoom-after.png",
+      "detail": {
+        "driftWorldPx": 0
+      }
+    },
+    {
+      "scenario": 3,
+      "assertion": "no zoom mínimo o mundo expandido inteiro fica visível (eixo centralizado)",
+      "pass": true,
+      "evidence": "browser-s3-minzoom.png",
+      "detail": {
+        "centeredX": true,
+        "centeredY": true
+      }
+    },
+    {
+      "scenario": 3,
+      "assertion": "quatro bordas dentro do viewport no zoom mínimo",
+      "pass": true,
+      "evidence": "browser-s3-minzoom.png",
+      "detail": {
+        "topLeft": {
+          "x": 320,
+          "y": 104
+        },
+        "bottomRight": {
+          "x": 960,
+          "y": 616
+        }
+      }
+    },
+    {
+      "scenario": 3,
+      "assertion": "borda direita/inferior alcançável (clamp exato)",
+      "pass": true,
+      "evidence": "browser-s3-maxedge.png",
+      "detail": {
+        "x": 1280,
+        "maxX": 1280,
+        "y": 1328,
+        "maxY": 1328
+      }
+    },
+    {
+      "scenario": 3,
+      "assertion": "borda esquerda/superior alcançável (clamp exato)",
+      "pass": true,
+      "evidence": "browser-s3-minedge.png",
+      "detail": {
+        "x": 0,
+        "minX": 0,
+        "y": 0,
+        "minY": 0
+      }
+    },
+    {
+      "scenario": 3,
+      "assertion": "span do clamp usa viewport/zoom",
+      "pass": true,
+      "evidence": "browser-s3-maxedge.png",
+      "detail": {
+        "spanX": 1280,
+        "expected": 1280
+      }
+    },
+    {
+      "scenario": 4,
+      "assertion": "painel abre para o marketKey clicado",
+      "pass": true,
+      "evidence": "browser-s4-panel-open.png",
+      "detail": {
+        "marketKey": "EURUSD:NORMAL"
+      }
+    },
+    {
+      "scenario": 4,
+      "assertion": "título do painel é EUR/USD",
+      "pass": true,
+      "evidence": "browser-s4-panel-open.png",
+      "detail": {
+        "title": "EUR/USD"
+      }
+    },
+    {
+      "scenario": 4,
+      "assertion": "zoom-to-desk aplicou zoom",
+      "pass": true,
+      "evidence": "browser-s4-panel-open.png",
+      "detail": {
+        "from": 1,
+        "to": 4
+      }
+    },
+    {
+      "scenario": 4,
+      "assertion": "stake do painel é a config real do mercado (25)",
+      "pass": true,
+      "evidence": "browser-s4-panel-open.png",
+      "detail": {
+        "stakeInput": "25",
+        "stakeMeta": "efetivo R$ 25,00 · teto R$ 100,00"
+      }
+    },
+    {
+      "scenario": 4,
+      "assertion": "estado do painel é MERCADO ABERTO · OPERANDO",
+      "pass": true,
+      "evidence": "browser-s4-panel-open.png",
+      "detail": {}
+    },
+    {
+      "scenario": 4,
+      "assertion": "FECHAR remove o painel e devolve o espaço",
+      "pass": true,
+      "evidence": "browser-s4-panel-closed.png",
+      "detail": {
+        "panels": 0,
+        "selected": null,
+        "rootChildren": 0
+      }
+    },
+    {
+      "scenario": 5,
+      "assertion": "popup abre e o destaque ↑↓ é uma opção real",
+      "pass": true,
+      "evidence": "browser-s5-mesas.png",
+      "detail": {
+        "activeBefore": "GBP/USD · MERCADO ABERTO · FEED OFFLINE",
+        "activeAfter": {
+          "text": "GBP/USD · MERCADO ABERTO · FEED OFFLINE",
+          "marketKey": "GBPUSD:NORMAL"
+        }
+      }
+    },
+    {
+      "scenario": 5,
+      "assertion": "↑↓ + Enter seleciona o mercado destacado",
+      "pass": true,
+      "evidence": "browser-s5-mesas.png",
+      "detail": {
+        "marketKey": "GBPUSD:NORMAL",
+        "focused": "GBPUSD:NORMAL"
+      }
+    },
+    {
+      "scenario": 5,
+      "assertion": "foco/zoom aponta para a mesma mesa",
+      "pass": true,
+      "evidence": "browser-s5-mesas.png",
+      "detail": {
+        "focus": "GBPUSD:NORMAL",
+        "selected": "GBPUSD:NORMAL"
+      }
+    },
+    {
+      "scenario": 5,
+      "assertion": "painel corresponde à seleção",
+      "pass": true,
+      "evidence": "browser-s5-mesas.png",
+      "detail": {
+        "title": "GBP/USD"
+      }
+    },
+    {
+      "scenario": 6,
+      "assertion": "painel passa para o NOVO marketKey",
+      "pass": true,
+      "evidence": "browser-s6-eurjpy.png",
+      "detail": {
+        "marketKey": "EURJPY:NORMAL"
+      }
+    },
+    {
+      "scenario": 6,
+      "assertion": "sem texto/dados do mercado anterior",
+      "pass": true,
+      "evidence": "browser-s6-eurjpy.png",
+      "detail": {}
+    },
+    {
+      "scenario": 6,
+      "assertion": "título e estado mudam para EUR/JPY WORKING",
+      "pass": true,
+      "evidence": "browser-s6-eurjpy.png",
+      "detail": {
+        "title": "EUR/JPY",
+        "state": "WORKING"
+      }
+    },
+    {
+      "scenario": 6,
+      "assertion": "overlay segue o mesmo estado (2 agentes por posto WORKING)",
+      "pass": true,
+      "evidence": "browser-s6-eurjpy.png",
+      "detail": {
+        "agents": 102,
+        "working": 51
+      }
+    },
+    {
+      "scenario": 7,
+      "assertion": "estado derivado é MERCADO ABERTO · FEED OFFLINE",
+      "pass": true,
+      "evidence": "browser-s7-feed-offline.png",
+      "detail": {
+        "state": "OPEN_BUT_FEED_OFFLINE",
+        "label": "MERCADO ABERTO · FEED OFFLINE",
+        "shortLabel": "FEED OFFLINE",
+        "agentsWorking": false,
+        "feedStatus": "STALE"
+      }
+    },
+    {
+      "scenario": 7,
+      "assertion": "painel mostra o MESMO rótulo do desk",
+      "pass": true,
+      "evidence": "browser-s7-feed-offline.png",
+      "detail": {
+        "panelState": "MERCADO ABERTO · FEED OFFLINE",
+        "panelAgents": "OCIOSO (SOCIAL/IDLE)"
+      }
+    },
+    {
+      "scenario": 7,
+      "assertion": "agentes não trabalham com feed offline (contagem do overlay bate)",
+      "pass": true,
+      "evidence": "browser-s7-feed-offline.png",
+      "detail": {
+        "agents": 102,
+        "working": 51,
+        "feedOffline": 1
+      }
+    }
+  ]
+}

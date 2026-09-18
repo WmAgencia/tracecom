@@ -1012,6 +1012,68 @@ describe("OFFICE V3 UI — SPACE + drag (regressão de seleção)", () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * HOTFIX — regressões encontradas no browser real (Task 6/7)
+ * ------------------------------------------------------------------ */
+
+describe("OFFICE V3 UI — regressões do browser real (HOTFIX)", () => {
+  it("cursor inline do hover não bloqueia o cursor grab/grabbing do Space", () => {
+    const canvasEl = fakeDoc.createElement("canvas");
+    const bodyEl = new FakeElement("body");
+    const target = new FakeElement("div");
+    const cam = camera.createCamera({ width: 800, height: 600 });
+    const pan = page.bindPanNavigation({ canvas: canvasEl, body: bodyEl, target, getCamera: () => cam, getCameraModule: () => camera });
+    canvasEl.style.cursor = "pointer";
+    target.dispatchEvent({ type: "keydown", key: " ", code: "Space" });
+    expect(canvasEl.style.cursor).toBe("");
+    expect(canvasEl.classList.contains("pan-ready")).toBe(true);
+    target.dispatchEvent({ type: "keyup", key: " ", code: "Space" });
+    expect(canvasEl.style.cursor).toBe("");
+    expect(pan.isSpaceDown()).toBe(false);
+  });
+
+  it("wasMoved não fica preso depois do pan (clique normal volta a valer)", () => {
+    const canvasEl = fakeDoc.createElement("canvas");
+    const bodyEl = new FakeElement("body");
+    const target = new FakeElement("div");
+    const cam = camera.createCamera({ width: 800, height: 600 });
+    const pan = page.bindPanNavigation({ canvas: canvasEl, body: bodyEl, target, getCamera: () => cam, getCameraModule: () => camera });
+    target.dispatchEvent({ type: "keydown", key: " ", code: "Space" });
+    canvasEl.dispatchEvent({ type: "pointerdown", button: 0, pointerId: 4, clientX: 20, clientY: 20 });
+    target.dispatchEvent({ type: "pointermove", pointerId: 4, clientX: 120, clientY: 60 });
+    expect(pan.wasMoved()).toBe(true);
+    target.dispatchEvent({ type: "pointerup", pointerId: 4 });
+    expect(pan.wasMoved()).toBe(false);
+    expect(pan.consumeClickSuppression()).toBe(true);
+    expect(pan.consumeClickSuppression()).toBe(false);
+  });
+
+  it("FECHAR do painel notifica o shell (onClose) e não reabre no próximo poll", () => {
+    const root = fakeDoc.createElement("div");
+    const closed: string[] = [];
+    detail.mountMarketDetail(root, officeFixture(), "EURUSD:NORMAL", { document: fakeDoc, onClose: (key: string) => closed.push(String(key)) });
+    const closeButton = findAll(root, (node) => node.classList?.contains("tc-v3-detail-close"))[0];
+    expect(closeButton).toBeTruthy();
+    closeButton.dispatchEvent({ type: "click" });
+    expect(closed).toEqual(["EURUSD:NORMAL"]);
+    expect(findAll(root, (node) => node.classList?.contains("tc-v3-detail"))).toHaveLength(0);
+    expect(detail.closeMarketDetail()).toBe(false);
+    expect(closed).toEqual(["EURUSD:NORMAL"]);
+  });
+
+  it("refresh do poll (re-mount do MESMO mercado) não dispara onClose nem perde a seleção", () => {
+    const root = fakeDoc.createElement("div");
+    const closed: string[] = [];
+    detail.mountMarketDetail(root, officeFixture(), "EURUSD:NORMAL", { document: fakeDoc, onClose: (key: string) => closed.push(String(key)) });
+    detail.mountMarketDetail(root, officeFixture(), "EURUSD:NORMAL", { document: fakeDoc, onClose: (key: string) => closed.push(String(key)) });
+    expect(closed).toEqual([]);
+    expect(findAll(root, (node) => node.classList?.contains("tc-v3-detail"))).toHaveLength(1);
+    const closeButton = findAll(root, (node) => node.classList?.contains("tc-v3-detail-close"))[0];
+    closeButton.dispatchEvent({ type: "click" });
+    expect(closed).toEqual(["EURUSD:NORMAL"]);
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * reservado: assets não utilizados diretamente são carregados para
  * garantir que o bundle V3 completo segue importável em Node.
  * ------------------------------------------------------------------ */

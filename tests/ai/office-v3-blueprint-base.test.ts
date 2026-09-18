@@ -175,9 +175,45 @@ describe("OFFICE V3 — STATION_ANCHORS (blueprint)", () => {
     expect(ANCHOR_BANDS.map((band: any) => band.y)).toEqual([392, 502, 616, 731, 839, 1072]);
     expect(ANCHOR_BANDS[2].sectors).toHaveLength(2);
     expect(ANCHOR_BANDS[3].sectors).toHaveLength(2);
-    expect(STATION_ANCHORS["BTCUSD:OTC"].expanded).toBe(true);
-    expect(STATION_ANCHORS["BTCUSD:OTC"].y).toBe(1072);
+    expect(STATION_ANCHORS["BTCUSD:OTC"].expanded).toBe(false);
+    expect(STATION_ANCHORS["BTCUSD:OTC"].y).toBe(616);
+    expect(STATION_ANCHORS["BTCUSD:OTC"].x).toBe(847);
+    expect(STATION_ANCHORS["USDCHF:NORMAL"].expanded).toBe(true);
+    expect(STATION_ANCHORS["USDCHF:NORMAL"].y).toBe(1072);
     expect(STATION_ANCHORS["EURUSD:NORMAL"].desk).toEqual({ x: 211, y: 392, w: 100, h: 52 });
+  });
+
+  it("cada mercado com contraparte pintada cai na mesa com o rótulo correspondente", () => {
+    const at = (key: string) => ({ x: STATION_ANCHORS[key].x, y: STATION_ANCHORS[key].y });
+    expect(at("EURUSD:NORMAL")).toEqual({ x: 261, y: 392 });
+    expect(at("GBPUSD:NORMAL")).toEqual({ x: 374, y: 392 });
+    expect(at("USDJPY:NORMAL")).toEqual({ x: 487, y: 392 });
+    expect(at("AUDUSD:NORMAL")).toEqual({ x: 600, y: 392 });
+    expect(at("USDCAD:NORMAL")).toEqual({ x: 713, y: 392 });
+    expect(at("EURGBP:NORMAL")).toEqual({ x: 1052, y: 392 });
+    expect(at("EURJPY:NORMAL")).toEqual({ x: 1165, y: 392 });
+    expect(at("GBPJPY:NORMAL")).toEqual({ x: 1278, y: 392 });
+    expect(at("AUDJPY:NORMAL")).toEqual({ x: 261, y: 502 });
+    expect(at("AUDCAD:OTC")).toEqual({ x: 374, y: 502 });
+    expect(at("AUDCHF:OTC")).toEqual({ x: 487, y: 502 });
+    expect(at("CADJPY:OTC")).toEqual({ x: 600, y: 502 });
+    expect(at("EURCAD:OTC")).toEqual({ x: 826, y: 502 });
+    expect(at("EURCHF:OTC")).toEqual({ x: 939, y: 502 });
+    expect(at("EURAUD:OTC")).toEqual({ x: 1052, y: 502 });
+    expect(at("GBPAUD:OTC")).toEqual({ x: 1165, y: 502 });
+    expect(at("GBPCHF:OTC")).toEqual({ x: 1278, y: 502 });
+    const otcFive: Array<[string, number]> = [["EURUSD:OTC", 258], ["GBPUSD:OTC", 372], ["USDJPY:OTC", 486], ["EURGBP:OTC", 600], ["GBPJPY:OTC", 714]];
+    for (const [key, x] of otcFive) {
+      expect(at(key)).toEqual({ x, y: 616 });
+    }
+    expect(at("BTCUSD:OTC")).toEqual({ x: 847, y: 616 });
+    expect(at("US500:NORMAL")).toEqual({ x: 249, y: 731 });
+    expect(at("US100:NORMAL")).toEqual({ x: 363, y: 731 });
+    expect(at("US30:NORMAL")).toEqual({ x: 477, y: 731 });
+    expect(at("GER30:NORMAL")).toEqual({ x: 591, y: 731 });
+    expect(at("UK100:NORMAL")).toEqual({ x: 705, y: 731 });
+    expect(at("XAUUSD:NORMAL")).toEqual({ x: 846, y: 731 });
+    expect(at("XAGUSD:NORMAL")).toEqual({ x: 959, y: 731 });
   });
 
   it("existe âncora para todos os mercados do universo reconciliado", () => {

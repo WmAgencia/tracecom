@@ -288,13 +288,26 @@ function renderDetail(doc, panel, market, model, office, options) {
  * public API
  * ------------------------------------------------------------------ */
 
-export function closeMarketDetail() {
+function detachMarketDetail(runOnClose) {
   if (!activeDetail) return false;
-  const { root, panel } = activeDetail;
+  const { root, panel, marketKey, onClose } = activeDetail;
   if (panel && typeof panel.remove === "function") panel.remove();
   else if (root && panel && Array.isArray(root.childNodes)) root.childNodes = root.childNodes.filter((node) => node !== panel);
   activeDetail = null;
+  // Only a user/system close notifies the page shell. A replacement mount
+  // (poll refresh of the SAME market) must not clear the current selection.
+  if (runOnClose && typeof onClose === "function") {
+    try {
+      onClose(marketKey ?? null);
+    } catch {
+      /* fail-soft */
+    }
+  }
   return true;
+}
+
+export function closeMarketDetail() {
+  return detachMarketDetail(true);
 }
 
 export function mountMarketDetail(rootEl, officeJson, marketKey, options = {}) {
@@ -302,7 +315,7 @@ export function mountMarketDetail(rootEl, officeJson, marketKey, options = {}) {
   const doc = globalThis.document;
   if (!doc) throw new Error("TC_V3_DOCUMENT_REQUIRED");
 
-  closeMarketDetail();
+  detachMarketDetail(false);
 
   const office = officeJson ?? {};
   const markets = Array.isArray(office?.markets) ? office.markets : [];
@@ -325,7 +338,7 @@ export function mountMarketDetail(rootEl, officeJson, marketKey, options = {}) {
     header.append(titleWrap, closeButton);
     panel.append(header, el(doc, "p", "tc-v3-detail-empty", "O marketKey informado não existe no snapshot atual."));
     rootEl.appendChild(panel);
-    activeDetail = { root: rootEl, panel };
+    activeDetail = { root: rootEl, panel, marketKey: marketKey ?? null, onClose: options.onClose ?? null };
     return { state: "error", marketKey: marketKey ?? null };
   }
 
@@ -334,6 +347,6 @@ export function mountMarketDetail(rootEl, officeJson, marketKey, options = {}) {
   model.stake = buildStakeConfigModel(market, office);
   renderDetail(doc, panel, market, model, office, options);
   rootEl.appendChild(panel);
-  activeDetail = { root: rootEl, panel };
+  activeDetail = { root: rootEl, panel, marketKey: marketKey ?? null, onClose: options.onClose ?? null };
   return model;
 }

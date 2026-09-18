@@ -76,6 +76,7 @@ let stationListSignature = "";
 let selectedMarketKey = null;
 let mesasController = null;
 let panController = null;
+let lastOverlayStats = null;
 
 /* ------------------------------------------------------------------ *
  * Status / error surfaces (fail-soft)
@@ -343,9 +344,25 @@ function isHybrid() {
   return shouldDrawBase() && !!blueprintBase && !!modules.overlay;
 }
 
+let stationResolver = null;
+let stationResolverWorld = null;
+
+/**
+ * Collision-free blueprint anchor for one station in the CURRENT world.
+ * Shares the exact assignment used by `overlay.drawDynamicOverlay` and
+ * `overlay.hitTestAnchor`, so zoom-to-desk never targets another market's desk
+ * when the snapshot carries a market the calibrated table does not know.
+ */
 function overlayAnchorFor(station, index) {
   if (!isHybrid() || !station) return null;
   try {
+    if (modules.overlay && typeof modules.overlay.createAnchorResolver === "function" && worldState) {
+      if (!stationResolver || stationResolverWorld !== worldState) {
+        stationResolver = modules.overlay.createAnchorResolver(worldState.stations);
+        stationResolverWorld = worldState;
+      }
+      return stationResolver.anchorFor(station, index);
+    }
     if (typeof modules.overlay.anchorForStation === "function") return modules.overlay.anchorForStation(station, index);
   } catch (error) {
     warnMissing("overlay.anchorForStation", error);
@@ -456,6 +473,9 @@ function openDetail(station, marketKey, options = {}) {
       modules.marketDetail.mountMarketDetail(detailRootEl, officeJson ?? {}, key, {
         onStakeApplied: requestRefresh,
         initialTab: options.initialTab ?? activeDetailTab(),
+        onClose: (closedKey) => {
+          if (selectedMarketKey === closedKey) selectedMarketKey = null;
+        },
       });
       if (detailRootEl.setAttribute) detailRootEl.setAttribute("data-market-key", key);
       return;
@@ -653,7 +673,7 @@ function renderFrame(now) {
       if (modules.blueprintBase && typeof modules.blueprintBase.drawBlueprintBase === "function") {
         modules.blueprintBase.drawBlueprintBase(ctx, blueprintBase);
       }
-      modules.overlay.drawDynamicOverlay(ctx, worldState, lifeSystem, camera, {
+      lastOverlayStats = modules.overlay.drawDynamicOverlay(ctx, worldState, lifeSystem, camera, {
         drawCharacter: modules.assets && modules.assets.drawCharacter,
         hoverMarketKey: hoveredStationId,
       });
@@ -663,6 +683,7 @@ function renderFrame(now) {
       blueprintBase = null;
     }
   } else {
+    lastOverlayStats = null;
     try {
       worldModule.drawWorld(ctx, worldState, camera, { agents: !lifeSystem });
     } catch (error) {
@@ -728,6 +749,9 @@ export function bindPanNavigation(elements = {}) {
     if (canvasEl.classList?.toggle) canvasEl.classList.toggle(SPACE_CLASS, spaceDown);
     if (bodyEl?.classList?.toggle) bodyEl.classList.toggle(SPACE_BODY_CLASS, spaceDown);
     if (!spaceDown && !panning && canvasEl.classList?.remove) canvasEl.classList.remove("dragging");
+    // Inline cursor from hover ("pointer"/"grab") would override the
+    // .pan-ready/.dragging CSS cursors; clear it so the Space cursor wins.
+    if (canvasEl.style) canvasEl.style.cursor = "";
   }
 
   function beginPan(event) {
@@ -764,6 +788,11 @@ export function bindPanNavigation(elements = {}) {
     if (!panning) return false;
     panning = false;
     if (moved) suppressClick = true;
+    // `moved` is only true for the gesture that just ended. Leaving it true
+    // would make wasMoved() sticky and suppress every later plain desk click
+    // until the next Space drag (real-browser regression: click after pan
+    // never opened the panel). One-shot suppression is what guards the click.
+    moved = false;
     const pointerId = activePointerId;
     activePointerId = null;
     if (pointerId !== null && typeof canvasEl.releasePointerCapture === "function") {
@@ -1117,6 +1146,40 @@ function bindInput() {
   };
 }
 
+/* ------------------------------------------------------------------ *
+ * Debug/automation hook (read-only + select) — used by
+ * scripts/office-v3-browser-check.mjs. Never issues orders/stakes.
+ * ------------------------------------------------------------------ */
+
+function installDebugHooks() {
+  if (typeof globalThis === "undefined" || !globalThis) return;
+  globalThis.__tracecomOffice = {
+    version: "office-v3-debug.1.0.0",
+    camera: () => camera,
+    cameraModule: () => modules.camera,
+    worldState: () => worldState,
+    worldModule: () => worldModule,
+    officeJson: () => officeJson,
+    overlay: () => modules.overlay,
+    overlayStats: () => lastOverlayStats,
+    pan: () => panController,
+    mesas: () => mesasController,
+    selectedMarketKey: () => selectedMarketKey,
+    derivedFor: (marketKey) => {
+      if (!worldState || !marketKey) return null;
+      const pools = [worldState.stations, worldState.allStations];
+      for (const pool of pools) {
+        if (!Array.isArray(pool)) continue;
+        const station = pool.find((candidate) => candidate && (candidate.marketKey === marketKey || candidate.id === marketKey));
+        if (station) return derivedForStation(station);
+      }
+      return null;
+    },
+    selectMarket: (marketKey) => selectMarket(marketKey),
+    closeDetail: () => closeDetail(),
+  };
+}
+
 function canvasPointFromEvent(event) {
   const rect = canvas && typeof canvas.getBoundingClientRect === "function" ? canvas.getBoundingClientRect() : null;
   const scaleX = rect && rect.width ? canvas.width / rect.width : 1;
@@ -1258,6 +1321,7 @@ async function pollOnce() {
 
 async function init() {
   bindInput();
+  installDebugHooks();
   resize();
   setStatus("Carregando PIXEL OFFICE V3…", "importando módulos");
   await loadModules();

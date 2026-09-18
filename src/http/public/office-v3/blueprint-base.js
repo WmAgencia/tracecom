@@ -7,12 +7,13 @@
  * technique that can approach 100% visual identity for the static scene.
  *
  * DEFAULT ASSET = `blueprint-clean.png`: the reference with the painted FALSE
- * P&L badges above every desk inpainted out (see scripts/office-v3-clean-plate.mjs),
- * because dynamic P&L is drawn per real station state by `overlay.js`. The raw
- * frozen reference remains available via `?base=original` (or env
- * `OFFICE_V3_BASE=original`) for audit/diff. A CLOSED desk still cannot remove
- * the painted agents, so the overlay scrims/tags the desk instead (see
- * docs/office-v3/blueprint-base.md). The dynamic art is ours.
+ * P&L badges AND every painted character inpainted out (see
+ * scripts/office-v3-clean-plate.mjs), because dynamic P&L and dynamic life are
+ * drawn per real station state by `overlay.js`/`life.js`. The raw frozen
+ * reference remains available via `?base=original` (or env
+ * `OFFICE_V3_BASE=original`) for audit/diff. Non-working desks get a
+ * translucent scrim + the derived state tag; the painted desk labels are
+ * preserved by the clean plate. The dynamic art is ours.
  *
  * Dependency-free and DOM-guarded: browser uses `new Image()`, Node uses
  * `@napi-rs/canvas` `loadImage` (via createRequire) so headless tests/render

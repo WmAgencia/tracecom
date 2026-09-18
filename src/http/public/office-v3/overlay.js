@@ -73,29 +73,37 @@ const SEAT_LINE = 30;
 const AGENT_SPLIT = 20;
 
 /**
- * Canonical 55-market order (matches relay/market-universe.mjs order). Each
- * entry is [marketKey, display]. Position = index → row/column on the grid.
+ * Canonical 55-desk order aligned to the PAINTED blueprint labels (see
+ * docs/office-v3/blueprint-base.md). Position = index → row/column on the
+ * grid; every market of the reconciled relay universe is placed on the desk
+ * whose painted label matches its instrument whenever one exists:
+ *   band 1 majors, band 2 crosses, band 3 OTC-24H + BTC, band 4 indices +
+ *   commodities, band 5 leftovers, band 6 expanded (off-artboard).
+ * `USDCHF:NORMAL` (removed from the live universe) keeps the last expanded
+ * slot as a reserve; unknown keys are assigned by `createAnchorResolver`.
  */
 export const ANCHOR_MARKETS = Object.freeze([
-  ["EURUSD:NORMAL", "EUR/USD"], ["USDJPY:NORMAL", "USD/JPY"], ["GBPUSD:NORMAL", "GBP/USD"],
-  ["AUDUSD:NORMAL", "AUD/USD"], ["USDCAD:NORMAL", "USD/CAD"], ["USDCHF:NORMAL", "USD/CHF"],
-  ["EURJPY:NORMAL", "EUR/JPY"], ["EURGBP:NORMAL", "EUR/GBP"], ["AUDJPY:NORMAL", "AUD/JPY"],
+  ["EURUSD:NORMAL", "EUR/USD"], ["GBPUSD:NORMAL", "GBP/USD"], ["USDJPY:NORMAL", "USD/JPY"],
+  ["AUDUSD:NORMAL", "AUD/USD"], ["USDCAD:NORMAL", "USD/CAD"], ["USDCHF:OTC", "USD/CHF OTC"],
+  ["NZDCAD:OTC", "NZD/CAD OTC"], ["EURGBP:NORMAL", "EUR/GBP"], ["EURJPY:NORMAL", "EUR/JPY"],
   ["GBPJPY:NORMAL", "GBP/JPY"],
+  ["AUDJPY:NORMAL", "AUD/JPY"], ["AUDCAD:OTC", "AUD/CAD OTC"], ["AUDCHF:OTC", "AUD/CHF OTC"],
+  ["CADJPY:OTC", "CAD/JPY OTC"], ["CADCHF:OTC", "CAD/CHF OTC"], ["EURCAD:OTC", "EUR/CAD OTC"],
+  ["EURCHF:OTC", "EUR/CHF OTC"], ["EURAUD:OTC", "EUR/AUD OTC"], ["GBPAUD:OTC", "GBP/AUD OTC"],
+  ["GBPCHF:OTC", "GBP/CHF OTC"],
   ["EURUSD:OTC", "EUR/USD OTC"], ["GBPUSD:OTC", "GBP/USD OTC"], ["USDJPY:OTC", "USD/JPY OTC"],
-  ["EURGBP:OTC", "EUR/GBP OTC"], ["GBPJPY:OTC", "GBP/JPY OTC"], ["AUDUSD:OTC", "AUD/USD OTC"],
-  ["USDCAD:OTC", "USD/CAD OTC"], ["USDCHF:OTC", "USD/CHF OTC"], ["EURJPY:OTC", "EUR/JPY OTC"],
-  ["AUDJPY:OTC", "AUD/JPY OTC"], ["EURAUD:OTC", "EUR/AUD OTC"], ["EURCHF:OTC", "EUR/CHF OTC"],
-  ["EURCAD:OTC", "EUR/CAD OTC"], ["EURNZD:OTC", "EUR/NZD OTC"], ["AUDCAD:OTC", "AUD/CAD OTC"],
-  ["AUDCHF:OTC", "AUD/CHF OTC"], ["AUDNZD:OTC", "AUD/NZD OTC"], ["CADJPY:OTC", "CAD/JPY OTC"],
-  ["CADCHF:OTC", "CAD/CHF OTC"], ["GBPAUD:OTC", "GBP/AUD OTC"], ["GBPCAD:OTC", "GBP/CAD OTC"],
-  ["GBPCHF:OTC", "GBP/CHF OTC"], ["GBPNZD:OTC", "GBP/NZD OTC"], ["NZDCAD:OTC", "NZD/CAD OTC"],
-  ["NZDJPY:OTC", "NZD/JPY OTC"], ["NZDCHF:OTC", "NZD/CHF OTC"], ["USDMXN:OTC", "USD/MXN OTC"],
-  ["USDBRL:OTC", "USD/BRL OTC"], ["USDTRY:OTC", "USD/TRY OTC"], ["USDZAR:OTC", "USD/ZAR OTC"],
-  ["XAUUSD:NORMAL", "GOLD"], ["XAGUSD:NORMAL", "SILVER"], ["US30:NORMAL", "US30"],
-  ["US100:NORMAL", "US100"], ["US500:NORMAL", "US500"], ["US2000:NORMAL", "US2000"],
-  ["GER30:NORMAL", "GER30"], ["UK100:NORMAL", "UK100"], ["JP225:NORMAL", "JP225"],
-  ["AUS200:NORMAL", "AUS200"], ["EU50:NORMAL", "EU50"], ["HK33:NORMAL", "HK33"],
-  ["FR40:NORMAL", "FR40"], ["SP35:NORMAL", "SP35"], ["BTCUSD:OTC", "BTC/USD OTC"],
+  ["EURGBP:OTC", "EUR/GBP OTC"], ["GBPJPY:OTC", "GBP/JPY OTC"], ["BTCUSD:OTC", "BTC/USD OTC"],
+  ["AUDUSD:OTC", "AUD/USD OTC"], ["USDCAD:OTC", "USD/CAD OTC"], ["EURJPY:OTC", "EUR/JPY OTC"],
+  ["AUDJPY:OTC", "AUD/JPY OTC"],
+  ["US500:NORMAL", "US500"], ["US100:NORMAL", "US100"], ["US30:NORMAL", "US30"],
+  ["GER30:NORMAL", "GER30"], ["UK100:NORMAL", "UK100"],
+  ["XAUUSD:NORMAL", "GOLD"], ["XAGUSD:NORMAL", "SILVER"], ["US2000:NORMAL", "US2000"],
+  ["JP225:NORMAL", "JP225"], ["AUS200:NORMAL", "AUS200"],
+  ["EU50:NORMAL", "EU50"], ["HK33:NORMAL", "HK33"], ["FR40:NORMAL", "FR40"],
+  ["SP35:NORMAL", "SP35"], ["EURNZD:OTC", "EUR/NZD OTC"], ["AUDNZD:OTC", "AUD/NZD OTC"],
+  ["GBPCAD:OTC", "GBP/CAD OTC"], ["GBPNZD:OTC", "GBP/NZD OTC"], ["NZDJPY:OTC", "NZD/JPY OTC"],
+  ["NZDCHF:OTC", "NZD/CHF OTC"], ["USDMXN:OTC", "USD/MXN OTC"], ["USDBRL:OTC", "USD/BRL OTC"],
+  ["USDTRY:OTC", "USD/TRY OTC"], ["USDZAR:OTC", "USD/ZAR OTC"], ["USDCHF:NORMAL", "USD/CHF"],
 ]);
 
 /**
@@ -197,6 +205,45 @@ export function anchorForMarket(market, index) {
 
 export function anchorForStation(station, index) {
   return anchorForMarket(station, index);
+}
+
+/**
+ * Deterministic, collision-free anchor assignment for a concrete station list.
+ *
+ * `anchorForMarket` is a PREFERENCE resolution (marketKey → display → index
+ * fallback). When a snapshot carries a market the calibrated table does not
+ * know (offline demo fixture, future universe entry), the index fallback can
+ * land on an anchor already used by another station: two desks would draw the
+ * same agents and the click hitbox would open the wrong market. The resolver
+ * keeps the preferred anchor when free and otherwise hands out the first free
+ * slot in a stable order, so base, overlay and hitboxes always agree.
+ */
+export function createAnchorResolver(stations) {
+  const list = Array.isArray(stations) ? stations.filter((station) => station && typeof station === "object") : [];
+  const allAnchors = Object.values(STATION_ANCHORS);
+  const claimed = new Set();
+  const byStation = new Map();
+  const byKey = new Map();
+  for (let index = 0; index < list.length; index += 1) {
+    const station = list[index];
+    const preferred = anchorForMarket(station, index);
+    let anchor = preferred && !claimed.has(preferred.marketKey)
+      ? preferred
+      : allAnchors.find((candidate) => !claimed.has(candidate.marketKey)) ?? null;
+    if (anchor) claimed.add(anchor.marketKey);
+    byStation.set(station, anchor);
+    const key = station.marketKey ?? station.id ?? null;
+    if (key) byKey.set(key, anchor);
+  }
+  return {
+    /** Anchor assigned to this exact station object/key (falls back to preference). */
+    anchorFor(station, index) {
+      if (byStation.has(station)) return byStation.get(station);
+      const key = station?.marketKey ?? station?.id ?? null;
+      if (key && byKey.has(key)) return byKey.get(key);
+      return anchorForMarket(station, index);
+    },
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -364,8 +411,9 @@ export function hitTestAnchor(worldState, x, y) {
   const ny = Number(y);
   if (!Number.isFinite(nx) || !Number.isFinite(ny)) return null;
   const stations = Array.isArray(worldState?.stations) ? worldState.stations : [];
+  const resolver = createAnchorResolver(stations);
   for (let index = 0; index < stations.length; index += 1) {
-    const anchor = anchorForStation(stations[index], index);
+    const anchor = resolver.anchorFor(stations[index], index);
     if (!anchor) continue;
     const rect = anchor.desk;
     if (nx >= rect.x && nx <= rect.x + rect.w && ny >= rect.y && ny <= rect.y + rect.h) return stations[index];
@@ -384,10 +432,12 @@ export function drawDynamicOverlay(ctx, worldState, life = null, camera = null, 
   const stats = { stations: 0, open: 0, closed: 0, agents: 0, badges: 0, supervisor: 0, hover: false, feedOffline: 0 };
   if (!ctx || !worldState) return stats;
 
-  const resolveAnchor = typeof options.anchorFor === "function" ? options.anchorFor : anchorForStation;
-  const hoverKey = options.hoverMarketKey ?? options.hoverStationId ?? null;
   const stations = Array.isArray(worldState.stations) ? worldState.stations : [];
   stats.stations = stations.length;
+  const resolveAnchor = typeof options.anchorFor === "function"
+    ? options.anchorFor
+    : createAnchorResolver(stations).anchorFor;
+  const hoverKey = options.hoverMarketKey ?? options.hoverStationId ?? null;
 
   stations.forEach((station, index) => {
     const anchor = resolveAnchor(station, index);
@@ -433,6 +483,7 @@ export default {
   buildDeskSlots,
   anchorForMarket,
   anchorForStation,
+  createAnchorResolver,
   hitTestAnchor,
   closedLabel,
   drawClosedTreatment,

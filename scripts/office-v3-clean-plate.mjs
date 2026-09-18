@@ -165,6 +165,62 @@ export function badgeWindows() {
   return windows;
 }
 
+/* ------------------------------------------------ desk-agent geometry */
+
+/**
+ * Authoritative desk-agent boxes, derived from the SAME `ANCHOR_BANDS` the
+ * runtime overlay uses to seat the dynamic agents (trader at cx-20, critic at
+ * cx+20). The automatic color detector misses sprites whose skin component
+ * merges with the wooden desk/background (dark-haired traders) — the previous
+ * clean plate kept ~14 painted agents alive. These boxes guarantee every
+ * painted agent inside the 50 painted desks (10+10+10+10+10) is masked,
+ * ending at `band.y + 25`: the desk front with the engraved label starts
+ * below, so labels are never touched.
+ */
+export const DESK_AGENT_BOX = Object.freeze({ halfWidth: 17, above: 17, below: 25, agentOffset: 20 });
+
+export function deskAgentBoxes(bands = ANCHOR_BANDS) {
+  const boxes = [];
+  for (const band of bands) {
+    if (!band || band.expanded) continue;
+    for (const sector of band.sectors) {
+      for (let index = 0; index < sector.count; index += 1) {
+        const cx = Math.round(sector.x0 + index * sector.pitch);
+        for (const side of [-1, 1]) {
+          const agentX = cx + side * DESK_AGENT_BOX.agentOffset;
+          boxes.push(Object.freeze({
+            band: band.band,
+            cx,
+            side,
+            agentX,
+            x: agentX - DESK_AGENT_BOX.halfWidth,
+            y: band.y - DESK_AGENT_BOX.above,
+            w: DESK_AGENT_BOX.halfWidth * 2,
+            h: DESK_AGENT_BOX.above + DESK_AGENT_BOX.below,
+          }));
+        }
+      }
+    }
+  }
+  return Object.freeze(boxes);
+}
+
+export const DESK_AGENT_BOXES = deskAgentBoxes();
+
+/** Clip limit for automatic masks inside a desk row (keeps the engraved label). */
+export function deskClipLimit(x, y, bands = ANCHOR_BANDS) {
+  for (const band of bands) {
+    if (!band || band.expanded) continue;
+    if (y < band.y - 34 || y > band.y + 90) continue;
+    for (const sector of band.sectors) {
+      const x0 = sector.x0 - 70;
+      const x1 = sector.x0 + (sector.count - 1) * sector.pitch + 70;
+      if (x >= x0 && x <= x1) return band.y + 25;
+    }
+  }
+  return Number.POSITIVE_INFINITY;
+}
+
 /**
  * Detect painted badge pills from raw RGBA pixels (legacy pass kept intact).
  *
@@ -1017,6 +1073,10 @@ export function detectCharacterMasks(data, width, height) {
       }
     } else {
       pixels = growSeedMask(data, width, height, seed, claimed, context, { strictCore: seed.kind === "social-anchor" });
+      // Never let an automatic sprite growth cross into the desk front: the
+      // engraved market label lives there and must survive the cleanup.
+      const limit = deskClipLimit(seed.x + seed.w / 2, seed.y + seed.h / 2);
+      if (Number.isFinite(limit)) pixels = pixels.filter((p) => ((p / width) | 0) <= limit);
     }
     if (pixels.length < 12) continue;
     let minX = width;
@@ -1046,7 +1106,160 @@ export function detectCharacterMasks(data, width, height) {
       seedY: seed.y,
     });
   }
+  // Geometric guarantee: every painted desk agent gets a full box mask even
+  // when the color detector cannot separate its face from the wooden desk.
+  for (const box of DESK_AGENT_BOXES) {
+    const x0 = Math.max(0, box.x);
+    const y0 = Math.max(0, box.y);
+    const x1 = Math.min(width, box.x + box.w);
+    const y1 = Math.min(height, box.y + box.h);
+    if (x1 <= x0 || y1 <= y0) continue;
+    masks.push({
+      kind: "character-desk",
+      x: x0,
+      y: y0,
+      w: x1 - x0,
+      h: y1 - y0,
+      pixels: (x1 - x0) * (y1 - y0),
+      cells: null,
+      eyes: 1,
+      seedX: box.agentX,
+      seedY: box.y,
+      band: box.band,
+    });
+  }
   return masks;
+}
+
+/**
+ * Residual verifier for the desk-agent boxes: a face is a compact skin
+ * component (light or deep) with at least one embedded dark eye/mouth blob
+ * whose surroundings are mostly skin. Runs on the CLEANED pixels — the clean
+ * plate must return zero. Exported so tests can hold the regression.
+ */
+export function scanDeskAgentResiduals(data, width, height, boxes = DESK_AGENT_BOXES) {
+  const residuals = [];
+  for (const box of boxes) {
+    const bw = box.w;
+    const bh = box.h;
+    const ox = box.x;
+    const oy = box.y;
+    if (bw <= 0 || bh <= 0) continue;
+    const skin = new Uint8Array(bw * bh);
+    for (let y = 0; y < bh; y += 1) {
+      for (let x = 0; x < bw; x += 1) {
+        const i = ((oy + y) * width + (ox + x)) * 4;
+        if (skinTone(data[i], data[i + 1], data[i + 2]) || skinDeepTone(data[i], data[i + 1], data[i + 2])) skin[y * bw + x] = 1;
+      }
+    }
+    const label = new Int32Array(bw * bh).fill(-1);
+    const comps = [];
+    const stack = [];
+    for (let start = 0; start < bw * bh; start += 1) {
+      if (!skin[start] || label[start] >= 0) continue;
+      const id = comps.length;
+      let count = 0;
+      let minX = bw;
+      let maxX = -1;
+      let minY = bh;
+      let maxY = -1;
+      stack.length = 0;
+      stack.push(start);
+      label[start] = id;
+      while (stack.length) {
+        const p = stack.pop();
+        const x = p % bw;
+        const y = (p / bw) | 0;
+        count += 1;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+        for (let dy = -1; dy <= 1; dy += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            if (!dx && !dy) continue;
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= bw || ny >= bh) continue;
+            const q = ny * bw + nx;
+            if (skin[q] && label[q] < 0) { label[q] = id; stack.push(q); }
+          }
+        }
+      }
+      comps.push({ id, count, minX, maxX, minY, maxY, w: maxX - minX + 1, h: maxY - minY + 1 });
+    }
+    for (const comp of comps) {
+      if (comp.count < 24 || comp.count > 700 || comp.w < 6 || comp.h < 6 || comp.w > 40 || comp.h > 40) continue;
+      const seen = new Set();
+      let eyes = 0;
+      for (let y = comp.minY; y <= comp.maxY; y += 1) {
+        for (let x = comp.minX; x <= comp.maxX; x += 1) {
+          const p = y * bw + x;
+          if (label[p] >= 0 || seen.has(p)) continue;
+          const i = ((oy + y) * width + (ox + x)) * 4;
+          if (!eyeTone(data[i], data[i + 1], data[i + 2])) continue;
+          let touchesEdge = false;
+          let size = 0;
+          const blob = [];
+          const queue = [p];
+          seen.add(p);
+          while (queue.length) {
+            const v = queue.pop();
+            const vx = v % bw;
+            const vy = (v / bw) | 0;
+            size += 1;
+            blob.push(v);
+            if (vx === comp.minX || vx === comp.maxX || vy === comp.minY || vy === comp.maxY) touchesEdge = true;
+            for (let dy = -1; dy <= 1; dy += 1) {
+              for (let dx = -1; dx <= 1; dx += 1) {
+                if (!dx && !dy) continue;
+                const nx = vx + dx;
+                const ny = vy + dy;
+                if (nx < comp.minX || nx > comp.maxX || ny < comp.minY || ny > comp.maxY) continue;
+                const np = ny * bw + nx;
+                const ni = ((oy + ny) * width + (ox + nx)) * 4;
+                if (!eyeTone(data[ni], data[ni + 1], data[ni + 2]) || label[np] >= 0 || seen.has(np)) continue;
+                seen.add(np);
+                queue.push(np);
+              }
+            }
+          }
+          if (touchesEdge || size > 14) continue;
+          const blobSet = new Set(blob);
+          let neighbours = 0;
+          let skinNeighbours = 0;
+          for (const v of blob) {
+            const vx = v % bw;
+            const vy = (v / bw) | 0;
+            for (let dy = -1; dy <= 1; dy += 1) {
+              for (let dx = -1; dx <= 1; dx += 1) {
+                if (!dx && !dy) continue;
+                const nx = vx + dx;
+                const ny = vy + dy;
+                if (nx < 0 || ny < 0 || nx >= bw || ny >= bh) continue;
+                const np = ny * bw + nx;
+                if (blobSet.has(np)) continue;
+                neighbours += 1;
+                if (skin[np]) skinNeighbours += 1;
+              }
+            }
+          }
+          if (neighbours && skinNeighbours / neighbours >= 0.36) eyes += 1;
+        }
+      }
+      if (eyes < 1) continue;
+      const pixels = [];
+      for (let y = comp.minY; y <= comp.maxY; y += 1) {
+        for (let x = comp.minX; x <= comp.maxX; x += 1) {
+          const p = y * bw + x;
+          if (label[p] === comp.id) pixels.push((oy + y) * width + (ox + x));
+        }
+      }
+      residuals.push({ box: `${box.band ?? "desk"}@${box.agentX ?? box.cx}`, x: ox + comp.minX, y: oy + comp.minY, w: comp.w, h: comp.h, eyes, pixels });
+      break;
+    }
+  }
+  return residuals;
 }
 
 /** Merges every mask kind into one per-pixel mask, then dilates it by `grow`. */
@@ -1646,11 +1859,16 @@ export function buildCleanPlate(originalData, width = CLEAN_PLATE_WIDTH, height 
   // pixels and diffuse-repair those spots; their bboxes join the declared
   // masks so the outside-parity metric stays exact. Bounded to 2 passes.
   let characterAfter = scanCharacterClusters(data, width, height);
+  let deskAfter = scanDeskAgentResiduals(data, width, height);
   let residualPasses = 0;
-  while ((characterAfter.faces + characterAfter.backs + characterAfter.social) > 0 && residualPasses < 2) {
+  while ((characterAfter.faces + characterAfter.backs + characterAfter.social) > 0 || deskAfter.length > 0) {
+    if (residualPasses >= 2) break;
     const residualMask = new Uint8Array(width * height);
     for (const seed of characterAfter.seeds) {
       for (const p of seed.pixels) residualMask[p] = 1;
+    }
+    for (const residual of deskAfter) {
+      for (const p of residual.pixels) residualMask[p] = 1;
     }
     const copy = residualMask.slice();
     let rMinX = width;
@@ -1686,6 +1904,7 @@ export function buildCleanPlate(originalData, width = CLEAN_PLATE_WIDTH, height 
       });
     }
     characterAfter = scanCharacterClusters(data, width, height);
+    deskAfter = scanDeskAgentResiduals(data, width, height);
   }
   inpaintStats.residualPasses = residualPasses;
   const badgeAfter = scanMaskBadgePixels(data, width, height, badges);
@@ -1700,6 +1919,7 @@ export function buildCleanPlate(originalData, width = CLEAN_PLATE_WIDTH, height 
     badgeAfter,
     characterBefore,
     characterAfter,
+    deskAfter,
     parity,
     inpaintStats,
   };
@@ -1843,6 +2063,8 @@ export async function main(options = {}) {
     remainingStrictBadges: result.badgeAfter.strict,
     remainingFringeBadges: result.badgeAfter.fringe,
     remainingCharacterSeeds: result.characterAfter.faces + result.characterAfter.backs + result.characterAfter.social,
+    remainingDeskResiduals: result.deskAfter.length,
+    deskAgentBoxes: DESK_AGENT_BOXES.length,
     outsideMaskChanged: result.parity.outside,
     changedPixels: result.parity.changed,
     changedPct: Number(((result.parity.changed / totalPixels) * 100).toFixed(4)),
@@ -1852,10 +2074,10 @@ export async function main(options = {}) {
     regions: result.parity.regions.map((region) => ({ ...region, outsidePct: Number(((region.outside / totalPixels) * 100).toFixed(4)) })),
   };
   console.log(`[clean-plate] fonte ${source}`);
-  console.log(`[clean-plate] badges=${result.badges.length} (${badgePixelsRemoved} px removidos); characters=${result.characters.length} mascaras; seeds face=${result.characterBefore.faces} back=${result.characterBefore.backs} social=${result.characterBefore.social} anchors=${MANUAL_ANCHORS.length}`);
+  console.log(`[clean-plate] badges=${result.badges.length} (${badgePixelsRemoved} px removidos); characters=${result.characters.length} mascaras (${DESK_AGENT_BOXES.length} baias geometricas de desk); seeds face=${result.characterBefore.faces} back=${result.characterBefore.backs} social=${result.characterBefore.social} anchors=${MANUAL_ANCHORS.length}`);
   console.log(`[clean-plate] character pixels removed=${result.parity.changed} (${summary.changedPct}% da imagem); inpaint h=${result.inpaintStats.horizontal} v=${result.inpaintStats.vertical} bg=${result.inpaintStats.background} diffuse=${result.inpaintStats.diffuse} residualPasses=${result.inpaintStats.residualPasses}`);
   console.log(`[clean-plate] objetos preservados: ${PRESERVE_REGIONS.length} regioes (vasos, sofa, abajures, letreiros, teclado)`);
-  console.log(`[clean-plate] restantes: badges strict=${result.badgeAfter.strict} fringe=${result.badgeAfter.fringe}; character seeds=${summary.remainingCharacterSeeds}; fora das mascaras=${result.parity.outside}`);
+  console.log(`[clean-plate] restantes: badges strict=${result.badgeAfter.strict} fringe=${result.badgeAfter.fringe}; character seeds=${summary.remainingCharacterSeeds}; desk residuals=${summary.remainingDeskResiduals}; fora das mascaras=${result.parity.outside}`);
   for (const region of summary.regions) {
     console.log(`  ${region.region} changed=${region.changed} outside=${region.outside}`);
   }
@@ -1874,6 +2096,7 @@ if (invokedDirectly) {
   if (summary.outsideMaskChanged !== 0) process.exitCode = 1;
   if (summary.remainingStrictBadges !== 0) process.exitCode = 1;
   if (summary.remainingCharacterSeeds !== 0) process.exitCode = 1;
+  if (summary.remainingDeskResiduals !== 0) process.exitCode = 1;
 }
 
 export default {
@@ -1890,6 +2113,10 @@ export default {
   badgeColorClass,
   scanMaskBadgePixels,
   scanCharacterClusters,
+  scanDeskAgentResiduals,
+  DESK_AGENT_BOXES,
+  deskAgentBoxes,
+  deskClipLimit,
   detectSocialSeeds,
   manualAnchorSeeds,
   SOCIAL_ZONES,
