@@ -61,6 +61,45 @@ describe("MARKET STATUS — fonte de verdade e o broker (nunca horario teorico)"
     expect(resolver.get("EURUSD:OTC").staleSnapshot).toBe(false);
   });
 
+  it("snapshot INCOMPLETO do broker (feed stale/ausente/reconectando) vira UNKNOWN, nunca SUSPENDED/NOT_OFFERED", () => {
+    const resolver = new RuntimeAssetResolver() as any;
+    resolver.ingestInitializationData(initData({
+      "1861": { name: "front.EURUSD-op", enabled: true, is_suspended: false },
+      "1865": { name: "front.USDJPY-op", enabled: true, is_suspended: false },
+    }));
+    expect(resolver.get("EURUSD:NORMAL").availability).toBe("OPEN");
+    expect(resolver.get("USDJPY:NORMAL").availability).toBe("OPEN");
+    // mesmo cenario do incidente: ativos confirmados somem e os restantes chegam suspensos
+    resolver.ingestInitializationData(initData({ "1861": { name: "front.EURUSD-op", enabled: true, is_suspended: true } }));
+    expect(resolver.lastSnapshotIncomplete).toBe(true);
+    expect(resolver.get("EURUSD:NORMAL").availability).toBe("UNKNOWN");
+    expect(resolver.get("USDJPY:NORMAL").availability).toBe("UNKNOWN");
+    expect(resolver.get("EURUSD:NORMAL").staleSnapshot).toBe(true);
+    // snapshot completo volta a ser a verdade do broker
+    resolver.ingestInitializationData(initData({
+      "1861": { name: "front.EURUSD-op", enabled: true, is_suspended: false },
+      "1865": { name: "front.USDJPY-op", enabled: true, is_suspended: false },
+    }));
+    expect(resolver.lastSnapshotIncomplete).toBe(false);
+    expect(resolver.get("EURUSD:NORMAL").availability).toBe("OPEN");
+    expect(resolver.get("USDJPY:NORMAL").availability).toBe("OPEN");
+  });
+
+  it("suspensao REAL do broker com snapshot completo continua SUSPENDED", () => {
+    const resolver = new RuntimeAssetResolver() as any;
+    resolver.ingestInitializationData(initData({
+      "1861": { name: "front.EURUSD-op", enabled: true, is_suspended: false },
+      "1865": { name: "front.USDJPY-op", enabled: true, is_suspended: false },
+    }));
+    resolver.ingestInitializationData(initData({
+      "1861": { name: "front.EURUSD-op", enabled: true, is_suspended: true },
+      "1865": { name: "front.USDJPY-op", enabled: true, is_suspended: false },
+    }));
+    expect(resolver.lastSnapshotIncomplete).toBe(false);
+    expect(resolver.get("EURUSD:NORMAL").availability).toBe("SUSPENDED");
+    expect(resolver.get("USDJPY:NORMAL").availability).toBe("OPEN");
+  });
+
   it("NORMAL e OTC nunca se misturam (activeIds e status independentes)", () => {
     const resolver = new RuntimeAssetResolver() as any;
     resolver.ingestInitializationData(initData({ "1": { name: "EURUSD", enabled: true, is_suspended: true }, "76": { name: "EURUSD-OTC", enabled: true, is_suspended: false } }));

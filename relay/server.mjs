@@ -50,7 +50,7 @@ async function migrate() {
     finally { client.release(); }
   }
 }
-await migrate();
+try { await migrate(); } catch (error) { console.info("MIGRATE_SKIPPED", String(error?.message ?? error).slice(0, 160)); }
 try {
   const restored = await loadSession(pool, process.env.TOKEN_SIGNING_SECRET || "");
   if (restored && iqAuth.restore(restored)) { console.info("IQ_SESSION_RESTORED", JSON.stringify({ email: restored.emailMasked })); wsRuntime.start(); }

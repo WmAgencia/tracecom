@@ -64,6 +64,8 @@ export class RuntimeAssetResolver {
     this.payoutByActiveId = new Map();
     this.lastResolvedAt = null;
     this.lastError = null;
+    this.lastSnapshotIncomplete = false;
+    this.lastSnapshotResolved = null;
     this.rawActivesSeen = 0;
     this.auxMessages = 0;
     this.lastAuxShape = null;
@@ -151,6 +153,9 @@ export class RuntimeAssetResolver {
 
   #merge(rows) {
     const now = this.now();
+    const previous = this.mapping;
+    const previousResolved = [...previous.values()].filter((row) => row.activeId !== null && row.activeId !== undefined).length;
+    const next = new Map();
     for (const entry of this.universe) {
       const key = marketKey(entry.canonical, entry.marketType);
       const matches = rows.filter((row) => row.canonical === entry.canonical && row.marketType === entry.marketType);
@@ -160,7 +165,7 @@ export class RuntimeAssetResolver {
       if (!selected) {
         // Broker NAO lista o instrumento em nenhuma secao: NOT_OFFERED (nunca confundir com mercado fechado/suspenso).
         const digital = this.digitalByCanonical.get(entry.canonical) ?? [];
-        this.mapping.set(key, {
+        next.set(key, {
           marketKey: key, symbol: entry.symbol, display: entry.display, marketType: entry.marketType, canonical: entry.canonical,
           activeId: null, instrumentTypes: [], availability: "NOT_OFFERED", enabledLive: false, suspended: false, offered: false,
           product: digital.length ? "DIGITAL_ONLY" : "NONE",
@@ -171,7 +176,7 @@ export class RuntimeAssetResolver {
       }
       const payout = selected.payout ?? this.payoutByActiveId.get(selected.activeId) ?? null;
       const digital = this.digitalByCanonical.get(entry.canonical) ?? [];
-      this.mapping.set(key, {
+      next.set(key, {
         marketKey: key, symbol: entry.symbol, display: entry.display, marketType: entry.marketType, canonical: entry.canonical,
         activeId: selected.activeId, instrumentTypes: sections, availability: open.length ? "OPEN" : selected.enabled ? "SUSPENDED" : "DISABLED",
         enabledLive: selected.enabled, suspended: selected.suspended, offered: true, product: "BINARY_TURBO",
@@ -181,8 +186,22 @@ export class RuntimeAssetResolver {
         candidates: matches.map((row) => ({ activeId: row.activeId, section: row.section, enabled: row.enabled, suspended: row.suspended })),
       });
     }
+    const nextResolved = [...next.values()].filter((row) => row.activeId !== null && row.activeId !== undefined).length;
+    // Snapshot incompleto (feed ausente/parcial/reconectando): o broker deixou de listar ativos ja confirmados.
+    // Regra arquitetural: feed desconhecido/stale/ausente => UNKNOWN, NUNCA SUSPENDED/NOT_OFFERED.
+    // SUSPENDED so permanece quando o snapshot e completo (mesmo universo de ativos resolvidos).
+    const incomplete = previousResolved > 0 && nextResolved < previousResolved;
+    this.lastSnapshotIncomplete = incomplete;
+    this.lastSnapshotResolved = { previous: previousResolved, next: nextResolved };
+    for (const [key, row] of next.entries()) {
+      const prev = previous.get(key);
+      const wasConfirmed = Boolean(prev && prev.activeId !== null && prev.activeId !== undefined);
+      const downgraded = row.availability === "SUSPENDED" || row.availability === "NOT_OFFERED" || row.availability === "DISABLED";
+      row.staleSnapshot = incomplete && wasConfirmed && downgraded;
+      next.set(key, row);
+    }
+    this.mapping = next;
     this.lastResolvedAt = now;
-    for (const row of this.mapping.values()) row.staleSnapshot = false;
     this.lastError = null;
   }
 
@@ -212,6 +231,8 @@ export class RuntimeAssetResolver {
       resolverVersion: RESOLVER_VERSION,
       lastResolvedAt: this.lastResolvedAt,
       lastError: this.lastError,
+      lastSnapshotIncomplete: this.lastSnapshotIncomplete === true,
+      lastSnapshotResolved: this.lastSnapshotResolved,
       sectionsSeen: this.sectionsSeen,
       rawActivesSeen: this.rawActivesSeen,
       sampleActiveKeys: this.sampleActiveKeys,
