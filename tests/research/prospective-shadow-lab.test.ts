@@ -464,4 +464,26 @@ describe("classificadores H1/H2/H3 e degradation observer (descritivos)", () => 
     expect(MIGRATION_SQL).toContain("decision_source text");
     expect(readFileSync("scripts/db-retention.mjs", "utf8")).toContain("iq_trade_market_windows");
   });
+
+  it("persistencia: placeholders das queries casam 1:1 com os parametros (sem parametro orfao)", async () => {
+    const calls: AnyRecord[] = [];
+    const pool = { query: async (sql: string, params: any[]) => { calls.push({ sql, params }); return { rows: [] }; }, connect: async () => ({ query: async () => ({ rows: [] }), release() {} }), end: async () => {} };
+    const instance: AnyRecord = new ShadowLab({ pool, now: () => 1000 });
+    observeWith(instance, {
+      candidateId: "cand_sql",
+      candles: [
+        { bucketStart: 880_000, open: 1.1, high: 1.1, low: 1.09, close: 1.1 },
+        { bucketStart: 885_000, open: 1.1, high: 1.11, low: 1.09, close: 1.105 },
+        { bucketStart: 890_000, open: 1.105, high: 1.11, low: 1.1, close: 1.108 },
+      ],
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const windowCalls = calls.filter((call) => call.sql.includes("iq_trade_market_windows"));
+    expect(windowCalls.length).toBeGreaterThan(0);
+    for (const call of [...windowCalls, ...calls.filter((entry) => entry.sql.includes("INSERT INTO iq_shadow_observations"))]) {
+      const placeholders = [...call.sql.matchAll(/\$(\d+)/g)].map((match) => Number(match[1]));
+      expect(Math.max(...placeholders)).toBe(call.params.length);
+      expect(new Set(placeholders).size).toBe(call.params.length);
+    }
+  });
 });

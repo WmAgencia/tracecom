@@ -1042,7 +1042,7 @@ export class ShadowLab {
           candidate_id,trade_id,execution_id,correlation_id,candidate_at,decision_at,jit_at,send_at,entry_at,target_entry_at,target_expiry_at,payout,
           t0,gate_current,gate_corrected_shadow,gate_comparison,h1_location,h2_displacement,h3_critic,degradation,counterfactual,
           current_execution,current_execution_reason,settlement_basis,broker_result,broker_profit,theoretical_result,theoretical_pnl,created_at,updated_at)
-         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,to_timestamp($14/1000.0),to_timestamp($15/1000.0),to_timestamp($16/1000.0),to_timestamp($17/1000.0),to_timestamp($18/1000.0),to_timestamp($19/1000.0),to_timestamp($20/1000.0),$21,
+         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,to_timestamp($14::double precision/1000.0),to_timestamp($15::double precision/1000.0),to_timestamp($16::double precision/1000.0),to_timestamp($17::double precision/1000.0),to_timestamp($18::double precision/1000.0),to_timestamp($19::double precision/1000.0),to_timestamp($20::double precision/1000.0),$21,
           $22::jsonb,$23::jsonb,$24::jsonb,$25::jsonb,$26::jsonb,$27::jsonb,$28::jsonb,$29::jsonb,$30::jsonb,$31,$32,$33,$34,$35,$36,$37,now(),now())
          ON CONFLICT(observation_id) DO NOTHING`,
         [
@@ -1067,8 +1067,8 @@ export class ShadowLab {
       const values = [];
       const params = [];
       rows.forEach((candle, position) => {
-        const base = position * 12;
-        values.push(`($${base + 1},$${base + 2},$${base + 3},$${base + 4},to_timestamp($${base + 5}/1000.0),$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10},true,false)`);
+        const base = position * 10;
+        values.push(`($${base + 1},$${base + 2},$${base + 3},$${base + 4},to_timestamp($${base + 5}::double precision/1000.0),$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10},true,false)`);
         params.push(
           observation.id, observation.tradeId ?? observation.executionId ?? null, observation.marketKey, kind,
           candle.bucketStart, candle.offsetSeconds ?? candle.targetSeconds ?? null,
@@ -1100,7 +1100,7 @@ export class ShadowLab {
     if (patch.theoreticalPnl !== undefined) push("theoretical_pnl", patch.theoreticalPnl);
     if (patch.settlementPrice !== undefined) push("settlement_price", patch.settlementPrice);
     if (patch.actualEntryPrice !== undefined) push("entry_price", patch.actualEntryPrice);
-    if (patch.entryAt !== undefined) { params.push(patch.entryAt); sets.push(`entry_at=to_timestamp($${params.length}/1000.0)`); }
+    if (patch.entryAt !== undefined) { params.push(patch.entryAt); sets.push(`entry_at=to_timestamp($${params.length}::double precision/1000.0)`); }
     if (patch.tradeId !== undefined) push("trade_id", patch.tradeId);
     if (patch.executionId !== undefined) push("execution_id", patch.executionId);
     if (patch.decisionSource !== undefined) push("decision_source", patch.decisionSource);
