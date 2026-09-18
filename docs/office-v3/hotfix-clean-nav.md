@@ -83,7 +83,7 @@ PRACTICE only, ZERO REAL.
   smoke `GET /` = 200, `GET /classic.html` = 200.
 
 ## Commit
-- commit: `HOTFIX_COMMIT_PLACEHOLDER`
+- commit: `e2f32a6`
 - branch: `main` (origin `WmAgencia/tracecom`)
 
 ## Pendências
