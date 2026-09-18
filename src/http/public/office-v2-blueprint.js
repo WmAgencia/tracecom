@@ -183,6 +183,7 @@ export const SECTOR_BANDS = [
   {
     id: "BAND_OTC",
     label: "OTC - 24H",
+    banner: "OTC - 24H (5 PARES)",
     macroBand: "BAND_OTC_CRYPTO",
     accent: "blue",
     ribbon: { x: 368, y: 576, w: 188, h: 26 },
@@ -205,6 +206,7 @@ export const SECTOR_BANDS = [
   {
     id: "BAND_INDICES",
     label: "INDICES",
+    banner: "?NDICES",
     macroBand: "BAND_INDICES_COMMODITIES",
     accent: "blue",
     ribbon: { x: 400, y: 692, w: 100, h: 26 },
@@ -2503,7 +2505,7 @@ function drawRightColumn(ctx) {
  */
 export function ribbonBannerRect(band) {
   const scale = 2;
-  const textW = measurePixelText(band.label, scale, 1);
+  const textW = measurePixelText(band.banner ?? band.label, scale, 1);
   const w = textW + 20;
   const h = GLYPH_HEIGHT * scale + 4;
   const cx = band.ribbon.x + band.ribbon.w / 2;
@@ -2529,7 +2531,7 @@ function drawRibbon(ctx, band) {
   pxRect(ctx, x + 1, y + h - 2, w - 2, 1, "rgba(0,0,0,0.4)");
   pxRect(ctx, x, y + 1, 1, h - 2, "rgba(0,0,0,0.25)");
   pxRect(ctx, x + w - 1, y + 1, 1, h - 2, "rgba(0,0,0,0.25)");
-  drawPixelText(ctx, band.label, cx, y + 2, {
+  drawPixelText(ctx, band.banner ?? band.label, cx, y + 2, {
     scale,
     align: "center",
     color: PALETTE.white,
