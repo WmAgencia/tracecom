@@ -94,15 +94,16 @@ const cleanPlateImage = await loadBlueprintBase(BASE_ASSET);
 const referenceImage = await loadBlueprintBase(REFERENCE_PATH);
 
 describe("OFFICE V3 — resolveBaseMode", () => {
-  it("usa 'reference' por padrão quando não há query nem env", () => {
-    expect(resolveBaseMode("", {})).toBe("reference");
-    expect(resolveBaseMode(undefined, undefined)).toBe("reference");
-    expect(resolveBaseMode("?", {})).toBe("reference");
+  it("usa 'procedural' por padrão quando não há query nem env", () => {
+    expect(resolveBaseMode("", {})).toBe("procedural");
+    expect(resolveBaseMode(undefined, undefined)).toBe("procedural");
+    expect(resolveBaseMode("?", {})).toBe("procedural");
   });
 
   it("respeita o override por env OFFICE_V3_BASE", () => {
-    expect(resolveBaseMode("", { OFFICE_V3_BASE: "procedural" })).toBe("procedural");
+    expect(resolveBaseMode("", { OFFICE_V3_BASE: "reference" })).toBe("reference");
     expect(resolveBaseMode("", { OFFICE_V3_BASE: "REFERENCE" })).toBe("reference");
+    expect(resolveBaseMode("", { OFFICE_V3_BASE: "original" })).toBe("original");
   });
 
   it("a query ?base= vence o env", () => {
@@ -110,19 +111,20 @@ describe("OFFICE V3 — resolveBaseMode", () => {
     expect(resolveBaseMode("?base=reference", { OFFICE_V3_BASE: "procedural" })).toBe("reference");
   });
 
-  it("ignora valores inválidos e cai no padrão", () => {
-    expect(resolveBaseMode("?base=banana", { OFFICE_V3_BASE: "nope" })).toBe("reference");
-    expect(resolveBaseMode({ base: "xyz" }, {})).toBe("reference");
+  it("ignora valores inválidos e cai no padrão procedural", () => {
+    expect(resolveBaseMode("?base=banana", { OFFICE_V3_BASE: "nope" })).toBe("procedural");
+    expect(resolveBaseMode({ base: "xyz" }, {})).toBe("procedural");
   });
 
   it("aceita URLSearchParams e objeto simples", () => {
     expect(resolveBaseMode(new URLSearchParams("base=procedural"), {})).toBe("procedural");
-    expect(resolveBaseMode({ base: "procedural" }, {})).toBe("procedural");
+    expect(resolveBaseMode({ base: "original" }, {})).toBe("original");
   });
 
-  it("shouldDrawBlueprintBase reflete o modo", () => {
+  it("shouldDrawBlueprintBase reflete o modo (default procedural = sem base)", () => {
     expect(shouldDrawBlueprintBase("reference")).toBe(true);
-    expect(shouldDrawBlueprintBase(undefined)).toBe(true);
+    expect(shouldDrawBlueprintBase("original")).toBe(true);
+    expect(shouldDrawBlueprintBase(undefined)).toBe(false);
     expect(shouldDrawBlueprintBase("procedural")).toBe(false);
   });
 });

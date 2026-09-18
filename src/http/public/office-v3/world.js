@@ -461,6 +461,60 @@ export function hitTestStation(worldState, worldX, worldY) {
   return null;
 }
 
+/**
+ * THE single anchor source for the procedural world. Maps every station of a
+ * built world state to its desk geometry, so the hit test, the MESAS popup, the
+ * zoom/focus and the right panel all resolve the same desk for the same
+ * `marketKey`. This replaces the hybrid blueprint anchors on the default path.
+ */
+export function createAnchorResolver(stations) {
+  const list = Array.isArray(stations) ? stations.filter((station) => station && typeof station === "object") : [];
+  const byKey = new Map();
+  const anchors = list.map((station, index) => {
+    const cell = station.cell && typeof station.cell === "object" ? station.cell : {};
+    const desk = station.desk && typeof station.desk === "object"
+      ? station.desk
+      : { x: Number(station.x) || 0, y: Number(station.y) || 0, w: DESK_WIDTH, h: DESK_HEIGHT };
+    const marketKey = station.marketKey ?? station.id ?? null;
+    const centerX = Number.isFinite(Number(cell.centerX)) ? Number(cell.centerX) : desk.x + desk.w / 2;
+    const anchor = {
+      marketKey,
+      id: station.id ?? null,
+      index,
+      x: centerX,
+      y: desk.y,
+      w: desk.w,
+      h: desk.h,
+      desk: { x: desk.x, y: desk.y, w: desk.w, h: desk.h },
+      centerX,
+      centerY: desk.y + desk.h / 2,
+    };
+    if (marketKey) byKey.set(marketKey, anchor);
+    return anchor;
+  });
+  return {
+    anchors,
+    byKey,
+    anchorFor(station, index) {
+      if (!station) return null;
+      const key = station.marketKey ?? station.id ?? null;
+      if (key && byKey.has(key)) return byKey.get(key);
+      const position = Number.isInteger(index) ? index : list.indexOf(station);
+      return anchors[position] ?? null;
+    },
+  };
+}
+
+/** Convenience for a single station (isolated callers/tests). */
+export function anchorForStation(station, index = 0) {
+  return createAnchorResolver([station]).anchorFor(station, index);
+}
+
+/** Hit test against the same procedural anchors used to draw and focus. */
+export function hitTestAnchor(worldState, worldX, worldY) {
+  return hitTestStation(worldState, worldX, worldY);
+}
+
 /* ------------------------------------------------------------------ *
  * 8. RENDERING
  * ------------------------------------------------------------------ */
@@ -624,8 +678,9 @@ function drawDailyBoard(ctx, board) {
   const metricY = y + 120;
   metrics.forEach(([label, value], index) => {
     const rowY = metricY + index * 14;
+    const safe = value === "—" ? "SEM DADOS" : value;
     drawPixelText(ctx, label, metricX, rowY, { scale: 1, color: PALETTE_V3.metal });
-    drawPixelText(ctx, value, metricX + 130, rowY, {
+    drawPixelText(ctx, safe, metricX + 130, rowY, {
       scale: 1,
       align: "right",
       color: label === "MAIOR WIN" ? PALETTE_V3.green : label === "MAIOR LOSS" ? PALETTE_V3.red : PALETTE_V3.white,
@@ -692,7 +747,9 @@ function drawMarketsBox(ctx, x, y, board) {
 function drawValueBox(ctx, x, y, w, h, title, value) {
   drawPanel(ctx, x, y, w, h, "#0b1728", "#2a4a80");
   drawPixelText(ctx, title, x + w / 2, y + 5, { scale: 2, align: "center", color: "#7ab0e8" });
-  drawPixelText(ctx, value, x + w / 2, y + 26, { scale: 2, align: "center", color: value.startsWith("−") ? PALETTE_V3.red : value === "—" ? PALETTE_V3.metal : PALETTE_V3.green });
+  const empty = value === "—";
+  const safe = empty ? "SEM DADOS" : value;
+  drawPixelText(ctx, safe, x + w / 2, empty ? y + 30 : y + 26, { scale: empty ? 1 : 2, align: "center", color: empty ? PALETTE_V3.metal : value.startsWith("−") || value.startsWith("-") ? PALETTE_V3.red : PALETTE_V3.green });
 }
 
 function drawGlobalPanel(ctx, x, y, w, h, worldState) {

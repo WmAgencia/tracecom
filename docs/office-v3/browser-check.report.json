@@ -1,8 +1,8 @@
 {
-  "at": "2026-09-18T19:16:23.232Z",
+  "at": "2026-09-18T19:36:54.126Z",
   "engine": "playwright+chrome",
   "realBrowser": true,
-  "baseUrl": "http://127.0.0.1:64827",
+  "baseUrl": "http://127.0.0.1:59012",
   "scenarios": [
     0,
     1,
@@ -15,6 +15,8 @@
   ],
   "screenshots": [
     "browser-s0-boot.png",
+    "rebuild-after-procedural.png",
+    "rebuild-before-hybrid.png",
     "browser-s1-pan-before.png",
     "browser-s1-pan-after.png",
     "browser-s2-zoom-before.png",
@@ -30,8 +32,8 @@
     "browser-s6-eurjpy.png",
     "browser-s7-feed-offline.png"
   ],
-  "total": 43,
-  "passed": 43,
+  "total": 48,
+  "passed": 48,
   "failed": 0,
   "results": [
     {
@@ -58,7 +60,7 @@
       "pass": true,
       "evidence": "browser-s0-boot.png",
       "detail": {
-        "distinctColors": 1530
+        "distinctColors": 586
       }
     },
     {
@@ -104,12 +106,92 @@
     },
     {
       "scenario": 0,
-      "assertion": "overlay desenha exatamente 2 agentes por posto WORKING",
+      "assertion": "default é PROCEDURAL (sem base híbrida/blur)",
       "pass": true,
       "evidence": "browser-s0-boot.png",
       "detail": {
-        "agents": 102,
-        "working": 51
+        "baseMode": "procedural",
+        "noBlueprintBase": true
+      }
+    },
+    {
+      "scenario": 0,
+      "assertion": "sem agentes fantasma (nenhuma mesa não-WORKING com agentes)",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {
+        "ghostAgents": 0
+      }
+    },
+    {
+      "scenario": 0,
+      "assertion": "painel superior bate com o JSON real (P&L/wins/losses/WR)",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {
+        "board": {
+          "pnlText": "+R$ 123,45",
+          "wins": 7,
+          "losses": 3,
+          "draws": 1,
+          "trades": 11,
+          "winRateText": "70.0%",
+          "weeklyText": "—",
+          "monthlyText": "—",
+          "bestWinText": "+R$ 8,50",
+          "bestLossText": "—",
+          "open": 52,
+          "closed": 2,
+          "total": 54,
+          "equitySeries": [
+            0,
+            40,
+            90,
+            123.45
+          ],
+          "equityPlaceholder": false
+        },
+        "settled": {
+          "wins": 7,
+          "losses": 3,
+          "draws": 1,
+          "pnl": 123.45,
+          "trades": 11
+        }
+      }
+    },
+    {
+      "scenario": 0,
+      "assertion": "gráfico usa a série real de equity (sem ilustração)",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {
+        "equitySeries": [
+          0,
+          40,
+          90,
+          123.45
+        ],
+        "equityPlaceholder": false
+      }
+    },
+    {
+      "scenario": 0,
+      "assertion": "semanal/mensal ausentes no backend → estado vazio explícito",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {
+        "weekly": "—",
+        "monthly": "—"
+      }
+    },
+    {
+      "scenario": 0,
+      "assertion": "evidência before/after: híbrido (debug) vs procedural (default)",
+      "pass": true,
+      "evidence": "rebuild-before-hybrid.png",
+      "detail": {
+        "hybridMode": "reference"
       }
     },
     {
@@ -326,7 +408,7 @@
       "evidence": "browser-s4-panel-open.png",
       "detail": {
         "from": 1,
-        "to": 4
+        "to": 3.846153846153846
       }
     },
     {
@@ -427,12 +509,13 @@
     },
     {
       "scenario": 6,
-      "assertion": "overlay segue o mesmo estado (2 agentes por posto WORKING)",
+      "assertion": "sem agentes fantasma (nenhum agente em desk não-WORKING)",
       "pass": true,
       "evidence": "browser-s6-eurjpy.png",
       "detail": {
-        "agents": 102,
-        "working": 51
+        "ghostAgents": 0,
+        "working": 51,
+        "workingWithDeskAgents": 51
       }
     },
     {
@@ -460,11 +543,11 @@
     },
     {
       "scenario": 7,
-      "assertion": "agentes não trabalham com feed offline (contagem do overlay bate)",
+      "assertion": "agentes não trabalham com feed offline (sem fantasma)",
       "pass": true,
       "evidence": "browser-s7-feed-offline.png",
       "detail": {
-        "agents": 102,
+        "ghostAgents": 0,
         "working": 51,
         "feedOffline": 1
       }

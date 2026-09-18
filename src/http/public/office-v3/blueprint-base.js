@@ -1,19 +1,15 @@
 /**
- * TRACE/COM — PIXEL OFFICE V3 · BLUEPRINT BASE (hybrid static layer)
+ * TRACE/COM — PIXEL OFFICE V3 · BLUEPRINT BASE (DEBUG-ONLY static layer)
  *
- * The frozen reference artboard (1536x1024) is treated as the PRE-RENDERED
- * STATIC BASE layer. TraceCom draws only the DYNAMIC layers on top (see
- * `overlay.js`), aligned to the blueprint coordinates. This is the only
- * technique that can approach 100% visual identity for the static scene.
+ * The hybrid renderer (frozen reference image + dynamic overlay/inpaint) is
+ * REJECTED and no longer the default. The DEFAULT renderer is the PROCEDURAL
+ * world (`world.js`), which draws the whole office — floor, desks, plaques,
+ * daily results board, equity chart and agents — in code from the real
+ * `GET /api/iq/office` snapshot.
  *
- * DEFAULT ASSET = `blueprint-clean.png`: the reference with the painted FALSE
- * P&L badges AND every painted character inpainted out (see
- * scripts/office-v3-clean-plate.mjs), because dynamic P&L and dynamic life are
- * drawn per real station state by `overlay.js`/`life.js`. The raw frozen
- * reference remains available via `?base=original` (or env
- * `OFFICE_V3_BASE=original`) for audit/diff. Non-working desks get a
- * translucent scrim + the derived state tag; the painted desk labels are
- * preserved by the clean plate. The dynamic art is ours.
+ * This module now exists ONLY for debugging/audit, reachable through
+ * `?base=reference` (clean plate) or `?base=original` (raw frozen reference)
+ * / env `OFFICE_V3_BASE`. It must never be on the default path.
  *
  * Dependency-free and DOM-guarded: browser uses `new Image()`, Node uses
  * `@napi-rs/canvas` `loadImage` (via createRequire) so headless tests/render
@@ -25,7 +21,8 @@
 export const BASE_WIDTH = 1536;
 export const BASE_HEIGHT = 1024;
 export const BASE_MODES = Object.freeze(["reference", "original", "procedural"]);
-export const DEFAULT_BASE_MODE = "reference";
+// The procedural world is the ONLY default. The image base is debug-only.
+export const DEFAULT_BASE_MODE = "procedural";
 export const BASE_ASSET = "./blueprint-clean.png";
 export const ORIGINAL_ASSET = "./blueprint-reference.png";
 export const BASE_ASSETS = Object.freeze({
@@ -38,9 +35,9 @@ export const NODE_CANVAS_CANDIDATES = Object.freeze([
 ]);
 
 /**
- * Authoritative config for the hybrid base layer. Overridable by env
- * `OFFICE_V3_BASE` and by URL query `?base=original` / `?base=procedural`
- * (see base-mode.js). `mode: "reference"` means the clean plate.
+ * Authoritative config for the debug base layer. Overridable by env
+ * `OFFICE_V3_BASE` and by URL query `?base=reference|original|procedural`
+ * (see base-mode.js). Default is `procedural` (no image base).
  */
 export const OFFICE_V3_BASE = Object.freeze({
   mode: DEFAULT_BASE_MODE,

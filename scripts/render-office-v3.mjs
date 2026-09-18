@@ -100,6 +100,21 @@ function scenarioMarkets(openCount) {
 }
 
 function baseOffice(markets) {
+  // Real aggregate of the fixture's own settled markets — never a hardcoded
+  // P&L. weekly/monthly are intentionally absent (the live relay snapshot does
+  // not provide them), so the board renders the explicit empty state.
+  const settled = markets.reduce((acc, market) => {
+    const result = String(market?.settlementState?.lastResult ?? "").toUpperCase();
+    const profit = Number(market?.settlementState?.lastProfit);
+    if (!Number.isFinite(profit)) return acc;
+    if (result === "WIN") acc.wins += 1;
+    else if (result === "LOSS") acc.losses += 1;
+    else if (result === "DRAW") acc.draws += 1;
+    else return acc;
+    acc.pnl += profit;
+    acc.trades += 1;
+    return acc;
+  }, { wins: 0, losses: 0, draws: 0, pnl: 0, trades: 0 });
   return {
     version: "iq-multi-runtime-v3",
     at: Date.now(),
@@ -108,9 +123,7 @@ function baseOffice(markets) {
     activeCount: markets.filter((market) => market.availability === "OPEN").length,
     activeLimit: 55,
     portfolio: {
-      settled: { wins: 16, losses: 5, draws: 1, pnl: 578.76, trades: 22 },
-      weekly: { pnl: 1842.3 },
-      monthly: { pnl: 6721.55 },
+      settled: { ...settled, pnl: Number(settled.pnl.toFixed(2)) },
       openPositions: [],
       equityCurve: [],
     },

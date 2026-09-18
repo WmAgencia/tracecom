@@ -102,7 +102,12 @@ function buildFixture() {
       compliance: { armState: { state: "DISARMED", armed: false }, killSwitch: { executionEnabled: true } },
       executionGate: { state: "DISARMED", armed: false },
     },
-    portfolio: { settled: { wins: 0, losses: 0, draws: 0, pnl: null, trades: 0 }, equityCurve: [] },
+    // Real settled day + real equity series (weekly/monthly intentionally absent
+    // in the live relay snapshot, so the top panel must show an explicit "—").
+    portfolio: {
+      settled: { wins: 7, losses: 3, draws: 1, pnl: 123.45, trades: 11 },
+      equityCurve: [{ value: 0 }, { value: 40 }, { value: 90 }, { value: 123.45 }],
+    },
     markets,
   };
 }
@@ -283,7 +288,7 @@ async function readCamera(page) {
 async function ensurePage(page, baseUrl) {
   if (page.url() === "about:blank") await page.goto(baseUrl + "/", { waitUntil: "load" });
   await page.waitForFunction(() => window.__tracecomOffice && window.__tracecomOffice.worldState(), null, { timeout: 30_000 });
-  await page.waitForFunction(() => window.__tracecomOffice.overlayStats(), null, { timeout: 30_000 });
+  await page.waitForFunction(() => window.__tracecomOffice.baseMode && window.__tracecomOffice.baseMode() === "procedural", null, { timeout: 30_000 });
 }
 
 async function worldPointAt(page, screenX, screenY) {
@@ -309,7 +314,6 @@ async function scenario0Boot(page, baseUrl) {
     const boot = await page.evaluate(() => {
       const api = window.__tracecomOffice;
       const state = api.worldState();
-      const stats = api.overlayStats();
       const canvas = document.getElementById("office-canvas");
       const ctx = canvas.getContext("2d");
       const sample = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -324,22 +328,44 @@ async function scenario0Boot(page, baseUrl) {
         const station = state.stations.find((candidate) => candidate.marketKey === key);
         return station?.derived ? { state: station.derived.state, label: station.derived.label, agentsWorking: station.derived.agentsWorking, feedStatus: station.derived.feedStatus } : null;
       };
+      const office = api.officeJson();
+      const settled = office?.portfolio?.settled ?? {};
+      const board = state.board;
+      const derivedByKey = new Map(state.stations.map((station) => [station.marketKey, station.derived]));
+      const lifeLocations = api.lifeModule()?.getAgentLocations ? api.lifeModule().getAgentLocations(api.life()) : {};
+      const ghostAgents = Object.values(lifeLocations).filter((entry) => (entry.atDesk === true || entry.location === "DESK") && derivedByKey.get(entry.marketKey)?.agentsWorking !== true).length;
       return {
         title: document.title,
         stations: state.stations.length,
-        stats,
+        baseMode: api.baseMode(),
+        noBlueprintBase: api.blueprintBase() === null,
         distinctColors: colors.size,
         statusHidden: document.getElementById("office-status")?.classList.contains("hidden") ?? false,
         detailPanels: document.querySelectorAll(".tc-v3-detail").length,
+        settled,
+        board: {
+          pnlText: board.pnlText,
+          wins: board.wins,
+          losses: board.losses,
+          draws: board.draws,
+          trades: board.trades,
+          winRateText: board.winRateText,
+          weeklyText: board.weeklyText,
+          monthlyText: board.monthlyText,
+          bestWinText: board.bestWinText,
+          bestLossText: board.bestLossText,
+          open: board.open,
+          closed: board.closed,
+          total: board.total,
+          equitySeries: board.equitySeries,
+          equityPlaceholder: board.equityPlaceholder,
+        },
+        ghostAgents,
         eur: derive("EURUSD:NORMAL"),
         gbp: derive("GBPUSD:NORMAL"),
         jpy: derive("USDJPY:NORMAL"),
         eurgbp: derive("EURGBP:NORMAL"),
       };
-    });
-    const working = await page.evaluate(() => {
-      const state = window.__tracecomOffice.worldState();
-      return state.stations.filter((station) => station.derived?.agentsWorking === true).length;
     });
     assert(0, "mundo com 54 estações do universo reconciliado", boot.stations === 54, "browser-s0-boot.png", { stations: boot.stations });
     assert(0, "canvas renderizado (não vazio)", boot.distinctColors > 24, "browser-s0-boot.png", { distinctColors: boot.distinctColors });
@@ -347,7 +373,37 @@ async function scenario0Boot(page, baseUrl) {
     assert(0, "EUR/USD WORKING + agentes", boot.eur?.state === "WORKING" && boot.eur.agentsWorking === true, "browser-s0-boot.png", boot.eur);
     assert(0, "GBP/USD OPEN_BUT_FEED_OFFLINE + sem agentes", boot.gbp?.state === "OPEN_BUT_FEED_OFFLINE" && boot.gbp.agentsWorking === false, "browser-s0-boot.png", boot.gbp);
     assert(0, "USD/JPY CLOSED e EUR/GBP SUSPENDED", boot.jpy?.state === "CLOSED" && boot.eurgbp?.state === "SUSPENDED", "browser-s0-boot.png", { jpy: boot.jpy?.state, eurgbp: boot.eurgbp?.state });
-    assert(0, "overlay desenha exatamente 2 agentes por posto WORKING", boot.stats?.agents === working * 2, "browser-s0-boot.png", { agents: boot.stats?.agents, working });
+    assert(0, "default é PROCEDURAL (sem base híbrida/blur)", boot.baseMode === "procedural" && boot.noBlueprintBase === true, "browser-s0-boot.png", { baseMode: boot.baseMode, noBlueprintBase: boot.noBlueprintBase });
+    assert(0, "sem agentes fantasma (nenhuma mesa não-WORKING com agentes)", boot.ghostAgents === 0, "browser-s0-boot.png", { ghostAgents: boot.ghostAgents });
+    // Top panel = REAL data from GET /api/iq/office (compare with the JSON).
+    const boardPass = boot.board.pnlText === "+R$ 123,45"
+      && boot.board.wins === boot.settled.wins
+      && boot.board.losses === boot.settled.losses
+      && boot.board.draws === boot.settled.draws
+      && boot.board.trades === boot.settled.trades
+      && boot.board.winRateText === "70.0%";
+    assert(0, "painel superior bate com o JSON real (P&L/wins/losses/WR)", boardPass, "browser-s0-boot.png", { board: boot.board, settled: boot.settled });
+    const equityPass = Array.isArray(boot.board.equitySeries)
+      && boot.board.equitySeries.length === 4
+      && boot.board.equitySeries[3] === 123.45
+      && boot.board.equityPlaceholder === false;
+    assert(0, "gráfico usa a série real de equity (sem ilustração)", equityPass, "browser-s0-boot.png", { equitySeries: boot.board.equitySeries, equityPlaceholder: boot.board.equityPlaceholder });
+    const emptyPass = boot.board.weeklyText === "—" && boot.board.monthlyText === "—";
+    assert(0, "semanal/mensal ausentes no backend → estado vazio explícito", emptyPass, "browser-s0-boot.png", { weekly: boot.board.weeklyText, monthly: boot.board.monthlyText });
+
+    // before/after evidence of the rebuild: default (procedural) vs debug hybrid.
+    await shot(page, "rebuild-after-procedural.png");
+    const hybridPage = await page.context().newPage();
+    try {
+      await hybridPage.goto(baseUrl + "/?base=reference", { waitUntil: "load" });
+      await hybridPage.waitForFunction(() => window.__tracecomOffice && window.__tracecomOffice.worldState(), null, { timeout: 30_000 });
+      await hybridPage.waitForTimeout(900);
+      const hybridMode = await hybridPage.evaluate(() => window.__tracecomOffice.baseMode());
+      await shot(hybridPage, "rebuild-before-hybrid.png");
+      assert(0, "evidência before/after: híbrido (debug) vs procedural (default)", hybridMode === "reference", "rebuild-before-hybrid.png", { hybridMode });
+    } finally {
+      await hybridPage.close();
+    }
   } catch (error) {
     assert(0, "boot", false, null, { error: String(error?.message ?? error) });
   }
@@ -508,8 +564,9 @@ async function clickDesk(page, marketKey) {
     const api = window.__tracecomOffice;
     const camera = api.camera();
     const module = api.cameraModule();
-    const resolver = api.overlay().createAnchorResolver(api.worldState().stations);
-    const station = api.worldState().stations.find((candidate) => candidate.marketKey === key);
+    const state = api.worldState();
+    const resolver = api.worldModule().createAnchorResolver(state.stations);
+    const station = state.stations.find((candidate) => candidate.marketKey === key);
     const anchor = resolver.anchorFor(station, station.index);
     return module.worldToScreen(camera, anchor.desk.x + anchor.desk.w / 2, anchor.desk.y + anchor.desk.h / 2);
   }, marketKey);
@@ -623,14 +680,23 @@ async function scenario6SwitchMarket(page, baseUrl) {
       selected: api.selectedMarketKey(),
       eurjpyState: find("EURJPY:NORMAL")?.derived?.state ?? null,
       gbpUsdStale: find("GBPUSD:NORMAL")?.derived?.state ?? null,
-      agents: api.overlayStats()?.agents ?? null,
+      ghostAgents: (() => {
+        const derivedByKey = new Map(state.stations.map((station) => [station.marketKey, station.derived]));
+        const locations = api.lifeModule()?.getAgentLocations ? api.lifeModule().getAgentLocations(api.life()) : {};
+        return Object.values(locations).filter((entry) => (entry.atDesk === true || entry.location === "DESK") && derivedByKey.get(entry.marketKey)?.agentsWorking !== true).length;
+      })(),
+      workingWithDeskAgents: (() => {
+        const locations = api.lifeModule()?.getAgentLocations ? api.lifeModule().getAgentLocations(api.life()) : {};
+        const deskKeys = new Set(Object.values(locations).filter((entry) => entry.atDesk === true || entry.location === "DESK").map((entry) => entry.marketKey));
+        return state.stations.filter((station) => station.derived?.agentsWorking === true && deskKeys.has(station.marketKey)).length;
+      })(),
       working: state.stations.filter((station) => station.derived?.agentsWorking === true).length,
     };
   });
   assert(6, "painel passa para o NOVO marketKey", switched.marketKey === "EURJPY:NORMAL" && switched.selected === "EURJPY:NORMAL", "browser-s6-eurjpy.png", { marketKey: switched.marketKey });
   assert(6, "sem texto/dados do mercado anterior", !String(switched.text).includes("GBP/USD OTC") && !String(switched.text).includes("GBP/USD ·"), "browser-s6-eurjpy.png", {});
   assert(6, "título e estado mudam para EUR/JPY WORKING", String(switched.title ?? "").includes("EUR/JPY") && switched.eurjpyState === "WORKING", "browser-s6-eurjpy.png", { title: switched.title, state: switched.eurjpyState });
-  assert(6, "overlay segue o mesmo estado (2 agentes por posto WORKING)", switched.agents === switched.working * 2, "browser-s6-eurjpy.png", { agents: switched.agents, working: switched.working });
+  assert(6, "sem agentes fantasma (nenhum agente em desk não-WORKING)", switched.ghostAgents === 0 && switched.workingWithDeskAgents > 0, "browser-s6-eurjpy.png", { ghostAgents: switched.ghostAgents, working: switched.working, workingWithDeskAgents: switched.workingWithDeskAgents });
 }
 
 async function scenario7StateLabel(page, baseUrl) {
@@ -657,8 +723,12 @@ async function scenario7StateLabel(page, baseUrl) {
       gbpDerived: { state: gbp?.derived?.state, label: gbp?.derived?.label, shortLabel: gbp?.derived?.shortLabel, agentsWorking: gbp?.derived?.agentsWorking, feedStatus: gbp?.derived?.feedStatus },
       offlineCount: offlineStations.length,
       working,
-      agents: api.overlayStats()?.agents ?? null,
-      feedOfflineStat: api.overlayStats()?.feedOffline ?? null,
+      ghostAgents: (() => {
+        const derivedByKey = new Map(stations.map((station) => [station.marketKey, station.derived]));
+        const locations = api.lifeModule()?.getAgentLocations ? api.lifeModule().getAgentLocations(api.life()) : {};
+        return Object.values(locations).filter((entry) => (entry.atDesk === true || entry.location === "DESK") && derivedByKey.get(entry.marketKey)?.agentsWorking !== true).length;
+      })(),
+      feedOfflineStat: offlineStations.length,
       panelState: rows["Estado"] ?? null,
       panelAgents: rows["Status"] ?? null,
     };
@@ -669,7 +739,7 @@ async function scenario7StateLabel(page, baseUrl) {
     && state.gbpDerived.agentsWorking === false;
   assert(7, "estado derivado é MERCADO ABERTO · FEED OFFLINE", labelPass, "browser-s7-feed-offline.png", state.gbpDerived);
   assert(7, "painel mostra o MESMO rótulo do desk", state.panelState === "MERCADO ABERTO · FEED OFFLINE" && state.panelAgents === "OCIOSO (SOCIAL/IDLE)", "browser-s7-feed-offline.png", { panelState: state.panelState, panelAgents: state.panelAgents });
-  assert(7, "agentes não trabalham com feed offline (contagem do overlay bate)", state.agents === state.working * 2 && state.feedOfflineStat >= 1, "browser-s7-feed-offline.png", { agents: state.agents, working: state.working, feedOffline: state.feedOfflineStat });
+  assert(7, "agentes não trabalham com feed offline (sem fantasma)", state.ghostAgents === 0 && state.feedOfflineStat >= 1, "browser-s7-feed-offline.png", { ghostAgents: state.ghostAgents, working: state.working, feedOffline: state.feedOfflineStat });
 }
 
 /* ------------------------------------------------------------------ *

@@ -1,15 +1,13 @@
 /**
- * TRACE/COM — PIXEL OFFICE V3 · BASE MODE resolver
+ * TRACE/COM — PIXEL OFFICE V3 · BASE MODE resolver (debug-only)
  *
- * Small, dependency-light helper that decides which static layer the hybrid
- * renderer uses:
- *   "reference"  → the clean plate (frozen reference with the painted FALSE
- *                  P&L badges inpainted out) as the pre-rendered base — DEFAULT
- *   "original"   → the raw frozen reference (painted badges kept) for audit/diff
- *   "procedural" → the procedural world renderer (no base image)
+ * Decides which renderer the page uses:
+ *   "procedural" → the procedural world renderer (no base image) — DEFAULT
+ *   "reference"  → debug: the clean plate as the pre-rendered base
+ *   "original"   → debug/audit: the raw frozen reference (painted badges kept)
  *
- * Precedence: URL query `?base=...` > env `OFFICE_V3_BASE` > OFFICE_V3_BASE.mode
- * (default "reference"). Invalid values are ignored, never throw.
+ * Precedence: URL query `?base=...` > env `OFFICE_V3_BASE` > default
+ * ("procedural"). Invalid values are ignored, never throw.
  *
  * Frontend/rendering only. PRACTICE only. ZERO REAL.
  */

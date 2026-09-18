@@ -348,30 +348,39 @@ let stationResolver = null;
 let stationResolverWorld = null;
 
 /**
- * Collision-free blueprint anchor for one station in the CURRENT world.
- * Shares the exact assignment used by `overlay.drawDynamicOverlay` and
- * `overlay.hitTestAnchor`, so zoom-to-desk never targets another market's desk
- * when the snapshot carries a market the calibrated table does not know.
+ * THE single anchor source for the CURRENT world. On the default (procedural)
+ * path it is `world.createAnchorResolver` (desk geometry in world space); the
+ * hybrid debug path keeps the blueprint resolver. Hit test, zoom/focus, MESAS
+ * popup and the right panel all go through this one resolver, so a station can
+ * never resolve to another market's desk.
  */
-function overlayAnchorFor(station, index) {
-  if (!isHybrid() || !station) return null;
+function anchorResolver() {
+  if (!worldState) return null;
+  if (stationResolver && stationResolverWorld === worldState) return stationResolver;
   try {
-    if (modules.overlay && typeof modules.overlay.createAnchorResolver === "function" && worldState) {
-      if (!stationResolver || stationResolverWorld !== worldState) {
-        stationResolver = modules.overlay.createAnchorResolver(worldState.stations);
-        stationResolverWorld = worldState;
-      }
-      return stationResolver.anchorFor(station, index);
+    if (isHybrid() && modules.overlay && typeof modules.overlay.createAnchorResolver === "function") {
+      stationResolver = modules.overlay.createAnchorResolver(worldState.stations);
+    } else if (worldModule && typeof worldModule.createAnchorResolver === "function") {
+      stationResolver = worldModule.createAnchorResolver(worldState.stations);
+    } else {
+      stationResolver = null;
     }
-    if (typeof modules.overlay.anchorForStation === "function") return modules.overlay.anchorForStation(station, index);
   } catch (error) {
-    warnMissing("overlay.anchorForStation", error);
+    warnMissing("createAnchorResolver", error);
+    stationResolver = null;
   }
-  return null;
+  stationResolverWorld = worldState;
+  return stationResolver;
+}
+
+function anchorFor(station, index) {
+  if (!station) return null;
+  const resolver = anchorResolver();
+  return resolver ? resolver.anchorFor(station, index) : null;
 }
 
 function deskFocus(station, index) {
-  const anchor = overlayAnchorFor(station, index);
+  const anchor = anchorFor(station, index);
   if (anchor) {
     return {
       marketKey: station.marketKey ?? null,
@@ -1154,12 +1163,17 @@ function bindInput() {
 function installDebugHooks() {
   if (typeof globalThis === "undefined" || !globalThis) return;
   globalThis.__tracecomOffice = {
-    version: "office-v3-debug.1.0.0",
+    version: "office-v3-debug.1.1.0",
     camera: () => camera,
     cameraModule: () => modules.camera,
     worldState: () => worldState,
     worldModule: () => worldModule,
+    life: () => lifeSystem,
+    lifeModule: () => modules.life,
     officeJson: () => officeJson,
+    baseMode: () => baseMode,
+    blueprintBase: () => blueprintBase,
+    anchorResolver: () => anchorResolver(),
     overlay: () => modules.overlay,
     overlayStats: () => lastOverlayStats,
     pan: () => panController,
