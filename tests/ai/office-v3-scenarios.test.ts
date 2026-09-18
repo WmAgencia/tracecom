@@ -188,31 +188,35 @@ describe("OFFICE V3 — cenários de presença (world.js + life.js)", () => {
     for (const openCount of [55, 37, 10, 0]) {
       const { state, system } = makeScenario(openCount, `render-${openCount}`);
       const { ctx, drawn } = renderScene(state, system);
-      expect(drawn, `agentes desenhados em ${openCount} OPEN`).toBeGreaterThan(0);
+      if (openCount > 0) expect(drawn, `agentes desenhados em ${openCount} OPEN`).toBeGreaterThan(0);
+      else expect(drawn, "nenhum agente desenhado com 0 OPEN").toBe(0);
       expect(countDistinctColors(ctx, BASE_WIDTH, BASE_HEIGHT, 4), `${openCount} OPEN`).toBeGreaterThan(50);
     }
   });
 
-  it("drawAgents devolve 110 agentes + 1 supervisor quando não há culling", () => {
+  it("drawAgents devolve 110 agentes (sem supervisor andarilho) quando não há culling", () => {
     const { system } = makeScenario(55, "draw");
     const canvas = createCanvas(BASE_WIDTH, BASE_HEIGHT);
     const ctx = canvas.getContext("2d");
     const all = drawAgents(ctx, system, null);
-    expect(all).toBe(TOTAL_AGENTS + 1);
+    expect(all).toBe(TOTAL_AGENTS);
     const culled = drawAgents(ctx, system, { x: 0, y: 0, zoom: 1, viewport: { width: BASE_WIDTH, height: BASE_HEIGHT } });
     expect(culled).toBeGreaterThan(0);
-    expect(culled).toBeLessThanOrEqual(TOTAL_AGENTS + 1);
+    expect(culled).toBeLessThanOrEqual(TOTAL_AGENTS);
   });
 });
 
 describe("OFFICE V3 — guarda de integração (somente leitura/render)", () => {
-  it("o módulo da página faz exatamente um fetch, GET, para /api/iq/office", () => {
+  it("o módulo da página faz apenas GETs reais (snapshot + event stream)", () => {
     const calls = [...PAGE_SOURCE.matchAll(/fetch\s*\(([^)]*)/g)].map((match) => match[1]);
-    expect(calls).toHaveLength(1);
-    expect(calls[0]).toContain("POLL_URL");
+    expect(calls.length).toBeGreaterThanOrEqual(1);
+    for (const call of calls) expect(call).toMatch(/POLL_URL|EVENTS_URL/);
     expect(PAGE_SOURCE).toContain('const POLL_URL = "/api/iq/office"');
+    expect(PAGE_SOURCE).toContain('const EVENTS_URL = "/api/iq/events"');
     expect(PAGE_SOURCE).toContain('method: "GET"');
     expect(PAGE_SOURCE).not.toContain('method: "POST"');
+    expect(PAGE_SOURCE).not.toContain('method: "PUT"');
+    expect(PAGE_SOURCE).not.toContain('method: "DELETE"');
   });
 
   it("não existe endpoint de ordem/execução/REAL no módulo da página", () => {

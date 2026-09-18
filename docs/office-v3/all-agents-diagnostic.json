@@ -1,0 +1,6791 @@
+{
+  "at": "2026-09-18T21:10:46.344Z",
+  "baseUrl": "https://tracecom-consecom.vercel.app",
+  "mode": "PRACTICE",
+  "connection": {
+    "connected": true,
+    "host": "ws.iqoption.com",
+    "connectionId": "1f73a03f-cfee-45b9-a3c2-502c55b2ef7e",
+    "serverTimeMs": 1789749837308,
+    "clockSkewMs": -2,
+    "timeValid": true,
+    "connectedAt": 1789749837310,
+    "reconnects": 0,
+    "healthy": true
+  },
+  "config": {
+    "jitEnabled": true,
+    "qualityGateEnabled": true,
+    "minTradeQualityScore": 75,
+    "entryLeadMs": 1500,
+    "brainGeneration": 2
+  },
+  "totals": {
+    "markets": 54,
+    "availabilityOpen": 31,
+    "enabled": 37,
+    "working": 30,
+    "openButNotWorking": 1,
+    "workingWithPair": 30,
+    "waitDecisions": 30
+  },
+  "contamination": {
+    "ok": true,
+    "findings": [],
+    "distinctActiveIds": 54,
+    "distinctCorrelationIds": 37
+  },
+  "exceptions": [
+    {
+      "marketKey": "NZDCHF:OTC",
+      "derivedState": "DISABLED",
+      "reason": "ENABLED_FALSE",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "enabled": false,
+      "lastTickAgeMs": null,
+      "candles5s": 0,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "agentState": "WAIT"
+    }
+  ],
+  "markets": [
+    {
+      "marketKey": "EURUSD:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1861,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "EURUSD:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "USDJPY:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1865,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "USDJPY:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "GBPUSD:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1867,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "GBPUSD:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "AUDUSD:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1870,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "AUDUSD:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "USDCAD:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1878,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "USDCAD:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "EURJPY:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1864,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "EURJPY:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "EURGBP:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1862,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "EURGBP:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "AUDJPY:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1869,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "AUDJPY:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "GBPJPY:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1866,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "GBPJPY:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "EURUSD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 1.149205,
+      "activeId": 76,
+      "positionStatus": "SETTLED",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478109",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_EURUSD_OTC_1789765740000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "EURUSD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "GBPUSD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 1.331745,
+      "activeId": 81,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478119",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_GBPUSD_OTC_1789765740000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "GBPUSD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "USDJPY:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 154.47215,
+      "activeId": 85,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TREND_UP"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478133",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TREND_UP",
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida",
+        "waitReason": "entrada_excessivamente_estendida"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_USDJPY_OTC_1789765140000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "USDJPY:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_UP",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "TREND_PULLBACK",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": "pullback_com_estrutura_mantida",
+          "status": "PASS"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "EURGBP:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 0.857535,
+      "activeId": 77,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "UNCLEAR"
+      },
+      "critic": {
+        "verdict": "VETO",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "VETOED",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478137",
+      "brain": {
+        "action": "WAIT",
+        "regime": "UNCLEAR",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "AGUARDANDO JANELA",
+        "status": "WAITING_WINDOW",
+        "candidateId": "cand_EURGBP_OTC_1789765860000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "EURGBP:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "VETO",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "UNCLEAR",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "VETOED",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "AGUARDANDO JANELA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "GBPJPY:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 208.951425,
+      "activeId": 84,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478122",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "AGUARDANDO JANELA",
+        "status": "WAITING_WINDOW",
+        "candidateId": "cand_GBPJPY_OTC_1789765860000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "GBPJPY:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "AGUARDANDO JANELA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "AUDUSD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 0.709265,
+      "activeId": 2111,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TREND_DOWN"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478107",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TREND_DOWN",
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida",
+        "waitReason": "entrada_excessivamente_estendida"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_AUDUSD_OTC_1789765680000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "AUDUSD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_DOWN",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "TREND_PULLBACK",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": "pullback_com_estrutura_mantida",
+          "status": "PASS"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "USDCAD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 1.390355,
+      "activeId": 2112,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TREND_UP"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478108",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TREND_UP",
+        "setup": "FAILED_BREAKOUT",
+        "trigger": "falha_de_rompimento_contra_tendencia",
+        "waitReason": "entrada_excessivamente_estendida"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_USDCAD_OTC_1789765560000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "USDCAD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_UP",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "FAILED_BREAKOUT",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": "falha_de_rompimento_contra_tendencia",
+          "status": "PASS"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "USDCHF:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 0.823415,
+      "activeId": 78,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TREND_DOWN"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478114",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TREND_DOWN",
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida",
+        "waitReason": "entrada_excessivamente_estendida"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_USDCHF_OTC_1789765560000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "USDCHF:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_DOWN",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "TREND_PULLBACK",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": "pullback_com_estrutura_mantida",
+          "status": "PASS"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "EURJPY:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 180.208115,
+      "activeId": 79,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478127",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_EURJPY_OTC_1789765740000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "EURJPY:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "AUDJPY:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 113.158325,
+      "activeId": 2113,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478131",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_AUDJPY_OTC_1789765200000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "AUDJPY:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "EURAUD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 1.627765,
+      "activeId": 2120,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "RANGE"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478097",
+      "brain": {
+        "action": "WAIT",
+        "regime": "RANGE",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_EURAUD_OTC_1789765560000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "EURAUD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "RANGE",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "EURCHF:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 1,
+      "lastTickPrice": 0.931205,
+      "activeId": 2131,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TREND_DOWN"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478120",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TREND_DOWN",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_EURCHF_OTC_1789765800000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "EURCHF:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 1,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_DOWN",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "EURCAD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 1.601275,
+      "activeId": 2117,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478117",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_EURCAD_OTC_1789765740000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "EURCAD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "EURNZD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 1.998825,
+      "activeId": 2122,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "UNCLEAR"
+      },
+      "critic": {
+        "verdict": "VETO",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "VETOED",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478134",
+      "brain": {
+        "action": "WAIT",
+        "regime": "UNCLEAR",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_EURNZD_OTC_1789765680000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "EURNZD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "VETO",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "UNCLEAR",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "VETOED",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "AUDCAD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 0.998125,
+      "activeId": 86,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "UNCLEAR"
+      },
+      "critic": {
+        "verdict": "VETO",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "VETOED",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478104",
+      "brain": {
+        "action": "WAIT",
+        "regime": "UNCLEAR",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_AUDCAD_OTC_1789765740000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "AUDCAD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "VETO",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "UNCLEAR",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "VETOED",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "AUDCHF:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 0.586615,
+      "activeId": 2129,
+      "positionStatus": "SETTLED",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478124",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_AUDCHF_OTC_1789765620000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "AUDCHF:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "AUDNZD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 1.190695,
+      "activeId": 2130,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478126",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_AUDNZD_OTC_1789765260000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "AUDNZD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "CADJPY:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 110.6645,
+      "activeId": 2136,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TREND_UP"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478132",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TREND_UP",
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida",
+        "waitReason": "entrada_excessivamente_estendida"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_CADJPY_OTC_1789765740000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "CADJPY:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_UP",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "TREND_PULLBACK",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": "pullback_com_estrutura_mantida",
+          "status": "PASS"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "CADCHF:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 0.589575,
+      "activeId": 2119,
+      "positionStatus": "SETTLED",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478111",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE IDENTIFICADA",
+        "status": "POSITION_OPEN",
+        "candidateId": "cand_CADCHF_OTC_1789765740000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "CADCHF:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE IDENTIFICADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "GBPAUD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 1.886125,
+      "activeId": 2116,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONFIRM",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478102",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_GBPAUD_OTC_1789765680000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "GBPAUD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONFIRM",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "GBPCAD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 1.819165,
+      "activeId": 2114,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "UNCLEAR"
+      },
+      "critic": {
+        "verdict": "VETO",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "VETOED",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478121",
+      "brain": {
+        "action": "WAIT",
+        "regime": "UNCLEAR",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_GBPCAD_OTC_1789765440000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "GBPCAD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "VETO",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "UNCLEAR",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "VETOED",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "GBPCHF:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 1.109385,
+      "activeId": 2115,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478130",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_GBPCHF_OTC_1789765200000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "GBPCHF:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "GBPNZD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 2.321825,
+      "activeId": 2132,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TREND_UP"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478129",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TREND_UP",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_GBPNZD_OTC_1789765740000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "GBPNZD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_UP",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "NZDCAD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 0.785075,
+      "activeId": 2137,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478116",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_NZDCAD_OTC_1789765800000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "NZDCAD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "NZDJPY:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 89.654285,
+      "activeId": 2138,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TREND_DOWN"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478135",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TREND_DOWN",
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida",
+        "waitReason": "entrada_excessivamente_estendida"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_NZDJPY_OTC_1789765560000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "NZDJPY:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_DOWN",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "TREND_PULLBACK",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": "pullback_com_estrutura_mantida",
+          "status": "PASS"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "NZDCHF:OTC",
+      "availability": "OPEN",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "ENABLED_FALSE",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 2202,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "NZDCHF:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "USDMXN:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 17.164505,
+      "activeId": 2300,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "UNCLEAR"
+      },
+      "critic": {
+        "verdict": "VETO",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "VETOED",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478128",
+      "brain": {
+        "action": "WAIT",
+        "regime": "UNCLEAR",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "AGUARDANDO JANELA",
+        "status": "WAITING_WINDOW",
+        "candidateId": "cand_USDMXN_OTC_1789765860000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "USDMXN:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "VETO",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "UNCLEAR",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "VETOED",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "AGUARDANDO JANELA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "USDBRL:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 5.094655,
+      "activeId": 2298,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478125",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_USDBRL_OTC_1789765440000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "USDBRL:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "USDTRY:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 48.771095,
+      "activeId": 2124,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TREND_DOWN"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478096",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TREND_DOWN",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_USDTRY_OTC_1789765680000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "USDTRY:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_DOWN",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "USDZAR:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 16.156055,
+      "activeId": 1380,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TREND_DOWN"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478123",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TREND_DOWN",
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida",
+        "waitReason": "entrada_excessivamente_estendida"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_USDZAR_OTC_1789764480000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "USDZAR:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_DOWN",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "TREND_PULLBACK",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": "pullback_com_estrutura_mantida",
+          "status": "PASS"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    },
+    {
+      "marketKey": "XAUUSD:NORMAL",
+      "availability": "DISABLED",
+      "enabled": true,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 4380.94,
+      "activeId": 1912,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "BUY",
+        "confidence": 0.714,
+        "regime": "TREND_UP"
+      },
+      "critic": {
+        "verdict": "CONFIRM",
+        "finalRecommendation": "BUY"
+      },
+      "consensus": {
+        "status": "CONFIRMED",
+        "action": "BUY"
+      },
+      "correlationId": "corr_478083",
+      "brain": {
+        "action": "BUY",
+        "regime": "TREND_UP",
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida",
+        "waitReason": null
+      },
+      "jit": {
+        "stage": "AGUARDANDO JANELA",
+        "status": "WAITING_WINDOW",
+        "candidateId": "cand_XAUUSD_NORMAL_1789765860000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "XAUUSD:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "BUY",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONFIRM",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "BUY",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_UP",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "TREND_PULLBACK",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": "pullback_com_estrutura_mantida",
+          "status": "PASS"
+        },
+        {
+          "label": "Consensus",
+          "value": "CONFIRMED",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "AGUARDANDO JANELA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "XAGUSD:NORMAL",
+      "availability": "DISABLED",
+      "enabled": true,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 66.35325,
+      "activeId": 1913,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "UNCLEAR"
+      },
+      "critic": {
+        "verdict": "VETO",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "VETOED",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478115",
+      "brain": {
+        "action": "WAIT",
+        "regime": "UNCLEAR",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_XAGUSD_NORMAL_1789764300000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "XAGUSD:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "VETO",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "UNCLEAR",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "VETOED",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "US30:NORMAL",
+      "availability": "DISABLED",
+      "enabled": true,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 51702.45,
+      "activeId": 1472,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONFIRM",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478106",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_US30_NORMAL_1789763640000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "US30:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONFIRM",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "US100:NORMAL",
+      "availability": "DISABLED",
+      "enabled": true,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 29672.31,
+      "activeId": 1471,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478118",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_US100_NORMAL_1789764180000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "US100:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "US500:NORMAL",
+      "availability": "DISABLED",
+      "enabled": true,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 7660.81,
+      "activeId": 1470,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TREND_DOWN"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478112",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TREND_DOWN",
+        "setup": "TREND_PULLBACK",
+        "trigger": "pullback_com_estrutura_mantida",
+        "waitReason": "entrada_excessivamente_estendida"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_US500_NORMAL_1789764240000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "US500:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TREND_DOWN",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "TREND_PULLBACK",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": "pullback_com_estrutura_mantida",
+          "status": "PASS"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "US2000:NORMAL",
+      "availability": "DISABLED",
+      "enabled": true,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 2862.51,
+      "activeId": 1473,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "UNCLEAR"
+      },
+      "critic": {
+        "verdict": "VETO",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "VETOED",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478113",
+      "brain": {
+        "action": "WAIT",
+        "regime": "UNCLEAR",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_US2000_NORMAL_1789763880000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "US2000:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "VETO",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "UNCLEAR",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "VETOED",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "GER30:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1478,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "GER30:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "UK100:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1475,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "UK100:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "JP225:NORMAL",
+      "availability": "DISABLED",
+      "enabled": true,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 65242.51,
+      "activeId": 1476,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "TRANSITION"
+      },
+      "critic": {
+        "verdict": "CONTEST",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "NO_CONSENSUS",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478110",
+      "brain": {
+        "action": "WAIT",
+        "regime": "TRANSITION",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_JP225_NORMAL_1789763700000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "JP225:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "CONTEST",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "TRANSITION",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "NO_CONSENSUS",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "AUS200:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1481,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "AUS200:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "EU50:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1480,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "EU50:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "HK33:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1477,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "HK33:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "FR40:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1479,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "FR40:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "SP35:NORMAL",
+      "availability": "DISABLED",
+      "enabled": false,
+      "derivedState": "DISABLED",
+      "derivedReason": "BROKER_DISABLED",
+      "feedStatus": "OFFLINE",
+      "feedReason": "AGENT_OFFLINE",
+      "candles5s": 0,
+      "lastTickAgeMs": null,
+      "lastTickPrice": null,
+      "activeId": 1474,
+      "positionStatus": "IDLE",
+      "trader": null,
+      "critic": null,
+      "consensus": null,
+      "correlationId": null,
+      "brain": {
+        "action": "WAIT",
+        "regime": null,
+        "setup": null,
+        "trigger": null,
+        "waitReason": null
+      },
+      "jit": null,
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "SP35:NORMAL",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "DISABLED",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": false,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Trader state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Critic state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": false,
+          "status": "FAIL"
+        }
+      ],
+      "ok": false,
+      "working": false
+    },
+    {
+      "marketKey": "BTCUSD:OTC",
+      "availability": "OPEN",
+      "enabled": true,
+      "derivedState": "WORKING",
+      "derivedReason": "OK",
+      "feedStatus": "FRESH",
+      "feedReason": "OK",
+      "candles5s": 600,
+      "lastTickAgeMs": 0,
+      "lastTickPrice": 79878.0555,
+      "activeId": 2270,
+      "positionStatus": "IDLE",
+      "trader": {
+        "action": "WAIT",
+        "confidence": 0,
+        "regime": "UNCLEAR"
+      },
+      "critic": {
+        "verdict": "VETO",
+        "finalRecommendation": "WAIT"
+      },
+      "consensus": {
+        "status": "VETOED",
+        "action": "WAIT"
+      },
+      "correlationId": "corr_478136",
+      "brain": {
+        "action": "WAIT",
+        "regime": "UNCLEAR",
+        "setup": "NO_VALID_SETUP",
+        "trigger": null,
+        "waitReason": "SEM_SETUP_VALIDO"
+      },
+      "jit": {
+        "stage": "OPORTUNIDADE CANCELADA",
+        "status": "CANCELLED",
+        "candidateId": "cand_BTCUSD_OTC_1789765500000"
+      },
+      "checks": [
+        {
+          "label": "marketKey",
+          "value": "BTCUSD:OTC",
+          "status": "PASS"
+        },
+        {
+          "label": "availability",
+          "value": "OPEN",
+          "status": "PASS"
+        },
+        {
+          "label": "enabled",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "feedFresh",
+          "value": true,
+          "status": "PASS"
+        },
+        {
+          "label": "candles5s",
+          "value": 600,
+          "status": "PASS"
+        },
+        {
+          "label": "lastTick",
+          "value": 0,
+          "status": "PASS"
+        },
+        {
+          "label": "Trader state",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "Critic state",
+          "value": "VETO",
+          "status": "PASS"
+        },
+        {
+          "label": "Brain action",
+          "value": "WAIT",
+          "status": "PASS"
+        },
+        {
+          "label": "regime",
+          "value": "UNCLEAR",
+          "status": "PASS"
+        },
+        {
+          "label": "structure",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "setup",
+          "value": "NO_VALID_SETUP",
+          "status": "PASS"
+        },
+        {
+          "label": "trigger",
+          "value": null,
+          "status": "ABSENT"
+        },
+        {
+          "label": "Consensus",
+          "value": "VETOED",
+          "status": "PASS"
+        },
+        {
+          "label": "Quality Score",
+          "value": null,
+          "status": "PASS"
+        },
+        {
+          "label": "JIT state",
+          "value": "OPORTUNIDADE CANCELADA",
+          "status": "PASS"
+        },
+        {
+          "label": "Execution eligibility",
+          "value": true,
+          "status": "PASS"
+        }
+      ],
+      "ok": true,
+      "working": true
+    }
+  ],
+  "conclusion": {
+    "allWorkingPass": true,
+    "noContamination": true,
+    "everyWorkingHasOwnFeed": true,
+    "everyWorkingHasPair": true
+  }
+}

@@ -215,28 +215,124 @@ function activateTab(tabs, bodies, id) {
   for (const body of bodies) body.hidden = body.dataset.tab !== id;
 }
 
-function renderRow(doc, item) {
-  const wrapper = el(doc, "div", "tc-v3-row");
-  setData(wrapper, "field", item.key);
-  const value = el(doc, "span", "tc-v3-row-value");
-  const strong = el(doc, "b", item.available ? null : "tc-v3-row-na", item.value);
-  if (!item.available) strong.setAttribute("title", NA_HINT);
-  value.appendChild(strong);
-  if (!item.available) value.appendChild(el(doc, "i", "tc-v3-na", NA_HINT));
-  wrapper.append(el(doc, "span", "tc-v3-row-label", item.label), value);
-  return wrapper;
+/* ------------------------------------------------------------------ *
+ * T8/T9 — simplified operational panel
+ *   header · STAKE DESTE MERCADO (isolated) · ESTADO · PERFORMANCE DO DIA ·
+ *   ATIVIDADE EM TEMPO REAL (real Trader/Critic/decision events for THIS key).
+ * Technical/back-office data stays in buildMarketDetailModel (backend), never
+ * rendered in the main interface.
+ * ------------------------------------------------------------------ */
+
+function toFinite(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
 }
 
-function renderSection(doc, section, index, active) {
-  const body = el(doc, "section", "tc-v3-detail-section");
-  setData(body, "tab", section.id);
-  body.hidden = !active;
-  body.appendChild(el(doc, "h4", "tc-v3-detail-section-title", section.label));
-  const rows = el(doc, "div", "tc-v3-rows");
-  for (const item of section.rows) rows.appendChild(renderRow(doc, item));
-  body.appendChild(rows);
+/**
+ * PERFORMANCE DO DIA for ONE marketKey: only really executed + settled trades
+ * of that market, aggregated server-side in `settlementState.daily`.
+ */
+export function buildMarketPerformanceModel(market) {
+  const daily = market?.settlementState?.daily ?? null;
+  const wins = toFinite(daily?.wins);
+  const losses = toFinite(daily?.losses);
+  const draws = toFinite(daily?.draws);
+  const trades = toFinite(daily?.trades);
+  const pnl = toFinite(daily?.settledPnl);
+  const decided = (wins ?? 0) + (losses ?? 0);
+  const hasData = Boolean(daily) && (trades !== null || wins !== null || losses !== null);
+  return {
+    hasData,
+    marketKey: market?.marketKey ?? null,
+    trades,
+    wins,
+    losses,
+    draws,
+    pnl,
+    pnlText: pnl === null ? EMPTY : formatBRL(pnl, { signed: true }),
+    winRateText: hasData && decided > 0 ? `${((wins ?? 0) / decided * 100).toFixed(1).replace(".", ",")}%` : EMPTY,
+    tradesText: trades === null ? EMPTY : String(trades),
+    winsText: wins === null ? EMPTY : String(wins),
+    lossesText: losses === null ? EMPTY : String(losses),
+  };
+}
+
+function renderBlock(doc, panel, id, title, marketKey) {
+  const section = el(doc, "section", "tc-v3-detail-section");
+  setData(section, "block", id);
+  setData(section, "marketKey", marketKey);
+  section.appendChild(el(doc, "h4", "tc-v3-detail-section-title", title));
+  const body = el(doc, "div", "tc-v3-block-body");
+  section.appendChild(body);
+  panel.appendChild(section);
   return body;
 }
+
+function renderStateBlock(doc, panel, model, marketKey) {
+  const body = renderBlock(doc, panel, "estado", "ESTADO", marketKey);
+  const row = el(doc, "div", "tc-v3-row");
+  setData(row, "field", "state");
+  const value = el(doc, "span", "tc-v3-row-value");
+  value.appendChild(el(doc, "b", null, model.state.label));
+  row.append(el(doc, "span", "tc-v3-row-label", "Estado"), value);
+  body.appendChild(row);
+  body.appendChild(el(doc, "p", "tc-v3-block-note", model.state.explanation));
+}
+
+function renderPerformanceBlock(doc, panel, market, marketKey) {
+  const performance = buildMarketPerformanceModel(market);
+  const body = renderBlock(doc, panel, "performance", "PERFORMANCE DO DIA", marketKey);
+  if (!performance.hasData) {
+    body.appendChild(el(doc, "p", "tc-v3-block-empty", "SEM OPERAÇÕES LIQUIDADAS DESTE MERCADO HOJE"));
+    return performance;
+  }
+  const rows = [
+    ["OPERAÇÕES", performance.tradesText, "trades"],
+    ["WINS", performance.winsText, "wins"],
+    ["LOSSES", performance.lossesText, "losses"],
+    ["WR", performance.winRateText, "winrate"],
+  ];
+  for (const [label, text, field] of rows) {
+    const row = el(doc, "div", "tc-v3-row");
+    setData(row, "field", field);
+    const value = el(doc, "span", "tc-v3-row-value");
+    const strong = el(doc, "b", null, text);
+    if (field === "wins") strong.setAttribute("data-tone", "ok");
+    if (field === "losses") strong.setAttribute("data-tone", "bad");
+    value.appendChild(strong);
+    row.append(el(doc, "span", "tc-v3-row-label", label), value);
+    body.appendChild(row);
+  }
+  return performance;
+}
+
+function renderActivityBlock(doc, panel, marketKey, eventLog) {
+  const body = renderBlock(doc, panel, "atividade", "ATIVIDADE EM TEMPO REAL", marketKey);
+  const list = el(doc, "div", "tc-v3-activity");
+  list.setAttribute("role", "log");
+  list.setAttribute("aria-live", "polite");
+  setData(list, "marketKey", marketKey);
+  const entries = Array.isArray(eventLog) ? eventLog.slice(-MARKET_ACTIVITY_LIMIT) : [];
+  if (!entries.length) {
+    list.appendChild(el(doc, "p", "tc-v3-block-empty", "SEM EVENTOS REAIS DESTE MERCADO AINDA"));
+  } else {
+    for (const entry of entries) {
+      const line = el(doc, "div", "tc-v3-activity-line");
+      setData(line, "marketKey", entry.marketKey ?? marketKey);
+      const tone = entry.tone === "POSITIVE" ? "ok" : entry.tone === "NEGATIVE" ? "bad" : null;
+      const time = el(doc, "span", "tc-v3-activity-time", entry.time ?? EMPTY);
+      const text = el(doc, "span", "tc-v3-activity-text", entry.text ?? EMPTY);
+      if (tone) text.setAttribute("data-tone", tone);
+      line.append(time, text);
+      list.appendChild(line);
+    }
+  }
+  body.appendChild(list);
+  return entries.length;
+}
+
+export const MARKET_ACTIVITY_LIMIT = 12;
 
 function renderDetail(doc, panel, market, model, office, options) {
   const header = el(doc, "header", "tc-v3-detail-head");
@@ -252,36 +348,17 @@ function renderDetail(doc, panel, market, model, office, options) {
 
   panel.appendChild(header);
 
+  // Stake isolado do marketKey (GLOBAL vs OVERRIDE INDIVIDUAL preservado no
+  // próprio bloco), mantendo todos os gates/tetos do servidor.
   mountStakeConfig(panel, market, office, {
     document: doc,
     fetchImpl: options?.fetchImpl,
     onApplied: options?.onStakeApplied,
   });
 
-  const nav = el(doc, "nav", "tc-v3-tabs");
-  nav.setAttribute("role", "tablist");
-  const bodies = el(doc, "div", "tc-v3-detail-bodies");
-  const tabs = [];
-  const bodyEls = [];
-  const requestedTab = typeof options?.initialTab === "string" ? options.initialTab : null;
-  const hasRequested = model.sections.some((section) => section.id === requestedTab);
-  model.sections.forEach((section, index) => {
-    const active = hasRequested ? section.id === requestedTab : index === 0;
-    const tab = el(doc, "button", `tc-v3-tab${active ? " is-active" : ""}`, section.label);
-    tab.setAttribute("type", "button");
-    tab.setAttribute("role", "tab");
-    tab.setAttribute("aria-selected", active ? "true" : "false");
-    setData(tab, "tab", section.id);
-    tab.addEventListener("click", () => activateTab(tabs, bodyEls, section.id));
-    tabs.push(tab);
-    nav.appendChild(tab);
-
-    const body = renderSection(doc, section, index, active);
-    bodyEls.push(body);
-    bodies.appendChild(body);
-  });
-
-  panel.append(nav, bodies);
+  renderStateBlock(doc, panel, model, market.marketKey ?? null);
+  renderPerformanceBlock(doc, panel, market, market.marketKey ?? null);
+  renderActivityBlock(doc, panel, market.marketKey ?? null, options?.eventLog ?? []);
 }
 
 /* ------------------------------------------------------------------ *

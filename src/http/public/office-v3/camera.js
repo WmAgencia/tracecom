@@ -130,11 +130,21 @@ export function updateViewport(camera, width, height) {
 }
 
 /**
- * Recomputes the world bounds from the CURRENT world state. Never keeps stale
- * Office dimensions: the page calls this on every snapshot before clamping.
+ * Recomputes the navigable bounds from the CURRENT world state. Never keeps
+ * stale Office dimensions: the page calls this on every snapshot before
+ * clamping. When the world exposes real `contentBounds` (the office itself),
+ * THOSE are the navigable bounds: the content is centered/kept reachable on
+ * every axis instead of being pinned to the top-left of a larger empty world.
+ * Without contentBounds (bare worldWidth/Height callers) the world rectangle is
+ * used, preserving the previous contract.
  */
 export function refreshWorldBounds(camera, worldState) {
   if (!camera || !worldState) return camera;
+  const content = contentBoundsOf(worldState);
+  if (content) {
+    camera.bounds = { ...content };
+    return camera;
+  }
   const width = Number(worldState.worldWidth ?? worldState.width);
   const height = Number(worldState.worldHeight ?? worldState.height);
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return camera;

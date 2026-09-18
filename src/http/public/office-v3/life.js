@@ -1158,6 +1158,8 @@ export function updateLife(life, dtMs) {
     const working = life.resolveOpen(station) === true;
     if (working) {
       if (agent.hidden === true || agent.atDesk !== true) placeAtDesk(agent, now);
+      // T6: deterministic, subtle animation frame while seated (no state change).
+      agent.frame = Math.floor((now + (agent.loiterSeed % 997)) / 360) % 4;
     } else if (agent.hidden !== true) {
       hideAgent(agent, now);
     }
@@ -1290,11 +1292,11 @@ export function drawAgents(ctx, life, camera = null) {
     const station = life.stationById?.get(agent.stationId);
     const desk = station?.desk;
     const seated = agent.atDesk === true && desk;
-    const renderY = seated ? desk.y + DESK_SEAT_LINE : agent.y;
+    // T6: very subtle life — a ~1px breathing offset plus the animation frame,
+    // no labels/badges. The agent state itself never changes (registry intact).
+    const bob = seated ? Math.sin((Number(life.time) || 0) / 640 + (Number(agent.index) || 0) * 1.7) * 0.9 : 0;
+    const renderY = (seated ? desk.y + DESK_SEAT_LINE : agent.y) + bob;
     items.push({ sortY: renderY, sortX: agent.x, entity: agent, renderY, front: null });
-  }
-  if (life.supervisor) {
-    items.push({ sortY: life.supervisor.y, sortX: life.supervisor.x, entity: life.supervisor, renderY: life.supervisor.y, front: null });
   }
   if (world && typeof world.collectDeskFronts === "function" && worldState) {
     for (const front of world.collectDeskFronts(worldState, camera)) {

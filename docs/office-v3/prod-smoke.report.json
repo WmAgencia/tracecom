@@ -1,0 +1,75 @@
+{
+  "at": "2026-09-18T21:10:40.259Z",
+  "baseUrl": "https://tracecom-consecom.vercel.app",
+  "total": 6,
+  "passed": 6,
+  "failed": 0,
+  "results": [
+    {
+      "assertion": "GET / = 200 (Office V3 na raiz)",
+      "pass": true,
+      "evidence": "final-prod-boot.png",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "assertion": "mundo real com 54 mercados",
+      "pass": true,
+      "evidence": "final-prod-boot.png",
+      "detail": {
+        "stations": 54
+      }
+    },
+    {
+      "assertion": "painel superior com dados reais do GET /api/iq/office",
+      "pass": true,
+      "evidence": "final-prod-boot.png",
+      "detail": {
+        "pnlText": "−R$ 2,80",
+        "settledPnl": -2.8
+      }
+    },
+    {
+      "assertion": "IQ OPTION mostra status real e zero input de credencial",
+      "pass": true,
+      "evidence": "final-prod-iq.png",
+      "detail": {
+        "CONEXÃO": "CONECTADO",
+        "WS": "ONLINE",
+        "MODO": "PRACTICE · ZERO REAL",
+        "CONTA": "PRACTICE",
+        "SALDO": "USD 57.20",
+        "MCP": "SEM STATUS NO SNAPSHOT",
+        "STAKE GLOBAL": "R$ 10.00 · teto R$ 100.00",
+        "AUTO": "ON",
+        "JIT/QUALITY": "ATIVO",
+        "REAL": "BLOQUEADO · ZERO REAL",
+        "TROCA DE CONTA": "NÃO SUPORTADA (PRACTICE ÚNICA)"
+      }
+    },
+    {
+      "assertion": "painel direito simplificado no marketKey WORKING real",
+      "pass": true,
+      "evidence": "final-prod-panel.png",
+      "detail": {
+        "marketKey": "EURUSD:OTC",
+        "blocks": [
+          "estado",
+          "performance",
+          "atividade"
+        ],
+        "tabs": 0,
+        "technical": false
+      }
+    },
+    {
+      "assertion": "rollback /classic.html responde 200",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "status": 200
+      }
+    }
+  ]
+}

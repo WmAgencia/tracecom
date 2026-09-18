@@ -465,52 +465,42 @@ describe("OFFICE V3 — modelo puro e design system", () => {
  * market detail
  * ------------------------------------------------------------------ */
 
-describe("OFFICE V3 — detalhe de mercado", () => {
-  it("mostra todos os campos obrigatórios exigidos", () => {
+describe("OFFICE V3 — detalhe de mercado (painel simplificado T8/T9)", () => {
+  it("mostra apenas os blocos operacionais exigidos e remove o back-office", () => {
     const root = new FakeElement("div");
     detail.mountMarketDetail(root, fixtureOffice(), "EURUSD:NORMAL");
     const labels = findAll(root, (node) => node.className === "tc-v3-row-label").map((node) => node.textContent);
-    const required = [
-      "Ativo", "Símbolo", "Canônico", "Market key", "Tipo", "Produto", "Active ID", "Status", "Disponibilidade", "Payout", "Habilitado",
-      "Feed freshness", "Candles 5s", "Último tick",
-      "Trader ação", "Trader confiança", "Trader regime", "Critic veredito", "Critic recomendação", "Contradições", "Risk flags",
-      "Regime", "Estrutura", "Setup", "Gatilho", "Quality Score", "Failed checks",
-      "RSI", "ADX", "+DI", "-DI", "ATR", "Donchian",
-      "JIT estágio", "JIT revalidação", "JIT entrada", "Final Revalidation", "Drift na janela",
-      "Posição", "Direção", "Stake", "Última execução", "Settlement", "P&L",
-      "Journal",
-    ];
+    const required = ["Estado", "OPERAÇÕES", "WINS", "LOSSES", "WR"];
     for (const label of required) expect(labels, `campo ausente: ${label}`).toContain(label);
+    expect(findAll(root, (node) => node.className === "tc-stake-config")).toHaveLength(1);
+    const blocks = findAll(root, (node) => node.className.split(/\s+/).includes("tc-v3-detail-section")).map((node) => node.dataset.block);
+    expect(blocks).toEqual(["estado", "performance", "atividade"]);
+    const removed = ["RSI", "ADX", "Journal", "Trader ação", "Gatilho", "P&L", "JIT entrada", "Última execução"];
+    for (const label of removed) expect(labels, `campo deveria ter saído: ${label}`).not.toContain(label);
+    expect(findAll(root, (node) => node.className.split(/\s+/).includes("tc-v3-tab"))).toHaveLength(0);
   });
 
-  it("valores do detalhe são exatamente os do fixture (sem invenção)", () => {
+  it("valores são exatamente os do fixture (sem invenção)", () => {
     const root = new FakeElement("div");
     detail.mountMarketDetail(root, fixtureOffice(), "EURUSD:NORMAL");
     const rowValue = (field: string) => {
       const row = byData(root, "field", field)[0];
       return findAll(row, (node) => node.tagName === "B")[0].textContent;
     };
-    expect(rowValue("marketKey")).toBe("EURUSD:NORMAL");
-    expect(rowValue("marketType")).toBe("NORMAL");
-    expect(rowValue("payout")).toBe("82%");
-    expect(rowValue("rsi")).toBe("61,20");
-    expect(rowValue("adx")).toBe("27,40");
-    expect(rowValue("atr")).toBe("0,00123");
-    expect(rowValue("stake")).toBe("R$ 2,00");
-    expect(rowValue("pnl")).toBe("+R$ 1,70");
-    expect(rowValue("traderConfidence")).toBe("62%");
+    expect(rowValue("state")).toBe("MERCADO ABERTO · OPERANDO");
+    expect(rowValue("trades")).toBe("1");
+    expect(rowValue("wins")).toBe("1");
+    expect(rowValue("losses")).toBe("0");
+    expect(rowValue("winrate")).toBe("100,0%");
   });
 
-  it("campo ausente vira — com dica explícita não disponível", () => {
+  it("mercado sem operações liquidadas mostra vazio explícito (nunca inventa)", () => {
     const root = new FakeElement("div");
     detail.mountMarketDetail(root, fixtureOffice(), "EURUSD:OTC");
-    const rsiRow = byData(root, "field", "rsi")[0];
-    expect(findAll(rsiRow, (node) => node.tagName === "B")[0].textContent).toBe("—");
-    const hint = findAll(rsiRow, (node) => node.className === "tc-v3-na")[0];
-    expect(hint).toBeDefined();
-    expect(hint.textContent).toBe("não disponível");
-    const structureRow = byData(root, "field", "structure")[0];
-    expect(findAll(structureRow, (node) => node.tagName === "B")[0].textContent).toBe("—");
+    expect(byData(root, "field", "trades")).toHaveLength(0);
+    expect(root.textContent).toContain("SEM OPERAÇÕES LIQUIDADAS DESTE MERCADO HOJE");
+    const stateRow = byData(root, "field", "state")[0];
+    expect(findAll(stateRow, (node) => node.tagName === "B")[0].textContent).toBe("MERCADO FECHADO");
   });
 
   it("marketKey desconhecido gera estado de erro explícito", () => {
@@ -521,18 +511,22 @@ describe("OFFICE V3 — detalhe de mercado", () => {
     expect(root.textContent).toContain("Mercado não encontrado");
   });
 
-  it("abas alternam as seções sem perder os campos do DOM", () => {
+  it("atividade em tempo real é do marketKey selecionado e troca ao re-montar", () => {
     const root = new FakeElement("div");
-    detail.mountMarketDetail(root, fixtureOffice(), "EURUSD:NORMAL");
-    const technicalTab = byData(root, "tab", "technical").find((node) => node.className.split(/\s+/).includes("tc-v3-tab"));
-    const technicalBody = byData(root, "tab", "technical").find((node) => node.className.split(/\s+/).includes("tc-v3-detail-section"));
-    const identityBody = byData(root, "tab", "identity").find((node) => node.className.split(/\s+/).includes("tc-v3-detail-section"));
-    expect(technicalBody.hidden).toBe(true);
-    expect(identityBody.hidden).toBe(false);
-    technicalTab.dispatchEvent({ type: "click" });
-    expect(technicalBody.hidden).toBe(false);
-    expect(identityBody.hidden).toBe(true);
-    expect(technicalTab.getAttribute("aria-selected")).toBe("true");
+    detail.mountMarketDetail(root, fixtureOffice(), "EURUSD:NORMAL", {
+      eventLog: [{ time: "10:00:00", marketKey: "EURUSD:NORMAL", text: "TRADER BUY · CONF 62" }],
+    });
+    let lines = findAll(root, (node) => node.className === "tc-v3-activity-line");
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.dataset.marketKey).toBe("EURUSD:NORMAL");
+    expect(root.textContent).toContain("TRADER BUY");
+    detail.mountMarketDetail(root, fixtureOffice(), "GBPUSD:NORMAL", {
+      eventLog: [{ time: "10:00:02", marketKey: "GBPUSD:NORMAL", text: "CRITIC CONTEST" }],
+    });
+    lines = findAll(root, (node) => node.className === "tc-v3-activity-line");
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.dataset.marketKey).toBe("GBPUSD:NORMAL");
+    expect(root.textContent).not.toContain("TRADER BUY");
   });
 
   it("closeMarketDetail remove o painel montado", () => {

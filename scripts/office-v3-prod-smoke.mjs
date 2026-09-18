@@ -1,0 +1,137 @@
+/**
+ * OFFICE V3 — PRODUCTION SMOKE (real deployed page, real data).
+ *
+ * Opens https://tracecom-consecom.vercel.app (or --url=), drives the real
+ * browser and validates the deployed Office V3 against the live snapshot:
+ *   GET / 200 · 54 mercados · painel superior real · IQ OPTION · logs reais
+ *   painel simplificado no marketKey · screenshots.
+ *
+ * Read-only. PRACTICE only. ZERO REAL. No orders, no config writes.
+ */
+import { mkdir, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(HERE, "..");
+const OUT_DIR = resolve(ROOT, "docs/office-v3/screenshots");
+const REPORT_JSON = resolve(ROOT, "docs/office-v3/prod-smoke.report.json");
+const TEMP_KIT = join(tmpdir(), "opencode", "browser-kit");
+
+const args = process.argv.slice(2);
+const argValue = (name) => {
+  const hit = args.find((arg) => arg.startsWith(`--${name}=`));
+  return hit ? hit.slice(name.length + 3) : null;
+};
+const BASE_URL = (argValue("url") ?? "https://tracecom-consecom.vercel.app").replace(/\/$/, "");
+
+async function importPlaywright() {
+  for (const candidate of [() => import("playwright"), () => import(pathToFileURL(join(TEMP_KIT, "node_modules/playwright/index.mjs")).href)]) {
+    try {
+      const module = await candidate();
+      if (module?.chromium) return module;
+    } catch {
+      /* next */
+    }
+  }
+  return null;
+}
+
+const results = [];
+function assert(name, pass, evidence, detail) {
+  results.push({ assertion: name, pass: pass === true, evidence: evidence ?? null, detail: detail ?? null });
+  console.log(`  [${pass ? "PASS" : "FAIL"}] ${name}${detail ? ` · ${JSON.stringify(detail)}` : ""}`);
+}
+
+async function main() {
+  await mkdir(OUT_DIR, { recursive: true });
+  let playwright = await importPlaywright();
+  if (!playwright && existsSync(TEMP_KIT)) {
+    spawnSync("npm", ["install", "playwright@1.63.0", "--no-audit", "--no-fund", "--loglevel=error"], { cwd: TEMP_KIT, shell: true, stdio: "ignore", timeout: 300_000 });
+    playwright = await importPlaywright();
+  }
+  if (!playwright) {
+    console.error("[prod-smoke] playwright indisponível");
+    process.exitCode = 1;
+    return;
+  }
+  const browser = await playwright.chromium.launch({ headless: true, channel: "chrome" }).catch(() => playwright.chromium.launch({ headless: true }));
+  const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
+  page.on("pageerror", (error) => console.log(`  [pageerror] ${error.message}`));
+  try {
+    const rootResponse = await page.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    assert("GET / = 200 (Office V3 na raiz)", rootResponse?.status() === 200, "final-prod-boot.png", { status: rootResponse?.status() });
+    await page.waitForFunction(() => window.__tracecomOffice && window.__tracecomOffice.worldState(), null, { timeout: 60_000 });
+    await page.waitForTimeout(2500);
+    const boot = await page.evaluate(() => {
+      const api = window.__tracecomOffice;
+      const state = api.worldState();
+      const office = api.officeJson();
+      const derived = state.stations.map((station) => station.derived);
+      return {
+        title: document.title,
+        stations: state.stations.length,
+        working: derived.filter((entry) => entry.agentsWorking === true).length,
+        open: derived.filter((entry) => entry.state !== "CLOSED" && entry.state !== "DISABLED" && entry.state !== "NOT_OFFERED" && entry.state !== "SUSPENDED").length,
+        settledPnl: office?.portfolio?.settled?.pnl ?? null,
+        pnlText: state.board?.pnlText ?? null,
+        logs: api.logs().length,
+        mode: office?.mode ?? null,
+        connected: office?.connection?.connected === true,
+      };
+    });
+    assert("mundo real com 54 mercados", boot.stations === 54, "final-prod-boot.png", { stations: boot.stations });
+    assert("painel superior com dados reais do GET /api/iq/office", typeof boot.pnlText === "string" && boot.pnlText.length > 0, "final-prod-boot.png", { pnlText: boot.pnlText, settledPnl: boot.settledPnl });
+    await page.screenshot({ path: join(OUT_DIR, "final-prod-boot.png") });
+
+    await page.click('[data-tb="iq"]');
+    await page.waitForSelector(".tc-iq-modal:not([hidden])", { timeout: 10_000 });
+    await page.waitForTimeout(1200);
+    const iq = await page.evaluate(() => {
+      const rows = {};
+      for (const row of document.querySelectorAll(".tc-iq-modal .tc-iq-row")) rows[row.querySelector(".tc-iq-label")?.textContent ?? ""] = row.querySelector(".tc-iq-value")?.textContent ?? "";
+      return { rows, inputs: document.querySelectorAll(".tc-iq-modal input").length };
+    });
+    assert("IQ OPTION mostra status real e zero input de credencial", iq.inputs === 0 && typeof iq.rows["CONEXÃO"] === "string" && typeof iq.rows["WS"] === "string", "final-prod-iq.png", iq.rows);
+    await page.screenshot({ path: join(OUT_DIR, "final-prod-iq.png") });
+    await page.click(".tc-iq-close");
+
+    const firstKey = await page.evaluate(() => {
+      const api = window.__tracecomOffice;
+      const working = api.worldState().stations.find((station) => station.derived?.agentsWorking === true);
+      return working?.marketKey ?? api.worldState().stations[0]?.marketKey ?? null;
+    });
+    if (firstKey) {
+      await page.evaluate((key) => window.__tracecomOffice.selectMarket(key), firstKey);
+      await page.waitForTimeout(1500);
+      const panel = await page.evaluate(() => ({
+        marketKey: document.querySelector("#office-detail-root .tc-v3-detail")?.dataset.marketKey ?? null,
+        blocks: [...document.querySelectorAll("#office-detail-root .tc-v3-detail-section")].map((node) => node.dataset.block),
+        tabs: document.querySelectorAll("#office-detail-root .tc-v3-tab").length,
+        technical: Boolean(document.querySelector('#office-detail-root [data-block="technical"], #office-detail-root [data-block="journal"]')),
+      }));
+      assert("painel direito simplificado no marketKey WORKING real", panel.marketKey === firstKey && panel.blocks.join(",") === "estado,performance,atividade" && panel.tabs === 0 && panel.technical === false, "final-prod-panel.png", panel);
+      await page.screenshot({ path: join(OUT_DIR, "final-prod-panel.png") });
+    }
+
+    const rollback = await page.request.get(`${BASE_URL}/classic.html`);
+    assert("rollback /classic.html responde 200", rollback.status() === 200, null, { status: rollback.status() });
+  } catch (error) {
+    assert("smoke de produção executou sem exceção", false, null, { error: String(error?.message ?? error) });
+  } finally {
+    await browser.close();
+  }
+  const failed = results.filter((entry) => !entry.pass);
+  const report = { at: new Date().toISOString(), baseUrl: BASE_URL, total: results.length, passed: results.length - failed.length, failed: failed.length, results };
+  await writeFile(REPORT_JSON, JSON.stringify(report, null, 2));
+  console.log(`\n[prod-smoke] ${report.passed}/${report.total} asserts PASS — ${BASE_URL}`);
+  process.exitCode = failed.length ? 1 : 0;
+}
+
+main().catch((error) => {
+  console.error("[prod-smoke] falhou", error);
+  process.exitCode = 1;
+});

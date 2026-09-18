@@ -776,6 +776,7 @@ async function scenario7StateLabel(page, baseUrl) {
       const key = row.querySelector(".tc-v3-row-label")?.textContent ?? "";
       rows[key] = row.querySelector(".tc-v3-row-value")?.textContent ?? "";
     }
+    const hasLegacyBlocks = Boolean(panel?.querySelector('[data-block="technical"], [data-block="journal"], .tc-v3-tabs'));
     return {
       gbpDerived: { state: gbp?.derived?.state, label: gbp?.derived?.label, shortLabel: gbp?.derived?.shortLabel, agentsWorking: gbp?.derived?.agentsWorking, feedStatus: gbp?.derived?.feedStatus },
       offlineCount: offlineStations.length,
@@ -787,7 +788,7 @@ async function scenario7StateLabel(page, baseUrl) {
       })(),
       feedOfflineStat: offlineStations.length,
       panelState: rows["Estado"] ?? null,
-      panelAgents: rows["Status"] ?? null,
+      hasLegacyBlocks,
     };
   });
   const labelPass = state.gbpDerived.state === "OPEN_BUT_FEED_OFFLINE"
@@ -795,7 +796,8 @@ async function scenario7StateLabel(page, baseUrl) {
     && state.gbpDerived.shortLabel === "FEED OFFLINE"
     && state.gbpDerived.agentsWorking === false;
   assert(7, "estado derivado é MERCADO ABERTO · FEED OFFLINE", labelPass, "browser-s7-feed-offline.png", state.gbpDerived);
-  assert(7, "painel mostra o MESMO rótulo do desk", state.panelState === "MERCADO ABERTO · FEED OFFLINE" && state.panelAgents === "SEM AGENTES (ATIVO FECHADO)", "browser-s7-feed-offline.png", { panelState: state.panelState, panelAgents: state.panelAgents });
+  assert(7, "painel simplificado mostra o MESMO rótulo do desk", state.panelState === "MERCADO ABERTO · FEED OFFLINE", "browser-s7-feed-offline.png", { panelState: state.panelState });
+  assert(7, "painel não expõe blocos técnicos/journal/abas", state.hasLegacyBlocks === false, "browser-s7-feed-offline.png", { hasLegacyBlocks: state.hasLegacyBlocks });
   assert(7, "agentes não trabalham com feed offline (sem fantasma)", state.ghostAgents === 0 && state.feedOfflineStat >= 1, "browser-s7-feed-offline.png", { ghostAgents: state.ghostAgents, working: state.working, feedOffline: state.feedOfflineStat });
 }
 

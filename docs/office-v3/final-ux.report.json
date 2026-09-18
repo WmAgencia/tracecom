@@ -1,0 +1,519 @@
+{
+  "at": "2026-09-18T20:52:52.705Z",
+  "engine": "playwright+chrome",
+  "realBrowser": true,
+  "baseUrl": "http://127.0.0.1:50743",
+  "screenshots": [
+    "final-boot-centered.png",
+    "final-logs.png",
+    "final-panel-eurusd.png",
+    "final-panel-switch.png",
+    "final-iq-option.png",
+    "final-iq-option-after.png",
+    "final-mesas-popup.png",
+    "final-resize.png"
+  ],
+  "total": 32,
+  "passed": 32,
+  "failed": 0,
+  "results": [
+    {
+      "scenario": "T1",
+      "assertion": "bounds navegáveis = content bounds (não mundo vazio)",
+      "pass": true,
+      "evidence": "final-boot-centered.png",
+      "detail": {
+        "bounds": {
+          "minX": 512,
+          "minY": 0,
+          "maxX": 2048,
+          "maxY": 1024
+        },
+        "content": {
+          "minX": 512,
+          "minY": 0,
+          "maxX": 2048,
+          "maxY": 1024
+        }
+      }
+    },
+    {
+      "scenario": "T1",
+      "assertion": "conteúdo centrado horizontal e verticalmente",
+      "pass": true,
+      "evidence": "final-boot-centered.png",
+      "detail": {
+        "center": {
+          "x": 1280,
+          "y": 512
+        },
+        "margins": {
+          "left": 171.99999999999994,
+          "top": 47.99999999999997,
+          "right": 172,
+          "bottom": 48
+        }
+      }
+    },
+    {
+      "scenario": "T1",
+      "assertion": "folgas presentes nos 4 lados e opostas equilibradas",
+      "pass": true,
+      "evidence": "final-boot-centered.png",
+      "detail": {
+        "left": 171.99999999999994,
+        "top": 47.99999999999997,
+        "right": 172,
+        "bottom": 48
+      }
+    },
+    {
+      "scenario": "T1",
+      "assertion": "bordas do conteúdo medidas em PIXELS na screenshot (dentro ≠ fora)",
+      "pass": true,
+      "evidence": "final-boot-centered.png",
+      "detail": {
+        "diffs": {
+          "top": 93,
+          "bottom": 115,
+          "left": 72,
+          "right": 72
+        },
+        "samples": {
+          "topInside": {
+            "r": 22,
+            "g": 48,
+            "b": 79,
+            "a": 255
+          },
+          "topOutside": {
+            "r": 9,
+            "g": 17,
+            "b": 30,
+            "a": 255
+          },
+          "bottomInside": {
+            "r": 90,
+            "g": 61,
+            "b": 31,
+            "a": 255
+          },
+          "bottomOutside": {
+            "r": 19,
+            "g": 30,
+            "b": 44,
+            "a": 255
+          },
+          "leftInside": {
+            "r": 58,
+            "g": 42,
+            "b": 34,
+            "a": 255
+          },
+          "leftOutside": {
+            "r": 13,
+            "g": 27,
+            "b": 46,
+            "a": 255
+          }
+        }
+      }
+    },
+    {
+      "scenario": "T4",
+      "assertion": "faixa FOREX MAJORS visível NA FRENTE (azul sobre o piso)",
+      "pass": true,
+      "evidence": "final-boot-centered.png",
+      "detail": {
+        "ribbon": {
+          "r": 51,
+          "g": 67,
+          "b": 103,
+          "a": 255
+        },
+        "floor": {
+          "r": 78,
+          "g": 52,
+          "b": 25,
+          "a": 255
+        }
+      }
+    },
+    {
+      "scenario": "T5/T6",
+      "assertion": "agentes apenas nos mercados WORKING (1 trader + 1 critic por mesa)",
+      "pass": true,
+      "evidence": "final-boot-centered.png",
+      "detail": {
+        "total": 110,
+        "working": 106,
+        "atDesk": 106,
+        "hidden": 4,
+        "locations": [
+          "desk",
+          "hidden"
+        ],
+        "workingMarkets": 53
+      }
+    },
+    {
+      "scenario": "T6",
+      "assertion": "animação sutil (pixels mudam entre frames, sem texto/badge novo)",
+      "pass": true,
+      "evidence": "final-boot-centered.png",
+      "detail": {
+        "changedPixels": 3710
+      }
+    },
+    {
+      "scenario": "T7",
+      "assertion": "badge WIN real visível na janela de 12s e expirado depois",
+      "pass": true,
+      "evidence": "final-boot-centered.png",
+      "detail": {
+        "badge": {
+          "visible": true,
+          "tone": "POSITIVE",
+          "color": "#3fbf5f",
+          "text": "+R$ 8,50",
+          "settledAt": 1789764757323
+        },
+        "visibleNow": true,
+        "visibleAfter": false
+      }
+    },
+    {
+      "scenario": "T3",
+      "assertion": "LOGS globais com eventos reais HH:MM:SS ATIVO — evento (lista limitada)",
+      "pass": true,
+      "evidence": "final-logs.png",
+      "detail": {
+        "count": 3,
+        "first": {
+          "time": "17:52:44",
+          "at": 1789764764087,
+          "marketKey": "EURUSD:NORMAL",
+          "asset": "EUR/USD",
+          "text": "DECISÃO · BUY · CONSENSUS_CONFIRMED",
+          "tone": null,
+          "seq": 123
+        },
+        "stateLogs": 3
+      }
+    },
+    {
+      "scenario": "boot",
+      "assertion": "54 estações + reservas e estados derivados coerentes",
+      "pass": true,
+      "evidence": "final-boot-centered.png",
+      "detail": {
+        "stations": 55,
+        "working": 53,
+        "openButOffline": 1,
+        "closed": 1,
+        "cameraBoundsIsContent": true
+      }
+    },
+    {
+      "scenario": "T13",
+      "assertion": "wheel = scroll vertical (sem zoom)",
+      "pass": true,
+      "evidence": "final-nav-scroll.png",
+      "detail": {
+        "from": 183.97698533976768,
+        "to": 292.8836232198213
+      }
+    },
+    {
+      "scenario": "T13",
+      "assertion": "Shift+wheel = scroll horizontal",
+      "pass": true,
+      "evidence": "final-nav-scroll.png",
+      "detail": {
+        "from": 705.1891236551105,
+        "to": 748.2375523907933
+      }
+    },
+    {
+      "scenario": "T13",
+      "assertion": "Ctrl+wheel = zoom no cursor (ponto do mundo fixo)",
+      "pass": true,
+      "evidence": "final-nav-zoom.png",
+      "detail": {
+        "zoomBefore": 0.9847953388362944,
+        "zoomAfter": 1.4458227877021759,
+        "drift": 0
+      }
+    },
+    {
+      "scenario": "T13",
+      "assertion": "Space+drag = pan real (sem abrir painel)",
+      "pass": true,
+      "evidence": "final-nav-pan.png",
+      "detail": {
+        "from": {
+          "x": 974.8917536973061,
+          "y": 415.92447535764256
+        },
+        "to": {
+          "x": 1127.0542468266624,
+          "y": 485.0892449618957
+        }
+      }
+    },
+    {
+      "scenario": "T13",
+      "assertion": "clique na mesa = zoom/foco + painel do marketKey",
+      "pass": true,
+      "evidence": "final-nav-focus.png",
+      "detail": {
+        "selected": "EURUSD:NORMAL",
+        "focus": "EURUSD:NORMAL",
+        "panels": 1
+      }
+    },
+    {
+      "scenario": "T8",
+      "assertion": "painel só com ESTADO/PERFORMANCE/ATIVIDADE + stake individual",
+      "pass": true,
+      "evidence": "final-panel-eurusd.png",
+      "detail": {
+        "blocks": [
+          "estado",
+          "performance",
+          "atividade"
+        ],
+        "tabs": 0
+      }
+    },
+    {
+      "scenario": "T8",
+      "assertion": "estado e performance do dia reais (EURUSD: 5/4/1/WR)",
+      "pass": true,
+      "evidence": "final-panel-eurusd.png",
+      "detail": {
+        "Estado": "MERCADO ABERTO · OPERANDO",
+        "OPERAÇÕES": "5",
+        "WINS": "4",
+        "LOSSES": "1",
+        "WR": "80,0%"
+      }
+    },
+    {
+      "scenario": "T8",
+      "assertion": "stake individual marcado como OVERRIDE INDIVIDUAL (valor 25)",
+      "pass": true,
+      "evidence": "final-panel-eurusd.png",
+      "detail": {
+        "stake": "25",
+        "scope": "OVERRIDE INDIVIDUAL"
+      }
+    },
+    {
+      "scenario": "T9",
+      "assertion": "ATIVIDADE EM TEMPO REAL isolada no marketKey (EURUSD)",
+      "pass": true,
+      "evidence": "final-panel-eurusd.png",
+      "detail": {
+        "lines": 5,
+        "sample": "17:52:44CRITIC · CONFIRM17:52:44CONSENSO · BUY · CONFIRMED17:52:44DECISÃO · BUY · CONSENSUS_CONFIRMED17:52:46CONSENSO · "
+      }
+    },
+    {
+      "scenario": "T12",
+      "assertion": "troca rápida → EURUSD:NORMAL (painel/stake/log isolados)",
+      "pass": true,
+      "evidence": "final-panel-switch.png",
+      "detail": {
+        "marketKey": "EURUSD:NORMAL",
+        "title": "EUR/USD",
+        "stake": "25",
+        "state": "MERCADO ABERTO · OPERANDO",
+        "activityKeys": [
+          "EURUSD:NORMAL"
+        ],
+        "text": "EUR/USDEURUSD:NORMAL · NORMALFECHARSTAKE DESTE MERCADOOVERRIDE INDIVIDUALSALVARefetivo R$ 25,00 · teto R$ 100,00ESTADOEstadoMERCADO ABERTO · OPERANDOBroker OPEN, habilitado e feed fresco — agentes no desk.PERFORMANCE DO DIAOPERAÇÕES5WINS4LOSSES1WR80,0%ATIVIDADE EM TEMPO REAL17:52:44CRITIC · CONFIRM17:52:44CONSENSO · BUY · CONFIRMED17:52:44DECISÃO · BUY · CONSENSUS_CONFIRMED17:52:46CONSENSO · BUY · CONFIRMED17:52:46DECISÃO · BUY · CONSENSUS_CONFIRMED",
+        "officeHasKey": true,
+        "officeSample": [
+          "GBPJPY:NORMAL",
+          "GBPJPY:OTC"
+        ]
+      }
+    },
+    {
+      "scenario": "T12",
+      "assertion": "troca rápida → GBPJPY:OTC (painel/stake/log isolados)",
+      "pass": true,
+      "evidence": "final-panel-switch.png",
+      "detail": {
+        "marketKey": "GBPJPY:OTC",
+        "title": "GBP/JPY OTC",
+        "stake": "",
+        "state": "MERCADO ABERTO · OPERANDO",
+        "activityKeys": [],
+        "text": "GBP/JPY OTCGBPJPY:OTC · OTCFECHARSTAKE DESTE MERCADOGLOBALSALVARefetivo R$ 10,00 · teto R$ 100,00ESTADOEstadoMERCADO ABERTO · OPERANDOBroker OPEN, habilitado e feed fresco — agentes no desk.PERFORMANCE DO DIAOPERAÇÕES4WINS1LOSSES3WR25,0%ATIVIDADE EM TEMPO REALSEM EVENTOS REAIS DESTE MERCADO AINDA",
+        "officeHasKey": true,
+        "officeSample": [
+          "GBPJPY:NORMAL",
+          "GBPJPY:OTC"
+        ]
+      }
+    },
+    {
+      "scenario": "T12",
+      "assertion": "troca rápida → GOLD:NORMAL (painel/stake/log isolados)",
+      "pass": true,
+      "evidence": "final-panel-switch.png",
+      "detail": {
+        "marketKey": "GOLD:NORMAL",
+        "title": "GOLD",
+        "stake": "",
+        "state": "MERCADO ABERTO · OPERANDO",
+        "activityKeys": [],
+        "text": "GOLDGOLD:NORMAL · NORMALFECHARSTAKE DESTE MERCADOGLOBALSALVARefetivo R$ 10,00 · teto R$ 100,00ESTADOEstadoMERCADO ABERTO · OPERANDOBroker OPEN, habilitado e feed fresco — agentes no desk.PERFORMANCE DO DIAOPERAÇÕES2WINS0LOSSES0WR—ATIVIDADE EM TEMPO REALSEM EVENTOS REAIS DESTE MERCADO AINDA",
+        "officeHasKey": true,
+        "officeSample": [
+          "GBPJPY:NORMAL",
+          "GBPJPY:OTC"
+        ]
+      }
+    },
+    {
+      "scenario": "T12",
+      "assertion": "troca rápida → USDJPY:NORMAL (painel/stake/log isolados)",
+      "pass": true,
+      "evidence": "final-panel-switch.png",
+      "detail": {
+        "marketKey": "USDJPY:NORMAL",
+        "title": "USD/JPY",
+        "stake": "",
+        "state": "MERCADO ABERTO · OPERANDO",
+        "activityKeys": [],
+        "text": "USD/JPYUSDJPY:NORMAL · NORMALFECHARSTAKE DESTE MERCADOGLOBALSALVARefetivo R$ 10,00 · teto R$ 100,00ESTADOEstadoMERCADO ABERTO · OPERANDOBroker OPEN, habilitado e feed fresco — agentes no desk.PERFORMANCE DO DIAOPERAÇÕES2WINS2LOSSES0WR100,0%ATIVIDADE EM TEMPO REALSEM EVENTOS REAIS DESTE MERCADO AINDA",
+        "officeHasKey": true,
+        "officeSample": [
+          "GBPJPY:NORMAL",
+          "GBPJPY:OTC"
+        ]
+      }
+    },
+    {
+      "scenario": "T12",
+      "assertion": "troca rápida → EURUSD:NORMAL (painel/stake/log isolados)",
+      "pass": true,
+      "evidence": "final-panel-switch.png",
+      "detail": {
+        "marketKey": "EURUSD:NORMAL",
+        "title": "EUR/USD",
+        "stake": "25",
+        "state": "MERCADO ABERTO · OPERANDO",
+        "activityKeys": [
+          "EURUSD:NORMAL"
+        ],
+        "text": "EUR/USDEURUSD:NORMAL · NORMALFECHARSTAKE DESTE MERCADOOVERRIDE INDIVIDUALSALVARefetivo R$ 25,00 · teto R$ 100,00ESTADOEstadoMERCADO ABERTO · OPERANDOBroker OPEN, habilitado e feed fresco — agentes no desk.PERFORMANCE DO DIAOPERAÇÕES5WINS4LOSSES1WR80,0%ATIVIDADE EM TEMPO REAL17:52:44CRITIC · CONFIRM17:52:44CONSENSO · BUY · CONFIRMED17:52:44DECISÃO · BUY · CONSENSUS_CONFIRMED17:52:46CONSENSO · BUY · CONFIRMED17:52:46DECISÃO · BUY · CONSENSUS_CONFIRMED17:52:48DECISÃO · BUY · CONSENSUS_CONFIRMED",
+        "officeHasKey": true,
+        "officeSample": [
+          "GBPJPY:NORMAL",
+          "GBPJPY:OTC"
+        ]
+      }
+    },
+    {
+      "scenario": "T12",
+      "assertion": "sem contaminação do ativo anterior no último painel",
+      "pass": true,
+      "evidence": "final-panel-switch.png",
+      "detail": {
+        "title": "EUR/USD",
+        "activity": [
+          "EURUSD:NORMAL"
+        ]
+      }
+    },
+    {
+      "scenario": "T2",
+      "assertion": "modal abre com CONECTADO/PRACTICE/SALDO/WS/MCP reais",
+      "pass": true,
+      "evidence": "final-iq-option.png",
+      "detail": {
+        "CONEXÃO": "CONECTADO",
+        "WS": "ONLINE",
+        "MODO": "PRACTICE · ZERO REAL",
+        "CONTA": "PRACTICE",
+        "SALDO": "BRL 10000.50",
+        "MCP": "SEM STATUS NO SNAPSHOT",
+        "STAKE GLOBAL": "R$ 10.00 · teto R$ 100.00",
+        "AUTO": "OFF",
+        "JIT/QUALITY": "ATIVO",
+        "REAL": "BLOQUEADO · ZERO REAL",
+        "TROCA DE CONTA": "NÃO SUPORTADA (PRACTICE ÚNICA)"
+      }
+    },
+    {
+      "scenario": "T2",
+      "assertion": "REAL bloqueado, conta única e zero campos de credencial no DOM",
+      "pass": true,
+      "evidence": "final-iq-option.png",
+      "detail": {
+        "inputs": [],
+        "reconnectDisabled": true
+      }
+    },
+    {
+      "scenario": "T2",
+      "assertion": "valores exibidos não contêm senha/token/ssid/cookie/secret",
+      "pass": true,
+      "evidence": "final-iq-option.png",
+      "detail": {}
+    },
+    {
+      "scenario": "T2",
+      "assertion": "DESCONECTAR usa o endpoint real e atualiza o estado",
+      "pass": true,
+      "evidence": "final-iq-option-after.png",
+      "detail": {
+        "afterDisconnect": "DESCONECTADO"
+      }
+    },
+    {
+      "scenario": "T2",
+      "assertion": "modal fecha e não deixa overlay preso",
+      "pass": true,
+      "evidence": null,
+      "detail": {}
+    },
+    {
+      "scenario": "T13",
+      "assertion": "MESAS busca + Enter seleciona a mesa correta (GOLD)",
+      "pass": true,
+      "evidence": "final-mesas-popup.png",
+      "detail": {
+        "selected": "GOLD:NORMAL",
+        "title": "GOLD",
+        "activity": [
+          "GOLD:NORMAL"
+        ]
+      }
+    },
+    {
+      "scenario": "T13",
+      "assertion": "resize mantém clamp vivo e conteúdo re-enquadrável no centro",
+      "pass": true,
+      "evidence": "final-resize.png",
+      "detail": {
+        "viewport": {
+          "width": 1024,
+          "height": 640
+        },
+        "clampHolds": true,
+        "centered": true,
+        "margins": {
+          "left": 104,
+          "top": 48.000000000000014,
+          "right": 104,
+          "bottom": 47.999999999999886
+        }
+      }
+    }
+  ]
+}

@@ -563,13 +563,21 @@ describe("OFFICE V3 UI — painel correlacionado ao marketKey (TASK 6)", () => {
     expect(root.textContent).toContain("Mercado não encontrado");
   });
 
-  it("refresh do snapshot preserva a aba ativa do painel correlacionado", () => {
+  it("refresh do snapshot preserva o marketKey e a atividade isolada do painel", () => {
     const root = fakeDoc.createElement("div");
-    detail.mountMarketDetail(root, officeFixture(), "EURUSD:NORMAL", { document: fakeDoc, initialTab: "technical" });
-    const technicalBody = findAll(root, (node) => node.classList?.contains("tc-v3-detail-section") && node.dataset?.tab === "technical")[0];
-    const identityBody = findAll(root, (node) => node.classList?.contains("tc-v3-detail-section") && node.dataset?.tab === "identity")[0];
-    expect(technicalBody.hidden).toBe(false);
-    expect(identityBody.hidden).toBe(true);
+    detail.mountMarketDetail(root, officeFixture(), "EURUSD:NORMAL", { document: fakeDoc });
+    detail.mountMarketDetail(root, officeFixture(), "GBPJPY:OTC", {
+      document: fakeDoc,
+      eventLog: [{ time: "09:59:59", marketKey: "GBPJPY:OTC", text: "TRADER BUY" }],
+    });
+    const panels = findAll(root, (node) => node.classList?.contains("tc-v3-detail"));
+    expect(panels).toHaveLength(1);
+    expect(panels[0]!.dataset.marketKey).toBe("GBPJPY:OTC");
+    const lines = findAll(root, (node) => node.classList?.contains("tc-v3-activity-line"));
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.dataset.marketKey).toBe("GBPJPY:OTC");
+    expect(root.textContent).toContain("TRADER BUY");
+    expect(root.textContent).not.toContain("EUR/USD ·");
   });
 });
 

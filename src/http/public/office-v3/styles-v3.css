@@ -1006,3 +1006,78 @@ body.tc-v3-panning * {
   #office-detail-root { width: calc(100vw - 20px); }
   .tc-topbar-status { display: none; }
 }
+
+/* =====================================================================
+ * T2 — IQ OPTION MODAL (status/config only; never credentials)
+ * ===================================================================== */
+
+.tc-iq-modal {
+  position: fixed;
+  top: 58px;
+  right: 14px;
+  width: 330px;
+  max-width: calc(100vw - 24px);
+  padding: var(--tc-v3-space-3);
+  border: 1px solid var(--tc-v3-line-strong);
+  border-radius: var(--tc-v3-radius-md);
+  background: rgba(13, 24, 44, 0.98);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55);
+  z-index: 40;
+}
+
+.tc-iq-modal[hidden] { display: none; }
+
+.tc-iq-head { display: flex; align-items: baseline; gap: var(--tc-v3-space-2); }
+.tc-iq-title { margin: 0; color: var(--tc-v3-gold); font-size: var(--tc-v3-text-sm); letter-spacing: 2px; }
+.tc-iq-sub { color: var(--tc-v3-ink-muted); font-size: var(--tc-v3-text-xs); letter-spacing: 1px; }
+.tc-iq-close {
+  margin-left: auto;
+  border: 1px solid var(--tc-v3-line-strong);
+  border-radius: var(--tc-v3-radius-sm);
+  background: transparent;
+  color: var(--tc-v3-ink-muted);
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 7px;
+  cursor: pointer;
+}
+.tc-iq-close:hover { border-color: var(--tc-v3-amber); color: var(--tc-v3-amber); }
+
+.tc-iq-body { display: flex; flex-direction: column; margin: var(--tc-v3-space-2) 0; }
+.tc-iq-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--tc-v3-space-2); padding: 5px 0; border-bottom: 1px solid rgba(120, 150, 200, 0.12); }
+.tc-iq-row:last-child { border-bottom: 0; }
+.tc-iq-label { color: var(--tc-v3-ink-muted); font-size: 10px; letter-spacing: 1px; }
+.tc-iq-value { color: #fff; font-size: var(--tc-v3-text-sm); font-variant-numeric: tabular-nums; }
+.tc-iq-value[data-tone="ok"] { color: var(--tc-v3-positive); }
+.tc-iq-value[data-tone="bad"] { color: var(--tc-v3-negative); }
+.tc-iq-value[data-tone="warn"] { color: var(--tc-v3-warn); }
+.tc-iq-value[data-tone="muted"] { color: var(--tc-v3-ink-dim); }
+
+.tc-iq-actions { display: flex; gap: var(--tc-v3-space-2); }
+.tc-iq-note { margin: var(--tc-v3-space-2) 0 0; color: var(--tc-v3-ink-dim); font-size: 10px; line-height: 1.5; }
+
+/* =====================================================================
+ * T8/T9 — simplified right panel: blocks + real-time activity list
+ * ===================================================================== */
+
+.tc-v3-block-body { display: flex; flex-direction: column; gap: var(--tc-v3-space-1); }
+.tc-v3-block-note { margin: 0; color: var(--tc-v3-ink-muted); font-size: 10px; line-height: 1.5; }
+.tc-v3-block-empty { margin: 0; color: var(--tc-v3-ink-dim); font-size: var(--tc-v3-text-xs); letter-spacing: 1px; }
+
+.tc-v3-activity {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: var(--tc-v3-space-2);
+  border: 1px solid var(--tc-v3-line-strong);
+  border-radius: var(--tc-v3-radius-sm);
+  background: #081223;
+  font-family: var(--tc-v3-mono);
+}
+.tc-v3-activity-line { display: flex; gap: 6px; align-items: baseline; font-size: 10px; line-height: 1.5; }
+.tc-v3-activity-time { color: var(--tc-v3-ink-dim); white-space: nowrap; }
+.tc-v3-activity-text { color: #dfe8f8; }
+.tc-v3-activity-text[data-tone="ok"] { color: var(--tc-v3-positive); }
+.tc-v3-activity-text[data-tone="bad"] { color: var(--tc-v3-negative); }

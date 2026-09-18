@@ -164,9 +164,9 @@ describe("OFFICE V3 — visual gauntlet regressions", () => {
     const canvas = createCanvas(240, 240);
     const drawn = life.drawAgents(canvas.getContext("2d"), system, null);
     life.bindAssets(assets);
-    expect(drawn).toBe(111);
-    expect(seen).toHaveLength(111);
-    expect(new Set(seen).size).toBe(111);
+    expect(drawn).toBe(110);
+    expect(seen).toHaveLength(110);
+    expect(new Set(seen).size).toBe(110);
   });
 
   it("rótulos PT-BR acentuados são cobertos pela fonte", () => {

@@ -321,7 +321,7 @@ describe("OFFICE V3 — agent registry: localização única e determinismo", ()
     warn.mockRestore();
   });
 
-  it("cada agentId é desenhado exatamente uma vez por frame (110 + supervisor)", () => {
+  it("cada agentId é desenhado exatamente uma vez por frame (110 agentes, sem supervisor)", () => {
     const system = life.createLifeSystem(makeFallback(55), { seed: "draw", strict: true });
     life.updateLife(system, 16);
     const drawnIds: string[] = [];
@@ -332,14 +332,15 @@ describe("OFFICE V3 — agent registry: localização única e determinismo", ()
     });
     try {
       const total = life.drawAgents({} as any, system, null);
-      expect(total).toBe(TOTAL * 2 + 1);
+      expect(total).toBe(TOTAL * 2);
       expect(system.lastDrawStats.duplicates).toBe(0);
-      expect(system.lastDrawStats.unique).toBe(TOTAL * 2 + 1);
+      expect(system.lastDrawStats.unique).toBe(TOTAL * 2);
       expect(new Set(drawnIds).size).toBe(drawnIds.length);
       for (const agent of system.agents) {
         expect(drawnIds.filter((id) => id === agent.id)).toHaveLength(1);
       }
-      expect(drawnIds.filter((id) => id === "supervisor")).toHaveLength(1);
+      // T5: nenhum agente andarilho/social é desenhado nesta versão.
+      expect(drawnIds).not.toContain("supervisor");
     } finally {
       life.bindAssets(null);
     }

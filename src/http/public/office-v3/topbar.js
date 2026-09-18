@@ -27,6 +27,16 @@ export const TOPBAR_ENDPOINTS = Object.freeze({
   globalStake: "/api/iq/config/global-stake",
 });
 
+/**
+ * IQ OPTION modal endpoints — only EXISTING, public relay endpoints. The modal
+ * never sends or stores email/password/token/ssid: credentials stay server-side
+ * (iq-session-vault), and the UI only reads sanitized status snapshots.
+ */
+export const IQ_OPTION_ENDPOINTS = Object.freeze({
+  status: "/api/iq/status",
+  disconnect: "/api/iq/disconnect",
+});
+
 const EMPTY = "—";
 const STAKE_MIN = 1;
 const STAKE_MAX = 100;
@@ -87,6 +97,59 @@ function connectionText(model) {
   if (model.connected && model.healthy) return "ONLINE";
   if (model.connected) return "DEGRADADA";
   return "OFFLINE";
+}
+
+/**
+ * IQ OPTION modal model — derived from the real office snapshot plus the
+ * sanitized relay status response (GET /api/iq/status). No credential field is
+ * ever present. MCP is shown only when the runtime actually reports it; when
+ * absent the modal says so explicitly instead of inventing a state.
+ */
+export function buildIqOptionModel(office, status = null) {
+  const source = office ?? {};
+  const statusData = status && typeof status === "object" ? status : null;
+  const statusLegacy = statusData && (statusData.marketData || statusData.account) ? statusData : null;
+  const connection = statusLegacy
+    ? { connected: statusLegacy.marketData?.connected === true, healthy: statusLegacy.marketData?.healthy === true, host: statusLegacy.marketData?.host ?? null }
+    : { connected: source.connection?.connected === true, healthy: source.connection?.healthy === true, host: source.connection?.host ?? null };
+  const authState = statusData?.state ?? null;
+  const statusDisconnected = authState === "DISCONNECTED" || authState === "ERROR";
+  const connected = statusDisconnected ? false : connection.connected === true || authState === "CONNECTED_READ_ONLY";
+  const healthy = statusDisconnected ? false : connection.healthy;
+  const mode = statusData?.mode ?? source.mode ?? null;
+  const account = statusLegacy?.account ?? source.legacy?.account ?? source.account ?? null;
+  const balance = toNumber(account?.balance);
+  const currency = typeof account?.currency === "string" ? account.currency : null;
+  const mcp = source.mcp ?? source.aux?.mcp ?? source.runtime?.mcp ?? null;
+
+  return {
+    version: "office-v3-iq-option.1.0.0",
+    connected,
+    authState,
+    mode,
+    practice: mode !== "REAL",
+    host: connection.host,
+    healthy,
+    reconnects: toNumber(source.connection?.reconnects ?? statusLegacy?.marketData?.reconnects),
+    accountType: account?.type ?? null,
+    accountIdMasked: typeof account?.id === "string" && account.id.length > 4 ? `***${account.id.slice(-4)}` : null,
+    currency,
+    balance,
+    balanceText: balance === null ? EMPTY : `${currency ? `${currency} ` : ""}${balance.toFixed(2)}`,
+    verified: account?.verified === true,
+    hasReal: account?.hasReal === true,
+    wsText: connected ? (healthy ? "ONLINE" : "CONECTADO · DEGRADADO") : authState === "TWO_FACTOR_REQUIRED" ? "AGUARDANDO 2FA" : "DESCONECTADO",
+    mcpStatus: mcp ? (mcp.status ?? (mcp.connected === true ? "CONECTADO" : "SEM SESSÃO")) : "SEM STATUS NO SNAPSHOT",
+    mcpKnown: Boolean(mcp),
+    realBlocked: true,
+    accountSwitchSupported: false,
+    globalStake: toNumber(source.config?.globalMaxStake),
+    defaultStake: toNumber(source.config?.defaultStake),
+    hardCap: toNumber(source.config?.hardCap),
+    autoExecute: source.config?.autoExecute === true,
+    brainGeneration: source.config?.brainGeneration ?? source.brain?.generation ?? null,
+    jitEnabled: source.config?.jitEnabled === true,
+  };
 }
 
 function gateText(model) {
@@ -166,16 +229,53 @@ function createTopBar(doc, rootEl, options) {
   real.setAttribute("aria-disabled", "true");
   real.setAttribute("title", "ZERO REAL — indisponível nesta build PRACTICE");
 
+  /* ---- IQ OPTION modal (T2) — status/config, never credentials ---- */
+  const iq = bit(doc, rootEl, "button", "tc-topbar-btn", "IQ OPTION", "iq");
+  iq.setAttribute("type", "button");
+  iq.setAttribute("aria-haspopup", "dialog");
+
+  const iqModal = el(doc, "div", "tc-iq-modal");
+  iqModal.hidden = true;
+  iqModal.setAttribute("data-tc-v3", "iq-option");
+  iqModal.setAttribute("role", "dialog");
+  iqModal.setAttribute("aria-label", "Conexão e configuração IQ Option (PRACTICE)");
+  const iqHead = el(doc, "div", "tc-iq-head");
+  iqHead.append(el(doc, "h3", "tc-iq-title", "IQ OPTION"), el(doc, "span", "tc-iq-sub", "PRACTICE · ZERO REAL"));
+  const iqClose = el(doc, "button", "tc-iq-close", "×");
+  iqClose.setAttribute("type", "button");
+  iqClose.setAttribute("aria-label", "Fechar");
+  iqHead.appendChild(iqClose);
+  const iqBody = el(doc, "div", "tc-iq-body");
+  const iqActions = el(doc, "div", "tc-iq-actions");
+  const iqRefresh = el(doc, "button", "tc-topbar-btn", "ATUALIZAR");
+  iqRefresh.setAttribute("type", "button");
+  iqRefresh.setAttribute("data-iq", "refresh");
+  const iqDisconnect = el(doc, "button", "tc-topbar-btn", "DESCONECTAR");
+  iqDisconnect.setAttribute("type", "button");
+  iqDisconnect.setAttribute("data-iq", "disconnect");
+  const iqReconnect = el(doc, "button", "tc-topbar-btn is-disabled", "RECONECTAR");
+  iqReconnect.setAttribute("type", "button");
+  iqReconnect.setAttribute("data-iq", "reconnect");
+  iqReconnect.disabled = true;
+  iqReconnect.setAttribute("aria-disabled", "true");
+  iqReconnect.setAttribute("title", "Reconexão com credenciais é server-side (vault do relay); esta UI nunca manipula senha/token/SSID.");
+  iqActions.append(iqRefresh, iqDisconnect, iqReconnect);
+  const iqNote = el(doc, "p", "tc-iq-note", "Nenhuma senha, token, cookie ou SSID é digitado, exibido ou armazenado aqui — apenas status sanitizado do servidor.");
+  iqModal.append(iqHead, iqBody, iqActions, iqNote);
+  rootEl.appendChild(iqModal);
+
   const status = bit(doc, rootEl, "div", "tc-topbar-status", "", "status");
   status.setAttribute("role", "status");
   status.setAttribute("aria-live", "polite");
 
   const state = {
     model: buildTopBarModel(null),
+    office: null,
+    iqStatus: null,
     busy: false,
   };
 
-  const nodes = { mode, connection, arm, auto, stakeWrap, stakeInput, stakeApply, markets, active, gate, real, status };
+  const nodes = { mode, connection, arm, auto, stakeWrap, stakeInput, stakeApply, markets, active, gate, real, iq, iqModal, iqBody, status };
 
   function setStatus(text) {
     status.textContent = text ?? "";
@@ -251,9 +351,90 @@ function createTopBar(doc, rootEl, options) {
     void send(TOPBAR_ENDPOINTS.globalStake, { value });
   });
 
+  /* ---- IQ OPTION modal behavior (status only, never credentials) ---- */
+
+  function iqRow(key, label, value, tone) {
+    const row = el(doc, "div", "tc-iq-row");
+    row.setAttribute("data-iq-row", key);
+    const valueNode = el(doc, "b", "tc-iq-value", value ?? EMPTY);
+    if (tone) valueNode.setAttribute("data-tone", tone);
+    row.append(el(doc, "span", "tc-iq-label", label), valueNode);
+    return row;
+  }
+
+  function renderIqModal() {
+    const model = buildIqOptionModel(state.office, state.iqStatus);
+    iqBody.textContent = "";
+    iqBody.append(
+      iqRow("connection", "CONEXÃO", model.connected ? "CONECTADO" : "DESCONECTADO", model.connected ? "ok" : "bad"),
+      iqRow("ws", "WS", model.wsText, model.healthy ? "ok" : model.connected ? "warn" : "bad"),
+      iqRow("mode", "MODO", model.practice ? `${model.mode ?? "PRACTICE"} · ZERO REAL` : "REAL", model.practice ? "ok" : "bad"),
+      iqRow("account", "CONTA", model.accountType ?? EMPTY, null),
+      iqRow("balance", "SALDO", model.balanceText, model.balance === null ? "muted" : "ok"),
+      iqRow("mcp", "MCP", model.mcpStatus, model.mcpKnown ? null : "muted"),
+      iqRow("stake", "STAKE GLOBAL", model.defaultStake === null ? EMPTY : `R$ ${model.defaultStake.toFixed(2)} · teto ${model.hardCap === null ? EMPTY : `R$ ${model.hardCap.toFixed(2)}`}`, null),
+      iqRow("auto", "AUTO", model.autoExecute ? "ON" : "OFF", null),
+      iqRow("jit", "JIT/QUALITY", model.jitEnabled ? "ATIVO" : "OFF", null),
+      iqRow("real", "REAL", "BLOQUEADO · ZERO REAL", "bad"),
+      iqRow("switch", "TROCA DE CONTA", "NÃO SUPORTADA (PRACTICE ÚNICA)", "muted"),
+    );
+    nodes.iq.classList?.toggle?.("is-on", model.connected);
+    nodes.iq.setAttribute("data-connected", model.connected ? "true" : "false");
+    nodes.iqModal.setAttribute("data-connected", model.connected ? "true" : "false");
+    return model;
+  }
+
+  function iqRequest(endpoint, method = "GET") {
+    const fetchImpl = (typeof options.fetchImpl === "function" && options.fetchImpl) || globalThis.fetch;
+    if (typeof fetchImpl !== "function") return Promise.resolve(null);
+    return Promise.resolve(fetchImpl(endpoint, { method, headers: { accept: "application/json" } }))
+      .then((response) => {
+        if (!response || response.ok !== true) throw new Error(`HTTP ${response ? response.status : "?"}`);
+        return typeof response.json === "function" ? response.json().catch(() => null) : null;
+      })
+      .catch((error) => {
+        setStatus(`falha · ${endpoint} · ${String(error && error.message ? error.message : error)}`);
+        return null;
+      });
+  }
+
+  function refreshIqModal() {
+    setStatus("atualizando status IQ…");
+    return iqRequest(IQ_OPTION_ENDPOINTS.status).then((json) => {
+      if (json) state.iqStatus = json;
+      renderIqModal();
+      setStatus("ok · status IQ atualizado");
+      return json;
+    });
+  }
+
+  function openIqModal() {
+    iqModal.hidden = false;
+    renderIqModal();
+    void refreshIqModal();
+  }
+
+  function closeIqModal() {
+    iqModal.hidden = true;
+  }
+
+  iq.addEventListener("click", () => (iqModal.hidden ? openIqModal() : closeIqModal()));
+  iqClose.addEventListener("click", closeIqModal);
+  iqRefresh.addEventListener("click", () => void refreshIqModal());
+  iqDisconnect.addEventListener("click", () => {
+    setStatus("desconectando IQ…");
+    void iqRequest(IQ_OPTION_ENDPOINTS.disconnect, "POST").then((json) => {
+      if (json) state.iqStatus = { ...(state.iqStatus ?? {}), ...json, state: json.state ?? "DISCONNECTED" };
+      renderIqModal();
+      setStatus("ok · desconectado");
+      if (typeof options.onRefresh === "function") options.onRefresh();
+    });
+  });
+
   function update(officeJson) {
     const model = buildTopBarModel(officeJson);
     state.model = model;
+    state.office = officeJson ?? null;
 
     const modeText = model.mode ?? EMPTY;
     nodes.mode.lastElementChild.textContent = model.practice ? `${modeText} · ZERO REAL` : "REAL BLOQUEADO";
@@ -285,10 +466,24 @@ function createTopBar(doc, rootEl, options) {
 
     nodes.active.lastElementChild.textContent = model.activeCount === null ? EMPTY : `${model.activeCount}/${model.activeLimit ?? EMPTY}`;
     nodes.gate.lastElementChild.textContent = gateText(model);
+    if (iqModal.hidden === false) renderIqModal();
+    else nodes.iq.setAttribute("data-connected", buildIqOptionModel(officeJson, state.iqStatus).connected ? "true" : "false");
     return model;
   }
 
-  rootEl.__tcTopBar = { update, state, nodes, endpoints: TOPBAR_ENDPOINTS };
+  rootEl.__tcTopBar = {
+    update,
+    state,
+    nodes,
+    endpoints: TOPBAR_ENDPOINTS,
+    iq: {
+      model: () => buildIqOptionModel(state.office, state.iqStatus),
+      open: openIqModal,
+      close: closeIqModal,
+      refresh: refreshIqModal,
+      isOpen: () => iqModal.hidden === false,
+    },
+  };
   return rootEl.__tcTopBar;
 }
 

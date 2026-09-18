@@ -1,8 +1,8 @@
 {
-  "at": "2026-09-18T20:04:00.604Z",
+  "at": "2026-09-18T20:53:30.254Z",
   "engine": "playwright+chrome",
   "realBrowser": true,
-  "baseUrl": "http://127.0.0.1:61370",
+  "baseUrl": "http://127.0.0.1:60829",
   "scenarios": [
     0,
     1,
@@ -33,8 +33,8 @@
     "browser-s6-eurjpy.png",
     "browser-s7-feed-offline.png"
   ],
-  "total": 52,
-  "passed": 52,
+  "total": 53,
+  "passed": 53,
   "failed": 0,
   "results": [
     {
@@ -61,7 +61,7 @@
       "pass": true,
       "evidence": "browser-s0-boot.png",
       "detail": {
-        "distinctColors": 338
+        "distinctColors": 332
       }
     },
     {
@@ -592,12 +592,20 @@
     },
     {
       "scenario": 7,
-      "assertion": "painel mostra o MESMO rótulo do desk",
+      "assertion": "painel simplificado mostra o MESMO rótulo do desk",
       "pass": true,
       "evidence": "browser-s7-feed-offline.png",
       "detail": {
-        "panelState": "MERCADO ABERTO · FEED OFFLINE",
-        "panelAgents": "SEM AGENTES (ATIVO FECHADO)"
+        "panelState": "MERCADO ABERTO · FEED OFFLINE"
+      }
+    },
+    {
+      "scenario": 7,
+      "assertion": "painel não expõe blocos técnicos/journal/abas",
+      "pass": true,
+      "evidence": "browser-s7-feed-offline.png",
+      "detail": {
+        "hasLegacyBlocks": false
       }
     },
     {

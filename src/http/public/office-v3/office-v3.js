@@ -29,9 +29,12 @@
 import { attachDerivedStates, deriveMarketState } from "./state-model.js";
 
 const POLL_URL = "/api/iq/office";
+const EVENTS_URL = "/api/iq/events";
 const POLL_BASE_MS = 2000;
 const POLL_MAX_MS = 30000;
 const DRAG_CLICK_THRESHOLD = 4;
+export const GLOBAL_LOG_LIMIT = 12;
+export const MARKET_LOG_LIMIT = 12;
 
 const doc = typeof document !== "undefined" && document ? document : null;
 const $ = (id) => (doc && typeof doc.getElementById === "function" ? doc.getElementById(id) : null);
@@ -78,6 +81,10 @@ let mesasController = null;
 let panController = null;
 let lastOverlayStats = null;
 let didFitContent = false;
+let eventsCursor = 0;
+let eventsSeeded = false;
+let globalLogs = [];
+const marketLogs = new Map();
 
 /* ------------------------------------------------------------------ *
  * Status / error surfaces (fail-soft)
@@ -131,6 +138,175 @@ export function formatStationOption(station) {
   const derived = derivedForStation(station);
   const stateLabel = derived?.label ?? String(station?.availability ?? "—").toUpperCase();
   return `${label} · ${stateLabel}`;
+}
+
+/* ------------------------------------------------------------------ *
+ * REAL EVENT STREAM — GET /api/iq/events (runtime/audit events)
+ *
+ * ONE poller feeds both the global LOGS box (T3) and the per-market
+ * ATIVIDADE EM TEMPO REAL panel (T9). Only existing event types/fields are
+ * rendered; nothing is synthesized. Both lists are bounded arrays, so the
+ * canvas log and the DOM never grow without limit.
+ * ------------------------------------------------------------------ */
+
+const EVENT_TEXT = Object.freeze({
+  "connection.ready": "WS CONECTADO",
+  "connection.disconnected": "WS DESCONECTADO",
+  "account.balances": "SALDOS ATUALIZADOS",
+  "markets.default_selection": "SELEÇÃO PADRÃO DE MERCADOS",
+  "markets.availability_refreshed": "DISPONIBILIDADE ATUALIZADA",
+  "markets.resolved": "ATIVOS RESOLVIDOS",
+  "market.reopened": "MERCADO REABERTO",
+  "market.unavailable": "MERCADO INDISPONÍVEL",
+  "market.config": "CONFIG DE MERCADO",
+  "config.global_stake": "STAKE GLOBAL",
+  "mode.changed": "MODO ALTERADO",
+  kill_switch: "KILL SWITCH",
+  "execution.armed": "EXECUÇÃO ARMADA",
+  "execution.disarmed": "EXECUÇÃO DESARMADA",
+  "market.feature": "FEATURE",
+  "market.decision": "DECISÃO",
+  "market.signal": "SINAL",
+  "market.wait": "AGUARDAR",
+  "agent.trader": "TRADER",
+  "agent.critic": "CRITIC",
+  "agent.consensus": "CONSENSO",
+  "candidate.created": "CANDIDATO CRIADO",
+  "candidate.updated": "CANDIDATO ATUALIZADO",
+  "candidate.revalidated": "CANDIDATO REVALIDADO",
+  "candidate.confirmed": "CANDIDATO CONFIRMADO",
+  "candidate.cancelled": "CANDIDATO CANCELADO",
+  "signal.disposition": "SINAL",
+  "signal.disposition.final": "SINAL CONFIRMADO",
+  "order.pending": "ORDEM PENDENTE",
+  "order.ack": "ORDEM ACEITA",
+  "order.rejected": "ORDEM REJEITADA",
+  "position.open": "POSIÇÃO ABERTA",
+  "position.settled": "RESULTADO",
+  "supervisor.review": "SUPERVISOR",
+  "professor.review": "REVISÃO",
+  "apprentice.config": "APRENDIZ CONFIG",
+  "apprentice.review": "APRENDIZ REVISÃO",
+  "entry.config": "JIT CONFIG",
+  "market.tradability_probe": "PROBE DE TRADABILIDADE",
+});
+
+/** Short real description of one event (never invents fields). */
+export function describeEvent(event) {
+  if (!event || typeof event !== "object") return null;
+  const type = String(event.type ?? "");
+  const base = EVENT_TEXT[type] ?? type.toUpperCase();
+  const detail = [];
+  if (event.action) detail.push(String(event.action));
+  if (event.verdict) detail.push(String(event.verdict));
+  if (event.status) detail.push(String(event.status));
+  if (event.reason) detail.push(String(event.reason).slice(0, 42));
+  else if (event.waitReason) detail.push(String(event.waitReason).slice(0, 42));
+  if (event.result) detail.push(String(event.result));
+  if (Number.isFinite(Number(event.profit))) detail.push(`R$ ${Number(event.profit).toFixed(2)}`);
+  if (Number.isFinite(Number(event.rsi14))) detail.push(`RSI ${Number(event.rsi14).toFixed(1)}`);
+  return detail.length ? `${base} · ${detail.join(" · ")}` : base;
+}
+
+export function eventTone(event) {
+  const result = String(event?.result ?? event?.brokerResult ?? "").toUpperCase();
+  if (result === "WIN") return "POSITIVE";
+  if (result === "LOSS") return "NEGATIVE";
+  return null;
+}
+
+export function timeTextOf(at) {
+  const numeric = Number(at);
+  if (!Number.isFinite(numeric)) return "--:--:--";
+  try {
+    return new Date(numeric).toLocaleTimeString("pt-BR", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  } catch {
+    return "--:--:--";
+  }
+}
+
+function assetLabelFor(marketKey) {
+  if (!marketKey) return "SISTEMA";
+  if (worldState && Array.isArray(worldState.stations)) {
+    const station = worldState.stations.find((candidate) => candidate.marketKey === marketKey);
+    if (station) return station.display ?? station.symbol ?? marketKey;
+  }
+  return String(marketKey).split(":")[0] || "SISTEMA";
+}
+
+/** Raw event -> bounded log entry { time, asset, text, tone, marketKey }. */
+export function formatEventEntry(event) {
+  const text = describeEvent(event);
+  if (!text) return null;
+  return {
+    time: timeTextOf(event.at),
+    at: Number(event.at) || null,
+    marketKey: event.marketKey ?? null,
+    asset: assetLabelFor(event.marketKey),
+    text,
+    tone: eventTone(event),
+    seq: Number(event.seq) || null,
+  };
+}
+
+export function appendBoundedLog(list, entry, limit) {
+  if (!entry) return list;
+  list.push(entry);
+  if (list.length > limit) list.splice(0, list.length - limit);
+  return list;
+}
+
+export function getGlobalLogs() {
+  return globalLogs.slice();
+}
+
+export function getMarketLogs(marketKey) {
+  if (!marketKey || !marketLogs.has(marketKey)) return [];
+  return marketLogs.get(marketKey).slice();
+}
+
+function recordEvents(events) {
+  if (!Array.isArray(events) || !events.length) return;
+  for (const event of events) {
+    const entry = formatEventEntry(event);
+    if (!entry) continue;
+    appendBoundedLog(globalLogs, entry, GLOBAL_LOG_LIMIT);
+    if (entry.marketKey) {
+      if (!marketLogs.has(entry.marketKey)) marketLogs.set(entry.marketKey, []);
+      appendBoundedLog(marketLogs.get(entry.marketKey), entry, MARKET_LOG_LIMIT);
+    }
+  }
+  if (worldState && modules.world && typeof modules.world.setWorldLogs === "function") {
+    try {
+      modules.world.setWorldLogs(worldState, globalLogs);
+    } catch (error) {
+      warnMissing("world.setWorldLogs", error);
+    }
+  }
+}
+
+async function pollEventsOnce() {
+  try {
+    const limit = eventsSeeded ? 100 : 1;
+    const response = await fetch(`${EVENTS_URL}?after=${eventsCursor}&limit=${limit}`, {
+      method: "GET",
+      headers: { accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!response || !response.ok) return;
+    const json = await response.json();
+    if (!json || !Array.isArray(json.events)) return;
+    if (!eventsSeeded) {
+      // Seed on the live cursor: never replay the whole historical buffer.
+      eventsSeeded = true;
+      eventsCursor = Number(json.cursor) || 0;
+      return;
+    }
+    recordEvents(json.events);
+    if (Number.isFinite(Number(json.cursor))) eventsCursor = Number(json.cursor);
+  } catch (error) {
+    console.warn(`[office-v3] GET ${EVENTS_URL} falhou`, error);
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -493,6 +669,7 @@ function openDetail(station, marketKey, options = {}) {
       modules.marketDetail.mountMarketDetail(detailRootEl, officeJson ?? {}, key, {
         onStakeApplied: requestRefresh,
         initialTab: options.initialTab ?? activeDetailTab(),
+        eventLog: getMarketLogs(key),
         onClose: (closedKey) => {
           if (selectedMarketKey === closedKey) selectedMarketKey = null;
         },
@@ -630,6 +807,13 @@ function applyOfficeJson(json) {
   } catch (error) {
     warnMissing("state-model.attachDerivedStates", error);
   }
+  if (modules.world && typeof modules.world.setWorldLogs === "function") {
+    try {
+      modules.world.setWorldLogs(worldState, globalLogs);
+    } catch (error) {
+      warnMissing("world.setWorldLogs", error);
+    }
+  }
   attachWorldToCamera();
 
   const signature = stationSignature(worldState);
@@ -705,7 +889,7 @@ function renderFrame(now) {
   } else {
     lastOverlayStats = null;
     try {
-      worldModule.drawWorld(ctx, worldState, camera, { agents: !lifeSystem });
+      worldModule.drawWorld(ctx, worldState, camera, { agents: !lifeSystem, timeMs: lifeSystem ? lifeSystem.time : now });
     } catch (error) {
       console.warn("[office-v3] drawWorld falhou", error);
     }
@@ -1212,6 +1396,9 @@ function installDebugHooks() {
     },
     selectMarket: (marketKey) => selectMarket(marketKey),
     closeDetail: () => closeDetail(),
+    logs: () => getGlobalLogs(),
+    marketLogs: (marketKey) => getMarketLogs(marketKey),
+    eventsCursor: () => eventsCursor,
   };
 }
 
@@ -1337,7 +1524,7 @@ function schedulePoll() {
 
 async function pollOnce() {
   if (disposed) return;
-  const json = await fetchOfficeJson();
+  const [json] = await Promise.all([fetchOfficeJson(), pollEventsOnce()]);
   if (disposed) return;
   if (json) {
     pollBackoff = POLL_BASE_MS;

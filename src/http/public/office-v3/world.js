@@ -82,7 +82,7 @@ const BAND_ROWS = [
 ];
 
 const SUB_BAND_BY_ROW = {
-  BAND_OTC_CRYPTO: ["OTC - 24H", "CRIPTOMOEDAS"],
+  BAND_OTC_CRYPTO: ["OTC 24H", "CRIPTOMOEDAS"],
   BAND_INDICES_COMMODITIES: ["ÍNDICES", "COMMODITIES"],
 };
 
@@ -159,15 +159,35 @@ export function isMarketActive(market) {
   return availability === "OPEN" || market.enabled === true;
 }
 
+export const SETTLEMENT_BADGE_WINDOW_MS = 12_000;
+
+/** True only while a REAL settlement badge is inside its ~12s window (T7). */
+export function settlementBadgeVisible(station, nowMs = Date.now()) {
+  const badge = station?.badge;
+  if (!badge || badge.visible !== true) return false;
+  const settledAt = Number(badge.settledAt);
+  if (!Number.isFinite(settledAt) || settledAt <= 0) return false;
+  const ageMs = Number(nowMs) - settledAt;
+  return ageMs >= 0 && ageMs <= SETTLEMENT_BADGE_WINDOW_MS;
+}
+
 function marketBadge(market, active) {
-  if (!active) return { visible: false, tone: "NONE", color: null, text: "" };
-  const result = String(market?.settlementState?.lastResult ?? "").toUpperCase();
-  const profit = Number(market?.settlementState?.lastProfit);
-  if (!Number.isFinite(profit)) return { visible: false, tone: "NONE", color: null, text: "" };
-  if (result === "WIN") return { visible: true, tone: "POSITIVE", color: PALETTE_V3.green, text: `+R$ ${formatBRL(Math.abs(profit))}` };
-  if (result === "LOSS") return { visible: true, tone: "NEGATIVE", color: PALETTE_V3.red, text: `−R$ ${formatBRL(Math.abs(profit))}` };
-  if (result === "DRAW") return { visible: true, tone: "ZERO", color: PALETTE_V3.metal, text: "R$ 0,00" };
-  return { visible: false, tone: "NONE", color: null, text: "" };
+  if (!active) return { visible: false, tone: "NONE", color: null, text: "", settledAt: null };
+  const settlement = market?.settlementState && typeof market.settlementState === "object" ? market.settlementState : {};
+  const result = String(settlement.lastResult ?? "").toUpperCase();
+  const rawProfit = settlement.lastProfit;
+  const rawAt = settlement.lastAt;
+  const profit = rawProfit === null || rawProfit === undefined || rawProfit === "" ? Number.NaN : Number(rawProfit);
+  const settledAt = rawAt === null || rawAt === undefined || rawAt === "" ? Number.NaN : Number(rawAt);
+  // Real settlement only: brokerage result + real profit + real settlement
+  // timestamp. The badge is drawn for ~12s over the station after the REAL
+  // settlement and then the desk returns to the subtle animation (T7).
+  if (!["WIN", "LOSS", "DRAW"].includes(result) || !Number.isFinite(profit) || !Number.isFinite(settledAt) || settledAt <= 0) {
+    return { visible: false, tone: "NONE", color: null, text: "", settledAt: null };
+  }
+  if (result === "WIN") return { visible: true, tone: "POSITIVE", color: PALETTE_V3.green, text: `+R$ ${formatBRL(Math.abs(profit))}`, settledAt };
+  if (result === "LOSS") return { visible: true, tone: "NEGATIVE", color: PALETTE_V3.red, text: `−R$ ${formatBRL(Math.abs(profit))}`, settledAt };
+  return { visible: true, tone: "ZERO", color: PALETTE_V3.metal, text: "R$ 0,00", settledAt };
 }
 
 /* ------------------------------------------------------------------ *
@@ -318,9 +338,21 @@ export function buildWorldState(officeJson = {}) {
     reserved,
     allStations: stations.concat(reserved),
     board: dailyBoardModel(officeJson),
+    // Real TraceCom event log (runtime/audit stream) rendered in the top panel.
+    // Bounded by the page; the renderer only reads the last entries (T3/T9).
+    logs: Array.isArray(officeJson.logs) ? officeJson.logs.slice(-40) : [],
     amenities: buildAmenities(),
     lighting: buildLighting(),
   };
+}
+
+/** Bounded global log list for the top LOGS box (last N, never grows). */
+export const WORLD_LOG_LIMIT = 12;
+
+export function setWorldLogs(worldState, logs) {
+  if (!worldState) return worldState;
+  worldState.logs = Array.isArray(logs) ? logs.slice(-WORLD_LOG_LIMIT) : [];
+  return worldState;
 }
 
 export function stationPlaque(station) {
@@ -426,14 +458,17 @@ function pxRectLocal(ctx, x, y, w, h, color) {
 }
 
 function drawFloor(ctx) {
-  drawTile(ctx, "floor_tiles", 0, 0, WORLD_WIDTH, WORLD_HEIGHT, { size: 28 });
+  // T1: the floor exists only inside the real CONTENT window; everything else
+  // is the neutral void fill drawn by drawWorld, so the content is visually
+  // centered in the navigable area instead of pinned inside a larger gray slab.
+  drawTile(ctx, "floor_tiles", CONTENT_X, CONTENT_Y, CONTENT_WIDTH, CONTENT_HEIGHT, { size: 28 });
   // warm wood across the top social band and the bottom band, navy on the floor
-  drawTile(ctx, "floor_wood", CONTENT_X, 0, CONTENT_WIDTH, 362, { plankH: 18 });
-  drawTile(ctx, "floor_wood", CONTENT_X, 900, CONTENT_WIDTH, 124, { plankH: 18 });
-  warmOverlayLocal(ctx, 0, 0, WORLD_WIDTH, WORLD_HEIGHT, "#f0b429", 0.05);
-  warmOverlayLocal(ctx, 0, 362, WORLD_WIDTH, 900 - 362, "#0e2740", 0.24);
-  warmOverlayLocal(ctx, 0, 0, WORLD_WIDTH, 362, "#7a4a1e", 0.12);
-  warmOverlayLocal(ctx, 0, 900, WORLD_WIDTH, WORLD_HEIGHT - 900, "#7a4a1e", 0.16);
+  drawTile(ctx, "floor_wood", CONTENT_X, CONTENT_Y, CONTENT_WIDTH, 362, { plankH: 18 });
+  drawTile(ctx, "floor_wood", CONTENT_X, CONTENT_Y + 900, CONTENT_WIDTH, 124, { plankH: 18 });
+  warmOverlayLocal(ctx, CONTENT_X, CONTENT_Y, CONTENT_WIDTH, CONTENT_HEIGHT, "#f0b429", 0.05);
+  warmOverlayLocal(ctx, CONTENT_X, CONTENT_Y + 362, CONTENT_WIDTH, 900 - 362, "#0e2740", 0.24);
+  warmOverlayLocal(ctx, CONTENT_X, CONTENT_Y, CONTENT_WIDTH, 362, "#7a4a1e", 0.12);
+  warmOverlayLocal(ctx, CONTENT_X, CONTENT_Y + 900, CONTENT_WIDTH, CONTENT_HEIGHT - 900, "#7a4a1e", 0.16);
 }
 
 function warmOverlayLocal(ctx, x, y, w, h, color, alpha) {
@@ -445,34 +480,48 @@ function warmOverlayLocal(ctx, x, y, w, h, color, alpha) {
 }
 
 function drawWalls(ctx) {
-  drawTile(ctx, "wall_panel", 0, 0, WORLD_WIDTH, 44, { panelW: 56 });
-  drawTile(ctx, "wall_brick", 0, 900, WORLD_WIDTH, 16, {});
+  drawTile(ctx, "wall_panel", CONTENT_X, CONTENT_Y, CONTENT_WIDTH, 44, { panelW: 56 });
+  drawTile(ctx, "wall_brick", CONTENT_X, CONTENT_Y + 900, CONTENT_WIDTH, 16, {});
   for (let x = CONTENT_X + 40; x < CONTENT_X + CONTENT_WIDTH - 30; x += 280) {
-    drawSprite(ctx, "wall_sconce", x, 34, { pool: 40, alpha: 0.12 });
+    drawSprite(ctx, "wall_sconce", x, CONTENT_Y + 34, { pool: 40, alpha: 0.12 });
   }
 }
 
+/**
+ * Sector ribbon (T4). Drawn in the DYNAMIC pass AFTER the desks so the label is
+ * always in front of the office surface (never buried under a desk front), with
+ * a solid opaque panel, brighter text and a clip/scale guard so long labels do
+ * not overflow the band. Lifted above the desk row so it never covers monitors.
+ */
 function drawRibbon(ctx, row) {
-  const y = row.deskTop - 42;
+  const y = row.deskTop - 60;
   if (row.accent === "split") {
     const parts = SUB_BAND_BY_ROW[row.id] ?? [row.label];
     const leftCenter = (COLUMNS[0] + COLUMNS[4]) / 2;
     const rightCenter = (COLUMNS[5] + COLUMNS[COLUMN_COUNT - 1]) / 2;
-    drawRibbonAt(ctx, parts[0], leftCenter, y, PALETTE_V3.bandBlue, PALETTE_V3.bandBlueHi);
-    drawRibbonAt(ctx, parts[1] ?? parts[0], rightCenter, y, PALETTE_V3.bandGreen, PALETTE_V3.bandGreenHi);
+    const half = 5 * COLUMN_STEP - 16;
+    drawRibbonAt(ctx, parts[0], leftCenter, y, PALETTE_V3.bandBlue, PALETTE_V3.bandBlueHi, half);
+    drawRibbonAt(ctx, parts[1] ?? parts[0], rightCenter, y, PALETTE_V3.bandGreen, PALETTE_V3.bandGreenHi, half);
     return;
   }
-  drawRibbonAt(ctx, row.label, Math.round(WORLD_WIDTH / 2), y, PALETTE_V3.bandBlue, PALETTE_V3.bandBlueHi);
+  drawRibbonAt(ctx, row.label, Math.round(WORLD_WIDTH / 2), y, PALETTE_V3.bandBlue, PALETTE_V3.bandBlueHi, 0);
 }
 
-function drawRibbonAt(ctx, label, centerX, y, accent, accentHi) {
-  const w = Math.max(120, measurePixelText(label, 2, 1) + 30);
+function drawRibbonAt(ctx, label, centerX, y, accent, accentHi, maxWidth = 0) {
+  let scale = 2;
+  let textW = measurePixelText(label, scale, 1);
+  while (scale > 1 && (maxWidth > 0 ? textW + 30 > maxWidth : textW > WORLD_WIDTH - 80)) {
+    scale -= 1;
+    textW = measurePixelText(label, scale, 1);
+  }
+  const w = Math.max(120, textW + 30);
   const x = Math.round(centerX - w / 2);
-  pxRectLocal(ctx, x + 4, y + 4, w, 24, "rgba(0,0,0,0.35)");
-  pxRectLocal(ctx, x, y, w, 24, accent);
+  pxRectLocal(ctx, x + 4, y + 5, w, 26, "rgba(0,0,0,0.45)");
+  pxRectLocal(ctx, x, y, w, 26, accent);
   pxRectLocal(ctx, x, y, w, 2, accentHi);
-  pxRectLocal(ctx, x, y + 22, w, 2, "rgba(0,0,0,0.35)");
-  drawPixelText(ctx, label, x + w / 2, y + 6, { scale: 2, align: "center", color: PALETTE_V3.white, shadow: "rgba(0,0,0,0.5)" });
+  pxRectLocal(ctx, x, y + 24, w, 2, "rgba(0,0,0,0.4)");
+  pxRectLocal(ctx, x, y, 2, 26, "rgba(255,255,255,0.16)");
+  drawPixelText(ctx, label, x + w / 2, y + Math.round((26 - 7 * scale) / 2), { scale, align: "center", color: PALETTE_V3.white, shadow: "rgba(0,0,0,0.65)" });
 }
 
 function drawPanel(ctx, x, y, w, h, bg, border) {
@@ -628,15 +677,75 @@ function drawValueBox(ctx, x, y, w, h, title, value) {
   drawPixelText(ctx, safe, x + w / 2, empty ? y + 30 : y + 26, { scale: empty ? 1 : 2, align: "center", color: empty ? PALETTE_V3.metal : value.startsWith("−") || value.startsWith("-") ? PALETTE_V3.red : PALETTE_V3.green });
 }
 
+/**
+ * GLOBAL LOGS box (T3) — real TraceCom runtime/event stream only. Sits to the
+ * right of MERCADOS / LUCRO SEMANAL / LUCRO MENSAL, same top panel, and is
+ * redrawn every frame from the bounded `worldState.logs` list (the DOM never
+ * grows: the page keeps a fixed-size array). Format: HH:MM:SS ATIVO — evento.
+ */
+export function drawLogsBox(ctx, worldState) {
+  if (!ctx || !worldState) return;
+  const x = CONTENT_X + 840 + 170 + 10;
+  const y = 6;
+  const w = CONTENT_X + CONTENT_WIDTH - x - 8;
+  const h = 236;
+  drawPanel(ctx, x, y, w, h, "#0a1424", "#2a4a80");
+  pxRectLocal(ctx, x + 6, y + 6, w - 12, 22, PALETTE_V3.panelHeader);
+  drawPixelText(ctx, "LOGS", x + w / 2, y + 11, { scale: 2, align: "center", color: PALETTE_V3.white });
+  const logs = Array.isArray(worldState.logs) ? worldState.logs : [];
+  const maxLines = 11;
+  const visible = logs.slice(-maxLines);
+  const lineHeight = 19;
+  const startY = y + 36;
+  if (!visible.length) {
+    drawPixelText(ctx, "AGUARDANDO EVENTOS REAIS", x + w / 2, startY + 60, { scale: 1, align: "center", color: PALETTE_V3.metal });
+    return;
+  }
+  visible.forEach((entry, index) => {
+    const rowY = startY + index * lineHeight;
+    const time = String(entry?.time ?? entry?.at ?? "").slice(0, 8) || "--:--:--";
+    const asset = String(entry?.asset ?? entry?.marketKey ?? "SISTEMA").slice(0, 14);
+    const eventText = String(entry?.text ?? "");
+    drawPixelText(ctx, time, x + 10, rowY, { scale: 1, color: PALETTE_V3.metal });
+    drawPixelText(ctx, asset, x + 62, rowY, { scale: 1, color: PALETTE_V3.goldHi });
+    const prefixWidth = 62 + measurePixelText(asset, 1, 1) + 10;
+    drawPixelText(ctx, `— ${eventText}`, x + prefixWidth, rowY, { scale: 1, color: entry?.tone === "POSITIVE" ? PALETTE_V3.green : entry?.tone === "NEGATIVE" ? PALETTE_V3.red : PALETTE_V3.white });
+    if (index < visible.length - 1) pxRectLocal(ctx, x + 8, rowY + 13, w - 16, 1, "rgba(120,150,200,0.10)");
+  });
+}
+
 export const DESK_TOP_DEPTH = 18;
 export const DESK_SEAT_LINE = DESK_TOP_DEPTH + 7;
 
-function drawStation(ctx, station, showAgents = true) {
+/** Very subtle terminal activity: 2-3 pixels + a soft breathing glow (T6). */
+function drawTerminalActivity(ctx, station, timeMs) {
+  const cell = station.cell;
+  const desk = station.desk;
+  const cx = cell.centerX;
+  const phase = Number(timeMs) || 0;
+  const seed = Number(station.index) || 0;
+  const glow = 0.07 + 0.035 * (0.5 + 0.5 * Math.sin(phase / 620 + seed));
+  lightPoolLocal(ctx, cx, desk.y + 10, 54, PALETTE_V3.screenOn, glow);
+  const step = Math.floor(phase / 380);
+  for (let pixel = 0; pixel < 3; pixel += 1) {
+    const value = (step * 2654435761 + seed * 40503 + pixel * 97) >>> 0;
+    const px = cx - 15 + (value % 26);
+    const py = desk.y + 4 + ((value >>> 8) % 12);
+    const brightness = 0.35 + ((value >>> 16) % 4) * 0.12;
+    ctx.save();
+    ctx.globalAlpha = brightness;
+    pxRectLocal(ctx, px, py, 2, 2, (value >>> 20) % 3 === 0 ? PALETTE_V3.screenGreen : PALETTE_V3.screenOn);
+    ctx.restore();
+  }
+}
+
+function drawStation(ctx, station, showAgents = true, options = {}) {
   const cell = station.cell;
   const desk = station.desk;
   const cx = cell.centerX;
   const seatLine = desk.y + DESK_SEAT_LINE;
   const active = station.active === true;
+  const timeMs = Number(options.timeMs) || 0;
 
   drawCastShadow(ctx, desk.x, desk.y, desk.w, desk.h);
 
@@ -662,7 +771,7 @@ function drawStation(ctx, station, showAgents = true) {
     drawSprite(ctx, "monitor", cx - 17, desk.y + 2, { w: 34, h: 22 });
     drawSprite(ctx, "computer_tower", desk.x + 8, desk.y - 30, { w: 20, h: 34 });
     drawSprite(ctx, "keyboard", cx - 19, desk.y + 20, { w: 38, h: 10 });
-    lightPoolLocal(ctx, cx, desk.y + 10, 54, PALETTE_V3.screenOn, 0.1);
+    drawTerminalActivity(ctx, station, timeMs);
   } else if (station.reserved) {
     drawSprite(ctx, "keyboard", cx - 19, desk.y + 20, { w: 38, h: 10 });
   }
@@ -675,9 +784,13 @@ function drawStation(ctx, station, showAgents = true) {
     plaque: active || station.plaque.text ? station.plaque.text : null,
   });
 
-  if (station.badge?.visible) {
-    const color = station.badge.color ?? PALETTE_V3.metal;
-    drawPixelText(ctx, station.badge.text, cx, desk.y - 20, { scale: 2, align: "center", color, shadow: "rgba(0,0,0,0.7)" });
+  // Real settlement badge (T7): WIN/LOSS/DRAW over the station for ~12s after
+  // the brokerage settlement timestamp, then back to the subtle animation.
+  const badge = station.badge;
+  if (badge?.visible && settlementBadgeVisible(station, Date.now())) {
+    const color = badge.color ?? PALETTE_V3.metal;
+    const bob = Math.round(Math.sin(timeMs / 500) * 1);
+    drawPixelText(ctx, badge.text, cx, desk.y - 22 + bob, { scale: 2, align: "center", color, shadow: "rgba(0,0,0,0.7)" });
   }
 }
 
@@ -738,6 +851,7 @@ function drawAmenity(ctx, item) {
 export function drawWorld(ctx, worldState, camera = {}, options = {}) {
   if (!worldState) return;
   const showAgents = options.agents !== false;
+  const timeMs = Number(options.timeMs) || 0;
   const zoom = Math.min(4, Math.max(0.2, Number(camera?.zoom) || 1));
   const camX = Number(camera?.x) || 0;
   const camY = Number(camera?.y) || 0;
@@ -748,6 +862,11 @@ export function drawWorld(ctx, worldState, camera = {}, options = {}) {
   ctx.scale(zoom, zoom);
   ctx.translate(-Math.round(camX), -Math.round(camY));
 
+  // T1: when the viewport is centered on the real content and part of it falls
+  // outside the logical world, fill that area with the floor base color so the
+  // office is framed by a coherent surface instead of a black band.
+  pxRectLocal(ctx, view.x - 8, view.y - 8, view.w + 16, view.h + 16, PALETTE_V3.floor);
+
   const ground = ensureGroundLayer(worldState);
   if (ground) {
     blitGround(ctx, ground, view);
@@ -755,13 +874,15 @@ export function drawWorld(ctx, worldState, camera = {}, options = {}) {
     drawFloor(ctx);
     drawWalls(ctx);
     drawBackWallItems(ctx, worldState);
-    for (const row of BAND_ROWS) drawRibbon(ctx, row);
     const tiles = worldState.amenities.filter((item) => item.kind === "tile");
     for (const item of tiles) {
       renderStats.tilesDrawn += 1;
       drawAmenity(ctx, item);
     }
   }
+
+  // GLOBAL LOGS box (T3) — real events, always in front, redrawn each frame.
+  drawLogsBox(ctx, worldState);
 
   // objects sorted with the painter's algorithm (bottom edge, then x)
   const drawables = [];
@@ -786,9 +907,12 @@ export function drawWorld(ctx, worldState, camera = {}, options = {}) {
   }
   drawables.sort((a, b) => a.sortY - b.sortY || a.sortX - b.sortX);
   for (const entry of drawables) {
-    if (entry.type === "station") drawStation(ctx, entry.item, showAgents);
+    if (entry.type === "station") drawStation(ctx, entry.item, showAgents, { timeMs });
     else drawAmenity(ctx, entry.item);
   }
+
+  // T4: sector labels AFTER the desks — always in front of the surface.
+  for (const row of BAND_ROWS) drawRibbon(ctx, row);
 
   for (const pool of worldState.lighting) {
     if (!intersectsView(view, pool.x - pool.radius, pool.y - pool.radius, pool.radius * 2, pool.radius * 2, 0)) continue;
@@ -836,7 +960,6 @@ function buildGroundLayer(worldState) {
   drawFloor(context);
   drawWalls(context);
   drawBackWallItems(context, worldState);
-  for (const row of BAND_ROWS) drawRibbon(context, row);
   for (const item of worldState.amenities) if (item.kind === "tile") drawAmenity(context, item);
   return canvas;
 }

@@ -62,6 +62,7 @@ export function buildStakeConfigModel(market, office = null) {
     configuredText: configuredStake === null ? EMPTY : formatBRL(configuredStake),
     effectiveText: effectiveStake === null ? EMPTY : formatBRL(effectiveStake),
     source: configuredStake !== null ? "MERCADO" : defaultStake !== null ? "GLOBAL" : EMPTY,
+    scope: configuredStake !== null ? "OVERRIDE INDIVIDUAL" : "GLOBAL",
     enabled: m.enabled === true,
   };
 }
@@ -119,7 +120,7 @@ export function mountStakeConfig(rootEl, market, office = null, options = {}) {
   const head = el(doc, "div", "tc-stake-config-head");
   head.append(
     el(doc, "h4", "tc-stake-config-title", "STAKE DESTE MERCADO"),
-    el(doc, "span", "tc-stake-config-source", model.source),
+    el(doc, "span", "tc-stake-config-source", model.scope),
   );
 
   const row = el(doc, "div", "tc-stake-config-row");
