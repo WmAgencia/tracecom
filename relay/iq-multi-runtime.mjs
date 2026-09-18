@@ -58,6 +58,7 @@ function emptyDailyStats() { return { wins: 0, losses: 0, draws: 0, settledPnl: 
 
 export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
+  #dbProbeAt = null;
 
   constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null } = {}) {
     super();
@@ -100,6 +101,13 @@ export class IqMultiRuntime extends EventEmitter {
     this.metrics = { messages: 0, candles: 0, reorder: 0, duplicates: 0, rejected: 0, startedAt: null, cpuBase: process.cpuUsage(), reconnects: 0 };
     this.reconcile = { lastRunAt: null, checked: 0, settled: 0, unknown: 0, error: null };
     this.configLoaded = false;
+    this.persistence = {
+      lastSuccessAt: null, lastFailureAt: null, lastError: null, consecutiveFailures: 0, readOnlyDetectedAt: null,
+      auditAttempts: 0, auditFailures: 0, auditLastOkAt: null, auditLastErrorAt: null, auditLastError: null,
+      configLastOkAt: null, configLastErrorAt: null, configLastError: null,
+      marketLastOkAt: null, marketLastErrorAt: null, marketLastError: null,
+      executionLastOkAt: null, executionLastErrorAt: null, executionLastError: null,
+    };
     this.availabilityTimer = null;
     this.equityCurveCache = []; this.equityRefreshedAt = 0;
     this.lastTickEmit = new Map();
@@ -900,7 +908,13 @@ export class IqMultiRuntime extends EventEmitter {
     const record = { correlationId, marketKey, stage, detail, at: this.now() };
     this.audit.push(record);
     if (this.audit.length > 800) this.audit.splice(0, this.audit.length - 800);
-    if (persist) void (async () => { try { if (!await this.#ensureDb()) return; await this.pool.query("INSERT INTO iq_audit_trail(correlation_id,market_key,stage,detail) VALUES($1,$2,$3,$4::jsonb)", [correlationId, marketKey, stage, JSON.stringify(detail)]); } catch { /* best effort */ } })();
+    if (persist) void (async () => {
+      try {
+        if (!await this.#ensureDb()) { this.#recordPersistResult("audit", false, { code: "DB_UNAVAILABLE", message: "audit persistence unavailable (db not ready)" }); return; }
+        await this.pool.query("INSERT INTO iq_audit_trail(correlation_id,market_key,stage,detail) VALUES($1,$2,$3,$4::jsonb)", [correlationId, marketKey, stage, JSON.stringify(detail)]);
+        this.#recordPersistResult("audit", true);
+      } catch (error) { this.#recordPersistResult("audit", false, error); }
+    })();
     return record;
   }
 
@@ -1165,6 +1179,7 @@ export class IqMultiRuntime extends EventEmitter {
     }
     return {
       version: "broker-audit-v1", at: this.now(), live, probeError,
+      persistence: this.persistenceHealth(),
       connected: this.session.connected, timeValid: this.session.timeValid, host: this.session.host,
       resolver: this.resolver.status(), evidence,
       openOptions: { count: openOptions.length, byActive: openOptionsByActive, sample: openOptions.slice(0, 12) },
@@ -1549,16 +1564,111 @@ export class IqMultiRuntime extends EventEmitter {
 
   /* ------------------------------- persistencia ------------------------------- */
 
-  async #ensureDb() {
-    if (!this.pool) return false;
-    if (this.dbReady !== undefined) return this.dbReady;
-    try { const result = await this.pool.query("SELECT to_regclass('public.iq_executions') AS table_name"); this.dbReady = Boolean(result.rows[0]?.table_name); } catch { this.dbReady = false; }
+  async #ensureDb(table = "iq_executions") {
+    if (!this.pool) { this.dbReady = false; return false; }
+    if (this.dbReady === true) return true;
+    if (this.#dbProbeAt !== null && this.now() - this.#dbProbeAt < 10_000) return this.dbReady === true;
+    this.#dbProbeAt = this.now();
+    try {
+      const result = await this.pool.query("SELECT to_regclass($1) AS table_name, current_setting('transaction_read_only') AS read_only", [`public.${table}`]);
+      this.dbReady = Boolean(result.rows?.[0]?.table_name);
+      if (String(result.rows?.[0]?.read_only ?? "").toLowerCase() === "on") this.#markReadOnly();
+    } catch { this.dbReady = false; }
     return this.dbReady;
+  }
+
+  #markReadOnly() {
+    if (this.persistence.readOnlyDetectedAt === null) this.persistence.readOnlyDetectedAt = this.now();
+  }
+
+  #recordPersistResult(kind, ok, error = null) {
+    const p = this.persistence;
+    const at = this.now();
+    if (ok === true) {
+      p.lastSuccessAt = at;
+      p.consecutiveFailures = 0;
+      p.lastError = null;
+      p.readOnlyDetectedAt = null;
+      if (kind === "audit") { p.auditAttempts += 1; p.auditLastOkAt = at; }
+      else if (kind === "config") p.configLastOkAt = at;
+      else if (kind === "market") p.marketLastOkAt = at;
+      else if (kind === "execution") p.executionLastOkAt = at;
+      return;
+    }
+    const message = String(error?.message ?? error ?? "PERSIST_FAILED").slice(0, 200);
+    const code = error?.code ?? null;
+    p.consecutiveFailures = Number(p.consecutiveFailures || 0) + 1;
+    p.lastFailureAt = at;
+    p.lastError = { kind, code, message, at };
+    if (kind === "audit") { p.auditAttempts += 1; p.auditFailures += 1; p.auditLastErrorAt = at; p.auditLastError = p.lastError; }
+    else if (kind === "config") { p.configLastErrorAt = at; p.configLastError = p.lastError; }
+    else if (kind === "market") { p.marketLastErrorAt = at; p.marketLastError = p.lastError; }
+    else if (kind === "execution") { p.executionLastErrorAt = at; p.executionLastError = p.lastError; }
+    if (code === "25006" || /read-only transaction/i.test(message)) this.#markReadOnly();
+  }
+
+  /** Saude operacional da persistencia: nunca HEALTHY enquanto o audit nao persiste (DB read-only tolerado para disponibilidade). */
+  persistenceHealth() {
+    const p = this.persistence;
+    const hasPool = Boolean(this.pool);
+    const dbReady = this.dbReady === true;
+    const readOnly = p.readOnlyDetectedAt !== null;
+    const auditFailing = p.auditFailures > 0 && (p.auditLastOkAt === null || p.auditLastOkAt < (p.auditLastErrorAt ?? 0));
+    const writeFailing = p.consecutiveFailures > 0 && !auditFailing;
+    const wroteSomething = p.lastSuccessAt !== null || p.auditLastOkAt !== null || p.configLastOkAt !== null || p.marketLastOkAt !== null;
+    let state = "HEALTHY";
+    if (!hasPool || !dbReady || readOnly) state = "UNAVAILABLE";
+    else if (auditFailing || writeFailing) state = "DEGRADED";
+    else if (!wroteSomething) state = "UNKNOWN";
+    const alerts = [];
+    if (state === "UNAVAILABLE") alerts.push("PERSISTENCE_UNAVAILABLE");
+    if (state === "DEGRADED" || readOnly) alerts.push("DB_DEGRADED");
+    return {
+      ok: state === "HEALTHY",
+      state,
+      alerts,
+      dbReady: this.dbReady ?? null,
+      readOnly,
+      auditPersisting: !(readOnly || auditFailing),
+      lastSuccessAt: p.lastSuccessAt,
+      lastFailureAt: p.lastFailureAt,
+      consecutiveFailures: p.consecutiveFailures,
+      lastError: p.lastError,
+      audit: { attempts: p.auditAttempts, failures: p.auditFailures, lastOkAt: p.auditLastOkAt, lastErrorAt: p.auditLastErrorAt, lastError: p.auditLastError },
+      config: { lastOkAt: p.configLastOkAt, lastErrorAt: p.configLastErrorAt, lastError: p.configLastError },
+      market: { lastOkAt: p.marketLastOkAt, lastErrorAt: p.marketLastErrorAt, lastError: p.marketLastError },
+    };
+  }
+
+  /** Probe explicito de persistencia do audit trail (escrita 1 linha + leitura de volta). Usado apenas manualmente/pos-espaco. */
+  async persistProbe({ marketKey = null, detail = {} } = {}) {
+    if (!this.pool) return { ok: false, persisted: false, error: "NO_POOL", health: this.persistenceHealth() };
+    if (!await this.#ensureDb()) return { ok: false, persisted: false, error: "DB_UNAVAILABLE", health: this.persistenceHealth() };
+    const correlationId = `persistence_probe_${this.now()}`;
+    const at = new Date(this.now()).toISOString();
+    try {
+      const inserted = await this.pool.query(
+        "INSERT INTO iq_audit_trail(correlation_id, market_key, stage, detail) VALUES($1,$2,$3,$4::jsonb) RETURNING id, created_at",
+        [correlationId, marketKey, "PERSISTENCE_PROBE", JSON.stringify({ probe: true, at, ...detail })],
+      );
+      const id = Number(inserted.rows?.[0]?.id) || null;
+      this.#recordPersistResult("audit", true);
+      if (id === null) return { ok: true, persisted: true, readBackOk: false, insertedId: null, correlationId, error: "NO_ID_RETURNED", health: this.persistenceHealth() };
+      try {
+        const readBack = (await this.pool.query("SELECT id, correlation_id, market_key, stage, detail, created_at FROM iq_audit_trail WHERE id=$1", [id])).rows?.[0] ?? null;
+        return { ok: true, persisted: true, readBackOk: Boolean(readBack), insertedId: id, correlationId, readBack, health: this.persistenceHealth() };
+      } catch (error) {
+        return { ok: true, persisted: true, readBackOk: false, insertedId: id, correlationId, error: String(error?.message ?? error).slice(0, 160), health: this.persistenceHealth() };
+      }
+    } catch (error) {
+      this.#recordPersistResult("audit", false, error);
+      return { ok: false, persisted: false, error: String(error?.message ?? error).slice(0, 200), code: error?.code ?? null, correlationId, health: this.persistenceHealth() };
+    }
   }
 
   async #persistExecution(row) {
     try {
-      if (!await this.#ensureDb()) return false;
+      if (!await this.#ensureDb()) { this.#recordPersistResult("execution", false, { code: "DB_UNAVAILABLE", message: "execution persistence unavailable (db not ready)" }); return false; }
       const updated = await this.pool.query(
         `UPDATE iq_executions SET idempotency_key=COALESCE($2,idempotency_key), decision_id=COALESCE($3,decision_id), market_key=COALESCE($4,market_key), mode=COALESCE($5,mode), connection_id=COALESCE($6,connection_id), account_type=COALESCE($7,account_type), broker_order_id=COALESCE($8,broker_order_id), symbol=COALESCE($9,symbol), active_id=COALESCE($10,active_id), direction=COALESCE($11,direction), stake=COALESCE($12,stake), currency=COALESCE($13,currency), state=$14, request_id=COALESCE($15,request_id), expiration_at=COALESCE($16,expiration_at), entry_price=COALESCE($17,entry_price), acked_at=COALESCE($18,acked_at), settled_at=COALESCE($19,settled_at), broker_result=COALESCE($20,broker_result), causal_result=COALESCE($21,causal_result), settlement_mismatch=($22 OR settlement_mismatch), profit=COALESCE($23,profit), error=COALESCE($24,error), payout=COALESCE($25,payout), option_kind=COALESCE($26,option_kind), meta=COALESCE(iq_executions.meta,'{}'::jsonb) || COALESCE($27::jsonb,'{}'::jsonb), updated_at=now() WHERE execution_id=$1`,
         [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.marketKey ?? null, row.mode ?? null, row.connectionId ?? null, row.accountType ?? null, row.brokerOrderId ?? null, row.symbol ?? null, row.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, row.payout ?? null, row.optionKind ?? null, row.meta ? JSON.stringify(row.meta) : null],
@@ -1570,8 +1680,9 @@ export class IqMultiRuntime extends EventEmitter {
           [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.marketKey ?? null, row.mode ?? "PRACTICE", row.connectionId ?? null, row.accountType ?? "PRACTICE", row.brokerOrderId ?? null, row.symbol ?? null, row.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, row.payout ?? null, row.optionKind ?? null, row.meta ? JSON.stringify(row.meta) : JSON.stringify({})],
         );
       }
+      this.#recordPersistResult("execution", true);
       return true;
-    } catch (error) { this.#safe(() => this.log("IQ_MULTI_PERSIST_FAILED", String(error?.message ?? error).slice(0, 160))); return false; }
+    } catch (error) { this.#safe(() => this.log("IQ_MULTI_PERSIST_FAILED", String(error?.message ?? error).slice(0, 160))); this.#recordPersistResult("execution", false, error); return false; }
   }
 
   async recentExecutions(limit = 50, marketKeyFilter = null) {
@@ -1586,20 +1697,24 @@ export class IqMultiRuntime extends EventEmitter {
 
   async #persistMarket(ctx) {
     try {
-      if (!this.pool || !await this.#ensureDb()) return false;
+      if (!this.pool) return false;
+      if (!await this.#ensureDb()) { this.#recordPersistResult("market", false, { code: "DB_UNAVAILABLE", message: "market persistence unavailable (db not ready)" }); return false; }
       await this.pool.query("INSERT INTO iq_markets(market_key,symbol,display,market_type,canonical,enabled,paused,max_stake,configured_stake,strategy,strategy_variant_id,revision,active_id,instrument_types,availability,payout,payout_source,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15,$16,$17,now()) ON CONFLICT(market_key) DO UPDATE SET enabled=EXCLUDED.enabled, paused=EXCLUDED.paused, max_stake=EXCLUDED.max_stake, configured_stake=EXCLUDED.configured_stake, strategy=EXCLUDED.strategy, strategy_variant_id=EXCLUDED.strategy_variant_id, revision=EXCLUDED.revision, active_id=EXCLUDED.active_id, instrument_types=EXCLUDED.instrument_types, availability=EXCLUDED.availability, payout=EXCLUDED.payout, payout_source=EXCLUDED.payout_source, updated_at=now()",
         [ctx.marketKey, ctx.symbol, ctx.display, ctx.marketType, ctx.canonical, ctx.enabled, ctx.paused, ctx.maxStake, ctx.configuredStake, ctx.strategy, ctx.strategyVariantId, Number(ctx.revision || 0), ctx.activeId, JSON.stringify(ctx.instrumentTypes ?? []), ctx.availability, ctx.payout, ctx.payoutSource]);
+      this.#recordPersistResult("market", true);
       return true;
-    } catch (error) { this.#safe(() => this.log("IQ_MULTI_MARKET_PERSIST_FAILED", String(error?.message ?? error).slice(0, 120))); return false; }
+    } catch (error) { this.#safe(() => this.log("IQ_MULTI_MARKET_PERSIST_FAILED", String(error?.message ?? error).slice(0, 120))); this.#recordPersistResult("market", false, error); return false; }
   }
 
   async #persistConfig() {
     try {
-      if (!this.pool || !await this.#ensureDb("iq_runtime_config")) return false;
+      if (!this.pool) return false;
+      if (!await this.#ensureDb("iq_runtime_config")) { this.#recordPersistResult("config", false, { code: "DB_UNAVAILABLE", message: "runtime config persistence unavailable (db not ready)" }); return false; }
       await this.pool.query("INSERT INTO iq_runtime_config(id,mode,global_max_stake,default_stake,calculated_bankroll_stake,auto_execute,selection_json,resolver_json,research_json,supervisor_json,apprentice_json,hypotheses_json,jit_enabled,entry_lead_ms,entry_window_max_drift_ms,quality_gate_enabled,min_trade_quality_score,revision,updated_at) VALUES(1,$1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9::jsonb,$10::jsonb,$11::jsonb,$12,$13,$14,$15,$16,$17,now()) ON CONFLICT(id) DO UPDATE SET mode=EXCLUDED.mode, global_max_stake=EXCLUDED.global_max_stake, default_stake=EXCLUDED.default_stake, calculated_bankroll_stake=EXCLUDED.calculated_bankroll_stake, auto_execute=EXCLUDED.auto_execute, selection_json=EXCLUDED.selection_json, resolver_json=EXCLUDED.resolver_json, research_json=EXCLUDED.research_json, supervisor_json=EXCLUDED.supervisor_json, apprentice_json=EXCLUDED.apprentice_json, hypotheses_json=EXCLUDED.hypotheses_json, jit_enabled=EXCLUDED.jit_enabled, entry_lead_ms=EXCLUDED.entry_lead_ms, entry_window_max_drift_ms=EXCLUDED.entry_window_max_drift_ms, quality_gate_enabled=EXCLUDED.quality_gate_enabled, min_trade_quality_score=EXCLUDED.min_trade_quality_score, revision=EXCLUDED.revision, updated_at=now()",
         [this.config.mode, this.config.globalMaxStake, this.config.defaultStake, this.config.calculatedBankrollStake, this.config.autoExecute, JSON.stringify({ legacy: "LEGACY_STRATEGY_AUDIT", brainGeneration: BRAIN_GENERATION }), JSON.stringify(this.resolver.toJSON()), JSON.stringify({ ...this.research.toJSON(), entryTiming: this.jit.toJSON() }), JSON.stringify(this.supervisor.toJSON()), JSON.stringify(this.apprentice.toJSON()), JSON.stringify({ items: this.hypotheses.list() }), this.config.jitEnabled === true, this.config.entryLeadMs, this.#entryMaxDriftMs(), this.config.qualityGateEnabled === true, this.#minTradeQualityScore(), Number(this.config.revision || 0)]);
+      this.#recordPersistResult("config", true);
       return true;
-    } catch (error) { this.#safe(() => this.log("IQ_MULTI_CONFIG_PERSIST_FAILED", String(error?.message ?? error).slice(0, 120))); return false; }
+    } catch (error) { this.#safe(() => this.log("IQ_MULTI_CONFIG_PERSIST_FAILED", String(error?.message ?? error).slice(0, 120))); this.#recordPersistResult("config", false, error); return false; }
   }
 
   async #loadPersistedConfig() {
@@ -1731,6 +1846,7 @@ export class IqMultiRuntime extends EventEmitter {
       version: RUNTIME_VERSION, at: this.now(), serverTime: this.session.serverTimeMs,
       connection: { ...this.session, reconnects: this.reconnects, healthy: this.connectionHealth().healthy },
       mode: this.config.mode, modeState: this.modeState(),
+      health: this.persistenceHealth(),
       config: { globalMaxStake: this.config.globalMaxStake, defaultStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, hardCap: this.config.hardCap, maxActiveMarkets: this.config.maxActiveMarkets, autoExecute: this.config.autoExecute, revision: this.config.revision, brainGeneration: BRAIN_GENERATION, jitEnabled: this.config.jitEnabled === true, entryLeadMs: this.config.entryLeadMs, entryWindowMaxDriftMs: this.#entryMaxDriftMs(), qualityGateEnabled: this.config.qualityGateEnabled === true, minTradeQualityScore: this.#minTradeQualityScore() },
       activeCount: this.activeMarketKeys().length, activeLimit: this.config.maxActiveMarkets, universeCount: this.markets.size,
       portfolio: { ...portfolio, equityCurve: this.equityCurveCache ?? [] },

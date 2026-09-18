@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-18T13:18:50.217Z",
-  "startedAt": 1789737530217,
+  "generatedAt": "2026-09-18T13:54:07.985Z",
+  "startedAt": 1789739647985,
   "endpoints": {
     "office": "https://tracecom.consecom.com.br/api/iq/office",
     "status": "https://tracecom.consecom.com.br/api/iq/status",
@@ -10,10 +10,10 @@
     "status": 200,
     "ok": true,
     "error": null,
-    "latencyMs": 561
+    "latencyMs": 792
   },
   "sessionExpectation": {
-    "utc": "2026-09-18T13:18:50.217Z",
+    "utc": "2026-09-18T13:54:07.985Z",
     "weekday": true,
     "weekend": false,
     "fxNormalExpectedOpen": true,
@@ -21,10 +21,18 @@
     "note": "OTC pairs trade 24/7; FX NORMAL trades Sun 21:00 UTC - Fri 21:00 UTC. US cash equities 13:30-20:00 UTC weekdays."
   },
   "tracecomCounts": {
-    "SUSPENDED": 35,
-    "NOT_OFFERED": 20
+    "OPEN": 26,
+    "NOT_OFFERED": 1,
+    "SUSPENDED": 28
   },
   "mcpOpenKeys": [
+    "SP500ETF:NORMAL",
+    "ISHARESRUSSELL2000ETF:NORMAL",
+    "GOLDMINERSETF:NORMAL",
+    "TECHNOLOGYSPDR:NORMAL",
+    "ULTRAPROSHORTQQQ:NORMAL",
+    "SEMICONDUCTORETF:NORMAL",
+    "DOWJONESINDUSTRIALAVERAGEETF:NORMAL",
     "USDZAR:OTC",
     "USDSGD:OTC",
     "USDHKD:OTC",
@@ -58,6 +66,7 @@
     "GBPCAD:NORMAL",
     "AUDNZD:NORMAL",
     "EURNZD:NORMAL",
+    "MCDONALDSCORPORATION:NORMAL",
     "XAUUSD:NORMAL",
     "XAGUSD:NORMAL",
     "CRUDEOILWTI:NORMAL",
@@ -130,6 +139,11 @@
     "OPENAI:OTC",
     "MAGNIFICENT7:NORMAL",
     "EURTHB:NORMAL",
+    "ENERGYSPDR:NORMAL",
+    "UTILITIESSPDR:NORMAL",
+    "CONSUMERDISCRETIONARYSPDR:NORMAL",
+    "20YEARTREASURYBONDETF:NORMAL",
+    "ULTRASHORTSP500:NORMAL",
     "CADCHF:NORMAL",
     "CADJPY:NORMAL",
     "CHFJPY:NORMAL",
@@ -138,15 +152,29 @@
     "EURCHF:NORMAL",
     "USDCAD:NORMAL",
     "NZDJPY:NORMAL",
+    "USDBRL:NORMAL",
     "GBPCHF:NORMAL",
+    "CISCO:NORMAL",
+    "CITI:NORMAL",
     "TESLA:NORMAL",
+    "MORSTAN:NORMAL",
+    "ALIBABA:NORMAL",
     "AMAZON:NORMAL",
     "APPLEINC:NORMAL",
+    "BAIDU:NORMAL",
     "BITCOIN:NORMAL",
     "ETHEREUM:NORMAL",
+    "RIPPLE:NORMAL",
+    "COCACOLACOMPANY:NORMAL",
     "MICROSOFTCORPORATION:NORMAL",
+    "NIKE:NORMAL",
     "META:NORMAL",
     "ALPHABETINC:NORMAL",
+    "GS:NORMAL",
+    "INTELCORPORATION:NORMAL",
+    "JPM:NORMAL",
+    "AIG:NORMAL",
+    "ISHARESBITCOINTRUSTIBIT:NORMAL",
     "DOLLARINDEX:NORMAL",
     "YENINDEX:NORMAL",
     "EUROINDEX:NORMAL",
@@ -154,17 +182,18 @@
     "CANADIANDOLLARINDEX:NORMAL",
     "AUSTRALIANDOLLARINDEX:NORMAL",
     "NVIDIA:NORMAL",
-    "RIPPLE:NORMAL",
+    "BROADCOMLIMITED:NORMAL",
     "DOGECOIN:OTC",
     "VISA:OTC",
+    "AIPOWERDATACENTER:NORMAL",
+    "AIUSSEMICONDUCTORS:NORMAL",
     "AIEUROPE:NORMAL",
     "LUXURY:NORMAL"
   ],
   "counts": {
-    "CONFLICT": 16,
-    "SESSION_DATA_STALE": 10,
-    "NOT_OFFERED_FOR_PRODUCT": 10,
-    "BROKER_CONFIRMED_CLOSED/SUSPENDED": 19
+    "BROKER_CONFIRMED_OPEN": 26,
+    "NOT_OFFERED_FOR_PRODUCT": 1,
+    "BROKER_CONFIRMED_CLOSED/SUSPENDED": 28
   },
   "matched": 26,
   "unmatched": [
@@ -199,204 +228,19 @@
     "BTCUSD:OTC"
   ],
   "totalMarkets": 55,
-  "freshTickMarkets": 25,
-  "wsCatalogAnomaly": true,
+  "freshTickMarkets": 37,
+  "wsCatalogAnomaly": false,
   "sameAssetIdContradictions": [
     {
-      "marketKey": "EURUSD:NORMAL",
+      "marketKey": "USDBRL:OTC",
       "sharedAssetIds": [
-        1861
+        2298
       ],
       "wsSuspendedIds": [
-        1,
-        1861
+        2298
       ],
       "mcpOpenIds": [
-        1861,
-        1861,
-        1861
-      ]
-    },
-    {
-      "marketKey": "USDCAD:NORMAL",
-      "sharedAssetIds": [
-        1878
-      ],
-      "wsSuspendedIds": [
-        100,
-        1878
-      ],
-      "mcpOpenIds": [
-        1878,
-        1878
-      ]
-    },
-    {
-      "marketKey": "EURNZD:OTC",
-      "sharedAssetIds": [
-        2122
-      ],
-      "wsSuspendedIds": [
-        2122
-      ],
-      "mcpOpenIds": [
-        2122,
-        2122,
-        2122
-      ]
-    },
-    {
-      "marketKey": "USDTRY:OTC",
-      "sharedAssetIds": [
-        2124
-      ],
-      "wsSuspendedIds": [
-        2124
-      ],
-      "mcpOpenIds": [
-        2124,
-        2124,
-        2124
-      ]
-    },
-    {
-      "marketKey": "USDZAR:OTC",
-      "sharedAssetIds": [
-        1380
-      ],
-      "wsSuspendedIds": [
-        1380
-      ],
-      "mcpOpenIds": [
-        1380,
-        1380,
-        1380
-      ]
-    },
-    {
-      "marketKey": "XAGUSD:NORMAL",
-      "sharedAssetIds": [
-        1913
-      ],
-      "wsSuspendedIds": [
-        1913
-      ],
-      "mcpOpenIds": [
-        1913,
-        1913,
-        1913
-      ]
-    },
-    {
-      "marketKey": "US30:NORMAL",
-      "sharedAssetIds": [
-        1472
-      ],
-      "wsSuspendedIds": [
-        1472
-      ],
-      "mcpOpenIds": [
-        1472,
-        1472,
-        1472
-      ]
-    },
-    {
-      "marketKey": "US100:NORMAL",
-      "sharedAssetIds": [
-        1471
-      ],
-      "wsSuspendedIds": [
-        1471
-      ],
-      "mcpOpenIds": [
-        1471,
-        1471,
-        1471
-      ]
-    },
-    {
-      "marketKey": "US500:NORMAL",
-      "sharedAssetIds": [
-        1470
-      ],
-      "wsSuspendedIds": [
-        1470
-      ],
-      "mcpOpenIds": [
-        1470,
-        1470,
-        1470
-      ]
-    },
-    {
-      "marketKey": "US2000:NORMAL",
-      "sharedAssetIds": [
-        1473
-      ],
-      "wsSuspendedIds": [
-        1473
-      ],
-      "mcpOpenIds": [
-        1473,
-        1473,
-        1473
-      ]
-    },
-    {
-      "marketKey": "GER30:NORMAL",
-      "sharedAssetIds": [
-        1478
-      ],
-      "wsSuspendedIds": [
-        1478
-      ],
-      "mcpOpenIds": [
-        1478,
-        1478,
-        1478
-      ]
-    },
-    {
-      "marketKey": "UK100:NORMAL",
-      "sharedAssetIds": [
-        1475
-      ],
-      "wsSuspendedIds": [
-        1475
-      ],
-      "mcpOpenIds": [
-        1475,
-        1475,
-        1475
-      ]
-    },
-    {
-      "marketKey": "JP225:NORMAL",
-      "sharedAssetIds": [
-        1476
-      ],
-      "wsSuspendedIds": [
-        1476
-      ],
-      "mcpOpenIds": [
-        1476,
-        1476,
-        1476
-      ]
-    },
-    {
-      "marketKey": "AUS200:NORMAL",
-      "sharedAssetIds": [
-        1481
-      ],
-      "wsSuspendedIds": [
-        1481
-      ],
-      "mcpOpenIds": [
-        1481,
-        1481,
-        1481
+        2298
       ]
     },
     {
@@ -410,60 +254,46 @@
       "mcpOpenIds": [
         1477
       ]
-    },
-    {
-      "marketKey": "FR40:NORMAL",
-      "sharedAssetIds": [
-        1479
-      ],
-      "wsSuspendedIds": [
-        1479
-      ],
-      "mcpOpenIds": [
-        1479,
-        1479,
-        1479
-      ]
     }
   ],
   "mcpFreshness": {
-    "turboProfitPresent": 112,
-    "binaryProfitPresent": 126,
+    "turboProfitPresent": 120,
+    "binaryProfitPresent": 153,
     "matchedExpirationsFuture": 26,
     "matchedExpirationsFutureTotal": 26,
     "digitalInstrumentsGeneratedAt": [
-      "2026-09-18T13:17:05Z",
-      "2026-09-18T13:17:05Z",
-      "2026-09-18T13:17:05Z",
-      "2026-09-18T13:17:05Z"
+      "2026-09-18T13:49:05Z",
+      "2026-09-18T13:49:05Z",
+      "2026-09-18T13:49:05Z",
+      "2026-09-18T13:49:05Z"
     ],
     "digitalInstrumentsExpiration": [
-      "2026-09-18T13:19:00Z",
-      "2026-09-18T13:19:00Z",
-      "2026-09-18T13:19:00Z",
-      "2026-09-18T13:19:00Z"
+      "2026-09-18T13:55:00Z",
+      "2026-09-18T13:55:00Z",
+      "2026-09-18T13:55:00Z",
+      "2026-09-18T13:55:00Z"
     ]
   },
   "critic": [
     {
       "question": "Is it genuinely market-closed (weekend/holiday/session hours)?",
       "verdict": "REFUTED",
-      "evidence": "UTC 2026-09-18T13:18:50.217Z; weekday=true; FX NORMAL expected open=true; OTC 24/7 expected open. MCP confirms open with future expirations."
+      "evidence": "UTC 2026-09-18T13:54:07.985Z; weekday=true; FX NORMAL expected open=true; OTC 24/7 expected open. MCP confirms open with future expirations."
     },
     {
       "question": "Is it product-specific (Turbo vs Binary vs Digital)?",
       "verdict": "REFUTED",
-      "evidence": "Turbo 112/112 open, Binary 126/126 open, Digital 126/126 open — all three products report the same markets open."
+      "evidence": "Turbo 120/120 open, Binary 153/153 open, Digital 138/138 open — all three products report the same markets open."
     },
     {
       "question": "Is it NORMAL vs OTC specific?",
-      "verdict": "BOTH",
-      "evidence": "CONFLICTs: NORMAL=13, OTC=3. OTC major pairs (EURUSD/GBPUSD/USDJPY/AUDUSD/USDCAD) are absent from the MCP catalog (withdrawn during NORMAL hours) so TraceCom NOT_OFFERED is consistent there; OTC exotics (EURNZD, USDTRY, USDZAR) are MCP-open while TraceCom suspends."
+      "verdict": "OTC_ONLY",
+      "evidence": "CONFLICTs: NORMAL=0, OTC=0. OTC major pairs (EURUSD/GBPUSD/USDJPY/AUDUSD/USDCAD) are absent from the MCP catalog (withdrawn during NORMAL hours) so TraceCom NOT_OFFERED is consistent there; OTC exotics (EURNZD, USDTRY, USDZAR) are MCP-open while TraceCom suspends."
     },
     {
       "question": "Could the MCP itself be stale/cached?",
       "verdict": "REFUTED",
-      "evidence": "Digital get_instruments generated_at=2026-09-18T13:17:05Z,2026-09-18T13:17:05Z,2026-09-18T13:17:05Z,2026-09-18T13:17:05Z with future expiration 2026-09-18T13:19:00Z,2026-09-18T13:19:00Z,2026-09-18T13:19:00Z,2026-09-18T13:19:00Z; turbo/binary expirations are all in the future and profit_percent is present."
+      "evidence": "Digital get_instruments generated_at=2026-09-18T13:49:05Z,2026-09-18T13:49:05Z,2026-09-18T13:49:05Z,2026-09-18T13:49:05Z with future expiration 2026-09-18T13:55:00Z,2026-09-18T13:55:00Z,2026-09-18T13:55:00Z,2026-09-18T13:55:00Z; turbo/binary expirations are all in the future and profit_percent is present."
     },
     {
       "question": "Is TraceCom's NOT_OFFERED list consistent with the MCP catalog (genuinely absent) or a resolver artifact?",
@@ -473,81 +303,81 @@
     {
       "question": "Do any markets share the SAME IQ asset_id with opposite flags (open vs suspended)?",
       "verdict": "CONFIRMED",
-      "evidence": "16 market(s): EURUSD:NORMAL=[1861]; USDCAD:NORMAL=[1878]; EURNZD:OTC=[2122]; USDTRY:OTC=[2124]; USDZAR:OTC=[1380]; XAGUSD:NORMAL=[1913]; US30:NORMAL=[1472]; US100:NORMAL=[1471]; US500:NORMAL=[1470]; US2000:NORMAL=[1473]; GER30:NORMAL=[1478]; UK100:NORMAL=[1475]; JP225:NORMAL=[1476]; AUS200:NORMAL=[1481]; HK33:NORMAL=[1477]; FR40:NORMAL=[1479]"
+      "evidence": "2 market(s): USDBRL:OTC=[2298]; HK33:NORMAL=[1477]"
     },
     {
       "question": "How many markets disagree (MCP open vs TraceCom non-open)?",
       "verdict": "COUNTED",
-      "evidence": "26 of 55 markets; unmatched to MCP: 29."
+      "evidence": "0 of 55 markets; unmatched to MCP: 29."
     }
   ],
   "freshnessEvidence": {
-    "nowUtc": "2026-09-18T13:18:50.217Z",
-    "officeAt": 1789737531026,
-    "officeTopServerTime": 1789686342360,
+    "nowUtc": "2026-09-18T13:54:07.985Z",
+    "officeAt": 1789739648916,
+    "officeTopServerTime": 1789738952188,
     "officeTopServerTimeNote": "office.connection.serverTimeMs is the connect-time snapshot (relay iq-multi-runtime.mjs:1731); NOT a liveness indicator.",
     "officeConnected": true,
     "officeHealthy": true,
-    "officeConnectionId": "4819798e-37e9-4ba4-8659-53072cf03692",
-    "officeConnectedAt": 1789686342386,
-    "officeReconnects": 1,
-    "statusWsServerTime": 1789737531011,
-    "statusWsServerTimeIso": "2026-09-18T13:18:51.011Z",
-    "statusWsServerTimeAgeMs": -794,
+    "officeConnectionId": "cc035cc1-1a27-42be-8ce5-04bbd195942c",
+    "officeConnectedAt": 1789738952192,
+    "officeReconnects": 0,
+    "statusWsServerTime": 1789739648896,
+    "statusWsServerTimeIso": "2026-09-18T13:54:08.896Z",
+    "statusWsServerTimeAgeMs": -911,
     "statusTimeValid": true,
     "statusConnected": true,
-    "wsCandidatesTotal": 72,
-    "wsCandidatesSuspended": 72,
-    "wsCatalogAnomaly": true,
-    "wsResolverLastResolvedAt": 1789737522952,
+    "wsCandidatesTotal": 105,
+    "wsCandidatesSuspended": 56,
+    "wsCatalogAnomaly": false,
+    "wsResolverLastResolvedAt": 1789739618958,
     "wsResolverSectionsSeen": [
       "turbo",
       "binary",
       "blitz",
       "groups"
     ],
-    "wsResolverRawActivesSeen": 1088229,
-    "turboAssetCount": 112,
-    "turboOpenCount": 112,
-    "binaryAssetCount": 126,
-    "binaryOpenCount": 126,
-    "digitalAssetCount": 126,
-    "digitalOpenCount": 126,
+    "wsResolverRawActivesSeen": 16254,
+    "turboAssetCount": 120,
+    "turboOpenCount": 120,
+    "binaryAssetCount": 153,
+    "binaryOpenCount": 153,
+    "digitalAssetCount": 138,
+    "digitalOpenCount": 138,
     "digitalInstruments": [
       {
-        "assetId": 1380,
+        "assetId": 308,
         "ok": true,
         "status": 200,
-        "generated_at": "2026-09-18T13:17:05Z",
-        "expiration": "2026-09-18T13:19:00Z",
-        "deadline": "2026-09-18T13:18:30Z",
+        "generated_at": "2026-09-18T13:49:05Z",
+        "expiration": "2026-09-18T13:55:00Z",
+        "deadline": "2026-09-18T13:54:30Z",
         "instrumentCount": 26
       },
       {
-        "assetId": 1381,
+        "assetId": 808,
         "ok": true,
         "status": 200,
-        "generated_at": "2026-09-18T13:17:05Z",
-        "expiration": "2026-09-18T13:19:00Z",
-        "deadline": "2026-09-18T13:18:30Z",
+        "generated_at": "2026-09-18T13:49:05Z",
+        "expiration": "2026-09-18T13:55:00Z",
+        "deadline": "2026-09-18T13:54:30Z",
         "instrumentCount": 26
       },
       {
-        "assetId": 1382,
+        "assetId": 1205,
         "ok": true,
         "status": 200,
-        "generated_at": "2026-09-18T13:17:05Z",
-        "expiration": "2026-09-18T13:19:00Z",
-        "deadline": "2026-09-18T13:18:30Z",
+        "generated_at": "2026-09-18T13:49:05Z",
+        "expiration": "2026-09-18T13:55:00Z",
+        "deadline": "2026-09-18T13:54:30Z",
         "instrumentCount": 26
       },
       {
-        "assetId": 1383,
+        "assetId": 1206,
         "ok": true,
         "status": 200,
-        "generated_at": "2026-09-18T13:17:05Z",
-        "expiration": "2026-09-18T13:19:00Z",
-        "deadline": "2026-09-18T13:18:30Z",
+        "generated_at": "2026-09-18T13:49:05Z",
+        "expiration": "2026-09-18T13:55:00Z",
+        "deadline": "2026-09-18T13:54:30Z",
         "instrumentCount": 26
       }
     ]
@@ -557,70 +387,58 @@
       "base": "https://turbo-options.mcp.iqoption.com",
       "ok": true,
       "error": null,
-      "assetCount": 112,
-      "openCount": 112
+      "assetCount": 120,
+      "openCount": 120
     },
     "binary": {
       "base": "https://binary-options.mcp.iqoption.com",
       "ok": true,
       "error": null,
-      "assetCount": 126,
-      "openCount": 126
+      "assetCount": 153,
+      "openCount": 153
     },
     "digital": {
       "base": "https://digital-options.mcp.iqoption.com",
       "ok": true,
       "error": null,
-      "assetCount": 126,
-      "openCount": 126
+      "assetCount": 138,
+      "openCount": 138
     }
   },
   "rows": [
     {
       "marketKey": "EURUSD:NORMAL",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "EUR/USD",
-        "activeId": 1,
-        "payout": 84,
+        "activeId": 1861,
+        "payout": 89,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
-        "activeId": 1,
+        "availability": "OPEN",
+        "activeId": 1861,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
-            "activeId": 1,
-            "section": "turbo",
-            "enabled": true,
-            "suspended": true
-          },
-          {
             "activeId": 1861,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
-          },
-          {
-            "activeId": 1,
-            "section": "binary",
-            "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1861,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
@@ -630,8 +448,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -640,17 +458,17 @@
           "is_open": true,
           "profit_percent": 93,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -659,17 +477,17 @@
           "is_open": true,
           "profit_percent": 94,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -679,42 +497,45 @@
           "asset_type": "Forex"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1861
-        ],
-        "wsSuspendedIds": [
-          1,
-          1861
-        ],
-        "mcpOpenIds": [
-          1861,
-          1861,
-          1861
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "USDJPY:NORMAL",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "OPEN",
         "display": "USD/JPY",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 1865,
+        "payout": 85,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
+        "availability": "OPEN",
+        "activeId": 1865,
+        "enabledLive": true,
         "suspended": false,
-        "offered": false,
-        "candidates": []
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 1865,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": false
+          },
+          {
+            "activeId": 1865,
+            "section": "binary",
+            "enabled": true,
+            "suspended": false
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
@@ -722,8 +543,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -732,17 +553,17 @@
           "is_open": true,
           "profit_percent": 89,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -751,17 +572,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -771,200 +592,43 @@
           "asset_type": "Forex"
         }
       },
-      "classification": "SESSION_DATA_STALE",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
       "sameAssetIdContradiction": null
     },
     {
       "marketKey": "GBPUSD:NORMAL",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "OPEN",
         "display": "GBP/USD",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
-        "enabled": false,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
-      },
-      "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
-      },
-      "freshness": {
-        "marketConnected": true,
-        "lastMessageAt": null,
-        "lastTickReceivedAt": null,
-        "feedAgeMs": null,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
-      },
-      "mcp": {
-        "turbo": {
-          "asset_id": 1867,
-          "name": "GBP/USD",
-          "is_open": true,
-          "profit_percent": 89,
-          "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
-          ],
-          "expirationStats": {
-            "count": 5,
-            "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
-          }
-        },
-        "binary": {
-          "asset_id": 1867,
-          "name": "GBP/USD",
-          "is_open": true,
-          "profit_percent": 94,
-          "expirations": [
-            1789738200,
-            1789739100,
-            1789740000,
-            1789740900,
-            1789741800
-          ],
-          "expirationStats": {
-            "count": 5,
-            "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
-          }
-        },
-        "digital": {
-          "asset_id": 1867,
-          "name": "GBP/USD",
-          "is_open": true,
-          "asset_type": "Forex"
-        }
-      },
-      "classification": "SESSION_DATA_STALE",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": null
-    },
-    {
-      "marketKey": "AUDUSD:NORMAL",
-      "tracecom": {
-        "availability": "NOT_OFFERED",
-        "display": "AUD/USD",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
-        "enabled": false,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
-      },
-      "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
-      },
-      "freshness": {
-        "marketConnected": true,
-        "lastMessageAt": null,
-        "lastTickReceivedAt": null,
-        "feedAgeMs": null,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
-      },
-      "mcp": {
-        "turbo": {
-          "asset_id": 1870,
-          "name": "AUD/USD",
-          "is_open": true,
-          "profit_percent": 89,
-          "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
-          ],
-          "expirationStats": {
-            "count": 5,
-            "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
-          }
-        },
-        "binary": {
-          "asset_id": 1870,
-          "name": "AUD/USD",
-          "is_open": true,
-          "profit_percent": 91,
-          "expirations": [
-            1789738200,
-            1789739100,
-            1789740000,
-            1789740900,
-            1789741800
-          ],
-          "expirationStats": {
-            "count": 5,
-            "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
-          }
-        },
-        "digital": {
-          "asset_id": 1870,
-          "name": "AUD/USD",
-          "is_open": true,
-          "asset_type": "Forex"
-        }
-      },
-      "classification": "SESSION_DATA_STALE",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": null
-    },
-    {
-      "marketKey": "USDCAD:NORMAL",
-      "tracecom": {
-        "availability": "SUSPENDED",
-        "display": "USD/CAD",
-        "activeId": 100,
-        "payout": 84,
+        "activeId": 1867,
+        "payout": 85,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
         "instrumentTypes": [
+          "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
-        "activeId": 100,
+        "availability": "OPEN",
+        "activeId": 1867,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
-            "activeId": 100,
-            "section": "binary",
+            "activeId": 1867,
+            "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
-            "activeId": 1878,
+            "activeId": 1867,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
@@ -974,8 +638,191 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
+      },
+      "mcp": {
+        "turbo": {
+          "asset_id": 1867,
+          "name": "GBP/USD",
+          "is_open": true,
+          "profit_percent": 89,
+          "expirations": [
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
+          ],
+          "expirationStats": {
+            "count": 5,
+            "futureCount": 5,
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
+          }
+        },
+        "binary": {
+          "asset_id": 1867,
+          "name": "GBP/USD",
+          "is_open": true,
+          "profit_percent": 94,
+          "expirations": [
+            1789740000,
+            1789740900,
+            1789741800,
+            1789742700,
+            1789743600
+          ],
+          "expirationStats": {
+            "count": 5,
+            "futureCount": 5,
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
+          }
+        },
+        "digital": {
+          "asset_id": 1867,
+          "name": "GBP/USD",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
+    },
+    {
+      "marketKey": "AUDUSD:NORMAL",
+      "tracecom": {
+        "availability": "OPEN",
+        "display": "AUD/USD",
+        "activeId": 1870,
+        "payout": 85,
+        "payoutSource": "initialization-data.option.profit.commission",
+        "enabled": false,
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
+      },
+      "wsResolver": {
+        "availability": "OPEN",
+        "activeId": 1870,
+        "enabledLive": true,
+        "suspended": false,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 1870,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": false
+          },
+          {
+            "activeId": 1870,
+            "section": "binary",
+            "enabled": true,
+            "suspended": false
+          }
+        ]
+      },
+      "freshness": {
+        "marketConnected": true,
+        "lastMessageAt": null,
+        "lastTickReceivedAt": null,
+        "feedAgeMs": null,
+        "feedFresh": false,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
+      },
+      "mcp": {
+        "turbo": {
+          "asset_id": 1870,
+          "name": "AUD/USD",
+          "is_open": true,
+          "profit_percent": 89,
+          "expirations": [
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
+          ],
+          "expirationStats": {
+            "count": 5,
+            "futureCount": 5,
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
+          }
+        },
+        "binary": {
+          "asset_id": 1870,
+          "name": "AUD/USD",
+          "is_open": true,
+          "profit_percent": 91,
+          "expirations": [
+            1789740000,
+            1789740900,
+            1789741800,
+            1789742700,
+            1789743600
+          ],
+          "expirationStats": {
+            "count": 5,
+            "futureCount": 5,
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
+          }
+        },
+        "digital": {
+          "asset_id": 1870,
+          "name": "AUD/USD",
+          "is_open": true,
+          "asset_type": "Forex"
+        }
+      },
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
+    },
+    {
+      "marketKey": "USDCAD:NORMAL",
+      "tracecom": {
+        "availability": "OPEN",
+        "display": "USD/CAD",
+        "activeId": 1878,
+        "payout": 87,
+        "payoutSource": "initialization-data.option.profit.commission",
+        "enabled": false,
+        "instrumentTypes": [
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
+      },
+      "wsResolver": {
+        "availability": "OPEN",
+        "activeId": 1878,
+        "enabledLive": true,
+        "suspended": false,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 1878,
+            "section": "binary",
+            "enabled": true,
+            "suspended": false
+          }
+        ]
+      },
+      "freshness": {
+        "marketConnected": true,
+        "lastMessageAt": null,
+        "lastTickReceivedAt": null,
+        "feedAgeMs": null,
+        "feedFresh": false,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -985,17 +832,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -1005,21 +852,9 @@
           "asset_type": "Forex"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1878
-        ],
-        "wsSuspendedIds": [
-          100,
-          1878
-        ],
-        "mcpOpenIds": [
-          1878,
-          1878
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "USDCHF:NORMAL",
@@ -1031,7 +866,7 @@
         "payoutSource": null,
         "enabled": false,
         "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "NOT_OFFERED",
@@ -1047,8 +882,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -1062,22 +897,38 @@
     {
       "marketKey": "EURJPY:NORMAL",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "OPEN",
         "display": "EUR/JPY",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 1864,
+        "payout": 85,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
+        "availability": "OPEN",
+        "activeId": 1864,
+        "enabledLive": true,
         "suspended": false,
-        "offered": false,
-        "candidates": []
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 1864,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": false
+          },
+          {
+            "activeId": 1864,
+            "section": "binary",
+            "enabled": true,
+            "suspended": false
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
@@ -1085,8 +936,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -1095,17 +946,17 @@
           "is_open": true,
           "profit_percent": 89,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -1114,17 +965,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -1134,29 +985,45 @@
           "asset_type": "Forex"
         }
       },
-      "classification": "SESSION_DATA_STALE",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
       "sameAssetIdContradiction": null
     },
     {
       "marketKey": "EURGBP:NORMAL",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "OPEN",
         "display": "EUR/GBP",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 1862,
+        "payout": 85,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
+        "availability": "OPEN",
+        "activeId": 1862,
+        "enabledLive": true,
         "suspended": false,
-        "offered": false,
-        "candidates": []
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 1862,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": false
+          },
+          {
+            "activeId": 1862,
+            "section": "binary",
+            "enabled": true,
+            "suspended": false
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
@@ -1164,8 +1031,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -1174,17 +1041,17 @@
           "is_open": true,
           "profit_percent": 89,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -1193,17 +1060,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -1213,29 +1080,45 @@
           "asset_type": "Forex"
         }
       },
-      "classification": "SESSION_DATA_STALE",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
       "sameAssetIdContradiction": null
     },
     {
       "marketKey": "AUDJPY:NORMAL",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "OPEN",
         "display": "AUD/JPY",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 1869,
+        "payout": 85,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
+        "availability": "OPEN",
+        "activeId": 1869,
+        "enabledLive": true,
         "suspended": false,
-        "offered": false,
-        "candidates": []
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 1869,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": false
+          },
+          {
+            "activeId": 1869,
+            "section": "binary",
+            "enabled": true,
+            "suspended": false
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
@@ -1243,8 +1126,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -1253,17 +1136,17 @@
           "is_open": true,
           "profit_percent": 89,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -1272,17 +1155,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -1292,29 +1175,45 @@
           "asset_type": "Forex"
         }
       },
-      "classification": "SESSION_DATA_STALE",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
       "sameAssetIdContradiction": null
     },
     {
       "marketKey": "GBPJPY:NORMAL",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "OPEN",
         "display": "GBP/JPY",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 1866,
+        "payout": 85,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
+        "availability": "OPEN",
+        "activeId": 1866,
+        "enabledLive": true,
         "suspended": false,
-        "offered": false,
-        "candidates": []
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 1866,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": false
+          },
+          {
+            "activeId": 1866,
+            "section": "binary",
+            "enabled": true,
+            "suspended": false
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
@@ -1322,8 +1221,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -1332,17 +1231,17 @@
           "is_open": true,
           "profit_percent": 89,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -1351,17 +1250,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -1371,198 +1270,271 @@
           "asset_type": "Forex"
         }
       },
-      "classification": "SESSION_DATA_STALE",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
       "sameAssetIdContradiction": null
     },
     {
       "marketKey": "EURUSD:OTC",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "SUSPENDED",
         "display": "EUR/USD OTC",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 76,
+        "payout": 82,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
+        "availability": "SUSPENDED",
+        "activeId": 76,
+        "enabledLive": true,
+        "suspended": true,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 76,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": true
+          },
+          {
+            "activeId": 76,
+            "section": "binary",
+            "enabled": true,
+            "suspended": true
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789686341057,
-        "lastTickReceivedAt": 1789686341057,
-        "feedAgeMs": 51189160,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "lastMessageAt": 1789739648718,
+        "lastTickReceivedAt": 1789739648718,
+        "feedAgeMs": -733,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
         "binary": null,
         "digital": null
       },
-      "classification": "NOT_OFFERED_FOR_PRODUCT",
-      "rootCause": "ABSENT_FROM_BROKER_CATALOG",
+      "classification": "BROKER_CONFIRMED_CLOSED/SUSPENDED",
+      "rootCause": "NO_MCP_COUNTERPART_NON_OPEN",
       "sameAssetIdContradiction": null
     },
     {
       "marketKey": "GBPUSD:OTC",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "SUSPENDED",
         "display": "GBP/USD OTC",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 81,
+        "payout": 82,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
+        "availability": "SUSPENDED",
+        "activeId": 81,
+        "enabledLive": true,
+        "suspended": true,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 81,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": true
+          },
+          {
+            "activeId": 81,
+            "section": "binary",
+            "enabled": true,
+            "suspended": true
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789686341050,
-        "lastTickReceivedAt": 1789686341050,
-        "feedAgeMs": 51189167,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "lastMessageAt": 1789739648314,
+        "lastTickReceivedAt": 1789739648314,
+        "feedAgeMs": -329,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
         "binary": null,
         "digital": null
       },
-      "classification": "NOT_OFFERED_FOR_PRODUCT",
-      "rootCause": "ABSENT_FROM_BROKER_CATALOG",
+      "classification": "BROKER_CONFIRMED_CLOSED/SUSPENDED",
+      "rootCause": "NO_MCP_COUNTERPART_NON_OPEN",
       "sameAssetIdContradiction": null
     },
     {
       "marketKey": "USDJPY:OTC",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "SUSPENDED",
         "display": "USD/JPY OTC",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 85,
+        "payout": 82,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
+        "availability": "SUSPENDED",
+        "activeId": 85,
+        "enabledLive": true,
+        "suspended": true,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 85,
+            "section": "binary",
+            "enabled": true,
+            "suspended": true
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789686341047,
-        "lastTickReceivedAt": 1789686341047,
-        "feedAgeMs": 51189170,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "lastMessageAt": 1789739648521,
+        "lastTickReceivedAt": 1789739648521,
+        "feedAgeMs": -536,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
         "binary": null,
         "digital": null
       },
-      "classification": "NOT_OFFERED_FOR_PRODUCT",
-      "rootCause": "ABSENT_FROM_BROKER_CATALOG",
+      "classification": "BROKER_CONFIRMED_CLOSED/SUSPENDED",
+      "rootCause": "NO_MCP_COUNTERPART_NON_OPEN",
       "sameAssetIdContradiction": null
     },
     {
       "marketKey": "EURGBP:OTC",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "SUSPENDED",
         "display": "EUR/GBP OTC",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 77,
+        "payout": 82,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
+        "availability": "SUSPENDED",
+        "activeId": 77,
+        "enabledLive": true,
+        "suspended": true,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 77,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": true
+          },
+          {
+            "activeId": 77,
+            "section": "binary",
+            "enabled": true,
+            "suspended": true
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789686341057,
-        "lastTickReceivedAt": 1789686341057,
-        "feedAgeMs": 51189160,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "lastMessageAt": 1789739648082,
+        "lastTickReceivedAt": 1789739648082,
+        "feedAgeMs": -97,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
         "binary": null,
         "digital": null
       },
-      "classification": "NOT_OFFERED_FOR_PRODUCT",
-      "rootCause": "ABSENT_FROM_BROKER_CATALOG",
+      "classification": "BROKER_CONFIRMED_CLOSED/SUSPENDED",
+      "rootCause": "NO_MCP_COUNTERPART_NON_OPEN",
       "sameAssetIdContradiction": null
     },
     {
       "marketKey": "GBPJPY:OTC",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "SUSPENDED",
         "display": "GBP/JPY OTC",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 84,
+        "payout": 82,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
+        "availability": "SUSPENDED",
+        "activeId": 84,
+        "enabledLive": true,
+        "suspended": true,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 84,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": true
+          },
+          {
+            "activeId": 84,
+            "section": "binary",
+            "enabled": true,
+            "suspended": true
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789686341022,
-        "lastTickReceivedAt": 1789686341022,
-        "feedAgeMs": 51189195,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "lastMessageAt": 1789739648713,
+        "lastTickReceivedAt": 1789739648713,
+        "feedAgeMs": -728,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
         "binary": null,
         "digital": null
       },
-      "classification": "NOT_OFFERED_FOR_PRODUCT",
-      "rootCause": "ABSENT_FROM_BROKER_CATALOG",
+      "classification": "BROKER_CONFIRMED_CLOSED/SUSPENDED",
+      "rootCause": "NO_MCP_COUNTERPART_NON_OPEN",
       "sameAssetIdContradiction": null
     },
     {
@@ -1578,7 +1550,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -1603,12 +1575,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530616,
-        "lastTickReceivedAt": 1789737530616,
-        "feedAgeMs": -399,
+        "lastMessageAt": 1789739648066,
+        "lastTickReceivedAt": 1789739648066,
+        "feedAgeMs": -81,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -1632,7 +1604,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -1657,12 +1629,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530816,
-        "lastTickReceivedAt": 1789737530816,
-        "feedAgeMs": -599,
+        "lastMessageAt": 1789739648722,
+        "lastTickReceivedAt": 1789739648722,
+        "feedAgeMs": -737,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -1676,77 +1648,109 @@
     {
       "marketKey": "USDCHF:OTC",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "SUSPENDED",
         "display": "USD/CHF OTC",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 78,
+        "payout": 82,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
+        "availability": "SUSPENDED",
+        "activeId": 78,
+        "enabledLive": true,
+        "suspended": true,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 78,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": true
+          },
+          {
+            "activeId": 78,
+            "section": "binary",
+            "enabled": true,
+            "suspended": true
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789686341055,
-        "lastTickReceivedAt": 1789686341055,
-        "feedAgeMs": 51189162,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "lastMessageAt": 1789739648619,
+        "lastTickReceivedAt": 1789739648619,
+        "feedAgeMs": -634,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
         "binary": null,
         "digital": null
       },
-      "classification": "NOT_OFFERED_FOR_PRODUCT",
-      "rootCause": "ABSENT_FROM_BROKER_CATALOG",
+      "classification": "BROKER_CONFIRMED_CLOSED/SUSPENDED",
+      "rootCause": "NO_MCP_COUNTERPART_NON_OPEN",
       "sameAssetIdContradiction": null
     },
     {
       "marketKey": "EURJPY:OTC",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "SUSPENDED",
         "display": "EUR/JPY OTC",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 79,
+        "payout": 82,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
+        "availability": "SUSPENDED",
+        "activeId": 79,
+        "enabledLive": true,
+        "suspended": true,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 79,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": true
+          },
+          {
+            "activeId": 79,
+            "section": "binary",
+            "enabled": true,
+            "suspended": true
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789686341058,
-        "lastTickReceivedAt": 1789686341058,
-        "feedAgeMs": 51189159,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "lastMessageAt": 1789739648715,
+        "lastTickReceivedAt": 1789739648715,
+        "feedAgeMs": -730,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
         "binary": null,
         "digital": null
       },
-      "classification": "NOT_OFFERED_FOR_PRODUCT",
-      "rootCause": "ABSENT_FROM_BROKER_CATALOG",
+      "classification": "BROKER_CONFIRMED_CLOSED/SUSPENDED",
+      "rootCause": "NO_MCP_COUNTERPART_NON_OPEN",
       "sameAssetIdContradiction": null
     },
     {
@@ -1762,7 +1766,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -1787,12 +1791,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530812,
-        "lastTickReceivedAt": 1789737530812,
-        "feedAgeMs": -595,
+        "lastMessageAt": 1789739648417,
+        "lastTickReceivedAt": 1789739648417,
+        "feedAgeMs": -432,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -1816,7 +1820,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -1841,12 +1845,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530515,
-        "lastTickReceivedAt": 1789737530515,
-        "feedAgeMs": -298,
+        "lastMessageAt": 1789739648818,
+        "lastTickReceivedAt": 1789739648818,
+        "feedAgeMs": -833,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -1863,14 +1867,14 @@
         "availability": "SUSPENDED",
         "display": "EUR/CHF OTC",
         "activeId": 2131,
-        "payout": 84,
+        "payout": 82,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -1895,12 +1899,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530415,
-        "lastTickReceivedAt": 1789737530415,
-        "feedAgeMs": -198,
+        "lastMessageAt": 1789739648410,
+        "lastTickReceivedAt": 1789739648410,
+        "feedAgeMs": -425,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -1924,7 +1928,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -1949,12 +1953,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530421,
-        "lastTickReceivedAt": 1789737530421,
-        "feedAgeMs": -204,
+        "lastMessageAt": 1789739648619,
+        "lastTickReceivedAt": 1789739648619,
+        "feedAgeMs": -634,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -1968,7 +1972,7 @@
     {
       "marketKey": "EURNZD:OTC",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "EUR/NZD OTC",
         "activeId": 2122,
         "payout": 82,
@@ -1978,37 +1982,37 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 2122,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 2122,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 2122,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530712,
-        "lastTickReceivedAt": 1789737530712,
-        "feedAgeMs": -495,
+        "lastMessageAt": 1789739648415,
+        "lastTickReceivedAt": 1789739648415,
+        "feedAgeMs": -430,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -2017,17 +2021,17 @@
           "is_open": true,
           "profit_percent": 86,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -2036,17 +2040,17 @@
           "is_open": true,
           "profit_percent": 86,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -2056,58 +2060,62 @@
           "asset_type": "Forex"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          2122
-        ],
-        "wsSuspendedIds": [
-          2122
-        ],
-        "mcpOpenIds": [
-          2122,
-          2122,
-          2122
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "AUDCAD:OTC",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "SUSPENDED",
         "display": "AUD/CAD OTC",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 86,
+        "payout": 82,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
+        "availability": "SUSPENDED",
+        "activeId": 86,
+        "enabledLive": true,
+        "suspended": true,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 86,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": true
+          },
+          {
+            "activeId": 86,
+            "section": "binary",
+            "enabled": true,
+            "suspended": true
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789686341015,
-        "lastTickReceivedAt": 1789686341015,
-        "feedAgeMs": 51189202,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "lastMessageAt": 1789739648417,
+        "lastTickReceivedAt": 1789739648417,
+        "feedAgeMs": -432,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
         "binary": null,
         "digital": null
       },
-      "classification": "NOT_OFFERED_FOR_PRODUCT",
-      "rootCause": "ABSENT_FROM_BROKER_CATALOG",
+      "classification": "BROKER_CONFIRMED_CLOSED/SUSPENDED",
+      "rootCause": "NO_MCP_COUNTERPART_NON_OPEN",
       "sameAssetIdContradiction": null
     },
     {
@@ -2123,7 +2131,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -2148,12 +2156,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530813,
-        "lastTickReceivedAt": 1789737530813,
-        "feedAgeMs": -596,
+        "lastMessageAt": 1789739648414,
+        "lastTickReceivedAt": 1789739648414,
+        "feedAgeMs": -429,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -2177,7 +2185,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -2202,12 +2210,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530712,
-        "lastTickReceivedAt": 1789737530712,
-        "feedAgeMs": -495,
+        "lastMessageAt": 1789739648821,
+        "lastTickReceivedAt": 1789739648821,
+        "feedAgeMs": -836,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -2231,7 +2239,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -2256,12 +2264,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530712,
-        "lastTickReceivedAt": 1789737530712,
-        "feedAgeMs": -495,
+        "lastMessageAt": 1789739648821,
+        "lastTickReceivedAt": 1789739648821,
+        "feedAgeMs": -836,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -2285,7 +2293,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -2310,12 +2318,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530518,
-        "lastTickReceivedAt": 1789737530518,
-        "feedAgeMs": -301,
+        "lastMessageAt": 1789739648713,
+        "lastTickReceivedAt": 1789739648713,
+        "feedAgeMs": -728,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -2339,7 +2347,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -2364,12 +2372,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530616,
-        "lastTickReceivedAt": 1789737530616,
-        "feedAgeMs": -399,
+        "lastMessageAt": 1789739648081,
+        "lastTickReceivedAt": 1789739648081,
+        "feedAgeMs": -96,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -2393,7 +2401,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -2418,12 +2426,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530712,
-        "lastTickReceivedAt": 1789737530712,
-        "feedAgeMs": -495,
+        "lastMessageAt": 1789739648814,
+        "lastTickReceivedAt": 1789739648814,
+        "feedAgeMs": -829,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -2440,14 +2448,14 @@
         "availability": "SUSPENDED",
         "display": "GBP/CHF OTC",
         "activeId": 2115,
-        "payout": 84,
+        "payout": 82,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -2472,12 +2480,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530360,
-        "lastTickReceivedAt": 1789737530360,
-        "feedAgeMs": -143,
+        "lastMessageAt": 1789739648414,
+        "lastTickReceivedAt": 1789739648414,
+        "feedAgeMs": -429,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -2501,7 +2509,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -2526,12 +2534,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530813,
-        "lastTickReceivedAt": 1789737530813,
-        "feedAgeMs": -596,
+        "lastMessageAt": 1789739648810,
+        "lastTickReceivedAt": 1789739648810,
+        "feedAgeMs": -825,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -2555,7 +2563,7 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -2580,12 +2588,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530242,
-        "lastTickReceivedAt": 1789737530242,
-        "feedAgeMs": -25,
+        "lastMessageAt": 1789739648824,
+        "lastTickReceivedAt": 1789739648824,
+        "feedAgeMs": -839,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -2602,14 +2610,14 @@
         "availability": "SUSPENDED",
         "display": "NZD/JPY OTC",
         "activeId": 2138,
-        "payout": 84,
+        "payout": 82,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -2634,12 +2642,12 @@
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530814,
-        "lastTickReceivedAt": 1789737530814,
-        "feedAgeMs": -597,
+        "lastMessageAt": 1789739648418,
+        "lastTickReceivedAt": 1789739648418,
+        "feedAgeMs": -433,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -2656,14 +2664,14 @@
         "availability": "SUSPENDED",
         "display": "NZD/CHF OTC",
         "activeId": 2202,
-        "payout": 84,
+        "payout": 83,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -2692,8 +2700,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -2707,31 +2715,47 @@
     {
       "marketKey": "USDMXN:OTC",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "OPEN",
         "display": "USD/MXN OTC",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 2300,
+        "payout": 82,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
+        "availability": "OPEN",
+        "activeId": 2300,
+        "enabledLive": true,
         "suspended": false,
-        "offered": false,
-        "candidates": []
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 2300,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": false
+          },
+          {
+            "activeId": 2300,
+            "section": "binary",
+            "enabled": true,
+            "suspended": false
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789686340621,
-        "lastTickReceivedAt": 1789686340621,
-        "feedAgeMs": 51189596,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "lastMessageAt": 1789739648144,
+        "lastTickReceivedAt": 1789739648144,
+        "feedAgeMs": -159,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -2740,17 +2764,17 @@
           "is_open": true,
           "profit_percent": 86,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -2759,17 +2783,17 @@
           "is_open": true,
           "profit_percent": 90,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -2779,38 +2803,54 @@
           "asset_type": "Forex"
         }
       },
-      "classification": "SESSION_DATA_STALE",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
       "sameAssetIdContradiction": null
     },
     {
       "marketKey": "USDBRL:OTC",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "OPEN",
         "display": "USD/BRL OTC",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 2298,
+        "payout": 82,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
+        "availability": "OPEN",
+        "activeId": 2298,
+        "enabledLive": true,
         "suspended": false,
-        "offered": false,
-        "candidates": []
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 2298,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": false
+          },
+          {
+            "activeId": 2298,
+            "section": "binary",
+            "enabled": true,
+            "suspended": true
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789686341073,
-        "lastTickReceivedAt": 1789686341073,
-        "feedAgeMs": 51189144,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "lastMessageAt": 1789739648615,
+        "lastTickReceivedAt": 1789739648615,
+        "feedAgeMs": -630,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -2819,70 +2859,80 @@
           "is_open": true,
           "profit_percent": 86,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": null,
         "digital": null
       },
-      "classification": "SESSION_DATA_STALE",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": null
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": {
+        "sharedAssetIds": [
+          2298
+        ],
+        "wsSuspendedIds": [
+          2298
+        ],
+        "mcpOpenIds": [
+          2298
+        ]
+      }
     },
     {
       "marketKey": "USDTRY:OTC",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "USD/TRY OTC",
         "activeId": 2124,
-        "payout": 84,
+        "payout": 82,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 2124,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 2124,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 2124,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530810,
-        "lastTickReceivedAt": 1789737530810,
-        "feedAgeMs": -593,
+        "lastMessageAt": 1789739648722,
+        "lastTickReceivedAt": 1789739648722,
+        "feedAgeMs": -737,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -2891,17 +2941,17 @@
           "is_open": true,
           "profit_percent": 86,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -2910,17 +2960,17 @@
           "is_open": true,
           "profit_percent": 90,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -2930,66 +2980,54 @@
           "asset_type": "Forex"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          2124
-        ],
-        "wsSuspendedIds": [
-          2124
-        ],
-        "mcpOpenIds": [
-          2124,
-          2124,
-          2124
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "USDZAR:OTC",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "USD/ZAR OTC",
         "activeId": 1380,
-        "payout": 84,
+        "payout": 82,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 1380,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1380,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1380,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530414,
-        "lastTickReceivedAt": 1789737530414,
-        "feedAgeMs": -197,
+        "lastMessageAt": 1789739648722,
+        "lastTickReceivedAt": 1789739648722,
+        "feedAgeMs": -737,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -2998,17 +3036,17 @@
           "is_open": true,
           "profit_percent": 86,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -3017,17 +3055,17 @@
           "is_open": true,
           "profit_percent": 90,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -3037,107 +3075,16 @@
           "asset_type": "Forex"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1380
-        ],
-        "wsSuspendedIds": [
-          1380
-        ],
-        "mcpOpenIds": [
-          1380,
-          1380,
-          1380
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "XAUUSD:NORMAL",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "OPEN",
         "display": "GOLD",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
-        "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
-      },
-      "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
-      },
-      "freshness": {
-        "marketConnected": true,
-        "lastMessageAt": 1789686341074,
-        "lastTickReceivedAt": 1789686341074,
-        "feedAgeMs": 51189143,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
-      },
-      "mcp": {
-        "turbo": {
-          "asset_id": 1912,
-          "name": "Gold",
-          "is_open": true,
-          "profit_percent": 89,
-          "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
-          ],
-          "expirationStats": {
-            "count": 5,
-            "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
-          }
-        },
-        "binary": {
-          "asset_id": 1912,
-          "name": "Gold",
-          "is_open": true,
-          "profit_percent": 91,
-          "expirations": [
-            1789738200,
-            1789739100,
-            1789740000,
-            1789740900,
-            1789741800
-          ],
-          "expirationStats": {
-            "count": 5,
-            "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
-          }
-        },
-        "digital": {
-          "asset_id": 1912,
-          "name": "Gold",
-          "is_open": true,
-          "asset_type": "Commodity"
-        }
-      },
-      "classification": "SESSION_DATA_STALE",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": null
-    },
-    {
-      "marketKey": "XAGUSD:NORMAL",
-      "tracecom": {
-        "availability": "SUSPENDED",
-        "display": "SILVER",
-        "activeId": 1913,
+        "activeId": 1912,
         "payout": 86,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
@@ -3145,37 +3092,132 @@
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
+        "activeId": 1912,
+        "enabledLive": true,
+        "suspended": false,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 1912,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": false
+          },
+          {
+            "activeId": 1912,
+            "section": "binary",
+            "enabled": true,
+            "suspended": false
+          }
+        ]
+      },
+      "freshness": {
+        "marketConnected": true,
+        "lastMessageAt": 1789739648818,
+        "lastTickReceivedAt": 1789739648818,
+        "feedAgeMs": -833,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
+      },
+      "mcp": {
+        "turbo": {
+          "asset_id": 1912,
+          "name": "Gold",
+          "is_open": true,
+          "profit_percent": 90,
+          "expirations": [
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
+          ],
+          "expirationStats": {
+            "count": 5,
+            "futureCount": 5,
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
+          }
+        },
+        "binary": {
+          "asset_id": 1912,
+          "name": "Gold",
+          "is_open": true,
+          "profit_percent": 91,
+          "expirations": [
+            1789740000,
+            1789740900,
+            1789741800,
+            1789742700,
+            1789743600
+          ],
+          "expirationStats": {
+            "count": 5,
+            "futureCount": 5,
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
+          }
+        },
+        "digital": {
+          "asset_id": 1912,
+          "name": "Gold",
+          "is_open": true,
+          "asset_type": "Commodity"
+        }
+      },
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
+    },
+    {
+      "marketKey": "XAGUSD:NORMAL",
+      "tracecom": {
+        "availability": "OPEN",
+        "display": "SILVER",
+        "activeId": 1913,
+        "payout": 87,
+        "payoutSource": "initialization-data.option.profit.commission",
+        "enabled": true,
+        "instrumentTypes": [
+          "turbo",
+          "binary"
+        ],
+        "resolvedAt": 1789739618958
+      },
+      "wsResolver": {
+        "availability": "OPEN",
         "activeId": 1913,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1913,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1913,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737531015,
-        "lastTickReceivedAt": 1789737531015,
-        "feedAgeMs": -798,
+        "lastMessageAt": 1789739648825,
+        "lastTickReceivedAt": 1789739648825,
+        "feedAgeMs": -840,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -3184,17 +3226,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -3203,17 +3245,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -3223,66 +3265,54 @@
           "asset_type": "Commodity"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1913
-        ],
-        "wsSuspendedIds": [
-          1913
-        ],
-        "mcpOpenIds": [
-          1913,
-          1913,
-          1913
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "US30:NORMAL",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "US30",
         "activeId": 1472,
-        "payout": 84,
+        "payout": 86,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 1472,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1472,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1472,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530814,
-        "lastTickReceivedAt": 1789737530814,
-        "feedAgeMs": -597,
+        "lastMessageAt": 1789739648821,
+        "lastTickReceivedAt": 1789739648821,
+        "feedAgeMs": -836,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -3291,17 +3321,17 @@
           "is_open": true,
           "profit_percent": 90,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -3310,17 +3340,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -3330,66 +3360,54 @@
           "asset_type": "Index"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1472
-        ],
-        "wsSuspendedIds": [
-          1472
-        ],
-        "mcpOpenIds": [
-          1472,
-          1472,
-          1472
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "US100:NORMAL",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "US100",
         "activeId": 1471,
-        "payout": 84,
+        "payout": 87,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 1471,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1471,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1471,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530814,
-        "lastTickReceivedAt": 1789737530814,
-        "feedAgeMs": -597,
+        "lastMessageAt": 1789739648814,
+        "lastTickReceivedAt": 1789739648814,
+        "feedAgeMs": -829,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -3398,17 +3416,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -3417,17 +3435,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -3437,66 +3455,54 @@
           "asset_type": "Index"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1471
-        ],
-        "wsSuspendedIds": [
-          1471
-        ],
-        "mcpOpenIds": [
-          1471,
-          1471,
-          1471
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "US500:NORMAL",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "US500",
         "activeId": 1470,
-        "payout": 84,
+        "payout": 87,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 1470,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1470,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1470,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530258,
-        "lastTickReceivedAt": 1789737530258,
-        "feedAgeMs": -41,
+        "lastMessageAt": 1789739648016,
+        "lastTickReceivedAt": 1789739648016,
+        "feedAgeMs": -31,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -3505,17 +3511,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -3524,17 +3530,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -3544,66 +3550,54 @@
           "asset_type": "Index"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1470
-        ],
-        "wsSuspendedIds": [
-          1470
-        ],
-        "mcpOpenIds": [
-          1470,
-          1470,
-          1470
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "US2000:NORMAL",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "US2000",
         "activeId": 1473,
-        "payout": 84,
+        "payout": 85,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 1473,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1473,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1473,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530135,
-        "lastTickReceivedAt": 1789737530135,
-        "feedAgeMs": 82,
+        "lastMessageAt": 1789739648520,
+        "lastTickReceivedAt": 1789739648520,
+        "feedAgeMs": -535,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -3612,17 +3606,17 @@
           "is_open": true,
           "profit_percent": 89,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -3631,17 +3625,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -3651,55 +3645,43 @@
           "asset_type": "Index"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1473
-        ],
-        "wsSuspendedIds": [
-          1473
-        ],
-        "mcpOpenIds": [
-          1473,
-          1473,
-          1473
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "GER30:NORMAL",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "GER30",
         "activeId": 1478,
-        "payout": 84,
+        "payout": 87,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 1478,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1478,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1478,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
@@ -3709,8 +3691,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -3719,17 +3701,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -3738,17 +3720,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -3758,55 +3740,43 @@
           "asset_type": "Index"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1478
-        ],
-        "wsSuspendedIds": [
-          1478
-        ],
-        "mcpOpenIds": [
-          1478,
-          1478,
-          1478
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "UK100:NORMAL",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "UK100",
         "activeId": 1475,
-        "payout": 84,
+        "payout": 86,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 1475,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1475,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1475,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
@@ -3816,8 +3786,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -3826,17 +3796,17 @@
           "is_open": true,
           "profit_percent": 90,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -3845,17 +3815,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -3865,66 +3835,54 @@
           "asset_type": "Index"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1475
-        ],
-        "wsSuspendedIds": [
-          1475
-        ],
-        "mcpOpenIds": [
-          1475,
-          1475,
-          1475
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "JP225:NORMAL",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "JP225",
         "activeId": 1476,
-        "payout": 84,
+        "payout": 87,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 1476,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1476,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1476,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789737530071,
-        "lastTickReceivedAt": 1789737530071,
-        "feedAgeMs": 146,
+        "lastMessageAt": 1789739648081,
+        "lastTickReceivedAt": 1789739648081,
+        "feedAgeMs": -96,
         "feedFresh": true,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -3933,17 +3891,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -3952,17 +3910,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -3972,55 +3930,43 @@
           "asset_type": "Index"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1476
-        ],
-        "wsSuspendedIds": [
-          1476
-        ],
-        "mcpOpenIds": [
-          1476,
-          1476,
-          1476
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "AUS200:NORMAL",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "AUS200",
         "activeId": 1481,
-        "payout": 84,
+        "payout": 87,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 1481,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1481,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1481,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
@@ -4030,8 +3976,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -4040,17 +3986,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -4059,17 +4005,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -4079,21 +4025,9 @@
           "asset_type": "Index"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1481
-        ],
-        "wsSuspendedIds": [
-          1481
-        ],
-        "mcpOpenIds": [
-          1481,
-          1481,
-          1481
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "EU50:NORMAL",
@@ -4101,14 +4035,14 @@
         "availability": "SUSPENDED",
         "display": "EU50",
         "activeId": 1480,
-        "payout": 84,
+        "payout": 85,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -4137,8 +4071,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -4152,30 +4086,30 @@
     {
       "marketKey": "HK33:NORMAL",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "HK33",
         "activeId": 1477,
-        "payout": 84,
+        "payout": 87,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 1477,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1477,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1477,
@@ -4191,8 +4125,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -4201,24 +4135,24 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": null,
         "digital": null
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
       "sameAssetIdContradiction": {
         "sharedAssetIds": [
           1477
@@ -4234,36 +4168,36 @@
     {
       "marketKey": "FR40:NORMAL",
       "tracecom": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "display": "FR40",
         "activeId": 1479,
-        "payout": 84,
+        "payout": 87,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "SUSPENDED",
+        "availability": "OPEN",
         "activeId": 1479,
         "enabledLive": true,
-        "suspended": true,
+        "suspended": false,
         "offered": true,
         "candidates": [
           {
             "activeId": 1479,
             "section": "turbo",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           },
           {
             "activeId": 1479,
             "section": "binary",
             "enabled": true,
-            "suspended": true
+            "suspended": false
           }
         ]
       },
@@ -4273,8 +4207,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": {
@@ -4283,17 +4217,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789737600,
-            1789737660,
-            1789737720,
-            1789737780,
-            1789737840
+            1789739700,
+            1789739760,
+            1789739820,
+            1789739880,
+            1789739940
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:20:00.000Z",
-            "nextExpirationInMs": 69783
+            "nextExpiration": "2026-09-18T13:55:00.000Z",
+            "nextExpirationInMs": 52015
           }
         },
         "binary": {
@@ -4302,17 +4236,17 @@
           "is_open": true,
           "profit_percent": 91,
           "expirations": [
-            1789738200,
-            1789739100,
             1789740000,
             1789740900,
-            1789741800
+            1789741800,
+            1789742700,
+            1789743600
           ],
           "expirationStats": {
             "count": 5,
             "futureCount": 5,
-            "nextExpiration": "2026-09-18T13:30:00.000Z",
-            "nextExpirationInMs": 669783
+            "nextExpiration": "2026-09-18T14:00:00.000Z",
+            "nextExpirationInMs": 352015
           }
         },
         "digital": {
@@ -4322,21 +4256,9 @@
           "asset_type": "Index"
         }
       },
-      "classification": "CONFLICT",
-      "rootCause": "WS_INIT_CATALOG_ALL_SUSPENDED",
-      "sameAssetIdContradiction": {
-        "sharedAssetIds": [
-          1479
-        ],
-        "wsSuspendedIds": [
-          1479
-        ],
-        "mcpOpenIds": [
-          1479,
-          1479,
-          1479
-        ]
-      }
+      "classification": "BROKER_CONFIRMED_OPEN",
+      "rootCause": "AGREEMENT",
+      "sameAssetIdContradiction": null
     },
     {
       "marketKey": "SP35:NORMAL",
@@ -4344,14 +4266,14 @@
         "availability": "SUSPENDED",
         "display": "SP35",
         "activeId": 1474,
-        "payout": 84,
+        "payout": 85,
         "payoutSource": "initialization-data.option.profit.commission",
         "enabled": false,
         "instrumentTypes": [
           "turbo",
           "binary"
         ],
-        "resolvedAt": 1789737522952
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
         "availability": "SUSPENDED",
@@ -4380,8 +4302,8 @@
         "lastTickReceivedAt": null,
         "feedAgeMs": null,
         "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
@@ -4395,47 +4317,56 @@
     {
       "marketKey": "BTCUSD:OTC",
       "tracecom": {
-        "availability": "NOT_OFFERED",
+        "availability": "SUSPENDED",
         "display": "BTC/USD OTC",
-        "activeId": null,
-        "payout": null,
-        "payoutSource": null,
+        "activeId": 2270,
+        "payout": 82,
+        "payoutSource": "initialization-data.option.profit.commission",
         "enabled": true,
-        "instrumentTypes": [],
-        "resolvedAt": 1789737522952
+        "instrumentTypes": [
+          "turbo"
+        ],
+        "resolvedAt": 1789739618958
       },
       "wsResolver": {
-        "availability": "NOT_OFFERED",
-        "activeId": null,
-        "enabledLive": false,
-        "suspended": false,
-        "offered": false,
-        "candidates": []
+        "availability": "SUSPENDED",
+        "activeId": 2270,
+        "enabledLive": true,
+        "suspended": true,
+        "offered": true,
+        "candidates": [
+          {
+            "activeId": 2270,
+            "section": "turbo",
+            "enabled": true,
+            "suspended": true
+          }
+        ]
       },
       "freshness": {
         "marketConnected": true,
-        "lastMessageAt": 1789686341046,
-        "lastTickReceivedAt": 1789686341046,
-        "feedAgeMs": 51189171,
-        "feedFresh": false,
-        "statusWsServerTime": 1789737531011,
-        "statusWsServerTimeAgeMs": -794
+        "lastMessageAt": 1789739648722,
+        "lastTickReceivedAt": 1789739648722,
+        "feedAgeMs": -737,
+        "feedFresh": true,
+        "statusWsServerTime": 1789739648896,
+        "statusWsServerTimeAgeMs": -911
       },
       "mcp": {
         "turbo": null,
         "binary": null,
         "digital": null
       },
-      "classification": "NOT_OFFERED_FOR_PRODUCT",
-      "rootCause": "ABSENT_FROM_BROKER_CATALOG",
+      "classification": "BROKER_CONFIRMED_CLOSED/SUSPENDED",
+      "rootCause": "NO_MCP_COUNTERPART_NON_OPEN",
       "sameAssetIdContradiction": null
     }
   ],
   "verdict": {
-    "state": "WRONG",
-    "confidence": "PROVEN",
-    "reason": "MCP (turbo/binary/digital) reports 112/112, 126/126, 126/126 assets open with future expirations, while TraceCom reports 26 market(s) SUSPENDED/NOT_OFFERED. The TraceCom WS init catalog marks ALL 72/72 candidate actives as is_suspended=true (a session-catalog anomaly), so the 0-OPEN state is a TraceCom session/resolver artifact, not genuine market closure.",
-    "mcpSaysOpenTracecomNot": 26,
-    "wsCatalogAnomaly": true
+    "state": "INCONCLUSIVE",
+    "confidence": "INFERRED",
+    "reason": "Mixed evidence.",
+    "mcpSaysOpenTracecomNot": 0,
+    "wsCatalogAnomaly": false
   }
 }

@@ -1,0 +1,3559 @@
+{
+ "version": "suspended-28-classifier-v1",
+ "generatedAt": "2026-09-18T14:02:52.885Z",
+ "scope": "READ-ONLY diagnosis. Zero orders. Token never persisted (redacted).",
+ "endpoints": {
+  "office": "https://tracecom.consecom.com.br/api/iq/office",
+  "status": "https://tracecom.consecom.com.br/api/iq/status",
+  "assetMap": "https://tracecom.consecom.com.br/api/iq/asset-map",
+  "mcp": {
+   "turbo": "https://turbo-options.mcp.iqoption.com",
+   "binary": "https://binary-options.mcp.iqoption.com",
+   "digital": "https://digital-options.mcp.iqoption.com"
+  }
+ },
+ "evidenceTimestamps": {
+  "office": {
+   "fetchedAt": "2026-09-18T14:02:44.218Z",
+   "status": 200,
+   "serverAt": 1789740164331,
+   "resolverLastResolvedAt": 1789740132720,
+   "resolverLastResolvedAtIso": "2026-09-18T14:02:12.720Z",
+   "connection": {
+    "connected": true,
+    "connectionId": "cc035cc1-1a27-42be-8ce5-04bbd195942c",
+    "connectedAt": 1789738952192,
+    "connectedAtIso": "2026-09-18T13:42:32.192Z",
+    "reconnects": 0
+   }
+  },
+  "status": {
+   "fetchedAt": "2026-09-18T14:02:44.003Z",
+   "status": 200,
+   "serverTimeMs": 1789740164382,
+   "serverTimeIso": "2026-09-18T14:02:44.382Z",
+   "timeValid": true,
+   "connected": true
+  },
+  "assetMap": {
+   "fetchedAt": "2026-09-18T14:02:44.007Z",
+   "status": 200,
+   "resolverLastResolvedAt": 1789740132720,
+   "lastSnapshotIncomplete": false,
+   "lastSnapshotResolved": {
+    "previous": 54,
+    "next": 54
+   },
+   "sectionsSeen": [
+    "turbo",
+    "binary",
+    "blitz",
+    "groups"
+   ],
+   "rawActivesSeen": 28638
+  },
+  "freshWs": {
+   "evidenceFile": "one-off ride along `railway run` (s28-fresh-ws.mjs)",
+   "vaultConnectedAt": 1789694540201,
+   "vaultConnectedAtIso": "2026-09-18T01:22:20.201Z",
+   "connectRequestedAt": "2026-09-18T13:55:48.147Z",
+   "readyAt": "2026-09-18T13:55:49.538Z",
+   "host": "ws.iqoption.com",
+   "serverTimeIso": "2026-09-18T13:55:49.959Z",
+   "timeValid": true,
+   "init": [
+    {
+     "label": "t0",
+     "requestedAt": "2026-09-18T13:55:49.539Z",
+     "receivedAt": "2026-09-18T13:55:51.098Z",
+     "msgName": "initialization-data",
+     "latencyMs": 1559,
+     "sectionsSeen": [
+      "turbo",
+      "binary",
+      "blitz",
+      "groups"
+     ],
+     "rawActivesSeen": 774,
+     "resolvedCount": 54,
+     "counts": {
+      "OPEN": 26,
+      "NOT_OFFERED": 1,
+      "SUSPENDED": 28
+     }
+    },
+    {
+     "label": "t4s",
+     "requestedAt": "2026-09-18T13:55:55.132Z",
+     "receivedAt": "2026-09-18T13:55:56.041Z",
+     "msgName": "initialization-data",
+     "latencyMs": 909,
+     "sectionsSeen": [
+      "turbo",
+      "binary",
+      "blitz",
+      "groups"
+     ],
+     "rawActivesSeen": 1548,
+     "resolvedCount": 54,
+     "counts": {
+      "OPEN": 26,
+      "NOT_OFFERED": 1,
+      "SUSPENDED": 28
+     }
+    }
+   ]
+  },
+  "mcp": {
+   "turbo": {
+    "fetchedAtAll": "2026-09-18T14:02:44.223Z",
+    "fetchedAtOpen": "2026-09-18T14:02:46.380Z",
+    "latencyMsAll": 2156,
+    "fullCatalog": {
+     "assetCount": 246,
+     "openCount": 120,
+     "closedCount": 126
+    },
+    "openCatalog": {
+     "assetCount": 120,
+     "openCount": 120
+    }
+   },
+   "binary": {
+    "fetchedAtAll": "2026-09-18T14:02:47.134Z",
+    "fetchedAtOpen": "2026-09-18T14:02:48.919Z",
+    "latencyMsAll": 1785,
+    "fullCatalog": {
+     "assetCount": 269,
+     "openCount": 150,
+     "closedCount": 119
+    },
+    "openCatalog": {
+     "assetCount": 150,
+     "openCount": 150
+    }
+   },
+   "digital": {
+    "fetchedAtAll": "2026-09-18T14:02:49.963Z",
+    "fetchedAtOpen": "2026-09-18T14:02:51.882Z",
+    "latencyMsAll": 1919,
+    "fullCatalog": {
+     "assetCount": 139,
+     "openCount": 138,
+     "closedCount": 1
+    },
+    "openCatalog": {
+     "assetCount": 138,
+     "openCount": 138
+    }
+   }
+  }
+ },
+ "productionAvailabilityCounts": {
+  "OPEN": 26,
+  "NOT_OFFERED": 1,
+  "SUSPENDED": 28
+ },
+ "counts": {
+  "BROKER_CONFIRMED_SUSPENDED": 28
+ },
+ "mustChangeState": [],
+ "rows": [
+  {
+   "marketKey": "AUDCAD:OTC",
+   "canonical": "AUDCAD",
+   "marketType": "OTC",
+   "activeId": 86,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 86,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 86,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 86,
+       "name": "AUD/CAD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 86,
+       "name": "AUD/CAD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 86) e MCP do produto confirma is_open=false: turbo#86, binary#86. [MCP closed: turbo: asset_id 86 \"AUD/CAD (OTC)\" is_open=false; binary: asset_id 86 \"AUD/CAD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 86,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 86,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 86,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 86,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "AUDCHF:OTC",
+   "canonical": "AUDCHF",
+   "marketType": "OTC",
+   "activeId": 2129,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2129,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2129,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2129,
+       "name": "AUD/CHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2129,
+       "name": "AUD/CHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2129) e MCP do produto confirma is_open=false: turbo#2129, binary#2129. [MCP closed: turbo: asset_id 2129 \"AUD/CHF (OTC)\" is_open=false; binary: asset_id 2129 \"AUD/CHF (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2129,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2129,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2129,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2129,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "AUDJPY:OTC",
+   "canonical": "AUDJPY",
+   "marketType": "OTC",
+   "activeId": 2113,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2113,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2113,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2113,
+       "name": "AUD/JPY (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2113,
+       "name": "AUD/JPY (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2113) e MCP do produto confirma is_open=false: turbo#2113, binary#2113. [MCP closed: turbo: asset_id 2113 \"AUD/JPY (OTC)\" is_open=false; binary: asset_id 2113 \"AUD/JPY (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2113,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2113,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2113,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2113,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "AUDNZD:OTC",
+   "canonical": "AUDNZD",
+   "marketType": "OTC",
+   "activeId": 2130,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2130,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2130,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2130,
+       "name": "AUD/NZD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2130,
+       "name": "AUD/NZD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2130) e MCP do produto confirma is_open=false: turbo#2130, binary#2130. [MCP closed: turbo: asset_id 2130 \"AUD/NZD (OTC)\" is_open=false; binary: asset_id 2130 \"AUD/NZD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2130,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2130,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2130,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2130,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "AUDUSD:OTC",
+   "canonical": "AUDUSD",
+   "marketType": "OTC",
+   "activeId": 2111,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2111,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2111,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2111,
+       "name": "AUD/USD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2111,
+       "name": "AUD/USD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2111) e MCP do produto confirma is_open=false: turbo#2111, binary#2111. [MCP closed: turbo: asset_id 2111 \"AUD/USD (OTC)\" is_open=false; binary: asset_id 2111 \"AUD/USD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2111,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2111,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2111,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2111,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "BTCUSD:OTC",
+   "canonical": "BTCUSD",
+   "marketType": "OTC",
+   "activeId": 2270,
+   "product": "turbo",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2270,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2270,
+       "name": "BTC/USD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2270) e MCP do produto confirma is_open=false: turbo#2270. [MCP closed: turbo: asset_id 2270 \"BTC/USD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2270,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2270,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2270,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "CADCHF:OTC",
+   "canonical": "CADCHF",
+   "marketType": "OTC",
+   "activeId": 2119,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2119,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2119,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2119,
+       "name": "CAD/CHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2119,
+       "name": "CAD/CHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2119) e MCP do produto confirma is_open=false: turbo#2119, binary#2119. [MCP closed: turbo: asset_id 2119 \"CAD/CHF (OTC)\" is_open=false; binary: asset_id 2119 \"CAD/CHF (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2119,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2119,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2119,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2119,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "CADJPY:OTC",
+   "canonical": "CADJPY",
+   "marketType": "OTC",
+   "activeId": 2136,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2136,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2136,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2136,
+       "name": "CAD/JPY (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2136,
+       "name": "CAD/JPY (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2136) e MCP do produto confirma is_open=false: turbo#2136, binary#2136. [MCP closed: turbo: asset_id 2136 \"CAD/JPY (OTC)\" is_open=false; binary: asset_id 2136 \"CAD/JPY (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2136,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2136,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2136,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2136,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "EU50:NORMAL",
+   "canonical": "EU50",
+   "marketType": "NORMAL",
+   "activeId": 1480,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 1480,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 1480,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 1480,
+       "name": "EU 50",
+       "isOpen": false,
+       "profitPercent": 89,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 1480,
+       "name": "EU 50",
+       "isOpen": false,
+       "profitPercent": 91,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 1480) e MCP do produto confirma is_open=false: turbo#1480, binary#1480. [MCP closed: turbo: asset_id 1480 \"EU 50\" is_open=false; binary: asset_id 1480 \"EU 50\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 1480,
+    "payout": 85,
+    "enabled": false,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 1480,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 1480,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 1480,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "EURAUD:OTC",
+   "canonical": "EURAUD",
+   "marketType": "OTC",
+   "activeId": 2120,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2120,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2120,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2120,
+       "name": "EUR/AUD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2120,
+       "name": "EUR/AUD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2120) e MCP do produto confirma is_open=false: turbo#2120, binary#2120. [MCP closed: turbo: asset_id 2120 \"EUR/AUD (OTC)\" is_open=false; binary: asset_id 2120 \"EUR/AUD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2120,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2120,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2120,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2120,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "EURCAD:OTC",
+   "canonical": "EURCAD",
+   "marketType": "OTC",
+   "activeId": 2117,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2117,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2117,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2117,
+       "name": "EUR/CAD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2117,
+       "name": "EUR/CAD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2117) e MCP do produto confirma is_open=false: turbo#2117, binary#2117. [MCP closed: turbo: asset_id 2117 \"EUR/CAD (OTC)\" is_open=false; binary: asset_id 2117 \"EUR/CAD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2117,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2117,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2117,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2117,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "EURCHF:OTC",
+   "canonical": "EURCHF",
+   "marketType": "OTC",
+   "activeId": 2131,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2131,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2131,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2131,
+       "name": "EUR/CHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2131,
+       "name": "EUR/CHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 90,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2131) e MCP do produto confirma is_open=false: turbo#2131, binary#2131. [MCP closed: turbo: asset_id 2131 \"EUR/CHF (OTC)\" is_open=false; binary: asset_id 2131 \"EUR/CHF (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2131,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2131,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2131,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2131,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "EURGBP:OTC",
+   "canonical": "EURGBP",
+   "marketType": "OTC",
+   "activeId": 77,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 77,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 77,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 77,
+       "name": "EUR/GBP (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 77,
+       "name": "EUR/GBP (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 77) e MCP do produto confirma is_open=false: turbo#77, binary#77. [MCP closed: turbo: asset_id 77 \"EUR/GBP (OTC)\" is_open=false; binary: asset_id 77 \"EUR/GBP (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 77,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 77,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 77,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 77,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "EURJPY:OTC",
+   "canonical": "EURJPY",
+   "marketType": "OTC",
+   "activeId": 79,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 79,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 79,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 79,
+       "name": "EUR/JPY (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 79,
+       "name": "EUR/JPY (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 79) e MCP do produto confirma is_open=false: turbo#79, binary#79. [MCP closed: turbo: asset_id 79 \"EUR/JPY (OTC)\" is_open=false; binary: asset_id 79 \"EUR/JPY (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 79,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 79,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 79,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 79,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "EURUSD:OTC",
+   "canonical": "EURUSD",
+   "marketType": "OTC",
+   "activeId": 76,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 76,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 76,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 76,
+       "name": "EUR/USD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 76,
+       "name": "EUR/USD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 76) e MCP do produto confirma is_open=false: turbo#76, binary#76. [MCP closed: turbo: asset_id 76 \"EUR/USD (OTC)\" is_open=false; binary: asset_id 76 \"EUR/USD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 76,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 76,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 76,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 76,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "GBPAUD:OTC",
+   "canonical": "GBPAUD",
+   "marketType": "OTC",
+   "activeId": 2116,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2116,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2116,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2116,
+       "name": "GBP/AUD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2116,
+       "name": "GBP/AUD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2116) e MCP do produto confirma is_open=false: turbo#2116, binary#2116. [MCP closed: turbo: asset_id 2116 \"GBP/AUD (OTC)\" is_open=false; binary: asset_id 2116 \"GBP/AUD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2116,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2116,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2116,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2116,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "GBPCAD:OTC",
+   "canonical": "GBPCAD",
+   "marketType": "OTC",
+   "activeId": 2114,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2114,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2114,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2114,
+       "name": "GBP/CAD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2114,
+       "name": "GBP/CAD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2114) e MCP do produto confirma is_open=false: turbo#2114, binary#2114. [MCP closed: turbo: asset_id 2114 \"GBP/CAD (OTC)\" is_open=false; binary: asset_id 2114 \"GBP/CAD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2114,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2114,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2114,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2114,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "GBPCHF:OTC",
+   "canonical": "GBPCHF",
+   "marketType": "OTC",
+   "activeId": 2115,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2115,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2115,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2115,
+       "name": "GBP/CHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2115,
+       "name": "GBP/CHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 90,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2115) e MCP do produto confirma is_open=false: turbo#2115, binary#2115. [MCP closed: turbo: asset_id 2115 \"GBP/CHF (OTC)\" is_open=false; binary: asset_id 2115 \"GBP/CHF (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2115,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2115,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2115,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2115,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "GBPJPY:OTC",
+   "canonical": "GBPJPY",
+   "marketType": "OTC",
+   "activeId": 84,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 84,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 84,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 84,
+       "name": "GBP/JPY (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 84,
+       "name": "GBP/JPY (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 84) e MCP do produto confirma is_open=false: turbo#84, binary#84. [MCP closed: turbo: asset_id 84 \"GBP/JPY (OTC)\" is_open=false; binary: asset_id 84 \"GBP/JPY (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 84,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 84,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 84,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 84,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "GBPNZD:OTC",
+   "canonical": "GBPNZD",
+   "marketType": "OTC",
+   "activeId": 2132,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2132,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2132,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2132,
+       "name": "GBP/NZD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2132,
+       "name": "GBP/NZD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2132) e MCP do produto confirma is_open=false: turbo#2132, binary#2132. [MCP closed: turbo: asset_id 2132 \"GBP/NZD (OTC)\" is_open=false; binary: asset_id 2132 \"GBP/NZD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2132,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2132,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2132,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2132,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "GBPUSD:OTC",
+   "canonical": "GBPUSD",
+   "marketType": "OTC",
+   "activeId": 81,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 81,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 81,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 81,
+       "name": "GBP/USD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 81,
+       "name": "GBP/USD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 81) e MCP do produto confirma is_open=false: turbo#81, binary#81. [MCP closed: turbo: asset_id 81 \"GBP/USD (OTC)\" is_open=false; binary: asset_id 81 \"GBP/USD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 81,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 81,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 81,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 81,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "NZDCAD:OTC",
+   "canonical": "NZDCAD",
+   "marketType": "OTC",
+   "activeId": 2137,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2137,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2137,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2137,
+       "name": "NZD/CAD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2137,
+       "name": "NZD/CAD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2137) e MCP do produto confirma is_open=false: turbo#2137, binary#2137. [MCP closed: turbo: asset_id 2137 \"NZD/CAD (OTC)\" is_open=false; binary: asset_id 2137 \"NZD/CAD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2137,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2137,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2137,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2137,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "NZDCHF:OTC",
+   "canonical": "NZDCHF",
+   "marketType": "OTC",
+   "activeId": 2202,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2202,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2202,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2202,
+       "name": "NZDCHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 87,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2202,
+       "name": "NZDCHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 90,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2202) e MCP do produto confirma is_open=false: turbo#2202, binary#2202. [MCP closed: turbo: asset_id 2202 \"NZDCHF (OTC)\" is_open=false; binary: asset_id 2202 \"NZDCHF (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2202,
+    "payout": 83,
+    "enabled": false,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2202,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2202,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2202,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "NZDJPY:OTC",
+   "canonical": "NZDJPY",
+   "marketType": "OTC",
+   "activeId": 2138,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2138,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2138,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2138,
+       "name": "NZD/JPY (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2138,
+       "name": "NZD/JPY (OTC)",
+       "isOpen": false,
+       "profitPercent": 90,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2138) e MCP do produto confirma is_open=false: turbo#2138, binary#2138. [MCP closed: turbo: asset_id 2138 \"NZD/JPY (OTC)\" is_open=false; binary: asset_id 2138 \"NZD/JPY (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2138,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2138,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2138,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2138,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "SP35:NORMAL",
+   "canonical": "SP35",
+   "marketType": "NORMAL",
+   "activeId": 1474,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 1474,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 1474,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 1474,
+       "name": "SP 35",
+       "isOpen": false,
+       "profitPercent": 89,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 1474,
+       "name": "SP 35",
+       "isOpen": false,
+       "profitPercent": 91,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 1474) e MCP do produto confirma is_open=false: turbo#1474, binary#1474. [MCP closed: turbo: asset_id 1474 \"SP 35\" is_open=false; binary: asset_id 1474 \"SP 35\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 1474,
+    "payout": 85,
+    "enabled": false,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 1474,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 1474,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 1474,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "USDCAD:OTC",
+   "canonical": "USDCAD",
+   "marketType": "OTC",
+   "activeId": 2112,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 2112,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 2112,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2112,
+       "name": "USD/CAD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 2112,
+       "name": "USD/CAD (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 2112) e MCP do produto confirma is_open=false: turbo#2112, binary#2112. [MCP closed: turbo: asset_id 2112 \"USD/CAD (OTC)\" is_open=false; binary: asset_id 2112 \"USD/CAD (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 2112,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 2112,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 2112,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 2112,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "USDCHF:OTC",
+   "canonical": "USDCHF",
+   "marketType": "OTC",
+   "activeId": 78,
+   "product": "turbo+binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 78,
+     "section": "turbo",
+     "enabled": true,
+     "suspended": true
+    },
+    {
+     "activeId": 78,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "turbo:is_open=false · binary:is_open=false",
+   "mcpEvidence": {
+    "turbo": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 78,
+       "name": "USD/CHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:04:00.000Z",
+        "nextExpirationInMs": 67115
+       },
+       "rawExpirations": [
+        1789740240,
+        1789740300,
+        1789740360,
+        1789740420,
+        1789740480
+       ]
+      }
+     ]
+    },
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 78,
+       "name": "USD/CHF (OTC)",
+       "isOpen": false,
+       "profitPercent": 90,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "turbo": "5 future exp, next 2026-09-18T14:04:00.000Z",
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 78) e MCP do produto confirma is_open=false: turbo#78, binary#78. [MCP closed: turbo: asset_id 78 \"USD/CHF (OTC)\" is_open=false; binary: asset_id 78 \"USD/CHF (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 78,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 78,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 78,
+      "section": "turbo",
+      "enabled": true,
+      "suspended": true
+     },
+     {
+      "activeId": 78,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  },
+  {
+   "marketKey": "USDJPY:OTC",
+   "canonical": "USDJPY",
+   "marketType": "OTC",
+   "activeId": 85,
+   "product": "binary",
+   "wsState": "SUSPENDED",
+   "wsSuspended": true,
+   "wsEnabled": true,
+   "wsCandidates": [
+    {
+     "activeId": 85,
+     "section": "binary",
+     "enabled": true,
+     "suspended": true
+    }
+   ],
+   "wsFreshness": {
+    "freshSession": true,
+    "completeSnapshot": true,
+    "staleSnapshot": false,
+    "sessionReadyAt": "2026-09-18T13:55:49.538Z",
+    "initReceivedAt": [
+     "2026-09-18T13:55:51.098Z",
+     "2026-09-18T13:55:56.041Z"
+    ],
+    "host": "ws.iqoption.com",
+    "timeValid": true,
+    "resolvedCount": 54
+   },
+   "mcpState": "binary:is_open=false",
+   "mcpEvidence": {
+    "binary": {
+     "present": true,
+     "isOpen": false,
+     "entries": [
+      {
+       "assetId": 85,
+       "name": "USD/JPY (OTC)",
+       "isOpen": false,
+       "profitPercent": 86,
+       "expirations": {
+        "count": 5,
+        "futureCount": 5,
+        "nextExpiration": "2026-09-18T14:15:00.000Z",
+        "nextExpirationInMs": 727115
+       },
+       "rawExpirations": [
+        1789740900,
+        1789741800,
+        1789742700,
+        1789743600,
+        1789744500
+       ]
+      }
+     ]
+    }
+   },
+   "mcpAbsentProducts": [],
+   "mcpExpirationEvidence": {
+    "binary": "5 future exp, next 2026-09-18T14:15:00.000Z"
+   },
+   "classification": "BROKER_CONFIRMED_SUSPENDED",
+   "reason": "WS fresco is_suspended=true (activeId 85) e MCP do produto confirma is_open=false: binary#85. [MCP closed: binary: asset_id 85 \"USD/JPY (OTC)\" is_open=false]",
+   "productionOffice": {
+    "availability": "SUSPENDED",
+    "activeId": 85,
+    "payout": 82,
+    "enabled": true,
+    "resolvedAt": 1789740132720
+   },
+   "productionResolver": {
+    "availability": "SUSPENDED",
+    "activeId": 85,
+    "suspended": true,
+    "enabledLive": true,
+    "candidates": [
+     {
+      "activeId": 85,
+      "section": "binary",
+      "enabled": true,
+      "suspended": true
+     }
+    ]
+   }
+  }
+ ]
+}
