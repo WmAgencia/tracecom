@@ -36,6 +36,8 @@ const detailRowsEl = document.getElementById("detail-rows");
 const dashboardEl = document.getElementById("office-dashboard");
 const detailRootEl = document.getElementById("office-detail-root");
 const errorEl = document.getElementById("office-error");
+const tooltipEl = document.getElementById("office-tooltip");
+const stationListEl = document.getElementById("office-station-list");
 
 const modules = { assets: null, world: null, life: null, camera: null, dashboard: null, marketDetail: null, blueprintBase: null, overlay: null, baseMode: null };
 let worldState = null;
@@ -51,6 +53,10 @@ let lastFrame = 0;
 let pollTimer = 0;
 let pollBackoff = POLL_BASE_MS;
 let disposed = false;
+let hoveredStationId = null;
+let reduceMotion = false;
+let stationListIndex = 0;
+let stationListSignature = "";
 
 /* ------------------------------------------------------------------ *
  * Status / error surfaces (fail-soft)
@@ -272,7 +278,34 @@ function screenToWorld(screenX, screenY) {
   return { x: camera.x + screenX / camera.zoom, y: camera.y + screenY / camera.zoom };
 }
 
-function deskFocus(station) {
+function isHybrid() {
+  return baseMode === "reference" && !!blueprintBase && !!modules.overlay;
+}
+
+function overlayAnchorFor(station, index) {
+  if (!isHybrid() || !station) return null;
+  try {
+    if (typeof modules.overlay.anchorForStation === "function") return modules.overlay.anchorForStation(station, index);
+  } catch (error) {
+    warnMissing("overlay.anchorForStation", error);
+  }
+  return null;
+}
+
+function deskFocus(station, index) {
+  const anchor = overlayAnchorFor(station, index);
+  if (anchor) {
+    return {
+      marketKey: station.marketKey ?? null,
+      id: station.id ?? null,
+      x: anchor.desk.x,
+      y: anchor.desk.y,
+      w: anchor.desk.w,
+      h: anchor.desk.h,
+      centerX: anchor.x,
+      centerY: anchor.desk.y + anchor.desk.h / 2,
+    };
+  }
   const desk = station.desk ?? { x: station.x ?? 0, y: station.y ?? 0, w: station.w ?? 118, h: station.h ?? 72 };
   const cell = station.cell ?? {};
   return {
@@ -287,17 +320,18 @@ function deskFocus(station) {
   };
 }
 
-function zoomToStation(station) {
+function zoomToStation(station, index) {
   if (!camera || !station) return;
   if (modules.camera && typeof modules.camera.zoomToDesk === "function") {
     try {
-      modules.camera.zoomToDesk(camera, deskFocus(station));
+      modules.camera.zoomToDesk(camera, deskFocus(station, index));
+      if (reduceMotion && camera.target) modules.camera.updateCamera(camera, camera.target.duration);
       return;
     } catch (error) {
       warnMissing("camera.zoomToDesk", error);
     }
   }
-  const focus = deskFocus(station);
+  const focus = deskFocus(station, index);
   camera.zoom = Math.min(camera.maxZoom ?? 4, Math.max(camera.minZoom ?? 0.25, 1.6));
   camera.x = focus.centerX - viewport.width / (2 * camera.zoom);
   camera.y = focus.centerY - viewport.height / (2 * camera.zoom);
@@ -443,6 +477,7 @@ function applyOfficeJson(json) {
     modeEl.textContent = `${mode} · ZERO REAL`;
   }
   mountDashboard();
+  refreshStationList();
 }
 
 /* ------------------------------------------------------------------ *
@@ -481,12 +516,21 @@ function renderFrame(now) {
   const hybrid = baseMode === "reference" && blueprintBase && modules.overlay && typeof modules.overlay.drawDynamicOverlay === "function";
   if (hybrid) {
     try {
+      ctx.save();
+      if (modules.camera && typeof modules.camera.applyCamera === "function") {
+        modules.camera.applyCamera(ctx, camera);
+      } else {
+        ctx.scale(camera.zoom, camera.zoom);
+        ctx.translate(-camera.x, -camera.y);
+      }
       if (modules.blueprintBase && typeof modules.blueprintBase.drawBlueprintBase === "function") {
         modules.blueprintBase.drawBlueprintBase(ctx, blueprintBase);
       }
       modules.overlay.drawDynamicOverlay(ctx, worldState, lifeSystem, camera, {
         drawCharacter: modules.assets && modules.assets.drawCharacter,
+        hoverMarketKey: hoveredStationId,
       });
+      ctx.restore();
     } catch (error) {
       console.warn("[office-v3] render híbrido falhou — fallback procedural", error);
       blueprintBase = null;
@@ -577,13 +621,10 @@ function bindInput() {
   });
 
   canvas.addEventListener("mousemove", (event) => {
-    if (!camera || moved || !modules.camera || typeof modules.camera.handleHover !== "function") return;
-    try {
-      modules.camera.handleHover(camera, event);
-    } catch (error) {
-      warnMissing("camera.handleHover", error);
-    }
+    if (moved) return;
+    updateHover(event);
   });
+  canvas.addEventListener("mouseleave", clearHover);
 
   const closeButton = document.getElementById("detail-close");
   if (closeButton) closeButton.addEventListener("click", closeDetail);
@@ -592,27 +633,175 @@ function bindInput() {
   });
   window.addEventListener("resize", resize);
 
+  const media = typeof window !== "undefined" && typeof window.matchMedia === "function"
+    ? window.matchMedia("(prefers-reduced-motion: reduce)")
+    : null;
+  if (media) {
+    reduceMotion = media.matches === true;
+    const onChange = (event) => { reduceMotion = event.matches === true; };
+    if (typeof media.addEventListener === "function") media.addEventListener("change", onChange);
+    else if (typeof media.addListener === "function") media.addListener(onChange);
+  }
+
+  bindStationList();
+
   if (dashboardEl) dashboardEl.addEventListener("tracecom:market-select", onMarketSelect);
   globalThis.__tracecomSelectMarket = (marketKey) => {
     if (typeof marketKey === "string" && marketKey) selectMarket(marketKey);
   };
 }
 
-function resolveClickedStation(event) {
+function canvasPointFromEvent(event) {
+  const rect = canvas && typeof canvas.getBoundingClientRect === "function" ? canvas.getBoundingClientRect() : null;
+  const scaleX = rect && rect.width ? canvas.width / rect.width : 1;
+  const scaleY = rect && rect.height ? canvas.height / rect.height : 1;
+  const left = rect ? rect.left : 0;
+  const top = rect ? rect.top : 0;
+  return { x: (event.clientX - left) * scaleX, y: (event.clientY - top) * scaleY };
+}
+
+function screenToWorldFromClient(clientX, clientY) {
+  const point = canvasPointFromEvent({ clientX, clientY });
+  return screenToWorld(point.x, point.y);
+}
+
+/** screenToWorld + station hit test (overlay anchors in hybrid mode). */
+function stationAtScreen(clientX, clientY) {
   if (!worldState) return null;
-  if (modules.camera && typeof modules.camera.handleClick === "function") {
+  const point = screenToWorldFromClient(clientX, clientY);
+  if (isHybrid() && modules.overlay && typeof modules.overlay.hitTestAnchor === "function") {
     try {
-      const hit = modules.camera.handleClick(camera, event);
+      const hit = modules.overlay.hitTestAnchor(worldState, point.x, point.y);
       if (hit) return hit;
     } catch (error) {
-      warnMissing("camera.handleClick", error);
+      warnMissing("overlay.hitTestAnchor", error);
     }
   }
-  const point = screenToWorld(event.clientX, event.clientY);
   if (worldModule && typeof worldModule.hitTestStation === "function") {
     return worldModule.hitTestStation(worldState, point.x, point.y);
   }
   return null;
+}
+
+function resolveClickedStation(event) {
+  return stationAtScreen(event.clientX, event.clientY);
+}
+
+function updateHover(event) {
+  const station = stationAtScreen(event.clientX, event.clientY);
+  hoveredStationId = station ? station.marketKey ?? station.id ?? null : null;
+  if (camera) camera.hoverStationId = hoveredStationId;
+  if (canvas) canvas.style.cursor = station ? "pointer" : "grab";
+  if (station) showTooltip(station, event.clientX, event.clientY);
+  else hideTooltip();
+}
+
+function clearHover() {
+  hoveredStationId = null;
+  if (camera) camera.hoverStationId = null;
+  if (canvas) canvas.style.cursor = "grab";
+  hideTooltip();
+}
+
+function showTooltip(station, clientX, clientY) {
+  if (!tooltipEl) return;
+  const label = station.display ?? station.symbol ?? station.marketKey ?? "—";
+  const availability = String(station.availability ?? "—").toUpperCase();
+  const payout = station.payout == null ? "—" : `${station.payout}%`;
+  tooltipEl.textContent = `${label} · ${availability} · ${payout}`;
+  tooltipEl.hidden = false;
+  tooltipEl.style.left = `${Math.round(clientX + 14)}px`;
+  tooltipEl.style.top = `${Math.round(clientY + 14)}px`;
+}
+
+function hideTooltip() {
+  if (tooltipEl) tooltipEl.hidden = true;
+}
+
+/* ------------------------------------------------------------------ *
+ * Keyboard station list (accessibility)
+ * ------------------------------------------------------------------ */
+
+function updateStationListActive() {
+  if (!stationListEl) return;
+  const options = stationListEl.querySelectorAll(".station-option");
+  options.forEach((option, index) => {
+    const active = index === stationListIndex;
+    option.classList.toggle("active", active);
+    option.setAttribute("aria-selected", active ? "true" : "false");
+    option.tabIndex = active ? 0 : -1;
+  });
+}
+
+function refreshStationList() {
+  if (!stationListEl || !worldState) return;
+  const signature = stationSignature(worldState);
+  if (signature === stationListSignature) return;
+  stationListSignature = signature;
+  stationListIndex = Math.min(stationListIndex, Math.max(0, worldState.stations.length - 1));
+  stationListEl.textContent = "";
+  worldState.stations.forEach((station, index) => {
+    const option = document.createElement("div");
+    option.className = "station-option";
+    option.setAttribute("role", "option");
+    option.dataset.index = String(index);
+    const availability = String(station.availability ?? "").toUpperCase();
+    option.textContent = `${station.display ?? station.symbol ?? station.marketKey} · ${availability}`;
+    option.addEventListener("click", () => openStationAtIndex(index));
+    stationListEl.append(option);
+  });
+  updateStationListActive();
+}
+
+function focusActiveOption() {
+  if (!stationListEl) return;
+  const option = stationListEl.querySelectorAll(".station-option")[stationListIndex];
+  if (option && typeof option.focus === "function") option.focus();
+}
+
+function openStationAtIndex(index) {
+  if (!worldState) return;
+  const station = worldState.stations[index];
+  if (!station) return;
+  stationListIndex = index;
+  updateStationListActive();
+  selectMarket(station.marketKey ?? station.id);
+}
+
+function bindStationList() {
+  if (!stationListEl) return;
+  stationListEl.addEventListener("keydown", (event) => {
+    const count = worldState ? worldState.stations.length : 0;
+    if (!count) return;
+    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+      event.preventDefault();
+      stationListIndex = (stationListIndex + 1) % count;
+      updateStationListActive();
+      focusActiveOption();
+    } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+      event.preventDefault();
+      stationListIndex = (stationListIndex - 1 + count) % count;
+      updateStationListActive();
+      focusActiveOption();
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      stationListIndex = 0;
+      updateStationListActive();
+      focusActiveOption();
+    } else if (event.key === "End") {
+      event.preventDefault();
+      stationListIndex = count - 1;
+      updateStationListActive();
+      focusActiveOption();
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openStationAtIndex(stationListIndex);
+    }
+  });
+  stationListEl.addEventListener("focus", () => {
+    updateStationListActive();
+    focusActiveOption();
+  });
 }
 
 /* ------------------------------------------------------------------ *

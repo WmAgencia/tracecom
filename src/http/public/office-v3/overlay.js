@@ -13,38 +13,58 @@
  * It MUST NOT redraw the static scene (floor, walls, desks, panels, base
  * agents). The base image owns the static pixels.
  *
- * COORDINATE NOTE: STATION_ANCHORS are calibrated to
- * `docs/office-v2/BLUEPRINT.md` band geometry (desk cell ≈124px, 10 columns
- * starting x≈200, band desk-y ranges 368/486/604/720/836, plus the 5 expanded
- * OTC desks at y=1072 from the v2 expanded world). They land on the
- * reference's OWN desks, independent of world.js's CONTENT_X layout.
+ * COORDINATE NOTE: STATION_ANCHORS are MEASURED from the frozen reference
+ * itself (`docs/office-v2/screenshots/reference.png`, 1536×1024) with a small
+ * headless scan (`docs/office-v3/blueprint-base.md` has the raw numbers). The
+ * painted desks do NOT follow the old blueprint estimate (124px pitch ending at
+ * x≈1378): the real 10-column bands use x0≈261 / pitch≈113, and the split bands
+ * (OTC|CRIPTO, ÍNDICES|COMMODITIES) are two 5-desk sectors with their own
+ * origins. Anchors land on the reference's OWN desks, independent of world.js's
+ * CONTENT_X layout. No resize/crop/blur of the reference is involved.
  *
  * Frontend/rendering only. PRACTICE only. ZERO REAL. No orders, no stake.
  */
 
-export const OVERLAY_VERSION = "office-v3-overlay.1.0.0";
+export const OVERLAY_VERSION = "office-v3-overlay.2.0.0";
 
 /* ------------------------------------------------------------------ *
- * 1. BLUEPRINT GEOMETRY (authoritative — docs/office-v2/BLUEPRINT.md)
+ * 1. BLUEPRINT GEOMETRY (calibrated to the reference image)
  * ------------------------------------------------------------------ */
 
-/** 10 column centers: x0≈200, cell 124, desk width 118. */
-export const ANCHOR_COLUMNS = Object.freeze([
-  262, 386, 510, 634, 758, 882, 1006, 1130, 1254, 1378,
+/**
+ * Per-band desk geometry, data-driven as `{ y, sectors: [{ x0, pitch, count }] }`.
+ * `y` = top of the desk cell (badge baseline sits at y-14, seat line at y+25).
+ * Measured desk front: ~82–85px wide, ~26px tall; the anchor rect uses 100×52
+ * to cover the painted desk + top surface. The expanded OTC band (5 markets that
+ * do not fit the 50 painted desks) stays at y=1072 from the v2 expanded world.
+ */
+export const ANCHOR_BANDS = Object.freeze([
+  { band: "FOREX MAJORS", y: 392, h: 52, accent: "blue", expanded: false,
+    sectors: Object.freeze([{ x0: 261, pitch: 113, count: 10 }]) },
+  { band: "FOREX CRUZADOS", y: 502, h: 52, accent: "blue", expanded: false,
+    sectors: Object.freeze([{ x0: 261, pitch: 113, count: 10 }]) },
+  { band: "OTC + CRIPTO", y: 616, h: 52, accent: "split", expanded: false,
+    sectors: Object.freeze([{ x0: 258, pitch: 114, count: 5 }, { x0: 847, pitch: 110, count: 5 }]) },
+  { band: "ÍNDICES + COMMODITIES", y: 731, h: 52, accent: "split", expanded: false,
+    sectors: Object.freeze([{ x0: 249, pitch: 114, count: 5 }, { x0: 846, pitch: 113, count: 5 }]) },
+  { band: "OUTROS ATIVOS", y: 839, h: 52, accent: "blue", expanded: false,
+    sectors: Object.freeze([{ x0: 254, pitch: 114, count: 10 }]) },
+  { band: "OTC EXTRA", y: 1072, h: 52, accent: "blue", expanded: true,
+    sectors: Object.freeze([{ x0: 261, pitch: 113, count: 5 }]) },
 ]);
 
-/** Band desk-y ranges from the blueprint (+ the expanded OTC band). */
-export const ANCHOR_ROWS = Object.freeze([
-  { y: 368, h: 72, band: "FOREX MAJORS", accent: "blue", expanded: false },
-  { y: 486, h: 70, band: "FOREX CRUZADOS", accent: "blue", expanded: false },
-  { y: 604, h: 70, band: "OTC + CRIPTO", accent: "split", expanded: false },
-  { y: 720, h: 72, band: "ÍNDICES + COMMODITIES", accent: "split", expanded: false },
-  { y: 836, h: 62, band: "OUTROS ATIVOS", accent: "blue", expanded: false },
-  { y: 1072, h: 70, band: "OTC EXTRA", accent: "blue", expanded: true },
-]);
+/** 10 column centers of the first full-width band (x0=261, pitch=113). */
+export const ANCHOR_COLUMNS = Object.freeze(
+  Array.from({ length: 10 }, (_, index) => Math.round(ANCHOR_BANDS[0].sectors[0].x0 + index * ANCHOR_BANDS[0].sectors[0].pitch)),
+);
 
-const DESK_WIDTH = 118;
-const SEAT_LINE = 25;
+/** Band descriptors (compat view of ANCHOR_BANDS). */
+export const ANCHOR_ROWS = Object.freeze(
+  ANCHOR_BANDS.map((band) => Object.freeze({ y: band.y, h: band.h, band: band.band, accent: band.accent, expanded: band.expanded })),
+);
+
+const DESK_WIDTH = 100;
+const SEAT_LINE = 30;
 const AGENT_SPLIT = 20;
 
 /**
@@ -73,34 +93,59 @@ export const ANCHOR_MARKETS = Object.freeze([
   ["FR40:NORMAL", "FR40"], ["SP35:NORMAL", "SP35"], ["BTCUSD:OTC", "BTC/USD OTC"],
 ]);
 
-const COLUMNS_PER_ROW = ANCHOR_COLUMNS.length;
+/**
+ * Flattens the per-band sectors into 55 desk slots (10+10+5+5+5+5+10+5). The
+ * split bands contribute two 5-desk sectors with independent origins.
+ */
+export function buildDeskSlots() {
+  const slots = [];
+  ANCHOR_BANDS.forEach((band, row) => {
+    let col = 0;
+    for (const sector of band.sectors) {
+      for (let index = 0; index < sector.count; index += 1) {
+        slots.push(Object.freeze({
+          x: Math.round(sector.x0 + index * sector.pitch),
+          y: band.y,
+          w: DESK_WIDTH,
+          h: band.h,
+          col,
+          row,
+          band: band.band,
+          accent: band.accent,
+          expanded: band.expanded === true,
+        }));
+        col += 1;
+      }
+    }
+  });
+  return slots;
+}
+
+const DESK_SLOTS = buildDeskSlots();
 
 function buildAnchors() {
   const anchors = {};
   ANCHOR_MARKETS.forEach(([marketKey, display], index) => {
-    const row = Math.min(Math.floor(index / COLUMNS_PER_ROW), ANCHOR_ROWS.length - 1);
-    const col = index % COLUMNS_PER_ROW;
-    const band = ANCHOR_ROWS[row];
-    const x = ANCHOR_COLUMNS[col];
-    const w = DESK_WIDTH;
-    const h = band.h;
+    const slot = DESK_SLOTS[index];
+    if (!slot) return;
+    const { x, y, w, h } = slot;
     anchors[marketKey] = Object.freeze({
       marketKey,
       display,
       x,
-      y: band.y,
+      y,
       w,
       h,
-      col,
-      row,
-      band: band.band,
-      accent: band.accent,
-      expanded: band.expanded === true,
-      desk: Object.freeze({ x: x - Math.round(w / 2), y: band.y, w, h }),
-      seatY: band.y + SEAT_LINE,
+      col: slot.col,
+      row: slot.row,
+      band: slot.band,
+      accent: slot.accent,
+      expanded: slot.expanded,
+      desk: Object.freeze({ x: x - Math.round(w / 2), y, w, h }),
+      seatY: y + SEAT_LINE,
       traderX: x - AGENT_SPLIT,
       criticX: x + AGENT_SPLIT,
-      badgeY: band.y - 14,
+      badgeY: y - 14,
     });
   });
   return Object.freeze(anchors);
@@ -304,6 +349,26 @@ function matchesHover(station, key) {
 }
 
 /**
+ * Blueprint-space hit test over the calibrated anchors. Returns the station
+ * whose painted desk rect contains `(x, y)`, or null. Used by the page for
+ * hover/click in hybrid mode (the procedural `world.hitTestStation` works in
+ * world space, not blueprint space).
+ */
+export function hitTestAnchor(worldState, x, y) {
+  const nx = Number(x);
+  const ny = Number(y);
+  if (!Number.isFinite(nx) || !Number.isFinite(ny)) return null;
+  const stations = Array.isArray(worldState?.stations) ? worldState.stations : [];
+  for (let index = 0; index < stations.length; index += 1) {
+    const anchor = anchorForStation(stations[index], index);
+    if (!anchor) continue;
+    const rect = anchor.desk;
+    if (nx >= rect.x && nx <= rect.x + rect.w && ny >= rect.y && ny <= rect.y + rect.h) return stations[index];
+  }
+  return null;
+}
+
+/**
  * Draws the dynamic layers only. `life` may be null (only the supervisor is
  * skipped/degraded); `camera` is accepted for API compatibility but the base is
  * fixed at 1:1, so the overlay draws in blueprint space.
@@ -348,12 +413,15 @@ export function drawDynamicOverlay(ctx, worldState, life = null, camera = null, 
 export default {
   OVERLAY_VERSION,
   STATION_ANCHORS,
+  ANCHOR_BANDS,
   ANCHOR_COLUMNS,
   ANCHOR_ROWS,
   ANCHOR_MARKETS,
   SUPERVISOR_ANCHOR,
+  buildDeskSlots,
   anchorForMarket,
   anchorForStation,
+  hitTestAnchor,
   closedLabel,
   drawClosedTreatment,
   drawHoverHighlight,

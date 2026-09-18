@@ -163,10 +163,20 @@ describe("OFFICE V3 — STATION_ANCHORS (blueprint)", () => {
       expect(Number.isFinite(anchor.x)).toBe(true);
       expect(Number.isFinite(anchor.y)).toBe(true);
       expect(Number.isFinite(anchor.seatY)).toBe(true);
-      expect(anchor.desk.w).toBe(118);
+      expect(anchor.desk.w).toBe(100);
     }
-    expect(ANCHOR_COLUMNS).toEqual([262, 386, 510, 634, 758, 882, 1006, 1130, 1254, 1378]);
+    expect(ANCHOR_COLUMNS).toEqual([261, 374, 487, 600, 713, 826, 939, 1052, 1165, 1278]);
     expect(new Set(anchors.map((a) => a.y)).size).toBeGreaterThanOrEqual(5);
+  });
+
+  it("calibra as bandas divididas com dois setores independentes", () => {
+    const { ANCHOR_BANDS } = overlayModule as any;
+    expect(ANCHOR_BANDS.map((band: any) => band.y)).toEqual([392, 502, 616, 731, 839, 1072]);
+    expect(ANCHOR_BANDS[2].sectors).toHaveLength(2);
+    expect(ANCHOR_BANDS[3].sectors).toHaveLength(2);
+    expect(STATION_ANCHORS["BTCUSD:OTC"].expanded).toBe(true);
+    expect(STATION_ANCHORS["BTCUSD:OTC"].y).toBe(1072);
+    expect(STATION_ANCHORS["EURUSD:NORMAL"].desk).toEqual({ x: 211, y: 392, w: 100, h: 52 });
   });
 
   it("existe âncora para todos os 55 mercados do universo", () => {

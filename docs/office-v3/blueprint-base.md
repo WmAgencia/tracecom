@@ -33,24 +33,58 @@ plantas e personagens pintados à mão, nós os herdamos da própria referência
 | `src/http/public/office-v3/base-mode.js` | `resolveBaseMode(search, env)` |
 | `src/http/public/office-v3/blueprint-reference.png` | cópia servida da referência congelada |
 | `scripts/office-v3-base-diff.mjs` | renderiza o híbrido e mede a similaridade |
-| `tests/ai/office-v3-blueprint-base.test.ts` | 18 testes headless |
+| `scripts/office-v3-hybrid-shots.mjs` | screenshots híbridos (overview/zoom/hover/viewports) |
+| `tests/ai/office-v3-blueprint-base.test.ts` | 19 testes headless |
 
 A referência original **não** é tocada; `blueprint-reference.png` é uma cópia
 para o navegador poder carregá-la.
 
-## Âncoras (`STATION_ANCHORS`)
+## Âncoras (`STATION_ANCHORS`) — calibradas pela PRÓPRIA referência
 
-Calibradas pela geometria do blueprint, para pousarem **sobre as próprias mesas
-da referência** (independente do `CONTENT_X` do `world.js`):
+As âncoras **não** usam mais a estimativa antiga do `BLUEPRINT.md` (célula
+124px, fim em x≈1378). Um scan headless da referência congelada
+(`docs/office-v2/screenshots/reference.png`) mediu as mesas pintadas: as bandas
+de 10 mesas têm `x0 ≈ 261` / `pitch ≈ 113`, e as bandas divididas
+(OTC|CRIPTO, ÍNDICES|COMMODITIES) são **dois setores de 5 mesas** com origens
+próprias. Sem resize, crop ou blur.
 
-- 10 colunas, `x0 ≈ 200`, célula 124px, mesa 118px →
-  centros `262, 386, 510, 634, 758, 882, 1006, 1130, 1254, 1378`;
-- bandas de mesa em `y = 368 / 486 / 604 / 720 / 836`;
-- os 5 mercados OTC que não cabem no viewport de 50 mesas usam a banda
-  expandida do v2 em `y = 1072` (documentado no `BLUEPRINT.md`).
+Geometria data-driven: `ANCHOR_BANDS = [{ y, sectors: [{ x0, pitch, count }] }]`.
+
+| Banda | `y` (topo) | Setor | `x0` | `pitch` | mesas |
+|---|---|---|---|---|---|
+| FOREX MAJORS | 392 | — | 261 | 113 | 10 |
+| FOREX CRUZADOS | 502 | — | 261 | 113 | 10 |
+| OTC + CRIPTO | 616 | OTC 24H | 258 | 114 | 5 |
+| OTC + CRIPTO | 616 | CRIPTO | 847 | 110 | 5 |
+| ÍNDICES + COMMODITIES | 731 | ÍNDICES | 249 | 114 | 5 |
+| ÍNDICES + COMMODITIES | 731 | COMMODITIES | 846 | 113 | 5 |
+| OUTROS ATIVOS | 839 | — | 254 | 114 | 10 |
+| OTC EXTRA (expandido) | 1072 | — | 261 | 113 | 5 |
+
+Medidas de apoio (mesma varredura): frente da mesa ≈ **82–85px de largura** e
+≈ **26px de altura**; o retângulo de âncora usa **100×52** para cobrir tampo +
+frente. Linha de assento = `y + 30`; badge de P&L = `y − 14`. A resolução tenta
+`marketKey` → `display/symbol` (exato e normalizado) → índice.
 
 Cada âncora expõe `{ x, y, desk, seatY, traderX, criticX, badgeY, band, col }`.
-A resolução tenta `marketKey` → `display/symbol` (exato e normalizado) → índice.
+As 55 posições saem de `buildDeskSlots()` (10+10+5+5+5+5+10+5); os 5 mercados
+que não cabem nas 50 mesas pintadas usam a banda expandida em `y = 1072`.
+
+## Hover, clique e teclado
+
+- **mousemove** → `screenToWorld` + hit test nas âncoras calibradas
+  (`overlay.hitTestAnchor`); a mesa sob o cursor recebe `drawHoverHighlight`
+  (contorno dourado) via `hoverMarketKey`. O estado `hoveredStationId` **não
+  toca a camada base** (a base é desenhada idêntica a cada frame).
+- cursor vira `pointer` sobre uma mesa; **tooltip** flutuante mostra
+  `símbolo · disponibilidade · payout`.
+- **clique** → `mountMarketDetail` + `zoomToDesk` (o foco usa a âncora do
+  overlay, não o `CONTENT_X` do `world.js`).
+- **teclado**: a lista `#office-station-list` é focável (`role="listbox"`),
+  navegável com ↑/↓ (roving tabindex) e **Enter abre o detalhe** da estação.
+- **`prefers-reduced-motion: reduce`** desativa a animação suave da câmera
+  (`zoomToDesk` salta direto para o alvo).
+
 
 ## Modos e como alternar
 
@@ -73,9 +107,11 @@ Valores inválidos são ignorados e caem no padrão, sem lançar.
   que uma mesa vazia de verdade — é uma limitação consciente da técnica híbrida.
 - **A arte dinâmica é nossa**: os agentes desenhados por cima são os sprites do
   `assets.js`, não os da referência. Podem não coincidir pixel a pixel com os
-  agentes pintados (daí o pequeno desvio no híbrido).
-- **Pan/zoom**: a base é fixa em 1:1; o overlay desenha no espaço do blueprint.
-  A navegação procedural continua disponível no modo `procedural`.
+  agentes pintados (daí o pequeno desvio no híbrido). Os badges de P&L do
+  overlay caem sobre os badges pintados (não dá para apagá-los).
+- **Pan/zoom**: no híbrido a câmera é aplicada à base + overlay, então
+  `zoomToDesk` funciona; em repouso (`zoom=1, x=y=0`) a base fica 1:1, sem
+  resize/crop/blur. `prefers-reduced-motion` desliga a animação suave.
 
 ## Similaridade medida (não manipulada)
 
@@ -86,23 +122,24 @@ Cenário do script: 55 mercados, 49 OPEN / 6 CLOSED, 98 agentes + 49 badges.
 | Camada | mean abs diff | similaridade |
 |---|---|---|
 | base-only (estático) | 0.0000 | **100.000%** |
-| **híbrido (base + overlay)** | **2.4856** | **99.025%** |
+| **híbrido (base + overlay)** | **2.3388** | **99.083%** |
 
 Tabela 8 regiões (híbrido):
 
 | Região | similaridade | mean abs diff |
 |---|---|---|
-| R1C1 | 99.573% | 1.0897 |
-| R1C2 | 98.667% | 3.4003 |
-| R1C3 | 99.001% | 2.5467 |
-| R1C4 | 99.336% | 1.6921 |
-| R2C1 | 99.450% | 1.4028 |
-| R2C2 | 97.912% | 5.3247 |
-| R2C3 | 99.077% | 2.3525 |
-| R2C4 | 99.186% | 2.0762 |
+| R1C1 | 99.672% | 0.8353 |
+| R1C2 | 98.980% | 2.6020 |
+| R1C3 | 99.393% | 1.5484 |
+| R1C4 | 99.628% | 0.9483 |
+| R2C1 | 99.223% | 1.9816 |
+| R2C2 | 97.711% | 5.8372 |
+| R2C3 | 98.772% | 3.1322 |
+| R2C4 | 99.284% | 1.8256 |
 
-O híbrido fica acima de 95% (pior região 97.9%), o que confirma a identidade
-visual para as partes estáticas.
+O híbrido fica acima de 95% (pior região 97.7%), o que confirma a identidade
+visual para as partes estáticas. A calibração das âncoras subiu a similaridade
+de **99.025% → 99.083%** (os agentes agora pousam nas mesas pintadas).
 
 ## Verificação
 
@@ -110,6 +147,9 @@ visual para as partes estáticas.
 node --check src/http/public/office-v3/blueprint-base.js
 node --check src/http/public/office-v3/base-mode.js
 node --check src/http/public/office-v3/overlay.js
+node --check src/http/public/office-v3/office-v3.js
+node scripts/office-v3-base-diff.mjs
+node scripts/office-v3-hybrid-shots.mjs
 npx vitest run tests/ai/office-v3-blueprint-base.test.ts
 npx tsc -p tsconfig.json --noEmit
 ```
