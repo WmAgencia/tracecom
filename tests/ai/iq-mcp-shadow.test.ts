@@ -235,7 +235,10 @@ describe("IQ MCP shadow — scheduler", () => {
     const { runner, timers } = makeRunner();
     runner.start();
     timers[0]?.fn();
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    const deadline = Date.now() + 3_000;
+    while (timers.length < 2 && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
     expect(runner.getShadowStatus().runs).toBe(1);
     expect(timers).toHaveLength(2);
     expect(timers[1]?.ms).toBe(62_500);

@@ -139,7 +139,7 @@ test executed in this run. Line numbers refer to the post-fix revision.
 | FINDING | EVIDENCE | SEVERITY | COUNTEREXAMPLE | STATUS |
 |---|---|---|---|---|
 | In-memory TTL cache had no hard cap | `adapter.mjs:531` | LOW | see F-05 | FIXED (F-05) |
-| JSONL history grows without rotation; `loadHistory` reads the whole file | `reconciliation.mjs:593–601` (`appendFile`, no cap), `:605–625` (`readFile` whole file) | LOW | shadow cadence (60 s) × ~20 records = ~29k records/day; history read loads everything | **OPEN** — concurrent module added mid-audit (owned by another workstream, currently red tests); recommended: tail-read with byte cap + rotation/retention |
+| JSONL history grows without rotation; `loadHistory` reads the whole file | `reconciliation.mjs:712–799` (`readTailText`/`rotateHistory`/`loadHistory`) | LOW | shadow cadence (60 s) × ~20 records = ~29k records/day; history read loads everything | **FIXED (this run)** — bounded tail read (`maxBytes`, 2 MiB default) + post-append rotation (`maxRecords`, 20k default, best-effort); regressions in `tests/ai/iq-mcp-critic-architecture.test.ts`. See `critic-data-architecture.md`. |
 | Products-probe payload truncation bounds per-payload output | `products-probe.mjs:397–398` (4k cap), `read-probe:101` (3k cap) | LOW | — | ACCEPTED |
 
 ### NORMAL/OTC conflation

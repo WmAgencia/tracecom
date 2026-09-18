@@ -374,7 +374,8 @@ describe("IQ MCP adapter — read projections", () => {
     expect(status.data.expirations).toHaveLength(5);
 
     const closed = await adapter.getMarketStatus(77);
-    expect(closed.data.status).toBe("DISABLED");
+    expect(closed.data.status).toBe("CLOSED");
+    expect(closed.data.isOpen).toBe(false);
 
     const missing = await adapter.getMarketStatus(999);
     expect(missing.ok).toBe(true);

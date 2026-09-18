@@ -8,16 +8,23 @@
  * Safety rules encoded here:
  * - NORMAL/OTC isolation: a market only pairs with an asset of the SAME
  *   canonical AND SAME market type. EURUSD:OTC never pairs with EURUSD
- *   (NORMAL) and vice-versa.
+ *   (NORMAL) and vice-versa. The market identity (marketKey / marketType /
+ *   OTC marker in display+symbol) must be internally consistent — any
+ *   contradiction becomes CONFLICT and no pair is formed.
  * - `is_open` is a boolean: it can only confirm/deny the OPEN state. The
  *   5-state availability enum is NEVER derived from it — every other state is
  *   NOT_COMPARABLE and explicitly labeled as boolean-only.
  * - Tolerances: payout exact; practice balance is MINOR only when |Δ| ≤ 1% AND
  *   |Δ| ≤ 1 unit. Skew > 5 min marks comparable records STALE_SOURCE.
+ * - A record without a source timestamp is NOT_COMPARABLE (freshness cannot be
+ *   proven) — it is never silently MATCH.
+ * - JSONL history is bounded: `loadHistory` reads only the last
+ *   `maxBytes` (tail read) and `persistRecords` rotates the file when it
+ *   exceeds `maxBytes`, retaining at most `maxRecords` lines.
  * - These records are diagnostics only: nothing is substituted automatically.
  */
 
-import { appendFile, mkdir, readFile } from "node:fs/promises";
+import { appendFile, mkdir, open, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 export const CLASSIFICATION = Object.freeze({
@@ -43,6 +50,11 @@ export const STALE_SKEW_MS = 5 * 60_000;
 export const BALANCE_TOLERANCE = Object.freeze({ ratio: 0.01, absolute: 1 });
 
 export const DEFAULT_RECONCILIATION_PATH = "diagnostic-results/iq-mcp-reconciliation.jsonl";
+
+/** Byte cap for a tail read of the JSONL history (default 2 MiB). */
+export const DEFAULT_MAX_HISTORY_BYTES = 2 * 1024 * 1024;
+/** Maximum number of retained JSONL records after rotation (default 20k). */
+export const DEFAULT_MAX_HISTORY_RECORDS = 20_000;
 
 const OTC_NAME_RE = /\(?\s*\bOTC\b\s*\)?/i;
 const ACCOUNT_SCOPE = "ACCOUNT";
@@ -73,11 +85,60 @@ export function assetMarketKey(asset) {
   return canonical ? `${canonical}:${assetMarketType(asset)}` : null;
 }
 
-function expectedMarketKey(market) {
-  if (market?.marketKey) return String(market.marketKey);
-  const canonical = normalizeCanonical(market?.canonical ?? market?.symbol);
-  const type = String(market?.marketType ?? "").toUpperCase() === "OTC" ? "OTC" : "NORMAL";
-  return canonical ? `${canonical}:${type}` : null;
+function normalizeMarketType(value) {
+  if (value === null || value === undefined) return null;
+  const type = String(value).trim().toUpperCase();
+  return type === "OTC" || type === "NORMAL" ? type : null;
+}
+
+/** true = explicit OTC marker, false = string present without marker, null = no text. */
+function otcMarker(value) {
+  if (typeof value !== "string" || value.trim() === "") return null;
+  return OTC_NAME_RE.test(value);
+}
+
+function marketKeyType(key) {
+  const text = String(key ?? "");
+  const index = text.lastIndexOf(":");
+  if (index < 0) return null;
+  return normalizeMarketType(text.slice(index + 1));
+}
+
+function marketKeyCanonical(key) {
+  const text = String(key ?? "");
+  const index = text.lastIndexOf(":");
+  const prefix = (index < 0 ? text : text.slice(0, index)).trim();
+  return normalizeCanonical(prefix);
+}
+
+/**
+ * Resolves `{ key, conflict }` for an internal market.
+ *
+ * Contradictory evidence (declared marketKey type vs marketType vs explicit
+ * OTC marker in display/symbol vs canonical) yields a CONFLICT identity that
+ * is never paired — this is the path that used to fabricate a NORMAL key from
+ * a missing/whitespace marketType and cross-match an OTC market.
+ */
+function marketIdentity(market) {
+  const canonical = normalizeCanonical(market?.canonical ?? market?.symbol ?? market?.display);
+  const declared = normalizeMarketType(market?.marketType);
+  const marker = [market?.display, market?.symbol].map(otcMarker).find((value) => value !== null) ?? null;
+  const rawKey = market?.marketKey;
+  const explicitKey = rawKey === null || rawKey === undefined || String(rawKey).trim() === "" ? null : String(rawKey);
+
+  if (explicitKey) {
+    const keyType = marketKeyType(explicitKey);
+    const keyCanonical = marketKeyCanonical(explicitKey);
+    if (declared && keyType && declared !== keyType) return { key: explicitKey, conflict: "MARKET_KEY_TYPE_CONFLICT" };
+    if (marker === true && keyType === "NORMAL") return { key: explicitKey, conflict: "MARKET_KEY_TYPE_CONFLICT" };
+    if (canonical && keyCanonical && canonical !== keyCanonical) return { key: explicitKey, conflict: "MARKET_KEY_CANONICAL_CONFLICT" };
+    return { key: explicitKey, conflict: null };
+  }
+
+  if (!canonical) return { key: null, conflict: null };
+  if (declared === "NORMAL" && marker === true) return { key: `${canonical}:NORMAL`, conflict: "MARKET_TYPE_EVIDENCE_CONFLICT" };
+  const type = declared ?? (marker === true ? "OTC" : "NORMAL");
+  return { key: `${canonical}:${type}`, conflict: null };
 }
 
 /** Exact unless a tolerance is given (both bounds must hold). */
@@ -143,6 +204,28 @@ function withStale(classification, skewMs, staleSkewMs) {
   return skewMs > staleSkewMs ? CLASSIFICATION.STALE_SOURCE : classification;
 }
 
+/**
+ * A missing source timestamp makes freshness unprovable: value agreement is
+ * downgraded to NOT_COMPARABLE (never left as a silent MATCH/MINOR/CONFLICT).
+ * Structural identity conflicts (ambiguous match, key/type contradiction) do
+ * not depend on freshness and are preserved when `preserveConflict` is true.
+ */
+function withSourceFreshness(record, sourceTimestamp, { preserveConflict = false } = {}) {
+  if (record.classification === CLASSIFICATION.NOT_COMPARABLE) return record;
+  if (asNumber(sourceTimestamp) !== null) return record;
+  if (preserveConflict && record.classification === CLASSIFICATION.CONFLICT) return record;
+  return {
+    ...record,
+    difference: {
+      ...(record.difference ?? {}),
+      code: "SOURCE_TIMESTAMP_MISSING",
+      skewMs: null,
+      note: "office snapshot carries no source timestamp; freshness is unprovable",
+    },
+    classification: CLASSIFICATION.NOT_COMPARABLE,
+  };
+}
+
 function differenceValue({ metric = null, code = "EXACT", delta = null, skewMs = null, note = null } = {}) {
   return { metric, code, delta, skewMs, note };
 }
@@ -176,14 +259,18 @@ function pairMarkets(markets, mcpAssets) {
 
   for (const market of markets ?? []) {
     if (!market || typeof market !== "object") continue;
-    const marketKey = expectedMarketKey(market);
+    const identity = marketIdentity(market);
+    const marketKey = identity.key;
     if (!marketKey) continue;
     let asset = null;
-    let conflict = null;
+    let conflict = identity.conflict ?? null;
     let matchMode = null;
+    let identityMismatch = null;
 
     const explicitId = market.mcpAssetId ?? null;
-    if (explicitId !== null && explicitId !== undefined) {
+    if (conflict) {
+      /* contradictory identity: never pair, surface the conflict */
+    } else if (explicitId !== null && explicitId !== undefined) {
       matchMode = "EXPLICIT_ID";
       asset = byId.get(String(explicitId)) ?? null;
       if (!asset) conflict = "MAPPED_ASSET_ID_MISSING";
@@ -198,8 +285,14 @@ function pairMarkets(markets, mcpAssets) {
       }
     }
 
+    if (!conflict && asset) {
+      const activeId = asNumber(market.activeId);
+      const assetId = asNumber(asset.asset_id);
+      if (activeId !== null && assetId !== null && activeId !== assetId) identityMismatch = { delta: activeId - assetId };
+    }
+
     if (asset?.asset_id !== undefined && asset?.asset_id !== null) used.add(String(asset.asset_id));
-    pairs.push({ market, marketKey, asset, conflict, matchMode });
+    pairs.push({ market, marketKey, asset, conflict, matchMode, identityMismatch });
   }
 
   const leftovers = [];
@@ -289,6 +382,13 @@ function payoutRecord(pair, context) {
   if (!pair.asset || pair.conflict) {
     return makeRecord({ ...base, difference: differenceValue({ metric: "payout", code: "NO_MCP_COUNTERPART", skewMs }), classification: CLASSIFICATION.NOT_COMPARABLE });
   }
+  if (pair.identityMismatch) {
+    return makeRecord({
+      ...base,
+      difference: differenceValue({ metric: "payout", code: "IDENTITY_MISMATCH", delta: pair.identityMismatch.delta, skewMs, note: "catalog asset_id disagrees with the internal activeId; payout is not compared" }),
+      classification: CLASSIFICATION.NOT_COMPARABLE,
+    });
+  }
   if (currentValue === null || mcpValue === null) {
     return makeRecord({ ...base, difference: differenceValue({ metric: "payout", code: "PAYOUT_ABSENT", skewMs }), classification: CLASSIFICATION.NOT_COMPARABLE });
   }
@@ -321,6 +421,13 @@ function expirationRecord(pair, context) {
 
   if (!pair.asset || pair.conflict) {
     return makeRecord({ ...base, difference: differenceValue({ metric: "expirations", code: "NO_MCP_COUNTERPART", skewMs }), classification: CLASSIFICATION.NOT_COMPARABLE });
+  }
+  if (pair.identityMismatch) {
+    return makeRecord({
+      ...base,
+      difference: differenceValue({ metric: "expirations", code: "IDENTITY_MISMATCH", delta: pair.identityMismatch.delta, skewMs, note: "catalog asset_id disagrees with the internal activeId; expirations are not compared" }),
+      classification: CLASSIFICATION.NOT_COMPARABLE,
+    });
   }
   if (!internal) {
     return makeRecord({
@@ -365,6 +472,13 @@ function availabilityRecord(pair, context) {
 
   if (!pair.asset || pair.conflict) {
     return makeRecord({ ...base, difference: differenceValue({ metric: "availability", code: "NO_MCP_COUNTERPART", skewMs }), classification: CLASSIFICATION.NOT_COMPARABLE });
+  }
+  if (pair.identityMismatch) {
+    return makeRecord({
+      ...base,
+      difference: differenceValue({ metric: "availability", code: "IDENTITY_MISMATCH", delta: pair.identityMismatch.delta, skewMs, note: "catalog asset_id disagrees with the internal activeId; availability is not compared" }),
+      classification: CLASSIFICATION.NOT_COMPARABLE,
+    });
   }
   if (state === null || !AVAILABILITY_STATES.includes(state)) {
     return makeRecord({ ...base, difference: differenceValue({ metric: "availability", code: "UNKNOWN_INTERNAL_STATE", skewMs }), classification: CLASSIFICATION.NOT_COMPARABLE });
@@ -498,7 +612,7 @@ function accountRecords(account, mcpAccount, context) {
     accountCurrencyRecord(internal, mcp, context, skewMs),
     accountTypeRecord(internal, mcp, context, skewMs),
     accountModeRecord(internal, mcp, context, skewMs),
-  ];
+  ].map((record) => withSourceFreshness(record, accountTimestamp));
 }
 
 /**
@@ -527,10 +641,10 @@ export function buildComparisons({
   const { pairs, leftovers } = pairMarkets(markets, mcpAssets);
   const records = [];
   for (const pair of pairs) {
-    records.push(catalogRecord(pair, context));
-    records.push(payoutRecord(pair, context));
-    records.push(expirationRecord(pair, context));
-    records.push(availabilityRecord(pair, context));
+    records.push(withSourceFreshness(catalogRecord(pair, context), context.sourceTimestamp, { preserveConflict: true }));
+    records.push(withSourceFreshness(payoutRecord(pair, context), context.sourceTimestamp));
+    records.push(withSourceFreshness(expirationRecord(pair, context), context.sourceTimestamp));
+    records.push(withSourceFreshness(availabilityRecord(pair, context), context.sourceTimestamp));
   }
   if (includeLeftoverAssets) {
     for (const leftover of leftovers) records.push(leftoverCatalogRecord(leftover, context));
@@ -589,24 +703,94 @@ export function summarize(records = []) {
   };
 }
 
-/** Appends records as JSONL (one JSON object per line), creating the dir. */
-export async function persistRecords(records, { path = DEFAULT_RECONCILIATION_PATH, fsImpl = null } = {}) {
+function historyIo(fsImpl) {
+  const overrides = fsImpl && typeof fsImpl === "object" ? fsImpl : {};
+  return { appendFile, mkdir, open, rename, stat, writeFile, ...overrides };
+}
+
+/** Reads at most `maxBytes` from the END of a file (drops a cut first line). */
+async function readTailText(path, io, maxBytes) {
+  const info = await io.stat(path);
+  const size = Math.max(0, Math.trunc(Number(info?.size) || 0));
+  if (size === 0) return "";
+  const byteCap = Math.max(1, Math.trunc(Number(maxBytes) || DEFAULT_MAX_HISTORY_BYTES));
+  const start = Math.max(0, size - byteCap);
+  const length = size - start;
+  const handle = await io.open(path, "r");
+  try {
+    const buffer = Buffer.alloc(length);
+    let offset = 0;
+    while (offset < length) {
+      const chunk = await handle.read(buffer, offset, length - offset, start + offset);
+      if (!chunk || !Number.isFinite(chunk.bytesRead) || chunk.bytesRead <= 0) break;
+      offset += chunk.bytesRead;
+    }
+    let text = buffer.subarray(0, offset).toString("utf8");
+    if (start > 0) {
+      const newline = text.indexOf("\n");
+      text = newline === -1 ? "" : text.slice(newline + 1);
+    }
+    return text;
+  } finally {
+    await handle.close();
+  }
+}
+
+/** Keeps the last `maxRecords` complete lines, then the last `maxBytes` bytes. */
+function trimHistoryPayload(text, maxBytes, maxRecords) {
+  const lines = String(text).split(/\r?\n/).filter((line) => line.trim());
+  const recordCap = Math.max(1, Math.trunc(Number(maxRecords) || DEFAULT_MAX_HISTORY_RECORDS));
+  let kept = lines.slice(-recordCap);
+  const byteCap = Math.max(1, Math.trunc(Number(maxBytes) || DEFAULT_MAX_HISTORY_BYTES));
+  while (kept.length > 1 && Buffer.byteLength(`${kept.join("\n")}\n`, "utf8") > byteCap) kept = kept.slice(1);
+  return kept.length ? `${kept.join("\n")}\n` : "";
+}
+
+/** Rewrites the JSONL tail-in-place when the file exceeds `maxBytes`. */
+async function rotateHistory(path, io, maxBytes, maxRecords) {
+  const info = await io.stat(path);
+  const size = Number(info?.size) || 0;
+  if (size <= maxBytes) return false;
+  const tail = await readTailText(path, io, maxBytes);
+  const payload = trimHistoryPayload(tail, maxBytes, maxRecords);
+  const tmp = `${path}.rotating`;
+  await io.writeFile(tmp, payload, "utf8");
+  await io.rename(tmp, path);
+  return true;
+}
+
+/**
+ * Appends records as JSONL (one JSON object per line), creating the dir, then
+ * rotates the file when it exceeds `maxBytes` (keeps the last `maxRecords`).
+ */
+export async function persistRecords(
+  records,
+  { path = DEFAULT_RECONCILIATION_PATH, fsImpl = null, maxBytes = DEFAULT_MAX_HISTORY_BYTES, maxRecords = DEFAULT_MAX_HISTORY_RECORDS } = {},
+) {
   const list = Array.isArray(records) ? records : [records];
   if (list.length === 0) return { path, written: 0 };
-  const io = fsImpl ?? { appendFile, mkdir };
+  const io = historyIo(fsImpl);
   const dir = dirname(path);
   if (dir && dir !== ".") await io.mkdir(dir, { recursive: true });
   const payload = `${list.map((record) => JSON.stringify(record)).join("\n")}\n`;
   await io.appendFile(path, payload, "utf8");
+  try {
+    await rotateHistory(path, io, maxBytes, maxRecords);
+  } catch {
+    /* append already succeeded; rotation is best-effort maintenance */
+  }
   return { path, written: list.length };
 }
 
-/** Reads back JSONL history; corrupt/blank lines are skipped. `limit` keeps the last N. */
-export async function loadHistory({ path = DEFAULT_RECONCILIATION_PATH, limit = 0, fsImpl = null } = {}) {
-  const io = fsImpl ?? { readFile };
+/**
+ * Reads back JSONL history from a bounded tail (`maxBytes`, default 2 MiB);
+ * corrupt/blank lines are skipped. `limit` keeps the last N parsed records.
+ */
+export async function loadHistory({ path = DEFAULT_RECONCILIATION_PATH, limit = 0, maxBytes = DEFAULT_MAX_HISTORY_BYTES, fsImpl = null } = {}) {
+  const io = historyIo(fsImpl);
   let text = "";
   try {
-    text = await io.readFile(path, "utf8");
+    text = await readTailText(path, io, maxBytes);
   } catch {
     return [];
   }

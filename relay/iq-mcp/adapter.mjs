@@ -171,6 +171,14 @@ function extractToolPayload(result) {
   return result;
 }
 
+/** First text content of an MCP `isError:true` result, bounded and safe to surface. */
+function toolErrorMessage(result) {
+  const textPart = Array.isArray(result?.content) ? result.content.find((c) => typeof c?.text === "string") : null;
+  const detail = textPart ? textPart.text.trim() : "tool reported isError=true";
+  const bounded = detail.length > 500 ? `${detail.slice(0, 500)}…` : detail;
+  return bounded || "tool reported isError=true";
+}
+
 function rowsFrom(payload) {
   if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === "object") {
@@ -387,8 +395,9 @@ export class IQOfficialMCPAdapter {
 
   async _acquire(kind) {
     let ticket = this.limiter.take(kind);
-    if (!ticket.ok && ticket.waitMs <= this.maxRateWaitMs) {
-      await this.sleep(ticket.waitMs);
+    while (!ticket.ok && ticket.waitMs <= this.maxRateWaitMs) {
+      const stepMs = Math.max(1, Math.ceil(ticket.waitMs));
+      await this.sleep(stepMs);
       ticket = this.limiter.take(kind);
     }
     if (!ticket.ok) this.stats.rateLimited += 1;
@@ -433,8 +442,6 @@ export class IQOfficialMCPAdapter {
     this.stats.requests += 1;
 
     const sessionId = res.headers?.get?.("mcp-session-id");
-    if (sessionId) this.sessionId = sessionId;
-
     const status = res.status;
     if (status === 401 || status === 403) {
       return { ok: false, code: "MCP_AUTH", status, message: `HTTP ${status}`, retryable: false };
@@ -453,11 +460,13 @@ export class IQOfficialMCPAdapter {
       return { ok: false, code: "MCP_HTTP_ERROR", status, message: `HTTP ${status}`, retryable: false };
     }
     if (opts.notification) {
+      if (sessionId) this.sessionId = sessionId;
       return { ok: true, status, sessionId: this.sessionId, result: null };
     }
 
     const parsed = parseRpcBody(text, res.headers?.get?.("content-type") ?? "", opts.id);
     if (!parsed.ok) return { ...parsed, status, retryable: false };
+    if (sessionId) this.sessionId = sessionId;
     return { ok: true, status, sessionId: this.sessionId, result: parsed.result };
   }
 
@@ -515,6 +524,9 @@ export class IQOfficialMCPAdapter {
   async _callToolRpc(tool, args) {
     const rpc = await this._rpc("tools/call", { name: tool, arguments: args ?? {} }, { kind: "read", toolName: tool });
     if (!rpc.ok) return rpc;
+    if (rpc.result?.isError === true) {
+      return { ok: false, code: "MCP_TOOL_ERROR", status: rpc.status, message: toolErrorMessage(rpc.result), retryable: false };
+    }
     return { ok: true, payload: extractToolPayload(rpc.result) };
   }
 
@@ -623,7 +635,8 @@ export class IQOfficialMCPAdapter {
         data: assets.map((a) => ({
           assetId: a?.asset_id ?? null,
           name: a?.name ?? null,
-          status: a?.is_open ? "OPEN" : "DISABLED",
+          status: a?.is_open === true ? "OPEN" : "CLOSED",
+          isOpen: typeof a?.is_open === "boolean" ? a.is_open : null,
           payout: a?.profit_percent ?? null,
           expirations: a?.expirations ?? [],
         })),
@@ -636,7 +649,8 @@ export class IQOfficialMCPAdapter {
       data: {
         assetId: asset.asset_id,
         name: asset.name ?? null,
-        status: asset.is_open ? "OPEN" : "DISABLED",
+        status: asset.is_open === true ? "OPEN" : "CLOSED",
+        isOpen: typeof asset.is_open === "boolean" ? asset.is_open : null,
         payout: asset.profit_percent ?? null,
         expirations: asset.expirations ?? [],
       },

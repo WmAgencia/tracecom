@@ -84,6 +84,7 @@ para o tipo errado vira `CONFLICT` de CATALOG.
 | ACCOUNT.balance `MINOR_DIFFERENCE` | `|Δ| ≤ 1%` **e** `|Δ| ≤ 1` unidade (ambos) |
 | ACCOUNT.currency / type / mode | exato (`MIXED` aceito quando o tipo exigido existe) |
 | `STALE_SOURCE` | skew `|mcpTimestamp − sourceTimestamp| > 5 min`; substitui MATCH/MINOR/CONFLICT, nunca `NOT_COMPARABLE` |
+| Timestamp de origem ausente | MATCH/MINOR/CONFLICT viram `NOT_COMPARABLE` (`SOURCE_TIMESTAMP_MISSING`); conflito estrutural de catálogo permanece |
 
 ## Classificações
 
@@ -122,8 +123,11 @@ com o shadow desligado, `runOnce()` retorna `MCP_SHADOW_DISABLED` sem fetch.
 ## Persistência
 
 JSONL append-only (uma linha por registro). `persistRecords(records, { path })`
-cria diretórios; `loadHistory({ path, limit })` ignora linhas corrompidas e
-devolve as últimas N. O diretório `diagnostic-results/` é operacional — mantenha
+cria diretórios e rotaciona o arquivo quando ele passa de `maxBytes` (padrão
+2 MiB), retendo no máximo `maxRecords` linhas (padrão 20k); a rotação é
+best-effort e nunca falha a persistência. `loadHistory({ path, limit })` lê
+apenas uma cauda limitada (`maxBytes`), ignora linhas corrompidas e devolve as
+últimas N. O diretório `diagnostic-results/` é operacional — mantenha
 `iq-mcp-reconciliation.jsonl` fora do versionamento (o arquivo é regenerável).
 
 ## Veredito por campo (nenhuma substituição automática)
