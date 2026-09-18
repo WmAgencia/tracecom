@@ -7,7 +7,7 @@ import handler from "../../api/http";
 const read = (path: string): string => readFileSync(new URL(path, import.meta.url), "utf8");
 const app = read("../../src/http/public/app.js");
 const consoleJs = read("../../src/http/public/strategy-console.js");
-const indexHtml = read("../../src/http/public/index.html");
+const indexHtml = read("../../src/http/public/classic.html");
 
 describe("banca — limite de 5% por operação (sem martingale)", () => {
   const limitOf = (total: number): number => {

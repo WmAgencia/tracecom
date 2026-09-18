@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const indexHtml = readFileSync(new URL("../../src/http/public/index.html", import.meta.url), "utf8");
+const indexHtml = readFileSync(new URL("../../src/http/public/classic.html", import.meta.url), "utf8");
 const officeJs = readFileSync(new URL("../../src/http/public/office.js", import.meta.url), "utf8");
 const fixtureHtml = readFileSync(new URL("../../src/http/public/office-fixture.html", import.meta.url), "utf8");
 const proxy = readFileSync(new URL("../../api/http.ts", import.meta.url), "utf8");
