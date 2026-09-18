@@ -77,6 +77,7 @@ let selectedMarketKey = null;
 let mesasController = null;
 let panController = null;
 let lastOverlayStats = null;
+let didFitContent = false;
 
 /* ------------------------------------------------------------------ *
  * Status / error surfaces (fail-soft)
@@ -309,6 +310,16 @@ function attachWorldToCamera() {
       warnMissing("camera.bindWorld", error);
     }
   }
+  // Born centered: frame the real office content once with an even margin on all
+  // four sides. Later snapshots/resizes never re-fit, so the user keeps control.
+  if (!didFitContent && modules.camera && typeof modules.camera.fitContent === "function" && worldState.contentBounds) {
+    try {
+      modules.camera.fitContent(camera, worldState);
+      didFitContent = true;
+    } catch (error) {
+      warnMissing("camera.fitContent", error);
+    }
+  }
 }
 
 function clampCamera() {
@@ -439,7 +450,7 @@ function showDetailFallback(station) {
     { label: "Feed status", value: derived ? `${derived.feedStatus}${derived.feedReason ? ` · ${derived.feedReason}` : ""}` : "—" },
     { label: "Payout", value: station.payout == null ? "—" : `${station.payout}%` },
     { label: "Estado derivado", value: derived?.label ?? "—" },
-    { label: "Agentes", value: derived ? (derived.agentsWorking ? "TRABALHANDO" : "OCIOSO (SOCIAL/IDLE)") : "—" },
+    { label: "Agentes", value: derived ? (derived.agentsWorking ? "TRABALHANDO" : "SEM AGENTES (ATIVO FECHADO)") : "—" },
   ];
   for (const row of rows) {
     const div = doc.createElement("div");
@@ -1081,15 +1092,25 @@ function bindInput() {
   eventTarget.addEventListener("mousemove", markMove);
   eventTarget.addEventListener("pointermove", markMove);
 
+  // Normal wheel = scroll/pan (vertical, horizontal with Shift). Ctrl/Meta+wheel
+  // = smooth zoom centered on the cursor. Wheel NEVER zooms on its own.
   canvas.addEventListener(
     "wheel",
     (event) => {
+      if (!camera) return;
+      if (event.ctrlKey === true || event.metaKey === true) {
+        event.preventDefault();
+        if (modules.camera && typeof modules.camera.handleWheel === "function") modules.camera.handleWheel(camera, event);
+        return;
+      }
       event.preventDefault();
-      if (camera && modules.camera && typeof modules.camera.handleWheel === "function") {
-        modules.camera.handleWheel(camera, event);
-      } else if (camera) {
-        const factor = event.deltaY < 0 ? 1.15 : 1 / 1.15;
-        camera.zoom = Math.min(Math.max(camera.zoom * factor, camera.minZoom ?? 0.25), camera.maxZoom ?? 4);
+      if (modules.camera && typeof modules.camera.handleScrollPan === "function") {
+        modules.camera.handleScrollPan(camera, event);
+      } else {
+        const zoom = camera.zoom || 1;
+        camera.y += (event.deltaY || 0) / zoom;
+        camera.x += (event.shiftKey ? event.deltaY || 0 : event.deltaX || 0) / zoom;
+        clampCamera();
       }
     },
     { passive: false },

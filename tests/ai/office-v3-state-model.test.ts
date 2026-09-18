@@ -395,7 +395,7 @@ describe("OFFICE V3 state-model — fonte única compartilhada", () => {
     expect(READ("dashboard.js")).toContain("deriveOfficeStates");
   });
 
-  it("agentes usam a presença derivada: OPEN com feed offline vai para social/idle", () => {
+  it("agentes usam a presença derivada: OPEN com feed offline fica oculto", () => {
     const json = officeFixture([market(), feedOffline()]);
     const worldState = world.buildWorldState(json);
     model.attachDerivedStates(worldState, json);
@@ -413,7 +413,8 @@ describe("OFFICE V3 state-model — fonte única compartilhada", () => {
     for (const state of offlineAgents) {
       expect(state.working).toBe(false);
       expect(state.atDesk).toBe(false);
-      expect(state.assignment).toBe("SOCIAL");
+      expect(state.hidden).toBe(true);
+      expect(state.assignment).toBe("HIDDEN");
     }
   });
 

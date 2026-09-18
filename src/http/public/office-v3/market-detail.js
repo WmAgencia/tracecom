@@ -103,7 +103,7 @@ export function buildMarketDetailModel(market, office = null) {
         row("marketType", "Tipo", m.marketType ?? null),
         row("product", "Produto", Array.isArray(m.instrumentTypes) && m.instrumentTypes.length ? m.instrumentTypes.join(", ") : null),
         row("activeId", "Active ID", isFiniteNumber(m.activeId) ? String(m.activeId) : null),
-        row("agentState", "Status", derived.agentsWorking ? "TRABALHANDO" : "OCIOSO (SOCIAL/IDLE)"),
+        row("agentState", "Status", derived.agentsWorking ? "TRABALHANDO" : "SEM AGENTES (ATIVO FECHADO)"),
         row("agentStateRaw", "Agente (relay)", m.agentState ?? null),
         row("availability", "Disponibilidade", m.availability ?? null),
         row("payout", "Payout", payoutText(m.payout)),

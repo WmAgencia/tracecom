@@ -1,0 +1,345 @@
+{
+  "at": "2026-09-18T20:02:12.012Z",
+  "base": "https://tracecom.consecom.com.br",
+  "mode": "PRACTICE",
+  "real": false,
+  "phase1": {
+    "ok": true,
+    "connection": {
+      "connected": true,
+      "host": "ws.iqoption.com",
+      "connectionId": "1f73a03f-cfee-45b9-a3c2-502c55b2ef7e",
+      "serverTimeMs": 1789749837308,
+      "clockSkewMs": -2,
+      "timeValid": true,
+      "connectedAt": 1789749837310,
+      "reconnects": 0,
+      "healthy": true
+    },
+    "counts": {
+      "working": 37,
+      "openButFeedOffline": 0,
+      "closed": 0,
+      "suspended": 0,
+      "disabled": 17,
+      "notOffered": 0,
+      "unknown": 0,
+      "total": 54
+    },
+    "workingMarkets": [
+      "EURUSD:OTC",
+      "GBPUSD:OTC",
+      "USDJPY:OTC",
+      "EURGBP:OTC",
+      "GBPJPY:OTC",
+      "AUDUSD:OTC",
+      "USDCAD:OTC",
+      "USDCHF:OTC",
+      "EURJPY:OTC",
+      "AUDJPY:OTC",
+      "EURAUD:OTC",
+      "EURCHF:OTC",
+      "EURCAD:OTC",
+      "EURNZD:OTC",
+      "AUDCAD:OTC",
+      "AUDCHF:OTC",
+      "AUDNZD:OTC",
+      "CADJPY:OTC",
+      "CADCHF:OTC",
+      "GBPAUD:OTC",
+      "GBPCAD:OTC",
+      "GBPCHF:OTC",
+      "GBPNZD:OTC",
+      "NZDCAD:OTC",
+      "NZDJPY:OTC",
+      "USDMXN:OTC",
+      "USDBRL:OTC",
+      "USDTRY:OTC",
+      "USDZAR:OTC",
+      "XAUUSD:NORMAL",
+      "XAGUSD:NORMAL",
+      "US30:NORMAL",
+      "US100:NORMAL",
+      "US500:NORMAL",
+      "US2000:NORMAL",
+      "JP225:NORMAL",
+      "BTCUSD:OTC"
+    ],
+    "problems": []
+  },
+  "phase2": {
+    "executed": true,
+    "target": "EURUSD:OTC",
+    "targetWasWorking": true,
+    "arm": {
+      "status": 200,
+      "ok": true,
+      "body": {
+        "state": "ARMED",
+        "twoFactorRequired": false,
+        "email": null,
+        "connectedAt": null,
+        "lastError": null,
+        "hasSession": false,
+        "armed": true,
+        "connectedAccountType": "PRACTICE",
+        "marketDataHealthy": true,
+        "practiceOnly": true,
+        "maxPracticeStakeBrl": 100,
+        "disarmReason": null,
+        "limit": {
+          "brokerCurrency": "BRL",
+          "userLimitBrl": 1,
+          "effective": 1,
+          "rate": 1,
+          "hardCapBrl": 100
+        },
+        "userLimitBrl": 1,
+        "mode": "PRACTICE",
+        "currency": "USD",
+        "fxMode": "NOMINAL_BROKER_CURRENCY_CAP",
+        "warning": null,
+        "openMarkets": 37,
+        "marketsEnabled": 37,
+        "markets": [
+          {
+            "marketKey": "EURUSD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "GBPUSD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "USDJPY:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "EURGBP:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "GBPJPY:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "AUDUSD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "USDCAD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "USDCHF:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "EURJPY:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "AUDJPY:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "EURAUD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "EURCHF:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "EURCAD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "EURNZD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "AUDCAD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "AUDCHF:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "AUDNZD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "CADJPY:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "CADCHF:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "GBPAUD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "GBPCAD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "GBPCHF:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "GBPNZD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "NZDCAD:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "NZDJPY:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "USDMXN:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "USDBRL:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "USDTRY:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "USDZAR:OTC",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "XAUUSD:NORMAL",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "XAGUSD:NORMAL",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "US30:NORMAL",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "US100:NORMAL",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "US500:NORMAL",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "US2000:NORMAL",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "JP225:NORMAL",
+            "availability": "OPEN"
+          },
+          {
+            "marketKey": "BTCUSD:OTC",
+            "availability": "OPEN"
+          }
+        ],
+        "brokerAutomation": "WS_ONLY_PRACTICE"
+      }
+    },
+    "order": {
+      "status": 200,
+      "ok": true,
+      "body": {
+        "state": "ACKNOWLEDGED",
+        "twoFactorRequired": false,
+        "email": null,
+        "connectedAt": null,
+        "lastError": null,
+        "hasSession": false,
+        "duplicate": false,
+        "marketKey": "EURUSD:OTC",
+        "executionId": "exec_1789761733551_9531r8",
+        "idempotencyKey": "office-v3-practice-1789761732955",
+        "requestId": "office-v3-practice-1789761732955",
+        "mode": "PRACTICE",
+        "brokerOrderId": "14274204934",
+        "ackMs": 463,
+        "source": "socket-option-opened",
+        "account": {
+          "practice": {
+            "verified": true,
+            "balanceId": 1250741747,
+            "balance": 60,
+            "currency": "USD"
+          },
+          "real": {
+            "available": true,
+            "balanceId": 1250741746,
+            "balance": 0,
+            "currency": "BRL"
+          },
+          "hasReal": true,
+          "checkedAt": 1789749850887,
+          "type": "PRACTICE"
+        },
+        "armState": {
+          "state": "CONNECTED_PRACTICE",
+          "armed": false,
+          "connectedAccountType": "PRACTICE",
+          "marketDataHealthy": true,
+          "practiceOnly": true,
+          "maxPracticeStakeBrl": 100,
+          "disarmReason": "SMOKE_AUTO_DISARM"
+        },
+        "practiceOnly": true,
+        "brokerAutomation": "WS_ONLY_PRACTICE"
+      }
+    },
+    "disarm": {
+      "status": 200,
+      "ok": true,
+      "body": {
+        "state": "CONNECTED_PRACTICE",
+        "twoFactorRequired": false,
+        "email": null,
+        "connectedAt": null,
+        "lastError": null,
+        "hasSession": false,
+        "armed": false,
+        "connectedAccountType": "PRACTICE",
+        "marketDataHealthy": true,
+        "practiceOnly": true,
+        "maxPracticeStakeBrl": 100,
+        "disarmReason": "MANUAL_UI",
+        "brokerAutomation": "WS_ONLY_PRACTICE"
+      }
+    },
+    "correlation": "request marketKey == target",
+    "officeAfter": {
+      "connection": {
+        "connected": true,
+        "host": "ws.iqoption.com",
+        "connectionId": "1f73a03f-cfee-45b9-a3c2-502c55b2ef7e",
+        "serverTimeMs": 1789749837308,
+        "clockSkewMs": -2,
+        "timeValid": true,
+        "connectedAt": 1789749837310,
+        "reconnects": 0,
+        "healthy": true
+      },
+      "mode": "PRACTICE"
+    }
+  },
+  "missingMechanisms": [
+    "Não existe endpoint de disparo em lote (um sinal por vez apenas em /api/iq/test-order).",
+    "Não existe endpoint que force um ciclo de análise/consenso sob demanda (o pipeline roda sozinho no relay)."
+  ]
+}

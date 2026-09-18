@@ -156,37 +156,30 @@ describe("OFFICE V3 — cenários de presença (world.js + life.js)", () => {
     expect(system.stats.openStations).toBe(0);
   });
 
-  it("0 OPEN → todos os 110 agentes ficam em áreas sociais", () => {
-    const { system } = makeScenario(0, "s0-social");
+  it("0 OPEN → todos os 110 agentes ficam ocultos (sem social/idle)", () => {
+    const { system } = makeScenario(0, "s0-hidden");
     const states = getAgentStates(system);
     expect(states).toHaveLength(TOTAL_AGENTS);
     for (const state of states) {
       expect(state.working).toBe(false);
-      expect(inAnyZone(system.world, state.x, state.y), `${state.id} fora de área social`).toBe(true);
+      expect(state.hidden).toBe(true);
+      expect(state.location).toBe("hidden");
     }
   });
 
-  it("reabrir um posto faz os agentes voltarem andando e chegarem (sem teleporte)", () => {
+  it("reabrir um posto faz os agentes reaparecerem no desk (sem teleporte social)", () => {
     const { system } = makeScenario(0, "reopen");
     const station = system.world.stations[0];
     const find = () => getAgentStates(system).find((state: any) => state.stationId === station.id && state.role === "trader");
     const before = find();
-    expect(before.atDesk).toBe(false);
-    const startX = before.x;
-    const startY = before.y;
+    expect(before.hidden).toBe(true);
 
     expect(setPresence(system, station.id, true)).toBe(true);
     updateLife(system, 16);
-    const during = find();
-    expect(during.traveling).toBe(true);
-    expect(during.atDesk).toBe(false);
-    expect(during.pathLength).toBeGreaterThan(1);
-    expect(Math.hypot(during.x - startX, during.y - startY)).toBeLessThan(12);
-
-    for (let index = 0; index < 8000; index += 1) updateLife(system, 16);
     const after = find();
     expect(after.atDesk).toBe(true);
     expect(after.working).toBe(true);
+    expect(after.hidden).toBe(false);
     expect(after.traveling).toBe(false);
     expect(Math.hypot(after.x - after.home.x, after.y - after.home.y)).toBeLessThan(1);
   });

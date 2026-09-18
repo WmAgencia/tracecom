@@ -302,6 +302,16 @@ export function buildWorldState(officeJson = {}) {
     baseHeight: BASE_HEIGHT,
     worldWidth: WORLD_WIDTH,
     worldHeight: WORLD_HEIGHT,
+    minX: CONTENT_X,
+    minY: CONTENT_Y,
+    maxX: CONTENT_X + CONTENT_WIDTH,
+    maxY: CONTENT_Y + CONTENT_HEIGHT,
+    contentBounds: {
+      minX: CONTENT_X,
+      minY: CONTENT_Y,
+      maxX: CONTENT_X + CONTENT_WIDTH,
+      maxY: CONTENT_Y + CONTENT_HEIGHT,
+    },
     layout: STATION_LAYOUT,
     cells,
     stations,
@@ -322,131 +332,16 @@ export function stationPlaque(station) {
  * ------------------------------------------------------------------ */
 
 function buildAmenities() {
-  const items = [];
-  const tile = (name, x, y, w, h, opts = {}) => items.push({ kind: "tile", name, x, y, w, h, opts, sortY: y });
-  const sprite = (name, x, y, opts = {}, sortY = null) =>
-    items.push({ kind: "sprite", name, x, y, opts, sortY: sortY ?? y + (opts.h ?? 40) });
-  const actor = (pose, x, y, opts = {}, sortY = null) =>
-    items.push({ kind: "character", pose, x, y, opts, sortY: sortY ?? y });
-
-  const X0 = CONTENT_X;
-  const X1 = CONTENT_X + CONTENT_WIDTH;
-
-  /* ================= TOP BAND (y 0..362) ================= */
-  // warm wood floor is painted by drawFloor() behind the panels and the board
-  // the left panel stack (logo/posters/professor) is drawn on the ground layer
-  // lounge
-  tile("rug_blue", X0 + 248, 224, 240, 116, {});
-  sprite("sofa", X0 + 258, 236, { w: 150, h: 42, color: PALETTE_V3.leather, outline: PALETTE_V3.leatherDark, color3: PALETTE_V3.leatherHi });
-  sprite("armchair", X0 + 420, 244, { w: 42, h: 40, color: PALETTE_V3.sofa, outline: PALETTE_V3.sofaDark, color3: PALETTE_V3.sofaHi });
-  sprite("coffee_table", X0 + 300, 288, { w: 96, h: 22 });
-  sprite("plant_large", X0 + 246, 224, {});
-  sprite("lamp", X0 + 470, 338, { height: 46, pool: 60, alpha: 0.2 });
-  actor("talk", X0 + 292, 264, { seed: hashString("lounge-1"), shirt: "#7a3a4a", role: "trader" });
-  actor("coffee", X0 + 386, 270, { seed: hashString("lounge-2"), role: "critic" });
-
-  // pool table
-  tile("rug_red", X0 + 498, 224, 214, 116, {});
-  sprite("pool_table", X0 + 512, 240, { w: 170, h: 74, frame: "#3a2414", rail: "#5a3a22" });
-  sprite("lamp", X0 + 600, 232, { height: 42, pool: 70, alpha: 0.22 });
-  sprite("plant_small", X0 + 498, 228, {});
-  actor("pool", X0 + 534, 258, { seed: hashString("pool-1"), shirt: "#3a4a7a", role: "trader" });
-  actor("pool", X0 + 670, 268, { seed: hashString("pool-2"), role: "critic" });
-
-  // cafe / kitchen
-  tile("floor_wood", X0 + 720, 222, 232, 118, { plankH: 16 });
-  sprite("kitchen_counter", X0 + 730, 252, { w: 140, h: 46 });
-  sprite("fridge", X0 + 882, 232, { w: 38, h: 64 });
-  sprite("bookshelf", X0 + 730, 222, { w: 120, h: 36, shelves: 2, seed: 7 });
-  actor("coffee", X0 + 770, 302, { seed: hashString("cafe-1"), shirt: "#7a4a2a", role: "trader" });
-  actor("talk", X0 + 850, 302, { seed: hashString("cafe-2"), role: "critic" });
-
-  // meeting
-  tile("rug_blue", X0 + 964, 252, 228, 88, {});
-  sprite("coffee_table", X0 + 1002, 278, { w: 150, h: 26 });
-  sprite("armchair", X0 + 972, 256, { w: 40, h: 38 });
-  sprite("armchair", X0 + 1140, 256, { w: 40, h: 38 });
-  actor("sit", X0 + 1002, 272, { seed: hashString("meet-1"), role: "trader" });
-  actor("sit", X0 + 1136, 272, { seed: hashString("meet-2"), role: "critic" });
-
-  // research
-  tile("floor_carpet", X0 + 1204, 224, 220, 116, { color: "#1c2c44" });
-  sprite("bookshelf", X0 + 1214, 228, { w: 112, h: 92, shelves: 4, seed: 21 });
-  sprite("whiteboard", X0 + 1336, 230, { w: 80, h: 50 });
-  sprite("research_desk", X0 + 1254, 300, { w: 140, h: 46, plaque: "PESQUISA" });
-  sprite("monitor", X0 + 1318, 278, { w: 30, h: 20 });
-  actor("work", X0 + 1254, 304, { seed: hashString("res-1"), shirt: "#4a5a86", role: "trader" });
-  actor("observe", X0 + 1378, 338, { seed: hashString("res-2"), role: "critic" });
-
-  // data center
-  tile("floor_tiles", X0 + 1434, 224, 100, 116, { size: 24 });
-  sprite("server_rack", X0 + 1442, 232, { w: 36, h: 80 });
-  sprite("server_rack", X0 + 1484, 232, { w: 36, h: 80 });
-  actor("observe", X0 + 1500, 338, { seed: hashString("data-1"), role: "critic" });
-
-  /* ================= CORRIDOR DENSITY (gaps between bands) ================= */
-  for (let col = 0; col < COLUMN_COUNT; col += 1) {
-    const cx = COLUMNS[col];
-    for (let row = 0; row < 4; row += 1) {
-      const gapY = BAND_START + row * BAND_PITCH - 30;
-      if (col % 2 === 0) sprite("plant_small", cx - 24, gapY + 6, {}, gapY + 28);
-      else sprite("plant_small", cx + 18, gapY + 6, {}, gapY + 28);
-    }
-  }
-  // side rails of plants + warm lamps so the floor has no empty navy regions
-  for (let row = 0; row < 5; row += 1) {
-    const y = BAND_START + row * BAND_PITCH;
-    sprite("plant_large", X0 + 4, y + 24, {}, y + 84);
-    sprite("plant_large", X1 - 22, y + 24, {}, y + 84);
-    sprite("lamp", X0 + 28, y + 74, { height: 46, pool: 60, alpha: 0.14 });
-    sprite("lamp", X1 - 42, y + 74, { height: 46, pool: 60, alpha: 0.14 });
-    sprite("bookshelf", X0 + 4, y + 34, { w: 30, h: 54, shelves: 2, seed: row + 3 }, y + 92);
-  }
-
-  /* ================= BOTTOM BAND (y 900..1024) ================= */
-  // wood floor is painted by drawFloor(); add the rug + furnishings here
-  tile("rug_amber", X0 + 372, 924, 792, 100, {});
-  // seating flanking the central TRACE/COM branding (drawn on the ground layer)
-  sprite("sofa", X0 + 380, 930, { w: 170, h: 44, color: PALETTE_V3.leather, outline: PALETTE_V3.leatherDark, color3: PALETTE_V3.leatherHi });
-  sprite("sofa", X0 + 970, 930, { w: 170, h: 44, color: PALETTE_V3.sofa, outline: PALETTE_V3.sofaDark, color3: PALETTE_V3.sofaHi });
-  sprite("coffee_table", X0 + 400, 992, { w: 110, h: 24 });
-  sprite("coffee_table", X0 + 1010, 992, { w: 110, h: 24 });
-  sprite("armchair", X0 + 300, 966, { w: 44, h: 40 });
-  sprite("armchair", X0 + 1150, 966, { w: 44, h: 40 });
-  sprite("pool_table", X0 + 270, 936, { w: 150, h: 72 });
-  sprite("stairs", X0 + 10, 940, { w: 130, h: 150, direction: "right" }, 1090);
-  sprite("stairs", X0 + 1390, 940, { w: 130, h: 150, direction: "left" }, 1090);
-  sprite("window", X0 + 150, 910, { w: 110, h: 84 });
-  sprite("window", X0 + 1230, 910, { w: 110, h: 84 });
-  sprite("plant_large", X0 + 30, 916, {});
-  sprite("plant_large", X0 + 1310, 916, {});
-  sprite("plant_large", X0 + 240, 1000, {});
-  sprite("plant_large", X0 + 1090, 1000, {});
-  sprite("lamp", X0 + 290, 1014, { height: 50, pool: 80, alpha: 0.18 });
-  sprite("lamp", X0 + 1060, 1014, { height: 50, pool: 80, alpha: 0.18 });
-  sprite("poster", X0 + 60, 916, { w: 40, h: 56, seed: 5 });
-  sprite("poster", X0 + 1240, 916, { w: 40, h: 56, seed: 9 });
-  actor("talk", X0 + 470, 974, { seed: hashString("ter-1"), shirt: "#3a4a7a", role: "trader" });
-  actor("coffee", X0 + 1010, 974, { seed: hashString("ter-2"), role: "critic" });
-  actor("pool", X0 + 300, 984, { seed: hashString("ter-3"), shirt: "#7a3a4a", role: "trader" });
-  actor("idle", X0 + 1080, 988, { seed: hashString("ter-4"), role: "critic" });
-
-  return items;
+  return [];
 }
-
 function buildLighting() {
   const pools = [];
   const cx = CONTENT_X + CONTENT_WIDTH / 2;
   for (let row = 0; row < 5; row += 1) {
     pools.push({ x: cx, y: BAND_START + row * BAND_PITCH + 34, radius: 430, color: PALETTE_V3.amber, alpha: 0.06 });
   }
-  pools.push({ x: CONTENT_X + 220, y: 200, radius: 300, color: PALETTE_V3.amber, alpha: 0.09 });
-  pools.push({ x: CONTENT_X + 900, y: 230, radius: 320, color: PALETTE_V3.amber, alpha: 0.08 });
-  pools.push({ x: CONTENT_X + 1300, y: 200, radius: 300, color: PALETTE_V3.amber, alpha: 0.08 });
-  pools.push({ x: cx, y: 980, radius: 460, color: PALETTE_V3.amber, alpha: 0.1 });
   return pools;
 }
-
 /* ------------------------------------------------------------------ *
  * 7. HIT TESTING
  * ------------------------------------------------------------------ */
@@ -580,41 +475,6 @@ function drawRibbonAt(ctx, label, centerX, y, accent, accentHi) {
   drawPixelText(ctx, label, x + w / 2, y + 6, { scale: 2, align: "center", color: PALETTE_V3.white, shadow: "rgba(0,0,0,0.5)" });
 }
 
-function drawLeftPanels(ctx) {
-  const x = CONTENT_X + 8;
-  const w = 224;
-  // "TRADER É UM JOGO DE LONGO PRAZO" poster
-  drawPanel(ctx, x, 104, w, 62, "#12233f", PALETTE_V3.gold);
-  drawPixelParagraph(ctx, "TRADER É UM JOGO DE LONGO PRAZO", x + w / 2, 114, w - 16, { scale: 1, align: "center", color: PALETTE_V3.goldHi, lineHeight: 11 });
-  // "FOCO DISCIPLINA PROCESSO RESULTADO" poster
-  drawPanel(ctx, x, 172, w, 62, "#2a1a10", PALETTE_V3.gold);
-  drawPixelParagraph(ctx, "FOCO DISCIPLINA PROCESSO RESULTADO", x + w / 2, 182, w - 16, { scale: 1, align: "center", color: "#e8c877", lineHeight: 11 });
-  // PROFESSOR & PESQUISA panel
-  drawPanel(ctx, x, 240, w, 118, "#0d1b2e", "#2a4a80");
-  drawPixelText(ctx, "PROFESSOR", x + 12, 250, { scale: 2, color: "#7ab0e8" });
-  drawPixelText(ctx, "& PESQUISA", x + 12, 270, { scale: 1, color: PALETTE_V3.white });
-  const labels = ["DADOS", "TESTES", "APRENDIZADO", "EVOLUÇÃO"];
-  labels.forEach((label, index) => {
-    drawPixelText(ctx, label, x + 12, 292 + index * 14, { scale: 1, color: "#9ab8dc" });
-    if (index < labels.length - 1) pxRectLocal(ctx, x + 12, 302 + index * 14, w - 30, 1, "rgba(120,150,200,0.14)");
-  });
-}
-
-function drawBottomBranding(ctx) {
-  const cx = WORLD_WIDTH / 2;
-  const w = 360;
-  const h = 74;
-  const x = Math.round(cx - w / 2);
-  const y = 948;
-  pxRectLocal(ctx, x - 5, y - 5, w + 10, h + 10, "rgba(0,0,0,0.4)");
-  pxRectLocal(ctx, x, y, w, h, "#0d1b2e");
-  pxRectLocal(ctx, x, y, w, 3, PALETTE_V3.border);
-  pxRectLocal(ctx, x, y + h - 3, w, 3, PALETTE_V3.border);
-  pxRectLocal(ctx, x + 3, y + 3, w - 6, 1, "rgba(255,255,255,0.08)");
-  drawPixelText(ctx, "TRACE/COM", cx, y + 14, { scale: 4, align: "center", color: PALETTE_V3.white });
-  drawPixelText(ctx, "VISION · SHADOW · RESULT", cx, y + 52, { scale: 2, align: "center", color: PALETTE_V3.goldHi });
-}
-
 function drawPanel(ctx, x, y, w, h, bg, border) {
   pxRectLocal(ctx, x, y, w, h, PALETTE_V3.woodDark);
   pxRectLocal(ctx, x + 1, y + 1, w - 2, h - 2, border ?? PALETTE_V3.border);
@@ -629,8 +489,6 @@ function drawBackWallItems(ctx, worldState) {
   drawMarketsBox(ctx, CONTENT_X + 840, 6, board);
   drawValueBox(ctx, CONTENT_X + 840, 132, 170, 52, "LUCRO SEMANAL", board.weeklyText);
   drawValueBox(ctx, CONTENT_X + 840, 190, 170, 52, "LUCRO MENSAL", board.monthlyText);
-  drawGlobalPanel(ctx, CONTENT_X + 1022, 6, 260, 160, worldState);
-  drawDisciplinePoster(ctx, CONTENT_X + 1294, 6, 224, 140);
   drawLogo(ctx, CONTENT_X + 10, 12);
 }
 
@@ -688,16 +546,25 @@ function drawDailyBoard(ctx, board) {
     if (index < metrics.length - 1) pxRectLocal(ctx, metricX, rowY + 11, 130, 1, "rgba(120,150,200,0.14)");
   });
 
-  // equity chart — real settled series only, explicit placeholder when absent
+  // equity chart — real settled series only, explicit placeholder when absent.
+  // Padding keeps the line and the min/max labels fully inside the frame.
   const chartX = x + 180;
-  const chartY = y + 120;
+  const chartY = y + 128;
   const chartW = 384;
-  const chartH = 84;
+  const chartH = 76;
+  const padX = 7;
+  const padY = 9;
+  const innerW = chartW - padX * 2;
+  const innerH = chartH - padY * 2;
   pxRectLocal(ctx, chartX, chartY, chartW, chartH, "#08121f");
-  for (let gx = 0; gx <= 4; gx += 1) pxRectLocal(ctx, chartX + (chartW / 4) * gx, chartY, 1, chartH, "rgba(90,130,190,0.16)");
-  for (let gy = 0; gy <= 4; gy += 1) pxRectLocal(ctx, chartX, chartY + (chartH / 4) * gy, chartW, 1, "rgba(90,130,190,0.16)");
+  pxRectLocal(ctx, chartX, chartY, chartW, 1, "rgba(120,150,200,0.35)");
+  pxRectLocal(ctx, chartX, chartY + chartH - 1, chartW, 1, "rgba(120,150,200,0.35)");
+  pxRectLocal(ctx, chartX, chartY, 1, chartH, "rgba(120,150,200,0.35)");
+  pxRectLocal(ctx, chartX + chartW - 1, chartY, 1, chartH, "rgba(120,150,200,0.35)");
+  for (let gx = 1; gx < 4; gx += 1) pxRectLocal(ctx, chartX + (chartW / 4) * gx, chartY + 1, 1, chartH - 2, "rgba(90,130,190,0.14)");
+  for (let gy = 1; gy < 4; gy += 1) pxRectLocal(ctx, chartX + 1, chartY + (chartH / 4) * gy, chartW - 2, 1, "rgba(90,130,190,0.14)");
   if (board.equityPlaceholder) {
-    pxRectLocal(ctx, chartX, chartY + Math.round(chartH / 2), chartW, 1, "rgba(120,150,200,0.3)");
+    pxRectLocal(ctx, chartX + 1, chartY + Math.round(chartH / 2), chartW - 2, 1, "rgba(120,150,200,0.3)");
     drawPixelText(ctx, "SEM SÉRIE DE RESULTADO", chartX + chartW / 2, chartY + Math.round(chartH / 2) - 4, { scale: 1, align: "center", color: PALETTE_V3.metal });
     drawPixelText(ctx, "EQUITY · SEM DADOS", chartX, chartY - 10, { scale: 1, color: PALETTE_V3.metal });
   } else {
@@ -706,21 +573,30 @@ function drawDailyBoard(ctx, board) {
     const max = Math.max(...series);
     const span = max - min || 1;
     const lineColor = negative ? PALETTE_V3.red : PALETTE_V3.green;
-    let previous = null;
+    const xAt = (index) => chartX + padX + (series.length === 1 ? innerW / 2 : (innerW / (series.length - 1)) * index);
+    const yAt = (value) => chartY + padY + innerH - ((value - min) / span) * innerH;
+    // zero baseline only when the real range crosses zero (never invented)
+    if (min <= 0 && max >= 0) {
+      pxRectLocal(ctx, chartX + 1, Math.round(yAt(0)), chartW - 2, 1, "rgba(120,150,200,0.35)");
+    }
+    ctx.save();
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+    ctx.beginPath();
     series.forEach((value, index) => {
-      const px = chartX + (chartW / (series.length - 1)) * index;
-      const py = chartY + chartH - ((value - min) / span) * (chartH - 6) - 3;
-      if (previous) {
-        ctx.strokeStyle = lineColor;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(previous.x, previous.y);
-        ctx.lineTo(px, py);
-        ctx.stroke();
-      }
-      previous = { x: px, y: py };
+      const px = xAt(index);
+      const py = yAt(value);
+      if (index === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
     });
+    ctx.stroke();
+    ctx.restore();
+    const lastValue = series[series.length - 1];
+    pxRectLocal(ctx, Math.round(xAt(series.length - 1)) - 2, Math.round(yAt(lastValue)) - 2, 4, 4, lineColor);
+    // Header: real series label + real last value, read from the settled series.
     drawPixelText(ctx, "EQUITY · SÉRIE REAL", chartX, chartY - 10, { scale: 1, color: PALETTE_V3.goldHi });
+    drawPixelText(ctx, signedBRL(lastValue), chartX + chartW, chartY - 10, { scale: 1, align: "right", color: lineColor });
   }
 }
 
@@ -750,42 +626,6 @@ function drawValueBox(ctx, x, y, w, h, title, value) {
   const empty = value === "—";
   const safe = empty ? "SEM DADOS" : value;
   drawPixelText(ctx, safe, x + w / 2, empty ? y + 30 : y + 26, { scale: empty ? 1 : 2, align: "center", color: empty ? PALETTE_V3.metal : value.startsWith("−") || value.startsWith("-") ? PALETTE_V3.red : PALETTE_V3.green });
-}
-
-function drawGlobalPanel(ctx, x, y, w, h, worldState) {
-  drawPanel(ctx, x, y, w, h, "#101a2b", PALETTE_V3.border);
-  drawPixelParagraph(ctx, "MERCADO GLOBAL 24H", x + 12, y + 10, w - 24, { scale: 2, color: "#7ab0e8", lineHeight: 18 });
-  drawPixelParagraph(ctx, "MAPA AGREGADO · DADOS REAIS", x + 12, y + 40, w - 24, { scale: 1, color: "#8fb4e0", lineHeight: 11 });
-  // simple world map blobs
-  const mx = x + 16;
-  const my = y + 58;
-  const mw = w - 32;
-  const mh = h - 78;
-  pxRectLocal(ctx, mx, my, mw, mh, "#08131f");
-  const blob = (fx, fy, fw, fh) => {
-    pxRectLocal(ctx, mx + mw * fx, my + mh * fy, Math.max(3, mw * fw), Math.max(3, mh * fh), "#1d5a9a");
-    pxRectLocal(ctx, mx + mw * fx + 1, my + mh * fy + 1, Math.max(2, mw * fw - 2), Math.max(2, mh * fh - 2), "#2f78bc");
-  };
-  blob(0.08, 0.14, 0.2, 0.28);
-  blob(0.24, 0.5, 0.12, 0.34);
-  blob(0.44, 0.14, 0.12, 0.18);
-  blob(0.46, 0.4, 0.14, 0.4);
-  blob(0.6, 0.16, 0.24, 0.26);
-  blob(0.78, 0.62, 0.13, 0.16);
-  for (const [fx, fy] of [[0.18, 0.3], [0.3, 0.6], [0.5, 0.3], [0.53, 0.55], [0.72, 0.3], [0.84, 0.66]]) {
-    pxRectLocal(ctx, mx + mw * fx, my + mh * fy, 3, 3, PALETTE_V3.amber);
-  }
-  drawPixelText(ctx, `${worldState.stations.length} ATIVOS MONITORADOS`, x + w / 2, y + h - 14, { scale: 1, align: "center", color: PALETTE_V3.goldHi });
-}
-
-function drawDisciplinePoster(ctx, x, y, w, h) {
-  drawPanel(ctx, x, y, w, h, "#3a2a18", PALETTE_V3.gold);
-  drawPixelParagraph(ctx, "DISCIPLINA TRANSFORMA ESTRATEGIA EM LIBERDADE", x + w / 2, y + 16, w - 20, {
-    scale: 1,
-    align: "center",
-    color: PALETTE_V3.goldHi,
-    lineHeight: 12,
-  });
 }
 
 export const DESK_TOP_DEPTH = 18;
@@ -915,14 +755,12 @@ export function drawWorld(ctx, worldState, camera = {}, options = {}) {
     drawFloor(ctx);
     drawWalls(ctx);
     drawBackWallItems(ctx, worldState);
-    drawLeftPanels(ctx);
     for (const row of BAND_ROWS) drawRibbon(ctx, row);
     const tiles = worldState.amenities.filter((item) => item.kind === "tile");
     for (const item of tiles) {
       renderStats.tilesDrawn += 1;
       drawAmenity(ctx, item);
     }
-    drawBottomBranding(ctx);
   }
 
   // objects sorted with the painter's algorithm (bottom edge, then x)
@@ -998,10 +836,8 @@ function buildGroundLayer(worldState) {
   drawFloor(context);
   drawWalls(context);
   drawBackWallItems(context, worldState);
-  drawLeftPanels(context);
   for (const row of BAND_ROWS) drawRibbon(context, row);
   for (const item of worldState.amenities) if (item.kind === "tile") drawAmenity(context, item);
-  drawBottomBranding(context);
   return canvas;
 }
 

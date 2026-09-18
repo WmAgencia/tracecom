@@ -361,6 +361,27 @@ async function scenario0Boot(page, baseUrl) {
           equityPlaceholder: board.equityPlaceholder,
         },
         ghostAgents,
+        centering: (() => {
+          const camera = api.camera();
+          const module = api.cameraModule();
+          const bounds = camera.bounds;
+          const center = { x: camera.x + camera.viewport.width / (2 * camera.zoom), y: camera.y + camera.viewport.height / (2 * camera.zoom) };
+          const content = state.contentBounds ?? null;
+          const contentCenter = content ? { x: (content.minX + content.maxX) / 2, y: (content.minY + content.maxY) / 2 } : null;
+          const tl = module.worldToScreen(camera, bounds.minX, bounds.minY);
+          const br = module.worldToScreen(camera, bounds.maxX, bounds.maxY);
+          return {
+            content,
+            contentCenter,
+            center,
+            dx: contentCenter ? Math.abs(center.x - contentCenter.x) : null,
+            dy: contentCenter ? Math.abs(center.y - contentCenter.y) : null,
+            marginLeft: tl.x,
+            marginTop: tl.y,
+            marginRight: camera.viewport.width - br.x,
+            marginBottom: camera.viewport.height - br.y,
+          };
+        })(),
         eur: derive("EURUSD:NORMAL"),
         gbp: derive("GBPUSD:NORMAL"),
         jpy: derive("USDJPY:NORMAL"),
@@ -370,6 +391,14 @@ async function scenario0Boot(page, baseUrl) {
     assert(0, "mundo com 54 estações do universo reconciliado", boot.stations === 54, "browser-s0-boot.png", { stations: boot.stations });
     assert(0, "canvas renderizado (não vazio)", boot.distinctColors > 24, "browser-s0-boot.png", { distinctColors: boot.distinctColors });
     assert(0, "status de carregamento saiu da tela", boot.statusHidden === true, "browser-s0-boot.png", {});
+    const centeredPass = Boolean(boot.centering.content)
+      && boot.centering.dx < 2
+      && boot.centering.dy < 2
+      && boot.centering.marginLeft >= 0
+      && boot.centering.marginTop >= 0
+      && boot.centering.marginRight >= 0
+      && boot.centering.marginBottom >= 0;
+    assert(0, "escritório nasce centrado com folga nos 4 lados", centeredPass, "browser-s0-boot.png", boot.centering);
     assert(0, "EUR/USD WORKING + agentes", boot.eur?.state === "WORKING" && boot.eur.agentsWorking === true, "browser-s0-boot.png", boot.eur);
     assert(0, "GBP/USD OPEN_BUT_FEED_OFFLINE + sem agentes", boot.gbp?.state === "OPEN_BUT_FEED_OFFLINE" && boot.gbp.agentsWorking === false, "browser-s0-boot.png", boot.gbp);
     assert(0, "USD/JPY CLOSED e EUR/GBP SUSPENDED", boot.jpy?.state === "CLOSED" && boot.eurgbp?.state === "SUSPENDED", "browser-s0-boot.png", { jpy: boot.jpy?.state, eurgbp: boot.eurgbp?.state });
@@ -431,9 +460,11 @@ async function scenario1Pan(page, baseUrl) {
     return { selection, bodyClass, cursor };
   };
 
-  // zoom in first so the camera has room to move away from the 0,0 clamp.
+  // Ctrl+wheel zooms in first so the camera has room to move inside the clamp.
   await page.mouse.move(640, 400);
+  await page.keyboard.down("Control");
   await page.mouse.wheel(0, -300);
+  await page.keyboard.up("Control");
   await page.waitForTimeout(120);
   await page.keyboard.down("Space");
 
@@ -469,38 +500,64 @@ async function scenario1Pan(page, baseUrl) {
 
 async function scenario2WheelZoom(page, baseUrl) {
   await ensurePage(page, baseUrl);
-  console.log("\n[scenario 2] wheel zoom centrado no cursor");
+  console.log("\n[scenario 2] wheel = scroll (pan) · Ctrl+wheel = zoom no cursor");
   await page.evaluate(() => {
     const api = window.__tracecomOffice;
     const camera = api.camera();
-    camera.zoom = 1;
-    camera.x = 300;
-    camera.y = 200;
+    camera.zoom = 1.4;
     camera.target = null;
+    const bounds = camera.bounds;
+    camera.x = (bounds.minX + bounds.maxX) / 2 - camera.viewport.width / (2 * camera.zoom);
+    camera.y = (bounds.minY + bounds.maxY) / 2 - camera.viewport.height / (2 * camera.zoom);
     api.cameraModule().clampToBounds(camera);
   });
   const sx = 700;
   const sy = 420;
   await page.mouse.move(sx, sy);
+  await shot(page, "browser-s2-zoom-before.png");
+
+  // 1) plain wheel must scroll (pan vertically), never zoom.
+  const scrollBefore = await readCamera(page);
+  await page.mouse.wheel(0, 220);
+  await page.waitForTimeout(60);
+  const scrollAfter = await readCamera(page);
+  await shot(page, "browser-s2-scroll-vertical.png");
+  assert(2, "wheel normal NÃO altera o zoom", Math.abs(scrollAfter.zoom - scrollBefore.zoom) < 1e-9, "browser-s2-scroll-vertical.png", { from: scrollBefore.zoom, to: scrollAfter.zoom });
+  assert(2, "wheel normal desloca na vertical (pan)", Math.abs(scrollAfter.y - scrollBefore.y) > 1, "browser-s2-scroll-vertical.png", { from: scrollBefore.y, to: scrollAfter.y });
+
+  // 2) Shift+wheel scrolls horizontally.
+  const shiftBefore = await readCamera(page);
+  await page.keyboard.down("Shift");
+  await page.mouse.wheel(0, 220);
+  await page.keyboard.up("Shift");
+  await page.waitForTimeout(60);
+  const shiftAfter = await readCamera(page);
+  assert(2, "Shift+wheel desloca na horizontal", Math.abs(shiftAfter.x - shiftBefore.x) > 1 && Math.abs(shiftAfter.zoom - shiftBefore.zoom) < 1e-9, "browser-s2-scroll-vertical.png", { from: shiftBefore.x, to: shiftAfter.x });
+
+  // 3) Ctrl+wheel zooms smoothly, anchored on the cursor.
+  await page.mouse.move(sx, sy);
   const before = await worldPointAt(page, sx, sy);
   const camBefore = await readCamera(page);
-  await shot(page, "browser-s2-zoom-before.png");
+  await page.keyboard.down("Control");
   await page.mouse.wheel(0, -240);
+  await page.keyboard.up("Control");
   await page.waitForTimeout(80);
   const afterIn = await worldPointAt(page, sx, sy);
   const camIn = await readCamera(page);
   await shot(page, "browser-s2-zoom-in.png");
+  await page.keyboard.down("Control");
   await page.mouse.wheel(0, 240);
+  await page.keyboard.up("Control");
   await page.waitForTimeout(80);
   const afterOut = await worldPointAt(page, sx, sy);
   const camOut = await readCamera(page);
   await shot(page, "browser-s2-zoom-after.png");
   const driftIn = Math.hypot(afterIn.x - before.x, afterIn.y - before.y);
   const driftOut = Math.hypot(afterOut.x - before.x, afterOut.y - before.y);
-  assert(2, "zoom in aumenta o zoom", camIn.zoom > camBefore.zoom, "browser-s2-zoom-in.png", { from: camBefore.zoom, to: camIn.zoom });
-  assert(2, "ponto do mundo sob o cursor fica fixo (zoom in)", driftIn < 0.75, "browser-s2-zoom-in.png", { driftWorldPx: Number(driftIn.toFixed(4)) });
-  assert(2, "zoom out reduz o zoom", camOut.zoom < camIn.zoom, "browser-s2-zoom-after.png", { from: camIn.zoom, to: camOut.zoom });
-  assert(2, "ponto do mundo sob o cursor fica fixo (zoom out)", driftOut < 0.75, "browser-s2-zoom-after.png", { driftWorldPx: Number(driftOut.toFixed(4)) });
+  assert(2, "Ctrl+wheel aumenta o zoom", camIn.zoom > camBefore.zoom, "browser-s2-zoom-in.png", { from: camBefore.zoom, to: camIn.zoom });
+  assert(2, "ponto do mundo sob o cursor fica fixo (Ctrl+wheel in)", driftIn < 0.75, "browser-s2-zoom-in.png", { driftWorldPx: Number(driftIn.toFixed(4)) });
+  assert(2, "Ctrl+wheel reduz o zoom", camOut.zoom < camIn.zoom, "browser-s2-zoom-after.png", { from: camIn.zoom, to: camOut.zoom });
+  assert(2, "ponto do mundo sob o cursor fica fixo (Ctrl+wheel out)", driftOut < 0.75, "browser-s2-zoom-after.png", { driftWorldPx: Number(driftOut.toFixed(4)) });
 }
 
 async function scenario3ClampEdges(page, baseUrl) {
@@ -738,7 +795,7 @@ async function scenario7StateLabel(page, baseUrl) {
     && state.gbpDerived.shortLabel === "FEED OFFLINE"
     && state.gbpDerived.agentsWorking === false;
   assert(7, "estado derivado é MERCADO ABERTO · FEED OFFLINE", labelPass, "browser-s7-feed-offline.png", state.gbpDerived);
-  assert(7, "painel mostra o MESMO rótulo do desk", state.panelState === "MERCADO ABERTO · FEED OFFLINE" && state.panelAgents === "OCIOSO (SOCIAL/IDLE)", "browser-s7-feed-offline.png", { panelState: state.panelState, panelAgents: state.panelAgents });
+  assert(7, "painel mostra o MESMO rótulo do desk", state.panelState === "MERCADO ABERTO · FEED OFFLINE" && state.panelAgents === "SEM AGENTES (ATIVO FECHADO)", "browser-s7-feed-offline.png", { panelState: state.panelState, panelAgents: state.panelAgents });
   assert(7, "agentes não trabalham com feed offline (sem fantasma)", state.ghostAgents === 0 && state.feedOfflineStat >= 1, "browser-s7-feed-offline.png", { ghostAgents: state.ghostAgents, working: state.working, feedOffline: state.feedOfflineStat });
 }
 

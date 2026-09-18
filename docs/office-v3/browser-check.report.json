@@ -1,8 +1,8 @@
 {
-  "at": "2026-09-18T19:36:54.126Z",
+  "at": "2026-09-18T20:04:00.604Z",
   "engine": "playwright+chrome",
   "realBrowser": true,
-  "baseUrl": "http://127.0.0.1:59012",
+  "baseUrl": "http://127.0.0.1:61370",
   "scenarios": [
     0,
     1,
@@ -20,6 +20,7 @@
     "browser-s1-pan-before.png",
     "browser-s1-pan-after.png",
     "browser-s2-zoom-before.png",
+    "browser-s2-scroll-vertical.png",
     "browser-s2-zoom-in.png",
     "browser-s2-zoom-after.png",
     "browser-s3-minzoom.png",
@@ -32,8 +33,8 @@
     "browser-s6-eurjpy.png",
     "browser-s7-feed-offline.png"
   ],
-  "total": 48,
-  "passed": 48,
+  "total": 52,
+  "passed": 52,
   "failed": 0,
   "results": [
     {
@@ -60,7 +61,7 @@
       "pass": true,
       "evidence": "browser-s0-boot.png",
       "detail": {
-        "distinctColors": 586
+        "distinctColors": 338
       }
     },
     {
@@ -69,6 +70,34 @@
       "pass": true,
       "evidence": "browser-s0-boot.png",
       "detail": {}
+    },
+    {
+      "scenario": 0,
+      "assertion": "escritório nasce centrado com folga nos 4 lados",
+      "pass": true,
+      "evidence": "browser-s0-boot.png",
+      "detail": {
+        "content": {
+          "minX": 512,
+          "minY": 0,
+          "maxX": 2048,
+          "maxY": 1024
+        },
+        "contentCenter": {
+          "x": 1280,
+          "y": 512
+        },
+        "center": {
+          "x": 1280,
+          "y": 512
+        },
+        "dx": 0,
+        "dy": 0,
+        "marginLeft": 171.99999999999994,
+        "marginTop": 47.99999999999997,
+        "marginRight": 172,
+        "marginBottom": 48
+      }
     },
     {
       "scenario": 0,
@@ -209,8 +238,8 @@
       "pass": true,
       "evidence": "browser-s1-pan-after.png",
       "detail": {
-        "from": 243.97862924406985,
-        "to": 380.110975441421
+        "from": 630.1187761953967,
+        "to": 748.2375523907933
       }
     },
     {
@@ -219,8 +248,8 @@
       "pass": true,
       "evidence": "browser-s1-pan-after.png",
       "detail": {
-        "from": 380.110975441421,
-        "to": 243.97862924406988
+        "from": 748.2375523907933,
+        "to": 524.840881707961
       }
     },
     {
@@ -229,8 +258,8 @@
       "pass": true,
       "evidence": "browser-s1-pan-after.png",
       "detail": {
-        "from": 152.48664327754366,
-        "to": 251.4919859665263
+        "from": 171.4652607631487,
+        "to": 292.8836232198213
       }
     },
     {
@@ -239,8 +268,8 @@
       "pass": true,
       "evidence": "browser-s1-pan-after.png",
       "detail": {
-        "from": 251.4919859665263,
-        "to": 152.48664327754366
+        "from": 292.8836232198213,
+        "to": 130.41331726867054
       }
     },
     {
@@ -287,17 +316,47 @@
     },
     {
       "scenario": 2,
-      "assertion": "zoom in aumenta o zoom",
+      "assertion": "wheel normal NÃO altera o zoom",
       "pass": true,
-      "evidence": "browser-s2-zoom-in.png",
+      "evidence": "browser-s2-scroll-vertical.png",
       "detail": {
-        "from": 1,
-        "to": 1.4681454416819895
+        "from": 1.4,
+        "to": 1.4
       }
     },
     {
       "scenario": 2,
-      "assertion": "ponto do mundo sob o cursor fica fixo (zoom in)",
+      "assertion": "wheel normal desloca na vertical (pan)",
+      "pass": true,
+      "evidence": "browser-s2-scroll-vertical.png",
+      "detail": {
+        "from": 254.85714285714283,
+        "to": 412
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "Shift+wheel desloca na horizontal",
+      "pass": true,
+      "evidence": "browser-s2-scroll-vertical.png",
+      "detail": {
+        "from": 822.8571428571429,
+        "to": 980
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "Ctrl+wheel aumenta o zoom",
+      "pass": true,
+      "evidence": "browser-s2-zoom-in.png",
+      "detail": {
+        "from": 1.4,
+        "to": 2.0554036183547852
+      }
+    },
+    {
+      "scenario": 2,
+      "assertion": "ponto do mundo sob o cursor fica fixo (Ctrl+wheel in)",
       "pass": true,
       "evidence": "browser-s2-zoom-in.png",
       "detail": {
@@ -306,17 +365,17 @@
     },
     {
       "scenario": 2,
-      "assertion": "zoom out reduz o zoom",
+      "assertion": "Ctrl+wheel reduz o zoom",
       "pass": true,
       "evidence": "browser-s2-zoom-after.png",
       "detail": {
-        "from": 1.4681454416819895,
-        "to": 1
+        "from": 2.0554036183547852,
+        "to": 1.4000000000000001
       }
     },
     {
       "scenario": 2,
-      "assertion": "ponto do mundo sob o cursor fica fixo (zoom out)",
+      "assertion": "ponto do mundo sob o cursor fica fixo (Ctrl+wheel out)",
       "pass": true,
       "evidence": "browser-s2-zoom-after.png",
       "detail": {
@@ -340,12 +399,12 @@
       "evidence": "browser-s3-minzoom.png",
       "detail": {
         "topLeft": {
-          "x": 320,
-          "y": 104
+          "x": 448,
+          "y": 232
         },
         "bottomRight": {
-          "x": 960,
-          "y": 616
+          "x": 832,
+          "y": 488
         }
       }
     },
@@ -355,10 +414,10 @@
       "pass": true,
       "evidence": "browser-s3-maxedge.png",
       "detail": {
-        "x": 1280,
-        "maxX": 1280,
-        "y": 1328,
-        "maxY": 1328
+        "x": 768,
+        "maxX": 768,
+        "y": 304,
+        "maxY": 304
       }
     },
     {
@@ -367,8 +426,8 @@
       "pass": true,
       "evidence": "browser-s3-minedge.png",
       "detail": {
-        "x": 0,
-        "minX": 0,
+        "x": 512,
+        "minX": 512,
         "y": 0,
         "minY": 0
       }
@@ -538,7 +597,7 @@
       "evidence": "browser-s7-feed-offline.png",
       "detail": {
         "panelState": "MERCADO ABERTO · FEED OFFLINE",
-        "panelAgents": "OCIOSO (SOCIAL/IDLE)"
+        "panelAgents": "SEM AGENTES (ATIVO FECHADO)"
       }
     },
     {

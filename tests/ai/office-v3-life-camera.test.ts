@@ -66,7 +66,7 @@ describe("OFFICE V3 — life: presença e occupancy", () => {
     expect(sys.stats.desksEmpty).toBe(45);
   });
 
-  it("0 OPEN → 0 trabalhando, 55 desks vazios e todos idle em áreas sociais", () => {
+  it("0 OPEN → 0 trabalhando, 55 desks vazios e nenhum agente visível (oculto)", () => {
     const sys = life.createLifeSystem(makeWorld(0), { seed: "t0" });
     life.updateLife(sys, 16);
     expect(sys.stats.working).toBe(0);
@@ -75,83 +75,62 @@ describe("OFFICE V3 — life: presença e occupancy", () => {
     expect(sys.stats.idle).toBe(110);
     const states = life.getAgentStates(sys);
     for (const state of states) {
-      expect(inAnyZone(sys.world, state.x, state.y), `${state.id} fora de área social`).toBe(true);
+      expect(state.hidden).toBe(true);
+      expect(state.location).toBe("hidden");
+      expect(state.atDesk).toBe(false);
     }
   });
 
-  it("setPresence reabre o posto e os agentes caminham de volta (sem teleporte)", () => {
+  it("setPresence reabre o posto e os agentes reaparecem no desk (sem social)", () => {
     const sys = life.createLifeSystem(makeWorld(0), { seed: "reopen" });
     life.updateLife(sys, 16);
     const station = sys.world.stations[0];
     const stationId = station.id;
     const find = () => life.getAgentStates(sys).find((state: any) => state.stationId === stationId && state.role === "trader");
     const before = find();
-    expect(before.atDesk).toBe(false);
-    const startX = before.x;
-    const startY = before.y;
+    expect(before.hidden).toBe(true);
     expect(life.setPresence(sys, stationId, true)).toBe(true);
     life.updateLife(sys, 16);
-    const during = find();
-    expect(during.traveling).toBe(true);
-    expect(during.atDesk).toBe(false);
-    expect(during.pathLength).toBeGreaterThan(1);
-    expect(Math.hypot(during.x - startX, during.y - startY)).toBeLessThan(10);
-    for (let index = 0; index < 6000; index += 1) life.updateLife(sys, 16);
     const after = find();
     expect(after.atDesk).toBe(true);
     expect(after.working).toBe(true);
+    expect(after.hidden).toBe(false);
     expect(after.traveling).toBe(false);
     expect(Math.hypot(after.x - after.home.x, after.y - after.home.y)).toBeLessThan(1);
   });
 
-  it("occupancy nunca excede a capacidade real de sofá/sinuca", () => {
+  it("sem áreas sociais não existem spots de occupancy", () => {
     const sys = life.createLifeSystem(makeWorld(0), { seed: "occ" });
-    const spots = sys.world.spots;
-    const occupancy = new life.LifeOccupancy(spots);
-    for (const spot of spots) {
-      for (let index = 0; index < 20; index += 1) occupancy.reserve(spot.id, `ghost-${spot.id}-${index}`);
-    }
-    for (const spot of spots) {
-      expect(occupancy.occupancy(spot.id)).toBeLessThanOrEqual(spot.capacity);
-    }
-    const sofa = spots.find((spot: any) => spot.kind === "leisure");
-    expect(occupancy.capacity(sofa.id)).toBe(3);
-    expect(occupancy.occupancy(sofa.id)).toBe(3);
-    expect(occupancy.reserve(sofa.id, "overflow")).toEqual({ ok: false, reason: "FULL" });
-    expect(occupancy.release(sofa.id, `ghost-${sofa.id}-0`)).toBe(true);
-    expect(occupancy.reserve(sofa.id, "late").ok).toBe(true);
-    expect(occupancy.occupancy(sofa.id)).toBe(3);
-    for (let index = 0; index < 200; index += 1) life.updateLife(sys, 16);
-    for (const spot of spots) {
-      const reserved = sys.agents.filter((agent: any) => agent.spotId === spot.id).length;
-      expect(reserved).toBeLessThanOrEqual(spot.capacity);
-    }
+    expect(sys.world.spots).toHaveLength(0);
+    const occupancy = new life.LifeOccupancy(sys.world.spots);
+    expect(occupancy.spots.size).toBe(0);
+    expect(occupancy.reserve("spot:missing", "ghost")).toEqual({ ok: false, reason: "UNKNOWN_SPOT" });
+    expect(sys.agents.every((agent: any) => agent.spotId === null)).toBe(true);
   });
 });
 
 describe("OFFICE V3 — life: pathfinding e determinismo", () => {
-  it("cada passo do caminho é adjacente (grade 4-direções)", () => {
-    const sys = life.createLifeSystem(makeWorld(0), { seed: "path" });
-    life.updateLife(sys, 16);
-    for (const station of sys.world.stations) life.setPresence(sys, station.id, true);
-    let adjacentAll = true;
-    let checked = 0;
-    outer: for (let frame = 0; frame < 600; frame += 1) {
-      life.updateLife(sys, 16);
-      for (const agent of sys.agents) {
-        if (agent.path.length < 2) continue;
-        for (let index = 1; index < agent.path.length; index += 1) {
-          const dx = Math.abs(agent.path[index].x - agent.path[index - 1].x);
-          const dy = Math.abs(agent.path[index].y - agent.path[index - 1].y);
-          const adjacent = (Math.abs(dx - TILE) < 1e-6 && dy < 1e-6) || (Math.abs(dy - TILE) < 1e-6 && dx < 1e-6);
-          if (!adjacent) adjacentAll = false;
-          checked += 1;
-        }
-        if (checked >= 5000) break outer;
+  it("findTilePath produz passos adjacentes (grade 4-direções)", () => {
+    const sys = life.createLifeSystem(makeWorld(55), { seed: "path" });
+    const grid = sys.world.grid;
+    let start: any = null;
+    let goal: any = null;
+    for (let ty = 1; ty < grid.height - 1 && !goal; ty += 1) {
+      for (let tx = 1; tx < grid.width - 1; tx += 1) {
+        if (!grid.isWalkable(tx, ty)) continue;
+        if (!start) { start = { x: tx, y: ty }; continue; }
+        if (Math.abs(tx - start.x) + Math.abs(ty - start.y) > 6) { goal = { x: tx, y: ty }; break; }
       }
     }
-    expect(checked).toBeGreaterThan(0);
-    expect(adjacentAll).toBe(true);
+    expect(Boolean(start && goal)).toBe(true);
+    const path = life.findTilePath(grid, start, goal);
+    expect(Array.isArray(path)).toBe(true);
+    expect(path.length).toBeGreaterThan(1);
+    for (let index = 1; index < path.length; index += 1) {
+      const dx = Math.abs(path[index].x - path[index - 1].x);
+      const dy = Math.abs(path[index].y - path[index - 1].y);
+      expect(dx + dy).toBe(1);
+    }
   });
 
   it("agente nunca termina dentro de um collider de mobília", () => {

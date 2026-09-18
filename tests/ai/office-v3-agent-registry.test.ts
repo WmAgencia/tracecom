@@ -145,26 +145,26 @@ describe("OFFICE V3 — agent registry: OPEN / CLOSED / reopen", () => {
     }
   });
 
-  it("CLOSED: 0 no desk e exatamente 2 em social por mercado", () => {
+  it("CLOSED: 0 no desk e exatamente 2 ocultos por mercado", () => {
     const system = life.createLifeSystem(makeFallback(0), { seed: "closed", strict: true });
     life.updateLife(system, 16);
     const registry = life.getAgentRegistry(system);
     const locations = life.getAgentLocations(system);
-    let social = 0;
+    let hidden = 0;
     for (const entry of Object.values<any>(registry)) {
       expect(entry.state).toBe("CLOSED");
-      expect(entry.currentLocation).toBe("social");
+      expect(entry.currentLocation).toBe("hidden");
       const pair = pairAgents(system, entry);
       for (const agent of pair) {
         expect(agent.atDesk).toBe(false);
         expect(agent.working).toBe(false);
-        expect(locations[agent.id].location).toBe("social");
-        expect(locations[agent.id].zoneId).toBeTruthy();
-        expect(zoneContains(system.world, agent.x, agent.y)).toBe(true);
-        social += 1;
+        expect(agent.hidden).toBe(true);
+        expect(locations[agent.id].location).toBe("hidden");
+        expect(locations[agent.id].zoneId).toBeNull();
+        hidden += 1;
       }
     }
-    expect(social).toBe(TOTAL * 2);
+    expect(hidden).toBe(TOTAL * 2);
   });
 
   it("misto 37 OPEN / 18 CLOSED mantém a consistência por mercado", () => {
@@ -181,45 +181,34 @@ describe("OFFICE V3 — agent registry: OPEN / CLOSED / reopen", () => {
         expect(pair.every((agent: any) => agent.atDesk && agent.working)).toBe(true);
       } else {
         closed += 1;
-        expect(entry.currentLocation).toBe("social");
-        expect(pair.every((agent: any) => !agent.atDesk && !agent.working)).toBe(true);
+        expect(entry.currentLocation).toBe("hidden");
+        expect(pair.every((agent: any) => !agent.atDesk && !agent.working && agent.hidden === true)).toBe(true);
       }
     }
     expect(open).toBe(37);
     expect(closed).toBe(18);
   });
 
-  it("reabrir faz os DOIS voltarem andando (sem teleporte) e chegarem ao desk", () => {
+  it("reabrir faz os DOIS reaparecerem no desk (sem social, sem teleporte)", () => {
     const system = life.createLifeSystem(makeFallback(0), { seed: "reopen", strict: true });
     life.updateLife(system, 16);
     const key = "ASSET0:NORMAL";
     const before = pairAgents(system, life.getAgentRegistry(system)[key]);
-    const start = before.map((agent: any) => ({ x: agent.x, y: agent.y }));
-    expect(before.every((agent: any) => !agent.atDesk)).toBe(true);
+    expect(before.every((agent: any) => !agent.atDesk && agent.hidden === true)).toBe(true);
 
     expect(life.setMarketPresence(system, key, true)).toBe(true);
     life.updateLife(system, 16);
-    const during = pairAgents(system, life.getAgentRegistry(system)[key]);
-    for (let index = 0; index < during.length; index += 1) {
-      const agent = during[index];
-      expect(agent.traveling).toBe(true);
-      expect(agent.atDesk).toBe(false);
-      expect(agent.path.length).toBeGreaterThan(1);
-      const moved = Math.hypot(agent.x - start[index]!.x, agent.y - start[index]!.y);
-      expect(moved).toBeLessThan(2);
-    }
-
-    for (let index = 0; index < 8000; index += 1) life.updateLife(system, 16);
     const after = pairAgents(system, life.getAgentRegistry(system)[key]);
     for (const agent of after) {
       expect(agent.atDesk).toBe(true);
       expect(agent.working).toBe(true);
+      expect(agent.hidden).toBe(false);
       expect(agent.traveling).toBe(false);
       expect(Math.hypot(agent.x - agent.home.x, agent.y - agent.home.y)).toBeLessThan(1);
     }
   });
 
-  it("fechar o mercado tira os DOIS do desk e os leva para social", () => {
+  it("fechar o mercado tira os DOIS do desk e os oculta", () => {
     const system = life.createLifeSystem(makeFallback(55), { seed: "close", strict: true });
     life.updateLife(system, 16);
     const key = "ASSET7:NORMAL";
@@ -232,14 +221,15 @@ describe("OFFICE V3 — agent registry: OPEN / CLOSED / reopen", () => {
     for (const agent of during) {
       expect(agent.atDesk).toBe(false);
       expect(agent.working).toBe(false);
-      expect(agent.assignment).toBe("SOCIAL");
+      expect(agent.hidden).toBe(true);
+      expect(agent.assignment).toBe("HIDDEN");
     }
 
-    for (let index = 0; index < 6000; index += 1) life.updateLife(system, 16);
+    for (let index = 0; index < 600; index += 1) life.updateLife(system, 16);
     const after = pairAgents(system, life.getAgentRegistry(system)[key]);
     for (const agent of after) {
       expect(agent.atDesk).toBe(false);
-      expect(zoneContains(system.world, agent.x, agent.y)).toBe(true);
+      expect(agent.hidden).toBe(true);
     }
   });
 
@@ -324,7 +314,7 @@ describe("OFFICE V3 — agent registry: localização única e determinismo", ()
     softSystem.agents[0].working = true;
     const report = life.validateLifeInvariants(softSystem);
     expect(report.ok).toBe(false);
-    expect(report.violations.some((violation: any) => violation.code === "DUAL_LOCATION_DESK_SPOT")).toBe(true);
+    expect(report.violations.some((violation: any) => violation.code === "CLOSED_MARKET_AT_DESK")).toBe(true);
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(() => life.getAgentRegistry(softSystem)).not.toThrow();
     expect(warn).toHaveBeenCalled();
@@ -356,7 +346,7 @@ describe("OFFICE V3 — agent registry: localização única e determinismo", ()
   });
 
   it("drawAgents lança em strict quando um agentId seria desenhado duas vezes", () => {
-    const system = life.createLifeSystem(makeFallback(0), { seed: "clone", strict: true });
+    const system = life.createLifeSystem(makeFallback(55), { seed: "clone", strict: true });
     life.updateLife(system, 16);
     life.bindAssets({ drawCharacter: () => {} });
     try {

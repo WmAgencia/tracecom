@@ -35,6 +35,7 @@ export const SUPERVISOR_OBSERVE_MS = 900;
 
 export const AGENT_REGISTRY_VERSION = "office-v3-agent-registry.1.0.0";
 export const LOCATION_DESK = "desk";
+export const LOCATION_HIDDEN = "hidden";
 export const LOCATION_SOCIAL = "social";
 export const LOCATION_WALKING = "walking";
 export const LOCATION_UNKNOWN = "unknown";
@@ -177,12 +178,13 @@ export function classifyAgentLocation(life, agent) {
   if (agent.traveling === true) {
     return { kind: LOCATION_WALKING, zoneId: null, zoneKind: null, spotId: agent.spotId ?? null, x: agent.x, y: agent.y };
   }
-  const zone = zoneAt(life?.world, agent.x, agent.y);
+  // No idle/social this round: any agent that is not seated at a working desk is
+  // hidden (closed/feed-offline/disabled market) and must not be rendered.
   return {
-    kind: LOCATION_SOCIAL,
-    zoneId: zone?.id ?? null,
-    zoneKind: zone?.kind ?? agent.activityKind ?? null,
-    spotId: agent.spotId ?? null,
+    kind: LOCATION_HIDDEN,
+    zoneId: null,
+    zoneKind: null,
+    spotId: null,
     x: agent.x,
     y: agent.y,
   };
@@ -555,46 +557,6 @@ export function buildFallbackWorldState(officeJson = null, options = {}) {
 
   const colliders = stations.map((station) => ({ kind: "desk", rect: { ...station.desk }, stationId: station.id }));
 
-  const socialZones = [
-    { id: "zone:lounge", kind: "leisure", label: "ÁREA DE LAZER", rect: { x: 80, y: 1040, w: 560, h: 360 } },
-    { id: "zone:pool", kind: "pool", label: "SINUCA", rect: { x: 680, y: 1040, w: 400, h: 360 } },
-    { id: "zone:cafe", kind: "kitchen", label: "CAFÉ", rect: { x: 1120, y: 1040, w: 440, h: 360 } },
-    { id: "zone:meeting", kind: "social", label: "SALA DE REUNIÃO", rect: { x: 1600, y: 1040, w: 420, h: 360 } },
-    { id: "zone:research", kind: "research", label: "PESQUISA", rect: { x: 80, y: 1440, w: 900, h: 120 } },
-  ];
-
-  const furniture = [
-    { kind: "sofa", rect: { x: 140, y: 1072, w: 96, h: 24 }, zoneId: "zone:lounge" },
-    { kind: "sofa", rect: { x: 300, y: 1072, w: 96, h: 24 }, zoneId: "zone:lounge" },
-    { kind: "sofa", rect: { x: 460, y: 1072, w: 96, h: 24 }, zoneId: "zone:lounge" },
-    { kind: "coffeeTable", rect: { x: 240, y: 1160, w: 120, h: 40 }, zoneId: "zone:lounge" },
-    { kind: "poolTable", rect: { x: 760, y: 1120, w: 180, h: 90 }, zoneId: "zone:pool" },
-    { kind: "counter", rect: { x: 1160, y: 1080, w: 240, h: 24 }, zoneId: "zone:cafe" },
-    { kind: "table", rect: { x: 1700, y: 1120, w: 220, h: 60 }, zoneId: "zone:meeting" },
-    { kind: "table", rect: { x: 160, y: 1480, w: 160, h: 32 }, zoneId: "zone:research" },
-    { kind: "table", rect: { x: 400, y: 1480, w: 160, h: 32 }, zoneId: "zone:research" },
-    { kind: "table", rect: { x: 640, y: 1480, w: 160, h: 32 }, zoneId: "zone:research" },
-  ];
-  for (const item of furniture) colliders.push({ kind: item.kind, rect: item.rect, zoneId: item.zoneId });
-
-  const spots = [
-    { id: "spot:lounge:1", kind: "leisure", capacity: 3, x: 188, y: 1140, label: "Sofá" },
-    { id: "spot:lounge:2", kind: "leisure", capacity: 3, x: 348, y: 1140, label: "Sofá" },
-    { id: "spot:lounge:3", kind: "leisure", capacity: 3, x: 508, y: 1140, label: "Sofá" },
-    { id: "spot:pool:1", kind: "pool", capacity: 2, x: 800, y: 1280, label: "Sinuca" },
-    { id: "spot:pool:2", kind: "pool", capacity: 2, x: 920, y: 1280, label: "Sinuca" },
-    { id: "spot:cafe:1", kind: "coffee", capacity: 1, x: 1200, y: 1160, label: "Café" },
-    { id: "spot:cafe:2", kind: "coffee", capacity: 1, x: 1290, y: 1160, label: "Café" },
-    { id: "spot:cafe:3", kind: "coffee", capacity: 1, x: 1380, y: 1160, label: "Café" },
-    { id: "spot:meeting:1", kind: "social", capacity: 1, x: 1740, y: 1240, label: "Mesa" },
-    { id: "spot:meeting:2", kind: "social", capacity: 1, x: 1820, y: 1240, label: "Mesa" },
-    { id: "spot:meeting:3", kind: "social", capacity: 1, x: 1900, y: 1240, label: "Mesa" },
-    { id: "spot:meeting:4", kind: "social", capacity: 1, x: 1980, y: 1240, label: "Mesa" },
-    { id: "spot:research:1", kind: "research", capacity: 1, x: 240, y: 1540, label: "Estudo" },
-    { id: "spot:research:2", kind: "research", capacity: 1, x: 480, y: 1540, label: "Estudo" },
-    { id: "spot:research:3", kind: "research", capacity: 1, x: 720, y: 1540, label: "Estudo" },
-  ];
-
   const patrol = [];
   const rows = Math.ceil(stations.length / columns);
   for (let row = 0; row < rows; row += 1) {
@@ -608,8 +570,8 @@ export function buildFallbackWorldState(officeJson = null, options = {}) {
     worldHeight: height,
     stations,
     colliders,
-    socialZones,
-    spots,
+    socialZones: [],
+    spots: [],
     patrol,
     markets,
   };
@@ -660,55 +622,11 @@ function normalizeWorldState(worldState, options) {
   grid.blockBorder(1);
   for (const collider of colliders) grid.blockRectWorld(collider.x, collider.y, collider.w, collider.h);
 
-  const zones = Array.isArray(fallback.socialZones) && fallback.socialZones.length
-    ? fallback.socialZones
-    : defaultSocialZones(width, height);
-  const socialZones = zones
-    .map((zone) => {
-      const rect = normRect(zone?.rect ?? zone);
-      if (!rect) return null;
-      return { id: zone?.id ?? `zone:${zone?.kind ?? "social"}`, kind: zone?.kind ?? "social", label: zone?.label ?? "Social", rect };
-    })
-    .filter(Boolean);
-
-  const rawSpots = Array.isArray(fallback.spots) && fallback.spots.length ? fallback.spots : defaultSpots(socialZones);
+  // No social areas this round: closed/feed-offline markets simply hide their
+  // agents. The occupancy spots list stays empty (kept for registry plumbing).
+  const socialZones = [];
   const spots = [];
-  for (const spot of rawSpots) {
-    if (!spot || !spot.id) continue;
-    const x = Number(spot.x);
-    const y = Number(spot.y);
-    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
-    const tile = nearestWalkableTile(grid, Math.floor(x / TILE), Math.floor(y / TILE));
-    if (!tile) continue;
-    spots.push({
-      id: String(spot.id),
-      kind: String(spot.kind ?? "social"),
-      capacity: Math.max(1, Math.floor(Number(spot.capacity) || 1)),
-      label: String(spot.label ?? spot.kind ?? spot.id),
-      x: tile.x * TILE + TILE / 2,
-      y: tile.y * TILE + TILE / 2,
-      tx: tile.x,
-      ty: tile.y,
-    });
-  }
-
   const loiterTiles = [];
-  for (const zone of socialZones) {
-    const x0 = Math.max(0, Math.floor(zone.rect.x / TILE));
-    const y0 = Math.max(0, Math.floor(zone.rect.y / TILE));
-    const x1 = Math.min(grid.width - 1, Math.floor((zone.rect.x + zone.rect.w) / TILE));
-    const y1 = Math.min(grid.height - 1, Math.floor((zone.rect.y + zone.rect.h) / TILE));
-    for (let ty = y0; ty <= y1; ty += 1) {
-      for (let tx = x0; tx <= x1; tx += 1) {
-        if (!grid.isWalkable(tx, ty)) continue;
-        const centerX = tx * TILE + TILE / 2;
-        const centerY = ty * TILE + TILE / 2;
-        if (centerX < zone.rect.x || centerX > zone.rect.x + zone.rect.w) continue;
-        if (centerY < zone.rect.y || centerY > zone.rect.y + zone.rect.h) continue;
-        loiterTiles.push({ x: tx, y: ty, zoneId: zone.id, kind: zone.kind });
-      }
-    }
-  }
 
   const patrol = (Array.isArray(fallback.patrol) && fallback.patrol.length ? fallback.patrol : [])
     .map((point) => {
@@ -717,7 +635,7 @@ function normalizeWorldState(worldState, options) {
     })
     .filter(Boolean);
 
-  const idleFallback = fallbackIdleTile(grid, loiterTiles, width, height);
+  const idleFallback = null;
 
   return { width, height, grid, stations, colliders, socialZones, spots, loiterTiles, patrol, idleFallback, raw: fallback };
 }
@@ -793,6 +711,7 @@ function createAgent(role, station, seatIndex, index, seed) {
     speed: AGENT_SPEED,
     atDesk: false,
     working: false,
+    hidden: false,
     traveling: false,
     retryAt: 0,
     frame: 0,
@@ -827,6 +746,7 @@ function placeAtDesk(agent, now) {
   agent.traveling = false;
   agent.atDesk = true;
   agent.working = true;
+  agent.hidden = false;
   agent.destination = { kind: "desk", x: agent.home.x, y: agent.home.y };
   agent.assignment = "DESK";
   agent.spotId = null;
@@ -836,155 +756,32 @@ function placeAtDesk(agent, now) {
   agent.stateSince = now;
 }
 
-function chooseSocialDestination(life, agent) {
-  const spots = life.world.spots;
-  if (spots.length > 0) {
-    const start = agent.spotCursor % spots.length;
-    for (let offset = 0; offset < spots.length; offset += 1) {
-      const spot = spots[(start + offset) % spots.length];
-      if (life.occupancy.reserve(spot.id, agent.id).ok) {
-        agent.spotId = spot.id;
-        agent.activityKind = spot.kind;
-        return { kind: "spot", spotId: spot.id, activity: spot.kind, x: spot.x, y: spot.y };
-      }
-    }
-  }
-  const tiles = life.world.loiterTiles;
-  if (tiles.length > 0) {
-    const position = (agent.loiterSeed + agent.loiterStep) % tiles.length;
-    agent.loiterStep += 1;
-    const tile = tiles[position];
-    return { kind: "loiter", spotId: null, activity: tile.kind === "pool" ? "social" : tile.kind, x: tile.x * TILE + TILE / 2, y: tile.y * TILE + TILE / 2 };
-  }
-  const idle = life.world.idleFallback;
-  if (idle) {
-    return {
-      kind: "loiter",
-      spotId: null,
-      activity: idle.kind === "pool" ? "social" : idle.kind ?? "idle",
-      x: idle.x * TILE + TILE / 2,
-      y: idle.y * TILE + TILE / 2,
-    };
-  }
-  return { kind: "loiter", spotId: null, activity: "idle", x: agent.x, y: agent.y };
-}
-
-function settleAtDestination(life, agent, destination, now) {
-  agent.x = destination.x;
-  agent.y = destination.y;
+/**
+ * Closed / feed-offline / disabled / suspended market: the pair disappears.
+ * There is no social or idle area this round — the agents are simply hidden and
+ * are not rendered until the market becomes WORKING again.
+ */
+function hideAgent(agent, now) {
+  agent.x = agent.home.x;
+  agent.y = agent.home.y;
   agent.path = [];
   agent.pathIndex = 0;
   agent.traveling = false;
-  if (destination.kind === "desk") {
-    agent.atDesk = true;
-    agent.working = true;
-    agent.activityKind = "desk";
-    agent.state = agent.role === "trader" ? "WORK" : "SIT";
-    agent.pose = poseForActivity("desk", agent.role);
-  } else {
-    agent.atDesk = false;
-    agent.working = false;
-    agent.state = stateForActivity(destination.activity);
-    agent.pose = poseForActivity(destination.activity, agent.role);
-  }
+  agent.atDesk = false;
+  agent.working = false;
+  agent.hidden = true;
+  agent.destination = null;
+  agent.assignment = "HIDDEN";
+  agent.spotId = null;
+  agent.activityKind = "hidden";
+  agent.state = "HIDDEN";
+  agent.pose = "idle";
   agent.stateSince = now;
 }
 
-function walkTo(life, agent, destination) {
-  const start = tileOf(agent.x, agent.y);
-  const goal = { x: Math.floor(destination.x / TILE), y: Math.floor(destination.y / TILE) };
-  const path = findTilePath(life.world.grid, start, goal);
-  if (!path || path.length === 0) {
-    if (destination.kind === "desk") {
-      // Never teleport back to a desk: keep the agent where it is and retry
-      // deterministically after a short cooldown (reopen must be a walk).
-      agent.path = [];
-      agent.pathIndex = 0;
-      agent.traveling = false;
-      agent.retryAt = life.time + 400;
-      return false;
-    }
-    settleAtDestination(life, agent, destination, life.time);
-    return false;
-  }
-  agent.path = path.map((point) => ({ x: point.x * TILE + TILE / 2, y: point.y * TILE + TILE / 2 }));
-  agent.pathIndex = 0;
-  agent.traveling = true;
-  agent.state = "WALK";
-  agent.pose = "walk";
-  return true;
-}
-
-function planDesk(life, agent, now) {
-  if (agent.spotId) {
-    life.occupancy.release(agent.spotId, agent.id);
-    agent.spotId = null;
-  }
-  agent.assignment = "DESK";
-  agent.activityKind = "desk";
-  agent.atDesk = false;
-  agent.working = false;
-  const destination = { kind: "desk", x: agent.home.x, y: agent.home.y };
-  agent.destination = destination;
-  if (Math.hypot(agent.x - agent.home.x, agent.y - agent.home.y) <= TILE / 2) {
-    settleAtDestination(life, agent, destination, now);
-    return;
-  }
-  walkTo(life, agent, destination);
-}
-
-function planSocial(life, agent, now) {
-  agent.assignment = "SOCIAL";
-  agent.atDesk = false;
-  agent.working = false;
-  if (agent.spotId) {
-    life.occupancy.release(agent.spotId, agent.id);
-    agent.spotId = null;
-  }
-  const destination = chooseSocialDestination(life, agent);
-  agent.destination = destination;
-  if (Math.hypot(agent.x - destination.x, agent.y - destination.y) <= TILE / 2) {
-    settleAtDestination(life, agent, destination, now);
-    return;
-  }
-  walkTo(life, agent, destination);
-}
-
-function advanceAgent(life, agent, dtMs, now) {
-  agent.frame = Math.floor(now / 280) % 4;
-  if (agent.state !== "WALK" || agent.path.length === 0) return;
-  let remaining = agent.speed * (dtMs / 1000);
-  while (remaining > 0 && agent.pathIndex < agent.path.length) {
-    const target = agent.path[agent.pathIndex];
-    const dx = target.x - agent.x;
-    const dy = target.y - agent.y;
-    const distance = Math.hypot(dx, dy);
-    if (distance <= remaining) {
-      agent.x = target.x;
-      agent.y = target.y;
-      agent.pathIndex += 1;
-      remaining -= distance;
-    } else {
-      agent.x += (dx / distance) * remaining;
-      agent.y += (dy / distance) * remaining;
-      if (Math.abs(dx) >= Math.abs(dy)) agent.facing = dx >= 0 ? 1 : -1;
-      remaining = 0;
-    }
-  }
-  if (agent.pathIndex >= agent.path.length) {
-    settleAtDestination(life, agent, agent.destination ?? { kind: "desk", x: agent.home.x, y: agent.home.y }, now);
-  }
-}
-
 function spawnAgent(life, agent, station, now) {
-  if (isStationOpen(station)) {
-    placeAtDesk(agent, now);
-    return;
-  }
-  agent.assignment = "SOCIAL";
-  const destination = chooseSocialDestination(life, agent);
-  agent.destination = destination;
-  settleAtDestination(life, agent, destination, now);
+  if (isStationOpen(station)) placeAtDesk(agent, now);
+  else hideAgent(agent, now);
 }
 
 /* ------------------------------------------------------------------ *
@@ -1175,7 +972,7 @@ export function validateLifeInvariants(life) {
     if (pair.length === 2 && (traders !== 1 || critics !== 1)) push("MARKET_PAIR_ROLES", { marketKey: key, traders, critics });
     const open = life.resolveOpen ? life.resolveOpen(station) === true : isStationOpen(station);
     for (const agent of pair) {
-      const desired = open ? "DESK" : "SOCIAL";
+      const desired = open ? "DESK" : "HIDDEN";
       if (!pending && agent.assignment !== desired) {
         push("ASSIGNMENT_MISMATCH", { marketKey: key, agentId: agent.id, assignment: agent.assignment, desired });
       }
@@ -1355,16 +1152,15 @@ export function updateLife(life, dtMs) {
   }
   for (const agent of life.agents) {
     const station = life.stationById.get(agent.stationId) ?? life.stationByKey.get(agent.marketKey) ?? null;
-    const desired = life.resolveOpen(station) ? "DESK" : "SOCIAL";
-    // A stalled desk return (no path this frame) retries after a cooldown,
-    // instead of teleporting the agent onto the chair.
-    const deskStalled =
-      desired === "DESK" && agent.assignment === "DESK" && !agent.atDesk && !agent.traveling && now >= (agent.retryAt ?? 0);
-    if (desired !== agent.assignment || deskStalled) {
-      if (desired === "DESK") planDesk(life, agent, now);
-      else planSocial(life, agent, now);
+    // WORKING market → both agents sit at the desk. Any other derived state
+    // (CLOSED/SUSPENDED/DISABLED/NOT_OFFERED/UNKNOWN/OPEN_BUT_FEED_OFFLINE) →
+    // the pair disappears. There is no idle/social destination this round.
+    const working = life.resolveOpen(station) === true;
+    if (working) {
+      if (agent.hidden === true || agent.atDesk !== true) placeAtDesk(agent, now);
+    } else if (agent.hidden !== true) {
+      hideAgent(agent, now);
     }
-    advanceAgent(life, agent, dt, now);
   }
   updateSupervisor(life, dt, now);
   life.pendingPresence = false;
@@ -1392,6 +1188,7 @@ export function getAgentStates(life) {
       activityKind: agent.activityKind,
       atDesk: agent.atDesk,
       working: agent.working,
+      hidden: agent.hidden === true,
       traveling: agent.traveling,
       idle: !agent.working,
       pathLength: agent.path.length,
@@ -1487,6 +1284,9 @@ export function drawAgents(ctx, life, camera = null) {
   // their lower body, matching the reference two-layer desk.
   const items = [];
   for (const agent of life.agents) {
+    // Agents of a non-WORKING market are hidden: they exist in the registry but
+    // are never rendered (no social, no idle, no floating pair).
+    if (agent.hidden === true || agent.working !== true) continue;
     const station = life.stationById?.get(agent.stationId);
     const desk = station?.desk;
     const seated = agent.atDesk === true && desk;
@@ -1549,6 +1349,8 @@ export default {
   LIFE_VERSION,
   AGENT_REGISTRY_VERSION,
   TILE,
+  LOCATION_DESK,
+  LOCATION_HIDDEN,
   createLifeSystem,
   updateLife,
   drawAgents,

@@ -361,6 +361,63 @@ export function handleWheel(camera, evt) {
   return zoomAtScreen(camera, sx, sy, camera.zoom * factor);
 }
 
+/**
+ * Plain wheel = vertical scroll (pan). Shift+wheel = horizontal scroll. It never
+ * changes the zoom: Ctrl/Meta + wheel is the only zoom gesture (see handleWheel).
+ * Wheel-down (deltaY > 0) reveals content below, i.e. moves the camera down.
+ */
+export function handleScrollPan(camera, evt, options = {}) {
+  if (!camera || !evt) return camera;
+  const shift = evt.shiftKey === true;
+  const rawY = normalizeWheelDelta(evt);
+  const rawX = normalizeWheelDelta({ deltaY: evt.deltaX, deltaMode: evt.deltaMode, view: evt.view });
+  const dx = shift ? (rawX !== 0 ? rawX : rawY) : rawX;
+  const dy = shift ? 0 : rawY;
+  if (dx === 0 && dy === 0) return camera;
+  if (typeof evt.preventDefault === "function") evt.preventDefault();
+  return panBy(camera, -dx, -dy, options);
+}
+
+/** Real content bounds exposed by world.js, or null when absent. */
+export function contentBoundsOf(worldState) {
+  const cb = worldState?.contentBounds;
+  if (!cb) return null;
+  const minX = Number(cb.minX);
+  const minY = Number(cb.minY);
+  const maxX = Number(cb.maxX);
+  const maxY = Number(cb.maxY);
+  if (![minX, minY, maxX, maxY].every(Number.isFinite) || maxX <= minX || maxY <= minY) return null;
+  return { minX, minY, maxX, maxY };
+}
+
+/**
+ * Frames the office content inside the viewport with an even margin on all four
+ * sides and centers it. Zoom never exceeds 1 (the office is never over-magnified
+ * on a small viewport) and never goes below the camera min zoom.
+ */
+export function fitContent(camera, worldState, options = {}) {
+  if (!camera || !worldState) return camera;
+  const bounds = contentBoundsOf(worldState);
+  if (!bounds) return camera;
+  const padding = Number.isFinite(Number(options.padding)) ? Number(options.padding) : 48;
+  const vw = Math.max(1, Number(camera.viewport.width) || OVERVIEW_WIDTH);
+  const vh = Math.max(1, Number(camera.viewport.height) || OVERVIEW_HEIGHT);
+  const cw = Math.max(1, bounds.maxX - bounds.minX);
+  const ch = Math.max(1, bounds.maxY - bounds.minY);
+  const fitZoom = Math.min((vw - padding * 2) / cw, (vh - padding * 2) / ch);
+  camera.zoom = clampZoomValue(fitZoom, camera.minZoom, Math.min(camera.maxZoom, 1));
+  camera.x = (bounds.minX + bounds.maxX) / 2 - vw / (2 * camera.zoom);
+  camera.y = (bounds.minY + bounds.maxY) / 2 - vh / (2 * camera.zoom);
+  camera.target = null;
+  if (camera.overview) {
+    camera.overview.x = camera.x;
+    camera.overview.y = camera.y;
+    camera.overview.zoom = camera.zoom;
+  }
+  if (options.clamp !== false) clampToBounds(camera);
+  return camera;
+}
+
 export function handleDragStart(camera, evt) {
   if (!camera) return camera;
   camera.dragging = true;
@@ -474,6 +531,9 @@ export default {
   normalizeWheelDelta,
   zoomFactorForDelta,
   handleWheel,
+  handleScrollPan,
+  contentBoundsOf,
+  fitContent,
   handleDragStart,
   handleDragMove,
   handleDragEnd,
