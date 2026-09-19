@@ -49,13 +49,16 @@ export const RSI_V3_POLICY = Object.freeze({
   overrideRsiSells: [85, 90],
   // V3.1 — memoria causal curta do episodio (EVENTO != ESTADO ATUAL):
   // rejeicao Bollinger e DI cross valem como evidencia recente dentro do MESMO episodio,
-  // com validade derivada de horizonte/candles/volatilidade/idade do candidate (nunca eterna).
+  // com validade ancorada no horizonte de 60s (x volatilidade; leve encolhimento so perto
+  // da idade maxima do candidate) — nunca eterna.
   candleMs: 5_000,
-  rejectionBaseValidityMs: 12_000,
-  rejectionMaxValidityMs: 30_000,
+  rejectionBaseValidityMs: 45_000, // 0,75 x horizonte de 60s
+  rejectionMinValidityMs: 20_000,
+  rejectionMaxValidityMs: 90_000,
   rejectionVolatilityRef: 0.0015,
-  diCrossBaseValidityMs: 20_000,
-  diCrossMaxValidityMs: 45_000,
+  diCrossBaseValidityMs: 54_000,   // 0,9 x horizonte de 60s
+  diCrossMinValidityMs: 25_000,
+  diCrossMaxValidityMs: 120_000,
   firstSightVersion: "V3_1_EPISODE_EVENT_STATE",
   finalWindowMs: 5000,
   minimumSafeMarginMs: 3000,
@@ -432,8 +435,8 @@ export function rejectionValidityV3({ episode, indicators, at = null } = {}) {
   const price = num(indicators?.bollinger?.close);
   const vol = num(indicators?.noiseHorizon) ?? 0;
   const volRatio = price && price > 0 ? clamp(vol / (price * policy.rejectionVolatilityRef), 0, 2) : 0;
-  const ageFactor = clamp((atMs - (episode.candidateAt ?? atMs)) / 60_000, 0, 1);
-  const validityMs = clamp(policy.rejectionBaseValidityMs * (1 + 0.6 * volRatio) * (1 - 0.4 * ageFactor), 8_000, policy.rejectionMaxValidityMs);
+  const ageFactor = 1 - 0.25 * clamp((atMs - (episode.candidateAt ?? atMs)) / policy.candidateMaxAgeMs, 0, 1);
+  const validityMs = clamp(policy.rejectionBaseValidityMs * (0.85 + 0.4 * volRatio) * ageFactor, policy.rejectionMinValidityMs, policy.rejectionMaxValidityMs);
   const sell = episode.direction === "SELL";
   const extreme = num(episode.bollingerRejectionExtreme);
   const noise = num(indicators?.noisePerCandle) ?? 0;
@@ -458,8 +461,8 @@ export function diCrossValidityV3({ episode, indicators, at = null } = {}) {
   const price = num(indicators?.bollinger?.close);
   const vol = num(indicators?.noiseHorizon) ?? 0;
   const volRatio = price && price > 0 ? clamp(vol / (price * policy.rejectionVolatilityRef), 0, 2) : 0;
-  const ageFactor = clamp((atMs - (episode.candidateAt ?? atMs)) / 60_000, 0, 1);
-  const validityMs = clamp(policy.diCrossBaseValidityMs * (1 + 0.6 * volRatio) * (1 - 0.4 * ageFactor), 10_000, policy.diCrossMaxValidityMs);
+  const ageFactor = 1 - 0.25 * clamp((atMs - (episode.candidateAt ?? atMs)) / policy.candidateMaxAgeMs, 0, 1);
+  const validityMs = clamp(policy.diCrossBaseValidityMs * (0.85 + 0.4 * volRatio) * ageFactor, policy.diCrossMinValidityMs, policy.diCrossMaxValidityMs);
   const sell = episode.direction === "SELL";
   const dmi = indicators?.dmi ?? {};
   const adx = indicators?.adx ?? {};

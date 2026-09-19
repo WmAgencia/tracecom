@@ -272,6 +272,16 @@ describe("RSI V3.1 — memoria causal do episodio (evento != estado)", () => {
     expect(thesis.hardFails).toContain("REJEICAO_ANTIGA_DEMAIS");
   });
 
+  it("janela de validade e ancorada no horizonte de 60s e nao encolhe no T-5", () => {
+    const recent = rejectionValidityV3({ episode: sellEpisodeWithMemory({ bollingerRejectionAt: T - 30_000 }), indicators: sellReady(), at: T - 34_000 });
+    expect(recent.valid).toBe(true);
+    expect(recent.validityMs).toBeGreaterThanOrEqual(20_000);
+    expect(recent.validityMs).toBeLessThanOrEqual(90_000);
+    const stale = rejectionValidityV3({ episode: sellEpisodeWithMemory({ bollingerRejectionAt: T - 120_000 }), indicators: sellReady(), at: T - 34_000 });
+    expect(stale.valid).toBe(false);
+    expect(stale.reason).toBe("REJEICAO_ANTIGA_DEMAIS");
+  });
+
   it("rejeicao invalidada pelo preco -> BLOCK", () => {
     const episode = sellEpisodeWithMemory({ bollingerRejectionExtreme: 1.10, maxSpread: 12 });
     const thesis = firstSightThesisV3({ indicators: sellReady(), direction: "SELL", episode, at: T - 34_000 });

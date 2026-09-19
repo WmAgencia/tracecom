@@ -1,6 +1,6 @@
 {
   "schema": "rsi-v3-freeze-v1",
-  "frozenAtUtc": "2026-09-19T19:59:43.976Z",
+  "frozenAtUtc": "2026-09-19T20:16:02.734Z",
   "sourceCommit": null,
   "noTuning": true,
   "strategy": "RSI_REVERSAL_PULLBACK_V3",
@@ -26,8 +26,8 @@
   },
   "files": {
     "relay/rsi-v3.mjs": {
-      "sha256": "5fe172d751b7fd7d5afe3ff24390045dc42cd869d1712d3de5c80a5c30e1f9ad",
-      "bytes": 48494
+      "sha256": "57ba80f6efb4c6d7fa55884b15987771ed9f0e79c06a33f4411852f337290f8f",
+      "bytes": 48749
     },
     "relay/rsi-agents-v3.mjs": {
       "sha256": "4592041cb7140e5ba97442527ce20c873a36db7e6e8af5455f691f3e951f9d16",
