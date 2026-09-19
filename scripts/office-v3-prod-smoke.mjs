@@ -117,8 +117,8 @@ async function main() {
     await page.waitForTimeout(1200);
     const iq = await page.evaluate(() => {
       const rows = {};
-      for (const row of document.querySelectorAll(".tc-iq-modal .tc-iq-row")) rows[row.querySelector(".tc-iq-label")?.textContent ?? ""] = row.querySelector(".tc-iq-value")?.textContent ?? "";
-      return { rows, inputs: document.querySelectorAll(".tc-iq-modal input").length };
+      for (const row of document.querySelectorAll(".tc-iq-modal:not([hidden]) .tc-iq-row")) rows[row.querySelector(".tc-iq-label")?.textContent ?? ""] = row.querySelector(".tc-iq-value")?.textContent ?? "";
+      return { rows, inputs: document.querySelectorAll(".tc-iq-modal:not([hidden]) input").length };
     });
     assert("IQ OPTION mostra status real e zero input de credencial", iq.inputs === 0 && typeof iq.rows["CONEXÃO"] === "string" && typeof iq.rows["WS"] === "string", "final-prod-iq.png", iq.rows);
     await page.screenshot({ path: join(OUT_DIR, "final-prod-iq.png") });
