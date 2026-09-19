@@ -1,5 +1,5 @@
-/**
- * EFFICACY v3 — medicao corrigida (READ-ONLY). Corrige as lacunas do v2 sem tocar em estrategia.
+﻿/**
+ * EFFICACY v3 â€” medicao corrigida (READ-ONLY). Corrige as lacunas do v2 sem tocar em estrategia.
  * P1 join deterministico V4 x V3-creation (candidate_id exato) + auditoria de perdas
  * P2 auditoria de preco do LATE (evaluations[].price) e veredito de mensurabilidade
  * P3 Location condicional a Scenario x Direction
@@ -241,7 +241,7 @@ function playbookFunnel(v4ByCandidate) {
 /* ---------------- P8: payout ---------------- */
 function payoutAnalysis(v4ByCandidate, paired) {
   const settledAccepted = [...v4ByCandidate.values()].filter((row) => (row.final_action === "BUY" || row.final_action === "SELL") && DECIDED.has(row.theoretical_result));
-  const payouts = settledAccepted.map((row) => Number(row.payout)).filter((value) => Number.isFinite(value) && value > 0);
+  const payouts = settledAccepted.map((row) => Number(row.payload?.t0?.market?.payout ?? row.payout)).filter((value) => Number.isFinite(value) && value > 0);
   const withPayout = payouts.length, total = settledAccepted.length;
   const avg = mean(payouts);
   const fraction = avg !== null ? (avg > 1 ? avg / 100 : avg) : null;
@@ -288,7 +288,7 @@ try {
   fs.writeFileSync(path.join(ROOT, "docs/research/data/efficacy-v3.json"), JSON.stringify(report, null, 1) + "\n");
   const md = [];
   const line = (label, s) => "| " + label + " | " + s.decided + " | " + s.wins + "/" + s.losses + "/" + s.draws + " | " + (s.wr === null ? "-" : (s.wr * 100).toFixed(1) + "%") + " | " + (s.ci95.low === null ? "-" : (s.ci95.low * 100).toFixed(1) + "-" + (s.ci95.high * 100).toFixed(1) + "%") + " |";
-  md.push("# EFFICACY v3 — medicao corrigida (read-only)\n");
+  md.push("# EFFICACY v3 â€” medicao corrigida (read-only)\n");
   md.push("- Gerado: " + report.generatedAtUtc + ". Cobertura pareada: " + JSON.stringify(paired.coverage));
   md.push("- Causa das perdas no v2: " + report.joinAudit.causeOfV2Loss.join("; "));
   md.push("\n## 1. G2 vs V4 pareado (V4 x V3-creation)\n| coorte | decididos | W/L/D | WR | CI95 |\n|---|---|---|---|---|");
@@ -329,3 +329,4 @@ try {
 } finally {
   await pool.end().catch(() => undefined);
 }
+

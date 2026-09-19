@@ -1,6 +1,6 @@
 {
  "schema": "efficacy-v3",
- "generatedAtUtc": "2026-09-19T13:03:26.184Z",
+ "generatedAtUtc": "2026-09-19T13:05:25.165Z",
  "joinAudit": {
   "causeOfV2Loss": [
    "observacao V4 ocorre na CRIACAO do candidato; shadow-lab somente no FINAL ENTRY (candidatos cancelados antes nao geram linha shadow)",
@@ -9,23 +9,23 @@
   ],
   "fix": "join deterministico por candidate_id entre V4 e iq_scenario_shadow_observations (ambos na criacao, mesmo T0), sem heuristica de horario",
   "coverage": {
-   "v4Rows": 969,
-   "v4WithV3": 969,
+   "v4Rows": 988,
+   "v4WithV3": 988,
    "v4WithoutV3": 0,
-   "shadowJoinWas": 573
+   "shadowJoinWas": 577
   }
  },
  "paired": {
   "A": {
-   "n": 196,
-   "decided": 195,
+   "n": 197,
+   "decided": 196,
    "wins": 97,
-   "losses": 98,
+   "losses": 99,
    "draws": 1,
-   "wr": 0.4974,
+   "wr": 0.4949,
    "ci95": {
-    "low": 0.428,
-    "high": 0.567
+    "low": 0.4257,
+    "high": 0.5643
    },
    "lowN": false
   },
@@ -43,15 +43,15 @@
    "lowN": true
   },
   "C": {
-   "n": 686,
-   "decided": 682,
-   "wins": 345,
-   "losses": 337,
+   "n": 698,
+   "decided": 694,
+   "wins": 354,
+   "losses": 340,
    "draws": 4,
-   "wr": 0.5059,
+   "wr": 0.5101,
    "ci95": {
-    "low": 0.4684,
-    "high": 0.5433
+    "low": 0.4729,
+    "high": 0.5471
    },
    "lowN": false
   },
@@ -69,26 +69,26 @@
    "lowN": true
   },
   "accepted": {
-   "n": 219,
-   "decided": 218,
+   "n": 220,
+   "decided": 219,
    "wins": 112,
-   "losses": 106,
+   "losses": 107,
    "draws": 1,
-   "wr": 0.5138,
+   "wr": 0.5114,
    "ci95": {
-    "low": 0.4478,
-    "high": 0.5793
+    "low": 0.4456,
+    "high": 0.5769
    },
    "lowN": false
   },
   "test": {
-   "deltaPp": 0.79,
-   "pValue": 0.83913,
+   "deltaPp": 0.13,
+   "pValue": 0.972635,
    "bootstrapNote": "N pareado agora usa V3-creation (mesmo T0), nao o shadow final-entry."
   }
  },
  "locationConditional": {
-  "n": 229,
+  "n": 230,
   "byVerdict": [
    {
     "key": "NEUTRAL",
@@ -120,15 +120,15 @@
    },
    {
     "key": "UNFAVORABLE",
-    "n": 45,
-    "decided": 44,
+    "n": 46,
+    "decided": 45,
     "wins": 28,
-    "losses": 16,
+    "losses": 17,
     "draws": 1,
-    "wr": 0.6364,
+    "wr": 0.6222,
     "ci95": {
-     "low": 0.4887,
-     "high": 0.7622
+     "low": 0.4763,
+     "high": 0.7489
     },
     "lowN": false
    }
@@ -1972,12 +1972,21 @@
    },
    {
     "verdict": "UNFAVORABLE",
-    "result": null,
+    "result": "LOSS",
     "scenario": "TREND_PULLBACK",
     "direction": "SELL",
     "zone": "LOWER_HALF",
     "pos": 0.3333333333333333,
     "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": null,
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6479620853082172,
+    "regime": "TREND_UP"
    },
    {
     "verdict": "UNFAVORABLE",
@@ -2198,7 +2207,7 @@
   ]
  },
  "structuralVsImpulse": {
-  "n": 218,
+  "n": 219,
   "structural": {
    "aligned": {
     "n": 61,
@@ -2214,30 +2223,30 @@
     "lowN": false
    },
    "notAligned": {
-    "n": 37,
-    "decided": 37,
+    "n": 38,
+    "decided": 38,
     "wins": 17,
-    "losses": 20,
+    "losses": 21,
     "draws": 0,
-    "wr": 0.4595,
+    "wr": 0.4474,
     "ci95": {
-     "low": 0.3104,
-     "high": 0.6162
+     "low": 0.3015,
+     "high": 0.6029
     },
     "lowN": false
    }
   },
   "impulse": {
    "aligned": {
-    "n": 188,
-    "decided": 188,
+    "n": 189,
+    "decided": 189,
     "wins": 96,
-    "losses": 92,
+    "losses": 93,
     "draws": 0,
-    "wr": 0.5106,
+    "wr": 0.5079,
     "ci95": {
-     "low": 0.4397,
-     "high": 0.5812
+     "low": 0.4372,
+     "high": 0.5783
     },
     "lowN": false
    },
@@ -2283,15 +2292,15 @@
     "lowN": true
    },
    "impulseOnly": {
-    "n": 135,
-    "decided": 135,
+    "n": 136,
+    "decided": 136,
     "wins": 66,
-    "losses": 69,
+    "losses": 70,
     "draws": 0,
-    "wr": 0.4889,
+    "wr": 0.4853,
     "ci95": {
-     "low": 0.406,
-     "high": 0.5723
+     "low": 0.4029,
+     "high": 0.5685
     },
     "lowN": false
    },
@@ -2310,9 +2319,9 @@
    }
   },
   "outcomeDirection": {
-   "structuralMatchesOutcome": 53,
+   "structuralMatchesOutcome": 54,
    "impulseMatchesOutcome": 110,
-   "n": 218
+   "n": 219
   }
  },
  "lateAudit": {
@@ -2886,15 +2895,15 @@
   "stratification": [
    {
     "verdict": "CHALLENGED_RESOLVED",
-    "n": 133,
-    "decided": 133,
+    "n": 134,
+    "decided": 134,
     "wins": 62,
-    "losses": 71,
+    "losses": 72,
     "draws": 0,
-    "wr": 0.4662,
+    "wr": 0.4627,
     "ci95": {
-     "low": 0.3835,
-     "high": 0.5507
+     "low": 0.3805,
+     "high": 0.547
     },
     "lowN": false
    },
@@ -2917,80 +2926,80 @@
  },
  "inertComponents": {
   "MICROSTRUCTURE_AGENT": {
-   "total": 969,
+   "total": 988,
    "distribution": {
-    "SELL_PRESSURE": 274,
-    "BALANCED": 434,
-    "BUY_PRESSURE": 261
+    "SELL_PRESSURE": 278,
+    "BALANCED": 445,
+    "BUY_PRESSURE": 265
    },
-   "dominantShare": 0.4479,
+   "dominantShare": 0.4504,
    "distinctStates": 3,
    "mutualInformationWithOutcome": {
-    "mi": 0.003732,
-    "n": 218
+    "mi": 0.003958,
+    "n": 219
    },
    "inertRationale": "ESTADOS_VARIAM"
   },
   "VOLATILITY_AGENT": {
-   "total": 969,
+   "total": 988,
    "distribution": {
-    "NORMAL": 967,
+    "NORMAL": 986,
     "EXPANDING": 2
    },
-   "dominantShare": 0.9979,
+   "dominantShare": 0.998,
    "distinctStates": 2,
    "mutualInformationWithOutcome": {
-    "mi": 0.00615,
-    "n": 218
+    "mi": 0.006164,
+    "n": 219
    },
    "inertRationale": "STATE_QUASE_CONSTANTE"
   },
   "LOCATION_AGENT": {
-   "total": 969,
+   "total": 988,
    "distribution": {
-    "MID": 684,
+    "MID": 701,
     "LOWER_HALF": 140,
-    "UPPER_HALF": 131,
+    "UPPER_HALF": 133,
     "EDGE_UPPER": 7,
     "EDGE_LOWER": 7
    },
-   "dominantShare": 0.7059,
+   "dominantShare": 0.7095,
    "distinctStates": 5,
    "mutualInformationWithOutcome": {
-    "mi": 0.002779,
-    "n": 218
+    "mi": 0.003031,
+    "n": 219
    },
    "inertRationale": "ESTADOS_VARIAM"
   },
   "PRICE_ACTION_AGENT": {
-   "total": 969,
+   "total": 988,
    "distribution": {
-    "BULLISH": 330,
-    "NEUTRAL": 311,
-    "BEARISH": 328
+    "BULLISH": 333,
+    "NEUTRAL": 318,
+    "BEARISH": 337
    },
-   "dominantShare": 0.3406,
+   "dominantShare": 0.3411,
    "distinctStates": 3,
    "mutualInformationWithOutcome": {
-    "mi": 0.003038,
-    "n": 218
+    "mi": 0.003543,
+    "n": 219
    },
    "inertRationale": "ESTADOS_VARIAM"
   },
   "MOMENTUM_AGENT": {
-   "total": 969,
+   "total": 988,
    "distribution": {
-    "STABLE": 30,
-    "BUILDING": 244,
-    "STRONG": 459,
+    "STABLE": 31,
+    "BUILDING": 249,
+    "STRONG": 470,
     "WEAKENING": 127,
-    "REVERSING": 109
+    "REVERSING": 111
    },
-   "dominantShare": 0.4737,
+   "dominantShare": 0.4757,
    "distinctStates": 5,
    "mutualInformationWithOutcome": {
-    "mi": 0.008369,
-    "n": 218
+    "mi": 0.007404,
+    "n": 219
    },
    "inertRationale": "ESTADOS_VARIAM"
   }
@@ -2998,12 +3007,12 @@
  "playbookFunnel": [
   {
    "scenario": "TREND_CONTINUATION",
-   "detected": 148,
-   "directionPresent": 148,
+   "detected": 149,
+   "directionPresent": 149,
    "trigger": 115,
    "synthesisTrade": 115,
    "redTeam": {
-    "CONFIRMED_UNCHALLENGED": 39,
+    "CONFIRMED_UNCHALLENGED": 40,
     "CHALLENGED_RESOLVED": 109,
     "CHALLENGED_UNRESOLVED": 0,
     "NONE": 0
@@ -3011,8 +3020,8 @@
    "finalTrade": 115,
    "settled": 111,
    "funnel": {
-    "DETECTED": 148,
-    "VALID_CONTEXT": 148,
+    "DETECTED": 149,
+    "VALID_CONTEXT": 149,
     "TRIGGER": 115,
     "SYNTHESIS_TRADE": 115,
     "FINAL_TRADE": 115,
@@ -3020,48 +3029,48 @@
    },
    "triggerStates": {
     "DATA_UNSAFE": 1,
-    "SCENARIO_COMPONENT_MISSING": 31,
+    "SCENARIO_COMPONENT_MISSING": 32,
     "TRIGGERED": 115,
     "AMBIGUOUS_COMPETING_SCENARIOS": 1
    }
   },
   {
    "scenario": "TREND_PULLBACK",
-   "detected": 575,
-   "directionPresent": 575,
-   "trigger": 76,
-   "synthesisTrade": 76,
+   "detected": 588,
+   "directionPresent": 588,
+   "trigger": 77,
+   "synthesisTrade": 77,
    "redTeam": {
-    "CONFIRMED_UNCHALLENGED": 140,
-    "CHALLENGED_RESOLVED": 435,
+    "CONFIRMED_UNCHALLENGED": 144,
+    "CHALLENGED_RESOLVED": 444,
     "CHALLENGED_UNRESOLVED": 0,
     "NONE": 0
    },
-   "finalTrade": 76,
-   "settled": 71,
+   "finalTrade": 77,
+   "settled": 72,
    "funnel": {
-    "DETECTED": 575,
-    "VALID_CONTEXT": 575,
-    "TRIGGER": 76,
-    "SYNTHESIS_TRADE": 76,
-    "FINAL_TRADE": 76,
-    "SETTLED": 71
+    "DETECTED": 588,
+    "VALID_CONTEXT": 588,
+    "TRIGGER": 77,
+    "SYNTHESIS_TRADE": 77,
+    "FINAL_TRADE": 77,
+    "SETTLED": 72
    },
    "triggerStates": {
     "DATA_UNSAFE": 8,
-    "AMBIGUOUS_COMPETING_SCENARIOS": 343,
-    "TRIGGERED": 76,
-    "CONTEXT_OK_NO_TRIGGER": 148
+    "AMBIGUOUS_COMPETING_SCENARIOS": 352,
+    "TRIGGERED": 77,
+    "CONTEXT_OK_NO_TRIGGER": 151
    }
   },
   {
    "scenario": "BREAKOUT",
-   "detected": 51,
-   "directionPresent": 51,
+   "detected": 52,
+   "directionPresent": 52,
    "trigger": 25,
    "synthesisTrade": 25,
    "redTeam": {
-    "CONFIRMED_UNCHALLENGED": 51,
+    "CONFIRMED_UNCHALLENGED": 52,
     "CHALLENGED_RESOLVED": 0,
     "CHALLENGED_UNRESOLVED": 0,
     "NONE": 0
@@ -3069,8 +3078,8 @@
    "finalTrade": 25,
    "settled": 25,
    "funnel": {
-    "DETECTED": 51,
-    "VALID_CONTEXT": 51,
+    "DETECTED": 52,
+    "VALID_CONTEXT": 52,
     "TRIGGER": 25,
     "SYNTHESIS_TRADE": 25,
     "FINAL_TRADE": 25,
@@ -3079,7 +3088,7 @@
    "triggerStates": {
     "DATA_UNSAFE": 1,
     "TRIGGERED": 25,
-    "AMBIGUOUS_COMPETING_SCENARIOS": 12,
+    "AMBIGUOUS_COMPETING_SCENARIOS": 13,
     "CONTEXT_OK_NO_TRIGGER": 5,
     "SCENARIO_COMPONENT_MISSING": 8
    }
@@ -3137,12 +3146,12 @@
   },
   {
    "scenario": "REVERSAL",
-   "detected": 129,
-   "directionPresent": 129,
+   "detected": 130,
+   "directionPresent": 130,
    "trigger": 13,
    "synthesisTrade": 13,
    "redTeam": {
-    "CONFIRMED_UNCHALLENGED": 129,
+    "CONFIRMED_UNCHALLENGED": 130,
     "CHALLENGED_RESOLVED": 0,
     "CHALLENGED_UNRESOLVED": 0,
     "NONE": 0
@@ -3150,15 +3159,15 @@
    "finalTrade": 13,
    "settled": 12,
    "funnel": {
-    "DETECTED": 129,
-    "VALID_CONTEXT": 129,
+    "DETECTED": 130,
+    "VALID_CONTEXT": 130,
     "TRIGGER": 13,
     "SYNTHESIS_TRADE": 13,
     "FINAL_TRADE": 13,
     "SETTLED": 12
    },
    "triggerStates": {
-    "SCENARIO_COMPONENT_MISSING": 51,
+    "SCENARIO_COMPONENT_MISSING": 52,
     "AMBIGUOUS_COMPETING_SCENARIOS": 65,
     "TRIGGERED": 13
    }
@@ -3189,12 +3198,12 @@
   },
   {
    "scenario": "TRANSITION_NO_TRADE",
-   "detected": 60,
-   "directionPresent": 60,
+   "detected": 63,
+   "directionPresent": 63,
    "trigger": 0,
    "synthesisTrade": 0,
    "redTeam": {
-    "CONFIRMED_UNCHALLENGED": 60,
+    "CONFIRMED_UNCHALLENGED": 63,
     "CHALLENGED_RESOLVED": 0,
     "CHALLENGED_UNRESOLVED": 0,
     "NONE": 0
@@ -3202,27 +3211,27 @@
    "finalTrade": 0,
    "settled": 0,
    "funnel": {
-    "DETECTED": 60,
-    "VALID_CONTEXT": 60,
+    "DETECTED": 63,
+    "VALID_CONTEXT": 63,
     "TRIGGER": 0,
     "SYNTHESIS_TRADE": 0,
     "FINAL_TRADE": 0,
     "SETTLED": 0
    },
    "triggerStates": {
-    "REGIME_TRANSITION": 60
+    "REGIME_TRANSITION": 63
    }
   }
  ],
  "payout": {
-  "settledDirectional": 219,
-  "payoutPresent": 0,
-  "payoutCoverage": 0,
-  "avgPayout": null,
-  "breakEvenWr": null,
-  "observedWr": 0.5138,
-  "expectancy": "EXPECTANCY_UNKNOWN",
-  "normalizedEv": "EXPECTANCY_UNKNOWN",
+  "settledDirectional": 220,
+  "payoutPresent": 220,
+  "payoutCoverage": 1,
+  "avgPayout": 83.4091,
+  "breakEvenWr": 0.5452,
+  "observedWr": 0.5114,
+  "expectancy": -0.0617,
+  "normalizedEv": -0.0617,
   "policy": {
    "noImputation": true,
    "payoutFromObservationOnly": true
