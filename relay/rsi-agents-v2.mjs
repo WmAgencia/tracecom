@@ -440,7 +440,7 @@ export class RsiAgentsV2 {
       executingDecision: execEval.decision, shadowDecision: shadowEval.decision,
       executingAccepted: execEval.accepted === true, shadowAccepted: shadowEval.accepted === true,
       direction: direction === "BUY" || direction === "SELL" ? direction : null,
-      rsi: num(indicators.rsi), rsiBand: indicators.rsiBand ?? null,
+      rsi: num(indicators.rsi), rsiBand: episode?.candidateRsiBand ?? indicators.rsiBand ?? null, candidateRsi: num(episode?.candidateRsi),
       bollinger: indicators.bollinger ?? null, dmi: indicators.dmi ?? null, adx: indicators.adx ?? null,
       structuralTrend: indicators.structuralTrend ?? null, shortHorizonDirection: indicators.shortHorizonDirection ?? null,
       payout: num(payout), entryPrice: num(indicators.bollinger?.close),

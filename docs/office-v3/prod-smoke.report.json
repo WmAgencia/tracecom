@@ -1,8 +1,8 @@
 {
-  "at": "2026-09-19T16:58:26.154Z",
+  "at": "2026-09-19T17:38:22.986Z",
   "baseUrl": "https://tracecom.consecom.com.br",
-  "total": 10,
-  "passed": 10,
+  "total": 11,
+  "passed": 11,
   "failed": 0,
   "results": [
     {
@@ -50,6 +50,21 @@
       "evidence": null,
       "detail": {
         "canvasLogsBox": false
+      }
+    },
+    {
+      "assertion": "RSI V2 50/50 no Office (superior STRICT V2 / inferior PULLBACK V2)",
+      "pass": true,
+      "evidence": "final-prod-boot.png",
+      "detail": {
+        "split": {
+          "strict": 15,
+          "pullback": 14
+        },
+        "migration": "COMPLETE",
+        "desksWithTag": 29,
+        "firstPullback": 40,
+        "lastStrict": 14
       }
     },
     {
