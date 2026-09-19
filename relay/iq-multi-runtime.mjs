@@ -1559,8 +1559,8 @@ export class IqMultiRuntime extends EventEmitter {
       candidateRsi: state.candidateRsi ?? null, stage: state.stage ?? null, strength: state.strength ?? null,
       entryMode: state.entryMode ?? null, expectedCushion: state.expectedCushion ?? null,
       watch: state.watch ?? null,
-      strictV2Decision: state.strictV2Decision ?? null, pullbackV2Decision: state.pullbackV2Decision ?? null,
-      ...this.#executionMeta({ source: `agent-v3:${state.strategy}`, marketKey: ctx.marketKey }),
+          strictV2Decision: state.strictV2Decision ?? null, pullbackV2Decision: state.pullbackV2Decision ?? null,
+          ...this.#executionMeta({ source: `agent-v4:${state.strategy}`, marketKey: ctx.marketKey }),
     });
   }
 
