@@ -1,64 +1,84 @@
 # DUAL_REASONING_V1_SHADOW — relatorio observacional
 
-- Gerado: 2026-09-19T13:39:09.849Z. Observacoes: 145; directional settled: 46; proximo checkpoint: 60.
+- Gerado: 2026-09-19T13:45:01.239Z. Observacoes: 187; directional settled: 60; proximo checkpoint: 100.
 - Experimento CONGELADO; relatorio nao altera regras. ZERO REAL.
 
 ## Mudancas de decisao (R1 -> FINAL)
 
-- nada mudou: 25; so A: 36; so B: 36; ambos: 48
-- R1->R2 mudou: 80; R2->FINAL mudou: 109
-- causas: {"UNRESOLVED_CONFLICT":16,"STRUCTURE_CHANGE":30,"SCENARIO_CHANGE":13,"SHORT_IMPULSE_CHANGE":27,"THESIS_INVALIDATED":34}
+- nada mudou: 37; so A: 39; so B: 45; ambos: 66
+- R1->R2 mudou: 104; R2->FINAL mudou: 140
+- causas: {"UNRESOLVED_CONFLICT":20,"STRUCTURE_CHANGE":35,"SCENARIO_CHANGE":16,"SHORT_IMPULSE_CHANGE":34,"THESIS_INVALIDATED":44,"UNKNOWN":1}
 
 ## Matriz A x B (FINAL) — outcome do Dual por celula
 | A | B | N | trades | cobertura | W/L | WR | CI95 | A-sozinho (cf) | B-sozinho (cf) |
 |---|---|---|---|---|---|---|---|---|---|
-| BUY | BUY | 9 | 9 | 1 | 4/4 | 50.0% | 21.5-78.5% | 50.0% | 50.0% |
+| BUY | BUY | 13 | 13 | 1 | 7/5 | 58.3% | 31.9-80.7% | 58.3% | 58.3% |
 | BUY | SELL | 2 | 0 | 0 | 0/0 | - | - | 100.0% | 0.0% |
-| BUY | WAIT | 11 | 7 | 0.6364 | 1/6 | 14.3% | 2.6-51.3% | 22.2% | 14.3% |
-| SELL | BUY | 0 | 0 | null | 0/0 | - | - | - | - |
-| SELL | SELL | 14 | 14 | 1 | 4/6 | 40.0% | 16.8-68.7% | 40.0% | 40.0% |
-| SELL | WAIT | 15 | 13 | 0.8667 | 5/8 | 38.5% | 17.7-64.5% | 35.7% | 38.5% |
-| WAIT | BUY | 23 | 2 | 0.087 | 1/1 | 50.0% | 9.4-90.5% | 33.3% | 58.8% |
-| WAIT | SELL | 15 | 7 | 0.4667 | 2/3 | 40.0% | 11.8-76.9% | 25.0% | 61.5% |
-| WAIT | WAIT | 56 | 0 | 0 | 0/0 | - | - | 71.0% | 41.0% |
+| BUY | WAIT | 15 | 9 | 0.6 | 3/6 | 33.3% | 12.1-64.6% | 33.3% | 40.0% |
+| SELL | BUY | 1 | 0 | 0 | 0/0 | - | - | 0.0% | 100.0% |
+| SELL | SELL | 18 | 18 | 1 | 7/7 | 50.0% | 26.8-73.2% | 50.0% | 50.0% |
+| SELL | WAIT | 18 | 13 | 0.7222 | 5/8 | 38.5% | 17.7-64.5% | 35.3% | 43.8% |
+| WAIT | BUY | 24 | 3 | 0.125 | 1/2 | 33.3% | 6.2-79.2% | 38.5% | 52.6% |
+| WAIT | SELL | 22 | 10 | 0.4545 | 4/4 | 50.0% | 21.5-78.5% | 25.0% | 66.7% |
+| WAIT | WAIT | 74 | 0 | 0 | 0/0 | - | - | 66.7% | 45.5% |
 
 ## Structural x Short horizon
 | celula | N | trades | cobertura | W/L | WR | A-sozinho (cf) | B-sozinho (cf) |
 |---|---|---|---|---|---|---|---|
-| STRUCTURAL_BULLISH_SHORT_BULLISH | 25 | 18 | 0.72 | 6/11 | 35.3% | 45.8% | 45.8% |
-| STRUCTURAL_BULLISH_SHORT_BEARISH | 17 | 0 | 0 | 0/0 | - | 64.3% | 35.7% |
-| STRUCTURAL_BEARISH_SHORT_BEARISH | 37 | 28 | 0.7568 | 8/15 | 34.8% | 40.0% | 40.0% |
-| STRUCTURAL_BEARISH_SHORT_BULLISH | 21 | 0 | 0 | 0/0 | - | 41.2% | 58.8% |
+| STRUCTURAL_BULLISH_SHORT_BULLISH | 35 | 24 | 0.6857 | 11/12 | 47.8% | 54.5% | 54.5% |
+| STRUCTURAL_BULLISH_SHORT_BEARISH | 26 | 0 | 0 | 0/0 | - | 55.0% | 45.0% |
+| STRUCTURAL_BEARISH_SHORT_BEARISH | 45 | 33 | 0.7333 | 12/17 | 41.4% | 43.6% | 43.6% |
+| STRUCTURAL_BEARISH_SHORT_BULLISH | 28 | 0 | 0 | 0/0 | - | 41.7% | 58.3% |
 | STRUCTURAL_BULLISH_SHORT_NEUTRAL | 3 | 0 | 0 | 0/0 | - | 50.0% | - |
 | STRUCTURAL_BEARISH_SHORT_NEUTRAL | 7 | 1 | 0.1429 | 1/0 | 100.0% | 66.7% | - |
 
 ## Thesis survival
 | categoria | N | trades | cobertura | W/L | WR | expectancy |
 |---|---|---|---|---|---|---|
-| BOTH_SURVIVE | 77 | 49 | 0.6364 | 15/27 | 35.7% | -0.2791 |
-| ONLY_A_SURVIVES | 25 | 2 | 0.08 | 1/1 | 50.0% | 0 |
-| ONLY_B_SURVIVES | 17 | 1 | 0.0588 | 1/0 | 100.0% | 1 |
+| BOTH_SURVIVE | 95 | 60 | 0.6316 | 25/30 | 45.5% | -0.0893 |
+| ONLY_A_SURVIVES | 38 | 5 | 0.1316 | 1/2 | 33.3% | -0.3333 |
+| ONLY_B_SURVIVES | 19 | 1 | 0.0526 | 1/0 | 100.0% | 1 |
 | NEITHER_SURVIVES | 0 | 0 | null | 0/0 | - | - |
-| CONFLICT_UNRESOLVED | 20 | 0 | 0 | 0/0 | - | - |
+| CONFLICT_UNRESOLVED | 27 | 0 | 0 | 0/0 | - | - |
 
 ## Cross-examination (pre-cross vs real)
 
-- transicoes: {"BUY->WAIT":11,"SELL->WAIT":9}
-- pre-cross trades 72 WR 0.4167; real trades 52 WR 0.3778
+- transicoes: {"BUY->WAIT":11,"SELL->WAIT":14}
+- pre-cross trades 91 WR 0.4744; real trades 66 WR 0.4576
 
 ## Rounds / persistencia
 
 - tick/candle deltas: NOT_MEASURABLE (payload do Dual nao persiste contagem de ticks/candles por rodada; apenas snapshotId e availableAt)
-- agreement persistence: [{"key":"ALWAYS_CONFLICTED","n":107,"wr":0.36},{"key":"CONVERGED","n":22,"wr":0.4118},{"key":"DIVERGED","n":15,"wr":0},{"key":"ALWAYS_AGREED","n":1,"wr":1}]
-- A stability: [{"key":"STABLE","n":82,"wr":0.4333},{"key":"ONE_CHANGE","n":63,"wr":0.2667}]
-- B stability: [{"key":"ONE_CHANGE","n":89,"wr":0.3448},{"key":"STABLE","n":56,"wr":0.4375}]
+- agreement persistence: [{"key":"ALWAYS_CONFLICTED","n":141,"wr":0.4194},{"key":"CONVERGED","n":30,"wr":0.52},{"key":"DIVERGED","n":15,"wr":0},{"key":"ALWAYS_AGREED","n":1,"wr":1}]
+- A stability: [{"key":"STABLE","n":108,"wr":0.5},{"key":"ONE_CHANGE","n":79,"wr":0.3913}]
+- B stability: [{"key":"ONE_CHANGE","n":105,"wr":0.4211},{"key":"STABLE","n":82,"wr":0.5238}]
 
 ## G2 vs V4 vs Dual (mesma coorte)
 
-- Dual: trades 52 WR 0.3778 coverage 0.3586 break-even null expectancy -0.2391
-- V4: trades 36 WR 0.5278 coverage 0.2483
-- G2: trades 123 WR 0.5455 coverage 0.8483
-- G2 x V4 discordantes: N=1
+- Dual: trades 66 WR 0.4576 coverage 0.3529 break-even null expectancy -0.0833
+- V4: trades 40 WR 0.55 coverage 0.2139
+- G2: trades 162 WR 0.522 coverage 0.8663
+- G2 x V4 discordantes: N=3
+
+## ROLLING (NOT CHECKPOINT)
+
+- directional settled: 60; WR 0.4576; coverage 0.3209 (checkpoints imutaveis abaixo)
+
+## Contrafactual por rodada
+
+- R1_ONLY: {"n":13,"decided":13,"wins":4,"losses":9,"draws":0,"wr":0.3077,"ci95":{"low":0.1268,"high":0.5763},"lowN":true}
+- R2_ONLY: {"n":19,"decided":19,"wins":10,"losses":9,"draws":0,"wr":0.5263,"ci95":{"low":0.3171,"high":0.7267},"lowN":true}
+- FINAL (real): {"n":60,"decided":59,"wins":27,"losses":32,"draws":1,"wr":0.4576,"ci95":{"low":0.337,"high":0.5834},"lowN":false,"note":"resultado real do Dual"}
+
+## Overthinking (associacao, nao causalidade)
+
+- {"r1_correct_final_wrong":0,"r1_wrong_final_correct":0,"r2_correct_final_wrong":1,"r2_wrong_final_correct":1,"r1_correct_final_correct":1,"r1_wrong_final_wrong":2,"note":"associacao observacional; nao e causalidade"}
+
+## Market delta material (sidecar; historico NOT_MEASURABLE)
+
+- changeWithMaterial {"n":0,"decided":0,"wins":0,"losses":0,"draws":0,"wr":null,"ci95":{"low":null,"high":null},"lowN":true}
+- changeWithoutMaterial {"n":0,"decided":0,"wins":0,"losses":0,"draws":0,"wr":null,"ci95":{"low":null,"high":null},"lowN":true}
+- notMeasurable 187
 
 ## Latencia (ms)
 
@@ -72,11 +92,11 @@
 ## Checkpoints
 | nivel | completo | N | W/L/D | WR | CI95 | cobertura | break-even | expectancy |
 |---|---|---|---|---|---|---|---|---|
-| 30 | sim | 30 | 10/20/0 | 33.3% | 19.2-51.2% | 0.2069 | null | -0.3333 |
-| 60 | nao | 45 | 17/28/1 | 37.8% | 25.1-52.4% | 0.3172 | null | -0.2391 |
-| 100 | nao | 45 | 17/28/1 | 37.8% | 25.1-52.4% | 0.3172 | null | -0.2391 |
-| 200 | nao | 45 | 17/28/1 | 37.8% | 25.1-52.4% | 0.3172 | null | -0.2391 |
-| 500 | nao | 45 | 17/28/1 | 37.8% | 25.1-52.4% | 0.3172 | null | -0.2391 |
+| 30 | sim | 30 | 10/20/0 | 33.3% | 19.2-51.2% | 0.1604 | null | -0.3333 |
+| 60 | sim | 59 | 27/32/1 | 45.8% | 33.7-58.3% | 0.3209 | null | -0.0833 |
+| 100 | nao | 59 | 27/32/1 | 45.8% | 33.7-58.3% | 0.3209 | null | -0.0833 |
+| 200 | nao | 59 | 27/32/1 | 45.8% | 33.7-58.3% | 0.3209 | null | -0.0833 |
+| 500 | nao | 59 | 27/32/1 | 45.8% | 33.7-58.3% | 0.3209 | null | -0.0833 |
 
 ## Respostas do checkpoint
 ```
@@ -217,11 +237,11 @@
   "verdict": "MEASURED"
  },
  "G_round2Value": {
-  "changedR1toR2": 80,
+  "changedR1toR2": 104,
   "verdict": "MEASURED"
  },
  "H_finalRoundValue": {
-  "changedR2toFinal": 109,
+  "changedR2toFinal": 140,
   "verdict": "MEASURED"
  },
  "I_survivalPredicts": {
@@ -262,9 +282,9 @@
   "verdict": "INSUFFICIENT"
  },
  "J_coverageCost": {
-  "observations": 145,
+  "observations": 187,
   "trades": 30,
-  "coverage": 0.2069
+  "coverage": 0.1604
  },
  "note": "Respostas usam a mesma coorte; N insuficiente nao vira conclusao."
 }

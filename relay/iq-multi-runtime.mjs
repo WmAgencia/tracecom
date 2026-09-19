@@ -51,6 +51,8 @@ import { AgentsV4Persistence } from "./agents-v4/persistence.mjs";
 import { AgentsV4Settlement } from "./agents-v4/settlement.mjs";
 // DUAL_REASONING_V1_SHADOW: experimento independente (A estrutural x B curto prazo). NUNCA executa.
 import { DualReasoningEngine } from "./dual-reasoning.mjs";
+// Sidecar EXTERNO de deltas de mercado entre rodadas (observacao unidirecional; nunca alimenta A/B/Sintese).
+import { DualRoundMarketDeltaObserver } from "./dual-round-observer.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
 export const ACK_TIMEOUT_MS = 15_000;
@@ -138,6 +140,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.agentsV4.attachSettlement(this.agentsV4Settlement);
     // DUAL_REASONING_V1_SHADOW (experimento independente; sem LLM no deadline; zero ordem).
     this.dual = new DualReasoningEngine({ pool, dataHub: this.dataHub, now: this.now, log: this.log, enabled: dualReasoningEnabled === true });
+    this.dualObserver = new DualRoundMarketDeltaObserver({ pool, now: this.now, log: this.log, enabled: dualReasoningEnabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -1250,17 +1253,22 @@ export class IqMultiRuntime extends EventEmitter {
   #observeDualRound1(ctx, candidate, now) {
     if (!this.dual?.enabled || !candidate) return null;
     const t0 = this.#buildT0ForV4(ctx, this.#candleList(ctx), { now, candidate });
-    return this.dual.observeRound1({
+    const dualResult = this.dual.observeRound1({
       t0, candidate: { candidateId: candidate.id, correlationId: candidate.correlationId ?? null, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, payout: ctx.payout },
       g2Action: candidate.action ?? null, v4Action: ctx.lastAgentsV4?.action ?? null, execution: this.#agentsV4Execution(ctx, { now, candidate }),
     });
+    // Sidecar: observa o T0 ja produzido, apos a rodada; nunca influencia a decisao.
+    this.dualObserver.observe({ observationId: this.#dualObservationId(ctx, candidate), marketKey: ctx.marketKey, round: "R1", t0 });
+    return dualResult;
   }
   #observeDualRound2(ctx, candidate, now) {
     if (!this.dual?.enabled || !candidate || candidate.evaluations < 1) return null;
     const observationId = this.#dualObservationId(ctx, candidate);
     if (!this.dual.observations.has(observationId)) return null;
     const t0 = this.#buildT0ForV4(ctx, this.#candleList(ctx), { now, candidate });
-    return this.dual.observeRound2({ observationId, t0, execution: this.#agentsV4Execution(ctx, { now, candidate }), g2Action: candidate.action ?? null, v4Action: ctx.lastAgentsV4?.action ?? null });
+    const dualResult = this.dual.observeRound2({ observationId, t0, execution: this.#agentsV4Execution(ctx, { now, candidate }), g2Action: candidate.action ?? null, v4Action: ctx.lastAgentsV4?.action ?? null });
+    this.dualObserver.observe({ observationId, marketKey: ctx.marketKey, round: "R2", t0 });
+    return dualResult;
   }
   #finalizeDual(ctx, candidate, action, now) {
     if (!this.dual?.enabled || !candidate) return null;
@@ -1268,12 +1276,14 @@ export class IqMultiRuntime extends EventEmitter {
     if (!this.dual.observations.has(observationId)) return null;
     const t0 = this.#buildT0ForV4(ctx, this.#candleList(ctx), { now, candidate });
     const timingObservation = this.timingShadow.getByCandidate(candidate.id);
-    return this.dual.finalize({
+    const dualResult = this.dual.finalize({
       observationId, t0, execution: this.#agentsV4Execution(ctx, { now, candidate }),
       candidate: { targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, payout: ctx.payout },
       g2Action: candidate.action ?? null, v4Action: action ?? null,
       lateView: timingObservation ? { lateVerdict: timingObservation.late?.verdict ?? null } : null,
     });
+    this.dualObserver.observe({ observationId, marketKey: ctx.marketKey, round: "FINAL", t0 });
+    return dualResult;
   }
 
   #agentsV4RiskContext(ctx, now) {
@@ -1599,6 +1609,7 @@ export class IqMultiRuntime extends EventEmitter {
       ...status,
       enabled: this.config.dualReasoningShadowEnabled === true && this.dual.enabled === true,
       isolation: { shadowOnly: true, controlsExecution: false, sendsOrders: false, redTeamUntouched: true, lateWindowDecoupled: true, g2Untouched: true, v3Untouched: true, v4Untouched: true, stakeUntouched: true, realAllowlistUntouched: true },
+      observer: this.dualObserver.status(),
       realAllowlistUntouched: true,
     };
   }

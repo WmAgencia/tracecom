@@ -1,0 +1,32 @@
+-- 037: DUAL_ROUND_MARKET_DELTA_OBSERVER — sidecar externo do DUAL_REASONING_V1 (observacao unidirecional).
+CREATE TABLE IF NOT EXISTS iq_dual_round_deltas (
+  observation_id text NOT NULL,
+  round text NOT NULL,
+  market_key text,
+  snapshot_id text,
+  previous_snapshot_id text,
+  observed_at bigint,
+  elapsed_ms bigint,
+  new_tick_count integer,
+  new_closed_5s_count integer,
+  price numeric,
+  price_delta numeric,
+  price_delta_atr numeric,
+  velocity_delta numeric,
+  acceleration_delta numeric,
+  rsi_delta numeric,
+  di_spread_delta numeric,
+  atr_delta numeric,
+  structure_changed boolean,
+  regime_changed boolean,
+  scenario_changed boolean,
+  location_changed boolean,
+  trigger_changed boolean,
+  short_impulse_changed boolean,
+  price_action_changed boolean,
+  material_market_change boolean NOT NULL DEFAULT false,
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (observation_id, round)
+);
+CREATE INDEX IF NOT EXISTS idx_iq_dual_round_deltas_material ON iq_dual_round_deltas(material_market_change, created_at DESC);

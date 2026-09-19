@@ -12,8 +12,11 @@ export class DualReportService {
       this.pool.query(`SELECT DISTINCT ON (candidate_id) candidate_id, direction, theoretical_result FROM iq_scenario_shadow_observations WHERE candidate_id IS NOT NULL ORDER BY candidate_id, created_at DESC`).then((r) => r.rows).catch(() => []),
       this.pool.query(`SELECT DISTINCT ON (candidate_id) candidate_id, direction, final_action, theoretical_result FROM iq_agents_v4_observations WHERE candidate_id IS NOT NULL ORDER BY candidate_id, created_at DESC`).then((r) => r.rows).catch(() => []),
     ]);
+    const deltas = await this.pool.query(`SELECT observation_id, round, material_market_change FROM iq_dual_round_deltas`).then((r) => r.rows).catch(() => []);
     const g2ByCandidate = new Map(v3.map((row) => [row.candidate_id, { direction: row.direction, result: row.theoretical_result }]));
     const v4ByCandidate = new Map(v4.map((row) => [row.candidate_id, { direction: row.direction, action: row.final_action, result: row.theoretical_result }]));
-    return buildDualReport({ rows: dual, g2ByCandidate, v4ByCandidate });
+    const roundDeltasByObservation = new Map();
+    for (const row of deltas) { if (!roundDeltasByObservation.has(row.observation_id)) roundDeltasByObservation.set(row.observation_id, []); roundDeltasByObservation.get(row.observation_id).push(row); }
+    return buildDualReport({ rows: dual, g2ByCandidate, v4ByCandidate, roundDeltasByObservation });
   }
 }

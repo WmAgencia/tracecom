@@ -39,6 +39,18 @@ try {
   md.push(`- V4: trades ${report.comparison.v4.trades} WR ${report.comparison.v4.outcome.wr} coverage ${report.comparison.v4.coverage}`);
   md.push(`- G2: trades ${report.comparison.g2.trades} WR ${report.comparison.g2.outcome.wr} coverage ${report.comparison.g2.coverage}`);
   md.push(`- G2 x V4 discordantes: N=${report.comparison.disagreementSubset.n}\n`);
+  md.push("## ROLLING (NOT CHECKPOINT)\n");
+  md.push(`- directional settled: ${report.rolling?.directionalSettled}; WR ${report.rolling?.outcome?.wr}; coverage ${report.rolling?.coverage} (checkpoints imutaveis abaixo)\n`);
+  md.push("## Contrafactual por rodada\n");
+  md.push(`- R1_ONLY: ${JSON.stringify(report.roundCounterfactuals?.R1_ONLY)}`);
+  md.push(`- R2_ONLY: ${JSON.stringify(report.roundCounterfactuals?.R2_ONLY)}`);
+  md.push(`- FINAL (real): ${JSON.stringify(report.roundCounterfactuals?.FINAL)}\n`);
+  md.push("## Overthinking (associacao, nao causalidade)\n");
+  md.push(`- ${JSON.stringify(report.overthinking)}\n`);
+  md.push("## Market delta material (sidecar; historico NOT_MEASURABLE)\n");
+  md.push(`- changeWithMaterial ${JSON.stringify(report.materialSummary?.changeWithMaterial)}`);
+  md.push(`- changeWithoutMaterial ${JSON.stringify(report.materialSummary?.changeWithoutMaterial)}`);
+  md.push(`- notMeasurable ${report.materialSummary?.notMeasurable}\n`);
   md.push("## Latencia (ms)\n");
   for (const [key, value] of Object.entries(report.latency)) md.push(`- ${key}: p50 ${value.p50} p95 ${value.p95} p99 ${value.p99} max ${value.max} negligivel=${value.operationallyNegligible}`);
   md.push("\n## Checkpoints\n| nivel | completo | N | W/L/D | WR | CI95 | cobertura | break-even | expectancy |\n|---|---|---|---|---|---|---|---|---|");

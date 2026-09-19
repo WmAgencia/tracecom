@@ -1,0 +1,25 @@
+{
+  "schema": "dual-reasoning-hypotheses-v1",
+  "experiment": "DUAL_REASONING_V1_SHADOW",
+  "frozen": true,
+  "createdAt": "2026-09-19T14:05:00Z",
+  "createdBeforeFutureCheckpoint": true,
+  "checkpointBaseline": "N30",
+  "baselineSnapshot": { "directionalSettled": 30, "wins": 10, "losses": 20, "wr": 0.3333, "coverage": 0.2069, "v4Wr": 0.6, "g2Wr": 0.4667 },
+  "policy": {
+    "noRuntimeChangeFromHypotheses": true,
+    "noTuning": true,
+    "noFilterUse": true,
+    "evaluatedOnlyAtCheckpoints": [60, 100, 200, 500],
+    "note": "Hipoteses registradas ANTES de ver N60; resultados permanecem exploratorios ate N suficiente."
+  },
+  "hypotheses": [
+    { "id": "H1", "description": "A e B na MESMA direcao terao performance superior a A direcional + B WAIT.", "expectedDirection": "SAME_DIRECTION > A_DIRECTIONAL_B_WAIT", "metric": "WR e expectancy por grupo (A x B FINAL)", "population": "oportunidades com settling direcional do Dual" },
+    { "id": "H2", "description": "B=WAIT funciona como contraindicação de curto prazo quando A esta direcional.", "expectedDirection": "B_WAIT pior que B_SAME_DIRECTION", "metric": "WR/expectancy do grupo A direcional + B WAIT vs A+B mesma direcao", "population": "A acao BUY/SELL no FINAL" },
+    { "id": "H3", "description": "BOTH_SURVIVE tera resultado superior a teses que nao sobrevivem completamente.", "expectedDirection": "BOTH_SURVIVE > ONLY_A/ONLY_B/NEITHER/CONFLICT", "metric": "WR por thesisSurvival", "population": "observacoes finalizadas" },
+    { "id": "H4", "description": "Mudancas R1->R2 associadas a informacao de mercado nova tendem a ser uteis; mudancas sem informacao material podem ser instabilidade.", "expectedDirection": "WITH_MARKET_CHANGE >= WITHOUT_MARKET_CHANGE", "metric": "WR por mudanca com/sem market delta (sidecar)", "population": "observacoes com sidecar disponivel" },
+    { "id": "H5", "description": "R2->FINAL pode adicionar ruido se houver muitas mudancas com pouco market delta.", "expectedDirection": "R2->FINAL_WITHOUT_DELTA <= R2->FINAL_WITH_DELTA", "metric": "WR e taxa de overthinking (R1 correto -> FINAL errado)", "population": "observacoes finalizadas" },
+    { "id": "H6", "description": "ALWAYS_AGREED/CONVERGED pode ter resultado diferente de DIVERGED/ALWAYS_CONFLICTED.", "expectedDirection": "ALWAYS_AGREED/CONVERGED >= DIVERGED/ALWAYS_CONFLICTED", "metric": "WR por agreement persistence", "population": "observacoes com R1/R2/FINAL" },
+    { "id": "H7", "description": "Structural direction sozinho pode nao bastar para ~60s; contraindicação de curto prazo pode ter valor como filtro.", "expectedDirection": "A_SOZINHO <= A+B_ALINHADOS; B_CONTRA pode separar qualidade", "metric": "WR A-sozinho vs A+B; WR em B oposto a A", "population": "observacoes finalizadas" }
+  ]
+}

@@ -14,6 +14,25 @@ const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const flags = new Set(process.argv.slice(2));
 const dry = flags.has("--dry");
 
+// FAIL CLOSED: alvos Railway esperados (IDs de infraestrutura, nunca secrets). Nunca auto-criar projeto/servico.
+import { assertRailwayTarget, EXPECTED_RAILWAY } from "../relay/deploy-guard.mjs";
+export { assertRailwayTarget, EXPECTED_RAILWAY };
+
+function assertRailwayOrAbort() {
+  let statusJson = null;
+  try {
+    const output = execFileSync("npx", ["@railway/cli", "status", "--json"], { cwd: RELAY_DEPLOY_DIR, encoding: "utf8", shell: process.platform === "win32" });
+    statusJson = JSON.parse(output.replace(/^\uFEFF/, ""));
+  } catch (error) { statusJson = null; }
+  const check = assertRailwayTarget(statusJson);
+  if (!check.ok) {
+    console.error(`DEPLOY_ABORTED_RAILWAY_TARGET: ${check.errors.join(",")}`);
+    console.error("Fail-closed: nenhum railway up foi executado. Linke/verifique o servico tracecom-live-relay antes de deployar.");
+    process.exit(1);
+  }
+  return check;
+}
+
 function run(command, args, { cwd = ROOT, shell = false } = {}) {
   console.log(`\n$ ${command} ${args.join(" ")}`);
   if (dry) return "";
@@ -43,6 +62,7 @@ if (!flags.has("--skip-relay")) {
     fs.cpSync(path.join(ROOT, "relay", dir), path.join(RELAY_DEPLOY_DIR, dir), { recursive: true });
   }
   for (const file of sync) fs.copyFileSync(path.join(ROOT, file), path.join(RELAY_DEPLOY_DIR, path.basename(file)));
+  assertRailwayOrAbort();
   run("npx", ["@railway/cli", "up", "-d", "-s", "tracecom-live-relay"], { cwd: RELAY_DEPLOY_DIR, shell: process.platform === "win32" });
 }
 

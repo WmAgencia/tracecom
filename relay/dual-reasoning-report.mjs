@@ -29,7 +29,7 @@ export function makeCounterfactualResolver({ g2 = null, v4 = null } = {}) {
   };
 }
 
-export function buildDualReport({ rows = [], g2ByCandidate = new Map(), v4ByCandidate = new Map(), levels = CHECKPOINT_LEVELS } = {}) {
+export function buildDualReport({ rows = [], g2ByCandidate = new Map(), v4ByCandidate = new Map(), levels = CHECKPOINT_LEVELS, roundDeltasByObservation = new Map() } = {}) {
   const observations = rows.map((row) => {
     const r1 = row.payload?.rounds?.R1 ?? null, r2 = row.payload?.rounds?.R2 ?? null, fin = row.payload?.rounds?.FINAL ?? null;
     const g2 = g2ByCandidate.get(row.candidate_id) ?? null;
@@ -172,8 +172,36 @@ export function buildDualReport({ rows = [], g2ByCandidate = new Map(), v4ByCand
     const payouts = slice.map((o) => o.payout);
     return { level, complete: settledDirectional.length >= level, n: slice.length, outcome, coverage: observations.length ? Number((slice.length / observations.length).toFixed(4)) : null, breakEven: breakEven(payouts), expectancy: expectancyOf(slice.map((o) => o.result), payouts), answers: answersFor(slice, observations) };
   });
+  /* 4/5: contrafactuais por rodada (R1_ONLY / R2_ONLY / FINAL) + overthinking */
+  const roundDecision = (o, round) => { const a = o.actions[round]?.a, b = o.actions[round]?.b; return a && a === b && a !== "WAIT" ? a : "WAIT"; };
+  const asOutcome = (o, action) => (action === "BUY" || action === "SELL" ? makeCounterfactualResolver({ g2: o.counterfactuals.g2, v4: o.counterfactuals.v4 })(action).result : null);
+  const roundCounterfactuals = { R1_ONLY: cohort(observations.map((o) => asOutcome(o, roundDecision(o, "R1")))), R2_ONLY: cohort(observations.map((o) => asOutcome(o, roundDecision(o, "R2")))), FINAL: { ...cohort(observations.map((o) => o.result)), note: "resultado real do Dual" }, coverage: { R1: observations.filter((o) => roundDecision(o, "R1") !== "WAIT").length, R2: observations.filter((o) => roundDecision(o, "R2") !== "WAIT").length, FINAL: observations.filter((o) => o.actions.dual === "BUY" || o.actions.dual === "SELL").length, total: observations.length } };
+  const overthinking = { r1_correct_final_wrong: 0, r1_wrong_final_correct: 0, r2_correct_final_wrong: 0, r2_wrong_final_correct: 0, r1_correct_final_correct: 0, r1_wrong_final_wrong: 0 };
+  for (const o of observations) {
+    const final = o.result;
+    if (!DECIDED.has(final) && o.actions.dual !== "WAIT") continue;
+    const r1 = asOutcome(o, roundDecision(o, "R1")), r2 = asOutcome(o, roundDecision(o, "R2"));
+    if (r1 && DECIDED.has(final)) {
+      if (r1 === "WIN" && final === "LOSS") overthinking.r1_correct_final_wrong += 1; else if (r1 === "LOSS" && final === "WIN") overthinking.r1_wrong_final_correct += 1; else if (r1 === "WIN" && final === "WIN") overthinking.r1_correct_final_correct += 1; else if (r1 === "LOSS" && final === "LOSS") overthinking.r1_wrong_final_wrong += 1;
+    }
+    if (r2 && DECIDED.has(final)) {
+      if (r2 === "WIN" && final === "LOSS") overthinking.r2_correct_final_wrong += 1; else if (r2 === "LOSS" && final === "WIN") overthinking.r2_wrong_final_correct += 1;
+    }
+  }
+  overthinking.note = "associacao observacional; nao e causalidade";
+  /* 3/7: atribuicao por market delta real (sidecar; historico = NOT_MEASURABLE) */
+  const materialAttribution = { changeWithMaterial: [], changeWithoutMaterial: [], noChangeWithMaterial: [], noChangeWithoutMaterial: [], notMeasurable: 0 };
+  for (const o of observations) {
+    const deltas = roundDeltasByObservation.get(o.id) ?? null;
+    if (!deltas || !deltas.length) { materialAttribution.notMeasurable += 1; continue; }
+    const material = deltas.some((delta) => delta.material_market_change === true);
+    const changed = o.actions.R1.a !== o.actions.FINAL.a || o.actions.R1.b !== o.actions.FINAL.b;
+    if (changed && material) materialAttribution.changeWithMaterial.push(o.result); else if (changed) materialAttribution.changeWithoutMaterial.push(o.result); else if (material) materialAttribution.noChangeWithMaterial.push(o.result); else materialAttribution.noChangeWithoutMaterial.push(o.result);
+  }
+  const materialSummary = { changeWithMaterial: cohort(materialAttribution.changeWithMaterial), changeWithoutMaterial: cohort(materialAttribution.changeWithoutMaterial), noChangeWithMaterial: cohort(materialAttribution.noChangeWithMaterial), noChangeWithoutMaterial: cohort(materialAttribution.noChangeWithoutMaterial), notMeasurable: materialAttribution.notMeasurable, policy: "material-market-change-v1 (analise apenas)" };
+  const rolling = { label: "ROLLING / NOT CHECKPOINT", asOf: Date.now(), directionalSettled: settledDirectional.length, outcome: cohort(settledDirectional.map((o) => o.result)), coverage: observations.length ? Number((settledDirectional.length / observations.length).toFixed(4)) : null, note: "checkpoints imutaveis permanecem em checkpoints[]; rolling nunca os sobrescreve." };
   return {
-    version: DUAL_REPORT_VERSION, generatedAtUtc: new Date().toISOString(),
+    version: DUAL_REPORT_VERSION, generatedAtUtc: new Date().toISOString(), rolling, roundCounterfactuals, overthinking, materialSummary,
     snapshot: { asOf: Date.now(), n: observations.length, source: "PROSPECTIVE_SHADOW", note: "DUAL_REASONING_V1 congelado; relatorio apenas observacional." },
     counts: { observations: observations.length, finalized: observations.filter((o) => o.actions.dual).length, directionalSettled: settledDirectional.length, nextCheckpoint: levels.find((l) => l > settledDirectional.length) ?? null },
     change, changeMatrix: change, abMatrix, structuralShort, survival, crossValue, roundsValue, aAlone: { cohort: aAloneCohort }, bAlone: { cohort: bAloneCohort }, comparison, latency, checkpoints,
