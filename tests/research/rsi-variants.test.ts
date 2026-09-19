@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 // @ts-expect-error - relay ESM sem tipagem
 const variants = await import("../../relay/rsi-variants.mjs");
 
-function series({ drift, count = 90, start = 1.1, tail = 0, tailCount = 1, step = 0.0002 }) {
+function series({ drift, count = 90, start = 1.1, tail = 0, tailCount = 1, step = 0.0002 }: any = {}) {
   const now = 1_800_000_000_000;
   const list: any[] = [];
   let price = start;
