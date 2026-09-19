@@ -1,0 +1,2517 @@
+{
+ "schema": "signal-latency-probe-v1",
+ "generatedAtUtc": "2026-09-19T12:36:48.711Z",
+ "counts": {
+  "v4T0s": 5,
+  "v3T0s": 5
+ },
+ "v4": {
+  "runs": [
+   {
+    "marketKey": "EURJPY:OTC",
+    "observationId": "v4:EURJPY:OTC:cand_EURJPY_OTC_1789821420000",
+    "scenarioMs": 2,
+    "specialistsMs": 6,
+    "synthesisMs": 0,
+    "redTeamMs": 1,
+    "totalMs": 19.674,
+    "scenario": "REVERSAL",
+    "action": "NO_TRADE"
+   },
+   {
+    "marketKey": "USDJPY:OTC",
+    "observationId": "v4:USDJPY:OTC:cand_USDJPY_OTC_1789821420000",
+    "scenarioMs": 0,
+    "specialistsMs": 0,
+    "synthesisMs": 0,
+    "redTeamMs": 0,
+    "totalMs": 1.051,
+    "scenario": "TREND_CONTINUATION",
+    "action": "NO_TRADE"
+   },
+   {
+    "marketKey": "AUDNZD:OTC",
+    "observationId": "v4:AUDNZD:OTC:cand_AUDNZD_OTC_1789821420000",
+    "scenarioMs": 0,
+    "specialistsMs": 0,
+    "synthesisMs": 0,
+    "redTeamMs": 0,
+    "totalMs": 0.664,
+    "scenario": "TREND_CONTINUATION",
+    "action": "NO_TRADE"
+   },
+   {
+    "marketKey": "USDTRY:OTC",
+    "observationId": "v4:USDTRY:OTC:cand_USDTRY_OTC_1789821420000",
+    "scenarioMs": 0,
+    "specialistsMs": 0,
+    "synthesisMs": 0,
+    "redTeamMs": 0,
+    "totalMs": 0.795,
+    "scenario": "TREND_CONTINUATION",
+    "action": "NO_TRADE"
+   },
+   {
+    "marketKey": "EURCHF:OTC",
+    "observationId": "v4:EURCHF:OTC:cand_EURCHF_OTC_1789821420000",
+    "scenarioMs": 0,
+    "specialistsMs": 0,
+    "synthesisMs": 0,
+    "redTeamMs": 0,
+    "totalMs": 0.82,
+    "scenario": "BREAKOUT",
+    "action": "NO_TRADE"
+   }
+  ],
+  "repeat": [
+   {
+    "run": 1,
+    "scenarioMs": 0,
+    "totalMs": 1.674,
+    "scenario": "REVERSAL"
+   },
+   {
+    "run": 2,
+    "scenarioMs": 0,
+    "totalMs": 0.749,
+    "scenario": "REVERSAL"
+   },
+   {
+    "run": 3,
+    "scenarioMs": 0,
+    "totalMs": 0.663,
+    "scenario": "REVERSAL"
+   },
+   {
+    "run": 4,
+    "scenarioMs": 0,
+    "totalMs": 1.92,
+    "scenario": "REVERSAL"
+   },
+   {
+    "run": 5,
+    "scenarioMs": 0,
+    "totalMs": 0.736,
+    "scenario": "REVERSAL"
+   }
+  ],
+  "summary": {
+   "scenario": {
+    "mean": 0.4,
+    "min": 0,
+    "max": 2,
+    "p50": 0
+   },
+   "specialists": {
+    "mean": 1.2,
+    "min": 0,
+    "max": 6,
+    "p50": 0
+   },
+   "synthesis": {
+    "mean": 0,
+    "min": 0,
+    "max": 0,
+    "p50": 0
+   },
+   "redTeam": {
+    "mean": 0.2,
+    "min": 0,
+    "max": 1,
+    "p50": 0
+   },
+   "total": {
+    "mean": 4.601,
+    "min": 0.664,
+    "max": 19.674,
+    "p50": 0.82
+   }
+  }
+ },
+ "v3": {
+  "runs": [
+   {
+    "candidateId": "cand_EURJPY_OTC_1789821420000",
+    "identifyMs": 8.182,
+    "scenario": "TRANSITION_NO_TRADE",
+    "regime": "TRANSITION",
+    "action": "WAIT"
+   },
+   {
+    "candidateId": "cand_USDJPY_OTC_1789821420000",
+    "identifyMs": 0.861,
+    "scenario": "TRANSITION_NO_TRADE",
+    "regime": "TRANSITION",
+    "action": "WAIT"
+   },
+   {
+    "candidateId": "cand_AUDNZD_OTC_1789821420000",
+    "identifyMs": 0.535,
+    "scenario": "TREND_PULLBACK",
+    "regime": "RANGE",
+    "action": "WAIT"
+   },
+   {
+    "candidateId": "cand_USDTRY_OTC_1789821420000",
+    "identifyMs": 0.432,
+    "scenario": "TREND_CONTINUATION",
+    "regime": "RANGE",
+    "action": "WAIT"
+   },
+   {
+    "candidateId": "cand_EURCHF_OTC_1789821420000",
+    "identifyMs": 0.865,
+    "scenario": "TRANSITION_NO_TRADE",
+    "regime": "TRANSITION",
+    "action": "WAIT"
+   }
+  ],
+  "summary": {
+   "mean": 2.175,
+   "min": 0.432,
+   "max": 8.182,
+   "p50": 0.861
+  }
+ },
+ "productionSend": {
+  "entryStatus": {
+   "version": "entry-timing-v1",
+   "jitEnabled": true,
+   "entryLeadMs": 1500,
+   "entryWindowMaxDriftMs": 2500,
+   "qualityGateEnabled": true,
+   "minTradeQualityScore": 75,
+   "markets": [
+    {
+     "candidateId": "cand_EURUSD_OTC_1789821300000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821240040,
+     "targetEntryAt": 1789821300000,
+     "targetExpiryAt": 1789821360000,
+     "submitAt": 1789821298500,
+     "revalidatedAt": 1789821298514,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_DOWN",
+       "after": "TRANSITION"
+      },
+      {
+       "field": "structure",
+       "before": "DOWN",
+       "after": "RANGE"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 41.66857183993864,
+       "after": 53.44114773090322
+      },
+      {
+       "field": "adx",
+       "before": 38.115506867352586,
+       "after": 26.048022847901617
+      },
+      {
+       "field": "diSpread",
+       "before": 16.070515236260867,
+       "after": 1.6444311464565082
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.986,
+       "after": 1.002
+      },
+      {
+       "field": "donchian",
+       "before": "LOWER_HALF",
+       "after": "AT_TOP"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 1.148015,
+       "after": 1.148245
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_GBPUSD_OTC_1789821360000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821299082,
+     "targetEntryAt": 1789821360000,
+     "targetExpiryAt": 1789821420000,
+     "submitAt": 1789821358500,
+     "revalidatedAt": 1789821358507,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_DOWN",
+       "after": "TREND_UP"
+      },
+      {
+       "field": "structure",
+       "before": "DOWN",
+       "after": "UP"
+      },
+      {
+       "field": "rsi",
+       "before": 44.352812632030506,
+       "after": 63.912586237964305
+      },
+      {
+       "field": "adx",
+       "before": 26.724460472507946,
+       "after": 24.695143633623438
+      },
+      {
+       "field": "diSpread",
+       "before": 12.643823502626521,
+       "after": 11.792231145405008
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.111,
+       "after": 1.047
+      },
+      {
+       "field": "donchian",
+       "before": "LOWER_HALF",
+       "after": "AT_TOP"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 1.338205,
+       "after": 1.338865
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_USDJPY_OTC_1789821420000",
+     "action": "BUY",
+     "status": "WAITING_WINDOW",
+     "stage": "AGUARDANDO JANELA",
+     "createdAt": 1789821370218,
+     "targetEntryAt": 1789821420000,
+     "targetExpiryAt": 1789821480000,
+     "submitAt": 1789821418500,
+     "revalidatedAt": null,
+     "confirmedAt": null,
+     "cancelReason": null,
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "rsi",
+       "before": 54.560531873469294,
+       "after": 65.29786074150584
+      },
+      {
+       "field": "adx",
+       "before": 28.531050707770845,
+       "after": 33.920332202664476
+      },
+      {
+       "field": "diSpread",
+       "before": 10.760492503016572,
+       "after": 20.579220664277226
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.04,
+       "after": 1.01
+      },
+      {
+       "field": "donchian",
+       "before": "MID",
+       "after": "AT_TOP"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 154.57245,
+       "after": 154.59415
+      }
+     ],
+     "secondsToRevalidation": 11,
+     "secondsToEntry": 12
+    },
+    {
+     "candidateId": "cand_EURGBP_OTC_1789821180000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821156421,
+     "targetEntryAt": 1789821180000,
+     "targetExpiryAt": 1789821240000,
+     "submitAt": 1789821178500,
+     "revalidatedAt": 1789821178514,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 42.81610320253053,
+       "after": 52.07604759599879
+      },
+      {
+       "field": "adx",
+       "before": 24.552776380694542,
+       "after": 20.30852088063827
+      },
+      {
+       "field": "diSpread",
+       "before": 11.15454061844574,
+       "after": 3.244608847875387
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.931,
+       "after": 1.006
+      },
+      {
+       "field": "donchian",
+       "before": "LOWER_HALF",
+       "after": "UPPER_HALF"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 0.863245,
+       "after": 0.863345
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_GBPJPY_OTC_1789821060000",
+     "action": "BUY",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821003717,
+     "targetEntryAt": 1789821060000,
+     "targetExpiryAt": 1789821120000,
+     "submitAt": 1789821058500,
+     "revalidatedAt": 1789821058513,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_UP",
+       "after": "UNCLEAR"
+      },
+      {
+       "field": "structure",
+       "before": "UP",
+       "after": "RANGE"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 51.627446036100025,
+       "after": 55.32654418197127
+      },
+      {
+       "field": "adx",
+       "before": 20.04754956557971,
+       "after": 17.873668434028936
+      },
+      {
+       "field": "diSpread",
+       "before": 9.44595616380986,
+       "after": 6.534623133359265
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.033,
+       "after": 1.031
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "VETO"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "VETOED"
+      },
+      {
+       "field": "price",
+       "before": 208.133695,
+       "after": 208.132685
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_AUDUSD_OTC_1789821120000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821066086,
+     "targetEntryAt": 1789821120000,
+     "targetExpiryAt": 1789821180000,
+     "submitAt": 1789821118500,
+     "revalidatedAt": 1789821118511,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 44.755765202329385,
+       "after": 37.38275433651287
+      },
+      {
+       "field": "adx",
+       "before": 28.75242267413347,
+       "after": 24.564989508143153
+      },
+      {
+       "field": "diSpread",
+       "before": 10.459737707159668,
+       "after": 17.718884948925634
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.862,
+       "after": 1.049
+      },
+      {
+       "field": "donchian",
+       "before": "LOWER_HALF",
+       "after": "AT_BOTTOM"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 0.716935,
+       "after": 0.716825
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_USDCAD_OTC_1789821360000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821301317,
+     "targetEntryAt": 1789821360000,
+     "targetExpiryAt": 1789821420000,
+     "submitAt": 1789821358500,
+     "revalidatedAt": 1789821358524,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_DOWN",
+       "after": "TREND_UP"
+      },
+      {
+       "field": "structure",
+       "before": "DOWN",
+       "after": "UP"
+      },
+      {
+       "field": "rsi",
+       "before": 47.9091076825446,
+       "after": 64.26677366960999
+      },
+      {
+       "field": "adx",
+       "before": 27.324220473053725,
+       "after": 30.358758991298743
+      },
+      {
+       "field": "diSpread",
+       "before": 5.622613098232922,
+       "after": 15.990969046477613
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.906,
+       "after": 0.959
+      },
+      {
+       "field": "donchian",
+       "before": "MID",
+       "after": "AT_TOP"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 1.385275,
+       "after": 1.387105
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_USDCHF_OTC_1789821240000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821185078,
+     "targetEntryAt": 1789821240000,
+     "targetExpiryAt": 1789821300000,
+     "submitAt": 1789821238500,
+     "revalidatedAt": 1789821238521,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "rsi",
+       "before": 49.52766668225792,
+       "after": 48.6420870004257
+      },
+      {
+       "field": "adx",
+       "before": 24.77393717918857,
+       "after": 27.51398580402497
+      },
+      {
+       "field": "diSpread",
+       "before": 4.737257464417905,
+       "after": 1.4576058866691497
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.005,
+       "after": 1.108
+      },
+      {
+       "field": "donchian",
+       "before": "UPPER_HALF",
+       "after": "MID"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 0.821875,
+       "after": 0.821785
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_EURJPY_OTC_1789821420000",
+     "action": "SELL",
+     "status": "WAITING_WINDOW",
+     "stage": "AGUARDANDO JANELA",
+     "createdAt": 1789821402620,
+     "targetEntryAt": 1789821420000,
+     "targetExpiryAt": 1789821480000,
+     "submitAt": 1789821418500,
+     "revalidatedAt": null,
+     "confirmedAt": null,
+     "cancelReason": null,
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "rsi",
+       "before": 44.4084492891805,
+       "after": 47.428858815099765
+      },
+      {
+       "field": "adx",
+       "before": 40.26545040638545,
+       "after": 38.388395729723086
+      },
+      {
+       "field": "diSpread",
+       "before": 7.470503102129513,
+       "after": 7.906902355101593
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.997,
+       "after": 0.939
+      },
+      {
+       "field": "donchian",
+       "before": "MID",
+       "after": "UPPER_HALF"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 180.885025,
+       "after": 180.891085
+      }
+     ],
+     "secondsToRevalidation": 11,
+     "secondsToEntry": 12
+    },
+    {
+     "candidateId": "cand_AUDJPY_OTC_1789821300000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821251079,
+     "targetEntryAt": 1789821300000,
+     "targetExpiryAt": 1789821360000,
+     "submitAt": 1789821298500,
+     "revalidatedAt": 1789821298528,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_DOWN",
+       "after": "UNCLEAR"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 44.454674111825874,
+       "after": 54.47528997288782
+      },
+      {
+       "field": "adx",
+       "before": 27.42397230834498,
+       "after": 21.549522358453675
+      },
+      {
+       "field": "diSpread",
+       "before": 12.33397153435228,
+       "after": 2.335335249482551
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.915,
+       "after": 0.946
+      },
+      {
+       "field": "donchian",
+       "before": "LOWER_HALF",
+       "after": "UPPER_HALF"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "VETO"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "VETOED"
+      },
+      {
+       "field": "price",
+       "before": 112.794535,
+       "after": 112.821005
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_EURCHF_OTC_1789821420000",
+     "action": "BUY",
+     "status": "WAITING_WINDOW",
+     "stage": "AGUARDANDO JANELA",
+     "createdAt": 1789821358720,
+     "targetEntryAt": 1789821420000,
+     "targetExpiryAt": 1789821480000,
+     "submitAt": 1789821418500,
+     "revalidatedAt": null,
+     "confirmedAt": null,
+     "cancelReason": null,
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_UP",
+       "after": "TRANSITION"
+      },
+      {
+       "field": "structure",
+       "before": "UP",
+       "after": "RANGE"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 54.604095686994384,
+       "after": 56.2327513755482
+      },
+      {
+       "field": "adx",
+       "before": 31.48843396701016,
+       "after": 25.619840295502172
+      },
+      {
+       "field": "diSpread",
+       "before": 10.877472928771617,
+       "after": 5.279781606370733
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.977,
+       "after": 0.878
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 0.943525,
+       "after": 0.943575
+      }
+     ],
+     "secondsToRevalidation": 11,
+     "secondsToEntry": 12
+    },
+    {
+     "candidateId": "cand_EURCAD_OTC_1789821000000",
+     "action": "BUY",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789820958318,
+     "targetEntryAt": 1789821000000,
+     "targetExpiryAt": 1789821060000,
+     "submitAt": 1789820998500,
+     "revalidatedAt": 1789820998513,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_UP",
+       "after": "UNCLEAR"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 53.301230985629616,
+       "after": 48.34286010432846
+      },
+      {
+       "field": "adx",
+       "before": 25.010988713009198,
+       "after": 20.130603302595514
+      },
+      {
+       "field": "diSpread",
+       "before": 10.699178658049295,
+       "after": 0.776325882249548
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.133,
+       "after": 1.045
+      },
+      {
+       "field": "donchian",
+       "before": "MID",
+       "after": "LOWER_HALF"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "VETO"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "VETOED"
+      },
+      {
+       "field": "price",
+       "before": 1.613025,
+       "after": 1.612905
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_EURNZD_OTC_1789820820000",
+     "action": "BUY",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789820762136,
+     "targetEntryAt": 1789820820000,
+     "targetExpiryAt": 1789820880000,
+     "submitAt": 1789820818500,
+     "revalidatedAt": 1789820818507,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 59.03754002788433,
+       "after": 68.4837473063435
+      },
+      {
+       "field": "adx",
+       "before": 35.35921793860546,
+       "after": 50.41061576990326
+      },
+      {
+       "field": "diSpread",
+       "before": 16.92673367050894,
+       "after": 24.866620101042248
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.066,
+       "after": 1.01
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 2.010455,
+       "after": 2.013135
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_AUDCAD_OTC_1789821180000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821147216,
+     "targetEntryAt": 1789821180000,
+     "targetExpiryAt": 1789821240000,
+     "submitAt": 1789821178500,
+     "revalidatedAt": 1789821178512,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_DOWN",
+       "after": "TRANSITION"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 43.19858186537342,
+       "after": 53.95688857652702
+      },
+      {
+       "field": "adx",
+       "before": 21.363495239614814,
+       "after": 17.3218843828673
+      },
+      {
+       "field": "diSpread",
+       "before": 6.147709902577432,
+       "after": 1.5320948230575482
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.042,
+       "after": 1.001
+      },
+      {
+       "field": "donchian",
+       "before": "LOWER_HALF",
+       "after": "UPPER_HALF"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 0.997205,
+       "after": 0.997295
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_AUDCHF_OTC_1789821300000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821251086,
+     "targetEntryAt": 1789821300000,
+     "targetExpiryAt": 1789821360000,
+     "submitAt": 1789821298500,
+     "revalidatedAt": 1789821298519,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 39.25003731385554,
+       "after": 23.76212759900075
+      },
+      {
+       "field": "adx",
+       "before": 44.39214228690786,
+       "after": 43.79500385167784
+      },
+      {
+       "field": "diSpread",
+       "before": 12.763953435506242,
+       "after": 23.594672350281893
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.884,
+       "after": 0.921
+      },
+      {
+       "field": "donchian",
+       "before": "LOWER_HALF",
+       "after": "AT_BOTTOM"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 0.584875,
+       "after": 0.584645
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_AUDNZD_OTC_1789821420000",
+     "action": "BUY",
+     "status": "WAITING_WINDOW",
+     "stage": "AGUARDANDO JANELA",
+     "createdAt": 1789821364519,
+     "targetEntryAt": 1789821420000,
+     "targetExpiryAt": 1789821480000,
+     "submitAt": 1789821418500,
+     "revalidatedAt": null,
+     "confirmedAt": null,
+     "cancelReason": null,
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_UP",
+       "after": "TRANSITION"
+      },
+      {
+       "field": "structure",
+       "before": "UP",
+       "after": "RANGE"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 53.96527688819566,
+       "after": 51.01575410677701
+      },
+      {
+       "field": "adx",
+       "before": 28.191586860742095,
+       "after": 20.1008465648009
+      },
+      {
+       "field": "diSpread",
+       "before": 5.053533288466916,
+       "after": 3.0603686776134396
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.034,
+       "after": 0.978
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 1.253395,
+       "after": 1.252895
+      }
+     ],
+     "secondsToRevalidation": 11,
+     "secondsToEntry": 12
+    },
+    {
+     "candidateId": "cand_CADJPY_OTC_1789821300000",
+     "action": "BUY",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821256081,
+     "targetEntryAt": 1789821300000,
+     "targetExpiryAt": 1789821360000,
+     "submitAt": 1789821298500,
+     "revalidatedAt": 1789821298529,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_UP",
+       "after": "UNCLEAR"
+      },
+      {
+       "field": "structure",
+       "before": "UP",
+       "after": "RANGE"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 52.74646542672108,
+       "after": 50.82041471355929
+      },
+      {
+       "field": "adx",
+       "before": 23.03960754708165,
+       "after": 17.176304250597134
+      },
+      {
+       "field": "diSpread",
+       "before": 1.4325534809606388,
+       "after": 3.6513023418488615
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.941,
+       "after": 0.961
+      },
+      {
+       "field": "donchian",
+       "before": "AT_TOP",
+       "after": "UPPER_HALF"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "VETO"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "VETOED"
+      },
+      {
+       "field": "price",
+       "before": 112.9725,
+       "after": 112.9715
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_CADCHF_OTC_1789821300000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821239318,
+     "targetEntryAt": 1789821300000,
+     "targetExpiryAt": 1789821360000,
+     "submitAt": 1789821298500,
+     "revalidatedAt": 1789821298512,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_DOWN",
+       "after": "TRANSITION"
+      },
+      {
+       "field": "structure",
+       "before": "DOWN",
+       "after": "RANGE"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 34.05107684993078,
+       "after": 33.41271121949532
+      },
+      {
+       "field": "adx",
+       "before": 37.228663963354556,
+       "after": 40.7124785493793
+      },
+      {
+       "field": "diSpread",
+       "before": 19.452928908485177,
+       "after": 24.3642904166892
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.754,
+       "after": 1.06
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 0.586415,
+       "after": 0.586265
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_GBPAUD_OTC_1789821360000",
+     "action": "BUY",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821351423,
+     "targetEntryAt": 1789821360000,
+     "targetExpiryAt": 1789821420000,
+     "submitAt": 1789821358500,
+     "revalidatedAt": 1789821358523,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_UP",
+       "after": "TRANSITION"
+      },
+      {
+       "field": "structure",
+       "before": "UP",
+       "after": "RANGE"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 60.12041584946558,
+       "after": 54.71192711491047
+      },
+      {
+       "field": "adx",
+       "before": 28.569632190224183,
+       "after": 27.12933751310239
+      },
+      {
+       "field": "diSpread",
+       "before": 10.029593825352187,
+       "after": 4.535638730305546
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.022,
+       "after": 1.014
+      },
+      {
+       "field": "donchian",
+       "before": "UPPER_HALF",
+       "after": "MID"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 1.867825,
+       "after": 1.867655
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_GBPCAD_OTC_1789820820000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789820768047,
+     "targetEntryAt": 1789820820000,
+     "targetExpiryAt": 1789820880000,
+     "submitAt": 1789820818500,
+     "revalidatedAt": 1789820818522,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_DOWN",
+       "after": "TRANSITION"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 43.17672497769806,
+       "after": 52.522607728701416
+      },
+      {
+       "field": "adx",
+       "before": 20.073493416539,
+       "after": 14.507230544967754
+      },
+      {
+       "field": "diSpread",
+       "before": 8.560864595996112,
+       "after": 0.28216031380467754
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.004,
+       "after": 0.977
+      },
+      {
+       "field": "donchian",
+       "before": "LOWER_HALF",
+       "after": "UPPER_HALF"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 1.896005,
+       "after": 1.896935
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_GBPCHF_OTC_1789821180000",
+     "action": "BUY",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821168318,
+     "targetEntryAt": 1789821180000,
+     "targetExpiryAt": 1789821240000,
+     "submitAt": 1789821178500,
+     "revalidatedAt": 1789821178522,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_UP",
+       "after": "UNCLEAR"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 51.90334222873275,
+       "after": 44.99384731301291
+      },
+      {
+       "field": "adx",
+       "before": 24.08377675362167,
+       "after": 22.13380926134733
+      },
+      {
+       "field": "diSpread",
+       "before": 6.0527858522548215,
+       "after": 3.158692293295559
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.108,
+       "after": 1.153
+      },
+      {
+       "field": "donchian",
+       "before": "UPPER_HALF",
+       "after": "LOWER_HALF"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "VETO"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "VETOED"
+      },
+      {
+       "field": "price",
+       "before": 1.095605,
+       "after": 1.095425
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_GBPNZD_OTC_1789820820000",
+     "action": "BUY",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789820766019,
+     "targetEntryAt": 1789820820000,
+     "targetExpiryAt": 1789820880000,
+     "submitAt": 1789820818500,
+     "revalidatedAt": 1789820818520,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_UP",
+       "after": "TRANSITION"
+      },
+      {
+       "field": "structure",
+       "before": "UP",
+       "after": "RANGE"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 51.11604553773725,
+       "after": 60.14002258255448
+      },
+      {
+       "field": "adx",
+       "before": 29.849259205977074,
+       "after": 22.381310389856516
+      },
+      {
+       "field": "diSpread",
+       "before": 9.316150027193345,
+       "after": 14.67754216241445
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.955,
+       "after": 0.964
+      },
+      {
+       "field": "donchian",
+       "before": "MID",
+       "after": "AT_TOP"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 2.321745,
+       "after": 2.322125
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_NZDCAD_OTC_1789821360000",
+     "action": "BUY",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821337219,
+     "targetEntryAt": 1789821360000,
+     "targetExpiryAt": 1789821420000,
+     "submitAt": 1789821358500,
+     "revalidatedAt": 1789821358521,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_UP",
+       "after": "UNCLEAR"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 47.61029436580496,
+       "after": 43.13206049333675
+      },
+      {
+       "field": "adx",
+       "before": 25.758612578491384,
+       "after": 21.15519772380396
+      },
+      {
+       "field": "diSpread",
+       "before": 4.235916362762211,
+       "after": 3.076475573947068
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.06,
+       "after": 1.14
+      },
+      {
+       "field": "donchian",
+       "before": "MID",
+       "after": "LOWER_HALF"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "VETO"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "VETOED"
+      },
+      {
+       "field": "price",
+       "before": 0.803315,
+       "after": 0.803215
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_NZDJPY_OTC_1789821180000",
+     "action": "SELL",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821136220,
+     "targetEntryAt": 1789821180000,
+     "targetExpiryAt": 1789821240000,
+     "submitAt": 1789821178500,
+     "revalidatedAt": 1789821178506,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "SELL",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_DOWN",
+       "after": "TRANSITION"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 45.956570178503426,
+       "after": 62.65875377276238
+      },
+      {
+       "field": "adx",
+       "before": 21.526325260096172,
+       "after": 19.828314461486862
+      },
+      {
+       "field": "diSpread",
+       "before": 14.84008547892605,
+       "after": 6.997287234481057
+      },
+      {
+       "field": "atrRatio",
+       "before": 1.016,
+       "after": 1.034
+      },
+      {
+       "field": "donchian",
+       "before": "LOWER_HALF",
+       "after": "AT_TOP"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 91.820785,
+       "after": 91.855035
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_USDMXN_OTC_1789821360000",
+     "action": "BUY",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789821308058,
+     "targetEntryAt": 1789821360000,
+     "targetExpiryAt": 1789821420000,
+     "submitAt": 1789821358500,
+     "revalidatedAt": 1789821358511,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_UP",
+       "after": "UNCLEAR"
+      },
+      {
+       "field": "structure",
+       "before": "UP",
+       "after": "RANGE"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 59.314615121682785,
+       "after": 49.67710565282851
+      },
+      {
+       "field": "adx",
+       "before": 28.157081829668282,
+       "after": 19.43965129969826
+      },
+      {
+       "field": "diSpread",
+       "before": 10.079399995623856,
+       "after": 1.3001581507128606
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.926,
+       "after": 1.031
+      },
+      {
+       "field": "donchian",
+       "before": "UPPER_HALF",
+       "after": "LOWER_HALF"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "VETO"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "VETOED"
+      },
+      {
+       "field": "price",
+       "before": 17.255175,
+       "after": 17.254085
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_USDBRL_OTC_1789820820000",
+     "action": "BUY",
+     "status": "CANCELLED",
+     "stage": "OPORTUNIDADE CANCELADA",
+     "createdAt": 1789820784087,
+     "targetEntryAt": 1789820820000,
+     "targetExpiryAt": 1789820880000,
+     "submitAt": 1789820818500,
+     "revalidatedAt": 1789820818528,
+     "confirmedAt": null,
+     "cancelReason": "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "action",
+       "before": "BUY",
+       "after": "WAIT"
+      },
+      {
+       "field": "regime",
+       "before": "TREND_UP",
+       "after": "TRANSITION"
+      },
+      {
+       "field": "structure",
+       "before": "UP",
+       "after": "RANGE"
+      },
+      {
+       "field": "setup",
+       "before": "TREND_PULLBACK",
+       "after": "NO_VALID_SETUP"
+      },
+      {
+       "field": "trigger",
+       "before": "pullback_com_estrutura_mantida",
+       "after": null
+      },
+      {
+       "field": "rsi",
+       "before": 49.609992204490844,
+       "after": 36.96335395149925
+      },
+      {
+       "field": "adx",
+       "before": 23.744462249316353,
+       "after": 21.920322715834054
+      },
+      {
+       "field": "diSpread",
+       "before": 9.677005201715549,
+       "after": 12.690152730371683
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.97,
+       "after": 1.03
+      },
+      {
+       "field": "donchian",
+       "before": "MID",
+       "after": "AT_BOTTOM"
+      },
+      {
+       "field": "criticVerdict",
+       "before": "CONFIRM",
+       "after": "CONTEST"
+      },
+      {
+       "field": "consensusStatus",
+       "before": "CONFIRMED",
+       "after": "NO_CONSENSUS"
+      },
+      {
+       "field": "price",
+       "before": 5.299225,
+       "after": 5.292275
+      }
+     ],
+     "secondsToRevalidation": null,
+     "secondsToEntry": null
+    },
+    {
+     "candidateId": "cand_USDTRY_OTC_1789821420000",
+     "action": "SELL",
+     "status": "WAITING_WINDOW",
+     "stage": "AGUARDANDO JANELA",
+     "createdAt": 1789821360719,
+     "targetEntryAt": 1789821420000,
+     "targetExpiryAt": 1789821480000,
+     "submitAt": 1789821418500,
+     "revalidatedAt": null,
+     "confirmedAt": null,
+     "cancelReason": null,
+     "entryLeadMs": 1500,
+     "candidateChangedBeforeEntry": true,
+     "changedFields": [
+      {
+       "field": "rsi",
+       "before": 52.565643293729565,
+       "after": 50.20757597694223
+      },
+      {
+       "field": "adx",
+       "before": 28.67184662110126,
+       "after": 23.876772099897327
+      },
+      {
+       "field": "diSpread",
+       "before": 0.5055852027155545,
+       "after": 9.771235437594576
+      },
+      {
+       "field": "atrRatio",
+       "before": 0.98,
+       "after": 1.02
+      },
+      {
+       "field": "price",
+       "before": 48.819825,
+       "after": 48.819475
+      }
+     ],
+     "secondsToRevalidation": 11,
+     "secondsToEntry": 12
+    }
+   ],
+   "scoreboard": {
+    "version": "entry-timing-experiment-v1",
+    "counters": {
+     "candidates": 16845,
+     "cancellations": 16712,
+     "directionChanges": 14717,
+     "setupInvalidated": 100,
+     "windowMissed": 0
+    },
+    "arms": {
+     "EARLY_DECISION_SHADOW": {
+      "n": 373,
+      "wins": 189,
+      "losses": 183,
+      "draws": 1,
+      "winRate": 0.5067,
+      "pnl": -25.11,
+      "pnlPerTrade": -0.0673
+     },
+     "JUST_IN_TIME_ENTRY": {
+      "n": 40,
+      "wins": 20,
+      "losses": 19,
+      "draws": 1,
+      "winRate": 0.5,
+      "pnl": -197.8,
+      "pnlPerTrade": -4.945
+     }
+    },
+    "note": "Comparacao prospectiva; nunca usar os 15 trades historicos para declarar JIT melhor."
+   },
+   "practiceOnly": true,
+   "brokerAutomation": "WS_ONLY_PRACTICE"
+  },
+  "agentsV4Latency": {
+   "total": {
+    "count": 512,
+    "p50": 0,
+    "p95": 1,
+    "p99": 1,
+    "max": 3,
+    "mean": 0.283
+   },
+   "specialists": {
+    "count": 512,
+    "p50": 0,
+    "p95": 1,
+    "p99": 1,
+    "max": 1,
+    "mean": 0.09
+   },
+   "synthesis": {
+    "count": 512,
+    "p50": 0,
+    "p95": 0,
+    "p99": 1,
+    "max": 2,
+    "mean": 0.016
+   },
+   "redTeam": {
+    "count": 512,
+    "p50": 0,
+    "p95": 1,
+    "p99": 1,
+    "max": 1,
+    "mean": 0.064
+   },
+   "committees": {
+    "count": 512,
+    "p50": 0,
+    "p95": 0,
+    "p99": 1,
+    "max": 2,
+    "mean": 0.023
+   },
+   "p99Total": 1
+  },
+  "recentExecutions": [
+   {
+    "executionId": "exec_1789808638183_07yahg",
+    "meta": {
+     "ackMs": 1737,
+     "setup": "TREND_PULLBACK",
+     "causal": {
+      "entry": 0.866535,
+      "direction": "PUT",
+      "settlement": 0.866615
+     },
+     "source": "AUTO_DECISION",
+     "marketKey": "EURGBP:OTC",
+     "infraProbe": false,
+     "entryTiming": {
+      "submitAt": 1789808638170,
+      "submitAtMs": 1789808638183,
+      "candidateId": "cand_EURGBP_OTC_1789808640000",
+      "entryLeadMs": 1830,
+      "revalidatedAt": 1789808638181,
+      "targetEntryAt": 1789808640000,
+      "targetExpiryAt": 1789808700000,
+      "candidateChangedBeforeEntry": true
+     },
+     "stakeSource": "MARKET_CONFIGURED",
+     "entryDriftMs": -80,
+     "stakeRequested": 10,
+     "strategySource": "PROFESSIONAL_BRAIN_G2",
+     "stakeAdjustment": {
+      "to": 10,
+      "from": 10,
+      "reason": null,
+      "applied": false
+     },
+     "effectiveEntryAt": 1789808639920,
+     "settlementReason": "MATCH",
+     "excludedFromStats": false,
+     "strategyVariantId": null,
+     "expirationMismatch": false,
+     "brokerExpirationSec": 1789808700
+    },
+    "state": "SETTLED",
+    "ackAt": null
+   },
+   {
+    "executionId": "exec_1789807498179_vd4fh6",
+    "meta": {
+     "ackMs": 1048,
+     "setup": "TREND_PULLBACK",
+     "causal": {
+      "entry": 48.752615,
+      "direction": "CALL",
+      "settlement": 48.752225
+     },
+     "source": "AUTO_DECISION",
+     "marketKey": "USDTRY:OTC",
+     "infraProbe": false,
+     "entryTiming": {
+      "submitAt": 1789807498170,
+      "submitAtMs": 1789807498179,
+      "candidateId": "cand_USDTRY_OTC_1789807500000",
+      "entryLeadMs": 1830,
+      "revalidatedAt": 1789807498176,
+      "targetEntryAt": 1789807500000,
+      "targetExpiryAt": 1789807560000,
+      "candidateChangedBeforeEntry": true
+     },
+     "stakeSource": "MARKET_CONFIGURED",
+     "entryDriftMs": -773,
+     "stakeRequested": 10,
+     "strategySource": "PROFESSIONAL_BRAIN_G2",
+     "stakeAdjustment": {
+      "to": 10,
+      "from": 10,
+      "reason": null,
+      "applied": false
+     },
+     "effectiveEntryAt": 1789807499227,
+     "settlementReason": "MATCH",
+     "excludedFromStats": false,
+     "strategyVariantId": null,
+     "expirationMismatch": false,
+     "brokerExpirationSec": 1789807560
+    },
+    "state": "SETTLED",
+    "ackAt": null
+   },
+   {
+    "executionId": "exec_1789806658520_kt5whp",
+    "meta": {
+     "ackMs": 1380,
+     "setup": "TREND_PULLBACK",
+     "causal": {
+      "entry": 17.223245,
+      "direction": "PUT",
+      "settlement": 17.223485
+     },
+     "source": "AUTO_DECISION",
+     "marketKey": "USDMXN:OTC",
+     "infraProbe": false,
+     "entryTiming": {
+      "submitAt": 1789806658500,
+      "submitAtMs": 1789806658520,
+      "candidateId": "cand_USDMXN_OTC_1789806660000",
+      "entryLeadMs": 1500,
+      "revalidatedAt": 1789806658516,
+      "targetEntryAt": 1789806660000,
+      "targetExpiryAt": 1789806720000,
+      "candidateChangedBeforeEntry": true
+     },
+     "stakeSource": "MARKET_CONFIGURED",
+     "entryDriftMs": -100,
+     "stakeRequested": 10,
+     "strategySource": "PROFESSIONAL_BRAIN_G2",
+     "stakeAdjustment": {
+      "to": 10,
+      "from": 10,
+      "reason": null,
+      "applied": false
+     },
+     "effectiveEntryAt": 1789806659900,
+     "settlementReason": "SETTLEMENT_MISMATCH",
+     "excludedFromStats": false,
+     "strategyVariantId": null,
+     "expirationMismatch": false,
+     "brokerExpirationSec": 1789806720
+    },
+    "state": "SETTLED",
+    "ackAt": null
+   },
+   {
+    "executionId": "exec_1789770838656_a9hjsa",
+    "meta": {
+     "ackMs": 570,
+     "setup": "TREND_PULLBACK",
+     "causal": {
+      "entry": 1.143355,
+      "direction": "PUT",
+      "settlement": 1.143025
+     },
+     "source": "AUTO_DECISION",
+     "marketKey": "EURUSD:OTC",
+     "infraProbe": false,
+     "entryTiming": {
+      "submitAt": 1789770838653,
+      "submitAtMs": 1789770838656,
+      "candidateId": "cand_EURUSD_OTC_1789770840000",
+      "entryLeadMs": 1347,
+      "revalidatedAt": 1789770838654,
+      "targetEntryAt": 1789770840000,
+      "targetExpiryAt": 1789770900000,
+      "candidateChangedBeforeEntry": true
+     },
+     "stakeSource": "MARKET_CONFIGURED",
+     "entryDriftMs": -774,
+     "stakeRequested": 10,
+     "strategySource": "PROFESSIONAL_BRAIN_G2",
+     "stakeAdjustment": {
+      "to": 10,
+      "from": 10,
+      "reason": null,
+      "applied": false
+     },
+     "effectiveEntryAt": 1789770839226,
+     "settlementReason": "MATCH",
+     "excludedFromStats": false,
+     "strategyVariantId": null
+    },
+    "state": "SETTLED",
+    "ackAt": null
+   },
+   {
+    "executionId": "exec_1789770238657_z9cnn1",
+    "meta": {
+     "ackMs": 694,
+     "setup": "TREND_PULLBACK",
+     "causal": {
+      "entry": 0.787015,
+      "direction": "CALL",
+      "settlement": 0.787385
+     },
+     "source": "AUTO_DECISION",
+     "marketKey": "NZDCAD:OTC",
+     "infraProbe": false,
+     "entryTiming": {
+      "submitAt": 1789770238653,
+      "submitAtMs": 1789770238657,
+      "candidateId": "cand_NZDCAD_OTC_1789770240000",
+      "entryLeadMs": 1347,
+      "revalidatedAt": 1789770238655,
+      "targetEntryAt": 1789770240000,
+      "targetExpiryAt": 1789770300000,
+      "candidateChangedBeforeEntry": true
+     },
+     "stakeSource": "MARKET_CONFIGURED",
+     "entryDriftMs": -649,
+     "stakeRequested": 10,
+     "strategySource": "PROFESSIONAL_BRAIN_G2",
+     "stakeAdjustment": {
+      "to": 10,
+      "from": 10,
+      "reason": null,
+      "applied": false
+     },
+     "effectiveEntryAt": 1789770239351,
+     "settlementReason": "MATCH",
+     "excludedFromStats": false,
+     "strategyVariantId": null
+    },
+    "state": "SETTLED",
+    "ackAt": null
+   }
+  ]
+ },
+ "researchOnly": true,
+ "controlsExecution": false
+}
