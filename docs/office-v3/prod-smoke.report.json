@@ -1,8 +1,8 @@
 {
-  "at": "2026-09-19T17:38:22.986Z",
+  "at": "2026-09-19T18:10:53.656Z",
   "baseUrl": "https://tracecom.consecom.com.br",
-  "total": 11,
-  "passed": 11,
+  "total": 12,
+  "passed": 12,
   "failed": 0,
   "results": [
     {
@@ -26,8 +26,8 @@
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "pnlText": "−R$ 15,37",
-        "settledPnl": -15.37
+        "pnlText": "−R$ 62,07",
+        "settledPnl": -62.07
       }
     },
     {
@@ -36,11 +36,11 @@
       "evidence": "final-prod-boot.png",
       "detail": {
         "present": true,
-        "text": "RESULTADO DO DIA-R$ 15,3713 operações · 5W / 7L / 1DWR observado 41,7% · payout médio 86,2% (30 mercados abertos)HOJE-R$ 15,3713 operações · 5W / 7L / 1DSEMANA-R$ 652,13237 trades liquidadosMÊS-R$ 652,13237 trades liquidadosOPERAÇÕES13WINS5LOSSES7DRAWS1WR OBSERVADO41,7%PAYOUT MÉDIO86,2%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
+        "text": "RESULTADO DO DIA-R$ 62,0729 operações · 10W / 16L / 3DWR observado 38,5% · payout médio 86,2% (30 mercados abertos)HOJE-R$ 62,0729 operações · 10W / 16L / 3DSEMANA-R$ 698,83253 trades liquidadosMÊS-R$ 698,83253 trades liquidadosOPERAÇÕES29WINS10LOSSES16DRAWS3WR OBSERVADO38,5%PAYOUT MÉDIO86,2%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
         "model": {
-          "day": "-R$ 15,37",
-          "week": "-R$ 652,13",
-          "month": "-R$ 652,13"
+          "day": "-R$ 62,07",
+          "week": "-R$ 698,83",
+          "month": "-R$ 698,83"
         }
       }
     },
@@ -68,11 +68,33 @@
       }
     },
     {
-      "assertion": "LOGS abre overlay DOM legivel (9 colunas, sem pixel-art)",
+      "assertion": "EXECUTION ROUTING: somente STRICT_V2/PULLBACK_V2 podem chegar ao requestOrder",
+      "pass": true,
+      "evidence": "final-prod-boot.png",
+      "detail": {
+        "policy": "RSI_V2_ONLY",
+        "allowed": [
+          "RSI_REVERSAL_STRICT_V2",
+          "RSI_EXTREME_PULLBACK_V2"
+        ],
+        "blocked": [
+          "AUTO_DECISION:false",
+          "DIAGNOSTIC_SIGNAL:false",
+          "MANUAL:false",
+          "INFRA_PROBE:false",
+          "experiment:RSI_REVERSAL_CONFLUENCE_V1:false",
+          "experiment:RSI_STRICT_PULLBACK_2X2_V1:false",
+          "experiment:PRACTICE_FOUR_WAY_3X_TEST_V1:false",
+          "experiment:INDICATOR_5M_V1:false"
+        ]
+      }
+    },
+    {
+      "assertion": "LOGS abre overlay DOM legivel (11 colunas com FONTE/EXEC, sem pixel-art)",
       "pass": true,
       "evidence": "final-prod-logs.png",
       "detail": {
-        "columns": 9,
+        "columns": 11,
         "rows": 0
       }
     },
@@ -93,7 +115,7 @@
         "WS": "ONLINE",
         "MODO": "PRACTICE · ZERO REAL",
         "CONTA": "PRACTICE",
-        "SALDO": "USD 9985.79",
+        "SALDO": "USD 52.00",
         "MCP": "SEM STATUS NO SNAPSHOT",
         "STAKE GLOBAL": "R$ 10.00 · teto R$ 100.00",
         "AUTO": "ON",
