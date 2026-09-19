@@ -1274,7 +1274,13 @@ export class IqMultiRuntime extends EventEmitter {
     const gapsWindow = countSince(ctx.dqWindow?.gapAt);
     prune(ctx.dqWindow?.duplicateAt); prune(ctx.dqWindow?.reorderAt); prune(ctx.dqWindow?.gapAt);
     return dataQualityInputFromRuntime(
-      { ...ctx, accountContext: this.accountContext.context },
+      {
+        ...ctx,
+        accountContext: this.accountContext.context,
+        timeValid: this.session.timeValid === true,
+        clockSkewMs: Number.isFinite(Number(this.session.clockSkewMs)) ? Number(this.session.clockSkewMs) : null,
+        connectionHealth: { ...(ctx.connectionHealth ?? {}), connected: ctx.connectionHealth?.connected === true && this.session.connected === true },
+      },
       { now, sequenceGaps: gapsWindow, duplicateWindow: duplicatesWindow, reorderWindow, featureStaleMs: DATA_QUALITY_THRESHOLDS.featureStaleMs },
     );
   }
