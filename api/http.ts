@@ -609,6 +609,32 @@ async function relayAdminJson(method: "GET" | "POST" | "PUT" | "DELETE", path: s
     return { ok: response.ok, status: response.status, body };
   } catch { return null; }
 }
+/**
+ * Metodo HTTP usado no proxy para o relay (regressao: MESAS exige PUT no relay;
+ * enviar POST devolvia 404 e o toggle individual nunca funcionava em producao).
+ */
+export function proxyMethodFor(path: string): "PUT" | "POST" {
+  return path === "/api/iq/market" || path === "/api/iq/mesas" || path === "/api/iq/supervisor/config" || path === "/api/iq/entry/config" || path === "/api/iq/apprentice/config" ? "PUT" : "POST";
+}
+/** Payload do toggle individual de MESAS (PUT /api/iq/mesas). */
+export function mesasTogglePayload(input: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    marketKey: String(input.marketKey ?? "").slice(0, 40),
+    instrumentType: String(input.instrumentType ?? "BINARY").slice(0, 16),
+    durationSeconds: Number.isFinite(Number(input.durationSeconds)) ? Number(input.durationSeconds) : 60,
+    enabled: input.enabled === true,
+  };
+}
+/** Payload do bulk de MESAS (POST /api/iq/mesas/bulk). Regressao: payload vazio desligava tudo sem filtro. */
+export function mesasBulkPayload(input: Record<string, unknown> = {}): Record<string, unknown> {
+  const rawFilter = input.filter && typeof input.filter === "object" && !Array.isArray(input.filter) ? input.filter as Record<string, unknown> : {};
+  const filter: Record<string, string> = {};
+  if (typeof rawFilter.instrumentType === "string" && rawFilter.instrumentType) filter.instrumentType = rawFilter.instrumentType.slice(0, 16);
+  if (typeof rawFilter.marketType === "string" && rawFilter.marketType) filter.marketType = rawFilter.marketType.slice(0, 12);
+  if (typeof rawFilter.category === "string" && rawFilter.category) filter.category = rawFilter.category.slice(0, 12);
+  if (typeof rawFilter.marketKey === "string" && rawFilter.marketKey) filter.marketKey = rawFilter.marketKey.slice(0, 40);
+  return { filter, enabled: input.enabled === true };
+}
 async function relayAdminGet(path: string): Promise<Record<string, unknown>> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, ""); const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim(); if (!base || !admin) throw new Error("relay_not_configured");
   const response = await fetch(`${base}${path}`, { headers: { "x-relay-admin": admin }, signal: AbortSignal.timeout(8_000) }); if (!response.ok) throw new Error(`relay_${response.status}`); return await response.json() as Record<string, unknown>;
@@ -856,6 +882,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         : path === "/api/iq/apprentice/config" ? { enabled: operationalInput.enabled === undefined ? undefined : operationalInput.enabled === true, reviewEverySettlements: operationalInput.reviewEverySettlements === undefined ? undefined : Number(operationalInput.reviewEverySettlements), minCandidateSamples: operationalInput.minCandidateSamples === undefined ? undefined : Number(operationalInput.minCandidateSamples), minPerformanceDelta: operationalInput.minPerformanceDelta === undefined ? undefined : Number(operationalInput.minPerformanceDelta), maxCandidates: operationalInput.maxCandidates === undefined ? undefined : Number(operationalInput.maxCandidates), cooldownSettlements: operationalInput.cooldownSettlements === undefined ? undefined : Number(operationalInput.cooldownSettlements) }
         : path === "/api/iq/entry/config" ? { jitEnabled: operationalInput.jitEnabled === undefined ? undefined : operationalInput.jitEnabled === true, entryLeadMs: operationalInput.entryLeadMs === undefined ? undefined : Number(operationalInput.entryLeadMs), entryWindowMaxDriftMs: operationalInput.entryWindowMaxDriftMs === undefined ? undefined : Number(operationalInput.entryWindowMaxDriftMs), qualityGateEnabled: operationalInput.qualityGateEnabled === undefined ? undefined : operationalInput.qualityGateEnabled === true, minTradeQualityScore: operationalInput.minTradeQualityScore === undefined ? undefined : Number(operationalInput.minTradeQualityScore) }
         : path === "/api/iq/supervisor/config" ? { minSamples: operationalInput.minSamples === undefined ? undefined : Number(operationalInput.minSamples), maxDrawdown: operationalInput.maxDrawdown === undefined ? undefined : Number(operationalInput.maxDrawdown), maxConsecutiveLosses: operationalInput.maxConsecutiveLosses === undefined ? undefined : Number(operationalInput.maxConsecutiveLosses), minDecisionQuality: operationalInput.minDecisionQuality === undefined ? undefined : Number(operationalInput.minDecisionQuality), reviewCooldownMs: operationalInput.reviewCooldownMs === undefined ? undefined : Number(operationalInput.reviewCooldownMs) }
+        : path === "/api/iq/mesas" ? mesasTogglePayload(operationalInput)
+        : path === "/api/iq/mesas/bulk" ? mesasBulkPayload(operationalInput)
         : path === "/api/iq/hypotheses" ? { originAgent: typeof operationalInput.originAgent === "string" ? operationalInput.originAgent.slice(0, 80) : null, marketKey: typeof operationalInput.marketKey === "string" ? operationalInput.marketKey.slice(0, 40) : null, statement: String(operationalInput.statement ?? "").slice(0, 300), observedEffect: typeof operationalInput.observedEffect === "string" ? operationalInput.observedEffect.slice(0, 300) : null, sample: Number(operationalInput.sample) || 0, regime: typeof operationalInput.regime === "string" ? operationalInput.regime.slice(0, 24) : null, setup: typeof operationalInput.setup === "string" ? operationalInput.setup.slice(0, 32) : null, markets: Array.isArray(operationalInput.markets) ? (operationalInput.markets as unknown[]).map(String).slice(0, 10) : [] }
         : path === "/api/iq/hypotheses/evaluate" ? { id: String(operationalInput.id ?? "").slice(0, 80) }
         : path === "/api/iq/test-order" ? { marketKey: typeof operationalInput.marketKey === "string" ? operationalInput.marketKey.slice(0, 40) : null, direction: String(operationalInput.direction ?? "").slice(0, 8), stake: Number(operationalInput.stake), horizonSeconds: Number(operationalInput.horizonSeconds) || 60, decisionId: typeof operationalInput.decisionId === "string" ? operationalInput.decisionId.slice(0, 120) : null, idempotencyKey: typeof operationalInput.idempotencyKey === "string" ? operationalInput.idempotencyKey.slice(0, 120) : null }
@@ -868,7 +896,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (path === "/api/iq/market" && !String(payload.marketKey ?? "")) { json(400, { error: "market_key_required" }); return; }
       if (path === "/api/iq/config/global-stake" && (!Number.isFinite(Number(payload.value)) || Number(payload.value) <= 0 || Number(payload.value) > 100)) { json(400, { error: "invalid_global_stake" }); return; }
       if (path === "/api/iq/real/confirm" && !String(payload.phrase ?? "")) { json(400, { error: "real_confirmation_required" }); return; }
-      const result = await relayAdminJson(path === "/api/iq/market" || path === "/api/iq/supervisor/config" || path === "/api/iq/entry/config" || path === "/api/iq/apprentice/config" ? "PUT" : "POST", path, payload, 20_000);
+      const result = await relayAdminJson(proxyMethodFor(path), path, payload, 20_000);
       if (!result) { json(502, { error: "iq_relay_unavailable" }); return; }
       if (!result.ok) { json(result.status >= 400 && result.status < 500 ? result.status : 502, { ...result.body, practiceOnly: path === "/api/iq/real/confirm" || path === "/api/iq/real/arm" || path === "/api/iq/mode" ? false : true, brokerAutomation: "WS_ONLY_PRACTICE" }); return; }
       const contextPaths = ["/api/iq/real/confirm", "/api/iq/real/arm", "/api/iq/real/disarm", "/api/iq/account/select"];
