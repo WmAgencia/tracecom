@@ -8,6 +8,7 @@ import { runVisionProvider, runTextProvider, runDecisionAgent, maskProviderKey }
 import { IqAuthSession } from './iqoption-auth.mjs';
 import { saveSession, loadSession, clearSession } from './iq-session-vault.mjs';
 import { IqMultiRuntime } from './iq-multi-runtime.mjs';
+import { scenarioShadowStatus } from './scenario-shadow.mjs';
 import { ExecutionArmState, KillSwitch, IdempotencyStore } from './iqoption-connector.mjs';
 import { buildCandles } from './experiment.mjs';
 import { buildFeatureContext, freshnessGate } from './feature-engine.mjs';
@@ -392,6 +393,7 @@ const server = http.createServer(async (req, res) => {
     if(url.pathname === '/api/iq/quality' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...wsRuntime.qualityStatus(), practiceOnly:true, shadowOnly:true, brokerAutomation:'NONE' }); }
     if(url.pathname === '/api/iq/research/shadow-lab' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...wsRuntime.shadowLabStatus(), practiceOnly:true, shadowOnly:true, brokerAutomation:'NONE' }); }
     if(url.pathname === '/api/iq/research/timing-policy' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...wsRuntime.timingPolicyStatus(), practiceOnly:true, shadowOnly:true, brokerAutomation:'NONE' }); }
+    if(url.pathname === '/api/iq/research/scenario-shadow' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...scenarioShadowStatus(), practiceOnly:true, shadowOnly:true, brokerAutomation:'NONE' }); }
     if(url.pathname === '/api/iq/entry' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...wsRuntime.entryTimingStatus(), practiceOnly:true, brokerAutomation:'NONE' }); }
     if(url.pathname === '/api/iq/entry/config' && req.method === 'PUT') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const input = await body(req, 2000); try { const config = wsRuntime.setEntryTimingConfig(input); return reply(res,200,{ config, practiceOnly:true }); } catch(error) { return reply(res,400,{ ...sanitizedError(error), practiceOnly:true }); } }
     if(url.pathname === '/api/iq/supervisor' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...wsRuntime.supervisorStatus(), practiceOnly:true, brokerAutomation:'NONE' }); }
