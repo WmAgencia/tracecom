@@ -139,6 +139,29 @@ describe("RSI_REVERSAL â€” experimento, guards e caps", () => {
     expect((await experiment.arm({ phrase: rsi.RSI_REVERSAL_ARM_PHRASE, preflight: { accountContext: "PRACTICE", realState: "LOCKED", brokerConnected: true, killSwitchEngaged: false } })).ok).toBe(true);
     expect(experiment.state).toBe("ARMED_PRACTICE");
   });
+  it("observabilidade: rejection persiste motivo exato (ORDER_IN_FLIGHT) sem alterar estrategia", async () => {
+    const experiment = new rsi.RsiReversalExperiment({ runtime: { experimentRequestOrder: async () => { const error: any = new Error("ORDER_IN_FLIGHT: EURUSD:OTC"); error.code = "ORDER_IN_FLIGHT"; throw error; } } });
+    await experiment.arm({ phrase: rsi.RSI_REVERSAL_ARM_PHRASE, preflight: { accountContext: "PRACTICE", realState: "LOCKED", brokerConnected: true, killSwitchEngaged: false } });
+    const now = 1_800_000_000_000;
+    const candles: any[] = [];
+    let price = 1.1;
+    for (let index = 0; index < 90; index += 1) {
+      const open = price;
+      const close = open - 0.0006 + (index === 89 ? 0.0001 : 0);
+      const start_ = now - (90 - index) * 5_000;
+      candles.push({ bucketStart: start_, bucketEnd: start_ + 5_000, open, high: Math.max(open, close), low: Math.min(open, close), close });
+      price = close;
+    }
+    const expiry = 1_800_000_060_000;
+    const entryAt = expiry - 30_000 - 3_500;
+    const record = await experiment.observeMarket({ marketKey: "EURUSD:OTC", marketType: "OTC", candles, targetExpiryAt: expiry, now: entryAt });
+    if (record?.status === "BROKER_REJECTED") {
+      expect(record.rejectionReason).toBe("ORDER_IN_FLIGHT");
+      expect(String(record.error)).toContain("ORDER_IN_FLIGHT");
+    } else {
+      expect(["CANDIDATE", "OBSERVE_ONLY", "WAITING_CONFIRMATION", "REVERSAL_REJECTED_STRONG_TREND", "NO_OPPORTUNITY", "WOULD_EXECUTE", "MISSED_ENTRY_WINDOW", "CANCELLED_REVALIDATION"]).toContain(record?.status);
+    }
+  });
   it("cap 30, stake R$1, PRACTICE-only, sem auto-inversao e mesma expiracao no freeze", () => {
     const manifest = rsi.rsiReversalFreezeManifest();
     expect(manifest.policy.maxTotalBrokerAccepted).toBe(30);

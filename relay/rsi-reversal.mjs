@@ -252,8 +252,13 @@ export class RsiReversalExperiment {
       return record;
     } catch (error) {
       await this.#releaseSlot({ accepted: false });
-      record.status = "BROKER_REJECTED"; record.error = String(error?.message ?? error).slice(0, 160);
-      this.counters.errors += 1; this.#store(record); void this.#persist(record);
+      const code = String(error?.code ?? "ERROR");
+      const message = String(error?.message ?? error).slice(0, 200);
+      record.status = "BROKER_REJECTED"; record.error = `${code}: ${message}`.slice(0, 240);
+      record.rejectionReason = code;
+      this.counters.errors += 1;
+      this.memory.events.push({ at: this.now(), eventType: "ORDER_BLOCKED", payload: { stage: "REQUEST_ORDER", reason: code, message, marketKey: record.marketKey, direction: record.direction } });
+      this.#store(record); void this.#persist(record);
       return record;
     }
   }
@@ -300,7 +305,7 @@ export class RsiReversalExperiment {
       `INSERT INTO iq_rsi_reversal_observations(id, market_key, market_type, active_id, status, direction, rsi, rsi_band, bollinger_confirmed, dmi_adx_confirmed, rejected_strong_trend, target_expiry_at, purchase_cutoff_at, entry_window_opens_at, safe_margin_ms, revalidation_at, submit_at, distance_to_cutoff_ms, payload, outcome, settlement_basis, theoretical_result, theoretical_pnl, updated_at)
        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19::jsonb,$20::jsonb,$21,$22,$23, now())
        ON CONFLICT(id) DO UPDATE SET status=$5, direction=$6, bollinger_confirmed=$9, dmi_adx_confirmed=$10, rejected_strong_trend=$11, revalidation_at=$16, submit_at=$17, distance_to_cutoff_ms=$18, payload=$19::jsonb, outcome=$20::jsonb, settlement_basis=$21, theoretical_result=$22, theoretical_pnl=$23, updated_at=now()`,
-      [record.id, record.marketKey, record.marketType, record.activeId, record.status, record.direction, record.evaluation?.rsi ?? null, record.evaluation?.rsiBand ?? null, record.evaluation?.bollingerConfirmed ?? false, record.evaluation?.dmiConfirmed ?? false, record.evaluation?.rejectedStrongTrend ?? false, record.targetExpiryAt, record.window?.purchaseCutoffAt ?? null, record.window?.entryWindowOpensAt ?? null, record.safeMarginMs ?? null, record.revalidationAt ?? null, record.submitAt ?? null, record.distanceToCutoffMs ?? null, JSON.stringify({ evaluation: record.evaluation, revalidation: record.revalidation, window: record.window, events: this.memory.events.slice(-20) }), JSON.stringify(record.outcome ?? null), record.settlementBasis, record.theoreticalResult, record.theoreticalPnl],
+      [record.id, record.marketKey, record.marketType, record.activeId, record.status, record.direction, record.evaluation?.rsi ?? null, record.evaluation?.rsiBand ?? null, record.evaluation?.bollingerConfirmed ?? false, record.evaluation?.dmiConfirmed ?? false, record.evaluation?.rejectedStrongTrend ?? false, record.targetExpiryAt, record.window?.purchaseCutoffAt ?? null, record.window?.entryWindowOpensAt ?? null, record.safeMarginMs ?? null, record.revalidationAt ?? null, record.submitAt ?? null, record.distanceToCutoffMs ?? null, JSON.stringify({ evaluation: record.evaluation, revalidation: record.revalidation, window: record.window, rejectionReason: record.rejectionReason ?? null, error: record.error ?? null, events: this.memory.events.slice(-20) }), JSON.stringify(record.outcome ?? null), record.settlementBasis, record.theoreticalResult, record.theoreticalPnl],
     ).catch(() => undefined);
   }
 
@@ -315,7 +320,7 @@ export class RsiReversalExperiment {
       counters: { ...this.counters, brokerAccepted: executed }, settlement: { ...this.settled, decided: this.settled.wins + this.settled.losses, wr, basis: "CAUSAL_COUNTERFACTUAL" },
       latencyMs: { evaluation: this.latency.evaluation.summary(), submit: this.latency.submit.summary() },
       events: this.memory.events.slice(-25),
-      recent: this.order.slice(-20).map((id) => this.observations.get(id)).filter(Boolean).map((record) => ({ id: record.id, marketKey: record.marketKey, status: record.status, direction: record.direction, rsi: record.evaluation?.rsi ?? null, band: record.evaluation?.rsiBand ?? null, distanceToCutoffMs: record.distanceToCutoffMs ?? null, result: record.theoreticalResult })),
+      recent: this.order.slice(-20).map((id) => this.observations.get(id)).filter(Boolean).map((record) => ({ id: record.id, marketKey: record.marketKey, status: record.status, direction: record.direction, rsi: record.evaluation?.rsi ?? null, band: record.evaluation?.rsiBand ?? null, distanceToCutoffMs: record.distanceToCutoffMs ?? null, result: record.theoreticalResult, rejectionReason: record.rejectionReason ?? null, error: record.error ?? null })),
       policy: RSI_REVERSAL_POLICY, controlsExecution: false, note: "Experimento separado; nao interfere no FIVE_WAY. Ordem apenas via harness/Execution Gate (PRACTICE).",
     };
   }
@@ -329,4 +334,5 @@ export class RsiReversalExperiment {
 export function rsiReversalFreezeManifest() {
   return { schema: "rsi-reversal-freeze-v1", version: RSI_REVERSAL_VERSION, frozenAtUtc: new Date().toISOString(), policy: RSI_REVERSAL_POLICY, noTuning: true, rules: { detector: "RSI<=30 BUY / RSI>=70 SELL", confirmations: "Bollinger AND DMI/ADX (both required)", strongTrend: "bloqueia reversao contra tendencia forte/band riding", timing: "ordem somente em [cutoff-5000, cutoff-safeMargin]", safeMargin: "max(3000ms, medido); se >5s cancela NO_SAFE_ENTRY_INSIDE_5S_WINDOW", revalidation: "T-5s com dados mais recentes; sem auto-inversao", sameExpiry: true, cap: 30 } };
 }
+
 
