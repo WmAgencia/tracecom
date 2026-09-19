@@ -1,0 +1,23 @@
+{
+  "schema": "scenario-shadow-settle-v1",
+  "generatedAt": "2026-09-19T09:09:51.803Z",
+  "mode": "APPLY",
+  "settlementBasis": "CAUSAL_COUNTERFACTUAL",
+  "neverBroker": true,
+  "candidates": 307,
+  "settledWins": 154,
+  "settledLosses": 151,
+  "settledDraws": 2,
+  "updated": 307,
+  "skipped": 0,
+  "errors": [],
+  "warnings": [
+    "Observacoes sem shadow-lab linkado e sem snapshot de candles persistido nao sao settlementaveis retroativamente; a coleta segue pelo runtime (settleCausal no pipeline de candles)."
+  ],
+  "coverage": {
+    "total": 3140,
+    "pending": 2830,
+    "counterfactual": 307,
+    "broker": 3
+  }
+}

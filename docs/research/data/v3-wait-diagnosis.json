@@ -1,0 +1,1119 @@
+{
+  "schema": "v3-wait-diagnosis-v1",
+  "generatedAt": "2026-09-19T08:58:53.976Z",
+  "since": "2026-09-01T00:00:00Z",
+  "readOnly": true,
+  "errors": [],
+  "columns": [
+    "observation_id",
+    "version",
+    "scenario_policy_version",
+    "current_policy_version",
+    "timing_policy_version",
+    "kind",
+    "provenance",
+    "market_key",
+    "market_type",
+    "active_id",
+    "agent_id",
+    "candidate_id",
+    "correlation_id",
+    "execution_id",
+    "trade_id",
+    "candidate_at",
+    "decision_at",
+    "jit_at",
+    "final_entry_at",
+    "target_entry_at",
+    "target_expiry_at",
+    "direction",
+    "payout",
+    "t0",
+    "current_decision",
+    "scenario_decision",
+    "trader_scenario",
+    "critic_scenario",
+    "critic_freeze",
+    "comparison",
+    "agreement",
+    "divergence",
+    "persistence",
+    "ablation",
+    "stages",
+    "transitions",
+    "scenario_at_candidate",
+    "scenario_at_revalidation1",
+    "scenario_at_revalidation2",
+    "scenario_at_final_entry",
+    "scenario_changed",
+    "scenario_change_count",
+    "playbook_at_candidate",
+    "playbook_at_entry",
+    "final_action",
+    "reasons_for_wait",
+    "t0_integrity",
+    "engine_info",
+    "outcome",
+    "settlement_basis",
+    "broker_result",
+    "broker_profit",
+    "theoretical_result",
+    "theoretical_pnl",
+    "created_at",
+    "updated_at",
+    "scenario_engine_version"
+  ],
+  "totals": {
+    "total": 3063,
+    "basis_null": 3061,
+    "outcome_null": 0,
+    "wait_rows": 3063,
+    "prospective": 3063,
+    "min_created": "2026-09-19T01:45:47.365Z",
+    "max_created": "2026-09-19T08:58:36.096Z"
+  },
+  "crosstab": {
+    "observations": 3063,
+    "g2Trade": 3063,
+    "g2TradeV3Wait": 3063,
+    "g2TradeV3Entry": 0,
+    "byProvenance": {
+      "PROSPECTIVE": 3063
+    },
+    "byBasis": {
+      "NULL": 3061,
+      "BROKER_EXECUTED": 2
+    },
+    "byFinalAction": {
+      "WAIT": 3063
+    },
+    "byG2Action": {
+      "SELL": 1535,
+      "BUY": 1528
+    }
+  },
+  "decomposition": {
+    "finalAction": [
+      {
+        "key": "WAIT",
+        "count": 3063
+      }
+    ],
+    "waitReasons": [
+      {
+        "key": "CRITIC_WAIT",
+        "count": 282
+      },
+      {
+        "key": "AMBIGUOUS_COMPETING_SCENARIOS",
+        "count": 269
+      },
+      {
+        "key": "GOVERNANCE_REGIME_TRANSITION",
+        "count": 254
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_TREND_PULLBACK",
+        "count": 203
+      },
+      {
+        "key": "GOVERNANCE_INSUFFICIENT_STRUCTURAL_EVIDENCE",
+        "count": 190
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_RANGE_MEAN_REVERSION",
+        "count": 38
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_TREND_CONTINUATION",
+        "count": 23
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_COMPRESSION_EXPANSION",
+        "count": 5
+      }
+    ],
+    "waitReasonsG2Trade": [
+      {
+        "key": "CRITIC_WAIT",
+        "count": 282
+      },
+      {
+        "key": "AMBIGUOUS_COMPETING_SCENARIOS",
+        "count": 269
+      },
+      {
+        "key": "GOVERNANCE_REGIME_TRANSITION",
+        "count": 254
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_TREND_PULLBACK",
+        "count": 203
+      },
+      {
+        "key": "GOVERNANCE_INSUFFICIENT_STRUCTURAL_EVIDENCE",
+        "count": 190
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_RANGE_MEAN_REVERSION",
+        "count": 38
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_TREND_CONTINUATION",
+        "count": 23
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_COMPRESSION_EXPANSION",
+        "count": 5
+      }
+    ],
+    "scenarioAtCandidate": [
+      {
+        "key": "TRANSITION_NO_TRADE",
+        "count": 2070
+      },
+      {
+        "key": "TREND_PULLBACK",
+        "count": 790
+      },
+      {
+        "key": "RANGE_MEAN_REVERSION",
+        "count": 123
+      },
+      {
+        "key": "TREND_CONTINUATION",
+        "count": 75
+      },
+      {
+        "key": "COMPRESSION_EXPANSION",
+        "count": 5
+      }
+    ],
+    "scenarioAtCandidateG2TradeWait": [
+      {
+        "key": "TRANSITION_NO_TRADE",
+        "count": 2070
+      },
+      {
+        "key": "TREND_PULLBACK",
+        "count": 790
+      },
+      {
+        "key": "RANGE_MEAN_REVERSION",
+        "count": 123
+      },
+      {
+        "key": "TREND_CONTINUATION",
+        "count": 75
+      },
+      {
+        "key": "COMPRESSION_EXPANSION",
+        "count": 5
+      }
+    ],
+    "scenarioAtFinalEntry": [
+      {
+        "key": "NULL",
+        "count": 3063
+      }
+    ],
+    "scenarioChanged": [
+      {
+        "key": "false",
+        "count": 3063
+      }
+    ],
+    "divergenceLabels": [
+      {
+        "key": "SAME",
+        "count": 3063
+      }
+    ],
+    "divergenceG2TradeWait": [
+      {
+        "key": "SAME",
+        "count": 3063
+      }
+    ],
+    "criticAction": [
+      {
+        "key": "WAIT",
+        "count": 3063
+      }
+    ],
+    "criticActionG2TradeWait": [
+      {
+        "key": "WAIT",
+        "count": 3063
+      }
+    ],
+    "traderActionG2TradeWait": [
+      {
+        "key": "WAIT",
+        "count": 3063
+      }
+    ],
+    "engineMode": [
+      {
+        "key": "SCENARIO_ENGINE",
+        "count": 3063
+      }
+    ],
+    "engineFallback": [
+      {
+        "key": "NULL",
+        "count": 3063
+      }
+    ],
+    "direction": [
+      {
+        "key": "SELL",
+        "count": 1535
+      },
+      {
+        "key": "BUY",
+        "count": 1528
+      }
+    ],
+    "marketType": [
+      {
+        "key": "OTC",
+        "count": 3063
+      }
+    ],
+    "finalActionByMarketType": [
+      {
+        "key": "OTC:WAIT",
+        "count": 3063
+      }
+    ],
+    "comparisonAgreement": [
+      {
+        "key": "NULL",
+        "count": 3063
+      }
+    ],
+    "comparisonPoints": [
+      {
+        "key": "criticAction=WAIT",
+        "count": 3063
+      },
+      {
+        "key": "traderAction=WAIT",
+        "count": 3063
+      },
+      {
+        "key": "criticScenario=TRANSITION_NO_TRADE",
+        "count": 2070
+      },
+      {
+        "key": "traderScenario=TRANSITION_NO_TRADE",
+        "count": 2070
+      },
+      {
+        "key": "criticScenario=TREND_PULLBACK",
+        "count": 790
+      },
+      {
+        "key": "traderScenario=TREND_PULLBACK",
+        "count": 790
+      },
+      {
+        "key": "criticScenario=RANGE_MEAN_REVERSION",
+        "count": 123
+      },
+      {
+        "key": "traderScenario=RANGE_MEAN_REVERSION",
+        "count": 123
+      },
+      {
+        "key": "criticScenario=TREND_CONTINUATION",
+        "count": 75
+      },
+      {
+        "key": "traderScenario=TREND_CONTINUATION",
+        "count": 75
+      },
+      {
+        "key": "criticScenario=COMPRESSION_EXPANSION",
+        "count": 5
+      },
+      {
+        "key": "traderScenario=COMPRESSION_EXPANSION",
+        "count": 5
+      }
+    ],
+    "missingFeatures": []
+  },
+  "scenarioDecisionKeys": {
+    "note": "string",
+    "action": "string",
+    "checks": "object",
+    "source": "string",
+    "conflict": "object",
+    "evidence": "object",
+    "divergence": "string",
+    "investigation": "boolean",
+    "reasonsForWait": "object",
+    "resolutionRule": "string",
+    "resultingAction": "string",
+    "adoptedDirection": "object",
+    "divergencePolicy": "string",
+    "criticDirectionAdopted": "boolean",
+    "directionFlipForbidden": "boolean",
+    "cancelled": "boolean",
+    "cancelReason": "string",
+    "directionFlipAttempted": "boolean"
+  },
+  "traderScenarioKeys": {
+    "rule": "string",
+    "action": "string",
+    "playbook": "object",
+    "confidence": "number",
+    "trendState": "string",
+    "engineError": "object",
+    "featuresUsed": "object",
+    "marketRegime": "string",
+    "triggerState": "string",
+    "locationState": "string",
+    "momentumState": "string",
+    "degradedReason": "object",
+    "structureState": "string",
+    "primaryScenario": "string",
+    "rejectionPriors": "object",
+    "volatilityState": "string",
+    "secondaryScenario": "string",
+    "degradedToFallback": "boolean",
+    "invalidationReasons": "object",
+    "microstructureState": "string",
+    "scenarioEvidenceFor": "object",
+    "scenarioEvidenceAgainst": "object"
+  },
+  "criticScenarioKeys": {
+    "rule": "string",
+    "action": "string",
+    "playbook": "object",
+    "confidence": "number",
+    "trendState": "string",
+    "engineError": "object",
+    "featuresUsed": "object",
+    "marketRegime": "string",
+    "triggerState": "string",
+    "locationState": "string",
+    "momentumState": "string",
+    "degradedReason": "object",
+    "structureState": "string",
+    "primaryScenario": "string",
+    "rejectionPriors": "object",
+    "volatilityState": "string",
+    "secondaryScenario": "string",
+    "degradedToFallback": "boolean",
+    "invalidationReasons": "object",
+    "microstructureState": "string",
+    "scenarioEvidenceFor": "object",
+    "scenarioEvidenceAgainst": "object"
+  },
+  "reasonMatrixG2Trade": {
+    "TRANSITION_NO_TRADE|WAIT": [
+      {
+        "key": "CRITIC_WAIT",
+        "count": 10
+      }
+    ],
+    "TREND_PULLBACK|WAIT": [
+      {
+        "key": "CRITIC_WAIT",
+        "count": 206
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_TREND_PULLBACK",
+        "count": 203
+      },
+      {
+        "key": "AMBIGUOUS_COMPETING_SCENARIOS",
+        "count": 203
+      },
+      {
+        "key": "GOVERNANCE_REGIME_TRANSITION",
+        "count": 196
+      },
+      {
+        "key": "GOVERNANCE_INSUFFICIENT_STRUCTURAL_EVIDENCE",
+        "count": 138
+      }
+    ],
+    "RANGE_MEAN_REVERSION|WAIT": [
+      {
+        "key": "CRITIC_WAIT",
+        "count": 38
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_RANGE_MEAN_REVERSION",
+        "count": 38
+      },
+      {
+        "key": "AMBIGUOUS_COMPETING_SCENARIOS",
+        "count": 38
+      },
+      {
+        "key": "GOVERNANCE_REGIME_TRANSITION",
+        "count": 33
+      },
+      {
+        "key": "GOVERNANCE_INSUFFICIENT_STRUCTURAL_EVIDENCE",
+        "count": 30
+      }
+    ],
+    "TREND_CONTINUATION|WAIT": [
+      {
+        "key": "CRITIC_WAIT",
+        "count": 23
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_TREND_CONTINUATION",
+        "count": 23
+      },
+      {
+        "key": "AMBIGUOUS_COMPETING_SCENARIOS",
+        "count": 23
+      },
+      {
+        "key": "GOVERNANCE_REGIME_TRANSITION",
+        "count": 21
+      },
+      {
+        "key": "GOVERNANCE_INSUFFICIENT_STRUCTURAL_EVIDENCE",
+        "count": 18
+      }
+    ],
+    "COMPRESSION_EXPANSION|WAIT": [
+      {
+        "key": "CRITIC_WAIT",
+        "count": 5
+      },
+      {
+        "key": "SCENARIO_TRANSITION_NO_TRADE_INVALIDATES_COMPRESSION_EXPANSION",
+        "count": 5
+      },
+      {
+        "key": "AMBIGUOUS_COMPETING_SCENARIOS",
+        "count": 5
+      },
+      {
+        "key": "GOVERNANCE_REGIME_TRANSITION",
+        "count": 4
+      },
+      {
+        "key": "GOVERNANCE_INSUFFICIENT_STRUCTURAL_EVIDENCE",
+        "count": 4
+      }
+    ]
+  },
+  "intersections": {
+    "total": 3071,
+    "byVerdict": [
+      {
+        "key": "INSUFFICIENT_DATA",
+        "count": 3069
+      },
+      {
+        "key": "BOTH_WAIT",
+        "count": 2
+      }
+    ],
+    "byLateOutcome": [
+      {
+        "key": "OBSERVING",
+        "count": 3069
+      },
+      {
+        "key": "LATE_CANCEL",
+        "count": 2
+      }
+    ],
+    "codes": [
+      {
+        "key": "SCENARIO_AT_CANDIDATE",
+        "count": 3071
+      },
+      {
+        "key": "SCENARIO_AT_LATE_DEADLINE",
+        "count": 3071
+      },
+      {
+        "key": "SCENARIO_FINAL_WAIT",
+        "count": 3071
+      },
+      {
+        "key": "LATE_OBSERVING",
+        "count": 3069
+      },
+      {
+        "key": "SCENARIO_CHANGED_BEFORE_DEADLINE",
+        "count": 2572
+      },
+      {
+        "key": "SCENARIO_INVALIDATED_BEFORE_DEADLINE",
+        "count": 270
+      },
+      {
+        "key": "LATE_CANCEL",
+        "count": 2
+      }
+    ],
+    "scenarioFinalAction": [
+      {
+        "key": "WAIT",
+        "count": 3071
+      }
+    ]
+  },
+  "diagnosis": {
+    "note": "Causa decomposta a partir do traderScenario/criticScenario persistidos + estagios; FACT no relatorio.",
+    "traderEntryEligible": [
+      {
+        "key": "false",
+        "count": 3063
+      }
+    ],
+    "traderAction": [
+      {
+        "key": "WAIT",
+        "count": 3063
+      }
+    ],
+    "traderPlaybookAction": [
+      {
+        "key": "WAIT",
+        "count": 3063
+      }
+    ],
+    "traderPrimaryScenario": [
+      {
+        "key": "TRANSITION_NO_TRADE",
+        "count": 2070
+      },
+      {
+        "key": "TREND_PULLBACK",
+        "count": 790
+      },
+      {
+        "key": "RANGE_MEAN_REVERSION",
+        "count": 123
+      },
+      {
+        "key": "TREND_CONTINUATION",
+        "count": 75
+      },
+      {
+        "key": "COMPRESSION_EXPANSION",
+        "count": 5
+      }
+    ],
+    "traderSecondaryScenario": [
+      {
+        "key": "TREND_PULLBACK",
+        "count": 1554
+      },
+      {
+        "key": "TREND_CONTINUATION",
+        "count": 1373
+      },
+      {
+        "key": "BREAKOUT",
+        "count": 127
+      },
+      {
+        "key": "RANGE_MEAN_REVERSION",
+        "count": 8
+      },
+      {
+        "key": "COMPRESSION_EXPANSION",
+        "count": 1
+      }
+    ],
+    "traderAmbiguous": [
+      {
+        "key": "NULL",
+        "count": 3063
+      }
+    ],
+    "traderRegime": [
+      {
+        "key": "TRANSITION",
+        "count": 2061
+      },
+      {
+        "key": "RANGE",
+        "count": 1002
+      }
+    ],
+    "criticPrimaryScenario": [
+      {
+        "key": "TRANSITION_NO_TRADE",
+        "count": 2070
+      },
+      {
+        "key": "TREND_PULLBACK",
+        "count": 790
+      },
+      {
+        "key": "RANGE_MEAN_REVERSION",
+        "count": 123
+      },
+      {
+        "key": "TREND_CONTINUATION",
+        "count": 75
+      },
+      {
+        "key": "COMPRESSION_EXPANSION",
+        "count": 5
+      }
+    ],
+    "criticAction": [
+      {
+        "key": "WAIT",
+        "count": 3063
+      }
+    ],
+    "criticRegime": [
+      {
+        "key": "TRANSITION",
+        "count": 2061
+      },
+      {
+        "key": "RANGE",
+        "count": 1002
+      }
+    ],
+    "traderInvalidations": [
+      {
+        "key": "AMBIGUOUS_COMPETING_SCENARIOS",
+        "count": 2197
+      },
+      {
+        "key": "GOVERNANCE_REGIME_TRANSITION",
+        "count": 2061
+      },
+      {
+        "key": "REGIME_NOT_VALID_FOR_PLAYBOOK_RANGE",
+        "count": 865
+      },
+      {
+        "key": "GOVERNANCE_INSUFFICIENT_STRUCTURAL_EVIDENCE",
+        "count": 217
+      },
+      {
+        "key": "STRUCTURE_NOT_RANGE",
+        "count": 78
+      },
+      {
+        "key": "MID_LOCATION",
+        "count": 14
+      },
+      {
+        "key": "BREAKOUT_RISK_ADX_DI",
+        "count": 7
+      },
+      {
+        "key": "EXPANSION_WITHOUT_DIRECTION",
+        "count": 5
+      },
+      {
+        "key": "REGIME_NOT_VALID_FOR_PLAYBOOK_TRANSITION",
+        "count": 5
+      }
+    ],
+    "traderPlaybookInvalidations": [
+      {
+        "key": "REGIME_NOT_VALID_FOR_PLAYBOOK_RANGE",
+        "count": 865
+      },
+      {
+        "key": "STRUCTURE_NOT_RANGE",
+        "count": 78
+      },
+      {
+        "key": "MID_LOCATION",
+        "count": 14
+      },
+      {
+        "key": "BREAKOUT_RISK_ADX_DI",
+        "count": 7
+      },
+      {
+        "key": "EXPANSION_WITHOUT_DIRECTION",
+        "count": 5
+      },
+      {
+        "key": "REGIME_NOT_VALID_FOR_PLAYBOOK_TRANSITION",
+        "count": 5
+      }
+    ],
+    "traderGovernanceFor": [
+      {
+        "key": "GOVERNANCE_REGIME_TRANSITION",
+        "count": 2061
+      },
+      {
+        "key": "GOVERNANCE_INSUFFICIENT_STRUCTURAL_EVIDENCE",
+        "count": 217
+      }
+    ],
+    "traderEvidenceAgainstTags": [
+      {
+        "key": "AMBIGUOUS_COMPETING_SCENARIOS",
+        "count": 2197
+      },
+      {
+        "key": "REGIME_RANGE",
+        "count": 865
+      },
+      {
+        "key": "STRUCTURE_NOT_RANGE",
+        "count": 78
+      },
+      {
+        "key": "MID_LOCATION",
+        "count": 14
+      },
+      {
+        "key": "BREAKOUT_RISK_ADX_DI",
+        "count": 7
+      },
+      {
+        "key": "EXPANSION_WITHOUT_DIRECTION",
+        "count": 5
+      }
+    ],
+    "traderTriggerState": [
+      {
+        "key": "NONE",
+        "count": 2273
+      },
+      {
+        "key": "PARTIAL",
+        "count": 790
+      }
+    ],
+    "traderLocationState": [
+      {
+        "key": "LOWER_HALF",
+        "count": 996
+      },
+      {
+        "key": "UPPER_HALF",
+        "count": 986
+      },
+      {
+        "key": "MID",
+        "count": 971
+      },
+      {
+        "key": "AT_BOTTOM",
+        "count": 62
+      },
+      {
+        "key": "AT_TOP",
+        "count": 48
+      }
+    ],
+    "traderMomentumState": [
+      {
+        "key": "UNKNOWN",
+        "count": 3063
+      }
+    ],
+    "traderStructureState": [
+      {
+        "key": "DOWN",
+        "count": 1510
+      },
+      {
+        "key": "UP",
+        "count": 1502
+      },
+      {
+        "key": "RANGE",
+        "count": 51
+      }
+    ],
+    "traderVolatilityState": [
+      {
+        "key": "NORMAL",
+        "count": 3058
+      },
+      {
+        "key": "COMPRESSION",
+        "count": 5
+      }
+    ],
+    "traderMicrostructureState": [
+      {
+        "key": "UNKNOWN",
+        "count": 3063
+      }
+    ],
+    "traderTrendState": [
+      {
+        "key": "UNKNOWN",
+        "count": 3063
+      }
+    ],
+    "traderUnavailable": [],
+    "traderEngineError": 0,
+    "traderDegradedToFallback": 0,
+    "emptyReasonsForWait": 2781,
+    "nonEmptyReasonsForWait": 282,
+    "emptyReasonsByStageCount": [
+      {
+        "key": "4",
+        "count": 2781
+      }
+    ],
+    "directionFlipAttempts": 0,
+    "cancelled": 269,
+    "cancelReasons": [
+      {
+        "key": "NULL",
+        "count": 2794
+      },
+      {
+        "key": "SCENARIO_INVALIDATED_AT_FINAL_REVALIDATION",
+        "count": 269
+      }
+    ],
+    "divergenceFromColumn": [
+      {
+        "key": "SAME",
+        "count": 3063
+      }
+    ],
+    "conflictFromColumn": [
+      {
+        "key": "NULL",
+        "count": 3063
+      }
+    ],
+    "stagesByAction": [
+      {
+        "key": "CANDIDATE:WAIT:TRANSITION_NO_TRADE",
+        "count": 2070
+      },
+      {
+        "key": "REVALIDATION_1:WAIT:TRANSITION_NO_TRADE",
+        "count": 2070
+      },
+      {
+        "key": "REVALIDATION_2:WAIT:RANGE_MEAN_REVERSION",
+        "count": 1406
+      },
+      {
+        "key": "FINAL_ENTRY:WAIT:RANGE_MEAN_REVERSION",
+        "count": 1397
+      },
+      {
+        "key": "REVALIDATION_2:WAIT:TRANSITION_NO_TRADE",
+        "count": 1174
+      },
+      {
+        "key": "FINAL_ENTRY:WAIT:TRANSITION_NO_TRADE",
+        "count": 1171
+      },
+      {
+        "key": "CANDIDATE:WAIT:TREND_PULLBACK",
+        "count": 790
+      },
+      {
+        "key": "REVALIDATION_1:WAIT:TREND_PULLBACK",
+        "count": 790
+      },
+      {
+        "key": "REVALIDATION_2:WAIT:TREND_PULLBACK",
+        "count": 424
+      },
+      {
+        "key": "FINAL_ENTRY:WAIT:TREND_PULLBACK",
+        "count": 424
+      },
+      {
+        "key": "CANDIDATE:WAIT:RANGE_MEAN_REVERSION",
+        "count": 123
+      },
+      {
+        "key": "REVALIDATION_1:WAIT:RANGE_MEAN_REVERSION",
+        "count": 123
+      },
+      {
+        "key": "CANDIDATE:WAIT:TREND_CONTINUATION",
+        "count": 75
+      },
+      {
+        "key": "REVALIDATION_1:WAIT:TREND_CONTINUATION",
+        "count": 75
+      },
+      {
+        "key": "REVALIDATION_2:WAIT:TREND_CONTINUATION",
+        "count": 58
+      },
+      {
+        "key": "FINAL_ENTRY:WAIT:TREND_CONTINUATION",
+        "count": 57
+      },
+      {
+        "key": "CANDIDATE:WAIT:COMPRESSION_EXPANSION",
+        "count": 5
+      },
+      {
+        "key": "REVALIDATION_1:WAIT:COMPRESSION_EXPANSION",
+        "count": 5
+      },
+      {
+        "key": "REVALIDATION_2:WAIT:COMPRESSION_EXPANSION",
+        "count": 1
+      },
+      {
+        "key": "FINAL_ENTRY:WAIT:COMPRESSION_EXPANSION",
+        "count": 1
+      }
+    ],
+    "scenarioChangedByStage": [
+      {
+        "key": "REVALIDATION_1:changed=false",
+        "count": 3063
+      },
+      {
+        "key": "FINAL_ENTRY:changed=false",
+        "count": 3047
+      },
+      {
+        "key": "REVALIDATION_2:changed=false",
+        "count": 2794
+      },
+      {
+        "key": "REVALIDATION_2:changed=true",
+        "count": 269
+      },
+      {
+        "key": "FINAL_ENTRY:changed=true",
+        "count": 3
+      }
+    ]
+  },
+  "replay": {
+    "attempted": 400,
+    "matchedAction": 400,
+    "matchedScenario": 400,
+    "matchedRegime": 400,
+    "mismatches": [],
+    "sampleSize": 400,
+    "note": "Replay offline do MOTOR REAL congelado sobre o t0 persistido (analyzeScenarioSnapshot + engine real). Prova reprodutibilidade; o motor nao e alterado.",
+    "counterfactual": {
+      "note": "What-if DIAGNOSTICO: reenvia velocity/acceleration (existentes no t0, mas descartados por buildScenarioFeatures) e conta mudanca de regime/acao. Nao altera arquivos.",
+      "attempted": 400,
+      "regimeChanged": 178,
+      "regimeCounts": {
+        "TREND_DOWN": 98,
+        "RANGE": 55,
+        "TRANSITION": 167,
+        "TREND_UP": 80
+      },
+      "actionChanged": 175,
+      "actionCounts": {
+        "SELL": 95,
+        "WAIT": 225,
+        "BUY": 80
+      }
+    },
+    "actionMatchRate": 1,
+    "scenarioMatchRate": 1,
+    "regimeMatchRate": 1
+  },
+  "settlement": {
+    "basisNull": 3061,
+    "outcomeNull": 3061,
+    "outcomePresent": 2,
+    "theoreticalResult": [
+      {
+        "key": "NULL",
+        "count": 3061
+      },
+      {
+        "key": "DRAW",
+        "count": 1
+      },
+      {
+        "key": "LOSS",
+        "count": 1
+      }
+    ],
+    "brokerResult": [
+      {
+        "key": "NULL",
+        "count": 3061
+      },
+      {
+        "key": "DRAW",
+        "count": 1
+      },
+      {
+        "key": "LOSS",
+        "count": 1
+      }
+    ],
+    "settledWithTargetExpiry": 2,
+    "unsettledWithTargetExpiry": 3061,
+    "unsettledPastExpiry": 3061
+  },
+  "stages": {
+    "byStage": [
+      {
+        "key": "CANDIDATE",
+        "count": 3063
+      },
+      {
+        "key": "REVALIDATION_1",
+        "count": 3063
+      },
+      {
+        "key": "REVALIDATION_2",
+        "count": 3063
+      },
+      {
+        "key": "FINAL_ENTRY",
+        "count": 3050
+      }
+    ],
+    "persistenceKeys": {
+      "transitions": "object",
+      "criticTimeline": "object",
+      "regimeTimeline": "object",
+      "playbookAtEntry": "string",
+      "qualityTimeline": "object",
+      "scenarioChanged": "boolean",
+      "locationTimeline": "object",
+      "momentumTimeline": "object",
+      "directionTimeline": "object",
+      "playbookAtCandidate": "string",
+      "scenarioAtCandidate": "object",
+      "scenarioChangeCount": "number",
+      "scenarioAtFinalEntry": "object",
+      "scenarioAtRevalidation1": "object",
+      "scenarioAtRevalidation2": "object"
+    }
+  },
+  "scenarioDecisionStringFields": {
+    "action": [
+      {
+        "key": "WAIT",
+        "count": 3063
+      }
+    ],
+    "cancelReason": [
+      {
+        "key": "SCENARIO_INVALIDATED_AT_FINAL_REVALIDATION",
+        "count": 269
+      }
+    ]
+  }
+}

@@ -170,7 +170,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.realMode.revoke("RUNTIME_STOP");
     this.accountContext.lock("RUNTIME_STOP");
     try { this.armState.disarm("WS_DISCONNECTED"); } catch { /* noop */ }
-    for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason }); this.#setAgent(ctx, "OFFLINE", "RUNTIME_STOP"); this.timingShadow.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "SESSION_LOST" }); }
+    for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason }); this.#setAgent(ctx, "OFFLINE", "RUNTIME_STOP"); this.timingShadow.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "SESSION_LOST" }); this.#observeScenarioTimingIntersectionsForMarket(ctx.marketKey); }
     return { stopped: true, reason };
   }
 
@@ -212,7 +212,7 @@ export class IqMultiRuntime extends EventEmitter {
         this.realMode.revoke("WS_DISCONNECTED");
         // FAIL CLOSED: qualquer queda de WS rebaixa REAL para LOCKED imediatamente.
         this.accountContext.lock("WS_DISCONNECTED");
-        for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason: "WS_DISCONNECTED" }); this.timingShadow.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "WS_DISCONNECTED" }); if (ctx.enabled) this.#setAgent(ctx, ctx.availability === "OPEN" ? "WAIT" : "UNAVAILABLE", "WS_DISCONNECTED"); }
+        for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason: "WS_DISCONNECTED" }); this.timingShadow.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "WS_DISCONNECTED" }); this.#observeScenarioTimingIntersectionsForMarket(ctx.marketKey); if (ctx.enabled) this.#setAgent(ctx, ctx.availability === "OPEN" ? "WAIT" : "UNAVAILABLE", "WS_DISCONNECTED"); }
       }
       if (!this.running || this.stopRequested) break;
       const delay = RECONNECT_BACKOFF_MS[Math.min(attempt, RECONNECT_BACKOFF_MS.length - 1)];
@@ -936,13 +936,21 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.config.jitEnabled !== true) return null;
     try {
       const expiration = computeExpiration(Number(serverNow) / 1000, Math.max(1, Math.round(BRAIN_HORIZON_SECONDS / 60)));
-      return this.timingShadow.begin({
+      // OBSERVABILIDADE: se begin() supersede a observacao LATE anterior da mesma janela, a interseccao
+      // antiga precisa ser reobservada com o desfecho real (antes ficava presa em LATE_OBSERVING).
+      const windowKey = `${ctx.marketKey}:${candidate.targetExpiryAt}`;
+      const previousTiming = this.timingShadow.getByWindow(windowKey);
+      const observation = this.timingShadow.begin({
         marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, agentId: this.#agentId(ctx),
         candidateId: candidate.id, correlationId: candidate.correlationId ?? null, direction: action,
         candidateSnapshot: candidate.initialFull ?? snapshot ?? {}, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt,
         currentSubmitAt: candidate.submitAt, currentLeadMs: candidate.entryLeadMs, productKind: expiration.optionKind,
         payout: ctx.payout, serverNowMs: serverNow, latency: this.#timingLatencySamples(), atMs: candidate.createdAt,
       });
+      if (previousTiming && previousTiming.candidateId && previousTiming.candidateId !== candidate.id && previousTiming.outcome !== "OBSERVING") {
+        this.#observeScenarioTimingIntersection(previousTiming.candidateId);
+      }
+      return observation;
     } catch (error) { this.#safe(() => this.log("IQ_TIMING_SHADOW_BEGIN_FAILED", String(error?.message ?? error).slice(0, 160))); return null; }
   }
 
@@ -1039,6 +1047,18 @@ export class IqMultiRuntime extends EventEmitter {
       this.#observeScenarioTimingIntersection(candidate.id);
       return result;
     } catch (error) { this.#safe(() => this.log("IQ_SCENARIO_SHADOW_FINALIZE_FAILED", String(error?.message ?? error).slice(0, 160))); return null; }
+  }
+
+  /** Reobserva interseccoes de LATE ja finalizados do mercado (evita interseccao presa em LATE_OBSERVING). */
+  #observeScenarioTimingIntersectionsForMarket(marketKey) {
+    if (this.config.scenarioTimingIntersectionEnabled !== true) return 0;
+    let count = 0;
+    for (const observation of this.timingShadow.list()) {
+      if (observation?.marketKey !== marketKey || !observation.candidateId) continue;
+      if (observation.outcome === "OBSERVING") continue;
+      if (this.#observeScenarioTimingIntersection(observation.candidateId)) count += 1;
+    }
+    return count;
   }
 
   /** Registra a intersecao observacional scenario x timing (somente leitura dos dois estados). */
