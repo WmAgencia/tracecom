@@ -63,8 +63,10 @@ import { Indicator5MEngine, effectiveSafetyMarginMs } from "./indicator-5m.mjs";
 import { RsiReversalExperiment } from "./rsi-reversal.mjs";
 // RSI_STRICT_PULLBACK_2X2_V1: comparativo separado (STRICT vs PULLBACK) sobre 10 OTCs, caps no banco.
 import { RsiVariantsRunner } from "./rsi-variants.mjs";
-// RSI AGENTS 5x5: 10 agentes normais do runtime (5 STRICT + 5 PULLBACK) em OTCs fixos.
+// RSI AGENTS 5x5: 10 agentes da rodada anterior (V1) — PAUSADOS durante a migracao (nenhuma ordem).
 import { RsiAgents5x5 } from "./rsi-agents-5x5.mjs";
+// RSI AGENTS V2: universo dinamico 50/50 STRICT V2 x PULLBACK V2, shadow comparison, ordem via submitAgentV2Order.
+import { RsiAgentsV2 } from "./rsi-agents-v2.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
 export const ACK_TIMEOUT_MS = 15_000;
@@ -91,7 +93,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = true } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = true } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -159,6 +161,8 @@ export class IqMultiRuntime extends EventEmitter {
     this.rsiReversal = new RsiReversalExperiment({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiReversalEnabled === true });
     this.rsiVariants = new RsiVariantsRunner({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiVariantsEnabled === true });
     this.rsiAgents = new RsiAgents5x5({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsEnabled === true });
+    // V2: 50/50 dinamico; V1 fica explicitamente pausado (enabled=false) durante a migracao.
+    this.rsiAgentsV2 = new RsiAgentsV2({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2Enabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -1290,42 +1294,60 @@ export class IqMultiRuntime extends EventEmitter {
     });
   }
 
-  /* ------------------- RSI AGENTS PINADOS (12 agentes NORMAIS; ordem via submitAgentOrder) ------------------- */
+  /* ------------------- RSI AGENTS V2 (universo dinamico 50/50; ordem via submitAgentV2Order) ------------------- */
   #observeRsiAgents(ctx, list, now) {
-    if (!this.rsiAgents?.enabled) return null;
+    if (!this.rsiAgentsV2?.enabled) return null;
     if (now - (ctx.rsiAgentsAt ?? 0) < 5_000) return null;
     ctx.rsiAgentsAt = now;
-    if (!this.rsiAgents.pinnedReady) this.rsiAgents.ensurePinned([...this.markets.values()]);
-    // Reconciliacao periodica com o banco (throttle interno): pinado nunca troca de mercado.
-    void this.rsiAgents.assignUniverse([...this.markets.values()]);
-    if (!this.rsiAgents.assignments.has(ctx.marketKey)) return null;
+    // Universo/split sao reconciliados periodicamente (throttle interno do modulo):
+    // mercado novo entra no lado menor; mercado que sai do feed fica bloqueado (fail closed).
+    void this.rsiAgentsV2.assignUniverse([...this.markets.values()]);
+    if (!this.rsiAgentsV2.assignments.has(ctx.marketKey)) return null;
     const serverNow = this.client?.serverNow?.() ?? now;
     const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
     const ackSamples = ctx.latency?.orderAck ?? [];
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
     const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
-    if (ctx.availability && ctx.availability !== "OPEN") void this.rsiAgents.markAvailability(ctx.marketKey, ctx.availability);
-    return this.rsiAgents.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 } });
+    return this.rsiAgentsV2.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 } });
   }
 
-  /** Caminho NORMAL de ordem dos agentes: exige ARM PRACTICE + autoExecute; usa requestOrder (Execution Gate). */
-  async submitAgentOrder({ marketKey, direction, strategyId = null, skill = null, stake = 1, decisionId = null, idempotencyKey = null } = {}) {
+  /**
+   * Caminho NORMAL de ordem V2 (UNICO): exige ARM PRACTICE + autoExecute + kill switch OFF +
+   * migracao completa + assignment V2 valido + stake esperada (R$10) dentro dos limites oficiais.
+   * Sempre termina em requestOrder (Execution Gate unico). REAL nunca passa.
+   */
+  async submitAgentV2Order({ marketKey, direction, strategyId = null, skill = null, stake = 10, expectedStake = 10, decisionId = null, idempotencyKey = null, candidateAt = null, expiryAt = null, shadow = null } = {}) {
     if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("AGENT_ORDER_PRACTICE_ONLY", String(this.config.mode));
     if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("AGENT_ORDER_ACCOUNT_NOT_PRACTICE", this.accountContext.context);
     if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
     if (this.config.autoExecute !== true) throw new IqWsError("AGENT_ORDER_AUTO_EXECUTE_OFF");
     if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("AGENT_ORDER_KILL_SWITCH");
-    // Stake solicitada pela policy do agente; resolveFinalStake/Execution Gate aplicam os limites oficiais
-    // (mercado/global/hard cap) e o resultado devolve requestedStake x effectiveStake para observabilidade.
-    const requestedStake = Number.isFinite(Number(stake)) && Number(stake) > 0 ? Number(stake) : (Number(this.config.calculatedBankrollStake) > 0 ? Number(this.config.calculatedBankrollStake) : 1);
-    return this.requestOrder({ marketKey, direction, stake: requestedStake, decisionId, idempotencyKey, source: "agent:" + (strategyId || "rsi-agents") + ":" + (skill || "skill"), horizonSeconds: 60 });
+    if (this.rsiAgentsV2?.migration?.complete !== true) throw new IqWsError("AGENT_ORDER_MIGRATION_IN_PROGRESS");
+    const assignment = this.rsiAgentsV2?.assignments?.get(marketKey);
+    if (!assignment || assignment.strategy !== strategyId) throw new IqWsError("AGENT_ORDER_ASSIGNMENT_MISMATCH", `${marketKey}:${strategyId}`);
+    if (assignment.blocked === true || assignment.eligible !== true) throw new IqWsError("AGENT_ORDER_ASSIGNMENT_BLOCKED", assignment.blockReason ?? "NOT_ELIGIBLE");
+    const ctx = this.markets.get(marketKey);
+    if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
+    const requested = Number(stake);
+    const expected = Number(expectedStake);
+    if (!Number.isFinite(requested) || requested <= 0) throw new IqWsError("AGENT_ORDER_STAKE_REQUIRED");
+    if (!Number.isFinite(expected) || expected !== requested) throw new IqWsError("AGENT_ORDER_STAKE_MISMATCH", `${requested}!=${expected}`);
+    const officialCap = Math.min(Number(this.config.globalMaxStake) || expected, Number(ctx.maxStake) || expected, Number(this.config.hardCap) || expected);
+    if (expected > officialCap) throw new IqWsError("AGENT_ORDER_STAKE_ABOVE_OFFICIAL_CAP", `${expected}>${officialCap}`);
+    return this.requestOrder({ marketKey, direction, stake: requested, decisionId, idempotencyKey, source: "agent-v2:" + (strategyId || "rsi-agents-v2") + ":" + (skill || strategyId || "skill"), horizonSeconds: 60 });
   }
 
+  /** V1 PAUSADO na migracao: nunca envia ordem (fail closed explicito). */
+  async submitAgentOrder() {
+    throw new IqWsError("AGENT_ORDER_V1_PAUSED", "RSI_AGENTS_5x5 pausado durante a migracao para V2");
+  }
+
+  /** Status V2 (rota legada /rsi-agents agora reporta a V2 + estado da V1 pausada). */
   async rsiAgentsStatus() {
-    const status = await this.rsiAgents.status();
-    const officialStake = { policyStakeBrl: status.policy?.stakeBrl ?? null, calculatedBankrollStake: this.config.calculatedBankrollStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap, defaultStake: this.config.defaultStake };
-    return { ...status, stake: officialStake, context: { mode: this.config.mode, accountContext: this.accountContext.context, armed: this.armState.armed === true, autoExecute: this.config.autoExecute === true, killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, realState: this.realMode.authorized() ? "ARMED" : "LOCKED" }, realAllowlistUntouched: true };
+    const status = await this.rsiAgentsV2.status();
+    const officialStake = { policyStakeBrl: status.stakeBrl ?? null, calculatedBankrollStake: this.config.calculatedBankrollStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap, defaultStake: this.config.defaultStake };
+    return { ...status, stake: officialStake, legacyV1: { ...(status.legacyV1 ?? {}), enabled: this.rsiAgents?.enabled === true, paused: true }, context: { mode: this.config.mode, accountContext: this.accountContext.context, armed: this.armState.armed === true, autoExecute: this.config.autoExecute === true, killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, realState: this.realMode.authorized() ? "ARMED" : "LOCKED" }, realAllowlistUntouched: true };
   }
 
   /* ------------------- RSI VARIANTS 2x2 (STRICT x PULLBACK; 10 OTCs; ordem so via harness) ------------------- */
@@ -2636,7 +2658,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.#emitEvent("position.settled", { marketKey: key, brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, correlationId: position.correlationId ?? null, accountContext: settlementContext });
     // Harness 4x3: marca settlement da execucao experimental (idempotente; no-op se a ordem nao for do experimento).
     void this.fourWay?.recordSettlementByBrokerOrder({ brokerOrderId, result: broker.result, profit: broker.profit, entryPrice: position.entryPrice ?? null, expiryPrice: settlement.detail?.settlement ?? null });
-    try { this.rsiAgents?.recordSettlement({ marketKey: key, result: broker.result, profit: broker.profit, entryPrice: position.entryPrice ?? null, expiryPrice: settlement.detail?.settlement ?? null, payout: ctx.payout }); } catch { /* observabilidade nunca derruba settlement */ }
+    try { this.rsiAgentsV2?.recordSettlement({ marketKey: key, result: broker.result, profit: broker.profit, entryPrice: position.entryPrice ?? null, expiryPrice: settlement.detail?.settlement ?? null, payout: ctx.payout }); } catch { /* observabilidade nunca derruba settlement */ }
     if (this.dataHub) this.#safe(() => this.dataHub.publish({
       eventType: "SETTLEMENT", marketKey: key, marketType: ctx.marketType, activeId: ctx.activeId,
       serverTime: ctx.serverTime, receivedAt: settledAt, availableAt: settledAt, producer: "iq-multi-runtime", source: "broker-settlement",
@@ -3027,6 +3049,7 @@ export class IqMultiRuntime extends EventEmitter {
       agentState: ctx.agentState, agentSince: ctx.agentSince, agentReason: ctx.agentReason ?? null,
       lastSignal: ctx.lastSignal, lastDecision: ctx.lastDecision, lastTrade: ctx.lastTrade,
       selectionReason: ctx.selectionReason ?? null, brainGeneration: BRAIN_GENERATION,
+      rsiAgent: this.rsiAgentsV2?.stateFor(ctx.marketKey) ?? null,
       entryTiming: this.#publicEntryTiming(ctx, this.client?.serverNow?.() ?? this.now()),
     };
   }
@@ -3036,7 +3059,11 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.now() - (this.lastResearchPersist ?? 0) > 60_000) { this.lastResearchPersist = this.now(); void this.#persistConfig(); }
     const activeContext = this.accountContext.context;
     const contextState = this.accountContextState();
-    const markets = [...this.markets.values()].map((ctx) => this.#publicMarket(ctx));
+    const marketRows = [...this.markets.values()].map((ctx) => this.#publicMarket(ctx));
+    // Office V3: parte SUPERIOR = STRICT V2, parte INFERIOR = PULLBACK V2.
+    // Ordem visual: STRICT primeiro (topo), demais mercados no meio, PULLBACK no fim (base).
+    const strategyRank = (row) => row.rsiAgent?.strategyId === "RSI_REVERSAL_STRICT_V2" ? 0 : row.rsiAgent?.strategyId === "RSI_EXTREME_PULLBACK_V2" ? 2 : 1;
+    const markets = marketRows.map((row, index) => ({ row, index })).sort((a, b) => strategyRank(a.row) - strategyRank(b.row) || a.index - b.index).map((entry) => entry.row);
     const portfolio = this.portfolioSnapshot(activeContext);
     const contextSignals = [...this.signalLog].reverse().filter((row) => (row.accountContext ?? ACCOUNT_PRACTICE) === activeContext).slice(0, 40);
     const contextJournalTrades = this.journal.trades.filter((trade) => (trade.accountContext === ACCOUNT_REAL ? ACCOUNT_REAL : ACCOUNT_PRACTICE) === activeContext).length;
@@ -3069,6 +3096,7 @@ export class IqMultiRuntime extends EventEmitter {
         news: this.newsContext ?? { status: "NO_FEED", note: "interface pronta; nenhum evento inventado" },
         executionGate,
         portfolioControl: { activeMarkets: this.activeMarketKeys(), openPositions: portfolio.openPositions.length, settledPnl: portfolio.settled.pnl, wins: portfolio.settled.wins, losses: portfolio.settled.losses, draws: portfolio.settled.draws, agentsOnline: markets.filter((market) => market.agentState !== "OFFLINE" && market.agentState !== "UNAVAILABLE").length },
+        rsiAgentsV2: this.rsiAgentsV2?.snapshot() ?? null,
       },
       resolver: { lastResolvedAt: this.resolver.lastResolvedAt, resolvedCount: this.resolver.resolvedCount(), sampleActiveKeys: this.resolver.sampleActiveKeys, lastError: this.resolver.lastError },
       intelligence: this.intelligence.status(),

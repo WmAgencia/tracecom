@@ -296,6 +296,7 @@ export function buildWorldState(officeJson = {}) {
       critic: active ? critic : null,
       agents: active ? [trader, critic] : [],
       badge: marketBadge(market, active),
+      rsiAgent: market.rsiAgent ?? null,
     });
   }
   const reserved = [];
@@ -493,18 +494,19 @@ function drawWalls(ctx) {
  * a solid opaque panel, brighter text and a clip/scale guard so long labels do
  * not overflow the band. Lifted above the desk row so it never covers monitors.
  */
-function drawRibbon(ctx, row) {
+function drawRibbon(ctx, row, zone = null) {
   const y = row.deskTop - 60;
+  const suffix = zone && zone.strict > 0 && zone.pullback === 0 ? " · STRICT V2" : zone && zone.pullback > 0 && zone.strict === 0 ? " · PULLBACK V2" : zone && zone.strict > 0 && zone.pullback > 0 ? " · STRICT V2 + PULLBACK V2" : "";
   if (row.accent === "split") {
     const parts = SUB_BAND_BY_ROW[row.id] ?? [row.label];
     const leftCenter = (COLUMNS[0] + COLUMNS[4]) / 2;
     const rightCenter = (COLUMNS[5] + COLUMNS[COLUMN_COUNT - 1]) / 2;
     const half = 5 * COLUMN_STEP - 16;
-    drawRibbonAt(ctx, parts[0], leftCenter, y, PALETTE_V3.bandBlue, PALETTE_V3.bandBlueHi, half);
-    drawRibbonAt(ctx, parts[1] ?? parts[0], rightCenter, y, PALETTE_V3.bandGreen, PALETTE_V3.bandGreenHi, half);
+    drawRibbonAt(ctx, `${parts[0]}${suffix}`, leftCenter, y, PALETTE_V3.bandBlue, PALETTE_V3.bandBlueHi, half);
+    drawRibbonAt(ctx, `${parts[1] ?? parts[0]}${suffix}`, rightCenter, y, PALETTE_V3.bandGreen, PALETTE_V3.bandGreenHi, half);
     return;
   }
-  drawRibbonAt(ctx, row.label, Math.round(WORLD_WIDTH / 2), y, PALETTE_V3.bandBlue, PALETTE_V3.bandBlueHi, 0);
+  drawRibbonAt(ctx, `${row.label}${suffix}`, Math.round(WORLD_WIDTH / 2), y, PALETTE_V3.bandBlue, PALETTE_V3.bandBlueHi, 0);
 }
 
 function drawRibbonAt(ctx, label, centerX, y, accent, accentHi, maxWidth = 0) {
@@ -752,7 +754,63 @@ function drawStation(ctx, station, showAgents = true, options = {}) {
     const bob = Math.round(Math.sin(timeMs / 500) * 1);
     drawPixelText(ctx, badge.text, cx, desk.y - 22 + bob, { scale: 2, align: "center", color, shadow: "rgba(0,0,0,0.7)" });
   }
+
+  // RSI AGENTS V2 (T14): cada mesa mostra claramente ativo (placa), STRICT/PULLBACK,
+  // BUY/SELL/WAIT, estado e último resultado. Parte superior = STRICT V2, inferior = PULLBACK V2.
+  drawRsiAgentTag(ctx, station, cx, desk.y, timeMs);
 }
+
+/** Estrategia/estado/decisao do agente RSI V2 desenhados sobre cada mesa. */
+function drawRsiAgentTag(ctx, station, cx, deskY, timeMs) {
+  const agent = station?.rsiAgent;
+  if (!agent) return;
+  const strict = agent.strategyId === "RSI_REVERSAL_STRICT_V2";
+  const tag = strict ? "STRICT V2" : agent.strategyId === "RSI_EXTREME_PULLBACK_V2" ? "PULLBACK V2" : null;
+  if (!tag) return;
+  const tagColor = strict ? "#2a4a80" : "#1f6b3a";
+  const tagInk = strict ? "#bcd6ff" : "#c7f5d4";
+  const tagW = Math.max(64, tag.length * 6 + 12);
+  const tagY = deskY - 46;
+  pxRectLocal(ctx, cx - tagW / 2, tagY, tagW, 12, tagColor);
+  pxRectLocal(ctx, cx - tagW / 2, tagY, tagW, 1, "rgba(255,255,255,0.25)");
+  drawPixelText(ctx, tag, cx, tagY + 3, { scale: 1, align: "center", color: tagInk });
+
+  const decision = agent.blocked === true ? "BLOCK" : agent.decision === "BUY" || agent.decision === "SELL" ? agent.decision : "WAIT";
+  const decisionColor = decision === "BUY" ? PALETTE_V3.green : decision === "SELL" ? PALETTE_V3.red : decision === "BLOCK" ? PALETTE_V3.red : PALETTE_V3.metal;
+  const waitShort = WAIT_REASON_SHORT[String(agent.waitReason ?? "")] ?? (agent.waitReason ? String(agent.waitReason).replace(/_/g, " ").slice(0, 10) : null);
+  const pnl = Number(agent.lastPnl);
+  const state = agent.lastResult
+    ? `${agent.lastResult}${Number.isFinite(pnl) ? ` ${pnl >= 0 ? "+" : "-"}${Math.abs(pnl).toFixed(2).replace(".", ",")}` : ""}`
+    : agent.position?.status === "OPEN" ? "ABERTA"
+      : agent.blocked === true ? "BLOQUEADO"
+        : waitShort ?? "ANALISANDO";
+  const line = `${decision} · ${state}`.slice(0, 17);
+  const lineW = Math.max(64, line.length * 6 + 10);
+  pxRectLocal(ctx, cx - lineW / 2, deskY - 32, lineW, 12, "rgba(6,12,24,0.8)");
+  drawPixelText(ctx, line, cx, deskY - 29, { scale: 1, align: "center", color: decisionColor });
+}
+
+/** Rotulos curtos para caber na largura da mesa (124px) sem sobrepor a mesa vizinha. */
+const WAIT_REASON_SHORT = Object.freeze({
+  NO_CANDIDATE_RSI_NEUTRO: "SEM EXTREMO",
+  OBSERVE_ONLY: "JANELA",
+  OBSERVE_ONLY_NO_EXPIRY: "JANELA",
+  STRICT_WAITING_CONFIRMATION: "CONFIRMAR",
+  PULLBACK_WAITING_CONFIRMATION: "CONFIRMAR",
+  STRICT_BLOCKED_STRONG_TREND: "BLOQUEADO",
+  PULLBACK_BLOCKED_STRONG_TREND: "BLOQUEADO",
+  MOMENTUM_CURTO_NAO_REAGIU: "MOMENTO",
+  DI_ANTIGO_NAO_ENFRAQUECEU: "DI ANTIGO",
+  DI_OPOSTO_SEM_REACAO: "DI OPOSTO",
+  ADX_AINDA_FORTALECENDO_TENDENCIA: "ADX FORTE",
+  CONTINUACAO_FORTE_BAND_RIDING: "CONTINUA",
+  CANCELLED_REVALIDATION: "CANCELADO",
+  DUPLICATE_BLOCKED: "DUPLICADO",
+  MISSED_ENTRY_WINDOW: "PERDIDA",
+  NO_SAFE_ENTRY_INSIDE_5S_WINDOW: "SEM JANELA",
+  NO_FEED_INSUFFICIENT_CANDLES: "SEM FEED",
+  MIGRATION_IN_PROGRESS: "MIGRANDO",
+});
 
 /**
  * Desk fronts to be re-drawn AFTER the dynamic agents (life.js) so the front
@@ -879,7 +937,17 @@ export function drawWorld(ctx, worldState, camera = {}, options = {}) {
   }
 
   // T4: sector labels AFTER the desks — always in front of the surface.
-  for (const row of BAND_ROWS) drawRibbon(ctx, row);
+  // T14: o rotulo indica a zona V2 (superior STRICT V2 / inferior PULLBACK V2) da linha.
+  const zoneByBand = new Map();
+  for (const station of worldState.stations) {
+    const band = station.cell?.band;
+    if (!band) continue;
+    const zone = zoneByBand.get(band) ?? { strict: 0, pullback: 0 };
+    if (station.rsiAgent?.strategyId === "RSI_REVERSAL_STRICT_V2") zone.strict += 1;
+    else if (station.rsiAgent?.strategyId === "RSI_EXTREME_PULLBACK_V2") zone.pullback += 1;
+    zoneByBand.set(band, zone);
+  }
+  for (const row of BAND_ROWS) drawRibbon(ctx, row, zoneByBand.get(row.id) ?? null);
 
   for (const pool of worldState.lighting) {
     if (!intersectsView(view, pool.x - pool.radius, pool.y - pool.radius, pool.radius * 2, pool.radius * 2, 0)) continue;

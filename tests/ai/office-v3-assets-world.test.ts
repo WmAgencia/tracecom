@@ -333,6 +333,20 @@ describe("OFFICE V3 — render e guarda de DOM", () => {
     expect(countDistinctColors(ctx, BASE_WIDTH, BASE_HEIGHT, 3)).toBeGreaterThan(50);
   });
 
+  it("mesa com agente RSI V2 carrega estrategia/decisao/resultado e desenha a tag (STRICT/PULLBACK)", () => {
+    const markets = fixtureMarkets(4);
+    markets[0] = { ...markets[0], rsiAgent: { strategyId: "RSI_REVERSAL_STRICT_V2", label: "STRICT", decision: "BUY", waitReason: null, lastResult: null, lastPnl: null, candidateAt: 1, rsi: 28.4, position: null, blocked: false, blockReason: null } };
+    markets[1] = { ...markets[1], rsiAgent: { strategyId: "RSI_EXTREME_PULLBACK_V2", label: "PULLBACK", decision: "WAIT", waitReason: "MOMENTUM_CURTO_NAO_REAGIU", lastResult: "LOSS", lastPnl: -10, candidateAt: 2, rsi: 74.2, position: null, blocked: false, blockReason: null } };
+    const state = buildWorldState({ markets });
+    expect(state.stations[0].rsiAgent.strategyId).toBe("RSI_REVERSAL_STRICT_V2");
+    expect(state.stations[1].rsiAgent.strategyId).toBe("RSI_EXTREME_PULLBACK_V2");
+    const canvas = createCanvas(BASE_WIDTH, BASE_HEIGHT);
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    expect(() => drawWorld(ctx, state, { x: 0, y: 0, zoom: 1 })).not.toThrow();
+    expect(countDistinctColors(ctx, BASE_WIDTH, BASE_HEIGHT, 2)).toBeGreaterThan(50);
+  });
+
   it("não referencia globais de DOM no momento do import", () => {
     expect(typeof (globalThis as any).document).toBe("undefined");
     expect(typeof (globalThis as any).window).toBe("undefined");

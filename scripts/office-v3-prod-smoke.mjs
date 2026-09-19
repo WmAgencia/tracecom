@@ -88,12 +88,18 @@ async function main() {
           model: api.resultsModel ? { day: api.resultsModel()?.day?.pnlText ?? null, week: api.resultsModel()?.week?.pnlText ?? null, month: api.resultsModel()?.month?.pnlText ?? null } : null,
         },
         canvasLogsBox: typeof api.worldModule().drawLogsBox === "function",
+        rsiV2: office?.aux?.rsiAgentsV2 ?? null,
+        strategyOrder: state.stations.map((station) => station.rsiAgent?.strategyId ?? null),
+        desksWithTag: state.stations.filter((station) => Boolean(station.rsiAgent?.strategyId)).length,
       };
     });
     assert("mundo real com 54 mercados", boot.stations === 54, "final-prod-boot.png", { stations: boot.stations });
     assert("painel superior com dados reais do GET /api/iq/office", typeof boot.pnlText === "string" && boot.pnlText.length > 0, "final-prod-boot.png", { pnlText: boot.pnlText, settledPnl: boot.settledPnl });
     assert("RESULTS DO DIA/SEMANA/MES legivel e sem NaN/undefined", boot.results.present === true && /RESULTADO DO DIA/.test(boot.results.text ?? "") && !/NaN|undefined/.test(boot.results.text ?? ""), "final-prod-boot.png", boot.results);
     assert("box de LOGS do canvas removido (somente overlay DOM)", boot.canvasLogsBox === false, null, { canvasLogsBox: boot.canvasLogsBox });
+    const firstPullback = boot.strategyOrder.findIndex((strategy) => strategy === "RSI_EXTREME_PULLBACK_V2");
+    const lastStrict = boot.strategyOrder.reduce((last, strategy, index) => (strategy === "RSI_REVERSAL_STRICT_V2" ? index : last), -1);
+    assert("RSI V2 50/50 no Office (superior STRICT V2 / inferior PULLBACK V2)", Boolean(boot.rsiV2) && boot.rsiV2.migration?.complete === true && boot.rsiV2.split.strict > 0 && boot.rsiV2.split.pullback > 0 && Math.abs(boot.rsiV2.split.strict - boot.rsiV2.split.pullback) <= 1 && firstPullback > lastStrict && boot.desksWithTag === boot.rsiV2.split.strict + boot.rsiV2.split.pullback, "final-prod-boot.png", { split: boot.rsiV2?.split, migration: boot.rsiV2?.migration?.state, desksWithTag: boot.desksWithTag, firstPullback, lastStrict });
     await page.screenshot({ path: join(OUT_DIR, "final-prod-boot.png") });
 
     await page.click("#logs-toggle");

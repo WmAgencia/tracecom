@@ -1,0 +1,54 @@
+{
+  "schema": "rsi-agents-v2-freeze-v1",
+  "frozenAtUtc": "2026-09-19T17:28:18.902Z",
+  "sourceCommit": null,
+  "noTuning": true,
+  "strategies": {
+    "strict": "RSI_REVERSAL_STRICT_V2",
+    "pullback": "RSI_EXTREME_PULLBACK_V2"
+  },
+  "policy": {
+    "practiceOnly": true,
+    "realLocked": true,
+    "stakeBrl": 10,
+    "split": "50/50 balanceado NORMAL/OTC",
+    "shadow": "skill nao atribuida nunca envia ordem",
+    "singleBrokerPath": "runtime.submitAgentV2Order -> requestOrder",
+    "autoInvert": false,
+    "sameExpiryRequired": true
+  },
+  "v1Reference": {
+    "note": "V1 intocada; agentes V1 pausados na migracao",
+    "files": [
+      "relay/rsi-reversal.mjs",
+      "relay/rsi-variants.mjs",
+      "relay/rsi-agents-5x5.mjs"
+    ]
+  },
+  "files": {
+    "relay/rsi-skills-v2.mjs": {
+      "sha256": "d67a8d671b548016363288ede246c7f8a6ed43419ed85b0d0da9480534f1e17c",
+      "bytes": 23316
+    },
+    "relay/rsi-agents-v2.mjs": {
+      "sha256": "eebfbe8e160556dd0aabe20567b631c66374e1680b87ba1f920e659c8f80bcc0",
+      "bytes": 52493
+    },
+    "relay/iq-multi-runtime.mjs": {
+      "sha256": "8ea446557cc27ccf236fdb4f261458b6f568fde614f78fb0f544e3b19d3decb8",
+      "bytes": 277101
+    },
+    "relay/rsi-reversal.mjs": {
+      "sha256": "5b8708da02e526b237b0ca52eb3bf4b85a73011a4474e1ca45f4e9695f4b6695",
+      "bytes": 29303
+    },
+    "relay/rsi-variants.mjs": {
+      "sha256": "1ce8bd857949756cafb46c9a701fdfafce801279c82be2a85b261dca0c668419",
+      "bytes": 22859
+    },
+    "relay/rsi-agents-5x5.mjs": {
+      "sha256": "56b1d27c01f6796ec19ed3d6fa74715c001abdfb4e37ee21e17ec77144bb2b10",
+      "bytes": 27223
+    }
+  }
+}
