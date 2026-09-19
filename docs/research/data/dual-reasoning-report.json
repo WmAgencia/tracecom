@@ -1,423 +1,101 @@
 {
  "version": "dual-reasoning-report-v1",
- "generatedAtUtc": "2026-09-19T13:22:14.369Z",
+ "generatedAtUtc": "2026-09-19T13:39:09.849Z",
  "snapshot": {
-  "asOf": 1789824134371,
-  "n": 50,
+  "asOf": 1789825149850,
+  "n": 145,
   "source": "PROSPECTIVE_SHADOW",
   "note": "DUAL_REASONING_V1 congelado; relatorio apenas observacional."
  },
  "counts": {
-  "observations": 50,
-  "finalized": 49,
-  "directionalSettled": 19,
-  "nextCheckpoint": 30
+  "observations": 145,
+  "finalized": 139,
+  "directionalSettled": 46,
+  "nextCheckpoint": 60
  },
  "change": {
-  "nothing": 12,
-  "onlyA": 14,
-  "onlyB": 11,
-  "both": 13,
-  "r1ToR2Changes": 24,
-  "r2ToFinalChanges": 38,
-  "synthesisChangedFromR1": 42,
+  "nothing": 25,
+  "onlyA": 36,
+  "onlyB": 36,
+  "both": 48,
+  "r1ToR2Changes": 80,
+  "r2ToFinalChanges": 109,
+  "synthesisChangedFromR1": 119,
   "causes": {
-   "UNRESOLVED_CONFLICT": 5,
-   "STRUCTURE_CHANGE": 11,
-   "SCENARIO_CHANGE": 5,
-   "SHORT_IMPULSE_CHANGE": 7,
-   "THESIS_INVALIDATED": 10
+   "UNRESOLVED_CONFLICT": 16,
+   "STRUCTURE_CHANGE": 30,
+   "SCENARIO_CHANGE": 13,
+   "SHORT_IMPULSE_CHANGE": 27,
+   "THESIS_INVALIDATED": 34
   }
  },
  "changeMatrix": {
-  "nothing": 12,
-  "onlyA": 14,
-  "onlyB": 11,
-  "both": 13,
-  "r1ToR2Changes": 24,
-  "r2ToFinalChanges": 38,
-  "synthesisChangedFromR1": 42,
+  "nothing": 25,
+  "onlyA": 36,
+  "onlyB": 36,
+  "both": 48,
+  "r1ToR2Changes": 80,
+  "r2ToFinalChanges": 109,
+  "synthesisChangedFromR1": 119,
   "causes": {
-   "UNRESOLVED_CONFLICT": 5,
-   "STRUCTURE_CHANGE": 11,
-   "SCENARIO_CHANGE": 5,
-   "SHORT_IMPULSE_CHANGE": 7,
-   "THESIS_INVALIDATED": 10
+   "UNRESOLVED_CONFLICT": 16,
+   "STRUCTURE_CHANGE": 30,
+   "SCENARIO_CHANGE": 13,
+   "SHORT_IMPULSE_CHANGE": 27,
+   "THESIS_INVALIDATED": 34
   }
  },
  "abMatrix": [
   {
    "a": "BUY",
    "b": "BUY",
+   "n": 9,
+   "trades": 9,
+   "coverage": 1,
+   "outcome": {
+    "n": 8,
+    "decided": 8,
+    "wins": 4,
+    "losses": 4,
+    "draws": 0,
+    "wr": 0.5,
+    "ci95": {
+     "low": 0.2152,
+     "high": 0.7848
+    },
+    "lowN": true
+   },
+   "aAloneCounterfactual": {
+    "n": 8,
+    "decided": 8,
+    "wins": 4,
+    "losses": 4,
+    "draws": 0,
+    "wr": 0.5,
+    "ci95": {
+     "low": 0.2152,
+     "high": 0.7848
+    },
+    "lowN": true
+   },
+   "bAloneCounterfactual": {
+    "n": 8,
+    "decided": 8,
+    "wins": 4,
+    "losses": 4,
+    "draws": 0,
+    "wr": 0.5,
+    "ci95": {
+     "low": 0.2152,
+     "high": 0.7848
+    },
+    "lowN": true
+   }
+  },
+  {
+   "a": "BUY",
+   "b": "SELL",
    "n": 2,
-   "trades": 2,
-   "coverage": 1,
-   "outcome": {
-    "n": 2,
-    "decided": 2,
-    "wins": 1,
-    "losses": 1,
-    "draws": 0,
-    "wr": 0.5,
-    "ci95": {
-     "low": 0.0945,
-     "high": 0.9055
-    },
-    "lowN": true
-   },
-   "aAloneCounterfactual": {
-    "n": 2,
-    "decided": 2,
-    "wins": 1,
-    "losses": 1,
-    "draws": 0,
-    "wr": 0.5,
-    "ci95": {
-     "low": 0.0945,
-     "high": 0.9055
-    },
-    "lowN": true
-   },
-   "bAloneCounterfactual": {
-    "n": 2,
-    "decided": 2,
-    "wins": 1,
-    "losses": 1,
-    "draws": 0,
-    "wr": 0.5,
-    "ci95": {
-     "low": 0.0945,
-     "high": 0.9055
-    },
-    "lowN": true
-   }
-  },
-  {
-   "a": "BUY",
-   "b": "SELL",
-   "n": 0,
-   "trades": 0,
-   "coverage": null,
-   "outcome": {
-    "n": 0,
-    "decided": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowN": true
-   },
-   "aAloneCounterfactual": {
-    "n": 0,
-    "decided": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowN": true
-   },
-   "bAloneCounterfactual": {
-    "n": 0,
-    "decided": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowN": true
-   }
-  },
-  {
-   "a": "BUY",
-   "b": "WAIT",
-   "n": 6,
-   "trades": 4,
-   "coverage": 0.6667,
-   "outcome": {
-    "n": 4,
-    "decided": 4,
-    "wins": 0,
-    "losses": 4,
-    "draws": 0,
-    "wr": 0,
-    "ci95": {
-     "low": 0,
-     "high": 0.4899
-    },
-    "lowN": true
-   },
-   "aAloneCounterfactual": {
-    "n": 6,
-    "decided": 6,
-    "wins": 1,
-    "losses": 5,
-    "draws": 0,
-    "wr": 0.1667,
-    "ci95": {
-     "low": 0.0301,
-     "high": 0.5635
-    },
-    "lowN": true
-   },
-   "bAloneCounterfactual": {
-    "n": 4,
-    "decided": 4,
-    "wins": 0,
-    "losses": 4,
-    "draws": 0,
-    "wr": 0,
-    "ci95": {
-     "low": 0,
-     "high": 0.4899
-    },
-    "lowN": true
-   }
-  },
-  {
-   "a": "SELL",
-   "b": "BUY",
-   "n": 0,
-   "trades": 0,
-   "coverage": null,
-   "outcome": {
-    "n": 0,
-    "decided": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowN": true
-   },
-   "aAloneCounterfactual": {
-    "n": 0,
-    "decided": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowN": true
-   },
-   "bAloneCounterfactual": {
-    "n": 0,
-    "decided": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowN": true
-   }
-  },
-  {
-   "a": "SELL",
-   "b": "SELL",
-   "n": 5,
-   "trades": 5,
-   "coverage": 1,
-   "outcome": {
-    "n": 4,
-    "decided": 4,
-    "wins": 2,
-    "losses": 2,
-    "draws": 0,
-    "wr": 0.5,
-    "ci95": {
-     "low": 0.15,
-     "high": 0.85
-    },
-    "lowN": true
-   },
-   "aAloneCounterfactual": {
-    "n": 4,
-    "decided": 4,
-    "wins": 2,
-    "losses": 2,
-    "draws": 0,
-    "wr": 0.5,
-    "ci95": {
-     "low": 0.15,
-     "high": 0.85
-    },
-    "lowN": true
-   },
-   "bAloneCounterfactual": {
-    "n": 4,
-    "decided": 4,
-    "wins": 2,
-    "losses": 2,
-    "draws": 0,
-    "wr": 0.5,
-    "ci95": {
-     "low": 0.15,
-     "high": 0.85
-    },
-    "lowN": true
-   }
-  },
-  {
-   "a": "SELL",
-   "b": "WAIT",
-   "n": 8,
-   "trades": 8,
-   "coverage": 1,
-   "outcome": {
-    "n": 7,
-    "decided": 7,
-    "wins": 3,
-    "losses": 4,
-    "draws": 0,
-    "wr": 0.4286,
-    "ci95": {
-     "low": 0.1582,
-     "high": 0.7495
-    },
-    "lowN": true
-   },
-   "aAloneCounterfactual": {
-    "n": 7,
-    "decided": 7,
-    "wins": 3,
-    "losses": 4,
-    "draws": 0,
-    "wr": 0.4286,
-    "ci95": {
-     "low": 0.1582,
-     "high": 0.7495
-    },
-    "lowN": true
-   },
-   "bAloneCounterfactual": {
-    "n": 7,
-    "decided": 7,
-    "wins": 3,
-    "losses": 4,
-    "draws": 0,
-    "wr": 0.4286,
-    "ci95": {
-     "low": 0.1582,
-     "high": 0.7495
-    },
-    "lowN": true
-   }
-  },
-  {
-   "a": "WAIT",
-   "b": "BUY",
-   "n": 7,
-   "trades": 1,
-   "coverage": 0.1429,
-   "outcome": {
-    "n": 1,
-    "decided": 1,
-    "wins": 0,
-    "losses": 1,
-    "draws": 0,
-    "wr": 0,
-    "ci95": {
-     "low": 0,
-     "high": 0.7935
-    },
-    "lowN": true
-   },
-   "aAloneCounterfactual": {
-    "n": 4,
-    "decided": 4,
-    "wins": 1,
-    "losses": 3,
-    "draws": 0,
-    "wr": 0.25,
-    "ci95": {
-     "low": 0.0456,
-     "high": 0.6994
-    },
-    "lowN": true
-   },
-   "bAloneCounterfactual": {
-    "n": 6,
-    "decided": 6,
-    "wins": 3,
-    "losses": 3,
-    "draws": 0,
-    "wr": 0.5,
-    "ci95": {
-     "low": 0.1876,
-     "high": 0.8124
-    },
-    "lowN": true
-   }
-  },
-  {
-   "a": "WAIT",
-   "b": "SELL",
-   "n": 3,
-   "trades": 3,
-   "coverage": 1,
-   "outcome": {
-    "n": 1,
-    "decided": 1,
-    "wins": 1,
-    "losses": 0,
-    "draws": 0,
-    "wr": 1,
-    "ci95": {
-     "low": 0.2065,
-     "high": 1
-    },
-    "lowN": true
-   },
-   "aAloneCounterfactual": {
-    "n": 0,
-    "decided": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowN": true
-   },
-   "bAloneCounterfactual": {
-    "n": 1,
-    "decided": 1,
-    "wins": 1,
-    "losses": 0,
-    "draws": 0,
-    "wr": 1,
-    "ci95": {
-     "low": 0.2065,
-     "high": 1
-    },
-    "lowN": true
-   }
-  },
-  {
-   "a": "WAIT",
-   "b": "WAIT",
-   "n": 19,
    "trades": 0,
    "coverage": 0,
    "outcome": {
@@ -434,39 +112,38 @@
     "lowN": true
    },
    "aAloneCounterfactual": {
-    "n": 11,
-    "decided": 11,
-    "wins": 7,
-    "losses": 4,
+    "n": 1,
+    "decided": 1,
+    "wins": 1,
+    "losses": 0,
     "draws": 0,
-    "wr": 0.6364,
+    "wr": 1,
     "ci95": {
-     "low": 0.3538,
-     "high": 0.8483
+     "low": 0.2065,
+     "high": 1
     },
     "lowN": true
    },
    "bAloneCounterfactual": {
-    "n": 12,
-    "decided": 12,
-    "wins": 5,
-    "losses": 7,
+    "n": 1,
+    "decided": 1,
+    "wins": 0,
+    "losses": 1,
     "draws": 0,
-    "wr": 0.4167,
+    "wr": 0,
     "ci95": {
-     "low": 0.1933,
-     "high": 0.6805
+     "low": 0,
+     "high": 0.7935
     },
     "lowN": true
    }
-  }
- ],
- "structuralShort": [
+  },
   {
-   "label": "STRUCTURAL_BULLISH_SHORT_BULLISH",
-   "n": 12,
+   "a": "BUY",
+   "b": "WAIT",
+   "n": 11,
    "trades": 7,
-   "coverage": 0.5833,
+   "coverage": 0.6364,
    "outcome": {
     "n": 7,
     "decided": 7,
@@ -481,6 +158,190 @@
     "lowN": true
    },
    "aAloneCounterfactual": {
+    "n": 9,
+    "decided": 9,
+    "wins": 2,
+    "losses": 7,
+    "draws": 0,
+    "wr": 0.2222,
+    "ci95": {
+     "low": 0.0632,
+     "high": 0.5474
+    },
+    "lowN": true
+   },
+   "bAloneCounterfactual": {
+    "n": 7,
+    "decided": 7,
+    "wins": 1,
+    "losses": 6,
+    "draws": 0,
+    "wr": 0.1429,
+    "ci95": {
+     "low": 0.0257,
+     "high": 0.5131
+    },
+    "lowN": true
+   }
+  },
+  {
+   "a": "SELL",
+   "b": "BUY",
+   "n": 0,
+   "trades": 0,
+   "coverage": null,
+   "outcome": {
+    "n": 0,
+    "decided": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "aAloneCounterfactual": {
+    "n": 0,
+    "decided": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "bAloneCounterfactual": {
+    "n": 0,
+    "decided": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   }
+  },
+  {
+   "a": "SELL",
+   "b": "SELL",
+   "n": 14,
+   "trades": 14,
+   "coverage": 1,
+   "outcome": {
+    "n": 11,
+    "decided": 10,
+    "wins": 4,
+    "losses": 6,
+    "draws": 1,
+    "wr": 0.4,
+    "ci95": {
+     "low": 0.1682,
+     "high": 0.6873
+    },
+    "lowN": true
+   },
+   "aAloneCounterfactual": {
+    "n": 11,
+    "decided": 10,
+    "wins": 4,
+    "losses": 6,
+    "draws": 1,
+    "wr": 0.4,
+    "ci95": {
+     "low": 0.1682,
+     "high": 0.6873
+    },
+    "lowN": true
+   },
+   "bAloneCounterfactual": {
+    "n": 11,
+    "decided": 10,
+    "wins": 4,
+    "losses": 6,
+    "draws": 1,
+    "wr": 0.4,
+    "ci95": {
+     "low": 0.1682,
+     "high": 0.6873
+    },
+    "lowN": true
+   }
+  },
+  {
+   "a": "SELL",
+   "b": "WAIT",
+   "n": 15,
+   "trades": 13,
+   "coverage": 0.8667,
+   "outcome": {
+    "n": 13,
+    "decided": 13,
+    "wins": 5,
+    "losses": 8,
+    "draws": 0,
+    "wr": 0.3846,
+    "ci95": {
+     "low": 0.1771,
+     "high": 0.6448
+    },
+    "lowN": true
+   },
+   "aAloneCounterfactual": {
+    "n": 14,
+    "decided": 14,
+    "wins": 5,
+    "losses": 9,
+    "draws": 0,
+    "wr": 0.3571,
+    "ci95": {
+     "low": 0.1634,
+     "high": 0.6124
+    },
+    "lowN": true
+   },
+   "bAloneCounterfactual": {
+    "n": 13,
+    "decided": 13,
+    "wins": 5,
+    "losses": 8,
+    "draws": 0,
+    "wr": 0.3846,
+    "ci95": {
+     "low": 0.1771,
+     "high": 0.6448
+    },
+    "lowN": true
+   }
+  },
+  {
+   "a": "WAIT",
+   "b": "BUY",
+   "n": 23,
+   "trades": 2,
+   "coverage": 0.087,
+   "outcome": {
+    "n": 2,
+    "decided": 2,
+    "wins": 1,
+    "losses": 1,
+    "draws": 0,
+    "wr": 0.5,
+    "ci95": {
+     "low": 0.0945,
+     "high": 0.9055
+    },
+    "lowN": true
+   },
+   "aAloneCounterfactual": {
     "n": 12,
     "decided": 12,
     "wins": 4,
@@ -494,22 +355,161 @@
     "lowN": true
    },
    "bAloneCounterfactual": {
-    "n": 12,
-    "decided": 12,
-    "wins": 4,
-    "losses": 8,
+    "n": 17,
+    "decided": 17,
+    "wins": 10,
+    "losses": 7,
     "draws": 0,
-    "wr": 0.3333,
+    "wr": 0.5882,
     "ci95": {
-     "low": 0.1381,
-     "high": 0.6094
+     "low": 0.3601,
+     "high": 0.7839
+    },
+    "lowN": true
+   }
+  },
+  {
+   "a": "WAIT",
+   "b": "SELL",
+   "n": 15,
+   "trades": 7,
+   "coverage": 0.4667,
+   "outcome": {
+    "n": 5,
+    "decided": 5,
+    "wins": 2,
+    "losses": 3,
+    "draws": 0,
+    "wr": 0.4,
+    "ci95": {
+     "low": 0.1176,
+     "high": 0.7693
+    },
+    "lowN": true
+   },
+   "aAloneCounterfactual": {
+    "n": 8,
+    "decided": 8,
+    "wins": 2,
+    "losses": 6,
+    "draws": 0,
+    "wr": 0.25,
+    "ci95": {
+     "low": 0.0715,
+     "high": 0.5907
+    },
+    "lowN": true
+   },
+   "bAloneCounterfactual": {
+    "n": 13,
+    "decided": 13,
+    "wins": 8,
+    "losses": 5,
+    "draws": 0,
+    "wr": 0.6154,
+    "ci95": {
+     "low": 0.3552,
+     "high": 0.8229
+    },
+    "lowN": true
+   }
+  },
+  {
+   "a": "WAIT",
+   "b": "WAIT",
+   "n": 56,
+   "trades": 0,
+   "coverage": 0,
+   "outcome": {
+    "n": 0,
+    "decided": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "aAloneCounterfactual": {
+    "n": 31,
+    "decided": 31,
+    "wins": 22,
+    "losses": 9,
+    "draws": 0,
+    "wr": 0.7097,
+    "ci95": {
+     "low": 0.5341,
+     "high": 0.839
+    },
+    "lowN": false
+   },
+   "bAloneCounterfactual": {
+    "n": 39,
+    "decided": 39,
+    "wins": 16,
+    "losses": 23,
+    "draws": 0,
+    "wr": 0.4103,
+    "ci95": {
+     "low": 0.2708,
+     "high": 0.5658
+    },
+    "lowN": false
+   }
+  }
+ ],
+ "structuralShort": [
+  {
+   "label": "STRUCTURAL_BULLISH_SHORT_BULLISH",
+   "n": 25,
+   "trades": 18,
+   "coverage": 0.72,
+   "outcome": {
+    "n": 17,
+    "decided": 17,
+    "wins": 6,
+    "losses": 11,
+    "draws": 0,
+    "wr": 0.3529,
+    "ci95": {
+     "low": 0.1731,
+     "high": 0.587
+    },
+    "lowN": true
+   },
+   "aAloneCounterfactual": {
+    "n": 24,
+    "decided": 24,
+    "wins": 11,
+    "losses": 13,
+    "draws": 0,
+    "wr": 0.4583,
+    "ci95": {
+     "low": 0.2789,
+     "high": 0.6493
+    },
+    "lowN": true
+   },
+   "bAloneCounterfactual": {
+    "n": 24,
+    "decided": 24,
+    "wins": 11,
+    "losses": 13,
+    "draws": 0,
+    "wr": 0.4583,
+    "ci95": {
+     "low": 0.2789,
+     "high": 0.6493
     },
     "lowN": true
    }
   },
   {
    "label": "STRUCTURAL_BULLISH_SHORT_BEARISH",
-   "n": 4,
+   "n": 17,
    "trades": 0,
    "coverage": 0,
    "outcome": {
@@ -526,80 +526,80 @@
     "lowN": true
    },
    "aAloneCounterfactual": {
-    "n": 3,
-    "decided": 3,
-    "wins": 3,
-    "losses": 0,
+    "n": 14,
+    "decided": 14,
+    "wins": 9,
+    "losses": 5,
     "draws": 0,
-    "wr": 1,
+    "wr": 0.6429,
     "ci95": {
-     "low": 0.4385,
-     "high": 1
+     "low": 0.3876,
+     "high": 0.8366
     },
     "lowN": true
    },
    "bAloneCounterfactual": {
-    "n": 3,
-    "decided": 3,
-    "wins": 0,
-    "losses": 3,
+    "n": 14,
+    "decided": 14,
+    "wins": 5,
+    "losses": 9,
     "draws": 0,
-    "wr": 0,
+    "wr": 0.3571,
     "ci95": {
-     "low": 0,
-     "high": 0.5615
+     "low": 0.1634,
+     "high": 0.6124
     },
     "lowN": true
    }
   },
   {
    "label": "STRUCTURAL_BEARISH_SHORT_BEARISH",
-   "n": 15,
-   "trades": 13,
-   "coverage": 0.8667,
+   "n": 37,
+   "trades": 28,
+   "coverage": 0.7568,
    "outcome": {
-    "n": 11,
-    "decided": 11,
-    "wins": 5,
-    "losses": 6,
-    "draws": 0,
-    "wr": 0.4545,
+    "n": 24,
+    "decided": 23,
+    "wins": 8,
+    "losses": 15,
+    "draws": 1,
+    "wr": 0.3478,
     "ci95": {
-     "low": 0.2127,
-     "high": 0.7199
+     "low": 0.1881,
+     "high": 0.5511
     },
     "lowN": true
    },
    "aAloneCounterfactual": {
-    "n": 12,
-    "decided": 12,
-    "wins": 5,
-    "losses": 7,
-    "draws": 0,
-    "wr": 0.4167,
+    "n": 31,
+    "decided": 30,
+    "wins": 12,
+    "losses": 18,
+    "draws": 1,
+    "wr": 0.4,
     "ci95": {
-     "low": 0.1933,
-     "high": 0.6805
+     "low": 0.2459,
+     "high": 0.5768
     },
-    "lowN": true
+    "lowN": false
    },
    "bAloneCounterfactual": {
-    "n": 12,
-    "decided": 12,
-    "wins": 5,
-    "losses": 7,
-    "draws": 0,
-    "wr": 0.4167,
+    "n": 31,
+    "decided": 30,
+    "wins": 12,
+    "losses": 18,
+    "draws": 1,
+    "wr": 0.4,
     "ci95": {
-     "low": 0.1933,
-     "high": 0.6805
+     "low": 0.2459,
+     "high": 0.5768
     },
-    "lowN": true
+    "lowN": false
    }
   },
   {
    "label": "STRUCTURAL_BEARISH_SHORT_BULLISH",
-   "n": 6,
+   "n": 21,
    "trades": 0,
    "coverage": 0,
    "outcome": {
@@ -616,35 +616,35 @@
     "lowN": true
    },
    "aAloneCounterfactual": {
-    "n": 4,
-    "decided": 4,
-    "wins": 1,
-    "losses": 3,
+    "n": 17,
+    "decided": 17,
+    "wins": 7,
+    "losses": 10,
     "draws": 0,
-    "wr": 0.25,
+    "wr": 0.4118,
     "ci95": {
-     "low": 0.0456,
-     "high": 0.6994
+     "low": 0.2161,
+     "high": 0.6399
     },
     "lowN": true
    },
    "bAloneCounterfactual": {
-    "n": 4,
-    "decided": 4,
-    "wins": 3,
-    "losses": 1,
+    "n": 17,
+    "decided": 17,
+    "wins": 10,
+    "losses": 7,
     "draws": 0,
-    "wr": 0.75,
+    "wr": 0.5882,
     "ci95": {
-     "low": 0.3006,
-     "high": 0.9544
+     "low": 0.3601,
+     "high": 0.7839
     },
     "lowN": true
    }
   },
   {
    "label": "STRUCTURAL_BULLISH_SHORT_NEUTRAL",
-   "n": 2,
+   "n": 3,
    "trades": 0,
    "coverage": 0,
    "outcome": {
@@ -689,23 +689,10 @@
   },
   {
    "label": "STRUCTURAL_BEARISH_SHORT_NEUTRAL",
-   "n": 1,
-   "trades": 0,
-   "coverage": 0,
+   "n": 7,
+   "trades": 1,
+   "coverage": 0.1429,
    "outcome": {
-    "n": 0,
-    "decided": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowN": true
-   },
-   "aAloneCounterfactual": {
     "n": 1,
     "decided": 1,
     "wins": 1,
@@ -715,6 +702,19 @@
     "ci95": {
      "low": 0.2065,
      "high": 1
+    },
+    "lowN": true
+   },
+   "aAloneCounterfactual": {
+    "n": 6,
+    "decided": 6,
+    "wins": 4,
+    "losses": 2,
+    "draws": 0,
+    "wr": 0.6667,
+    "ci95": {
+     "low": 0.3,
+     "high": 0.9032
     },
     "lowN": true
    },
@@ -736,63 +736,63 @@
  "survival": [
   {
    "survival": "BOTH_SURVIVE",
-   "n": 29,
-   "trades": 21,
-   "coverage": 0.7241,
+   "n": 77,
+   "trades": 49,
+   "coverage": 0.6364,
    "outcome": {
-    "n": 19,
-    "decided": 19,
-    "wins": 7,
-    "losses": 12,
-    "draws": 0,
-    "wr": 0.3684,
+    "n": 43,
+    "decided": 42,
+    "wins": 15,
+    "losses": 27,
+    "draws": 1,
+    "wr": 0.3571,
     "ci95": {
-     "low": 0.1915,
-     "high": 0.5896
+     "low": 0.2299,
+     "high": 0.5083
     },
-    "lowN": true
+    "lowN": false
    },
-   "expectancy": -0.2632
+   "expectancy": -0.2791
   },
   {
    "survival": "ONLY_A_SURVIVES",
-   "n": 8,
+   "n": 25,
    "trades": 2,
-   "coverage": 0.25,
+   "coverage": 0.08,
    "outcome": {
-    "n": 0,
-    "decided": 0,
-    "wins": 0,
-    "losses": 0,
+    "n": 2,
+    "decided": 2,
+    "wins": 1,
+    "losses": 1,
     "draws": 0,
-    "wr": null,
+    "wr": 0.5,
     "ci95": {
-     "low": null,
-     "high": null
+     "low": 0.0945,
+     "high": 0.9055
     },
     "lowN": true
    },
-   "expectancy": null
+   "expectancy": 0
   },
   {
    "survival": "ONLY_B_SURVIVES",
-   "n": 6,
-   "trades": 0,
-   "coverage": 0,
+   "n": 17,
+   "trades": 1,
+   "coverage": 0.0588,
    "outcome": {
-    "n": 0,
-    "decided": 0,
-    "wins": 0,
+    "n": 1,
+    "decided": 1,
+    "wins": 1,
     "losses": 0,
     "draws": 0,
-    "wr": null,
+    "wr": 1,
     "ci95": {
-     "low": null,
-     "high": null
+     "low": 0.2065,
+     "high": 1
     },
     "lowN": true
    },
-   "expectancy": null
+   "expectancy": 1
   },
   {
    "survival": "NEITHER_SURVIVES",
@@ -816,7 +816,7 @@
   },
   {
    "survival": "CONFLICT_UNRESOLVED",
-   "n": 6,
+   "n": 20,
    "trades": 0,
    "coverage": 0,
    "outcome": {
@@ -837,174 +837,175 @@
  ],
  "crossValue": {
   "transitions": {
-   "BUY->WAIT": 4
+   "BUY->WAIT": 11,
+   "SELL->WAIT": 9
   },
   "preCross": {
-   "trades": 27,
+   "trades": 72,
    "outcome": {
-    "n": 23,
-    "decided": 23,
-    "wins": 9,
-    "losses": 14,
-    "draws": 0,
-    "wr": 0.3913,
+    "n": 61,
+    "decided": 60,
+    "wins": 25,
+    "losses": 35,
+    "draws": 1,
+    "wr": 0.4167,
     "ci95": {
-     "low": 0.2216,
-     "high": 0.5921
+     "low": 0.3006,
+     "high": 0.5427
     },
-    "lowN": true
+    "lowN": false
    }
   },
   "actual": {
-   "trades": 23,
+   "trades": 52,
    "outcome": {
-    "n": 19,
-    "decided": 19,
-    "wins": 7,
-    "losses": 12,
-    "draws": 0,
-    "wr": 0.3684,
+    "n": 46,
+    "decided": 45,
+    "wins": 17,
+    "losses": 28,
+    "draws": 1,
+    "wr": 0.3778,
     "ci95": {
-     "low": 0.1915,
-     "high": 0.5896
+     "low": 0.2511,
+     "high": 0.5237
     },
-    "lowN": true
+    "lowN": false
    }
   }
  },
  "roundsValue": {
-  "r1ToR2Changes": 24,
-  "r2ToFinalChanges": 38,
+  "r1ToR2Changes": 80,
+  "r2ToFinalChanges": 109,
   "aStability": [
    {
     "key": "STABLE",
-    "n": 30,
+    "n": 82,
     "outcome": {
-     "n": 10,
-     "decided": 10,
-     "wins": 5,
-     "losses": 5,
-     "draws": 0,
-     "wr": 0.5,
+     "n": 31,
+     "decided": 30,
+     "wins": 13,
+     "losses": 17,
+     "draws": 1,
+     "wr": 0.4333,
      "ci95": {
-      "low": 0.2366,
-      "high": 0.7634
+      "low": 0.2738,
+      "high": 0.608
      },
-     "lowN": true
+     "lowN": false
     },
-    "trades": 12
+    "trades": 34
    },
    {
     "key": "ONE_CHANGE",
-    "n": 20,
+    "n": 63,
     "outcome": {
-     "n": 9,
-     "decided": 9,
-     "wins": 2,
-     "losses": 7,
+     "n": 15,
+     "decided": 15,
+     "wins": 4,
+     "losses": 11,
      "draws": 0,
-     "wr": 0.2222,
+     "wr": 0.2667,
      "ci95": {
-      "low": 0.0632,
-      "high": 0.5474
+      "low": 0.109,
+      "high": 0.5195
      },
      "lowN": true
     },
-    "trades": 11
+    "trades": 18
    }
   ],
   "bStability": [
    {
     "key": "ONE_CHANGE",
-    "n": 28,
+    "n": 89,
     "outcome": {
-     "n": 10,
-     "decided": 10,
-     "wins": 3,
-     "losses": 7,
-     "draws": 0,
-     "wr": 0.3,
+     "n": 30,
+     "decided": 29,
+     "wins": 10,
+     "losses": 19,
+     "draws": 1,
+     "wr": 0.3448,
      "ci95": {
-      "low": 0.1078,
-      "high": 0.6032
+      "low": 0.1994,
+      "high": 0.5266
      },
      "lowN": true
     },
-    "trades": 13
+    "trades": 35
    },
    {
     "key": "STABLE",
-    "n": 22,
+    "n": 56,
     "outcome": {
-     "n": 9,
-     "decided": 9,
-     "wins": 4,
-     "losses": 5,
+     "n": 16,
+     "decided": 16,
+     "wins": 7,
+     "losses": 9,
      "draws": 0,
-     "wr": 0.4444,
+     "wr": 0.4375,
      "ci95": {
-      "low": 0.1888,
-      "high": 0.7334
+      "low": 0.231,
+      "high": 0.6682
      },
      "lowN": true
     },
-    "trades": 10
+    "trades": 17
    }
   ],
   "agreementPersistence": [
    {
     "key": "ALWAYS_CONFLICTED",
-    "n": 40,
+    "n": 107,
     "outcome": {
-     "n": 12,
-     "decided": 12,
-     "wins": 4,
-     "losses": 8,
+     "n": 25,
+     "decided": 25,
+     "wins": 9,
+     "losses": 16,
      "draws": 0,
-     "wr": 0.3333,
+     "wr": 0.36,
      "ci95": {
-      "low": 0.1381,
-      "high": 0.6094
+      "low": 0.2025,
+      "high": 0.5548
      },
      "lowN": true
     },
-    "trades": 15
+    "trades": 27
    },
    {
     "key": "CONVERGED",
-    "n": 6,
+    "n": 22,
     "outcome": {
-     "n": 5,
-     "decided": 5,
-     "wins": 2,
-     "losses": 3,
-     "draws": 0,
-     "wr": 0.4,
+     "n": 18,
+     "decided": 17,
+     "wins": 7,
+     "losses": 10,
+     "draws": 1,
+     "wr": 0.4118,
      "ci95": {
-      "low": 0.1176,
-      "high": 0.7693
+      "low": 0.2161,
+      "high": 0.6399
      },
      "lowN": true
     },
-    "trades": 6
+    "trades": 22
    },
    {
     "key": "DIVERGED",
-    "n": 3,
+    "n": 15,
     "outcome": {
-     "n": 1,
-     "decided": 1,
+     "n": 2,
+     "decided": 2,
      "wins": 0,
-     "losses": 1,
+     "losses": 2,
      "draws": 0,
      "wr": 0,
      "ci95": {
       "low": 0,
-      "high": 0.7935
+      "high": 0.6576
      },
      "lowN": true
     },
-    "trades": 1
+    "trades": 2
    },
    {
     "key": "ALWAYS_AGREED",
@@ -1029,97 +1030,110 @@
  },
  "aAlone": {
   "cohort": {
-   "n": 34,
-   "decided": 34,
-   "wins": 15,
-   "losses": 19,
-   "draws": 0,
-   "wr": 0.4412,
+   "n": 94,
+   "decided": 93,
+   "wins": 44,
+   "losses": 49,
+   "draws": 1,
+   "wr": 0.4731,
    "ci95": {
-    "low": 0.2888,
-    "high": 0.6055
+    "low": 0.3747,
+    "high": 0.5736
    },
    "lowN": false
   }
  },
  "bAlone": {
   "cohort": {
-   "n": 36,
-   "decided": 36,
-   "wins": 15,
-   "losses": 21,
-   "draws": 0,
-   "wr": 0.4167,
+   "n": 109,
+   "decided": 108,
+   "wins": 48,
+   "losses": 60,
+   "draws": 1,
+   "wr": 0.4444,
    "ci95": {
-    "low": 0.2714,
-    "high": 0.578
+    "low": 0.3542,
+    "high": 0.5385
    },
    "lowN": false
   }
  },
  "comparison": {
-  "cohort": 50,
+  "cohort": 145,
   "dual": {
-   "trades": 23,
+   "trades": 52,
    "outcome": {
-    "n": 19,
-    "decided": 19,
-    "wins": 7,
-    "losses": 12,
-    "draws": 0,
-    "wr": 0.3684,
-    "ci95": {
-     "low": 0.1915,
-     "high": 0.5896
-    },
-    "lowN": true
-   },
-   "coverage": 0.46,
-   "breakEven": null,
-   "expectancy": -0.2632
-  },
-  "v4": {
-   "trades": 10,
-   "outcome": {
-    "n": 10,
-    "decided": 10,
-    "wins": 5,
-    "losses": 5,
-    "draws": 0,
-    "wr": 0.5,
-    "ci95": {
-     "low": 0.2366,
-     "high": 0.7634
-    },
-    "lowN": true
-   },
-   "coverage": 0.2
-  },
-  "g2": {
-   "trades": 40,
-   "outcome": {
-    "n": 40,
-    "decided": 39,
-    "wins": 23,
-    "losses": 16,
+    "n": 46,
+    "decided": 45,
+    "wins": 17,
+    "losses": 28,
     "draws": 1,
-    "wr": 0.5897,
+    "wr": 0.3778,
     "ci95": {
-     "low": 0.4342,
-     "high": 0.7292
+     "low": 0.2511,
+     "high": 0.5237
     },
     "lowN": false
    },
-   "coverage": 0.8
+   "coverage": 0.3586,
+   "breakEven": null,
+   "expectancy": -0.2391
+  },
+  "v4": {
+   "trades": 36,
+   "outcome": {
+    "n": 36,
+    "decided": 36,
+    "wins": 19,
+    "losses": 17,
+    "draws": 0,
+    "wr": 0.5278,
+    "ci95": {
+     "low": 0.3701,
+     "high": 0.6801
+    },
+    "lowN": false
+   },
+   "coverage": 0.2483
+  },
+  "g2": {
+   "trades": 123,
+   "outcome": {
+    "n": 123,
+    "decided": 121,
+    "wins": 66,
+    "losses": 55,
+    "draws": 2,
+    "wr": 0.5455,
+    "ci95": {
+     "low": 0.4567,
+     "high": 0.6314
+    },
+    "lowN": false
+   },
+   "coverage": 0.8483
   },
   "disagreementSubset": {
-   "n": 0,
-   "rows": []
+   "n": 1,
+   "rows": [
+    {
+     "id": "dual:USDTRY:OTC:cand_USDTRY_OTC_1789824660000",
+     "g2Direction": "BUY",
+     "g2Result": "LOSS",
+     "v4Direction": "SELL",
+     "v4Result": "WIN",
+     "aDirection": "BULLISH",
+     "bDirection": "BULLISH",
+     "dualAction": "BUY",
+     "dualResult": "LOSS",
+     "survival": "BOTH_SURVIVE"
+    }
+   ]
   }
  },
  "latency": {
   "total": {
-   "count": 49,
+   "count": 139,
    "p50": 0,
    "p95": 1,
    "p99": 2,
@@ -1127,7 +1141,7 @@
    "operationallyNegligible": true
   },
   "agentA": {
-   "count": 49,
+   "count": 139,
    "p50": 0,
    "p95": 1,
    "p99": 1,
@@ -1135,7 +1149,7 @@
    "operationallyNegligible": true
   },
   "agentB": {
-   "count": 49,
+   "count": 139,
    "p50": 0,
    "p95": 0,
    "p99": 1,
@@ -1143,7 +1157,7 @@
    "operationallyNegligible": true
   },
   "comparison": {
-   "count": 49,
+   "count": 139,
    "p50": 0,
    "p95": 0,
    "p99": 0,
@@ -1151,15 +1165,15 @@
    "operationallyNegligible": true
   },
   "crossExam": {
-   "count": 49,
+   "count": 139,
    "p50": 0,
    "p95": 0,
    "p99": 0,
-   "max": 0,
+   "max": 1,
    "operationallyNegligible": true
   },
   "synthesis": {
-   "count": 49,
+   "count": 139,
    "p50": 0,
    "p95": 0,
    "p99": 1,
@@ -1170,123 +1184,123 @@
  "checkpoints": [
   {
    "level": 30,
-   "complete": false,
-   "n": 19,
+   "complete": true,
+   "n": 30,
    "outcome": {
-    "n": 19,
-    "decided": 19,
-    "wins": 7,
-    "losses": 12,
+    "n": 30,
+    "decided": 30,
+    "wins": 10,
+    "losses": 20,
     "draws": 0,
-    "wr": 0.3684,
+    "wr": 0.3333,
     "ci95": {
-     "low": 0.1915,
-     "high": 0.5896
+     "low": 0.1923,
+     "high": 0.5122
     },
-    "lowN": true
+    "lowN": false
    },
-   "coverage": 0.38,
+   "coverage": 0.2069,
    "breakEven": null,
-   "expectancy": -0.2632,
+   "expectancy": -0.3333,
    "answers": {
     "A_dualVsV4": {
-     "dual": 0.3684,
-     "v4": 0.6667,
-     "deltaPp": -29.83,
-     "verdict": "INSUFFICIENT"
+     "dual": 0.3333,
+     "v4": 0.6,
+     "deltaPp": -26.67,
+     "verdict": "MEASURED"
     },
     "B_dualVsG2": {
-     "dual": 0.3684,
-     "g2": 0.5789,
-     "deltaPp": -21.05,
-     "verdict": "INSUFFICIENT"
+     "dual": 0.3333,
+     "g2": 0.4667,
+     "deltaPp": -13.34,
+     "verdict": "MEASURED"
     },
     "C_agreementVsA": {
-     "agreementTrades": 6,
+     "agreementTrades": 11,
      "agreementOutcome": {
-      "n": 6,
-      "decided": 6,
-      "wins": 3,
-      "losses": 3,
+      "n": 11,
+      "decided": 11,
+      "wins": 5,
+      "losses": 6,
       "draws": 0,
-      "wr": 0.5,
+      "wr": 0.4545,
       "ci95": {
-       "low": 0.1876,
-       "high": 0.8124
+       "low": 0.2127,
+       "high": 0.7199
       },
       "lowN": true
      },
      "aAlone": {
-      "n": 18,
-      "decided": 18,
-      "wins": 6,
-      "losses": 12,
+      "n": 27,
+      "decided": 27,
+      "wins": 8,
+      "losses": 19,
       "draws": 0,
-      "wr": 0.3333,
+      "wr": 0.2963,
       "ci95": {
-       "low": 0.1628,
-       "high": 0.5625
+       "low": 0.1585,
+       "high": 0.4848
       },
       "lowN": true
      },
-     "deltaPp": 16.67,
+     "deltaPp": 15.82,
      "verdict": "INSUFFICIENT"
     },
     "D_agreementVsB": {
      "agreementOutcome": {
-      "n": 6,
-      "decided": 6,
-      "wins": 3,
-      "losses": 3,
+      "n": 11,
+      "decided": 11,
+      "wins": 5,
+      "losses": 6,
       "draws": 0,
-      "wr": 0.5,
+      "wr": 0.4545,
       "ci95": {
-       "low": 0.1876,
-       "high": 0.8124
+       "low": 0.2127,
+       "high": 0.7199
       },
       "lowN": true
      },
      "bAlone": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
+      "n": 30,
+      "decided": 30,
+      "wins": 10,
+      "losses": 20,
       "draws": 0,
-      "wr": 0.3684,
+      "wr": 0.3333,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.1923,
+       "high": 0.5122
       },
-      "lowN": true
+      "lowN": false
      },
-     "deltaPp": 13.16,
+     "deltaPp": 12.12,
      "verdict": "INSUFFICIENT"
     },
     "E_bWaitProtectsA": {
-     "cases": 11,
+     "cases": 14,
      "dualOutcome": {
-      "n": 11,
-      "decided": 11,
+      "n": 14,
+      "decided": 14,
       "wins": 3,
-      "losses": 8,
+      "losses": 11,
       "draws": 0,
-      "wr": 0.2727,
+      "wr": 0.2143,
       "ci95": {
-       "low": 0.0975,
-       "high": 0.5657
+       "low": 0.0757,
+       "high": 0.4759
       },
       "lowN": true
      },
      "aAloneCounterfactual": {
-      "n": 11,
-      "decided": 11,
+      "n": 14,
+      "decided": 14,
       "wins": 3,
-      "losses": 8,
+      "losses": 11,
       "draws": 0,
-      "wr": 0.2727,
+      "wr": 0.2143,
       "ci95": {
-       "low": 0.0975,
-       "high": 0.5657
+       "low": 0.0757,
+       "high": 0.4759
       },
       "lowN": true
      },
@@ -1295,41 +1309,41 @@
     },
     "F_crossExamValue": {
      "preCross": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
+      "n": 30,
+      "decided": 30,
+      "wins": 10,
+      "losses": 20,
       "draws": 0,
-      "wr": 0.3684,
+      "wr": 0.3333,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.1923,
+       "high": 0.5122
       },
-      "lowN": true
+      "lowN": false
      },
      "actual": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
+      "n": 30,
+      "decided": 30,
+      "wins": 10,
+      "losses": 20,
       "draws": 0,
-      "wr": 0.3684,
+      "wr": 0.3333,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.1923,
+       "high": 0.5122
       },
-      "lowN": true
+      "lowN": false
      },
      "deltaPp": 0,
      "transitions": null,
-     "verdict": "INSUFFICIENT"
+     "verdict": "MEASURED"
     },
     "G_round2Value": {
-     "changedR1toR2": 24,
+     "changedR1toR2": 80,
      "verdict": "MEASURED"
     },
     "H_finalRoundValue": {
-     "changedR2toFinal": 38,
+     "changedR2toFinal": 109,
      "verdict": "MEASURED"
     },
     "I_survivalPredicts": {
@@ -1337,15 +1351,31 @@
       {
        "survival": "BOTH_SURVIVE",
        "outcome": {
-        "n": 19,
-        "decided": 19,
-        "wins": 7,
-        "losses": 12,
+        "n": 28,
+        "decided": 28,
+        "wins": 9,
+        "losses": 19,
         "draws": 0,
-        "wr": 0.3684,
+        "wr": 0.3214,
         "ci95": {
-         "low": 0.1915,
-         "high": 0.5896
+         "low": 0.1793,
+         "high": 0.5066
+        },
+        "lowN": true
+       }
+      },
+      {
+       "survival": "ONLY_A_SURVIVES",
+       "outcome": {
+        "n": 2,
+        "decided": 2,
+        "wins": 1,
+        "losses": 1,
+        "draws": 0,
+        "wr": 0.5,
+        "ci95": {
+         "low": 0.0945,
+         "high": 0.9055
         },
         "lowN": true
        }
@@ -1354,9 +1384,9 @@
      "verdict": "INSUFFICIENT"
     },
     "J_coverageCost": {
-     "observations": 50,
-     "trades": 19,
-     "coverage": 0.38
+     "observations": 145,
+     "trades": 30,
+     "coverage": 0.2069
     },
     "note": "Respostas usam a mesma coorte; N insuficiente nao vira conclusao."
    }
@@ -1364,165 +1394,165 @@
   {
    "level": 60,
    "complete": false,
-   "n": 19,
+   "n": 46,
    "outcome": {
-    "n": 19,
-    "decided": 19,
-    "wins": 7,
-    "losses": 12,
-    "draws": 0,
-    "wr": 0.3684,
+    "n": 46,
+    "decided": 45,
+    "wins": 17,
+    "losses": 28,
+    "draws": 1,
+    "wr": 0.3778,
     "ci95": {
-     "low": 0.1915,
-     "high": 0.5896
+     "low": 0.2511,
+     "high": 0.5237
     },
-    "lowN": true
+    "lowN": false
    },
-   "coverage": 0.38,
+   "coverage": 0.3172,
    "breakEven": null,
-   "expectancy": -0.2632,
+   "expectancy": -0.2391,
    "answers": {
     "A_dualVsV4": {
-     "dual": 0.3684,
+     "dual": 0.3778,
      "v4": 0.6667,
-     "deltaPp": -29.83,
-     "verdict": "INSUFFICIENT"
+     "deltaPp": -28.89,
+     "verdict": "MEASURED"
     },
     "B_dualVsG2": {
-     "dual": 0.3684,
-     "g2": 0.5789,
-     "deltaPp": -21.05,
-     "verdict": "INSUFFICIENT"
+     "dual": 0.3778,
+     "g2": 0.5111,
+     "deltaPp": -13.33,
+     "verdict": "MEASURED"
     },
     "C_agreementVsA": {
-     "agreementTrades": 6,
+     "agreementTrades": 19,
      "agreementOutcome": {
-      "n": 6,
-      "decided": 6,
-      "wins": 3,
-      "losses": 3,
-      "draws": 0,
-      "wr": 0.5,
+      "n": 19,
+      "decided": 18,
+      "wins": 8,
+      "losses": 10,
+      "draws": 1,
+      "wr": 0.4444,
       "ci95": {
-       "low": 0.1876,
-       "high": 0.8124
+       "low": 0.2456,
+       "high": 0.6628
       },
       "lowN": true
      },
      "aAlone": {
-      "n": 18,
-      "decided": 18,
-      "wins": 6,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3333,
+      "n": 42,
+      "decided": 41,
+      "wins": 15,
+      "losses": 26,
+      "draws": 1,
+      "wr": 0.3659,
       "ci95": {
-       "low": 0.1628,
-       "high": 0.5625
+       "low": 0.2359,
+       "high": 0.5188
       },
-      "lowN": true
+      "lowN": false
      },
-     "deltaPp": 16.67,
+     "deltaPp": 7.85,
      "verdict": "INSUFFICIENT"
     },
     "D_agreementVsB": {
      "agreementOutcome": {
-      "n": 6,
-      "decided": 6,
-      "wins": 3,
-      "losses": 3,
-      "draws": 0,
-      "wr": 0.5,
+      "n": 19,
+      "decided": 18,
+      "wins": 8,
+      "losses": 10,
+      "draws": 1,
+      "wr": 0.4444,
       "ci95": {
-       "low": 0.1876,
-       "high": 0.8124
+       "low": 0.2456,
+       "high": 0.6628
       },
       "lowN": true
      },
      "bAlone": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 45,
+      "decided": 44,
+      "wins": 16,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3636,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2378,
+       "high": 0.5113
       },
-      "lowN": true
+      "lowN": false
      },
-     "deltaPp": 13.16,
+     "deltaPp": 8.08,
      "verdict": "INSUFFICIENT"
     },
     "E_bWaitProtectsA": {
-     "cases": 11,
+     "cases": 20,
      "dualOutcome": {
-      "n": 11,
-      "decided": 11,
-      "wins": 3,
-      "losses": 8,
+      "n": 20,
+      "decided": 20,
+      "wins": 6,
+      "losses": 14,
       "draws": 0,
-      "wr": 0.2727,
+      "wr": 0.3,
       "ci95": {
-       "low": 0.0975,
-       "high": 0.5657
+       "low": 0.1455,
+       "high": 0.519
       },
       "lowN": true
      },
      "aAloneCounterfactual": {
-      "n": 11,
-      "decided": 11,
-      "wins": 3,
-      "losses": 8,
+      "n": 20,
+      "decided": 20,
+      "wins": 6,
+      "losses": 14,
       "draws": 0,
-      "wr": 0.2727,
+      "wr": 0.3,
       "ci95": {
-       "low": 0.0975,
-       "high": 0.5657
+       "low": 0.1455,
+       "high": 0.519
       },
       "lowN": true
      },
      "deltaPp": 0,
-     "verdict": "INSUFFICIENT"
+     "verdict": "MEASURED"
     },
     "F_crossExamValue": {
      "preCross": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 46,
+      "decided": 45,
+      "wins": 17,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3778,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2511,
+       "high": 0.5237
       },
-      "lowN": true
+      "lowN": false
      },
      "actual": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 46,
+      "decided": 45,
+      "wins": 17,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3778,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2511,
+       "high": 0.5237
       },
-      "lowN": true
+      "lowN": false
      },
      "deltaPp": 0,
      "transitions": null,
-     "verdict": "INSUFFICIENT"
+     "verdict": "MEASURED"
     },
     "G_round2Value": {
-     "changedR1toR2": 24,
+     "changedR1toR2": 80,
      "verdict": "MEASURED"
     },
     "H_finalRoundValue": {
-     "changedR2toFinal": 38,
+     "changedR2toFinal": 109,
      "verdict": "MEASURED"
     },
     "I_survivalPredicts": {
@@ -1530,15 +1560,47 @@
       {
        "survival": "BOTH_SURVIVE",
        "outcome": {
-        "n": 19,
-        "decided": 19,
-        "wins": 7,
-        "losses": 12,
-        "draws": 0,
-        "wr": 0.3684,
+        "n": 43,
+        "decided": 42,
+        "wins": 15,
+        "losses": 27,
+        "draws": 1,
+        "wr": 0.3571,
         "ci95": {
-         "low": 0.1915,
-         "high": 0.5896
+         "low": 0.2299,
+         "high": 0.5083
+        },
+        "lowN": false
+       }
+      },
+      {
+       "survival": "ONLY_A_SURVIVES",
+       "outcome": {
+        "n": 2,
+        "decided": 2,
+        "wins": 1,
+        "losses": 1,
+        "draws": 0,
+        "wr": 0.5,
+        "ci95": {
+         "low": 0.0945,
+         "high": 0.9055
+        },
+        "lowN": true
+       }
+      },
+      {
+       "survival": "ONLY_B_SURVIVES",
+       "outcome": {
+        "n": 1,
+        "decided": 1,
+        "wins": 1,
+        "losses": 0,
+        "draws": 0,
+        "wr": 1,
+        "ci95": {
+         "low": 0.2065,
+         "high": 1
         },
         "lowN": true
        }
@@ -1547,9 +1609,9 @@
      "verdict": "INSUFFICIENT"
     },
     "J_coverageCost": {
-     "observations": 50,
-     "trades": 19,
-     "coverage": 0.38
+     "observations": 145,
+     "trades": 46,
+     "coverage": 0.3172
     },
     "note": "Respostas usam a mesma coorte; N insuficiente nao vira conclusao."
    }
@@ -1557,165 +1619,165 @@
   {
    "level": 100,
    "complete": false,
-   "n": 19,
+   "n": 46,
    "outcome": {
-    "n": 19,
-    "decided": 19,
-    "wins": 7,
-    "losses": 12,
-    "draws": 0,
-    "wr": 0.3684,
+    "n": 46,
+    "decided": 45,
+    "wins": 17,
+    "losses": 28,
+    "draws": 1,
+    "wr": 0.3778,
     "ci95": {
-     "low": 0.1915,
-     "high": 0.5896
+     "low": 0.2511,
+     "high": 0.5237
     },
-    "lowN": true
+    "lowN": false
    },
-   "coverage": 0.38,
+   "coverage": 0.3172,
    "breakEven": null,
-   "expectancy": -0.2632,
+   "expectancy": -0.2391,
    "answers": {
     "A_dualVsV4": {
-     "dual": 0.3684,
+     "dual": 0.3778,
      "v4": 0.6667,
-     "deltaPp": -29.83,
-     "verdict": "INSUFFICIENT"
+     "deltaPp": -28.89,
+     "verdict": "MEASURED"
     },
     "B_dualVsG2": {
-     "dual": 0.3684,
-     "g2": 0.5789,
-     "deltaPp": -21.05,
-     "verdict": "INSUFFICIENT"
+     "dual": 0.3778,
+     "g2": 0.5111,
+     "deltaPp": -13.33,
+     "verdict": "MEASURED"
     },
     "C_agreementVsA": {
-     "agreementTrades": 6,
+     "agreementTrades": 19,
      "agreementOutcome": {
-      "n": 6,
-      "decided": 6,
-      "wins": 3,
-      "losses": 3,
-      "draws": 0,
-      "wr": 0.5,
+      "n": 19,
+      "decided": 18,
+      "wins": 8,
+      "losses": 10,
+      "draws": 1,
+      "wr": 0.4444,
       "ci95": {
-       "low": 0.1876,
-       "high": 0.8124
+       "low": 0.2456,
+       "high": 0.6628
       },
       "lowN": true
      },
      "aAlone": {
-      "n": 18,
-      "decided": 18,
-      "wins": 6,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3333,
+      "n": 42,
+      "decided": 41,
+      "wins": 15,
+      "losses": 26,
+      "draws": 1,
+      "wr": 0.3659,
       "ci95": {
-       "low": 0.1628,
-       "high": 0.5625
+       "low": 0.2359,
+       "high": 0.5188
       },
-      "lowN": true
+      "lowN": false
      },
-     "deltaPp": 16.67,
+     "deltaPp": 7.85,
      "verdict": "INSUFFICIENT"
     },
     "D_agreementVsB": {
      "agreementOutcome": {
-      "n": 6,
-      "decided": 6,
-      "wins": 3,
-      "losses": 3,
-      "draws": 0,
-      "wr": 0.5,
+      "n": 19,
+      "decided": 18,
+      "wins": 8,
+      "losses": 10,
+      "draws": 1,
+      "wr": 0.4444,
       "ci95": {
-       "low": 0.1876,
-       "high": 0.8124
+       "low": 0.2456,
+       "high": 0.6628
       },
       "lowN": true
      },
      "bAlone": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 45,
+      "decided": 44,
+      "wins": 16,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3636,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2378,
+       "high": 0.5113
       },
-      "lowN": true
+      "lowN": false
      },
-     "deltaPp": 13.16,
+     "deltaPp": 8.08,
      "verdict": "INSUFFICIENT"
     },
     "E_bWaitProtectsA": {
-     "cases": 11,
+     "cases": 20,
      "dualOutcome": {
-      "n": 11,
-      "decided": 11,
-      "wins": 3,
-      "losses": 8,
+      "n": 20,
+      "decided": 20,
+      "wins": 6,
+      "losses": 14,
       "draws": 0,
-      "wr": 0.2727,
+      "wr": 0.3,
       "ci95": {
-       "low": 0.0975,
-       "high": 0.5657
+       "low": 0.1455,
+       "high": 0.519
       },
       "lowN": true
      },
      "aAloneCounterfactual": {
-      "n": 11,
-      "decided": 11,
-      "wins": 3,
-      "losses": 8,
+      "n": 20,
+      "decided": 20,
+      "wins": 6,
+      "losses": 14,
       "draws": 0,
-      "wr": 0.2727,
+      "wr": 0.3,
       "ci95": {
-       "low": 0.0975,
-       "high": 0.5657
+       "low": 0.1455,
+       "high": 0.519
       },
       "lowN": true
      },
      "deltaPp": 0,
-     "verdict": "INSUFFICIENT"
+     "verdict": "MEASURED"
     },
     "F_crossExamValue": {
      "preCross": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 46,
+      "decided": 45,
+      "wins": 17,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3778,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2511,
+       "high": 0.5237
       },
-      "lowN": true
+      "lowN": false
      },
      "actual": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 46,
+      "decided": 45,
+      "wins": 17,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3778,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2511,
+       "high": 0.5237
       },
-      "lowN": true
+      "lowN": false
      },
      "deltaPp": 0,
      "transitions": null,
-     "verdict": "INSUFFICIENT"
+     "verdict": "MEASURED"
     },
     "G_round2Value": {
-     "changedR1toR2": 24,
+     "changedR1toR2": 80,
      "verdict": "MEASURED"
     },
     "H_finalRoundValue": {
-     "changedR2toFinal": 38,
+     "changedR2toFinal": 109,
      "verdict": "MEASURED"
     },
     "I_survivalPredicts": {
@@ -1723,15 +1785,47 @@
       {
        "survival": "BOTH_SURVIVE",
        "outcome": {
-        "n": 19,
-        "decided": 19,
-        "wins": 7,
-        "losses": 12,
-        "draws": 0,
-        "wr": 0.3684,
+        "n": 43,
+        "decided": 42,
+        "wins": 15,
+        "losses": 27,
+        "draws": 1,
+        "wr": 0.3571,
         "ci95": {
-         "low": 0.1915,
-         "high": 0.5896
+         "low": 0.2299,
+         "high": 0.5083
+        },
+        "lowN": false
+       }
+      },
+      {
+       "survival": "ONLY_A_SURVIVES",
+       "outcome": {
+        "n": 2,
+        "decided": 2,
+        "wins": 1,
+        "losses": 1,
+        "draws": 0,
+        "wr": 0.5,
+        "ci95": {
+         "low": 0.0945,
+         "high": 0.9055
+        },
+        "lowN": true
+       }
+      },
+      {
+       "survival": "ONLY_B_SURVIVES",
+       "outcome": {
+        "n": 1,
+        "decided": 1,
+        "wins": 1,
+        "losses": 0,
+        "draws": 0,
+        "wr": 1,
+        "ci95": {
+         "low": 0.2065,
+         "high": 1
         },
         "lowN": true
        }
@@ -1740,9 +1834,9 @@
      "verdict": "INSUFFICIENT"
     },
     "J_coverageCost": {
-     "observations": 50,
-     "trades": 19,
-     "coverage": 0.38
+     "observations": 145,
+     "trades": 46,
+     "coverage": 0.3172
     },
     "note": "Respostas usam a mesma coorte; N insuficiente nao vira conclusao."
    }
@@ -1750,165 +1844,165 @@
   {
    "level": 200,
    "complete": false,
-   "n": 19,
+   "n": 46,
    "outcome": {
-    "n": 19,
-    "decided": 19,
-    "wins": 7,
-    "losses": 12,
-    "draws": 0,
-    "wr": 0.3684,
+    "n": 46,
+    "decided": 45,
+    "wins": 17,
+    "losses": 28,
+    "draws": 1,
+    "wr": 0.3778,
     "ci95": {
-     "low": 0.1915,
-     "high": 0.5896
+     "low": 0.2511,
+     "high": 0.5237
     },
-    "lowN": true
+    "lowN": false
    },
-   "coverage": 0.38,
+   "coverage": 0.3172,
    "breakEven": null,
-   "expectancy": -0.2632,
+   "expectancy": -0.2391,
    "answers": {
     "A_dualVsV4": {
-     "dual": 0.3684,
+     "dual": 0.3778,
      "v4": 0.6667,
-     "deltaPp": -29.83,
-     "verdict": "INSUFFICIENT"
+     "deltaPp": -28.89,
+     "verdict": "MEASURED"
     },
     "B_dualVsG2": {
-     "dual": 0.3684,
-     "g2": 0.5789,
-     "deltaPp": -21.05,
-     "verdict": "INSUFFICIENT"
+     "dual": 0.3778,
+     "g2": 0.5111,
+     "deltaPp": -13.33,
+     "verdict": "MEASURED"
     },
     "C_agreementVsA": {
-     "agreementTrades": 6,
+     "agreementTrades": 19,
      "agreementOutcome": {
-      "n": 6,
-      "decided": 6,
-      "wins": 3,
-      "losses": 3,
-      "draws": 0,
-      "wr": 0.5,
+      "n": 19,
+      "decided": 18,
+      "wins": 8,
+      "losses": 10,
+      "draws": 1,
+      "wr": 0.4444,
       "ci95": {
-       "low": 0.1876,
-       "high": 0.8124
+       "low": 0.2456,
+       "high": 0.6628
       },
       "lowN": true
      },
      "aAlone": {
-      "n": 18,
-      "decided": 18,
-      "wins": 6,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3333,
+      "n": 42,
+      "decided": 41,
+      "wins": 15,
+      "losses": 26,
+      "draws": 1,
+      "wr": 0.3659,
       "ci95": {
-       "low": 0.1628,
-       "high": 0.5625
+       "low": 0.2359,
+       "high": 0.5188
       },
-      "lowN": true
+      "lowN": false
      },
-     "deltaPp": 16.67,
+     "deltaPp": 7.85,
      "verdict": "INSUFFICIENT"
     },
     "D_agreementVsB": {
      "agreementOutcome": {
-      "n": 6,
-      "decided": 6,
-      "wins": 3,
-      "losses": 3,
-      "draws": 0,
-      "wr": 0.5,
+      "n": 19,
+      "decided": 18,
+      "wins": 8,
+      "losses": 10,
+      "draws": 1,
+      "wr": 0.4444,
       "ci95": {
-       "low": 0.1876,
-       "high": 0.8124
+       "low": 0.2456,
+       "high": 0.6628
       },
       "lowN": true
      },
      "bAlone": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 45,
+      "decided": 44,
+      "wins": 16,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3636,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2378,
+       "high": 0.5113
       },
-      "lowN": true
+      "lowN": false
      },
-     "deltaPp": 13.16,
+     "deltaPp": 8.08,
      "verdict": "INSUFFICIENT"
     },
     "E_bWaitProtectsA": {
-     "cases": 11,
+     "cases": 20,
      "dualOutcome": {
-      "n": 11,
-      "decided": 11,
-      "wins": 3,
-      "losses": 8,
+      "n": 20,
+      "decided": 20,
+      "wins": 6,
+      "losses": 14,
       "draws": 0,
-      "wr": 0.2727,
+      "wr": 0.3,
       "ci95": {
-       "low": 0.0975,
-       "high": 0.5657
+       "low": 0.1455,
+       "high": 0.519
       },
       "lowN": true
      },
      "aAloneCounterfactual": {
-      "n": 11,
-      "decided": 11,
-      "wins": 3,
-      "losses": 8,
+      "n": 20,
+      "decided": 20,
+      "wins": 6,
+      "losses": 14,
       "draws": 0,
-      "wr": 0.2727,
+      "wr": 0.3,
       "ci95": {
-       "low": 0.0975,
-       "high": 0.5657
+       "low": 0.1455,
+       "high": 0.519
       },
       "lowN": true
      },
      "deltaPp": 0,
-     "verdict": "INSUFFICIENT"
+     "verdict": "MEASURED"
     },
     "F_crossExamValue": {
      "preCross": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 46,
+      "decided": 45,
+      "wins": 17,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3778,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2511,
+       "high": 0.5237
       },
-      "lowN": true
+      "lowN": false
      },
      "actual": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 46,
+      "decided": 45,
+      "wins": 17,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3778,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2511,
+       "high": 0.5237
       },
-      "lowN": true
+      "lowN": false
      },
      "deltaPp": 0,
      "transitions": null,
-     "verdict": "INSUFFICIENT"
+     "verdict": "MEASURED"
     },
     "G_round2Value": {
-     "changedR1toR2": 24,
+     "changedR1toR2": 80,
      "verdict": "MEASURED"
     },
     "H_finalRoundValue": {
-     "changedR2toFinal": 38,
+     "changedR2toFinal": 109,
      "verdict": "MEASURED"
     },
     "I_survivalPredicts": {
@@ -1916,15 +2010,47 @@
       {
        "survival": "BOTH_SURVIVE",
        "outcome": {
-        "n": 19,
-        "decided": 19,
-        "wins": 7,
-        "losses": 12,
-        "draws": 0,
-        "wr": 0.3684,
+        "n": 43,
+        "decided": 42,
+        "wins": 15,
+        "losses": 27,
+        "draws": 1,
+        "wr": 0.3571,
         "ci95": {
-         "low": 0.1915,
-         "high": 0.5896
+         "low": 0.2299,
+         "high": 0.5083
+        },
+        "lowN": false
+       }
+      },
+      {
+       "survival": "ONLY_A_SURVIVES",
+       "outcome": {
+        "n": 2,
+        "decided": 2,
+        "wins": 1,
+        "losses": 1,
+        "draws": 0,
+        "wr": 0.5,
+        "ci95": {
+         "low": 0.0945,
+         "high": 0.9055
+        },
+        "lowN": true
+       }
+      },
+      {
+       "survival": "ONLY_B_SURVIVES",
+       "outcome": {
+        "n": 1,
+        "decided": 1,
+        "wins": 1,
+        "losses": 0,
+        "draws": 0,
+        "wr": 1,
+        "ci95": {
+         "low": 0.2065,
+         "high": 1
         },
         "lowN": true
        }
@@ -1933,9 +2059,9 @@
      "verdict": "INSUFFICIENT"
     },
     "J_coverageCost": {
-     "observations": 50,
-     "trades": 19,
-     "coverage": 0.38
+     "observations": 145,
+     "trades": 46,
+     "coverage": 0.3172
     },
     "note": "Respostas usam a mesma coorte; N insuficiente nao vira conclusao."
    }
@@ -1943,165 +2069,165 @@
   {
    "level": 500,
    "complete": false,
-   "n": 19,
+   "n": 46,
    "outcome": {
-    "n": 19,
-    "decided": 19,
-    "wins": 7,
-    "losses": 12,
-    "draws": 0,
-    "wr": 0.3684,
+    "n": 46,
+    "decided": 45,
+    "wins": 17,
+    "losses": 28,
+    "draws": 1,
+    "wr": 0.3778,
     "ci95": {
-     "low": 0.1915,
-     "high": 0.5896
+     "low": 0.2511,
+     "high": 0.5237
     },
-    "lowN": true
+    "lowN": false
    },
-   "coverage": 0.38,
+   "coverage": 0.3172,
    "breakEven": null,
-   "expectancy": -0.2632,
+   "expectancy": -0.2391,
    "answers": {
     "A_dualVsV4": {
-     "dual": 0.3684,
+     "dual": 0.3778,
      "v4": 0.6667,
-     "deltaPp": -29.83,
-     "verdict": "INSUFFICIENT"
+     "deltaPp": -28.89,
+     "verdict": "MEASURED"
     },
     "B_dualVsG2": {
-     "dual": 0.3684,
-     "g2": 0.5789,
-     "deltaPp": -21.05,
-     "verdict": "INSUFFICIENT"
+     "dual": 0.3778,
+     "g2": 0.5111,
+     "deltaPp": -13.33,
+     "verdict": "MEASURED"
     },
     "C_agreementVsA": {
-     "agreementTrades": 6,
+     "agreementTrades": 19,
      "agreementOutcome": {
-      "n": 6,
-      "decided": 6,
-      "wins": 3,
-      "losses": 3,
-      "draws": 0,
-      "wr": 0.5,
+      "n": 19,
+      "decided": 18,
+      "wins": 8,
+      "losses": 10,
+      "draws": 1,
+      "wr": 0.4444,
       "ci95": {
-       "low": 0.1876,
-       "high": 0.8124
+       "low": 0.2456,
+       "high": 0.6628
       },
       "lowN": true
      },
      "aAlone": {
-      "n": 18,
-      "decided": 18,
-      "wins": 6,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3333,
+      "n": 42,
+      "decided": 41,
+      "wins": 15,
+      "losses": 26,
+      "draws": 1,
+      "wr": 0.3659,
       "ci95": {
-       "low": 0.1628,
-       "high": 0.5625
+       "low": 0.2359,
+       "high": 0.5188
       },
-      "lowN": true
+      "lowN": false
      },
-     "deltaPp": 16.67,
+     "deltaPp": 7.85,
      "verdict": "INSUFFICIENT"
     },
     "D_agreementVsB": {
      "agreementOutcome": {
-      "n": 6,
-      "decided": 6,
-      "wins": 3,
-      "losses": 3,
-      "draws": 0,
-      "wr": 0.5,
+      "n": 19,
+      "decided": 18,
+      "wins": 8,
+      "losses": 10,
+      "draws": 1,
+      "wr": 0.4444,
       "ci95": {
-       "low": 0.1876,
-       "high": 0.8124
+       "low": 0.2456,
+       "high": 0.6628
       },
       "lowN": true
      },
      "bAlone": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 45,
+      "decided": 44,
+      "wins": 16,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3636,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2378,
+       "high": 0.5113
       },
-      "lowN": true
+      "lowN": false
      },
-     "deltaPp": 13.16,
+     "deltaPp": 8.08,
      "verdict": "INSUFFICIENT"
     },
     "E_bWaitProtectsA": {
-     "cases": 11,
+     "cases": 20,
      "dualOutcome": {
-      "n": 11,
-      "decided": 11,
-      "wins": 3,
-      "losses": 8,
+      "n": 20,
+      "decided": 20,
+      "wins": 6,
+      "losses": 14,
       "draws": 0,
-      "wr": 0.2727,
+      "wr": 0.3,
       "ci95": {
-       "low": 0.0975,
-       "high": 0.5657
+       "low": 0.1455,
+       "high": 0.519
       },
       "lowN": true
      },
      "aAloneCounterfactual": {
-      "n": 11,
-      "decided": 11,
-      "wins": 3,
-      "losses": 8,
+      "n": 20,
+      "decided": 20,
+      "wins": 6,
+      "losses": 14,
       "draws": 0,
-      "wr": 0.2727,
+      "wr": 0.3,
       "ci95": {
-       "low": 0.0975,
-       "high": 0.5657
+       "low": 0.1455,
+       "high": 0.519
       },
       "lowN": true
      },
      "deltaPp": 0,
-     "verdict": "INSUFFICIENT"
+     "verdict": "MEASURED"
     },
     "F_crossExamValue": {
      "preCross": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 46,
+      "decided": 45,
+      "wins": 17,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3778,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2511,
+       "high": 0.5237
       },
-      "lowN": true
+      "lowN": false
      },
      "actual": {
-      "n": 19,
-      "decided": 19,
-      "wins": 7,
-      "losses": 12,
-      "draws": 0,
-      "wr": 0.3684,
+      "n": 46,
+      "decided": 45,
+      "wins": 17,
+      "losses": 28,
+      "draws": 1,
+      "wr": 0.3778,
       "ci95": {
-       "low": 0.1915,
-       "high": 0.5896
+       "low": 0.2511,
+       "high": 0.5237
       },
-      "lowN": true
+      "lowN": false
      },
      "deltaPp": 0,
      "transitions": null,
-     "verdict": "INSUFFICIENT"
+     "verdict": "MEASURED"
     },
     "G_round2Value": {
-     "changedR1toR2": 24,
+     "changedR1toR2": 80,
      "verdict": "MEASURED"
     },
     "H_finalRoundValue": {
-     "changedR2toFinal": 38,
+     "changedR2toFinal": 109,
      "verdict": "MEASURED"
     },
     "I_survivalPredicts": {
@@ -2109,15 +2235,47 @@
       {
        "survival": "BOTH_SURVIVE",
        "outcome": {
-        "n": 19,
-        "decided": 19,
-        "wins": 7,
-        "losses": 12,
-        "draws": 0,
-        "wr": 0.3684,
+        "n": 43,
+        "decided": 42,
+        "wins": 15,
+        "losses": 27,
+        "draws": 1,
+        "wr": 0.3571,
         "ci95": {
-         "low": 0.1915,
-         "high": 0.5896
+         "low": 0.2299,
+         "high": 0.5083
+        },
+        "lowN": false
+       }
+      },
+      {
+       "survival": "ONLY_A_SURVIVES",
+       "outcome": {
+        "n": 2,
+        "decided": 2,
+        "wins": 1,
+        "losses": 1,
+        "draws": 0,
+        "wr": 0.5,
+        "ci95": {
+         "low": 0.0945,
+         "high": 0.9055
+        },
+        "lowN": true
+       }
+      },
+      {
+       "survival": "ONLY_B_SURVIVES",
+       "outcome": {
+        "n": 1,
+        "decided": 1,
+        "wins": 1,
+        "losses": 0,
+        "draws": 0,
+        "wr": 1,
+        "ci95": {
+         "low": 0.2065,
+         "high": 1
         },
         "lowN": true
        }
@@ -2126,9 +2284,9 @@
      "verdict": "INSUFFICIENT"
     },
     "J_coverageCost": {
-     "observations": 50,
-     "trades": 19,
-     "coverage": 0.38
+     "observations": 145,
+     "trades": 46,
+     "coverage": 0.3172
     },
     "note": "Respostas usam a mesma coorte; N insuficiente nao vira conclusao."
    }
