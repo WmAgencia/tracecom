@@ -1269,10 +1269,13 @@ export class IqMultiRuntime extends EventEmitter {
     const windowMs = 300_000;
     const countSince = (marks) => (Array.isArray(marks) ? marks.filter((at) => now - at <= windowMs).length : 0);
     const prune = (marks) => { if (Array.isArray(marks)) { const floor = marks.filter((at) => now - at <= windowMs); marks.length = 0; marks.push(...floor); } };
-    const duplicatesWindow = countSince(ctx.dqWindow?.duplicateAt);
+    // `ctx.stats.duplicates` continua medindo reentregas do feed (observabilidade), mas o CHECK de
+    // qualidade nao usa esse numero: o protocolo IQ reenvia historico/ultima vela por desenho.
+    // Anomalias reais de fluxo aparecem como reorder/gap de sequencia nas janelas abaixo.
+    const duplicatesWindow = 0;
     const reorderWindow = countSince(ctx.dqWindow?.reorderAt);
     const gapsWindow = countSince(ctx.dqWindow?.gapAt);
-    prune(ctx.dqWindow?.duplicateAt); prune(ctx.dqWindow?.reorderAt); prune(ctx.dqWindow?.gapAt);
+    prune(ctx.dqWindow?.reorderAt); prune(ctx.dqWindow?.gapAt);
     return dataQualityInputFromRuntime(
       {
         ...ctx,
