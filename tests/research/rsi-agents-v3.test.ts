@@ -66,11 +66,16 @@ const fakeRuntime = ({ armed = true, orderResult = null }: any = {}) => {
   };
 };
 
-const fakePool = () => {
+const fakePool = (options: any = {}) => {
   const assignments = new Map<string, any>();
   const opportunities = new Map<string, any>();
   const events: any[] = [];
+  const universeInserts: any[] = [];
+  const queries: any[] = [];
   const query = async (text: string, values: any[] = []) => {
+    queries.push({ text, values });
+    if (options.onQuery) options.onQuery(text, values);
+    if (text.startsWith("INSERT INTO iq_rsi_universe_v3")) { universeInserts.push({ text, values }); return { rows: [] }; }
     if (text.startsWith("SELECT market_key, strategy")) return { rows: [...assignments.values()].map((row) => ({ ...row })) };
     if (text.startsWith("INSERT INTO iq_rsi_agent_assignments_v3")) {
       const [marketKey, strategy, marketType, canonical, activeId, availability] = values;
@@ -101,7 +106,7 @@ const fakePool = () => {
     if (text.startsWith("INSERT INTO iq_rsi_events_v3")) { events.push({ text, values }); return { rows: [] }; }
     return { rows: [] };
   };
-  return { query, assignments, opportunities, events };
+  return { query, assignments, opportunities, events, universeInserts, queries };
 };
 
 const buildRunner = async (options: any = {}) => {
@@ -234,6 +239,91 @@ describe("RSI AGENTS V3 — execucao e shadow", () => {
     const out = await built.runner.observeMarket({ marketKey: key, marketType: "OTC", candles: [], targetExpiryAt: T, payout: 82, now: T - 34_000 });
     expect(runtime.calls).toHaveLength(0);
     expect(["CANCELLED_REVALIDATION", "NOVA_DIRECAO_AINDA_NAO_EMERGIU"]).toContain(out.waitReason);
+  });
+});
+
+describe("RSI AGENTS V3.1 — janela final, observabilidade e replay", () => {
+  const candle = (bucketEnd: number) => ({ bucketStart: bucketEnd - 5_000, bucketEnd, open: 1.1, high: 1.11, low: 1.09, close: 1.1 });
+
+  it("aceito dentro da janela mas em candle nao-final => OBSERVE_ONLY (nao antecipa)", async () => {
+    const runtime = fakeRuntime();
+    const pool = fakePool();
+    const built = await buildRunner({ runtime, pool, markets: markets(1, 1), skills: scripted([sellCandidate(), sellReady(), sellReady(), sellReady()]), skillsV2: scriptedV2([]) });
+    const key = [...built.runner.assignments.keys()][0];
+    await built.runner.observeMarket({ marketKey: key, marketType: "OTC", candles: [candle(T - 60_000)], targetExpiryAt: T, payout: 82, now: T - 60_000 });
+    const observeOnly = await built.runner.observeMarket({ marketKey: key, marketType: "OTC", candles: [candle(T - 40_000)], targetExpiryAt: T, payout: 82, now: T - 40_000 });
+    expect(observeOnly.decision).toBe("WAIT");
+    expect(observeOnly.waitReason).toBe("OBSERVE_ONLY");
+    expect(observeOnly.entryMode).toBeNull();
+    expect(runtime.calls).toHaveLength(0);
+    const out = await built.runner.observeMarket({ marketKey: key, marketType: "OTC", candles: [candle(T - 35_000)], targetExpiryAt: T, payout: 82, now: T - 34_000 });
+    expect(runtime.calls).toHaveLength(1);
+    expect(out.entryMode).toBe("NORMAL_T5");
+    expect(out.decision).toBe("SELL");
+  });
+
+  it("nunca envia depois do cutoff (candle tardio vira MISSED)", async () => {
+    const runtime = fakeRuntime();
+    const built = await buildRunner({ runtime, markets: markets(1, 1), skills: scripted([sellCandidate(), sellReady(), sellReady()]), skillsV2: scriptedV2([]) });
+    const key = [...built.runner.assignments.keys()][0];
+    await built.runner.observeMarket({ marketKey: key, marketType: "OTC", candles: [candle(T - 60_000)], targetExpiryAt: T, payout: 82, now: T - 60_000 });
+    const late = await built.runner.observeMarket({ marketKey: key, marketType: "OTC", candles: [candle(T - 30_000)], targetExpiryAt: T, payout: 82, now: T - 29_000 });
+    expect(runtime.calls).toHaveLength(0);
+    expect(["MISSED_ENTRY_WINDOW", "NO_SAFE_ENTRY_INSIDE_5S_WINDOW"]).toContain(late.waitReason);
+  });
+
+  it("observabilidade: events sem created_at, upserts com COALESCE e entry_mode sem valor precoce", async () => {
+    const runtime = fakeRuntime();
+    const pool = fakePool();
+    const built = await buildRunner({ runtime, pool, markets: markets(1, 1), skills: scripted([sellCandidate(), sellReady(), sellReady(), sellReady()]), skillsV2: scriptedV2([]) });
+    const key = [...built.runner.assignments.keys()][0];
+    await built.runner.observeMarket({ marketKey: key, marketType: "OTC", candles: [candle(T - 60_000)], targetExpiryAt: T, payout: 82, now: T - 60_000 });
+    const observeOnly = await built.runner.observeMarket({ marketKey: key, marketType: "OTC", candles: [candle(T - 40_000)], targetExpiryAt: T, payout: 82, now: T - 40_000 });
+    expect(observeOnly.entryMode).toBeNull();
+    const eventQueries = pool.queries.filter((q: any) => q.text.startsWith("INSERT INTO iq_rsi_events_v3"));
+    expect(eventQueries.length).toBeGreaterThan(0);
+    expect(eventQueries.every((q: any) => !q.text.includes("created_at") && q.text.includes("payload"))).toBe(true);
+    const stateQueries = pool.queries.filter((q: any) => q.text.startsWith("INSERT INTO iq_rsi_agent_state_v3"));
+    expect(stateQueries.some((q: any) => q.text.includes("revalidation_at=COALESCE(") && q.text.includes("submit_at=COALESCE("))).toBe(true);
+    const opportunityQueries = pool.queries.filter((q: any) => q.text.startsWith("INSERT INTO iq_rsi_opportunities_v3"));
+    expect(opportunityQueries.some((q: any) => q.text.includes("entry_mode=COALESCE(") && q.text.includes("bollinger_rejection_at=COALESCE("))).toBe(true);
+    const row: any = [...pool.opportunities.values()][0];
+    expect(row.entry_mode).toBeNull();
+  });
+
+  it("snapshot do universo persiste completo mesmo com discover concorrente", async () => {
+    const pool = fakePool();
+    let replaced = false;
+    const other = markets(5, 5);
+    const runner = new RsiAgentsV3({ runtime: fakeRuntime(), pool, now: () => NOW, enabled: true, skills: { ...skillsV3 }, skillsV2: { ...skillsV2 } });
+    pool.query = async (text: string, values: any[] = []) => {
+      pool.queries.push({ text, values });
+      if (text.startsWith("INSERT INTO iq_rsi_universe_v3")) {
+        pool.universeInserts.push({ text, values });
+        if (!replaced) { replaced = true; runner.discoverUniverse(other); }
+        return { rows: [] };
+      }
+      if (text.startsWith("SELECT market_key, strategy")) return { rows: [...pool.assignments.values()].map((row) => ({ ...row })) };
+      if (text.startsWith("INSERT INTO iq_rsi_agent_assignments_v3")) {
+        const [marketKey, strategy, marketType, canonical, activeId, availability] = values;
+        pool.assignments.set(marketKey, { market_key: marketKey, strategy, market_type: marketType, canonical, active_id: activeId, availability, block_reason: null });
+        return { rows: [] };
+      }
+      return { rows: [] };
+    };
+    await runner.assignUniverse(markets(2, 2));
+    expect(replaced).toBe(true);
+    const ids = new Set(pool.universeInserts.map((insert: any) => insert.values[0]));
+    expect(ids.size).toBe(1);
+    expect(pool.universeInserts.length).toBe(4);
+  });
+
+  it("V3.1 mantem stake 10, PRACTICE e nunca usa dado futuro (firstSight recebe o mesmo tick)", () => {
+    const source = readFileSync(new URL("../../relay/rsi-v3.mjs", import.meta.url), "utf8");
+    expect(source.includes("V3_1_EPISODE_EVENT_STATE")).toBe(true);
+    expect(source.includes("finalWindowMs: 5000")).toBe(true);
+    expect(RSI_AGENTS_V3_POLICY.stakeBrl).toBe(10);
+    expect(RSI_AGENTS_V3_POLICY.practiceOnly).toBe(true);
   });
 });
 

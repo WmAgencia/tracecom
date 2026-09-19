@@ -1,5 +1,5 @@
 /**
- * RSI AGENTS V3 — estrategia UNICA RSI_REVERSAL_PULLBACK_V3 em TODO o universo elegivel.
+ * RSI AGENTS V3 â€” estrategia UNICA RSI_REVERSAL_PULLBACK_V3 em TODO o universo elegivel.
  *
  * - Universo dinamico (OPEN + enabled + activeId + turbo + candles), snapshot persistido, NORMAL/OTC separados.
  * - Uma unica estrategia para todos os agentes; assignment persistido (sem troca silenciosa).
@@ -103,12 +103,16 @@ export class RsiAgentsV3 {
     if (!this.pool?.query) return;
     if (this.now() - this.lastUniversePersistAt < 60_000) return;
     this.lastUniversePersistAt = this.now();
-    for (const row of this.universe.observed) {
+    // Captura atomica: discoverUniverse pode substituir this.universe durante o loop.
+    const snapshotId = this.universe.snapshotId;
+    const snapshotAt = this.universe.at;
+    const observed = [...this.universe.observed];
+    for (const row of observed) {
       await this.pool.query(
         `INSERT INTO iq_rsi_universe_v3(snapshot_id, market_key, at, market_type, canonical, active_id, enabled, availability, payout, candles_count, feed_ready, turbo_supported, eligible, reason, payload)
          VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb)
          ON CONFLICT(snapshot_id, market_key) DO NOTHING`,
-        [this.universe.snapshotId, row.marketKey, this.universe.at, row.marketType, row.canonical, row.activeId, row.enabled, row.availability, row.payout, row.candlesCount, row.feedReady, row.turboSupported, row.eligible, row.reason, JSON.stringify({ policy: RSI_AGENTS_V3_POLICY })],
+        [snapshotId, row.marketKey, snapshotAt, row.marketType, row.canonical, row.activeId, row.enabled, row.availability, row.payout, row.candlesCount, row.feedReady, row.turboSupported, row.eligible, row.reason, JSON.stringify({ policy: RSI_AGENTS_V3_POLICY })],
       ).catch(() => undefined);
     }
     if (this.migration.universePersistedAt === null) this.migration.universePersistedAt = this.now();
@@ -285,7 +289,7 @@ export class RsiAgentsV3 {
       expectedCushion: projection?.expectedCushionNormalized ?? null,
       strictV2Decision: v2Strict.decision, pullbackV2Decision: v2Pullback.decision,
       decision: entryEval.accepted ? entryEval.direction : "WAIT",
-      entryMode: entryEval.entryMode ?? null,
+      entryMode: null,
       execEval: entryEval, v2StrictEval: v2Strict, v2PullbackEval: v2Pullback, episodeEvent: episodeUpdate.event,
       episode: episode ? {
         direction: episode.direction, candidateAt: episode.candidateAt, candidateRsi: episode.candidateRsi, candidateRsiBand: episode.candidateRsiBand,
@@ -295,6 +299,11 @@ export class RsiAgentsV3 {
         maxSpread: episode.maxSpread, minSpread: episode.minSpread, maxRsi: episode.maxRsi, minRsi: episode.minRsi,
         maxPlusDI: episode.maxPlusDI, maxMinusDI: episode.maxMinusDI, oldDiWeakStreak: episode.oldDiWeakStreak, newDiReactStreak: episode.newDiReactStreak,
         neutralTicks: episode.neutralTicks, lateralTicks: episode.lateralTicks, carriedExpiries: episode.carriedExpiries ?? 0,
+        bollingerTouchAt: episode.bollingerTouchAt ?? null, bollingerRejectionAt: episode.bollingerRejectionAt ?? null,
+        bollingerRejectionPrice: episode.bollingerRejectionPrice ?? null, bollingerRejectionDirection: episode.bollingerRejectionDirection ?? null,
+        bollingerReentryConfirmed: episode.bollingerReentryConfirmed === true, bollingerRejectionExtreme: episode.bollingerRejectionExtreme ?? null,
+        diCrossAt: episode.diCrossAt ?? null, diCrossDirection: episode.diCrossDirection ?? null,
+        newDirectionConfirmedAt: episode.newDirectionConfirmedAt ?? null,
       } : null,
       candidateIndicators: episode?.candidateIndicators ?? null,
       indicators,
@@ -322,8 +331,17 @@ export class RsiAgentsV3 {
     const override = entryEval.entryMode === "EXTREME_REVERSAL_OVERRIDE";
     const inNormalWindow = at >= window.entryWindowOpensAt && at <= window.entryWindowClosesAt;
     const inOverrideWindow = override && at >= window.purchaseCutoffAt - RSI_V3_POLICY.overrideMinLeadMs && at < window.entryWindowOpensAt;
-    if (!inNormalWindow && !inOverrideWindow) {
-      state.waitReason = at < window.entryWindowOpensAt ? "OBSERVE_ONLY" : at > window.purchaseCutoffAt ? "MISSED_ENTRY_WINDOW" : "NO_SAFE_ENTRY_INSIDE_5S_WINDOW";
+    // V3.1 â€” JANELA FINAL COMPATIVEL COM A CADENCIA REAL:
+    // so executa na ULTIMA avaliacao causal antes do safe cutoff, calculada a partir do
+    // grid conhecido de candles de 5s (sem dado futuro). Nunca depois do cutoff.
+    const lastCandleEnd = num(list[list.length - 1]?.bucketEnd);
+    const nextCandleEnd = lastCandleEnd !== null ? lastCandleEnd + (Number(RSI_V3_POLICY.candleMs) || 5_000) : null;
+    const isFinalChance = nextCandleEnd === null ? true : nextCandleEnd >= window.entryWindowClosesAt;
+    if (!inOverrideWindow && (!inNormalWindow || !isFinalChance)) {
+      state.decision = "WAIT";
+      state.entryMode = null;
+      state.waitReason = at > window.purchaseCutoffAt ? "MISSED_ENTRY_WINDOW" : at > window.entryWindowClosesAt ? "NO_SAFE_ENTRY_INSIDE_5S_WINDOW" : "OBSERVE_ONLY";
+      if (state.waitReason === "OBSERVE_ONLY") state.reason = `aguardando janela final (ultima avaliacao causal antes de ${new Date(window.entryWindowClosesAt).toISOString()})`;
       this.#setState(state); void this.#persistState(state); return state;
     }
     // REVALIDACAO COMPLETA (T-5 ou override): recalculo do zero + "primeira vista".
@@ -331,7 +349,7 @@ export class RsiAgentsV3 {
     const revalEpisodeUpdate = this.skills.updateEpisodeV3({ episode, indicators: { ...revalIndicators, targetExpiryAt: num(targetExpiryAt) }, at });
     const revalEpisode = revalEpisodeUpdate.episode ?? null;
     const revalEval = this.skills.evaluateV3Entry({ indicators: revalIndicators, episode: revalEpisode, window, at });
-    const firstSight = this.skills.firstSightThesisV3({ indicators: revalIndicators, direction: entryEval.direction });
+    const firstSight = this.skills.firstSightThesisV3({ indicators: revalIndicators, direction: entryEval.direction, episode: revalEpisode, at });
     state.revalidationAt = at;
     state.revalidation = { accepted: revalEval.accepted === true, firstSightValid: firstSight.valid === true, firstSightReason: firstSight.reason, stage: revalEval.stage, strength: revalEval.strength };
     if (!revalEpisode || revalEval.accepted !== true || revalEval.direction !== entryEval.direction || firstSight.valid !== true) {
@@ -424,7 +442,20 @@ export class RsiAgentsV3 {
       order_id: null, execution_id: null, effective_stake: null, entry_price: num(indicators.bollinger?.close), entry_noise: num(indicators.noiseHorizon),
       expiry_at: num(targetExpiryAt), expiry_price: null, result: null, profit: null,
       actual_displacement: null, actual_cushion: null, projection_correct: null, quality_class: null, settlement_basis: null,
-      indicators: { ...indicators, targetExpiryAt: num(targetExpiryAt) }, payload: { payout: num(payout), candidates: entryEval.candidate ?? null, v2: { strict: { status: v2Strict.status, reason: v2Strict.reason }, pullback: { status: v2Pullback.status, reason: v2Pullback.reason } } },
+      // V3.1: memoria causal do episodio persistida (eventos com timestamp/validade).
+      bollinger_rejection_at: entryEval.episodeEvidence?.bollingerRejectionAt ?? null,
+      bollinger_rejection_price: entryEval.episodeEvidence?.bollingerRejectionPrice ?? null,
+      bollinger_rejection_direction: entryEval.episodeEvidence?.bollingerRejectionDirection ?? null,
+      bollinger_reentry_confirmed: entryEval.episodeEvidence?.bollingerReentryConfirmed === true,
+      bars_since_rejection: entryEval.episodeEvidence?.barsSinceRejection ?? null,
+      ms_since_rejection: entryEval.episodeEvidence?.msSinceRejection ?? null,
+      di_cross_at: entryEval.episodeEvidence?.diCrossAt ?? null,
+      di_cross_direction: entryEval.episodeEvidence?.diCrossDirection ?? null,
+      di_cross_age_ms: entryEval.episodeEvidence?.diCrossAgeMs ?? null,
+      new_direction_confirmed_at: entryEval.episodeEvidence?.newDirectionConfirmedAt ?? null,
+      rejection_valid: entryEval.firstSight?.rejection?.valid === true,
+      revalidation_at: null, submit_at: null,
+      indicators: { ...indicators, targetExpiryAt: num(targetExpiryAt) }, payload: { payout: num(payout), candidates: entryEval.candidate ?? null, evidence: entryEval.episodeEvidence ?? null, firstSight: entryEval.firstSight ? { valid: entryEval.firstSight.valid, hardFails: entryEval.firstSight.hardFails, reason: entryEval.firstSight.reason } : null, v2: { strict: { status: v2Strict.status, reason: v2Strict.reason }, pullback: { status: v2Pullback.status, reason: v2Pullback.reason } } },
     };
   }
 
@@ -439,10 +470,10 @@ export class RsiAgentsV3 {
     if (!this.pool?.query || !record) return;
     this.#opportunitiesSet(record.opportunity_id, record);
     await this.pool.query(
-      `INSERT INTO iq_rsi_opportunities_v3(opportunity_id, market_key, market_type, agent_id, strategy_id, observed_at, candidate_at, candidate_age_ms, candidate_rsi, candidate_rsi_band, candidate_price, candidate_expiry, direction, entry_mode, stage, strength, decision, accepted, rsi, rsi_trajectory, bollinger, band, dmi, adx, structural_trend, short_horizon_direction, projection, expected_cushion, v3_decision, strict_v2_decision, pullback_v2_decision, order_id, execution_id, effective_stake, entry_price, entry_noise, expiry_at, expiry_price, result, profit, actual_displacement, actual_cushion, projection_correct, quality_class, settlement_basis, indicators, payload, updated_at)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21::jsonb,$22::jsonb,$23::jsonb,$24::jsonb,$25,$26,$27::jsonb,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46::jsonb,$47::jsonb, now())
-       ON CONFLICT(opportunity_id) DO UPDATE SET candidate_age_ms=$8, direction=$13, entry_mode=$14, stage=$15, strength=$16, decision=$17, accepted=$18, rsi=$19, rsi_trajectory=$20, bollinger=$21::jsonb, band=$22::jsonb, dmi=$23::jsonb, adx=$24::jsonb, structural_trend=$25, short_horizon_direction=$26, projection=$27::jsonb, expected_cushion=$28, v3_decision=$29, strict_v2_decision=$30, pullback_v2_decision=$31, order_id=COALESCE($32, iq_rsi_opportunities_v3.order_id), execution_id=COALESCE($33, iq_rsi_opportunities_v3.execution_id), effective_stake=COALESCE($34, iq_rsi_opportunities_v3.effective_stake), entry_price=COALESCE($35, iq_rsi_opportunities_v3.entry_price), entry_noise=COALESCE($36, iq_rsi_opportunities_v3.entry_noise), expiry_price=COALESCE($38, iq_rsi_opportunities_v3.expiry_price), result=COALESCE($39, iq_rsi_opportunities_v3.result), profit=COALESCE($40, iq_rsi_opportunities_v3.profit), actual_displacement=COALESCE($41, iq_rsi_opportunities_v3.actual_displacement), actual_cushion=COALESCE($42, iq_rsi_opportunities_v3.actual_cushion), projection_correct=COALESCE($43, iq_rsi_opportunities_v3.projection_correct), quality_class=COALESCE($44, iq_rsi_opportunities_v3.quality_class), settlement_basis=COALESCE($45, iq_rsi_opportunities_v3.settlement_basis), indicators=$46::jsonb, payload=$47::jsonb, updated_at=now()`,
-      [record.opportunity_id, record.market_key, record.market_type, record.agent_id, record.strategy_id, record.observed_at, record.candidate_at, record.candidate_age_ms, record.candidate_rsi, record.candidate_rsi_band, record.candidate_price, record.candidate_expiry, record.direction, record.entry_mode, record.stage, record.strength, record.decision, record.accepted, record.rsi, record.rsi_trajectory, JSON.stringify(record.bollinger), JSON.stringify(record.band), JSON.stringify(record.dmi), JSON.stringify(record.adx), record.structural_trend, record.short_horizon_direction, JSON.stringify(record.projection), record.expected_cushion, record.v3_decision, record.strict_v2_decision, record.pullback_v2_decision, record.order_id, record.execution_id, record.effective_stake, record.entry_price, record.entry_noise, record.expiry_at, record.expiry_price, record.result, record.profit, record.actual_displacement, record.actual_cushion, record.projection_correct, record.quality_class, record.settlement_basis, JSON.stringify(record.indicators ?? {}), JSON.stringify(record.payload ?? {})],
+      `INSERT INTO iq_rsi_opportunities_v3(opportunity_id, market_key, market_type, agent_id, strategy_id, observed_at, candidate_at, candidate_age_ms, candidate_rsi, candidate_rsi_band, candidate_price, candidate_expiry, direction, entry_mode, stage, strength, decision, accepted, rsi, rsi_trajectory, bollinger, band, dmi, adx, structural_trend, short_horizon_direction, projection, expected_cushion, v3_decision, strict_v2_decision, pullback_v2_decision, order_id, execution_id, effective_stake, entry_price, entry_noise, expiry_at, expiry_price, result, profit, actual_displacement, actual_cushion, projection_correct, quality_class, settlement_basis, indicators, payload, bollinger_rejection_at, bollinger_rejection_price, bollinger_rejection_direction, bollinger_reentry_confirmed, bars_since_rejection, ms_since_rejection, di_cross_at, di_cross_direction, di_cross_age_ms, new_direction_confirmed_at, rejection_valid, revalidation_at, submit_at, updated_at)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21::jsonb,$22::jsonb,$23::jsonb,$24::jsonb,$25,$26,$27::jsonb,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46::jsonb,$47::jsonb,$48,$49,$50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$60, now())
+       ON CONFLICT(opportunity_id) DO UPDATE SET candidate_age_ms=$8, direction=$13, entry_mode=COALESCE($14, iq_rsi_opportunities_v3.entry_mode), stage=$15, strength=$16, decision=$17, accepted=$18, rsi=$19, rsi_trajectory=$20, bollinger=$21::jsonb, band=$22::jsonb, dmi=$23::jsonb, adx=$24::jsonb, structural_trend=$25, short_horizon_direction=$26, projection=$27::jsonb, expected_cushion=$28, v3_decision=$29, strict_v2_decision=$30, pullback_v2_decision=$31, order_id=COALESCE($32, iq_rsi_opportunities_v3.order_id), execution_id=COALESCE($33, iq_rsi_opportunities_v3.execution_id), effective_stake=COALESCE($34, iq_rsi_opportunities_v3.effective_stake), entry_price=COALESCE($35, iq_rsi_opportunities_v3.entry_price), entry_noise=COALESCE($36, iq_rsi_opportunities_v3.entry_noise), expiry_price=COALESCE($38, iq_rsi_opportunities_v3.expiry_price), result=COALESCE($39, iq_rsi_opportunities_v3.result), profit=COALESCE($40, iq_rsi_opportunities_v3.profit), actual_displacement=COALESCE($41, iq_rsi_opportunities_v3.actual_displacement), actual_cushion=COALESCE($42, iq_rsi_opportunities_v3.actual_cushion), projection_correct=COALESCE($43, iq_rsi_opportunities_v3.projection_correct), quality_class=COALESCE($44, iq_rsi_opportunities_v3.quality_class), settlement_basis=COALESCE($45, iq_rsi_opportunities_v3.settlement_basis), indicators=$46::jsonb, payload=$47::jsonb, bollinger_rejection_at=COALESCE($48, iq_rsi_opportunities_v3.bollinger_rejection_at), bollinger_rejection_price=COALESCE($49, iq_rsi_opportunities_v3.bollinger_rejection_price), bollinger_rejection_direction=COALESCE($50, iq_rsi_opportunities_v3.bollinger_rejection_direction), bollinger_reentry_confirmed=COALESCE($51, iq_rsi_opportunities_v3.bollinger_reentry_confirmed), bars_since_rejection=$52, ms_since_rejection=$53, di_cross_at=COALESCE($54, iq_rsi_opportunities_v3.di_cross_at), di_cross_direction=COALESCE($55, iq_rsi_opportunities_v3.di_cross_direction), di_cross_age_ms=$56, new_direction_confirmed_at=COALESCE($57, iq_rsi_opportunities_v3.new_direction_confirmed_at), rejection_valid=COALESCE($58, iq_rsi_opportunities_v3.rejection_valid), revalidation_at=COALESCE($59, iq_rsi_opportunities_v3.revalidation_at), submit_at=COALESCE($60, iq_rsi_opportunities_v3.submit_at), updated_at=now()`,
+      [record.opportunity_id, record.market_key, record.market_type, record.agent_id, record.strategy_id, record.observed_at, record.candidate_at, record.candidate_age_ms, record.candidate_rsi, record.candidate_rsi_band, record.candidate_price, record.candidate_expiry, record.direction, record.entry_mode, record.stage, record.strength, record.decision, record.accepted, record.rsi, record.rsi_trajectory, JSON.stringify(record.bollinger), JSON.stringify(record.band), JSON.stringify(record.dmi), JSON.stringify(record.adx), record.structural_trend, record.short_horizon_direction, JSON.stringify(record.projection), record.expected_cushion, record.v3_decision, record.strict_v2_decision, record.pullback_v2_decision, record.order_id, record.execution_id, record.effective_stake, record.entry_price, record.entry_noise, record.expiry_at, record.expiry_price, record.result, record.profit, record.actual_displacement, record.actual_cushion, record.projection_correct, record.quality_class, record.settlement_basis, JSON.stringify(record.indicators ?? {}), JSON.stringify(record.payload ?? {}), record.bollinger_rejection_at ?? null, record.bollinger_rejection_price ?? null, record.bollinger_rejection_direction ?? null, record.bollinger_reentry_confirmed === true, record.bars_since_rejection ?? null, record.ms_since_rejection ?? null, record.di_cross_at ?? null, record.di_cross_direction ?? null, record.di_cross_age_ms ?? null, record.new_direction_confirmed_at ?? null, record.rejection_valid ?? null, record.revalidation_at ?? null, record.submit_at ?? null],
     ).catch(() => undefined);
   }
 
@@ -507,17 +538,17 @@ export class RsiAgentsV3 {
   async #persistState(state) {
     if (!this.pool?.query || !state?.marketKey) return;
     await this.pool.query(
-      `INSERT INTO iq_rsi_agent_state_v3(agent_id, market_key, strategy, status, decision, wait_reason, candidate_at, candidate_age_ms, candidate_rsi, candidate_price, candidate_expiry, revalidation_at, submit_at, expiry_at, entry_mode, rsi, rsi_trajectory, rsi_band, bollinger, band, dmi, adx, stage, strength, structural_trend, short_horizon_direction, projection, expected_cushion, strict_v2_decision, pullback_v2_decision, order_id, execution_id, requested_stake, effective_stake, last_result, last_pnl, quality_class, last_reason, payload, updated_at)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19::jsonb,$20::jsonb,$21::jsonb,$22::jsonb,$23,$24,$25,$26,$27::jsonb,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39::jsonb, now())
-       ON CONFLICT(agent_id) DO UPDATE SET status=$4, decision=$5, wait_reason=$6, candidate_at=$7, candidate_age_ms=$8, candidate_rsi=$9, candidate_price=$10, candidate_expiry=$11, revalidation_at=$12, submit_at=$13, expiry_at=$14, entry_mode=COALESCE($15, iq_rsi_agent_state_v3.entry_mode), rsi=$16, rsi_trajectory=$17, rsi_band=$18, bollinger=$19::jsonb, band=$20::jsonb, dmi=$21::jsonb, adx=$22::jsonb, stage=$23, strength=$24, structural_trend=$25, short_horizon_direction=$26, projection=$27::jsonb, expected_cushion=$28, strict_v2_decision=$29, pullback_v2_decision=$30, order_id=COALESCE($31, iq_rsi_agent_state_v3.order_id), execution_id=COALESCE($32, iq_rsi_agent_state_v3.execution_id), requested_stake=$33, effective_stake=COALESCE($34, iq_rsi_agent_state_v3.effective_stake), last_result=COALESCE($35, iq_rsi_agent_state_v3.last_result), last_pnl=COALESCE($36, iq_rsi_agent_state_v3.last_pnl), quality_class=COALESCE($37, iq_rsi_agent_state_v3.quality_class), last_reason=$38, payload=$39::jsonb, updated_at=now()`,
-      [state.agentId, state.marketKey, V3_ID, state.waitReason ? "WAIT" : state.decision === "BUY" || state.decision === "SELL" ? "SIGNAL" : "ANALYZING", state.decision, state.waitReason, state.candidateAt, state.candidateAgeMs, state.candidateRsi, state.candidatePrice, state.candidateExpiry, state.revalidationAt, state.submitAt, state.expiryAt, state.entryMode, state.rsi, state.rsiTrajectory, state.rsiBand, JSON.stringify(state.indicators?.bollinger ?? null), JSON.stringify({ position: state.indicators?.bollinger?.position ?? null, touchUpper: state.indicators?.bollinger?.touchUpper ?? null, touchLower: state.indicators?.bollinger?.touchLower ?? null, outsideUpper: state.indicators?.bollinger?.outsideUpper ?? null, outsideLower: state.indicators?.bollinger?.outsideLower ?? null, rejectionUpperNow: state.indicators?.rejectionUpperNow ?? null, rejectionLowerNow: state.indicators?.rejectionLowerNow ?? null, widthSlope: state.indicators?.bollinger?.widthSlope ?? null, expanding: state.indicators?.bollinger?.expanding ?? null }), JSON.stringify(state.indicators?.dmi ?? null), JSON.stringify(state.indicators?.adx ?? null), state.stage, state.strength, state.indicators?.structuralTrend ?? null, state.indicators?.shortHorizonDirection ?? null, JSON.stringify(state.execEval?.projection ?? null), state.expectedCushion, state.strictV2Decision, state.pullbackV2Decision, state.orderId, state.executionId, state.requestedStake ?? this.stakeBrl, state.effectiveStake, state.lastResult ?? null, state.lastPnl ?? null, state.qualityClass ?? null, state.reason, JSON.stringify({ execEval: state.execEval ? { stage: state.execEval.stage, strength: state.execEval.strength, blockers: state.execEval.blockers, strengths: state.execEval.strengths, firstSight: state.execEval.firstSight, confirmations: state.execEval.confirmations } : null, revalidation: state.revalidation ?? null, episode: state.episode ?? null, episodeEvent: state.episodeEvent ?? null, candidateIndicators: state.candidateIndicators ?? null, v2: { strict: state.v2StrictEval ? { status: state.v2StrictEval.status, reason: state.v2StrictEval.reason } : null, pullback: state.v2PullbackEval ? { status: state.v2PullbackEval.status, reason: state.v2PullbackEval.reason } : null }, policy: RSI_AGENTS_V3_POLICY })],
+      `INSERT INTO iq_rsi_agent_state_v3(agent_id, market_key, strategy, status, decision, wait_reason, candidate_at, candidate_age_ms, candidate_rsi, candidate_price, candidate_expiry, revalidation_at, submit_at, expiry_at, entry_mode, rsi, rsi_trajectory, rsi_band, bollinger, band, dmi, adx, stage, strength, structural_trend, short_horizon_direction, projection, expected_cushion, strict_v2_decision, pullback_v2_decision, order_id, execution_id, requested_stake, effective_stake, last_result, last_pnl, quality_class, last_reason, payload, bollinger_rejection_at, di_cross_at, new_direction_confirmed_at, updated_at)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19::jsonb,$20::jsonb,$21::jsonb,$22::jsonb,$23,$24,$25,$26,$27::jsonb,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39::jsonb,$40,$41,$42, now())
+       ON CONFLICT(agent_id) DO UPDATE SET status=$4, decision=$5, wait_reason=$6, candidate_at=$7, candidate_age_ms=$8, candidate_rsi=$9, candidate_price=$10, candidate_expiry=$11, revalidation_at=COALESCE($12, iq_rsi_agent_state_v3.revalidation_at), submit_at=COALESCE($13, iq_rsi_agent_state_v3.submit_at), expiry_at=$14, entry_mode=COALESCE($15, iq_rsi_agent_state_v3.entry_mode), rsi=$16, rsi_trajectory=$17, rsi_band=$18, bollinger=$19::jsonb, band=$20::jsonb, dmi=$21::jsonb, adx=$22::jsonb, stage=$23, strength=$24, structural_trend=$25, short_horizon_direction=$26, projection=$27::jsonb, expected_cushion=$28, strict_v2_decision=$29, pullback_v2_decision=$30, order_id=COALESCE($31, iq_rsi_agent_state_v3.order_id), execution_id=COALESCE($32, iq_rsi_agent_state_v3.execution_id), requested_stake=$33, effective_stake=COALESCE($34, iq_rsi_agent_state_v3.effective_stake), last_result=COALESCE($35, iq_rsi_agent_state_v3.last_result), last_pnl=COALESCE($36, iq_rsi_agent_state_v3.last_pnl), quality_class=COALESCE($37, iq_rsi_agent_state_v3.quality_class), last_reason=$38, payload=$39::jsonb, bollinger_rejection_at=COALESCE($40, iq_rsi_agent_state_v3.bollinger_rejection_at), di_cross_at=COALESCE($41, iq_rsi_agent_state_v3.di_cross_at), new_direction_confirmed_at=COALESCE($42, iq_rsi_agent_state_v3.new_direction_confirmed_at), updated_at=now()`,
+      [state.agentId, state.marketKey, V3_ID, state.waitReason ? "WAIT" : state.decision === "BUY" || state.decision === "SELL" ? "SIGNAL" : "ANALYZING", state.decision, state.waitReason, state.candidateAt, state.candidateAgeMs, state.candidateRsi, state.candidatePrice, state.candidateExpiry, state.revalidationAt, state.submitAt, state.expiryAt, state.entryMode, state.rsi, state.rsiTrajectory, state.rsiBand, JSON.stringify(state.indicators?.bollinger ?? null), JSON.stringify({ position: state.indicators?.bollinger?.position ?? null, touchUpper: state.indicators?.bollinger?.touchUpper ?? null, touchLower: state.indicators?.bollinger?.touchLower ?? null, outsideUpper: state.indicators?.bollinger?.outsideUpper ?? null, outsideLower: state.indicators?.bollinger?.outsideLower ?? null, rejectionUpperNow: state.indicators?.rejectionUpperNow ?? null, rejectionLowerNow: state.indicators?.rejectionLowerNow ?? null, widthSlope: state.indicators?.bollinger?.widthSlope ?? null, expanding: state.indicators?.bollinger?.expanding ?? null }), JSON.stringify(state.indicators?.dmi ?? null), JSON.stringify(state.indicators?.adx ?? null), state.stage, state.strength, state.indicators?.structuralTrend ?? null, state.indicators?.shortHorizonDirection ?? null, JSON.stringify(state.execEval?.projection ?? null), state.expectedCushion, state.strictV2Decision, state.pullbackV2Decision, state.orderId, state.executionId, state.requestedStake ?? this.stakeBrl, state.effectiveStake, state.lastResult ?? null, state.lastPnl ?? null, state.qualityClass ?? null, state.reason, JSON.stringify({ execEval: state.execEval ? { stage: state.execEval.stage, strength: state.execEval.strength, blockers: state.execEval.blockers, strengths: state.execEval.strengths, firstSight: state.execEval.firstSight, confirmations: state.execEval.confirmations, episodeEvidence: state.execEval.episodeEvidence ?? null, intendedEntryMode: state.execEval.intendedEntryMode ?? null } : null, revalidation: state.revalidation ?? null, episode: state.episode ?? null, episodeEvent: state.episodeEvent ?? null, candidateIndicators: state.candidateIndicators ?? null, v2: { strict: state.v2StrictEval ? { status: state.v2StrictEval.status, reason: state.v2StrictEval.reason } : null, pullback: state.v2PullbackEval ? { status: state.v2PullbackEval.status, reason: state.v2PullbackEval.reason } : null }, policy: RSI_AGENTS_V3_POLICY }), state.episode?.bollingerRejectionAt ?? null, state.episode?.diCrossAt ?? null, state.episode?.newDirectionConfirmedAt ?? null],
     ).catch(() => undefined);
   }
 
   async #persistEvent({ marketKey, event, decision, reason, payload = {} }) {
     if (!this.pool?.query) return;
     await this.pool.query(
-      "INSERT INTO iq_rsi_events_v3(market_key, agent_id, strategy_id, event, decision, reason, payload, created_at) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb, now())",
+      "INSERT INTO iq_rsi_events_v3(market_key, agent_id, strategy_id, event, decision, reason, payload) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)",
       [marketKey, `${V3_ID}:${marketKey}`, V3_ID, event, decision ?? null, reason ?? null, JSON.stringify(payload)],
     ).catch(() => undefined);
   }
@@ -600,7 +631,7 @@ export class RsiAgentsV3 {
       shadowV2: { strict: STRICT_V2_ID, pullback: PULLBACK_V2_ID, controlsExecution: false, note: "V2 congelada; decisoes registradas por oportunidade e nunca executam." },
       legacy: { v1: { paused: true }, v2: { frozen: true, executionDisabled: true } },
       readyToArm: true, armed: false,
-      armInstructions: "ARM PRACTICE no TraceCon (autoExecute) — RSI_REVERSAL_PULLBACK_V3 executa via requestOrder, stake R$10, REAL LOCKED.",
+      armInstructions: "ARM PRACTICE no TraceCon (autoExecute) â€” RSI_REVERSAL_PULLBACK_V3 executa via requestOrder, stake R$10, REAL LOCKED.",
     };
   }
 }
@@ -618,3 +649,4 @@ export function rsiAgentsV3FreezeManifest() {
     noTuning: true,
   };
 }
+

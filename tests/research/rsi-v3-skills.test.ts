@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 // @ts-expect-error - relay ESM sem tipagem
 const v3 = await import("../../relay/rsi-v3.mjs");
 
-const { V3_ID, evaluateIndicatorsV3, createEpisodeV3, updateEpisodeV3, evaluateStageV3, evaluateV3Entry, firstSightThesisV3, projectExpiryV3, classifyOutcomeV3, rsiBandV3 } = v3;
+const { V3_ID, evaluateIndicatorsV3, createEpisodeV3, updateEpisodeV3, evaluateStageV3, evaluateV3Entry, firstSightThesisV3, projectExpiryV3, classifyOutcomeV3, rsiBandV3, rejectionValidityV3, diCrossValidityV3 } = v3;
 const NOW = 1_800_000_000_000;
 const T = Math.ceil(NOW / 60_000) * 60_000;
 const WINDOW = { purchaseCutoffAt: T - 30_000, entryWindowOpensAt: T - 35_000, entryWindowClosesAt: T - 27_000, safeMarginMs: 3000, windowMs: 2000 };
@@ -35,6 +35,20 @@ const sellEpisode = (overrides: any = {}) => ({
 });
 const buyEpisode = (overrides: any = {}) => ({
   ...(createEpisodeV3({ indicators: ind({ rsi: 24, rsiBand: "20-15", at: NOW - 20_000, bollinger: { ...ind().bollinger, position: 0.05, touchLower: true, outsideLower: true, close: 1.02 } }), at: NOW - 20_000, expiryAt: T }) ?? {}),
+  ...overrides,
+});
+
+/** Episodio SELL com memoria causal V3.1 (rejeicao + DI cross recentes e validos). */
+const sellEpisodeWithMemory = (overrides: any = {}) => sellEpisode({
+  bollingerRejectionAt: T - 45_000, bollingerRejectionPrice: 1.17, bollingerRejectionDirection: "UPPER",
+  bollingerReentryConfirmed: true, bollingerRejectionExtreme: 1.18,
+  diCrossAt: T - 45_000, diCrossDirection: "SELL", newDirectionConfirmedAt: T - 45_000,
+  ...overrides,
+});
+const buyEpisodeWithMemory = (overrides: any = {}) => buyEpisode({
+  bollingerRejectionAt: T - 45_000, bollingerRejectionPrice: 1.03, bollingerRejectionDirection: "LOWER",
+  bollingerReentryConfirmed: true, bollingerRejectionExtreme: 1.02,
+  diCrossAt: T - 45_000, diCrossDirection: "BUY", newDirectionConfirmedAt: T - 45_000,
   ...overrides,
 });
 
@@ -157,7 +171,7 @@ describe("RSI V3 — T-5 (primeira vista) e RSI neutro no submit", () => {
     const stale = ind({ at: T - 34_000, rsi: 58, rsiSlope: 0.3, bollinger: { ...ind().bollinger, position: 0.6, touchUpper: true, outsideUpper: false }, dmi: { plusDI: 29, minusDI: 22, spread: 7, plusSlope: 0.4, minusSlope: -0.1 }, adx: { value: 28, slope: 0.6, rising: true }, shortMomentum: -0.2, rejectionUpperNow: false });
     const thesis = firstSightThesisV3({ indicators: stale, direction: "SELL" });
     expect(thesis.valid).toBe(false);
-    expect(thesis.hardFails).toContain("NOVA_DIRECAO_AUSENTE");
+    expect(thesis.hardFails.some((fail: string) => fail.startsWith("NOVA_DIRECAO") || fail === "SEM_REJEICAO_ATUAL")).toBe(true);
     const entry = evaluateV3Entry({ indicators: stale, episode: sellEpisode({ maxSpread: 14 }), window: WINDOW, at: T - 34_000 });
     expect(entry.decision).toBe("WAIT");
   });
@@ -169,11 +183,11 @@ describe("RSI V3 — T-5 (primeira vista) e RSI neutro no submit", () => {
 
   it("RSI neutro 45-55 no submit exige confirmacao forte + cushion forte", () => {
     const neutralWeak = ind({ at: T - 34_000, rsi: 49, rsiSlope: -0.2, bollinger: { ...ind().bollinger, position: 0.7, touchUpper: true }, dmi: { plusDI: 26, minusDI: 25, spread: 1, plusSlope: -0.5, minusSlope: 0.4 }, adx: { value: 24, slope: -0.2, falling: true, stabilizing: true }, shortMomentum: -0.5, rejectionUpperNow: true });
-    const weak = evaluateV3Entry({ indicators: neutralWeak, episode: sellEpisode({ maxSpread: 10 }), window: WINDOW, at: T - 34_000 });
+    const weak = evaluateV3Entry({ indicators: neutralWeak, episode: sellEpisodeWithMemory({ maxSpread: 10 }), window: WINDOW, at: T - 34_000 });
     expect(weak.decision).toBe("WAIT");
     expect(weak.blockers).toContain("RSI_NEUTRO_SEM_CONFIRMACAO_FORTE");
-    const neutralStrong = ind({ at: T - 34_000, rsi: 48, rsiSlope: -1.2, bollinger: { ...ind().bollinger, position: 0.55, touchUpper: true }, dmi: { plusDI: 24, minusDI: 28, spread: -4, plusSlope: -1.8, minusSlope: 2.1 }, adx: { value: 27, slope: 0.7, rising: true, strong: true }, shortMomentum: -1.0, rejectionUpperNow: true });
-    const strong = evaluateV3Entry({ indicators: neutralStrong, episode: sellEpisode({ maxSpread: 10 }), window: WINDOW, at: T - 34_000 });
+    const neutralStrong = ind({ at: T - 34_000, rsi: 48, rsiSlope: -1.2, bollinger: { ...ind().bollinger, position: 0.55, touchUpper: true }, dmi: { plusDI: 24, minusDI: 28, spread: -4, plusSlope: -1.8, minusSlope: 2.1 }, adx: { value: 27, slope: 0.7, rising: true, strong: true }, shortMomentum: -1.0, shortHorizonDirection: "BEARISH", velocity: -0.5, rejectionUpperNow: true });
+    const strong = evaluateV3Entry({ indicators: neutralStrong, episode: sellEpisodeWithMemory({ maxSpread: 10 }), window: WINDOW, at: T - 34_000 });
     expect(strong.decision).toBe("SELL");
   });
 });
@@ -218,7 +232,7 @@ describe("RSI V3 — extreme reversal override", () => {
     shortMomentum: -1.1, shortHorizonDirection: "BEARISH", velocity: -0.6, acceleration: -0.3,
     structuralTrend: "BULLISH", rejectionUpperNow: true,
   });
-  const overrideEpisode = () => sellEpisode({ candidateRsi: 92, extreme: true, extremeDeep: true, maxRsi: 93, outsideUpper: true, reenteredUpper: true, touchedUpper: true, maxSpread: 8 });
+  const overrideEpisode = () => sellEpisodeWithMemory({ candidateRsi: 92, extreme: true, extremeDeep: true, maxRsi: 93, outsideUpper: true, reenteredUpper: true, touchedUpper: true, maxSpread: 8, bollingerRejectionExtreme: 1.18 });
 
   it("override permitido apenas com confluencia excepcional (RSI >=85) e em modo OVERRIDE", () => {
     const entry = evaluateV3Entry({ indicators: overrideIndicators(), episode: overrideEpisode(), window: WINDOW, at: T - 45_000 });
@@ -239,6 +253,86 @@ describe("RSI V3 — extreme reversal override", () => {
     const shallow = sellReady();
     const entry = evaluateV3Entry({ indicators: shallow, episode: sellEpisode({ candidateRsi: 76 }), window: WINDOW, at: T - 45_000 });
     expect(entry.confirmations.overrideEligible).toBe(false);
+  });
+});
+
+describe("RSI V3.1 — memoria causal do episodio (evento != estado)", () => {
+  it("rejeicao do MESMO episodio vale sem exigir nova rejeicao no tick (T-5)", () => {
+    const thesis = firstSightThesisV3({ indicators: sellReady(), direction: "SELL", episode: sellEpisodeWithMemory({ maxSpread: 12, maxPosition: 0.98 }), at: T - 34_000 });
+    expect(thesis.valid).toBe(true);
+    expect(thesis.components.episodeRejectionValid).toBe(true);
+    expect(thesis.components.episodeStage2Recorded).toBe(true);
+    expect(thesis.rejection.ageMs).toBeLessThan(thesis.rejection.validityMs);
+  });
+
+  it("rejeicao antiga demais -> BLOCK (nao autoriza eternamente)", () => {
+    const episode = sellEpisodeWithMemory({ bollingerRejectionAt: T - 200_000, maxSpread: 12 });
+    const thesis = firstSightThesisV3({ indicators: sellReady(), direction: "SELL", episode, at: T - 34_000 });
+    expect(thesis.valid).toBe(false);
+    expect(thesis.hardFails).toContain("REJEICAO_ANTIGA_DEMAIS");
+  });
+
+  it("rejeicao invalidada pelo preco -> BLOCK", () => {
+    const episode = sellEpisodeWithMemory({ bollingerRejectionExtreme: 1.10, maxSpread: 12 });
+    const thesis = firstSightThesisV3({ indicators: sellReady(), direction: "SELL", episode, at: T - 34_000 });
+    expect(thesis.valid).toBe(false);
+    expect(thesis.hardFails).toContain("REJEICAO_INVALIDADA_PELO_PRECO");
+  });
+
+  it("band riding retomado -> BLOCK; strong continuation antiga -> BLOCK", () => {
+    const riding = ind({ ...sellReady(), bandRiding: { upper: true, lower: false } });
+    const ridingThesis = firstSightThesisV3({ indicators: riding, direction: "SELL", episode: sellEpisodeWithMemory({ maxSpread: 12 }), at: T - 34_000 });
+    expect(ridingThesis.valid).toBe(false);
+    expect(ridingThesis.hardFails).toContain("BAND_RIDING_AGAINST");
+    const strong = ind({ ...sellReady(), strongContinuation: { upper: true, lower: false } });
+    const strongThesis = firstSightThesisV3({ indicators: strong, direction: "SELL", episode: sellEpisodeWithMemory({ maxSpread: 12 }), at: T - 34_000 });
+    expect(strongThesis.valid).toBe(false);
+    expect(strongThesis.hardFails).toContain("CONTINUACAO_FORTE");
+  });
+
+  it("DI cross recente mantem Stage 2 mesmo com slope 0/negativo; cross antigo/revertido -> BLOCK", () => {
+    const flatSlope = ind({ at: T - 34_000, rsi: 62, rsiSlope: -0.4, bollinger: { ...ind().bollinger, position: 0.7, touchUpper: true }, dmi: { plusDI: 24, minusDI: 28, spread: -4, plusSlope: -0.2, minusSlope: -0.1 }, adx: { value: 26, slope: 0.2, rising: false, stabilizing: true }, shortMomentum: -0.6, structuralTrend: "BULLISH", shortHorizonDirection: "BEARISH", velocity: -0.3, rejectionUpperNow: true });
+    const stage = evaluateStageV3({ indicators: flatSlope, episode: sellEpisodeWithMemory({ maxSpread: 10 }) });
+    expect(stage.stage).toBe("NEW_DIRECTION_EMERGING");
+    expect(stage.emerging.crossValid).toBe(true);
+    expect(stage.strengths).toContain("DI_CROSS_PERSISTED");
+    const thesis = firstSightThesisV3({ indicators: flatSlope, direction: "SELL", episode: sellEpisodeWithMemory({ maxSpread: 10 }), at: T - 34_000 });
+    expect(thesis.valid).toBe(true);
+    const oldCross = evaluateStageV3({ indicators: flatSlope, episode: sellEpisodeWithMemory({ diCrossAt: T - 300_000, maxSpread: 10 }) });
+    expect(oldCross.stage).not.toBe("NEW_DIRECTION_EMERGING");
+    const reverted = diCrossValidityV3({ episode: sellEpisodeWithMemory({ maxSpread: 10 }), indicators: ind({ ...flatSlope, dmi: { plusDI: 30, minusDI: 22, spread: 8, plusSlope: 0.3, minusSlope: 0.1 } }), at: T - 34_000 });
+    expect(reverted.valid).toBe(false);
+    expect(reverted.reason).toBe("DI_NOVO_PERDEU_DOMINANCIA");
+  });
+
+  it("ADX volta a fortalecer a antiga com DI antigo dominante -> BLOCK", () => {
+    const backing = ind({ ...sellReady(), dmi: { plusDI: 30, minusDI: 22, spread: 8, plusSlope: 0.6, minusSlope: 0.2 }, adx: { value: 30, slope: 1.2, rising: true, strong: true } });
+    const thesis = firstSightThesisV3({ indicators: backing, direction: "SELL", episode: sellEpisodeWithMemory({ maxSpread: 12 }), at: T - 34_000 });
+    expect(thesis.valid).toBe(false);
+    expect(thesis.hardFails).toContain("ADX_FORTALECENDO_ANTIGA");
+    const cross = diCrossValidityV3({ episode: sellEpisodeWithMemory({ maxSpread: 12 }), indicators: backing, at: T - 34_000 });
+    expect(cross.valid).toBe(false);
+    expect(cross.reason).toBe("ADX_VOLTOU_FORTALECER_ANTIGA");
+  });
+
+  it("cushion <0.25 -> BLOCK (rejeicao e DI validos nao bastam)", () => {
+    const fragile = ind({ ...sellReady(), shortMomentum: -0.03, velocity: -0.01, acceleration: 0 });
+    const thesis = firstSightThesisV3({ indicators: fragile, direction: "SELL", episode: sellEpisodeWithMemory({ maxSpread: 12 }), at: T - 34_000 });
+    expect(thesis.valid).toBe(false);
+    expect(thesis.hardFails).toContain("CUSHION_ABAIXO");
+  });
+
+  it("dados insuficientes -> WAIT/INSUFFICIENT_HISTORY", () => {
+    const candles = Array.from({ length: 20 }, (_v, index) => ({ bucketStart: index * 5_000, bucketEnd: (index + 1) * 5_000, open: 1, high: 1.1, low: 0.9, close: 1 + index * 0.001 }));
+    const evaluation = evaluateIndicatorsV3({ candles, now: 200_000 });
+    expect(evaluation.status).toBe("WAIT");
+    expect(evaluation.reason).toBe("INSUFFICIENT_HISTORY");
+  });
+
+  it("rejeicao fora do mesmo episodio (candidate sem memoria) -> BLOCK", () => {
+    const thesis = firstSightThesisV3({ indicators: sellReady(), direction: "SELL", episode: sellEpisode({ maxSpread: 12 }), at: T - 34_000 });
+    expect(thesis.valid).toBe(false);
+    expect(thesis.hardFails).toContain("SEM_REJEICAO_NO_EPISODIO");
   });
 });
 

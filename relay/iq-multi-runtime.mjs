@@ -1304,7 +1304,9 @@ export class IqMultiRuntime extends EventEmitter {
   /* ------------------- RSI AGENTS V3 (estrategia unica; ordem via submitAgentV3Order) ------------------- */
   #observeRsiAgents(ctx, list, now) {
     if (!this.rsiAgentsV3?.enabled) return null;
-    if (now - (ctx.rsiAgentsAt ?? 0) < 5_000) return null;
+    // V3.1: throttle abaixo da cadencia de candle (5s) para garantir que a ULTIMA avaliacao
+    // causal antes do safe cutoff nunca seja pulada por jitter de ~1 tick.
+    if (now - (ctx.rsiAgentsAt ?? 0) < 4_500) return null;
     ctx.rsiAgentsAt = now;
     // Universo reconciliado periodicamente (throttle interno): mercado novo entra; mercado que sai do feed fica bloqueado.
     void this.rsiAgentsV3.assignUniverse([...this.markets.values()]);

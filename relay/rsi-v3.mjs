@@ -13,7 +13,7 @@
 import { rsiWilder, adxWilder, atrWilder } from "./feature-engine.mjs";
 
 export const V3_ID = "RSI_REVERSAL_PULLBACK_V3";
-export const RSI_V3_VERSION = "RSI_REVERSAL_PULLBACK_V3_V1";
+export const RSI_V3_VERSION = "RSI_REVERSAL_PULLBACK_V3_V1_1";
 
 export const RSI_V3_POLICY = Object.freeze({
   version: RSI_V3_VERSION,
@@ -47,6 +47,16 @@ export const RSI_V3_POLICY = Object.freeze({
   overrideMinLeadMs: 55_000,
   overrideRsiBuys: [15, 10],
   overrideRsiSells: [85, 90],
+  // V3.1 — memoria causal curta do episodio (EVENTO != ESTADO ATUAL):
+  // rejeicao Bollinger e DI cross valem como evidencia recente dentro do MESMO episodio,
+  // com validade derivada de horizonte/candles/volatilidade/idade do candidate (nunca eterna).
+  candleMs: 5_000,
+  rejectionBaseValidityMs: 12_000,
+  rejectionMaxValidityMs: 30_000,
+  rejectionVolatilityRef: 0.0015,
+  diCrossBaseValidityMs: 20_000,
+  diCrossMaxValidityMs: 45_000,
+  firstSightVersion: "V3_1_EPISODE_EVENT_STATE",
   finalWindowMs: 5000,
   minimumSafeMarginMs: 3000,
   noTuning: true,
@@ -223,6 +233,14 @@ export function createEpisodeV3({ indicators, at = null, expiryAt = null } = {})
     maxMinusDI: num(indicators?.dmi?.minusDI), minMinusDI: num(indicators?.dmi?.minusDI),
     maxSpread: num(indicators?.dmi?.spread), minSpread: num(indicators?.dmi?.spread),
     oldDiWeakStreak: 0, newDiReactStreak: 0, neutralTicks: 0, lateralTicks: 0,
+    // V3.1: memoria causal do episodio (eventos, nao apenas estado atual).
+    bollingerTouchAt: (direction === "SELL" ? indicators?.bollinger?.touchUpper === true : indicators?.bollinger?.touchLower === true) ? atMs : null,
+    bollingerRejectionAt: (direction === "SELL" ? indicators?.rejectionUpperNow === true : indicators?.rejectionLowerNow === true) ? atMs : null,
+    bollingerRejectionPrice: (direction === "SELL" ? indicators?.rejectionUpperNow === true : indicators?.rejectionLowerNow === true) ? num(indicators?.bollinger?.close) : null,
+    bollingerRejectionDirection: (direction === "SELL" ? indicators?.rejectionUpperNow === true : indicators?.rejectionLowerNow === true) ? (direction === "SELL" ? "UPPER" : "LOWER") : null,
+    bollingerReentryConfirmed: (direction === "SELL" ? indicators?.rejectionUpperNow === true : indicators?.rejectionLowerNow === true),
+    bollingerRejectionExtreme: (direction === "SELL" ? indicators?.outsideUpper === true : indicators?.outsideLower === true) ? num(indicators?.bollinger?.close) : num(indicators?.bollinger?.close),
+    diCrossAt: null, diCrossDirection: null, lastDiDominance: null, newDirectionConfirmedAt: null,
     expiryAt: num(expiryAt), carriedExpiries: 0, lastAt: atMs,
   };
 }
@@ -260,6 +278,8 @@ export function updateEpisodeV3({ episode = null, indicators, at = null } = {}) 
   if (rsi !== null) { episode.minRsi = Math.min(episode.minRsi ?? rsi, rsi); episode.maxRsi = Math.max(episode.maxRsi ?? rsi, rsi); }
   const band = indicators?.bollinger;
   if (band) {
+    const sell = episode.direction === "SELL";
+    const reenteredBefore = sell ? episode.reenteredUpper === true : episode.reenteredLower === true;
     if (band.touchUpper) episode.touchedUpper = true;
     if (band.touchLower) episode.touchedLower = true;
     if (band.outsideUpper) episode.outsideUpper = true;
@@ -270,6 +290,22 @@ export function updateEpisodeV3({ episode = null, indicators, at = null } = {}) 
     if (episode.touchedLower && band.position > 1 - policy.bandTouchPosition) episode.reenteredLower = true;
     episode.maxPosition = Math.max(episode.maxPosition ?? band.position, band.position);
     episode.minPosition = Math.min(episode.minPosition ?? band.position, band.position);
+    // V3.1: registra o EVENTO de rejeicao/reentrada (nao so o estado do candle).
+    if (sell ? band.touchUpper === true : band.touchLower === true) episode.bollingerTouchAt = episode.bollingerTouchAt ?? atMs;
+    if (sell ? band.outsideUpper === true : band.outsideLower === true) {
+      const close = num(band.close);
+      if (close !== null) episode.bollingerRejectionExtreme = episode.bollingerRejectionExtreme === null || episode.bollingerRejectionExtreme === undefined
+        ? close : sell ? Math.max(episode.bollingerRejectionExtreme, close) : Math.min(episode.bollingerRejectionExtreme, close);
+    }
+    const rejectionNow = sell ? band && indicators.rejectionUpperNow === true : indicators.rejectionLowerNow === true;
+    const reenteredNow = !reenteredBefore && (sell ? episode.reenteredUpper === true : episode.reenteredLower === true);
+    if (rejectionNow || reenteredNow) {
+      episode.bollingerRejectionAt = atMs;
+      episode.bollingerRejectionPrice = num(band.close);
+      episode.bollingerRejectionDirection = sell ? "UPPER" : "LOWER";
+      episode.bollingerReentryConfirmed = true;
+      if (episode.bollingerRejectionExtreme === null || episode.bollingerRejectionExtreme === undefined) episode.bollingerRejectionExtreme = num(band.close);
+    }
   }
   const dmi = indicators?.dmi;
   if (dmi) {
@@ -283,6 +319,13 @@ export function updateEpisodeV3({ episode = null, indicators, at = null } = {}) 
     const newReact = episode.direction === "BUY" ? (dmi.plusSlope !== null && dmi.plusSlope > 0) : (dmi.minusSlope !== null && dmi.minusSlope > 0);
     episode.oldDiWeakStreak = oldWeak ? (episode.oldDiWeakStreak ?? 0) + 1 : 0;
     episode.newDiReactStreak = newReact ? (episode.newDiReactStreak ?? 0) + 1 : 0;
+    // V3.1: registra o EVENTO de DI cross (nova direcao assume), que passa a valer no episodio.
+    const sell = episode.direction === "SELL";
+    const newDominant = sell ? num(dmi.minusDI) !== null && num(dmi.plusDI) !== null && dmi.minusDI > dmi.plusDI : num(dmi.plusDI) !== null && num(dmi.minusDI) !== null && dmi.plusDI > dmi.minusDI;
+    if (newDominant && episode.lastDiDominance !== true) {
+      episode.diCrossAt = atMs; episode.diCrossDirection = episode.direction;
+    }
+    episode.lastDiDominance = newDominant;
   }
   episode.expiryAt = num(indicators?.targetExpiryAt) ?? episode.expiryAt;
   episode.lastAt = atMs;
@@ -328,6 +371,9 @@ export function evaluateStageV3({ indicators, episode } = {}) {
   const adxNotStrengthening = adx.slope === null || adx.slope === undefined || adx.slope <= policy.adxStabilizeBand;
   const adxStoppedFalling = adx.slope !== null && adxSlopeStopped(adx, policy);
   const adxRisingWithNewDi = diCross && num(adx.slope) !== null && adx.slope > policy.adxRisingSlope;
+  // V3.1: um DI cross RECENTE ainda estruturalmente valido nao pode ser apagado por um slope 0/negativo no tick.
+  const crossInfo = diCrossValidityV3({ episode, indicators, at: num(indicators?.at) });
+  const crossValid = crossInfo.valid === true;
   const weakening = {
     oldDiFalling,
     spreadContracting: contraction.clear,
@@ -339,14 +385,18 @@ export function evaluateStageV3({ indicators, episode } = {}) {
     newDiReacting,
     newDiReactStreak: episode.newDiReactStreak ?? 0,
     diCross,
+    crossValid,
+    crossAgeMs: crossInfo.ageMs,
+    crossReason: crossInfo.reason,
     adxStoppedFalling,
     adxRisingWithNewDi,
     adxTransition: adxStoppedFalling || adxRisingWithNewDi,
   };
   const stage1 = oldDiFalling && (contraction.clear || newDiReacting) && adxNotStrengthening;
-  const stage2 = newDiReacting && (adxStoppedFalling || adxRisingWithNewDi || diCross);
+  const stage2 = crossValid || (newDiReacting && (adxStoppedFalling || adxRisingWithNewDi || diCross));
   const strengths = [];
   if (diCross) strengths.push("DI_CROSS");
+  if (crossValid) strengths.push("DI_CROSS_PERSISTED");
   if (adxRisingWithNewDi) strengths.push("ADX_RISING_NEW_DI");
   if ((episode.oldDiWeakStreak ?? 0) >= 2 && (episode.newDiReactStreak ?? 0) >= 2) strengths.push("SUSTAINED_TWO_SIDED");
   if (contraction.clear) strengths.push("SPREAD_CONTRACTION");
@@ -366,6 +416,63 @@ export function evaluateStageV3({ indicators, episode } = {}) {
 function adxSlopeStopped(adx, policy) {
   if (adx.slope === null || adx.slope === undefined) return true;
   return adx.slope >= -policy.adxStabilizeBand;
+}
+
+/* ------------------------------------------------------------------ *
+ * V3.1 — memoria causal do episodio: rejeicao Bollinger e DI cross
+ * (evento registrado no episodio; validade curta derivada de ruido/idade)
+ * ------------------------------------------------------------------ */
+
+/** Validade da rejeicao: base 12s, cresce com volatilidade, encolhe com a idade do candidate. */
+export function rejectionValidityV3({ episode, indicators, at = null } = {}) {
+  const policy = RSI_V3_POLICY;
+  if (!episode?.bollingerRejectionAt) return { valid: false, reason: "SEM_REJEICAO_NO_EPISODIO", ageMs: null, validityMs: null, invalidated: false, extreme: null };
+  const atMs = num(at) ?? num(indicators?.at) ?? Date.now();
+  const ageMs = atMs - episode.bollingerRejectionAt;
+  const price = num(indicators?.bollinger?.close);
+  const vol = num(indicators?.noiseHorizon) ?? 0;
+  const volRatio = price && price > 0 ? clamp(vol / (price * policy.rejectionVolatilityRef), 0, 2) : 0;
+  const ageFactor = clamp((atMs - (episode.candidateAt ?? atMs)) / 60_000, 0, 1);
+  const validityMs = clamp(policy.rejectionBaseValidityMs * (1 + 0.6 * volRatio) * (1 - 0.4 * ageFactor), 8_000, policy.rejectionMaxValidityMs);
+  const sell = episode.direction === "SELL";
+  const extreme = num(episode.bollingerRejectionExtreme);
+  const noise = num(indicators?.noisePerCandle) ?? 0;
+  // Invalida se o preco volta a superar/perder o extremo da rejeicao (tendencia antiga retomou).
+  const invalidated = extreme !== null && price !== null && (sell ? price > extreme + 0.1 * noise : price < extreme - 0.1 * noise);
+  const bandRidingAgainst = sell ? indicators?.bandRiding?.upper === true : indicators?.bandRiding?.lower === true;
+  const strongContinuationAgainst = sell ? indicators?.strongContinuation?.upper === true : indicators?.strongContinuation?.lower === true;
+  const valid = ageMs <= validityMs && !invalidated && !bandRidingAgainst && !strongContinuationAgainst;
+  const reason = valid ? "REJEICAO_EPISODIO_VALIDA"
+    : invalidated ? "REJEICAO_INVALIDADA_PELO_PRECO"
+      : ageMs > validityMs ? "REJEICAO_ANTIGA_DEMAIS"
+        : bandRidingAgainst ? "BAND_RIDING_RETOMADO" : "CONTINUACAO_FORTE";
+  return { valid, reason, ageMs, validityMs: Math.round(validityMs), invalidated, extreme: round(extreme, 8), price: round(price, 8) };
+}
+
+/** Validade do DI cross: base 20s, cresce com volatilidade, encolhe com a idade do candidate. */
+export function diCrossValidityV3({ episode, indicators, at = null } = {}) {
+  const policy = RSI_V3_POLICY;
+  if (!episode?.diCrossAt || episode.diCrossDirection !== episode.direction) return { valid: false, reason: "SEM_DI_CROSS_NO_EPISODIO", ageMs: null, validityMs: null, newDominant: false, adxBackingOld: false };
+  const atMs = num(at) ?? num(indicators?.at) ?? Date.now();
+  const ageMs = atMs - episode.diCrossAt;
+  const price = num(indicators?.bollinger?.close);
+  const vol = num(indicators?.noiseHorizon) ?? 0;
+  const volRatio = price && price > 0 ? clamp(vol / (price * policy.rejectionVolatilityRef), 0, 2) : 0;
+  const ageFactor = clamp((atMs - (episode.candidateAt ?? atMs)) / 60_000, 0, 1);
+  const validityMs = clamp(policy.diCrossBaseValidityMs * (1 + 0.6 * volRatio) * (1 - 0.4 * ageFactor), 10_000, policy.diCrossMaxValidityMs);
+  const sell = episode.direction === "SELL";
+  const dmi = indicators?.dmi ?? {};
+  const adx = indicators?.adx ?? {};
+  const newDominant = sell ? num(dmi.minusDI) !== null && num(dmi.plusDI) !== null && dmi.minusDI > dmi.plusDI : num(dmi.plusDI) !== null && num(dmi.minusDI) !== null && dmi.plusDI > dmi.minusDI;
+  const oldDominant = sell ? num(dmi.plusDI) !== null && num(dmi.minusDI) !== null && dmi.plusDI > dmi.minusDI : num(dmi.minusDI) !== null && num(dmi.plusDI) !== null && dmi.minusDI > dmi.plusDI;
+  const adxBackingOld = adx.slope !== null && adx.slope !== undefined && adx.slope > policy.adxRisingSlope && oldDominant;
+  const strongContinuationAgainst = sell ? indicators?.strongContinuation?.upper === true : indicators?.strongContinuation?.lower === true;
+  const valid = ageMs <= validityMs && newDominant && !adxBackingOld && !strongContinuationAgainst;
+  const reason = valid ? "DI_CROSS_EPISODIO_VALIDO"
+    : adxBackingOld ? "ADX_VOLTOU_FORTALECER_ANTIGA"
+      : !newDominant ? "DI_NOVO_PERDEU_DOMINANCIA"
+        : ageMs > validityMs ? "DI_CROSS_ANTIGO_DEMAIS" : "CONTINUACAO_FORTE";
+  return { valid, reason, ageMs, validityMs: Math.round(validityMs), newDominant, adxBackingOld };
 }
 
 /* ------------------------------------------------------------------ *
@@ -406,39 +513,59 @@ export function projectExpiryV3({ indicators, direction, entryPrice = null } = {
 }
 
 /* ------------------------------------------------------------------ *
- * Revalidacao "primeira vista" (T-5): a tese ainda faria sentido AGORA?
+ * V3.1 — firstSight: A) evidencia historica recente do MESMO episodio
+ *              B) estado ATUAL da tese (nao exige repetir eventos no tick)
  * ------------------------------------------------------------------ */
 
-export function firstSightThesisV3({ indicators, direction } = {}) {
+export function firstSightThesisV3({ indicators, direction, episode = null, at = null } = {}) {
   const policy = RSI_V3_POLICY;
-  if (!indicators || (direction !== "BUY" && direction !== "SELL")) return { valid: false, components: null, reason: "NO_DIRECTION" };
+  if (!indicators || (direction !== "BUY" && direction !== "SELL")) return { valid: false, components: null, hardFails: ["NO_DIRECTION"], reason: "NO_DIRECTION" };
+  const atMs = num(at) ?? num(indicators?.at) ?? Date.now();
   const sell = direction === "SELL";
   const band = indicators.bollinger ?? {};
   const dmi = indicators.dmi ?? {};
   const adx = indicators.adx ?? {};
   const newDiDominant = sell ? num(dmi.minusDI) !== null && num(dmi.plusDI) !== null && dmi.minusDI > dmi.plusDI : num(dmi.plusDI) !== null && num(dmi.minusDI) !== null && dmi.plusDI > dmi.minusDI;
+  const projection = projectExpiryV3({ indicators, direction, entryPrice: band.close ?? null });
+  const cushionOk = projection !== null && projection.fragile !== true;
+  const rejection = rejectionValidityV3({ episode, indicators, at: atMs });
+  const cross = diCrossValidityV3({ episode, indicators, at: atMs });
+  const rejectionNow = sell ? indicators.rejectionUpperNow === true || (band.touchUpper === true && band.position < policy.bandTouchPosition) : indicators.rejectionLowerNow === true || (band.touchLower === true && band.position > 1 - policy.bandTouchPosition);
+  const historicalRejection = episode ? rejection.valid : rejectionNow;
+  const stage2Recorded = episode ? (episode.newDirectionConfirmedAt !== null && episode.newDirectionConfirmedAt !== undefined) || cross.valid : true;
+  const newDirectionStillValid = newDiDominant && (cross.valid || (sell ? num(dmi.minusSlope) !== null && dmi.minusSlope >= 0 : num(dmi.plusSlope) !== null && dmi.plusSlope >= 0));
   const components = {
-    rsiExtremeOrLeaving: sell
-      ? num(indicators.rsi) >= policy.rsiSellThreshold - 5 || num(indicators.rsiPrevious) >= policy.rsiSellThreshold
-      : num(indicators.rsi) <= policy.rsiBuyThreshold + 5 || num(indicators.rsiPrevious) <= policy.rsiBuyThreshold,
-    rsiMovingWithDirection: sell ? num(indicators.rsiSlope) !== null && indicators.rsiSlope <= 0 : num(indicators.rsiSlope) !== null && indicators.rsiSlope >= 0,
-    bandRejectionNow: sell ? (indicators.rejectionUpperNow === true || (band.touchUpper === true && band.position < policy.bandTouchPosition)) : (indicators.rejectionLowerNow === true || (band.touchLower === true && band.position > 1 - policy.bandTouchPosition)),
+    // A) evidencia historica do mesmo episodio (eventos passados, janela curta)
+    candidateExtreme: episode ? (sell ? num(episode.candidateRsi) >= policy.rsiSellThreshold : num(episode.candidateRsi) <= policy.rsiBuyThreshold) : true,
+    episodeRejectionValid: historicalRejection,
+    episodeStage2Recorded: stage2Recorded,
+    // B) estado ATUAL
+    rsiMovingWithDirection: sell ? num(indicators.rsiSlope) !== null && indicators.rsiSlope <= 0.05 : num(indicators.rsiSlope) !== null && indicators.rsiSlope >= -0.05,
+    priceNotInvalidated: rejection.invalidated !== true,
     bandNotRidingAgainst: sell ? indicators.bandRiding?.upper !== true : indicators.bandRiding?.lower !== true,
-    oldDiFalling: sell ? num(dmi.plusSlope) !== null && dmi.plusSlope < 0 : num(dmi.minusSlope) !== null && dmi.minusSlope < 0,
-    newDiReacting: sell ? num(dmi.minusSlope) !== null && dmi.minusSlope > 0 : num(dmi.plusSlope) !== null && dmi.plusSlope > 0,
-    // ADX subindo COM a nova direcao dominante e tendencia nova, nao a antiga.
+    noStrongContinuationAgainst: sell ? indicators.strongContinuation?.upper !== true : indicators.strongContinuation?.lower !== true,
+    newDirectionStillValid,
     adxNotStrengtheningOld: adx.slope === null || adx.slope === undefined || adx.slope <= policy.adxStabilizeBand || newDiDominant,
     shortMomentumWithDirection: sell ? indicators.shortHorizonDirection === "BEARISH" || (num(indicators.velocity) ?? 0) < 0 : indicators.shortHorizonDirection === "BULLISH" || (num(indicators.velocity) ?? 0) > 0,
-    noStrongContinuationAgainst: sell ? indicators.strongContinuation?.upper !== true : indicators.strongContinuation?.lower !== true,
+    cushionOk,
   };
   const hardFails = [];
+  if (!components.candidateExtreme) hardFails.push("CANDIDATE_NAO_EXTREMO");
+  if (!components.episodeRejectionValid) hardFails.push(episode ? rejection.reason : "SEM_REJEICAO_ATUAL");
+  if (!components.episodeStage2Recorded) hardFails.push("STAGE2_NAO_REGISTRADO");
   if (!components.rsiMovingWithDirection) hardFails.push("RSI_SEM_DIRECAO");
-  if (!components.bandRejectionNow) hardFails.push("SEM_REJEICAO_ATUAL");
   if (!components.bandNotRidingAgainst) hardFails.push("BAND_RIDING_AGAINST");
-  if (!components.newDiReacting) hardFails.push("NOVA_DIRECAO_AUSENTE");
-  if (!components.adxNotStrengtheningOld) hardFails.push("ADX_FORTALECENDO_ANTIGA");
   if (!components.noStrongContinuationAgainst) hardFails.push("CONTINUACAO_FORTE");
-  return { valid: hardFails.length === 0, components, hardFails, reason: hardFails.length ? hardFails.join("+") : "FIRST_SIGHT_THESIS_OK" };
+  if (!components.newDirectionStillValid) hardFails.push(cross.reason === "DI_CROSS_EPISODIO_VALIDO" ? "NOVA_DIRECAO_AUSENTE" : `NOVA_DIRECAO_${cross.reason ?? "AUSENTE"}`);
+  if (!components.adxNotStrengtheningOld) hardFails.push("ADX_FORTALECENDO_ANTIGA");
+  if (!components.shortMomentumWithDirection) hardFails.push("MOMENTUM_CURTO_CONTRARIO");
+  if (!components.cushionOk) hardFails.push("CUSHION_ABAIXO");
+  const uniqueFails = [...new Set(hardFails)];
+  return {
+    version: policy.firstSightVersion, valid: uniqueFails.length === 0, components, hardFails: uniqueFails,
+    reason: uniqueFails.length ? uniqueFails.join("+") : "FIRST_SIGHT_THESIS_OK",
+    rejection, cross, projection,
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -457,7 +584,7 @@ export function evaluateV3Entry({ indicators, episode, window = null, at = null 
   const candidateFresh = atMs - episode.candidateAt <= policy.candidateMaxAgeMs;
   const band = indicators?.bollinger ?? {};
   const projection = projectExpiryV3({ indicators, direction, entryPrice: band.close ?? null });
-  const firstSight = firstSightThesisV3({ indicators, direction });
+  const firstSight = firstSightThesisV3({ indicators, direction, episode, at: atMs });
   const rsiLeaving = sell
     ? rsi !== null && rsi < (episode.maxRsi ?? rsi) && (indicators.rsiSlope === null || indicators.rsiSlope <= 0.05)
     : rsi !== null && rsi > (episode.minRsi ?? rsi) && (indicators.rsiSlope === null || indicators.rsiSlope >= -0.05);
@@ -490,8 +617,12 @@ export function evaluateV3Entry({ indicators, episode, window = null, at = null 
   if (rsiInNeutral && firstSight.valid !== true) blockers.push("RSI_NEUTRO_TESE_AMBIGUA");
 
   const accepted = blockers.length === 0;
-  const overrideAllowed = Boolean(overrideEligible && window && atMs < window.entryWindowOpensAt && atMs >= window.purchaseCutoffAt - policy.overrideMinLeadMs);
-  const entryMode = !accepted ? null : overrideAllowed ? "EXTREME_REVERSAL_OVERRIDE" : "NORMAL_T5";
+  // V3.1: registra o EVENTO de Stage 2/confirmacao da nova direcao no episodio (memoria causal).
+  if (accepted && episode && (episode.newDirectionConfirmedAt === null || episode.newDirectionConfirmedAt === undefined)) episode.newDirectionConfirmedAt = atMs;
+  const inNormalWindow = window ? atMs >= window.entryWindowOpensAt && atMs <= window.entryWindowClosesAt : false;
+  const inOverrideLead = window ? atMs >= window.purchaseCutoffAt - policy.overrideMinLeadMs && atMs < window.entryWindowOpensAt : false;
+  const intendedEntryMode = overrideEligible ? "EXTREME_REVERSAL_OVERRIDE" : "NORMAL_T5";
+  const entryMode = !accepted ? null : overrideEligible && inOverrideLead ? "EXTREME_REVERSAL_OVERRIDE" : inNormalWindow ? "NORMAL_T5" : null;
   return {
     strategy: V3_ID, direction, decision: accepted ? direction : "WAIT", accepted,
     status: accepted ? "V3_CONFIRMED" : stageEval.blockers.length ? "V3_BLOCKED_STRONG_TREND" : "V3_WAITING_CONTINUITY",
@@ -499,7 +630,17 @@ export function evaluateV3Entry({ indicators, episode, window = null, at = null 
     stage: stageEval.stage, strength: stageEval.strength,
     weakening: stageEval.weakening, emerging: stageEval.emerging, strengths: stageEval.strengths,
     confirmations: { candidateFresh, rsiLeaving, bandTouch, bandReentry, rsiInNeutral, strongConfirmation, extremeEpisode, deepExtreme, overrideEligible, firstSight, cushionOk, cushionStrong, rsiBand: episode.candidateRsiBand },
-    blockers, projection, firstSight, entryMode,
+    blockers, projection, firstSight, entryMode, intendedEntryMode, inNormalWindow, inOverrideLead,
+    episodeEvidence: {
+      bollingerRejectionAt: episode.bollingerRejectionAt ?? null, bollingerRejectionPrice: episode.bollingerRejectionPrice ?? null,
+      bollingerRejectionDirection: episode.bollingerRejectionDirection ?? null, bollingerReentryConfirmed: episode.bollingerReentryConfirmed === true,
+      barsSinceRejection: episode.bollingerRejectionAt ? Math.floor((atMs - episode.bollingerRejectionAt) / policy.candleMs) : null,
+      msSinceRejection: episode.bollingerRejectionAt ? atMs - episode.bollingerRejectionAt : null,
+      diCrossAt: episode.diCrossAt ?? null, diCrossDirection: episode.diCrossDirection ?? null,
+      diCrossAgeMs: episode.diCrossAt ? atMs - episode.diCrossAt : null,
+      newDirectionConfirmedAt: episode.newDirectionConfirmedAt ?? null,
+      rejectionValidity: firstSight.rejection ?? null, diCrossValidity: firstSight.cross ?? null,
+    },
     candidate: { candidateAt: episode.candidateAt, candidateAgeMs: atMs - episode.candidateAt, candidateRsi: episode.candidateRsi, candidatePrice: episode.candidatePrice, candidateExpiry: episode.candidateExpiry, candidateDirection: direction, candidateReason: episode.candidateReason },
   };
 }
@@ -535,7 +676,9 @@ export function rsiV3FreezeManifest() {
       stage1: "tendencia antiga enfraquecendo (DI antigo caindo, spread contraindo, ADX nao fortalecendo) mantem candidate vivo, NAO autoriza",
       stage2: "nova direcao emergindo (DI novo reagindo/subindo/cruzando + ADX para de cair/estabiliza/sobe com DI novo dominante) — sem cross obrigatorio",
       bollinger: "touch/outside + rejeicao/reentrada + afastamento; band riding/expansao contra bloqueiam",
-      revalidation: "recalculo completo na janela final (T-5) com teste 'primeira vista'; sem tese atual => CANCEL",
+      revalidation: "recalculo completo na janela final com 'primeira vista' V3.1: A) evidencia historica recente do MESMO episodio (RSI extremo, rejeicao Bollinger, Stage1/2, DI cross) + B) estado atual (trajetoria RSI, preco nao invalidou, sem band riding/continuacao forte, nova direcao ainda valida, ADX nao voltou a antiga, cushion, momentum curto); eventos nao precisam se repetir no tick",
+      eventMemory: "rejeicao Bollinger e DI cross persistidos no episodio (at/price/direction/age) com validade curta derivada de horizonte 60s/candles 5s/volatilidade/idade do candidate; rejeicao velha ou invalidada nao autoriza",
+      finalChance: "decisao na ULTIMA avaliacao causal antes do safe cutoff (candle 5s conhecido), nunca depois do cutoff e sem dado futuro",
       neutralSubmit: "RSI em 45-55 no submit exige confirmacao forte + cushion forte",
       projection: "projecao deterministica ~60s (ATR/impulso/velocidade) com EXPECTED_EXPIRY_CUSHION; fragile => WAIT",
       override: "EXTREME_REVERSAL_OVERRIDE apenas RSI<=15/>=85 (deep <=10/>=90) com confluencia excepcional; duvida => fluxo normal",
