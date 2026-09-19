@@ -55,6 +55,8 @@ import { DualReasoningEngine } from "./dual-reasoning.mjs";
 import { DualRoundMarketDeltaObserver } from "./dual-round-observer.mjs";
 // SOLO_REASONING_V1_SHADOW: controle de simplicidade (1 analista, 1 passada). NUNCA executa.
 import { SoloReasoningEngine } from "./solo-reasoning.mjs";
+// PRACTICE_FOUR_WAY_3X_TEST_V1: harness de execucao experimental (DRY_RUN default; nunca segundo caminho de broker).
+import { FourWayExperiment, EXPERIMENT_ID as FOUR_WAY_EXPERIMENT_ID } from "./four-way-experiment.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
 export const ACK_TIMEOUT_MS = 15_000;
@@ -144,6 +146,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.dual = new DualReasoningEngine({ pool, dataHub: this.dataHub, now: this.now, log: this.log, enabled: dualReasoningEnabled === true });
     this.dualObserver = new DualRoundMarketDeltaObserver({ pool, now: this.now, log: this.log, enabled: dualReasoningEnabled === true });
     this.solo = new SoloReasoningEngine({ pool, now: this.now, log: this.log, enabled: soloReasoningEnabled === true });
+    this.fourWay = new FourWayExperiment({ pool, runtime: this, now: this.now, log: this.log, minStakeBrl: 1 });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -957,6 +960,8 @@ export class IqMultiRuntime extends EventEmitter {
       this.#safe(() => this.#observeDualRound1(ctx, candidate, now));
       // SOLO_REASONING (SHADOW): uma passada, mesmo T0; nunca influencia nada.
       this.#safe(() => this.#observeSolo(ctx, candidate, now));
+      // HARNESS 4x3 (DRY_RUN): registra as decisoes finais existentes; nunca altera estrategia.
+      this.#safe(() => this.#observeFourWay(ctx, candidate, now, action));
       this.#setAgent(ctx, "SIGNAL", `CANDIDATE_${action}`);
       this.#emitEvent("candidate.created", { marketKey: ctx.marketKey, candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, secondsToWindow: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
       this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "CANDIDATE_CREATED", { candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, serverNow, regime: snapshot.regime, setup: snapshot.setup, trigger: snapshot.trigger }, { persist: true });
@@ -1253,6 +1258,63 @@ export class IqMultiRuntime extends EventEmitter {
       marketMeta: { symbol: ctx.display ?? null, availability: ctx.availability ?? null, productKind: candidate?.productKind ?? null },
       snapshotId: `${ctx.marketKey}:${candidate?.id ?? now}`,
     });
+  }
+
+  /* ------------------- HARNESS PRACTICE_FOUR_WAY_3X_TEST_V1 (DRY_RUN default) ------------------- */
+  /** Observa as decisoes finais JA existentes (nao recalcula); WAIT nunca executa. */
+  #observeFourWay(ctx, candidate, now, action) {
+    if (!this.fourWay || !candidate) return null;
+    const snapshotBase = { marketKey: ctx.marketKey, marketType: ctx.marketType, regime: ctx.decisionState?.regime ?? null, setup: ctx.decisionState?.setup ?? null, payout: ctx.payout };
+    const context = {
+      accountContext: this.accountContext.context,
+      brokerAccountType: this.accountContext.context,
+      realState: this.realMode.authorized() ? "ARMED" : "LOCKED",
+      realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true",
+      killSwitchEngaged: this.killSwitch.status().executionEnabled !== true,
+      brokerConnected: this.session.connected === true,
+      dataQuality: ctx.decisionState?.featuresAvailable === false ? "UNSAFE" : "HEALTHY",
+      marketValid: Boolean(ctx.marketKey && ctx.activeId),
+    };
+    const definitions = [
+      { strategyId: "PROFESSIONAL_BRAIN_G2", direction: action, snapshot: { ...snapshotBase, trader: ctx.agents?.trader?.action ?? null, critic: ctx.agents?.critic?.traderAssessment ?? null, consensus: ctx.agents?.consensus?.status ?? null, qualityScore: candidate.quality?.score ?? null, jit: candidate.status ?? null } },
+      { strategyId: "PROFESSIONAL_AGENT_SYSTEM_V4", direction: ctx.lastAgentsV4?.action ?? null, snapshot: { ...snapshotBase, scenario: ctx.lastAgentsV4?.scenario ?? null, whyNow: ctx.lastAgentsV4?.whyNow ?? null } },
+      { strategyId: "DUAL_REASONING_V1", direction: this.dual?.observations?.get(this.#dualObservationId(ctx, candidate))?.finalAction ?? null, snapshot: { ...snapshotBase, survival: this.dual?.observations?.get(this.#dualObservationId(ctx, candidate))?.thesisSurvival ?? null } },
+      { strategyId: "SOLO_REASONING_V1", direction: this.solo?.observations?.get(`solo:${ctx.marketKey}:${candidate.id}`)?.finalAction ?? null, snapshot: { ...snapshotBase, scenario: this.solo?.observations?.get(`solo:${ctx.marketKey}:${candidate.id}`)?.discovery?.primaryScenario ?? null, survival: this.solo?.observations?.get(`solo:${ctx.marketKey}:${candidate.id}`)?.refutation?.survival ?? null } },
+    ];
+    for (const definition of definitions) {
+      if (definition.direction !== "BUY" && definition.direction !== "SELL") continue;
+      void this.fourWay.observeDecision({
+        strategyId: definition.strategyId, opportunityId: candidate.id, decisionId: candidate.id,
+        marketKey: ctx.marketKey, marketType: ctx.marketType, direction: definition.direction,
+        scenario: definition.snapshot.scenario ?? null, whyNow: definition.snapshot.whyNow ?? null,
+        targetEntryAt: candidate.targetEntryAt ?? null, targetExpiryAt: candidate.targetExpiryAt ?? null,
+        payout: ctx.payout, snapshot: definition.snapshot, context,
+      });
+    }
+    return definitions.length;
+  }
+
+  /** UNICO ponto de ordem experimental: reusa requestOrder (mesmo Execution Gate/broker adapter). */
+  async experimentRequestOrder({ marketKey, direction, stake, decisionId = null, idempotencyKey = null, strategyId = null, experimentId = null } = {}) {
+    if (experimentId !== FOUR_WAY_EXPERIMENT_ID) throw new IqWsError("EXPERIMENT_ID_MISMATCH", String(experimentId));
+    if (ACCOUNT_PRACTICE !== this.accountContext.context) throw new IqWsError("EXPERIMENT_PRACTICE_ONLY", this.accountContext.context);
+    return this.requestOrder({ marketKey, direction, stake, decisionId, idempotencyKey, source: `experiment:${strategyId ?? "unknown"}`, horizonSeconds: 60 });
+  }
+
+  /** Status do harness 4x3 (DRY_RUN por padrao; arm independente do REAL). */
+  async fourWayStatus() {
+    const status = await this.fourWay.status();
+    return {
+      ...status,
+      context: {
+        accountContext: this.accountContext.context,
+        realState: this.realMode.authorized() ? "ARMED" : "LOCKED",
+        killSwitchEngaged: this.killSwitch.status().executionEnabled !== true,
+        brokerConnected: this.session.connected === true,
+        autoExecute: this.config.autoExecute === true,
+      },
+      realAllowlistUntouched: true,
+    };
   }
 
   /* ------------------- SOLO_REASONING_V1_SHADOW (controle de simplicidade) ------------------- */
@@ -2410,6 +2472,8 @@ export class IqMultiRuntime extends EventEmitter {
     this.openPositions.delete(key); this.orderIndex.delete(String(brokerOrderId));
     await this.#persistExecution({ executionId: position.executionId, brokerOrderId: String(brokerOrderId), state: "SETTLED", accountContext: settlementContext, settledAt: nowIso(settledAt), brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, meta: { settlementReason: comparison.reason, causal: settlement.detail, marketKey: key } });
     this.#emitEvent("position.settled", { marketKey: key, brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, correlationId: position.correlationId ?? null, accountContext: settlementContext });
+    // Harness 4x3: marca settlement da execucao experimental (idempotente; no-op se a ordem nao for do experimento).
+    void this.fourWay?.recordSettlementByBrokerOrder({ brokerOrderId, result: broker.result, profit: broker.profit, entryPrice: position.entryPrice ?? null, expiryPrice: settlement.detail?.settlement ?? null });
     if (this.dataHub) this.#safe(() => this.dataHub.publish({
       eventType: "SETTLEMENT", marketKey: key, marketType: ctx.marketType, activeId: ctx.activeId,
       serverTime: ctx.serverTime, receivedAt: settledAt, availableAt: settledAt, producer: "iq-multi-runtime", source: "broker-settlement",
