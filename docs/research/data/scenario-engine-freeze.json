@@ -1,0 +1,155 @@
+{
+  "schema": "scenario-engine-freeze-v1",
+  "scenarioEngineVersion": "SCENARIO_ENGINE_V3_FROZEN",
+  "engineVersionConstant": "SCENARIO_ENGINE_V3",
+  "frozenAtUtc": "2026-09-19T08:21:48Z",
+  "frozenAtCommit": "87688267aa2145ab9af22551f26b1bb169eeb715",
+  "frozenAtCommitSubject": "chore(tests): commita atualizacoes de teste do refactor AI provider que estavam apenas no worktree (env 76 linhas, engine/pan/provenance) e remove 3 artefatos de 0 byte criados por comando shell malformado",
+  "manifestNote": "SCENARIO_ENGINE_V3_FROZEN e a designacao congelada do motor SCENARIO_ENGINE_V3. A constante de runtime continua SCENARIO_ENGINE_V3 para nao partir a serie prospectiva ja persistida; qualquer alteracao futura de logica exige NOVA VERSAO. O commit que adiciona este manifesto e o imediatamente seguinte a frozenAtCommit.",
+  "files": {
+    "relay/scenario-engine.mjs": {
+      "sha256": "54c68f07b45e64ac2da61ebf816619ccd5dd9dab3a65b83e4235ab31460f385d",
+      "role": "motor puro SCENARIO_ENGINE_V3 (regimes, cenarios, 8 playbooks)"
+    },
+    "relay/scenario-shadow.mjs": {
+      "sha256": "8216fb18826dc18137bf50376a699b714850c406d80cf3a6bd4b50754db096dc",
+      "role": "hook SHADOW + Critic independente 2 fases + persistencia observacional"
+    },
+    "relay/scenario-timing-intersection.mjs": {
+      "sha256": "a493cd4b9fbf6fa837b7d5cbf642905fc71292ab16b888869ef8e1a204d87f74",
+      "role": "camada observacional somente-leitura V3 x LATE_WINDOW_V2"
+    }
+  },
+  "verification": {
+    "test": "tests/research/scenario-engine-freeze.test.ts",
+    "command": "npx vitest run tests/research/scenario-engine-freeze.test.ts",
+    "recomputes": "sha256 dos 3 arquivos + versoes + 8 playbooks + FEATURE_COMPONENTS + OTC_UNAVAILABLE_FEATURES"
+  },
+  "configuration": {
+    "engine": {
+      "scenarioEngineVersion": "SCENARIO_ENGINE_V3",
+      "mode": "SHADOW_OBSERVATIONAL",
+      "execution": "SHADOW_ONLY",
+      "controlsExecution": false,
+      "sendsOrders": false,
+      "practiceOnly": true,
+      "realMoney": false,
+      "deterministic": true,
+      "io": "NONE",
+      "otcPolicy": "OBSERVABLE_ONLY_NO_SYNTHETIC_VOLUME_OR_ORDER_BOOK",
+      "tuningPolicy": "NO_TUNING_ON_WIN_LOSS"
+    },
+    "shadow": {
+      "scenarioShadowVersion": "scenario-shadow-v2",
+      "contractVersion": "scenario-engine-contract-v1",
+      "scenarioPolicyVersion": "SCENARIO_ENGINE_V3_SHADOW",
+      "currentPolicyVersion": "CURRENT_G2",
+      "divergencePolicy": "EXPERIMENTAL_V1",
+      "criticMode": "INDEPENDENT_TWO_PHASE",
+      "divergenceMode": "INVESTIGATION_NEVER_VOTING",
+      "directionPolicy": "NEVER_FLIPS_DIRECTION_FAIL_TO_WAIT",
+      "criticDirectionPolicy": "NEVER_ADOPT_CRITIC_DIRECTION_CONFLICT_UNRESOLVED_UNTIL_EVIDENCE",
+      "timingCoupling": "NONE",
+      "minResolutionEvidence": 4,
+      "minOppositeDirectionEvidence": 5,
+      "ablationComponents": ["rsi", "adx", "microstructure", "location", "volatility"],
+      "ablationDefault": { "rsi": true, "adx": true, "microstructure": true, "location": true, "volatility": true },
+      "ablationPolicy": "RESEARCH_ONLY_NO_LEARNED_WEIGHTS"
+    },
+    "intersection": {
+      "version": "scenario-timing-intersection-v1",
+      "mode": "READ_ONLY_COMPARISON",
+      "execution": "SHADOW_ONLY",
+      "controlsExecution": false,
+      "mutatesNeither": true,
+      "verdicts": ["BOTH_ENTRY", "SCENARIO_ENTRY_LATE_CANCEL", "SCENARIO_WAIT_LATE_ACCEPT", "BOTH_WAIT", "INSUFFICIENT_DATA"]
+    },
+    "runtimeFlags": {
+      "scenarioShadowEnabled": true,
+      "scenarioShadowEnabledSource": "default do construtor IqMultiRuntime (nenhuma env var de gate)",
+      "scenarioTimingIntersectionEnabled": true,
+      "scenarioTimingIntersectionEnabledSource": "default do construtor IqMultiRuntime (nenhuma env var de gate)",
+      "hook": "relay/iq-multi-runtime.mjs (#beginScenarioShadow / #observeScenarioShadow / #finalizeScenarioShadow / #observeScenarioTimingIntersection / recordOutcome)",
+      "brokerAutomation": "NONE"
+    },
+    "governance": {
+      "scope": "PRACTICE ONLY, ZERO REAL",
+      "martingale": false,
+      "lossRecovery": false,
+      "shadowSendsOrders": false
+    }
+  },
+  "features": {
+    "engineFeatureComponents": {
+      "rsi14": "rsi",
+      "adx14": "adx",
+      "plusDI": "adx",
+      "minusDI": "adx",
+      "streak": "microstructure",
+      "bodyRatio": "microstructure",
+      "upperWick": "microstructure",
+      "lowerWick": "microstructure",
+      "donchianPosition": "location",
+      "distanceToUpperATR": "location",
+      "distanceToLowerATR": "location",
+      "channelHigh": "location",
+      "channelLow": "location",
+      "atr": "volatility",
+      "atrRatio": "volatility"
+    },
+    "shadowFeatureComponents": {
+      "rsi14": "rsi",
+      "adx14": "adx",
+      "plusDI": "adx",
+      "minusDI": "adx",
+      "streak": "microstructure",
+      "bodyRatio": "microstructure",
+      "upperWick": "microstructure",
+      "lowerWick": "microstructure",
+      "donchianPosition": "location",
+      "distanceToUpperATR": "location",
+      "distanceToLowerATR": "location",
+      "channelHigh": "location",
+      "channelLow": "location",
+      "atr": "volatility",
+      "atrRatio": "volatility"
+    },
+    "otcUnavailable": [
+      "volume:OTC_NOT_OBSERVABLE",
+      "orderBook:OTC_NOT_OBSERVABLE",
+      "marketDepth:OTC_NOT_OBSERVABLE"
+    ],
+    "playbookFeaturesUsed": {
+      "PB_TREND_CONTINUATION": ["structureLabel", "donchianPosition", "velocity", "acceleration", "adx14", "plusDI", "minusDI", "rsi14", "atrRatio", "bodyRatio", "ticks"],
+      "PB_TREND_PULLBACK": ["structureLabel", "donchianPosition", "velocity", "acceleration", "rsi14", "atrRatio", "bodyRatio", "upperWick", "lowerWick"],
+      "PB_BREAKOUT": ["structureLabel", "donchianPosition", "channelHigh", "channelLow", "distanceToUpperATR", "distanceToLowerATR", "atrRatio", "bodyRatio", "upperWick", "lowerWick", "velocity", "ticks"],
+      "PB_FAILED_BREAKOUT": ["structureLabel", "donchianPosition", "distanceToUpperATR", "distanceToLowerATR", "bodyRatio", "upperWick", "lowerWick", "velocity", "atrRatio", "ticks"],
+      "PB_RANGE_MEAN_REVERSION": ["structureLabel", "donchianPosition", "channelHigh", "channelLow", "atrRatio", "adx14", "plusDI", "minusDI", "rsi14", "bodyRatio", "upperWick", "lowerWick", "ticks", "candles"],
+      "PB_REVERSAL": ["structureLabel", "donchianPosition", "velocity", "acceleration", "rsi14", "atrRatio", "bodyRatio", "upperWick", "lowerWick", "ticks"],
+      "PB_COMPRESSION_EXPANSION": ["atrRatio", "atr", "structureLabel", "donchianPosition", "channelHigh", "channelLow", "bodyRatio", "velocity", "ticks", "candles"],
+      "PB_TRANSITION_NO_TRADE": ["structureLabel", "velocity", "acceleration", "adx14", "atrRatio", "rsi14", "ticks", "candles"]
+    }
+  },
+  "playbooks": [
+    { "id": "PB_TREND_CONTINUATION", "scenario": "TREND_CONTINUATION" },
+    { "id": "PB_TREND_PULLBACK", "scenario": "TREND_PULLBACK" },
+    { "id": "PB_BREAKOUT", "scenario": "BREAKOUT" },
+    { "id": "PB_FAILED_BREAKOUT", "scenario": "FAILED_BREAKOUT" },
+    { "id": "PB_RANGE_MEAN_REVERSION", "scenario": "RANGE_MEAN_REVERSION" },
+    { "id": "PB_REVERSAL", "scenario": "REVERSAL" },
+    { "id": "PB_COMPRESSION_EXPANSION", "scenario": "COMPRESSION_EXPANSION" },
+    { "id": "PB_TRANSITION_NO_TRADE", "scenario": "TRANSITION_NO_TRADE" }
+  ],
+  "frozenDecisionsNotToChange": [
+    "playbooks",
+    "thresholds",
+    "classificacao de regime/cenario",
+    "logica de disputa",
+    "logica Trader/Critic",
+    "EXPERIMENTAL_V1",
+    "features",
+    "pesos",
+    "regras de WAIT",
+    "Brain G2/estrategia/stake/JIT/Execution Gate"
+  ]
+}

@@ -67,3 +67,28 @@ start-server.sh
 
 .vercel
 relay/gauntlet-*.json
+
+# Scratch de diagnostico/probe (dumps ad-hoc; regeneraveis, nunca versionar — ver docs/diag/scratch-cleanup.md)
+/execs.json
+/office.json
+/sig.json
+/st.json
+/fase7-catalog-table.json
+/fase7b-audit.json
+/iq-catalog.json
+/stress-55-report.json
+/wr-study-summary.json
+/relay/am.json
+/relay/be.txt
+/relay/bl.txt
+/relay/ev.json
+/relay/office.json
+/relay/re.txt
+/relay/rl.txt
+/relay/sig.json
+/relay/st.json
+/relay/status.json
+/relay/relay-build-err.txt
+/relay/relay-build-logs.txt
+/relay/relay-logs.err.txt
+/relay/relay-logs.txt
