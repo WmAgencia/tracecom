@@ -722,11 +722,11 @@ export class IqMultiRuntime extends EventEmitter {
       const activeId = Number(raw?.active_id);
       const ctx = [...this.markets.values()].find((market) => market.enabled && Number(market.activeId) === activeId) ?? null;
       if (!ctx) continue; // ativo desconhecido/desabilitado: NUNCA roteia para outro mercado
-      this.#ingestCandle(ctx, raw, { receivedAt, serverTimestamp, connectionId: event.connectionId });
+      this.#ingestCandle(ctx, raw, { receivedAt, serverTimestamp, connectionId: event.connectionId, batch: allSizes });
     }
   }
 
-  #ingestCandle(ctx, raw, { receivedAt, serverTimestamp, connectionId }) {
+  #ingestCandle(ctx, raw, { receivedAt, serverTimestamp, connectionId, batch = false }) {
     let candle;
     try {
       candle = normalizeCandle(raw, { symbol: ctx.display, activeId: ctx.activeId, serverTimestamp, receivedAt, connectionId, sizeSeconds: CANDLE_SIZE_SECONDS });
@@ -743,9 +743,9 @@ export class IqMultiRuntime extends EventEmitter {
       ctx.stats.candlesProcessed += 1; this.metrics.candles += 1;
     } else {
       ctx.stats.duplicates += 1;
-      // Para o DQ, "duplicata" e reentrega de bucket JA FECHADO (anomalia). Updates dentro do bucket
-      // em formacao sao o comportamento normal do feed IQ e nao degradam a qualidade.
-      if (candle.bucketEnd <= receivedAt) ctx.dqWindow?.duplicateAt?.push(receivedAt);
+      // Para o DQ, so conta anomalia real: reentrega de bucket JA FECHADO fora de mensagem em lote
+      // (candles-generated reenvia historico por protocolo; isso e esperado e nao degrada os dados).
+      if (!batch && candle.bucketEnd <= receivedAt) ctx.dqWindow?.duplicateAt?.push(receivedAt);
     }
     if (ctx.stats.lastBucketStart === null || candle.bucketStart > ctx.stats.lastBucketStart) ctx.stats.lastBucketStart = candle.bucketStart;
     const existing = ctx.candles.get(candle.bucketStart);
