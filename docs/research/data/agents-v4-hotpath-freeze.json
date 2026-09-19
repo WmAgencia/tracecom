@@ -1,6 +1,6 @@
 {
   "schema": "agents-v4-hotpath-freeze-v1",
-  "frozenAtUtc": "2026-09-19T18:54:39.355Z",
+  "frozenAtUtc": "2026-09-19T19:07:26.512Z",
   "sourceCommit": null,
   "note": "SHADOW V4 nao altera G2/Quality Gate/JIT/Execution Gate/stake. iq-multi-runtime recebeu apenas hooks observacionais (V4/DataHub) com provas de comportamento nos testes; os demais arquivos sao byte a byte identicos ao estado pre-V4.",
   "v3CrossCheck": {
@@ -67,8 +67,8 @@
       "bytes": 15367
     },
     "relay/iq-multi-runtime.mjs": {
-      "sha256": "ee2dcf340bc59628e73eea75e5c110b29e95e5bb107b2ecb28c036d304874b78",
-      "bytes": 287729
+      "sha256": "1540df8af93d272e3c042ce606bf0ca552c0ae6995e268c2b93b7fc861da82eb",
+      "bytes": 287783
     }
   }
 }

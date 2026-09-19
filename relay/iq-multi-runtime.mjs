@@ -2400,6 +2400,7 @@ export class IqMultiRuntime extends EventEmitter {
     const raw = String(source ?? "");
     if (raw.startsWith("agent-v3:")) return "AGENT_V3";
     if (raw.startsWith("agent-v2:")) return "AGENT_V2";
+    if (raw.startsWith("agent:")) return "AGENT_V1";
     if (raw.startsWith("experiment:")) return "EXPERIMENT";
     return decisionSourceOf({ source: raw, setup: null, infraProbe: raw === "INFRA_PROBE" });
   }
