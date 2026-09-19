@@ -1,0 +1,21 @@
+﻿{
+    "autoInvert":  false,
+    "frozenAtUtc":  "2026-09-19T14:37:31Z",
+    "minimumSafetyMarginMs":  3000,
+    "files":  {
+                  "relay/migrations/040_indicator_5m.sql":  {
+                                                                "sha256":  "da6d486fc06751fd3c7e4921558e1d35bbc74d8be4a94e7d3bb50d9d3a4702ab"
+                                                            },
+                  "relay/indicator-5m.mjs":  {
+                                                 "sha256":  "a694c6d0499cb2a90c1f2faef8e7c92c78dc815ea4e1c8778b077443ac8c68a4"
+                                             },
+                  "tests/research/indicator-5m.test.ts":  {
+                                                              "sha256":  "15a0ee3c7350d5fe4a5ed60b9941e7320f8c49488d9e96bd15f010b5aff9147a"
+                                                          }
+              },
+    "defaultState":  "DRY_RUN",
+    "schema":  "indicator-5m-freeze.json",
+    "version":  "INDICATOR_5M_V1",
+    "minClosedCandles":  60,
+    "practiceOnly":  true
+}

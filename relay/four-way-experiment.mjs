@@ -1,5 +1,5 @@
-/**
- * PRACTICE_FOUR_WAY_3X_TEST_V1 — harness ISOLADO de execucao experimental.
+﻿/**
+ * PRACTICE_FOUR_WAY_3X_TEST_V1 â€” harness ISOLADO de execucao experimental.
  *
  * Invariantes:
  *  - NAO existe segundo caminho de broker: ordens so saem via runtime.requestOrder (mesmo Execution Gate).
@@ -10,11 +10,11 @@
  */
 import crypto from "node:crypto";
 
-export const EXPERIMENT_ID = "PRACTICE_FOUR_WAY_3X_TEST_V1";
-export const EXPERIMENT_STRATEGIES = Object.freeze(["PROFESSIONAL_BRAIN_G2", "PROFESSIONAL_AGENT_SYSTEM_V4", "DUAL_REASONING_V1", "SOLO_REASONING_V1"]);
-export const ARM_PHRASE = "CONTA PRACTICE → ARMAR EXPERIMENTO 4X3";
+export const EXPERIMENT_ID = "PRACTICE_FIVE_WAY_3X_TEST_V1";
+export const EXPERIMENT_STRATEGIES = Object.freeze(["PROFESSIONAL_BRAIN_G2", "PROFESSIONAL_AGENT_SYSTEM_V4", "DUAL_REASONING_V1", "SOLO_REASONING_V1", "INDICATOR_5M_V1"]);
+export const ARM_PHRASE = "CONTA PRACTICE â†’ ARMAR EXPERIMENTO 4X3";
 export const MAX_PER_STRATEGY = 3;
-export const MAX_TOTAL = 12;
+export const MAX_TOTAL = 15;
 export const PRACTICE_ONLY = true;
 export const EXPERIMENT_STATES = Object.freeze(["CREATED", "DRY_RUN", "READY_TO_ARM", "ARMED_PRACTICE", "RUNNING", "COMPLETE", "STOPPED", "FAILED_SAFE"]);
 export const EXPERIMENT_EVENTS = Object.freeze(["EXPERIMENT_CREATED", "DRY_RUN_STARTED", "WOULD_EXECUTE", "ARM_REQUESTED", "ARMED", "DECISION_RECEIVED", "ORDER_REQUESTED", "ORDER_BLOCKED", "BROKER_ACCEPTED", "BROKER_REJECTED", "SETTLED", "STRATEGY_COMPLETE", "EXPERIMENT_COMPLETE", "STOPPED", "FAILED_SAFE"]);
@@ -300,7 +300,7 @@ export class FourWayExperiment {
       : [...this.memory.executions.values()].slice(-50);
     return {
       experimentId: EXPERIMENT_ID, state, practiceOnly: PRACTICE_ONLY, controlsExecution: state === "ARMED_PRACTICE" || state === "RUNNING" ? false : true,
-      armPhraseRequired: true, armPhraseHint: "CONTA PRACTICE → ARMAR EXPERIMENTO 4X3 (hash)", minStakeBrl: this.minStakeBrl,
+      armPhraseRequired: true, armPhraseHint: "CONTA PRACTICE â†’ ARMAR EXPERIMENTO 4X3 (hash)", minStakeBrl: this.minStakeBrl,
       maxPerStrategy: MAX_PER_STRATEGY, maxTotal: MAX_TOTAL, totalExecuted, progress,
       events: this.memory.events.slice(-30), executions: executions.slice(0, 50),
       errors: this.lastError, note: "Harness isolado; ordens somente via runtime.requestOrder; REAL nunca participa.",
@@ -311,3 +311,4 @@ export class FourWayExperiment {
 export function fourWayFreezeManifest() {
   return { schema: "four-way-experiment-freeze-v1", experimentId: EXPERIMENT_ID, frozenAtUtc: new Date().toISOString(), practiceOnly: true, maxPerStrategy: MAX_PER_STRATEGY, maxTotal: MAX_TOTAL, states: [...EXPERIMENT_STATES], armPhraseHashRequired: true, singleBrokerPath: "runtime.requestOrder", noTuning: true };
 }
+

@@ -1,25 +1,27 @@
 ﻿{
-    "maxTotal":  12,
-    "practiceOnly":  true,
-    "defaultState":  "DRY_RUN",
-    "version":  "PRACTICE_FOUR_WAY_3X_TEST_V1",
-    "frozenAtUtc":  "2026-09-19T14:09:35Z",
+    "frozenAtUtc":  "2026-09-19T14:37:31Z",
+    "maxPerStrategy":  3,
     "files":  {
                   "tests/research/four-way-experiment.test.ts":  {
-                                                                     "bytes":  9806,
-                                                                     "sha256":  "d2fce2f942baeec9db253ca0ee183f6f5bbacf31cf052d4a0929d40d94af34f7"
+                                                                     "sha256":  "927eca641e3a0fb58b4f5f2dfaa543cf335f594b11ced9fa1fc0e01e6ab50582"
                                                                  },
                   "relay/migrations/039_four_way_experiment.sql":  {
-                                                                       "bytes":  2100,
                                                                        "sha256":  "4376c52918ddc26aa9388e6fd53e6ec025349d06ced9fdfd629415b6a116ebea"
                                                                    },
                   "relay/four-way-experiment.mjs":  {
-                                                        "bytes":  23381,
-                                                        "sha256":  "14d8d4c6e2159e11e482d981fdea7aa0dd0d7510cc7e5f570af53767fdf5940b"
+                                                        "sha256":  "6a13a1ae176a5ceec479c744db58adc2129c8c610bc087bb58406dcbafca1204"
                                                     }
               },
-    "schema":  "four-way-experiment-freeze-v1",
-    "singleBrokerPath":  "runtime.requestOrder",
-    "maxPerStrategy":  3,
-    "armPhrase":  "CONTA PRACTICE -\u003e ARMAR EXPERIMENTO 4X3"
+    "defaultState":  "DRY_RUN",
+    "schema":  "four-way-experiment-freeze.json",
+    "version":  "FIVE_WAY_3X",
+    "maxTotal":  15,
+    "strategies":  [
+                       "PROFESSIONAL_BRAIN_G2",
+                       "PROFESSIONAL_AGENT_SYSTEM_V4",
+                       "DUAL_REASONING_V1",
+                       "SOLO_REASONING_V1",
+                       "INDICATOR_5M_V1"
+                   ],
+    "practiceOnly":  true
 }

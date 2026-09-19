@@ -1,5 +1,5 @@
-/**
- * PRACTICE_FOUR_WAY_3X_TEST_V1 — testes adversariais do harness (DRY_RUN default; zero ordem).
+﻿/**
+ * PRACTICE_FOUR_WAY_3X_TEST_V1 â€” testes adversariais do harness (DRY_RUN default; zero ordem).
  */
 import { describe, expect, it } from "vitest";
 // @ts-expect-error - relay ESM sem tipagem
@@ -15,7 +15,7 @@ function decision(overrides: any = {}) {
 }
 function armMemory(harness: any) { harness.memory.state = "ARMED_PRACTICE"; }
 
-describe("harness 4x3 — estados e DRY_RUN", () => {
+describe("harness 4x3 â€” estados e DRY_RUN", () => {
   it("default e DRY_RUN e NUNCA chama requestOrder", async () => {
     let called = 0;
     const harness = makeHarness({ runtime: { experimentRequestOrder: async () => { called += 1; return { state: "ACKNOWLEDGED" }; } } });
@@ -45,7 +45,7 @@ describe("harness 4x3 — estados e DRY_RUN", () => {
   });
 });
 
-describe("harness 4x3 — guards PRACTICE-only", () => {
+describe("harness 4x3 â€” guards PRACTICE-only", () => {
   it("REAL sempre bloqueado (account context, broker account, realState, realTradingEnabled)", async () => {
     const harness = makeHarness(); armMemory(harness);
     for (const context of [
@@ -76,7 +76,7 @@ describe("harness 4x3 — guards PRACTICE-only", () => {
   });
 });
 
-describe("harness 4x3 — caps, atomicidade e idempotencia", () => {
+describe("harness 4x3 â€” caps, atomicidade e idempotencia", () => {
   it("G2 para em 3 e 4a tentativa recebe EXPERIMENT_STRATEGY_CAP_REACHED", async () => {
     const harness = makeHarness(); armMemory(harness);
     for (let index = 0; index < 3; index += 1) {
@@ -122,10 +122,10 @@ describe("harness 4x3 — caps, atomicidade e idempotencia", () => {
   });
   it("total para em 12 e COMPLETE nao reabre sozinho", async () => {
     const harness = makeHarness(); armMemory(harness);
-    const strategies = ["PROFESSIONAL_BRAIN_G2", "PROFESSIONAL_AGENT_SYSTEM_V4", "DUAL_REASONING_V1", "SOLO_REASONING_V1"];
+    const strategies = ["PROFESSIONAL_BRAIN_G2", "PROFESSIONAL_AGENT_SYSTEM_V4", "DUAL_REASONING_V1", "SOLO_REASONING_V1", "INDICATOR_5M_V1"];
     for (const strategyId of strategies) for (let index = 0; index < 3; index += 1) await harness.tryForward(decision({ strategyId, opportunityId: `t_${strategyId}_${index}` }));
     const status = await harness.status();
-    expect(status.totalExecuted).toBe(12);
+    expect(status.totalExecuted).toBe(15);
     expect(status.state).toBe("COMPLETE");
     const extra = await harness.tryForward(decision({ strategyId: "PROFESSIONAL_BRAIN_G2", opportunityId: "x1" }));
     expect(extra.executed).toBe(false);
@@ -152,7 +152,7 @@ describe("harness 4x3 — caps, atomicidade e idempotencia", () => {
     expect(mod.validateExperimentGuards(base).ok).toBe(true);
     expect(mod.validateExperimentGuards({ ...base, state: "DRY_RUN" }).errors).toContain("NOT_ARMED:DRY_RUN");
     expect(mod.validateExperimentGuards({ ...base, strategyCount: 3 }).errors).toContain("EXPERIMENT_STRATEGY_CAP_REACHED");
-    expect(mod.validateExperimentGuards({ ...base, totalCount: 12 }).errors).toContain("EXPERIMENT_TOTAL_CAP_REACHED");
+    expect(mod.validateExperimentGuards({ ...base, totalCount: 15 }).errors).toContain("EXPERIMENT_TOTAL_CAP_REACHED");
     expect(mod.PRACTICE_ONLY).toBe(true);
     expect(mod.ARM_PHRASE).toContain("ARMAR EXPERIMENTO 4X3");
   });
@@ -160,7 +160,8 @@ describe("harness 4x3 — caps, atomicidade e idempotencia", () => {
     const manifest = mod.fourWayFreezeManifest();
     expect(manifest.singleBrokerPath).toBe("runtime.requestOrder");
     expect(manifest.maxPerStrategy).toBe(3);
-    expect(manifest.maxTotal).toBe(12);
+    expect(manifest.maxTotal).toBe(15);
     expect(manifest.practiceOnly).toBe(true);
   });
 });
+

@@ -1,8 +1,8 @@
-/**
- * IQ MULTI-MARKET RUNTIME (Fase 4) — uma conexao WS, N mercados independentes (ate 10 ativos).
+﻿/**
+ * IQ MULTI-MARKET RUNTIME (Fase 4) â€” uma conexao WS, N mercados independentes (ate 10 ativos).
  *
  * Invariantes:
- *  - NORMAL ≠ OTC: `markets` e chaveado por marketKey (EURUSD:NORMAL / EURUSD:OTC); nenhum
+ *  - NORMAL â‰  OTC: `markets` e chaveado por marketKey (EURUSD:NORMAL / EURUSD:OTC); nenhum
  *    buffer/feature/decision/trade e compartilhado. Nenhum fallback silencioso para OTC.
  *  - Ativos resolvidos em RUNTIME (RuntimeAssetResolver); activeId estatico nunca e verdade.
  *  - PortfolioExecutionGate ANTES de qualquer ordem; gate PRACTICE congelado continua sendo a
@@ -57,6 +57,8 @@ import { DualRoundMarketDeltaObserver } from "./dual-round-observer.mjs";
 import { SoloReasoningEngine } from "./solo-reasoning.mjs";
 // PRACTICE_FOUR_WAY_3X_TEST_V1: harness de execucao experimental (DRY_RUN default; nunca segundo caminho de broker).
 import { FourWayExperiment, EXPERIMENT_ID as FOUR_WAY_EXPERIMENT_ID } from "./four-way-experiment.mjs";
+// INDICATOR_5M_V1: control group simples (RSI + DMI/ADX + Bollinger) com entrada tardia.
+import { Indicator5MEngine, effectiveSafetyMarginMs } from "./indicator-5m.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
 export const ACK_TIMEOUT_MS = 15_000;
@@ -83,7 +85,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -95,7 +97,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.reconnects = 0; this.connectionStartedAt = null;
     this.session = { connected: false, host: null, connectionId: null, serverTimeMs: null, clockSkewMs: null, timeValid: false, connectedAt: null };
     this.account = { practice: { verified: false, balanceId: null, balance: null, currency: null }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: null, type: "UNKNOWN" };
-    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true, agentsV4ShadowEnabled: agentsV4Enabled === true, dualReasoningShadowEnabled: dualReasoningEnabled === true, soloReasoningShadowEnabled: soloReasoningEnabled === true };
+    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true, agentsV4ShadowEnabled: agentsV4Enabled === true, dualReasoningShadowEnabled: dualReasoningEnabled === true, soloReasoningShadowEnabled: soloReasoningEnabled === true, indicator5mShadowEnabled: indicator5mEnabled === true };
     this.markets = new Map();
     for (const entry of UNIVERSE) {
       const key = marketKey(entry.canonical, entry.marketType);
@@ -147,6 +149,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.dualObserver = new DualRoundMarketDeltaObserver({ pool, now: this.now, log: this.log, enabled: dualReasoningEnabled === true });
     this.solo = new SoloReasoningEngine({ pool, now: this.now, log: this.log, enabled: soloReasoningEnabled === true });
     this.fourWay = new FourWayExperiment({ pool, runtime: this, now: this.now, log: this.log, minStakeBrl: 1 });
+    this.indicator5m = new Indicator5MEngine({ pool, now: this.now, log: this.log, enabled: indicator5mEnabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -832,6 +835,8 @@ export class IqMultiRuntime extends EventEmitter {
       this.dual.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // SOLO_REASONING (SHADOW): liquidacao causal do final e do contrafactual da tese inicial.
       this.solo.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      // INDICATOR_5M_V1: liquidacao causal (PROSPECTIVE_SHADOW; nunca broker).
+      this.indicator5m.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
@@ -855,7 +860,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   #agentId(ctx) { return `trader:${ctx.marketKey}`; }
 
-  /** Features causais para o brain (momentum normalizado, r24, vol12) — derivadas do Feature Engine, sem variantes antigas. */
+  /** Features causais para o brain (momentum normalizado, r24, vol12) â€” derivadas do Feature Engine, sem variantes antigas. */
   #brainFeatures(list, context) {
     const closes = list.map((candle) => candle.close);
     const rsi = context?.deterministicIndicators?.rsi14?.value ?? null;
@@ -960,8 +965,10 @@ export class IqMultiRuntime extends EventEmitter {
       this.#safe(() => this.#observeDualRound1(ctx, candidate, now));
       // SOLO_REASONING (SHADOW): uma passada, mesmo T0; nunca influencia nada.
       this.#safe(() => this.#observeSolo(ctx, candidate, now));
-      // HARNESS 4x3 (DRY_RUN): registra as decisoes finais existentes; nunca altera estrategia.
+      // HARNESS 5x3 (DRY_RUN): registra as decisoes finais existentes; nunca altera estrategia.
       this.#safe(() => this.#observeFourWay(ctx, candidate, now, action));
+      // INDICATOR_5M_V1: analise inicial (candidate) com entrada tardia planejada.
+      this.#safe(() => this.#observeIndicator5M(ctx, candidate, now));
       this.#setAgent(ctx, "SIGNAL", `CANDIDATE_${action}`);
       this.#emitEvent("candidate.created", { marketKey: ctx.marketKey, candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, secondsToWindow: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
       this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "CANDIDATE_CREATED", { candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, serverNow, regime: snapshot.regime, setup: snapshot.setup, trigger: snapshot.trigger }, { persist: true });
@@ -1178,6 +1185,8 @@ export class IqMultiRuntime extends EventEmitter {
     this.#safe(() => this.#finalizeAgentsV4Candidate(ctx, { candidate, now, list: this.#candleList(ctx) }));
     // DUAL_REASONING_V1_SHADOW: round final T2 + cross-examination final + DUAL_SYNTHESIS_V1 (observacional).
     this.#safe(() => this.#finalizeDual(ctx, candidate, action, now));
+    // INDICATOR_5M_V1: revalidacao no limite + encaminhamento ao harness (DRY_RUN nao envia ordem).
+    this.#safe(() => this.#finalizeIndicator5M(ctx, candidate, now));
     if (!revalidation.ok) { this.#cancelCandidate(ctx, revalidation.reason ?? "CANDIDATE_REVALIDATION_FAILED", { checks: revalidation.checks }); return; }
     candidate.status = "CONFIRMED"; candidate.confirmedAt = now;
     this.#emitEvent("candidate.confirmed", { marketKey: ctx.marketKey, candidateId: candidate.id, action, secondsToEntry: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
@@ -1260,7 +1269,52 @@ export class IqMultiRuntime extends EventEmitter {
     });
   }
 
-  /* ------------------- HARNESS PRACTICE_FOUR_WAY_3X_TEST_V1 (DRY_RUN default) ------------------- */
+  /* ------------------- INDICATOR_5M_V1 (control group; nunca executa direto) ------------------- */
+  #observeIndicator5M(ctx, candidate, now) {
+    if (!this.indicator5m?.enabled || !candidate) return null;
+    const ackSamples = ctx.latency?.orderAck ?? [];
+    const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
+    const persistSamples = ctx.latency?.dbPersist ?? [];
+    const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
+    const observation = this.indicator5m.observeCandidate({
+      marketKey: ctx.marketKey, marketType: ctx.marketType, candles: this.#candleList(ctx),
+      targetEntryAt: candidate.targetEntryAt ?? null, targetExpiryAt: candidate.targetExpiryAt ?? null, payout: ctx.payout,
+      latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 50, jitterMs: 300, bufferMs: 150 },
+    });
+    if (observation) ctx.indicator5mId = observation.id;
+    return observation;
+  }
+
+  #finalizeIndicator5M(ctx, candidate, now) {
+    if (!this.indicator5m?.enabled || !candidate || !ctx.indicator5mId) return null;
+    const observation = this.indicator5m.revalidateFinal({ observationId: ctx.indicator5mId, candles: this.#candleList(ctx), atMs: now });
+    if (!observation || observation.status !== "READY") return observation;
+    const ackSamples = ctx.latency?.orderAck ?? [];
+    const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
+    // Encaminha ao MESMO harness/Execution Gate; em DRY_RUN apenas registra WOULD_EXECUTE.
+    void this.fourWay.observeDecision({
+      strategyId: "INDICATOR_5M_V1", opportunityId: candidate.id, decisionId: candidate.id,
+      marketKey: ctx.marketKey, marketType: ctx.marketType, direction: observation.direction,
+      scenario: observation.initialDecision?.confluence ?? null, whyNow: observation.initialDecision?.whyNow ?? null,
+      targetEntryAt: candidate.targetEntryAt ?? null, targetExpiryAt: candidate.targetExpiryAt ?? null, payout: ctx.payout,
+      snapshot: { marketKey: ctx.marketKey, marketType: ctx.marketType, rsi: observation.initialDecision?.states?.rsiState ?? null, dmi: observation.initialDecision?.states?.dmiDirection ?? null, adx: observation.initialDecision?.states?.adxStrength ?? null, bollinger: observation.initialDecision?.states?.bollingerState ?? null, confluence: observation.initialDecision?.confluence ?? null, timing: observation.timing ?? null, ackP95Ms: ackP95 },
+      context: {
+        accountContext: this.accountContext.context, brokerAccountType: this.accountContext.context,
+        realState: this.realMode.authorized() ? "ARMED" : "LOCKED", realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true",
+        killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, brokerConnected: this.session.connected === true,
+        dataQuality: "HEALTHY", marketValid: Boolean(ctx.marketKey && ctx.activeId),
+      },
+    });
+    return observation;
+  }
+
+  /** Status do INDICATOR_5M_V1 (control group; DRY_RUN ate ARM explicito do harness). */
+  indicator5mStatus() {
+    const status = this.indicator5m.status();
+    return { ...status, enabled: this.config.indicator5mShadowEnabled === true && this.indicator5m.enabled === true, isolation: { shadowOnly: true, controlsExecution: false, sendsOrders: false, sameExpiryRequired: true, autoInvert: false, minimumSafetyMarginMs: 3000 }, realAllowlistUntouched: true };
+  }
+
+  /* ------------------- HARNESS PRACTICE_FIVE_WAY_3X_TEST_V1 (DRY_RUN default) ------------------- */
   /** Observa as decisoes finais JA existentes (nao recalcula); WAIT nunca executa. */
   #observeFourWay(ctx, candidate, now, action) {
     if (!this.fourWay || !candidate) return null;
@@ -1475,7 +1529,7 @@ export class IqMultiRuntime extends EventEmitter {
     return view;
   }
 
-  /** Observacao V4 no candidato G2 (benchmark G2 x V3 x V4) — puro SHADOW, zero ordem. */
+  /** Observacao V4 no candidato G2 (benchmark G2 x V3 x V4) â€” puro SHADOW, zero ordem. */
   #observeAgentsV4Candidate(ctx, { candidate, action, trader, critic, consensus, now, list }) {
     if (!this.agentsV4?.enabled) return null;
     const t0 = this.#buildT0ForV4(ctx, list, { now, candidate });
@@ -2993,3 +3047,4 @@ export class IqMultiRuntime extends EventEmitter {
 
   stressReport() { return { running: this.stress.running, startedAt: this.stress.startedAt ?? null, stages: this.stress.stages ?? null, secondsPerStage: this.stress.secondsPerStage ?? null, cancelRequested: this.stress.cancelRequested === true, report: this.stress.report ?? null }; }
 }
+
