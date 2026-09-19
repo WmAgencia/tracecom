@@ -1,31 +1,42 @@
 {
-  "schema": "rsi-agents-v2-freeze-v1",
-  "frozenAtUtc": "2026-09-19T18:54:39.152Z",
+  "schema": "rsi-v3-freeze-v1",
+  "frozenAtUtc": "2026-09-19T18:54:38.981Z",
   "sourceCommit": null,
   "noTuning": true,
-  "strategies": {
-    "strict": "RSI_REVERSAL_STRICT_V2",
-    "pullback": "RSI_EXTREME_PULLBACK_V2"
-  },
+  "strategy": "RSI_REVERSAL_PULLBACK_V3",
   "policy": {
     "practiceOnly": true,
     "realLocked": true,
     "stakeBrl": 10,
-    "split": "50/50 balanceado NORMAL/OTC",
-    "shadow": "skill nao atribuida nunca envia ordem",
-    "singleBrokerPath": "runtime.submitAgentV2Order -> requestOrder",
-    "autoInvert": false,
-    "sameExpiryRequired": true
+    "routing": "RSI_V3_ONLY",
+    "singleBrokerPath": "runtime.submitAgentV3Order -> requestOrder",
+    "shadowV2": true,
+    "controlsExecution": "apenas V3"
   },
-  "v1Reference": {
-    "note": "V1 intocada; agentes V1 pausados na migracao",
-    "files": [
+  "references": {
+    "v1": [
       "relay/rsi-reversal.mjs",
       "relay/rsi-variants.mjs",
       "relay/rsi-agents-5x5.mjs"
+    ],
+    "v2": [
+      "relay/rsi-skills-v2.mjs",
+      "relay/rsi-agents-v2.mjs"
     ]
   },
   "files": {
+    "relay/rsi-v3.mjs": {
+      "sha256": "177c6e2d4f72b63974f51361a71a603754ee5348b77264dfbd587e8bd579ed76",
+      "bytes": 36516
+    },
+    "relay/rsi-agents-v3.mjs": {
+      "sha256": "cb93dfbfd2805192551677be367e79c3a4d1d1082c8f8a6d12e70579f48f7a06",
+      "bytes": 54816
+    },
+    "relay/iq-multi-runtime.mjs": {
+      "sha256": "ee2dcf340bc59628e73eea75e5c110b29e95e5bb107b2ecb28c036d304874b78",
+      "bytes": 287729
+    },
     "relay/rsi-skills-v2.mjs": {
       "sha256": "d67a8d671b548016363288ede246c7f8a6ed43419ed85b0d0da9480534f1e17c",
       "bytes": 23316
@@ -33,10 +44,6 @@
     "relay/rsi-agents-v2.mjs": {
       "sha256": "9dcf89459bbc96b6111cbf5b323a1e31b36d074aff04bb026efccad719090e60",
       "bytes": 52781
-    },
-    "relay/iq-multi-runtime.mjs": {
-      "sha256": "ee2dcf340bc59628e73eea75e5c110b29e95e5bb107b2ecb28c036d304874b78",
-      "bytes": 287729
     },
     "relay/rsi-reversal.mjs": {
       "sha256": "5b8708da02e526b237b0ca52eb3bf4b85a73011a4474e1ca45f4e9695f4b6695",

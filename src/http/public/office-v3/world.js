@@ -496,7 +496,7 @@ function drawWalls(ctx) {
  */
 function drawRibbon(ctx, row, zone = null) {
   const y = row.deskTop - 60;
-  const suffix = zone && zone.strict > 0 && zone.pullback === 0 ? " · STRICT V2" : zone && zone.pullback > 0 && zone.strict === 0 ? " · PULLBACK V2" : zone && zone.strict > 0 && zone.pullback > 0 ? " · STRICT V2 + PULLBACK V2" : "";
+  const suffix = zone && zone.v3 > 0 ? " · RSI V3" : zone && zone.strict > 0 && zone.pullback === 0 ? " · STRICT V2" : zone && zone.pullback > 0 && zone.strict === 0 ? " · PULLBACK V2" : zone && zone.strict > 0 && zone.pullback > 0 ? " · STRICT V2 + PULLBACK V2" : "";
   if (row.accent === "split") {
     const parts = SUB_BAND_BY_ROW[row.id] ?? [row.label];
     const leftCenter = (COLUMNS[0] + COLUMNS[4]) / 2;
@@ -760,15 +760,16 @@ function drawStation(ctx, station, showAgents = true, options = {}) {
   drawRsiAgentTag(ctx, station, cx, desk.y, timeMs);
 }
 
-/** Estrategia/estado/decisao do agente RSI V2 desenhados sobre cada mesa. */
+/** Estrategia/estado/decisao do agente RSI V2/V3 desenhados sobre cada mesa. */
 function drawRsiAgentTag(ctx, station, cx, deskY, timeMs) {
   const agent = station?.rsiAgent;
   if (!agent) return;
+  const v3 = agent.strategyId === "RSI_REVERSAL_PULLBACK_V3";
   const strict = agent.strategyId === "RSI_REVERSAL_STRICT_V2";
-  const tag = strict ? "STRICT V2" : agent.strategyId === "RSI_EXTREME_PULLBACK_V2" ? "PULLBACK V2" : null;
+  const tag = v3 ? "RSI V3" : strict ? "STRICT V2" : agent.strategyId === "RSI_EXTREME_PULLBACK_V2" ? "PULLBACK V2" : null;
   if (!tag) return;
-  const tagColor = strict ? "#2a4a80" : "#1f6b3a";
-  const tagInk = strict ? "#bcd6ff" : "#c7f5d4";
+  const tagColor = v3 ? "#3a2a6b" : strict ? "#2a4a80" : "#1f6b3a";
+  const tagInk = v3 ? "#d9ccff" : strict ? "#bcd6ff" : "#c7f5d4";
   const tagW = Math.max(64, tag.length * 6 + 12);
   const tagY = deskY - 46;
   pxRectLocal(ctx, cx - tagW / 2, tagY, tagW, 12, tagColor);
@@ -779,12 +780,12 @@ function drawRsiAgentTag(ctx, station, cx, deskY, timeMs) {
   const decisionColor = decision === "BUY" ? PALETTE_V3.green : decision === "SELL" ? PALETTE_V3.red : decision === "BLOCK" ? PALETTE_V3.red : PALETTE_V3.metal;
   const waitShort = WAIT_REASON_SHORT[String(agent.waitReason ?? "")] ?? (agent.waitReason ? String(agent.waitReason).replace(/_/g, " ").slice(0, 10) : null);
   const pnl = Number(agent.lastPnl);
-  const state = agent.lastResult
+  const result = agent.lastResult
     ? `${agent.lastResult}${Number.isFinite(pnl) ? ` ${pnl >= 0 ? "+" : "-"}${Math.abs(pnl).toFixed(2).replace(".", ",")}` : ""}`
     : agent.position?.status === "OPEN" ? "ABERTA"
       : agent.blocked === true ? "BLOQUEADO"
         : waitShort ?? "ANALISANDO";
-  const line = `${decision} · ${state}`.slice(0, 17);
+  const line = `${decision} · ${result}`.slice(0, 17);
   const lineW = Math.max(64, line.length * 6 + 10);
   pxRectLocal(ctx, cx - lineW / 2, deskY - 32, lineW, 12, "rgba(6,12,24,0.8)");
   drawPixelText(ctx, line, cx, deskY - 29, { scale: 1, align: "center", color: decisionColor });
@@ -937,13 +938,14 @@ export function drawWorld(ctx, worldState, camera = {}, options = {}) {
   }
 
   // T4: sector labels AFTER the desks — always in front of the surface.
-  // T14: o rotulo indica a zona V2 (superior STRICT V2 / inferior PULLBACK V2) da linha.
+  // T14: o rotulo indica a zona (V3 no topo / mercados sem agente no meio / PULLBACK V2 legado na base).
   const zoneByBand = new Map();
   for (const station of worldState.stations) {
     const band = station.cell?.band;
     if (!band) continue;
-    const zone = zoneByBand.get(band) ?? { strict: 0, pullback: 0 };
-    if (station.rsiAgent?.strategyId === "RSI_REVERSAL_STRICT_V2") zone.strict += 1;
+    const zone = zoneByBand.get(band) ?? { v3: 0, strict: 0, pullback: 0 };
+    if (station.rsiAgent?.strategyId === "RSI_REVERSAL_PULLBACK_V3") zone.v3 += 1;
+    else if (station.rsiAgent?.strategyId === "RSI_REVERSAL_STRICT_V2") zone.strict += 1;
     else if (station.rsiAgent?.strategyId === "RSI_EXTREME_PULLBACK_V2") zone.pullback += 1;
     zoneByBand.set(band, zone);
   }

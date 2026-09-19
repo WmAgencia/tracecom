@@ -8,8 +8,8 @@ import { runVisionProvider, runTextProvider, runDecisionAgent, maskProviderKey }
 import { IqAuthSession } from './iqoption-auth.mjs';
 import { saveSession, loadSession, clearSession } from './iq-session-vault.mjs';
 import { IqMultiRuntime } from './iq-multi-runtime.mjs';
-// RSI AGENTS V2: allowlist de execucao (somente STRICT_V2/PULLBACK_V2 podem chegar ao broker nesta rodada).
-import { RSI_V2_EXECUTION_ALLOWLIST } from './rsi-agents-v2.mjs';
+// RSI AGENTS V3: allowlist de execucao (somente RSI_REVERSAL_PULLBACK_V3 pode chegar ao broker nesta rodada).
+import { RSI_V3_EXECUTION_ALLOWLIST } from './rsi-agents-v3.mjs';
 import { scenarioShadowStatus } from './scenario-shadow.mjs';
 import { ExecutionArmState, KillSwitch, IdempotencyStore } from './iqoption-connector.mjs';
 import { buildCandles } from './experiment.mjs';
@@ -26,7 +26,7 @@ const admin = process.env.TOKEN_SIGNING_SECRET || '';
 const armState = new ExecutionArmState();
 const killSwitch = new KillSwitch();
 const executionIdempotency = new IdempotencyStore();
-const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: RSI_V2_EXECUTION_ALLOWLIST });
+const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: RSI_V3_EXECUTION_ALLOWLIST, executionPolicyName: 'RSI_V3_ONLY' });
 // QUANT / RESEARCH PLATFORM (fora do hot path; nao executa nada).
 const { ResearchLab } = await import('./research-lab/api.mjs');
 const researchLab = new ResearchLab({ pool, runtime: wsRuntime, log: (...args) => console.info(...args) });
@@ -413,9 +413,11 @@ const server = http.createServer(async (req, res) => {
  if(url.pathname === '/api/iq/research/rsi-variants/arm' && req.method === 'POST') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const input = await body(req, 2000); const result = await wsRuntime.rsiVariantsArm({ phrase: String(input.phrase ?? ''), actor: String(input.actor ?? 'owner').slice(0,40) }); return reply(res, result.ok ? 200 : 409, { ...result, practiceOnly:true, realUntouched:true }); }
   if(url.pathname === '/api/iq/research/rsi-variants/stop' && req.method === 'POST') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiVariantsStop('MANUAL_STOP')), practiceOnly:true }); }
   if(url.pathname === '/api/iq/research/rsi-agents' && req.method === 'GET') {
-    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiAgentsStatus()), practiceOnly:true, realLocked:true, v2:true, legacyPath:true }); }
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiAgentsStatus()), practiceOnly:true, realLocked:true, v3:true, legacyPath:true }); }
   if(url.pathname === '/api/iq/research/rsi-agents-v2' && req.method === 'GET') {
-    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiAgentsStatus()), practiceOnly:true, realLocked:true, v2:true }); }
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiAgentsStatus()), practiceOnly:true, realLocked:true, v3:true, legacyPath:true }); }
+  if(url.pathname === '/api/iq/research/rsi-agents-v3' && req.method === 'GET') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiAgentsStatus()), practiceOnly:true, realLocked:true, v3:true }); }
   if(url.pathname === '/api/iq/execution-routing' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...wsRuntime.executionRoutingStatus(), practiceOnly:true, realLocked:true }); }
  if(url.pathname === '/api/iq/research/rsi-reversal' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiReversalStatus()), practiceOnly:true, realAllowlistUnchanged:true }); }

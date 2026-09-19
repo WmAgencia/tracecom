@@ -9,9 +9,12 @@ import { describe, expect, it } from "vitest";
 const runtimeModule = await import("../../relay/iq-multi-runtime.mjs");
 // @ts-expect-error - relay ESM sem tipagem
 const agentsV2 = await import("../../relay/rsi-agents-v2.mjs");
+// @ts-expect-error - relay ESM sem tipagem
+const agentsV3 = await import("../../relay/rsi-agents-v3.mjs");
 
 const { IqMultiRuntime } = runtimeModule;
 const { RSI_V2_EXECUTION_ALLOWLIST } = agentsV2;
+const { RSI_V3_EXECUTION_ALLOWLIST } = agentsV3;
 
 const build = (options: any = {}) => new IqMultiRuntime({ executionAllowlist: RSI_V2_EXECUTION_ALLOWLIST, ...options });
 
@@ -82,5 +85,42 @@ describe("EXECUTION ROUTING — apenas V2 pode executar", () => {
     expect(event.strategyId).toBe("PROFESSIONAL_BRAIN_G2");
     expect(event.decisionSource).toBe("G2_AUTO");
     expect(event.controlsExecution).toBe(false);
+  });
+});
+
+describe("EXECUTION ROUTING — politica RSI_V3_ONLY", () => {
+  const buildV3 = () => new IqMultiRuntime({ executionAllowlist: RSI_V3_EXECUTION_ALLOWLIST, executionPolicyName: "RSI_V3_ONLY" });
+
+  it("somente RSI_REVERSAL_PULLBACK_V3 (agent-v3) pode executar; V2 e G2 bloqueados", async () => {
+    const runtime = buildV3();
+    const v3Source = "agent-v3:RSI_REVERSAL_PULLBACK_V3:RSI_REVERSAL_PULLBACK_V3";
+    expect(await codeOf(runtime.requestOrder({ marketKey: "EURUSD:OTC", direction: "BUY", source: v3Source }))).not.toBe("EXECUTION_SOURCE_BLOCKED");
+    for (const source of [
+      "agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2",
+      "agent-v2:RSI_EXTREME_PULLBACK_V2:RSI_EXTREME_PULLBACK_V2",
+      "AUTO_DECISION",
+      "MANUAL",
+    ]) {
+      expect(await codeOf(runtime.requestOrder({ marketKey: "EURUSD:OTC", direction: "BUY", source })), source).toBe("EXECUTION_SOURCE_BLOCKED");
+    }
+  });
+
+  it("status RSI_V3_ONLY: apenas V3 com controlsExecution=true", () => {
+    const status = buildV3().executionRoutingStatus();
+    expect(status.policy).toBe("RSI_V3_ONLY");
+    expect(status.allowlist).toEqual([`agent-v3:RSI_REVERSAL_PULLBACK_V3`]);
+    const allowed = status.sources.filter((row: any) => row.controlsExecution === true && row.canReachRequestOrder === true);
+    expect(allowed).toHaveLength(1);
+    expect(allowed[0].strategyId).toBe("RSI_REVERSAL_PULLBACK_V3");
+    expect(allowed[0].decisionSource).toBe("AGENT_V3");
+    const blocked = status.sources.filter((row: any) => row.controlsExecution === false);
+    expect(blocked.some((row: any) => row.strategyId === "RSI_REVERSAL_STRICT_V2")).toBe(true);
+    expect(blocked.some((row: any) => row.strategyId === "RSI_EXTREME_PULLBACK_V2")).toBe(true);
+    expect(blocked.some((row: any) => row.source === "AUTO_DECISION")).toBe(true);
+  });
+
+  it("V1 (agent:RSI*) tambem fica bloqueada na politica V3", async () => {
+    const runtime = buildV3();
+    expect(await codeOf(runtime.requestOrder({ marketKey: "EURUSD:OTC", direction: "SELL", source: "agent:RSI_REVERSAL_STRICT:RSI_REVERSAL_STRICT_V1" }))).toBe("EXECUTION_SOURCE_BLOCKED");
   });
 });

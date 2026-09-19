@@ -347,6 +347,18 @@ describe("OFFICE V3 — render e guarda de DOM", () => {
     expect(countDistinctColors(ctx, BASE_WIDTH, BASE_HEIGHT, 2)).toBeGreaterThan(50);
   });
 
+  it("mesa com agente RSI V3 mostra a tag unica RSI V3", () => {
+    const markets = fixtureMarkets(3);
+    markets[0] = { ...markets[0], rsiAgent: { strategyId: "RSI_REVERSAL_PULLBACK_V3", label: "RSI V3", decision: "SELL", waitReason: null, lastResult: "WIN", lastPnl: 8.2, qualityClass: "NORMAL_WIN", entryMode: "NORMAL_T5", rsi: 64, expectedCushion: 0.51, position: null, blocked: false, blockReason: null } };
+    const state = buildWorldState({ markets });
+    expect(state.stations[0].rsiAgent.strategyId).toBe("RSI_REVERSAL_PULLBACK_V3");
+    const canvas = createCanvas(BASE_WIDTH, BASE_HEIGHT);
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    expect(() => drawWorld(ctx, state, { x: 0, y: 0, zoom: 1 })).not.toThrow();
+    expect(countDistinctColors(ctx, BASE_WIDTH, BASE_HEIGHT, 2)).toBeGreaterThan(50);
+  });
+
   it("não referencia globais de DOM no momento do import", () => {
     expect(typeof (globalThis as any).document).toBe("undefined");
     expect(typeof (globalThis as any).window).toBe("undefined");

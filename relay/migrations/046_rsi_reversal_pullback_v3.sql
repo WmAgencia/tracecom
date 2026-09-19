@@ -1,0 +1,148 @@
+-- 046: RSI_REVERSAL_PULLBACK_V3 — estrategia UNICA em todo o universo elegivel.
+-- V1/V2 permanecem intactos (tabelas proprias). Nada historico e alterado.
+
+CREATE TABLE IF NOT EXISTS iq_rsi_universe_v3 (
+  snapshot_id text NOT NULL,
+  market_key text NOT NULL,
+  at bigint NOT NULL,
+  market_type text,
+  canonical text,
+  active_id bigint,
+  enabled boolean,
+  availability text,
+  payout numeric,
+  candles_count int,
+  feed_ready boolean,
+  turbo_supported boolean,
+  eligible boolean,
+  reason text,
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (snapshot_id, market_key)
+);
+CREATE INDEX IF NOT EXISTS idx_iq_rsi_universe_v3_at ON iq_rsi_universe_v3(at DESC);
+
+CREATE TABLE IF NOT EXISTS iq_rsi_agent_assignments_v3 (
+  market_key text PRIMARY KEY,
+  strategy text NOT NULL,
+  market_type text,
+  canonical text,
+  active_id bigint,
+  availability text NOT NULL DEFAULT 'UNKNOWN',
+  pinned boolean NOT NULL DEFAULT true,
+  block_reason text,
+  assigned_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_iq_rsi_v3_assignment_market ON iq_rsi_agent_assignments_v3(market_type, market_key);
+
+CREATE TABLE IF NOT EXISTS iq_rsi_agent_state_v3 (
+  agent_id text PRIMARY KEY,
+  market_key text NOT NULL,
+  strategy text NOT NULL,
+  status text,
+  decision text,
+  wait_reason text,
+  candidate_at bigint,
+  candidate_age_ms bigint,
+  candidate_rsi numeric,
+  candidate_price numeric,
+  candidate_expiry bigint,
+  revalidation_at bigint,
+  submit_at bigint,
+  expiry_at bigint,
+  entry_mode text,
+  rsi numeric,
+  rsi_trajectory text,
+  rsi_band text,
+  bollinger jsonb,
+  band jsonb,
+  dmi jsonb,
+  adx jsonb,
+  stage text,
+  strength text,
+  structural_trend text,
+  short_horizon_direction text,
+  projection jsonb,
+  expected_cushion numeric,
+  strict_v2_decision text,
+  pullback_v2_decision text,
+  order_id text,
+  execution_id text,
+  requested_stake numeric,
+  effective_stake numeric,
+  last_result text,
+  last_pnl numeric,
+  quality_class text,
+  last_reason text,
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_iq_rsi_state_v3_market ON iq_rsi_agent_state_v3(market_key);
+
+CREATE TABLE IF NOT EXISTS iq_rsi_opportunities_v3 (
+  opportunity_id text PRIMARY KEY,
+  market_key text NOT NULL,
+  market_type text,
+  agent_id text NOT NULL,
+  strategy_id text NOT NULL,
+  observed_at bigint,
+  candidate_at bigint,
+  candidate_age_ms bigint,
+  candidate_rsi numeric,
+  candidate_rsi_band text,
+  candidate_price numeric,
+  candidate_expiry bigint,
+  direction text,
+  entry_mode text,
+  stage text,
+  strength text,
+  decision text,
+  accepted boolean,
+  rsi numeric,
+  rsi_trajectory text,
+  bollinger jsonb,
+  band jsonb,
+  dmi jsonb,
+  adx jsonb,
+  structural_trend text,
+  short_horizon_direction text,
+  projection jsonb,
+  expected_cushion numeric,
+  v3_decision text,
+  strict_v2_decision text,
+  pullback_v2_decision text,
+  order_id text,
+  execution_id text,
+  effective_stake numeric,
+  entry_price numeric,
+  entry_noise numeric,
+  expiry_at bigint,
+  expiry_price numeric,
+  result text,
+  profit numeric,
+  actual_displacement numeric,
+  actual_cushion numeric,
+  projection_correct boolean,
+  quality_class text,
+  settlement_basis text,
+  indicators jsonb NOT NULL DEFAULT '{}'::jsonb,
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_iq_rsi_v3_opp_market ON iq_rsi_opportunities_v3(market_key, observed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_iq_rsi_v3_opp_result ON iq_rsi_opportunities_v3(result, entry_mode);
+
+CREATE TABLE IF NOT EXISTS iq_rsi_events_v3 (
+  id bigserial PRIMARY KEY,
+  at timestamptz NOT NULL DEFAULT now(),
+  market_key text,
+  agent_id text,
+  strategy_id text,
+  event text,
+  decision text,
+  reason text,
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb
+);
+CREATE INDEX IF NOT EXISTS idx_iq_rsi_events_v3_market ON iq_rsi_events_v3(market_key, at DESC);

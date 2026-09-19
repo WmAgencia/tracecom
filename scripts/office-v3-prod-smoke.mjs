@@ -88,7 +88,8 @@ async function main() {
           model: api.resultsModel ? { day: api.resultsModel()?.day?.pnlText ?? null, week: api.resultsModel()?.week?.pnlText ?? null, month: api.resultsModel()?.month?.pnlText ?? null } : null,
         },
         canvasLogsBox: typeof api.worldModule().drawLogsBox === "function",
-        rsiV2: office?.aux?.rsiAgentsV2 ?? null,
+        rsiV3: office?.aux?.rsiAgentsV3 ?? null,
+        rsiV2Frozen: office?.aux?.rsiAgentsV2 ?? null,
         strategyOrder: state.stations.map((station) => station.rsiAgent?.strategyId ?? null),
         desksWithTag: state.stations.filter((station) => Boolean(station.rsiAgent?.strategyId)).length,
       };
@@ -97,16 +98,16 @@ async function main() {
     assert("painel superior com dados reais do GET /api/iq/office", typeof boot.pnlText === "string" && boot.pnlText.length > 0, "final-prod-boot.png", { pnlText: boot.pnlText, settledPnl: boot.settledPnl });
     assert("RESULTS DO DIA/SEMANA/MES legivel e sem NaN/undefined", boot.results.present === true && /RESULTADO DO DIA/.test(boot.results.text ?? "") && !/NaN|undefined/.test(boot.results.text ?? ""), "final-prod-boot.png", boot.results);
     assert("box de LOGS do canvas removido (somente overlay DOM)", boot.canvasLogsBox === false, null, { canvasLogsBox: boot.canvasLogsBox });
-    const firstPullback = boot.strategyOrder.findIndex((strategy) => strategy === "RSI_EXTREME_PULLBACK_V2");
-    const lastStrict = boot.strategyOrder.reduce((last, strategy, index) => (strategy === "RSI_REVERSAL_STRICT_V2" ? index : last), -1);
-    assert("RSI V2 50/50 no Office (superior STRICT V2 / inferior PULLBACK V2)", Boolean(boot.rsiV2) && boot.rsiV2.migration?.complete === true && boot.rsiV2.split.strict > 0 && boot.rsiV2.split.pullback > 0 && Math.abs(boot.rsiV2.split.strict - boot.rsiV2.split.pullback) <= 1 && firstPullback > lastStrict && boot.desksWithTag === boot.rsiV2.split.strict + boot.rsiV2.split.pullback, "final-prod-boot.png", { split: boot.rsiV2?.split, migration: boot.rsiV2?.migration?.state, desksWithTag: boot.desksWithTag, firstPullback, lastStrict });
+    const strategySet = [...new Set(boot.strategyOrder.filter(Boolean))];
+    assert("RSI V3 unica em TODOS os agentes do Office", Boolean(boot.rsiV3) && boot.rsiV3.migration?.complete === true && boot.rsiV3.strategy === "RSI_REVERSAL_PULLBACK_V3" && boot.rsiV3.split?.eligible > 0 && strategySet.length === 1 && strategySet[0] === "RSI_REVERSAL_PULLBACK_V3" && boot.desksWithTag === boot.rsiV3.split.eligible, "final-prod-boot.png", { strategy: boot.rsiV3?.strategy, eligible: boot.rsiV3?.split?.eligible, desksWithTag: boot.desksWithTag, strategySet });
+    assert("V2 congelada em shadow (sem execucao)", boot.rsiV2Frozen?.frozen === true && boot.rsiV2Frozen?.controlsExecution === false, null, boot.rsiV2Frozen);
 
     const routingResponse = await page.request.get(`${BASE_URL}/api/iq/execution-routing`);
     const routing = routingResponse.ok() ? await routingResponse.json() : null;
-    const v2Sources = ["agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2", "agent-v2:RSI_EXTREME_PULLBACK_V2:RSI_EXTREME_PULLBACK_V2"];
+    const v3Sources = ["agent-v3:RSI_REVERSAL_PULLBACK_V3:RSI_REVERSAL_PULLBACK_V3"];
     const allowedSources = (routing?.sources ?? []).filter((row) => row.controlsExecution === true);
-    const blockedOthers = (routing?.sources ?? []).filter((row) => !v2Sources.includes(row.source));
-    assert("EXECUTION ROUTING: somente STRICT_V2/PULLBACK_V2 podem chegar ao requestOrder", routing?.policy === "RSI_V2_ONLY" && allowedSources.length === 2 && allowedSources.every((row) => ["RSI_REVERSAL_STRICT_V2", "RSI_EXTREME_PULLBACK_V2"].includes(row.strategyId)) && blockedOthers.length > 0 && blockedOthers.every((row) => row.controlsExecution === false && row.canReachRequestOrder === false), "final-prod-boot.png", { policy: routing?.policy, allowed: allowedSources.map((row) => row.strategyId), blocked: blockedOthers.map((row) => `${row.source}:${row.controlsExecution}`) });
+    const blockedOthers = (routing?.sources ?? []).filter((row) => !v3Sources.includes(row.source));
+    assert("EXECUTION ROUTING RSI_V3_ONLY: somente RSI_REVERSAL_PULLBACK_V3 pode chegar ao requestOrder", routing?.policy === "RSI_V3_ONLY" && allowedSources.length === 1 && allowedSources[0].strategyId === "RSI_REVERSAL_PULLBACK_V3" && blockedOthers.length > 0 && blockedOthers.every((row) => row.controlsExecution === false && row.canReachRequestOrder === false), "final-prod-boot.png", { policy: routing?.policy, allowed: allowedSources.map((row) => row.strategyId), blocked: blockedOthers.map((row) => `${row.source}:${row.controlsExecution}`) });
     await page.screenshot({ path: join(OUT_DIR, "final-prod-boot.png") });
 
     await page.click("#logs-toggle");
