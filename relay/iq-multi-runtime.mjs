@@ -59,6 +59,8 @@ import { SoloReasoningEngine } from "./solo-reasoning.mjs";
 import { FourWayExperiment, EXPERIMENT_ID as FOUR_WAY_EXPERIMENT_ID } from "./four-way-experiment.mjs";
 // INDICATOR_5M_V1: control group simples (RSI + DMI/ADX + Bollinger) com entrada tardia.
 import { Indicator5MEngine, effectiveSafetyMarginMs } from "./indicator-5m.mjs";
+// RSI_REVERSAL_CONFLUENCE_V1: experimento separado (RSI extremo + Bollinger + DMI/ADX, janela T-5s).
+import { RsiReversalExperiment } from "./rsi-reversal.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
 export const ACK_TIMEOUT_MS = 15_000;
@@ -85,7 +87,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -150,6 +152,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.solo = new SoloReasoningEngine({ pool, now: this.now, log: this.log, enabled: soloReasoningEnabled === true });
     this.fourWay = new FourWayExperiment({ pool, runtime: this, now: this.now, log: this.log, minStakeBrl: 1 });
     this.indicator5m = new Indicator5MEngine({ pool, now: this.now, log: this.log, enabled: indicator5mEnabled === true });
+    this.rsiReversal = new RsiReversalExperiment({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiReversalEnabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -835,8 +838,13 @@ export class IqMultiRuntime extends EventEmitter {
       this.dual.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // SOLO_REASONING (SHADOW): liquidacao causal do final e do contrafactual da tese inicial.
       this.solo.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      // RSI_REVERSAL (PRACTICE experiment): liquidacao causal observacional.
+      this.rsiReversal.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // INDICATOR_5M_V1: liquidacao causal (PROSPECTIVE_SHADOW; nunca broker).
       this.indicator5m.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      // RSI_REVERSAL (experimento PRACTICE): avaliacao por mercado (isolada) + liquidacao causal.
+      this.#safe(() => this.#observeRsiReversal(ctx, list, now));
+      this.rsiReversal.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
@@ -1267,6 +1275,35 @@ export class IqMultiRuntime extends EventEmitter {
       marketMeta: { symbol: ctx.display ?? null, availability: ctx.availability ?? null, productKind: candidate?.productKind ?? null },
       snapshotId: `${ctx.marketKey}:${candidate?.id ?? now}`,
     });
+  }
+
+  /* ------------------- RSI_REVERSAL_CONFLUENCE_V1 (experimento separado; ordem so via harness) ------------------- */
+  #observeRsiReversal(ctx, list, now) {
+    if (!this.rsiReversal?.enabled) return null;
+    if (now - (ctx.rsi5sAt ?? 0) < 5_000) return null; // avaliacao a cada ~5s por mercado
+    ctx.rsi5sAt = now;
+    const serverNow = this.client?.serverNow?.() ?? now;
+    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000; // mesma expiracao Turbo 1m
+    const ackSamples = ctx.latency?.orderAck ?? [];
+    const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
+    const persistSamples = ctx.latency?.dbPersist ?? [];
+    const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
+    return this.rsiReversal.observeMarket({
+      marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, candles: list,
+      targetExpiryAt, payout: ctx.payout, now,
+      latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 },
+    });
+  }
+
+  async rsiReversalStatus() {
+    const status = await this.rsiReversal.status();
+    return { ...status, context: { accountContext: this.accountContext.context, realState: this.realMode.authorized() ? "ARMED" : "LOCKED", killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, brokerConnected: this.session.connected === true }, realAllowlistUntouched: true, fiveWayUntouched: true };
+  }
+  async rsiReversalPrepare() { return this.rsiReversal.prepare({ preflight: this.#rsiReversalPreflight() }); }
+  async rsiReversalArm({ phrase = "", actor = "owner" } = {}) { return this.rsiReversal.arm({ phrase, actor, preflight: this.#rsiReversalPreflight() }); }
+  async rsiReversalStop(reason = "MANUAL_STOP") { return this.rsiReversal.stop(reason); }
+  #rsiReversalPreflight() {
+    return { accountContext: this.accountContext.context, realState: this.realMode.authorized() ? "ARMED" : "LOCKED", killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, brokerConnected: this.session.connected === true, stakeBrl: 1 };
   }
 
   /* ------------------- INDICATOR_5M_V1 (control group; nunca executa direto) ------------------- */

@@ -1,0 +1,22 @@
+﻿{
+    "practiceOnly":  true,
+    "files":  {
+                  "relay/rsi-reversal.mjs":  {
+                                                 "sha256":  "5d48d14e05711060e3da0fd0d3689c51edefe930dfb256f998cdf37ee3cbd73f"
+                                             },
+                  "relay/migrations/041_rsi_reversal.sql":  {
+                                                                "sha256":  "86a55330988a2f161e3218dd37c9a631a3d8192bcf1a0365957da0c86d2f3201"
+                                                            },
+                  "tests/research/rsi-reversal.test.ts":  {
+                                                              "sha256":  "71e31f8f52049248a7c5fb7f148213cfd0e4748aafe1dbf0052e4927450cc12d"
+                                                          }
+              },
+    "noTuning":  true,
+    "version":  "RSI_REVERSAL_CONFLUENCE_V1",
+    "frozenAtUtc":  "2026-09-19T15:05:24Z",
+    "stakeBrl":  1,
+    "minSafeMarginMs":  3000,
+    "cap":  30,
+    "schema":  "rsi-reversal-freeze-v1",
+    "windowMs":  5000
+}
