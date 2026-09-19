@@ -21,6 +21,7 @@ export const DATA_QUALITY_THRESHOLDS = Object.freeze({
   criticalMissingBuckets: 3,
   criticalSequenceGaps: 3,
   minTicks: 3,
+  duplicatesTolerance: 10,
 });
 
 function check(id, ok, severity, detail) { return { id, ok: ok === true, severity, detail: detail ?? null }; }
@@ -50,7 +51,8 @@ export function assessDataQuality({
   const gaps = Number(sequenceGaps) || 0;
   checks.push(check("SEQUENCE_CONTINUOUS", gaps === 0, gaps >= limits.criticalSequenceGaps ? "CRITICAL" : "DEGRADED", gaps ? `sequenceGaps=${gaps}` : null));
   const duplicates = Number(candles.duplicates) || 0;
-  checks.push(check("NO_DUPLICATES", duplicates === 0, "DEGRADED", duplicates ? `duplicates=${duplicates}` : null));
+  // Reentrega da ultima vela fechada e comportamento esperado do feed IQ; so vira DEGRADED acima da tolerancia.
+  checks.push(check("NO_DUPLICATES", duplicates <= limits.duplicatesTolerance, "DEGRADED", duplicates ? `duplicates=${duplicates} (tolerancia=${limits.duplicatesTolerance})` : null));
   const reorder = Number(candles.reorder) || 0;
   checks.push(check("NO_REORDER", reorder === 0, "DEGRADED", reorder ? `reorder=${reorder}` : null));
 

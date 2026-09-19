@@ -37,11 +37,18 @@ describe("Data Quality Agent", () => {
     }
   });
 
-  it("classifica DEGRADED para duplicatas/gaps/clock leve e nunca como UNSAFE", () => {
+  it("classifica DEGRADED para duplicatas acima da tolerancia/gaps/reorder e nunca como UNSAFE", () => {
     const t0 = baseT0();
-    const result = hub.assessDataQuality(dataQualityInput(t0, { candles: { count: 80, duplicates: 2, reorder: 1, missingBuckets: 1 } }));
+    const result = hub.assessDataQuality(dataQualityInput(t0, { candles: { count: 80, duplicates: 50, reorder: 1, missingBuckets: 1 } }));
     expect(result.state).toBe("DEGRADED");
     expect(result.noTrade).toBe(false);
+  });
+
+  it("reentrega esperada da vela fechada (dentro da tolerancia) NAO degrada os dados", () => {
+    const t0 = baseT0();
+    const result = hub.assessDataQuality(dataQualityInput(t0, { candles: { count: 80, duplicates: 3, reorder: 0, missingBuckets: 0 } }));
+    expect(result.state).toBe("HEALTHY");
+    expect(result.checks.find((row: any) => row.id === "NO_DUPLICATES").ok).toBe(true);
   });
 
   it("isola NORMAL/OTC: sufixo do marketKey divergente do marketType e UNSAFE", () => {
