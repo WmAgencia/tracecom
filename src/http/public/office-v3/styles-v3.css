@@ -1371,6 +1371,54 @@ body.tc-v3-panning * {
   text-align: center;
 }
 
+/* Filtro por fonte (V4 e o agente que controla execucao; nao pode ficar escondido) */
+.tc-logs-filters { display: flex; gap: 6px; margin-left: auto; margin-right: 10px; }
+.tc-logs-filters button {
+  border: 1px solid var(--tc-v3-line);
+  background: transparent;
+  color: var(--tc-v3-ink-muted);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+}
+.tc-logs-filters button.is-active {
+  background: var(--tc-v3-accent);
+  border-color: var(--tc-v3-accent);
+  color: #06121f;
+  font-weight: var(--tc-v3-weight-bold);
+}
+.tc-logs-row.is-v4 { border-left: 3px solid #7fb0ff; }
+.tc-logs-row.is-v4 .tc-logs-strategy { color: #9fc6ff; }
+.tc-logs-row.is-mesas { border-left: 3px solid #ffd76a; }
+
+/* Faixa de status da V4 (bloqueio por MESAS zero visivel no topo) */
+.tc-v4-status {
+  position: fixed;
+  top: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  max-width: min(92vw, 900px);
+  padding: 6px 14px;
+  border: 1px solid var(--tc-v3-line, #2a3d63);
+  border-radius: 999px;
+  background: rgba(7, 16, 31, 0.92);
+  color: var(--tc-v3-ink-muted, #9fb2d6);
+  font-family: var(--tc-v3-mono, monospace);
+  font-size: 10.5px;
+  letter-spacing: 0.5px;
+  text-align: center;
+  pointer-events: none;
+}
+.tc-v4-status.is-blocked {
+  border-color: #b23a3a;
+  background: rgba(34, 13, 13, 0.95);
+  color: #ff9d9d;
+  font-weight: 700;
+}
+
 .tc-logs-foot {
   padding-top: 8px;
   border-top: 1px solid var(--tc-v3-line);

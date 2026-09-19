@@ -187,6 +187,8 @@ export class IqMultiRuntime extends EventEmitter {
     this.metrics = { messages: 0, candles: 0, reorder: 0, duplicates: 0, rejected: 0, startedAt: null, cpuBase: process.cpuUsage(), reconnects: 0 };
     this.reconcile = { lastRunAt: null, checked: 0, settled: 0, unknown: 0, error: null };
     this.configLoaded = false;
+    this.configHydrated = false;
+    this.rsiV4UniverseEmpty = false;
     this.persistence = {
       lastSuccessAt: null, lastFailureAt: null, lastError: null, consecutiveFailures: 0, readOnlyDetectedAt: null,
       auditAttempts: 0, auditFailures: 0, auditLastOkAt: null, auditLastErrorAt: null, auditLastError: null,
@@ -1377,15 +1379,19 @@ export class IqMultiRuntime extends EventEmitter {
     if (!force && this.now() - (this.lastInstrumentSync ?? 0) < 15_000) return null;
     this.lastInstrumentSync = this.now();
     try {
-      for (const ctx of this.markets.values()) {
-        if (!Array.isArray(ctx.instrumentTypes) || !ctx.instrumentTypes.includes("binary")) continue;
-        const seedEnabled = ctx.enabled === true && ctx.availability === "OPEN";
-        await this.pool.query(
-          `INSERT INTO iq_rsi_instruments(market_key, instrument_type, duration_seconds, market_type, canonical, active_id, enabled, status, payout, source, payload, updated_at)
-           VALUES($1,'BINARY',60,$2,$3,$4,$5,$6,$7,'SEED_UNIVERSE','{}'::jsonb, now())
-           ON CONFLICT(market_key, instrument_type, duration_seconds) DO UPDATE SET market_type=$2, canonical=$3, active_id=$4, status=$6, payout=$7, updated_at=now()`,
-          [ctx.marketKey, ctx.marketType, ctx.canonical, ctx.activeId, seedEnabled, ctx.availability, ctx.payout],
-        ).catch(() => undefined);
+      // Seed so depois do config persistido carregado: em boot com DB lento o seed
+      // nao pode gravar enabled=false (o runtime ainda nao sabe quais mercados o operador ligou).
+      if (this.configHydrated === true) {
+        for (const ctx of this.markets.values()) {
+          if (!Array.isArray(ctx.instrumentTypes) || !ctx.instrumentTypes.includes("binary")) continue;
+          const seedEnabled = ctx.enabled === true && ctx.availability === "OPEN";
+          await this.pool.query(
+            `INSERT INTO iq_rsi_instruments(market_key, instrument_type, duration_seconds, market_type, canonical, active_id, enabled, status, payout, source, payload, updated_at)
+             VALUES($1,'BINARY',60,$2,$3,$4,$5,$6,$7,'SEED_UNIVERSE','{}'::jsonb, now())
+             ON CONFLICT(market_key, instrument_type, duration_seconds) DO UPDATE SET market_type=$2, canonical=$3, active_id=$4, status=$6, payout=$7, updated_at=now()`,
+            [ctx.marketKey, ctx.marketType, ctx.canonical, ctx.activeId, seedEnabled, ctx.availability, ctx.payout],
+          ).catch(() => undefined);
+        }
       }
       const rows = (await this.pool.query("SELECT market_key, instrument_type, duration_seconds, market_type, canonical, enabled, status, payout FROM iq_rsi_instruments ORDER BY market_key, instrument_type")).rows ?? [];
       const merged = rows.map((row) => {
@@ -1398,7 +1404,22 @@ export class IqMultiRuntime extends EventEmitter {
         };
       });
       this.rsiAgentsV4.assignUniverse(merged);
-      return { total: merged.length, enabled: merged.filter((row) => row.enabled).length };
+      const enabled = merged.filter((row) => row.enabled).length;
+      const empty = merged.length > 0 && enabled === 0;
+      if (empty && this.rsiV4UniverseEmpty !== true) {
+        this.rsiV4UniverseEmpty = true;
+        this.#emitEvent("rsi.v4.universe_empty", {
+          total: merged.length, enabled, blocked: merged.length,
+          legacyEnabled: [...this.markets.values()].filter((ctx) => ctx.enabled).length,
+          reason: "MESAS_ZERO_ENABLED",
+          note: "Nenhum instrumento ligado em MESAS: o runner V4 avalia zero mercados (nenhuma ordem e possivel).",
+        });
+        this.#safe(() => this.log("RSI_V4_UNIVERSE_EMPTY", JSON.stringify({ total: merged.length, legacyEnabled: [...this.markets.values()].filter((ctx) => ctx.enabled).length })));
+      } else if (!empty && this.rsiV4UniverseEmpty === true) {
+        this.rsiV4UniverseEmpty = false;
+        this.#emitEvent("rsi.v4.universe_restored", { total: merged.length, enabled });
+      }
+      return { total: merged.length, enabled, empty };
     } catch (error) {
       this.#safe(() => this.log("RSI_V4_REGISTRY_SYNC_FAIL", String(error?.message ?? error)));
       return null;
@@ -1434,6 +1455,8 @@ export class IqMultiRuntime extends EventEmitter {
     const result = await this.pool.query("UPDATE iq_rsi_instruments SET enabled=$4, updated_at=now() WHERE market_key=$1 AND instrument_type=$2 AND duration_seconds=$3 RETURNING *", [marketKey, type, Number(durationSeconds), enabled === true]);
     if (!result.rows?.length) throw new IqWsError("MESAS_INSTRUMENT_NOT_FOUND", `${marketKey}:${type}:${durationSeconds}`);
     this.#emitEvent("mesas.instrument", { marketKey, instrumentType: type, durationSeconds: Number(durationSeconds), enabled: enabled === true });
+    // Auditoria persistida (MESAS controla o universo executavel V4; toggle nunca pode ser invisivel).
+    this.#auditRecord(`mesas_${type}_${marketKey}_${this.now()}`, marketKey, "MESAS_INSTRUMENT", { instrumentType: type, durationSeconds: Number(durationSeconds), enabled: enabled === true, actor: "OPERATOR_UI" }, { persist: true });
     await this.refreshInstrumentRegistry({ force: true });
     return result.rows[0];
   }
@@ -1454,8 +1477,20 @@ export class IqMultiRuntime extends EventEmitter {
     const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
     const result = await this.pool.query(`UPDATE iq_rsi_instruments SET enabled=$${values.length}, updated_at=now() ${where} RETURNING market_key, instrument_type`, values);
     this.#emitEvent("mesas.bulk", { filter, enabled: enabled === true, changed: result.rows?.length ?? 0 });
+    this.#auditRecord(`mesas_bulk_${this.now()}`, null, "MESAS_BULK", { filter, enabled: enabled === true, changed: result.rows?.length ?? 0, actor: "OPERATOR_UI" }, { persist: true });
     await this.refreshInstrumentRegistry({ force: true });
     return { changed: result.rows?.length ?? 0, enabled: enabled === true };
+  }
+
+  /** Eventos persistidos da V4 (read-only, auditoria do funil DETECT->WATCH->GATE->SUBMIT). */
+  async rsiV4Events(params = {}) {
+    if (!this.rsiAgentsV4?.events) return { events: [], unavailable: true };
+    return this.rsiAgentsV4.events(params);
+  }
+
+  async rsiV4EventsFunnel(params = {}) {
+    if (!this.rsiAgentsV4?.eventsFunnel) return { funnel: [], unavailable: true };
+    return this.rsiAgentsV4.eventsFunnel(params);
   }
 
   /**
@@ -3277,6 +3312,7 @@ export class IqMultiRuntime extends EventEmitter {
   async #loadPersistedConfig() {
     if (this.configLoaded || !this.pool) return;
     this.configLoaded = true;
+    this.configHydrated = false;
     try {
       const row = (await this.pool.query("SELECT * FROM iq_runtime_config WHERE id=1")).rows[0];
       if (row) {
@@ -3314,6 +3350,7 @@ export class IqMultiRuntime extends EventEmitter {
         if (market.payout !== null && market.payout !== undefined) ctx.payout = Number(market.payout);
       }
       this.#safe(() => this.log("IQ_MULTI_CONFIG_LOADED", JSON.stringify({ markets: markets.length, globalMaxStake: this.config.globalMaxStake, defaultStake: this.config.defaultStake, mode: this.config.mode, autoExecute: this.config.autoExecute, revision: this.config.revision })));
+      this.configHydrated = true;
       const enabled = [...this.markets.values()].filter((ctx) => ctx.enabled);
       if (enabled.length > this.config.maxActiveMarkets) {
         for (const ctx of enabled.slice(this.config.maxActiveMarkets)) { ctx.enabled = false; void this.#persistMarket(ctx); }

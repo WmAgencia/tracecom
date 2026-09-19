@@ -252,4 +252,40 @@ describe("OFFICE V3 LOGS — overlay legivel", () => {
     expect(controller.isOpen()).toBe(false);
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
   });
+
+  it("V4 aparece com estrategia/fonte e filtro dedicado (nao fica escondida atras do G2)", () => {
+    const v4 = logs.logRowModel({
+      time: "22:14:55",
+      agentId: "RSI_REVERSAL_V4:AUDJPY:OTC",
+      marketKey: "AUDJPY:OTC",
+      strategyId: "RSI_REVERSAL_V4",
+      type: "rsi.agent.decision",
+      decision: "WAIT",
+      reason: "NO_CANDIDATE_RSI_NEUTRO",
+    });
+    expect(v4.strategy).toBe("RSI_REVERSAL_V4");
+    expect(v4.source).toBe("AGENT_V4");
+    expect(v4.v4).toBe(true);
+    expect(logs.matchesLogFilter({ strategyId: "RSI_REVERSAL_V4" }, "V4")).toBe(true);
+    expect(logs.matchesLogFilter({ strategyId: "RSI_REVERSAL_V4" }, "G2")).toBe(false);
+    expect(logs.matchesLogFilter({ type: "mesas.bulk", enabled: false }, "MESAS")).toBe(true);
+    expect(logs.matchesLogFilter({ type: "mesas.bulk" }, "V4")).toBe(false);
+    expect(logs.matchesLogFilter({ type: "agent.trader", decisionSource: "G2_AUTO" }, "G2")).toBe(true);
+    expect(logs.matchesLogFilter({ type: "agent.trader", decisionSource: "G2_AUTO" }, "ALL")).toBe(true);
+
+    const doc = new FakeDocument();
+    const list = doc.createElement("div");
+    const entries = [
+      entry({ seq: 1, type: "agent.trader", decisionSource: "G2_AUTO", text: "G2 UM" }),
+      { time: "22:14:55", marketKey: "AUDJPY:OTC", strategyId: "RSI_REVERSAL_V4", type: "rsi.agent.decision", decision: "WAIT", reason: "NO_CANDIDATE_RSI_NEUTRO", seq: 2, text: "V4 UM" },
+      { time: "22:14:56", strategyId: "RSI_REVERSAL_V4", type: "rsi.agent.decision", decision: "BUY", reason: "V4_ENTRY_OK", seq: 3, text: "V4 DOIS" },
+    ];
+    expect(logs.renderLogRows(doc, list, entries, 200, "V4")).toBe(2);
+    expect(list.textContent).toContain("V4 DOIS");
+    expect(list.textContent).not.toContain("G2 UM");
+    const v4Rows = byClass(list, "is-v4");
+    expect(v4Rows.length).toBe(2);
+    expect(logs.renderLogRows(doc, list, entries, 200, "G2")).toBe(1);
+    expect(list.textContent).toContain("G2 UM");
+  });
 });

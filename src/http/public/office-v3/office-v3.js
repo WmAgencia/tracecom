@@ -61,9 +61,11 @@ const mesasPanelEl = $("mesas-panel");
 const mesasSearchEl = $("mesas-search");
 const logsToggleEl = $("logs-toggle");
 const logsPanelEl = $("logs-panel");
-const logsListEl = $("logs-list");
-const logsMetaEl = $("logs-meta");
-const logsCloseEl = $("logs-close");
+    const logsListEl = $("logs-list");
+    const logsMetaEl = $("logs-meta");
+    const logsCloseEl = $("logs-close");
+    const logsFiltersEl = $("logs-filters");
+    const v4StatusEl = $("office-v4-status");
 
 const modules = { assets: null, world: null, life: null, camera: null, dashboard: null, marketDetail: null, topbar: null, blueprintBase: null, overlay: null, baseMode: null, pixelAssets: null, resultsPanel: null, logsPanel: null };
 let worldState = null;
@@ -881,9 +883,35 @@ function mountResults(json) {
   }
 }
 
+function renderV4Status(json) {
+  if (!v4StatusEl) return;
+  const v4 = json?.aux?.rsiAgentsV4 ?? null;
+  if (!v4) { v4StatusEl.hidden = true; return; }
+  const universe = v4.universe ?? {};
+  const enabled = Number(universe.enabled) || 0;
+  const total = Number(universe.total) || 0;
+  const routing = json?.aux?.executionRouting ?? {};
+  const v4Source = (routing.sources ?? []).find((row) => String(row.source ?? "").startsWith("agent-v4")) ?? null;
+  const controls = v4Source?.controlsExecution === true;
+  const blocked = enabled === 0 && total > 0;
+  v4StatusEl.hidden = false;
+  v4StatusEl.dataset.v4Enabled = String(enabled);
+  v4StatusEl.dataset.v4Total = String(total);
+  v4StatusEl.dataset.v4Controls = controls ? "true" : "false";
+  v4StatusEl.classList.toggle("is-blocked", blocked);
+  v4StatusEl.textContent = blocked
+    ? `RSI V4 BLOQUEADA · 0/${total} instrumentos ligados em MESAS · o agente que controla execução (${controls ? "EXEC=true" : "EXEC=false"}) não avalia nada até religar os instrumentos em MESAS`
+    : `RSI V4 · ${enabled}/${total} instrumentos MESAS · ${v4.strategy ?? "RSI_REVERSAL_V4"} · EXEC=${controls ? "true" : "false"} · stake R$ ${Number(v4.stakeBrl ?? 0).toFixed(2)}`;
+}
+
 function applyOfficeJson(json) {
   if (!worldModule || typeof worldModule.buildWorldState !== "function") return;
   officeJson = json;
+  try {
+    renderV4Status(json);
+  } catch (error) {
+    warnMissing("renderV4Status", error);
+  }
   worldState = worldModule.buildWorldState(json);
   try {
     attachDerivedStates(worldState, json);
@@ -1455,8 +1483,9 @@ function bindLogsPanel() {
       panel: logsPanelEl,
       list: logsListEl,
       meta: logsMetaEl,
-      close: logsCloseEl,
-      limit: GLOBAL_LOG_LIMIT,
+          close: logsCloseEl,
+          filters: logsFiltersEl,
+          limit: GLOBAL_LOG_LIMIT,
     });
     if (logsController) logsController.render(globalLogs);
   } catch (error) {

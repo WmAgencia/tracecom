@@ -238,4 +238,40 @@ describe("RSI AGENTS V4 — contrato", () => {
     expect(RSI_V4_POLICY.realLocked).toBe(true);
     expect(RSI_V4_POLICY.blitzDurationSeconds).toBe(45);
   });
+
+  it("universeEmpty sinaliza MESAS 0/N (auditoria: nunca silencioso)", () => {
+    const runner = new RsiAgentsV4({ enabled: true, now: () => NOW });
+    runner.assignUniverse([
+      { marketKey: "AUDJPY:OTC", instrumentType: "BINARY", durationSeconds: 60, enabled: false, availability: "OPEN" },
+      { marketKey: "GBPUSD:OTC", instrumentType: "BINARY", durationSeconds: 60, enabled: false, availability: "OPEN" },
+    ]);
+    expect(runner.universe.enabled).toBe(0);
+    expect(runner.universe.total).toBe(2);
+    expect(runner.status().universeEmpty).toBe(true);
+    expect(runner.status().blockedReason).toBe("MESAS_ZERO_ENABLED");
+    runner.assignUniverse([
+      { marketKey: "AUDJPY:OTC", instrumentType: "BINARY", durationSeconds: 60, enabled: true, availability: "OPEN" },
+      { marketKey: "GBPUSD:OTC", instrumentType: "BINARY", durationSeconds: 60, enabled: false, availability: "OPEN" },
+    ]);
+    expect(runner.status().universeEmpty).toBe(false);
+    expect(runner.status().blockedReason).toBe(null);
+    runner.assignUniverse([]);
+    expect(runner.status().universeEmpty).toBe(false);
+  });
+
+  it("mapV4EventRow entrega payload publico e estavel (sem campos internos)", () => {
+    const mapped = agentsV4.mapV4EventRow({
+      id: 42, at: new Date("2026-09-19T22:14:55.115Z"), market_key: "AUDJPY:OTC", instrument_type: "BINARY",
+      agent_id: "RSI_REVERSAL_V4:AUDJPY:OTC", strategy_id: "RSI_REVERSAL_V4", event: "CANDIDATE_CREATED",
+      decision: "BUY", reason: "RSI_EXTREME_BUY_30", payload: { candidateRsi: 27.4 }, password: "nunca",
+    });
+    expect(mapped).toEqual({
+      id: 42, at: "2026-09-19T22:14:55.115Z", marketKey: "AUDJPY:OTC", instrumentType: "BINARY",
+      agentId: "RSI_REVERSAL_V4:AUDJPY:OTC", strategyId: "RSI_REVERSAL_V4", event: "CANDIDATE_CREATED",
+      decision: "BUY", reason: "RSI_EXTREME_BUY_30", payload: { candidateRsi: 27.4 },
+    });
+    const sparse = agentsV4.mapV4EventRow({});
+    expect(sparse.marketKey).toBe(null);
+    expect(sparse.strategyId).toBe("RSI_REVERSAL_V4");
+  });
 });

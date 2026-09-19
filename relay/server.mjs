@@ -420,6 +420,10 @@ const server = http.createServer(async (req, res) => {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiAgentsStatus()), practiceOnly:true, realLocked:true, v3:true, frozen:true, controlsExecution:false }); }
   if(url.pathname === '/api/iq/research/rsi-agents-v4' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(wsRuntime.rsiAgentsV4?.status?.() ?? { error:'RSI_V4_UNAVAILABLE' }), practiceOnly:true, realLocked:true }); }
+  if(url.pathname === '/api/iq/research/rsi-agents-v4/events' && req.method === 'GET') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const payload = await wsRuntime.rsiV4Events({ marketKey: url.searchParams.get('marketKey') || null, limit: Number(url.searchParams.get('limit')) || 100 }); return reply(res,200,{ ...payload, practiceOnly:true, realLocked:true, readOnly:true }); }
+  if(url.pathname === '/api/iq/research/rsi-agents-v4/funnel' && req.method === 'GET') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const payload = await wsRuntime.rsiV4EventsFunnel({ marketKey: url.searchParams.get('marketKey') || null }); return reply(res,200,{ ...payload, practiceOnly:true, realLocked:true, readOnly:true }); }
   if(url.pathname === '/api/iq/mesas' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.mesasList()), practiceOnly:true, brokerAutomation:'NONE' }); }
   if(url.pathname === '/api/iq/mesas' && req.method === 'PUT') {

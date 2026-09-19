@@ -77,6 +77,7 @@ export class RsiAgentsV4 {
     const byType = { BINARY: 0, BLITZ_45S: 0 };
     for (const row of enabledRows) { const key = instrumentOf(row); if (byType[key] !== undefined) byType[key] += 1; }
     this.universe = { at, enabled: enabledRows.length, total: list.length, byType, signature: enabledRows.map((row) => `${row.marketKey}|${instrumentOf(row)}`).join(",") };
+    this.universeEmpty = list.length > 0 && enabledRows.length === 0;
 
     // Cancelamento auditavel de mercados desabilitados (episode vivo).
     for (const [watchKey, episode] of [...this.episodes]) {
@@ -519,18 +520,61 @@ export class RsiAgentsV4 {
     }
   }
 
+  /**
+   * Eventos persistidos da V4 (read-only, auditoria). Nunca expõe segredos:
+   * apenas colunas publicas de iq_rsi_events_v4.
+   */
+  async events({ marketKey = null, limit = 100 } = {}) {
+    if (!this.pool?.query) return { events: [], total: 0, limit: 0, unavailable: true };
+    const bounded = Math.max(1, Math.min(500, Number(limit) || 100));
+    const params = [];
+    let where = "";
+    if (marketKey) { params.push(String(marketKey).slice(0, 40)); where = "WHERE market_key=$1"; }
+    params.push(bounded);
+    const rows = (await this.pool.query(`SELECT id, at, market_key, instrument_type, agent_id, strategy_id, event, decision, reason, payload FROM iq_rsi_events_v4 ${where} ORDER BY id DESC LIMIT $${params.length}`, params)).rows ?? [];
+    return { events: rows.map(mapV4EventRow), total: rows.length, limit: bounded, marketKey: marketKey ?? null };
+  }
+
+  /** Funil agregado de eventos persistidos (read-only). */
+  async eventsFunnel({ marketKey = null } = {}) {
+    if (!this.pool?.query) return { funnel: [], unavailable: true };
+    const params = [];
+    let where = "";
+    if (marketKey) { params.push(String(marketKey).slice(0, 40)); where = "WHERE market_key=$1"; }
+    const rows = (await this.pool.query(`SELECT event, count(*)::int AS total, max(at) AS last_at FROM iq_rsi_events_v4 ${where} GROUP BY event ORDER BY total DESC`, params)).rows ?? [];
+    return { funnel: rows.map((row) => ({ event: row.event, total: Number(row.total) || 0, lastAt: row.last_at instanceof Date ? row.last_at.toISOString() : (row.last_at ?? null) })) };
+  }
+
   status() {
     const agents = [...(this.agents ?? new Map()).values()];
     return {
       version: RSI_AGENTS_V4_VERSION, strategy: V4_ID, strategyVersion: "v4", mode: "NORMAL_RUNTIME_AGENT",
       enabled: this.enabled, stakeBrl: this.stakeBrl, routing: "RSI_V4_ONLY", practiceOnly: true, realLocked: true,
       migration: { ...this.migration }, universe: this.universe,
+      universeEmpty: this.universeEmpty === true,
+      blockedReason: this.universeEmpty === true ? "MESAS_ZERO_ENABLED" : null,
       totals: { enabled: this.universe.enabled, blocked: [...this.assignments.values()].filter((row) => row.blocked).length, signals: agents.filter((row) => row.decision === "BUY" || row.decision === "SELL").length, open: agents.filter((row) => row.position?.status === "OPEN").length, settled: agents.filter((row) => row.lastResult).length, wins: agents.filter((row) => row.lastResult === "WIN").length, losses: agents.filter((row) => row.lastResult === "LOSS").length },
       agents, counters: { ...this.counters }, rejections: this.rejections.slice(-40),
       policy: RSI_AGENTS_V4_POLICY, freeze: rsiV4FreezeManifest(),
       readyToArm: true, armed: false,
     };
   }
+}
+
+/** Mapeia uma linha de iq_rsi_events_v4 para payload publico (função pura). */
+export function mapV4EventRow(row = {}) {
+  return {
+    id: num(row.id),
+    at: row.at instanceof Date ? row.at.toISOString() : (row.at ?? null),
+    marketKey: row.market_key ?? null,
+    instrumentType: row.instrument_type ?? null,
+    agentId: row.agent_id ?? null,
+    strategyId: row.strategy_id ?? V4_ID,
+    event: row.event ?? null,
+    decision: row.decision ?? null,
+    reason: row.reason ?? null,
+    payload: row.payload ?? {},
+  };
 }
 
 /** Pacote de auditoria da operacao (schema pedido; sem dados sensiveis). */

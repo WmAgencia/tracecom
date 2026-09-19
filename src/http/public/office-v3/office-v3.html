@@ -15,6 +15,7 @@
     <canvas id="office-canvas"></canvas>
 
     <div id="office-topbar" class="tc-topbar"></div>
+    <div id="office-v4-status" class="tc-v4-status" hidden></div>
 
     <div id="office-results" data-tc-v3="results" hidden></div>
 
@@ -32,6 +33,12 @@
         <header class="tc-logs-head">
           <h2>LOGS · EVENTOS REAIS</h2>
           <span id="logs-meta">aguardando eventos…</span>
+          <div id="logs-filters" class="tc-logs-filters" role="group" aria-label="Filtrar logs por fonte">
+            <button type="button" data-logs-filter="ALL" class="is-active" aria-pressed="true">TODOS</button>
+            <button type="button" data-logs-filter="V4" aria-pressed="false">V4</button>
+            <button type="button" data-logs-filter="G2" aria-pressed="false">G2</button>
+            <button type="button" data-logs-filter="MESAS" aria-pressed="false">MESAS</button>
+          </div>
           <button id="logs-close" type="button" aria-label="Fechar logs">×</button>
         </header>
         <div class="tc-logs-columns" aria-hidden="true">
