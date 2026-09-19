@@ -11,6 +11,8 @@ const runtimeModule = await import("../../relay/iq-multi-runtime.mjs");
 const agentsV2 = await import("../../relay/rsi-agents-v2.mjs");
 // @ts-expect-error - relay ESM sem tipagem
 const agentsV3 = await import("../../relay/rsi-agents-v3.mjs");
+// @ts-expect-error - relay ESM sem tipagem
+const agentsV4 = await import("../../relay/rsi-agents-v4.mjs");
 
 const { IqMultiRuntime } = runtimeModule;
 const { RSI_V2_EXECUTION_ALLOWLIST } = agentsV2;
@@ -122,5 +124,40 @@ describe("EXECUTION ROUTING — politica RSI_V3_ONLY", () => {
   it("V1 (agent:RSI*) tambem fica bloqueada na politica V3", async () => {
     const runtime = buildV3();
     expect(await codeOf(runtime.requestOrder({ marketKey: "EURUSD:OTC", direction: "SELL", source: "agent:RSI_REVERSAL_STRICT:RSI_REVERSAL_STRICT_V1" }))).toBe("EXECUTION_SOURCE_BLOCKED");
+  });
+});
+
+describe("EXECUTION ROUTING — politica RSI_V4_ONLY", () => {
+  const buildV4 = () => new IqMultiRuntime({ executionAllowlist: agentsV4.RSI_V4_EXECUTION_ALLOWLIST, executionPolicyName: "RSI_V4_ONLY" });
+
+  it("somente agent-v4:RSI_REVERSAL_V4 executa; V3/V2/V1/G2/manual/experimentos bloqueados", async () => {
+    const runtime = buildV4();
+    expect(await codeOf(runtime.requestOrder({ marketKey: "EURUSD:OTC", direction: "BUY", source: "agent-v4:RSI_REVERSAL_V4:RSI_REVERSAL_V4" }))).not.toBe("EXECUTION_SOURCE_BLOCKED");
+    for (const source of [
+      "agent-v3:RSI_REVERSAL_PULLBACK_V3:RSI_REVERSAL_PULLBACK_V3",
+      "agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2",
+      "agent:RSI_REVERSAL_STRICT:RSI_REVERSAL_STRICT_V1",
+      "AUTO_DECISION",
+      "DIAGNOSTIC_SIGNAL",
+      "MANUAL",
+      "INFRA_PROBE",
+      "experiment:RSI_REVERSAL_CONFLUENCE_V1",
+    ]) {
+      expect(await codeOf(runtime.requestOrder({ marketKey: "EURUSD:OTC", direction: "BUY", source })), source).toBe("EXECUTION_SOURCE_BLOCKED");
+    }
+  });
+
+  it("status RSI_V4_ONLY: apenas V4 com controlsExecution=true; historico permanece bloqueado", () => {
+    const status = buildV4().executionRoutingStatus();
+    expect(status.policy).toBe("RSI_V4_ONLY");
+    expect(status.allowlist).toEqual(["agent-v4:RSI_REVERSAL_V4"]);
+    const allowed = status.sources.filter((row: any) => row.controlsExecution === true && row.canReachRequestOrder === true);
+    expect(allowed).toHaveLength(1);
+    expect(allowed[0].strategyId).toBe("RSI_REVERSAL_V4");
+    expect(allowed[0].decisionSource).toBe("AGENT_V4");
+    const blocked = status.sources.filter((row: any) => row.controlsExecution === false);
+    expect(blocked.some((row: any) => row.strategyId === "RSI_REVERSAL_PULLBACK_V3")).toBe(true);
+    expect(blocked.some((row: any) => row.strategyId === "RSI_REVERSAL_STRICT_V2")).toBe(true);
+    expect(blocked.some((row: any) => row.source === "AUTO_DECISION")).toBe(true);
   });
 });

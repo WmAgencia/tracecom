@@ -69,6 +69,7 @@ import { RsiAgents5x5 } from "./rsi-agents-5x5.mjs";
 import { RsiAgentsV2 } from "./rsi-agents-v2.mjs";
 // RSI AGENTS V3: estrategia UNICA RSI_REVERSAL_PULLBACK_V3 em todo o universo elegivel (executa via submitAgentV3Order).
 import { RsiAgentsV3 } from "./rsi-agents-v3.mjs";
+import { RsiAgentsV4 } from "./rsi-agents-v4.mjs";
 import { RSI_V3_WATCH_POLICY, shouldEvaluate } from "./rsi-v3-watch.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
@@ -92,11 +93,17 @@ const nowIso = (ms) => new Date(ms).toISOString();
 
 function emptyDailyStats() { return { wins: 0, losses: 0, draws: 0, settledPnl: 0, trades: 0 }; }
 
+/** Helpers do registry de instrumentos (MESAS) — nunca expor dados sensiveis. */
+const toNum = (value) => (value === null || value === undefined || value === "" ? null : (Number.isFinite(Number(value)) ? Number(value) : null));
+const sanitizeInstrumentRow = (row) => (row && typeof row === "object"
+  ? Object.fromEntries(Object.entries(row).filter(([key]) => !/ssid|token|bearer|authorization|cookie|password|secret|email|user|balance/i.test(key)).slice(0, 32))
+  : null);
+
 export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = false, rsiAgentsV3Enabled = true, executionAllowlist = null, executionPolicyName = null } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = false, rsiAgentsV3Enabled = true, rsiAgentsV4Enabled = false, executionAllowlist = null, executionPolicyName = null } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -171,6 +178,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.rsiAgentsV2 = new RsiAgentsV2({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2Enabled === true });
     // V3: estrategia unica no universo elegivel; V2 permanece congelada apenas como referencia/shadow.
     this.rsiAgentsV3 = new RsiAgentsV3({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV3Enabled === true });
+    this.rsiAgentsV4 = new RsiAgentsV4({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV4Enabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -870,6 +878,8 @@ export class IqMultiRuntime extends EventEmitter {
       this.rsiVariants.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // RSI AGENTS 5x5 (agentes normais): avaliacao por mercado atribuido.
       this.#safe(() => this.#observeRsiAgents(ctx, list, now));
+      // RSI AGENTS V4 (MESAS-driven; UNICO executavel da rodada V4 quando habilitado).
+      this.#safe(() => this.#observeRsiAgentsV4(ctx, list, now));
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
@@ -1332,6 +1342,168 @@ export class IqMultiRuntime extends EventEmitter {
     return promise;
   }
 
+  /* ------------------- RSI AGENTS V4 (MESAS-driven; ordem via submitAgentV4Order) ------------------- */
+  #observeRsiAgentsV4(ctx, list, now) {
+    if (!this.rsiAgentsV4?.enabled) return null;
+    const candidateActive = this.rsiAgentsV4.hasActiveCandidate(ctx.marketKey, "BINARY") === true || this.rsiAgentsV4.hasActiveCandidate(ctx.marketKey, "BLITZ_45S") === true;
+    const bucketEnd = Number(list?.[list.length - 1]?.bucketEnd);
+    const evaluate = shouldEvaluate({
+      now, lastAt: ctx.rsiAgentsV4At ?? null,
+      bucketEnd: Number.isFinite(bucketEnd) ? bucketEnd : null, lastBucket: ctx.rsiAgentsV4Bucket ?? null,
+      candidateActive, throttleMs: RSI_V3_WATCH_POLICY.normalThrottleMs,
+    });
+    if (!evaluate) { ctx.rsiAgentsV4Skips = (ctx.rsiAgentsV4Skips ?? 0) + 1; return null; }
+    ctx.rsiAgentsV4At = now;
+    if (Number.isFinite(bucketEnd)) ctx.rsiAgentsV4Bucket = bucketEnd;
+    void this.refreshInstrumentRegistry();
+    if (!this.rsiAgentsV4.assignments.has(ctx.marketKey)) return null;
+    const serverNow = this.client?.serverNow?.() ?? now;
+    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    const ackSamples = ctx.latency?.orderAck ?? [];
+    const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
+    const persistSamples = ctx.latency?.dbPersist ?? [];
+    const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
+    const instruments = [...this.rsiAgentsV4.instruments.values()].filter((row) => row.marketKey === ctx.marketKey && row.enabled === true);
+    const promises = instruments.map((row) => this.rsiAgentsV4.observeMarket({
+      marketKey: ctx.marketKey, instrumentType: row.instrumentType, durationSeconds: row.durationSeconds, marketType: ctx.marketType,
+      candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 },
+    }));
+    return Promise.all(promises).then((states) => { for (const state of states) this.#emitRsiAgentDecision(ctx, state, now); });
+  }
+
+  /** Registry de instrumentos (MESAS) — fonte do universo executavel V4. Nunca inventa instrumento. */
+  async refreshInstrumentRegistry({ force = false } = {}) {
+    if (!this.pool?.query || !this.rsiAgentsV4) return null;
+    if (!force && this.now() - (this.lastInstrumentSync ?? 0) < 15_000) return null;
+    this.lastInstrumentSync = this.now();
+    try {
+      for (const ctx of this.markets.values()) {
+        if (!Array.isArray(ctx.instrumentTypes) || !ctx.instrumentTypes.includes("binary")) continue;
+        const seedEnabled = ctx.enabled === true && ctx.availability === "OPEN";
+        await this.pool.query(
+          `INSERT INTO iq_rsi_instruments(market_key, instrument_type, duration_seconds, market_type, canonical, active_id, enabled, status, payout, source, payload, updated_at)
+           VALUES($1,'BINARY',60,$2,$3,$4,$5,$6,$7,'SEED_UNIVERSE','{}'::jsonb, now())
+           ON CONFLICT(market_key, instrument_type, duration_seconds) DO UPDATE SET market_type=$2, canonical=$3, active_id=$4, status=$6, payout=$7, updated_at=now()`,
+          [ctx.marketKey, ctx.marketType, ctx.canonical, ctx.activeId, seedEnabled, ctx.availability, ctx.payout],
+        ).catch(() => undefined);
+      }
+      const rows = (await this.pool.query("SELECT market_key, instrument_type, duration_seconds, market_type, canonical, enabled, status, payout FROM iq_rsi_instruments ORDER BY market_key, instrument_type")).rows ?? [];
+      const merged = rows.map((row) => {
+        const ctx = this.markets.get(row.market_key);
+        return {
+          marketKey: row.market_key, instrumentType: row.instrument_type, durationSeconds: toNum(row.duration_seconds) ?? 60,
+          marketType: ctx?.marketType ?? row.market_type ?? null, canonical: ctx?.canonical ?? row.canonical ?? null,
+          enabled: row.enabled === true, availability: ctx?.availability ?? row.status ?? "UNKNOWN", status: ctx?.availability ?? row.status ?? "UNKNOWN",
+          activeId: ctx?.activeId ?? null, payout: ctx?.payout ?? toNum(row.payout),
+        };
+      });
+      this.rsiAgentsV4.assignUniverse(merged);
+      return { total: merged.length, enabled: merged.filter((row) => row.enabled).length };
+    } catch (error) {
+      this.#safe(() => this.log("RSI_V4_REGISTRY_SYNC_FAIL", String(error?.message ?? error)));
+      return null;
+    }
+  }
+
+  /** Lista para o MESAS (registry + disponibilidade viva). */
+  async mesasList() {
+    if (!this.pool?.query) return { rows: [], totals: { total: 0, enabled: 0, byType: {}, byMarketType: {} } };
+    const rows = (await this.pool.query("SELECT market_key, instrument_type, duration_seconds, market_type, canonical, active_id, enabled, status, payout, source, updated_at FROM iq_rsi_instruments ORDER BY instrument_type, market_type, market_key")).rows ?? [];
+    const view = rows.map((row) => {
+      const ctx = this.markets.get(row.market_key);
+      const canonical = ctx?.canonical ?? row.canonical ?? String(row.market_key).split(":")[0];
+      const isCrypto = /BTC|ETH|LTC|XRP|ADA|SOL|DOGE/.test(String(canonical).toUpperCase());
+      return {
+        marketKey: row.market_key, instrumentType: row.instrument_type, durationSeconds: toNum(row.duration_seconds) ?? 60,
+        marketType: ctx?.marketType ?? row.market_type ?? (String(row.market_key).includes(":OTC") ? "OTC" : "NORMAL"),
+        category: row.instrument_type === "BINARY" ? "BINARY" : row.instrument_type === "BLITZ_45S" ? "BLITZ" : "OTHER",
+        assetClass: isCrypto ? "CRYPTO" : "FOREX", canonical,
+        payout: toNum(ctx?.payout ?? row.payout), status: ctx?.availability ?? row.status ?? "UNKNOWN",
+        liveAvailability: ctx?.availability ?? null, activeId: toNum(ctx?.activeId ?? row.active_id),
+        enabled: row.enabled === true, source: row.source, updatedAt: row.updated_at,
+      };
+    });
+    const byType = {}; const byMarketType = {};
+    for (const row of view) { byType[row.category] = (byType[row.category] ?? 0) + 1; byMarketType[row.marketType] = (byMarketType[row.marketType] ?? 0) + 1; }
+    return { rows: view, totals: { total: view.length, enabled: view.filter((row) => row.enabled).length, byType, byMarketType } };
+  }
+
+  async setInstrumentEnabled({ marketKey, instrumentType, durationSeconds = 60, enabled }) {
+    if (!this.pool?.query) throw new IqWsError("MESAS_NO_DB");
+    const type = String(instrumentType).toUpperCase();
+    const result = await this.pool.query("UPDATE iq_rsi_instruments SET enabled=$4, updated_at=now() WHERE market_key=$1 AND instrument_type=$2 AND duration_seconds=$3 RETURNING *", [marketKey, type, Number(durationSeconds), enabled === true]);
+    if (!result.rows?.length) throw new IqWsError("MESAS_INSTRUMENT_NOT_FOUND", `${marketKey}:${type}:${durationSeconds}`);
+    this.#emitEvent("mesas.instrument", { marketKey, instrumentType: type, durationSeconds: Number(durationSeconds), enabled: enabled === true });
+    await this.refreshInstrumentRegistry({ force: true });
+    return result.rows[0];
+  }
+
+  async bulkSetInstruments({ filter = {}, enabled = false } = {}) {
+    if (!this.pool?.query) throw new IqWsError("MESAS_NO_DB");
+    const clauses = []; const values = [];
+    if (filter.instrumentType) { values.push(String(filter.instrumentType).toUpperCase()); clauses.push(`instrument_type=$${values.length}`); }
+    if (filter.marketType) { values.push(String(filter.marketType).toUpperCase()); clauses.push(`market_type=$${values.length}`); }
+    if (filter.category) {
+      const category = String(filter.category).toUpperCase();
+      if (category === "BLITZ") clauses.push("instrument_type IN ('BLITZ_45S','BLITZ')");
+      else if (category === "BINARY") clauses.push("instrument_type='BINARY'");
+      else if (category === "CRYPTO") clauses.push("(canonical ILIKE '%BTC%' OR canonical ILIKE '%ETH%' OR canonical ILIKE '%LTC%' OR canonical ILIKE '%XRP%' OR canonical ILIKE '%ADA%' OR canonical ILIKE '%SOL%' OR canonical ILIKE '%DOGE%')");
+    }
+    if (filter.marketKey) { values.push(filter.marketKey); clauses.push(`market_key=$${values.length}`); }
+    values.push(enabled === true);
+    const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+    const result = await this.pool.query(`UPDATE iq_rsi_instruments SET enabled=$${values.length}, updated_at=now() ${where} RETURNING market_key, instrument_type`, values);
+    this.#emitEvent("mesas.bulk", { filter, enabled: enabled === true, changed: result.rows?.length ?? 0 });
+    await this.refreshInstrumentRegistry({ force: true });
+    return { changed: result.rows?.length ?? 0, enabled: enabled === true };
+  }
+
+  /**
+   * DESCOBERTA BLITZ pelo protocolo atual (read-only). Registra o que o broker realmente oferecer;
+   * nunca inventa IDs e NUNCA habilita execucao automaticamente (enabled=false, orderPath unverified).
+   */
+  async discoverBlitzInstruments() {
+    const report = { schema: "blitz-discovery-v1", at: new Date(this.now()).toISOString(), supported: false, instruments: [], durations: [], payout: {}, orderPath: { supported: false, reason: "ORDER_MESSAGE_UNVERIFIED" }, errors: [] };
+    const collect = (() => { const sections = new Set(); const rows = []; return { sections, rows }; })();
+    try {
+      const init = await this.client.getInitializationData();
+      const payload = init?.msg ?? init?.message ?? init ?? {};
+      for (const [section, data] of Object.entries(payload ?? {})) {
+        if (!data || typeof data !== "object") continue;
+        if (/blitz/i.test(section)) collect.sections.add(section);
+        const actives = data.actives ?? null;
+        if (actives && typeof actives === "object" && /blitz/i.test(section)) {
+          for (const [id, row] of Object.entries(actives)) rows.push({ section, activeId: Number(id), name: row?.name ?? null, enabled: row?.enabled === true, suspended: row?.suspended === true });
+        }
+      }
+      report.initSectionsWithBlitz = [...collect.sections];
+      report.instruments = collect.rows;
+    } catch (error) { report.errors.push(`init:${String(error?.message ?? error).slice(0, 120)}`); }
+    for (const type of ["blitz-option"]) {
+      try {
+        const response = await this.client.getInstruments({ type });
+        const payload = response?.msg ?? response?.message ?? response ?? {};
+        const list = Array.isArray(payload) ? payload : Array.isArray(payload?.instruments) ? payload.instruments : Array.isArray(payload?.result) ? payload.result : [];
+        report.instruments = [...report.instruments, ...list.map((row) => ({ type, raw: sanitizeInstrumentRow(row) }))];
+      } catch (error) { report.errors.push(`instruments:${type}:${String(error?.message ?? error).slice(0, 120)}`); }
+      try {
+        const response = await this.client.getOptions({ limit: 30, instrumentType: "blitz" });
+        const payload = response?.msg ?? response?.message ?? response ?? {};
+        const options = payload?.result ?? payload?.options ?? [];
+        for (const option of Array.isArray(options) ? options : []) {
+          const durationMs = Number(option.expiration ?? option.expired ?? 0) - Number(option.created_at ?? 0);
+          report.durations.push(durationMs > 0 ? Math.round(durationMs / 1000) : null);
+          if (option.active_id) report.payout[String(option.active_id)] = option.win_amount ?? option.payout ?? null;
+        }
+      } catch (error) { report.errors.push(`options:blitz:${String(error?.message ?? error).slice(0, 120)}`); }
+    }
+    report.durations = [...new Set(report.durations.filter((value) => Number.isFinite(value) && value > 0))].sort((a, b) => a - b);
+    report.supported = report.instruments.length > 0 || report.durations.length > 0;
+    report.supports45s = report.durations.includes(45);
+    report.orderPath = report.supported ? { supported: false, reason: "ORDER_MESSAGE_UNVERIFIED" } : { supported: false, reason: "BLITZ_NOT_OFFERED" };
+    return report;
+  }
+
   /** LOGS: decisao RSI V3 com agentId/strategyId/decisionSource/controlsExecution (throttle + mudanca de estado). */
   #emitRsiAgentDecision(ctx, state, now) {
     if (!state?.strategy) return;
@@ -1377,6 +1549,59 @@ export class IqMultiRuntime extends EventEmitter {
     const officialCap = Math.min(Number(this.config.globalMaxStake) || expected, Number(ctx.maxStake) || expected, Number(this.config.hardCap) || expected);
     if (expected > officialCap) throw new IqWsError("AGENT_ORDER_STAKE_ABOVE_OFFICIAL_CAP", `${expected}>${officialCap}`);
     return this.requestOrder({ marketKey, direction, stake: requested, decisionId, idempotencyKey, source: "agent-v3:" + (strategyId || "rsi-agents-v3") + ":" + (skill || strategyId || "skill"), horizonSeconds: 60 });
+  }
+
+  /**
+   * Caminho normal de ordem V4 (UNICO executavel apos a rodada V4): BINARY sincronizado com o broker;
+   * BLITZ somente quando o instrumento foi DESCOBERTO e o caminho de ordem verificado (fail-closed).
+   * Sempre termina em requestOrder (Execution Gate unico). REAL nunca passa.
+   */
+  async submitAgentV4Order({ marketKey, direction, strategyId = null, skill = null, stake = 10, expectedStake = 10, decisionId = null, idempotencyKey = null, candidateAt = null, expiryAt = null, instrumentType = "BINARY", durationSeconds = 60, entryMode = null, projection = null, counterEvidence = [] } = {}) {
+    if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("AGENT_ORDER_PRACTICE_ONLY", String(this.config.mode));
+    if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("AGENT_ORDER_ACCOUNT_NOT_PRACTICE", this.accountContext.context);
+    if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
+    if (this.config.autoExecute !== true) throw new IqWsError("AGENT_ORDER_AUTO_EXECUTE_OFF");
+    if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("AGENT_ORDER_KILL_SWITCH");
+    if (this.rsiAgentsV4?.migration?.complete !== true) throw new IqWsError("AGENT_ORDER_MIGRATION_IN_PROGRESS");
+    const registry = this.rsiAgentsV4?.instruments?.get?.(`${marketKey}|${String(instrumentType).toUpperCase()}`) ?? null;
+    if (!registry || registry.enabled !== true) throw new IqWsError("AGENT_ORDER_MARKET_DISABLED_BY_USER", `${marketKey}:${instrumentType}`);
+    const ctx = this.markets.get(marketKey);
+    if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
+    const requested = Number(stake);
+    const expected = Number(expectedStake);
+    if (!Number.isFinite(requested) || requested <= 0) throw new IqWsError("AGENT_ORDER_STAKE_REQUIRED");
+    if (!Number.isFinite(expected) || expected !== requested) throw new IqWsError("AGENT_ORDER_STAKE_MISMATCH", `${requested}!=${expected}`);
+    const officialCap = Math.min(Number(this.config.globalMaxStake) || expected, Number(ctx.maxStake) || expected, Number(this.config.hardCap) || expected);
+    if (expected > officialCap) throw new IqWsError("AGENT_ORDER_STAKE_ABOVE_OFFICIAL_CAP", `${expected}>${officialCap}`);
+    const instrument = String(instrumentType).toUpperCase();
+    const source = "agent-v4:" + (strategyId || "rsi-agents-v4") + ":" + (skill || strategyId || "skill");
+    if (instrument === "BLITZ_45S" || instrument === "BLITZ") {
+      const duration = Number(durationSeconds) || 45;
+      const capability = await this.#blitzCapability({ marketKey, durationSeconds: duration });
+      if (capability.supported !== true) throw new IqWsError("BLITZ_ORDER_PATH_UNSUPPORTED", capability.reason);
+      return this.requestOrder({ marketKey, direction, stake: requested, decisionId, idempotencyKey, source, horizonSeconds: duration, entryTiming: { instrumentType: "BLITZ_45S", durationSeconds: duration, requestedDuration: duration } });
+    }
+    return this.requestOrder({ marketKey, direction, stake: requested, decisionId, idempotencyKey, source, horizonSeconds: 60 });
+  }
+
+  /**
+   * BLITZ so executa quando o instrumento foi descoberto no broker E o caminho de ordem foi verificado.
+   * Enquanto nao houver verificacao, permanece fail-closed (nunca simular).
+   */
+  async #blitzCapability({ marketKey = null, durationSeconds = 45 } = {}) {
+    if (!this.pool?.query) return { supported: false, reason: "BLITZ_NO_DB", instrument: null };
+    try {
+      const rows = (await this.pool.query("SELECT market_key, instrument_type, duration_seconds, enabled, status, payout, payload FROM iq_rsi_instruments WHERE market_key=$1 AND instrument_type IN ('BLITZ_45S','BLITZ') AND duration_seconds=$2", [marketKey, Number(durationSeconds)])).rows ?? [];
+      const row = rows[0] ?? null;
+      if (!row) return { supported: false, reason: "BLITZ_INSTRUMENT_NOT_OFFERED", instrument: null };
+      if (row.enabled !== true) return { supported: false, reason: "BLITZ_DISABLED_BY_USER", instrument: row.instrument_type };
+      if (String(row.status ?? "").toUpperCase() !== "OPEN") return { supported: false, reason: `BLITZ_STATUS_${row.status}`, instrument: row.instrument_type };
+      const orderPath = row.payload?.orderPath ?? null;
+      if (orderPath !== "VERIFIED") return { supported: false, reason: "BLITZ_ORDER_MESSAGE_UNVERIFIED", instrument: row.instrument_type };
+      return { supported: true, reason: "BLITZ_ORDER_PATH_VERIFIED", instrument: row.instrument_type };
+    } catch (error) {
+      return { supported: false, reason: `BLITZ_CAPABILITY_ERROR:${String(error?.message ?? error).slice(0, 80)}`, instrument: null };
+    }
   }
 
   /** V1 e V2 nao executam nesta rodada (fail closed explicito). */
@@ -2411,6 +2636,7 @@ export class IqMultiRuntime extends EventEmitter {
    */
   #decisionSourceFor(source) {
     const raw = String(source ?? "");
+    if (raw.startsWith("agent-v4:")) return "AGENT_V4";
     if (raw.startsWith("agent-v3:")) return "AGENT_V3";
     if (raw.startsWith("agent-v2:")) return "AGENT_V2";
     if (raw.startsWith("agent:")) return "AGENT_V1";
@@ -2422,6 +2648,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.executionPolicyName) return this.executionPolicyName;
     const list = Array.isArray(this.executionAllowlist) ? this.executionAllowlist : null;
     if (!list) return "PERMISSIVE";
+    if (list.some((entry) => String(entry).startsWith("agent-v4:"))) return "RSI_V4_ONLY";
     if (list.some((entry) => String(entry).startsWith("agent-v3:"))) return "RSI_V3_ONLY";
     if (list.some((entry) => String(entry).startsWith("agent-v2:"))) return "RSI_V2_ONLY";
     return "CUSTOM_ALLOWLIST";
@@ -2431,14 +2658,14 @@ export class IqMultiRuntime extends EventEmitter {
     const raw = String(source ?? "MANUAL");
     const allowlist = Array.isArray(this.executionAllowlist) ? this.executionAllowlist : null;
     const allowed = !allowlist || allowlist.some((prefix) => raw === prefix || raw.startsWith(`${prefix}:`) || raw.startsWith(`${prefix}|`) || raw.startsWith(`${prefix},`));
-    const isAgent = raw.startsWith("agent-v2:") || raw.startsWith("agent-v3:");
+    const isAgent = raw.startsWith("agent-v2:") || raw.startsWith("agent-v3:") || raw.startsWith("agent-v4:");
     const strategyId = isAgent ? raw.split(":")[1] ?? null : raw === "AUTO_DECISION" || raw === "DIAGNOSTIC_SIGNAL" ? `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}` : raw.startsWith("experiment:") ? raw.slice("experiment:".length) : null;
     return { source: raw, allowed, policy: this.#executionPolicyLabel(), strategyId, decisionSource: this.#decisionSourceFor(raw), controlsExecution: allowed === true };
   }
 
   #executionMeta({ source, agentId = null, strategyId = null, marketKey = null } = {}) {
     const routing = this.#executionRouting(source);
-    const agentSource = routing.source.startsWith("agent-v2:") || routing.source.startsWith("agent-v3:");
+    const agentSource = routing.source.startsWith("agent-v2:") || routing.source.startsWith("agent-v3:") || routing.source.startsWith("agent-v4:");
     return {
       agentId: agentId ?? (agentSource && marketKey ? `${routing.strategyId}:${marketKey}` : null),
       strategyId: strategyId ?? routing.strategyId,
@@ -2468,6 +2695,7 @@ export class IqMultiRuntime extends EventEmitter {
       practiceOnly: String(this.config.mode).toUpperCase() === "PRACTICE",
       singleGate: "runtime.requestOrder (Execution Gate unico)",
       sources: [
+        row("agent-v4:RSI_REVERSAL_V4:RSI_REVERSAL_V4", "RSI_REVERSAL_V4:<marketKey>", "RSI_REVERSAL_V4"),
         row("agent-v3:RSI_REVERSAL_PULLBACK_V3:RSI_REVERSAL_PULLBACK_V3", "RSI_REVERSAL_PULLBACK_V3:<marketKey>", "RSI_REVERSAL_PULLBACK_V3"),
         row("agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2", "RSI_REVERSAL_STRICT_V2:<marketKey>", "RSI_REVERSAL_STRICT_V2"),
         row("agent-v2:RSI_EXTREME_PULLBACK_V2:RSI_EXTREME_PULLBACK_V2", "RSI_EXTREME_PULLBACK_V2:<marketKey>", "RSI_EXTREME_PULLBACK_V2"),
@@ -3184,7 +3412,8 @@ export class IqMultiRuntime extends EventEmitter {
       agentState: ctx.agentState, agentSince: ctx.agentSince, agentReason: ctx.agentReason ?? null,
       lastSignal: ctx.lastSignal, lastDecision: ctx.lastDecision, lastTrade: ctx.lastTrade,
       selectionReason: ctx.selectionReason ?? null, brainGeneration: BRAIN_GENERATION,
-      rsiAgent: this.rsiAgentsV3?.stateFor(ctx.marketKey) ?? null,
+      rsiAgent: this.rsiAgentsV4?.stateFor(ctx.marketKey) ?? this.rsiAgentsV3?.stateFor(ctx.marketKey) ?? null,
+      rsiInstruments: this.rsiAgentsV4 ? [...this.rsiAgentsV4.instruments.values()].filter((row) => row.marketKey === ctx.marketKey).map((row) => ({ instrumentType: row.instrumentType, durationSeconds: row.durationSeconds, enabled: row.enabled === true, payout: row.payout ?? null, status: row.status ?? null })) : [],
       entryTiming: this.#publicEntryTiming(ctx, this.client?.serverNow?.() ?? this.now()),
     };
   }
@@ -3198,7 +3427,7 @@ export class IqMultiRuntime extends EventEmitter {
     // Office V3: agentes RSI V3 primeiro (topo); mercados sem agente no meio; legado PULLBACK V2 (se houver) na base.
     const strategyRank = (row) => {
       const strategy = row.rsiAgent?.strategyId;
-      if (strategy === "RSI_REVERSAL_PULLBACK_V3" || strategy === "RSI_REVERSAL_STRICT_V2") return 0;
+      if (strategy === "RSI_REVERSAL_V4" || strategy === "RSI_REVERSAL_PULLBACK_V3" || strategy === "RSI_REVERSAL_STRICT_V2") return 0;
       if (strategy === "RSI_EXTREME_PULLBACK_V2") return 2;
       return 1;
     };
@@ -3235,6 +3464,7 @@ export class IqMultiRuntime extends EventEmitter {
         news: this.newsContext ?? { status: "NO_FEED", note: "interface pronta; nenhum evento inventado" },
         executionGate,
         portfolioControl: { activeMarkets: this.activeMarketKeys(), openPositions: portfolio.openPositions.length, settledPnl: portfolio.settled.pnl, wins: portfolio.settled.wins, losses: portfolio.settled.losses, draws: portfolio.settled.draws, agentsOnline: markets.filter((market) => market.agentState !== "OFFLINE" && market.agentState !== "UNAVAILABLE").length },
+        rsiAgentsV4: this.rsiAgentsV4?.status?.() ?? { version: "rsi-agents-v4-single-v1", enabled: this.rsiAgentsV4?.enabled === true, strategy: "RSI_REVERSAL_V4", routing: "RSI_V4_ONLY" },
         rsiAgentsV3: this.rsiAgentsV3?.snapshot?.() ?? { version: "rsi-agents-v3-single-v1", enabled: this.rsiAgentsV3?.enabled === true, migration: this.rsiAgentsV3?.migration ?? null, universe: { eligible: this.rsiAgentsV3?.universe?.eligible?.length ?? 0 }, strategy: "RSI_REVERSAL_PULLBACK_V3" },
         rsiAgentsV2: { module: "rsi-agents-v2", frozen: true, enabled: this.rsiAgentsV2?.enabled === true, controlsExecution: false },
         executionRouting: this.executionRoutingStatus(),

@@ -89,6 +89,7 @@ async function main() {
         },
         canvasLogsBox: typeof api.worldModule().drawLogsBox === "function",
         rsiV3: office?.aux?.rsiAgentsV3 ?? null,
+        rsiV4: office?.aux?.rsiAgentsV4 ?? null,
         rsiV2Frozen: office?.aux?.rsiAgentsV2 ?? null,
         strategyOrder: state.stations.map((station) => station.rsiAgent?.strategyId ?? null),
         desksWithTag: state.stations.filter((station) => Boolean(station.rsiAgent?.strategyId)).length,
@@ -99,15 +100,21 @@ async function main() {
     assert("RESULTS DO DIA/SEMANA/MES legivel e sem NaN/undefined", boot.results.present === true && /RESULTADO DO DIA/.test(boot.results.text ?? "") && !/NaN|undefined/.test(boot.results.text ?? ""), "final-prod-boot.png", boot.results);
     assert("box de LOGS do canvas removido (somente overlay DOM)", boot.canvasLogsBox === false, null, { canvasLogsBox: boot.canvasLogsBox });
     const strategySet = [...new Set(boot.strategyOrder.filter(Boolean))];
-    assert("RSI V3 unica em TODOS os agentes do Office", Boolean(boot.rsiV3) && boot.rsiV3.migration?.complete === true && boot.rsiV3.strategy === "RSI_REVERSAL_PULLBACK_V3" && boot.rsiV3.split?.eligible > 0 && strategySet.length === 1 && strategySet[0] === "RSI_REVERSAL_PULLBACK_V3" && boot.desksWithTag === boot.rsiV3.split.eligible, "final-prod-boot.png", { strategy: boot.rsiV3?.strategy, eligible: boot.rsiV3?.split?.eligible, desksWithTag: boot.desksWithTag, strategySet });
+    assert("RSI V4 unica em TODOS os agentes do Office (V3/V2 nao executam)", Boolean(boot.rsiV4) && boot.rsiV4.strategy === "RSI_REVERSAL_V4" && boot.rsiV4.routing === "RSI_V4_ONLY" && boot.rsiV4.universe?.enabled >= 1 && strategySet.length === 1 && strategySet[0] === "RSI_REVERSAL_V4" && boot.desksWithTag >= 1, "final-prod-boot.png", { strategy: boot.rsiV4?.strategy, enabled: boot.rsiV4?.universe?.enabled, desksWithTag: boot.desksWithTag, strategySet });
     assert("V2 congelada em shadow (sem execucao)", boot.rsiV2Frozen?.frozen === true && boot.rsiV2Frozen?.controlsExecution === false, null, boot.rsiV2Frozen);
 
     const routingResponse = await page.request.get(`${BASE_URL}/api/iq/execution-routing`);
     const routing = routingResponse.ok() ? await routingResponse.json() : null;
-    const v3Sources = ["agent-v3:RSI_REVERSAL_PULLBACK_V3:RSI_REVERSAL_PULLBACK_V3"];
+    const v4Sources = ["agent-v4:RSI_REVERSAL_V4:RSI_REVERSAL_V4"];
     const allowedSources = (routing?.sources ?? []).filter((row) => row.controlsExecution === true);
-    const blockedOthers = (routing?.sources ?? []).filter((row) => !v3Sources.includes(row.source));
-    assert("EXECUTION ROUTING RSI_V3_ONLY: somente RSI_REVERSAL_PULLBACK_V3 pode chegar ao requestOrder", routing?.policy === "RSI_V3_ONLY" && allowedSources.length === 1 && allowedSources[0].strategyId === "RSI_REVERSAL_PULLBACK_V3" && blockedOthers.length > 0 && blockedOthers.every((row) => row.controlsExecution === false && row.canReachRequestOrder === false), "final-prod-boot.png", { policy: routing?.policy, allowed: allowedSources.map((row) => row.strategyId), blocked: blockedOthers.map((row) => `${row.source}:${row.controlsExecution}`) });
+    const blockedOthers = (routing?.sources ?? []).filter((row) => !v4Sources.includes(row.source));
+    assert("EXECUTION ROUTING RSI_V4_ONLY: somente RSI_REVERSAL_V4 pode chegar ao requestOrder (historico bloqueado)", routing?.policy === "RSI_V4_ONLY" && allowedSources.length === 1 && allowedSources[0].strategyId === "RSI_REVERSAL_V4" && blockedOthers.length > 0 && blockedOthers.every((row) => row.controlsExecution === false && row.canReachRequestOrder === false), "final-prod-boot.png", { policy: routing?.policy, allowed: allowedSources.map((row) => row.strategyId), blocked: blockedOthers.map((row) => `${row.source}:${row.controlsExecution}`) });
+    const mesasResponse = await page.request.get(`${BASE_URL}/api/iq/mesas`);
+    const mesas = mesasResponse.ok() ? await mesasResponse.json() : null;
+    assert("MESAS de instrumentos respondendo com registry (BINARY presente; BLITZ so se descoberto)", mesas?.totals?.total >= 1 && Array.isArray(mesas?.rows) && mesas.rows.some((row) => row.instrumentType === "BINARY") && mesas.practiceOnly === true, "final-prod-boot.png", { totals: mesas?.totals ?? null });
+    const blitzResponse = await page.request.get(`${BASE_URL}/api/iq/instruments/blitz`);
+    const blitz = blitzResponse.ok() ? await blitzResponse.json() : null;
+    assert("BLITZ discovery read-only responde (supported/orderPath explicitos; nunca simula)", Boolean(blitz) && typeof blitz.supported === "boolean" && blitz.orderPath?.supported !== true, "final-prod-boot.png", { supported: blitz?.supported ?? null, durations: blitz?.durations ?? null, orderPath: blitz?.orderPath ?? null });
     await page.screenshot({ path: join(OUT_DIR, "final-prod-boot.png") });
 
     await page.click("#logs-toggle");

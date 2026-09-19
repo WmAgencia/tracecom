@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-19T20:33:13.880Z",
+  "at": "2026-09-19T21:29:30.537Z",
   "baseUrl": "https://tracecom.consecom.com.br",
   "total": 13,
   "passed": 13,
@@ -26,8 +26,8 @@
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "pnlText": "−R$ 15,47",
-        "settledPnl": -15.47
+        "pnlText": "−R$ 42,47",
+        "settledPnl": -42.47
       }
     },
     {
@@ -36,11 +36,11 @@
       "evidence": "final-prod-boot.png",
       "detail": {
         "present": true,
-        "text": "RESULTADO DO DIA-R$ 15,4769 operações · 34W / 32L / 3DWR observado 51,5% · payout médio 86,2% (30 mercados abertos)HOJE-R$ 15,4769 operações · 34W / 32L / 3DSEMANA-R$ 652,23293 trades liquidadosMÊS-R$ 652,23293 trades liquidadosOPERAÇÕES69WINS34LOSSES32DRAWS3WR OBSERVADO51,5%PAYOUT MÉDIO86,2%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
+        "text": "RESULTADO DO DIA-R$ 42,4781 operações · 39W / 39L / 3DWR observado 50,0% · payout médio 86,2% (30 mercados abertos)HOJE-R$ 42,4781 operações · 39W / 39L / 3DSEMANA-R$ 679,23305 trades liquidadosMÊS-R$ 679,23305 trades liquidadosOPERAÇÕES81WINS39LOSSES39DRAWS3WR OBSERVADO50,0%PAYOUT MÉDIO86,2%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
         "model": {
-          "day": "-R$ 15,47",
-          "week": "-R$ 652,23",
-          "month": "-R$ 652,23"
+          "day": "-R$ 42,47",
+          "week": "-R$ 679,23",
+          "month": "-R$ 679,23"
         }
       }
     },
@@ -127,7 +127,7 @@
         "WS": "ONLINE",
         "MODO": "PRACTICE · ZERO REAL",
         "CONTA": "PRACTICE",
-        "SALDO": "USD 98.60",
+        "SALDO": "USD 71.60",
         "MCP": "SEM STATUS NO SNAPSHOT",
         "STAKE GLOBAL": "R$ 10.00 · teto R$ 100.00",
         "AUTO": "ON",

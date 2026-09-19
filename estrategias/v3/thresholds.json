@@ -1,0 +1,12 @@
+{
+  "strategy": "RSI_REVERSAL_PULLBACK_V3",
+  "moduleVersion": "RSI_REVERSAL_PULLBACK_V3_V1_0 (linha base, antes do V1_1)",
+  "source": "relay/rsi-v3.mjs (RSI_V3_POLICY — na epoca sem os campos de memoria de episodio)",
+  "detector": { "rsiPeriod": 14, "buyThreshold": 30, "sellThreshold": 70 },
+  "extremeOverride": { "buyRsi": [15, 10], "sellRsi": [85, 90], "minLeadMs": 55000 },
+  "stages": { "strongDiMargin": 8, "adxStrong": 25, "adxRisingSlope": 0.5, "adxStabilizeBand": 0.15, "spreadContractionMin": 2 },
+  "bollinger": { "period": 20, "stdDev": 2, "bandTouchPosition": 0.9 },
+  "cushion": { "min": 0.25, "strong": 0.45 },
+  "binary": { "horizonSeconds": 60, "finalWindowMs": 5000, "minimumSafeMarginMs": 3000, "turbCutoffMs": 30000 },
+  "safety": { "routing": "RSI_V3_ONLY", "practiceOnly": true, "realLocked": true, "stakeBrl": 10 }
+}

@@ -1,0 +1,7 @@
+{
+  "strategy": ["RSI_REVERSAL_STRICT_V2", "RSI_EXTREME_PULLBACK_V2"],
+  "source": "relay/rsi-skills-v2.mjs (RSI_SKILLS_V2_POLICY) e relay/rsi-agents-v2.mjs",
+  "detector": { "rsiPeriod": 14, "buyThreshold": 30, "sellThreshold": 70 },
+  "binary": { "horizonSeconds": 60, "finalWindowMs": 5000, "minimumSafeMarginMs": 3000, "turbCutoffMs": 30000, "minClosedCandles5s": 60 },
+  "safety": { "practiceOnly": true, "realLocked": true, "stakeBrl": 10, "controlsExecution": false, "frozen": true }
+}

@@ -1,0 +1,226 @@
+{
+  "schema": "rsi-v4-counterfactual-v1",
+  "at": "2026-09-19T21:49:53.276Z",
+  "decisionUsesOutcome": false,
+  "totals": {
+    "total": 12,
+    "SAME_ENTRY": 12,
+    "V4_BLOCKED": 0,
+    "V4_DIFFERENT_TIMING": 0,
+    "INSUFFICIENT_DATA": 0
+  },
+  "trades": [
+    {
+      "market": "CADCHF:OTC",
+      "direction": "SELL",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "LOSS",
+      "v3Profit": -10,
+      "v3Decision": "ENTER",
+      "v4Decision": "SELL",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_OK",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "ADX_FALLING_CONTEXT_ONLY",
+        "REJECTION_FAILED"
+      ],
+      "cushionClass": "STRONG",
+      "candidateToEntryMs": 25529.736083984375
+    },
+    {
+      "market": "GBPNZD:OTC",
+      "direction": "BUY",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "WIN",
+      "v3Profit": 8.600000000000001,
+      "v3Decision": "ENTER",
+      "v4Decision": "BUY",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_OK",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "ADX_FALLING_CONTEXT_ONLY",
+        "REJECTION_FAILED"
+      ],
+      "cushionClass": "STRONG",
+      "candidateToEntryMs": 50263.126953125
+    },
+    {
+      "market": "USDCHF:OTC",
+      "direction": "SELL",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "LOSS",
+      "v3Profit": -10,
+      "v3Decision": "ENTER",
+      "v4Decision": "SELL",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_OK",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "OPPOSITE_DI_ACCELERATING",
+        "ADX_FALLING_CONTEXT_ONLY",
+        "REJECTION_FAILED"
+      ],
+      "cushionClass": "STRONG",
+      "candidateToEntryMs": 126016.7900390625
+    },
+    {
+      "market": "AUDUSD:OTC",
+      "direction": "SELL",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "LOSS",
+      "v3Profit": -10,
+      "v3Decision": "ENTER",
+      "v4Decision": "SELL",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_FORTE+DI_NOVO_DOMINANTE_ADX_ESTAVEL_OU_SUBINDO",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "REJECTION_FAILED"
+      ],
+      "cushionClass": "STRONG",
+      "candidateToEntryMs": 39009.998046875
+    },
+    {
+      "market": "AUDJPY:OTC",
+      "direction": "BUY",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "WIN",
+      "v3Profit": 8.600000000000001,
+      "v3Decision": "ENTER",
+      "v4Decision": "BUY",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_OK",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "ADX_FALLING_CONTEXT_ONLY"
+      ],
+      "cushionClass": "STRONG",
+      "candidateToEntryMs": 44950.93505859375
+    },
+    {
+      "market": "AUDUSD:OTC",
+      "direction": "SELL",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "WIN",
+      "v3Profit": 8.600000000000001,
+      "v3Decision": "ENTER",
+      "v4Decision": "SELL",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_OK",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "REJECTION_FAILED"
+      ],
+      "cushionClass": "STRONG",
+      "candidateToEntryMs": 144997.03198242188
+    },
+    {
+      "market": "EURCAD:OTC",
+      "direction": "SELL",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "LOSS",
+      "v3Profit": -10,
+      "v3Decision": "ENTER",
+      "v4Decision": "SELL",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_FORTE+DI_NOVO_DOMINANTE_ADX_ESTAVEL_OU_SUBINDO",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "REJECTION_FAILED"
+      ],
+      "cushionClass": "STRONG",
+      "candidateToEntryMs": 31135.7060546875
+    },
+    {
+      "market": "EURNZD:OTC",
+      "direction": "SELL",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "LOSS",
+      "v3Profit": -10,
+      "v3Decision": "ENTER",
+      "v4Decision": "SELL",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_FORTE+DI_NOVO_DOMINANTE_ADX_ESTAVEL_OU_SUBINDO",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "REJECTION_FAILED"
+      ],
+      "cushionClass": "STRONG",
+      "candidateToEntryMs": 115539.43994140625
+    },
+    {
+      "market": "EURNZD:OTC",
+      "direction": "SELL",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "WIN",
+      "v3Profit": 8.600000000000001,
+      "v3Decision": "ENTER",
+      "v4Decision": "SELL",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_FORTE+DI_NOVO_DOMINANTE_ADX_ESTAVEL_OU_SUBINDO",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "REJECTION_FAILED"
+      ],
+      "cushionClass": "STRONG",
+      "candidateToEntryMs": 236342.31811523438
+    },
+    {
+      "market": "BTCUSD:OTC",
+      "direction": "SELL",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "LOSS",
+      "v3Profit": -10,
+      "v3Decision": "ENTER",
+      "v4Decision": "SELL",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_OK",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "ADX_FALLING_CONTEXT_ONLY",
+        "VELOCITY_AGAINST",
+        "REJECTION_FAILED"
+      ],
+      "cushionClass": "STRONG",
+      "candidateToEntryMs": 94550.35205078125
+    },
+    {
+      "market": "AUDNZD:OTC",
+      "direction": "BUY",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "LOSS",
+      "v3Profit": -10,
+      "v3Decision": "ENTER",
+      "v4Decision": "BUY",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_OK",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "ADX_FALLING_CONTEXT_ONLY",
+        "VELOCITY_AGAINST",
+        "REJECTION_FAILED"
+      ],
+      "cushionClass": "STRONG",
+      "candidateToEntryMs": 50813.9208984375
+    },
+    {
+      "market": "EURAUD:OTC",
+      "direction": "BUY",
+      "v3EntryMode": "NORMAL_T5",
+      "v3Outcome": "WIN",
+      "v3Profit": 8.600000000000001,
+      "v3Decision": "ENTER",
+      "v4Decision": "BUY",
+      "classification": "SAME_ENTRY",
+      "v4Reason": "V4_ENTRY_OK:REVERSAO_BOLLINGER_OK+DMI_ADX_OK",
+      "v4HardBlocks": [],
+      "v4SoftBlocks": [
+        "ADX_FALLING_CONTEXT_ONLY"
+      ],
+      "cushionClass": "NORMAL",
+      "candidateToEntryMs": 290310.52587890625
+    }
+  ]
+}

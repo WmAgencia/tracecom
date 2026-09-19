@@ -1,0 +1,14 @@
+{
+  "strategy": "RSI_REVERSAL_V4",
+  "moduleVersion": "RSI_REVERSAL_V4_V1",
+  "source": "relay/rsi-v4.mjs (RSI_V4_POLICY)",
+  "detector": { "rsiPeriod": 14, "buyThreshold": 30, "sellThreshold": 70 },
+  "episode": { "maxAgeMs": 480000, "candleMs": 5000, "neutralLow": 45, "neutralHigh": 55 },
+  "bollinger": { "period": 20, "stdDev": 2, "bandZonePosition": 0.15, "bandTouchPosition": 0.9 },
+  "dmiAdx": { "adxRisingSlope": 0.5, "adxStabilizeFloor": -0.15, "shortMomentumMin": 0.5 },
+  "cushion": { "normal": 0.25, "strong": 0.45 },
+  "binary": { "horizonSeconds": 60, "finalWindowMs": 5000, "minimumSafeMarginMs": 3000, "turbCutoffMs": 30000 },
+  "blitz": { "durationSeconds": 45 },
+  "safety": { "routing": "RSI_V4_ONLY", "practiceOnly": true, "realLocked": true, "stakeBrl": 10, "martingale": false, "recovery": false, "stakeProgression": false },
+  "note": "Números idênticos aos provados na V3 (0.25/0.45, janela T-5s relativa ao cutoff de turb) para evitar tuning novo."
+}

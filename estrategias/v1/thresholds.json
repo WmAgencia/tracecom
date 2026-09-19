@@ -1,0 +1,8 @@
+{
+  "strategy": ["RSI_REVERSAL_STRICT_V1", "RSI_EXTREME_PULLBACK_V1"],
+  "source": "relay/rsi-reversal.mjs (RSI_REVERSAL_POLICY) e relay/rsi-variants.mjs",
+  "detector": { "rsiPeriod": 14, "buyThreshold": 30, "sellThreshold": 70 },
+  "binary": { "horizonSeconds": 60, "finalWindowMs": 5000, "minimumSafeMarginMs": 3000, "turbCutoffMs": 30000, "minClosedCandles5s": 60 },
+  "safety": { "practiceOnly": true, "realLocked": true, "stakeBrl": 10, "execution": "desligada" },
+  "note": "Valores reconstruidos do codigo atual; a versao historica nao guardava snapshot proprio."
+}

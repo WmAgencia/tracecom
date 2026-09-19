@@ -1,0 +1,37 @@
+{
+  "schema": "rsi-v4-freeze-v1",
+  "frozenAtUtc": "2026-09-19T21:52:48.094Z",
+  "sourceCommit": null,
+  "noTuning": true,
+  "strategy": "RSI_REVERSAL_V4",
+  "policy": {
+    "practiceOnly": true,
+    "realLocked": true,
+    "stakeBrl": 10,
+    "routing": "RSI_V4_ONLY",
+    "singleBrokerPath": "runtime.submitAgentV4Order -> requestOrder",
+    "instruments": [
+      "BINARY",
+      "BLITZ_45S"
+    ],
+    "controlsExecution": "apenas V4"
+  },
+  "files": {
+    "relay/rsi-v4.mjs": {
+      "sha256": "3a78552924015430bc22de52ec3849aed39f6de8002085dcb0d6b36cfb0edb92",
+      "bytes": 18637
+    },
+    "relay/rsi-agents-v4.mjs": {
+      "sha256": "fe040ae5b3c503c66a180c740e6642884a2b455cf34fa8cd2d3316fe25b66713",
+      "bytes": 55373
+    },
+    "relay/rsi-v3-watch.mjs": {
+      "sha256": "77fa2ad3bfb69d155346e99a069c5183eec9e4b1da90ac772a0c79df7f3558d5",
+      "bytes": 3525
+    },
+    "relay/iq-multi-runtime.mjs": {
+      "sha256": "a7000af13929662cfbb06e3f19d2512691c75b0a103f60fc045a27bf648e4e54",
+      "bytes": 307574
+    }
+  }
+}

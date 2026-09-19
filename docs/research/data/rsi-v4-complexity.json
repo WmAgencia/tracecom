@@ -1,0 +1,43 @@
+{
+  "schema": "rsi-complexity-budget-v1",
+  "at": "2026-09-19T21:51:35.730Z",
+  "v3_1": {
+    "policyThresholds": 43,
+    "workflowStates": [
+      "NO_CANDIDATE",
+      "CANDIDATE",
+      "STAGE1",
+      "STAGE2",
+      "REVALIDATION",
+      "FINAL_CHANCE",
+      "OVERRIDE"
+    ],
+    "hardBlockers": 10,
+    "reasonCodesCore": 114,
+    "timersValidityWindows": 12,
+    "decisionCoreLines": 377,
+    "runnerLines": 769
+  },
+  "v4": {
+    "policyThresholds": 26,
+    "workflowStates": [
+      "DETECT",
+      "WATCH",
+      "CONFIRM",
+      "REVALIDATE",
+      "ENTER_OR_CANCEL"
+    ],
+    "hardBlockers": 7,
+    "softBlockers": 5,
+    "reasonCodesCore": 80,
+    "timersValidityWindows": 4,
+    "decisionCoreLines": 189,
+    "runnerLines": 603
+  },
+  "verdict": {
+    "thresholdsReduced": true,
+    "decisionCoreReduced": true,
+    "hardBlockersExplicit": true,
+    "noTuning": true
+  }
+}

@@ -61,11 +61,21 @@ function fixtureSnapshots() {
   return snapshots;
 }
 
+async function loadPg() {
+  try {
+    return (await import("pg")).default;
+  } catch {
+    const { createRequire } = await import("node:module");
+    const require = createRequire(path.join(ROOT, "relay", "package.json"));
+    return require("pg");
+  }
+}
+
 async function fromDatabase(limit) {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) return null;
-  const pg = await import("pg");
-  const pool = new pg.default.Pool({ connectionString, max: 2, ssl: /sslmode=require/.test(connectionString) ? { rejectUnauthorized: false } : undefined });
+  const pg = await loadPg();
+  const pool = new pg.Pool({ connectionString, max: 2, ssl: /sslmode=require/.test(connectionString) ? { rejectUnauthorized: false } : undefined });
   try {
     const rows = await pool.query(
       `SELECT payload->'t0' AS t0 FROM iq_agents_v4_observations WHERE payload ? 't0' ORDER BY created_at DESC LIMIT $1`,

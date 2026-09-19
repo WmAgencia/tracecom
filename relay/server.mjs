@@ -8,8 +8,8 @@ import { runVisionProvider, runTextProvider, runDecisionAgent, maskProviderKey }
 import { IqAuthSession } from './iqoption-auth.mjs';
 import { saveSession, loadSession, clearSession } from './iq-session-vault.mjs';
 import { IqMultiRuntime } from './iq-multi-runtime.mjs';
-// RSI AGENTS V3: allowlist de execucao (somente RSI_REVERSAL_PULLBACK_V3 pode chegar ao broker nesta rodada).
-import { RSI_V3_EXECUTION_ALLOWLIST } from './rsi-agents-v3.mjs';
+// RSI AGENTS V4: allowlist de execucao (somente RSI_REVERSAL_V4 pode chegar ao broker nesta rodada).
+import { RSI_V4_EXECUTION_ALLOWLIST } from './rsi-agents-v4.mjs';
 import { scenarioShadowStatus } from './scenario-shadow.mjs';
 import { ExecutionArmState, KillSwitch, IdempotencyStore } from './iqoption-connector.mjs';
 import { buildCandles } from './experiment.mjs';
@@ -26,7 +26,7 @@ const admin = process.env.TOKEN_SIGNING_SECRET || '';
 const armState = new ExecutionArmState();
 const killSwitch = new KillSwitch();
 const executionIdempotency = new IdempotencyStore();
-const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: RSI_V3_EXECUTION_ALLOWLIST, executionPolicyName: 'RSI_V3_ONLY' });
+const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: RSI_V4_EXECUTION_ALLOWLIST, executionPolicyName: 'RSI_V4_ONLY', rsiAgentsV4Enabled: true, rsiAgentsV3Enabled: false });
 // QUANT / RESEARCH PLATFORM (fora do hot path; nao executa nada).
 const { ResearchLab } = await import('./research-lab/api.mjs');
 const researchLab = new ResearchLab({ pool, runtime: wsRuntime, log: (...args) => console.info(...args) });
@@ -417,7 +417,17 @@ const server = http.createServer(async (req, res) => {
   if(url.pathname === '/api/iq/research/rsi-agents-v2' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiAgentsStatus()), practiceOnly:true, realLocked:true, v3:true, legacyPath:true }); }
   if(url.pathname === '/api/iq/research/rsi-agents-v3' && req.method === 'GET') {
-    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiAgentsStatus()), practiceOnly:true, realLocked:true, v3:true }); }
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiAgentsStatus()), practiceOnly:true, realLocked:true, v3:true, frozen:true, controlsExecution:false }); }
+  if(url.pathname === '/api/iq/research/rsi-agents-v4' && req.method === 'GET') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(wsRuntime.rsiAgentsV4?.status?.() ?? { error:'RSI_V4_UNAVAILABLE' }), practiceOnly:true, realLocked:true }); }
+  if(url.pathname === '/api/iq/mesas' && req.method === 'GET') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.mesasList()), practiceOnly:true, brokerAutomation:'NONE' }); }
+  if(url.pathname === '/api/iq/mesas' && req.method === 'PUT') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const input = await body(req, 4000); try { const row = await wsRuntime.setInstrumentEnabled({ marketKey: String(input.marketKey ?? ''), instrumentType: String(input.instrumentType ?? 'BINARY'), durationSeconds: Number(input.durationSeconds ?? 60), enabled: input.enabled === true }); return reply(res,200,{ instrument: row, practiceOnly:true }); } catch(error) { return reply(res,400,{ ...sanitizedError(error), practiceOnly:true }); } }
+  if(url.pathname === '/api/iq/mesas/bulk' && req.method === 'POST') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const input = await body(req, 4000); try { const result = await wsRuntime.bulkSetInstruments({ filter: input.filter ?? {}, enabled: input.enabled === true }); return reply(res,200,{ ...result, practiceOnly:true }); } catch(error) { return reply(res,400,{ ...sanitizedError(error), practiceOnly:true }); } }
+  if(url.pathname === '/api/iq/instruments/blitz' && req.method === 'GET') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); try { return reply(res,200,{ ...(await wsRuntime.discoverBlitzInstruments()), practiceOnly:true, readOnly:true }); } catch(error) { return reply(res,400,{ ...sanitizedError(error), practiceOnly:true }); } }
   if(url.pathname === '/api/iq/execution-routing' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...wsRuntime.executionRoutingStatus(), practiceOnly:true, realLocked:true }); }
  if(url.pathname === '/api/iq/research/rsi-reversal' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiReversalStatus()), practiceOnly:true, realAllowlistUnchanged:true }); }
