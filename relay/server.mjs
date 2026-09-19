@@ -1,4 +1,4 @@
-import http from 'node:http';
+﻿import http from 'node:http';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -405,6 +405,11 @@ const server = http.createServer(async (req, res) => {
     if(url.pathname === '/api/iq/research/timing-policy' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...wsRuntime.timingPolicyStatus(), practiceOnly:true, shadowOnly:true, brokerAutomation:'NONE' }); }
     if(url.pathname === '/api/iq/research/scenario-shadow' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const payload = typeof wsRuntime.scenarioShadowStatus === 'function' ? wsRuntime.scenarioShadowStatus() : scenarioShadowStatus(); return reply(res,200,{ ...payload, practiceOnly:true, shadowOnly:true, brokerAutomation:'NONE' }); }
  if(url.pathname === '/api/iq/research/agents-v4' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const payload = typeof wsRuntime.agentsV4Status === 'function' ? wsRuntime.agentsV4Status() : { error:'AGENTS_V4_UNAVAILABLE' }; return reply(res,200,{ ...payload, practiceOnly:true, shadowOnly:true, brokerAutomation:'NONE', realAllowlistUnchanged:true }); }
+ if(url.pathname === '/api/iq/research/rsi-variants' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiVariantsStatus()), practiceOnly:true, realAllowlistUnchanged:true }); }
+ if(url.pathname === '/api/iq/research/rsi-variants/report' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiVariants.status()), practiceOnly:true, microSample:true }); }
+ if(url.pathname === '/api/iq/research/rsi-variants/prepare' && req.method === 'POST') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const result = await wsRuntime.rsiVariantsPrepare(); return reply(res, result.ok ? 200 : 409, { ...result, practiceOnly:true }); }
+ if(url.pathname === '/api/iq/research/rsi-variants/arm' && req.method === 'POST') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const input = await body(req, 2000); const result = await wsRuntime.rsiVariantsArm({ phrase: String(input.phrase ?? ''), actor: String(input.actor ?? 'owner').slice(0,40) }); return reply(res, result.ok ? 200 : 409, { ...result, practiceOnly:true, realUntouched:true }); }
+ if(url.pathname === '/api/iq/research/rsi-variants/stop' && req.method === 'POST') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiVariantsStop('MANUAL_STOP')), practiceOnly:true }); }
  if(url.pathname === '/api/iq/research/rsi-reversal' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiReversalStatus()), practiceOnly:true, realAllowlistUnchanged:true }); }
  if(url.pathname === '/api/iq/research/rsi-reversal/report' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const payload = await wsRuntime.rsiReversalStatus(); return reply(res,200,{ ...payload, microSample:true, significant:false, note:'N30 e amostra pequena; sem claim de edge.', practiceOnly:true }); }
  if(url.pathname === '/api/iq/research/rsi-reversal/prepare' && req.method === 'POST') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const result = await wsRuntime.rsiReversalPrepare(); return reply(res, result.ok ? 200 : 409, { ...result, practiceOnly:true }); }
@@ -467,3 +472,4 @@ function startFrozenLoop(pool){
   setInterval(async()=>{ try { const out=await maybeAutoSelect(pool); if(out.changed) console.info('FROZEN_AUTO_SWITCH', JSON.stringify(out)); } catch(error){ console.error('FROZEN_AUTO_ERROR', error.message); } }, 300000);
 }
 server.listen(port,()=>{console.log(`tracecom-live-relay listening on ${port}`); if(process.env.SHADOW_EXPERIMENT_DISABLED !== 'true') startExperimentLoop(pool); if(process.env.FROZEN_STRATEGIES_DISABLED !== 'true') startFrozenLoop(pool);});
+

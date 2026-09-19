@@ -61,6 +61,8 @@ import { FourWayExperiment, EXPERIMENT_ID as FOUR_WAY_EXPERIMENT_ID } from "./fo
 import { Indicator5MEngine, effectiveSafetyMarginMs } from "./indicator-5m.mjs";
 // RSI_REVERSAL_CONFLUENCE_V1: experimento separado (RSI extremo + Bollinger + DMI/ADX, janela T-5s).
 import { RsiReversalExperiment } from "./rsi-reversal.mjs";
+// RSI_STRICT_PULLBACK_2X2_V1: comparativo separado (STRICT vs PULLBACK) sobre 10 OTCs, caps no banco.
+import { RsiVariantsRunner } from "./rsi-variants.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
 export const ACK_TIMEOUT_MS = 15_000;
@@ -87,7 +89,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -153,6 +155,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.fourWay = new FourWayExperiment({ pool, runtime: this, now: this.now, log: this.log, minStakeBrl: 1 });
     this.indicator5m = new Indicator5MEngine({ pool, now: this.now, log: this.log, enabled: indicator5mEnabled === true });
     this.rsiReversal = new RsiReversalExperiment({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiReversalEnabled === true });
+    this.rsiVariants = new RsiVariantsRunner({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiVariantsEnabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -1276,6 +1279,26 @@ export class IqMultiRuntime extends EventEmitter {
       snapshotId: `${ctx.marketKey}:${candidate?.id ?? now}`,
     });
   }
+
+  /* ------------------- RSI VARIANTS 2x2 (STRICT x PULLBACK; 10 OTCs; ordem so via harness) ------------------- */
+  #observeRsiVariants(ctx, list, now) {
+    if (!this.rsiVariants?.enabled) return null;
+    this.rsiVariants.selectOtcUniverse([...this.markets.values()]);
+    if (!this.rsiVariants.otcKeys?.includes(ctx.marketKey)) return null;
+    if (now - (ctx.rsiVariantsAt ?? 0) < 5_000) return null;
+    ctx.rsiVariantsAt = now;
+    const serverNow = this.client?.serverNow?.() ?? now;
+    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    const ackSamples = ctx.latency?.orderAck ?? [];
+    const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
+    const persistSamples = ctx.latency?.dbPersist ?? [];
+    const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
+    return this.rsiVariants.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 } });
+  }
+  async rsiVariantsStatus() { const status = await this.rsiVariants.status(); return { ...status, context: { accountContext: this.accountContext.context, realState: this.realMode.authorized() ? "ARMED" : "LOCKED", killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, brokerConnected: this.session.connected === true }, realAllowlistUntouched: true, fiveWayUntouched: true, rsiReversalUntouched: true }; }
+  async rsiVariantsPrepare() { return this.rsiVariants.prepare({ preflight: this.#rsiReversalPreflight() }); }
+  async rsiVariantsArm({ phrase = "", actor = "owner" } = {}) { return this.rsiVariants.arm({ phrase, actor, preflight: this.#rsiReversalPreflight() }); }
+  async rsiVariantsStop(reason = "MANUAL_STOP") { return this.rsiVariants.stop(reason); }
 
   /* ------------------- RSI_REVERSAL_CONFLUENCE_V1 (experimento separado; ordem so via harness) ------------------- */
   #observeRsiReversal(ctx, list, now) {
@@ -3084,4 +3107,5 @@ export class IqMultiRuntime extends EventEmitter {
 
   stressReport() { return { running: this.stress.running, startedAt: this.stress.startedAt ?? null, stages: this.stress.stages ?? null, secondsPerStage: this.stress.secondsPerStage ?? null, cancelRequested: this.stress.cancelRequested === true, report: this.stress.report ?? null }; }
 }
+
 

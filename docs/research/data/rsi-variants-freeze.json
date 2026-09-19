@@ -1,0 +1,24 @@
+﻿{
+    "maxTotal":  4,
+    "practiceOnly":  true,
+    "noTuning":  true,
+    "countersAuthority":  "POSTGRES",
+    "version":  "RSI_STRICT_PULLBACK_2X2_V1",
+    "frozenAtUtc":  "2026-09-19T15:33:06Z",
+    "stakeBrl":  1,
+    "files":  {
+                  "relay/rsi-variants.mjs":  {
+                                                 "sha256":  "1ce8bd857949756cafb46c9a701fdfafce801279c82be2a85b261dca0c668419"
+                                             },
+                  "relay/migrations/042_rsi_variants.sql":  {
+                                                                "sha256":  "f9d708d35169701cf5b729119ba1d657d7320e00f0655a161608ffd686502b7d"
+                                                            },
+                  "tests/research/rsi-variants.test.ts":  {
+                                                              "sha256":  "c7e3e46a8ffc0ef96f77758d9806a52c752781c3acc6ceccb836a6b80f774902"
+                                                          }
+              },
+    "windowMs":  5000,
+    "schema":  "rsi-variants-freeze-v1",
+    "maxPerVariant":  2,
+    "otcUniverseSize":  10
+}
