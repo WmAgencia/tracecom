@@ -33,7 +33,7 @@ function assertRailwayOrAbort() {
   return check;
 }
 
-function run(command, args, { cwd = ROOT, shell = false } = {}) {
+function run(command, args, { cwd = ROOT, shell = process.platform === "win32" } = {}) {
   console.log(`\n$ ${command} ${args.join(" ")}`);
   if (dry) return "";
   return execFileSync(command, args, { cwd, stdio: "inherit", shell });
