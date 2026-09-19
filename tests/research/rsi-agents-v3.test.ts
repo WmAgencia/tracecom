@@ -93,6 +93,8 @@ const fakePool = (options: any = {}) => {
       Object.assign(row, { opportunity_id: opportunityId, market_key: values[1], market_type: values[2], direction: values[12], entry_mode: values[13], decision: values[16], accepted: values[17], v3_decision: values[28], strict_v2_decision: values[29], pullback_v2_decision: values[30], entry_price: values[34], entry_noise: values[35], expiry_at: values[36] });
       row.order_id = values[31] ?? row.order_id ?? null;
       row.execution_id = values[32] ?? row.execution_id ?? null;
+      row.revalidation_at = values[58] ?? row.revalidation_at ?? null;
+      row.submit_at = values[59] ?? row.submit_at ?? null;
       row.result = values[38] ?? row.result ?? null;
       opportunities.set(opportunityId, row);
       return { rows: [] };
@@ -260,6 +262,9 @@ describe("RSI AGENTS V3.1 — janela final, observabilidade e replay", () => {
     expect(runtime.calls).toHaveLength(1);
     expect(out.entryMode).toBe("NORMAL_T5");
     expect(out.decision).toBe("SELL");
+    const submittedRow: any = [...pool.opportunities.values()].find((row: any) => row.submit_at);
+    expect(submittedRow).toBeTruthy();
+    expect(submittedRow.revalidation_at).toBeTruthy();
   });
 
   it("nunca envia depois do cutoff (candle tardio vira MISSED)", async () => {

@@ -356,6 +356,13 @@ export class RsiAgentsV3 {
       state.decision = "WAIT"; state.waitReason = "CANCELLED_REVALIDATION"; state.reason = `tese morreu na revalidacao: ${firstSight.reason}`;
       this.counters.waits.CANCELLED_REVALIDATION = (this.counters.waits.CANCELLED_REVALIDATION ?? 0) + 1;
       void this.#persistEvent({ marketKey, event: "REVALIDATION_CANCELLED", decision: entryEval.direction, reason: state.reason, payload: { firstSight, revalBlockers: revalEval.blockers ?? [] } });
+      const cancelRecord = this.#opportunitiesGet(opportunityId);
+      if (cancelRecord) {
+        cancelRecord.revalidation_at = at;
+        cancelRecord.payload = { ...(cancelRecord.payload ?? {}), cancelReason: state.reason };
+        this.#opportunitiesSet(opportunityId, cancelRecord);
+        void this.#persistOpportunity(cancelRecord);
+      }
       this.#setState(state); void this.#persistState(state); return state;
     }
     if (this.migration.complete !== true) {
@@ -403,7 +410,7 @@ export class RsiAgentsV3 {
         if (entryMode === "EXTREME_REVERSAL_OVERRIDE") this.counters.override += 1; else this.counters.normalT5 += 1;
         state.reason = `ordem aceita PRACTICE (${entryMode}) execution=${state.executionId ?? "-"} order=${state.orderId ?? "-"} stake=${state.effectiveStake ?? "-"}`;
         state.position = { status: "OPEN", brokerOrderId: state.orderId, executionId: state.executionId, requestedStake: state.requestedStake, effectiveStake: state.effectiveStake, entryMode };
-        this.#opportunitiesSet(opportunityId, { ...opportunity, accepted: true, v3_decision: state.decision, entry_mode: entryMode, order_id: state.orderId, execution_id: state.executionId, effective_stake: state.effectiveStake, entry_price: num(revalIndicators?.bollinger?.close) ?? opportunity.entry_price, entry_noise: num(revalIndicators?.noiseHorizon) ?? opportunity.entry_noise, direction: state.decision, decision: state.decision });
+        this.#opportunitiesSet(opportunityId, { ...opportunity, accepted: true, v3_decision: state.decision, entry_mode: entryMode, order_id: state.orderId, execution_id: state.executionId, effective_stake: state.effectiveStake, entry_price: num(revalIndicators?.bollinger?.close) ?? opportunity.entry_price, entry_noise: num(revalIndicators?.noiseHorizon) ?? opportunity.entry_noise, direction: state.decision, decision: state.decision, revalidation_at: at, submit_at: state.submitAt });
         void this.#persistOpportunity(this.#opportunitiesGet(opportunityId));
       } else {
         state.decision = "WAIT"; state.waitReason = `ORDER_${order?.disposition ?? order?.state ?? "BLOCKED"}`;
