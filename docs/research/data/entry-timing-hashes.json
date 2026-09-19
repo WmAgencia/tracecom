@@ -1,0 +1,30 @@
+{
+ "schema": "entry-timing-hashes-v1",
+ "generatedAt": "2026-09-19T00:02:33.747Z",
+ "purpose": "Prova de zero alteracao estrategica na investigacao de entry timing (LATE_WINDOW_V2 SHADOW).",
+ "decisionModulesUnchanged": true,
+ "before": {
+  "relay/professional-brain.mjs": "8a95a334c60adb7ae2156de40c8f74900e697dad236d0d738049d2470e7af3c6",
+  "relay/trade-quality.mjs": "fca56b7464202ff5b392f8cf4e966c441839fc6ab7cb8cb7ec482194a9d0b861",
+  "relay/entry-timing.mjs": "70d96b4aae07f25fd5c324c5ff4a0208312ae87739f409ab2c2b7151f57c94e6",
+  "relay/portfolio-gate.mjs": "26ef61a2cc35e22cd5626d4fc6df49f75a0d030d43fe9317b5a86a6df4be2a5e",
+  "relay/frozen-strategies.mjs": "8b8b6e446c0c5fd4824aeb6f0fe1eefefe841cdbd60c668c6d060b2a55cebbc8",
+  "relay/research-engine.mjs": "ac07111adeeb36e9322cb20dd1f6707f86ec92a997349b04905a2255db272a69",
+  "relay/market-universe.mjs": "da24d2eaf173c130febf008afb7a420516d912eb0d4a95165d23e0f865d2348e",
+  "relay/price-structure.mjs": "eafbed6463911001bb7938b30d62b66af90cd223479fb326564d3fa4357b75b9",
+  "relay/feature-engine.mjs": "531caf525cb61023f2cb6f839f23e41bfa28a16ab90b2d0199a68b08f27d89c9",
+  "relay/iqoption-connector.mjs": "30fbfbf627419dc688a0d3fd5c2ade2b50adbf43638389881012fbdda35a0017"
+ },
+ "after": {
+  "relay/professional-brain.mjs": "8a95a334c60adb7ae2156de40c8f74900e697dad236d0d738049d2470e7af3c6",
+  "relay/trade-quality.mjs": "fca56b7464202ff5b392f8cf4e966c441839fc6ab7cb8cb7ec482194a9d0b861",
+  "relay/entry-timing.mjs": "70d96b4aae07f25fd5c324c5ff4a0208312ae87739f409ab2c2b7151f57c94e6",
+  "relay/portfolio-gate.mjs": "26ef61a2cc35e22cd5626d4fc6df49f75a0d030d43fe9317b5a86a6df4be2a5e",
+  "relay/frozen-strategies.mjs": "8b8b6e446c0c5fd4824aeb6f0fe1eefefe841cdbd60c668c6d060b2a55cebbc8",
+  "relay/research-engine.mjs": "ac07111adeeb36e9322cb20dd1f6707f86ec92a997349b04905a2255db272a69",
+  "relay/market-universe.mjs": "da24d2eaf173c130febf008afb7a420516d912eb0d4a95165d23e0f865d2348e",
+  "relay/price-structure.mjs": "eafbed6463911001bb7938b30d62b66af90cd223479fb326564d3fa4357b75b9",
+  "relay/feature-engine.mjs": "531caf525cb61023f2cb6f839f23e41bfa28a16ab90b2d0199a68b08f27d89c9",
+  "relay/iqoption-connector.mjs": "30fbfbf627419dc688a0d3fd5c2ade2b50adbf43638389881012fbdda35a0017"
+ }
+}
