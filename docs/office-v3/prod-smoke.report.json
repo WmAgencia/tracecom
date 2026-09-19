@@ -1,8 +1,8 @@
 {
-  "at": "2026-09-18T21:10:40.259Z",
-  "baseUrl": "https://tracecom-consecom.vercel.app",
-  "total": 6,
-  "passed": 6,
+  "at": "2026-09-19T16:58:26.154Z",
+  "baseUrl": "https://tracecom.consecom.com.br",
+  "total": 10,
+  "passed": 10,
   "failed": 0,
   "results": [
     {
@@ -26,8 +26,47 @@
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "pnlText": "−R$ 2,80",
-        "settledPnl": -2.8
+        "pnlText": "−R$ 15,37",
+        "settledPnl": -15.37
+      }
+    },
+    {
+      "assertion": "RESULTS DO DIA/SEMANA/MES legivel e sem NaN/undefined",
+      "pass": true,
+      "evidence": "final-prod-boot.png",
+      "detail": {
+        "present": true,
+        "text": "RESULTADO DO DIA-R$ 15,3713 operações · 5W / 7L / 1DWR observado 41,7% · payout médio 86,2% (30 mercados abertos)HOJE-R$ 15,3713 operações · 5W / 7L / 1DSEMANA-R$ 652,13237 trades liquidadosMÊS-R$ 652,13237 trades liquidadosOPERAÇÕES13WINS5LOSSES7DRAWS1WR OBSERVADO41,7%PAYOUT MÉDIO86,2%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
+        "model": {
+          "day": "-R$ 15,37",
+          "week": "-R$ 652,13",
+          "month": "-R$ 652,13"
+        }
+      }
+    },
+    {
+      "assertion": "box de LOGS do canvas removido (somente overlay DOM)",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "canvasLogsBox": false
+      }
+    },
+    {
+      "assertion": "LOGS abre overlay DOM legivel (9 colunas, sem pixel-art)",
+      "pass": true,
+      "evidence": "final-prod-logs.png",
+      "detail": {
+        "columns": 9,
+        "rows": 0
+      }
+    },
+    {
+      "assertion": "LOGS fecha e volta ao escritorio",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "closed": true
       }
     },
     {
@@ -39,7 +78,7 @@
         "WS": "ONLINE",
         "MODO": "PRACTICE · ZERO REAL",
         "CONTA": "PRACTICE",
-        "SALDO": "USD 57.20",
+        "SALDO": "USD 9985.79",
         "MCP": "SEM STATUS NO SNAPSHOT",
         "STAKE GLOBAL": "R$ 10.00 · teto R$ 100.00",
         "AUTO": "ON",
