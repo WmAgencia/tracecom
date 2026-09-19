@@ -16,12 +16,30 @@
 
     <div id="office-topbar" class="tc-topbar"></div>
 
+    <div id="office-results" data-tc-v3="results" hidden></div>
+
     <div id="office-mesas">
       <button id="mesas-toggle" type="button" aria-expanded="false" aria-controls="mesas-panel">MESAS</button>
       <div id="mesas-panel" hidden>
         <input id="mesas-search" type="search" placeholder="buscar mercado…" aria-label="Buscar mercado" autocomplete="off" spellcheck="false" />
         <div id="office-station-list" role="listbox" aria-label="Lista de mercados" tabindex="0"></div>
       </div>
+    </div>
+
+    <div id="office-logs">
+      <button id="logs-toggle" type="button" aria-expanded="false" aria-controls="logs-panel">LOGS</button>
+      <section id="logs-panel" role="dialog" aria-label="Logs de eventos reais" hidden>
+        <header class="tc-logs-head">
+          <h2>LOGS · EVENTOS REAIS</h2>
+          <span id="logs-meta">aguardando eventos…</span>
+          <button id="logs-close" type="button" aria-label="Fechar logs">×</button>
+        </header>
+        <div class="tc-logs-columns" aria-hidden="true">
+          <span>HORA</span><span>AGENTE</span><span>MERCADO</span><span>ESTRATÉGIA</span><span>EVENTO</span><span>DECISÃO</span><span>MOTIVO</span><span>ORDEM</span><span>RESULTADO / ERRO</span>
+        </div>
+        <div id="logs-list" role="log" aria-live="polite"></div>
+        <footer class="tc-logs-foot">Fonte: GET /api/iq/events · somente eventos reais do runtime · nada sintetizado · PRACTICE</footer>
+      </section>
     </div>
 
     <div id="office-detail-root"></div>

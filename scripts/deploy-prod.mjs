@@ -56,12 +56,18 @@ if (!flags.has("--skip-relay")) {
     console.error(`RELAY_DEPLOY_DIR ausente: ${RELAY_DEPLOY_DIR} (defina TRACECOM_RELAY_DEPLOY_DIR)`);
     process.exit(1);
   }
-  const sync = ["relay/iq-multi-runtime.mjs", "relay/server.mjs", "relay/research-worker.mjs"];
+  // Sync robusto: TODOS os modulos-raiz do relay (inclui rsi-agents/rsi-variants/rsi-reversal/indicator-5m)
+  // + os diretorios de runtime. Evita lista fixa desatualizada (fail-closed para deploy parcial).
+  const relayRoot = path.join(ROOT, "relay");
+  for (const entry of fs.readdirSync(relayRoot, { withFileTypes: true })) {
+    if (entry.isFile() && /\.(mjs|mts|json)$/i.test(entry.name) && entry.name !== "package-lock.json") {
+      fs.copyFileSync(path.join(relayRoot, entry.name), path.join(RELAY_DEPLOY_DIR, entry.name));
+    }
+  }
   for (const dir of ["datahub", "agents-v4", "research-lab", "migrations"]) {
     fs.mkdirSync(path.join(RELAY_DEPLOY_DIR, dir), { recursive: true });
     fs.cpSync(path.join(ROOT, "relay", dir), path.join(RELAY_DEPLOY_DIR, dir), { recursive: true });
   }
-  for (const file of sync) fs.copyFileSync(path.join(ROOT, file), path.join(RELAY_DEPLOY_DIR, path.basename(file)));
   assertRailwayOrAbort();
   run("npx", ["@railway/cli", "up", "-d", "-s", "tracecom-live-relay"], { cwd: RELAY_DEPLOY_DIR, shell: process.platform === "win32" });
 }

@@ -71,6 +71,7 @@ async function main() {
       const state = api.worldState();
       const office = api.officeJson();
       const derived = state.stations.map((station) => station.derived);
+      const resultsEl = document.querySelector("#office-results");
       return {
         title: document.title,
         stations: state.stations.length,
@@ -81,11 +82,35 @@ async function main() {
         logs: api.logs().length,
         mode: office?.mode ?? null,
         connected: office?.connection?.connected === true,
+        results: {
+          present: Boolean(resultsEl && resultsEl.hidden === false),
+          text: resultsEl ? resultsEl.textContent.slice(0, 600) : null,
+          model: api.resultsModel ? { day: api.resultsModel()?.day?.pnlText ?? null, week: api.resultsModel()?.week?.pnlText ?? null, month: api.resultsModel()?.month?.pnlText ?? null } : null,
+        },
+        canvasLogsBox: typeof api.worldModule().drawLogsBox === "function",
       };
     });
     assert("mundo real com 54 mercados", boot.stations === 54, "final-prod-boot.png", { stations: boot.stations });
     assert("painel superior com dados reais do GET /api/iq/office", typeof boot.pnlText === "string" && boot.pnlText.length > 0, "final-prod-boot.png", { pnlText: boot.pnlText, settledPnl: boot.settledPnl });
+    assert("RESULTS DO DIA/SEMANA/MES legivel e sem NaN/undefined", boot.results.present === true && /RESULTADO DO DIA/.test(boot.results.text ?? "") && !/NaN|undefined/.test(boot.results.text ?? ""), "final-prod-boot.png", boot.results);
+    assert("box de LOGS do canvas removido (somente overlay DOM)", boot.canvasLogsBox === false, null, { canvasLogsBox: boot.canvasLogsBox });
     await page.screenshot({ path: join(OUT_DIR, "final-prod-boot.png") });
+
+    await page.click("#logs-toggle");
+    await page.waitForSelector("#logs-panel:not([hidden])", { timeout: 10_000 });
+    await page.waitForTimeout(700);
+    const logsPanel = await page.evaluate(() => ({
+      columns: document.querySelectorAll("#logs-panel .tc-logs-columns span").length,
+      rows: document.querySelectorAll("#logs-list .tc-logs-row").length,
+      hasHeader: /HORA/.test(document.querySelector("#logs-panel .tc-logs-columns")?.textContent ?? ""),
+      text: (document.querySelector("#logs-panel")?.textContent ?? "").slice(0, 400),
+    }));
+    assert("LOGS abre overlay DOM legivel (9 colunas, sem pixel-art)", logsPanel.columns === 9 && logsPanel.hasHeader === true, "final-prod-logs.png", { columns: logsPanel.columns, rows: logsPanel.rows });
+    await page.screenshot({ path: join(OUT_DIR, "final-prod-logs.png") });
+    await page.click("#logs-close");
+    const logsClosed = await page.evaluate(() => document.querySelector("#logs-panel")?.hidden === true);
+    assert("LOGS fecha e volta ao escritorio", logsClosed === true, null, { closed: logsClosed });
+
 
     await page.click('[data-tb="iq"]');
     await page.waitForSelector(".tc-iq-modal:not([hidden])", { timeout: 10_000 });

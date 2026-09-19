@@ -176,6 +176,7 @@ export class IqMultiRuntime extends EventEmitter {
     };
     this.availabilityTimer = null;
     this.equityCurveCache = []; this.equityRefreshedAt = 0;
+    this.periodPnlCache = { weekly: null, monthly: null, weeklyTrades: null, monthlyTrades: null, context: null, refreshedAt: 0 };
     this.lastTickEmit = new Map();
   }
 
@@ -344,6 +345,7 @@ export class IqMultiRuntime extends EventEmitter {
     await this.#loadDailyStats();
     void this.reconcileOrphans();
     void this.refreshEquityCurve();
+    void this.refreshPeriodPnl();
   }
 
   /** Default: ativa somente mercados NORMAL disponiveis (nunca troca NORMAL por OTC em silencio).
@@ -1288,13 +1290,15 @@ export class IqMultiRuntime extends EventEmitter {
     });
   }
 
-  /* ------------------- RSI AGENTS 5x5 (agentes NORMAIS do runtime; ordem via submitAgentOrder) ------------------- */
+  /* ------------------- RSI AGENTS PINADOS (12 agentes NORMAIS; ordem via submitAgentOrder) ------------------- */
   #observeRsiAgents(ctx, list, now) {
     if (!this.rsiAgents?.enabled) return null;
     if (now - (ctx.rsiAgentsAt ?? 0) < 5_000) return null;
-    if (this.rsiAgents.assignments.size < 10) void this.rsiAgents.assignUniverse([...this.markets.values()]);
-    if (!this.rsiAgents.assignments.has(ctx.marketKey)) return null;
     ctx.rsiAgentsAt = now;
+    if (!this.rsiAgents.pinnedReady) this.rsiAgents.ensurePinned([...this.markets.values()]);
+    // Reconciliacao periodica com o banco (throttle interno): pinado nunca troca de mercado.
+    void this.rsiAgents.assignUniverse([...this.markets.values()]);
+    if (!this.rsiAgents.assignments.has(ctx.marketKey)) return null;
     const serverNow = this.client?.serverNow?.() ?? now;
     const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
     const ackSamples = ctx.latency?.orderAck ?? [];
@@ -1312,12 +1316,16 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
     if (this.config.autoExecute !== true) throw new IqWsError("AGENT_ORDER_AUTO_EXECUTE_OFF");
     if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("AGENT_ORDER_KILL_SWITCH");
-    return this.requestOrder({ marketKey, direction, stake: Math.max(1, Math.min(1, Number(stake) || 1)), decisionId, idempotencyKey, source: "agent:" + (strategyId || "rsi-agents") + ":" + (skill || "skill"), horizonSeconds: 60 });
+    // Stake solicitada pela policy do agente; resolveFinalStake/Execution Gate aplicam os limites oficiais
+    // (mercado/global/hard cap) e o resultado devolve requestedStake x effectiveStake para observabilidade.
+    const requestedStake = Number.isFinite(Number(stake)) && Number(stake) > 0 ? Number(stake) : (Number(this.config.calculatedBankrollStake) > 0 ? Number(this.config.calculatedBankrollStake) : 1);
+    return this.requestOrder({ marketKey, direction, stake: requestedStake, decisionId, idempotencyKey, source: "agent:" + (strategyId || "rsi-agents") + ":" + (skill || "skill"), horizonSeconds: 60 });
   }
 
   async rsiAgentsStatus() {
     const status = await this.rsiAgents.status();
-    return { ...status, context: { mode: this.config.mode, accountContext: this.accountContext.context, armed: this.armState.armed === true, autoExecute: this.config.autoExecute === true, killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, realState: this.realMode.authorized() ? "ARMED" : "LOCKED" }, realAllowlistUntouched: true };
+    const officialStake = { policyStakeBrl: status.policy?.stakeBrl ?? null, calculatedBankrollStake: this.config.calculatedBankrollStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap, defaultStake: this.config.defaultStake };
+    return { ...status, stake: officialStake, context: { mode: this.config.mode, accountContext: this.accountContext.context, armed: this.armState.armed === true, autoExecute: this.config.autoExecute === true, killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, realState: this.realMode.authorized() ? "ARMED" : "LOCKED" }, realAllowlistUntouched: true };
   }
 
   /* ------------------- RSI VARIANTS 2x2 (STRICT x PULLBACK; 10 OTCs; ordem so via harness) ------------------- */
@@ -2342,7 +2350,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (!Number.isFinite(finalStake) || finalStake <= 0) throw new IqWsError("NO_STAKE_CONFIGURED");
     const requestedKey = String(idempotencyKey ?? `${key}:${decisionId ?? this.now()}`).slice(0, 160);
     const existingRecord = this.idempotency.get(requestedKey);
-    if (existingRecord) return { duplicate: true, marketKey: key, state: existingRecord.state, executionId: existingRecord.executionId, brokerOrderId: existingRecord.brokerOrderId, idempotencyKey: requestedKey };
+    if (existingRecord) return { duplicate: true, marketKey: key, state: existingRecord.state, executionId: existingRecord.executionId, brokerOrderId: existingRecord.brokerOrderId, idempotencyKey: requestedKey, stake: Number.isFinite(Number(existingRecord.stake)) ? Number(existingRecord.stake) : null, stakeRequested: Number.isFinite(Number(stake)) && Number(stake) > 0 ? Number(stake) : null };
     const decisionAction = direction === "BUY" || direction === "CALL" ? "BUY" : direction === "SELL" || direction === "PUT" ? "SELL" : null;
     if (!decisionAction) throw new IqWsError("INVALID_DIRECTION", String(direction));
     const setupFromState = ctx.decisionState?.setup && ctx.decisionState.setup !== "NO_VALID_SETUP" ? ctx.decisionState.setup : null;
@@ -2389,12 +2397,12 @@ export class IqMultiRuntime extends EventEmitter {
         { action: decisionAction, stake: finalStake, decisionId: decisionId ?? `ord_${this.now()}`, asset: key, horizonSeconds, decisionAgeMs: Number(decisionAgeMs) || 0, marketOpen: true, idempotencyKey: requestedKey },
         { armState: this.armState, userLimitBrl: Math.min(this.config.globalMaxStake, ctx.maxStake), brokerCurrency: this.account.practice.currency ?? "BRL", fxRate: 1, killSwitch: this.killSwitch, idempotency: this.idempotency, accountType: "PRACTICE", expectedAsset: key },
       );
-      if (practice.duplicate) return { duplicate: true, marketKey: key, state: practice.record.state, executionId: practice.record.executionId, brokerOrderId: practice.record.brokerOrderId, idempotencyKey: requestedKey };
+      if (practice.duplicate) return { duplicate: true, marketKey: key, state: practice.record.state, executionId: practice.record.executionId, brokerOrderId: practice.record.brokerOrderId, idempotencyKey: requestedKey, stake: finalStake, stakeRequested: resolvedStake.requestedStake };
       record = practice.record;
     } else {
       this.realMode.authorizeOrder({ stake: finalStake, marketKey: key });
       const registered = this.idempotency.register(requestedKey, { direction: decisionAction, stake: finalStake, asset: key, horizonSeconds, decisionId: decisionId ?? null, mode: "REAL" });
-      if (registered.duplicate) return { duplicate: true, marketKey: key, state: registered.record.state, executionId: registered.record.executionId, brokerOrderId: registered.record.brokerOrderId, idempotencyKey: requestedKey };
+      if (registered.duplicate) return { duplicate: true, marketKey: key, state: registered.record.state, executionId: registered.record.executionId, brokerOrderId: registered.record.brokerOrderId, idempotencyKey: requestedKey, stake: finalStake, stakeRequested: resolvedStake.requestedStake };
       record = registered.record;
     }
     const serverSec = (this.client.serverNow() ?? this.now()) / 1000;
@@ -2450,7 +2458,7 @@ export class IqMultiRuntime extends EventEmitter {
     ackTimer.unref?.();
     const outcome = await ackPromise;
     clearTimeout(ackTimer);
-    return { duplicate: false, marketKey: key, executionId: record.executionId, idempotencyKey: requestedKey, requestId: requestedKey, mode, ...outcome };
+    return { duplicate: false, marketKey: key, executionId: record.executionId, idempotencyKey: requestedKey, requestId: requestedKey, mode, stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeCappedBy: resolvedStake.cappedBy ?? null, ...outcome };
   }
 
   /**
@@ -2951,6 +2959,37 @@ export class IqMultiRuntime extends EventEmitter {
     } catch { return []; }
   }
 
+  /**
+   * PnL REAL semanal/mensal por contexto de conta, direto de iq_executions (mesma fonte do dia).
+   * Somente dados liquidados; sem estimativa. Cacheado (30s) como a equity curve.
+   */
+  async refreshPeriodPnl() {
+    try {
+      if (!this.pool || !await this.#ensureDb()) return this.periodPnlCache;
+      const context = this.accountContext.context === ACCOUNT_REAL ? ACCOUNT_REAL : ACCOUNT_PRACTICE;
+      const row = (await this.pool.query(
+        `SELECT
+           COALESCE(sum(profit) FILTER (WHERE settled_at >= date_trunc('week', now())), 0)::float AS weekly_pnl,
+           COALESCE(sum(profit) FILTER (WHERE settled_at >= date_trunc('month', now())), 0)::float AS monthly_pnl,
+           count(*) FILTER (WHERE settled_at >= date_trunc('week', now()))::int AS weekly_trades,
+           count(*) FILTER (WHERE settled_at >= date_trunc('month', now()))::int AS monthly_trades,
+           count(*)::int AS total_settled
+         FROM iq_executions
+         WHERE state='SETTLED' AND account_context=$1 AND settled_at >= date_trunc('month', now())`, [context],
+      )).rows[0];
+      const weekly = row && row.weekly_pnl !== null && row.weekly_pnl !== undefined ? Number(row.weekly_pnl) : null;
+      const monthly = row && row.monthly_pnl !== null && row.monthly_pnl !== undefined ? Number(row.monthly_pnl) : null;
+      this.periodPnlCache = {
+        weekly: Number.isFinite(weekly) ? weekly : null,
+        monthly: Number.isFinite(monthly) ? monthly : null,
+        weeklyTrades: row ? Number(row.weekly_trades) || 0 : null,
+        monthlyTrades: row ? Number(row.monthly_trades) || 0 : null,
+        context, refreshedAt: this.now(),
+      };
+    } catch { /* fail-soft: UI mostra N/A ate existir leitura real */ }
+    return this.periodPnlCache;
+  }
+
   /* ------------------------------- eventos/status ------------------------------- */
 
   /** Emitido com o tipo SEMPRE por ultimo: payload nunca sobrescreve `type`/`seq`. */
@@ -2993,7 +3032,7 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   office() {
-    if (this.now() - this.equityRefreshedAt > 30_000) { this.equityRefreshedAt = this.now(); void this.refreshEquityCurve(); }
+    if (this.now() - this.equityRefreshedAt > 30_000) { this.equityRefreshedAt = this.now(); void this.refreshEquityCurve(); void this.refreshPeriodPnl(); }
     if (this.now() - (this.lastResearchPersist ?? 0) > 60_000) { this.lastResearchPersist = this.now(); void this.#persistConfig(); }
     const activeContext = this.accountContext.context;
     const contextState = this.accountContextState();
@@ -3021,7 +3060,7 @@ export class IqMultiRuntime extends EventEmitter {
       health: this.persistenceHealth(),
       config: { globalMaxStake: this.config.globalMaxStake, defaultStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, hardCap: this.config.hardCap, maxActiveMarkets: this.config.maxActiveMarkets, autoExecute: this.config.autoExecute, revision: this.config.revision, brainGeneration: BRAIN_GENERATION, jitEnabled: this.config.jitEnabled === true, entryLeadMs: this.config.entryLeadMs, entryWindowMaxDriftMs: this.#entryMaxDriftMs(), qualityGateEnabled: this.config.qualityGateEnabled === true, minTradeQualityScore: this.#minTradeQualityScore() },
       activeCount: this.activeMarketKeys().length, activeLimit: this.config.maxActiveMarkets, universeCount: this.markets.size,
-      portfolio: { ...portfolio, equityCurve: this.equityCurveCache ?? [] },
+      portfolio: { ...portfolio, equityCurve: this.equityCurveCache ?? [], weekly: { pnl: this.periodPnlCache.weekly, trades: this.periodPnlCache.weeklyTrades, context: this.periodPnlCache.context, refreshedAt: this.periodPnlCache.refreshedAt || null }, monthly: { pnl: this.periodPnlCache.monthly, trades: this.periodPnlCache.monthlyTrades, context: this.periodPnlCache.context, refreshedAt: this.periodPnlCache.refreshedAt || null } },
       markets,
       aux: {
         risk: { openPositions: portfolio.openPositions.length, stakeAtRisk: Number(portfolio.openPositions.reduce((sum, position) => sum + (Number(position.stake) || 0), 0).toFixed(4)), exposure: portfolio.exposure, concentrationWarnings: portfolio.concentrationWarnings, limits: { maxActiveMarkets: this.config.maxActiveMarkets, maxOpenPerMarket: MAX_OPEN_POSITIONS_PER_MARKET, hardCap: this.config.hardCap } },

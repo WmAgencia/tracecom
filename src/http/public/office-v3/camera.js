@@ -403,7 +403,9 @@ export function contentBoundsOf(worldState) {
 /**
  * Frames the office content inside the viewport with an even margin on all four
  * sides and centers it. Zoom never exceeds 1 (the office is never over-magnified
- * on a small viewport) and never goes below the camera min zoom.
+ * on a small viewport) and never goes below the camera min zoom. `minFitZoom`
+ * evita que o escritorio nasca minusculo em viewports reduzidos: o conteudo
+ * fica maior que o viewport e continua navegavel por pan (sem auto-FIT depois).
  */
 export function fitContent(camera, worldState, options = {}) {
   if (!camera || !worldState) return camera;
@@ -415,7 +417,9 @@ export function fitContent(camera, worldState, options = {}) {
   const cw = Math.max(1, bounds.maxX - bounds.minX);
   const ch = Math.max(1, bounds.maxY - bounds.minY);
   const fitZoom = Math.min((vw - padding * 2) / cw, (vh - padding * 2) / ch);
-  camera.zoom = clampZoomValue(fitZoom, camera.minZoom, Math.min(camera.maxZoom, 1));
+  const minFitZoom = Number.isFinite(Number(options.minFitZoom)) ? Number(options.minFitZoom) : 0;
+  const effectiveFit = Math.max(fitZoom, Math.max(camera.minZoom, Math.min(minFitZoom, 1)));
+  camera.zoom = clampZoomValue(effectiveFit, camera.minZoom, Math.min(camera.maxZoom, 1));
   camera.x = (bounds.minX + bounds.maxX) / 2 - vw / (2 * camera.zoom);
   camera.y = (bounds.minY + bounds.maxY) / 2 - vh / (2 * camera.zoom);
   camera.target = null;

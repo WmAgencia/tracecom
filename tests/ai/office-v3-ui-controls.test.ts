@@ -343,7 +343,7 @@ function mockFetch() {
  * ------------------------------------------------------------------ */
 
 describe("OFFICE V3 UI — painel esquerdo removido (TASK 2)", () => {
-  it("HTML da raiz e da página V3 não duplicam o board de resultados", () => {
+  it("HTML da raiz e da página V3 trazem resultados legiveis + LOGS, sem dashboard legado duplicado", () => {
     const v3Html = readFileSync(new URL("../../src/http/public/office-v3/office-v3.html", import.meta.url), "utf8");
     const rootHtml = readFileSync(new URL("../../src/http/public/index.html", import.meta.url), "utf8");
     for (const html of [v3Html, rootHtml]) {
@@ -352,17 +352,22 @@ describe("OFFICE V3 UI — painel esquerdo removido (TASK 2)", () => {
       expect(html).not.toContain("max-height: 62vh");
       expect(html).toContain('id="office-topbar"');
       expect(html).toContain('id="mesas-toggle"');
+      expect(html).toContain('id="logs-toggle"');
+      expect(html).toContain('id="office-results"');
     }
     expect(v3Html).toContain("./office-v3.js");
     expect(v3Html).toContain("./styles-v3.css");
   });
 
-  it("office-v3.js não monta o dashboard lateral (só consome market-detail/topbar)", () => {
+  it("office-v3.js monta resultados/logs por modulos proprios (nunca o dashboard lateral)", () => {
     const source = readFileSync(new URL("../../src/http/public/office-v3/office-v3.js", import.meta.url), "utf8");
     expect(source.includes("mountDashboard(")).toBe(false);
     expect(source.includes('id="office-topbar"')).toBe(false);
     expect(source.includes("mountTopBar")).toBe(true);
     expect(source.includes("./topbar.js")).toBe(true);
+    expect(source.includes("./results-panel.js")).toBe(true);
+    expect(source.includes("./logs-panel.js")).toBe(true);
+    expect(source.includes("mountResultsPanel")).toBe(true);
   });
 });
 

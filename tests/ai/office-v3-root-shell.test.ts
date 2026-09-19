@@ -24,10 +24,13 @@ describe("root shell — Office V3 em / com rollback estável", () => {
     expect(v3Html).toContain("./office-v3.js");
     expect(v3Html).toContain("./styles-v3.css");
   });
-  it("a raiz e a página direta montam o top bar e não duplicam o painel esquerdo de resultados", () => {
+  it("a raiz e a página direta montam top bar + resultados legiveis + MESAS/LOGS e não duplicam o dashboard legado", () => {
     for (const html of [rootHtml, v3Html]) {
       expect(html).toContain('id="office-topbar"');
       expect(html).toContain('id="mesas-toggle"');
+      expect(html).toContain('id="logs-toggle"');
+      expect(html).toContain('id="logs-panel"');
+      expect(html).toContain('id="office-results"');
       expect(html).not.toContain("office-dashboard");
       expect(html).not.toContain("tc-v3-dashboard");
     }

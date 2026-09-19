@@ -1,18 +1,21 @@
 {
-  "schema": "rsi-agents-5x5-freeze-v1",
-  "version": "rsi-agents-5x5-v1",
-  "frozenAtUtc": "2026-09-19T16:10:05.734Z",
+  "schema": "rsi-agents-pinned-12-freeze-v2",
+  "version": "rsi-agents-pinned-12-v2",
+  "frozenAtUtc": "2026-09-19T00:00:00.000Z",
+  "note": "Skills RSI/Bollinger/DMI/ADX congeladas (rsi-variants.mjs) — esta rodada apenas adiciona 2 pinos e observabilidade. Sem tuning.",
   "policy": {
-    "version": "rsi-agents-5x5-v1",
+    "version": "rsi-agents-pinned-12-v2",
     "mode": "NORMAL_RUNTIME_AGENT",
     "practiceOnly": true,
     "realLocked": true,
     "stakeBrl": 1,
-    "groupSize": 5,
-    "otcUniverseSize": 10,
+    "groupSize": 6,
+    "pinnedUniverseSize": 12,
     "finalWindowMs": 5000,
     "minimumSafeMarginMs": 3000,
     "turbCutoffMs": 30000,
+    "pinned": true,
+    "failClosed": true,
     "noSilentSubstitution": true,
     "autoInvert": false,
     "sameExpiryRequired": true,
@@ -22,17 +25,46 @@
     "strict": "RSI_REVERSAL_STRICT_V1",
     "pullback": "RSI_EXTREME_PULLBACK_V1"
   },
+  "pinned": [
+    { "marketKey": "AUDCAD:OTC", "strategy": "RSI_REVERSAL_STRICT" },
+    { "marketKey": "AUDCHF:OTC", "strategy": "RSI_REVERSAL_STRICT" },
+    { "marketKey": "AUDJPY:OTC", "strategy": "RSI_REVERSAL_STRICT" },
+    { "marketKey": "AUDNZD:OTC", "strategy": "RSI_REVERSAL_STRICT" },
+    { "marketKey": "AUDUSD:OTC", "strategy": "RSI_REVERSAL_STRICT" },
+    { "marketKey": "GBPUSD:OTC", "strategy": "RSI_REVERSAL_STRICT" },
+    { "marketKey": "BTCUSD:OTC", "strategy": "RSI_EXTREME_PULLBACK" },
+    { "marketKey": "CADCHF:OTC", "strategy": "RSI_EXTREME_PULLBACK" },
+    { "marketKey": "CADJPY:OTC", "strategy": "RSI_EXTREME_PULLBACK" },
+    { "marketKey": "EURAUD:OTC", "strategy": "RSI_EXTREME_PULLBACK" },
+    { "marketKey": "EURCAD:OTC", "strategy": "RSI_EXTREME_PULLBACK" },
+    { "marketKey": "EURUSD:OTC", "strategy": "RSI_EXTREME_PULLBACK" }
+  ],
   "noTuning": true,
   "rules": {
     "strict": "RSI extremo + Bollinger + DMI/ADX completo; strong continuation bloqueia",
     "pullback": "RSI extremo + Bollinger; short pullback permitido; band riding/aceleracao forte bloqueia",
     "singleBrokerPath": "runtime.submitAgentOrder -> requestOrder",
+    "failClosed": "mercado ausente/fechado/sem feed/invalido/em conflito => WAIT/BLOCK com motivo persistido; sem substituicao silenciosa",
     "realLocked": true,
     "stakeBrl": 1
   },
-  "hashes": {
-    "module": "a176865f2926473ef3a00675",
-    "skills": "1ce8bd857949756cafb46c9a",
-    "runtime": "c47623d78bc7d9fe675e1b5d"
-  }
+  "observability": [
+    "agentId",
+    "strategyId",
+    "marketKey",
+    "accountMode",
+    "requestedStake",
+    "effectiveStake",
+    "decision",
+    "reason",
+    "rsi",
+    "bollinger",
+    "plusDI",
+    "minusDI",
+    "adx",
+    "orderId",
+    "executionId",
+    "timestamps",
+    "resultado"
+  ]
 }

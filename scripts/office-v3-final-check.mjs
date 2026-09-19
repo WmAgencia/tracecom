@@ -427,6 +427,10 @@ async function scenarioFinal(page, baseUrl) {
       })(),
       logs: api.logs(),
       logsInState: Array.isArray(state.logs) ? state.logs.length : 0,
+      results: (() => {
+        const el = document.querySelector("#office-results");
+        return { present: Boolean(el && el.hidden === false), text: el ? el.textContent.slice(0, 800) : null };
+      })(),
     };
   });
 
@@ -435,6 +439,8 @@ async function scenarioFinal(page, baseUrl) {
   const centered = Math.abs(boot.center.x - (boot.content.minX + boot.content.maxX) / 2) < 1.5 && Math.abs(boot.center.y - (boot.content.minY + boot.content.maxY) / 2) < 1.5;
   assert("T1", "conteúdo centrado horizontal e verticalmente", centered, "final-boot-centered.png", { center: boot.center, margins });
   assert("T1", "folgas presentes nos 4 lados e opostas equilibradas", margins.left >= 8 && margins.right >= 8 && margins.top >= 8 && margins.bottom >= 8 && Math.abs(margins.left - margins.right) < 4 && Math.abs(margins.top - margins.bottom) < 4, "final-boot-centered.png", margins);
+
+  assert("RESULTS", "painel DOM de resultados com dia/semana/mes legiveis e sem NaN/undefined", state.results.present === true && /RESULTADO DO DIA/.test(state.results.text ?? "") && /SEMANA/.test(state.results.text ?? "") && /MÊS/.test(state.results.text ?? "") && !/NaN|undefined/.test(state.results.text ?? ""), "final-boot-centered.png", state.results);
 
   await shot(page, "final-boot-centered.png");
 
@@ -499,13 +505,24 @@ async function scenarioFinal(page, baseUrl) {
   });
   assert("T7", "badge WIN real visível na janela de 12s e expirado depois", badge.badge.visible === true && badge.badge.text === "+R$ 8,50" && badge.visibleNow === true && badge.visibleAfter === false, "final-boot-centered.png", badge);
 
-  // T3 — global LOGS: real stream polled, bounded, rendered on canvas.
+  // T3 — LOGS: stream real coletado e renderizado em overlay DOM legivel (sem box no canvas).
   await page.waitForFunction(() => window.__tracecomOffice.logs().length > 0, null, { timeout: 15_000 });
+  await page.click("#logs-toggle");
+  await page.waitForSelector("#logs-panel:not([hidden])", { timeout: 10_000 });
   await page.waitForTimeout(400);
-  const logs = await page.evaluate(() => ({ logs: window.__tracecomOffice.logs(), stateLogs: window.__tracecomOffice.worldState().logs?.length ?? 0 }));
-  const logOk = logs.logs.length > 0 && logs.stateLogs <= 12 && logs.logs.every((entry) => /^\d{2}:\d{2}:\d{2}$/.test(entry.time) && entry.asset && entry.text);
-  assert("T3", "LOGS globais com eventos reais HH:MM:SS ATIVO — evento (lista limitada)", logOk, "final-logs.png", { count: logs.logs.length, first: logs.logs[logs.logs.length - 1] ?? null, stateLogs: logs.stateLogs });
+  const logs = await page.evaluate(() => ({
+    logs: window.__tracecomOffice.logs(),
+    rows: document.querySelectorAll("#logs-list .tc-logs-row").length,
+    columns: document.querySelectorAll("#logs-panel .tc-logs-columns span").length,
+    canvasDrawsLogsBox: typeof window.__tracecomOffice.worldModule().drawLogsBox === "function",
+    canvasLogsInState: Array.isArray(window.__tracecomOffice.worldState().logs) ? window.__tracecomOffice.worldState().logs.length : 0,
+  }));
+  const logOk = logs.logs.length > 0 && logs.rows > 0 && logs.columns === 9 && logs.canvasDrawsLogsBox === false && logs.logs.every((entry) => /^\d{2}:\d{2}:\d{2}$/.test(entry.time) && entry.asset && entry.text);
+  assert("T3", "LOGS em overlay DOM legivel (9 colunas, recente primeiro, zero pixel-art)", logOk, "final-logs.png", { count: logs.logs.length, rows: logs.rows, columns: logs.columns, first: logs.logs[logs.logs.length - 1] ?? null, canvasDrawsLogsBox: logs.canvasDrawsLogsBox });
   await shot(page, "final-logs.png");
+  await page.click("#logs-close");
+  const logsClosed = await page.evaluate(() => document.querySelector("#logs-panel")?.hidden === true);
+  assert("T3", "painel de LOGS fecha e volta ao escritorio", logsClosed === true, null, { closed: logsClosed });
 
   assert("boot", "54 estações + reservas e estados derivados coerentes", state.allStations === 55 && state.working >= 50 && state.openButOffline >= 1 && state.closed >= 1, "final-boot-centered.png", { stations: state.stations, working: state.working, openButOffline: state.openButOffline, closed: state.closed, cameraBoundsIsContent: state.cameraBoundsIsContent });
   void state.supervisorDrawn;

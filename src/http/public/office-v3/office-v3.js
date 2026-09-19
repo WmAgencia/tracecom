@@ -33,7 +33,7 @@ const EVENTS_URL = "/api/iq/events";
 const POLL_BASE_MS = 2000;
 const POLL_MAX_MS = 30000;
 const DRAG_CLICK_THRESHOLD = 4;
-export const GLOBAL_LOG_LIMIT = 12;
+export const GLOBAL_LOG_LIMIT = 200;
 export const MARKET_LOG_LIMIT = 12;
 
 const doc = typeof document !== "undefined" && document ? document : null;
@@ -50,6 +50,7 @@ const detailEl = $("office-detail");
 const detailTitleEl = $("detail-title");
 const detailRowsEl = $("detail-rows");
 const topbarEl = $("office-topbar");
+const resultsEl = $("office-results");
 const detailRootEl = $("office-detail-root");
 const errorEl = $("office-error");
 const tooltipEl = $("office-tooltip");
@@ -58,8 +59,13 @@ const mesasEl = $("office-mesas");
 const mesasToggleEl = $("mesas-toggle");
 const mesasPanelEl = $("mesas-panel");
 const mesasSearchEl = $("mesas-search");
+const logsToggleEl = $("logs-toggle");
+const logsPanelEl = $("logs-panel");
+const logsListEl = $("logs-list");
+const logsMetaEl = $("logs-meta");
+const logsCloseEl = $("logs-close");
 
-const modules = { assets: null, world: null, life: null, camera: null, dashboard: null, marketDetail: null, topbar: null, blueprintBase: null, overlay: null, baseMode: null };
+const modules = { assets: null, world: null, life: null, camera: null, dashboard: null, marketDetail: null, topbar: null, blueprintBase: null, overlay: null, baseMode: null, pixelAssets: null, resultsPanel: null, logsPanel: null };
 let worldState = null;
 let worldModule = null;
 let lifeSystem = null;
@@ -85,6 +91,8 @@ let eventsCursor = 0;
 let eventsSeeded = false;
 let globalLogs = [];
 const marketLogs = new Map();
+let logsController = null;
+let lastResultsModel = null;
 
 /* ------------------------------------------------------------------ *
  * Status / error surfaces (fail-soft)
@@ -234,10 +242,14 @@ function assetLabelFor(marketKey) {
   return String(marketKey).split(":")[0] || "SISTEMA";
 }
 
-/** Raw event -> bounded log entry { time, asset, text, tone, marketKey }. */
+/** Raw event -> bounded log entry { time, asset, text, tone, marketKey, ... } (campos extras para o painel de LOGS). */
 export function formatEventEntry(event) {
   const text = describeEvent(event);
   if (!text) return null;
+  const source = typeof event.source === "string" ? event.source : null;
+  const agentStrategy = source && source.startsWith("agent:") ? source.split(":")[1] ?? null : null;
+  const agentSkill = source && source.startsWith("agent:") ? source.split(":")[2] ?? null : null;
+  const profit = Number.isFinite(Number(event.profit)) ? Number(event.profit) : null;
   return {
     time: timeTextOf(event.at),
     at: Number(event.at) || null,
@@ -246,6 +258,17 @@ export function formatEventEntry(event) {
     text,
     tone: eventTone(event),
     seq: Number(event.seq) || null,
+    type: event.type ?? null,
+    agent: event.agentId ?? event.agent ?? null,
+    strategy: event.strategyId ?? event.strategy ?? agentStrategy ?? (source && !source.startsWith("agent:") ? source : null),
+    skill: event.skill ?? agentSkill ?? null,
+    decision: event.action ?? event.direction ?? event.decision ?? null,
+    reason: event.reason ?? event.waitReason ?? null,
+    orderId: event.brokerOrderId ?? event.orderId ?? null,
+    executionId: event.executionId ?? null,
+    result: event.result ?? event.brokerResult ?? event.causalResult ?? null,
+    error: event.error ?? null,
+    profit,
   };
 }
 
@@ -276,11 +299,11 @@ function recordEvents(events) {
       appendBoundedLog(marketLogs.get(entry.marketKey), entry, MARKET_LOG_LIMIT);
     }
   }
-  if (worldState && modules.world && typeof modules.world.setWorldLogs === "function") {
+  if (logsController && logsController.isOpen()) {
     try {
-      modules.world.setWorldLogs(worldState, globalLogs);
+      logsController.render(globalLogs);
     } catch (error) {
-      warnMissing("world.setWorldLogs", error);
+      warnMissing("logsPanel.render", error);
     }
   }
 }
@@ -338,6 +361,8 @@ async function loadModules() {
     loadModule("overlay", "./overlay.js"),
     loadModule("baseMode", "./base-mode.js"),
     loadModule("pixelAssets", "./pixel-assets.js"),
+    loadModule("resultsPanel", "./results-panel.js"),
+    loadModule("logsPanel", "./logs-panel.js"),
   ]);
   worldModule = modules.world;
 }
@@ -527,11 +552,12 @@ function attachWorldToCamera() {
       warnMissing("camera.bindWorld", error);
     }
   }
-  // Born centered: frame the real office content once with an even margin on all
-  // four sides. Later snapshots/resizes never re-fit, so the user keeps control.
+  // Born centered: frame the real office content once with a small even margin on
+  // all four sides (padding 20 usa melhor o espaco sem cortar o mapa). Depois o
+  // usuario controla (nunca re-FITa em snapshots/resizes).
   if (!didFitContent && modules.camera && typeof modules.camera.fitContent === "function" && worldState.contentBounds) {
     try {
-      modules.camera.fitContent(camera, worldState);
+      modules.camera.fitContent(camera, worldState, { padding: 20 });
       didFitContent = true;
     } catch (error) {
       warnMissing("camera.fitContent", error);
@@ -843,6 +869,15 @@ function stationStateSignature(state) {
   return state.stations.map((station) => `${station.marketKey ?? station.id ?? "?"}:${station.derived?.state ?? "?"}`).join("|");
 }
 
+function mountResults(json) {
+  if (!resultsEl || !modules.resultsPanel || typeof modules.resultsPanel.mountResultsPanel !== "function") return;
+  try {
+    lastResultsModel = modules.resultsPanel.mountResultsPanel(resultsEl, json);
+  } catch (error) {
+    warnMissing("resultsPanel.mountResultsPanel", error);
+  }
+}
+
 function applyOfficeJson(json) {
   if (!worldModule || typeof worldModule.buildWorldState !== "function") return;
   officeJson = json;
@@ -852,13 +887,7 @@ function applyOfficeJson(json) {
   } catch (error) {
     warnMissing("state-model.attachDerivedStates", error);
   }
-  if (modules.world && typeof modules.world.setWorldLogs === "function") {
-    try {
-      modules.world.setWorldLogs(worldState, globalLogs);
-    } catch (error) {
-      warnMissing("world.setWorldLogs", error);
-    }
-  }
+  mountResults(json);
   attachWorldToCamera();
 
   const signature = stationSignature(worldState);
@@ -1372,7 +1401,12 @@ function bindInput() {
   if (closeButton) closeButton.addEventListener("click", closeDetail);
   if (eventTarget.addEventListener) {
     eventTarget.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeDetail();
+      if (event.key !== "Escape") return;
+      if (logsController && logsController.isOpen()) {
+        logsController.close();
+        return;
+      }
+      closeDetail();
     });
     eventTarget.addEventListener("resize", resize);
   }
@@ -1406,6 +1440,29 @@ function bindInput() {
 }
 
 /* ------------------------------------------------------------------ *
+ * LOGS overlay — created AFTER modules load (logs-panel.js dynamic import)
+ * ------------------------------------------------------------------ */
+
+function bindLogsPanel() {
+  if (logsController || !modules.logsPanel || typeof modules.logsPanel.createLogsPanel !== "function") return;
+  try {
+    logsController = modules.logsPanel.createLogsPanel({
+      document: doc,
+      toggle: logsToggleEl,
+      panel: logsPanelEl,
+      list: logsListEl,
+      meta: logsMetaEl,
+      close: logsCloseEl,
+      limit: GLOBAL_LOG_LIMIT,
+    });
+    if (logsController) logsController.render(globalLogs);
+  } catch (error) {
+    warnMissing("logsPanel.createLogsPanel", error);
+    logsController = null;
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * Debug/automation hook (read-only + select) — used by
  * scripts/office-v3-browser-check.mjs. Never issues orders/stakes.
  * ------------------------------------------------------------------ */
@@ -1413,7 +1470,7 @@ function bindInput() {
 function installDebugHooks() {
   if (typeof globalThis === "undefined" || !globalThis) return;
   globalThis.__tracecomOffice = {
-    version: "office-v3-debug.1.1.0",
+    version: "office-v3-debug.1.2.0",
     camera: () => camera,
     cameraModule: () => modules.camera,
     worldState: () => worldState,
@@ -1428,6 +1485,8 @@ function installDebugHooks() {
     overlayStats: () => lastOverlayStats,
     pan: () => panController,
     mesas: () => mesasController,
+    logsController: () => logsController,
+    resultsModel: () => lastResultsModel,
     selectedMarketKey: () => selectedMarketKey,
     derivedFor: (marketKey) => {
       if (!worldState || !marketKey) return null;
@@ -1631,6 +1690,7 @@ async function init() {
     setStatus("PIXEL OFFICE V3 indisponível", "world.js não pôde ser carregado");
     return;
   }
+  bindLogsPanel();
   void bootPixelAssets();
 
   camera = createCameraState();

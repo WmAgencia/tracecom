@@ -533,11 +533,9 @@ function drawPanel(ctx, x, y, w, h, bg, border) {
 }
 
 function drawBackWallItems(ctx, worldState) {
-  const board = worldState.board;
-  drawDailyBoard(ctx, board);
-  drawMarketsBox(ctx, CONTENT_X + 840, 6, board);
-  drawValueBox(ctx, CONTENT_X + 840, 132, 170, 52, "LUCRO SEMANAL", board.weeklyText);
-  drawValueBox(ctx, CONTENT_X + 840, 190, 170, 52, "LUCRO MENSAL", board.monthlyText);
+  // T3: os quadros financeiros (RESULTADO DO DIA / MERCADOS / SEMANAL / MENSAL)
+  // sairam do canvas e agora vivem no painel DOM legivel (results-panel.js).
+  // A parede mantem apenas a identidade pixel-art do escritorio.
   drawLogo(ctx, CONTENT_X + 10, 12);
 }
 
@@ -552,166 +550,6 @@ function drawLogo(ctx, x, y) {
   drawPixelText(ctx, "TRACE/COM", x + 54, y + 14, { scale: 2, color: PALETTE_V3.white });
   drawPixelText(ctx, "DISCIPLINA · DADOS · RESULTADOS", x + 54, y + 38, { scale: 1, color: PALETTE_V3.goldHi });
   drawPixelText(ctx, "PIXEL OFFICE V3", x + 54, y + 52, { scale: 1, color: PALETTE_V3.metal });
-}
-
-function drawDailyBoard(ctx, board) {
-  const x = CONTENT_X + 248;
-  const y = 6;
-  const w = 580;
-  const h = 214;
-  drawPanel(ctx, x, y, w, h, "#0b1728", PALETTE_V3.border);
-  pxRectLocal(ctx, x + 6, y + 6, w - 12, 26, PALETTE_V3.panelHeader);
-  drawPixelText(ctx, "RESULTADO DO DIA", x + w / 2, y + 10, { scale: 3, align: "center", color: PALETTE_V3.white });
-
-  const positive = board.tone === "POSITIVE";
-  const negative = board.tone === "NEGATIVE";
-  const color = positive ? PALETTE_V3.green : negative ? PALETTE_V3.red : PALETTE_V3.metal;
-  drawPixelText(ctx, board.pnlText, x + w / 2, y + 28, { scale: 8, align: "center", color, shadow: "rgba(0,0,0,0.6)" });
-  drawPixelText(ctx, positive ? "GANHO LÍQUIDO HOJE" : negative ? "PERDA LÍQUIDA HOJE" : "SEM RESULTADO LIQUIDADO", x + w / 2, y + 100, {
-    scale: 2,
-    align: "center",
-    color: PALETTE_V3.metal,
-  });
-
-  const metrics = [
-    ["OPERAÇÕES HOJE", String(board.trades)],
-    ["WINS", String(board.wins)],
-    ["LOSSES", String(board.losses)],
-    ["WIN RATE", board.winRateText],
-    ["MAIOR WIN", board.bestWinText],
-    ["MAIOR LOSS", board.bestLossText],
-  ];
-  const metricX = x + 16;
-  const metricY = y + 120;
-  metrics.forEach(([label, value], index) => {
-    const rowY = metricY + index * 14;
-    const safe = value === "—" ? "SEM DADOS" : value;
-    drawPixelText(ctx, label, metricX, rowY, { scale: 1, color: PALETTE_V3.metal });
-    drawPixelText(ctx, safe, metricX + 130, rowY, {
-      scale: 1,
-      align: "right",
-      color: label === "MAIOR WIN" ? PALETTE_V3.green : label === "MAIOR LOSS" ? PALETTE_V3.red : PALETTE_V3.white,
-    });
-    if (index < metrics.length - 1) pxRectLocal(ctx, metricX, rowY + 11, 130, 1, "rgba(120,150,200,0.14)");
-  });
-
-  // equity chart — real settled series only, explicit placeholder when absent.
-  // Padding keeps the line and the min/max labels fully inside the frame.
-  const chartX = x + 180;
-  const chartY = y + 128;
-  const chartW = 384;
-  const chartH = 76;
-  const padX = 7;
-  const padY = 9;
-  const innerW = chartW - padX * 2;
-  const innerH = chartH - padY * 2;
-  pxRectLocal(ctx, chartX, chartY, chartW, chartH, "#08121f");
-  pxRectLocal(ctx, chartX, chartY, chartW, 1, "rgba(120,150,200,0.35)");
-  pxRectLocal(ctx, chartX, chartY + chartH - 1, chartW, 1, "rgba(120,150,200,0.35)");
-  pxRectLocal(ctx, chartX, chartY, 1, chartH, "rgba(120,150,200,0.35)");
-  pxRectLocal(ctx, chartX + chartW - 1, chartY, 1, chartH, "rgba(120,150,200,0.35)");
-  for (let gx = 1; gx < 4; gx += 1) pxRectLocal(ctx, chartX + (chartW / 4) * gx, chartY + 1, 1, chartH - 2, "rgba(90,130,190,0.14)");
-  for (let gy = 1; gy < 4; gy += 1) pxRectLocal(ctx, chartX + 1, chartY + (chartH / 4) * gy, chartW - 2, 1, "rgba(90,130,190,0.14)");
-  if (board.equityPlaceholder) {
-    pxRectLocal(ctx, chartX + 1, chartY + Math.round(chartH / 2), chartW - 2, 1, "rgba(120,150,200,0.3)");
-    drawPixelText(ctx, "SEM SÉRIE DE RESULTADO", chartX + chartW / 2, chartY + Math.round(chartH / 2) - 4, { scale: 1, align: "center", color: PALETTE_V3.metal });
-    drawPixelText(ctx, "EQUITY · SEM DADOS", chartX, chartY - 10, { scale: 1, color: PALETTE_V3.metal });
-  } else {
-    const series = board.equitySeries;
-    const min = Math.min(...series);
-    const max = Math.max(...series);
-    const span = max - min || 1;
-    const lineColor = negative ? PALETTE_V3.red : PALETTE_V3.green;
-    const xAt = (index) => chartX + padX + (series.length === 1 ? innerW / 2 : (innerW / (series.length - 1)) * index);
-    const yAt = (value) => chartY + padY + innerH - ((value - min) / span) * innerH;
-    // zero baseline only when the real range crosses zero (never invented)
-    if (min <= 0 && max >= 0) {
-      pxRectLocal(ctx, chartX + 1, Math.round(yAt(0)), chartW - 2, 1, "rgba(120,150,200,0.35)");
-    }
-    ctx.save();
-    ctx.strokeStyle = lineColor;
-    ctx.lineWidth = 2;
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    series.forEach((value, index) => {
-      const px = xAt(index);
-      const py = yAt(value);
-      if (index === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    });
-    ctx.stroke();
-    ctx.restore();
-    const lastValue = series[series.length - 1];
-    pxRectLocal(ctx, Math.round(xAt(series.length - 1)) - 2, Math.round(yAt(lastValue)) - 2, 4, 4, lineColor);
-    // Header: real series label + real last value, read from the settled series.
-    drawPixelText(ctx, "EQUITY · SÉRIE REAL", chartX, chartY - 10, { scale: 1, color: PALETTE_V3.goldHi });
-    drawPixelText(ctx, signedBRL(lastValue), chartX + chartW, chartY - 10, { scale: 1, align: "right", color: lineColor });
-  }
-}
-
-function drawMarketsBox(ctx, x, y, board) {
-  const w = 170;
-  const h = 120;
-  drawPanel(ctx, x, y, w, h, "#0b1728", "#2a4a80");
-  drawPixelText(ctx, "MERCADOS", x + w / 2, y + 7, { scale: 2, align: "center", color: "#7ab0e8" });
-  const rows = [
-    ["ABERTOS", String(board.open), PALETTE_V3.white],
-    ["FECHADOS", String(board.closed), PALETTE_V3.white],
-    ["TOTAL", String(board.total), PALETTE_V3.metalHi],
-    ["MODO", "PRACTICE", PALETTE_V3.screenOn],
-    ["RISCO", "ZERO REAL", PALETTE_V3.green],
-  ];
-  rows.forEach(([label, value, color], index) => {
-    const rowY = y + 28 + index * 17;
-    drawPixelText(ctx, label, x + 12, rowY, { scale: 1, color: "#9ab8dc" });
-    drawPixelText(ctx, value, x + w - 12, rowY, { scale: 1, align: "right", color });
-    if (index < rows.length - 1) pxRectLocal(ctx, x + 10, rowY + 12, w - 20, 1, "rgba(120,150,200,0.14)");
-  });
-}
-
-function drawValueBox(ctx, x, y, w, h, title, value) {
-  drawPanel(ctx, x, y, w, h, "#0b1728", "#2a4a80");
-  drawPixelText(ctx, title, x + w / 2, y + 5, { scale: 2, align: "center", color: "#7ab0e8" });
-  const empty = value === "—";
-  const safe = empty ? "SEM DADOS" : value;
-  drawPixelText(ctx, safe, x + w / 2, empty ? y + 30 : y + 26, { scale: empty ? 1 : 2, align: "center", color: empty ? PALETTE_V3.metal : value.startsWith("−") || value.startsWith("-") ? PALETTE_V3.red : PALETTE_V3.green });
-}
-
-/**
- * GLOBAL LOGS box (T3) — real TraceCom runtime/event stream only. Sits to the
- * right of MERCADOS / LUCRO SEMANAL / LUCRO MENSAL, same top panel, and is
- * redrawn every frame from the bounded `worldState.logs` list (the DOM never
- * grows: the page keeps a fixed-size array). Format: HH:MM:SS ATIVO — evento.
- */
-export function drawLogsBox(ctx, worldState) {
-  if (!ctx || !worldState) return;
-  const x = CONTENT_X + 840 + 170 + 10;
-  const y = 6;
-  const w = CONTENT_X + CONTENT_WIDTH - x - 8;
-  const h = 236;
-  drawPanel(ctx, x, y, w, h, "#0a1424", "#2a4a80");
-  pxRectLocal(ctx, x + 6, y + 6, w - 12, 22, PALETTE_V3.panelHeader);
-  drawPixelText(ctx, "LOGS", x + w / 2, y + 11, { scale: 2, align: "center", color: PALETTE_V3.white });
-  const logs = Array.isArray(worldState.logs) ? worldState.logs : [];
-  const maxLines = 11;
-  const visible = logs.slice(-maxLines);
-  const lineHeight = 19;
-  const startY = y + 36;
-  if (!visible.length) {
-    drawPixelText(ctx, "AGUARDANDO EVENTOS REAIS", x + w / 2, startY + 60, { scale: 1, align: "center", color: PALETTE_V3.metal });
-    return;
-  }
-  visible.forEach((entry, index) => {
-    const rowY = startY + index * lineHeight;
-    const time = String(entry?.time ?? entry?.at ?? "").slice(0, 8) || "--:--:--";
-    const asset = String(entry?.asset ?? entry?.marketKey ?? "SISTEMA").slice(0, 14);
-    const eventText = String(entry?.text ?? "");
-    drawPixelText(ctx, time, x + 10, rowY, { scale: 1, color: PALETTE_V3.metal });
-    drawPixelText(ctx, asset, x + 62, rowY, { scale: 1, color: PALETTE_V3.goldHi });
-    const prefixWidth = 62 + measurePixelText(asset, 1, 1) + 10;
-    drawPixelText(ctx, `— ${eventText}`, x + prefixWidth, rowY, { scale: 1, color: entry?.tone === "POSITIVE" ? PALETTE_V3.green : entry?.tone === "NEGATIVE" ? PALETTE_V3.red : PALETTE_V3.white });
-    if (index < visible.length - 1) pxRectLocal(ctx, x + 8, rowY + 13, w - 16, 1, "rgba(120,150,200,0.10)");
-  });
 }
 
 export const DESK_TOP_DEPTH = 18;
@@ -1012,9 +850,7 @@ export function drawWorld(ctx, worldState, camera = {}, options = {}) {
     }
   }
 
-  // GLOBAL LOGS box (T3) — real events, always in front, redrawn each frame.
-  drawLogsBox(ctx, worldState);
-
+  // T3: o box de LOGS saiu do canvas — vive no overlay DOM (logs-panel.js).
   // objects sorted with the painter's algorithm (bottom edge, then x)
   const drawables = [];
   let pooled = 0;

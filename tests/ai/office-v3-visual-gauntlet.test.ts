@@ -121,13 +121,18 @@ describe("OFFICE V3 — visual gauntlet regressions", () => {
     expect(empty.equityPlaceholder).toBe(true);
   });
 
-  it("renderer não rotula dados fabricados como tempo real", () => {
+  it("renderer não rotula dados fabricados como tempo real (canvas -> painel DOM legivel)", () => {
     const root = fileURLToPath(new URL("../../src/http/public/office-v3/", import.meta.url));
-    const source = readFileSync(`${root}world.js`, "utf8");
-    expect(/TEMPO REAL/i.test(source)).toBe(false);
-    expect(/OPORTUNIDADES/i.test(source)).toBe(false);
-    expect(source.includes("SEM SÉRIE DE RESULTADO")).toBe(true);
-    expect(source.includes("SÉRIE REAL")).toBe(true);
+    const worldSource = readFileSync(`${root}world.js`, "utf8");
+    const resultsSource = readFileSync(`${root}results-panel.js`, "utf8");
+    expect(/TEMPO REAL/i.test(worldSource)).toBe(false);
+    expect(/OPORTUNIDADES/i.test(worldSource)).toBe(false);
+    // O canvas nao desenha mais logs nem os quadros financeiros (T3 movido para DOM).
+    expect(worldSource.includes("drawLogsBox")).toBe(false);
+    expect(worldSource.includes("drawDailyBoard")).toBe(false);
+    expect(resultsSource.includes("RESULTADO DO DIA")).toBe(true);
+    expect(resultsSource.includes("SEM SÉRIE DE RESULTADO")).toBe(true);
+    expect(resultsSource.includes("SÉRIE REAL")).toBe(true);
   });
 
   it("placa da mesa atinge contraste AA", () => {
