@@ -10,7 +10,7 @@
 export const FACTOR_PURITY_VERSION = "factor-purity-v1";
 export const FORBIDDEN_FORMULA_PATTERNS = Object.freeze([
   /lead\s*\(/i, /future/i, /centered/i, /settlement/i, /result/i, /outcome/i,
-  /shift\s*\(\s*-/i, /delay\s*\(\s*-/i, /ref\s*\(\s*[^,]+,\s*-/i,
+  /shift\s*\([^)]*,\s*-/i, /delay\s*\([^)]*,\s*-/i, /ref\s*\([^)]*,\s*-/i,
 ]);
 
 function deepCopyCandles(candles) { return candles.map((candle) => ({ ...candle })); }

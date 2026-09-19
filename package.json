@@ -32,6 +32,8 @@
     "second-brain:push": "node scripts/second-brain-sync.mjs --push",
     "audit:g2": "node scripts/g2-loss-audit.mjs",
     "stress:55": "node scripts/stress-55.mjs",
+    "deploy:prod": "node scripts/deploy-prod.mjs",
+    "research:smoke": "node scripts/research-smoke.mjs",
     "office:assets": "node scripts/office-assets/generate.mjs",
     "office:assets:check": "node scripts/office-assets/check.mjs"
   },

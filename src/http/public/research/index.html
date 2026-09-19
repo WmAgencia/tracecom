@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TraceCom — RESEARCH / QUANT LAB</title>
+<style>
+:root { color-scheme: dark; --bg:#0b0f14; --panel:#121922; --line:#243040; --ink:#dce6f2; --dim:#7d8ea3; --ok:#3ddc97; --warn:#ffb454; --bad:#ff6b6b; }
+* { box-sizing: border-box; }
+body { margin:0; font: 13px/1.45 ui-monospace, Consolas, monospace; background:var(--bg); color:var(--ink); }
+header { padding:10px 14px; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+h1 { font-size:14px; margin:0; letter-spacing:.08em; }
+#meta { color:var(--dim); font-size:11px; }
+nav { display:flex; flex-wrap:wrap; gap:4px; padding:8px 14px; border-bottom:1px solid var(--line); }
+nav button { background:var(--panel); color:var(--dim); border:1px solid var(--line); padding:4px 9px; cursor:pointer; border-radius:3px; font:inherit; }
+nav button.on { color:var(--ink); border-color:#3d5a7a; background:#182233; }
+main { padding:14px; }
+table { border-collapse:collapse; width:100%; margin:6px 0 14px; }
+th,td { border-bottom:1px solid var(--line); padding:4px 6px; text-align:left; font-size:12px; vertical-align:top; }
+th { color:var(--dim); font-weight:400; }
+.badge { padding:1px 6px; border-radius:9px; border:1px solid var(--line); font-size:11px; }
+.ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)} .dim{color:var(--dim)}
+pre { background:var(--panel); border:1px solid var(--line); padding:10px; overflow:auto; max-height:52vh; }
+.banner { background:var(--panel); border:1px solid var(--line); padding:6px 10px; font-size:11px; color:var(--dim); margin-bottom:10px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+.card { background:var(--panel); border:1px solid var(--line); padding:10px; }
+.card b { display:block; font-size:20px; margin-top:2px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>TRACECOM · RESEARCH / QUANT LAB</h1>
+  <span id="meta">carregando…</span>
+  <span class="badge">RESEARCH_ONLY</span><span class="badge">ZERO ORDEM</span><span class="badge">V4 INTOCADO</span>
+</header>
+<nav id="tabs"></nav>
+<main>
+  <div class="banner" id="banner">Todo dado exibe asOf / windowStart / windowEnd / N / source / datasetVersion. BACKTEST ≠ HISTORICAL ≠ PROSPECTIVE SHADOW ≠ PRACTICE — nunca somados.</div>
+  <div id="view">carregando…</div>
+</main>
+<script>
+const TABS = [
+  ["OVERVIEW","/overview"],["AGENTS","/comparison"],["FACTORS","/factors"],["ALPHAS","/alphas"],
+  ["BACKTESTS","/backtests"],["STRATEGIES","/strategy-regime"],["REGIMES","/strategy-regime"],
+  ["EXPERIMENTS","/experiments"],["HYPOTHESES","/hypotheses"],["MODELS","/models"],
+  ["JOURNAL","/journal-intelligence"],["SHADOW","/checkpoints"],["DATA QUALITY","/coverage"],["JOBS","/jobs"],
+];
+const view = document.getElementById("view");
+const meta = document.getElementById("meta");
+const banner = document.getElementById("banner");
+let current = "OVERVIEW";
+
+function fmtMeta(m){ if(!m) return ""; const d=(v)=>v?new Date(v).toISOString().replace("T"," ").slice(0,19):"—"; return `asOf ${d(m.asOf)} · janela ${d(m.windowStart)} → ${d(m.windowEnd)} · N=${m.n} · source ${m.source} · dataset ${m.datasetVersion??"—"}`; }
+function el(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content.firstChild; }
+function table(headers, rows){ const t=el(`<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody></tbody></table>`); const b=t.querySelector("tbody"); for(const r of rows){ b.appendChild(el(`<tr>${r.map(c=>`<td>${c??"—"}</td>`).join("")}</tr>`)); } return t; }
+function j(obj){ return el(`<pre>${JSON.stringify(obj,null,1).slice(0,20000)}</pre>`); }
+function card(label,value,cls=""){ return el(`<div class="card"><span class="dim">${label}</span><b class="${cls}">${value??"—"}</b></div>`); }
+function pct(v){ return v==null?"—":(v*100).toFixed(1)+"%"; }
+
+const RENDER = {
+  OVERVIEW(d){ const g=el(`<div><div class="grid"></div><h3>Jobs</h3><div id="ovjobs"></div></div>`); const grid=g.querySelector(".grid");
+    grid.append(card("Observações",d.counts?.observations),card("Settlements direcionais",d.counts?.directional),card("WAIT/NO_TRADE",d.counts?.waits),card("Fatores registrados",d.factors?.total),card("Importados",d.factors?.imported),card("Jobs rodando",d.jobs?.running));
+    g.querySelector("#ovjobs").appendChild(table(["Estado","Total"],[...Object.entries(d.jobs?.counts??{})]));
+    const frag=el("<div></div>"); frag.append(el(`<div class="banner">${fmtMeta(d.snapshot)}</div>`),g); return frag; },
+  AGENTS(d){ const c=d.comparison??{}; const frag=el("<div></div>"); frag.append(el(`<div class="banner">${fmtMeta(d.snapshot)} · mesmas oportunidades; WAIT fora do WR</div>`));
+    frag.appendChild(table(["Versão","Distribuição de ações"],[["G2",JSON.stringify(c.actions?.g2??{})],["V3 Frozen",JSON.stringify(c.actions?.v3??{})],["V4",JSON.stringify(c.actions?.v4??{})],["G2×V4 concordância",(c.g2V4AgreementPct??"—")+"%"]]));
+    return frag; },
+  FACTORS(d){ const m=d.manifest??{}; const rows=(m.factors??[]).slice(0,120).map(f=>[f.factorId,f.category,f.nativeOrDerived,f.source,f.status,f.formulaHash.slice(0,10)+(f.imported?" (importado)":"")]); const frag=el("<div></div>"); frag.append(el(`<div class="banner">${JSON.stringify(m.counts??{})}</div>`),table(["factorId","categoria","origem","source","status","hash"],rows)); return frag; },
+  ALPHAS(d){ const b=d.bench??{}; const rows=(b.factors??[]).slice(0,60).map(f=>[f.factorId,pct(f.coverage),f.distribution?f.distribution.p50:null,f.conditional?.favored?.wr,pct(f.conditional?.opposed?.wr),f.conditional?.edgePp??"—",f.ic??"—",f.rankIc??"—"]); const frag=el("<div></div>"); frag.append(el(`<div class="banner">${fmtMeta(b.snapshot)}${b.warning?` · <span class="warn">${b.warning}</span>`:""}</div>`),table(["fator","cobertura","mediana","WR favorecido","WR oposto","edge pp","IC","RankIC"],rows));
+    if(b.correlation?.topPairs?.length) frag.appendChild(el("<h3>Redundância (top pares)</h3>"),table(["fator A","fator B","pearson","spearman","MI"],(b.correlation.topPairs.slice(0,15).map(p=>[p.left,p.right,p.pearson,p.spearman,p.mutualInformation])))); return frag; },
+  BACKTESTS(d){ const p=d.preview?.metrics??{}; const v=d.validation??{}; const frag=el("<div></div>"); frag.append(el(`<div class="banner">${fmtMeta(d.preview?.meta?.snapshot)} · payout ${JSON.stringify(d.preview?.meta?.payoutPolicy?.requested??{})}</div>`));
+    frag.appendChild(table(["métrica","valor"],[["N",p.n],["decididos",p.decided],["W/L/D",`${p.wins}/${p.losses}/${p.draws}`],["WR",pct(p.wr)],["CI95",`${pct(p.ci95?.low)}–${pct(p.ci95?.high)}`],["expectancy",p.expectancy],["PnL norm.",p.normalizedPnl],["maxDD",p.maxDrawdown],["loss streak",p.maxLossStreak],["payout médio",p.avgPayout],["cobertura payout",pct(p.payoutCoverage)]]));
+    if(p.precisionWarning) frag.appendChild(el(`<div class="banner warn">${p.precisionWarning}</div>`));
+    frag.appendChild(el("<h3>Validação</h3>"),j({purgedN:(v.purged?.folds??[]).map(f=>({fold:f.fold,train:f.trainN,test:f.testN,valid:f.valid})),holdout:v.holdout,walkForwardN:(v.walkForward?.folds??[]).length,cpcvPaths:v.cpcv?.combinations,bootstrap:v.bootstrap?.wr}));
+    return frag; },
+  STRATEGIES(d){ const frag=el("<div></div>"); frag.append(el(`<div class="banner">${fmtMeta(d.snapshot)} · evidenceQuality nunca REAL_VALIDATED automático</div>`),table(["strategy","regime","cenário","mercado","tipo","N","WR","CI95","expectancy","PnL","DD","streak","evidence"],(d.groups??[]).slice(0,80).map(g=>[g.strategyVersion,g.regime,g.scenario,g.marketKey,g.marketType,g.decided,pct(g.wr),`${pct(g.ci95?.low)}–${pct(g.ci95?.high)}`,g.expectancy,g.normalizedPnl,g.maxDrawdown,g.maxLossStreak,g.evidenceQuality]))); return frag; },
+  JOURNAL(d){ const jr=d.journal??{}; const frag=el("<div></div>"); frag.append(el(`<div class="banner">${fmtMeta(d.snapshot)} · padrão → hipótese (nunca regra)</div>`),table(["padrão","N","W","L","WR","CI95","qualidade","exploratório"],(jr.patterns??[]).slice(0,40).map(p=>[p.pattern,p.n,p.wins,p.losses,pct(p.wr),`${pct(p.ci95?.low)}–${pct(p.ci95?.high)}`,p.evidenceQuality,p.exploratoryOnly?"sim":"não"]))); return frag; },
+  SHADOW(d){ const c=d.checkpoints??{}; return el(`<div><div class="banner">${fmtMeta(c.snapshot)} · WAIT=${c.waitObservations} fora do denominador · coverage=${JSON.stringify(c.coverage??{})}</div>${(c.checkpoints??[]).map(k=>`<div class="card"><span class="dim">N=${k.level} ${k.complete?"(completo)":"(aguardando)"}</span><b>${k.n} dir · WR ${k.wr==null?"—":(k.wr*100).toFixed(1)+"%"} · CI95 ${k.ci95.low==null?"—":(k.ci95.low*100).toFixed(0)+"–"+(k.ci95.high*100).toFixed(0)+"%"} · ${k.evidenceQuality}</b></div>`).join("")}</div>`); },
+  "DATA QUALITY"(d){ const a=d.audit??{}; const frag=el("<div></div>"); frag.append(el(`<div class="banner">${fmtMeta(a.snapshot)} · DEFAULTED/INVALID/STALE não contam como disponibilidade</div>`),table(["feature","real%","VALID","DERIVED_VALID","STALE","MISSING","UNAVAIL","DEFAULTED","INVALID","origem"],(a.rows??[]).map(r=>[r.feature,r.availableRealPct,r.VALID,r.DERIVED_VALID,r.STALE,r.MISSING,r.UNAVAILABLE,r.DEFAULTED,r.INVALID,r.origin]))); return frag; },
+  JOBS(d){ const frag=el("<div></div>"); frag.append(el(`<div class="banner">limites ${JSON.stringify(d.status?.limits??{})}</div>`),table(["jobId","tipo","status","progresso","criado","erro"],(d.jobs??[]).map(j=>[j.jobId,j.type,j.status,(Number(j.progress)*100).toFixed(0)+"%",j.createdAt?new Date(j.createdAt).toISOString().slice(11,19):"—",j.error])));
+    const controls=el(`<div><button id="jobcheck">rodar CHECKPOINTS</button> <button id="jobscan">rodar SCAN_FACTORS</button> <span id="jobres" class="dim"></span></div>`);
+    controls.querySelector("#jobcheck").onclick=()=>runJob("CHECKPOINTS");
+    controls.querySelector("#jobscan").onclick=()=>runJob("SCAN_FACTORS");
+    frag.appendChild(controls); return frag; },
+  EXPERIMENTS(d){ return table(["id","hipótese","dataset","strategy","status"],(d.experiments??[]).map(e=>[e.id,e.hypothesis,e.datasetVersion,e.strategyVersion,e.status])); },
+  HYPOTHESES(d){ return table(["id","origem","descrição","pré-registrada","status"],(d.hypotheses??[]).map(h=>[h.id,h.origin,h.description,h.createdBeforeEvaluation?"sim":"não",h.status])); },
+  MODELS(d){ const frag=el("<div></div>"); frag.append(el(`<div class="banner">${JSON.stringify(d.ml??{})} · estimatedWinProbability do sistema principal = NULL</div>`),table(["id","tipo","status","hash"],(d.models??[]).map(m=>[m.id,m.type,m.status,m.hash]))); return frag; },
+};
+
+async function runJob(type){ const res=document.getElementById("jobres"); res.textContent="enfileirando…"; const r=await fetch("/api/iq/research/lab/jobs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({type})}); const body=await r.json(); res.textContent=body.ok?`job ${body.job.jobId} ${body.job.status}`:`erro: ${body.reason??body.error}`; }
+async function show(tab){ current=tab; document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.textContent===tab)); view.textContent="carregando…";
+  const route=TABS.find(t=>t[0]===tab)[1];
+  try { const r=await fetch(`/api/iq/research/lab${route}?limit=500`); const body=await r.json(); meta.textContent="atualizado "+new Date().toLocaleTimeString(); view.innerHTML=""; const rendered=RENDER[tab]?.(body)??j(body); view.appendChild(rendered); }
+  catch(e){ view.textContent="erro: "+e.message; } }
+const nav=document.getElementById("tabs"); for(const [name] of TABS){ const b=el(`<button>${name}</button>`); b.onclick=()=>show(name); nav.appendChild(b); }
+show("OVERVIEW");
+</script>
+</body>
+</html>

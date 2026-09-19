@@ -90,8 +90,9 @@ export function featureDrift({ reference = [], current = [], staleThresholdPp = 
   const paths = new Set([...reference, ...current].flatMap((snapshot) => Object.keys(snapshot?.featureProvenance ?? {})));
   const rows = [];
   for (const path of paths) {
-    const refValues = reference.map((snapshot) => Number(snapshot?.featureProvenance?.[path]?.value)).filter(Number.isFinite);
-    const curValues = current.map((snapshot) => Number(snapshot?.featureProvenance?.[path]?.value)).filter(Number.isFinite);
+    const read = (snapshot) => { const value = snapshot?.featureProvenance?.[path]?.value; return value === null || value === undefined ? NaN : Number(value); };
+    const refValues = reference.map(read).filter(Number.isFinite);
+    const curValues = current.map(read).filter(Number.isFinite);
     const refAvailable = reference.length ? refValues.length / reference.length : null;
     const curAvailable = current.length ? curValues.length / current.length : null;
     const deltaPp = refAvailable !== null && curAvailable !== null ? Number(((curAvailable - refAvailable) * 100).toFixed(2)) : null;
