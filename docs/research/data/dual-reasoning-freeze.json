@@ -1,0 +1,31 @@
+﻿{
+    "version":  "DUAL_REASONING_V1_SHADOW",
+    "policy":  {
+                   "controlsExecution":  false,
+                   "noTuning":  true,
+                   "sendsOrders":  false,
+                   "deterministic":  true,
+                   "mode":  "SHADOW_ONLY",
+                   "llmInDeadline":  false
+               },
+    "files":  {
+                  "tests/research/dual-reasoning.test.ts":  {
+                                                                "bytes":  9177,
+                                                                "sha256":  "4cace3714cb8f98e272f01bd115aa5066dfba83110f2de9cfbbe1bab40a05209"
+                                                            },
+                  "relay/dual-reasoning.mjs":  {
+                                                   "bytes":  31554,
+                                                   "sha256":  "a38795acecd1c3c0c5ddce8c9f7bf174c163b4dbb4b78f838f92e9f32198e1b2"
+                                               },
+                  "relay/migrations/036_dual_reasoning.sql":  {
+                                                                  "bytes":  1140,
+                                                                  "sha256":  "a199ee6dd29f6380cd0f77c695c63e7b17dd88b7f8a0b88d9acffd97eba0fbff"
+                                                              }
+              },
+    "schema":  "dual-reasoning-freeze-v1",
+    "frozenAtUtc":  "2026-09-19T13:11:54Z",
+    "rules":  {
+                  "conflict":  "direcoes opostas =\u003e WAIT; sem inversao automatica",
+                  "settlement":  "CAUSAL_COUNTERFACTUAL/PROSPECTIVE_SHADOW idempotente; nunca BROKER_EXECUTED"
+              }
+}

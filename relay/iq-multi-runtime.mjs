@@ -49,6 +49,8 @@ import { dataQualityInputFromRuntime, DATA_QUALITY_THRESHOLDS } from "./datahub/
 import { AgentsV4Engine } from "./agents-v4/engine.mjs";
 import { AgentsV4Persistence } from "./agents-v4/persistence.mjs";
 import { AgentsV4Settlement } from "./agents-v4/settlement.mjs";
+// DUAL_REASONING_V1_SHADOW: experimento independente (A estrutural x B curto prazo). NUNCA executa.
+import { DualReasoningEngine } from "./dual-reasoning.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
 export const ACK_TIMEOUT_MS = 15_000;
@@ -75,7 +77,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -87,7 +89,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.reconnects = 0; this.connectionStartedAt = null;
     this.session = { connected: false, host: null, connectionId: null, serverTimeMs: null, clockSkewMs: null, timeValid: false, connectedAt: null };
     this.account = { practice: { verified: false, balanceId: null, balance: null, currency: null }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: null, type: "UNKNOWN" };
-    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true, agentsV4ShadowEnabled: agentsV4Enabled === true };
+    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true, agentsV4ShadowEnabled: agentsV4Enabled === true, dualReasoningShadowEnabled: dualReasoningEnabled === true };
     this.markets = new Map();
     for (const entry of UNIVERSE) {
       const key = marketKey(entry.canonical, entry.marketType);
@@ -134,6 +136,8 @@ export class IqMultiRuntime extends EventEmitter {
       })),
     });
     this.agentsV4.attachSettlement(this.agentsV4Settlement);
+    // DUAL_REASONING_V1_SHADOW (experimento independente; sem LLM no deadline; zero ordem).
+    this.dual = new DualReasoningEngine({ pool, dataHub: this.dataHub, now: this.now, log: this.log, enabled: dualReasoningEnabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -815,6 +819,8 @@ export class IqMultiRuntime extends EventEmitter {
       void this.scenarioSettlement.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // AGENTS V4 (SHADOW): liquidacao causal das observacoes V4 pendentes (nunca broker).
       this.agentsV4Settlement.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      // DUAL_REASONING (SHADOW): liquidacao causal PROSPECTIVE_SHADOW (nunca broker).
+      this.dual.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
@@ -940,6 +946,7 @@ export class IqMultiRuntime extends EventEmitter {
       this.#beginTimingShadow(ctx, { candidate, action, snapshot, serverNow });
       this.#beginScenarioShadow(ctx, { candidate, action, trader, critic, consensus, now });
       this.#safe(() => this.#observeAgentsV4Candidate(ctx, { candidate, action, trader, critic, consensus, now, list: this.#candleList(ctx) }));
+      this.#safe(() => this.#observeDualRound1(ctx, candidate, now));
       this.#setAgent(ctx, "SIGNAL", `CANDIDATE_${action}`);
       this.#emitEvent("candidate.created", { marketKey: ctx.marketKey, candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, secondsToWindow: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
       this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "CANDIDATE_CREATED", { candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, serverNow, regime: snapshot.regime, setup: snapshot.setup, trigger: snapshot.trigger }, { persist: true });
@@ -948,6 +955,7 @@ export class IqMultiRuntime extends EventEmitter {
     }
 
     const candidate = ctx.candidate;
+    this.#safe(() => this.#observeDualRound2(ctx, candidate, now));
     candidate.evaluations += 1;
     candidate.updatedAt = now;
     // Secao 6/9: mudanca intermediaria NAO cancela; marca candidateChangedBeforeEntry e segue analisando.
@@ -1153,6 +1161,8 @@ export class IqMultiRuntime extends EventEmitter {
     this.#finalizeScenarioShadow(ctx, { candidate, action, trader, critic, consensus, now });
     // AGENTS V4 (SHADOW): reavaliacao final observacional no instante do JIT.
     this.#safe(() => this.#finalizeAgentsV4Candidate(ctx, { candidate, now, list: this.#candleList(ctx) }));
+    // DUAL_REASONING_V1_SHADOW: round final T2 + cross-examination final + DUAL_SYNTHESIS_V1 (observacional).
+    this.#safe(() => this.#finalizeDual(ctx, candidate, action, now));
     if (!revalidation.ok) { this.#cancelCandidate(ctx, revalidation.reason ?? "CANDIDATE_REVALIDATION_FAILED", { checks: revalidation.checks }); return; }
     candidate.status = "CONFIRMED"; candidate.confirmedAt = now;
     this.#emitEvent("candidate.confirmed", { marketKey: ctx.marketKey, candidateId: candidate.id, action, secondsToEntry: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
@@ -1232,6 +1242,37 @@ export class IqMultiRuntime extends EventEmitter {
       trajectory: this.#trajectory(ctx), payout: ctx.payout,
       marketMeta: { symbol: ctx.display ?? null, availability: ctx.availability ?? null, productKind: candidate?.productKind ?? null },
       snapshotId: `${ctx.marketKey}:${candidate?.id ?? now}`,
+    });
+  }
+
+  /* ------------------- DUAL_REASONING_V1_SHADOW (experimento independente) ------------------- */
+  #dualObservationId(ctx, candidate) { return `dual:${ctx?.marketKey ?? "UNKNOWN"}:${candidate?.id ?? "unknown"}`; }
+  #observeDualRound1(ctx, candidate, now) {
+    if (!this.dual?.enabled || !candidate) return null;
+    const t0 = this.#buildT0ForV4(ctx, this.#candleList(ctx), { now, candidate });
+    return this.dual.observeRound1({
+      t0, candidate: { candidateId: candidate.id, correlationId: candidate.correlationId ?? null, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, payout: ctx.payout },
+      g2Action: candidate.action ?? null, v4Action: ctx.lastAgentsV4?.action ?? null, execution: this.#agentsV4Execution(ctx, { now, candidate }),
+    });
+  }
+  #observeDualRound2(ctx, candidate, now) {
+    if (!this.dual?.enabled || !candidate || candidate.evaluations < 1) return null;
+    const observationId = this.#dualObservationId(ctx, candidate);
+    if (!this.dual.observations.has(observationId)) return null;
+    const t0 = this.#buildT0ForV4(ctx, this.#candleList(ctx), { now, candidate });
+    return this.dual.observeRound2({ observationId, t0, execution: this.#agentsV4Execution(ctx, { now, candidate }), g2Action: candidate.action ?? null, v4Action: ctx.lastAgentsV4?.action ?? null });
+  }
+  #finalizeDual(ctx, candidate, action, now) {
+    if (!this.dual?.enabled || !candidate) return null;
+    const observationId = this.#dualObservationId(ctx, candidate);
+    if (!this.dual.observations.has(observationId)) return null;
+    const t0 = this.#buildT0ForV4(ctx, this.#candleList(ctx), { now, candidate });
+    const timingObservation = this.timingShadow.getByCandidate(candidate.id);
+    return this.dual.finalize({
+      observationId, t0, execution: this.#agentsV4Execution(ctx, { now, candidate }),
+      candidate: { targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, payout: ctx.payout },
+      g2Action: candidate.action ?? null, v4Action: action ?? null,
+      lateView: timingObservation ? { lateVerdict: timingObservation.late?.verdict ?? null } : null,
     });
   }
 
@@ -1549,6 +1590,25 @@ export class IqMultiRuntime extends EventEmitter {
         executionGateUntouched: true, stakeUntouched: true, realAllowlistUntouched: true,
       },
     };
+  }
+
+  /** Status do DUAL_REASONING_V1_SHADOW (experimento independente; nunca executa). */
+  dualReasoningStatus() {
+    const status = this.dual.status();
+    return {
+      ...status,
+      enabled: this.config.dualReasoningShadowEnabled === true && this.dual.enabled === true,
+      isolation: { shadowOnly: true, controlsExecution: false, sendsOrders: false, redTeamUntouched: true, lateWindowDecoupled: true, g2Untouched: true, v3Untouched: true, v4Untouched: true, stakeUntouched: true, realAllowlistUntouched: true },
+      realAllowlistUntouched: true,
+    };
+  }
+
+  /** Liga/desliga APENAS o experimento Dual Reasoning. */
+  setDualReasoningEnabled(enabled) {
+    this.config.dualReasoningShadowEnabled = enabled === true;
+    this.dual.setEnabled(enabled === true);
+    this.#emitEvent("dual.reasoning.config", { enabled: this.config.dualReasoningShadowEnabled });
+    return { enabled: this.config.dualReasoningShadowEnabled };
   }
 
   /** Liga/desliga APENAS a observacao V4 (G2/V3/JIT seguem identicos; nao toca producao). */
