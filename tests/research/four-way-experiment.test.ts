@@ -154,7 +154,7 @@ describe("harness 4x3 â€” caps, atomicidade e idempotencia", () => {
     expect(mod.validateExperimentGuards({ ...base, strategyCount: 3 }).errors).toContain("EXPERIMENT_STRATEGY_CAP_REACHED");
     expect(mod.validateExperimentGuards({ ...base, totalCount: 15 }).errors).toContain("EXPERIMENT_TOTAL_CAP_REACHED");
     expect(mod.PRACTICE_ONLY).toBe(true);
-    expect(mod.ARM_PHRASE).toContain("ARMAR EXPERIMENTO 4X3");
+    expect(mod.ARM_PHRASE).toContain("5X3");
   });
   it("freeze declara caminho unico de broker e caps", () => {
     const manifest = mod.fourWayFreezeManifest();
@@ -164,4 +164,5 @@ describe("harness 4x3 â€” caps, atomicidade e idempotencia", () => {
     expect(manifest.practiceOnly).toBe(true);
   });
 });
+
 
