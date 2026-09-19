@@ -14,24 +14,31 @@
  *  3. SCENARIO PERSISTENCE: estagios CANDIDATE, REVALIDATION_1, REVALIDATION_2, FINAL_ENTRY sao
  *     append-only (T0 jamais sobrescrito); as sequencias de scenario/regime/direction/critic/quality/
  *     location/momentum e playbook@candidate vs playbook@entry sao consultaveis.
- *  4. FINAL REVALIDATION acoplada ao LATE_WINDOW_V2: se o cenario mudar invalidando a tese, o candidato
- *     e cancelado (WAIT) — nunca mantem decisao antiga e nunca inverte a direcao.
+ *  4. FINAL REVALIDATION DESACOPLADA: se o cenario mudar invalidando a tese, o candidato e cancelado
+ *     (WAIT) — nunca mantem decisao antiga e nunca inverte a direcao. O instante/deadline e fornecido
+ *     pelo chamador (opaco); este modulo NAO importa, chama nem controla `late-window-timing.mjs`.
+ *     A intersecao analitica com o LATE_WINDOW_V2 vive em `relay/scenario-timing-intersection.mjs`
+ *     (camada observacional separada, somente leitura dos dois estados).
  *  5. ABLATION-ready (pesquisa): `featuresUsed` por analise + componentes desligaveis
  *     (RSI/ADX/microstructure/location/volatility). Sem pesos aprendidos.
  *  6. ZERO LEAKAGE: o T0 e point-in-time, whitelisted e sanitizado (result/settlement/postWindow/
  *     future/broker/causal NUNCA entram na classificacao). O outcome posterior e marcado como OUTCOME
  *     e `usedInClassification:false` — nunca realimenta a classificacao.
  *
- * O motor puro de cenarios vive em `relay/scenario-engine.mjs` (contrato CONGELADO). Este modulo faz
- * dynamic import com fallback deterministico que degrada sem quebrar; o fallback e explicitamente
- * marcado em cada observacao (`engineInfo.mode`).
+ * O motor puro de cenarios vive em `relay/scenario-engine.mjs` (contrato CONGELADO, SCENARIO_ENGINE_V3).
+ * O dynamic import e o caminho PRINCIPAL; o fallback deterministico e apenas FAIL-SAFE EXPLICITO:
+ * fica marcado (`engineInfo.fallbackActive` + `fallbackReason` persistidos) e e logado via sink
+ * opcional — nunca silencioso.
  */
 import { createHash } from "node:crypto";
 import { buildT0Snapshot, findFutureReferences, parseMarketKey, normalizedOutcomePnl, summarizeRows, wilsonInterval } from "./shadow-lab.mjs";
-import { TIMING_POLICY_CURRENT, TIMING_POLICY_LATE, sameExpirationWindow, lateDeadlineAt } from "./late-window-timing.mjs";
 
-export const SCENARIO_SHADOW_VERSION = "scenario-shadow-v1";
+export const SCENARIO_SHADOW_VERSION = "scenario-shadow-v2";
 export const SCENARIO_ENGINE_CONTRACT_VERSION = "scenario-engine-contract-v1";
+/** Versao persistida do motor real (TASK 4 — comparacao futura sem misturar amostras). */
+export const SCENARIO_ENGINE_V3 = "SCENARIO_ENGINE_V3";
+/** Politica de divergencia EXPERIMENTAL explicita (nunca score magico; componentes decompostos). */
+export const DIVERGENCE_POLICY_VERSION = "EXPERIMENTAL_V1";
 
 /** Series SEPARADAS: scenario policy e timing policy nunca se misturam. */
 export const CURRENT_G2 = "CURRENT_G2";
@@ -60,8 +67,11 @@ export const SCENARIO_SHADOW_POLICY = Object.freeze({
   controlsThresholds: false,
   controlsProductionCritic: false,
   criticMode: "INDEPENDENT_TWO_PHASE",
-  divergencePolicy: "INVESTIGATION_NEVER_VOTING",
+  divergencePolicy: DIVERGENCE_POLICY_VERSION,
+  divergenceMode: "INVESTIGATION_NEVER_VOTING",
   directionPolicy: "NEVER_FLIPS_DIRECTION_FAIL_TO_WAIT",
+  criticDirectionPolicy: "NEVER_ADOPT_CRITIC_DIRECTION_CONFLICT_UNRESOLVED_UNTIL_EVIDENCE",
+  timingCoupling: "NONE",
   note: "Nunca envia ordem; o Brain G2, o Critic atual, Consensus, stake, JIT e Execution Gate permanecem intocados.",
 });
 
@@ -95,7 +105,7 @@ export const ABLATION_POLICY = Object.freeze({
 
 /* ------------------------------------------------------------------ engine (dynamic import + fallback) */
 
-export const ENGINE_CONTRACT = Object.freeze(["REGIMES", "SCENARIOS", "extractContext", "classifyRegime", "classifyScenario", "evaluatePlaybook", "analyzeScenario"]);
+export const ENGINE_CONTRACT = Object.freeze(["SCENARIO_ENGINE_VERSION", "REGIMES", "SCENARIOS", "extractContext", "classifyRegime", "classifyScenario", "evaluatePlaybook", "analyzeScenario"]);
 
 const num = (value) => (value === null || value === undefined || value === "" ? null : (Number.isFinite(Number(value)) ? Number(value) : null));
 const round = (value, digits = 4) => (Number.isFinite(Number(value)) ? Number(Number(value).toFixed(digits)) : null);
@@ -333,9 +343,11 @@ function fallbackEvaluatePlaybook(playbook = PLAYBOOKS.NO_SCENARIO, context = {}
   };
 }
 
-/** Fallback deterministico do contrato congelado (usado quando `scenario-engine.mjs` ainda nao existe). */
+/** Fallback deterministico do contrato congelado: FAIL-SAFE EXPLICITO do motor real. */
+export const FALLBACK_ENGINE_VERSION = "scenario-engine-fallback-v1";
 export const FALLBACK_ENGINE = Object.freeze({
-  version: "scenario-engine-fallback-v1",
+  SCENARIO_ENGINE_VERSION: "SCENARIO_ENGINE_FALLBACK_V1",
+  version: FALLBACK_ENGINE_VERSION,
   REGIMES: FALLBACK_REGIMES,
   SCENARIOS: FALLBACK_SCENARIOS,
   extractContext: fallbackExtractContext,
@@ -385,10 +397,35 @@ let engineLoadError = null;
 let engineLoadPromise = null;
 let engineLoadStartedAt = null;
 let engineLoadResolvedAt = null;
+/** Estado explicito do fail-safe: nunca silencioso (flag + motivo persistidos/logados). */
+let engineState = { status: "PENDING", fallbackActive: true, fallbackReason: "ENGINE_NOT_LOADED", fallbackLogged: false };
+let engineLogSink = null;
+
+/** Sink opcional de log (runtime). FAIL-SAFE e sempre registrado no estado, com ou sem sink. */
+export function setScenarioEngineLogSink(sink) { engineLogSink = typeof sink === "function" ? sink : null; return engineLogSink !== null; }
+
+function markFallback(reason) {
+  engineState = { ...engineState, fallbackActive: true, fallbackReason: reason };
+  if (!engineState.fallbackLogged) {
+    engineState.fallbackLogged = true;
+    try { engineLogSink?.("SCENARIO_ENGINE_FAILSAFE_ACTIVE", JSON.stringify({ reason, explicit: true })); } catch { /* sink nunca derruba */ }
+  }
+  return null;
+}
+
+function markLoaded(engine, status) {
+  engineState = { status, fallbackActive: false, fallbackReason: null, fallbackLogged: false };
+  return engine;
+}
+
+export function engineVersionOf(engine = null) {
+  const resolved = engine ?? currentScenarioEngine();
+  return resolved?.SCENARIO_ENGINE_VERSION ?? resolved?.version ?? "UNKNOWN";
+}
 
 /**
- * Dynamic import do contrato congelado. Ausencia/erro NUNCA derruba o modulo: cai no FALLBACK_ENGINE.
- * Tambem rejeita motores sem as funcoes essenciais (degrada explicitamente).
+ * Dynamic import do contrato congelado (caminho PRINCIPAL). Ausencia/erro NUNCA derruba o modulo:
+ * cai no FALLBACK_ENGINE como FAIL-SAFE EXPLICITO (motivo em `scenarioEngineInfo().fallbackReason`).
  */
 export function loadScenarioEngine() {
   if (!engineLoadPromise) {
@@ -397,11 +434,11 @@ export function loadScenarioEngine() {
       .then((module) => {
         const missing = ENGINE_CONTRACT.filter((key) => module?.[key] === undefined);
         if (typeof module?.analyzeScenario !== "function") missing.push("analyzeScenario:function");
-        if (missing.length) { engineLoadError = `ENGINE_CONTRACT_INCOMPLETE:${missing.join(",")}`; return null; }
+        if (missing.length) { engineLoadError = `ENGINE_CONTRACT_INCOMPLETE:${missing.join(",")}`; return markFallback(engineLoadError); }
         loadedEngine = module;
-        return module;
+        return markLoaded(module, "LOADED");
       })
-      .catch((error) => { engineLoadError = String(error?.code ?? error?.message ?? error).slice(0, 160); return null; })
+      .catch((error) => { engineLoadError = String(error?.code ?? error?.message ?? error).slice(0, 160); return markFallback(`ENGINE_IMPORT_FAILED:${engineLoadError}`); })
       .finally(() => { engineLoadResolvedAt = Date.now(); });
   }
   return engineLoadPromise;
@@ -413,19 +450,32 @@ export function attachScenarioEngine(engine) {
   loadedEngine = engine;
   engineLoadError = null;
   engineLoadResolvedAt = Date.now();
+  markLoaded(engine, "ATTACHED");
   return engine;
+}
+
+/** Remove a injecao explicita (volta ao motor importado/fallback) — usado apenas em testes. */
+export function detachScenarioEngine() {
+  loadedEngine = null;
+  engineState = { status: "DETACHED", fallbackActive: true, fallbackReason: "ENGINE_DETACHED", fallbackLogged: true };
+  return currentScenarioEngine();
 }
 
 export function currentScenarioEngine() { return loadedEngine ?? FALLBACK_ENGINE; }
 
 export function scenarioEngineInfo() {
   const engine = currentScenarioEngine();
+  const fallback = loadedEngine === null;
   return {
     contractVersion: SCENARIO_ENGINE_CONTRACT_VERSION, contract: [...ENGINE_CONTRACT],
-    mode: loadedEngine ? "SCENARIO_ENGINE" : "FALLBACK",
-    version: engine.version ?? null, loadError: engineLoadError,
+    mode: fallback ? "FALLBACK" : "SCENARIO_ENGINE",
+    status: engineState.status, version: engineVersionOf(engine), scenarioEngineVersion: engineVersionOf(engine),
+    fallbackActive: engineState.fallbackActive, fallbackReason: engineState.fallbackReason,
+    loadError: engineLoadError,
     loadStartedAt: engineLoadStartedAt, loadResolvedAt: engineLoadResolvedAt,
-    note: loadedEngine ? "Motor puro importado de relay/scenario-engine.mjs." : "Fallback deterministico ativo; o contrato congelado sera usado assim que o modulo existir.",
+    note: fallback
+      ? `FAIL-SAFE EXPLICITO: ${engineState.fallbackReason ?? "ENGINE_UNAVAILABLE"} (fallback deterministico).`
+      : "Motor puro importado de relay/scenario-engine.mjs.",
   };
 }
 
@@ -638,8 +688,24 @@ export function normalizeAnalysis(raw = {}, input = {}) {
     rule: source.rule ?? null,
     playbook: source.playbook ?? null,
     engineError,
+    degradedReason: engineError,
     degradedToFallback: Boolean(engineError),
   };
+}
+
+/**
+ * Analise pura do motor para estagios intermediarios (runtime SHADOW). Nao cria observacao nem
+ * persiste; o chamador registra o estagio via `ScenarioShadow.recordStage`.
+ */
+export function analyzeScenarioSnapshot({ snapshot = {}, direction = null, ablation = null, engine = null, phase = "STAGE" } = {}) {
+  const resolvedEngine = engine ?? currentScenarioEngine();
+  const clean = sanitizePointInTime(snapshot ?? {});
+  const features = buildScenarioFeatures(clean, { direction, ablation });
+  return analyzeWithEngine(resolvedEngine, {
+    phase, snapshot: clean, marketKey: snapshot?.marketKey ?? null, marketType: snapshot?.marketType ?? null,
+    direction, features: features.features, featuresUsed: features.featuresUsed,
+    ablation: features.ablation.config, traderConclusionVisible: true,
+  });
 }
 
 /* ------------------------------------------------------------------ divergence resolution (investigation) */
@@ -696,8 +762,15 @@ export function resolveScenarioDivergence({ trader = null, critic = null, snapsh
   const satisfied = RESOLUTION_POINTS.filter((point) => evidence[point] === true);
   const known = RESOLUTION_POINTS.filter((point) => evidence[point] !== undefined);
   const missing = RESOLUTION_POINTS.filter((point) => evidence[point] === undefined);
+  // Evidencia DECOMPOSTA: cada uma das 6 checagens individualmente (valor + estado), sem score magico.
+  const checks = RESOLUTION_POINTS.map((point) => ({
+    point,
+    value: evidence[point] === undefined ? null : evidence[point] === true,
+    state: evidence[point] === undefined ? "UNKNOWN" : evidence[point] === true ? "SATISFIED" : "NOT_SATISFIED",
+  }));
   const base = {
     divergence: "SAME",
+    divergencePolicy: DIVERGENCE_POLICY_VERSION,
     scenarioAgreement,
     actionAgreement,
     regimeAgreement,
@@ -707,18 +780,31 @@ export function resolveScenarioDivergence({ trader = null, critic = null, snapsh
     criticAction,
     investigation: false,
     resolutionPoints: evidence,
+    checks,
+    satisfiedCount: satisfied.length,
+    knownCount: known.length,
+    requiredCount: MIN_RESOLUTION_EVIDENCE,
+    oppositeRequiredCount: MIN_OPPOSITE_DIRECTION_EVIDENCE,
     resolutionSatisfied: satisfied,
     resolutionKnown: known,
     resolutionMissing: missing,
     resolutionRule: `RESOLVE_TRADER_DIRECTION_ONLY_WITH_>=${MIN_RESOLUTION_EVIDENCE}/6_EXPLICIT_EVIDENCE`,
+    criticDirectionAdopted: false,
     directionFlipForbidden: true,
     adoptedDirection: null,
   };
   if (scenarioAgreement && actionAgreement) return { ...base, finalAction: traderAction, reasonsForWait: [] };
   if (directionOpposite(traderAction, criticAction)) {
     const needed = MIN_OPPOSITE_DIRECTION_EVIDENCE;
-    if (satisfied.length >= needed && missing.length === 0) return { ...base, divergence: "DIRECTION_OPPOSITE", investigation: true, finalAction: traderAction, reasonsForWait: [] };
-    return { ...base, divergence: "DIRECTION_OPPOSITE", investigation: true, finalAction: "WAIT", reasonsForWait: ["DIRECTION_OPPOSITE_INVESTIGATION", `EVIDENCE_${satisfied.length}_OF_${needed}`, "NEVER_ADOPT_CRITIC_DIRECTION"] };
+    // Conflito Trader CALL x Critic PUT: WAIT/CONFLICT_UNRESOLVED ate evidencia suficiente; a direcao
+    // do Critic NUNCA e adotada (mesmo resolvido, o resultado e a direcao do Trader ou WAIT).
+    if (satisfied.length >= needed && missing.length === 0) {
+      return { ...base, divergence: "DIRECTION_OPPOSITE", investigation: true, conflict: "RESOLVED_TRADER_DIRECTION_ONLY", finalAction: traderAction, reasonsForWait: [] };
+    }
+    return {
+      ...base, divergence: "DIRECTION_OPPOSITE", investigation: true, conflict: "CONFLICT_UNRESOLVED",
+      finalAction: "WAIT", reasonsForWait: ["CONFLICT_UNRESOLVED", "DIRECTION_OPPOSITE_INVESTIGATION", `EVIDENCE_${satisfied.length}_OF_${needed}`, "NEVER_ADOPT_CRITIC_DIRECTION"],
+    };
   }
   if (!regimeAgreement) return { ...base, divergence: "REGIME_MISMATCH", investigation: true, finalAction: "WAIT", reasonsForWait: ["REGIME_MISMATCH_INVESTIGATION", "DIRECTION_FLIP_FORBIDDEN"] };
   if (traderAction !== "WAIT" && criticAction === "WAIT") {
@@ -738,17 +824,20 @@ function directionOpposite(a, b) {
   return (a === "BUY" && b === "SELL") || (a === "SELL" && b === "BUY");
 }
 
-/* ------------------------------------------------------------------ late window coupling */
+/* ------------------------------------------------------------------ timing view (opaque, caller-provided) */
 
-/** Acopla a observacao ao LATE_WINDOW_V2 (mesma expiracao, deadline real). Somente leitura. */
-export function coupleLateWindow({ targetExpiryAt = null, productKind = "turbo", marginMs = undefined, timingPolicyVersion = null } = {}) {
-  const window = sameExpirationWindow({ targetExpiryAt, productKind });
-  const deadlineAt = window.supported ? lateDeadlineAt({ targetExpiryAt, marginMs: marginMs ?? 1_000, productKind }) : null;
+/**
+ * Visao de timing OPAQUE: o chamador (runtime/intersecao) informa o label da politica e o deadline.
+ * Este modulo NAO importa `late-window-timing.mjs`, NAO calcula deadline de politica e NAO controla
+ * timing — apenas registra o instante em que sua propria revalidacao e considerada valida.
+ */
+export function buildTimingView({ timingView = null, deadlineAt = null, timingPolicyVersion = null, source = "CALLER" } = {}) {
   return {
-    timingPolicyVersion: TIMING_POLICY_LATE,
-    currentTimingPolicyVersion: TIMING_POLICY_CURRENT,
-    requestedTimingPolicyVersion: timingPolicyVersion ?? TIMING_POLICY_LATE,
-    window, deadlineAt, supported: window.supported, reason: window.reason ?? null,
+    timingPolicyVersion: timingView?.timingPolicyVersion ?? timingPolicyVersion ?? null,
+    currentTimingPolicyVersion: timingView?.currentTimingPolicyVersion ?? null,
+    deadlineAt: firstFinite(timingView?.deadlineAt, deadlineAt),
+    supported: timingView?.supported ?? null,
+    source: timingView?.source ?? source,
     execution: "SHADOW_ONLY", controlsExecution: false,
   };
 }
@@ -763,7 +852,7 @@ export function evaluateFinalRevalidation({ observation = {}, analysis = null, a
   const nextScenario = analysis?.primaryScenario ?? null;
   const nextAnalysisAction = analysis?.action ?? null;
   const scenarioChanged = previousScenario !== null && nextScenario !== null && previousScenario !== nextScenario;
-  const invalidatingScenarios = new Set(["FAILED_BREAKOUT", "EXHAUSTION", "NO_SCENARIO", "REVERSAL"]);
+  const invalidatingScenarios = new Set(["FAILED_BREAKOUT", "EXHAUSTION", "NO_SCENARIO", "REVERSAL", "TRANSITION_NO_TRADE", "TRANSITION"]);
   const invalidationReasons = Array.isArray(analysis?.invalidationReasons) ? analysis.invalidationReasons : [];
   const thesisInvalidated = scenarioChanged && invalidatingScenarios.has(nextScenario);
   const directionFlipped = nextAnalysisAction !== null && (previousAction === "BUY" || previousAction === "SELL") && (nextAnalysisAction === "BUY" || nextAnalysisAction === "SELL") && nextAnalysisAction !== previousAction;
@@ -819,7 +908,8 @@ export function runScenarioShadow({
   direction = null, payout = null, provenance = "PROSPECTIVE",
   candidateAt = null, decisionAt = null, jitAt = null, finalEntryAt = null, targetEntryAt = null, targetExpiryAt = null,
   quality = null, location = null, momentum = null, currentDecision = null,
-  lateWindow = null, timingPolicyVersion = null, ablation = null, engine = null, now = () => Date.now(),
+  timingView = null, lateWindow = null, timingPolicyVersion = null, deadlineAt = null,
+  ablation = null, engine = null, now = () => Date.now(),
   executionGate = null,
 } = {}) {
   const resolvedEngine = engine ?? currentScenarioEngine();
@@ -853,25 +943,43 @@ export function runScenarioShadow({
   const divergence = resolveScenarioDivergence({ trader: traderScenario, critic: criticScenario, snapshot: t0, features: features.features, resolutionEvidence });
   const agreement = divergence.scenarioAgreement && divergence.actionAgreement;
   const decision = currentDecision ?? traderView?.currentDecision ?? traderView?.consensus?.action ?? t0?.consensus?.action ?? traderView?.action ?? null;
-  const late = lateWindow ?? coupleLateWindow({ targetExpiryAt, timingPolicyVersion });
+  const timing = buildTimingView({ timingView: timingView ?? lateWindow, deadlineAt, timingPolicyVersion });
   const scenarioAction = divergence.finalAction ?? "WAIT";
   const reasonsForWait = sceneReasons({ divergence, critic: criticScenario, scenarioAction });
+  // FAIL-SAFE EXPLICITO: qualquer degradacao por analise fica registrada (nunca silenciosa).
+  const degradedAnalyses = [
+    ...(criticScenario.degradedToFallback ? [{ phase: "PHASE1_INDEPENDENT", reason: criticScenario.degradedReason ?? "ENGINE_ERROR" }] : []),
+    ...(traderScenario.degradedToFallback ? [{ phase: "PHASE2_TRADER", reason: traderScenario.degradedReason ?? "ENGINE_ERROR" }] : []),
+  ];
+  const engineInfoBase = scenarioEngineInfo();
+  const engineInfo = {
+    ...engineInfoBase,
+    criticPhase: "PHASE1_FROZEN_BEFORE_TRADER", traderPhase: "PHASE2_COMPARISON",
+    usedEngineVersion: engineVersionOf(resolvedEngine),
+    fallbackUsed: resolvedEngine === FALLBACK_ENGINE || degradedAnalyses.length > 0,
+    degradedAnalyses,
+  };
+  const seriesKey = `${SCENARIO_ENGINE_V3_SHADOW}|${engineVersionOf(resolvedEngine)}|${timing.timingPolicyVersion ?? "TIMING_UNSPECIFIED"}`;
 
   const observation = {
     id: scenarioObservationKey({ candidateId, executionId, tradeId, marketKey, targetExpiryAt }),
     version: SCENARIO_SHADOW_VERSION, kind: SCENARIO_SHADOW_KIND, provenance,
     scenarioPolicyVersion: SCENARIO_ENGINE_V3_SHADOW, currentPolicyVersion: CURRENT_G2,
-    timingPolicyVersion: late.timingPolicyVersion ?? TIMING_POLICY_LATE,
+    scenarioEngineVersion: engineVersionOf(resolvedEngine),
+    timingPolicyVersion: timing.timingPolicyVersion,
+    seriesKey,
     marketKey, marketType, activeId, agentId, candidateId, correlationId, executionId, tradeId,
     direction: dir, payout: num(payout),
     candidateAt, decisionAt, jitAt, finalEntryAt, targetEntryAt, targetExpiryAt,
     currentDecision: { action: decision, source: "CURRENT_G2", altered: false, controlsExecution: "UNCHANGED", reason: traderView?.waitReason ?? null },
     scenarioDecision: {
       action: scenarioAction, source: SCENARIO_ENGINE_V3_SHADOW, divergence: divergence.divergence,
+      divergencePolicy: divergence.divergencePolicy, conflict: divergence.conflict ?? null,
       investigation: divergence.investigation, directionFlipForbidden: true,
-      adoptedDirection: divergence.finalAction === "BUY" || divergence.finalAction === "SELL" ? divergence.finalAction : null,
+      adoptedDirection: null, resultingAction: scenarioAction, checks: divergence.checks,
+      criticDirectionAdopted: false,
       reasonsForWait, resolutionRule: divergence.resolutionRule, evidence: divergence.resolutionPoints,
-      note: "Decisao SHADOW; nunca executada e nunca comparada como voto.",
+      note: "Decisao SHADOW; nunca executada e nunca comparada como voto. Direcao do Critic NUNCA adotada.",
     },
     traderScenario, criticScenario,
     criticFreeze: { frozenHash: criticFreeze.frozenHash, frozenAt: criticFreeze.frozenAt, phase: criticFreeze.phase, criticSawTraderConclusion: false, engineMode: criticFreeze.engineMode },
@@ -883,7 +991,7 @@ export function runScenarioShadow({
         traderAction: divergence.traderAction, criticAction: divergence.criticAction,
       },
       resolutionSatisfied: divergence.resolutionSatisfied, resolutionKnown: divergence.resolutionKnown, resolutionMissing: divergence.resolutionMissing,
-      adoptedDirection: divergence.finalAction, directionFlipForbidden: true,
+      checks: divergence.checks, adoptedDirection: null, directionFlipForbidden: true,
     },
     agreement,
     divergence,
@@ -903,7 +1011,7 @@ export function runScenarioShadow({
     },
     stages: [{ stage: "CANDIDATE", at: candidateAt, action: traderScenario.action, scenario: traderScenario.primaryScenario, regime: traderScenario.marketRegime, hash: sha256Hex(traderScenario) }],
     transitions: [{ at: candidateAt, from: null, to: traderScenario.primaryScenario, stage: "CANDIDATE" }],
-    lateWindow: late,
+    timingView: timing,
     ablation: { config: ablationPlan.config, disabled: ablationPlan.disabled, policy: ablationPlan.policy, featuresUsed: traderScenario.featuresUsed },
     featuresUsed: traderScenario.featuresUsed,
     evidenceFor: traderScenario.scenarioEvidenceFor, evidenceAgainst: traderScenario.scenarioEvidenceAgainst,
@@ -915,7 +1023,8 @@ export function runScenarioShadow({
       postWindowFeedable: false, outcomeFeedableToClassification: false,
     },
     currentCritic: criticView && Object.keys(criticView).length ? { assessment: criticView.traderAssessment ?? criticView.action ?? null, contradictions: criticView.contradictions ?? [], riskFlags: criticView.riskFlags ?? [] } : null,
-    engineInfo: { ...scenarioEngineInfo(), criticPhase: "PHASE1_FROZEN_BEFORE_TRADER", traderPhase: "PHASE2_COMPARISON" },
+    engineInfo,
+    engineFallback: { active: engineInfo.fallbackActive || degradedAnalyses.length > 0, reason: engineInfo.fallbackReason ?? degradedAnalyses[0]?.reason ?? null, explicit: true },
     outcome: null, outcomeAt: null, outcomeUsedInClassification: false,
     settlementBasis: null, brokerResult: null, brokerProfit: null, theoreticalResult: null, theoreticalPnl: null,
     status: "CLASSIFIED", finalAction: scenarioAction, cancelReason: null,
@@ -988,7 +1097,7 @@ function momentumPoint(momentum, stage, at) { return { stage, at, value: momentu
 
 /* ------------------------------------------------------------------ persistence + lifecycle */
 
-const OBSERVATION_SELECT = `SELECT observation_id, version, scenario_policy_version, current_policy_version, timing_policy_version, kind, provenance,
+const OBSERVATION_SELECT = `SELECT observation_id, version, scenario_policy_version, scenario_engine_version, current_policy_version, timing_policy_version, kind, provenance,
   market_key, market_type, active_id, agent_id, candidate_id, correlation_id, execution_id, trade_id,
   candidate_at, decision_at, jit_at, final_entry_at, target_entry_at, target_expiry_at, direction, payout,
   t0, current_decision, scenario_decision, trader_scenario, critic_scenario, agreement, divergence, persistence,
@@ -1002,7 +1111,7 @@ function rowToObservation(row) {
   if (!row) return null;
   return {
     id: row.observation_id, version: row.version, kind: row.kind, provenance: row.provenance,
-    scenarioPolicyVersion: row.scenario_policy_version, currentPolicyVersion: row.current_policy_version, timingPolicyVersion: row.timing_policy_version,
+    scenarioPolicyVersion: row.scenario_policy_version, scenarioEngineVersion: row.scenario_engine_version, currentPolicyVersion: row.current_policy_version, timingPolicyVersion: row.timing_policy_version,
     marketKey: row.market_key, marketType: row.market_type, activeId: row.active_id, agentId: row.agent_id,
     candidateId: row.candidate_id, correlationId: row.correlation_id, executionId: row.execution_id, tradeId: row.trade_id,
     candidateAt: fromDbMs(row.candidate_at), decisionAt: fromDbMs(row.decision_at), jitAt: fromDbMs(row.jit_at), finalEntryAt: fromDbMs(row.final_entry_at),
@@ -1023,18 +1132,21 @@ function rowToObservation(row) {
 }
 
 export class ScenarioShadow {
-  constructor({ pool = null, store = null, engine = null, now = () => Date.now(), log = () => {}, maxInMemory = 1_000 } = {}) {
+  constructor({ pool = null, store = null, engine = null, now = () => Date.now(), log = () => {}, maxInMemory = 1_000, enabled = true } = {}) {
     this.pool = pool;
     this.store = store;
     this.engine = engine;
     this.now = now;
     this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
     this.maxInMemory = maxInMemory;
+    this.enabled = enabled === true;
     this.observations = new Map();
     this.byMarket = new Map();
     this.byCandidate = new Map();
     this.persist = { attempts: 0, failures: 0, lastError: null, lastOkAt: null };
   }
+
+  setEnabled(enabled) { this.enabled = enabled === true; return this.enabled; }
 
   #remember(observation) {
     this.observations.set(observation.id, observation);
@@ -1058,6 +1170,7 @@ export class ScenarioShadow {
 
   /** Observacao SHADOW (2 fases) + persistencia best-effort. Nunca derruba o runtime. */
   observe(input = {}) {
+    if (this.enabled !== true) return null;
     const observation = runScenarioShadow({ ...input, engine: input.engine ?? this.engine, now: input.now ?? this.now });
     this.#remember(observation);
     observation.persistPromise = this.#persistInsert(observation);
@@ -1112,17 +1225,24 @@ export class ScenarioShadow {
   }
 
   /**
-   * FINAL REVALIDATION acoplada ao LATE_WINDOW_V2: cenario que invalida a tese cancela (WAIT).
+   * FINAL REVALIDATION DESACOPLADA: cenario que invalida a tese cancela (WAIT). O deadline e opaco e
+   * fornecido pelo chamador; nenhuma politica de timing e importada/consultada aqui.
    * Nunca mantem a decisao antiga e nunca inverte a direcao.
    */
-  revalidateFinal({ observationId = null, candidateId = null, analysis = {}, atMs = null, deadlineAt = null, timingPolicyVersion = TIMING_POLICY_LATE, quality = null, location = null, momentum = null, lateWindow = null } = {}) {
+  revalidateFinal({ observationId = null, candidateId = null, analysis = {}, atMs = null, deadlineAt = null, timingPolicyVersion = null, timingView = null, quality = null, location = null, momentum = null, lateWindow = null } = {}) {
     const observation = observationId ? this.get(observationId) : this.getByCandidate(candidateId);
     if (!observation) return null;
     const at = atMs ?? this.now();
-    const deadline = deadlineAt ?? observation.lateWindow?.deadlineAt ?? null;
+    const nextTiming = timingView ?? lateWindow ?? null;
+    const deadline = firstFinite(deadlineAt, nextTiming?.deadlineAt, observation.timingView?.deadlineAt);
     const revalidation = evaluateFinalRevalidation({ observation, analysis, atMs: at, deadlineAt: deadline });
     this.recordStage({ observationId: observation.id, stage: "FINAL_ENTRY", analysis, quality, location, momentum, atMs: at, source: "FINAL_REVALIDATION" });
-    observation.lateWindow = { ...(observation.lateWindow ?? {}), ...(lateWindow ?? {}), timingPolicyVersion, deadlineAt: deadline, lastRevalidationAt: at };
+    observation.timingView = {
+      ...(observation.timingView ?? buildTimingView({})),
+      ...(nextTiming ?? {}),
+      timingPolicyVersion: nextTiming?.timingPolicyVersion ?? timingPolicyVersion ?? observation.timingView?.timingPolicyVersion ?? null,
+      deadlineAt: deadline, lastRevalidationAt: at,
+    };
     if (revalidation.afterDeadline) {
       observation.status = observation.status === "SETTLED" ? "SETTLED" : "CLASSIFIED";
     } else if (revalidation.cancelled) {
@@ -1195,6 +1315,7 @@ export class ScenarioShadow {
     return {
       ...buildScenarioShadowDashboard({ observations: this.list(), executedTrades }),
       at: this.now(),
+      enabled: this.enabled === true,
       store: { mode: this.store ? "INJECTED" : this.pool ? "POSTGRES" : "MEMORY", ...this.persist },
       executionControl: "NONE",
       engineInfo: scenarioEngineInfo(),
@@ -1216,6 +1337,7 @@ export class ScenarioShadow {
         observation_id: add(`?`, observation.id),
         version: add(`?`, observation.version),
         scenario_policy_version: add(`?`, observation.scenarioPolicyVersion),
+        scenario_engine_version: add(`?`, observation.scenarioEngineVersion ?? engineVersionOf(null)),
         current_policy_version: add(`?`, observation.currentPolicyVersion),
         timing_policy_version: add(`?`, observation.timingPolicyVersion),
         kind: add(`?`, observation.kind),
@@ -1361,10 +1483,25 @@ export function buildScenarioShadowDashboard({ observations = [], executedTrades
   const scenarioCounts = (pick) => prospective.reduce((acc, row) => { const key = pick(row) ?? "UNSPECIFIED"; acc[key] = (acc[key] ?? 0) + 1; return acc; }, {});
   const changedRows = prospective.filter((row) => row.persistence?.scenarioChanged === true);
   const cancelledRows = prospective.filter((row) => row.status === "CANCELLED" || row.scenarioDecision?.cancelled === true);
+  const seriesCounts = all.reduce((acc, row) => {
+    const key = row.seriesKey ?? `${row.scenarioPolicyVersion ?? "UNKNOWN"}|${row.scenarioEngineVersion ?? "UNKNOWN"}|${row.timingPolicyVersion ?? "TIMING_UNSPECIFIED"}`;
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
   return {
     version: SCENARIO_SHADOW_VERSION,
     policy: SCENARIO_SHADOW_POLICY,
     engine: scenarioEngineInfo(),
+    engineFallback: {
+      active: all.filter((row) => row.engineFallback?.active === true || row.engineInfo?.fallbackActive === true).length,
+      prospective: prospective.filter((row) => row.engineFallback?.active === true).length,
+      note: "Fallback do motor e FAIL-SAFE explicito: toda observacao degradada registra motivo.",
+    },
+    series: {
+      keyed: "SCENARIO_POLICY|SCENARIO_ENGINE_VERSION|TIMING_POLICY",
+      counts: seriesCounts,
+      note: "Series versionadas permitem comparar G2+CURRENT_JIT / G2+LATE_WINDOW_V2 / V3+CURRENT_JIT / V3+LATE_WINDOW_V2 sem misturar amostras.",
+    },
     separation: "BROKER_EXECUTED != COUNTERFACTUAL != HISTORICAL != PROSPECTIVE",
     sections: {
       BROKER_EXECUTED: {
@@ -1392,6 +1529,8 @@ export function buildScenarioShadowDashboard({ observations = [], executedTrades
       mode: "INDEPENDENT_TWO_PHASE",
       frozenBeforeTrader: prospective.filter((row) => row.criticFreeze?.criticSawTraderConclusion === false).length,
       violations: prospective.filter((row) => row.criticFreeze?.criticSawTraderConclusion !== false).length,
+      criticDirectionAdopted: prospective.filter((row) => row.scenarioDecision?.criticDirectionAdopted === true || row.divergence?.criticDirectionAdopted === true).length,
+      directionPolicy: "NEVER_ADOPT_CRITIC_DIRECTION_CONFLICT_UNRESOLVED_UNTIL_EVIDENCE",
     },
     agreement: {
       n: prospective.length, agreed: agreementRows.length,
@@ -1423,16 +1562,22 @@ export function buildScenarioShadowDashboard({ observations = [], executedTrades
 
 export const scenarioShadow = new ScenarioShadow();
 
-/** Payload do endpoint GET /api/iq/research/scenario-shadow (aditivo; nunca executa nada). */
-export function scenarioShadowStatus({ observations = null, executedTrades = [] } = {}) {
+/**
+ * Payload do endpoint GET /api/iq/research/scenario-shadow (aditivo; nunca executa nada).
+ * NAO conhece politica de timing: a intersecao e anexada pelo runtime/server via
+ * `relay/scenario-timing-intersection.mjs` (camada observacional separada).
+ */
+export function scenarioShadowStatus({ observations = null, executedTrades = [], enabled = null } = {}) {
   return {
     ...buildScenarioShadowDashboard({ observations: observations ?? scenarioShadow.list(), executedTrades }),
     persist: { ...scenarioShadow.persist, mode: scenarioShadow.store ? "INJECTED" : scenarioShadow.pool ? "POSTGRES" : "MEMORY" },
     scenarioPolicyVersion: SCENARIO_ENGINE_V3_SHADOW,
+    scenarioEngineVersion: engineVersionOf(null),
     currentPolicyVersion: CURRENT_G2,
-    timingPolicyVersion: TIMING_POLICY_LATE,
-    currentTimingPolicyVersion: TIMING_POLICY_CURRENT,
-    isolation: { marketKeyKeyed: true, normalOtcSeparated: true, seriesSeparated: [CURRENT_G2, SCENARIO_ENGINE_V3_SHADOW, TIMING_POLICY_CURRENT, TIMING_POLICY_LATE] },
+    divergencePolicy: DIVERGENCE_POLICY_VERSION,
+    enabled: enabled === null ? true : enabled === true,
+    timingCoupling: "NONE",
+    isolation: { marketKeyKeyed: true, normalOtcSeparated: true, scenarioSeries: [CURRENT_G2, `${SCENARIO_ENGINE_V3_SHADOW}+${engineVersionOf(null)}`], timingPolicyKnown: false },
   };
 }
 

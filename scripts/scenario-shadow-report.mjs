@@ -84,7 +84,7 @@ async function main() {
   };
   try {
     const rows = (await pool.query(
-      `SELECT observation_id, version, scenario_policy_version, current_policy_version, timing_policy_version, provenance,
+      `SELECT observation_id, version, scenario_policy_version, scenario_engine_version, current_policy_version, timing_policy_version, provenance,
               market_key, market_type, candidate_id, correlation_id, candidate_at, final_entry_at, target_entry_at, target_expiry_at, direction, payout,
               current_decision, scenario_decision, trader_scenario, critic_scenario, critic_freeze, comparison, agreement, divergence, persistence,
               scenario_at_candidate, scenario_at_revalidation1, scenario_at_revalidation2, scenario_at_final_entry,
@@ -102,7 +102,9 @@ async function main() {
       settled: settled.length,
       distinctMarkets: new Set(rows.map((row) => row.market_key)).size,
       scenarioPolicyVersions: [...new Set(rows.map((row) => row.scenario_policy_version))],
+      scenarioEngineVersions: [...new Set(rows.map((row) => row.scenario_engine_version))],
       timingPolicyVersions: [...new Set(rows.map((row) => row.timing_policy_version))],
+      series: Object.entries(countBy(rows, (row) => `${row.scenario_policy_version}|${row.scenario_engine_version}|${row.timing_policy_version}`)).map(([key, count]) => ({ key, count })),
     };
     out.sections = scenarioShadowSections(rows);
     out.critic = {

@@ -35,6 +35,10 @@ import { ENTRY_TIMING_VERSION, DEFAULT_ENTRY_LEAD_MS, DEFAULT_MAX_DRIFT_MS, MIN_
 import { TRADE_QUALITY_VERSION, ARM_IDS, DEFAULT_MIN_TRADE_QUALITY_SCORE, MIN_TRADE_QUALITY_SCORE_LIMIT, MAX_TRADE_QUALITY_SCORE_LIMIT, evaluateShadowArms, featuresFromSnapshot, performanceHealth, BREAK_EVEN_WR, scoreTradeQuality, entryLocationCheck, finalMicrostructureVeto } from "./trade-quality.mjs";
 import { ShadowLab, decisionSourceOf, PROSPECTIVE_CHECKPOINT_N } from "./shadow-lab.mjs";
 import { LateWindowTimingShadow, TIMING_POLICY_CURRENT, TIMING_POLICY_LATE, LATE_WINDOW_POLICY, LATE_WINDOW_VERSION, adaptiveLateMarginMs } from "./late-window-timing.mjs";
+// SCENARIO ENGINE V3 (SHADOW): observacao independente. NUNCA toca Brain/Trader/Critic/Consensus/Quality Gate/JIT/Execution Gate.
+import { ScenarioShadow, analyzeScenarioSnapshot, scenarioShadowStatus as buildScenarioShadowStatus, setScenarioEngineLogSink } from "./scenario-shadow.mjs";
+// INTERSECAO OBSERVACIONAL: unico ponto que compara scenario x timing (somente leitura dos dois estados).
+import { ScenarioTimingIntersectionShadow } from "./scenario-timing-intersection.mjs";
 import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, DEFAULT_GLOBAL_MAX_STAKE, concentrationExposure } from "./market-universe.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
@@ -62,7 +66,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -73,7 +77,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.reconnects = 0; this.connectionStartedAt = null;
     this.session = { connected: false, host: null, connectionId: null, serverTimeMs: null, clockSkewMs: null, timeValid: false, connectedAt: null };
     this.account = { practice: { verified: false, balanceId: null, balance: null, currency: null }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: null, type: "UNKNOWN" };
-    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE };
+    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true };
     this.markets = new Map();
     for (const entry of UNIVERSE) {
       const key = marketKey(entry.canonical, entry.marketType);
@@ -99,6 +103,11 @@ export class IqMultiRuntime extends EventEmitter {
     this.shadowLab = new ShadowLab({ pool, now, log: this.log });
     // LATE WINDOW TIMING (Fase 4): LATE_WINDOW_V2 vs CURRENT_V1. SHADOW_ONLY, nunca envia ordem.
     this.timingShadow = new LateWindowTimingShadow({ pool, now, log: this.log });
+    // SCENARIO ENGINE V3 (SHADOW): estado proprio, independente do timing (nunca chama metodos do timing).
+    this.scenarioShadow = new ScenarioShadow({ pool, now, log: this.log, enabled: scenarioShadowEnabled === true });
+    // INTERSECAO OBSERVACIONAL: compara os dois estados como dado (nunca controla nenhum dos lados).
+    this.scenarioTimingIntersection = new ScenarioTimingIntersectionShadow({ pool, now, log: this.log, enabled: scenarioTimingIntersectionEnabled === true });
+    setScenarioEngineLogSink((event, payload) => this.#safe(() => this.log(event, payload)));
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -706,6 +715,7 @@ export class IqMultiRuntime extends EventEmitter {
     }
     void this.#entryPipeline(ctx, { action, trader, critic, consensus, fresh: effectiveFresh, knowledgeContext, intelligenceContext, now, correlationId });
     this.#observeTimingShadow(ctx, { action, trader, critic, consensus, fresh: effectiveFresh, now, list });
+    this.#observeScenarioShadow(ctx, { action, trader, critic, consensus, now, list });
   }
 
   /* ------------------------------- entrada just-in-time (Fase 6.2) ------------------------------- */
@@ -725,6 +735,7 @@ export class IqMultiRuntime extends EventEmitter {
       this.#scheduleEntryFinalize(ctx, candidate, serverNow);
       this.jit.recordCandidate({ marketKey: ctx.marketKey, marketType: ctx.marketType, candidateId: candidate.id, action, entryPrice: ctx.lastCandle?.close ?? null, payout: ctx.payout, atMs: now, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, regime: snapshot.regime, setup: snapshot.setup, trigger: snapshot.trigger });
       this.#beginTimingShadow(ctx, { candidate, action, snapshot, serverNow });
+      this.#beginScenarioShadow(ctx, { candidate, action, trader, critic, consensus, now });
       this.#setAgent(ctx, "SIGNAL", `CANDIDATE_${action}`);
       this.#emitEvent("candidate.created", { marketKey: ctx.marketKey, candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, secondsToWindow: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
       this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "CANDIDATE_CREATED", { candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, serverNow, regime: snapshot.regime, setup: snapshot.setup, trigger: snapshot.trigger }, { persist: true });
@@ -818,6 +829,78 @@ export class IqMultiRuntime extends EventEmitter {
     return actives.length;
   }
 
+  /* ------------------- SCENARIO ENGINE V3 (SHADOW, nunca executa) ------------------- */
+
+  /** Cria a observacao de cenario no candidato (Critic independente fase 1 + Trader fase 2). Observacional. */
+  #beginScenarioShadow(ctx, { candidate, action, trader, critic, consensus, now }) {
+    if (this.config.scenarioShadowEnabled !== true) return null;
+    try {
+      const snapshot = candidate.initialFull ?? this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
+      const observation = this.scenarioShadow.observe({
+        snapshot, direction: candidate.action,
+        traderView: { action, currentDecision: ctx.decisionState?.action ?? null, waitReason: ctx.decisionState?.waitReason ?? null },
+        criticView: { traderAssessment: critic?.traderAssessment ?? null, independentAction: critic?.independentAction ?? null, contradictions: critic?.contradictions ?? [], riskFlags: critic?.riskFlags ?? [] },
+        marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, agentId: this.#agentId(ctx),
+        candidateId: candidate.id, correlationId: candidate.correlationId ?? null,
+        payout: ctx.payout, provenance: "PROSPECTIVE",
+        candidateAt: candidate.createdAt, decisionAt: now, jitAt: candidate.submitAt, finalEntryAt: null,
+        targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt,
+        location: trader?.location ?? null, momentum: trader?.momentum ?? null,
+        // Timing OPAQUE (o scenario nao conhece a politica): deadline propria = entrada agendada do JIT.
+        timingView: { timingPolicyVersion: TIMING_POLICY_CURRENT, currentTimingPolicyVersion: TIMING_POLICY_CURRENT, deadlineAt: candidate.targetEntryAt, supported: true, source: "RUNTIME_CURRENT_JIT" },
+      });
+      this.#observeScenarioTimingIntersection(candidate.id);
+      return observation;
+    } catch (error) { this.#safe(() => this.log("IQ_SCENARIO_SHADOW_BEGIN_FAILED", String(error?.message ?? error).slice(0, 160))); return null; }
+  }
+
+  /** Estagios intermediarios (REVALIDATION_1/2) a cada avaliacao. Somente leitura do pipeline. */
+  #observeScenarioShadow(ctx, { action, trader, critic, consensus, now }) {
+    if (this.config.scenarioShadowEnabled !== true) return null;
+    const candidate = ctx.candidate;
+    if (!candidate) return null;
+    const observation = this.scenarioShadow.getByCandidate(candidate.id);
+    if (!observation) return null;
+    try {
+      const stage = observation.stages.some((row) => row.stage === "REVALIDATION_1") ? "REVALIDATION_2" : "REVALIDATION_1";
+      const snapshot = this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
+      const analysis = analyzeScenarioSnapshot({ snapshot, direction: candidate.action });
+      const result = this.scenarioShadow.recordStage({ candidateId: candidate.id, stage, analysis, location: trader?.location ?? null, momentum: trader?.momentum ?? null, atMs: now, source: "RUNTIME_OBSERVE" });
+      this.#observeScenarioTimingIntersection(candidate.id);
+      return result;
+    } catch (error) { this.#safe(() => this.log("IQ_SCENARIO_SHADOW_OBSERVE_FAILED", String(error?.message ?? error).slice(0, 160))); return null; }
+  }
+
+  /** Revalidacao final do cenario (desacoplada do timing; deadline = entrada agendada do candidato). */
+  #finalizeScenarioShadow(ctx, { candidate, action, trader, critic, consensus, now }) {
+    if (this.config.scenarioShadowEnabled !== true) return null;
+    try {
+      const observation = this.scenarioShadow.getByCandidate(candidate.id);
+      if (!observation) return null;
+      const snapshot = this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
+      const analysis = analyzeScenarioSnapshot({ snapshot, direction: candidate.action });
+      const result = this.scenarioShadow.revalidateFinal({
+        candidateId: candidate.id, analysis, atMs: now, deadlineAt: candidate.targetEntryAt,
+        timingView: { timingPolicyVersion: TIMING_POLICY_CURRENT, currentTimingPolicyVersion: TIMING_POLICY_CURRENT, deadlineAt: candidate.targetEntryAt, source: "RUNTIME_REVALIDATION" },
+        location: trader?.location ?? null, momentum: trader?.momentum ?? null,
+      });
+      this.#observeScenarioTimingIntersection(candidate.id);
+      return result;
+    } catch (error) { this.#safe(() => this.log("IQ_SCENARIO_SHADOW_FINALIZE_FAILED", String(error?.message ?? error).slice(0, 160))); return null; }
+  }
+
+  /** Registra a intersecao observacional scenario x timing (somente leitura dos dois estados). */
+  #observeScenarioTimingIntersection(candidateId) {
+    if (this.config.scenarioTimingIntersectionEnabled !== true) return null;
+    if (!candidateId) return null;
+    try {
+      const scenarioObservation = this.scenarioShadow.getByCandidate(candidateId);
+      const timingObservation = this.timingShadow.getByCandidate(candidateId);
+      if (!scenarioObservation && !timingObservation) return null;
+      return this.scenarioTimingIntersection.observe({ scenarioObservation, timingObservation, atMs: this.now() });
+    } catch (error) { this.#safe(() => this.log("IQ_SCENARIO_TIMING_INTERSECTION_FAILED", String(error?.message ?? error).slice(0, 160))); return null; }
+  }
+
   /** Revalidacao no timer: usa o snapshot MAIS RECENTE disponivel (ultima avaliacao), nunca o do candidato. */
   async #finalizeCandidate(ctx) {
     const agents = ctx.agents;
@@ -842,6 +925,8 @@ export class IqMultiRuntime extends EventEmitter {
     candidate.revalidatedAt = now; candidate.status = "REVALIDATING"; candidate.confirmation = revalidation;
     this.#emitEvent("candidate.revalidated", { marketKey: ctx.marketKey, candidateId: candidate.id, ok: revalidation.ok, reason: revalidation.reason, source });
     this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "FINAL_REVALIDATION", { candidateId: candidate.id, ok: revalidation.ok, reason: revalidation.reason, checks: revalidation.checks, candidateChangedBeforeEntry: candidate.changes.changed, changedFields: candidate.changes.changes, finalDecision, entryLeadMs: candidate.entryLeadMs, serverNow }, { persist: true });
+    // SCENARIO ENGINE V3 (SHADOW): revalidacao final do cenario (independente do gate; nunca altera a decisao).
+    this.#finalizeScenarioShadow(ctx, { candidate, action, trader, critic, consensus, now });
     if (!revalidation.ok) { this.#cancelCandidate(ctx, revalidation.reason ?? "CANDIDATE_REVALIDATION_FAILED", { checks: revalidation.checks }); return; }
     candidate.status = "CONFIRMED"; candidate.confirmedAt = now;
     this.#emitEvent("candidate.confirmed", { marketKey: ctx.marketKey, candidateId: candidate.id, action, secondsToEntry: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
@@ -943,6 +1028,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (candidate.finalizeTimer) { clearTimeout(candidate.finalizeTimer); candidate.finalizeTimer = null; }
     candidate.status = "CANCELLED"; candidate.cancelReason = reason; candidate.closedAt = this.now();
     this.timingShadow.markCurrentCancel({ candidateId: candidate.id, reason, atMs: this.now() });
+    this.#observeScenarioTimingIntersection(candidate.id);
     ctx.lastCandidate = { ...candidate, initialFull: undefined };
     ctx.candidate = null;
     this.jit.recordCancellation({ candidateId: candidate.id, reason, changes: candidate.changes?.changes ?? [] });
@@ -1025,6 +1111,37 @@ export class IqMultiRuntime extends EventEmitter {
       latencySamples: { ack: latency.ackSamples.length, persist: latency.persistSamples.length, decision: latency.decisionSamples.length },
       markets, summary: this.timingShadow.summary(), persist: this.timingShadow.statusSnapshot().persist,
     };
+  }
+
+  /** SCENARIO ENGINE V3 (SHADOW): status/observacoes + intersecao observacional com o timing (nunca executa). */
+  scenarioShadowStatus() {
+    const status = buildScenarioShadowStatus({ observations: this.scenarioShadow.list(), enabled: this.config.scenarioShadowEnabled === true });
+    return {
+      ...status,
+      enabled: this.config.scenarioShadowEnabled === true,
+      persist: { ...status.persist, mode: this.scenarioShadow.pool ? "POSTGRES" : "MEMORY" },
+      intersections: this.scenarioTimingIntersection.status(),
+      isolation: {
+        ...status.isolation,
+        scenarioControlsTiming: false, timingControlsScenario: false, mutatesNeither: true,
+        intersectionLayer: "READ_ONLY_COMPARISON",
+      },
+    };
+  }
+
+  /** Liga/desliga APENAS a observacao de cenario (o timing continua identico; nao toca producao). */
+  setScenarioShadowEnabled(enabled) {
+    this.config.scenarioShadowEnabled = enabled === true;
+    this.scenarioShadow.setEnabled(enabled === true);
+    this.#emitEvent("scenario.shadow.config", { enabled: this.config.scenarioShadowEnabled });
+    return { enabled: this.config.scenarioShadowEnabled };
+  }
+
+  /** Liga/desliga APENAS a intersecao observacional (nenhum dos dois lados e afetado). */
+  setScenarioTimingIntersectionEnabled(enabled) {
+    this.config.scenarioTimingIntersectionEnabled = enabled === true;
+    this.scenarioTimingIntersection.setEnabled(enabled === true);
+    return { enabled: this.config.scenarioTimingIntersectionEnabled };
   }
 
   #auditRecord(correlationId, marketKey, stage, detail = {}, { persist = false } = {}) {
@@ -1588,6 +1705,8 @@ export class IqMultiRuntime extends EventEmitter {
     if (entryTimingAck?.candidateId) this.shadowLab.markEntry({ observationId: entryTimingAck.shadowObservationId ?? null, candidateId: entryTimingAck.candidateId, executionId: pending.executionId, actualEntryPrice: pending.entryPrice, entryAt: ackedAt });
     // LATE WINDOW TIMING (SHADOW): registra ACK + expiracao aceita da perna CURRENT_V1 (nao decide nada).
     if (entryTimingAck?.candidateId) this.timingShadow.markCurrentAck({ candidateId: entryTimingAck.candidateId, atMs: ackedAt, brokerOrderId, brokerExpirationSec, entryPrice: pending.entryPrice });
+    // INTERSECAO OBSERVACIONAL (SHADOW): compara estado do cenario x timing (nunca controla nada).
+    if (entryTimingAck?.candidateId) this.#observeScenarioTimingIntersection(entryTimingAck.candidateId);
     if (expirationMismatch) {
       this.#auditRecord(pending.correlationId ?? `corr_exec_${pending.executionId}`, pending.marketKey, "BROKER_EXPIRATION_MISMATCH", { executionId: pending.executionId, brokerOrderId, requestedExpirationSec: pending.expirationSec, acceptedExpirationSec: brokerExpirationSec, candidateId: entryTimingAck?.candidateId ?? null }, { persist: true });
       this.#emitEvent("order.expiration_mismatch", { marketKey: pending.marketKey, brokerOrderId, requestedExpirationSec: pending.expirationSec, acceptedExpirationSec: brokerExpirationSec });
@@ -1640,6 +1759,11 @@ export class IqMultiRuntime extends EventEmitter {
     const settledAt = this.now();
     ctx.positionState = { ...ctx.positionState, status: "SETTLED", settledAt, result: broker.result, profit: broker.profit, brokerOrderId };
     if (position.entryTiming?.candidateId) this.timingShadow.markCurrentSettle({ candidateId: position.entryTiming.candidateId, result: broker.result, profit: broker.profit, stake: position.stake, atMs: settledAt });
+    // SCENARIO ENGINE V3 (SHADOW): outcome BROKER_EXECUTED (pos-classificacao; nunca realimenta T0).
+    if (position.entryTiming?.candidateId) {
+      this.scenarioShadow.recordOutcome({ candidateId: position.entryTiming.candidateId, result: broker.result, profit: broker.profit, stake: position.stake, payout: ctx.payout, settlementBasis: "BROKER_EXECUTED", atMs: settledAt });
+      this.#observeScenarioTimingIntersection(position.entryTiming.candidateId);
+    }
     ctx.settlementState = { lastResult: broker.result, lastProfit: broker.profit, lastAt: settledAt, daily: { wins: ctx.settlementState.daily.wins + (broker.result === "WIN" ? 1 : 0), losses: ctx.settlementState.daily.losses + (broker.result === "LOSS" ? 1 : 0), draws: ctx.settlementState.daily.draws + (broker.result === "DRAW" ? 1 : 0), settledPnl: Number((ctx.settlementState.daily.settledPnl + (Number(broker.profit) || 0)).toFixed(4)), trades: ctx.settlementState.daily.trades + 1 } };
     ctx.lastTrade = { marketKey: key, brokerOrderId, direction: position.direction, stake: position.stake, result: broker.result, profit: broker.profit, causalResult: settlement.result, mismatch: comparison.mismatch, at: settledAt };
     const agentState = broker.result === "WIN" ? "WIN" : broker.result === "LOSS" ? "LOSS" : "DRAW";

@@ -17,13 +17,24 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 // @ts-expect-error - relay ESM sem tipagem (validado em runtime)
 const shadow = await import("../../relay/scenario-shadow.mjs");
+// @ts-expect-error - relay ESM sem tipagem (validado em runtime)
+const intersection = await import("../../relay/scenario-timing-intersection.mjs");
+// @ts-expect-error - relay ESM sem tipagem (validado em runtime)
+const timing = await import("../../relay/late-window-timing.mjs");
+// @ts-expect-error - relay ESM sem tipagem (validado em runtime)
+const { IqMultiRuntime } = await import("../../relay/iq-multi-runtime.mjs");
 const {
   runScenarioShadow, ScenarioShadow, runCriticPhase1, buildCriticSnapshot, buildScenarioFeatures,
   resolveAblation, resolveScenarioDivergence, evaluateFinalRevalidation, extractResolutionEvidence,
   findForbiddenKeys, buildScenarioShadowDashboard, scenarioShadowStatus, scenarioEngineInfo,
   applyScenarioAdvisory, playbookOf, FALLBACK_ENGINE, SCENARIO_SHADOW_POLICY, ABLATION_POLICY,
   SCENARIO_ENGINE_V3_SHADOW, CURRENT_G2, SCENARIO_STAGES, RESOLUTION_POINTS,
+  analyzeScenarioSnapshot, buildTimingView, DIVERGENCE_POLICY_VERSION, SCENARIO_ENGINE_V3, detachScenarioEngine,
 } = shadow as unknown as Record<string, any>;
+const {
+  buildIntersection, ScenarioTimingIntersectionShadow, SCENARIO_TIMING_INTERSECTION_POLICY, scenarioPointAt,
+} = intersection as unknown as Record<string, any>;
+const { LateWindowTimingShadow, TIMING_POLICY_CURRENT, TIMING_POLICY_LATE } = timing as unknown as Record<string, any>;
 
 type AnyRecord = Record<string, any>;
 
@@ -273,7 +284,7 @@ describe("4. final revalidation acoplada ao LATE_WINDOW_V2 (cancela, nunca inver
     expect(result.reason).toBe("SCENARIO_INVALIDATED_AT_FINAL_REVALIDATION");
     expect(observation.finalAction).toBe("WAIT");
     expect(observation.status).toBe("CANCELLED");
-    expect(observation.lateWindow.timingPolicyVersion).toBe("LATE_WINDOW_V2");
+    expect(observation.timingView.timingPolicyVersion).toBe("LATE_WINDOW_V2");
   });
 
   it("CALL invalidada nao vira PUT: direcao oposta e forcada para WAIT", () => {
@@ -319,10 +330,21 @@ describe("5. SHADOW nunca controla execucao (Execution Gate intocado)", () => {
     expect(observation.executionGateCalled).toBe(false);
   });
 
-  it("modulo nao referencia ordem/expiracao de producao", () => {
+  it("modulo nao referencia ordem/expiracao de producao e NAO importa o timing (desacoplado)", () => {
     expect(MODULE_SOURCE).not.toMatch(/requestOrder|placeOrder|buyOption|sendOrder/);
+    expect(MODULE_SOURCE).not.toMatch(/from\s+"\.\/late-window-timing\.mjs"/);
+    expect(MODULE_SOURCE).not.toMatch(/sameExpirationWindow|lateDeadlineAt|TIMING_POLICY_LATE\s*=/);
+  });
+
+  it("hook de runtime e observacional: importa scenario-shadow e nunca chama requestOrder/placeOrder", () => {
     const runtimeSource = readFileSync("relay/iq-multi-runtime.mjs", "utf8");
-    expect(runtimeSource).not.toContain("scenario-shadow");
+    expect(runtimeSource).toContain('from "./scenario-shadow.mjs"');
+    expect(runtimeSource).toContain("#beginScenarioShadow");
+    expect(runtimeSource).toContain("this.scenarioShadow.observe");
+    expect(runtimeSource).toContain("this.scenarioTimingIntersection.observe");
+    // Nenhuma ordem e disparada dentro dos hooks de cenario/intersecao.
+    const hookSlice = runtimeSource.slice(runtimeSource.indexOf("#beginScenarioShadow"), runtimeSource.indexOf("#finalizeCandidate"));
+    expect(hookSlice).not.toMatch(/requestOrder|placeOrder|placeOption|#handleSignal/);
   });
 });
 
@@ -519,7 +541,7 @@ describe("11. reinicio nao perde associacao + persistencia serializada", () => {
 
 describe("12. contrato congelado respeitado", () => {
   it("fallback cobre todos os simbolos do contrato e engineInfo e explicito", () => {
-    for (const key of ["REGIMES", "SCENARIOS", "extractContext", "classifyRegime", "classifyScenario", "evaluatePlaybook", "analyzeScenario"]) {
+    for (const key of ["SCENARIO_ENGINE_VERSION", "REGIMES", "SCENARIOS", "extractContext", "classifyRegime", "classifyScenario", "evaluatePlaybook", "analyzeScenario"]) {
       expect(FALLBACK_ENGINE[key]).toBeDefined();
     }
     const analysis = FALLBACK_ENGINE.analyzeScenario({ snapshot: snapshot(), direction: "BUY" });
@@ -530,6 +552,11 @@ describe("12. contrato congelado respeitado", () => {
     const info = scenarioEngineInfo();
     expect(["SCENARIO_ENGINE", "FALLBACK"]).toContain(info.mode);
     expect(info.contract).toContain("analyzeScenario");
+    expect(typeof info.fallbackActive).toBe("boolean");
+    // Fail-safe EXPLICITO: modo FALLBACK sempre carrega motivo; modo real nunca se diz fallback.
+    expect(info.fallbackActive).toBe(info.mode === "FALLBACK");
+    if (info.mode === "FALLBACK") expect(typeof info.fallbackReason).toBe("string");
+    else expect(info.fallbackReason).toBeNull();
   });
 
   it("extractResolutionEvidence e conservador: undefined = nao observado", () => {
@@ -537,5 +564,374 @@ describe("12. contrato congelado respeitado", () => {
     expect(evidence.holdAboveLevel).toBeUndefined();
     expect(evidence.reEntry).toBeUndefined();
     expect(typeof evidence.locationOk).toBe("boolean");
+  });
+});
+
+describe("13. ISOLAMENTO BIDIRECIONAL Scenario Engine x LATE_WINDOW_V2", () => {
+  const BASE = Date.UTC(2026, 8, 18, 12, 0, 0);
+  const TARGET_EXPIRY_AT = BASE + 120_000;
+
+  function runTiming() {
+    const instance: AnyRecord = new LateWindowTimingShadow({ now: () => BASE + 1_000 });
+    const observation = instance.begin({
+      marketKey: "EURUSD:OTC", marketType: "OTC", candidateId: "c_iso", direction: "BUY",
+      candidateSnapshot: { action: "BUY", at: BASE - 5_000, price: 1.1, regime: "TREND_UP", setup: "TREND_PULLBACK", structure: { label: "UP" }, momentum: { rsi14: 55 }, freshness: { fresh: true } },
+      targetEntryAt: BASE + 60_000, targetExpiryAt: TARGET_EXPIRY_AT, currentSubmitAt: BASE + 59_000, currentLeadMs: 1_000,
+      productKind: "turbo", payout: 82, atMs: BASE,
+    });
+    instance.observe({
+      marketKey: "EURUSD:OTC", candidateId: "c_iso", atMs: BASE + 2_000, serverNowMs: BASE + 2_000,
+      final: { action: "BUY", regime: "TREND_UP", setup: "TREND_PULLBACK", trigger: "pullback_com_estrutura_mantida", consensusStatus: "CONFIRMED" }, freshness: { fresh: true },
+      latestSnapshot: { action: "BUY", regime: "TREND_UP", setup: "TREND_PULLBACK" }, gateEnabled: false, price: 1.1001, candles: [], payout: 82,
+    });
+    instance.finalize({ candidateId: "c_iso", atMs: BASE + 88_000, serverNowMs: BASE + 88_000, reason: "DEADLINE_REACHED" });
+    return { instance, observation };
+  }
+
+  function busyScenario(): void {
+    const instance: AnyRecord = new ScenarioShadow({ now: () => BASE + 3_000 });
+    instance.observe({
+      snapshot: snapshot(), direction: "BUY", traderView: { action: "BUY" }, criticView: {},
+      marketKey: "EURUSD:OTC", marketType: "OTC", candidateId: "c_iso", candidateAt: BASE, decisionAt: BASE + 1_000,
+      targetEntryAt: BASE + 60_000, targetExpiryAt: TARGET_EXPIRY_AT, payout: 82,
+    });
+    instance.recordStage({ candidateId: "c_iso", stage: "REVALIDATION_1", analysis: analysisFor({ primaryScenario: "BREAKOUT", action: "WAIT" }), atMs: BASE + 30_000 });
+    instance.revalidateFinal({ candidateId: "c_iso", analysis: analysisFor({ primaryScenario: "FAILED_BREAKOUT", action: "WAIT" }), atMs: BASE + 55_000, deadlineAt: BASE + 60_000 });
+    instance.recordOutcome({ candidateId: "c_iso", result: "LOSS", payout: 82, settlementBasis: "BROKER_EXECUTED", atMs: BASE + 130_000 });
+  }
+
+  function runScenario() {
+    const instance: AnyRecord = new ScenarioShadow({ now: () => BASE + 3_000 });
+    const observation = instance.observe({
+      snapshot: snapshot(), direction: "BUY", traderView: { action: "BUY" }, criticView: {},
+      marketKey: "EURUSD:OTC", marketType: "OTC", candidateId: "c_iso", candidateAt: BASE, decisionAt: BASE + 1_000,
+      targetEntryAt: BASE + 60_000, targetExpiryAt: TARGET_EXPIRY_AT, payout: 82,
+    });
+    instance.recordStage({ candidateId: "c_iso", stage: "REVALIDATION_1", analysis: analysisFor({ primaryScenario: "BREAKOUT", action: "WAIT" }), atMs: BASE + 30_000, quality: { score: 80 }, location: { donchianPosition: 0.6 }, momentum: { rsi14: 55 } });
+    instance.revalidateFinal({ candidateId: "c_iso", analysis: analysisFor({ primaryScenario: "FAILED_BREAKOUT", action: "WAIT" }), atMs: BASE + 55_000, deadlineAt: BASE + 60_000 });
+    return { instance, observation };
+  }
+
+  const timingFingerprint = (observation: AnyRecord): string => JSON.stringify({
+    outcome: observation.outcome, verdict: observation.late.verdict, deadlineAt: observation.late.deadlineAt,
+    compare: observation.comparison, evaluations: observation.late.evaluations,
+  });
+
+  it("(a) desligar o Scenario Engine -> Late Window produz resultado IDENTICO", () => {
+    const isolated = runTiming();
+    const fingerprintBefore = timingFingerprint(isolated.observation);
+    busyScenario();
+    const withScenarioTraffic = runTiming();
+    expect(timingFingerprint(withScenarioTraffic.observation)).toBe(fingerprintBefore);
+    expect(withScenarioTraffic.observation.outcome).toBe("LATE_ACCEPT");
+    // Nenhum vestigio de cenario no estado do timing.
+    expect(JSON.stringify(withScenarioTraffic.observation)).not.toContain("scenario");
+  });
+
+  it("(b) desligar o Late Window -> Scenario Engine produz resultado IDENTICO", () => {
+    const isolated = runScenario();
+    const scenarioFingerprint = (observation: AnyRecord): string => JSON.stringify({
+      finalAction: observation.finalAction, status: observation.status, stages: observation.stages,
+      criticHash: observation.criticFreeze.frozenHash, trader: observation.traderScenario, divergence: observation.divergence,
+    });
+    const before = scenarioFingerprint(isolated.observation);
+    runTiming();
+    const withTimingTraffic = runScenario();
+    expect(scenarioFingerprint(withTimingTraffic.observation)).toBe(before);
+    expect(withTimingTraffic.observation.finalAction).toBe("WAIT");
+  });
+
+  it("modulo de cenario nao importa/conhece a politica de timing (e vice-versa)", () => {
+    expect(MODULE_SOURCE).not.toMatch(/from\s+"\.\/late-window-timing\.mjs"/);
+    expect(MODULE_SOURCE).not.toMatch(/sameExpirationWindow|lateDeadlineAt|adaptiveLateMarginMs/);
+    const timingSource: string = readFileSync("relay/late-window-timing.mjs", "utf8");
+    expect(timingSource).not.toContain("scenario-shadow");
+    expect(timingSource).not.toContain("scenario-engine");
+    // 031 fica intocada nesta rodada (acoplamento removido sem migracao destrutiva).
+    expect(readFileSync("relay/migrations/031_scenario_shadow.sql", "utf8")).toContain("timing_policy_version");
+  });
+});
+
+describe("14. FAIL-SAFE explicitamente logado/marcado (nunca silencioso)", () => {
+  it("engine que lanca degrada com motivo persistido, sem derrubar a observacao", () => {
+    const broken = { version: "broken-engine-v0", SCENARIO_ENGINE_VERSION: "BROKEN", analyzeScenario: () => { throw new Error("BOOM_ENGINE"); } };
+    const observation = runScenarioShadow({ snapshot: snapshot(), direction: "BUY", traderView: { action: "BUY" }, engine: broken, now: () => 7 });
+    expect(observation.traderScenario.degradedToFallback).toBe(true);
+    expect(observation.traderScenario.degradedReason).toContain("BOOM_ENGINE");
+    expect(observation.engineFallback.active).toBe(true);
+    expect(observation.engineFallback.explicit).toBe(true);
+    expect(observation.engineFallback.reason).toContain("BOOM_ENGINE");
+    expect(observation.engineInfo.degradedAnalyses.length).toBeGreaterThanOrEqual(1);
+    expect(observation.scenarioEngineVersion).toBe("BROKEN");
+  });
+
+  it("observacao sem engine explicito registra o modo REAL do motor (fallback so se faltar)", () => {
+    const observation = runScenarioShadow({ snapshot: snapshot(), direction: "BUY", traderView: { action: "BUY" }, now: () => 7 });
+    const info = scenarioEngineInfo();
+    expect(observation.engineInfo.mode).toBe(info.mode);
+    expect(observation.engineFallback.active).toBe(info.fallbackActive);
+    expect(observation.scenarioEngineVersion).toBe(info.mode === "FALLBACK" ? observation.scenarioEngineVersion : observation.engineInfo.usedEngineVersion);
+    if (info.mode === "SCENARIO_ENGINE") {
+      expect(observation.engineFallback.active).toBe(false);
+      expect(observation.scenarioEngineVersion).toBe(SCENARIO_ENGINE_VERSION_EXPECTED());
+    }
+  });
+
+  function SCENARIO_ENGINE_VERSION_EXPECTED(): string { return SCENARIO_ENGINE_V3; }
+
+  it("analyzeScenarioSnapshot e puro e nao persiste nada (contrato do motor)", () => {
+    const analysis = analyzeScenarioSnapshot({ snapshot: snapshot(), direction: "BUY" });
+    for (const key of ["marketRegime", "primaryScenario", "action", "confidence", "featuresUsed"]) expect(analysis).toHaveProperty(key);
+    expect(analyzeScenarioSnapshot({ snapshot: snapshot(), direction: "BUY" })).toEqual(analysis);
+  });
+});
+
+describe("15. politica de divergencia EXPERIMENTAL_V1 decomposta (sem score magico)", () => {
+  it("registra as 6 checagens individualmente com valor e estado", () => {
+    const divergence = resolveScenarioDivergence({
+      trader: { primaryScenario: "BREAKOUT", action: "BUY", marketRegime: "TREND_UP" },
+      critic: { primaryScenario: "FAILED_BREAKOUT", action: "WAIT", marketRegime: "TREND_UP" },
+      snapshot: snapshot({ evidence: { holdAboveLevel: true, reEntry: false, rejectionWick: true } }),
+    });
+    expect(divergence.divergencePolicy).toBe(DIVERGENCE_POLICY_VERSION);
+    expect(divergence.divergencePolicy).toBe("EXPERIMENTAL_V1");
+    expect(divergence.checks).toHaveLength(6);
+    for (const check of divergence.checks) {
+      expect(["holdAboveLevel", "reEntry", "noRejectionWick", "momentumAligned", "ticksFresh", "locationOk"]).toContain(check.point);
+      expect(["SATISFIED", "NOT_SATISFIED", "UNKNOWN"]).toContain(check.state);
+      if (check.state === "UNKNOWN") expect(check.value).toBeNull(); else expect(typeof check.value).toBe("boolean");
+    }
+    expect(divergence.satisfiedCount).toBe(divergence.resolutionSatisfied.length);
+    expect(divergence.requiredCount).toBe(4);
+  });
+
+  it("conflito Trader CALL x Critic PUT -> WAIT/CONFLICT_UNRESOLVED ate evidencia suficiente", () => {
+    const unresolved = resolveScenarioDivergence({
+      trader: { primaryScenario: "TREND_PULLBACK", action: "BUY", marketRegime: "TREND_UP" },
+      critic: { primaryScenario: "REVERSAL", action: "SELL", marketRegime: "TREND_DOWN" },
+      snapshot: snapshot(),
+    });
+    expect(unresolved.divergence).toBe("DIRECTION_OPPOSITE");
+    expect(unresolved.conflict).toBe("CONFLICT_UNRESOLVED");
+    expect(unresolved.finalAction).toBe("WAIT");
+    expect(unresolved.reasonsForWait).toContain("CONFLICT_UNRESOLVED");
+    expect(unresolved.criticDirectionAdopted).toBe(false);
+    expect(unresolved.adoptedDirection).toBeNull();
+    expect(unresolved.finalAction).not.toBe("SELL");
+  });
+
+  it("Critic NUNCA adota direcao: mesmo resolvido, direcao final e a do Trader ou WAIT", () => {
+    const resolved = resolveScenarioDivergence({
+      trader: { primaryScenario: "TREND_PULLBACK", action: "BUY", marketRegime: "TREND_UP" },
+      critic: { primaryScenario: "REVERSAL", action: "SELL", marketRegime: "TREND_UP" },
+      snapshot: snapshot({ evidence: { holdAboveLevel: true, reEntry: true, rejectionWick: false, ticksFresh: true } }),
+    });
+    expect(resolved.finalAction).toBe("BUY");
+    expect(resolved.adoptedDirection).toBeNull();
+    expect(resolved.criticDirectionAdopted).toBe(false);
+    expect(resolved.conflict).toBe("RESOLVED_TRADER_DIRECTION_ONLY");
+    const dashboard = buildScenarioShadowDashboard({ observations: [{ provenance: "PROSPECTIVE", divergence: { divergence: "DIRECTION_OPPOSITE", criticDirectionAdopted: true } }] });
+    expect(dashboard.criticIndependence.criticDirectionAdopted).toBe(1);
+  });
+});
+
+describe("16. versionamento persistido e series independentes", () => {
+  it("persiste scenarioEngineVersion e timingPolicyVersion independentes", () => {
+    const late = runScenarioShadow({ snapshot: snapshot(), direction: "BUY", traderView: { action: "BUY" }, timingView: { timingPolicyVersion: "LATE_WINDOW_V2", deadlineAt: 90_000 }, candidateId: "c_v_late", now: () => 1 });
+    const current = runScenarioShadow({ snapshot: snapshot(), direction: "BUY", traderView: { action: "BUY" }, timingView: { timingPolicyVersion: "CURRENT_V1", deadlineAt: 60_000 }, candidateId: "c_v_cur", now: () => 1 });
+    expect(late.scenarioPolicyVersion).toBe(SCENARIO_ENGINE_V3_SHADOW);
+    expect(late.scenarioEngineVersion).toBe(SCENARIO_ENGINE_V3);
+    expect(late.timingView.timingPolicyVersion).toBe("LATE_WINDOW_V2");
+    expect(current.timingView.timingPolicyVersion).toBe("CURRENT_V1");
+    expect(late.seriesKey).not.toBe(current.seriesKey);
+    expect(late.seriesKey).toContain(SCENARIO_ENGINE_V3);
+    expect(late.seriesKey).toContain("LATE_WINDOW_V2");
+    expect(current.seriesKey).toContain("CURRENT_V1");
+    // Quatro series futuras comparaveis sem misturar amostras.
+    const status = scenarioShadowStatus({ observations: [late, current] });
+    expect(status.series.counts[late.seriesKey]).toBe(1);
+    expect(status.series.counts[current.seriesKey]).toBe(1);
+    expect(status.timingCoupling).toBe("NONE");
+    expect(status.divergencePolicy).toBe("EXPERIMENTAL_V1");
+    expect(status.scenarioEngineVersion).toBe(SCENARIO_ENGINE_V3);
+  });
+
+  it("migration 032 aditiva com coluna de versao e tabela de intersecao; retencao cobre a tabela", () => {
+    const migration = readFileSync("relay/migrations/032_scenario_timing_intersection.sql", "utf8");
+    expect(migration).toContain("ADD COLUMN IF NOT EXISTS scenario_engine_version");
+    expect(migration).toContain("iq_scenario_timing_intersections");
+    expect(migration).toContain("DROP TRIGGER IF EXISTS iq_scenario_shadow_engine_immutable");
+    expect(migration).toContain("is immutable");
+    const retention = readFileSync("scripts/db-retention.mjs", "utf8");
+    expect(retention).toContain("iq_scenario_timing_intersections");
+  });
+
+  it("buildTimingView e opaco: nao deriva deadline nem depende de politica", () => {
+    const view = buildTimingView({ timingPolicyVersion: "CUSTOM_X", deadlineAt: 123 });
+    expect(view.timingPolicyVersion).toBe("CUSTOM_X");
+    expect(view.deadlineAt).toBe(123);
+    expect(view.controlsExecution).toBe(false);
+    expect(buildTimingView({}).timingPolicyVersion).toBeNull();
+  });
+});
+
+describe("17. intersecao observacional separada (somente leitura)", () => {
+  const scenarioState = () => ({
+    id: "scenario_c_int", candidateId: "c_int", correlationId: "corr_1", marketKey: "EURUSD:OTC", marketType: "OTC",
+    scenarioPolicyVersion: SCENARIO_ENGINE_V3_SHADOW, scenarioEngineVersion: SCENARIO_ENGINE_V3,
+    stages: [{ stage: "CANDIDATE", at: 1_000, scenario: "BREAKOUT", action: "BUY", regime: "TREND_UP", playbook: "PB_BREAKOUT" }],
+    persistence: { scenarioChanged: true, scenarioChangeCount: 1 },
+    finalAction: "BUY", status: "CLASSIFIED", divergence: { divergence: "SAME" },
+  });
+  const timingState = () => ({
+    id: "timing_c_int", candidateId: "c_int", marketKey: "EURUSD:OTC", marketType: "OTC", windowKey: "EURUSD:OTC:120000",
+    direction: "BUY", outcome: "LATE_CANCEL", outcomeReason: "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+    policyVersion: "LATE_WINDOW_V2", targetExpiryAt: 120_000,
+    policy: { sameExpirationAtDeadline: true },
+    late: { deadlineAt: 90_000, verdict: "CANCEL_CANDIDATE_LOGIC_CHANGED_TO_WAIT", evaluations: [{ at: 80_000, action: "WAIT", valid: false }, { at: 89_000, action: "WAIT", valid: false }], lastBeforeDeadline: { at: 89_000, action: "WAIT", valid: false } },
+    comparison: { keptSameExpiration: true },
+  });
+
+  it("buildIntersection decompoe cenario@candidate vs cenario@deadline vs LATE_CANCEL", () => {
+    const scenario = scenarioState();
+    const timing = timingState();
+    const before = JSON.stringify({ scenario, timing });
+    const row = buildIntersection({ scenario, timing, atMs: 91_000 });
+    expect(row.verdict).toBe("SCENARIO_ENTRY_LATE_CANCEL");
+    expect(row.intersectionCodes).toContain("SCENARIO_AT_CANDIDATE");
+    expect(row.intersectionCodes).toContain("LATE_CANCEL");
+    expect(row.intersectionCodes).toContain("SCENARIO_FINAL_ENTRY");
+    expect(row.scenarioAtCandidate.scenario).toBe("BREAKOUT");
+    expect(row.scenarioFinalAction).toBe("BUY");
+    expect(row.lateOutcome).toBe("LATE_CANCEL");
+    expect(row.mutatedInputs).toBe(false);
+    expect(JSON.stringify({ scenario, timing })).toBe(before);
+    expect(row.controlsExecution).toBe(false);
+  });
+
+  it("scenarioPointAt usa apenas stages com at <= deadline (nunca inventa estado)", () => {
+    const stages = [{ stage: "CANDIDATE", at: 1_000, scenario: "A", action: "BUY" }, { stage: "REVALIDATION_1", at: 50_000, scenario: "B", action: "WAIT" }, { stage: "FINAL_ENTRY", at: 95_000, scenario: "C", action: "BUY" }];
+    expect(scenarioPointAt(stages, 60_000).scenario).toBe("B");
+    expect(scenarioPointAt(stages, 90_000).scenario).toBe("B");
+    expect(scenarioPointAt(stages, null).scenario).toBe("C");
+    expect(scenarioPointAt([], 10)).toBeNull();
+  });
+
+  it("classe registra intersecoes sem tocar nos dois estados e respeita enable/disable", () => {
+    const disabled: AnyRecord = new ScenarioTimingIntersectionShadow({ enabled: false });
+    expect(disabled.observe({ scenarioObservation: scenarioState(), timingObservation: timingState() })).toBeNull();
+    expect(disabled.list()).toHaveLength(0);
+    const instance: AnyRecord = new ScenarioTimingIntersectionShadow({ now: () => 91_000 });
+    const row = instance.observe({ scenarioObservation: scenarioState(), timingObservation: timingState() });
+    expect(row.id).toContain("c_int");
+    expect(instance.getByCandidate("c_int").verdict).toBe("SCENARIO_ENTRY_LATE_CANCEL");
+    const summary = instance.summary();
+    expect(summary.isolation.mutatesNeither).toBe(true);
+    expect(summary.isolation.scenarioControlsTiming).toBe(false);
+    expect(summary.isolation.timingControlsScenario).toBe(false);
+    expect(summary.byVerdict.SCENARIO_ENTRY_LATE_CANCEL).toBe(1);
+    expect(SCENARIO_TIMING_INTERSECTION_POLICY.mutatesNeither).toBe(true);
+    // reinicio nao perde associacao
+    const restarted: AnyRecord = new ScenarioTimingIntersectionShadow({ now: () => 2 });
+    expect(restarted.loadFrom(instance.toJSON())).toBe(true);
+    expect(restarted.getByCandidate("c_int").id).toBe(row.id);
+  });
+});
+
+describe("18. hook de runtime observacional (nunca executa)", () => {
+  const BASE = Date.UTC(2026, 8, 18, 12, 0, 20);
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function brain(action: string): AnyRecord {
+    const trader = {
+      agent: "TRADER", action, setup: action === "WAIT" ? "NO_VALID_SETUP" : "TREND_PULLBACK", trigger: action === "WAIT" ? null : "pullback_com_estrutura_mantida",
+      analysisConfidence: action === "WAIT" ? 0 : 0.62, waitReason: action === "WAIT" ? "SEM_SETUP_VALIDO" : null,
+      structure: { label: "HH_HL", candleShape: { bodyRatio: 0.7, upperWick: 0.1, lowerWick: 0.2 }, velocity: { velocity: 0.0002, acceleration: 0.00001 } },
+      location: { zone: "MEIO_CANAL", donchianPosition: 0.6, distanceToUpperATR: 1.2, distanceToLowerATR: 1.1, channelHigh: 1.2, channelLow: 1.0 },
+      momentum: { rsi14: 58, velocity: 0.0002, acceleration: 0.001 }, strength: { adx14: 27, diSpread: 12, plusDI: 20, minusDI: 8 },
+      volatility: { atrRatio: 0.0012, atr: 0.0002 }, microstructure: { streak: 2, bodyRatio: 0.7 },
+      processLog: [], supportingEvidence: [], contradictingEvidence: [], primaryRisk: null, latencyMs: 1,
+    };
+    const critic = { agent: "CRITIC", traderAssessment: action === "WAIT" ? "WAIT" : "CONFIRM", independentAction: action, contradictions: [], riskFlags: [], finalRecommendation: action, latencyMs: 1 };
+    const consensus = { action, status: action === "WAIT" ? "WAIT" : "CONFIRMED", reason: action === "WAIT" ? "TRADER_WAIT" : "TRADER_E_CRITIC_ALINHADOS", rules: [], analysisConfidence: action === "WAIT" ? 0 : 0.62, estimatedWinProbability: null, latencyMs: 1 };
+    return { trader, critic, consensus, regime: "TREND_UP" };
+  }
+
+  function fixture() {
+    const clock = { nowMs: BASE };
+    const overrides = new Map<string, () => AnyRecord>();
+    const runtime: AnyRecord = new IqMultiRuntime({
+      pool: null, getSsid: () => null, now: () => clock.nowMs, log: () => {}, ackTimeoutMs: 150,
+      decisionOverride: ({ marketKey }: AnyRecord) => { const override = overrides.get(marketKey); return override ? override() : brain("WAIT"); },
+    });
+    runtime.session = { connected: true, host: "ws.iqoption.com", connectionId: "conn-scn", serverTimeMs: clock.nowMs, clockSkewMs: 0, timeValid: true, connectedAt: clock.nowMs };
+    runtime.connection = { connectionId: "conn-scn", host: "ws.iqoption.com", serverTimeMs: clock.nowMs, clockSkewMs: 0, timeValid: true };
+    runtime.account = { practice: { verified: true, balanceId: 555, balance: 10_000, currency: "USD" }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: clock.nowMs, type: "PRACTICE" };
+    runtime.config.autoExecute = true; runtime.config.globalMaxStake = 100; runtime.config.calculatedBankrollStake = 1; runtime.config.qualityGateEnabled = true; runtime.config.minTradeQualityScore = 75;
+    runtime.__sent = [];
+    runtime.client = { serverNow: () => clock.nowMs, placeOrder: (options: AnyRecord) => { runtime.__sent.push(options); return options.requestId; }, getOptions: async () => ({ response: { msg: { closed_options: [] } } }) };
+    const ctx = runtime.markets.get("EURUSD:OTC");
+    ctx.availability = "OPEN"; ctx.activeId = 76; ctx.payout = 85; ctx.payoutSource = "test"; ctx.enabled = true; ctx.maxStake = 100; ctx.instrumentTypes = ["binary", "turbo"];
+    let bucket = Math.floor((clock.nowMs - 40 * 5_000) / 5_000) * 5_000;
+    const ingest = (bucketStart: number, close: number) => { runtime.ingestEvent("candle-generated", { connectionId: "conn-scn", receivedAt: clock.nowMs, msg: { active_id: 76, size: 5, from: Math.floor(bucketStart / 1000), to: Math.floor(bucketStart / 1000) + 5, open: close - 0.00001, high: close + 0.00002, low: close - 0.00002, close } }); bucket = bucketStart; };
+    for (let index = 0; index < 40; index += 1) ingest(bucket + 5_000, 1.1 + index * 0.00001);
+    const step = ({ advanceMs = 5_000, close = null }: AnyRecord = {}) => {
+      clock.nowMs += advanceMs;
+      const aligned = Math.floor(clock.nowMs / 5_000) * 5_000 - 5_000;
+      ingest(Math.max(bucket + 5_000, aligned), close ?? Number(ctx.lastCandle?.close ?? 1.1));
+    };
+    return { runtime, clock, overrides, ctx, step };
+  }
+
+  it("cria observacao de cenario + intersecao no candidato, sem enviar ordem", async () => {
+    const { runtime, ctx, overrides, step } = fixture();
+    overrides.set("EURUSD:OTC", () => brain("BUY"));
+    step();
+    await sleep(20);
+    expect(ctx.candidate).toBeTruthy();
+    const candidateId = ctx.candidate.id;
+    const observation = runtime.scenarioShadow.getByCandidate(candidateId);
+    expect(observation).toBeTruthy();
+    expect(observation.criticFreeze.criticSawTraderConclusion).toBe(false);
+    expect(observation.scenarioDecision.adoptedDirection).toBeNull();
+    expect(observation.engineFallback.explicit).toBe(true);
+    expect(runtime.timingShadow.getByCandidate(candidateId)).toBeTruthy();
+    const intersectionRow = runtime.scenarioTimingIntersection.getByCandidate(candidateId);
+    expect(intersectionRow).toBeTruthy();
+    expect(intersectionRow.mutatedInputs).toBe(false);
+    expect(intersectionRow.controlsExecution).toBe(false);
+    expect(runtime.__sent).toHaveLength(0);
+    const status = runtime.scenarioShadowStatus();
+    expect(status.controlsExecution).toBe(false);
+    expect(status.enabled).toBe(true);
+    expect(status.intersections.isolation.mutatesNeither).toBe(true);
+    expect(status.scenarioEngineVersion).toBe(SCENARIO_ENGINE_V3);
+    runtime.stop("END");
+  });
+
+  it("enable/disable independentes: cenario desligado nao altera timing/intersecao habilitada", async () => {
+    const { runtime, ctx, overrides, step } = fixture();
+    overrides.set("EURUSD:OTC", () => brain("BUY"));
+    step();
+    await sleep(20);
+    const candidateId = ctx.candidate.id;
+    const timingBefore = JSON.stringify(runtime.timingShadow.getByCandidate(candidateId));
+    expect(runtime.setScenarioShadowEnabled(false).enabled).toBe(false);
+    step();
+    await sleep(10);
+    expect(runtime.scenarioShadow.enabled).toBe(false);
+    // Timing continua identico ao estado anterior + novas avaliacoes (nunca afetado).
+    const timingAfter = runtime.timingShadow.getByCandidate(candidateId);
+    expect(timingAfter).toBeTruthy();
+    expect(timingAfter.outcome === "OBSERVING" || timingAfter.outcome === "LATE_ACCEPT" || timingAfter.outcome === "LATE_CANCEL").toBe(true);
+    expect(JSON.parse(timingBefore).direction).toBe(timingAfter.direction);
+    // Intersecao desligada tambem e independente.
+    const countBefore = runtime.scenarioTimingIntersection.list().length;
+    runtime.setScenarioTimingIntersectionEnabled(false);
+    step();
+    await sleep(10);
+    expect(runtime.scenarioTimingIntersection.list().length).toBe(countBefore);
+    expect(runtime.__sent).toHaveLength(0);
+    runtime.stop("END");
   });
 });
