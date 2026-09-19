@@ -1,0 +1,38 @@
+{
+  "schema": "rsi-agents-5x5-freeze-v1",
+  "version": "rsi-agents-5x5-v1",
+  "frozenAtUtc": "2026-09-19T16:10:05.734Z",
+  "policy": {
+    "version": "rsi-agents-5x5-v1",
+    "mode": "NORMAL_RUNTIME_AGENT",
+    "practiceOnly": true,
+    "realLocked": true,
+    "stakeBrl": 1,
+    "groupSize": 5,
+    "otcUniverseSize": 10,
+    "finalWindowMs": 5000,
+    "minimumSafeMarginMs": 3000,
+    "turbCutoffMs": 30000,
+    "noSilentSubstitution": true,
+    "autoInvert": false,
+    "sameExpiryRequired": true,
+    "singleBrokerPath": "runtime.submitAgentOrder -> requestOrder"
+  },
+  "skills": {
+    "strict": "RSI_REVERSAL_STRICT_V1",
+    "pullback": "RSI_EXTREME_PULLBACK_V1"
+  },
+  "noTuning": true,
+  "rules": {
+    "strict": "RSI extremo + Bollinger + DMI/ADX completo; strong continuation bloqueia",
+    "pullback": "RSI extremo + Bollinger; short pullback permitido; band riding/aceleracao forte bloqueia",
+    "singleBrokerPath": "runtime.submitAgentOrder -> requestOrder",
+    "realLocked": true,
+    "stakeBrl": 1
+  },
+  "hashes": {
+    "module": "a176865f2926473ef3a00675",
+    "skills": "1ce8bd857949756cafb46c9a",
+    "runtime": "c47623d78bc7d9fe675e1b5d"
+  }
+}
