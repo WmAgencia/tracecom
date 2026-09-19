@@ -265,7 +265,7 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(runtime.__sent).toHaveLength(0);
     expect(queries.some((sql) => sql.startsWith("UPDATE iq_executions"))).toBe(true);
   });
-  it("PRACTICE -> REAL causa DISARM; REAL exige confirmacao e usa saldo REAL", async () => {
+  it("PRACTICE -> REAL causa DISARM; REAL exige confirmacao e NUNCA envia ordem com accountContext LOCKED", async () => {
     const runtime = multiFixture();
     seedMarket(runtime, "EURUSD:NORMAL", { activeId: 101 });
     runtime.arm(2, { confirmation: true });
@@ -276,11 +276,12 @@ describe("MULTI RUNTIME — isolamento, simultaneidade, stake e restart", () => 
     expect(runtime.config.mode).toBe("REAL");
     expect(runtime.armState.armed).toBe(false);
     runtime.arm(2, { confirmation: true });
-    const order = runtime.requestOrder({ marketKey: "EURUSD:NORMAL", direction: "BUY", stake: 2, horizonSeconds: 60, idempotencyKey: "k-real" });
+    // Contexto de conta continua PRACTICE: a seleção REAL é explícita (account/select) e o envio REAL falha fechado.
+    expect(runtime.accountContext.status().state).toBe("PRACTICE");
+    await expect(runtime.requestOrder({ marketKey: "EURUSD:NORMAL", direction: "BUY", stake: 2, horizonSeconds: 60, idempotencyKey: "k-real" })).rejects.toThrowError(/REAL_GATE_BLOCKED/);
     await sleep(10);
-    expect(runtime.__sent[0]).toMatchObject({ balanceId: 777, price: 2 });
-    await ack(runtime, "EURUSD:NORMAL", "ORD-REAL");
-    await order;
+    expect(runtime.__sent).toHaveLength(0);
+    expect(runtime.accountContext.armed).toBe(false);
     runtime.setMode("PRACTICE");
     expect(runtime.realMode.authorized()).toBe(false);
     expect(runtime.config.mode).toBe("PRACTICE");

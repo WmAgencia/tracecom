@@ -20,6 +20,7 @@ import { IqWsClient, IqWsError, IQ_WS_CANDIDATE_HOSTS, CANDLE_SIZE_SECONDS, clas
 import { buildFeatureContext, freshnessGate } from "./feature-engine.mjs";
 import { executionGate, applyBrokerAcknowledgement, compareSettlement, ExecutionArmState, IdempotencyStore, KillSwitch, MAX_PRACTICE_STAKE_BRL } from "./iqoption-connector.mjs";
 import { RealModeController } from "./real-mode.mjs";
+import { AccountContextController, PRACTICE as ACCOUNT_PRACTICE, REAL as ACCOUNT_REAL, filterByAccountContext } from "./account-context.mjs";
 import { PortfolioExecutionGate, resolveFinalStake } from "./portfolio-gate.mjs";
 import { RuntimeAssetResolver } from "./asset-resolver.mjs";
 import { GlobalIntelligenceState, INTELLIGENCE_DOMAINS } from "./intelligence.mjs";
@@ -39,6 +40,7 @@ import { LateWindowTimingShadow, TIMING_POLICY_CURRENT, TIMING_POLICY_LATE, LATE
 import { ScenarioShadow, analyzeScenarioSnapshot, scenarioShadowStatus as buildScenarioShadowStatus, setScenarioEngineLogSink } from "./scenario-shadow.mjs";
 // INTERSECAO OBSERVACIONAL: unico ponto que compara scenario x timing (somente leitura dos dois estados).
 import { ScenarioTimingIntersectionShadow } from "./scenario-timing-intersection.mjs";
+import { ScenarioShadowSettlement } from "./scenario-shadow-settlement.mjs";
 import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, DEFAULT_GLOBAL_MAX_STAKE, concentrationExposure } from "./market-universe.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
@@ -66,12 +68,13 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
     this.maxLatencySamples = maxLatencySamples; this.ackTimeoutMs = ackTimeoutMs;
-    this.realMode = realMode; this.gate = gate; this.resolver = resolver;
+    this.realMode = realMode; this.accountContext = accountContext; this.gate = gate; this.resolver = resolver;
+    this.accountContext.onEvent = (event, payload) => this.#emitEvent(`account_context.${event.toLowerCase()}`, payload ?? {});
     this.decisionOverride = typeof decisionOverride === "function" ? decisionOverride : null; // diagnostico/testes deterministicos (nunca usado em producao)
     this.running = false; this.client = null; this.connection = null; this.stopRequested = false;
     this.reconnects = 0; this.connectionStartedAt = null;
@@ -107,6 +110,8 @@ export class IqMultiRuntime extends EventEmitter {
     this.scenarioShadow = new ScenarioShadow({ pool, now, log: this.log, enabled: scenarioShadowEnabled === true });
     // INTERSECAO OBSERVACIONAL: compara os dois estados como dado (nunca controla nenhum dos lados).
     this.scenarioTimingIntersection = new ScenarioTimingIntersectionShadow({ pool, now, log: this.log, enabled: scenarioTimingIntersectionEnabled === true });
+    // LIQUIDACAO CAUSAL OBSERVACIONAL das observacoes prospectivas do cenario (nunca broker, nunca decide).
+    this.scenarioSettlement = new ScenarioShadowSettlement({ scenarioShadow: this.scenarioShadow, pool, now, log: this.log });
     setScenarioEngineLogSink((event, payload) => this.#safe(() => this.log(event, payload)));
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
@@ -163,6 +168,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.client = null;
     this.session = { ...this.session, connected: false };
     this.realMode.revoke("RUNTIME_STOP");
+    this.accountContext.lock("RUNTIME_STOP");
     try { this.armState.disarm("WS_DISCONNECTED"); } catch { /* noop */ }
     for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason }); this.#setAgent(ctx, "OFFLINE", "RUNTIME_STOP"); this.timingShadow.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "SESSION_LOST" }); }
     return { stopped: true, reason };
@@ -190,6 +196,8 @@ export class IqMultiRuntime extends EventEmitter {
         this.metrics.reconnects = this.reconnects;
         this.connectionStartedAt = this.now();
         this.session = { connected: true, host: ready.host, connectionId: ready.connectionId, serverTimeMs: ready.serverTimeMs, clockSkewMs: ready.clockSkewMs, timeValid: ready.timeValid, connectedAt: this.now() };
+        // FAIL CLOSED: reconnect/token refresh/sessao nova => REAL LOCKED (nunca restaura ARMED).
+        this.accountContext.beginSession(ready.connectionId);
         this.#emitEvent("connection.ready", { host: ready.host, timeValid: ready.timeValid, clockSkewMs: ready.clockSkewMs });
         await this.#bootstrap(client);
         attempt = 0;
@@ -202,6 +210,8 @@ export class IqMultiRuntime extends EventEmitter {
         for (const ctx of this.markets.values()) ctx.connectionHealth = { ...ctx.connectionHealth, connected: false };
         try { this.armState.disarm("WS_DISCONNECTED"); } catch { /* noop */ }
         this.realMode.revoke("WS_DISCONNECTED");
+        // FAIL CLOSED: qualquer queda de WS rebaixa REAL para LOCKED imediatamente.
+        this.accountContext.lock("WS_DISCONNECTED");
         for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason: "WS_DISCONNECTED" }); this.timingShadow.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "WS_DISCONNECTED" }); if (ctx.enabled) this.#setAgent(ctx, ctx.availability === "OPEN" ? "WAIT" : "UNAVAILABLE", "WS_DISCONNECTED"); }
       }
       if (!this.running || this.stopRequested) break;
@@ -314,6 +324,7 @@ export class IqMultiRuntime extends EventEmitter {
       hasReal: classified.hasReal, checkedAt: this.now(), type: classified.type,
     };
     if (practice) { try { if (!this.armState.connectedAccountType) this.armState.onConnected("PRACTICE"); } catch { /* noop */ } }
+    this.#syncAccountContext();
     this.#emitEvent("account.balances", { practice: this.account.practice.verified, real: this.account.real.available, currency: this.account.practice.currency, type: this.account.type });
   }
 
@@ -323,6 +334,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (!current) return;
     if (Number(current.id) === Number(this.account.practice.balanceId)) this.account.practice.balance = Number.isFinite(Number(current.amount)) ? Number(current.amount) : this.account.practice.balance;
     if (Number(current.id) === Number(this.account.real.balanceId)) this.account.real.balance = Number.isFinite(Number(current.amount)) ? Number(current.amount) : this.account.real.balance;
+    this.#syncAccountContext();
   }
 
   /* ------------------------------- resolver/markets ------------------------------- */
@@ -495,6 +507,144 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
+  /* --------------------- ACCOUNT CONTEXT (PRACTICE x REAL) --------------------- */
+
+  /** Snapshot read-only da conta real. Nunca inventa saldo: indisponivel => available:false. */
+  #realAccountSnapshot() {
+    const rawBalance = this.account.real.balance;
+    const balance = rawBalance === null || rawBalance === undefined || rawBalance === "" ? null : Number(rawBalance);
+    return {
+      available: this.account.real.available === true,
+      balance: Number.isFinite(balance) ? balance : null,
+      currency: this.account.real.currency ?? null,
+      balanceId: this.account.real.balanceId ?? null,
+      checkedAt: this.account.checkedAt ?? null,
+      readOnly: true,
+      error: this.account.real.available === true ? null : "REAL_ACCOUNT_UNAVAILABLE",
+    };
+  }
+
+  /** Sincroniza o controller com os saldos broker: ambiguidade/indisponibilidade => LOCKED. */
+  #syncAccountContext() {
+    const real = this.#realAccountSnapshot();
+    const ambiguous = real.balanceId === null || real.balanceId === undefined || (real.available && !(Number(real.balance) > 0));
+    this.accountContext.reportRealAccount(ambiguous ? { available: false, error: "REAL_ACCOUNT_AMBIGUOUS" } : real);
+    return this.accountContext.status();
+  }
+
+  #dataQuality() {
+    const health = this.connectionHealth();
+    return health.healthy && this.session.timeValid === true ? "HEALTHY" : "DEGRADED";
+  }
+
+  /** Avaliacao do gate REAL com estado real do runtime (nunca envia ordem). */
+  #realGateInput(overrides = {}) {
+    const real = this.#realAccountSnapshot();
+    const openReal = [...this.openPositions.values()].filter((position) => position.accountContext === ACCOUNT_REAL);
+    const realExposure = Number(openReal.reduce((sum, position) => sum + (Number(position.stake) || 0), 0).toFixed(4));
+    const riskGate = openReal.length <= this.accountContext.maxPositions && realExposure <= this.accountContext.maxExposure ? "PASS" : "BLOCK";
+    const openMarkets = [...this.markets.values()].filter((ctx) => ctx.enabled === true && ctx.availability === "OPEN" && ctx.activeId !== null);
+    return {
+      accountContext: this.accountContext.context,
+      armed: this.accountContext.armed === true,
+      killSwitch: this.killSwitch.status(),
+      riskGate: overrides.riskGate ?? riskGate,
+      dataQuality: overrides.dataQuality ?? this.#dataQuality(),
+      strategy: overrides.strategy ?? `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`,
+      stake: overrides.stake ?? Math.min(this.config.globalMaxStake, this.config.hardCap),
+      hardCap: this.config.hardCap,
+      marketAllowed: overrides.marketAllowed ?? (overrides.marketKey ? Boolean(this.markets.get(overrides.marketKey)?.enabled && this.markets.get(overrides.marketKey)?.availability === "OPEN") : openMarkets.length > 0),
+      idempotencyValid: overrides.idempotencyValid ?? true,
+      accountAccessible: overrides.accountAccessible ?? real.available,
+      accountUnambiguous: overrides.accountUnambiguous ?? (real.balanceId !== null && real.balanceId !== undefined),
+      ...(overrides.overrides ?? {}),
+    };
+  }
+
+  /** Estado completo do contexto + contas isoladas (sem segredos, sem saldo simulado). */
+  accountContextState() {
+    const real = this.#realAccountSnapshot();
+    return {
+      ...this.accountContext.status(),
+      realAccount: {
+        available: real.available,
+        balance: real.balance,
+        currency: real.currency,
+        balanceIdMasked: real.balanceId === null || real.balanceId === undefined ? null : `***${String(real.balanceId).slice(-4)}`,
+        checkedAt: real.checkedAt,
+        readOnly: true,
+        error: real.error,
+      },
+      practiceAccount: {
+        verified: this.account.practice.verified === true,
+        balance: this.account.practice.balance ?? null,
+        currency: this.account.practice.currency ?? null,
+        balanceIdMasked: this.account.practice.balanceId === null || this.account.practice.balanceId === undefined ? null : `***${String(this.account.practice.balanceId).slice(-4)}`,
+        readOnly: true,
+      },
+      hasReal: this.account.hasReal === true,
+      checkedAt: this.account.checkedAt ?? null,
+      sessionId: this.session.connectionId ?? this.accountContext.sessionId,
+      brokerAutomation: "NONE",
+      practiceOnly: this.accountContext.context === ACCOUNT_PRACTICE,
+      realExecutionForbidden: this.accountContext.isRealArmed() !== true,
+    };
+  }
+
+  /** Seleciona o contexto de conta: separa TODA a visao PRACTICE x REAL. */
+  selectAccount(context) {
+    const selected = this.accountContext.select(context);
+    if (selected.context === ACCOUNT_PRACTICE) {
+      try { this.armState.disarm("MODE_SWITCH"); } catch { /* noop */ }
+      this.realMode.revoke("CONTEXT_SWITCH_TO_PRACTICE");
+    }
+    const real = this.#realAccountSnapshot();
+    if (selected.context === ACCOUNT_REAL) {
+      if (real.available) this.accountContext.reportRealAccount(real);
+      else this.accountContext.reportRealAccount({ available: false, error: real.error ?? "REAL_ACCOUNT_UNAVAILABLE" });
+    }
+    const state = this.accountContextState();
+    this.#emitEvent("account.context_changed", { context: state.context, state: state.state, lockedReason: state.lockedReason });
+    this.#auditRecord(`acct_${state.context}_${this.now()}`, null, "ACCOUNT_CONTEXT_SELECTED", { accountContext: state.context, state: state.state, lockedReason: state.lockedReason, realAccessible: real.available }, { persist: true, accountContext: state.context });
+    return state;
+  }
+
+  /** Preflight REAL (somente leitura): lista checks PASS/BLOCK sem nenhuma ordem. */
+  realPreflight(overrides = {}) {
+    const input = this.#realGateInput(overrides);
+    const result = this.accountContext.preflight(input, { audit: false });
+    return { ...result, input: { ...input, killSwitch: input.killSwitch }, accountContext: this.accountContext.context };
+  }
+
+  /**
+   * Arma REAL para a sessao. Exige preflight completo + confirmacao explicita.
+   * NUNCA persiste ARMED; restart/reconnect devolvem LOCKED.
+   */
+  armReal({ phrase = null, acknowledgeRisk = false, maxStake = null, strategy = null, actor = "ui" } = {}) {
+    const real = this.#realAccountSnapshot();
+    if (!real.available || real.balanceId === null || real.balanceId === undefined) throw new IqWsError("REAL_ACCOUNT_UNAVAILABLE");
+    this.accountContext.reportRealAccount(real);
+    const resolvedStrategy = strategy ?? `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`;
+    const limit = Number(maxStake ?? Math.min(this.config.globalMaxStake, this.config.hardCap));
+    const input = this.#realGateInput({ strategy: resolvedStrategy, stake: limit, accountAccessible: true, accountUnambiguous: true });
+    const status = this.accountContext.arm({
+      confirmationPhrase: phrase, acknowledge: acknowledgeRisk === true,
+      realBalance: real.balance, realBalanceId: real.balanceId, maxStake: limit,
+      strategy: resolvedStrategy, autoStatus: this.config.autoExecute === true, preflightInput: input, actor,
+    });
+    this.#emitEvent("real.armed", { strategy: resolvedStrategy, maxStake: limit, autoStatus: this.config.autoExecute === true });
+    this.accountContext.recordRealAttempt("ARM", { strategy: resolvedStrategy, stake: limit, agentVersion: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, send: false, autoStatus: this.config.autoExecute === true });
+    this.#auditRecord(`real_arm_${this.now()}`, null, "REAL_ARMED", { accountContext: ACCOUNT_REAL, strategy: resolvedStrategy, agentVersion: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, stake: limit, maxExposure: status.maxExposure, maxPositions: status.maxPositions, autoStatus: this.config.autoExecute === true, realBalanceSeen: real.balance }, { persist: true, accountContext: ACCOUNT_REAL });
+    return this.accountContextState();
+  }
+
+  disarmReal(reason = "MANUAL_UI") {
+    const status = this.accountContext.disarm(reason);
+    this.#emitEvent("real.disarmed", { reason: String(reason).slice(0, 60) });
+    this.#auditRecord(`real_disarm_${this.now()}`, null, "REAL_DISARMED", { accountContext: ACCOUNT_REAL, reason: String(reason).slice(0, 60) }, { persist: true, accountContext: ACCOUNT_REAL });
+    return { ...status, realExecutionForbidden: true };
+  }
+
   setKillSwitch(engaged, reason = "UI") {
     if (engaged === true) { this.killSwitch.engage(); try { this.armState.disarm("KILL_SWITCH"); } catch { /* noop */ } this.realMode.revoke("KILL_SWITCH"); }
     else this.killSwitch.release();
@@ -614,6 +764,8 @@ export class IqMultiRuntime extends EventEmitter {
       void this.shadowLab.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // LATE WINDOW TIMING (SHADOW): liquidacao causal do braco LATE_WINDOW_V2 (nunca broker).
       this.timingShadow.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      // SCENARIO SHADOW (PROSPECTIVE): liquidacao causal observacional no expiry (nunca broker, nunca decide).
+      void this.scenarioSettlement.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
@@ -1120,6 +1272,7 @@ export class IqMultiRuntime extends EventEmitter {
       ...status,
       enabled: this.config.scenarioShadowEnabled === true,
       persist: { ...status.persist, mode: this.scenarioShadow.pool ? "POSTGRES" : "MEMORY" },
+      settlement: this.scenarioSettlement.status(),
       intersections: this.scenarioTimingIntersection.status(),
       isolation: {
         ...status.isolation,
@@ -1144,24 +1297,26 @@ export class IqMultiRuntime extends EventEmitter {
     return { enabled: this.config.scenarioTimingIntersectionEnabled };
   }
 
-  #auditRecord(correlationId, marketKey, stage, detail = {}, { persist = false } = {}) {
-    const record = { correlationId, marketKey, stage, detail, at: this.now() };
+  #auditRecord(correlationId, marketKey, stage, detail = {}, { persist = false, accountContext = null } = {}) {
+    const context = accountContext ?? (this.config.mode === "REAL" ? ACCOUNT_REAL : ACCOUNT_PRACTICE);
+    const payload = { ...detail, accountContext: detail.accountContext ?? context };
+    const record = { correlationId, marketKey, stage, detail: payload, accountContext: context, at: this.now() };
     this.audit.push(record);
     if (this.audit.length > 800) this.audit.splice(0, this.audit.length - 800);
     if (persist) void (async () => {
       try {
         if (!await this.#ensureDb()) { this.#recordPersistResult("audit", false, { code: "DB_UNAVAILABLE", message: "audit persistence unavailable (db not ready)" }); return; }
-        await this.pool.query("INSERT INTO iq_audit_trail(correlation_id,market_key,stage,detail) VALUES($1,$2,$3,$4::jsonb)", [correlationId, marketKey, stage, JSON.stringify(detail)]);
+        await this.pool.query("INSERT INTO iq_audit_trail(correlation_id,market_key,stage,detail,account_context) VALUES($1,$2,$3,$4::jsonb,$5)", [correlationId, marketKey, stage, JSON.stringify(payload), context]);
         this.#recordPersistResult("audit", true);
       } catch (error) { this.#recordPersistResult("audit", false, error); }
     })();
     return record;
   }
 
-  auditTrail({ correlationId = null, marketKey = null, stage = null, limit = 100 } = {}) {
+  auditTrail({ correlationId = null, marketKey = null, stage = null, limit = 100, accountContext = null } = {}) {
     const bounded = Math.max(1, Math.min(500, Number(limit) || 100));
-    const rows = [...this.audit].reverse().filter((row) => (!correlationId || row.correlationId === correlationId) && (!marketKey || row.marketKey === marketKey) && (!stage || row.stage === stage)).slice(0, bounded);
-    return { audit: rows, total: this.audit.length };
+    const rows = [...this.audit].reverse().filter((row) => (!correlationId || row.correlationId === correlationId) && (!marketKey || row.marketKey === marketKey) && (!stage || row.stage === stage) && (!accountContext || row.accountContext === accountContext)).slice(0, bounded);
+    return { audit: rows, total: this.audit.length, accountContext: accountContext ?? "ALL" };
   }
 
   #setAgent(ctx, state, reason = null) {
@@ -1241,6 +1396,7 @@ export class IqMultiRuntime extends EventEmitter {
     else if (!gate.allowed) { disposition = "BLOCKED"; reason = `GATE_${gate.code}`; }
     const record = {
       id: ++this.signalSeq, marketKey: ctx.marketKey, marketType: ctx.marketType, canonical: ctx.canonical, display: ctx.display, activeId: ctx.activeId,
+      accountContext: this.config.mode === "REAL" ? ACCOUNT_REAL : ACCOUNT_PRACTICE,
       action, setup: brain?.setup ?? null, regime: brain?.regime ?? null, strategyVariantId: null, strategySource: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, at: now, bucketStart: bucket, horizonSeconds,
       stakeConfigured: resolved.requestedStake, stakeRequested: resolved.requestedStake, stakeCalculated: Number(this.config.calculatedBankrollStake), stakeFinal: resolved.finalStake, cappedBy: resolved.cappedBy, stakeSource: resolved.source, stakeAdjustment: resolved.adjustment,
       payout: ctx.payout, auto: this.config.autoExecute === true, armed: this.armState.armed === true, mode: this.config.mode,
@@ -1284,10 +1440,11 @@ export class IqMultiRuntime extends EventEmitter {
     }
   }
 
-  signals(limit = 50, marketKeyFilter = null) {
+  signals(limit = 50, marketKeyFilter = null, accountContext = null) {
     const bounded = Math.max(1, Math.min(200, Number(limit) || 50));
-    const rows = [...this.signalLog].reverse().filter((row) => !marketKeyFilter || row.marketKey === marketKeyFilter).slice(0, bounded);
-    return { signals: rows, stats: Object.fromEntries(this.signalStats), total: this.signalLog.length };
+    const rows = [...this.signalLog].reverse().filter((row) => (!marketKeyFilter || row.marketKey === marketKeyFilter) && (!accountContext || row.accountContext === accountContext)).slice(0, bounded);
+    const stats = accountContext ? Object.fromEntries([...this.signalStats].filter(([key]) => [...this.signalLog].some((row) => row.accountContext === accountContext && row.marketKey === key))) : Object.fromEntries(this.signalStats);
+    return { signals: rows, stats, total: this.signalLog.length, accountContext: accountContext ?? "ALL" };
   }
 
   /** Sinal sintetico para diagnostico/teste: registra disposicao passando por TODOS os gates reais. */
@@ -1480,9 +1637,17 @@ export class IqMultiRuntime extends EventEmitter {
   knowledgeSearch(query = {}) { return this.knowledge.search(query); }
   async secondBrainProbe() { return this.secondBrain.probe(); }
 
-  journalSummary() {
-    const agentIds = [...this.journal.agentStats.keys()];
-    return { version: "trade-journal-v1", agents: agentIds.map((agentId) => ({ agentId, stats: this.journal.agentMemory(agentId).stats })), recentTrades: this.journal.trades.slice(-30).reverse(), daily: this.journal.dailyReport() };
+  journalSummary(accountContext = null) {
+    const tradeContext = (trade) => trade.accountContext === ACCOUNT_REAL ? ACCOUNT_REAL : ACCOUNT_PRACTICE;
+    const trades = accountContext ? this.journal.trades.filter((trade) => tradeContext(trade) === accountContext) : this.journal.trades;
+    const agentIds = [...new Set(trades.map((trade) => trade.agentId).filter(Boolean))];
+    return {
+      version: "trade-journal-v1", accountContext: accountContext ?? "ALL",
+      agents: agentIds.map((agentId) => ({ agentId, stats: this.journal.agentMemory(agentId).stats })),
+      recentTrades: trades.slice(-30).reverse(),
+      daily: accountContext ? null : this.journal.dailyReport(),
+      isolation: { practiceTrades: this.journal.trades.filter((trade) => tradeContext(trade) === ACCOUNT_PRACTICE).length, realTrades: this.journal.trades.filter((trade) => tradeContext(trade) === ACCOUNT_REAL).length },
+    };
   }
   agentMemory(agentId) { return this.journal.agentMemory(agentId); }
   async writeDailyReport(date = null) { return this.journal.writeDailyReport(date ?? new Date(this.now()).toISOString().slice(0, 10)); }
@@ -1513,14 +1678,34 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
 
-  portfolioSnapshot() {
-    const openPositions = [...this.openPositions.values()];
+  portfolioSnapshot(accountContext = null) {
+    const allPositions = [...this.openPositions.values()].map((position) => ({ ...position, accountContext: position.accountContext ?? ACCOUNT_PRACTICE }));
+    const openPositions = accountContext ? filterByAccountContext(allPositions, accountContext) : allPositions;
     const exposure = concentrationExposure(openPositions);
-    const settled = [...this.markets.values()].reduce((acc, ctx) => {
-      acc.wins += ctx.settlementState.daily.wins; acc.losses += ctx.settlementState.daily.losses; acc.draws += ctx.settlementState.daily.draws; acc.pnl += ctx.settlementState.daily.settledPnl; acc.trades += ctx.settlementState.daily.trades;
-      return acc;
-    }, { wins: 0, losses: 0, draws: 0, pnl: 0, trades: 0 });
-    return { openPositions: openPositions.map((position) => ({ marketKey: position.marketKey, direction: position.direction, stake: position.stake, entryPrice: position.entryPrice, brokerOrderId: position.brokerOrderId, openedAt: position.openedAt, indicative: position.indicative ?? null })), exposure: exposure.exposures, concentrationWarnings: exposure.warnings, settled: { ...settled, pnl: Number(settled.pnl.toFixed(4)) }, practiceBalance: this.account.practice.balance, realBalance: this.account.real.balance };
+    const dailyFor = (context) => {
+      if (context) {
+        const buckets = [...this.markets.values()].map((ctx) => ctx.settlementState?.dailyByContext?.[context]).filter(Boolean);
+        const bucket = { wins: 0, losses: 0, draws: 0, pnl: 0, trades: 0 };
+        for (const row of buckets) { bucket.wins += row.wins; bucket.losses += row.losses; bucket.draws += row.draws; bucket.pnl += row.settledPnl; bucket.trades += row.trades; }
+        return bucket;
+      }
+      return [...this.markets.values()].reduce((acc, ctx) => {
+        acc.wins += ctx.settlementState.daily.wins; acc.losses += ctx.settlementState.daily.losses; acc.draws += ctx.settlementState.daily.draws; acc.pnl += ctx.settlementState.daily.settledPnl; acc.trades += ctx.settlementState.daily.trades;
+        return acc;
+      }, { wins: 0, losses: 0, draws: 0, pnl: 0, trades: 0 });
+    };
+    const settled = dailyFor(accountContext);
+    const byContext = {
+      PRACTICE: { ...dailyFor(ACCOUNT_PRACTICE), pnl: Number(dailyFor(ACCOUNT_PRACTICE).pnl.toFixed(4)), openPositions: filterByAccountContext(allPositions, ACCOUNT_PRACTICE).length },
+      REAL: { ...dailyFor(ACCOUNT_REAL), pnl: Number(dailyFor(ACCOUNT_REAL).pnl.toFixed(4)), openPositions: filterByAccountContext(allPositions, ACCOUNT_REAL).length },
+    };
+    return {
+      accountContext: accountContext ?? "ALL",
+      openPositions: openPositions.map((position) => ({ marketKey: position.marketKey, accountContext: position.accountContext, direction: position.direction, stake: position.stake, entryPrice: position.entryPrice, brokerOrderId: position.brokerOrderId, openedAt: position.openedAt, indicative: position.indicative ?? null })),
+      exposure: exposure.exposures, concentrationWarnings: exposure.warnings,
+      settled: { ...settled, pnl: Number(settled.pnl.toFixed(4)) }, byContext,
+      practiceBalance: this.account.practice.balance, realBalance: this.account.real.balance,
+    };
   }
 
   async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = 60, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false } = {}) {
@@ -1556,6 +1741,30 @@ export class IqMultiRuntime extends EventEmitter {
     if (!gateResult.allowed) throw new IqWsError(`PORTFOLIO_GATE_${gateResult.code}`, gateResult.reasons.join(","));
     let record;
     let mode = this.config.mode;
+    const orderContext = mode === "REAL" ? ACCOUNT_REAL : ACCOUNT_PRACTICE;
+    if (mode === "REAL") {
+      // ISOLAMENTO + FAIL CLOSED: ordem REAL so existe com accountContext=REAL, ARM explicito,
+      // REAL_TRADING_ENABLED, killSwitch OFF, riskGate PASS, dataQuality HEALTHY, strategy no
+      // allowlist congelado, stake <= hardCap, mercado permitido, idempotencia valida e conta
+      // real acessivel/sem ambiguidade. Qualquer falha => BLOCK (nunca envia).
+      const accountGate = this.accountContext.evaluateSend(this.#realGateInput({
+        strategy: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`,
+        stake: finalStake,
+        marketKey: key,
+        marketAllowed: ctx.enabled === true && ctx.availability === "OPEN",
+        idempotencyValid: existingRecord === null,
+        riskGate: "PASS",
+        accountAccessible: this.account.real.available === true,
+        accountUnambiguous: this.account.real.balanceId !== null && this.account.real.balanceId !== undefined,
+      }));
+      this.accountContext.recordRealAttempt("GATE", {
+        strategy: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, agentVersion: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`,
+        decisionId: decisionId ?? null, stake: finalStake, marketKey: key, direction: decisionAction,
+        expiry: null, send: false, ack: null, brokerOrderId: null, settlement: null, blockedBy: accountGate.blockedBy,
+      });
+      if (!accountGate.ok) throw new IqWsError("REAL_GATE_BLOCKED", accountGate.blockedBy.join(","));
+      this.#auditRecord(`real_gate_${this.now()}`, key, "REAL_GATE_PASS", { accountContext: ACCOUNT_REAL, strategy: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, stake: finalStake, direction: decisionAction, checks: accountGate.checks.map((check) => ({ id: check.id, ok: check.ok })) }, { persist: true, accountContext: ACCOUNT_REAL });
+    }
     if (mode === "PRACTICE") {
       const practice = executionGate(
         { action: decisionAction, stake: finalStake, decisionId: decisionId ?? `ord_${this.now()}`, asset: key, horizonSeconds, decisionAgeMs: Number(decisionAgeMs) || 0, marketOpen: true, idempotencyKey: requestedKey },
@@ -1580,6 +1789,7 @@ export class IqMultiRuntime extends EventEmitter {
     const directionWire = decisionAction === "BUY" ? "CALL" : "PUT";
     const pending = {
       executionId: record.executionId, idempotencyKey: requestedKey, requestId: requestedKey, marketKey: key, mode, direction: directionWire, action: decisionAction,
+      accountContext: orderContext,
       stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, activeId: ctx.activeId, symbol: ctx.display, expirationSec: expiration.expiration, optionKind: expiration.optionKind,
       entryPrice, requestedAt: this.now(), connectionId: this.connection?.connectionId ?? null, autoDisarmAfterAck: autoDisarmAfterAck === true, source, ackResolved: false, settling: false,
       correlationId: ctx.agents?.correlationId ?? `corr_exec_${record.executionId}`,
@@ -1589,14 +1799,18 @@ export class IqMultiRuntime extends EventEmitter {
     this.#auditRecord(pending.correlationId, key, "ORDER_SENT", { executionId: record.executionId, direction: directionWire, stake: finalStake, requestedStake: resolvedStake.requestedStake, stakeSource: resolvedStake.source, mode, source, expiration: expiration.expiration, optionKind: expiration.optionKind, candidateId: entryTiming?.candidateId ?? null, targetEntryAt: entryTiming?.targetEntryAt ?? null, submitAtMs, entryLeadMs: entryTiming?.entryLeadMs ?? null }, { persist: true });
     const ackPromise = new Promise((resolve) => { pending.ackResolve = resolve; });
     this.pendingOrders.set(key, pending);
-    ctx.positionState = { status: "ORDERING", direction: directionWire, entryPrice, stake: finalStake, brokerOrderId: null, requestId: requestedKey, expirationSec: expiration.expiration, openedAt: this.now(), settledAt: null, result: null, profit: null, mode };
+    ctx.positionState = { status: "ORDERING", direction: directionWire, entryPrice, stake: finalStake, brokerOrderId: null, requestId: requestedKey, expirationSec: expiration.expiration, openedAt: this.now(), settledAt: null, result: null, profit: null, mode, accountContext: orderContext };
     this.#setAgent(ctx, "ORDERING", source);
     this.#emitEvent("order.pending", { marketKey: key, direction: directionWire, stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, mode, expirationSec: expiration.expiration });
     const persistStartedAt = this.now();
-    await this.#persistExecution({ executionId: record.executionId, idempotencyKey: requestedKey, decisionId: record.payload?.decisionId ?? decisionId ?? null, marketKey: key, mode, connectionId: pending.connectionId, accountType: mode, brokerOrderId: null, symbol: ctx.display, activeId: ctx.activeId, direction: directionWire, stake: finalStake, currency: mode === "REAL" ? this.account.real.currency : this.account.practice.currency, state: "REQUESTED", requestId: requestedKey, expirationAt: nowIso(expiration.expiration * 1000), entryPrice, payout: ctx.payout, optionKind: expiration.optionKind, meta: { source, infraProbe: infraProbe === true, excludedFromStats: infraProbe === true, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, setup: brainSetup.setup, strategyVariantId: null, strategySource: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, entryTiming: pending.entryTiming ? { candidateId: pending.entryTiming.candidateId, targetEntryAt: pending.entryTiming.targetEntryAt, targetExpiryAt: pending.entryTiming.targetExpiryAt, submitAt: pending.entryTiming.submitAt, submitAtMs, entryLeadMs: pending.entryTiming.entryLeadMs, revalidatedAt: pending.entryTiming.revalidatedAt, candidateChangedBeforeEntry: pending.entryTiming.candidateChangedBeforeEntry } : null } });
+    await this.#persistExecution({ executionId: record.executionId, idempotencyKey: requestedKey, decisionId: record.payload?.decisionId ?? decisionId ?? null, marketKey: key, mode, accountContext: orderContext, connectionId: pending.connectionId, accountType: mode, brokerOrderId: null, symbol: ctx.display, activeId: ctx.activeId, direction: directionWire, stake: finalStake, currency: mode === "REAL" ? this.account.real.currency : this.account.practice.currency, state: "REQUESTED", requestId: requestedKey, expirationAt: nowIso(expiration.expiration * 1000), entryPrice, payout: ctx.payout, optionKind: expiration.optionKind, meta: { source, infraProbe: infraProbe === true, excludedFromStats: infraProbe === true, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, setup: brainSetup.setup, strategyVariantId: null, strategySource: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, entryTiming: pending.entryTiming ? { candidateId: pending.entryTiming.candidateId, targetEntryAt: pending.entryTiming.targetEntryAt, targetExpiryAt: pending.entryTiming.targetExpiryAt, submitAt: pending.entryTiming.submitAt, submitAtMs, entryLeadMs: pending.entryTiming.entryLeadMs, revalidatedAt: pending.entryTiming.revalidatedAt, candidateChangedBeforeEntry: pending.entryTiming.candidateChangedBeforeEntry } : null } });
     this.#recordLatency(ctx, "dbPersist", Math.max(0, this.now() - persistStartedAt));
     try {
       const balanceId = mode === "REAL" ? this.account.real.balanceId : this.account.practice.balanceId;
+      if (orderContext === ACCOUNT_REAL) {
+        this.accountContext.recordRealAttempt("SEND", { strategy: this.accountContext.armedMeta?.strategy ?? null, agentVersion: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, candidateId: entryTiming?.candidateId ?? null, decisionId: decisionId ?? null, stake: finalStake, marketKey: key, direction: decisionAction, expiry: expiration.expiration, send: true, ack: null, brokerOrderId: null, settlement: null, executionId: record.executionId, idempotencyKey: requestedKey, mode });
+        this.#auditRecord(record.executionId, key, "REAL_ORDER_SENT", { accountContext: ACCOUNT_REAL, strategy: this.accountContext.armedMeta?.strategy ?? null, agentVersion: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, candidateId: entryTiming?.candidateId ?? null, decisionId: decisionId ?? null, stake: finalStake, direction: directionAction, expiry: expiration.expiration, source }, { persist: true, accountContext: ACCOUNT_REAL });
+      }
       this.client.placeOrder({ price: finalStake, activeId: ctx.activeId, direction: directionWire, expiration: expiration.expiration, optionTypeId: expiration.optionTypeId, balanceId, requestId: requestedKey });
       this.#safe(() => this.log("IQ_MULTI_ORDER_SENT", JSON.stringify({ marketKey: key, executionId: record.executionId, direction: directionWire, stake: finalStake, mode, activeId: ctx.activeId, expiration: expiration.expiration, optionKind: expiration.optionKind, source })));
     } catch (error) {
@@ -1691,7 +1905,7 @@ export class IqMultiRuntime extends EventEmitter {
     const ctx = this.markets.get(pending.marketKey);
     if (ctx) {
       this.#recordLatency(ctx, "orderAck", ackMs);
-      ctx.positionState = { ...ctx.positionState, status: "OPEN", brokerOrderId, openedAt: ackedAt };
+      ctx.positionState = { ...ctx.positionState, status: "OPEN", brokerOrderId, openedAt: ackedAt, accountContext: pending.accountContext ?? ctx.positionState?.accountContext ?? null };
       ctx.positionState.indicative = null;
       this.#setAgent(ctx, "IN_POSITION", source);
       if (entryTimingAck && (ctx.candidate?.id === entryTimingAck.candidateId || ctx.lastCandidate?.id === entryTimingAck.candidateId)) {
@@ -1699,7 +1913,7 @@ export class IqMultiRuntime extends EventEmitter {
         if (ctx.lastCandidate?.id === entryTimingAck.candidateId) { ctx.lastCandidate.entryDriftMs = entryTimingAck.entryDriftMs; }
       }
     }
-    const position = { marketKey: pending.marketKey, mode: pending.mode, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, expirationSec: pending.expirationSec, openedAt: ackedAt, executionId: pending.executionId, source, connectionId: pending.connectionId, correlationId: pending.correlationId ?? null, infraProbe: pending.infraProbe === true, t0Snapshot: pending.t0Snapshot ?? entryTimingAck?.t0Snapshot ?? null, entryTiming: entryTimingAck, decisionSnapshot: ctx ? { ...this.#decisionSnapshot(ctx, pending), entryTiming: entryTimingAck } : null };
+    const position = { marketKey: pending.marketKey, mode: pending.mode, accountContext: pending.accountContext ?? ACCOUNT_PRACTICE, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, expirationSec: pending.expirationSec, openedAt: ackedAt, executionId: pending.executionId, source, connectionId: pending.connectionId, correlationId: pending.correlationId ?? null, infraProbe: pending.infraProbe === true, t0Snapshot: pending.t0Snapshot ?? entryTimingAck?.t0Snapshot ?? null, entryTiming: entryTimingAck, decisionSnapshot: ctx ? { ...this.#decisionSnapshot(ctx, pending), entryTiming: entryTimingAck } : null };
     this.openPositions.set(pending.marketKey, position);
     // SHADOW LAB (observacional): completa H1/H2 com o preco de entrada efetivo do runtime.
     if (entryTimingAck?.candidateId) this.shadowLab.markEntry({ observationId: entryTimingAck.shadowObservationId ?? null, candidateId: entryTimingAck.candidateId, executionId: pending.executionId, actualEntryPrice: pending.entryPrice, entryAt: ackedAt });
@@ -1716,6 +1930,10 @@ export class IqMultiRuntime extends EventEmitter {
     this.pendingOrders.delete(pending.marketKey);
     await this.#persistExecution({ executionId: pending.executionId, brokerOrderId, state: "ACKNOWLEDGED", ackedAt: nowIso(ackedAt), error: null, meta: entryTimingAck ? { effectiveEntryAt: ackedAt, entryDriftMs: entryTimingAck.entryDriftMs, ackMs, brokerExpirationSec, expirationMismatch } : { ackMs } });
     this.#auditRecord(pending.correlationId ?? `corr_exec_${pending.executionId}`, pending.marketKey, "BROKER_ACK", { brokerOrderId, source, ackMs, candidateId: entryTimingAck?.candidateId ?? null, targetEntryAt: entryTimingAck?.targetEntryAt ?? null, effectiveEntryAt: ackedAt, entryDriftMs: entryTimingAck?.entryDriftMs ?? null }, { persist: true });
+    if (pending.accountContext === ACCOUNT_REAL) {
+      this.accountContext.recordRealAttempt("ACK", { strategy: this.accountContext.armedMeta?.strategy ?? null, agentVersion: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, candidateId: entryTimingAck?.candidateId ?? null, decisionId: null, stake: pending.stake, marketKey: pending.marketKey, direction: pending.direction, expiry: pending.expirationSec, send: true, ack: "ACKNOWLEDGED", brokerOrderId, settlement: null });
+      this.#auditRecord(pending.correlationId ?? `corr_exec_${pending.executionId}`, pending.marketKey, "REAL_BROKER_ACK", { accountContext: ACCOUNT_REAL, brokerOrderId, ackMs, stake: pending.stake, direction: pending.direction, expiry: pending.expirationSec }, { persist: true, accountContext: ACCOUNT_REAL });
+    }
     this.#emitEvent("order.ack", { marketKey: pending.marketKey, brokerOrderId, ackMs, source, mode: pending.mode, entryDriftMs: entryTimingAck?.entryDriftMs ?? null, targetEntryAt: entryTimingAck?.targetEntryAt ?? null });
     this.#emitEvent("position.open", { marketKey: pending.marketKey, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId });
     this.#safe(() => this.log("IQ_MULTI_ORDER_ACK", JSON.stringify({ marketKey: pending.marketKey, executionId: pending.executionId, brokerOrderId, source, ackMs })));
@@ -1764,8 +1982,13 @@ export class IqMultiRuntime extends EventEmitter {
       this.scenarioShadow.recordOutcome({ candidateId: position.entryTiming.candidateId, result: broker.result, profit: broker.profit, stake: position.stake, payout: ctx.payout, settlementBasis: "BROKER_EXECUTED", atMs: settledAt });
       this.#observeScenarioTimingIntersection(position.entryTiming.candidateId);
     }
-    ctx.settlementState = { lastResult: broker.result, lastProfit: broker.profit, lastAt: settledAt, daily: { wins: ctx.settlementState.daily.wins + (broker.result === "WIN" ? 1 : 0), losses: ctx.settlementState.daily.losses + (broker.result === "LOSS" ? 1 : 0), draws: ctx.settlementState.daily.draws + (broker.result === "DRAW" ? 1 : 0), settledPnl: Number((ctx.settlementState.daily.settledPnl + (Number(broker.profit) || 0)).toFixed(4)), trades: ctx.settlementState.daily.trades + 1 } };
-    ctx.lastTrade = { marketKey: key, brokerOrderId, direction: position.direction, stake: position.stake, result: broker.result, profit: broker.profit, causalResult: settlement.result, mismatch: comparison.mismatch, at: settledAt };
+    const settlementContext = position.accountContext === ACCOUNT_REAL ? ACCOUNT_REAL : ACCOUNT_PRACTICE;
+    const nextDaily = { wins: ctx.settlementState.daily.wins + (broker.result === "WIN" ? 1 : 0), losses: ctx.settlementState.daily.losses + (broker.result === "LOSS" ? 1 : 0), draws: ctx.settlementState.daily.draws + (broker.result === "DRAW" ? 1 : 0), settledPnl: Number((ctx.settlementState.daily.settledPnl + (Number(broker.profit) || 0)).toFixed(4)), trades: ctx.settlementState.daily.trades + 1 };
+    const dailyByContext = { ...(ctx.settlementState.dailyByContext ?? {}) };
+    const existingBucket = dailyByContext[settlementContext] ?? emptyDailyStats();
+    dailyByContext[settlementContext] = { wins: existingBucket.wins + (broker.result === "WIN" ? 1 : 0), losses: existingBucket.losses + (broker.result === "LOSS" ? 1 : 0), draws: existingBucket.draws + (broker.result === "DRAW" ? 1 : 0), settledPnl: Number((existingBucket.settledPnl + (Number(broker.profit) || 0)).toFixed(4)), trades: existingBucket.trades + 1 };
+    ctx.settlementState = { lastResult: broker.result, lastProfit: broker.profit, lastAt: settledAt, daily: settlementContext === ACCOUNT_PRACTICE ? nextDaily : ctx.settlementState.daily, dailyByContext };
+    ctx.lastTrade = { marketKey: key, accountContext: settlementContext, brokerOrderId, direction: position.direction, stake: position.stake, result: broker.result, profit: broker.profit, causalResult: settlement.result, mismatch: comparison.mismatch, at: settledAt };
     const agentState = broker.result === "WIN" ? "WIN" : broker.result === "LOSS" ? "LOSS" : "DRAW";
     this.#setAgent(ctx, agentState, comparison.reason);
     const signalRecord = this.signalLog.find((row) => row.executionId === position.executionId && row.disposition === "EXECUTED");
@@ -1775,9 +1998,12 @@ export class IqMultiRuntime extends EventEmitter {
     signalStats.settledPnl = Number((signalStats.settledPnl + (Number(broker.profit) || 0)).toFixed(4));
     ctx.indicative = { state: "NEUTRAL", delta: null, indicativePnl: null, updatedAt: settledAt };
     this.openPositions.delete(key); this.orderIndex.delete(String(brokerOrderId));
-    await this.#persistExecution({ executionId: position.executionId, brokerOrderId: String(brokerOrderId), state: "SETTLED", settledAt: nowIso(settledAt), brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, meta: { settlementReason: comparison.reason, causal: settlement.detail, marketKey: key } });
-    this.#emitEvent("position.settled", { marketKey: key, brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, correlationId: position.correlationId ?? null });
-    this.#auditRecord(position.correlationId ?? `corr${position.executionId}`, key, "SETTLEMENT", { brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit }, { persist: true });
+    await this.#persistExecution({ executionId: position.executionId, brokerOrderId: String(brokerOrderId), state: "SETTLED", accountContext: settlementContext, settledAt: nowIso(settledAt), brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, meta: { settlementReason: comparison.reason, causal: settlement.detail, marketKey: key } });
+    this.#emitEvent("position.settled", { marketKey: key, brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, correlationId: position.correlationId ?? null, accountContext: settlementContext });
+    this.#auditRecord(position.correlationId ?? `corr${position.executionId}`, key, "SETTLEMENT", { brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, accountContext: settlementContext }, { persist: true, accountContext: settlementContext });
+    if (settlementContext === ACCOUNT_REAL) {
+      this.accountContext.recordRealAttempt("SETTLEMENT", { strategy: this.accountContext.armedMeta?.strategy ?? null, agentVersion: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, decisionId: position.decisionSnapshot?.decisionId ?? null, stake: position.stake, marketKey: key, direction: position.direction, expiry: position.expirationSec, send: true, ack: "ACKNOWLEDGED", brokerOrderId, settlement: { result: broker.result, profit: broker.profit, at: settledAt, mismatch: comparison.mismatch } });
+    }
     // Fase 6: Professor avalia qualidade (snapshot t0) antes/depois do outcome; Journal registra memoria estruturada.
     const snapshot = position.decisionSnapshot ?? { source: "SETTLEMENT_FALLBACK", marketKey: key, regime: ctx.decisionState?.regime ?? null, setup: ctx.decisionState?.setup ?? null, action: position.action ?? null, trigger: ctx.decisionState?.trigger ?? null, location: ctx.decisionState?.location ?? null, momentum: ctx.decisionState?.momentum ?? null, strength: ctx.decisionState?.strength ?? null, volatility: ctx.decisionState?.volatility ?? null, contradictingEvidence: ctx.decisionState?.contradictingEvidence ?? [], supportingEvidence: ctx.decisionState?.supportingEvidence ?? [], processLog: ctx.decisionState?.processLog ?? [], knowledgeContextIds: ctx.decisionState?.knowledge?.ids ?? [], knowledgeVersion: ctx.decisionState?.knowledge?.version ?? null, critic: ctx.decisionState?.consensus ?? null };
     if (position.infraProbe === true) { this.#auditRecord(position.correlationId ?? `probe_${position.executionId}`, key, "INFRA_PROBE_SETTLED", { brokerOrderId, result: broker.result, profit: broker.profit, excludedFromStats: true }, { persist: true }); this.#safe(() => this.log("IQ_INFRA_PROBE_SETTLED", JSON.stringify({ marketKey: key, brokerOrderId, result: broker.result }))); return; }
@@ -1790,7 +2016,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (position.entryTiming?.candidateId) this.jit.recordExecution({ marketKey: key, candidateId: position.entryTiming.candidateId, action: position.action ?? (position.direction === "CALL" ? "BUY" : "SELL"), result: broker.result, stake: position.stake, payout: ctx.payout, entryAt: position.openedAt ?? null, settlementAt: settledAt, entryPrice: position.entryPrice ?? null });
     this.#emitEvent("professor.review", { marketKey: key, correlationId: position.correlationId ?? null, decisionQuality: review.decisionQuality, outcome: review.outcome, mistakes: review.mistakes.map((mistake) => mistake.code), wouldWaitBeBetter: review.wouldWaitBeBetter });
     this.#auditRecord(position.correlationId ?? `corr${position.executionId}`, key, "PROFESSOR_REVIEW", { decisionQuality: review.decisionQuality, outcome: review.outcome, mistakes: review.mistakes.map((mistake) => mistake.code), wouldWaitBeBetter: review.wouldWaitBeBetter }, { persist: true });
-    void this.journal.recordTrade({ tradeId: position.executionId, decisionId: ctx.decisionState?.decisionId ?? null, correlationId: position.correlationId ?? null, agentId: this.#agentId(ctx), marketKey: key, marketType: ctx.marketType, entryAt: position.openedAt ?? null, settlementAt: settledAt, payout: ctx.payout, stake: position.stake, direction: position.direction, result: broker.result, profit: broker.profit, snapshot, review: reviewWithTiming, initialReview, initialSnapshot, entryTiming: position.entryTiming ?? null, intelligence: ctx.agents?.intelligenceContext ?? null });
+    void this.journal.recordTrade({ tradeId: position.executionId, decisionId: ctx.decisionState?.decisionId ?? null, correlationId: position.correlationId ?? null, agentId: this.#agentId(ctx), marketKey: key, marketType: ctx.marketType, entryAt: position.openedAt ?? null, settlementAt: settledAt, payout: ctx.payout, stake: position.stake, direction: position.direction, result: broker.result, profit: broker.profit, accountContext: settlementContext, snapshot, review: reviewWithTiming, initialReview, initialSnapshot, entryTiming: position.entryTiming ?? null, intelligence: ctx.agents?.intelligenceContext ?? null });
     // SHADOW LAB (observacional): settlement BROKER_EXECUTED + janela POST diagnostic_only. Nunca entra no P&L do broker.
     void this.shadowLab.settleExecuted({
       observationId: position.entryTiming?.shadowObservationId ?? null,
@@ -1967,14 +2193,14 @@ export class IqMultiRuntime extends EventEmitter {
     try {
       if (!await this.#ensureDb()) { this.#recordPersistResult("execution", false, { code: "DB_UNAVAILABLE", message: "execution persistence unavailable (db not ready)" }); return false; }
       const updated = await this.pool.query(
-        `UPDATE iq_executions SET idempotency_key=COALESCE($2,idempotency_key), decision_id=COALESCE($3,decision_id), market_key=COALESCE($4,market_key), mode=COALESCE($5,mode), connection_id=COALESCE($6,connection_id), account_type=COALESCE($7,account_type), broker_order_id=COALESCE($8,broker_order_id), symbol=COALESCE($9,symbol), active_id=COALESCE($10,active_id), direction=COALESCE($11,direction), stake=COALESCE($12,stake), currency=COALESCE($13,currency), state=$14, request_id=COALESCE($15,request_id), expiration_at=COALESCE($16,expiration_at), entry_price=COALESCE($17,entry_price), acked_at=COALESCE($18,acked_at), settled_at=COALESCE($19,settled_at), broker_result=COALESCE($20,broker_result), causal_result=COALESCE($21,causal_result), settlement_mismatch=($22 OR settlement_mismatch), profit=COALESCE($23,profit), error=COALESCE($24,error), payout=COALESCE($25,payout), option_kind=COALESCE($26,option_kind), meta=COALESCE(iq_executions.meta,'{}'::jsonb) || COALESCE($27::jsonb,'{}'::jsonb), updated_at=now() WHERE execution_id=$1`,
-        [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.marketKey ?? null, row.mode ?? null, row.connectionId ?? null, row.accountType ?? null, row.brokerOrderId ?? null, row.symbol ?? null, row.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, row.payout ?? null, row.optionKind ?? null, row.meta ? JSON.stringify(row.meta) : null],
+        `UPDATE iq_executions SET idempotency_key=COALESCE($2,idempotency_key), decision_id=COALESCE($3,decision_id), market_key=COALESCE($4,market_key), mode=COALESCE($5,mode), connection_id=COALESCE($6,connection_id), account_type=COALESCE($7,account_type), broker_order_id=COALESCE($8,broker_order_id), symbol=COALESCE($9,symbol), active_id=COALESCE($10,active_id), direction=COALESCE($11,direction), stake=COALESCE($12,stake), currency=COALESCE($13,currency), state=$14, request_id=COALESCE($15,request_id), expiration_at=COALESCE($16,expiration_at), entry_price=COALESCE($17,entry_price), acked_at=COALESCE($18,acked_at), settled_at=COALESCE($19,settled_at), broker_result=COALESCE($20,broker_result), causal_result=COALESCE($21,causal_result), settlement_mismatch=($22 OR settlement_mismatch), profit=COALESCE($23,profit), error=COALESCE($24,error), payout=COALESCE($25,payout), option_kind=COALESCE($26,option_kind), meta=COALESCE(iq_executions.meta,'{}'::jsonb) || COALESCE($27::jsonb,'{}'::jsonb), account_context=COALESCE($28,account_context), updated_at=now() WHERE execution_id=$1`,
+        [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.marketKey ?? null, row.mode ?? null, row.connectionId ?? null, row.accountType ?? null, row.brokerOrderId ?? null, row.symbol ?? null, row.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, row.payout ?? null, row.optionKind ?? null, row.meta ? JSON.stringify(row.meta) : null, row.accountContext ?? (row.mode === "REAL" ? ACCOUNT_REAL : null)],
       );
       if ((updated.rowCount ?? 0) === 0) {
         await this.pool.query(
-          `INSERT INTO iq_executions(execution_id,idempotency_key,decision_id,market_key,mode,connection_id,account_type,broker_order_id,symbol,active_id,direction,stake,currency,state,request_id,expiration_at,entry_price,acked_at,settled_at,broker_result,causal_result,settlement_mismatch,profit,error,payout,option_kind,meta,requested_at,updated_at)
-           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,now(),now())`,
-          [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.marketKey ?? null, row.mode ?? "PRACTICE", row.connectionId ?? null, row.accountType ?? "PRACTICE", row.brokerOrderId ?? null, row.symbol ?? null, row.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, row.payout ?? null, row.optionKind ?? null, row.meta ? JSON.stringify(row.meta) : JSON.stringify({})],
+          `INSERT INTO iq_executions(execution_id,idempotency_key,decision_id,market_key,mode,connection_id,account_type,broker_order_id,symbol,active_id,direction,stake,currency,state,request_id,expiration_at,entry_price,acked_at,settled_at,broker_result,causal_result,settlement_mismatch,profit,error,payout,option_kind,meta,account_context,requested_at,updated_at)
+           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,now(),now())`,
+          [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.marketKey ?? null, row.mode ?? "PRACTICE", row.connectionId ?? null, row.accountType ?? "PRACTICE", row.brokerOrderId ?? null, row.symbol ?? null, row.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, row.payout ?? null, row.optionKind ?? null, row.meta ? JSON.stringify(row.meta) : JSON.stringify({}), row.accountContext ?? (row.mode === "REAL" ? ACCOUNT_REAL : ACCOUNT_PRACTICE)],
         );
       }
       this.#recordPersistResult("execution", true);
@@ -1982,13 +2208,15 @@ export class IqMultiRuntime extends EventEmitter {
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_PERSIST_FAILED", String(error?.message ?? error).slice(0, 160))); this.#recordPersistResult("execution", false, error); return false; }
   }
 
-  async recentExecutions(limit = 50, marketKeyFilter = null) {
+  async recentExecutions(limit = 50, marketKeyFilter = null, accountContext = null) {
     const bounded = Math.max(1, Math.min(200, Number(limit) || 50));
     try {
       if (!await this.#ensureDb()) return [];
-      const args = [bounded]; let where = "";
-      if (marketKeyFilter) { where = " WHERE market_key=$2"; args.push(marketKeyFilter); }
-      return (await this.pool.query(`SELECT execution_id AS "executionId", idempotency_key AS "idempotencyKey", decision_id AS "decisionId", market_key AS "marketKey", mode, account_type AS "accountType", broker_order_id AS "brokerOrderId", symbol, active_id AS "activeId", direction, stake, currency, state, entry_price AS "entryPrice", broker_result AS "brokerResult", causal_result AS "causalResult", settlement_mismatch AS "settlementMismatch", profit, payout, error, meta, requested_at AS "requestedAt", acked_at AS "ackedAt", settled_at AS "settledAt", expiration_at AS "expirationAt" FROM iq_executions${where} ORDER BY requested_at DESC LIMIT $1`, args)).rows.map((row) => ({ ...row, settlementMismatch: row.settlementMismatch === true }));
+      const args = [bounded]; const filters = [];
+      if (marketKeyFilter) { args.push(marketKeyFilter); filters.push(`market_key=$${args.length}`); }
+      if (accountContext) { args.push(accountContext); filters.push(`account_context=$${args.length}`); }
+      const where = filters.length ? ` WHERE ${filters.join(" AND ")}` : "";
+      return (await this.pool.query(`SELECT execution_id AS "executionId", idempotency_key AS "idempotencyKey", decision_id AS "decisionId", market_key AS "marketKey", mode, account_type AS "accountType", account_context AS "accountContext", broker_order_id AS "brokerOrderId", symbol, active_id AS "activeId", direction, stake, currency, state, entry_price AS "entryPrice", broker_result AS "brokerResult", causal_result AS "causalResult", settlement_mismatch AS "settlementMismatch", profit, payout, error, meta, requested_at AS "requestedAt", acked_at AS "ackedAt", settled_at AS "settledAt", expiration_at AS "expirationAt" FROM iq_executions${where} ORDER BY requested_at DESC LIMIT $1`, args)).rows.map((row) => ({ ...row, settlementMismatch: row.settlementMismatch === true }));
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_EXECUTIONS_READ_FAILED", String(error?.message ?? error).slice(0, 120))); return []; }
   }
 
@@ -2065,19 +2293,24 @@ export class IqMultiRuntime extends EventEmitter {
   async #loadDailyStats() {
     if (!this.pool || !await this.#ensureDb()) return;
     try {
-      const rows = (await this.pool.query("SELECT market_key, count(*) FILTER (WHERE broker_result='WIN')::int AS wins, count(*) FILTER (WHERE broker_result='LOSS')::int AS losses, count(*) FILTER (WHERE broker_result='DRAW')::int AS draws, COALESCE(sum(profit),0)::float AS pnl, count(*)::int AS trades FROM iq_executions WHERE state='SETTLED' AND settled_at >= date_trunc('day', now()) GROUP BY market_key")).rows;
+      const rows = (await this.pool.query("SELECT market_key, account_context, count(*) FILTER (WHERE broker_result='WIN')::int AS wins, count(*) FILTER (WHERE broker_result='LOSS')::int AS losses, count(*) FILTER (WHERE broker_result='DRAW')::int AS draws, COALESCE(sum(profit),0)::float AS pnl, count(*)::int AS trades FROM iq_executions WHERE state='SETTLED' AND settled_at >= date_trunc('day', now()) GROUP BY market_key, account_context")).rows;
+      for (const ctx of this.markets.values()) ctx.settlementState.dailyByContext = {};
       for (const row of rows) {
         const ctx = this.markets.get(row.market_key);
         if (!ctx) continue;
-        ctx.settlementState.daily = { wins: row.wins, losses: row.losses, draws: row.draws, settledPnl: Number(row.pnl) || 0, trades: row.trades };
+        const context = row.account_context === ACCOUNT_REAL ? ACCOUNT_REAL : ACCOUNT_PRACTICE;
+        const bucket = { wins: row.wins, losses: row.losses, draws: row.draws, settledPnl: Number(row.pnl) || 0, trades: row.trades };
+        ctx.settlementState.dailyByContext[context] = bucket;
+        if (context === ACCOUNT_PRACTICE) ctx.settlementState.daily = bucket;
       }
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_DAILY_STATS_FAILED", String(error?.message ?? error).slice(0, 120))); }
   }
 
-  async dailyEquityCurve(limit = 120) {
+  async dailyEquityCurve(limit = 120, accountContext = null) {
     try {
       if (!this.pool || !await this.#ensureDb()) return [];
-      const rows = (await this.pool.query("SELECT settled_at AS at, profit FROM iq_executions WHERE state='SETTLED' AND settled_at >= date_trunc('day', now()) ORDER BY settled_at ASC LIMIT $1", [Math.max(1, Math.min(500, limit))])).rows;
+      const context = accountContext ?? (this.accountContext.context === ACCOUNT_REAL ? ACCOUNT_REAL : ACCOUNT_PRACTICE);
+      const rows = (await this.pool.query("SELECT settled_at AS at, profit FROM iq_executions WHERE state='SETTLED' AND account_context=$2 AND settled_at >= date_trunc('day', now()) ORDER BY settled_at ASC LIMIT $1", [Math.max(1, Math.min(500, limit)), context])).rows;
       let cumulative = 0;
       return rows.map((row) => { cumulative = Number((cumulative + (Number(row.profit) || 0)).toFixed(4)); return { at: row.at, cumulative }; });
     } catch { return []; }
@@ -2127,22 +2360,29 @@ export class IqMultiRuntime extends EventEmitter {
   office() {
     if (this.now() - this.equityRefreshedAt > 30_000) { this.equityRefreshedAt = this.now(); void this.refreshEquityCurve(); }
     if (this.now() - (this.lastResearchPersist ?? 0) > 60_000) { this.lastResearchPersist = this.now(); void this.#persistConfig(); }
+    const activeContext = this.accountContext.context;
+    const contextState = this.accountContextState();
     const markets = [...this.markets.values()].map((ctx) => this.#publicMarket(ctx));
-    const portfolio = this.portfolioSnapshot();
+    const portfolio = this.portfolioSnapshot(activeContext);
+    const contextSignals = [...this.signalLog].reverse().filter((row) => (row.accountContext ?? ACCOUNT_PRACTICE) === activeContext).slice(0, 40);
+    const contextJournalTrades = this.journal.trades.filter((trade) => (trade.accountContext === ACCOUNT_REAL ? ACCOUNT_REAL : ACCOUNT_PRACTICE) === activeContext).length;
     const compliance = {
       mode: this.config.mode, armState: this.armState.snapshot(), killSwitch: this.killSwitch.status(), hardCap: this.config.hardCap,
       realMode: this.realMode.status(),
-      invariants: { practiceOnlyDefault: true, realRequiresExplicitConfirmation: true, oneOrderPerDecision: true, onePositionPerMarket: true, normalNeverFallsBackToOtc: true, maxActiveMarkets: this.config.maxActiveMarkets },
+      accountContext: { context: activeContext, state: contextState.state, armed: contextState.armed, lockedReason: contextState.lockedReason, realTradingEnabled: contextState.realTradingEnabled },
+      invariants: { practiceOnlyDefault: true, realRequiresExplicitConfirmation: true, oneOrderPerDecision: true, onePositionPerMarket: true, normalNeverFallsBackToOtc: true, maxActiveMarkets: this.config.maxActiveMarkets, crossContextBlocked: true },
     };
     const executionGate = {
       state: this.killSwitch.status().executionEnabled !== true ? "BLOCKED" : this.armState.armed === true ? (this.pendingOrders.size ? "ORDERING" : "ARMED") : "DISARMED",
       armed: this.armState.armed === true, pendingOrders: this.pendingOrders.size, allowedMarkets: markets.filter((market) => market.enabled && market.availability === "OPEN").map((market) => market.marketKey),
       blockedMarkets: markets.filter((market) => !market.enabled || market.availability !== "OPEN").map((market) => market.marketKey), reasons: this.connectionHealth().reasons,
+      accountContext: activeContext, realState: contextState.state,
     };
     return {
       version: RUNTIME_VERSION, at: this.now(), serverTime: this.session.serverTimeMs,
       connection: { ...this.session, reconnects: this.reconnects, healthy: this.connectionHealth().healthy },
       mode: this.config.mode, modeState: this.modeState(),
+      accountContext: contextState,
       health: this.persistenceHealth(),
       config: { globalMaxStake: this.config.globalMaxStake, defaultStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, hardCap: this.config.hardCap, maxActiveMarkets: this.config.maxActiveMarkets, autoExecute: this.config.autoExecute, revision: this.config.revision, brainGeneration: BRAIN_GENERATION, jitEnabled: this.config.jitEnabled === true, entryLeadMs: this.config.entryLeadMs, entryWindowMaxDriftMs: this.#entryMaxDriftMs(), qualityGateEnabled: this.config.qualityGateEnabled === true, minTradeQualityScore: this.#minTradeQualityScore() },
       activeCount: this.activeMarketKeys().length, activeLimit: this.config.maxActiveMarkets, universeCount: this.markets.size,
@@ -2159,7 +2399,7 @@ export class IqMultiRuntime extends EventEmitter {
       resolver: { lastResolvedAt: this.resolver.lastResolvedAt, resolvedCount: this.resolver.resolvedCount(), sampleActiveKeys: this.resolver.sampleActiveKeys, lastError: this.resolver.lastError },
       intelligence: this.intelligence.status(),
       knowledge: { ...this.knowledge.status(), secondBrain: this.secondBrain.status() },
-      journal: { trades: this.journal.trades.length, decisions: this.journal.decisions.length },
+      journal: { trades: contextJournalTrades, decisions: this.journal.decisions.length, accountContext: activeContext },
       hypotheses: this.hypotheses.list().length,
       feeds: this.feeds.status(),
       apprentice: this.apprentice.scoreboard(),
@@ -2171,7 +2411,8 @@ export class IqMultiRuntime extends EventEmitter {
         setups: Object.fromEntries([...this.markets.values()].filter((ctx) => ctx.enabled).map((ctx) => [ctx.marketKey, this.research.scoreboard(ctx.marketKey)])),
         ab: this.ab.scoreboard(),
       },
-      signals: [...this.signalLog].reverse().slice(0, 40),
+      signals: contextSignals,
+      signalsTotal: this.signalLog.length,
       signalStats: Object.fromEntries(this.signalStats),
       reconcile: this.reconcile,
       metrics: { messages: this.metrics.messages, candles: this.metrics.candles, rejected: this.metrics.rejected, reconnects: this.reconnects, memoryMb: Number((process.memoryUsage().rss / 1048576).toFixed(1)), cpuUserMs: process.cpuUsage().user, uptimeSec: Math.round(process.uptime()) },
@@ -2195,9 +2436,7 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
-  async refreshEquityCurve() { this.equityCurveCache = await this.dailyEquityCurve(); return this.equityCurveCache; }
-
-  #legacyStatus() {
+  async refreshEquityCurve() { this.equityCurveCache = await this.dailyEquityCurve(); return this.equityCurveCache; }  #legacyStatus() {
     const primary = this.markets.get("EURUSD:NORMAL")?.lastCandle ? this.markets.get("EURUSD:NORMAL") : [...this.markets.values()].find((ctx) => ctx.enabled && ctx.lastCandle) ?? [...this.markets.values()].find((ctx) => ctx.lastCandle) ?? null;
     const candles = primary ? this.#candleList(primary) : [];
     return {

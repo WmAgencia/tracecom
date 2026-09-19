@@ -1,16 +1,21 @@
 /* =====================================================================
  * TRACE/COM — OFFICE V3 · TOP BAR
  *
- * Frontend/UX ONLY. Compact operational strip: PRACTICE mode, connection,
- * ARM, AUTO, global stake + "apply to all", open/total markets and the
- * execution gate state. Every control calls a REAL endpoint:
+ * Frontend/UX ONLY. Compact operational strip: seletor PRACTICE ⇄ REAL,
+ * conexão, ARM, AUTO, global stake + "apply to all", mercados e execution
+ * gate. Every control calls a REAL endpoint:
  *
+ *   SELETOR      POST /api/iq/account/select · GET /api/iq/account/context
+ *   REAL ARM     POST /api/iq/real/arm (frase CONFIRMAR E ARMAR REAL)
+ *   REAL DISARM  POST /api/iq/real/disarm
+ *   REAL PREFLIGHT GET /api/iq/real/preflight
  *   ARM/DISARM   POST /api/iq/arm  · POST /api/iq/disarm
  *   AUTO         POST /api/iq/config/auto-execute
  *   GLOBAL STAKE POST /api/iq/config/global-stake
  *
- * REAL mode is NEVER offered: the REAL control is permanently disabled.
- * No orders, no technical indicators. PRACTICE only. ZERO REAL.
+ * REAL nasce LOCKED: a UI nunca envia ordem REAL; o ARM exige confirmação
+ * explícita (saldo real, stake, exposição, posições, strategy, AUTO) e o
+ * servidor aplica fail-closed. Nenhum segredo no DOM.
  *
  * Public API:
  *   buildTopBarModel(office)
@@ -18,7 +23,7 @@
  *   updateTopBar(rootEl, officeJson, options)
  * ===================================================================== */
 
-export const TOPBAR_VERSION = "office-v3-topbar.1.0.0";
+export const TOPBAR_VERSION = "office-v3-topbar.1.1.0";
 
 export const TOPBAR_ENDPOINTS = Object.freeze({
   arm: "/api/iq/arm",
@@ -26,6 +31,17 @@ export const TOPBAR_ENDPOINTS = Object.freeze({
   auto: "/api/iq/config/auto-execute",
   globalStake: "/api/iq/config/global-stake",
 });
+
+/** Seleção de conta e REAL LOCKED/ARMED — endpoints server-side. */
+export const ACCOUNT_ENDPOINTS = Object.freeze({
+  context: "/api/iq/account/context",
+  select: "/api/iq/account/select",
+  realArm: "/api/iq/real/arm",
+  realDisarm: "/api/iq/real/disarm",
+  realPreflight: "/api/iq/real/preflight",
+});
+
+export const REAL_ARM_CONFIRMATION_PHRASE = "CONFIRMAR E ARMAR REAL";
 
 /**
  * IQ OPTION modal endpoints — only EXISTING, public relay endpoints. The modal
@@ -68,11 +84,31 @@ export function buildTopBarModel(office) {
   const executionGate = source?.aux?.executionGate ?? null;
   const armed = executionGate?.armed === true || armState?.armed === true;
   const mode = typeof source.mode === "string" ? source.mode : null;
+  const accountContext = source.accountContext && typeof source.accountContext === "object" ? source.accountContext : null;
+  const context = accountContext?.context === "REAL" ? "REAL" : "PRACTICE";
+  const accountState = typeof accountContext?.state === "string" ? accountContext.state : context;
+  const realState = accountContext ? (accountContext.armed === true ? "REAL · ARMED" : "REAL · LOCKED") : "PRACTICE";
+  const realAccount = accountContext?.realAccount && typeof accountContext.realAccount === "object" ? accountContext.realAccount : null;
 
   return {
     version: TOPBAR_VERSION,
     mode,
-    practice: mode !== "REAL",
+    practice: context !== "REAL",
+    accountContext: context,
+    accountState,
+    realState,
+    realArmed: accountContext ? accountContext.armed === true && accountContext.realExecutionEnabled === true : false,
+    realLocked: context === "REAL" && !(accountContext ? accountContext.armed === true : false),
+    realTradingEnabled: accountContext?.realTradingEnabled === true,
+    realExecutionForbidden: !(accountContext ? accountContext.realExecutionEnabled === true : false),
+    realAccountAvailable: realAccount?.available === true,
+    realBalance: toNumber(realAccount?.balance),
+    realCurrency: typeof realAccount?.currency === "string" ? realAccount.currency : null,
+    lockedReason: accountContext?.lockedReason ?? null,
+    maxExposure: toNumber(accountContext?.maxExposure),
+    maxPositions: toNumber(accountContext?.maxPositions),
+    strategy: typeof accountContext?.strategy === "string" ? accountContext.strategy : null,
+    allowlist: accountContext?.allowlist ?? null,
     connected: source?.connection?.connected === true,
     healthy: source?.connection?.healthy === true,
     armed,
@@ -121,13 +157,14 @@ export function buildIqOptionModel(office, status = null) {
   const balance = toNumber(account?.balance);
   const currency = typeof account?.currency === "string" ? account.currency : null;
   const mcp = source.mcp ?? source.aux?.mcp ?? source.runtime?.mcp ?? null;
+  const accountContext = source.accountContext && typeof source.accountContext === "object" ? source.accountContext : null;
 
   return {
-    version: "office-v3-iq-option.1.0.0",
+    version: "office-v3-iq-option.1.1.0",
     connected,
     authState,
     mode,
-    practice: mode !== "REAL",
+    practice: (accountContext?.context ?? mode) !== "REAL",
     host: connection.host,
     healthy,
     reconnects: toNumber(source.connection?.reconnects ?? statusLegacy?.marketData?.reconnects),
@@ -141,8 +178,10 @@ export function buildIqOptionModel(office, status = null) {
     wsText: connected ? (healthy ? "ONLINE" : "CONECTADO · DEGRADADO") : authState === "TWO_FACTOR_REQUIRED" ? "AGUARDANDO 2FA" : "DESCONECTADO",
     mcpStatus: mcp ? (mcp.status ?? (mcp.connected === true ? "CONECTADO" : "SEM SESSÃO")) : "SEM STATUS NO SNAPSHOT",
     mcpKnown: Boolean(mcp),
-    realBlocked: true,
-    accountSwitchSupported: false,
+    realBlocked: accountContext ? accountContext.realExecutionEnabled !== true : true,
+    accountSwitchSupported: true,
+    accountContext: accountContext?.context === "REAL" ? "REAL" : "PRACTICE",
+    realState: accountContext ? (accountContext.armed === true ? "REAL · ARMED" : "REAL · LOCKED") : "PRACTICE",
     globalStake: toNumber(source.config?.globalMaxStake),
     defaultStake: toNumber(source.config?.defaultStake),
     hardCap: toNumber(source.config?.hardCap),
@@ -157,6 +196,47 @@ function gateText(model) {
   if (state) return state;
   if (model.killSwitch && model.killSwitch.executionEnabled === false) return "BLOCKED";
   return model.armed ? "ARMED" : "DISARMED";
+}
+
+/**
+ * Model do modal CONTA REAL — somente leitura. Deriva do snapshot do Office e do
+ * status server-side (GET /api/iq/account/context / GET /api/iq/real/preflight).
+ * Nunca contém segredo e nunca simula saldo: indisponível => available:false.
+ */
+export function buildRealAccountModel(office = null, accountStatus = null) {
+  const base = buildTopBarModel(office);
+  const statusData = accountStatus && typeof accountStatus === "object" ? accountStatus : null;
+  const context = statusData?.context === "REAL" ? "REAL" : base.accountContext;
+  const armed = statusData ? statusData.armed === true : base.realArmed;
+  const realAccount = statusData?.realAccount && typeof statusData.realAccount === "object"
+    ? statusData.realAccount
+    : { available: base.realAccountAvailable, balance: base.realBalance, currency: base.realCurrency, error: null };
+  const balance = toNumber(realAccount.balance);
+  const currency = typeof realAccount.currency === "string" ? realAccount.currency : null;
+  const preflight = statusData?.lastPreflight && typeof statusData.lastPreflight === "object" ? statusData.lastPreflight : null;
+  const blockedBy = Array.isArray(preflight?.blockedBy) ? preflight.blockedBy : [];
+  return {
+    version: "office-v3-real-account.1.0.0",
+    context,
+    state: armed ? "REAL · ARMED" : context === "REAL" ? "REAL · LOCKED" : "PRACTICE",
+    armed,
+    realAvailable: realAccount.available === true,
+    accessError: typeof realAccount.error === "string" ? realAccount.error : null,
+    balance,
+    currency,
+    balanceText: balance === null ? EMPTY : `${currency ? `${currency} ` : ""}${balance.toFixed(2)}`,
+    maxStake: toNumber(statusData?.maxRealStake) ?? base.stakeValue,
+    hardCap: toNumber(statusData?.hardCap) ?? base.hardCap,
+    maxExposure: toNumber(statusData?.maxExposure) ?? base.maxExposure,
+    maxPositions: toNumber(statusData?.maxPositions) ?? base.maxPositions,
+    strategy: typeof statusData?.strategy === "string" ? statusData.strategy : base.strategy,
+    realTradingEnabled: statusData ? statusData.realTradingEnabled === true : base.realTradingEnabled,
+    auto: base.auto,
+    preflightOk: preflight ? preflight.ok === true : false,
+    preflightText: preflight ? (preflight.ok === true ? "PASS" : `BLOCK: ${blockedBy.join(", ")}`) : "NÃO VERIFICADO",
+    shadowOnly: statusData?.shadowOnly ?? base.allowlist?.shadowOnly ?? [],
+    phrase: REAL_ARM_CONFIRMATION_PHRASE,
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -223,11 +303,10 @@ function createTopBar(doc, rootEl, options) {
   const gate = bit(doc, rootEl, "div", "tc-topbar-chip", null, "gate");
   gate.append(el(doc, "small", null, "EXECUÇÃO"), el(doc, "b", null, EMPTY));
 
-  const real = bit(doc, rootEl, "button", "tc-topbar-btn is-disabled", "REAL OFF", "real");
+  const real = bit(doc, rootEl, "button", "tc-topbar-btn", "PRACTICE ⇄ REAL", "real");
   real.setAttribute("type", "button");
-  real.disabled = true;
-  real.setAttribute("aria-disabled", "true");
-  real.setAttribute("title", "ZERO REAL — indisponível nesta build PRACTICE");
+  real.setAttribute("aria-haspopup", "dialog");
+  real.setAttribute("title", "Selecionar conta PRACTICE ⇄ REAL (REAL inicia LOCKED)");
 
   /* ---- IQ OPTION modal (T2) — status/config, never credentials ---- */
   const iq = bit(doc, rootEl, "button", "tc-topbar-btn", "IQ OPTION", "iq");
@@ -268,14 +347,57 @@ function createTopBar(doc, rootEl, options) {
   status.setAttribute("role", "status");
   status.setAttribute("aria-live", "polite");
 
+  /* ---- REAL account modal (LOCKED/ARMED; confirmação explícita, sem segredos) ---- */
+  const realModal = el(doc, "div", "tc-iq-modal");
+  realModal.hidden = true;
+  realModal.setAttribute("data-tc-v3", "real-account");
+  realModal.setAttribute("role", "dialog");
+  realModal.setAttribute("aria-label", "Conta REAL — LOCKED/ARMED");
+  const realHead = el(doc, "div", "tc-iq-head");
+  realHead.append(el(doc, "h3", "tc-iq-title", "CONTA REAL"), el(doc, "span", "tc-iq-sub", "LOCKED / ARMED"));
+  const realClose = el(doc, "button", "tc-iq-close", "×");
+  realClose.setAttribute("type", "button");
+  realClose.setAttribute("aria-label", "Fechar");
+  realHead.appendChild(realClose);
+  const realBody = el(doc, "div", "tc-iq-body");
+  const realAckWrap = el(doc, "label", "tc-iq-row");
+  realAckWrap.setAttribute("data-real-row", "ack");
+  const realAck = el(doc, "input");
+  realAck.setAttribute("type", "checkbox");
+  realAck.setAttribute("data-tb", "real-ack");
+  realAck.setAttribute("aria-label", "Confirmo operar na conta real");
+  realAckWrap.append(el(doc, "span", "tc-iq-label", "RISCO ACEITO"), realAck);
+  const realActions = el(doc, "div", "tc-iq-actions");
+  const realSelectPractice = el(doc, "button", "tc-topbar-btn", "IR PARA PRACTICE");
+  realSelectPractice.setAttribute("type", "button");
+  realSelectPractice.setAttribute("data-tb", "real-select-practice");
+  const realSelectReal = el(doc, "button", "tc-topbar-btn", "SELECIONAR REAL");
+  realSelectReal.setAttribute("type", "button");
+  realSelectReal.setAttribute("data-tb", "real-select-real");
+  const realArmButton = el(doc, "button", "tc-topbar-btn", "CONFIRMAR E ARMAR REAL");
+  realArmButton.setAttribute("type", "button");
+  realArmButton.setAttribute("data-tb", "real-arm");
+  realArmButton.setAttribute("data-real-arm", "true");
+  const realDisarmButton = el(doc, "button", "tc-topbar-btn", "DESARMAR REAL");
+  realDisarmButton.setAttribute("type", "button");
+  realDisarmButton.setAttribute("data-tb", "real-disarm");
+  const realRefresh = el(doc, "button", "tc-topbar-btn", "ATUALIZAR");
+  realRefresh.setAttribute("type", "button");
+  realRefresh.setAttribute("data-tb", "real-refresh");
+  realActions.append(realSelectPractice, realSelectReal, realArmButton, realDisarmButton, realRefresh);
+  const realNote = el(doc, "p", "tc-iq-note", "REAL nasce LOCKED. Nenhuma ordem é enviada pela UI; o servidor decide com fail-closed (REAL_TRADING_ENABLED, ARM, kill switch, risk gate, data quality, allowlist, hard cap, mercado e idempotência). Estratégias experimentais permanecem SHADOW.");
+  realModal.append(realHead, realBody, realAckWrap, realActions, realNote);
+  rootEl.appendChild(realModal);
+
   const state = {
     model: buildTopBarModel(null),
     office: null,
     iqStatus: null,
+    accountStatus: null,
     busy: false,
   };
 
-  const nodes = { mode, connection, arm, auto, stakeWrap, stakeInput, stakeApply, markets, active, gate, real, iq, iqModal, iqBody, status };
+  const nodes = { mode, connection, arm, auto, stakeWrap, stakeInput, stakeApply, markets, active, gate, real, iq, iqModal, iqBody, status, realModal, realBody, realSelectPractice, realSelectReal, realArmButton, realDisarmButton, realAck };
 
   function setStatus(text) {
     status.textContent = text ?? "";
@@ -431,16 +553,105 @@ function createTopBar(doc, rootEl, options) {
     });
   });
 
+  /* ---- REAL account modal: seleção PRACTICE ⇄ REAL + LOCKED/ARMED (server-side) ---- */
+
+  function renderRealModal() {
+    const model = buildRealAccountModel(state.office, state.accountStatus);
+    realBody.textContent = "";
+    realBody.append(
+      iqRow("context", "CONTEXTO", model.context, model.context === "REAL" ? "warn" : "ok"),
+      iqRow("state", "ESTADO", model.state, model.armed ? "ok" : "muted"),
+      iqRow("balance", "SALDO REAL", model.balanceText, model.realAvailable ? "ok" : "bad"),
+      iqRow("access", "ACESSO", model.realAvailable ? "SOMENTE LEITURA · OK" : `INDISPONÍVEL (${model.accessError ?? "ERRO"})`, model.realAvailable ? "ok" : "bad"),
+      iqRow("stake", "STAKE MÁX", model.maxStake === null ? EMPTY : `R$ ${model.maxStake.toFixed(2)} · teto ${model.hardCap === null ? EMPTY : `R$ ${model.hardCap.toFixed(2)}`}`, null),
+      iqRow("exposure", "EXPOSIÇÃO MÁX", model.maxExposure === null ? EMPTY : `R$ ${model.maxExposure.toFixed(2)}`, null),
+      iqRow("positions", "POSIÇÕES MÁX", model.maxPositions === null ? EMPTY : String(model.maxPositions), null),
+      iqRow("strategy", "STRATEGY", model.strategy ?? "PROFESSIONAL_BRAIN_G2 (somente quando armado)", null),
+      iqRow("auto", "AUTO", model.auto ? "ON" : "OFF", null),
+      iqRow("trading", "REAL_TRADING_ENABLED", model.realTradingEnabled ? "true" : "false", model.realTradingEnabled ? "warn" : "muted"),
+      iqRow("preflight", "PREFLIGHT", model.preflightText, model.preflightOk ? "ok" : "warn"),
+      iqRow("shadow", "SHADOW (sempre)", Array.isArray(model.shadowOnly) ? model.shadowOnly.join(", ") : EMPTY, "muted"),
+    );
+    realArmButton.disabled = !(model.realAvailable && model.context === "REAL") || model.armed;
+    realDisarmButton.disabled = !model.armed;
+    realSelectReal.disabled = model.context === "REAL";
+    realSelectPractice.disabled = model.context === "PRACTICE";
+    realModal.setAttribute("data-context", model.context);
+    realModal.setAttribute("data-state", model.armed ? "ARMED" : model.context === "REAL" ? "LOCKED" : "PRACTICE");
+    return model;
+  }
+
+  function refreshAccountStatus() {
+    setStatus("atualizando conta…");
+    return iqRequest(ACCOUNT_ENDPOINTS.context).then((json) => {
+      if (json) state.accountStatus = json;
+      if (json && json.context === "REAL") {
+        return iqRequest(ACCOUNT_ENDPOINTS.realPreflight).then((preflight) => {
+          if (preflight) state.accountStatus = { ...state.accountStatus, lastPreflight: preflight };
+          renderRealModal();
+          setStatus("ok · conta atualizada");
+          return state.accountStatus;
+        });
+      }
+      renderRealModal();
+      setStatus("ok · conta atualizada");
+      return state.accountStatus;
+    });
+  }
+
+  function openRealModal() {
+    realModal.hidden = false;
+    renderRealModal();
+    void refreshAccountStatus();
+  }
+
+  function closeRealModal() {
+    realModal.hidden = true;
+  }
+
+  real.addEventListener("click", () => (realModal.hidden ? openRealModal() : closeRealModal()));
+  realClose.addEventListener("click", closeRealModal);
+  realRefresh.addEventListener("click", () => void refreshAccountStatus());
+  realSelectPractice.addEventListener("click", () => {
+    if (state.busy) return;
+    void send(ACCOUNT_ENDPOINTS.select, { context: "PRACTICE" }).then(() => refreshAccountStatus());
+  });
+  realSelectReal.addEventListener("click", () => {
+    if (state.busy) return;
+    void send(ACCOUNT_ENDPOINTS.select, { context: "REAL" }).then(() => refreshAccountStatus());
+  });
+  realArmButton.addEventListener("click", () => {
+    if (state.busy) return;
+    if (realAck.checked !== true) { setStatus("marque RISCO ACEITO para armar REAL"); return; }
+    const stake = currentStake();
+    void send(ACCOUNT_ENDPOINTS.realArm, { phrase: REAL_ARM_CONFIRMATION_PHRASE, acknowledgeRisk: true, maxStake: stake }).then((json) => {
+      if (json && typeof json === "object") state.accountStatus = { ...(state.accountStatus ?? {}), ...json };
+      return refreshAccountStatus();
+    });
+  });
+  realDisarmButton.addEventListener("click", () => {
+    if (state.busy) return;
+    void send(ACCOUNT_ENDPOINTS.realDisarm, {}).then(() => refreshAccountStatus());
+  });
+
   function update(officeJson) {
     const model = buildTopBarModel(officeJson);
     state.model = model;
     state.office = officeJson ?? null;
 
     const modeText = model.mode ?? EMPTY;
-    nodes.mode.lastElementChild.textContent = model.practice ? `${modeText} · ZERO REAL` : "REAL BLOQUEADO";
-    nodes.mode.classList?.toggle?.("is-ok", model.practice);
-    nodes.mode.classList?.toggle?.("is-bad", !model.practice);
+    nodes.mode.lastElementChild.textContent = model.accountContext === "REAL" ? model.realState : `${modeText} · ZERO REAL`;
+    nodes.mode.classList?.toggle?.("is-ok", model.accountContext !== "REAL");
+    nodes.mode.classList?.toggle?.("is-bad", model.accountContext === "REAL" && !model.realArmed);
     nodes.mode.setAttribute("data-mode", modeText);
+    nodes.mode.setAttribute("data-account-context", model.accountContext);
+
+    nodes.real.textContent = model.accountContext === "REAL" ? model.realState : "PRACTICE ⇄ REAL";
+    nodes.real.setAttribute("data-context", model.accountContext);
+    nodes.real.setAttribute("data-real", model.realArmed ? "ARMED" : model.accountContext === "REAL" ? "LOCKED" : "OFF");
+    nodes.real.disabled = false;
+    nodes.real.classList?.toggle?.("is-on", model.realArmed);
+    nodes.real.classList?.toggle?.("is-bad", model.accountContext === "REAL" && !model.realArmed);
 
     nodes.connection.lastElementChild.textContent = connectionText(model);
     nodes.connection.classList?.toggle?.("is-ok", model.connected && model.healthy);
@@ -466,6 +677,7 @@ function createTopBar(doc, rootEl, options) {
 
     nodes.active.lastElementChild.textContent = model.activeCount === null ? EMPTY : `${model.activeCount}/${model.activeLimit ?? EMPTY}`;
     nodes.gate.lastElementChild.textContent = gateText(model);
+    if (realModal.hidden === false) renderRealModal();
     if (iqModal.hidden === false) renderIqModal();
     else nodes.iq.setAttribute("data-connected", buildIqOptionModel(officeJson, state.iqStatus).connected ? "true" : "false");
     return model;
@@ -476,12 +688,21 @@ function createTopBar(doc, rootEl, options) {
     state,
     nodes,
     endpoints: TOPBAR_ENDPOINTS,
+    accountEndpoints: ACCOUNT_ENDPOINTS,
     iq: {
       model: () => buildIqOptionModel(state.office, state.iqStatus),
       open: openIqModal,
       close: closeIqModal,
       refresh: refreshIqModal,
       isOpen: () => iqModal.hidden === false,
+    },
+    real: {
+      model: () => buildRealAccountModel(state.office, state.accountStatus),
+      open: openRealModal,
+      close: closeRealModal,
+      refresh: refreshAccountStatus,
+      isOpen: () => realModal.hidden === false,
+      phrase: REAL_ARM_CONFIRMATION_PHRASE,
     },
   };
   return rootEl.__tcTopBar;

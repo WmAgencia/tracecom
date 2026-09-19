@@ -451,16 +451,73 @@ describe("OFFICE V3 UI — top bar operacional (TASK 5)", () => {
     expect(Object.keys(calls[0]!.body)).toEqual(["value"]);
   });
 
-  it("REAL permanece desabilitado e o módulo nunca referencia modo REAL", () => {
+  it("seletor PRACTICE ⇄ REAL existe e a UI nunca chama endpoint de ordem REAL", () => {
     const root = fakeDoc.createElement("div");
     topbar.mountTopBar(root, officeFixture(), { document: fakeDoc });
     const real = topbarControl(root, "real");
-    expect(real.disabled).toBe(true);
-    expect(real.getAttribute("aria-disabled")).toBe("true");
-    expect(real.textContent).toBe("REAL OFF");
+    expect(real.disabled).toBe(false);
+    expect(real.textContent).toBe("PRACTICE ⇄ REAL");
+    expect(real.getAttribute("data-context")).toBe("PRACTICE");
+    expect(real.getAttribute("data-real")).toBe("OFF");
     const source = readFileSync(new URL("../../src/http/public/office-v3/topbar.js", import.meta.url), "utf8");
     expect(source.includes("/api/iq/mode")).toBe(false);
-    expect(source.includes("/api/iq/real")).toBe(false);
+    expect(source.includes("/api/iq/test-order")).toBe(false);
+    expect(source.includes("/api/iq/real/confirm")).toBe(false);
+    expect(source.includes("placeOrder")).toBe(false);
+    expect(source.includes("sendOrder")).toBe(false);
+    expect(source.includes("/api/iq/account/select")).toBe(true);
+    expect(source.includes("/api/iq/real/arm")).toBe(true);
+    expect(source.includes("/api/iq/real/disarm")).toBe(true);
+  });
+
+  it("REAL LOCKED exibe estado e começa desarmado no modal (sem ordem)", () => {
+    const office = officeFixture({ accountContext: { context: "REAL", state: "REAL · LOCKED", armed: false, realExecutionEnabled: false, realTradingEnabled: false, realAccount: { available: false, error: "REAL_ACCOUNT_UNAVAILABLE" }, allowlist: { shadowOnly: ["SCENARIO_ENGINE_V3_FROZEN"] } } });
+    const root = fakeDoc.createElement("div");
+    const controller = topbar.mountTopBar(root, office, { document: fakeDoc });
+    const real = topbarControl(root, "real");
+    expect(real.textContent).toBe("REAL · LOCKED");
+    expect(real.getAttribute("data-real")).toBe("LOCKED");
+    const model = topbar.buildRealAccountModel(office, null);
+    expect(model.state).toBe("REAL · LOCKED");
+    expect(model.armed).toBe(false);
+    expect(model.realAvailable).toBe(false);
+    expect(model.balanceText).toBe("—");
+    expect(controller.real.phrase).toBe("CONFIRMAR E ARMAR REAL");
+  });
+
+  it("botão REAL abre o modal e SELECIONAR REAL chama POST /api/iq/account/select", async () => {
+    const { calls, impl } = mockFetch();
+    const root = fakeDoc.createElement("div");
+    topbar.mountTopBar(root, officeFixture(), { document: fakeDoc, fetchImpl: impl });
+    topbarControl(root, "real").dispatchEvent({ type: "click" });
+    await flush();
+    const selectReal = byData(root, "tb", "real-select-real")[0];
+    expect(selectReal).toBeTruthy();
+    selectReal.dispatchEvent({ type: "click" });
+    await flush();
+    const selectCall = calls.find((call) => call.url === "/api/iq/account/select");
+    expect(selectCall).toBeTruthy();
+    expect(selectCall!.body).toEqual({ context: "REAL" });
+    expect(calls.some((call) => call.url === "/api/iq/test-order")).toBe(false);
+  });
+
+  it("ARMAR REAL exige RISCO ACEITO e envia frase CONFIRMAR E ARMAR REAL", async () => {
+    const { calls, impl } = mockFetch();
+    const office = officeFixture({ accountContext: { context: "REAL", state: "REAL · LOCKED", armed: false, realExecutionEnabled: false, realTradingEnabled: true, realAccount: { available: true, balance: 500, currency: "BRL" }, allowlist: { shadowOnly: [] } } });
+    const root = fakeDoc.createElement("div");
+    topbar.mountTopBar(root, office, { document: fakeDoc, fetchImpl: impl });
+    topbarControl(root, "real").dispatchEvent({ type: "click" });
+    await flush();
+    const armButton = byData(root, "tb", "real-arm")[0];
+    armButton.dispatchEvent({ type: "click" });
+    await flush();
+    expect(calls.some((call) => call.url === "/api/iq/real/arm")).toBe(false);
+    byData(root, "tb", "real-ack")[0].checked = true;
+    armButton.dispatchEvent({ type: "click" });
+    await flush();
+    const armCall = calls.find((call) => call.url === "/api/iq/real/arm");
+    expect(armCall).toBeTruthy();
+    expect(armCall!.body).toEqual({ phrase: "CONFIRMAR E ARMAR REAL", acknowledgeRisk: true, maxStake: 10 });
   });
 
   it("falha de rede não quebra o top bar (fail-soft)", async () => {

@@ -84,6 +84,7 @@ export class TradingJournal {
     const record = {
       version: JOURNAL_VERSION,
       tradeId: entry.tradeId ?? null, decisionId: entry.decisionId ?? null, correlationId: entry.correlationId ?? null,
+      accountContext: entry.accountContext === "REAL" ? "REAL" : "PRACTICE",
       agentId: entry.agentId ?? null, marketKey: entry.marketKey ?? null, marketType: entry.marketType ?? null,
       entryAt: entry.entryAt ?? null, settlementAt: entry.settlementAt ?? this.now(), payout: entry.payout ?? null, stake: entry.stake ?? null,
       direction: entry.direction ?? null, result: entry.result ?? "UNKNOWN",
