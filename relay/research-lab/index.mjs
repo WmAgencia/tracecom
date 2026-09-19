@@ -1,0 +1,20 @@
+/** QUANT / RESEARCH PLATFORM — exports publicos. */
+export { RESEARCH_PLATFORM_VERSION, RESEARCH_MODE, RESEARCH_POLICY, FACTOR_CATEGORIES, FACTOR_STATUSES, FACTOR_COMPATIBILITY, NATIVE_OR_DERIVED, FEATURE_STATES, EVIDENCE_QUALITY, VALIDATION_MODES, JOB_STATES, MODEL_STATUSES, MODEL_TYPES, OTC_UNAVAILABLE_DATA, assertResearchOnly } from "./contracts.mjs";
+export { SNAPSHOT_META_VERSION, buildSnapshotMeta, snapshotFromRows, assertComparableSnapshots } from "./snapshot.mjs";
+export { RESEARCH_MATH_VERSION, mean, stdev, percentile, median, pearson, spearman, rank, wilsonInterval, normalizedPnl, expectancy, maxDrawdown, maxLossStreak, bootstrapResults, monteCarloSequence, mutualInformation, clusterByCorrelation } from "./math.mjs";
+export { OPS_VERSION, tsMean, tsStd, tsMax, tsMin, tsRank, tsCorr, tsSlope, tsRSquare, tsResidual, tsQuantile, tsArgMax, tsArgMin, pctChange, delta, shift } from "./ops.mjs";
+export { FACTOR_CONTRACT_VERSION, formulaHash, buildFactorDefinition, validateFactor, compatibilityFor } from "./factor-contracts.mjs";
+export { FACTOR_REGISTRY_VERSION, FactorRegistry } from "./factor-registry.mjs";
+export { FACTOR_CATALOG_VERSION, buildFactorRegistry, factorRegistry, evaluateFactor, factorCatalogManifest, IMPORTED_NOTICE, IMPORTED_SOURCE } from "./factors/index.mjs";
+export { NATIVE_FACTORS } from "./factors/native.mjs";
+export { IMPORTED_FACTORS } from "./factors/imported.mjs";
+export { FACTOR_PURITY_VERSION, checkFactorPurity, puritySuite, FORBIDDEN_FORMULA_PATTERNS } from "./purity.mjs";
+export { COVERAGE_AUDIT_VERSION, auditFeatureCoverage } from "./coverage-audit.mjs";
+export { ALPHA_BENCH_VERSION, benchmarkFactor, benchmarkSummary, correlationMatrix } from "./bench.mjs";
+export { ABLATION_LAB_VERSION, ABLATION_COMPONENTS, evaluateAblation, ablationMatrix } from "./ablation.mjs";
+export { BACKTEST_ENGINE_VERSION, PAYOUT_POLICY, resolvePayout, settleBinaryOutcome, simulateExecution, runBinaryBacktest, summarizeBacktest, VALIDATION_POLICY, walkForward, purgedKFold, cpcv, untouchedHoldout, bootstrapValidation } from "./backtest.mjs";
+export { REGISTRIES_VERSION, hashDataset, ResearchRegistries, evidenceQualityOf, buildStrategyRegimeDatabase, EVIDENCE_POLICY } from "./registries.mjs";
+export { JOURNAL_INTELLIGENCE_VERSION, DRIFT_VERSION, CALIBRATION_VERSION, ML_LAB_VERSION, JOURNAL_PATTERNS, detectJournalPatterns, journalIntelligence, featureDrift, predictionDrift, performanceDrift, regimeDistributionDrift, driftReport, reliabilityBins, fitPlatt, mlLabStatus, trainLogistic, ML_TARGET } from "./intelligence.mjs";
+export { RESEARCH_AGENTS_VERSION, RESEARCH_DAG_VERSION, RESEARCH_AGENT_IDS, runResearchAgent, runResearchDag } from "./agents.mjs";
+export { RESEARCH_JOBS_VERSION, DEFAULT_RESOURCE_LIMITS, ResearchJobQueue } from "./jobs.mjs";
+export { CHECKPOINTS_VERSION, CHECKPOINT_LEVELS, v4DirectionalCheckpoints } from "./checkpoints.mjs";
