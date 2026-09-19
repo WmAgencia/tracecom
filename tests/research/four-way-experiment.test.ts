@@ -7,7 +7,7 @@ const mod = await import("../../relay/four-way-experiment.mjs");
 
 const goodContext = { accountContext: "PRACTICE", brokerAccountType: "PRACTICE", realState: "LOCKED", realTradingEnabled: false, killSwitchEngaged: false, brokerConnected: true, dataQuality: "HEALTHY", marketValid: true };
 
-function makeHarness({ runtime = null } = {}) {
+function makeHarness({ runtime = null }: any = {}) {
   return new mod.FourWayExperiment({ runtime: runtime ?? { experimentRequestOrder: async () => ({ state: "ACKNOWLEDGED", executionId: "exec1", brokerOrderId: "order1" }) }, minStakeBrl: 1 });
 }
 function decision(overrides: any = {}) {
