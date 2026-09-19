@@ -14,8 +14,11 @@ import { createApp } from "../../src/app/index";
 describe("P-AN: market provider wiring", () => {
   it("com MARKET_DATA_MODE=binance, createApp retorna BinanceProvider V2 (não NoopProvider)", () => {
     const prev = process.env.MARKET_DATA_MODE;
+    const prevProvider = process.env.AI_PROVIDER;
+    const prevGoKey = process.env.OPENCODE_GO_API_KEY;
     process.env.MARKET_DATA_MODE = "binance";
-    process.env.ANTHROPIC_API_KEY = ""; // evita chamada real
+    process.env.AI_PROVIDER = "static"; // evita chamada real de IA
+    process.env.OPENCODE_GO_API_KEY = "";
     try {
       const app = createApp(); // usa process.env direto (loadConfig default)
       const p = app.provider as unknown as Record<string, unknown>;
@@ -27,6 +30,10 @@ describe("P-AN: market provider wiring", () => {
       app.close();
     } finally {
       process.env.MARKET_DATA_MODE = prev;
+      if (prevProvider === undefined) delete process.env.AI_PROVIDER;
+      else process.env.AI_PROVIDER = prevProvider;
+      if (prevGoKey === undefined) delete process.env.OPENCODE_GO_API_KEY;
+      else process.env.OPENCODE_GO_API_KEY = prevGoKey;
     }
   });
 });

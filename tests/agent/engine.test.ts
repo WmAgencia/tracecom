@@ -83,8 +83,17 @@ describe("createAiClient", () => {
     const ai = createAiClient({ apiKey: null, model: "m", logger });
     expect(ai.mode).toBe("static");
   });
-  it("com chave retorna AnthropicAiClient", () => {
-    const ai = createAiClient({ apiKey: "sk-fake", model: "m", logger });
+  it("com chave e provider omitido retorna OpenCodeGoAiClient (default)", () => {
+    const ai = createAiClient({ apiKey: "sk-fake", model: "deepseek-v4.1-flash", logger });
+    expect(ai.mode).toBe("openCodeGo");
+    expect(ai.model).toBe("deepseek-v4.1-flash");
+  });
+  it("provider anthropic explícito retorna AnthropicAiClient (legado)", () => {
+    const ai = createAiClient({ provider: "anthropic", apiKey: "sk-fake", model: "m", logger });
     expect(ai.mode).toBe("anthropic");
+  });
+  it("provider static força dry-run mesmo com chave", () => {
+    const ai = createAiClient({ provider: "static", apiKey: "sk-fake", model: "m", logger });
+    expect(ai.mode).toBe("static");
   });
 });

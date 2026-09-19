@@ -37,7 +37,7 @@ describe("decision provenance", () => {
     expect(provenance.why.primaryReasons.length).toBeGreaterThan(0);
     expect(provenance.why.supportingEvidence).toContain("regime=TREND_UP");
     expect(provenance.why.rejectedAlternatives[0]).toBe("counter_side=SELL");
-    expect(provenance.modelVersions.vision).toBe("claude-opus-5");
+    expect(provenance.modelVersions.vision).toBe("deepseek-v4.1-flash");
   });
 
   it("flags counter-trend reasons and uncertainty structurally", () => {
