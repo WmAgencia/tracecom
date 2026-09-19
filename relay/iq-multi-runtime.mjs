@@ -848,6 +848,9 @@ export class IqMultiRuntime extends EventEmitter {
       // RSI_REVERSAL (experimento PRACTICE): avaliacao por mercado (isolada) + liquidacao causal.
       this.#safe(() => this.#observeRsiReversal(ctx, list, now));
       this.rsiReversal.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      // RSI VARIANTS 2x2 (STRICT x PULLBACK; 10 OTCs dinamicos): avaliacao + liquidacao causal.
+      this.#safe(() => this.#observeRsiVariants(ctx, list, now));
+      this.rsiVariants.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
