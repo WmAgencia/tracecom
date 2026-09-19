@@ -1,788 +1,1146 @@
 {
- "generatedAtUtc": "2026-09-19T12:32:10.378Z",
- "source": "PROSPECTIVE_SHADOW",
+ "schema": "stage-efficacy-v2",
+ "generatedAtUtc": "2026-09-19T12:48:17.247Z",
+ "source": "PROSPECTIVE_SHADOW_READ_ONLY",
  "counts": {
-  "shadow": 561,
-  "v4": 741,
-  "v3": 4419,
-  "timing": 5000,
-  "intersections": 4419
+  "g2Settled": 566,
+  "v4": 866,
+  "v3": 4544,
+  "timing": 5147,
+  "intersections": 4545
  },
- "g2Baseline": {
-  "all": {
-   "n": 547,
-   "wins": 265,
-   "losses": 277,
-   "wr": 0.4845,
+ "cohorts": {
+  "A_sameDirection": {
+   "n": 23,
+   "wins": 7,
+   "losses": 16,
+   "draws": 0,
+   "decided": 23,
+   "wr": 0.3043,
    "ci95": {
-    "low": 0.4428,
-    "high": 0.5263
+    "low": 0.156,
+    "high": 0.5087
    },
-   "lowPrecision": false
-  },
-  "causal": {
-   "n": 547,
-   "wins": 265,
-   "losses": 277,
-   "wr": 0.4845,
-   "ci95": {
-    "low": 0.4428,
-    "high": 0.5263
-   },
-   "lowPrecision": false
-  },
-  "brokerExecuted": {
-   "n": 0,
-   "wins": 0,
-   "losses": 0,
-   "wr": null,
-   "ci95": {
-    "low": null,
-    "high": null
-   },
-   "lowPrecision": true
-  }
- },
- "v4Selection": {
-  "accepted": {
-   "n": 160,
-   "wins": 84,
-   "losses": 75,
-   "wr": 0.525,
-   "ci95": {
-    "low": 0.4479,
-    "high": 0.6009
-   },
-   "lowPrecision": false
-  },
-  "avoidedCounterfactual": {
-   "n": 56,
-   "wins": 26,
-   "losses": 30,
-   "wr": 0.4643,
-   "ci95": {
-    "low": 0.3402,
-    "high": 0.593
-   },
-   "lowPrecision": false
-  },
-  "noTradeCounterfactual": {
-   "n": 0,
-   "wins": 0,
-   "losses": 0,
-   "wr": null,
-   "ci95": {
-    "low": null,
-    "high": null
-   },
-   "lowPrecision": true
-  },
-  "sameDirectionAgreement": {
-   "n": 0,
-   "wins": 0,
-   "losses": 0,
-   "wr": null,
-   "ci95": {
-    "low": null,
-    "high": null
-   },
-   "lowPrecision": true
-  },
-  "selectionDeltaPp": 6.07
- },
- "v3": {
-  "finalActions": {
-   "WAIT": 4419
-  },
-  "directional": {
-   "n": 0,
-   "wins": 0,
-   "losses": 0,
-   "wr": null,
-   "ci95": {
-    "low": null,
-    "high": null
-   },
-   "lowPrecision": true
-  },
-  "avoidedCounterfactual": {
-   "n": 431,
-   "wins": 206,
-   "losses": 223,
-   "wr": 0.478,
-   "ci95": {
-    "low": 0.4312,
-    "high": 0.5251
-   },
-   "lowPrecision": false
-  },
-  "selectionDeltaPp": null
- },
- "byScenario": [
-  {
-   "key": "TREND_CONTINUATION",
-   "accepted": {
-    "n": 81,
-    "wins": 41,
-    "losses": 40,
-    "wr": 0.5062,
+   "lowN": true,
+   "expectancy": -0.4415,
+   "g2Same": {
+    "n": 23,
+    "wins": 8,
+    "losses": 15,
+    "draws": 0,
+    "decided": 23,
+    "wr": 0.3478,
     "ci95": {
-     "low": 0.3995,
-     "high": 0.6123
+     "low": 0.1881,
+     "high": 0.5511
     },
-    "lowPrecision": false
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
+    "lowN": true
    }
   },
-  {
-   "key": "TREND_PULLBACK",
-   "accepted": {
-    "n": 53,
-    "wins": 26,
-    "losses": 27,
-    "wr": 0.4906,
-    "ci95": {
-     "low": 0.3612,
-     "high": 0.6212
-    },
-    "lowPrecision": false
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
+  "B_directionFlip": {
+   "v4": {
+    "n": 2,
+    "wins": 2,
     "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "BREAKOUT",
-   "accepted": {
-    "n": 18,
-    "wins": 11,
-    "losses": 6,
-    "wr": 0.6111,
-    "ci95": {
-     "low": 0.3862,
-     "high": 0.797
-    },
-    "lowPrecision": true
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "REVERSAL",
-   "accepted": {
-    "n": 8,
-    "wins": 6,
-    "losses": 2,
-    "wr": 0.75,
-    "ci95": {
-     "low": 0.4093,
-     "high": 0.9285
-    },
-    "lowPrecision": true
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "TRANSITION_NO_TRADE",
-   "accepted": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "FAILED_BREAKOUT",
-   "accepted": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  }
- ],
- "byRegime": [
-  {
-   "key": "TREND_UP",
-   "accepted": {
-    "n": 92,
-    "wins": 47,
-    "losses": 44,
-    "wr": 0.5109,
-    "ci95": {
-     "low": 0.4104,
-     "high": 0.6105
-    },
-    "lowPrecision": false
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "TREND_DOWN",
-   "accepted": {
-    "n": 67,
-    "wins": 36,
-    "losses": 31,
-    "wr": 0.5373,
-    "ci95": {
-     "low": 0.4192,
-     "high": 0.6514
-    },
-    "lowPrecision": false
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "TRANSITION",
-   "accepted": {
-    "n": 1,
-    "wins": 1,
-    "losses": 0,
+    "draws": 0,
+    "decided": 2,
     "wr": 1,
     "ci95": {
-     "low": 0.2065,
+     "low": 0.3424,
      "high": 1
     },
-    "lowPrecision": true
+    "lowN": true,
+    "expectancy": 0.845
    },
-   "avoidedCounterfactual": {
-    "n": 0,
+   "g2": {
+    "n": 2,
     "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "UNCERTAIN",
-   "accepted": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  }
- ],
- "bySynthesisTrigger": [
-  {
-   "key": "TRIGGERED",
-   "accepted": {
-    "n": 160,
-    "wins": 84,
-    "losses": 75,
-    "wr": 0.525,
-    "ci95": {
-     "low": 0.4479,
-     "high": 0.6009
-    },
-    "lowPrecision": false
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "CONTEXT_OK_NO_TRIGGER",
-   "accepted": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "AMBIGUOUS_COMPETING_SCENARIOS",
-   "accepted": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "SCENARIO_COMPONENT_MISSING",
-   "accepted": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "REGIME_TRANSITION",
-   "accepted": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "DATA_UNSAFE",
-   "accepted": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  }
- ],
- "byRedTeamVerdict": [
-  {
-   "key": "CHALLENGED_RESOLVED",
-   "accepted": {
-    "n": 96,
-    "wins": 46,
-    "losses": 50,
-    "wr": 0.4792,
-    "ci95": {
-     "low": 0.382,
-     "high": 0.578
-    },
-    "lowPrecision": false
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "CONFIRMED_UNCHALLENGED",
-   "accepted": {
-    "n": 64,
-    "wins": 38,
-    "losses": 25,
-    "wr": 0.5938,
-    "ci95": {
-     "low": 0.4714,
-     "high": 0.7054
-    },
-    "lowPrecision": false
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  }
- ],
- "byDataQuality": [
-  {
-   "key": "HEALTHY",
-   "accepted": {
-    "n": 155,
-    "wins": 81,
-    "losses": 73,
-    "wr": 0.5226,
-    "ci95": {
-     "low": 0.4444,
-     "high": 0.5997
-    },
-    "lowPrecision": false
-   },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
-  },
-  {
-   "key": "DEGRADED",
-   "accepted": {
-    "n": 5,
-    "wins": 3,
     "losses": 2,
-    "wr": 0.6,
+    "draws": 0,
+    "decided": 2,
+    "wr": 0,
     "ci95": {
-     "low": 0.2307,
-     "high": 0.8824
+     "low": 0,
+     "high": 0.6576
     },
-    "lowPrecision": true
+    "lowN": true,
+    "expectancy": -1
    },
-   "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
-    "ci95": {
-     "low": null,
-     "high": null
-    },
-    "lowPrecision": true
-   }
+   "pairedMcNemar": {
+    "b": 0,
+    "c": 2,
+    "n": 2,
+    "p": 0.4795
+   },
+   "deltaPp": 100
   },
-  {
-   "key": "UNSAFE",
+  "C_v4Wait": {
+   "n": 67,
+   "wins": 33,
+   "losses": 34,
+   "draws": 0,
+   "decided": 67,
+   "wr": 0.4925,
+   "ci95": {
+    "low": 0.3765,
+    "high": 0.6094
+   },
+   "lowN": false,
+   "expectancy": -0.0967,
+   "noTrade": 0
+  },
+  "D_g2WaitV4Trade": {
+   "n": 0,
+   "wins": 0,
+   "losses": 0,
+   "draws": 0,
+   "decided": 0,
+   "wr": null,
+   "ci95": {
+    "low": null,
+    "high": null
+   },
+   "lowN": true
+  },
+  "unmatchedV4": 774
+ },
+ "selection": {
+  "paired": {
    "accepted": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
+    "n": 25,
+    "wins": 9,
+    "losses": 16,
+    "draws": 0,
+    "decided": 25,
+    "wr": 0.36,
     "ci95": {
-     "low": null,
-     "high": null
+     "low": 0.2025,
+     "high": 0.5548
     },
-    "lowPrecision": true
+    "lowN": true,
+    "expectancy": -0.339
    },
    "avoidedCounterfactual": {
-    "n": 0,
-    "wins": 0,
-    "losses": 0,
-    "wr": null,
+    "n": 67,
+    "wins": 33,
+    "losses": 34,
+    "draws": 0,
+    "decided": 67,
+    "wr": 0.4925,
     "ci95": {
-     "low": null,
-     "high": null
+     "low": 0.3765,
+     "high": 0.6094
     },
-    "lowPrecision": true
+    "lowN": false,
+    "expectancy": -0.0967
+   },
+   "deltaPp": -13.25,
+   "bootstrapDelta": {
+    "low": -0.357,
+    "high": 0.0824,
+    "p50": -0.1373
+   },
+   "pValue": 0.256229,
+   "note": "estrito: exige contrafactual G2 na MESMA oportunidade (join por candidate_id com settlement)."
+  },
+  "fullAccepted": {
+   "n": 193,
+   "wins": 98,
+   "losses": 94,
+   "draws": 1,
+   "decided": 192,
+   "wr": 0.5104,
+   "ci95": {
+    "low": 0.4402,
+    "high": 0.5802
+   },
+   "lowN": false,
+   "expectancy": 0.0207,
+   "note": "todos os aceitos com settlement proprio V4 (sem exigir join)."
+  },
+  "weightedDeltaPp": -13.39,
+  "strataWithBothArms": 22,
+  "signFlipStratum": true,
+  "strata": [
+   {
+    "key": "market:USDCAD:OTC",
+    "accepted": {
+     "n": 4,
+     "wins": 0,
+     "losses": 4,
+     "draws": 0,
+     "decided": 4,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.4899
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 3,
+     "wins": 1,
+     "losses": 2,
+     "draws": 0,
+     "decided": 3,
+     "wr": 0.3333,
+     "ci95": {
+      "low": 0.0615,
+      "high": 0.7923
+     },
+     "lowN": true
+    },
+    "deltaPp": -33.33,
+    "p": 0.212317
+   },
+   {
+    "key": "type:OTC",
+    "accepted": {
+     "n": 25,
+     "wins": 9,
+     "losses": 16,
+     "draws": 0,
+     "decided": 25,
+     "wr": 0.36,
+     "ci95": {
+      "low": 0.2025,
+      "high": 0.5548
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 67,
+     "wins": 33,
+     "losses": 34,
+     "draws": 0,
+     "decided": 67,
+     "wr": 0.4925,
+     "ci95": {
+      "low": 0.3765,
+      "high": 0.6094
+     },
+     "lowN": false
+    },
+    "deltaPp": -13.25,
+    "p": 0.256229
+   },
+   {
+    "key": "regime:TREND_DOWN",
+    "accepted": {
+     "n": 11,
+     "wins": 2,
+     "losses": 9,
+     "draws": 0,
+     "decided": 11,
+     "wr": 0.1818,
+     "ci95": {
+      "low": 0.0514,
+      "high": 0.477
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 32,
+     "wins": 14,
+     "losses": 18,
+     "draws": 0,
+     "decided": 32,
+     "wr": 0.4375,
+     "ci95": {
+      "low": 0.2817,
+      "high": 0.6067
+     },
+     "lowN": false
+    },
+    "deltaPp": -25.57,
+    "p": 0.130169
+   },
+   {
+    "key": "scenario:TREND_CONTINUATION",
+    "accepted": {
+     "n": 13,
+     "wins": 4,
+     "losses": 9,
+     "draws": 0,
+     "decided": 13,
+     "wr": 0.3077,
+     "ci95": {
+      "low": 0.1268,
+      "high": 0.5763
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 2,
+     "wins": 0,
+     "losses": 2,
+     "draws": 0,
+     "decided": 2,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.6576
+     },
+     "lowN": true
+    },
+    "deltaPp": 30.77,
+    "p": 0.359637
+   },
+   {
+    "key": "market:EURGBP:OTC",
+    "accepted": {
+     "n": 1,
+     "wins": 0,
+     "losses": 1,
+     "draws": 0,
+     "decided": 1,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.7935
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 1,
+     "wins": 1,
+     "losses": 0,
+     "draws": 0,
+     "decided": 1,
+     "wr": 1,
+     "ci95": {
+      "low": 0.2065,
+      "high": 1
+     },
+     "lowN": true
+    },
+    "deltaPp": -100,
+    "p": 0.157299
+   },
+   {
+    "key": "regime:TREND_UP",
+    "accepted": {
+     "n": 14,
+     "wins": 7,
+     "losses": 7,
+     "draws": 0,
+     "decided": 14,
+     "wr": 0.5,
+     "ci95": {
+      "low": 0.268,
+      "high": 0.732
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 34,
+     "wins": 18,
+     "losses": 16,
+     "draws": 0,
+     "decided": 34,
+     "wr": 0.5294,
+     "ci95": {
+      "low": 0.3674,
+      "high": 0.6855
+     },
+     "lowN": false
+    },
+    "deltaPp": -2.94,
+    "p": 0.852915
+   },
+   {
+    "key": "scenario:TREND_PULLBACK",
+    "accepted": {
+     "n": 8,
+     "wins": 3,
+     "losses": 5,
+     "draws": 0,
+     "decided": 8,
+     "wr": 0.375,
+     "ci95": {
+      "low": 0.1368,
+      "high": 0.6943
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 55,
+     "wins": 27,
+     "losses": 28,
+     "draws": 0,
+     "decided": 55,
+     "wr": 0.4909,
+     "ci95": {
+      "low": 0.3638,
+      "high": 0.6192
+     },
+     "lowN": false
+    },
+    "deltaPp": -11.59,
+    "p": 0.539656
+   },
+   {
+    "key": "market:USDCHF:OTC",
+    "accepted": {
+     "n": 1,
+     "wins": 0,
+     "losses": 1,
+     "draws": 0,
+     "decided": 1,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.7935
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 4,
+     "wins": 2,
+     "losses": 2,
+     "draws": 0,
+     "decided": 4,
+     "wr": 0.5,
+     "ci95": {
+      "low": 0.15,
+      "high": 0.85
+     },
+     "lowN": true
+    },
+    "deltaPp": -50,
+    "p": 0.36131
+   },
+   {
+    "key": "scenario:BREAKOUT",
+    "accepted": {
+     "n": 3,
+     "wins": 1,
+     "losses": 2,
+     "draws": 0,
+     "decided": 3,
+     "wr": 0.3333,
+     "ci95": {
+      "low": 0.0615,
+      "high": 0.7923
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 1,
+     "wins": 1,
+     "losses": 0,
+     "draws": 0,
+     "decided": 1,
+     "wr": 1,
+     "ci95": {
+      "low": 0.2065,
+      "high": 1
+     },
+     "lowN": true
+    },
+    "deltaPp": -66.67,
+    "p": 0.248213
+   },
+   {
+    "key": "market:USDJPY:OTC",
+    "accepted": {
+     "n": 1,
+     "wins": 1,
+     "losses": 0,
+     "draws": 0,
+     "decided": 1,
+     "wr": 1,
+     "ci95": {
+      "low": 0.2065,
+      "high": 1
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 1,
+     "wins": 0,
+     "losses": 1,
+     "draws": 0,
+     "decided": 1,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.7935
+     },
+     "lowN": true
+    },
+    "deltaPp": 100,
+    "p": 0.157299
+   },
+   {
+    "key": "market:USDTRY:OTC",
+    "accepted": {
+     "n": 2,
+     "wins": 1,
+     "losses": 1,
+     "draws": 0,
+     "decided": 2,
+     "wr": 0.5,
+     "ci95": {
+      "low": 0.0945,
+      "high": 0.9055
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 2,
+     "wins": 1,
+     "losses": 1,
+     "draws": 0,
+     "decided": 2,
+     "wr": 0.5,
+     "ci95": {
+      "low": 0.0945,
+      "high": 0.9055
+     },
+     "lowN": true
+    },
+    "deltaPp": 0,
+    "p": 1
+   },
+   {
+    "key": "market:USDZAR:OTC",
+    "accepted": {
+     "n": 2,
+     "wins": 0,
+     "losses": 2,
+     "draws": 0,
+     "decided": 2,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.6576
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 3,
+     "wins": 2,
+     "losses": 1,
+     "draws": 0,
+     "decided": 3,
+     "wr": 0.6667,
+     "ci95": {
+      "low": 0.2077,
+      "high": 0.9385
+     },
+     "lowN": true
+    },
+    "deltaPp": -66.67,
+    "p": 0.136037
+   },
+   {
+    "key": "market:EURCAD:OTC",
+    "accepted": {
+     "n": 1,
+     "wins": 1,
+     "losses": 0,
+     "draws": 0,
+     "decided": 1,
+     "wr": 1,
+     "ci95": {
+      "low": 0.2065,
+      "high": 1
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 5,
+     "wins": 4,
+     "losses": 1,
+     "draws": 0,
+     "decided": 5,
+     "wr": 0.8,
+     "ci95": {
+      "low": 0.3755,
+      "high": 0.9638
+     },
+     "lowN": true
+    },
+    "deltaPp": 20,
+    "p": 0.624206
+   },
+   {
+    "key": "market:AUDCHF:OTC",
+    "accepted": {
+     "n": 2,
+     "wins": 2,
+     "losses": 0,
+     "draws": 0,
+     "decided": 2,
+     "wr": 1,
+     "ci95": {
+      "low": 0.3424,
+      "high": 1
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 3,
+     "wins": 2,
+     "losses": 1,
+     "draws": 0,
+     "decided": 3,
+     "wr": 0.6667,
+     "ci95": {
+      "low": 0.2077,
+      "high": 0.9385
+     },
+     "lowN": true
+    },
+    "deltaPp": 33.33,
+    "p": 0.36131
+   },
+   {
+    "key": "market:EURNZD:OTC",
+    "accepted": {
+     "n": 1,
+     "wins": 0,
+     "losses": 1,
+     "draws": 0,
+     "decided": 1,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.7935
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 3,
+     "wins": 1,
+     "losses": 2,
+     "draws": 0,
+     "decided": 3,
+     "wr": 0.3333,
+     "ci95": {
+      "low": 0.0615,
+      "high": 0.7923
+     },
+     "lowN": true
+    },
+    "deltaPp": -33.33,
+    "p": 0.504985
+   },
+   {
+    "key": "market:NZDJPY:OTC",
+    "accepted": {
+     "n": 2,
+     "wins": 0,
+     "losses": 2,
+     "draws": 0,
+     "decided": 2,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.6576
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 4,
+     "wins": 2,
+     "losses": 2,
+     "draws": 0,
+     "decided": 4,
+     "wr": 0.5,
+     "ci95": {
+      "low": 0.15,
+      "high": 0.85
+     },
+     "lowN": true
+    },
+    "deltaPp": -50,
+    "p": 0.220671
+   },
+   {
+    "key": "market:EURJPY:OTC",
+    "accepted": {
+     "n": 1,
+     "wins": 0,
+     "losses": 1,
+     "draws": 0,
+     "decided": 1,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.7935
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 5,
+     "wins": 3,
+     "losses": 2,
+     "draws": 0,
+     "decided": 5,
+     "wr": 0.6,
+     "ci95": {
+      "low": 0.2307,
+      "high": 0.8824
+     },
+     "lowN": true
+    },
+    "deltaPp": -60,
+    "p": 0.273322
+   },
+   {
+    "key": "market:EURAUD:OTC",
+    "accepted": {
+     "n": 2,
+     "wins": 0,
+     "losses": 2,
+     "draws": 0,
+     "decided": 2,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.6576
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 2,
+     "wins": 0,
+     "losses": 2,
+     "draws": 0,
+     "decided": 2,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.6576
+     },
+     "lowN": true
+    },
+    "deltaPp": 0,
+    "p": null
+   },
+   {
+    "key": "market:AUDCAD:OTC",
+    "accepted": {
+     "n": 1,
+     "wins": 1,
+     "losses": 0,
+     "draws": 0,
+     "decided": 1,
+     "wr": 1,
+     "ci95": {
+      "low": 0.2065,
+      "high": 1
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 1,
+     "wins": 1,
+     "losses": 0,
+     "draws": 0,
+     "decided": 1,
+     "wr": 1,
+     "ci95": {
+      "low": 0.2065,
+      "high": 1
+     },
+     "lowN": true
+    },
+    "deltaPp": 0,
+    "p": null
+   },
+   {
+    "key": "market:GBPCAD:OTC",
+    "accepted": {
+     "n": 1,
+     "wins": 0,
+     "losses": 1,
+     "draws": 0,
+     "decided": 1,
+     "wr": 0,
+     "ci95": {
+      "low": 0,
+      "high": 0.7935
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 3,
+     "wins": 1,
+     "losses": 2,
+     "draws": 0,
+     "decided": 3,
+     "wr": 0.3333,
+     "ci95": {
+      "low": 0.0615,
+      "high": 0.7923
+     },
+     "lowN": true
+    },
+    "deltaPp": -33.33,
+    "p": 0.504985
+   },
+   {
+    "key": "scenario:REVERSAL",
+    "accepted": {
+     "n": 1,
+     "wins": 1,
+     "losses": 0,
+     "draws": 0,
+     "decided": 1,
+     "wr": 1,
+     "ci95": {
+      "low": 0.2065,
+      "high": 1
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 8,
+     "wins": 4,
+     "losses": 4,
+     "draws": 0,
+     "decided": 8,
+     "wr": 0.5,
+     "ci95": {
+      "low": 0.2152,
+      "high": 0.7848
+     },
+     "lowN": true
+    },
+    "deltaPp": 50,
+    "p": 0.342782
+   },
+   {
+    "key": "market:GBPUSD:OTC",
+    "accepted": {
+     "n": 1,
+     "wins": 1,
+     "losses": 0,
+     "draws": 0,
+     "decided": 1,
+     "wr": 1,
+     "ci95": {
+      "low": 0.2065,
+      "high": 1
+     },
+     "lowN": true
+    },
+    "avoided": {
+     "n": 1,
+     "wins": 1,
+     "losses": 0,
+     "draws": 0,
+     "decided": 1,
+     "wr": 1,
+     "ci95": {
+      "low": 0.2065,
+      "high": 1
+     },
+     "lowN": true
+    },
+    "deltaPp": 0,
+    "p": null
    }
-  }
- ],
- "byAgentAlignment": [
+  ]
+ },
+ "redTeam": {
+  "pass": {
+   "n": 193,
+   "wins": 98,
+   "losses": 94,
+   "draws": 1,
+   "decided": 192,
+   "wr": 0.5104,
+   "ci95": {
+    "low": 0.4402,
+    "high": 0.5802
+   },
+   "lowN": false,
+   "expectancy": 0.0207
+  },
+  "vetoedCounterfactual": {
+   "n": 0,
+   "wins": 0,
+   "losses": 0,
+   "draws": 0,
+   "decided": 0,
+   "wr": null,
+   "ci95": {
+    "low": null,
+    "high": null
+   },
+   "lowN": true,
+   "expectancy": null
+  },
+  "keepsWait": 663,
+  "otherStates": 0,
+  "vetoDeltaPp": null,
+  "pValue": null,
+  "bootstrap": {
+   "low": null,
+   "high": null,
+   "p50": null
+  },
+  "byVerdict": [
+   {
+    "key": "CHALLENGED_RESOLVED",
+    "n": 121,
+    "wins": 55,
+    "losses": 66,
+    "draws": 0,
+    "decided": 121,
+    "wr": 0.4545,
+    "ci95": {
+     "low": 0.3686,
+     "high": 0.5433
+    },
+    "lowN": false,
+    "status": "EXPLORATORY"
+   },
+   {
+    "key": "CONFIRMED_UNCHALLENGED",
+    "n": 72,
+    "wins": 43,
+    "losses": 28,
+    "draws": 1,
+    "decided": 71,
+    "wr": 0.6056,
+    "ci95": {
+     "low": 0.4894,
+     "high": 0.7111
+    },
+    "lowN": false,
+    "status": "EXPLORATORY"
+   }
+  ]
+ },
+ "specialists": [
   {
    "agentId": "MARKET_REGIME_AGENT",
    "aligned": {
-    "n": 147,
-    "wins": 73,
-    "losses": 73,
-    "wr": 0.4966,
+    "n": 175,
+    "wins": 85,
+    "losses": 89,
+    "draws": 1,
+    "decided": 174,
+    "wr": 0.4885,
     "ci95": {
-     "low": 0.4169,
-     "high": 0.5765
+     "low": 0.4153,
+     "high": 0.5622
     },
-    "lowPrecision": false
+    "lowN": false
    },
    "opposed": {
-    "n": 12,
-    "wins": 10,
-    "losses": 2,
-    "wr": 0.8333,
+    "n": 16,
+    "wins": 12,
+    "losses": 4,
+    "draws": 0,
+    "decided": 16,
+    "wr": 0.75,
     "ci95": {
-     "low": 0.552,
-     "high": 0.953
+     "low": 0.505,
+     "high": 0.8982
     },
-    "lowPrecision": true
+    "lowN": true
    },
-   "deltaPp": -33.67
+   "deltaPp": -26.15,
+   "pValue": 0.045244,
+   "status": "INSUFFICIENT"
   },
   {
-   "agentId": "MARKET_STRUCTURE_AGENT",
+   "agentId": "VOLATILITY_AGENT",
    "aligned": {
-    "n": 146,
-    "wins": 73,
-    "losses": 72,
-    "wr": 0.5,
+    "n": 107,
+    "wins": 55,
+    "losses": 51,
+    "draws": 1,
+    "decided": 106,
+    "wr": 0.5189,
     "ci95": {
-     "low": 0.4199,
-     "high": 0.5801
+     "low": 0.4248,
+     "high": 0.6117
     },
-    "lowPrecision": false
+    "lowN": false
    },
    "opposed": {
-    "n": 7,
-    "wins": 5,
-    "losses": 2,
-    "wr": 0.7143,
+    "n": 84,
+    "wins": 41,
+    "losses": 43,
+    "draws": 0,
+    "decided": 84,
+    "wr": 0.4881,
     "ci95": {
-     "low": 0.3589,
-     "high": 0.9178
+     "low": 0.3841,
+     "high": 0.5932
     },
-    "lowPrecision": true
+    "lowN": false
    },
-   "deltaPp": -21.43
+   "deltaPp": 3.08,
+   "pValue": 0.673505,
+   "status": "EXPLORATORY"
+  },
+  {
+   "agentId": "MOMENTUM_AGENT",
+   "aligned": {
+    "n": 96,
+    "wins": 45,
+    "losses": 51,
+    "draws": 0,
+    "decided": 96,
+    "wr": 0.4688,
+    "ci95": {
+     "low": 0.3721,
+     "high": 0.5678
+    },
+    "lowN": false
+   },
+   "opposed": {
+    "n": 92,
+    "wins": 49,
+    "losses": 43,
+    "draws": 0,
+    "decided": 92,
+    "wr": 0.5326,
+    "ci95": {
+     "low": 0.4314,
+     "high": 0.6312
+    },
+    "lowN": false
+   },
+   "deltaPp": -6.38,
+   "pValue": 0.381363,
+   "status": "PROMISING"
   },
   {
    "agentId": "TREND_AGENT",
    "aligned": {
-    "n": 148,
-    "wins": 74,
-    "losses": 73,
-    "wr": 0.5,
+    "n": 177,
+    "wins": 86,
+    "losses": 90,
+    "draws": 1,
+    "decided": 176,
+    "wr": 0.4886,
     "ci95": {
-     "low": 0.4205,
-     "high": 0.5795
+     "low": 0.4158,
+     "high": 0.5619
     },
-    "lowPrecision": false
+    "lowN": false
+   },
+   "opposed": {
+    "n": 11,
+    "wins": 8,
+    "losses": 3,
+    "draws": 0,
+    "decided": 11,
+    "wr": 0.7273,
+    "ci95": {
+     "low": 0.4343,
+     "high": 0.9025
+    },
+    "lowN": true
+   },
+   "deltaPp": -23.87,
+   "pValue": 0.124613,
+   "status": "INSUFFICIENT"
+  },
+  {
+   "agentId": "MARKET_STRUCTURE_AGENT",
+   "aligned": {
+    "n": 175,
+    "wins": 85,
+    "losses": 89,
+    "draws": 1,
+    "decided": 174,
+    "wr": 0.4885,
+    "ci95": {
+     "low": 0.4153,
+     "high": 0.5622
+    },
+    "lowN": false
    },
    "opposed": {
     "n": 9,
-    "wins": 7,
-    "losses": 2,
-    "wr": 0.7778,
+    "wins": 6,
+    "losses": 3,
+    "draws": 0,
+    "decided": 9,
+    "wr": 0.6667,
     "ci95": {
-     "low": 0.4526,
-     "high": 0.9368
+     "low": 0.3542,
+     "high": 0.8794
     },
-    "lowPrecision": true
+    "lowN": true
    },
-   "deltaPp": -27.78
+   "deltaPp": -17.82,
+   "pValue": 0.297243,
+   "status": "INSUFFICIENT"
   },
   {
    "agentId": "PRICE_ACTION_AGENT",
    "aligned": {
-    "n": 90,
-    "wins": 51,
-    "losses": 38,
-    "wr": 0.5667,
+    "n": 110,
+    "wins": 61,
+    "losses": 48,
+    "draws": 1,
+    "decided": 109,
+    "wr": 0.5596,
     "ci95": {
-     "low": 0.4636,
-     "high": 0.6642
+     "low": 0.466,
+     "high": 0.6492
     },
-    "lowPrecision": false
+    "lowN": false
    },
    "opposed": {
-    "n": 19,
-    "wins": 9,
-    "losses": 10,
-    "wr": 0.4737,
+    "n": 22,
+    "wins": 10,
+    "losses": 12,
+    "draws": 0,
+    "decided": 22,
+    "wr": 0.4545,
     "ci95": {
-     "low": 0.2733,
-     "high": 0.6829
+     "low": 0.2692,
+     "high": 0.6534
     },
-    "lowPrecision": true
+    "lowN": true
    },
-   "deltaPp": 9.3
+   "deltaPp": 10.51,
+   "pValue": 0.366836,
+   "status": "EXPLORATORY"
   },
   {
    "agentId": "MICROSTRUCTURE_AGENT",
    "aligned": {
-    "n": 57,
-    "wins": 30,
-    "losses": 27,
-    "wr": 0.5263,
+    "n": 66,
+    "wins": 34,
+    "losses": 32,
+    "draws": 0,
+    "decided": 66,
+    "wr": 0.5152,
     "ci95": {
-     "low": 0.3992,
-     "high": 0.6501
+     "low": 0.3971,
+     "high": 0.6315
     },
-    "lowPrecision": false
+    "lowN": false
    },
    "opposed": {
-    "n": 40,
-    "wins": 22,
-    "losses": 17,
-    "wr": 0.55,
+    "n": 48,
+    "wins": 25,
+    "losses": 22,
+    "draws": 1,
+    "decided": 47,
+    "wr": 0.5319,
     "ci95": {
-     "low": 0.3983,
-     "high": 0.6929
+     "low": 0.3923,
+     "high": 0.6667
     },
-    "lowPrecision": false
+    "lowN": false
    },
-   "deltaPp": -2.37
+   "deltaPp": -1.67,
+   "pValue": 0.860426,
+   "status": "EXPLORATORY"
   },
   {
    "agentId": "LOCATION_AGENT",
@@ -790,154 +1148,1895 @@
     "n": 0,
     "wins": 0,
     "losses": 0,
+    "draws": 0,
+    "decided": 0,
     "wr": null,
     "ci95": {
      "low": null,
      "high": null
     },
-    "lowPrecision": true
+    "lowN": true
    },
    "opposed": {
-    "n": 9,
+    "n": 10,
     "wins": 4,
-    "losses": 5,
-    "wr": 0.4444,
+    "losses": 6,
+    "draws": 0,
+    "decided": 10,
+    "wr": 0.4,
     "ci95": {
-     "low": 0.1888,
-     "high": 0.7334
+     "low": 0.1682,
+     "high": 0.6873
     },
-    "lowPrecision": true
+    "lowN": true
    },
-   "deltaPp": null
+   "deltaPp": null,
+   "pValue": null,
+   "status": "INSUFFICIENT"
+  }
+ ],
+ "playbooks": [
+  {
+   "key": "TREND_CONTINUATION | TREND_UP | BUY | OTC",
+   "scenario": "TREND_CONTINUATION",
+   "regime": "TREND_UP",
+   "direction": "BUY",
+   "marketType": "OTC",
+   "nObserved": 52,
+   "accepted": {
+    "n": 50,
+    "wins": 26,
+    "losses": 24,
+    "draws": 0,
+    "decided": 50,
+    "wr": 0.52,
+    "ci95": {
+     "low": 0.3851,
+     "high": 0.652
+    },
+    "lowN": false,
+    "coverage": 0.9615
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "EXPLORATORY"
+  },
+  {
+   "key": "TREND_CONTINUATION | TREND_DOWN | SELL | OTC",
+   "scenario": "TREND_CONTINUATION",
+   "regime": "TREND_DOWN",
+   "direction": "SELL",
+   "marketType": "OTC",
+   "nObserved": 48,
+   "accepted": {
+    "n": 46,
+    "wins": 21,
+    "losses": 25,
+    "draws": 0,
+    "decided": 46,
+    "wr": 0.4565,
+    "ci95": {
+     "low": 0.3215,
+     "high": 0.5982
+    },
+    "lowN": false,
+    "coverage": 0.9583
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "EXPLORATORY"
+  },
+  {
+   "key": "TREND_PULLBACK | TREND_UP | BUY | OTC",
+   "scenario": "TREND_PULLBACK",
+   "regime": "TREND_UP",
+   "direction": "BUY",
+   "marketType": "OTC",
+   "nObserved": 40,
+   "accepted": {
+    "n": 37,
+    "wins": 19,
+    "losses": 18,
+    "draws": 0,
+    "decided": 37,
+    "wr": 0.5135,
+    "ci95": {
+     "low": 0.3589,
+     "high": 0.6655
+    },
+    "lowN": false,
+    "coverage": 0.925
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "EXPLORATORY"
+  },
+  {
+   "key": "TREND_PULLBACK | TREND_DOWN | SELL | OTC",
+   "scenario": "TREND_PULLBACK",
+   "regime": "TREND_DOWN",
+   "direction": "SELL",
+   "marketType": "OTC",
+   "nObserved": 28,
+   "accepted": {
+    "n": 26,
+    "wins": 11,
+    "losses": 15,
+    "draws": 0,
+    "decided": 26,
+    "wr": 0.4231,
+    "ci95": {
+     "low": 0.2554,
+     "high": 0.6105
+    },
+    "lowN": true,
+    "coverage": 0.9286
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "EXPLORATORY"
+  },
+  {
+   "key": "BREAKOUT | TREND_UP | BUY | OTC",
+   "scenario": "BREAKOUT",
+   "regime": "TREND_UP",
+   "direction": "BUY",
+   "marketType": "OTC",
+   "nObserved": 12,
+   "accepted": {
+    "n": 12,
+    "wins": 5,
+    "losses": 6,
+    "draws": 1,
+    "decided": 11,
+    "wr": 0.4545,
+    "ci95": {
+     "low": 0.2127,
+     "high": 0.7199
+    },
+    "lowN": true,
+    "coverage": 1
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "REVERSAL | TREND_UP | SELL | OTC",
+   "scenario": "REVERSAL",
+   "regime": "TREND_UP",
+   "direction": "SELL",
+   "marketType": "OTC",
+   "nObserved": 6,
+   "accepted": {
+    "n": 6,
+    "wins": 4,
+    "losses": 2,
+    "draws": 0,
+    "decided": 6,
+    "wr": 0.6667,
+    "ci95": {
+     "low": 0.3,
+     "high": 0.9032
+    },
+    "lowN": true,
+    "coverage": 1
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "BREAKOUT | TREND_DOWN | BUY | OTC",
+   "scenario": "BREAKOUT",
+   "regime": "TREND_DOWN",
+   "direction": "BUY",
+   "marketType": "OTC",
+   "nObserved": 4,
+   "accepted": {
+    "n": 4,
+    "wins": 3,
+    "losses": 1,
+    "draws": 0,
+    "decided": 4,
+    "wr": 0.75,
+    "ci95": {
+     "low": 0.3006,
+     "high": 0.9544
+    },
+    "lowN": true,
+    "coverage": 1
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "REVERSAL | TREND_DOWN | BUY | OTC",
+   "scenario": "REVERSAL",
+   "regime": "TREND_DOWN",
+   "direction": "BUY",
+   "marketType": "OTC",
+   "nObserved": 5,
+   "accepted": {
+    "n": 4,
+    "wins": 3,
+    "losses": 1,
+    "draws": 0,
+    "decided": 4,
+    "wr": 0.75,
+    "ci95": {
+     "low": 0.3006,
+     "high": 0.9544
+    },
+    "lowN": true,
+    "coverage": 0.8
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "BREAKOUT | TREND_DOWN | SELL | OTC",
+   "scenario": "BREAKOUT",
+   "regime": "TREND_DOWN",
+   "direction": "SELL",
+   "marketType": "OTC",
+   "nObserved": 4,
+   "accepted": {
+    "n": 4,
+    "wins": 3,
+    "losses": 1,
+    "draws": 0,
+    "decided": 4,
+    "wr": 0.75,
+    "ci95": {
+     "low": 0.3006,
+     "high": 0.9544
+    },
+    "lowN": true,
+    "coverage": 1
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "BREAKOUT | TREND_UP | SELL | OTC",
+   "scenario": "BREAKOUT",
+   "regime": "TREND_UP",
+   "direction": "SELL",
+   "marketType": "OTC",
+   "nObserved": 2,
+   "accepted": {
+    "n": 2,
+    "wins": 2,
+    "losses": 0,
+    "draws": 0,
+    "decided": 2,
+    "wr": 1,
+    "ci95": {
+     "low": 0.3424,
+     "high": 1
+    },
+    "lowN": true,
+    "coverage": 1
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "TREND_CONTINUATION | TRANSITION | BUY | OTC",
+   "scenario": "TREND_CONTINUATION",
+   "regime": "TRANSITION",
+   "direction": "BUY",
+   "marketType": "OTC",
+   "nObserved": 1,
+   "accepted": {
+    "n": 1,
+    "wins": 0,
+    "losses": 1,
+    "draws": 0,
+    "decided": 1,
+    "wr": 0,
+    "ci95": {
+     "low": 0,
+     "high": 0.7935
+    },
+    "lowN": true,
+    "coverage": 1
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "TREND_CONTINUATION | TRANSITION | SELL | OTC",
+   "scenario": "TREND_CONTINUATION",
+   "regime": "TRANSITION",
+   "direction": "SELL",
+   "marketType": "OTC",
+   "nObserved": 1,
+   "accepted": {
+    "n": 1,
+    "wins": 1,
+    "losses": 0,
+    "draws": 0,
+    "decided": 1,
+    "wr": 1,
+    "ci95": {
+     "low": 0.2065,
+     "high": 1
+    },
+    "lowN": true,
+    "coverage": 1
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "TREND_PULLBACK | TREND_DOWN | WAIT | OTC",
+   "scenario": "TREND_PULLBACK",
+   "regime": "TREND_DOWN",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 215,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "REVERSAL | TREND_DOWN | WAIT | OTC",
+   "scenario": "REVERSAL",
+   "regime": "TREND_DOWN",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 52,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "TREND_PULLBACK | TREND_UP | WAIT | OTC",
+   "scenario": "TREND_PULLBACK",
+   "regime": "TREND_UP",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 233,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "TRANSITION_NO_TRADE | TRANSITION | WAIT | OTC",
+   "scenario": "TRANSITION_NO_TRADE",
+   "regime": "TRANSITION",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 38,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "TREND_CONTINUATION | TREND_DOWN | WAIT | OTC",
+   "scenario": "TREND_CONTINUATION",
+   "regime": "TREND_DOWN",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 16,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "BREAKOUT | TREND_DOWN | WAIT | OTC",
+   "scenario": "BREAKOUT",
+   "regime": "TREND_DOWN",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 12,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "REVERSAL | TREND_UP | WAIT | OTC",
+   "scenario": "REVERSAL",
+   "regime": "TREND_UP",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 51,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "TREND_CONTINUATION | TREND_UP | WAIT | OTC",
+   "scenario": "TREND_CONTINUATION",
+   "regime": "TREND_UP",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 14,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "TRANSITION_NO_TRADE | TREND_DOWN | WAIT | OTC",
+   "scenario": "TRANSITION_NO_TRADE",
+   "regime": "TREND_DOWN",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 9,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "BREAKOUT | TREND_UP | WAIT | OTC",
+   "scenario": "BREAKOUT",
+   "regime": "TREND_UP",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 7,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "FAILED_BREAKOUT | TREND_DOWN | WAIT | OTC",
+   "scenario": "FAILED_BREAKOUT",
+   "regime": "TREND_DOWN",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 3,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "BREAKOUT | TRANSITION | WAIT | OTC",
+   "scenario": "BREAKOUT",
+   "regime": "TRANSITION",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 4,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "TRANSITION_NO_TRADE | TREND_UP | WAIT | OTC",
+   "scenario": "TRANSITION_NO_TRADE",
+   "regime": "TREND_UP",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 5,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "TREND_CONTINUATION | TRANSITION | WAIT | OTC",
+   "scenario": "TREND_CONTINUATION",
+   "regime": "TRANSITION",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 1,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "FAILED_BREAKOUT | UNCERTAIN | WAIT | OTC",
+   "scenario": "FAILED_BREAKOUT",
+   "regime": "UNCERTAIN",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 1,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "FAILED_BREAKOUT | TRANSITION | WAIT | OTC",
+   "scenario": "FAILED_BREAKOUT",
+   "regime": "TRANSITION",
+   "direction": null,
+   "marketType": "OTC",
+   "nObserved": 2,
+   "accepted": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true,
+    "coverage": 0
+   },
+   "avoided": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "status": "INSUFFICIENT"
+  }
+ ],
+ "funnel": [
+  {
+   "scenario": "FAILED_BREAKOUT",
+   "synthesisPrimary": 6,
+   "synthesisCompetingOrSecondary": 1,
+   "accepted": 0,
+   "triggerStates": {
+    "SCENARIO_COMPONENT_MISSING": 4,
+    "AMBIGUOUS_COMPETING_SCENARIOS": 2
+   },
+   "redTeamVerdicts": {
+    "CONFIRMED_UNCHALLENGED": 6
+   },
+   "note": "Lista completa de candidatos do SCENARIO_AGENT nao e persistida (payload compacto); funil usa synthesis/agents."
+  },
+  {
+   "scenario": "RANGE_MEAN_REVERSION",
+   "synthesisPrimary": 0,
+   "synthesisCompetingOrSecondary": 0,
+   "accepted": 0,
+   "triggerStates": {},
+   "redTeamVerdicts": {},
+   "note": "Lista completa de candidatos do SCENARIO_AGENT nao e persistida (payload compacto); funil usa synthesis/agents."
+  }
+ ],
+ "trigger": [
+  {
+   "key": "TRIGGERED",
+   "n": 193,
+   "wins": 98,
+   "losses": 94,
+   "draws": 1,
+   "decided": 192,
+   "wr": 0.5104,
+   "ci95": {
+    "low": 0.4402,
+    "high": 0.5802
+   },
+   "lowN": false,
+   "status": "EXPLORATORY"
+  },
+  {
+   "key": "AMBIGUOUS_COMPETING_SCENARIOS",
+   "n": 44,
+   "wins": 25,
+   "losses": 19,
+   "draws": 0,
+   "decided": 44,
+   "wr": 0.5682,
+   "ci95": {
+    "low": 0.4222,
+    "high": 0.7032
+   },
+   "lowN": false,
+   "status": "EXPLORATORY"
+  },
+  {
+   "key": "CONTEXT_OK_NO_TRIGGER",
+   "n": 16,
+   "wins": 6,
+   "losses": 10,
+   "draws": 0,
+   "decided": 16,
+   "wr": 0.375,
+   "ci95": {
+    "low": 0.1848,
+    "high": 0.6136
+   },
+   "lowN": true,
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "SCENARIO_COMPONENT_MISSING",
+   "n": 6,
+   "wins": 3,
+   "losses": 3,
+   "draws": 0,
+   "decided": 6,
+   "wr": 0.5,
+   "ci95": {
+    "low": 0.1876,
+    "high": 0.8124
+   },
+   "lowN": true,
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "REGIME_TRANSITION",
+   "n": 1,
+   "wins": 0,
+   "losses": 1,
+   "draws": 0,
+   "decided": 1,
+   "wr": 0,
+   "ci95": {
+    "low": 0,
+    "high": 0.7935
+   },
+   "lowN": true,
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "DATA_UNSAFE",
+   "n": 0,
+   "wins": 0,
+   "losses": 0,
+   "draws": 0,
+   "decided": 0,
+   "wr": null,
+   "ci95": {
+    "low": null,
+    "high": null
+   },
+   "lowN": true,
+   "status": "INSUFFICIENT"
+  }
+ ],
+ "dataQuality": [
+  {
+   "key": "HEALTHY",
+   "n": 254,
+   "wins": 129,
+   "losses": 124,
+   "draws": 1,
+   "decided": 253,
+   "wr": 0.5099,
+   "ci95": {
+    "low": 0.4486,
+    "high": 0.5709
+   },
+   "lowN": false,
+   "status": "NEUTRAL"
+  },
+  {
+   "key": "DEGRADED",
+   "n": 6,
+   "wins": 3,
+   "losses": 3,
+   "draws": 0,
+   "decided": 6,
+   "wr": 0.5,
+   "ci95": {
+    "low": 0.1876,
+    "high": 0.8124
+   },
+   "lowN": true,
+   "status": "INSUFFICIENT"
+  },
+  {
+   "key": "UNSAFE",
+   "n": 0,
+   "wins": 0,
+   "losses": 0,
+   "draws": 0,
+   "decided": 0,
+   "wr": null,
+   "ci95": {
+    "low": null,
+    "high": null
+   },
+   "lowN": true,
+   "status": "INSUFFICIENT"
   }
  ],
  "lateWindow": {
-  "observations": 5000,
-  "bothArmsSettled": 0,
-  "currentArm": {
+  "outcomeGroups": [
+   {
+    "outcome": "LATE_CANCEL",
+    "n": 5031,
+    "originalCounterfactual": {
+     "n": 503,
+     "wins": 241,
+     "losses": 257,
+     "draws": 5,
+     "decided": 498,
+     "wr": 0.4839,
+     "ci95": {
+      "low": 0.4403,
+      "high": 0.5278
+     },
+     "lowN": false
+    },
+    "reasons": [
+     "CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+     "VALID_SETUP_BUT_BAD_ENTRY_PRICE",
+     "CANDIDATE_SETUP_INVALIDATED",
+     "CANDIDATE_LOGIC_CHANGED_DIRECTION"
+    ]
+   },
+   {
+    "outcome": "OBSERVING",
+    "n": 79,
+    "originalCounterfactual": {
+     "n": 0,
+     "wins": 0,
+     "losses": 0,
+     "draws": 0,
+     "decided": 0,
+     "wr": null,
+     "ci95": {
+      "low": null,
+      "high": null
+     },
+     "lowN": true
+    },
+    "reasons": []
+   },
+   {
+    "outcome": "LATE_ACCEPT",
+    "n": 37,
+    "originalCounterfactual": {
+     "n": 17,
+     "wins": 6,
+     "losses": 11,
+     "draws": 0,
+     "decided": 17,
+     "wr": 0.3529,
+     "ci95": {
+      "low": 0.1731,
+      "high": 0.587
+     },
+     "lowN": true
+    },
+    "reasons": []
+   }
+  ],
+  "lateAcceptTrades": {
+   "n": 37,
+   "wins": 18,
+   "losses": 19,
+   "draws": 0,
+   "decided": 37,
+   "wr": 0.4865,
+   "ci95": {
+    "low": 0.3345,
+    "high": 0.6411
+   },
+   "lowN": false
+  },
+  "currentVsLateBothSettled": {
    "n": 0,
-   "wins": 0,
-   "losses": 0,
-   "wr": null,
+   "current": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   },
+   "late": {
+    "n": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "decided": 0,
+    "wr": null,
+    "ci95": {
+     "low": null,
+     "high": null
+    },
+    "lowN": true
+   }
+  },
+  "entryQuality": {
+   "n": 37,
+   "priceBetter": 0,
+   "priceWorse": 0,
+   "priceEqual": 37,
+   "avgExtraEvaluations": 46
+  },
+  "coverage": {
+   "accept": 37,
+   "cancel": 5031,
+   "observing": 79,
+   "total": 5147,
+   "coverageRate": 0.0072
+  },
+  "intersectionVerdicts": [
+   {
+    "verdict": "CANCEL_CANDIDATE_LOGIC_CHANGED_TO_WAIT",
+    "n": 4025,
+    "originalWR": null
+   },
+   {
+    "verdict": "CANCEL_VALID_SETUP_BUT_BAD_ENTRY_PRICE",
+    "n": 245,
+    "originalWR": 0.4895
+   },
+   {
+    "verdict": "ACCEPT",
+    "n": 122,
+    "originalWR": 0.4696
+   },
+   {
+    "verdict": "CANCEL_QUALITY_SCORE_BELOW_THRESHOLD",
+    "n": 97,
+    "originalWR": 0.4574
+   },
+   {
+    "verdict": "CANCEL_CANDIDATE_LOGIC_CHANGED_DIRECTION",
+    "n": 27,
+    "originalWR": null
+   },
+   {
+    "verdict": "CANCEL_CANDIDATE_SETUP_INVALIDATED",
+    "n": 23,
+    "originalWR": null
+   },
+   {
+    "verdict": "CANCEL_CANDIDATE_REGIME_CHANGED",
+    "n": 6,
+    "originalWR": null
+   }
+  ]
+ },
+ "multipleTesting": {
+  "raw": [
+   {
+    "id": "V4_selection_accepted_vs_avoided",
+    "p": 0.256229
+   },
+   {
+    "id": "stratum:market:USDCAD:OTC",
+    "p": 0.212317
+   },
+   {
+    "id": "stratum:type:OTC",
+    "p": 0.256229
+   },
+   {
+    "id": "stratum:regime:TREND_DOWN",
+    "p": 0.130169
+   },
+   {
+    "id": "stratum:scenario:TREND_CONTINUATION",
+    "p": 0.359637
+   },
+   {
+    "id": "stratum:market:EURGBP:OTC",
+    "p": 0.157299
+   },
+   {
+    "id": "stratum:regime:TREND_UP",
+    "p": 0.852915
+   },
+   {
+    "id": "stratum:scenario:TREND_PULLBACK",
+    "p": 0.539656
+   },
+   {
+    "id": "stratum:market:USDCHF:OTC",
+    "p": 0.36131
+   },
+   {
+    "id": "stratum:scenario:BREAKOUT",
+    "p": 0.248213
+   },
+   {
+    "id": "stratum:market:USDJPY:OTC",
+    "p": 0.157299
+   },
+   {
+    "id": "stratum:market:USDTRY:OTC",
+    "p": 1
+   },
+   {
+    "id": "stratum:market:USDZAR:OTC",
+    "p": 0.136037
+   },
+   {
+    "id": "stratum:market:EURCAD:OTC",
+    "p": 0.624206
+   },
+   {
+    "id": "stratum:market:AUDCHF:OTC",
+    "p": 0.36131
+   },
+   {
+    "id": "stratum:market:EURNZD:OTC",
+    "p": 0.504985
+   },
+   {
+    "id": "stratum:market:NZDJPY:OTC",
+    "p": 0.220671
+   },
+   {
+    "id": "stratum:market:EURJPY:OTC",
+    "p": 0.273322
+   },
+   {
+    "id": "stratum:market:GBPCAD:OTC",
+    "p": 0.504985
+   },
+   {
+    "id": "stratum:scenario:REVERSAL",
+    "p": 0.342782
+   }
+  ],
+  "adjusted": [
+   {
+    "id": "stratum:regime:TREND_DOWN",
+    "p": 0.130169,
+    "q": 0.516157,
+    "rank": 1,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:USDZAR:OTC",
+    "p": 0.136037,
+    "q": 0.516157,
+    "rank": 2,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:EURGBP:OTC",
+    "p": 0.157299,
+    "q": 0.516157,
+    "rank": 3,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:USDJPY:OTC",
+    "p": 0.157299,
+    "q": 0.516157,
+    "rank": 4,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:USDCAD:OTC",
+    "p": 0.212317,
+    "q": 0.516157,
+    "rank": 5,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:NZDJPY:OTC",
+    "p": 0.220671,
+    "q": 0.516157,
+    "rank": 6,
+    "m": 20
+   },
+   {
+    "id": "stratum:scenario:BREAKOUT",
+    "p": 0.248213,
+    "q": 0.516157,
+    "rank": 7,
+    "m": 20
+   },
+   {
+    "id": "V4_selection_accepted_vs_avoided",
+    "p": 0.256229,
+    "q": 0.516157,
+    "rank": 8,
+    "m": 20
+   },
+   {
+    "id": "stratum:type:OTC",
+    "p": 0.256229,
+    "q": 0.516157,
+    "rank": 9,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:EURJPY:OTC",
+    "p": 0.273322,
+    "q": 0.516157,
+    "rank": 10,
+    "m": 20
+   },
+   {
+    "id": "stratum:scenario:REVERSAL",
+    "p": 0.342782,
+    "q": 0.516157,
+    "rank": 11,
+    "m": 20
+   },
+   {
+    "id": "stratum:scenario:TREND_CONTINUATION",
+    "p": 0.359637,
+    "q": 0.516157,
+    "rank": 12,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:USDCHF:OTC",
+    "p": 0.36131,
+    "q": 0.516157,
+    "rank": 13,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:AUDCHF:OTC",
+    "p": 0.36131,
+    "q": 0.516157,
+    "rank": 14,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:EURNZD:OTC",
+    "p": 0.504985,
+    "q": 0.631231,
+    "rank": 15,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:GBPCAD:OTC",
+    "p": 0.504985,
+    "q": 0.631231,
+    "rank": 16,
+    "m": 20
+   },
+   {
+    "id": "stratum:scenario:TREND_PULLBACK",
+    "p": 0.539656,
+    "q": 0.634889,
+    "rank": 17,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:EURCAD:OTC",
+    "p": 0.624206,
+    "q": 0.693562,
+    "rank": 18,
+    "m": 20
+   },
+   {
+    "id": "stratum:regime:TREND_UP",
+    "p": 0.852915,
+    "q": 0.897805,
+    "rank": 19,
+    "m": 20
+   },
+   {
+    "id": "stratum:market:USDTRY:OTC",
+    "p": 1,
+    "q": 1,
+    "rank": 20,
+    "m": 20
+   }
+  ],
+  "policy": "Benjamini-Hochberg FDR; q<=0.10 como limite exploratorio; nada aqui e verdade binaria."
+ },
+ "stageStatus": [
+  {
+   "component": "Regime",
+   "baseline": "â€”",
+   "withComponent": "48.85%",
+   "withoutComponent": "53.6%",
+   "deltaPp": -5.95,
+   "decided": 28,
    "ci95": {
     "low": null,
     "high": null
    },
-   "lowPrecision": true
+   "status": "EXPLORATORY",
+   "note": "ablation single-removal: cobertura 17% vs 22%; 18 decisoes mudaram"
   },
-  "lateArm": {
-   "n": 0,
-   "wins": 0,
-   "losses": 0,
-   "wr": null,
+  {
+   "component": "Structure",
+   "baseline": "â€”",
+   "withComponent": "â€”",
+   "withoutComponent": "42.9%",
+   "deltaPp": 4.76,
+   "decided": 7,
    "ci95": {
     "low": null,
     "high": null
    },
-   "lowPrecision": true
+   "status": "INSUFFICIENT",
+   "note": "ablation single-removal: cobertura 5% vs 22%; 38 decisoes mudaram"
   },
-  "lateDeltaPp": null,
-  "decisions": 0,
-  "lateWinsOverCurrent": 0,
-  "currentWinsOverLate": 0,
-  "samplePolicyShape": {
-   "currentKeys": [
-    "leadMs",
-    "profit",
-    "reason",
-    "result",
-    "ackedAt",
-    "submitAt",
-    "settledAt",
-    "decisionAt",
-    "entryPrice",
-    "disposition",
-    "executionId",
-    "brokerOrderId",
-    "consensusAction",
-    "expirationMismatch",
-    "brokerExpirationSec"
-   ],
-   "lateKeys": [
-    "reason",
-    "result",
-    "verdict",
-    "settledAt",
-    "deadlineAt",
-    "evaluations",
-    "recoveredAt",
-    "transitions",
-    "normalizedPnl",
-    "becameInvalidAt",
-    "firstEvaluation",
-    "lastEvaluationAt",
-    "entryPriceWouldBe",
-    "lastBeforeDeadline"
-   ],
-   "outcome": "OBSERVING",
-   "outcomeReason": null
-  }
- },
- "intersections": {
-  "verdicts": {
-   "INSUFFICIENT_DATA": 4416,
-   "BOTH_WAIT": 3
+  {
+   "component": "Trend",
+   "baseline": "â€”",
+   "withComponent": "â€”",
+   "withoutComponent": "â€”",
+   "deltaPp": -23.87,
+   "decided": 176,
+   "ci95": null,
+   "status": "INSUFFICIENT",
+   "note": "alinhamento vs oposto (checar inversao)"
   },
-  "lateVerdicts": {
-   "CANCEL_CANDIDATE_LOGIC_CHANGED_TO_WAIT": 3920,
-   "CANCEL_QUALITY_SCORE_BELOW_THRESHOLD": 95,
-   "CANCEL_VALID_SETUP_BUT_BAD_ENTRY_PRICE": 233,
-   "ACCEPT": 115,
-   "CANCEL_CANDIDATE_SETUP_INVALIDATED": 23,
-   "CANCEL_CANDIDATE_LOGIC_CHANGED_DIRECTION": 27,
-   "CANCEL_CANDIDATE_REGIME_CHANGED": 6
-  },
-  "survivorsToCutoff": {
-   "n": 110,
-   "wins": 51,
-   "losses": 59,
-   "wr": 0.4636,
-   "ci95": {
-    "low": 0.3732,
-    "high": 0.5565
-   },
-   "lowPrecision": false
-  }
- },
- "executedVsShadow": {
-  "g2Executed": {
-   "n": 0,
-   "wins": 0,
-   "losses": 0,
-   "wr": null,
+  {
+   "component": "Location",
+   "baseline": "â€”",
+   "withComponent": "â€”",
+   "withoutComponent": "48.6%",
+   "deltaPp": -1.03,
+   "decided": 37,
    "ci95": {
     "low": null,
     "high": null
    },
-   "lowPrecision": true
+   "status": "BUG_BLOCKED",
+   "note": "ablation single-removal: cobertura 23% vs 22%; 12 decisoes mudaram"
   },
-  "g2CausalCounterfactual": {
-   "n": 547,
-   "wins": 265,
-   "losses": 277,
-   "wr": 0.4845,
+  {
+   "component": "Momentum",
+   "baseline": "â€”",
+   "withComponent": "â€”",
+   "withoutComponent": "45.2%",
+   "deltaPp": 2.38,
+   "decided": 42,
    "ci95": {
-    "low": 0.4428,
-    "high": 0.5263
+    "low": null,
+    "high": null
    },
-   "lowPrecision": false
+   "status": "EXPLORATORY",
+   "note": "ablation single-removal: cobertura 33% vs 22%; 29 decisoes mudaram"
+  },
+  {
+   "component": "Volatility",
+   "baseline": "â€”",
+   "withComponent": "â€”",
+   "withoutComponent": "48.6%",
+   "deltaPp": -1.03,
+   "decided": 37,
+   "ci95": {
+    "low": null,
+    "high": null
+   },
+   "status": "EXPLORATORY",
+   "note": "ablation single-removal: cobertura 19% vs 22%; 5 decisoes mudaram"
+  },
+  {
+   "component": "PriceAction",
+   "baseline": "â€”",
+   "withComponent": "â€”",
+   "withoutComponent": "47.1%",
+   "deltaPp": 0.56,
+   "decided": 34,
+   "ci95": {
+    "low": null,
+    "high": null
+   },
+   "status": "EXPLORATORY",
+   "note": "ablation single-removal: cobertura 20% vs 22%; 13 decisoes mudaram"
+  },
+  {
+   "component": "Microstructure",
+   "baseline": "â€”",
+   "withComponent": "â€”",
+   "withoutComponent": "47.6%",
+   "deltaPp": 0,
+   "decided": 42,
+   "ci95": {
+    "low": null,
+    "high": null
+   },
+   "status": "EXPLORATORY",
+   "note": "ablation single-removal: cobertura 22% vs 22%; 0 decisoes mudaram"
+  },
+  {
+   "component": "SynthesisTrigger",
+   "baseline": "49.25% contexto vetado",
+   "withComponent": "36% triggered",
+   "withoutComponent": "â€”",
+   "deltaPp": -13.25,
+   "decided": 25,
+   "ci95": null,
+   "status": "EXPLORATORY",
+   "note": "triggered vs vetados"
+  },
+  {
+   "component": "RedTeam",
+   "baseline": "0% vetados",
+   "withComponent": "51.04% passou",
+   "withoutComponent": "â€”",
+   "deltaPp": null,
+   "decided": 192,
+   "ci95": null,
+   "status": "INSUFFICIENT",
+   "note": "pass vs veto"
+  },
+  {
+   "component": "DataQuality",
+   "baseline": "50% (degraded)",
+   "withComponent": "50.99% (healthy)",
+   "withoutComponent": "â€”",
+   "deltaPp": 0.99,
+   "decided": 253,
+   "ci95": null,
+   "status": "INSUFFICIENT",
+   "note": "healthy vs degraded"
+  },
+  {
+   "component": "LateWindow",
+   "baseline": "checkpoint atual",
+   "withComponent": "48.65% (LATE_ACCEPT)",
+   "withoutComponent": "48.39% (CANCEL original)",
+   "deltaPp": null,
+   "decided": 37,
+   "ci95": null,
+   "status": "EXPLORATORY",
+   "note": "cancelamentos logicos ainda sem contrafactual proprio"
   }
- },
- "coverage": {
-  "v4WithCandidate": 741,
-  "v4WithoutShadowJoin": 663,
-  "v3WithShadowJoin": 439,
-  "timingWithShadowJoin": 506
- },
- "caveats": [
-  "N prospectivo pequeno: toda metrica carrega N e CI95; nada e headline de performance.",
-  "G2 baseline causal usa iq_shadow_observations (CAUSAL_COUNTERFACTUAL) para comparar na MESMA oportunidade; BROKER_EXECUTED e mostrado separado e nunca somado.",
-  "V4/V3 WAIT nao tem settlement proprio; o resultado contrafactual vem do G2 causal da mesma oportunidade (mesmo T0/candles).",
-  "PROSPECTIVE_SHADOW nao e PRACTICE nem REAL; nenhuma ordem foi executada pelo V4/V3."
- ]
+ ],
+ "ablation": {
+  "available": true,
+  "sampleN": 200,
+  "baseline": {
+   "decided": 42,
+   "wr": 0.4762,
+   "coverage": 0.215
+  },
+  "components": [
+   {
+    "component": "RSI",
+    "n": 200,
+    "errors": 0,
+    "decisionsChanged": 29,
+    "coverageFull": 0.215,
+    "coverageAblated": 0.33,
+    "wrFull": 0.4762,
+    "wrAblated": 0.4524,
+    "decidedAblated": 42,
+    "deltaWrPp": 2.38,
+    "deltaCoveragePp": 11.5,
+    "status": "EXPLORATORY"
+   },
+   {
+    "component": "ADX",
+    "n": 200,
+    "errors": 0,
+    "decisionsChanged": 18,
+    "coverageFull": 0.215,
+    "coverageAblated": 0.165,
+    "wrFull": 0.4762,
+    "wrAblated": 0.5357,
+    "decidedAblated": 28,
+    "deltaWrPp": -5.95,
+    "deltaCoveragePp": -5,
+    "status": "EXPLORATORY"
+   },
+   {
+    "component": "STRUCTURE",
+    "n": 200,
+    "errors": 0,
+    "decisionsChanged": 38,
+    "coverageFull": 0.215,
+    "coverageAblated": 0.045,
+    "wrFull": 0.4762,
+    "wrAblated": 0.4286,
+    "decidedAblated": 7,
+    "deltaWrPp": 4.76,
+    "deltaCoveragePp": -17,
+    "status": "INSUFFICIENT"
+   },
+   {
+    "component": "LOCATION",
+    "n": 200,
+    "errors": 0,
+    "decisionsChanged": 12,
+    "coverageFull": 0.215,
+    "coverageAblated": 0.225,
+    "wrFull": 0.4762,
+    "wrAblated": 0.4865,
+    "decidedAblated": 37,
+    "deltaWrPp": -1.03,
+    "deltaCoveragePp": 1,
+    "status": "EXPLORATORY"
+   },
+   {
+    "component": "MICROSTRUCTURE",
+    "n": 200,
+    "errors": 0,
+    "decisionsChanged": 0,
+    "coverageFull": 0.215,
+    "coverageAblated": 0.215,
+    "wrFull": 0.4762,
+    "wrAblated": 0.4762,
+    "decidedAblated": 42,
+    "deltaWrPp": 0,
+    "deltaCoveragePp": 0,
+    "status": "EXPLORATORY"
+   },
+   {
+    "component": "HTF",
+    "n": 200,
+    "errors": 0,
+    "decisionsChanged": 3,
+    "coverageFull": 0.215,
+    "coverageAblated": 0.2,
+    "wrFull": 0.4762,
+    "wrAblated": 0.5128,
+    "decidedAblated": 39,
+    "deltaWrPp": -3.66,
+    "deltaCoveragePp": -1.5,
+    "status": "EXPLORATORY"
+   },
+   {
+    "component": "VELOCITY",
+    "n": 200,
+    "errors": 0,
+    "decisionsChanged": 21,
+    "coverageFull": 0.215,
+    "coverageAblated": 0.27,
+    "wrFull": 0.4762,
+    "wrAblated": 0.4737,
+    "decidedAblated": 38,
+    "deltaWrPp": 0.25,
+    "deltaCoveragePp": 5.5,
+    "status": "EXPLORATORY"
+   },
+   {
+    "component": "ACCELERATION",
+    "n": 200,
+    "errors": 0,
+    "decisionsChanged": 1,
+    "coverageFull": 0.215,
+    "coverageAblated": 0.21,
+    "wrFull": 0.4762,
+    "wrAblated": 0.4634,
+    "decidedAblated": 41,
+    "deltaWrPp": 1.28,
+    "deltaCoveragePp": -0.5,
+    "status": "EXPLORATORY"
+   },
+   {
+    "component": "VOLATILITY",
+    "n": 200,
+    "errors": 0,
+    "decisionsChanged": 5,
+    "coverageFull": 0.215,
+    "coverageAblated": 0.19,
+    "wrFull": 0.4762,
+    "wrAblated": 0.4865,
+    "decidedAblated": 37,
+    "deltaWrPp": -1.03,
+    "deltaCoveragePp": -2.5,
+    "status": "EXPLORATORY"
+   },
+   {
+    "component": "PRICE_ACTION",
+    "n": 200,
+    "errors": 0,
+    "decisionsChanged": 13,
+    "coverageFull": 0.215,
+    "coverageAblated": 0.2,
+    "wrFull": 0.4762,
+    "wrAblated": 0.4706,
+    "decidedAblated": 34,
+    "deltaWrPp": 0.56,
+    "deltaCoveragePp": -1.5,
+    "status": "EXPLORATORY"
+   }
+  ],
+  "note": "single-removal marginal (proxy de contribuicao; NAO e Shapley)."
+ }
 }
