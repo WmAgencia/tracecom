@@ -69,6 +69,7 @@ import { RsiAgents5x5 } from "./rsi-agents-5x5.mjs";
 import { RsiAgentsV2 } from "./rsi-agents-v2.mjs";
 // RSI AGENTS V3: estrategia UNICA RSI_REVERSAL_PULLBACK_V3 em todo o universo elegivel (executa via submitAgentV3Order).
 import { RsiAgentsV3 } from "./rsi-agents-v3.mjs";
+import { RSI_V3_WATCH_POLICY, shouldEvaluate } from "./rsi-v3-watch.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
 export const ACK_TIMEOUT_MS = 15_000;
@@ -1304,10 +1305,19 @@ export class IqMultiRuntime extends EventEmitter {
   /* ------------------- RSI AGENTS V3 (estrategia unica; ordem via submitAgentV3Order) ------------------- */
   #observeRsiAgents(ctx, list, now) {
     if (!this.rsiAgentsV3?.enabled) return null;
-    // V3.1: throttle abaixo da cadencia de candle (5s) para garantir que a ULTIMA avaliacao
-    // causal antes do safe cutoff nunca seja pulada por jitter de ~1 tick.
-    if (now - (ctx.rsiAgentsAt ?? 0) < 4_500) return null;
+    // V3.1 WATCH: candidate vivo => sem throttle generico (exatamente 1 avaliacao por candle de 5s,
+    // event-driven pelo fechamento do candle); sem candidate => throttle curto anti-duplicata.
+    // Dedupe por candle (bucketEnd) nos dois modos: nunca avalia o mesmo candle duas vezes.
+    const candidateActive = this.rsiAgentsV3.hasActiveCandidate?.(ctx.marketKey) === true;
+    const bucketEnd = Number(list?.[list.length - 1]?.bucketEnd);
+    const evaluate = shouldEvaluate({
+      now, lastAt: ctx.rsiAgentsAt ?? null,
+      bucketEnd: Number.isFinite(bucketEnd) ? bucketEnd : null, lastBucket: ctx.rsiAgentsBucket ?? null,
+      candidateActive, throttleMs: RSI_V3_WATCH_POLICY.normalThrottleMs,
+    });
+    if (!evaluate) { ctx.rsiAgentsSkips = (ctx.rsiAgentsSkips ?? 0) + 1; return null; }
     ctx.rsiAgentsAt = now;
+    if (Number.isFinite(bucketEnd)) ctx.rsiAgentsBucket = bucketEnd;
     // Universo reconciliado periodicamente (throttle interno): mercado novo entra; mercado que sai do feed fica bloqueado.
     void this.rsiAgentsV3.assignUniverse([...this.markets.values()]);
     if (!this.rsiAgentsV3.assignments.has(ctx.marketKey)) return null;
@@ -1337,6 +1347,7 @@ export class IqMultiRuntime extends EventEmitter {
       rsi: state.rsi ?? null, candidateAt: state.candidateAt ?? null,
       candidateRsi: state.candidateRsi ?? null, stage: state.stage ?? null, strength: state.strength ?? null,
       entryMode: state.entryMode ?? null, expectedCushion: state.expectedCushion ?? null,
+      watch: state.watch ?? null,
       strictV2Decision: state.strictV2Decision ?? null, pullbackV2Decision: state.pullbackV2Decision ?? null,
       ...this.#executionMeta({ source: `agent-v3:${state.strategy}`, marketKey: ctx.marketKey }),
     });
