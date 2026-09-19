@@ -1,0 +1,3237 @@
+{
+ "schema": "efficacy-v3",
+ "generatedAtUtc": "2026-09-19T13:03:26.184Z",
+ "joinAudit": {
+  "causeOfV2Loss": [
+   "observacao V4 ocorre na CRIACAO do candidato; shadow-lab somente no FINAL ENTRY (candidatos cancelados antes nao geram linha shadow)",
+   "janelas diferentes (shadow desde 2026-09-18T22:55Z; V4 desde 2026-09-19T10:38Z)",
+   "consequencia: 474 linhas shadow settled sem par V4 e ~181 V4 settled sem linha shadow"
+  ],
+  "fix": "join deterministico por candidate_id entre V4 e iq_scenario_shadow_observations (ambos na criacao, mesmo T0), sem heuristica de horario",
+  "coverage": {
+   "v4Rows": 969,
+   "v4WithV3": 969,
+   "v4WithoutV3": 0,
+   "shadowJoinWas": 573
+  }
+ },
+ "paired": {
+  "A": {
+   "n": 196,
+   "decided": 195,
+   "wins": 97,
+   "losses": 98,
+   "draws": 1,
+   "wr": 0.4974,
+   "ci95": {
+    "low": 0.428,
+    "high": 0.567
+   },
+   "lowN": false
+  },
+  "B": {
+   "n": 23,
+   "decided": 23,
+   "wins": 15,
+   "losses": 8,
+   "draws": 0,
+   "wr": 0.6522,
+   "ci95": {
+    "low": 0.4489,
+    "high": 0.8119
+   },
+   "lowN": true
+  },
+  "C": {
+   "n": 686,
+   "decided": 682,
+   "wins": 345,
+   "losses": 337,
+   "draws": 4,
+   "wr": 0.5059,
+   "ci95": {
+    "low": 0.4684,
+    "high": 0.5433
+   },
+   "lowN": false
+  },
+  "D": {
+   "n": 0,
+   "decided": 0,
+   "wins": 0,
+   "losses": 0,
+   "draws": 0,
+   "wr": null,
+   "ci95": {
+    "low": null,
+    "high": null
+   },
+   "lowN": true
+  },
+  "accepted": {
+   "n": 219,
+   "decided": 218,
+   "wins": 112,
+   "losses": 106,
+   "draws": 1,
+   "wr": 0.5138,
+   "ci95": {
+    "low": 0.4478,
+    "high": 0.5793
+   },
+   "lowN": false
+  },
+  "test": {
+   "deltaPp": 0.79,
+   "pValue": 0.83913,
+   "bootstrapNote": "N pareado agora usa V3-creation (mesmo T0), nao o shadow final-entry."
+  }
+ },
+ "locationConditional": {
+  "n": 229,
+  "byVerdict": [
+   {
+    "key": "NEUTRAL",
+    "n": 111,
+    "decided": 111,
+    "wins": 54,
+    "losses": 57,
+    "draws": 0,
+    "wr": 0.4865,
+    "ci95": {
+     "low": 0.3955,
+     "high": 0.5784
+    },
+    "lowN": false
+   },
+   {
+    "key": "FAVORABLE",
+    "n": 63,
+    "decided": 63,
+    "wins": 30,
+    "losses": 33,
+    "draws": 0,
+    "wr": 0.4762,
+    "ci95": {
+     "low": 0.3578,
+     "high": 0.5973
+    },
+    "lowN": false
+   },
+   {
+    "key": "UNFAVORABLE",
+    "n": 45,
+    "decided": 44,
+    "wins": 28,
+    "losses": 16,
+    "draws": 1,
+    "wr": 0.6364,
+    "ci95": {
+     "low": 0.4887,
+     "high": 0.7622
+    },
+    "lowN": false
+   }
+  ],
+  "detail": [
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6826923076922697,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.4285714285713719,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": null,
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.16666666666656388,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": null,
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.58136348064408,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": null,
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "UPPER_HALF",
+    "pos": 0.6382978723403954,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": null,
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.20422535211260998,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": null,
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5382341601337413,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": null,
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5254237288135338,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": null,
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.23055555555530555,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": null,
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7818181818182445,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.8014184397165086,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.4852941176470926,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.4098360655739077,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.42884615384604613,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5312500000000939,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.8016997167138696,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6103896103896216,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.25,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.46738678853357424,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5149501661129823,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.5333333333335554,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6330935251798492,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.5745341614907232,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7894736842105724,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.3853181076670946,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.5178571428571606,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7419354838707367,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7281553398057917,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.38461538461528605,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.538461538461558,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.9716599190285451,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.3900420388859829,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.363636363636226,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.1739130434783868,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6071428571427439,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.44565217391305134,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.5163043478260725,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5357142857145123,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.27586206896539844,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.49999999999972244,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.39378673383710844,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.4705882352942521,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.3823529411766819,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6279069767442701,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.5813953488371973,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.1806722689076234,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.304477611940308,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6363636363637097,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.9090909090909702,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.3092783505154568,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5416666666664739,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.45297029703016223,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.49999999999980177,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "BREAKOUT",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.33884297520664797,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.4545454545454087,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.8571428571427924,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.295238095237916,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.559999999999929,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6901408450703972,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.5868644067797136,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7982832618025829,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.363636363636226,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "UPPER_HALF",
+    "pos": 0.5584415584415136,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.07692307692353678,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.4901960784313085,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5324675324675524,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7806788511749274,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6071428571429845,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7752808988759448,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6666666666666666,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.15027122122856165,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.28571428571436125,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7222222222221879,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "UPPER_HALF",
+    "pos": 0.5616246498599561,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.36858076563929076,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7894736842103418,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7072243345996767,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.32656826568269554,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7099169943207401,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.9903888160769415,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.8188405797101712,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "UPPER_HALF",
+    "pos": 0.6113207547169546,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.15789473684253583,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.22701074141997324,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.12389380530977624,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.4110429447853755,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.5591397849461545,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.4482758620688203,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5000000000001914,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "DRAW",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6923076923076923,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5074626865670945,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6666666666665296,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7317073170730518,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.34948096885810886,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.2421052631580768,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.539215686274492,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5090909090909678,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.636363636363774,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.590909090909435,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.5357142857143282,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5392156862745482,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.2666666666669627,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.33333333333347037,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.548148148148136,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.2623574144486239,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6164383561642502,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.36486486486487296,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.49169435215966606,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.43343653250755265,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.27863777089810526,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.47527472527471637,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.30323193916351093,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.4385964912279677,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.4371325192220351,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "UPPER_HALF",
+    "pos": 0.7105263157893661,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.07692307692314261,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.4731182795699515,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5276532137518842,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.26819923371644544,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.31147540983592237,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.4222222222224635,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6666666666666666,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6632653061225021,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.49292025976793447,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.29230769230778647,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6197183098590404,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6399999999999822,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.8823529411765219,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.18032786885274926,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "UPPER_HALF",
+    "pos": 0.7113983548765584,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5384615384615713,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.5000000000001633,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7750000000000258,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6279069767442701,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.46511627906979147,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7919999999998764,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.15873015873016433,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6590909090911958,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.5558823529411642,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.4999999999998086,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.46153846153846156,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.20155038759665728,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7181008902068173,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7843137254900936,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.8375571981696642,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.47603430877892733,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.5552763819095768,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.9067796610169084,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.4799227266455075,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6652173913042739,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "UPPER_HALF",
+    "pos": 0.5769230769231755,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.3199999999999112,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.585284280936418,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.15094339622652575,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6480186480186151,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "UPPER_HALF",
+    "pos": 0.6122087132725316,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.4375000000001084,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.4252873563218935,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "UPPER_HALF",
+    "pos": 0.5833333333334104,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.47916666666653174,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.18181818181823425,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.27777777777781204,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.8333333333332544,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.2952586206898367,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.4077922077922124,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.4842342342343496,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.16113744075905992,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.28947368421063396,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5000000000001682,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6538461538463509,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6399999999999822,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6355651994213816,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.8461538461536491,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.06766917293227058,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6646706586826439,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "AT_BOTTOM",
+    "pos": 0.16666666666682087,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6106575963720424,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.5217391304348036,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5407801418439795,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.5108695652173662,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.42307692307693623,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.42393509127827345,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.35779816513770624,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.460957178841306,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7090909090910485,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.48076923076921024,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.5185185185184271,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "LOSS",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.3658536585365259,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.296296296296479,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.5833333333334104,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6748644908314639,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.48026315789475604,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.4848484848483829,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6931818181818347,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.520833333333237,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "FAVORABLE",
+    "result": "WIN",
+    "scenario": "TREND_PULLBACK",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.3432835820895077,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.2672450576019621,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.3443223443223634,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.5069860279442038,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "BREAKOUT",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.44444316067984413,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.28350515463926024,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5213986013988389,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.7377049180328883,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": null,
+    "scenario": "TREND_PULLBACK",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.3333333333333333,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": null,
+    "scenario": "REVERSAL",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.3125000000001735,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.4705882352942521,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "REVERSAL",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.40350877192984735,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "REVERSAL",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.4838709677418315,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.39744859420899775,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.32876712328774205,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "REVERSAL",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.4883720930234359,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "WIN",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "SELL",
+    "zone": "LOWER_HALF",
+    "pos": 0.34532374100705976,
+    "regime": "TRANSITION"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "REVERSAL",
+    "direction": "BUY",
+    "zone": "LOWER_HALF",
+    "pos": 0.4389027431422573,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "REVERSAL",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.49565217391320804,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "REVERSAL",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5175360710323887,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "REVERSAL",
+    "direction": "SELL",
+    "zone": "UPPER_HALF",
+    "pos": 0.643884892086235,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5416666666667245,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "REVERSAL",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.5641025641026809,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.5535714285715915,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "REVERSAL",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.49005515627628515,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6931216931213002,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6878306878307487,
+    "regime": "TRANSITION"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "REVERSAL",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.45471349353055246,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "UPPER_HALF",
+    "pos": 0.6078431372549532,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "REVERSAL",
+    "direction": "SELL",
+    "zone": "UPPER_HALF",
+    "pos": 0.6086956521736822,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "WIN",
+    "scenario": "REVERSAL",
+    "direction": "SELL",
+    "zone": "MID",
+    "pos": 0.5190839694656902,
+    "regime": "TREND_UP"
+   },
+   {
+    "verdict": "UNFAVORABLE",
+    "result": "LOSS",
+    "scenario": "BREAKOUT",
+    "direction": "BUY",
+    "zone": "MID",
+    "pos": 0.5353680720256033,
+    "regime": "TREND_DOWN"
+   },
+   {
+    "verdict": "NEUTRAL",
+    "result": "LOSS",
+    "scenario": "TREND_CONTINUATION",
+    "direction": "BUY",
+    "zone": "AT_TOP",
+    "pos": 0.8078561287269116,
+    "regime": "TRANSITION"
+   }
+  ]
+ },
+ "structuralVsImpulse": {
+  "n": 218,
+  "structural": {
+   "aligned": {
+    "n": 61,
+    "decided": 61,
+    "wins": 33,
+    "losses": 28,
+    "draws": 0,
+    "wr": 0.541,
+    "ci95": {
+     "low": 0.4172,
+     "high": 0.6599
+    },
+    "lowN": false
+   },
+   "notAligned": {
+    "n": 37,
+    "decided": 37,
+    "wins": 17,
+    "losses": 20,
+    "draws": 0,
+    "wr": 0.4595,
+    "ci95": {
+     "low": 0.3104,
+     "high": 0.6162
+    },
+    "lowN": false
+   }
+  },
+  "impulse": {
+   "aligned": {
+    "n": 188,
+    "decided": 188,
+    "wins": 96,
+    "losses": 92,
+    "draws": 0,
+    "wr": 0.5106,
+    "ci95": {
+     "low": 0.4397,
+     "high": 0.5812
+    },
+    "lowN": false
+   },
+   "notAligned": {
+    "n": 30,
+    "decided": 30,
+    "wins": 16,
+    "losses": 14,
+    "draws": 0,
+    "wr": 0.5333,
+    "ci95": {
+     "low": 0.3614,
+     "high": 0.6977
+    },
+    "lowN": false
+   }
+  },
+  "cross": {
+   "both": {
+    "n": 53,
+    "decided": 53,
+    "wins": 30,
+    "losses": 23,
+    "draws": 0,
+    "wr": 0.566,
+    "ci95": {
+     "low": 0.4327,
+     "high": 0.6905
+    },
+    "lowN": false
+   },
+   "structOnly": {
+    "n": 8,
+    "decided": 8,
+    "wins": 3,
+    "losses": 5,
+    "draws": 0,
+    "wr": 0.375,
+    "ci95": {
+     "low": 0.1368,
+     "high": 0.6943
+    },
+    "lowN": true
+   },
+   "impulseOnly": {
+    "n": 135,
+    "decided": 135,
+    "wins": 66,
+    "losses": 69,
+    "draws": 0,
+    "wr": 0.4889,
+    "ci95": {
+     "low": 0.406,
+     "high": 0.5723
+    },
+    "lowN": false
+   },
+   "neither": {
+    "n": 22,
+    "decided": 22,
+    "wins": 13,
+    "losses": 9,
+    "draws": 0,
+    "wr": 0.5909,
+    "ci95": {
+     "low": 0.3873,
+     "high": 0.7674
+    },
+    "lowN": true
+   }
+  },
+  "outcomeDirection": {
+   "structuralMatchesOutcome": 53,
+   "impulseMatchesOutcome": 110,
+   "n": 218
+  }
+ },
+ "lateAudit": {
+  "n": 38,
+  "measurability": {
+   "deadlinePriceCaptured": 38,
+   "wouldBePresent": 38,
+   "wouldBeEqualsCurrent": 0,
+   "verdict": "MEASURABLE",
+   "note": "precos reais existem em late_policy.evaluations[].price; a igualdade anterior era comparacao de campos equivalentes, nao ausencia de preco."
+  },
+  "lateVsCurrent": {
+   "better": 18,
+   "worse": 20,
+   "equal": 0
+  },
+  "deadlineVsCandidate": {
+   "measured": 35,
+   "better": 13,
+   "worse": 22
+  },
+  "outcome": {
+   "n": 38,
+   "decided": 38,
+   "wins": 18,
+   "losses": 20,
+   "draws": 0,
+   "wr": 0.4737,
+   "ci95": {
+    "low": 0.3248,
+    "high": 0.6274
+   },
+   "lowN": false
+  },
+  "rows": [
+   {
+    "candidateId": "cand_EURJPY_OTC_1789776600000",
+    "direction": "BUY",
+    "result": "LOSS",
+    "candidatePrice": 181.081785,
+    "deadlinePrice": 181.084315,
+    "wouldBe": 181.084315,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 7,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_USDTRY_OTC_1789776600000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 48.809455,
+    "deadlinePrice": 48.809525,
+    "wouldBe": 48.809525,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 7,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDJPY_OTC_1789777740000",
+    "direction": "SELL",
+    "result": "WIN",
+    "candidatePrice": 114.570385,
+    "deadlinePrice": 114.567075,
+    "wouldBe": 114.567075,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 40,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_GBPAUD_OTC_1789777800000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 1.897965,
+    "deadlinePrice": 1.897965,
+    "wouldBe": 1.897965,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 63,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": null,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDCAD_OTC_1789778460000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 0.997695,
+    "deadlinePrice": 0.997685,
+    "wouldBe": 0.997685,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 72,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_EURGBP_OTC_1789778640000",
+    "direction": "SELL",
+    "result": "WIN",
+    "candidatePrice": 0.863155,
+    "deadlinePrice": 0.863145,
+    "wouldBe": 0.863145,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 69,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDCAD_OTC_1789779900000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 0.998555,
+    "deadlinePrice": 0.998575,
+    "wouldBe": 0.998575,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 35,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_USDCHF_OTC_1789784640000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 0.824345,
+    "deadlinePrice": 0.824325,
+    "wouldBe": 0.824325,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 31,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_EURNZD_OTC_1789783380000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 1.993845,
+    "deadlinePrice": 1.993555,
+    "wouldBe": 1.993555,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 29,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_CADJPY_OTC_1789784940000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 112.7515,
+    "deadlinePrice": 112.7445,
+    "wouldBe": 112.7445,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 28,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_USDCAD_OTC_1789785960000",
+    "direction": "SELL",
+    "result": "WIN",
+    "candidatePrice": 1.372335,
+    "deadlinePrice": 1.372175,
+    "wouldBe": 1.372175,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 40,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_GBPCAD_OTC_1789788600000",
+    "direction": "SELL",
+    "result": "WIN",
+    "candidatePrice": 1.750265,
+    "deadlinePrice": 1.750325,
+    "wouldBe": 1.750325,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 41,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_USDBRL_OTC_1789792080000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 5.025635,
+    "deadlinePrice": 5.024535,
+    "wouldBe": 5.024535,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 49,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_NZDJPY_OTC_1789787100000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 90.393695,
+    "deadlinePrice": 90.393265,
+    "wouldBe": 90.393265,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 34,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_EURNZD_OTC_1789788240000",
+    "direction": "BUY",
+    "result": "LOSS",
+    "candidatePrice": 1.981665,
+    "deadlinePrice": 1.981855,
+    "wouldBe": 1.981855,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 69,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_EURJPY_OTC_1789790100000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 181.046335,
+    "deadlinePrice": 181.048115,
+    "wouldBe": 181.048115,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 36,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_USDCHF_OTC_1789789260000",
+    "direction": "BUY",
+    "result": "LOSS",
+    "candidatePrice": 0.824875,
+    "deadlinePrice": 0.824875,
+    "wouldBe": 0.824875,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 71,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": null,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_USDCHF_OTC_1789790520000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 0.825455,
+    "deadlinePrice": 0.825455,
+    "wouldBe": 0.825455,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 26,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": null,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_USDCHF_OTC_1789791660000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 0.825385,
+    "deadlinePrice": 0.825375,
+    "wouldBe": 0.825375,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 27,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_GBPCHF_OTC_1789792020000",
+    "direction": "BUY",
+    "result": "LOSS",
+    "candidatePrice": 1.103995,
+    "deadlinePrice": 1.103945,
+    "wouldBe": 1.103945,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 70,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_EURCHF_OTC_1789796940000",
+    "direction": "BUY",
+    "result": "LOSS",
+    "candidatePrice": 0.927045,
+    "deadlinePrice": 0.926995,
+    "wouldBe": 0.926995,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 42,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDCAD_OTC_1789810080000",
+    "direction": "BUY",
+    "result": "LOSS",
+    "candidatePrice": 0.996285,
+    "deadlinePrice": 0.996305,
+    "wouldBe": 0.996305,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 61,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDJPY_OTC_1789794960000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 114.334485,
+    "deadlinePrice": 114.343015,
+    "wouldBe": 114.343015,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 76,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_EURAUD_OTC_1789813320000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 1.606325,
+    "deadlinePrice": 1.606355,
+    "wouldBe": 1.606355,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 65,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDJPY_OTC_1789813320000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 112.536735,
+    "deadlinePrice": 112.542085,
+    "wouldBe": 112.542085,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 52,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDNZD_OTC_1789802760000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 1.210745,
+    "deadlinePrice": 1.210545,
+    "wouldBe": 1.210545,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 52,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDNZD_OTC_1789810320000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 1.222755,
+    "deadlinePrice": 1.222455,
+    "wouldBe": 1.222455,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 70,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_USDCHF_OTC_1789810560000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 0.821645,
+    "deadlinePrice": 0.821665,
+    "wouldBe": 0.821665,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 36,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDCHF_OTC_1789819620000",
+    "direction": "SELL",
+    "result": "WIN",
+    "candidatePrice": 0.585615,
+    "deadlinePrice": 0.585605,
+    "wouldBe": 0.585605,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 72,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDUSD_OTC_1789814040000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 0.717065,
+    "deadlinePrice": 0.717045,
+    "wouldBe": 0.717045,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 25,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_GBPJPY_OTC_1789809660000",
+    "direction": "SELL",
+    "result": "WIN",
+    "candidatePrice": 207.709795,
+    "deadlinePrice": 207.713595,
+    "wouldBe": 207.713595,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 28,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDNZD_OTC_1789809660000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 1.220465,
+    "deadlinePrice": 1.220635,
+    "wouldBe": 1.220635,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 46,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_GBPCHF_OTC_1789809840000",
+    "direction": "BUY",
+    "result": "LOSS",
+    "candidatePrice": 1.100665,
+    "deadlinePrice": 1.100705,
+    "wouldBe": 1.100705,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 46,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_AUDCHF_OTC_1789815960000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 0.584935,
+    "deadlinePrice": 0.584965,
+    "wouldBe": 0.584965,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 73,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_EURUSD_OTC_1789819020000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 1.146995,
+    "deadlinePrice": 1.147075,
+    "wouldBe": 1.147075,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 34,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_USDBRL_OTC_1789819020000",
+    "direction": "SELL",
+    "result": "LOSS",
+    "candidatePrice": 5.310635,
+    "deadlinePrice": 5.310245,
+    "wouldBe": 5.310245,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 53,
+    "lateBetterThanCurrent": true,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_EURCHF_OTC_1789821360000",
+    "direction": "BUY",
+    "result": "WIN",
+    "candidatePrice": 0.943445,
+    "deadlinePrice": 0.943495,
+    "wouldBe": 0.943495,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 26,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": false,
+    "wouldBeEqualsCurrent": false
+   },
+   {
+    "candidateId": "cand_USDCAD_OTC_1789822740000",
+    "direction": "BUY",
+    "result": "LOSS",
+    "candidatePrice": 1.393755,
+    "deadlinePrice": 1.393565,
+    "wouldBe": 1.393565,
+    "currentPrice": 0,
+    "capturedAtDeadline": true,
+    "evaluations": 75,
+    "lateBetterThanCurrent": false,
+    "deadlineBetterThanCandidate": true,
+    "wouldBeEqualsCurrent": false
+   }
+  ]
+ },
+ "redTeam": {
+  "stratification": [
+   {
+    "verdict": "CHALLENGED_RESOLVED",
+    "n": 133,
+    "decided": 133,
+    "wins": 62,
+    "losses": 71,
+    "draws": 0,
+    "wr": 0.4662,
+    "ci95": {
+     "low": 0.3835,
+     "high": 0.5507
+    },
+    "lowN": false
+   },
+   {
+    "verdict": "CONFIRMED_UNCHALLENGED",
+    "n": 86,
+    "decided": 85,
+    "wins": 50,
+    "losses": 35,
+    "draws": 1,
+    "wr": 0.5882,
+    "ci95": {
+     "low": 0.482,
+     "high": 0.6868
+    },
+    "lowN": false
+   }
+  ],
+  "vetoCount": 0
+ },
+ "inertComponents": {
+  "MICROSTRUCTURE_AGENT": {
+   "total": 969,
+   "distribution": {
+    "SELL_PRESSURE": 274,
+    "BALANCED": 434,
+    "BUY_PRESSURE": 261
+   },
+   "dominantShare": 0.4479,
+   "distinctStates": 3,
+   "mutualInformationWithOutcome": {
+    "mi": 0.003732,
+    "n": 218
+   },
+   "inertRationale": "ESTADOS_VARIAM"
+  },
+  "VOLATILITY_AGENT": {
+   "total": 969,
+   "distribution": {
+    "NORMAL": 967,
+    "EXPANDING": 2
+   },
+   "dominantShare": 0.9979,
+   "distinctStates": 2,
+   "mutualInformationWithOutcome": {
+    "mi": 0.00615,
+    "n": 218
+   },
+   "inertRationale": "STATE_QUASE_CONSTANTE"
+  },
+  "LOCATION_AGENT": {
+   "total": 969,
+   "distribution": {
+    "MID": 684,
+    "LOWER_HALF": 140,
+    "UPPER_HALF": 131,
+    "EDGE_UPPER": 7,
+    "EDGE_LOWER": 7
+   },
+   "dominantShare": 0.7059,
+   "distinctStates": 5,
+   "mutualInformationWithOutcome": {
+    "mi": 0.002779,
+    "n": 218
+   },
+   "inertRationale": "ESTADOS_VARIAM"
+  },
+  "PRICE_ACTION_AGENT": {
+   "total": 969,
+   "distribution": {
+    "BULLISH": 330,
+    "NEUTRAL": 311,
+    "BEARISH": 328
+   },
+   "dominantShare": 0.3406,
+   "distinctStates": 3,
+   "mutualInformationWithOutcome": {
+    "mi": 0.003038,
+    "n": 218
+   },
+   "inertRationale": "ESTADOS_VARIAM"
+  },
+  "MOMENTUM_AGENT": {
+   "total": 969,
+   "distribution": {
+    "STABLE": 30,
+    "BUILDING": 244,
+    "STRONG": 459,
+    "WEAKENING": 127,
+    "REVERSING": 109
+   },
+   "dominantShare": 0.4737,
+   "distinctStates": 5,
+   "mutualInformationWithOutcome": {
+    "mi": 0.008369,
+    "n": 218
+   },
+   "inertRationale": "ESTADOS_VARIAM"
+  }
+ },
+ "playbookFunnel": [
+  {
+   "scenario": "TREND_CONTINUATION",
+   "detected": 148,
+   "directionPresent": 148,
+   "trigger": 115,
+   "synthesisTrade": 115,
+   "redTeam": {
+    "CONFIRMED_UNCHALLENGED": 39,
+    "CHALLENGED_RESOLVED": 109,
+    "CHALLENGED_UNRESOLVED": 0,
+    "NONE": 0
+   },
+   "finalTrade": 115,
+   "settled": 111,
+   "funnel": {
+    "DETECTED": 148,
+    "VALID_CONTEXT": 148,
+    "TRIGGER": 115,
+    "SYNTHESIS_TRADE": 115,
+    "FINAL_TRADE": 115,
+    "SETTLED": 111
+   },
+   "triggerStates": {
+    "DATA_UNSAFE": 1,
+    "SCENARIO_COMPONENT_MISSING": 31,
+    "TRIGGERED": 115,
+    "AMBIGUOUS_COMPETING_SCENARIOS": 1
+   }
+  },
+  {
+   "scenario": "TREND_PULLBACK",
+   "detected": 575,
+   "directionPresent": 575,
+   "trigger": 76,
+   "synthesisTrade": 76,
+   "redTeam": {
+    "CONFIRMED_UNCHALLENGED": 140,
+    "CHALLENGED_RESOLVED": 435,
+    "CHALLENGED_UNRESOLVED": 0,
+    "NONE": 0
+   },
+   "finalTrade": 76,
+   "settled": 71,
+   "funnel": {
+    "DETECTED": 575,
+    "VALID_CONTEXT": 575,
+    "TRIGGER": 76,
+    "SYNTHESIS_TRADE": 76,
+    "FINAL_TRADE": 76,
+    "SETTLED": 71
+   },
+   "triggerStates": {
+    "DATA_UNSAFE": 8,
+    "AMBIGUOUS_COMPETING_SCENARIOS": 343,
+    "TRIGGERED": 76,
+    "CONTEXT_OK_NO_TRIGGER": 148
+   }
+  },
+  {
+   "scenario": "BREAKOUT",
+   "detected": 51,
+   "directionPresent": 51,
+   "trigger": 25,
+   "synthesisTrade": 25,
+   "redTeam": {
+    "CONFIRMED_UNCHALLENGED": 51,
+    "CHALLENGED_RESOLVED": 0,
+    "CHALLENGED_UNRESOLVED": 0,
+    "NONE": 0
+   },
+   "finalTrade": 25,
+   "settled": 25,
+   "funnel": {
+    "DETECTED": 51,
+    "VALID_CONTEXT": 51,
+    "TRIGGER": 25,
+    "SYNTHESIS_TRADE": 25,
+    "FINAL_TRADE": 25,
+    "SETTLED": 25
+   },
+   "triggerStates": {
+    "DATA_UNSAFE": 1,
+    "TRIGGERED": 25,
+    "AMBIGUOUS_COMPETING_SCENARIOS": 12,
+    "CONTEXT_OK_NO_TRIGGER": 5,
+    "SCENARIO_COMPONENT_MISSING": 8
+   }
+  },
+  {
+   "scenario": "FAILED_BREAKOUT",
+   "detected": 6,
+   "directionPresent": 6,
+   "trigger": 0,
+   "synthesisTrade": 0,
+   "redTeam": {
+    "CONFIRMED_UNCHALLENGED": 6,
+    "CHALLENGED_RESOLVED": 0,
+    "CHALLENGED_UNRESOLVED": 0,
+    "NONE": 0
+   },
+   "finalTrade": 0,
+   "settled": 0,
+   "funnel": {
+    "DETECTED": 6,
+    "VALID_CONTEXT": 6,
+    "TRIGGER": 0,
+    "SYNTHESIS_TRADE": 0,
+    "FINAL_TRADE": 0,
+    "SETTLED": 0
+   },
+   "triggerStates": {
+    "AMBIGUOUS_COMPETING_SCENARIOS": 2,
+    "SCENARIO_COMPONENT_MISSING": 4
+   }
+  },
+  {
+   "scenario": "RANGE_MEAN_REVERSION",
+   "detected": 0,
+   "directionPresent": 0,
+   "trigger": 0,
+   "synthesisTrade": 0,
+   "redTeam": {
+    "CONFIRMED_UNCHALLENGED": 0,
+    "CHALLENGED_RESOLVED": 0,
+    "CHALLENGED_UNRESOLVED": 0,
+    "NONE": 0
+   },
+   "finalTrade": 0,
+   "settled": 0,
+   "funnel": {
+    "DETECTED": 0,
+    "VALID_CONTEXT": 0,
+    "TRIGGER": 0,
+    "SYNTHESIS_TRADE": 0,
+    "FINAL_TRADE": 0,
+    "SETTLED": 0
+   },
+   "triggerStates": {}
+  },
+  {
+   "scenario": "REVERSAL",
+   "detected": 129,
+   "directionPresent": 129,
+   "trigger": 13,
+   "synthesisTrade": 13,
+   "redTeam": {
+    "CONFIRMED_UNCHALLENGED": 129,
+    "CHALLENGED_RESOLVED": 0,
+    "CHALLENGED_UNRESOLVED": 0,
+    "NONE": 0
+   },
+   "finalTrade": 13,
+   "settled": 12,
+   "funnel": {
+    "DETECTED": 129,
+    "VALID_CONTEXT": 129,
+    "TRIGGER": 13,
+    "SYNTHESIS_TRADE": 13,
+    "FINAL_TRADE": 13,
+    "SETTLED": 12
+   },
+   "triggerStates": {
+    "SCENARIO_COMPONENT_MISSING": 51,
+    "AMBIGUOUS_COMPETING_SCENARIOS": 65,
+    "TRIGGERED": 13
+   }
+  },
+  {
+   "scenario": "COMPRESSION_EXPANSION",
+   "detected": 0,
+   "directionPresent": 0,
+   "trigger": 0,
+   "synthesisTrade": 0,
+   "redTeam": {
+    "CONFIRMED_UNCHALLENGED": 0,
+    "CHALLENGED_RESOLVED": 0,
+    "CHALLENGED_UNRESOLVED": 0,
+    "NONE": 0
+   },
+   "finalTrade": 0,
+   "settled": 0,
+   "funnel": {
+    "DETECTED": 0,
+    "VALID_CONTEXT": 0,
+    "TRIGGER": 0,
+    "SYNTHESIS_TRADE": 0,
+    "FINAL_TRADE": 0,
+    "SETTLED": 0
+   },
+   "triggerStates": {}
+  },
+  {
+   "scenario": "TRANSITION_NO_TRADE",
+   "detected": 60,
+   "directionPresent": 60,
+   "trigger": 0,
+   "synthesisTrade": 0,
+   "redTeam": {
+    "CONFIRMED_UNCHALLENGED": 60,
+    "CHALLENGED_RESOLVED": 0,
+    "CHALLENGED_UNRESOLVED": 0,
+    "NONE": 0
+   },
+   "finalTrade": 0,
+   "settled": 0,
+   "funnel": {
+    "DETECTED": 60,
+    "VALID_CONTEXT": 60,
+    "TRIGGER": 0,
+    "SYNTHESIS_TRADE": 0,
+    "FINAL_TRADE": 0,
+    "SETTLED": 0
+   },
+   "triggerStates": {
+    "REGIME_TRANSITION": 60
+   }
+  }
+ ],
+ "payout": {
+  "settledDirectional": 219,
+  "payoutPresent": 0,
+  "payoutCoverage": 0,
+  "avgPayout": null,
+  "breakEvenWr": null,
+  "observedWr": 0.5138,
+  "expectancy": "EXPECTANCY_UNKNOWN",
+  "normalizedEv": "EXPECTANCY_UNKNOWN",
+  "policy": {
+   "noImputation": true,
+   "payoutFromObservationOnly": true
+  }
+ },
+ "policy": {
+  "readOnly": true,
+  "noTuning": true,
+  "noAgentChange": true,
+  "zeroReal": true
+ }
+}
