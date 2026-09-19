@@ -168,11 +168,13 @@ describe("OFFICE V3 LOGS — overlay legivel", () => {
     asset: "GBP/USD OTC",
     text: "ORDEM ACEITA · BUY",
     tone: "POSITIVE",
-    agent: "RSI_REVERSAL_STRICT:GBPUSD:OTC",
-    strategy: "RSI_REVERSAL_STRICT",
-    skill: "RSI_REVERSAL_STRICT_V1",
+    agent: "RSI_REVERSAL_STRICT_V2:GBPUSD:OTC",
+    strategy: "RSI_REVERSAL_STRICT_V2",
+    skill: "RSI_REVERSAL_STRICT_V2",
+    decisionSource: "AGENT_V2",
+    controlsExecution: true,
     decision: "BUY",
-    reason: "confluencia RSI_REVERSAL_STRICT_V1",
+    reason: "confluencia RSI_REVERSAL_STRICT_V2",
     orderId: "998877",
     executionId: "exec-42",
     result: "WIN",
@@ -185,9 +187,11 @@ describe("OFFICE V3 LOGS — overlay legivel", () => {
   it("linha traz as colunas exigidas e '—' quando o campo nao existe", () => {
     const full = logs.logRowModel(entry());
     expect(full.time).toBe("12:34:56");
-    expect(full.agent).toContain("RSI_REVERSAL_STRICT");
+    expect(full.agent).toContain("RSI_REVERSAL_STRICT_V2");
     expect(full.market).toBe("GBPUSD:OTC");
-    expect(full.strategy).toBe("RSI_REVERSAL_STRICT");
+    expect(full.strategy).toBe("RSI_REVERSAL_STRICT_V2");
+    expect(full.source).toBe("AGENT_V2");
+    expect(full.controls).toBe("true");
     expect(full.event).toBe("ORDEM ACEITA · BUY");
     expect(full.decision).toBe("BUY");
     expect(full.reason).toContain("confluencia");
@@ -195,10 +199,15 @@ describe("OFFICE V3 LOGS — overlay legivel", () => {
     expect(full.order).toContain("exec exec-42");
     expect(full.outcome).toContain("WIN");
     expect(full.outcome).toContain("+R$ 0,82");
+    const blocked = logs.logRowModel(entry({ decisionSource: "G2_AUTO", controlsExecution: false, agent: "trader:GBPUSD:OTC", strategy: "PROFESSIONAL_BRAIN_G2" }));
+    expect(blocked.source).toBe("G2_AUTO");
+    expect(blocked.controls).toBe("false");
     const sparse = logs.logRowModel({ time: "00:00:01" });
     expect(sparse.agent).toBe("—");
     expect(sparse.market).toBe("—");
     expect(sparse.strategy).toBe("—");
+    expect(sparse.source).toBe("—");
+    expect(sparse.controls).toBe("—");
     expect(sparse.decision).toBe("—");
     expect(sparse.order).toBe("—");
     expect(sparse.outcome).toBe("—");

@@ -1319,10 +1319,10 @@ body.tc-v3-panning * {
 .tc-logs-columns,
 .tc-logs-row {
   display: grid;
-  grid-template-columns: 74px 108px 118px 150px minmax(220px, 1.4fr) 80px minmax(150px, 1fr) 140px minmax(130px, 0.9fr);
-  gap: 10px;
+  grid-template-columns: 62px 140px 100px 140px 120px 180px 60px 130px 110px 110px 50px;
+  gap: 8px;
   align-items: baseline;
-  min-width: 1180px;
+  min-width: 1290px;
 }
 
 #logs-panel { overflow: auto; }
@@ -1358,6 +1358,10 @@ body.tc-v3-panning * {
 .tc-logs-market { font-family: var(--tc-v3-mono); color: var(--tc-v3-gold); }
 .tc-logs-event { color: #eaf1ff; }
 .tc-logs-order { font-family: var(--tc-v3-mono); color: var(--tc-v3-ink-muted); }
+.tc-logs-source { font-family: var(--tc-v3-mono); color: var(--tc-v3-accent); }
+.tc-logs-exec { font-family: var(--tc-v3-mono); font-weight: var(--tc-v3-weight-bold); letter-spacing: 0.5px; }
+.tc-logs-exec.is-on { color: var(--tc-v3-positive); }
+.tc-logs-exec.is-off { color: var(--tc-v3-negative); }
 
 .tc-logs-empty {
   margin: 0;

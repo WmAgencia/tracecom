@@ -100,6 +100,13 @@ async function main() {
     const firstPullback = boot.strategyOrder.findIndex((strategy) => strategy === "RSI_EXTREME_PULLBACK_V2");
     const lastStrict = boot.strategyOrder.reduce((last, strategy, index) => (strategy === "RSI_REVERSAL_STRICT_V2" ? index : last), -1);
     assert("RSI V2 50/50 no Office (superior STRICT V2 / inferior PULLBACK V2)", Boolean(boot.rsiV2) && boot.rsiV2.migration?.complete === true && boot.rsiV2.split.strict > 0 && boot.rsiV2.split.pullback > 0 && Math.abs(boot.rsiV2.split.strict - boot.rsiV2.split.pullback) <= 1 && firstPullback > lastStrict && boot.desksWithTag === boot.rsiV2.split.strict + boot.rsiV2.split.pullback, "final-prod-boot.png", { split: boot.rsiV2?.split, migration: boot.rsiV2?.migration?.state, desksWithTag: boot.desksWithTag, firstPullback, lastStrict });
+
+    const routingResponse = await page.request.get(`${BASE_URL}/api/iq/execution-routing`);
+    const routing = routingResponse.ok() ? await routingResponse.json() : null;
+    const v2Sources = ["agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2", "agent-v2:RSI_EXTREME_PULLBACK_V2:RSI_EXTREME_PULLBACK_V2"];
+    const allowedSources = (routing?.sources ?? []).filter((row) => row.controlsExecution === true);
+    const blockedOthers = (routing?.sources ?? []).filter((row) => !v2Sources.includes(row.source));
+    assert("EXECUTION ROUTING: somente STRICT_V2/PULLBACK_V2 podem chegar ao requestOrder", routing?.policy === "RSI_V2_ONLY" && allowedSources.length === 2 && allowedSources.every((row) => ["RSI_REVERSAL_STRICT_V2", "RSI_EXTREME_PULLBACK_V2"].includes(row.strategyId)) && blockedOthers.length > 0 && blockedOthers.every((row) => row.controlsExecution === false && row.canReachRequestOrder === false), "final-prod-boot.png", { policy: routing?.policy, allowed: allowedSources.map((row) => row.strategyId), blocked: blockedOthers.map((row) => `${row.source}:${row.controlsExecution}`) });
     await page.screenshot({ path: join(OUT_DIR, "final-prod-boot.png") });
 
     await page.click("#logs-toggle");
@@ -109,9 +116,10 @@ async function main() {
       columns: document.querySelectorAll("#logs-panel .tc-logs-columns span").length,
       rows: document.querySelectorAll("#logs-list .tc-logs-row").length,
       hasHeader: /HORA/.test(document.querySelector("#logs-panel .tc-logs-columns")?.textContent ?? ""),
+      hasAuditHeader: /FONTE/.test(document.querySelector("#logs-panel .tc-logs-columns")?.textContent ?? "") && /EXEC/.test(document.querySelector("#logs-panel .tc-logs-columns")?.textContent ?? ""),
       text: (document.querySelector("#logs-panel")?.textContent ?? "").slice(0, 400),
     }));
-    assert("LOGS abre overlay DOM legivel (9 colunas, sem pixel-art)", logsPanel.columns === 9 && logsPanel.hasHeader === true, "final-prod-logs.png", { columns: logsPanel.columns, rows: logsPanel.rows });
+    assert("LOGS abre overlay DOM legivel (11 colunas com FONTE/EXEC, sem pixel-art)", logsPanel.columns === 11 && logsPanel.hasHeader === true && logsPanel.hasAuditHeader === true, "final-prod-logs.png", { columns: logsPanel.columns, rows: logsPanel.rows });
     await page.screenshot({ path: join(OUT_DIR, "final-prod-logs.png") });
     await page.click("#logs-close");
     const logsClosed = await page.evaluate(() => document.querySelector("#logs-panel")?.hidden === true);

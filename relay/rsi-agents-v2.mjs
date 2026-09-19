@@ -21,6 +21,11 @@ import { effectiveSafeMarginMs, entryWindow } from "./rsi-reversal.mjs";
 
 export const RSI_AGENTS_V2_VERSION = "rsi-agents-v2-50-50-v1";
 export const RSI_AGENTS_V2 = Object.freeze({ STRICT: STRICT_V2_ID, PULLBACK: PULLBACK_V2_ID });
+/** Allowlist de execucao desta rodada: SOMENTE as duas skills V2 podem chegar ao broker. */
+export const RSI_V2_EXECUTION_ALLOWLIST = Object.freeze([
+  `agent-v2:${STRICT_V2_ID}`,
+  `agent-v2:${PULLBACK_V2_ID}`,
+]);
 export const RSI_AGENTS_V2_POLICY = Object.freeze({
   version: RSI_AGENTS_V2_VERSION,
   mode: "NORMAL_RUNTIME_AGENT",

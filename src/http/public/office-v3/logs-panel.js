@@ -44,11 +44,13 @@ export function logRowModel(entry) {
     agent: cell(item.agent ?? item.agentId),
     market: cell(item.marketKey ?? item.asset),
     strategy: cell(item.strategy ?? item.skill ?? item.source),
+    source: cell(item.decisionSource),
     event: cell(item.text ?? item.type),
     decision: cell(item.decision),
     reason: cell(typeof item.reason === "string" ? item.reason.slice(0, 90) : item.reason),
     order: shortOrder(item),
     outcome: outcome(item),
+    controls: item.controlsExecution === true ? "true" : item.controlsExecution === false ? "false" : EMPTY,
     tone: item.tone ?? null,
   };
 }
@@ -80,11 +82,13 @@ export function renderLogRows(doc, listEl, entries, limit = LOGS_PANEL_LIMIT) {
       el(doc, "span", "tc-logs-cell", model.agent),
       el(doc, "span", "tc-logs-cell tc-logs-market", model.market),
       el(doc, "span", "tc-logs-cell", model.strategy),
+      el(doc, "span", "tc-logs-cell tc-logs-source", model.source),
       el(doc, "span", "tc-logs-cell tc-logs-event", model.event),
       el(doc, "span", "tc-logs-cell", model.decision),
       el(doc, "span", "tc-logs-cell", model.reason),
       el(doc, "span", "tc-logs-cell tc-logs-order", model.order),
       el(doc, "span", "tc-logs-cell", model.outcome),
+      el(doc, "span", `tc-logs-cell tc-logs-exec ${model.controls === "true" ? "is-on" : model.controls === "false" ? "is-off" : ""}`, model.controls),
     );
     listEl.append(row);
   }

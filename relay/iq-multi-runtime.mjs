@@ -93,11 +93,13 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = true } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = true, executionAllowlist = null } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
     this.maxLatencySamples = maxLatencySamples; this.ackTimeoutMs = ackTimeoutMs;
+    // Politica de roteamento de execucao: null = permissiva (dev/testes); array = allowlist fail-closed.
+    this.executionAllowlist = Array.isArray(executionAllowlist) ? [...executionAllowlist] : null;
     this.realMode = realMode; this.accountContext = accountContext; this.gate = gate; this.resolver = resolver;
     this.accountContext.onEvent = (event, payload) => this.#emitEvent(`account_context.${event.toLowerCase()}`, payload ?? {});
     this.decisionOverride = typeof decisionOverride === "function" ? decisionOverride : null; // diagnostico/testes deterministicos (nunca usado em producao)
@@ -931,9 +933,9 @@ export class IqMultiRuntime extends EventEmitter {
     if (ctx.indicatorHistory.length > 60) ctx.indicatorHistory.splice(0, ctx.indicatorHistory.length - 60);
     this.agentLatency.push(trader.latencyMs + critic.latencyMs + consensus.latencyMs);
     if (this.agentLatency.length > this.maxLatencySamples) this.agentLatency.splice(0, this.agentLatency.length - this.maxLatencySamples);
-    this.#emitEvent("agent.trader", { marketKey: ctx.marketKey, correlationId, action: trader.action, confidence: trader.analysisConfidence, regime, setup: trader.setup, brainGeneration: BRAIN_GENERATION });
-    this.#emitEvent("agent.critic", { marketKey: ctx.marketKey, correlationId, independentAction: critic.independentAction, verdict: critic.traderAssessment, riskFlags: critic.riskFlags.length });
-    this.#emitEvent("agent.consensus", { marketKey: ctx.marketKey, correlationId, action: consensus.action, status: consensus.status, reason: consensus.reason });
+    this.#emitEvent("agent.trader", { marketKey: ctx.marketKey, correlationId, action: trader.action, confidence: trader.analysisConfidence, regime, setup: trader.setup, brainGeneration: BRAIN_GENERATION, ...this.#executionMeta({ source: "AUTO_DECISION", agentId: this.#agentId(ctx), strategyId: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}` }) });
+    this.#emitEvent("agent.critic", { marketKey: ctx.marketKey, correlationId, independentAction: critic.independentAction, verdict: critic.traderAssessment, riskFlags: critic.riskFlags.length, ...this.#executionMeta({ source: "AUTO_DECISION", agentId: this.#agentId(ctx), strategyId: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}` }) });
+    this.#emitEvent("agent.consensus", { marketKey: ctx.marketKey, correlationId, action: consensus.action, status: consensus.status, reason: consensus.reason, ...this.#executionMeta({ source: "AUTO_DECISION", agentId: this.#agentId(ctx), strategyId: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}` }) });
     this.#auditRecord(correlationId, ctx.marketKey, "AGENTS", { brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION, trader: trader.action, setup: trader.setup, criticVerdict: critic.traderAssessment, criticIndependent: critic.independentAction, consensus: consensus.action, consensusStatus: consensus.status, regime, knowledgeIds: knowledgeContext.knowledgeIds, knowledgeUsed: knowledgeContext.used }, { persist: consensus.action === "BUY" || consensus.action === "SELL" });
     // Research shadow por SETUP + A/B v2 (mesmo snapshot causal).
     this.research.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, brain: { setup: trader.setup, action: consensus.action, regime, trigger: trader.trigger }, payout: ctx.payout, atMs: now });
@@ -953,14 +955,14 @@ export class IqMultiRuntime extends EventEmitter {
     };
     ctx.lastDecision = ctx.decisionState;
     this.journal.recordDecision({ agentId: this.#agentId(ctx), marketKey: ctx.marketKey, marketType: ctx.marketType, decisionAt: now, snapshot: { ...ctx.decisionState, critic: { verdict: critic.traderAssessment, independent: critic.independentAction }, consensus: { status: consensus.status, action: consensus.action }, knowledgeContextIds: knowledgeContext.knowledgeIds } });
-    this.#emitEvent("market.decision", { marketKey: ctx.marketKey, action, reason, confidence, setup: trader.setup, regime, consensus: consensus.status });
+    this.#emitEvent("market.decision", { marketKey: ctx.marketKey, action, reason, confidence, setup: trader.setup, regime, consensus: consensus.status, ...this.#executionMeta({ source: "AUTO_DECISION", agentId: this.#agentId(ctx), strategyId: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}` }) });
     if (action === "BUY" || action === "SELL") {
       ctx.lastSignal = { action, at: this.now(), bucketStart: ctx.lastCandle?.bucketStart ?? null, setup: trader.setup };
-      this.#emitEvent("market.signal", { marketKey: ctx.marketKey, action, bucketStart: ctx.lastSignal.bucketStart, setup: trader.setup, consensus: consensus.status, correlationId });
+      this.#emitEvent("market.signal", { marketKey: ctx.marketKey, action, bucketStart: ctx.lastSignal.bucketStart, setup: trader.setup, consensus: consensus.status, correlationId, ...this.#executionMeta({ source: "AUTO_DECISION", agentId: this.#agentId(ctx), strategyId: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}` }) });
     } else {
       if (ctx.positionState?.status === "OPEN" || ctx.positionState?.status === "ORDERING") this.#setAgent(ctx, ctx.positionState.status === "OPEN" ? "IN_POSITION" : "ORDERING", "POSITION_OPEN");
       else if (!ctx.candidate) this.#setAgent(ctx, "WAIT", reason);
-      if (this.now() - (ctx.lastWaitEmit ?? 0) > 5_000) { ctx.lastWaitEmit = this.now(); this.#emitEvent("market.wait", { marketKey: ctx.marketKey, reason, waitReason: trader.waitReason, setup: trader.setup, consensus: consensus.status }); }
+      if (this.now() - (ctx.lastWaitEmit ?? 0) > 5_000) { ctx.lastWaitEmit = this.now(); this.#emitEvent("market.wait", { marketKey: ctx.marketKey, reason, waitReason: trader.waitReason, setup: trader.setup, consensus: consensus.status, ...this.#executionMeta({ source: "AUTO_DECISION", agentId: this.#agentId(ctx), strategyId: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}` }) }); }
       this.#expireSignals(ctx);
     }
     void this.#entryPipeline(ctx, { action, trader, critic, consensus, fresh: effectiveFresh, knowledgeContext, intelligenceContext, now, correlationId });
@@ -1309,7 +1311,27 @@ export class IqMultiRuntime extends EventEmitter {
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
     const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
-    return this.rsiAgentsV2.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 } });
+    const promise = this.rsiAgentsV2.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 } });
+    if (promise && typeof promise.then === "function") promise.then((state) => this.#emitRsiAgentDecision(ctx, state, now)).catch(() => undefined);
+    return promise;
+  }
+
+  /** LOGS: decisao RSI V2 com agentId/strategyId/decisionSource/controlsExecution (throttle + mudanca de estado). */
+  #emitRsiAgentDecision(ctx, state, now) {
+    if (!state?.strategy) return;
+    const signature = `${state.decision}|${state.waitReason ?? ""}|${state.candidateAt ?? ""}|${state.lastResult ?? ""}`;
+    const previous = ctx.rsiAgentDecision ?? null;
+    const changed = !previous || previous.signature !== signature;
+    const elapsed = previous ? now - previous.at : Infinity;
+    if (!changed || elapsed < 30_000) return;
+    ctx.rsiAgentDecision = { signature, at: now };
+    this.#emitEvent("rsi.agent.decision", {
+      marketKey: ctx.marketKey, agentId: state.agentId, strategyId: state.strategy,
+      decision: state.decision, reason: state.waitReason ?? state.reason ?? null,
+      rsi: state.rsi ?? null, candidateAt: state.candidateAt ?? null,
+      shadowStrategyId: state.shadowStrategy ?? null, shadowDecision: state.shadowDecision ?? null,
+      ...this.#executionMeta({ source: `agent-v2:${state.strategy}:${state.strategy}`, marketKey: ctx.marketKey }),
+    });
   }
 
   /**
@@ -2009,6 +2031,8 @@ export class IqMultiRuntime extends EventEmitter {
   /** Registra TODO sinal com destino observavel: EXECUTED | BLOCKED | EXPIRED | DUPLICATE + motivo humano. */
   async #handleSignal(ctx, action, brain, list, entryTiming = null, options = {}) {
     const now = this.now();
+    const signalSource = brain?.setup === "SYNTHETIC_TEST" ? "DIAGNOSTIC_SIGNAL" : "AUTO_DECISION";
+    const signalMeta = this.#executionMeta({ source: signalSource, agentId: this.#agentId(ctx), strategyId: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}` });
     const bucket = ctx.lastCandle?.bucketStart ?? null;
     const idempotencyKey = `${ctx.marketKey}:${bucket}:${action}`;
     const existing = this.signalLog.find((row) => row.idempotencyKey === idempotencyKey);
@@ -2016,7 +2040,7 @@ export class IqMultiRuntime extends EventEmitter {
       const stats = this.#signalStatsFor(ctx.marketKey);
       stats.duplicate += 1;
       existing.attempts = (existing.attempts ?? 1) + 1;
-      if (!existing.duplicateLogged) { existing.duplicateLogged = true; this.#emitEvent("signal.disposition", { marketKey: ctx.marketKey, action, disposition: "DUPLICATE", reason: "SINAL_JA_REGISTRADO", signalId: existing.id }); }
+      if (!existing.duplicateLogged) { existing.duplicateLogged = true; this.#emitEvent("signal.disposition", { marketKey: ctx.marketKey, action, disposition: "DUPLICATE", reason: "SINAL_JA_REGISTRADO", signalId: existing.id, ...signalMeta }); }
       return existing;
     }
     const resolved = resolveFinalStake({ marketConfiguredStake: ctx.configuredStake, configuredStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, marketMaxStake: ctx.maxStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap });
@@ -2057,23 +2081,23 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.signalLog.length > 500) this.signalLog.splice(0, this.signalLog.length - 500);
     const stats = this.#signalStatsFor(ctx.marketKey); stats.total += 1;
     if (disposition === "BLOCKED") stats.blocked += 1; else stats.executed += 1;
-    this.#emitEvent("signal.disposition", { marketKey: ctx.marketKey, action, disposition, reason, signalId: record.id, stakeFinal: record.stakeFinal, auto: record.auto, armed: record.armed });
+    this.#emitEvent("signal.disposition", { marketKey: ctx.marketKey, action, disposition, reason, signalId: record.id, stakeFinal: record.stakeFinal, auto: record.auto, armed: record.armed, ...signalMeta });
     this.#safe(() => this.log("IQ_MULTI_SIGNAL_DISPOSITION", JSON.stringify({ signalId: record.id, marketKey: ctx.marketKey, action, disposition, reason, stakeFinal: record.stakeFinal, auto: record.auto, armed: record.armed })));
     if (disposition === "BLOCKED" || disposition === "DUPLICATE") return record;
     try {
-      const orderSource = brain?.setup === "SYNTHETIC_TEST" ? "DIAGNOSTIC_SIGNAL" : "AUTO_DECISION";
+      const orderSource = signalSource;
       const result = await this.requestOrder({ marketKey: ctx.marketKey, direction: action, stake: null, decisionId: `auto_${ctx.marketKey}_${bucket}`, idempotencyKey, source: orderSource, horizonSeconds, decisionAgeMs: Math.max(0, this.now() - now), entryTiming, infraProbe: options?.infra === true });
       if (result.duplicate) { record.disposition = "DUPLICATE"; record.reason = "IDEMPOTENCIA"; stats.executed = Math.max(0, stats.executed - 1); stats.duplicate += 1; }
       else {
         record.executionId = result.executionId ?? null; record.brokerOrderId = result.brokerOrderId ?? null; record.ackAt = result.state === "ACKNOWLEDGED" ? this.now() : null;
         if (result.state !== "ACKNOWLEDGED") { record.disposition = "BLOCKED"; record.reason = result.state === "UNKNOWN" ? "ACK_DESCONHECIDO" : String(result.state); stats.executed = Math.max(0, stats.executed - 1); stats.blocked += 1; }
       }
-      this.#emitEvent("signal.disposition.final", { marketKey: ctx.marketKey, signalId: record.id, disposition: record.disposition, reason: record.reason, brokerOrderId: record.brokerOrderId });
+      this.#emitEvent("signal.disposition.final", { marketKey: ctx.marketKey, signalId: record.id, disposition: record.disposition, reason: record.reason, brokerOrderId: record.brokerOrderId, ...signalMeta });
       return record;
     } catch (error) {
       record.disposition = "BLOCKED"; record.reason = String(error?.code ?? error?.message ?? error).slice(0, 80);
       stats.executed = Math.max(0, stats.executed - 1); stats.blocked += 1;
-      this.#emitEvent("signal.disposition.final", { marketKey: ctx.marketKey, signalId: record.id, disposition: "BLOCKED", reason: record.reason });
+      this.#emitEvent("signal.disposition.final", { marketKey: ctx.marketKey, signalId: record.id, disposition: "BLOCKED", reason: record.reason, ...signalMeta });
       return record;
     }
   }
@@ -2357,7 +2381,80 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
+  /**
+   * ROTEAMENTO DE EXECUCAO (fail-closed): com `executionAllowlist` definida, SOMENTE fontes
+   * da allowlist podem chegar ao broker. Qualquer outra origem (brain G2/AUTO_DECISION,
+   * diagnostico, experimentos, manual) e bloqueada e auditada — nenhuma delas executa.
+   */
+  #decisionSourceFor(source) {
+    const raw = String(source ?? "");
+    if (raw.startsWith("agent-v2:")) return "AGENT_V2";
+    if (raw.startsWith("experiment:")) return "EXPERIMENT";
+    return decisionSourceOf({ source: raw, setup: null, infraProbe: raw === "INFRA_PROBE" });
+  }
+
+  #executionRouting(source) {
+    const raw = String(source ?? "MANUAL");
+    const allowlist = Array.isArray(this.executionAllowlist) ? this.executionAllowlist : null;
+    const allowed = !allowlist || allowlist.some((prefix) => raw === prefix || raw.startsWith(`${prefix}:`) || raw.startsWith(`${prefix}|`) || raw.startsWith(`${prefix},`));
+    const isV2 = raw.startsWith("agent-v2:");
+    const strategyId = isV2 ? raw.split(":")[1] ?? null : raw === "AUTO_DECISION" || raw === "DIAGNOSTIC_SIGNAL" ? `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}` : raw.startsWith("experiment:") ? raw.slice("experiment:".length) : null;
+    return { source: raw, allowed, policy: allowlist ? "RSI_V2_ONLY" : "PERMISSIVE", strategyId, decisionSource: this.#decisionSourceFor(raw), controlsExecution: allowed === true };
+  }
+
+  #executionMeta({ source, agentId = null, strategyId = null, marketKey = null } = {}) {
+    const routing = this.#executionRouting(source);
+    return {
+      agentId: agentId ?? (routing.source.startsWith("agent-v2:") && marketKey ? `${routing.strategyId}:${marketKey}` : null),
+      strategyId: strategyId ?? routing.strategyId,
+      decisionSource: routing.decisionSource,
+      controlsExecution: routing.controlsExecution,
+      executionPolicy: routing.policy,
+    };
+  }
+
+  /** Prova de roteamento: para cada origem conhecida, pode ou nao chegar a requestOrder. */
+  executionRoutingStatus() {
+    const allowlist = Array.isArray(this.executionAllowlist) ? this.executionAllowlist : null;
+    const row = (source, agentId = null, strategyId = null) => {
+      const routing = this.#executionRouting(source);
+      return { source, agentId, strategyId: strategyId ?? routing.strategyId, decisionSource: routing.decisionSource, controlsExecution: routing.controlsExecution, canReachRequestOrder: routing.allowed === true && this.killSwitch.status().executionEnabled === true, reason: routing.allowed ? "ALLOWED_BY_POLICY" : "EXECUTION_SOURCE_BLOCKED" };
+    };
+    return {
+      version: "execution-routing-v1",
+      policy: allowlist ? "RSI_V2_ONLY" : "PERMISSIVE",
+      enabled: allowlist !== null,
+      allowlist,
+      mode: this.config.mode,
+      armed: this.armState.armed === true,
+      autoExecute: this.config.autoExecute === true,
+      killSwitchExecutionEnabled: this.killSwitch.status().executionEnabled === true,
+      realLocked: !this.realMode.authorized(),
+      practiceOnly: String(this.config.mode).toUpperCase() === "PRACTICE",
+      singleGate: "runtime.requestOrder (Execution Gate unico)",
+      sources: [
+        row("agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2", "RSI_REVERSAL_STRICT_V2:<marketKey>", "RSI_REVERSAL_STRICT_V2"),
+        row("agent-v2:RSI_EXTREME_PULLBACK_V2:RSI_EXTREME_PULLBACK_V2", "RSI_EXTREME_PULLBACK_V2:<marketKey>", "RSI_EXTREME_PULLBACK_V2"),
+        row("AUTO_DECISION", "trader:<marketKey>", `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`),
+        row("DIAGNOSTIC_SIGNAL", "trader:<marketKey>", `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`),
+        row("MANUAL", null, null),
+        row("INFRA_PROBE", null, "INFRA_PROBE"),
+        row("experiment:RSI_REVERSAL_CONFLUENCE_V1", null, "RSI_REVERSAL_CONFLUENCE_V1"),
+        row("experiment:RSI_STRICT_PULLBACK_2X2_V1", null, "RSI_STRICT_PULLBACK_2X2_V1"),
+        row("experiment:PRACTICE_FOUR_WAY_3X_TEST_V1", null, "PRACTICE_FOUR_WAY_3X_TEST_V1"),
+        row("experiment:INDICATOR_5M_V1", null, "INDICATOR_5M_V1"),
+      ],
+    };
+  }
+
   async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = 60, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false } = {}) {
+    const routing = this.#executionRouting(source);
+    if (!routing.allowed) {
+      this.#safe(() => this.log("IQ_MULTI_EXECUTION_SOURCE_BLOCKED", JSON.stringify({ marketKey: key, source: routing.source, policy: routing.policy, reason: routing.reason ?? "EXECUTION_SOURCE_BLOCKED" })));
+      this.#auditRecord(`routing_${this.now()}`, key, "EXECUTION_SOURCE_BLOCKED", { marketKey: key, source: routing.source, strategyId: routing.strategyId, decisionSource: routing.decisionSource, policy: routing.policy, allowlist: this.executionAllowlist ?? null, controlsExecution: false }, { persist: true });
+      this.#emitEvent("execution.source_blocked", { marketKey: key, source: routing.source, strategyId: routing.strategyId, decisionSource: routing.decisionSource, controlsExecution: false, policy: routing.policy, reason: "EXECUTION_SOURCE_BLOCKED" });
+      throw new IqWsError("EXECUTION_SOURCE_BLOCKED", `${routing.source} bloqueado pela politica ${routing.policy}`);
+    }
     const ctx = this.markets.get(key);
     if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(key));
     if (!this.client || !this.session.connected) throw new IqWsError("WS_DISCONNECTED");
@@ -2450,7 +2547,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.pendingOrders.set(key, pending);
     ctx.positionState = { status: "ORDERING", direction: directionWire, entryPrice, stake: finalStake, brokerOrderId: null, requestId: requestedKey, expirationSec: expiration.expiration, openedAt: this.now(), settledAt: null, result: null, profit: null, mode, accountContext: orderContext };
     this.#setAgent(ctx, "ORDERING", source);
-    this.#emitEvent("order.pending", { marketKey: key, direction: directionWire, stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, mode, expirationSec: expiration.expiration });
+    this.#emitEvent("order.pending", { marketKey: key, direction: directionWire, stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, mode, expirationSec: expiration.expiration, source, ...this.#executionMeta({ source, marketKey: key }) });
     const persistStartedAt = this.now();
     await this.#persistExecution({ executionId: record.executionId, idempotencyKey: requestedKey, decisionId: record.payload?.decisionId ?? decisionId ?? null, marketKey: key, mode, accountContext: orderContext, connectionId: pending.connectionId, accountType: mode, brokerOrderId: null, symbol: ctx.display, activeId: ctx.activeId, direction: directionWire, stake: finalStake, currency: mode === "REAL" ? this.account.real.currency : this.account.practice.currency, state: "REQUESTED", requestId: requestedKey, expirationAt: nowIso(expiration.expiration * 1000), entryPrice, payout: ctx.payout, optionKind: expiration.optionKind, meta: { source, infraProbe: infraProbe === true, excludedFromStats: infraProbe === true, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, setup: brainSetup.setup, strategyVariantId: null, strategySource: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, entryTiming: pending.entryTiming ? { candidateId: pending.entryTiming.candidateId, targetEntryAt: pending.entryTiming.targetEntryAt, targetExpiryAt: pending.entryTiming.targetExpiryAt, submitAt: pending.entryTiming.submitAt, submitAtMs, entryLeadMs: pending.entryTiming.entryLeadMs, revalidatedAt: pending.entryTiming.revalidatedAt, candidateChangedBeforeEntry: pending.entryTiming.candidateChangedBeforeEntry } : null } });
     this.#recordLatency(ctx, "dbPersist", Math.max(0, this.now() - persistStartedAt));
@@ -2583,7 +2680,7 @@ export class IqMultiRuntime extends EventEmitter {
       this.accountContext.recordRealAttempt("ACK", { strategy: this.accountContext.armedMeta?.strategy ?? null, agentVersion: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, candidateId: entryTimingAck?.candidateId ?? null, decisionId: null, stake: pending.stake, marketKey: pending.marketKey, direction: pending.direction, expiry: pending.expirationSec, send: true, ack: "ACKNOWLEDGED", brokerOrderId, settlement: null });
       this.#auditRecord(pending.correlationId ?? `corr_exec_${pending.executionId}`, pending.marketKey, "REAL_BROKER_ACK", { accountContext: ACCOUNT_REAL, brokerOrderId, ackMs, stake: pending.stake, direction: pending.direction, expiry: pending.expirationSec }, { persist: true, accountContext: ACCOUNT_REAL });
     }
-    this.#emitEvent("order.ack", { marketKey: pending.marketKey, brokerOrderId, ackMs, source, mode: pending.mode, entryDriftMs: entryTimingAck?.entryDriftMs ?? null, targetEntryAt: entryTimingAck?.targetEntryAt ?? null });
+    this.#emitEvent("order.ack", { marketKey: pending.marketKey, brokerOrderId, ackMs, source, mode: pending.mode, entryDriftMs: entryTimingAck?.entryDriftMs ?? null, targetEntryAt: entryTimingAck?.targetEntryAt ?? null, ...this.#executionMeta({ source: pending.source, marketKey: pending.marketKey }) });
     if (this.dataHub) this.#safe(() => this.dataHub.publish({
       eventType: "BROKER_ACK", marketKey: pending.marketKey, marketType: ctx?.marketType ?? null, activeId: ctx?.activeId ?? null,
       serverTime: this.session.serverTimeMs, receivedAt: ackedAt, availableAt: ackedAt, producer: "iq-multi-runtime", source: "iq-ws-ack",
@@ -2591,7 +2688,7 @@ export class IqMultiRuntime extends EventEmitter {
       provenance: { basis: "BROKER_EXECUTED", resolution: source },
       payload: { executionId: pending.executionId, brokerOrderId, ackMs, expirationMismatch },
     }));
-    this.#emitEvent("position.open", { marketKey: pending.marketKey, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId });
+    this.#emitEvent("position.open", { marketKey: pending.marketKey, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, source: pending.source, ...this.#executionMeta({ source: pending.source, marketKey: pending.marketKey }) });
     this.#safe(() => this.log("IQ_MULTI_ORDER_ACK", JSON.stringify({ marketKey: pending.marketKey, executionId: pending.executionId, brokerOrderId, source, ackMs })));
     pending.ackResolve?.({ state: "ACKNOWLEDGED", brokerOrderId, ackMs, source });
     if (pending.autoDisarmAfterAck === true) {
@@ -2610,7 +2707,7 @@ export class IqMultiRuntime extends EventEmitter {
     const ctx = this.markets.get(pending.marketKey);
     if (ctx) { ctx.positionState = { ...ctx.positionState, status: state }; this.#setAgent(ctx, state === "REJECTED" ? "ERROR" : state, String(reason).slice(0, 80)); }
     await this.#persistExecution({ executionId: pending.executionId, state, error: String(reason).slice(0, 160) });
-    this.#emitEvent("order.rejected", { marketKey: pending.marketKey, reason: String(reason).slice(0, 120) });
+    this.#emitEvent("order.rejected", { marketKey: pending.marketKey, reason: String(reason).slice(0, 120), source: pending.source, ...this.#executionMeta({ source: pending.source, marketKey: pending.marketKey }) });
     pending.ackResolve?.({ state, brokerOrderId: null, reason: String(reason).slice(0, 160) });
   }
 
@@ -2655,7 +2752,7 @@ export class IqMultiRuntime extends EventEmitter {
     ctx.indicative = { state: "NEUTRAL", delta: null, indicativePnl: null, updatedAt: settledAt };
     this.openPositions.delete(key); this.orderIndex.delete(String(brokerOrderId));
     await this.#persistExecution({ executionId: position.executionId, brokerOrderId: String(brokerOrderId), state: "SETTLED", accountContext: settlementContext, settledAt: nowIso(settledAt), brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, meta: { settlementReason: comparison.reason, causal: settlement.detail, marketKey: key } });
-    this.#emitEvent("position.settled", { marketKey: key, brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, correlationId: position.correlationId ?? null, accountContext: settlementContext });
+    this.#emitEvent("position.settled", { marketKey: key, brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, correlationId: position.correlationId ?? null, accountContext: settlementContext, source: position.source ?? null, ...this.#executionMeta({ source: position.source ?? "UNKNOWN", marketKey: key }) });
     // Harness 4x3: marca settlement da execucao experimental (idempotente; no-op se a ordem nao for do experimento).
     void this.fourWay?.recordSettlementByBrokerOrder({ brokerOrderId, result: broker.result, profit: broker.profit, entryPrice: position.entryPrice ?? null, expiryPrice: settlement.detail?.settlement ?? null });
     try { this.rsiAgentsV2?.recordSettlement({ marketKey: key, result: broker.result, profit: broker.profit, entryPrice: position.entryPrice ?? null, expiryPrice: settlement.detail?.settlement ?? null, payout: ctx.payout }); } catch { /* observabilidade nunca derruba settlement */ }
@@ -3097,6 +3194,7 @@ export class IqMultiRuntime extends EventEmitter {
         executionGate,
         portfolioControl: { activeMarkets: this.activeMarketKeys(), openPositions: portfolio.openPositions.length, settledPnl: portfolio.settled.pnl, wins: portfolio.settled.wins, losses: portfolio.settled.losses, draws: portfolio.settled.draws, agentsOnline: markets.filter((market) => market.agentState !== "OFFLINE" && market.agentState !== "UNAVAILABLE").length },
         rsiAgentsV2: this.rsiAgentsV2?.snapshot() ?? null,
+        executionRouting: this.executionRoutingStatus(),
       },
       resolver: { lastResolvedAt: this.resolver.lastResolvedAt, resolvedCount: this.resolver.resolvedCount(), sampleActiveKeys: this.resolver.sampleActiveKeys, lastError: this.resolver.lastError },
       intelligence: this.intelligence.status(),
