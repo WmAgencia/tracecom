@@ -1,0 +1,74 @@
+{
+  "schema": "agents-v4-hotpath-freeze-v1",
+  "frozenAtUtc": "2026-09-19T10:20:29.924Z",
+  "sourceCommit": null,
+  "note": "SHADOW V4 nao altera G2/Quality Gate/JIT/Execution Gate/stake. iq-multi-runtime recebeu apenas hooks observacionais (V4/DataHub) com provas de comportamento nos testes; os demais arquivos sao byte a byte identicos ao estado pre-V4.",
+  "v3CrossCheck": {
+    "relay/scenario-engine.mjs": {
+      "v3Sha256": "54c68f07b45e64ac2da61ebf816619ccd5dd9dab3a65b83e4235ab31460f385d",
+      "matchesV3Freeze": true
+    },
+    "relay/scenario-shadow.mjs": {
+      "v3Sha256": "8216fb18826dc18137bf50376a699b714850c406d80cf3a6bd4b50754db096dc",
+      "matchesV3Freeze": true
+    },
+    "relay/scenario-timing-intersection.mjs": {
+      "v3Sha256": "a493cd4b9fbf6fa837b7d5cbf642905fc71292ab16b888869ef8e1a204d87f74",
+      "matchesV3Freeze": true
+    }
+  },
+  "files": {
+    "relay/professional-brain.mjs": {
+      "sha256": "8a95a334c60adb7ae2156de40c8f74900e697dad236d0d738049d2470e7af3c6",
+      "bytes": 25017
+    },
+    "relay/price-structure.mjs": {
+      "sha256": "eafbed6463911001bb7938b30d62b66af90cd223479fb326564d3fa4357b75b9",
+      "bytes": 9430
+    },
+    "relay/feature-engine.mjs": {
+      "sha256": "531caf525cb61023f2cb6f839f23e41bfa28a16ab90b2d0199a68b08f27d89c9",
+      "bytes": 9253
+    },
+    "relay/trade-quality.mjs": {
+      "sha256": "fca56b7464202ff5b392f8cf4e966c441839fc6ab7cb8cb7ec482194a9d0b861",
+      "bytes": 26755
+    },
+    "relay/entry-timing.mjs": {
+      "sha256": "70d96b4aae07f25fd5c324c5ff4a0208312ae87739f409ab2c2b7151f57c94e6",
+      "bytes": 12934
+    },
+    "relay/portfolio-gate.mjs": {
+      "sha256": "26ef61a2cc35e22cd5626d4fc6df49f75a0d030d43fe9317b5a86a6df4be2a5e",
+      "bytes": 8761
+    },
+    "relay/iqoption-connector.mjs": {
+      "sha256": "30fbfbf627419dc688a0d3fd5c2ade2b50adbf43638389881012fbdda35a0017",
+      "bytes": 11997
+    },
+    "relay/real-mode.mjs": {
+      "sha256": "b6ca5e359d625c31d4fd565ab8e89bbf9b20e2729f31ec39b0f82cf5e5ae667d",
+      "bytes": 4313
+    },
+    "relay/account-context.mjs": {
+      "sha256": "e1c11a01226b58c0d9202b7059806c958fc833b70d91cd964634242d893cd700",
+      "bytes": 17462
+    },
+    "relay/scenario-engine.mjs": {
+      "sha256": "54c68f07b45e64ac2da61ebf816619ccd5dd9dab3a65b83e4235ab31460f385d",
+      "bytes": 105102
+    },
+    "relay/scenario-shadow.mjs": {
+      "sha256": "8216fb18826dc18137bf50376a699b714850c406d80cf3a6bd4b50754db096dc",
+      "bytes": 93685
+    },
+    "relay/scenario-timing-intersection.mjs": {
+      "sha256": "a493cd4b9fbf6fa837b7d5cbf642905fc71292ab16b888869ef8e1a204d87f74",
+      "bytes": 15367
+    },
+    "relay/iq-multi-runtime.mjs": {
+      "sha256": "d3cfe11577ffad0553e690b8798deb3306b630d491718afecf47ab0cc4ccdda6",
+      "bytes": 241982
+    }
+  }
+}

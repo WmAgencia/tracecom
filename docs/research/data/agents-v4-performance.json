@@ -1,0 +1,113 @@
+{
+  "schema": "agents-v4-performance-v1",
+  "generatedAtUtc": "2026-09-19T10:18:14.320Z",
+  "iterations": 300,
+  "scenarios": [
+    "UP",
+    "DOWN",
+    "FLAT",
+    "COMPRESSION",
+    "MIXED"
+  ],
+  "latencyMs": {
+    "total": {
+      "count": 300,
+      "p50": 0.12,
+      "p95": 0.4257,
+      "p99": 0.8404,
+      "max": 16.5721,
+      "mean": 0.23
+    },
+    "phases": {
+      "dqMs": {
+        "count": 300,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "max": 0,
+        "mean": 0
+      },
+      "specialistsMs": {
+        "count": 300,
+        "p50": 0,
+        "p95": 0,
+        "p99": 1,
+        "max": 4,
+        "mean": 0.06
+      },
+      "scenarioMs": {
+        "count": 300,
+        "p50": 0,
+        "p95": 0,
+        "p99": 1,
+        "max": 1,
+        "mean": 0.017
+      },
+      "synthesisMs": {
+        "count": 300,
+        "p50": 0,
+        "p95": 0,
+        "p99": 1,
+        "max": 1,
+        "mean": 0.017
+      },
+      "redTeamMs": {
+        "count": 300,
+        "p50": 0,
+        "p95": 0,
+        "p99": 1,
+        "max": 4,
+        "mean": 0.05
+      },
+      "committeesMs": {
+        "count": 300,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "max": 1,
+        "mean": 0.007
+      },
+      "totalMs": {
+        "count": 300,
+        "p50": 0,
+        "p95": 1,
+        "p99": 1,
+        "max": 16,
+        "mean": 0.193
+      }
+    }
+  },
+  "cpu": {
+    "userMs": 78,
+    "systemMs": 0,
+    "perAnalysisMs": 0.26
+  },
+  "memory": {
+    "rssMb": 47.28,
+    "heapUsedMb": 8.24
+  },
+  "dataHub": {
+    "published": 20000,
+    "eventsPerSecond": 89902.9,
+    "publishMs": 222.46,
+    "publishP95MsApprox": 0.011123,
+    "deliveredFast": 4096,
+    "droppedSlow": 19872,
+    "deliveryLatencyMs": {
+      "count": 2048,
+      "p50": 194,
+      "p95": 196,
+      "p99": 197,
+      "max": 197,
+      "mean": 192.856
+    },
+    "memoryRssMb": 47.28
+  },
+  "jitImpact": {
+    "hookCallsPerOpportunity": 2,
+    "maxSyncBlockMs": 16.5721,
+    "note": "Hook e sincrono e fail-safe; nunca awaited no caminho de decisao. Budget de pesquisa: p95 < 50ms."
+  },
+  "shadowOnly": true,
+  "controlsExecution": false
+}

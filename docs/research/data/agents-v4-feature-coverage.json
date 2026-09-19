@@ -1,0 +1,837 @@
+{
+  "version": "feature-coverage-v1",
+  "generatedAt": 0,
+  "snapshots": 6,
+  "byMarketType": {
+    "total": 6,
+    "NORMAL": 3,
+    "OTC": 3,
+    "UNKNOWN": 0
+  },
+  "staleThresholdMs": 20000,
+  "rows": [
+    {
+      "feature": "indicators.adx14",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "indicators.atr14",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "indicators.bollinger",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "indicators.donchian",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "indicators.minusDI",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "indicators.plusDI",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "indicators.realizedVol",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "indicators.rsi14",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "location.distanceToLowerATR",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "location.distanceToUpperATR",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "momentum.acceleration",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "momentum.velocity",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "price.last",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "structure.bos",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "structure.hhHl",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "structure.label",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "structure.supportResistance",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "ticks.microstructure",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "timeframes.context5m",
+      "total": 6,
+      "available": 0,
+      "missing": 6,
+      "stale": 0,
+      "availablePct": 0,
+      "missingPct": 100,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 0,
+          "missing": 3,
+          "stale": 0,
+          "availablePct": 0,
+          "missingPct": 100,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 0,
+          "missing": 3,
+          "stale": 0,
+          "availablePct": 0,
+          "missingPct": 100,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "timeframes.structure1m",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    },
+    {
+      "feature": "volatility.compression",
+      "total": 6,
+      "available": 6,
+      "missing": 0,
+      "stale": 0,
+      "availablePct": 100,
+      "missingPct": 0,
+      "stalePct": 0,
+      "byType": {
+        "NORMAL": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "OTC": {
+          "total": 3,
+          "available": 3,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": 100,
+          "missingPct": 0,
+          "stalePct": 0
+        },
+        "UNKNOWN": {
+          "total": 0,
+          "available": 0,
+          "missing": 0,
+          "stale": 0,
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
+        }
+      }
+    }
+  ],
+  "note": "Relatorio observacional (SHADOW). Coverage ausente NAO e convertida em feature: apenas reportada.",
+  "source": "FIXTURE_REFERENCE",
+  "generatedAtUtc": "2026-09-19T10:17:59.150Z",
+  "limit": null
+}

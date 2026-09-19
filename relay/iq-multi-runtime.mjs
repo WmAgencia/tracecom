@@ -42,6 +42,13 @@ import { ScenarioShadow, analyzeScenarioSnapshot, scenarioShadowStatus as buildS
 import { ScenarioTimingIntersectionShadow } from "./scenario-timing-intersection.mjs";
 import { ScenarioShadowSettlement } from "./scenario-shadow-settlement.mjs";
 import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, DEFAULT_GLOBAL_MAX_STAKE, concentrationExposure } from "./market-universe.mjs";
+// DATAHUB + PROFESSIONAL_AGENT_SYSTEM_V4 (SHADOW): observabilidade/benchmark. NUNCA decide nem executa.
+import { EventBus } from "./datahub/event-bus.mjs";
+import { buildT0Enriched } from "./datahub/t0-enriched.mjs";
+import { dataQualityInputFromRuntime, DATA_QUALITY_THRESHOLDS } from "./datahub/data-quality-agent.mjs";
+import { AgentsV4Engine } from "./agents-v4/engine.mjs";
+import { AgentsV4Persistence } from "./agents-v4/persistence.mjs";
+import { AgentsV4Settlement } from "./agents-v4/settlement.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
 export const ACK_TIMEOUT_MS = 15_000;
@@ -68,7 +75,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -80,7 +87,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.reconnects = 0; this.connectionStartedAt = null;
     this.session = { connected: false, host: null, connectionId: null, serverTimeMs: null, clockSkewMs: null, timeValid: false, connectedAt: null };
     this.account = { practice: { verified: false, balanceId: null, balance: null, currency: null }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: null, type: "UNKNOWN" };
-    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true };
+    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true, agentsV4ShadowEnabled: agentsV4Enabled === true };
     this.markets = new Map();
     for (const entry of UNIVERSE) {
       const key = marketKey(entry.canonical, entry.marketType);
@@ -113,6 +120,20 @@ export class IqMultiRuntime extends EventEmitter {
     // LIQUIDACAO CAUSAL OBSERVACIONAL das observacoes prospectivas do cenario (nunca broker, nunca decide).
     this.scenarioSettlement = new ScenarioShadowSettlement({ scenarioShadow: this.scenarioShadow, pool, now, log: this.log });
     setScenarioEngineLogSink((event, payload) => this.#safe(() => this.log(event, payload)));
+    // DATAHUB (event bus nao bloqueante) + AGENT SYSTEM V4 (SHADOW). Missing pool => memoria apenas.
+    this.dataHub = dataHubEnabled === true ? new EventBus({ now: this.now, log: this.log }) : null;
+    if (this.dataHub) this.dataHub.subscribe({ id: "runtime-telemetry", maxQueue: 256, handler: () => {} });
+    this.agentsV4Persistence = new AgentsV4Persistence({ pool, now: this.now, log: this.log });
+    this.agentsV4 = new AgentsV4Engine({ dataHub: this.dataHub, persistence: this.agentsV4Persistence, now: this.now, log: this.log, enabled: agentsV4Enabled === true });
+    this.agentsV4Settlement = new AgentsV4Settlement({
+      observationSource: this.agentsV4, persistence: this.agentsV4Persistence, now: this.now, log: this.log,
+      onSettled: (observation) => this.#safe(() => this.dataHub?.publish({
+        eventType: "SETTLEMENT", marketKey: observation.marketKey, marketType: observation.marketType, activeId: observation.activeId,
+        producer: "agents-v4", source: "agents-v4-settlement", provenance: { basis: "CAUSAL_COUNTERFACTUAL", provenance: "PROSPECTIVE_SHADOW", observationId: observation.id },
+        accountContext: observation.accountContext, payload: { result: observation.theoreticalResult, basis: "CAUSAL_COUNTERFACTUAL", observationId: observation.id },
+      })),
+    });
+    this.agentsV4.attachSettlement(this.agentsV4Settlement);
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -146,7 +167,8 @@ export class IqMultiRuntime extends EventEmitter {
       indicative: { state: "NEUTRAL", delta: null, indicativePnl: null, updatedAt: null },
       latency: { serverToReceived: [], receivedToNormalized: [], normalizedToFeature: [], orderAck: [], dbPersist: [], decisionToSubmit: [] },
       stats: { messages: 0, candlesProcessed: 0, duplicates: 0, reorder: 0, gaps: 0, rejected: 0, lastBucketStart: null },
-      agentState: "OFFLINE", agentSince: null, lastSignal: null, lastDecision: null, lastTrade: null, indicatorHistory: [],
+      agentState: "OFFLINE", agentSince: null, lastSignal: null, lastDecision: null, lastTrade: null, indicatorHistory: [], tickHistory: [], agentsV4MarketAt: 0, last1mPublished: null,
+      dqWindow: { gapAt: [], duplicateAt: [], reorderAt: [] },
     };
   }
 
@@ -716,11 +738,14 @@ export class IqMultiRuntime extends EventEmitter {
     candle.segmentId = segmentIdFor(ctx.marketKey, candle.bucketStart);
     candle.marketKey = ctx.marketKey;
     if (!ctx.candles.has(candle.bucketStart)) {
-      if (ctx.stats.lastBucketStart !== null && candle.bucketStart < ctx.stats.lastBucketStart) ctx.stats.reorder += 1;
-      else if (ctx.stats.lastBucketStart !== null && candle.bucketStart > ctx.stats.lastBucketStart + CANDLE_SIZE_SECONDS * 1000) ctx.stats.gaps += 1;
+      if (ctx.stats.lastBucketStart !== null && candle.bucketStart < ctx.stats.lastBucketStart) { ctx.stats.reorder += 1; ctx.dqWindow?.reorderAt?.push(receivedAt); }
+      else if (ctx.stats.lastBucketStart !== null && candle.bucketStart > ctx.stats.lastBucketStart + CANDLE_SIZE_SECONDS * 1000) { ctx.stats.gaps += 1; ctx.dqWindow?.gapAt?.push(receivedAt); }
       ctx.stats.candlesProcessed += 1; this.metrics.candles += 1;
     } else {
       ctx.stats.duplicates += 1;
+      // Para o DQ, "duplicata" e reentrega de bucket JA FECHADO (anomalia). Updates dentro do bucket
+      // em formacao sao o comportamento normal do feed IQ e nao degradam a qualidade.
+      if (candle.bucketEnd <= receivedAt) ctx.dqWindow?.duplicateAt?.push(receivedAt);
     }
     if (ctx.stats.lastBucketStart === null || candle.bucketStart > ctx.stats.lastBucketStart) ctx.stats.lastBucketStart = candle.bucketStart;
     const existing = ctx.candles.get(candle.bucketStart);
@@ -731,6 +756,28 @@ export class IqMultiRuntime extends EventEmitter {
     ctx.lastCandle = candle; ctx.lastTickAt = receivedAt;
     ctx.serverTime = serverTimestamp;
     ctx.connectionHealth = { ...ctx.connectionHealth, connected: true, lastMessageAt: receivedAt };
+    // DATAHUB: tick ring real (candle updates do feed) + eventos CANDLE_5S/MARKET_TICK. Nunca bloqueia.
+    ctx.tickHistory.push({ price: candle.close, at: candle.receivedAt, receivedAt: candle.receivedAt, bucketStart: candle.bucketStart, source: candle.source });
+    if (ctx.tickHistory.length > 240) ctx.tickHistory.splice(0, ctx.tickHistory.length - 240);
+    if (this.dataHub) {
+      const accountContext = this.accountContext.context;
+      this.#safe(() => this.dataHub.publish({
+        eventType: "CANDLE_5S", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+        serverTime: candle.serverTimestamp, receivedAt: candle.receivedAt, availableAt: candle.receivedAt,
+        producer: "iq-multi-runtime", source: "IQ_OPTION_WS", accountContext,
+        provenance: { segmentId: candle.segmentId, candleSource: candle.source, connectionId: connectionId ?? null },
+        payload: { bucketStart: candle.bucketStart, open: candle.open, high: candle.high, low: candle.low, close: candle.close },
+      }));
+      const lastTickEmitAt = this.lastTickEmit.get(ctx.marketKey) ?? 0;
+      if (this.now() - lastTickEmitAt >= 1_000) {
+        this.#safe(() => this.dataHub.publish({
+          eventType: "MARKET_TICK", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+          serverTime: candle.serverTimestamp, receivedAt: candle.receivedAt, availableAt: candle.receivedAt,
+          producer: "iq-multi-runtime", source: "IQ_OPTION_WS", accountContext,
+          payload: { price: candle.close, ageMs: this.now() - candle.receivedAt },
+        }));
+      }
+    }
     if (Number.isFinite(Number(candle.serverTimestamp))) this.#recordLatency(ctx, "serverToReceived", Math.max(0, receivedAt - Number(candle.serverTimestamp)));
     this.#recordLatency(ctx, "receivedToNormalized", 0);
     this.#emitEvent("market.candle", { marketKey: ctx.marketKey, bucketStart: candle.bucketStart, close: candle.close, marketType: ctx.marketType });
@@ -766,6 +813,8 @@ export class IqMultiRuntime extends EventEmitter {
       this.timingShadow.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // SCENARIO SHADOW (PROSPECTIVE): liquidacao causal observacional no expiry (nunca broker, nunca decide).
       void this.scenarioSettlement.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      // AGENTS V4 (SHADOW): liquidacao causal das observacoes V4 pendentes (nunca broker).
+      this.agentsV4Settlement.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
@@ -846,6 +895,8 @@ export class IqMultiRuntime extends EventEmitter {
     const action = consensus.action;
     const reason = consensus.status === "CONFIRMED" ? "CONSENSUS_CONFIRMED" : consensus.reason;
     const confidence = consensus.analysisConfidence;
+    // AGENTS V4 (SHADOW): estado de mercado continuo por ativo (throttle 15s). Fail-safe: nunca sobe para o hot path.
+    this.#safe(() => this.#observeAgentsV4MarketState(ctx, list, now));
     ctx.decisionState = {
       action, reason, confidence, setup: trader.setup, regime, horizonSeconds: BRAIN_HORIZON_SECONDS, evaluatedAt: now, featuresAvailable: Boolean(structureFeatures),
       trigger: trader.trigger, waitReason: trader.waitReason,
@@ -888,6 +939,7 @@ export class IqMultiRuntime extends EventEmitter {
       this.jit.recordCandidate({ marketKey: ctx.marketKey, marketType: ctx.marketType, candidateId: candidate.id, action, entryPrice: ctx.lastCandle?.close ?? null, payout: ctx.payout, atMs: now, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, regime: snapshot.regime, setup: snapshot.setup, trigger: snapshot.trigger });
       this.#beginTimingShadow(ctx, { candidate, action, snapshot, serverNow });
       this.#beginScenarioShadow(ctx, { candidate, action, trader, critic, consensus, now });
+      this.#safe(() => this.#observeAgentsV4Candidate(ctx, { candidate, action, trader, critic, consensus, now, list: this.#candleList(ctx) }));
       this.#setAgent(ctx, "SIGNAL", `CANDIDATE_${action}`);
       this.#emitEvent("candidate.created", { marketKey: ctx.marketKey, candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, secondsToWindow: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
       this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "CANDIDATE_CREATED", { candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, serverNow, regime: snapshot.regime, setup: snapshot.setup, trigger: snapshot.trigger }, { persist: true });
@@ -1099,6 +1151,8 @@ export class IqMultiRuntime extends EventEmitter {
     this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "FINAL_REVALIDATION", { candidateId: candidate.id, ok: revalidation.ok, reason: revalidation.reason, checks: revalidation.checks, candidateChangedBeforeEntry: candidate.changes.changed, changedFields: candidate.changes.changes, finalDecision, entryLeadMs: candidate.entryLeadMs, serverNow }, { persist: true });
     // SCENARIO ENGINE V3 (SHADOW): revalidacao final do cenario (independente do gate; nunca altera a decisao).
     this.#finalizeScenarioShadow(ctx, { candidate, action, trader, critic, consensus, now });
+    // AGENTS V4 (SHADOW): reavaliacao final observacional no instante do JIT.
+    this.#safe(() => this.#finalizeAgentsV4Candidate(ctx, { candidate, now, list: this.#candleList(ctx) }));
     if (!revalidation.ok) { this.#cancelCandidate(ctx, revalidation.reason ?? "CANDIDATE_REVALIDATION_FAILED", { checks: revalidation.checks }); return; }
     candidate.status = "CONFIRMED"; candidate.confirmedAt = now;
     this.#emitEvent("candidate.confirmed", { marketKey: ctx.marketKey, candidateId: candidate.id, action, secondsToEntry: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
@@ -1146,6 +1200,15 @@ export class IqMultiRuntime extends EventEmitter {
       qualityScore: candidate.quality?.score ?? null, qualityChecks: candidate.quality?.checks ?? null, entryLocation: candidate.entryLocation ?? null, microVeto: candidate.microVeto ?? null,
     };
     const record = await this.#handleSignal(ctx, action, trader, this.#candleList(ctx), entryTiming);
+    if (this.dataHub) {
+      this.#safe(() => this.dataHub.publish({
+        eventType: "EXECUTION_STATE", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+        serverTime: ctx.serverTime, receivedAt: this.now(), availableAt: this.now(), producer: "iq-multi-runtime", source: "execution-gate",
+        accountContext: record?.accountContext ?? this.accountContext.context,
+        provenance: { gate: record?.gate?.allowed === true ? "ALLOWED" : "BLOCKED", candidateId: candidate.id },
+        payload: { executionId: record?.executionId ?? null, disposition: record?.disposition ?? null, reason: record?.reason ?? null, stakeFinal: record?.stakeFinal ?? null },
+      }));
+    }
     this.timingShadow.markCurrentSend({ candidateId: candidate.id, executionId: record?.executionId ?? null, disposition: record?.disposition ?? null, reason: record?.reason ?? null, atMs: this.now() });
     this.shadowLab.markExecution({
       observationId: observation?.id ?? null, candidateId: candidate.id, executionId: record?.executionId ?? null,
@@ -1155,6 +1218,165 @@ export class IqMultiRuntime extends EventEmitter {
     if (record?.disposition === "EXECUTED") { candidate.status = "ORDER_SENT"; this.#setAgent(ctx, "IN_POSITION", "ORDER_SENT"); }
     else if (record?.disposition === "DUPLICATE") { candidate.status = "DUPLICATE"; this.#commitCandidate(ctx, "CANDIDATE_DUPLICATE", { signalId: record?.id ?? null }); }
     else { candidate.status = "GATE_BLOCKED"; this.#cancelCandidate(ctx, `ORDER_${record?.reason ?? "BLOCKED"}`, { signalId: record?.id ?? null, reason: record?.reason ?? null }); }
+  }
+
+  /* ------------------- AGENTS V4 (SHADOW, nunca decide/executa) ------------------- */
+
+  /** T0 enriquecido point-in-time do ctx (mesmos insumos causais do G2 + ticks reais do feed). */
+  #buildT0ForV4(ctx, list, { now, execution = null, candidate = null } = {}) {
+    return buildT0Enriched({
+      marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+      accountContext: this.accountContext.context, decisionAt: now,
+      price: ctx.lastCandle?.close ?? null, candles5s: list, ticks: ctx.tickHistory ?? [],
+      featureContext: ctx.featureState?.context ?? null, structureFeatures: ctx.agents?.structureFeatures ?? null,
+      trajectory: this.#trajectory(ctx), payout: ctx.payout,
+      marketMeta: { symbol: ctx.display ?? null, availability: ctx.availability ?? null, productKind: candidate?.productKind ?? null },
+      snapshotId: `${ctx.marketKey}:${candidate?.id ?? now}`,
+    });
+  }
+
+  #agentsV4RiskContext(ctx, now) {
+    const positions = [...this.openPositions.values()].filter((position) => position.marketKey === ctx.marketKey);
+    const settled = ctx.settlementState?.daily ?? emptyDailyStats();
+    return {
+      accountContext: this.accountContext.context, openPositions: positions.length, consecutiveLosses: this.consecutiveLosses ?? 0,
+      dailyDrawdownPct: null, payout: ctx.payout, exposure: positions.reduce((sum, position) => sum + (Number(position.stake) || 0), 0),
+      stakeCap: Number(this.config.globalMaxStake) || HARD_CAP_STAKE, marketHealthy: ctx.connectionHealth?.connected === true,
+      daily: { trades: settled.trades ?? 0, wins: settled.wins ?? 0, losses: settled.losses ?? 0 },
+    };
+  }
+
+  #agentsV4Execution(ctx, { now, candidate = null } = {}) {
+    if (!candidate) return null;
+    const serverNow = this.client?.serverNow?.() ?? now;
+    const snapshot = candidate.initialFull ?? {};
+    const displacement = Number(snapshot?.displacement?.displacementATR ?? snapshot?.displacement ?? null);
+    return {
+      nowMs: serverNow, candidateAgeMs: Math.max(0, now - (candidate.createdAt ?? now)),
+      targetEntryAt: candidate.targetEntryAt ?? null, targetExpiryAt: candidate.targetExpiryAt ?? null,
+      submitAt: candidate.submitAt ?? null,
+      latencyMs: ctx.latency?.orderAck?.length ? ctx.latency.orderAck[ctx.latency.orderAck.length - 1] : null,
+      displacementATR: Number.isFinite(displacement) ? displacement : null,
+      newCandlesSinceCandidate: candidate.evaluations ?? null,
+      newTicksSinceCandidate: ctx.tickHistory?.length ? Math.max(0, (ctx.tickHistory[ctx.tickHistory.length - 1]?.at ?? 0) - (candidate.createdAt ?? 0)) : null,
+      degraded: candidate.changes?.changed === true,
+      accountContext: this.accountContext.context,
+    };
+  }
+
+  #agentsV4DataQuality(ctx, now) {
+    // Janelas recentes (5 min): contadores cumulativos tornariam o DQ UNSAFE para sempre apos um reconnect.
+    const windowMs = 300_000;
+    const countSince = (marks) => (Array.isArray(marks) ? marks.filter((at) => now - at <= windowMs).length : 0);
+    const prune = (marks) => { if (Array.isArray(marks)) { const floor = marks.filter((at) => now - at <= windowMs); marks.length = 0; marks.push(...floor); } };
+    const duplicatesWindow = countSince(ctx.dqWindow?.duplicateAt);
+    const reorderWindow = countSince(ctx.dqWindow?.reorderAt);
+    const gapsWindow = countSince(ctx.dqWindow?.gapAt);
+    prune(ctx.dqWindow?.duplicateAt); prune(ctx.dqWindow?.reorderAt); prune(ctx.dqWindow?.gapAt);
+    return dataQualityInputFromRuntime(
+      { ...ctx, accountContext: this.accountContext.context },
+      { now, sequenceGaps: gapsWindow, duplicateWindow: duplicatesWindow, reorderWindow, featureStaleMs: DATA_QUALITY_THRESHOLDS.featureStaleMs },
+    );
+  }
+
+  #observeAgentsV4MarketState(ctx, list, now) {
+    if (!this.agentsV4?.enabled) return null;
+    if (now - (ctx.agentsV4MarketAt ?? 0) < 15_000) return null;
+    ctx.agentsV4MarketAt = now;
+    const t0 = this.#buildT0ForV4(ctx, list, { now });
+    const view = this.agentsV4.observeMarketState({ t0, risk: this.#agentsV4RiskContext(ctx, now), dataQualityInput: this.#agentsV4DataQuality(ctx, now) });
+    if (view && this.dataHub) {
+      this.#safe(() => this.dataHub.publish({
+        eventType: "FEATURE_SNAPSHOT", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+        serverTime: ctx.serverTime, receivedAt: now, availableAt: t0.times.availableAt, producer: "agents-v4", source: "t0-enriched-v1",
+        accountContext: this.accountContext.context, payload: { snapshotId: t0.snapshotId, availableAt: t0.times.availableAt },
+      }));
+      this.#safe(() => this.dataHub.publish({
+        eventType: "AGENT_ANALYSIS", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+        serverTime: ctx.serverTime, receivedAt: now, availableAt: t0.times.availableAt, producer: "agents-v4", source: "agents-v4-engine",
+        accountContext: this.accountContext.context, payload: { action: view.result.finalAction, scenario: view.result.scenario.primary, regime: view.result.specialists.MARKET_REGIME_AGENT?.state ?? null, dataQuality: view.result.dataQuality.state, latencyMs: view.latencyMs },
+      }));
+      this.#safe(() => this.dataHub.publish({
+        eventType: "DATA_QUALITY_UPDATE", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+        serverTime: ctx.serverTime, receivedAt: now, availableAt: t0.times.availableAt, producer: "agents-v4", source: "data-quality-agent-v1",
+        accountContext: this.accountContext.context, payload: { state: view.result.dataQuality.state, unsafeReasons: view.result.dataQuality.unsafeReasons },
+      }));
+      this.#safe(() => this.dataHub.publish({
+        eventType: "REGIME_UPDATE", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+        serverTime: ctx.serverTime, receivedAt: now, availableAt: t0.times.availableAt, producer: "agents-v4", source: "market-regime-agent-v1",
+        accountContext: this.accountContext.context, payload: { regime: view.result.specialists.MARKET_REGIME_AGENT?.state ?? null },
+      }));
+      this.#safe(() => this.dataHub.publish({
+        eventType: "STRUCTURE_UPDATE", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+        serverTime: ctx.serverTime, receivedAt: now, availableAt: t0.times.availableAt, producer: "agents-v4", source: "market-structure-agent-v1",
+        accountContext: this.accountContext.context, payload: { structure: view.result.specialists.MARKET_STRUCTURE_AGENT?.state ?? null, bos: t0.structure?.bos?.type ?? null },
+      }));
+      this.#safe(() => this.dataHub.publish({
+        eventType: "SCENARIO_UPDATE", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+        serverTime: ctx.serverTime, receivedAt: now, availableAt: t0.times.availableAt, producer: "agents-v4", source: "scenario-agent-v1",
+        accountContext: this.accountContext.context, payload: { scenario: view.result.scenario.primary, direction: view.result.scenario.direction, triggerState: view.result.triggerState, action: view.result.finalAction },
+      }));
+      const structure1m = t0.timeframes?.structure1m ?? null;
+      if (structure1m && ctx.last1mPublished !== structure1m.closedCount) {
+        ctx.last1mPublished = structure1m.closedCount;
+        this.#safe(() => this.dataHub.publish({
+          eventType: "CANDLE_1M", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+          serverTime: ctx.serverTime, receivedAt: now, availableAt: t0.times.availableAt, producer: "iq-multi-runtime", source: "CANDLE_5S_DERIVED",
+          accountContext: this.accountContext.context, payload: { derivedFrom: "CANDLE_5S", closedCount: structure1m.closedCount, label: structure1m.label ?? null },
+        }));
+      }
+      this.#safe(() => this.dataHub.publish({
+        eventType: "CANDLE_CONTEXT", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+        serverTime: ctx.serverTime, receivedAt: now, availableAt: t0.times.availableAt, producer: "iq-multi-runtime", source: "T0_ENRICHED_MULTITF",
+        accountContext: this.accountContext.context, payload: { structure1m: structure1m?.label ?? null, context5m: t0.timeframes?.context5m?.direction ?? null },
+      }));
+    }
+    return view;
+  }
+
+  /** Observacao V4 no candidato G2 (benchmark G2 x V3 x V4) — puro SHADOW, zero ordem. */
+  #observeAgentsV4Candidate(ctx, { candidate, action, trader, critic, consensus, now, list }) {
+    if (!this.agentsV4?.enabled) return null;
+    const t0 = this.#buildT0ForV4(ctx, list, { now, candidate });
+    const observation = this.agentsV4.observeCandidate({
+      t0,
+      candidate: {
+        candidateId: candidate.id, correlationId: candidate.correlationId ?? null, createdAt: candidate.createdAt,
+        targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, entryPrice: candidate.initialFull?.price ?? ctx.lastCandle?.close ?? null,
+        payout: ctx.payout, productKind: candidate.initialFull?.productKind ?? null,
+      },
+      g2Action: action,
+      v3Runner: () => {
+        const scenario = this.scenarioShadow.getByCandidate(candidate.id);
+        const analysis = scenario?.traderScenario ?? scenario?.finalScenario ?? null;
+        return { action: scenario?.finalAction ?? "WAIT", primaryScenario: analysis?.primaryScenario ?? null, marketRegime: analysis?.marketRegime ?? null, version: "SCENARIO_ENGINE_V3_FROZEN" };
+      },
+      execution: this.#agentsV4Execution(ctx, { now, candidate }),
+      risk: this.#agentsV4RiskContext(ctx, now),
+      dataQualityInput: this.#agentsV4DataQuality(ctx, now),
+    });
+    if (observation) {
+      ctx.lastAgentsV4 = { observationId: observation.id, at: now, action: observation.finalAction, scenario: observation.scenario };
+      this.#safe(() => this.dataHub?.publish({
+        eventType: "CANDIDATE", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
+        serverTime: ctx.serverTime, receivedAt: now, availableAt: t0.times.availableAt, producer: "agents-v4", source: "agents-v4-engine",
+        accountContext: this.accountContext.context, payload: { candidateId: candidate.id, action: observation.finalAction, shadowOnly: true },
+      }));
+    }
+    return observation;
+  }
+
+  #finalizeAgentsV4Candidate(ctx, { candidate, now, list }) {
+    if (!this.agentsV4?.enabled || !candidate) return null;
+    const observationId = ctx.lastAgentsV4?.observationId ?? null;
+    if (!observationId) return null;
+    const t0 = this.#buildT0ForV4(ctx, list, { now, candidate });
+    return this.agentsV4.finalize({
+      observationId, t0,
+      execution: this.#agentsV4Execution(ctx, { now, candidate }),
+      risk: this.#agentsV4RiskContext(ctx, now),
+      dataQualityInput: this.#agentsV4DataQuality(ctx, now),
+    });
   }
 
   #candidateSnapshot(ctx, { action, trader, critic, consensus, now }) {
@@ -1300,6 +1522,32 @@ export class IqMultiRuntime extends EventEmitter {
         intersectionLayer: "READ_ONLY_COMPARISON",
       },
     };
+  }
+
+  /** Status do PROFESSIONAL_AGENT_SYSTEM_V4 (SHADOW) + DataHub. Nunca controla execucao. */
+  agentsV4Status() {
+    const status = this.agentsV4.status({ benchmarkLimit: 500 });
+    return {
+      ...status,
+      enabled: this.config.agentsV4ShadowEnabled === true && this.agentsV4.enabled === true,
+      accountContext: this.accountContext.context,
+      dataHub: this.dataHub ? { ...this.dataHub.stats(), epoch: this.dataHub.epochNumber } : null,
+      isolation: {
+        shadowOnly: true,
+        controlsExecution: false,
+        sendsOrders: false,
+        g2Untouched: true, v3Untouched: true, lateWindowUntouched: true, qualityGateUntouched: true,
+        executionGateUntouched: true, stakeUntouched: true, realAllowlistUntouched: true,
+      },
+    };
+  }
+
+  /** Liga/desliga APENAS a observacao V4 (G2/V3/JIT seguem identicos; nao toca producao). */
+  setAgentsV4Enabled(enabled) {
+    this.config.agentsV4ShadowEnabled = enabled === true;
+    this.agentsV4.setEnabled(enabled === true);
+    this.#emitEvent("agents.v4.config", { enabled: this.config.agentsV4ShadowEnabled });
+    return { enabled: this.config.agentsV4ShadowEnabled };
   }
 
   /** Liga/desliga APENAS a observacao de cenario (o timing continua identico; nao toca producao). */
@@ -1955,6 +2203,13 @@ export class IqMultiRuntime extends EventEmitter {
       this.#auditRecord(pending.correlationId ?? `corr_exec_${pending.executionId}`, pending.marketKey, "REAL_BROKER_ACK", { accountContext: ACCOUNT_REAL, brokerOrderId, ackMs, stake: pending.stake, direction: pending.direction, expiry: pending.expirationSec }, { persist: true, accountContext: ACCOUNT_REAL });
     }
     this.#emitEvent("order.ack", { marketKey: pending.marketKey, brokerOrderId, ackMs, source, mode: pending.mode, entryDriftMs: entryTimingAck?.entryDriftMs ?? null, targetEntryAt: entryTimingAck?.targetEntryAt ?? null });
+    if (this.dataHub) this.#safe(() => this.dataHub.publish({
+      eventType: "BROKER_ACK", marketKey: pending.marketKey, marketType: ctx?.marketType ?? null, activeId: ctx?.activeId ?? null,
+      serverTime: this.session.serverTimeMs, receivedAt: ackedAt, availableAt: ackedAt, producer: "iq-multi-runtime", source: "iq-ws-ack",
+      accountContext: pending.accountContext ?? this.accountContext.context,
+      provenance: { basis: "BROKER_EXECUTED", resolution: source },
+      payload: { executionId: pending.executionId, brokerOrderId, ackMs, expirationMismatch },
+    }));
     this.#emitEvent("position.open", { marketKey: pending.marketKey, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId });
     this.#safe(() => this.log("IQ_MULTI_ORDER_ACK", JSON.stringify({ marketKey: pending.marketKey, executionId: pending.executionId, brokerOrderId, source, ackMs })));
     pending.ackResolve?.({ state: "ACKNOWLEDGED", brokerOrderId, ackMs, source });
@@ -2020,6 +2275,12 @@ export class IqMultiRuntime extends EventEmitter {
     this.openPositions.delete(key); this.orderIndex.delete(String(brokerOrderId));
     await this.#persistExecution({ executionId: position.executionId, brokerOrderId: String(brokerOrderId), state: "SETTLED", accountContext: settlementContext, settledAt: nowIso(settledAt), brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, meta: { settlementReason: comparison.reason, causal: settlement.detail, marketKey: key } });
     this.#emitEvent("position.settled", { marketKey: key, brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, correlationId: position.correlationId ?? null, accountContext: settlementContext });
+    if (this.dataHub) this.#safe(() => this.dataHub.publish({
+      eventType: "SETTLEMENT", marketKey: key, marketType: ctx.marketType, activeId: ctx.activeId,
+      serverTime: ctx.serverTime, receivedAt: settledAt, availableAt: settledAt, producer: "iq-multi-runtime", source: "broker-settlement",
+      accountContext: settlementContext, provenance: { basis: "BROKER_EXECUTED", executionId: position.executionId },
+      payload: { brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit },
+    }));
     this.#auditRecord(position.correlationId ?? `corr${position.executionId}`, key, "SETTLEMENT", { brokerOrderId, brokerResult: broker.result, causalResult: settlement.result, mismatch: comparison.mismatch, profit: broker.profit, accountContext: settlementContext }, { persist: true, accountContext: settlementContext });
     if (settlementContext === ACCOUNT_REAL) {
       this.accountContext.recordRealAttempt("SETTLEMENT", { strategy: this.accountContext.armedMeta?.strategy ?? null, agentVersion: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, decisionId: position.decisionSnapshot?.decisionId ?? null, stake: position.stake, marketKey: key, direction: position.direction, expiry: position.expirationSec, send: true, ack: "ACKNOWLEDGED", brokerOrderId, settlement: { result: broker.result, profit: broker.profit, at: settledAt, mismatch: comparison.mismatch } });
