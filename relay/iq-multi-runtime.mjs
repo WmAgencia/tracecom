@@ -1463,10 +1463,12 @@ export class IqMultiRuntime extends EventEmitter {
    * nunca inventa IDs e NUNCA habilita execucao automaticamente (enabled=false, orderPath unverified).
    */
   async discoverBlitzInstruments() {
+    if (this.blitzDiscoveryCache && this.now() - (this.blitzDiscoveryAt ?? 0) < 600_000) return this.blitzDiscoveryCache;
+    const withTimeout = (promise, ms, label) => Promise.race([promise, new Promise((_resolve, reject) => setTimeout(() => reject(new Error(`TIMEOUT_${label}`)), ms))]);
     const report = { schema: "blitz-discovery-v1", at: new Date(this.now()).toISOString(), supported: false, instruments: [], durations: [], payout: {}, orderPath: { supported: false, reason: "ORDER_MESSAGE_UNVERIFIED" }, errors: [] };
     const collect = (() => { const sections = new Set(); const rows = []; return { sections, rows }; })();
     try {
-      const init = await this.client.getInitializationData();
+      const init = await withTimeout(this.client.getInitializationData(), 6_000, "INIT");
       const payload = init?.msg ?? init?.message ?? init ?? {};
       for (const [section, data] of Object.entries(payload ?? {})) {
         if (!data || typeof data !== "object") continue;
@@ -1481,13 +1483,13 @@ export class IqMultiRuntime extends EventEmitter {
     } catch (error) { report.errors.push(`init:${String(error?.message ?? error).slice(0, 120)}`); }
     for (const type of ["blitz-option"]) {
       try {
-        const response = await this.client.getInstruments({ type });
+        const response = await withTimeout(this.client.getInstruments({ type }), 6_000, "INSTRUMENTS");
         const payload = response?.msg ?? response?.message ?? response ?? {};
         const list = Array.isArray(payload) ? payload : Array.isArray(payload?.instruments) ? payload.instruments : Array.isArray(payload?.result) ? payload.result : [];
         report.instruments = [...report.instruments, ...list.map((row) => ({ type, raw: sanitizeInstrumentRow(row) }))];
       } catch (error) { report.errors.push(`instruments:${type}:${String(error?.message ?? error).slice(0, 120)}`); }
       try {
-        const response = await this.client.getOptions({ limit: 30, instrumentType: "blitz" });
+        const response = await withTimeout(this.client.getOptions({ limit: 30, instrumentType: "blitz" }), 6_000, "OPTIONS");
         const payload = response?.msg ?? response?.message ?? response ?? {};
         const options = payload?.result ?? payload?.options ?? [];
         for (const option of Array.isArray(options) ? options : []) {
@@ -1501,6 +1503,8 @@ export class IqMultiRuntime extends EventEmitter {
     report.supported = report.instruments.length > 0 || report.durations.length > 0;
     report.supports45s = report.durations.includes(45);
     report.orderPath = report.supported ? { supported: false, reason: "ORDER_MESSAGE_UNVERIFIED" } : { supported: false, reason: "BLITZ_NOT_OFFERED" };
+    this.blitzDiscoveryCache = report;
+    this.blitzDiscoveryAt = this.now();
     return report;
   }
 
