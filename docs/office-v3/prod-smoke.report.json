@@ -1,8 +1,8 @@
 {
-  "at": "2026-09-19T18:10:53.656Z",
+  "at": "2026-09-19T19:11:07.461Z",
   "baseUrl": "https://tracecom.consecom.com.br",
-  "total": 12,
-  "passed": 12,
+  "total": 13,
+  "passed": 13,
   "failed": 0,
   "results": [
     {
@@ -26,8 +26,8 @@
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "pnlText": "−R$ 62,07",
-        "settledPnl": -62.07
+        "pnlText": "−R$ 15,47",
+        "settledPnl": -15.47
       }
     },
     {
@@ -36,11 +36,11 @@
       "evidence": "final-prod-boot.png",
       "detail": {
         "present": true,
-        "text": "RESULTADO DO DIA-R$ 62,0729 operações · 10W / 16L / 3DWR observado 38,5% · payout médio 86,2% (30 mercados abertos)HOJE-R$ 62,0729 operações · 10W / 16L / 3DSEMANA-R$ 698,83253 trades liquidadosMÊS-R$ 698,83253 trades liquidadosOPERAÇÕES29WINS10LOSSES16DRAWS3WR OBSERVADO38,5%PAYOUT MÉDIO86,2%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
+        "text": "RESULTADO DO DIA-R$ 15,4769 operações · 34W / 32L / 3DWR observado 51,5% · payout médio 86,2% (30 mercados abertos)HOJE-R$ 15,4769 operações · 34W / 32L / 3DSEMANA-R$ 652,23293 trades liquidadosMÊS-R$ 652,23293 trades liquidadosOPERAÇÕES69WINS34LOSSES32DRAWS3WR OBSERVADO51,5%PAYOUT MÉDIO86,2%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
         "model": {
-          "day": "-R$ 62,07",
-          "week": "-R$ 698,83",
-          "month": "-R$ 698,83"
+          "day": "-R$ 15,47",
+          "week": "-R$ 652,23",
+          "month": "-R$ 652,23"
         }
       }
     },
@@ -53,31 +53,43 @@
       }
     },
     {
-      "assertion": "RSI V2 50/50 no Office (superior STRICT V2 / inferior PULLBACK V2)",
+      "assertion": "RSI V3 unica em TODOS os agentes do Office",
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "split": {
-          "strict": 15,
-          "pullback": 14
-        },
-        "migration": "COMPLETE",
+        "strategy": "RSI_REVERSAL_PULLBACK_V3",
+        "eligible": 29,
         "desksWithTag": 29,
-        "firstPullback": 40,
-        "lastStrict": 14
+        "strategySet": [
+          "RSI_REVERSAL_PULLBACK_V3"
+        ]
       }
     },
     {
-      "assertion": "EXECUTION ROUTING: somente STRICT_V2/PULLBACK_V2 podem chegar ao requestOrder",
+      "assertion": "V2 congelada em shadow (sem execucao)",
+      "pass": true,
+      "evidence": null,
+      "detail": {
+        "module": "rsi-agents-v2",
+        "frozen": true,
+        "enabled": false,
+        "controlsExecution": false
+      }
+    },
+    {
+      "assertion": "EXECUTION ROUTING RSI_V3_ONLY: somente RSI_REVERSAL_PULLBACK_V3 pode chegar ao requestOrder",
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "policy": "RSI_V2_ONLY",
+        "policy": "RSI_V3_ONLY",
         "allowed": [
-          "RSI_REVERSAL_STRICT_V2",
-          "RSI_EXTREME_PULLBACK_V2"
+          "RSI_REVERSAL_PULLBACK_V3"
         ],
         "blocked": [
+          "agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2:false",
+          "agent-v2:RSI_EXTREME_PULLBACK_V2:RSI_EXTREME_PULLBACK_V2:false",
+          "agent:RSI_REVERSAL_STRICT:RSI_REVERSAL_STRICT_V1:false",
+          "agent:RSI_EXTREME_PULLBACK:RSI_EXTREME_PULLBACK_V1:false",
           "AUTO_DECISION:false",
           "DIAGNOSTIC_SIGNAL:false",
           "MANUAL:false",
@@ -115,7 +127,7 @@
         "WS": "ONLINE",
         "MODO": "PRACTICE · ZERO REAL",
         "CONTA": "PRACTICE",
-        "SALDO": "USD 52.00",
+        "SALDO": "USD 98.60",
         "MCP": "SEM STATUS NO SNAPSHOT",
         "STAKE GLOBAL": "R$ 10.00 · teto R$ 100.00",
         "AUTO": "ON",
