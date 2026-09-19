@@ -1,0 +1,36 @@
+﻿{
+    "version":  "SOLO_REASONING_V1_SHADOW",
+    "policy":  {
+                   "autoInvert":  false,
+                   "committees":  false,
+                   "noTuning":  true,
+                   "rounds":  1,
+                   "controlsExecution":  false,
+                   "sendsOrders":  false,
+                   "voting":  false,
+                   "mode":  "SHADOW_ONLY"
+               },
+    "files":  {
+                  "relay/migrations/038_solo_reasoning.sql":  {
+                                                                  "bytes":  1261,
+                                                                  "sha256":  "b5d57443ff6874415322f10150ef5376d97862ec6169a75a901ae420aa61e7dd"
+                                                              },
+                  "relay/solo-reasoning.mjs":  {
+                                                   "bytes":  32858,
+                                                   "sha256":  "bfe3a22175510a0e6e65713ba3ac9f0a4ce18da500e9dee566323a3e10a3d281"
+                                               },
+                  "tests/research/solo-reasoning.test.ts":  {
+                                                                "bytes":  7988,
+                                                                "sha256":  "fa70f81fdccf08bd421d6d7006020733eb04be733fc76a8ecea1538ad4b8e993"
+                                                            }
+              },
+    "schema":  "solo-reasoning-freeze-v1",
+    "frozenAtUtc":  "2026-09-19T13:53:50Z",
+    "rules":  {
+                  "autoInvert":  "PROIBIDO",
+                  "ambiguity":  "gap\u003c0.15 entre cenarios incompativeis =\u003e WAIT",
+                  "invalidated":  "WAIT",
+                  "settlement":  "CAUSAL_COUNTERFACTUAL/PROSPECTIVE_SHADOW idempotente; contrafactual da tese inicial preservado",
+                  "weakened":  "WAIT conservador"
+              }
+}

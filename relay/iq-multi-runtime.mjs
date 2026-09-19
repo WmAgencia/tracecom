@@ -53,6 +53,8 @@ import { AgentsV4Settlement } from "./agents-v4/settlement.mjs";
 import { DualReasoningEngine } from "./dual-reasoning.mjs";
 // Sidecar EXTERNO de deltas de mercado entre rodadas (observacao unidirecional; nunca alimenta A/B/Sintese).
 import { DualRoundMarketDeltaObserver } from "./dual-round-observer.mjs";
+// SOLO_REASONING_V1_SHADOW: controle de simplicidade (1 analista, 1 passada). NUNCA executa.
+import { SoloReasoningEngine } from "./solo-reasoning.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
 export const ACK_TIMEOUT_MS = 15_000;
@@ -79,7 +81,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -91,7 +93,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.reconnects = 0; this.connectionStartedAt = null;
     this.session = { connected: false, host: null, connectionId: null, serverTimeMs: null, clockSkewMs: null, timeValid: false, connectedAt: null };
     this.account = { practice: { verified: false, balanceId: null, balance: null, currency: null }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: null, type: "UNKNOWN" };
-    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true, agentsV4ShadowEnabled: agentsV4Enabled === true, dualReasoningShadowEnabled: dualReasoningEnabled === true };
+    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true, agentsV4ShadowEnabled: agentsV4Enabled === true, dualReasoningShadowEnabled: dualReasoningEnabled === true, soloReasoningShadowEnabled: soloReasoningEnabled === true };
     this.markets = new Map();
     for (const entry of UNIVERSE) {
       const key = marketKey(entry.canonical, entry.marketType);
@@ -141,6 +143,7 @@ export class IqMultiRuntime extends EventEmitter {
     // DUAL_REASONING_V1_SHADOW (experimento independente; sem LLM no deadline; zero ordem).
     this.dual = new DualReasoningEngine({ pool, dataHub: this.dataHub, now: this.now, log: this.log, enabled: dualReasoningEnabled === true });
     this.dualObserver = new DualRoundMarketDeltaObserver({ pool, now: this.now, log: this.log, enabled: dualReasoningEnabled === true });
+    this.solo = new SoloReasoningEngine({ pool, now: this.now, log: this.log, enabled: soloReasoningEnabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -824,6 +827,8 @@ export class IqMultiRuntime extends EventEmitter {
       this.agentsV4Settlement.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // DUAL_REASONING (SHADOW): liquidacao causal PROSPECTIVE_SHADOW (nunca broker).
       this.dual.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      // SOLO_REASONING (SHADOW): liquidacao causal do final e do contrafactual da tese inicial.
+      this.solo.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
@@ -950,6 +955,8 @@ export class IqMultiRuntime extends EventEmitter {
       this.#beginScenarioShadow(ctx, { candidate, action, trader, critic, consensus, now });
       this.#safe(() => this.#observeAgentsV4Candidate(ctx, { candidate, action, trader, critic, consensus, now, list: this.#candleList(ctx) }));
       this.#safe(() => this.#observeDualRound1(ctx, candidate, now));
+      // SOLO_REASONING (SHADOW): uma passada, mesmo T0; nunca influencia nada.
+      this.#safe(() => this.#observeSolo(ctx, candidate, now));
       this.#setAgent(ctx, "SIGNAL", `CANDIDATE_${action}`);
       this.#emitEvent("candidate.created", { marketKey: ctx.marketKey, candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, secondsToWindow: Math.max(0, Math.round((candidate.targetEntryAt - serverNow) / 1000)) });
       this.#auditRecord(correlationId ?? candidate.id, ctx.marketKey, "CANDIDATE_CREATED", { candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, submitAt: candidate.submitAt, entryLeadMs: leadMs, serverNow, regime: snapshot.regime, setup: snapshot.setup, trigger: snapshot.trigger }, { persist: true });
@@ -1245,6 +1252,18 @@ export class IqMultiRuntime extends EventEmitter {
       trajectory: this.#trajectory(ctx), payout: ctx.payout,
       marketMeta: { symbol: ctx.display ?? null, availability: ctx.availability ?? null, productKind: candidate?.productKind ?? null },
       snapshotId: `${ctx.marketKey}:${candidate?.id ?? now}`,
+    });
+  }
+
+  /* ------------------- SOLO_REASONING_V1_SHADOW (controle de simplicidade) ------------------- */
+  #observeSolo(ctx, candidate, now) {
+    if (!this.solo?.enabled || !candidate) return null;
+    const t0 = this.#buildT0ForV4(ctx, this.#candleList(ctx), { now, candidate });
+    return this.solo.observe({
+      t0,
+      candidate: { candidateId: candidate.id, correlationId: candidate.correlationId ?? null, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, payout: ctx.payout },
+      g2Action: candidate.action ?? null, v4Action: ctx.lastAgentsV4?.action ?? null,
+      dualAction: this.dual?.observations?.get(this.#dualObservationId(ctx, candidate))?.finalAction ?? null,
     });
   }
 
@@ -1612,6 +1631,42 @@ export class IqMultiRuntime extends EventEmitter {
       observer: this.dualObserver.status(),
       realAllowlistUntouched: true,
     };
+  }
+
+  /** Status do SOLO_REASONING_V1_SHADOW (controle de simplicidade; nunca executa). */
+  soloReasoningStatus() {
+    const status = this.solo.status();
+    return {
+      ...status,
+      enabled: this.config.soloReasoningShadowEnabled === true && this.solo.enabled === true,
+      isolation: { shadowOnly: true, controlsExecution: false, sendsOrders: false, rounds: 1, voting: false, committees: false, g2Untouched: true, v3Untouched: true, v4Untouched: true, dualUntouched: true, lateWindowDecoupled: true, stakeUntouched: true, realAllowlistUntouched: true },
+      realAllowlistUntouched: true,
+    };
+  }
+
+  /** Relatorio observacional do SOLO (rolling; checkpoints imutaveis sao gerados pelo script). */
+  async soloReport() {
+    const status = this.soloReasoningStatus();
+    const observations = this.solo.list();
+    const cohort = observations.filter((o) => o.direction === "BUY" || o.direction === "SELL");
+    return {
+      version: status.version, mode: "SHADOW_ONLY", generatedAtUtc: new Date().toISOString(),
+      enabled: status.enabled, isolation: status.isolation, counters: status.counters,
+      distributions: status.distributions, selfRefutation: status.selfRefutation,
+      projectionAccuracy: status.projectionAccuracy, settlement: status.settlement, latencyMs: status.latencyMs,
+      rolling: { label: "ROLLING / NOT CHECKPOINT", directionalSettled: observations.filter((o) => ["WIN", "LOSS", "DRAW"].includes(o.theoreticalResult)).length, observations: observations.length, note: "checkpoints imutaveis (30/60/100/200/500) sao artefatos separados." },
+      fourWayCohort: observations.slice(-500).map((o) => ({ id: o.id, marketKey: o.marketKey, at: o.createdAt, g2Action: o.g2Action, v4Action: o.v4Action, dualAction: o.dualAction, soloInitial: o.thesis?.initialAction ?? null, soloFinal: o.finalAction, survival: o.refutation?.survival ?? null, direction: o.direction, result: o.theoreticalResult, initialCounterfactual: o.initialCounterfactual?.result ?? null, scenario: o.discovery?.primaryScenario ?? null })),
+      recentDecisions: cohort.slice(-40).map((o) => ({ id: o.id, scenario: o.discovery?.primaryScenario, initial: o.thesis?.initialAction, final: o.finalAction, survival: o.refutation?.survival, strength: o.refutation?.refutationStrength, whyNow: o.thesis?.whyNow })),
+      researchOnly: true, controlsExecution: false, sendsOrders: false,
+    };
+  }
+
+  /** Liga/desliga APENAS o experimento Solo Reasoning. */
+  setSoloReasoningEnabled(enabled) {
+    this.config.soloReasoningShadowEnabled = enabled === true;
+    this.solo.setEnabled(enabled === true);
+    this.#emitEvent("solo.reasoning.config", { enabled: this.config.soloReasoningShadowEnabled });
+    return { enabled: this.config.soloReasoningShadowEnabled };
   }
 
   /** Liga/desliga APENAS o experimento Dual Reasoning. */
