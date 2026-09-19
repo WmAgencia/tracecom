@@ -1,19 +1,19 @@
 {
   "version": "feature-coverage-v1",
   "generatedAt": 0,
-  "snapshots": 6,
+  "snapshots": 81,
   "byMarketType": {
-    "total": 6,
-    "NORMAL": 3,
-    "OTC": 3,
+    "total": 81,
+    "NORMAL": 0,
+    "OTC": 81,
     "UNKNOWN": 0
   },
   "staleThresholdMs": 20000,
   "rows": [
     {
       "feature": "indicators.adx14",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -21,17 +21,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -51,8 +51,8 @@
     },
     {
       "feature": "indicators.atr14",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -60,17 +60,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -90,8 +90,8 @@
     },
     {
       "feature": "indicators.bollinger",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -99,17 +99,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -129,8 +129,8 @@
     },
     {
       "feature": "indicators.donchian",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -138,17 +138,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -168,8 +168,8 @@
     },
     {
       "feature": "indicators.minusDI",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -177,17 +177,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -207,8 +207,8 @@
     },
     {
       "feature": "indicators.plusDI",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -216,17 +216,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -246,8 +246,8 @@
     },
     {
       "feature": "indicators.realizedVol",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -255,17 +255,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -285,8 +285,8 @@
     },
     {
       "feature": "indicators.rsi14",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -294,17 +294,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -324,8 +324,8 @@
     },
     {
       "feature": "location.distanceToLowerATR",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -333,17 +333,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -363,8 +363,8 @@
     },
     {
       "feature": "location.distanceToUpperATR",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -372,17 +372,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -402,8 +402,8 @@
     },
     {
       "feature": "momentum.acceleration",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -411,17 +411,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -441,8 +441,8 @@
     },
     {
       "feature": "momentum.velocity",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -450,17 +450,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -480,8 +480,8 @@
     },
     {
       "feature": "price.last",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -489,17 +489,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -519,8 +519,8 @@
     },
     {
       "feature": "structure.bos",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -528,17 +528,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -558,8 +558,8 @@
     },
     {
       "feature": "structure.hhHl",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -567,17 +567,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -597,8 +597,8 @@
     },
     {
       "feature": "structure.label",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -606,17 +606,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -636,8 +636,8 @@
     },
     {
       "feature": "structure.supportResistance",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -645,17 +645,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -675,8 +675,8 @@
     },
     {
       "feature": "ticks.microstructure",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -684,17 +684,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -714,27 +714,27 @@
     },
     {
       "feature": "timeframes.context5m",
-      "total": 6,
+      "total": 81,
       "available": 0,
-      "missing": 6,
+      "missing": 81,
       "stale": 0,
       "availablePct": 0,
       "missingPct": 100,
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
+          "total": 0,
           "available": 0,
-          "missing": 3,
+          "missing": 0,
           "stale": 0,
-          "availablePct": 0,
-          "missingPct": 100,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
+          "total": 81,
           "available": 0,
-          "missing": 3,
+          "missing": 81,
           "stale": 0,
           "availablePct": 0,
           "missingPct": 100,
@@ -753,8 +753,8 @@
     },
     {
       "feature": "timeframes.structure1m",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -762,17 +762,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -792,8 +792,8 @@
     },
     {
       "feature": "volatility.compression",
-      "total": 6,
-      "available": 6,
+      "total": 81,
+      "available": 81,
       "missing": 0,
       "stale": 0,
       "availablePct": 100,
@@ -801,17 +801,17 @@
       "stalePct": 0,
       "byType": {
         "NORMAL": {
-          "total": 3,
-          "available": 3,
+          "total": 0,
+          "available": 0,
           "missing": 0,
           "stale": 0,
-          "availablePct": 100,
-          "missingPct": 0,
-          "stalePct": 0
+          "availablePct": null,
+          "missingPct": null,
+          "stalePct": null
         },
         "OTC": {
-          "total": 3,
-          "available": 3,
+          "total": 81,
+          "available": 81,
           "missing": 0,
           "stale": 0,
           "availablePct": 100,
@@ -831,7 +831,7 @@
     }
   ],
   "note": "Relatorio observacional (SHADOW). Coverage ausente NAO e convertida em feature: apenas reportada.",
-  "source": "FIXTURE_REFERENCE",
-  "generatedAtUtc": "2026-09-19T10:17:59.150Z",
-  "limit": null
+  "source": "DATABASE_PROSPECTIVE",
+  "generatedAtUtc": "2026-09-19T10:59:31.785Z",
+  "limit": 500
 }

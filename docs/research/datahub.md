@@ -80,9 +80,9 @@ freshness de features. `UNSAFE` ⇒ o V4 responde **NO_TRADE** (testado).
 ## 6. Coverage
 
 `computeFeatureCoverage()` produz `feature × {available%, missing%, stale%} × {NORMAL, OTC, UNKNOWN}`.
-- relatorio offline: `node scripts/agents-v4-coverage.mjs [--from-db --limit N]`
-  → `docs/research/data/agents-v4-feature-coverage.json` (fonte atual: `FIXTURE_REFERENCE`;
-  `--from-db` usa `iq_agents_v4_observations.payload->'t0'` prospectivo);
+- relatorio: `node scripts/agents-v4-coverage.mjs [--from-db --limit N]`
+  → `docs/research/data/agents-v4-feature-coverage.json` (fonte atual: `DATABASE_PROSPECTIVE` a partir
+  de `iq_agents_v4_observations.payload->'t0'`; sem banco cai para `FIXTURE_REFERENCE`);
 - coverage ao vivo: exposta em `GET /api/iq/research/agents-v4` (janela em memoria de snapshots).
 
 ## 7. Integracao no runtime (somente observacao)

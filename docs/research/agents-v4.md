@@ -108,10 +108,18 @@ observacoes com direcao BUY/SELL sao liquidadas; idempotente; `feedableToClassif
 
 `docs/research/data/agents-v4-performance.json` e `agents-v4-feature-coverage.json` sao regeneraveis.
 
-## 10. Pendencias reais
+## 10. Producao e pendencias reais
 
-1. Coleta prospectiva V4 comeca apos o deploy (nenhuma ordem V4; `BROKER_EXECUTED` continua exclusivo
-   do G2 real broker).
-2. Coverage atual e `FIXTURE_REFERENCE`; rodar `scripts/agents-v4-coverage.mjs --from-db` apos o deploy.
+Deploy SHADOW ativo (relay Railway + Vercel). Primeiro checkpoint prospectivo em
+`docs/research/agents-v4-prospective-checkpoint.md`: 30/30 mercados HEALTHY, regimes TREND_UP/DOWN/
+TRANSITION alcancados no feed vivo, V4 com BUY/SELL/WAIT (nao 100% WAIT), V3 congelada 100% WAIT nas
+mesmas 19 oportunidades, settlement causal funcionando (WIN observacional, nunca broker).
+
+1. Coleta prospectiva segue por tempo indeterminado (nenhuma ordem V4; `BROKER_EXECUTED` continua
+   exclusivo do broker/G2 real).
+2. Coverage ja e `DATABASE_PROSPECTIVE` (`docs/research/data/agents-v4-feature-coverage.json`);
+   regenerar periodicamente com `scripts/agents-v4-coverage.mjs --from-db`.
 3. `CANDLE_1M` e derivado de candles 5s (nao ha feed 1m proprio do broker no caminho atual).
 4. V4 continua fora do allowlist REAL e nao ha plano de promocao nesta rodada.
+5. Deploy NAO e automatico no push: Vercel (`vercel --prod`) e Railway (`railway up` no servico
+   `tracecom-live-relay`) precisam ser acionados explicitamente.
