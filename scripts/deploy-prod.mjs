@@ -64,7 +64,7 @@ if (!flags.has("--skip-relay")) {
       fs.copyFileSync(path.join(relayRoot, entry.name), path.join(RELAY_DEPLOY_DIR, entry.name));
     }
   }
-  const runtimeDirs = fs.readdirSync(relayRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+  const runtimeDirs = fs.readdirSync(relayRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory() && entry.name !== "node_modules" && !entry.name.startsWith(".")).map((entry) => entry.name);
   for (const dir of runtimeDirs) {
     fs.mkdirSync(path.join(RELAY_DEPLOY_DIR, dir), { recursive: true });
     fs.cpSync(path.join(ROOT, "relay", dir), path.join(RELAY_DEPLOY_DIR, dir), { recursive: true });
