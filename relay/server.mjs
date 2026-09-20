@@ -59,14 +59,27 @@ async function migrate() {
   }
 }
 try { await migrate(); } catch (error) { console.info("MIGRATE_SKIPPED", String(error?.message ?? error).slice(0, 160)); }
-try {
-  const restored = await loadSession(pool, process.env.TOKEN_SIGNING_SECRET || "");
-  if (restored && iqAuth.restore(restored)) { console.info("IQ_SESSION_RESTORED", JSON.stringify({ email: restored.emailMasked })); wsRuntime.start(); }
-  else {
+async function tryRestoreSession() {
+  try {
+    const restored = await loadSession(pool, process.env.TOKEN_SIGNING_SECRET || "");
+    if (restored && iqAuth.restore(restored)) {
+      console.info("IQ_SESSION_RESTORED", JSON.stringify({ email: restored.emailMasked }));
+      wsRuntime.start();
+      return true;
+    }
     const diag = await pool.query("SELECT (ssid_enc IS NOT NULL) AS has_enc, length(ssid_enc) AS enc_len, (iv IS NOT NULL) AS has_iv, (tag IS NOT NULL) AS has_tag, updated_at FROM iq_auth_session WHERE id=1").catch(() => null);
     console.info("IQ_SESSION_NOT_RESTORED", JSON.stringify({ secretPresent: Boolean(process.env.TOKEN_SIGNING_SECRET), row: diag?.rows?.[0] ?? null }));
-  }
-} catch { console.info("IQ_SESSION_RESTORE_UNAVAILABLE"); }
+  } catch { console.info("IQ_SESSION_RESTORE_UNAVAILABLE"); }
+  return false;
+}
+// Boot com DB lento nao pode deixar a producao desconectada para sempre: retry ate restaurar.
+const sessionRestored = await tryRestoreSession();
+if (!sessionRestored) {
+  const sessionRestoreRetry = setInterval(() => {
+    void tryRestoreSession().then((ok) => { if (ok) clearInterval(sessionRestoreRetry); });
+  }, 20_000);
+  if (typeof sessionRestoreRetry.unref === "function") sessionRestoreRetry.unref();
+}
 async function authenticate(req, scope) {
   const value = req.headers.authorization || ''; const key = value.startsWith('Bearer ') ? value.slice(7) : '';
   if(!key.startsWith('tc_live_')) return null;
