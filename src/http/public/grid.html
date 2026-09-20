@@ -69,6 +69,8 @@
   const api = async (path, options) => { const r = await fetch(path, options); return r.ok ? r.json().catch(() => null) : null; };
   const fmtBrl = (v) => "R$ " + Number(v).toFixed(2).replace(".", ",");
   const chipOf = (row) => {
+    const candles = state.lastCandles.get(row.marketKey);
+    if (!candles || !candles.length) return ["SEM FEED", "off"];
     if (row.status !== "OPEN") return ["OFF", "off"];
     const exec = state.results.get(row.marketKey);
     if (exec && exec.open) return ["OPEN", "open"];
