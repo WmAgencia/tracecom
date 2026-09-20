@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-20T07:25:05.406Z",
+  "at": "2026-09-20T11:27:08.642Z",
   "baseUrl": "https://tracecom.consecom.com.br",
   "total": 15,
   "passed": 15,
@@ -26,8 +26,8 @@
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "pnlText": "+R$ 36,10",
-        "settledPnl": 36.1
+        "pnlText": "+R$ 103,30",
+        "settledPnl": 103.3
       }
     },
     {
@@ -36,11 +36,11 @@
       "evidence": "final-prod-boot.png",
       "detail": {
         "present": true,
-        "text": "RESULTADO DO DIA+R$ 36,1046 operações · 27W / 19L / 0DWR observado 58,7% · payout médio 83,4% (30 mercados abertos)HOJE+R$ 36,1046 operações · 27W / 19L / 0DSEMANA-R$ 643,13351 trades liquidadosMÊS-R$ 643,13351 trades liquidadosOPERAÇÕES46WINS27LOSSES19DRAWS0WR OBSERVADO58,7%PAYOUT MÉDIO83,4%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
+        "text": "RESULTADO DO DIA+R$ 103,3077 operações · 47W / 29L / 1DWR observado 61,8% · payout médio 83,4% (30 mercados abertos)HOJE+R$ 103,3077 operações · 47W / 29L / 1DSEMANA-R$ 575,93382 trades liquidadosMÊS-R$ 575,93382 trades liquidadosOPERAÇÕES77WINS47LOSSES29DRAWS1WR OBSERVADO61,8%PAYOUT MÉDIO83,4%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
         "model": {
-          "day": "+R$ 36,10",
-          "week": "-R$ 643,13",
-          "month": "-R$ 643,13"
+          "day": "+R$ 103,30",
+          "week": "-R$ 575,93",
+          "month": "-R$ 575,93"
         }
       }
     },
@@ -97,7 +97,7 @@
       "detail": {
         "totals": {
           "total": 53,
-          "enabled": 29,
+          "enabled": 53,
           "byType": {
             "BINARY": 53
           },
@@ -147,13 +147,13 @@
         "WS": "ONLINE",
         "MODO": "PRACTICE · ZERO REAL",
         "CONTA": "PRACTICE",
-        "SALDO": "USD 1024.30",
+        "SALDO": "USD 1091.50",
         "MCP": "SEM STATUS NO SNAPSHOT",
         "STAKE GLOBAL": "R$ 10.00 · teto R$ 100.00",
         "AUTO": "ON",
         "JIT/QUALITY": "ATIVO",
         "REAL": "BLOQUEADO · ZERO REAL",
-        "TROCA DE CONTA": "NÃO SUPORTADA (PRACTICE ÚNICA)"
+        "TROCA DE CONTA": "FEITA NA IQ OPTION (TRAINING ⇄ REGULAR) · sistema só espelha"
       }
     },
     {
@@ -161,7 +161,7 @@
       "pass": true,
       "evidence": "final-prod-panel.png",
       "detail": {
-        "marketKey": "EURGBP:OTC",
+        "marketKey": "EURUSD:OTC",
         "blocks": [
           "estado",
           "performance",

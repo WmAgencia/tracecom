@@ -31,7 +31,7 @@ export const REAL_ACCOUNT_CONTEXT_VERSION = "real-account-context-v1";
 /** Allowlist REAL congelada. Nenhuma estrategia experimental entra aqui por existir. */
 export const REAL_STRATEGY_ALLOWLIST = Object.freeze({
   version: "real-strategy-allowlist-v1",
-  allowed: Object.freeze(["PROFESSIONAL_BRAIN_G2"]),
+  allowed: Object.freeze(["PROFESSIONAL_BRAIN_G2", "RSI_REVERSAL_STRICT_V2", "RSI_EXTREME_PULLBACK_V2"]),
   shadowOnly: Object.freeze([
     "SCENARIO_ENGINE_V3_FROZEN",
     "AGENT_V4",

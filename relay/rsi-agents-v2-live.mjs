@@ -27,7 +27,7 @@ export const RSI_AGENTS_V2_LIVE_POLICY = Object.freeze({
   strategyVersion: "v2-live",
   practiceOnly: true,
   realLocked: true,
-  stakeBrl: 10,
+  stakeBrl: Number(process.env.RSI_V2_STAKE_BRL) > 0 ? Number(process.env.RSI_V2_STAKE_BRL) : 10,
   instruments: ["BINARY"],
   finalWindowMs: 5000,
   minimumSafeMarginMs: 3000,
