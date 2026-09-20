@@ -32,6 +32,9 @@ export const RSI_AGENTS_V2_LIVE_POLICY = Object.freeze({
   finalWindowMs: 5000,
   minimumSafeMarginMs: 3000,
   turbCutoffMs: 30000,
+  // (3) Janela infra: piso da margem de seguranca reduzido 3000->1500ms (ack p95 medido ~0,8s),
+  // alargando a janela util de entrada sem permitir ordem depois do cutoff. Nao altera a V2.
+  minimumSafeMarginMs: 1500,
   // GATE DE ELEGIBILIDADE DE ENTRADA (infra/execucao; nao altera o core V2 congelado):
   // a ordem so pode sair se o RSI AINDA estiver perto do extremo no momento da entrada
   // (BUY: <= buyMax; SELL: >= sellMin). Bollinger/DMI/ADX continuam sendo a confirmacao V2.
@@ -147,8 +150,22 @@ export class RsiAgentsV2Live {
     };
   }
 
-  /** Gate de entrada: o RSI precisa estar perto do extremo no instante da ordem (infra). */
-  #entryRsiEligible({ indicators, direction }) {
+  /**
+   * (3) Janela de entrada V2-live: mesma semantica de entryWindow, com piso de margem 1500ms
+   * (infra/execucao; cutoff e opens inalterados; nunca apos o cutoff).
+   */
+  #entryWindowV2Live({ targetExpiryAt, latency = {} } = {}) {
+    const expiry = num(targetExpiryAt);
+    if (expiry === null) return null;
+    const rawMargin = (num(latency.ackP95Ms) ?? 0) + (num(latency.persistP95Ms) ?? 0) + (num(latency.decisionMs) ?? 30) + (num(latency.jitterMs) ?? 300) + (num(latency.bufferMs) ?? 150);
+    const margin = Math.max(RSI_AGENTS_V2_LIVE_POLICY.minimumSafeMarginMs, Math.min(3000, Math.round(rawMargin)));
+    const cutoff = expiry - RSI_AGENTS_V2_LIVE_POLICY.turbCutoffMs;
+    const opens = cutoff - RSI_AGENTS_V2_LIVE_POLICY.finalWindowMs;
+    const closes = cutoff - margin;
+    return { purchaseCutoffAt: cutoff, entryWindowOpensAt: opens, entryWindowClosesAt: closes, safeMarginMs: margin, windowMs: closes - opens };
+  }
+
+  /** Gate de entrada: o RSI precisa estar perto do extremo no instante da ordem (infra). */  #entryRsiEligible({ indicators, direction }) {
     if (direction !== "BUY" && direction !== "SELL") return { ok: false, reason: "SEM_DIRECAO" };
     const rsi = num(indicators?.rsi);
     if (rsi === null) return { ok: false, reason: "RSI_UNAVAILABLE" };
@@ -272,7 +289,7 @@ export class RsiAgentsV2Live {
     if (update.event === "CANDIDATE_ENDED_NORMALIZED") this.counters.normalized += 1;
 
     const isBinary = type === "BINARY";
-    const window = isBinary && targetExpiryAt ? entryWindow({ targetExpiryAt, safeMarginMs: effectiveSafeMarginMs(latency) }) : null;
+    const window = isBinary && targetExpiryAt ? this.#entryWindowV2Live({ targetExpiryAt, latency }) : null;
     const watchRecord = this.#watchTouch({ marketKey, instrumentType: type, at, episode, targetExpiryAt, window, event: update.event });
     const decision = this.#coreDecision({ marketKey, indicators, episode });
     const projection = decision.cushion?.projection ?? null;

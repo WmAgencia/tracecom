@@ -105,6 +105,19 @@ describe("V2 LIVE — Strategy Core original + infra moderna", () => {
     expect(out.entryRsiOk).toBe(false);
   });
 
+  it("(3) janela infra 1500ms: aprova e envia em T-32s (que era MISSED com margem 3000)", async () => {
+    const runtime = fakeRuntime();
+    const snap = ind({ rsi: 72, rsiSlope: -1.2, bollinger: { ...ind().bollinger, position: 0.88, close: 1.19, touchUpper: true }, dmi: { plusDI: 33, minusDI: 21, spread: 12, plusSlope: 0.5, minusSlope: -0.4 }, adx: { value: 30, slope: 0.7 }, shortHorizonDirection: "BULLISH", shortMomentum: 0.7 });
+    const accepted = { strategy: STRICT_V2_ID, direction: "SELL", decision: "SELL", accepted: true, status: "STRICT_CONFIRMED", reason: null };
+    const episode = { direction: "SELL", candidateAt: NOW - 60_000, candidateRsi: 72, candidatePrice: 1.19, touchedUpper: true };
+    const built = await build({ runtime, skillsOverride: { evaluateIndicatorsV2: () => snap, updateEpisodeV2: () => ({ episode, event: "CANDIDATE_CONTINUED" }), evaluateV2: () => accepted } });
+    await built.runner.observeMarket({ marketKey: KEY, instrumentType: "BINARY", candles: [candle(T - 60_000)], targetExpiryAt: T, payout: 87, now: T - 60_000 });
+    const out = await built.runner.observeMarket({ marketKey: KEY, instrumentType: "BINARY", candles: [candle(T - 35_000)], targetExpiryAt: T, payout: 87, now: T - 32_000 });
+    expect(runtime.calls).toHaveLength(1);
+    expect(runtime.calls[0].direction).toBe("SELL");
+    expect(out.decision).toBe("SELL");
+  });
+
   it("prova positiva do caminho de ordem: aceitacao na janela final -> submitAgentV2LiveOrder + FINAL_EVALUATION", async () => {
     const runtime = fakeRuntime();
     const pool = fakePool();

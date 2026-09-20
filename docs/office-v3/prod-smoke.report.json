@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-20T05:34:50.934Z",
+  "at": "2026-09-20T07:25:05.406Z",
   "baseUrl": "https://tracecom.consecom.com.br",
   "total": 15,
   "passed": 15,
@@ -26,8 +26,8 @@
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "pnlText": "−R$ 9,40",
-        "settledPnl": -9.4
+        "pnlText": "+R$ 36,10",
+        "settledPnl": 36.1
       }
     },
     {
@@ -36,11 +36,11 @@
       "evidence": "final-prod-boot.png",
       "detail": {
         "present": true,
-        "text": "RESULTADO DO DIA-R$ 9,4034 operações · 18W / 16L / 0DWR observado 52,9% · payout médio 83,4% (30 mercados abertos)HOJE-R$ 9,4034 operações · 18W / 16L / 0DSEMANA-R$ 688,63339 trades liquidadosMÊS-R$ 688,63339 trades liquidadosOPERAÇÕES34WINS18LOSSES16DRAWS0WR OBSERVADO52,9%PAYOUT MÉDIO83,4%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
+        "text": "RESULTADO DO DIA+R$ 36,1046 operações · 27W / 19L / 0DWR observado 58,7% · payout médio 83,4% (30 mercados abertos)HOJE+R$ 36,1046 operações · 27W / 19L / 0DSEMANA-R$ 643,13351 trades liquidadosMÊS-R$ 643,13351 trades liquidadosOPERAÇÕES46WINS27LOSSES19DRAWS0WR OBSERVADO58,7%PAYOUT MÉDIO83,4%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
         "model": {
-          "day": "-R$ 9,40",
-          "week": "-R$ 688,63",
-          "month": "-R$ 688,63"
+          "day": "+R$ 36,10",
+          "week": "-R$ 643,13",
+          "month": "-R$ 643,13"
         }
       }
     },
@@ -59,7 +59,8 @@
       "detail": {
         "v2Routing": "RSI_V2_ONLY",
         "deskStrategies": [
-          "RSI_REVERSAL_STRICT_V2"
+          "RSI_REVERSAL_STRICT_V2",
+          "RSI_EXTREME_PULLBACK_V2"
         ],
         "desksWithTag": 29,
         "v4": "RSI_V4_ONLY"
@@ -126,7 +127,7 @@
       "evidence": "final-prod-logs.png",
       "detail": {
         "columns": 11,
-        "rows": 100
+        "rows": 200
       }
     },
     {
@@ -146,7 +147,7 @@
         "WS": "ONLINE",
         "MODO": "PRACTICE · ZERO REAL",
         "CONTA": "PRACTICE",
-        "SALDO": "USD 990.60",
+        "SALDO": "USD 1024.30",
         "MCP": "SEM STATUS NO SNAPSHOT",
         "STAKE GLOBAL": "R$ 10.00 · teto R$ 100.00",
         "AUTO": "ON",
@@ -160,7 +161,7 @@
       "pass": true,
       "evidence": "final-prod-panel.png",
       "detail": {
-        "marketKey": "EURUSD:OTC",
+        "marketKey": "EURGBP:OTC",
         "blocks": [
           "estado",
           "performance",

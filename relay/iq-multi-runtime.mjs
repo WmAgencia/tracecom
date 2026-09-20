@@ -1425,10 +1425,44 @@ export class IqMultiRuntime extends EventEmitter {
       candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 },
     });
     if (promise && typeof promise.then === "function") promise.then((state) => this.#emitRsiAgentDecision(ctx, state, now)).catch(() => undefined);
+    this.#scheduleV2LiveTicks();
     return promise;
   }
 
-  /** Registry de instrumentos (MESAS) — fonte do universo executavel V4. Nunca inventa instrumento. */
+  /**
+   * (1) TICK-WATCH do PRIORITY_FINAL_WATCH: enquanto o mercado tem candidate vivo e estamos na regiao
+   * T-45s..cutoff da expiracao alvo, reavalia a cada ~1s (nao so por candle), aumentando a chance de
+   * pegar a aprovacao V2 dentro da janela. Mesmas regras V2; muda apenas QUANDO avaliamos.
+   */
+  #scheduleV2LiveTicks() {
+    if (this.rsiAgentsV2LiveTickTimer) return;
+    const tick = () => {
+      this.rsiAgentsV2LiveTickTimer = setTimeout(() => {
+        this.#safe(() => this.#observeRsiAgentsV2LiveTicks());
+        tick();
+      }, 1000);
+      if (this.rsiAgentsV2LiveTickTimer?.unref) this.rsiAgentsV2LiveTickTimer.unref();
+    };
+    tick();
+  }
+
+  #observeRsiAgentsV2LiveTicks() {
+    if (!this.rsiAgentsV2Live?.enabled) return;
+    const now = this.now();
+    for (const ctx of this.markets.values()) {
+      if (ctx.enabled !== true || ctx.availability !== "OPEN") continue;
+      if (!this.rsiAgentsV2Live.hasActiveCandidate(ctx.marketKey)) continue;
+      const serverNow = this.client?.serverNow?.() ?? now;
+      const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+      if (now < targetExpiryAt - 45_000 || now > targetExpiryAt - 30_000) continue;
+      const list = this.#candleList(ctx);
+      if (list.length < 3) continue;
+      void this.rsiAgentsV2Live.observeMarket({
+        marketKey: ctx.marketKey, instrumentType: "BINARY", durationSeconds: 60, marketType: ctx.marketType,
+        candles: list, targetExpiryAt, payout: ctx.payout, now, latency: {},
+      });
+    }
+  }
   async refreshInstrumentRegistry({ force = false } = {}) {
     if (!this.pool?.query || !this.rsiAgentsV4) return null;
     if (!force && this.now() - (this.lastInstrumentSync ?? 0) < 15_000) return null;
