@@ -118,6 +118,22 @@ describe("HARDENING — boot/restart com DB lento", () => {
     runtime.stop("TEST");
   });
 
+  it("MESAS responde do registry em MEMORIA (sem SELECT; nao compete com o pool)", async () => {
+    const pool = fakePool();
+    const { runtime } = buildRuntime(pool);
+    runtime.rsiAgentsV4.assignUniverse([
+      { marketKey: KEY, instrumentType: "BINARY", durationSeconds: 60, marketType: "OTC", canonical: "EURUSD", enabled: true, availability: "OPEN", activeId: 76, payout: 85 },
+      { marketKey: "AUDJPY:OTC", instrumentType: "BINARY", durationSeconds: 60, marketType: "OTC", canonical: "AUDJPY", enabled: false, availability: "OPEN", activeId: 85, payout: 84 },
+    ]);
+    pool.calls.length = 0;
+    const list = await runtime.mesasList();
+    expect(list.source).toBe("IN_MEMORY_REGISTRY");
+    expect(list.totals).toMatchObject({ total: 2, enabled: 1 });
+    expect(list.rows.find((row) => row.marketKey === KEY)?.enabled).toBe(true);
+    expect(pool.calls.some((call) => call.text.includes("FROM iq_rsi_instruments"))).toBe(false);
+    runtime.stop("TEST");
+  });
+
   it("universo vazio com mercado legado ativo dispara rsi.v4.universe_empty", async () => {
     const pool = fakePool({
       configRow: configRow(),

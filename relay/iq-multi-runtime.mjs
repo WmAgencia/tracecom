@@ -1460,29 +1460,45 @@ export class IqMultiRuntime extends EventEmitter {
     }
   }
 
-  /** Lista para o MESAS (registry + disponibilidade viva). Cache curto + single-flight (nao compete com o runtime). */
+  /** Lista para o MESAS (registry + disponibilidade viva). Em memoria quando possivel
+   *  (o registry e sincronizado do banco a cada 15s e apos cada mutacao); DB apenas no cold start. */
   async mesasList() {
     if (!this.pool?.query) return { rows: [], totals: { total: 0, enabled: 0, byType: {}, byMarketType: {} } };
+    const inMemory = this.rsiAgentsV4 ? [...this.rsiAgentsV4.instruments.values()] : [];
+    if (inMemory.length > 0) {
+      const view = inMemory.map((row) => this.#mesasView(row));
+      const byType = {}; const byMarketType = {};
+      for (const row of view) { byType[row.category] = (byType[row.category] ?? 0) + 1; byMarketType[row.marketType] = (byMarketType[row.marketType] ?? 0) + 1; }
+      return { rows: view, totals: { total: view.length, enabled: view.filter((row) => row.enabled).length, byType, byMarketType }, source: "IN_MEMORY_REGISTRY", syncedAt: this.rsiAgentsV4.universe?.at ?? null };
+    }
     return this.cachedRead("mesas", 10_000, async () => {
     const rows = (await this.pool.query("SELECT market_key, instrument_type, duration_seconds, market_type, canonical, active_id, enabled, status, payout, source, updated_at FROM iq_rsi_instruments ORDER BY instrument_type, market_type, market_key")).rows ?? [];
-    const view = rows.map((row) => {
-      const ctx = this.markets.get(row.market_key);
-      const canonical = ctx?.canonical ?? row.canonical ?? String(row.market_key).split(":")[0];
-      const isCrypto = /BTC|ETH|LTC|XRP|ADA|SOL|DOGE/.test(String(canonical).toUpperCase());
-      return {
-        marketKey: row.market_key, instrumentType: row.instrument_type, durationSeconds: toNum(row.duration_seconds) ?? 60,
-        marketType: ctx?.marketType ?? row.market_type ?? (String(row.market_key).includes(":OTC") ? "OTC" : "NORMAL"),
-        category: row.instrument_type === "BINARY" ? "BINARY" : row.instrument_type === "BLITZ_45S" ? "BLITZ" : "OTHER",
-        assetClass: isCrypto ? "CRYPTO" : "FOREX", canonical,
-        payout: toNum(ctx?.payout ?? row.payout), status: ctx?.availability ?? row.status ?? "UNKNOWN",
-        liveAvailability: ctx?.availability ?? null, activeId: toNum(ctx?.activeId ?? row.active_id),
-        enabled: row.enabled === true, source: row.source, updatedAt: row.updated_at,
-      };
-    });
+    const view = rows.map((row) => this.#mesasView(row));
     const byType = {}; const byMarketType = {};
     for (const row of view) { byType[row.category] = (byType[row.category] ?? 0) + 1; byMarketType[row.marketType] = (byMarketType[row.marketType] ?? 0) + 1; }
     return { rows: view, totals: { total: view.length, enabled: view.filter((row) => row.enabled).length, byType, byMarketType } };
     });
+  }
+
+  /** View publica do MESAS (aceita linha do banco snake_case ou do registry em memoria). */
+  #mesasView(row = {}) {
+    const marketKey = row.marketKey ?? row.market_key ?? null;
+    const ctx = marketKey ? this.markets.get(marketKey) : null;
+    const canonical = ctx?.canonical ?? row.canonical ?? String(marketKey ?? "").split(":")[0];
+    const isCrypto = /BTC|ETH|LTC|XRP|ADA|SOL|DOGE/.test(String(canonical).toUpperCase());
+    const instrumentType = String(row.instrumentType ?? row.instrument_type ?? "BINARY");
+    return {
+      marketKey, instrumentType, durationSeconds: toNum(row.durationSeconds ?? row.duration_seconds) ?? 60,
+      marketType: ctx?.marketType ?? row.marketType ?? row.market_type ?? (String(marketKey ?? "").includes(":OTC") ? "OTC" : "NORMAL"),
+      category: instrumentType === "BINARY" ? "BINARY" : instrumentType === "BLITZ_45S" ? "BLITZ" : "OTHER",
+      assetClass: isCrypto ? "CRYPTO" : "FOREX", canonical,
+      payout: toNum(ctx?.payout ?? row.payout), status: ctx?.availability ?? row.status ?? "UNKNOWN",
+      liveAvailability: ctx?.availability ?? row.liveAvailability ?? null,
+      activeId: toNum(ctx?.activeId ?? row.activeId ?? row.active_id),
+      enabled: row.enabled === true,
+      source: row.source ?? "IN_MEMORY_REGISTRY",
+      updatedAt: row.updatedAt ?? row.updated_at ?? (this.rsiAgentsV4?.universe?.at ? new Date(this.rsiAgentsV4.universe.at).toISOString() : null),
+    };
   }
 
   async setInstrumentEnabled({ marketKey, instrumentType, durationSeconds = 60, enabled, meta = null }) {
