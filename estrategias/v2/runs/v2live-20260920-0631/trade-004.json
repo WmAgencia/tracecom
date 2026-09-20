@@ -1,0 +1,135 @@
+{
+  "n": 4,
+  "market": "GBPUSD:OTC",
+  "strategy": "RSI_REVERSAL_STRICT_V2",
+  "direction": "SELL",
+  "requestedAt": "2026-09-20 06:34:26Z",
+  "candidateAt": "2026-09-20 06:33:25Z",
+  "submitAt": "2026-09-20 06:34:26Z",
+  "expiryAt": "2026-09-20 06:35:00Z",
+  "candidateToEntryMs": 60644,
+  "candidateRsi": 73.3493,
+  "rsiAtEntry": 52.3448,
+  "rsiTrajectory": "LEAVING_EXTREME",
+  "bollingerPosition": 0.4968,
+  "touchLower": false,
+  "touchUpper": false,
+  "rejectionLowerNow": null,
+  "rejectionUpperNow": null,
+  "plusDI": 23.0009,
+  "minusDI": 29.0895,
+  "diSpread": -6.0886,
+  "plusSlope": -5.1849,
+  "minusSlope": 6.2668,
+  "adx": 20.2152,
+  "adxSlope": -2.7089,
+  "shortDirection": "BEARISH",
+  "expectedCushion": null,
+  "noiseHorizon": null,
+  "entryReason": [
+    "V2_OK_RSI_EXTREME_PULLBACK_V2"
+  ],
+  "v2Status": "PULLBACK_CONFIRMED",
+  "counterEvidence": {
+    "hard": [],
+    "soft": []
+  },
+  "evaluationsCount": 13,
+  "evaluationsTail": [
+    {
+      "at": 1789886041413,
+      "adx": 23.8994,
+      "rsi": 67.0332,
+      "price": 1.346735,
+      "plusDI": 28.5045,
+      "cushion": null,
+      "minusDI": 19.337,
+      "decision": "WAIT",
+      "position": 0.8818,
+      "reasonCodes": [
+        "PULLBACK_WAITING_CONFIRMATION"
+      ]
+    },
+    {
+      "at": 1789886045416,
+      "adx": 23.8787,
+      "rsi": 64.8714,
+      "price": 1.346695,
+      "plusDI": 29.796,
+      "cushion": null,
+      "minusDI": 18.4138,
+      "decision": "SELL",
+      "position": 0.8077,
+      "reasonCodes": []
+    },
+    {
+      "at": 1789886050118,
+      "adx": 22.9241,
+      "rsi": 60.1695,
+      "price": 1.346605,
+      "plusDI": 28.1858,
+      "cushion": null,
+      "minusDI": 22.8228,
+      "decision": "SELL",
+      "position": 0.6997,
+      "reasonCodes": []
+    },
+    {
+      "at": 1789886056082,
+      "adx": 22.0377,
+      "rsi": 62.1396,
+      "price": 1.346665,
+      "plusDI": 26.9319,
+      "cushion": null,
+      "minusDI": 21.8075,
+      "decision": "WAIT",
+      "position": 0.7332,
+      "reasonCodes": [
+        "PULLBACK_WAITING_CONFIRMATION"
+      ]
+    },
+    {
+      "at": 1789886061091,
+      "adx": 20.8711,
+      "rsi": 52.7698,
+      "price": 1.346465,
+      "plusDI": 23.9233,
+      "cushion": null,
+      "minusDI": 26.8188,
+      "decision": "SELL",
+      "position": 0.5228,
+      "reasonCodes": []
+    },
+    {
+      "at": 1789886066062,
+      "adx": 20.2152,
+      "rsi": 52.3448,
+      "price": 1.346455,
+      "plusDI": 23.0009,
+      "cushion": null,
+      "minusDI": 29.0895,
+      "decision": "SELL",
+      "position": 0.4968,
+      "reasonCodes": []
+    }
+  ],
+  "timing": {
+    "finalEvaluationAt": "2026-09-20 06:34:26Z",
+    "leadMs": 938,
+    "cutoffLeadMs": 3644,
+    "maxGapMs": 6298
+  },
+  "payout": 87,
+  "stake": 10,
+  "settlement": {
+    "result": "WIN",
+    "profit": 8.7,
+    "qualityClass": null,
+    "actualDisplacement": null,
+    "actualCushion": null
+  },
+  "tags": [
+    "THIN_WIN"
+  ],
+  "hasEntrySnapshot": true
+}

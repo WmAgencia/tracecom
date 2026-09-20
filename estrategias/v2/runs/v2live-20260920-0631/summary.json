@@ -1,0 +1,14 @@
+{
+  "schema": "v2live-report-v1",
+  "runId": "v2live-20260920-0631",
+  "generatedAtUtc": "2026-09-20T06:36:45.590Z",
+  "totalAvailable": 5,
+  "sampleSize": 5,
+  "wins": 4,
+  "losses": 0,
+  "draws": 1,
+  "wr": 100,
+  "averagePayout": 85.4,
+  "pnl": 34.5,
+  "note": "sinal bruto PRACTICE; amostra pequena; sem claim de edge."
+}

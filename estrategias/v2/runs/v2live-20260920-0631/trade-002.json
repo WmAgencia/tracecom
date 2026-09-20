@@ -1,0 +1,133 @@
+{
+  "n": 2,
+  "market": "USDMXN:OTC",
+  "strategy": "RSI_REVERSAL_STRICT_V2",
+  "direction": "SELL",
+  "requestedAt": "2026-09-20 06:33:26Z",
+  "candidateAt": "2026-09-20 06:30:05Z",
+  "submitAt": "2026-09-20 06:33:26Z",
+  "expiryAt": "2026-09-20 06:34:00Z",
+  "candidateToEntryMs": 200879,
+  "candidateRsi": 70.6804,
+  "rsiAtEntry": 59.6527,
+  "rsiTrajectory": "LEAVING_EXTREME",
+  "bollingerPosition": 0.5687,
+  "touchLower": false,
+  "touchUpper": false,
+  "rejectionLowerNow": null,
+  "rejectionUpperNow": null,
+  "plusDI": 38.1007,
+  "minusDI": 18.3201,
+  "diSpread": 19.7806,
+  "plusSlope": -3.1663,
+  "minusSlope": -2.1018,
+  "adx": 53.5123,
+  "adxSlope": -5.0837,
+  "shortDirection": "BULLISH",
+  "expectedCushion": null,
+  "noiseHorizon": null,
+  "entryReason": [
+    "V2_OK_RSI_REVERSAL_STRICT_V2"
+  ],
+  "v2Status": "STRICT_CONFIRMED",
+  "counterEvidence": {
+    "hard": [],
+    "soft": []
+  },
+  "evaluationsCount": 43,
+  "evaluationsTail": [
+    {
+      "at": 1789885991416,
+      "adx": 62.1383,
+      "rsi": 73.9984,
+      "price": 17.315945,
+      "plusDI": 51.9336,
+      "cushion": null,
+      "minusDI": 9.6299,
+      "decision": "WAIT",
+      "position": 0.8226,
+      "reasonCodes": [
+        "STRICT_WAITING_CONFIRMATION"
+      ]
+    },
+    {
+      "at": 1789885996118,
+      "adx": 60.5041,
+      "rsi": 61.9096,
+      "price": 17.313865,
+      "plusDI": 45.2697,
+      "cushion": null,
+      "minusDI": 19.7453,
+      "decision": "SELL",
+      "position": 0.6355,
+      "reasonCodes": []
+    },
+    {
+      "at": 1789886000316,
+      "adx": 58.596,
+      "rsi": 64.9075,
+      "price": 17.314875,
+      "plusDI": 41.267,
+      "cushion": null,
+      "minusDI": 20.4219,
+      "decision": "SELL",
+      "position": 0.7084,
+      "reasonCodes": []
+    },
+    {
+      "at": 1789886006051,
+      "adx": 56.784,
+      "rsi": 57.8661,
+      "price": 17.313425,
+      "plusDI": 37.7016,
+      "cushion": null,
+      "minusDI": 18.8958,
+      "decision": "SELL",
+      "position": 0.5457,
+      "reasonCodes": []
+    },
+    {
+      "at": 1789886011075,
+      "adx": 54.9318,
+      "rsi": 57.1296,
+      "price": 17.313265,
+      "plusDI": 37.2238,
+      "cushion": null,
+      "minusDI": 19.67,
+      "decision": "SELL",
+      "position": 0.5055,
+      "reasonCodes": []
+    },
+    {
+      "at": 1789886016062,
+      "adx": 53.5123,
+      "rsi": 59.6527,
+      "price": 17.313995,
+      "plusDI": 38.1007,
+      "cushion": null,
+      "minusDI": 18.3201,
+      "decision": "SELL",
+      "position": 0.5687,
+      "reasonCodes": []
+    }
+  ],
+  "timing": {
+    "finalEvaluationAt": "2026-09-20 06:33:26Z",
+    "leadMs": 949,
+    "cutoffLeadMs": 3592,
+    "maxGapMs": 6753
+  },
+  "payout": 82,
+  "stake": 10,
+  "settlement": {
+    "result": "WIN",
+    "profit": 8.2,
+    "qualityClass": null,
+    "actualDisplacement": null,
+    "actualCushion": null
+  },
+  "tags": [
+    "THIN_WIN"
+  ],
+  "hasEntrySnapshot": true
+}

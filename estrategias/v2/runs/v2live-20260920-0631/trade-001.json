@@ -1,0 +1,141 @@
+{
+  "n": 1,
+  "market": "EURUSD:OTC",
+  "strategy": "RSI_REVERSAL_STRICT_V2",
+  "direction": "BUY",
+  "requestedAt": "2026-09-20 06:31:25Z",
+  "candidateAt": "2026-09-20 06:30:16Z",
+  "submitAt": "2026-09-20 06:31:25Z",
+  "expiryAt": "2026-09-20 06:32:00Z",
+  "candidateToEntryMs": 69797,
+  "candidateRsi": 27.3025,
+  "rsiAtEntry": 31.9995,
+  "rsiTrajectory": "LEAVING_EXTREME",
+  "bollingerPosition": 0.1953,
+  "touchLower": false,
+  "touchUpper": false,
+  "rejectionLowerNow": null,
+  "rejectionUpperNow": null,
+  "plusDI": 12.9681,
+  "minusDI": 41.8519,
+  "diSpread": -28.8838,
+  "plusSlope": 3.6309,
+  "minusSlope": -8.5059,
+  "adx": 44.0699,
+  "adxSlope": 3.3946,
+  "shortDirection": "BULLISH",
+  "expectedCushion": null,
+  "noiseHorizon": null,
+  "entryReason": [
+    "V2_OK_RSI_EXTREME_PULLBACK_V2"
+  ],
+  "v2Status": "PULLBACK_CONFIRMED",
+  "counterEvidence": {
+    "hard": [],
+    "soft": []
+  },
+  "evaluationsCount": 15,
+  "evaluationsTail": [
+    {
+      "at": 1789885860113,
+      "adx": 36.5522,
+      "rsi": 31.6439,
+      "price": 1.143735,
+      "plusDI": 12.4409,
+      "cushion": null,
+      "minusDI": 44.5521,
+      "decision": "WAIT",
+      "position": 0.2043,
+      "reasonCodes": [
+        "PULLBACK_BLOCKED_STRONG_TREND"
+      ]
+    },
+    {
+      "at": 1789885866097,
+      "adx": 38.5182,
+      "rsi": 24.8557,
+      "price": 1.143305,
+      "plusDI": 10.4074,
+      "cushion": null,
+      "minusDI": 47.5333,
+      "decision": "WAIT",
+      "position": 0.0488,
+      "reasonCodes": [
+        "PULLBACK_BLOCKED_STRONG_TREND"
+      ]
+    },
+    {
+      "at": 1789885871215,
+      "adx": 40.6753,
+      "rsi": 22.3357,
+      "price": 1.143095,
+      "plusDI": 9.3372,
+      "cushion": null,
+      "minusDI": 50.3578,
+      "decision": "WAIT",
+      "position": 0.0023,
+      "reasonCodes": [
+        "PULLBACK_BLOCKED_STRONG_TREND"
+      ]
+    },
+    {
+      "at": 1789885876315,
+      "adx": 42.6929,
+      "rsi": 27.9544,
+      "price": 1.143245,
+      "plusDI": 8.7815,
+      "cushion": null,
+      "minusDI": 47.7326,
+      "decision": "WAIT",
+      "position": 0.1108,
+      "reasonCodes": [
+        "PULLBACK_WAITING_CONFIRMATION"
+      ]
+    },
+    {
+      "at": 1789885881212,
+      "adx": 43.4069,
+      "rsi": 33.1619,
+      "price": 1.143395,
+      "plusDI": 13.6932,
+      "cushion": null,
+      "minusDI": 44.1921,
+      "decision": "WAIT",
+      "position": 0.2088,
+      "reasonCodes": [
+        "PULLBACK_WAITING_CONFIRMATION"
+      ]
+    },
+    {
+      "at": 1789885885617,
+      "adx": 44.0699,
+      "rsi": 31.9995,
+      "price": 1.143325,
+      "plusDI": 12.9681,
+      "cushion": null,
+      "minusDI": 41.8519,
+      "decision": "BUY",
+      "position": 0.1953,
+      "reasonCodes": []
+    }
+  ],
+  "timing": {
+    "finalEvaluationAt": "2026-09-20 06:31:25Z",
+    "leadMs": 1383,
+    "cutoffLeadMs": 4130,
+    "maxGapMs": 6009
+  },
+  "payout": 89,
+  "stake": 10,
+  "settlement": {
+    "result": "WIN",
+    "profit": 8.899999999999999,
+    "qualityClass": null,
+    "actualDisplacement": null,
+    "actualCushion": null
+  },
+  "tags": [
+    "THIN_WIN"
+  ],
+  "hasEntrySnapshot": true
+}

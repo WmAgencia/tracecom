@@ -1,0 +1,137 @@
+{
+  "n": 3,
+  "market": "AUDCAD:OTC",
+  "strategy": "RSI_REVERSAL_STRICT_V2",
+  "direction": "SELL",
+  "requestedAt": "2026-09-20 06:33:26Z",
+  "candidateAt": "2026-09-20 06:31:01Z",
+  "submitAt": "2026-09-20 06:33:26Z",
+  "expiryAt": "2026-09-20 06:34:00Z",
+  "candidateToEntryMs": 145338,
+  "candidateRsi": 71.2558,
+  "rsiAtEntry": 56.9607,
+  "rsiTrajectory": "LEAVING_EXTREME",
+  "bollingerPosition": 0.4394,
+  "touchLower": false,
+  "touchUpper": false,
+  "rejectionLowerNow": null,
+  "rejectionUpperNow": null,
+  "plusDI": 31.5159,
+  "minusDI": 17.772,
+  "diSpread": 13.7439,
+  "plusSlope": -1.8743,
+  "minusSlope": 0.0585,
+  "adx": 37.5539,
+  "adxSlope": -2.5314,
+  "shortDirection": "BULLISH",
+  "expectedCushion": null,
+  "noiseHorizon": null,
+  "entryReason": [
+    "V2_OK_RSI_REVERSAL_STRICT_V2"
+  ],
+  "v2Status": "STRICT_CONFIRMED",
+  "counterEvidence": {
+    "hard": [],
+    "soft": []
+  },
+  "evaluationsCount": 30,
+  "evaluationsTail": [
+    {
+      "at": 1789885980716,
+      "adx": 42.3143,
+      "rsi": 53.3122,
+      "price": 0.997655,
+      "plusDI": 30.1704,
+      "cushion": null,
+      "minusDI": 19.5992,
+      "decision": "SELL",
+      "position": 0.4288,
+      "reasonCodes": []
+    },
+    {
+      "at": 1789885985120,
+      "adx": 40.809,
+      "rsi": 55.0471,
+      "price": 0.997675,
+      "plusDI": 29.4299,
+      "cushion": null,
+      "minusDI": 19.1182,
+      "decision": "SELL",
+      "position": 0.4541,
+      "reasonCodes": []
+    },
+    {
+      "at": 1789885990513,
+      "adx": 40.0853,
+      "rsi": 58.3782,
+      "price": 0.997715,
+      "plusDI": 33.3902,
+      "cushion": null,
+      "minusDI": 17.7136,
+      "decision": "WAIT",
+      "position": 0.554,
+      "reasonCodes": [
+        "STRICT_WAITING_CONFIRMATION"
+      ]
+    },
+    {
+      "at": 1789885995216,
+      "adx": 39.4132,
+      "rsi": 55.0815,
+      "price": 0.997685,
+      "plusDI": 31.7172,
+      "cushion": null,
+      "minusDI": 16.826,
+      "decision": "WAIT",
+      "position": 0.3875,
+      "reasonCodes": [
+        "STRICT_WAITING_CONFIRMATION"
+      ]
+    },
+    {
+      "at": 1789886001084,
+      "adx": 38.2977,
+      "rsi": 55.0815,
+      "price": 0.997685,
+      "plusDI": 30.4836,
+      "cushion": null,
+      "minusDI": 18.7646,
+      "decision": "WAIT",
+      "position": 0.3633,
+      "reasonCodes": [
+        "STRICT_WAITING_CONFIRMATION"
+      ]
+    },
+    {
+      "at": 1789886006085,
+      "adx": 37.5539,
+      "rsi": 56.9607,
+      "price": 0.997705,
+      "plusDI": 31.5159,
+      "cushion": null,
+      "minusDI": 17.772,
+      "decision": "SELL",
+      "position": 0.4394,
+      "reasonCodes": []
+    }
+  ],
+  "timing": {
+    "finalEvaluationAt": "2026-09-20 06:33:26Z",
+    "leadMs": 915,
+    "cutoffLeadMs": 3567,
+    "maxGapMs": 6268
+  },
+  "payout": 87,
+  "stake": 10,
+  "settlement": {
+    "result": "WIN",
+    "profit": 8.7,
+    "qualityClass": null,
+    "actualDisplacement": null,
+    "actualCushion": null
+  },
+  "tags": [
+    "THIN_WIN"
+  ],
+  "hasEntrySnapshot": true
+}
