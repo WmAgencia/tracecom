@@ -1873,7 +1873,9 @@ export class IqMultiRuntime extends EventEmitter {
       const balanceId = Number(balance?.balance_id ?? balance?.id);
       if (!Number.isFinite(balanceId)) throw new IqWsError("MCP_BALANCE_UNAVAILABLE");
       const uiStake = Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : Number(this.stakeBrl ?? 1);
-      const amount = Number(stake) > 0 ? Number(stake) : uiStake;
+      const requestedAmount = Number(stake) > 0 ? Number(stake) : uiStake;
+      const BROKER_MIN_AMOUNT_BRL = 2;
+      const amount = Math.max(requestedAmount, BROKER_MIN_AMOUNT_BRL);
       const expirations = Array.isArray(asset.expirations) ? asset.expirations.map(Number).filter((v) => Number.isFinite(v)).sort((a, b) => a - b) : [];
       const nowSec = Math.floor(stamp / 1000);
       const expired = expirations.find((ts) => ts >= nowSec + 30) ?? (Math.ceil((nowSec + 30) / 60) * 60);
@@ -1884,12 +1886,12 @@ export class IqMultiRuntime extends EventEmitter {
       const positionId = trade?.position_id ?? trade?.id ?? trade?.position?.position_id ?? trade?.position?.id ?? trade?.data?.position_id ?? null;
       let verify = null;
       try { const positions = await mcp.listPositions(balanceId); const hist = await mcp.getTradeHistory({ limit: 5 }); verify = { positions: Array.isArray(positions) ? positions.length : null, history: Array.isArray(hist) ? hist.length : null, open: Array.isArray(positions) ? positions.slice(0, 2) : null }; } catch (error) { verify = { error: String(error?.message ?? error).slice(0, 120) }; }
-      const meta = { source: "agent-v2:" + (strategyId || "rsi-v2") + ":mcp-binary", accountContext: "REAL", mcp: true, assetId: asset.asset_id, entryMode, profitPercent: asset.profit_percent, expirationSize, expired, positionId, rawTrade: trade, verify };
+      const meta = { source: "agent-v2:" + (strategyId || "rsi-v2") + ":mcp-binary", accountContext: "REAL", mcp: true, assetId: asset.asset_id, entryMode, profitPercent: asset.profit_percent, expirationSize, expired, positionId, amountRequested: requestedAmount, brokerMinAmount: BROKER_MIN_AMOUNT_BRL, amountClamped: amount !== requestedAmount, rawTrade: trade, verify };
       const executionRowId = "mcp-binary-" + (positionId !== null ? String(positionId) : "null-" + stamp);
       if (this.pool?.query) await this.pool.query("INSERT INTO iq_executions(execution_id, requested_at, market_key, symbol, direction, stake, state, meta, broker_order_id, account_context, account_type, mode) VALUES($1, now(), $2, $3, $4, $5, 'ACKNOWLEDGED', $6::jsonb, $7, 'REAL', 'REAL', 'REAL')", [executionRowId, marketKey, String(marketKey).split(":")[0], direction, amount, JSON.stringify(meta), positionId !== null ? String(positionId) : null]).catch((error) => { this.#safe(() => this.log("MCP_BINARY_EXEC_INSERT_FAIL", String(error?.message ?? error).slice(0, 140))); });
       this.#emitEvent("order.mcp", { marketKey, assetId: asset.asset_id, amount, positionId, mode: "REAL", verify });
       if (positionId === null) throw new IqWsError("MCP_NO_POSITION_ID", JSON.stringify(trade ?? {}).slice(0, 200));
-      return { state: "ACKNOWLEDGED", disposition: "EXECUTED", brokerOrderId: positionId, executionId: executionRowId, stake: amount, stakeRequested: amount, effectiveStake: amount, mode: "REAL", instrumentType: "BINARY", durationSeconds: expirationSize, verify };
+      return { state: "ACKNOWLEDGED", disposition: "EXECUTED", brokerOrderId: positionId, executionId: executionRowId, stake: amount, stakeRequested: requestedAmount, effectiveStake: amount, stakeUsed: amount, mode: "REAL", instrumentType: "BINARY", durationSeconds: expirationSize, verify };
     }
     const registry = this.rsiAgentsV2Live?.instruments?.get?.(`${marketKey}|BINARY`) ?? null;
     if (!registry || registry.enabled !== true) throw new IqWsError("AGENT_ORDER_MARKET_DISABLED_BY_USER", `${marketKey}:BINARY`);
