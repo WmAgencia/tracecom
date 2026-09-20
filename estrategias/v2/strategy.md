@@ -1,7 +1,7 @@
 # V2 — strategy.md (resumo do código)
 
 > **ESTRATÉGIA CENTRAL** (designação do operador, 2026-09-20). Spec canônica completa em `SPEC.md`.
-> Regra de entrada do operador: RSI no extremo profundo (BUY<=25 / SELL>=75) + confirmação V2 + revalidação causal.
+> Regra do operador: candidatos somente a partir de RSI <=25 / >=75 (detecção); a entrada é autorizada apenas pela V2 (confirmação + revalidação causal).
 
 - Universo dividido 50/50 NORMAL+OTC com assignment persistido (sem troca silenciosa).
 - STRICT V2: exige reversão confirmada (RSI deixando extremo + Bollinger + DMI invertendo) SEM
