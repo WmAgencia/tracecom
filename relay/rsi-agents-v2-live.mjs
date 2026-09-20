@@ -117,8 +117,10 @@ export class RsiAgentsV2Live {
 
   /** V2 ORIGINAL 50/50 (mesma regra do rsi-agents-v2.computeFiftyFiftySplit). */
   #assignSkills() {
-    const enabled = [...this.assignments.values()].filter((row) => row.enabled === true).map((row) => row.marketKey).sort();
-    const split = computeFiftyFiftySplit(enabled);
+    const enabledRows = [...this.assignments.values()]
+      .filter((row) => row.enabled === true)
+      .map((row) => ({ marketKey: row.marketKey, marketType: row.marketType ?? (String(row.marketKey).includes(":OTC") ? "OTC" : "NORMAL") }));
+    const split = computeFiftyFiftySplit(enabledRows);
     const keyOf = (row) => (typeof row === "string" ? row : (row?.marketKey ?? row?.market_key ?? null));
     this.skillAssignments = new Map();
     for (const row of split.strict) { const key = keyOf(row); if (key) this.skillAssignments.set(key, STRICT_V2_ID); }
@@ -310,7 +312,7 @@ export class RsiAgentsV2Live {
         }
         this.#setState(state); void this.#persistState(state); return state;
       }
-      return this.#revalidateAndSubmit({ state, opportunity, opportunityId, episode, indicators, decision, window, marketKey, instrumentType: type, marketType, payout, at, watchRecord, entryMode: "NORMAL_T5", expiryAt: num(targetExpiryAt), durationSeconds: RSI_V4_POLICY.horizonSeconds });
+      return this.#revalidateAndSubmit({ state, opportunity, opportunityId, episode, indicators, decision, window, marketKey, instrumentType: type, marketType, payout, at, watchRecord, entryMode: "NORMAL_T5", expiryAt: num(targetExpiryAt), durationSeconds: 60 });
     }
 
     // BLITZ: entra imediatamente quando a confirmacao existir (expiry = entrada + duracao).
@@ -333,7 +335,7 @@ export class RsiAgentsV2Live {
 
   /** REVALIDATE (current state) + ENTER. A decisao V4 ja e current-state; aqui so confirmamos a ordem. */
   async #revalidateAndSubmit({ state, opportunity, opportunityId, episode, indicators, decision, window, marketKey, instrumentType, marketType, payout, at, watchRecord, entryMode, expiryAt, durationSeconds }) {
-    const recheck = this.skills.coreDecision({ indicators, episode });
+    const recheck = this.#coreDecision({ marketKey, indicators, episode });
     if (recheck.accepted !== true || recheck.direction !== episode.direction) {
       state.decision = "WAIT"; state.waitReason = "CANCELLED_REVALIDATION"; state.reason = `tese morreu na revalidacao: ${recheck.reason}`;
       this.counters.waits.CANCELLED_REVALIDATION = (this.counters.waits.CANCELLED_REVALIDATION ?? 0) + 1;

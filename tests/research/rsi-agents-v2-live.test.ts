@@ -40,7 +40,13 @@ const fakePool = () => {
 const build = async (options: any = {}) => {
   const pool = options.pool ?? fakePool();
   const runtime = options.runtime ?? fakeRuntime();
-  const runner = new RsiAgentsV2Live({ pool, runtime, now: () => options.now ?? NOW, enabled: true, skills: { evaluateIndicatorsV2: options.scriptIndicators ?? skillsV2.evaluateIndicatorsV2, updateEpisodeV2: skillsV2.updateEpisodeV2, evaluateV2: skillsV2.evaluateV2 } });
+  const skills = {
+    evaluateIndicatorsV2: options.scriptIndicators ?? skillsV2.evaluateIndicatorsV2,
+    updateEpisodeV2: skillsV2.updateEpisodeV2,
+    evaluateV2: skillsV2.evaluateV2,
+    ...(options.skillsOverride ?? {}),
+  };
+  const runner = new RsiAgentsV2Live({ pool, runtime, now: () => options.now ?? NOW, enabled: true, skills });
   runner.assignUniverse(options.instruments ?? [{ marketKey: KEY, instrumentType: "BINARY", durationSeconds: 60, marketType: "OTC", canonical: "EURUSD", enabled: true, availability: "OPEN", activeId: 76, payout: 87 }]);
   if (options.rawUniverse) runner.assignUniverse(options.rawUniverse);
   return { runner, runtime, pool };
@@ -73,6 +79,40 @@ describe("V2 LIVE — Strategy Core original + infra moderna", () => {
     const late = await built.runner.observeMarket({ marketKey: KEY, instrumentType: "BINARY", candles: [candle(T - 30_000)], targetExpiryAt: T, payout: 87, now: T - 29_000 });
     expect(runtime.calls).toHaveLength(0);
     expect(late.decision).not.toBe("BUY");
+  });
+
+  it("prova positiva do caminho de ordem: aceitacao na janela final -> submitAgentV2LiveOrder + FINAL_EVALUATION", async () => {
+    const runtime = fakeRuntime();
+    const pool = fakePool();
+    const extreme = ind({ rsi: 24, rsiSlope: -0.4, bollinger: { ...ind().bollinger, position: 0.05, close: 1.0, touchLower: true }, dmi: { plusDI: 20, minusDI: 32, spread: -12, plusSlope: -0.2, minusSlope: 0.6 }, adx: { value: 30, slope: 0.7 }, shortHorizonDirection: "BEARISH", shortMomentum: -0.8 });
+    const accepted = { strategy: STRICT_V2_ID, direction: "BUY", decision: "BUY", accepted: true, status: "STRICT_CONFIRMED", reason: null };
+    let episode: any = { direction: "BUY", candidateAt: NOW - 60_000, candidateRsi: 24, candidatePrice: 1.0, touchedLower: true };
+    const built = await build({
+      runtime, pool,
+      skillsOverride: {
+        evaluateIndicatorsV2: () => extreme,
+        updateEpisodeV2: () => ({ episode, event: episode ? "CANDIDATE_CONTINUED" : "CANDIDATE_CREATED" }),
+        evaluateV2: () => accepted,
+      },
+    });
+    // 1) nascimento/continuidade do episodio (fora da janela)
+    const before = await built.runner.observeMarket({ marketKey: KEY, instrumentType: "BINARY", candles: [candle(T - 60_000)], targetExpiryAt: T, payout: 87, now: T - 60_000 });
+    expect(before.waitReason).toBe("OBSERVE_ONLY");
+    // 2) tick final causal (candle :25, next :30 >= closes) -> submit
+    const final = await built.runner.observeMarket({ marketKey: KEY, instrumentType: "BINARY", candles: [candle(T - 35_000)], targetExpiryAt: T, payout: 87, now: T - 34_000 });
+    expect(runtime.calls).toHaveLength(1);
+    const call = runtime.calls[0];
+    expect(call.instrumentType).toBe("BINARY");
+    expect(call.direction).toBe("BUY");
+    expect(call.stake).toBe(10);
+    expect(call.expectedStake).toBe(10);
+    expect(call.strategyId).toBe(STRICT_V2_ID);
+    expect(String(call.idempotencyKey)).toContain("rsi-agent-v2live");
+    expect(call.entryMode).toBe("NORMAL_T5");
+    expect(final.decision).toBe("BUY");
+    expect(pool.events.some((event: any) => event.event === "FINAL_EVALUATION")).toBe(true);
+    expect(pool.events.some((event: any) => event.event === "ORDER_SUBMITTED")).toBe(true);
+    expect(pool.events.some((event: any) => event.event === "ORDER_BLOCKED")).toBe(false);
   });
 
   it("MESAS: instrumento desabilitado bloqueia e cancela (MARKET_DISABLED_BY_USER)", async () => {
