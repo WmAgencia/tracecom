@@ -34,7 +34,7 @@ export class LabRunner {
   async start() {
     if (!this.enabled || this.started) return;
     this.started = true;
-    await this.store.ensureRun(LAB_STRATEGY_IDS).catch(() => undefined);
+    await this.store.ensureRun(LAB_STRATEGY_IDS).catch((error) => this.log("LAB_ENSURE_RUN_FAIL", String(error?.message ?? error).slice(0, 160)));
     const recovered = await this.store.loadState(LAB_STRATEGY_IDS).catch(() => ({ strategies: [], openTrades: [] }));
     for (const row of recovered.strategies ?? []) {
       const st = this.states.get(row.strategy_id); if (!st) continue;

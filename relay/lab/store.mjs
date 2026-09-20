@@ -16,10 +16,11 @@ export class LabStore {
       "INSERT INTO iq_lab_runs(run_id, specs_hash, stake, expiry_policy, status, account_context) VALUES($1,$2,$3,$4::jsonb,'RUNNING','PRACTICE') ON CONFLICT (run_id) DO NOTHING",
       [this.runId, this.specsHash, this.stake, JSON.stringify(this.expiryPolicy)],
     );
-    for (const strategyId of strategyIds) {
+    if (Array.isArray(strategyIds) && strategyIds.length) {
+      const values = strategyIds.map((_, index) => "($1, $" + (index + 2) + ")").join(", ");
       await this.pool.query(
-        "INSERT INTO iq_lab_strategy_state(run_id, strategy_id) VALUES($1,$2) ON CONFLICT (run_id, strategy_id) DO NOTHING",
-        [this.runId, strategyId],
+        "INSERT INTO iq_lab_strategy_state(run_id, strategy_id) VALUES " + values + " ON CONFLICT (run_id, strategy_id) DO NOTHING",
+        [this.runId, ...strategyIds],
       );
     }
   }
