@@ -1880,13 +1880,13 @@ export class IqMultiRuntime extends EventEmitter {
       const balance = this.binaryMcpBalances.find((b) => /regular|real/i.test(String(b.type ?? ""))) ?? this.binaryMcpBalances[0];
       const balanceId = Number(balance?.balance_id ?? balance?.id);
       if (!Number.isFinite(balanceId)) throw new IqWsError("MCP_BALANCE_UNAVAILABLE");
-      const balanceAmount = Number(balance?.amount ?? NaN);
-      if (Number.isFinite(balanceAmount) && balanceAmount < amount) throw new IqWsError("MCP_INSUFFICIENT_BALANCE", balanceAmount + " < " + amount);
       const uiStake = Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : Number(this.stakeBrl ?? 1);
       const requestedAmount = Number(stake) > 0 ? Number(stake) : uiStake;
       const BROKER_MIN_AMOUNT_BRL = 2;
       const BROKER_MAX_AMOUNT_BRL = 2;
       const amount = Math.min(Math.max(requestedAmount, BROKER_MIN_AMOUNT_BRL), BROKER_MAX_AMOUNT_BRL);
+      const balanceAmount = Number(balance?.amount ?? NaN);
+      if (Number.isFinite(balanceAmount) && balanceAmount < amount) throw new IqWsError("MCP_INSUFFICIENT_BALANCE", balanceAmount + " < " + amount);
       const expirations = Array.isArray(asset.expirations) ? asset.expirations.map(Number).filter((v) => Number.isFinite(v)).sort((a, b) => a - b) : [];
       const nowSec = Math.floor(stamp / 1000);
       const expired = expirations.find((ts) => ts >= nowSec + 30) ?? (Math.ceil((nowSec + 30) / 60) * 60);
