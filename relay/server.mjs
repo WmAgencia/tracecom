@@ -24,6 +24,8 @@ const pool = new Pool({
   max: Math.max(2, Math.min(10, Number(process.env.PG_POOL_MAX) || 6)),
   idleTimeoutMillis: 10_000,
   connectionTimeoutMillis: 8_000,
+  statement_timeout: 15_000,
+  query_timeout: 15_000,
   keepAlive: true,
   application_name: "tracecom-live-relay",
 });

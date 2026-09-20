@@ -1400,21 +1400,10 @@ export class IqMultiRuntime extends EventEmitter {
     if (!this.pool?.query || !this.rsiAgentsV4) return null;
     if (!force && this.now() - (this.lastInstrumentSync ?? 0) < 15_000) return null;
     this.lastInstrumentSync = this.now();
+    if (this.registrySyncInFlight === true) return null;
+    this.registrySyncInFlight = true;
     try {
-      // Seed so depois do config persistido carregado: em boot com DB lento o seed
-      // nao pode gravar enabled=false (o runtime ainda nao sabe quais mercados o operador ligou).
-      if (this.configHydrated === true) {
-        for (const ctx of this.markets.values()) {
-          if (!Array.isArray(ctx.instrumentTypes) || !ctx.instrumentTypes.includes("binary")) continue;
-          const seedEnabled = ctx.enabled === true && ctx.availability === "OPEN";
-          await this.pool.query(
-            `INSERT INTO iq_rsi_instruments(market_key, instrument_type, duration_seconds, market_type, canonical, active_id, enabled, status, payout, source, payload, updated_at)
-             VALUES($1,'BINARY',60,$2,$3,$4,$5,$6,$7,'SEED_UNIVERSE','{}'::jsonb, now())
-             ON CONFLICT(market_key, instrument_type, duration_seconds) DO UPDATE SET market_type=$2, canonical=$3, active_id=$4, status=$6, payout=$7, updated_at=now()`,
-            [ctx.marketKey, ctx.marketType, ctx.canonical, ctx.activeId, seedEnabled, ctx.availability, ctx.payout],
-          ).catch(() => undefined);
-        }
-      }
+      // 1) Universo executavel PRIMEIRO: nunca depende do seed nem de escrita.
       const rows = (await this.pool.query("SELECT market_key, instrument_type, duration_seconds, market_type, canonical, enabled, status, payout FROM iq_rsi_instruments ORDER BY market_key, instrument_type")).rows ?? [];
       const merged = rows.map((row) => {
         const ctx = this.markets.get(row.market_key);
@@ -1444,10 +1433,27 @@ export class IqMultiRuntime extends EventEmitter {
         this.rsiV4UniverseEmpty = false;
         this.#emitEvent("rsi.v4.universe_restored", { total: merged.length, enabled });
       }
+      // 2) Seed best-effort, so depois do config hidratado (nunca grava enabled=false as cegas).
+      if (this.configHydrated === true) {
+        const seeds = [];
+        for (const ctx of this.markets.values()) {
+          if (!Array.isArray(ctx.instrumentTypes) || !ctx.instrumentTypes.includes("binary")) continue;
+          const seedEnabled = ctx.enabled === true && ctx.availability === "OPEN";
+          seeds.push(this.pool.query(
+            `INSERT INTO iq_rsi_instruments(market_key, instrument_type, duration_seconds, market_type, canonical, active_id, enabled, status, payout, source, payload, updated_at)
+             VALUES($1,'BINARY',60,$2,$3,$4,$5,$6,$7,'SEED_UNIVERSE','{}'::jsonb, now())
+             ON CONFLICT(market_key, instrument_type, duration_seconds) DO UPDATE SET market_type=$2, canonical=$3, active_id=$4, status=$6, payout=$7, updated_at=now()`,
+            [ctx.marketKey, ctx.marketType, ctx.canonical, ctx.activeId, seedEnabled, ctx.availability, ctx.payout],
+          ).catch(() => undefined));
+        }
+        await Promise.allSettled(seeds);
+      }
       return { total: merged.length, enabled, empty };
     } catch (error) {
       this.#safe(() => this.log("RSI_V4_REGISTRY_SYNC_FAIL", String(error?.message ?? error)));
       return null;
+    } finally {
+      this.registrySyncInFlight = false;
     }
   }
 
@@ -2311,7 +2317,9 @@ export class IqMultiRuntime extends EventEmitter {
     if (persist) void (async () => {
       try {
         if (!await this.#ensureDb()) { this.#recordPersistResult("audit", false, { code: "DB_UNAVAILABLE", message: "audit persistence unavailable (db not ready)" }); return; }
-        await this.pool.query("INSERT INTO iq_audit_trail(correlation_id,market_key,stage,detail,account_context) VALUES($1,$2,$3,$4::jsonb,$5)", [correlationId, marketKey, stage, JSON.stringify(payload), context]);
+        // Auditoria OPERACIONAL e prioritaria (nunca dropada pelo scheduler sob pressao).
+        const operational = /^(ARM|DISARM|AUTO_ON|AUTO_OFF|STAKE_CHANGE|MESAS_|KILL_SWITCH|ACCOUNT_MODE_CHANGE|MARKET_CONFIG|REAL_)/.test(String(stage ?? ""));
+        await this.pool.query(`${operational ? "/*tc-critical*/" : ""}INSERT INTO iq_audit_trail(correlation_id,market_key,stage,detail,account_context) VALUES($1,$2,$3,$4::jsonb,$5)`, [correlationId, marketKey, stage, JSON.stringify(payload), context]);
         this.#recordPersistResult("audit", true);
       } catch (error) { this.#recordPersistResult("audit", false, error); }
     })();

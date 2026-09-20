@@ -65,6 +65,15 @@ describe("PERSIST SCHEDULER", () => {
     expect(CRITICAL_SQL.test("INSERT INTO iq_audit_trail(correlation_id) VALUES($1)")).toBe(false);
   });
 
+  it("query que nao retorna e abortada por timeout e libera o slot", async () => {
+    const pool = { __rawQuery: () => new Promise(() => {}) };
+    const scheduler = createPersistScheduler({ pool, maxInFlight: 1, maxQueue: 10, maxBestEffortPerSecond: 1000, maxQueryMs: 25 });
+    const dropped = await scheduler.query("INSERT INTO scenario_shadow_timeout VALUES(1)");
+    expect(dropped).toMatchObject({ dropped: true, reason: "QUERY_TIMEOUT" });
+    await tick(); await tick();
+    expect(scheduler.stats().inFlight).toBe(0);
+  });
+
   it("rate-limit de best-effort dropa o excedente, mas criticos passam", async () => {
     const pending: Array<ReturnType<typeof deferred>> = [];
     const pool = { __rawQuery: () => { const d = deferred(); pending.push(d); return d.promise; } };

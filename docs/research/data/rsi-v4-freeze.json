@@ -1,6 +1,6 @@
 {
   "schema": "rsi-v4-freeze-v1",
-  "frozenAtUtc": "2026-09-20T02:47:49.932Z",
+  "frozenAtUtc": "2026-09-20T03:03:13.394Z",
   "sourceCommit": null,
   "noTuning": true,
   "strategy": "RSI_REVERSAL_V4",
@@ -30,8 +30,8 @@
       "bytes": 3525
     },
     "relay/iq-multi-runtime.mjs": {
-      "sha256": "fbfe71a0aa7445b467a9d26caa36812b3476d906b9781f34c1fb43008a22acc5",
-      "bytes": 318097
+      "sha256": "cbd0521ade517eb37cff7795b5fac2c564bdf96d1819eadb2739e0b167247908",
+      "bytes": 318621
     }
   }
 }

@@ -19,11 +19,11 @@
  * Nenhuma regra de estrategia aqui — apenas agendamento de I/O.
  */
 
-export const CRITICAL_SQL = /iq_runtime_config|iq_markets|iq_executions|iq_rsi_instruments|iq_rsi_events_v4|iq_rsi_agent_state_v4|iq_rsi_opportunities_v4|iq_rsi_universe_v4|iq_auth_session|schema_migrations|iq_v4_export/i;
+export const CRITICAL_SQL = /tc-critical|to_regclass|iq_runtime_config|iq_markets|iq_executions|iq_rsi_instruments|iq_rsi_events_v4|iq_rsi_agent_state_v4|iq_rsi_opportunities_v4|iq_rsi_universe_v4|iq_auth_session|schema_migrations|iq_v4_export/i;
 
-export const PERSIST_SCHEDULER_VERSION = "persist-scheduler-v2";
+export const PERSIST_SCHEDULER_VERSION = "persist-scheduler-v3";
 
-export function createPersistScheduler({ pool, maxInFlight = 5, maxQueue = 120, maxCriticalQueue = 500, maxBestEffortPerSecond = 8, breakerFailures = 6, breakerCooldownMs = 20_000, now = () => Date.now() } = {}) {
+export function createPersistScheduler({ pool, maxInFlight = 5, maxQueue = 120, maxCriticalQueue = 500, maxBestEffortPerSecond = 8, maxQueryMs = 12_000, breakerFailures = 6, breakerCooldownMs = 20_000, now = () => Date.now() } = {}) {
   if (!pool || typeof pool.__rawQuery !== "function") throw new Error("PERSIST_SCHEDULER_POOL_REQUIRED");
   const state = { inFlight: 0, queue: 0, dropped: 0, criticalDropped: 0, total: 0, critical: 0, bestEffort: 0, rateLimited: 0, consecutiveFailures: 0, breakerUntil: 0, lastDropAt: 0, rateWindowAt: now(), rateWindowCount: 0 };
   const queue = [];
@@ -83,15 +83,26 @@ export function createPersistScheduler({ pool, maxInFlight = 5, maxQueue = 120, 
 
     return new Promise((resolve, reject) => {
       const run = () => {
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          state.consecutiveFailures += 1;
+          if (state.consecutiveFailures >= breakerFailures) state.breakerUntil = now() + breakerCooldownMs;
+          if (!critical) drop("QUERY_TIMEOUT").then(resolve);
+          else reject(new Error("QUERY_TIMEOUT"));
+          state.inFlight = Math.max(0, state.inFlight - 1);
+          pump();
+        }, Math.max(200, Number(maxQueryMs) || 12_000));
+        const finish = (fn) => { if (settled) return; settled = true; clearTimeout(timer); fn(); state.inFlight = Math.max(0, state.inFlight - 1); pump(); };
         pool.__rawQuery(text, params)
-          .then((result) => { state.consecutiveFailures = 0; resolve(result); })
-          .catch((error) => {
+          .then((result) => finish(() => { state.consecutiveFailures = 0; resolve(result); }))
+          .catch((error) => finish(() => {
             state.consecutiveFailures += 1;
             if (state.consecutiveFailures >= breakerFailures) state.breakerUntil = now() + breakerCooldownMs;
             if (!critical) drop("DB_ERROR").then(resolve);
             else reject(error);
-          })
-          .finally(() => { state.inFlight = Math.max(0, state.inFlight - 1); pump(); });
+          }));
       };
       queue.push(run);
       state.queue = queue.length;
