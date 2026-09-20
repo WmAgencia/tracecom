@@ -1,5 +1,9 @@
-# RSI REVERSAL V2 — ESPECIFICAÇÃO COMPLETA (oficial do operador)
+# RSI REVERSAL V2 — ESPECIFICAÇÃO COMPLETA (ESTRATÉGIA CENTRAL)
 
+> **ESTRATÉGIA CENTRAL do TraceCon** (designação do operador, 2026-09-20). É a estratégia de execução
+> oficial (runner `relay/rsi-agents-v2-live.mjs` + Strategy Core V2 congelado em `relay/rsi-skills-v2.mjs`).
+> V3/V3.1/V4 permanecem como pesquisa/shadow e NÃO controlam execução.
+>
 > Documento canônico da estratégia executada pelo Strategy Core V2 (congelado em `relay/rsi-skills-v2.mjs`).
 > A infraestrutura (scheduler/timing) NÃO faz parte do core e é a atual (ACTIVE WATCH, PRIORITY_FINAL_WATCH,
 > revalidação causal, safe cutoff, MISSED fail-closed, Execution Gate único).

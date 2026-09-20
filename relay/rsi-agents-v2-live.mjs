@@ -38,7 +38,7 @@ export const RSI_AGENTS_V2_LIVE_POLICY = Object.freeze({
   // GATE DE ELEGIBILIDADE DE ENTRADA (infra/execucao; nao altera o core V2 congelado):
   // a ordem so pode sair se o RSI AINDA estiver perto do extremo no momento da entrada
   // (BUY: <= buyMax; SELL: >= sellMin). Bollinger/DMI/ADX continuam sendo a confirmacao V2.
-  entryRsiNearExtreme: { buyMax: 50, sellMin: 50 }, // regra de lado: ordem so com a tese viva (RSI do lado certo); nao exigir retorno ao extremo
+  entryRsiNearExtreme: { buyMax: 25, sellMin: 75 }, // REGRA DO OPERADOR: entrada somente com RSI no extremo profundo (BUY<=25 / SELL>=75)
   watchPolicy: "ACTIVE_CANDIDATE+PRIORITY_FINAL_WATCH (preservado da V3.1)",
   routing: "RSI_V2_ONLY",
   singleBrokerPath: "runtime.submitAgentV2LiveOrder -> requestOrder",

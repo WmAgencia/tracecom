@@ -7,7 +7,7 @@ histórico operacional está no banco (`iq_rsi_*`). Aqui ficam apenas documenta�
 | Versão | Estratégia | Módulo | Executa? | Estado |
 |---|---|---|---|---|
 | v1 | RSI_REVERSAL_STRICT_V1 / RSI_EXTREME_PULLBACK_V1 | relay/rsi-reversal.mjs, relay/rsi-variants.mjs | não (pausada) | arquivada |
-| v2 | RSI_REVERSAL_STRICT_V2 / RSI_EXTREME_PULLBACK_V2 | relay/rsi-skills-v2.mjs, relay/rsi-agents-v2.mjs | não (shadow congelado) | arquivada |
+| v2 | RSI_REVERSAL_STRICT_V2 / RSI_EXTREME_PULLBACK_V2 | relay/rsi-skills-v2.mjs (core) + relay/rsi-agents-v2-live.mjs (live) | **SIM** (BINARY; arm explícito; 1 ordem por vez; teto R$2) | **ESTRATÉGIA CENTRAL** |
 | v3 | RSI_REVERSAL_PULLBACK_V3 | relay/rsi-v3.mjs, relay/rsi-agents-v3.mjs | não (desligada) | arquivada |
 | v3.1 | RSI_REVERSAL_PULLBACK_V3 (V1_1: memória de episódio + watch) | relay/rsi-v3.mjs, relay/rsi-agents-v3.mjs, relay/rsi-v3-watch.mjs | não (desligada) | substituída pela v4 |
 | v4 | RSI_REVERSAL_V4 | relay/rsi-v4.mjs, relay/rsi-agents-v4.mjs | **SIM** (PRACTICE, armed=false até ARM manual) | ativa |
@@ -28,4 +28,4 @@ histórico operacional está no banco (`iq_rsi_*`). Aqui ficam apenas documenta�
 1. Nunca declarar edge com amostra pequena.
 2. Nunca reescrever o passado: JSONs são congelados; correções viram novo documento.
 3. Nunca incluir segredos (ssid/token/cookie/sessão/saldo/credenciais) — ver scanner de export.
-4. PRACTICE ONLY; REAL LOCKED; sem martingale/recovery/progressão de stake (stake fixo R$10).
+4. Sem martingale/recovery/progressão; stake fixo por operação (máx R$2 no REAL); REAL exige arm explícito; 1 ordem por vez (lock global).
