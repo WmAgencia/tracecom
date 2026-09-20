@@ -1,9 +1,9 @@
 {
-  "at": "2026-09-20T05:27:36.621Z",
+  "at": "2026-09-20T05:34:50.934Z",
   "baseUrl": "https://tracecom.consecom.com.br",
   "total": 15,
-  "passed": 12,
-  "failed": 3,
+  "passed": 15,
+  "failed": 0,
   "results": [
     {
       "assertion": "GET / = 200 (Office V3 na raiz)",
@@ -15,10 +15,10 @@
     },
     {
       "assertion": "mundo real com 54 mercados",
-      "pass": false,
+      "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "stations": 55
+        "stations": 54
       }
     },
     {
@@ -26,8 +26,8 @@
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "pnlText": "R$ 0,00",
-        "settledPnl": null
+        "pnlText": "−R$ 9,40",
+        "settledPnl": -9.4
       }
     },
     {
@@ -36,11 +36,11 @@
       "evidence": "final-prod-boot.png",
       "detail": {
         "present": true,
-        "text": "RESULTADO DO DIAN/A0 operações · 0W / 0L / 0DWR observado N/A · payout médio 80,0% (48 mercados abertos)HOJEN/A0 operações · 0W / 0L / 0DSEMANAN/AN/AMÊSN/AN/AOPERAÇÕES0WINS0LOSSES0DRAWS0WR OBSERVADON/APAYOUT MÉDIO80,0%MERCADOS ABERTOS48/55PRACTICEEQUITY · SEM DADOSSEM SÉRIE DE RESULTADO",
+        "text": "RESULTADO DO DIA-R$ 9,4034 operações · 18W / 16L / 0DWR observado 52,9% · payout médio 83,4% (30 mercados abertos)HOJE-R$ 9,4034 operações · 18W / 16L / 0DSEMANA-R$ 688,63339 trades liquidadosMÊS-R$ 688,63339 trades liquidadosOPERAÇÕES34WINS18LOSSES16DRAWS0WR OBSERVADO52,9%PAYOUT MÉDIO83,4%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
         "model": {
-          "day": "N/A",
-          "week": "N/A",
-          "month": "N/A"
+          "day": "-R$ 9,40",
+          "week": "-R$ 688,63",
+          "month": "-R$ 688,63"
         }
       }
     },
@@ -54,18 +54,27 @@
     },
     {
       "assertion": "V2 ORIGINAL controla a execucao (Strategy Core V2 + infra atual); V4 em shadow",
-      "pass": false,
+      "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "deskStrategies": [],
-        "desksWithTag": 0
+        "v2Routing": "RSI_V2_ONLY",
+        "deskStrategies": [
+          "RSI_REVERSAL_STRICT_V2"
+        ],
+        "desksWithTag": 29,
+        "v4": "RSI_V4_ONLY"
       }
     },
     {
       "assertion": "V2 congelada em shadow (sem execucao)",
-      "pass": false,
+      "pass": true,
       "evidence": null,
-      "detail": null
+      "detail": {
+        "module": "rsi-agents-v2",
+        "frozen": true,
+        "enabled": false,
+        "controlsExecution": false
+      }
     },
     {
       "assertion": "EXECUTION ROUTING RSI_V2_ONLY: somente as duas skills V2 originais executam; V4/V3/G2 bloqueados",
@@ -117,7 +126,7 @@
       "evidence": "final-prod-logs.png",
       "detail": {
         "columns": 11,
-        "rows": 0
+        "rows": 100
       }
     },
     {
@@ -133,15 +142,15 @@
       "pass": true,
       "evidence": "final-prod-iq.png",
       "detail": {
-        "CONEXÃO": "DESCONECTADO",
-        "WS": "DESCONECTADO",
+        "CONEXÃO": "CONECTADO",
+        "WS": "ONLINE",
         "MODO": "PRACTICE · ZERO REAL",
-        "CONTA": "—",
-        "SALDO": "—",
+        "CONTA": "PRACTICE",
+        "SALDO": "USD 990.60",
         "MCP": "SEM STATUS NO SNAPSHOT",
-        "STAKE GLOBAL": "—",
-        "AUTO": "OFF",
-        "JIT/QUALITY": "OFF",
+        "STAKE GLOBAL": "R$ 10.00 · teto R$ 100.00",
+        "AUTO": "ON",
+        "JIT/QUALITY": "ATIVO",
         "REAL": "BLOQUEADO · ZERO REAL",
         "TROCA DE CONTA": "NÃO SUPORTADA (PRACTICE ÚNICA)"
       }
@@ -151,7 +160,7 @@
       "pass": true,
       "evidence": "final-prod-panel.png",
       "detail": {
-        "marketKey": "EURUSD:NORMAL",
+        "marketKey": "EURUSD:OTC",
         "blocks": [
           "estado",
           "performance",
