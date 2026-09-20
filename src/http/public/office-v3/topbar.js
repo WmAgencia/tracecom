@@ -498,7 +498,7 @@ function createTopBar(doc, rootEl, options) {
       iqRow("auto", "AUTO", model.autoExecute ? "ON" : "OFF", null),
       iqRow("jit", "JIT/QUALITY", model.jitEnabled ? "ATIVO" : "OFF", null),
       iqRow("real", "REAL", "BLOQUEADO · ZERO REAL", "bad"),
-      iqRow("switch", "TROCA DE CONTA", "NÃO SUPORTADA (PRACTICE ÚNICA)", "muted"),
+      iqRow("switch", "TROCA DE CONTA", "FEITA NA IQ OPTION (TRAINING ⇄ REGULAR) · sistema só espelha", "muted"),
     );
     nodes.iq.classList?.toggle?.("is-on", model.connected);
     nodes.iq.setAttribute("data-connected", model.connected ? "true" : "false");
@@ -557,9 +557,12 @@ function createTopBar(doc, rootEl, options) {
 
   function renderRealModal() {
     const model = buildRealAccountModel(state.office, state.accountStatus);
-    realBody.textContent = "";
-    realBody.append(
-      iqRow("context", "CONTEXTO", model.context, model.context === "REAL" ? "warn" : "ok"),
+  realBody.textContent = "";
+  if (realSelectPractice) realSelectPractice.textContent = "TRAINING (PRACTICE)";
+  if (realSelectReal) realSelectReal.textContent = "REGULAR (REAL)";
+  realBody.append(
+      iqRow("context", "CONTEXTO", model.context === "REAL" ? "REGULAR (REAL)" : "TRAINING (PRACTICE)", model.context === "REAL" ? "warn" : "ok"),
+    iqRow("note", "TRAINING ⇄ REGULAR", "a troca é feita na IQ Option; aqui o sistema espelha e mantém REGULAR bloqueado (REAL LOCKED)", "muted"),
       iqRow("state", "ESTADO", model.state, model.armed ? "ok" : "muted"),
       iqRow("balance", "SALDO REAL", model.balanceText, model.realAvailable ? "ok" : "bad"),
       iqRow("access", "ACESSO", model.realAvailable ? "SOMENTE LEITURA · OK" : `INDISPONÍVEL (${model.accessError ?? "ERRO"})`, model.realAvailable ? "ok" : "bad"),
