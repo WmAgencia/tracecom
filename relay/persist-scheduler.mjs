@@ -23,7 +23,7 @@ export const CRITICAL_SQL = /tc-critical|to_regclass|iq_runtime_config|iq_market
 
 export const PERSIST_SCHEDULER_VERSION = "persist-scheduler-v3";
 
-export function createPersistScheduler({ pool, maxInFlight = 5, maxQueue = 120, maxCriticalQueue = 500, maxBestEffortPerSecond = 8, maxQueryMs = 12_000, breakerFailures = 6, breakerCooldownMs = 20_000, now = () => Date.now() } = {}) {
+export function createPersistScheduler({ pool, maxInFlight = 5, maxQueue = 120, maxCriticalQueue = 1000, maxBestEffortPerSecond = 8, maxQueryMs = 12_000, breakerFailures = 6, breakerCooldownMs = 20_000, now = () => Date.now() } = {}) {
   if (!pool || typeof pool.__rawQuery !== "function") throw new Error("PERSIST_SCHEDULER_POOL_REQUIRED");
   const state = { inFlight: 0, queue: 0, dropped: 0, criticalDropped: 0, total: 0, critical: 0, bestEffort: 0, rateLimited: 0, consecutiveFailures: 0, breakerUntil: 0, lastDropAt: 0, rateWindowAt: now(), rateWindowCount: 0 };
   const queue = [];

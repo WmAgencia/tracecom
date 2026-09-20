@@ -1,6 +1,6 @@
 {
   "schema": "rsi-v4-freeze-v1",
-  "frozenAtUtc": "2026-09-20T03:03:13.394Z",
+  "frozenAtUtc": "2026-09-20T03:14:57.422Z",
   "sourceCommit": null,
   "noTuning": true,
   "strategy": "RSI_REVERSAL_V4",
@@ -22,16 +22,16 @@
       "bytes": 18637
     },
     "relay/rsi-agents-v4.mjs": {
-      "sha256": "43d40510e023c2992c23a0dbc459aa89734c5d98302eb99eeb1b122924c67fbe",
-      "bytes": 57684
+      "sha256": "b2d3de10b26f59ecd73224fa8613425fda76f15604d0c7c5f1d663deb23b3f72",
+      "bytes": 58568
     },
     "relay/rsi-v3-watch.mjs": {
       "sha256": "77fa2ad3bfb69d155346e99a069c5183eec9e4b1da90ac772a0c79df7f3558d5",
       "bytes": 3525
     },
     "relay/iq-multi-runtime.mjs": {
-      "sha256": "cbd0521ade517eb37cff7795b5fac2c564bdf96d1819eadb2739e0b167247908",
-      "bytes": 318621
+      "sha256": "07f44f8702e87d617e5e7b2e013b4d1046582bf74fe967d47c03c8eff7fe6f02",
+      "bytes": 318883
     }
   }
 }

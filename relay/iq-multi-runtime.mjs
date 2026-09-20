@@ -1433,11 +1433,14 @@ export class IqMultiRuntime extends EventEmitter {
         this.rsiV4UniverseEmpty = false;
         this.#emitEvent("rsi.v4.universe_restored", { total: merged.length, enabled });
       }
-      // 2) Seed best-effort, so depois do config hidratado (nunca grava enabled=false as cegas).
+      // 2) Seed best-effort, so depois do config hidratado (nunca grava enabled=false as cegas)
+      //    e SOMENTE para instrumentos ausentes no registry (sem rajada de upserts a cada sync).
       if (this.configHydrated === true) {
+        const existing = new Set(merged.map((row) => `${row.marketKey}|${row.instrumentType}`));
         const seeds = [];
         for (const ctx of this.markets.values()) {
           if (!Array.isArray(ctx.instrumentTypes) || !ctx.instrumentTypes.includes("binary")) continue;
+          if (existing.has(`${ctx.marketKey}|BINARY`)) continue;
           const seedEnabled = ctx.enabled === true && ctx.availability === "OPEN";
           seeds.push(this.pool.query(
             `INSERT INTO iq_rsi_instruments(market_key, instrument_type, duration_seconds, market_type, canonical, active_id, enabled, status, payout, source, payload, updated_at)

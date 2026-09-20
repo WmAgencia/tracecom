@@ -64,6 +64,7 @@ export class RsiAgentsV4 {
     };
     this.migration = { state: "PENDING", startedAt: null, completedAt: null, complete: false, hold: true, reason: "MIGRACAO_V4" };
     this.lastReconcileAt = 0;
+    this.statePersist = new Map();   // agentKey -> { signature, at } (coalescing de escrita)
     this.universe = { at: null, enabled: 0, total: 0, byType: { BINARY: 0, BLITZ_45S: 0 }, signature: null };
   }
 
@@ -446,6 +447,16 @@ export class RsiAgentsV4 {
 
   async #persistState(state) {
     if (!this.pool?.query || !state?.marketKey) return;
+    // Coalescing de escrita: so grava quando o estado muda (ou a cada 60s para freshness).
+    // O estado em memoria continua por avaliacao; o banco guarda o ultimo estado relevante.
+    const writeKey = state.agentId ?? `${state.marketKey}|${state.instrumentType}`;
+    const signature = `${state.decision}|${state.waitReason ?? ""}|${state.candidateAt ?? ""}|${state.rsiBand ?? ""}|${state.entryMode ?? ""}|${state.lastResult ?? ""}`;
+    const previousWrite = this.statePersist.get(writeKey);
+    const atMs = num(state.at) ?? this.now();
+    const changed = !previousWrite || previousWrite.signature !== signature;
+    const stale = !previousWrite || atMs - previousWrite.at >= 60_000;
+    if (!changed && !stale) return;
+    this.statePersist.set(writeKey, { signature, at: atMs });
     const watch = state.watch ?? null;
     await this.pool.query(
       `INSERT INTO iq_rsi_agent_state_v4(agent_id, market_key, instrument_type, duration_seconds, strategy, status, decision, wait_reason, candidate_at, candidate_age_ms, candidate_rsi, candidate_price, revalidation_at, submit_at, expiry_at, entry_mode, rsi, rsi_trajectory, rsi_band, bollinger, band, dmi, adx, expected_cushion, cushion_class, counter_evidence, entry_reason, order_id, execution_id, requested_stake, effective_stake, last_result, last_pnl, quality_class, last_reason, payload, watch_mode, watch_started_at, priority_started_at, evaluation_count, last_evaluation_at, evaluation_gap_ms, max_evaluation_gap_ms, time_to_expiry_ms, time_to_cutoff_ms, final_evaluation_at, final_evaluation_lead_ms, submit_latency_ms, updated_at)
