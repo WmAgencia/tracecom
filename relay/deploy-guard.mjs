@@ -3,7 +3,7 @@
  * IDs de infraestrutura podem vir de env seguro; nunca secrets.
  */
 export const EXPECTED_RAILWAY = Object.freeze({
-  projectId: process.env.TRACECOM_RAILWAY_PROJECT_ID ?? "68e899a3-4e6f-469c-935b-2a2123476fd5",
+  projectId: process.env.TRACECOM_RAILWAY_PROJECT_ID ?? "b9894058-a18c-44d8-a77b-7e0e6d47493a",
   environmentName: process.env.TRACECOM_RAILWAY_ENVIRONMENT ?? "production",
   serviceName: process.env.TRACECOM_RAILWAY_SERVICE ?? "tracecom-live-relay",
 });
