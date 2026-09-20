@@ -116,7 +116,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.executionAllowlist = Array.isArray(executionAllowlist) ? [...executionAllowlist] : null;
     this.executionPolicyName = typeof executionPolicyName === "string" && executionPolicyName ? executionPolicyName : null;
     this.realMode = realMode; this.accountContext = accountContext; this.gate = gate; this.resolver = resolver;
-    this.consensus = new ConsensusRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: consensusEnabled === true, execute: consensusExecute === true, emit: (type, payload) => this.#emitEvent(type, payload) });
+    try { this.consensus = new ConsensusRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: consensusEnabled === true, execute: consensusExecute === true, emit: (type, payload) => this.#emitEvent(type, payload) }); } catch (error) { this.consensus = null; this.#safe(() => this.log("CONSENSUS_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     this.accountContext.onEvent = (event, payload) => this.#emitEvent(`account_context.${event.toLowerCase()}`, payload ?? {});
     this.decisionOverride = typeof decisionOverride === "function" ? decisionOverride : null; // diagnostico/testes deterministicos (nunca usado em producao)
     this.running = false; this.client = null; this.connection = null; this.stopRequested = false;
@@ -917,6 +917,8 @@ export class IqMultiRuntime extends EventEmitter {
       this.#safe(() => this.#observeRsiAgentsV4(ctx, list, now));
       // RSI AGENTS V2 LIVE (Strategy Core = V2 ORIGINAL; CONTROLADOR de execucao da rodada).
       this.#safe(() => this.#observeRsiAgentsV2Live(ctx, list, now));
+      // CONSENSUS CORE V1 (nova arquitetura experimental: snapshot + 4 especialistas + decisor; BINARY OTC).
+      this.#safe(() => this.#observeConsensus(ctx, list, now));
       // RSI AGENTS V2 BLITZ (API oficial MCP; 45s; fast lane = ativos com feed WS).
       this.#safe(() => this.#observeRsiAgentsV2Blitz(ctx, list, now));
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
@@ -1440,6 +1442,23 @@ export class IqMultiRuntime extends EventEmitter {
     return promise;
   }
 
+  /** CONSENSUS CORE: avaliacao por candle (BINARY OTC apenas) + revalidacao causal no tick 1s. */
+  #observeConsensus(ctx, list, now) {
+    if (!this.consensus?.enabled) return null;
+    if (ctx.marketType !== "OTC") return null;
+    const serverNow = this.client?.serverNow?.() ?? now;
+    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    return this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout });
+  }
+
+  consensusStatus() {
+    return {
+      ...(this.consensus?.status?.() ?? { enabled: false }),
+      context: { mode: this.config.mode, accountContext: this.accountContext.context, realState: this.realMode.authorized() ? "ARMED" : "LOCKED", killSwitchEngaged: this.killSwitch.status().executionEnabled !== true },
+      scope: "BINARY_OTC_ONLY",
+    };
+  }
+
   /**
    * (1) TICK-WATCH do PRIORITY_FINAL_WATCH: enquanto o mercado tem candidate vivo e estamos na regiao
    * T-45s..cutoff da expiracao alvo, reavalia a cada ~1s (nao so por candle), aumentando a chance de
@@ -1474,6 +1493,16 @@ export class IqMultiRuntime extends EventEmitter {
         marketKey: ctx.marketKey, instrumentType: "BINARY", durationSeconds: 60, marketType: ctx.marketType,
         candles: list, targetExpiryAt, payout: ctx.payout, now, latency: {},
       });
+    }
+    for (const ctx of this.markets.values()) {
+      if (ctx.enabled !== true || ctx.availability !== "OPEN") continue;
+      if (!this.consensus?.hasActiveOpportunity(ctx.marketKey)) continue;
+      const serverNow = this.client?.serverNow?.() ?? now;
+      const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+      if (now < targetExpiryAt - 45_000 || now > targetExpiryAt - 30_000) continue;
+      const list = this.#candleList(ctx);
+      if (list.length < 3) continue;
+      void this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout });
     }
   }
 
