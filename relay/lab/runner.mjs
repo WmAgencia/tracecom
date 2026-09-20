@@ -1,0 +1,146 @@
+/**
+ * LAB RUNNER — orquestra as 6 estrategias sobre UM snapshot por avaliacao (PRACTICE-only).
+ * Capacidade: settled + open < 20 por estrategia (reserva de slot atomica no banco).
+ * Recuperacao pos-restart: contadores e trades abertos vem do banco.
+ */
+import { routeSnapshot } from "./router.mjs";
+import { LabStore, LAB_SETTLEMENT_CAP } from "./store.mjs";
+import { LAB_STRATEGY_IDS, LAB_EXPIRY_POLICY, labSpecsHash } from "./strategy-specs.mjs";
+
+export const LAB_RUNNER_VERSION = "lab-runner-v1";
+
+function qualityOf(result) {
+  const counter = (result.counterEvidence ?? []).length;
+  const support = (result.supportingEvidence ?? []).length;
+  if (counter === 0 && support >= 3) return "A";
+  if (counter <= 1 && support >= 2) return "B";
+  return "C";
+}
+
+export class LabRunner {
+  constructor({ runtime = null, pool = null, now = () => Date.now(), log = () => {}, emit = () => {}, enabled = false, runId = null, stake = null } = {}) {
+    this.runtime = runtime; this.pool = pool; this.now = now; this.log = log; this.emit = emit;
+    this.enabled = enabled === true;
+    this.runId = runId ?? `lab6-20260920-practice`;
+    this.specsHash = labSpecsHash();
+    this.stake = Number(stake) > 0 ? Number(stake) : (Number(runtime?.config?.defaultStake) > 0 ? Number(runtime.config.defaultStake) : 1);
+    this.store = new LabStore({ pool, runId: this.runId, specsHash: this.specsHash, stake: this.stake, expiryPolicy: LAB_EXPIRY_POLICY });
+    this.states = new Map();
+    for (const id of LAB_STRATEGY_IDS) this.states.set(id, { opportunity: null, lastDecision: null, lastSide: null, lastPersistAt: 0, recovered: null });
+    this.counters = { evaluations: 0, opportunities: 0, waits: 0, approvals: 0, blockedReal: 0, capacityBlocked: 0, submits: 0, rejected: 0, settled: 0, missed: 0, recoveredOpen: 0, recoveredSettled: 0 };
+    this.started = false;
+  }
+
+  async start() {
+    if (!this.enabled || this.started) return;
+    this.started = true;
+    await this.store.ensureRun(LAB_STRATEGY_IDS).catch(() => undefined);
+    const recovered = await this.store.loadState(LAB_STRATEGY_IDS).catch(() => ({ strategies: [], openTrades: [] }));
+    for (const row of recovered.strategies ?? []) {
+      const st = this.states.get(row.strategy_id); if (!st) continue;
+      st.recovered = { settled: row.settled_count, open: row.open_count, wins: row.wins, losses: row.losses, draws: row.draws, complete: row.complete };
+    }
+    this.counters.recoveredOpen = (recovered.openTrades ?? []).length;
+    this.counters.recoveredSettled = (recovered.strategies ?? []).reduce((acc, row) => acc + Number(row.settled_count ?? 0), 0);
+    this.log("LAB_START", JSON.stringify({ runId: this.runId, specsHash: this.specsHash.slice(0, 12), stake: this.stake, recoveredOpen: this.counters.recoveredOpen, recoveredSettled: this.counters.recoveredSettled }));
+    this.emit("lab.started", { runId: this.runId, specsHash: this.specsHash });
+  }
+
+  practiceOk() {
+    return String(this.runtime?.config?.mode).toUpperCase() === "PRACTICE" && this.runtime?.accountContext?.context === "PRACTICE";
+  }
+
+  async observeMarket({ snapshot, marketKey, targetExpiryAt = null, payout = null } = {}) {
+    if (!this.enabled || !this.started || !snapshot) return null;
+    this.counters.evaluations += 1;
+    if (!this.practiceOk()) { this.counters.blockedReal += 1; return null; }
+    const at = this.now();
+    const results = routeSnapshot(snapshot);
+    const submissions = [];
+    for (const result of results) {
+      const st = this.states.get(result.strategyId); if (!st) continue;
+      if (result.opportunity === true) {
+        if (!st.opportunity || st.opportunity.side !== result.side) st.opportunity = { side: result.side, candidateAt: at, snapshotId: result.snapshotId, marketKey };
+        this.counters.opportunities += 1;
+      }
+      const approved = result.decision === "BUY" || result.decision === "SELL";
+      if (approved) this.counters.approvals += 1; else this.counters.waits += 1;
+      const changed = st.lastDecision !== result.decision || st.lastSide !== (result.side ?? null);
+      const stale = at - st.lastPersistAt > 60_000;
+      if (changed || approved || stale) {
+        st.lastDecision = result.decision; st.lastSide = result.side ?? null; st.lastPersistAt = at;
+        void this.store.persistDecision({ strategyId: result.strategyId, marketKey, snapshotId: result.snapshotId, decision: result.decision, side: result.side, reason: result.reason, evidenceStrength: result.evidenceStrength, counter: result.counterEvidence }).catch(() => undefined);
+      }
+      if (!approved) continue;
+      const expiry = Number(targetExpiryAt);
+      if (!Number.isFinite(expiry)) continue;
+      if (at < expiry - 45_000) continue;
+      if (at > expiry - LAB_EXPIRY_POLICY.safeCutoffMs) { this.counters.missed += 1; this.emit("lab.missed", { strategyId: result.strategyId, marketKey, at }); continue; }
+      submissions.push({ result, expiry, candidateAt: st.opportunity?.candidateAt ?? at });
+    }
+    for (const { result, expiry, candidateAt } of submissions) {
+      const st = this.states.get(result.strategyId);
+      const strategyTradeId = `lab:${this.runId}:${result.strategyId}:${marketKey}:${expiry}:${result.side}`;
+      const reserved = await this.store.reserveSlot(result.strategyId).catch(() => null);
+      if (!reserved) { this.counters.capacityBlocked += 1; this.emit("lab.capacity_blocked", { strategyId: result.strategyId, marketKey, at }); continue; }
+      try {
+        const order = await this.runtime.submitLabPracticeOrder({ marketKey, direction: result.side, strategyId: result.strategyId, strategyTradeId, stake: this.stake });
+        const accepted = Boolean(order && (order.brokerOrderId || order.requestId || order.executionId || ["ACKNOWLEDGED", "REQUESTED", "PENDING", "EXECUTED"].includes(String(order.state))));
+        if (!accepted) throw Object.assign(new Error(String(order?.reason ?? order?.state ?? "ORDER_NOT_ACCEPTED")), { code: "LAB_ORDER_NOT_ACCEPTED" });
+        this.counters.submits += 1;
+        st.opportunity = null;
+        await this.store.persistTrade({
+          strategyTradeId, strategyId: result.strategyId, strategyVersion: result.strategyVersion,
+          episodeId: snapshot?.indicators?.fib?.episodeId ?? null, snapshotId: result.snapshotId, decisionId: strategyTradeId,
+          marketKey, direction: result.side, stake: this.stake, payout: payout ?? snapshot?.payout ?? null,
+          requestedExpiry: new Date(expiry).toISOString(), candidateAt: new Date(candidateAt).toISOString(), expiryAt: new Date(expiry).toISOString(),
+          decision: result.decision, reason: result.reason, evidenceStrength: result.evidenceStrength, entryQuality: qualityOf(result),
+          supporting: result.supportingEvidence, counter: result.counterEvidence, specialistOutputs: result.specialistOutputs, entrySnapshot: snapshot,
+          executionId: order?.executionId ?? null, brokerOrderId: order?.brokerOrderId ?? null, state: String(order?.state ?? "REQUESTED"),
+        });
+        this.emit("lab.order", { strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId, executionId: order?.executionId ?? null, at });
+        this.log("LAB_ORDER", JSON.stringify({ strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId }));
+      } catch (error) {
+        await this.store.releaseReservation(result.strategyId).catch(() => undefined);
+        this.counters.rejected += 1;
+        this.emit("lab.order_rejected", { strategyId: result.strategyId, marketKey, code: String(error?.code ?? error?.message ?? error).slice(0, 120), at });
+      }
+    }
+    return results.length;
+  }
+
+  hasActiveOpportunity(marketKey) {
+    for (const st of this.states.values()) { if (st.opportunity && st.opportunity.marketKey === marketKey && this.now() - st.opportunity.candidateAt <= 10 * 60_000) return true; }
+    return false;
+  }
+
+  async pollSettlements() {
+    if (!this.enabled || !this.started || !this.pool?.query) return;
+    const rows = (await this.pool.query(
+      `SELECT t.strategy_trade_id, t.strategy_id, e.broker_result, e.profit, e.settled_at
+       FROM iq_lab_trades t JOIN iq_executions e ON e.decision_id = t.strategy_trade_id
+       WHERE t.run_id=$1 AND t.result IS NULL AND t.state IN ('REQUESTED','ACKNOWLEDGED') LIMIT 50`, [this.runId]).catch(() => ({ rows: [] }))).rows ?? [];
+    for (const row of rows) {
+      const mapped = ["WIN", "LOSS", "DRAW"].includes(row.broker_result) ? row.broker_result : null;
+      if (!mapped) continue;
+      await this.store.markTradeSettled({ strategyTradeId: row.strategy_trade_id, result: mapped, pnl: Number(row.profit ?? 0), settlementAt: row.settled_at ?? null });
+      await this.store.releaseSlot(row.strategy_id, { result: mapped });
+      this.counters.settled += 1;
+      this.emit("lab.settlement", { strategyId: row.strategy_id, strategyTradeId: row.strategy_trade_id, result: mapped, pnl: Number(row.profit ?? 0) });
+    }
+    const states = await this.store.strategyStates().catch(() => []);
+    if (states.length === LAB_STRATEGY_IDS.length && states.every((row) => row.complete === true)) {
+      await this.store.finishRun().catch(() => undefined);
+      this.emit("lab.complete", { runId: this.runId });
+    }
+  }
+
+  status() {
+    return {
+      version: LAB_RUNNER_VERSION, enabled: this.enabled, started: this.started, runId: this.runId,
+      specsHash: this.specsHash, stake: this.stake, practiceOnly: true, settlementCap: LAB_SETTLEMENT_CAP,
+      counters: { ...this.counters },
+      strategies: [...this.states.entries()].map(([strategyId, st]) => ({ strategyId, opportunity: st.opportunity ? { side: st.opportunity.side, ageMs: this.now() - st.opportunity.candidateAt } : null, recovered: st.recovered })),
+    };
+  }
+}

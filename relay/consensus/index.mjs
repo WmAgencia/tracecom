@@ -18,10 +18,7 @@ import { analyzeBollinger } from "./specialists/bollinger.mjs";
 import { analyzeDmiAdx } from "./specialists/dmi-adx.mjs";
 import { decide } from "./decisor.mjs";
 
-export function evaluateConsensus({ marketKey, marketType = null, candles = [], now = Date.now(), payout = null, targetExpiryAt = null } = {}) {
-  const startedAt = Date.now();
-  const snapshot = buildMarketSnapshot({ marketKey, marketType, candles, now, payout, targetExpiryAt });
-  if (!snapshot) return { snapshot: null, decision: { decision: "WAIT", side: null, reason: "snapshot_indisponivel_historico_insuficiente", supportingEvidence: [], counterEvidence: [], evidenceStrength: 0, snapshotId: null, at: now }, latencyMs: Date.now() - startedAt };
+export function evaluateConsensusFromSnapshot(snapshot, startedAt = Date.now()) {
   const rsi = analyzeRsi(snapshot);
   if (!rsi.opportunity) return { snapshot, rsi, priceAction: null, bollinger: null, dmiAdx: null, decision: { decision: "WAIT", side: null, reason: rsi.observations[0] ?? "sem oportunidade", supportingEvidence: [], counterEvidence: [], evidenceStrength: 0, snapshotId: snapshot.snapshotId, at: snapshot.at }, latencyMs: Date.now() - startedAt };
   const priceAction = analyzePriceAction(snapshot);
@@ -29,4 +26,11 @@ export function evaluateConsensus({ marketKey, marketType = null, candles = [], 
   const dmiAdx = analyzeDmiAdx(snapshot);
   const decision = decide({ snapshot, rsi, priceAction, bollinger, dmiAdx });
   return { snapshot, rsi, priceAction, bollinger, dmiAdx, decision, latencyMs: Date.now() - startedAt };
+}
+
+export function evaluateConsensus({ marketKey, marketType = null, candles = [], now = Date.now(), payout = null, targetExpiryAt = null } = {}) {
+  const startedAt = Date.now();
+  const snapshot = buildMarketSnapshot({ marketKey, marketType, candles, now, payout, targetExpiryAt });
+  if (!snapshot) return { snapshot: null, decision: { decision: "WAIT", side: null, reason: "snapshot_indisponivel_historico_insuficiente", supportingEvidence: [], counterEvidence: [], evidenceStrength: 0, snapshotId: null, at: now }, latencyMs: Date.now() - startedAt };
+  return evaluateConsensusFromSnapshot(snapshot, startedAt);
 }

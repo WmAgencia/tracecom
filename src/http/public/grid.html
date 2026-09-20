@@ -53,10 +53,12 @@
   <span class="badge" id="bCount">ativos: <b>…</b></span>
   <span class="spacer"></span>
   <button class="btn" id="btnMesas">MESAS</button>
+  <button class="btn" id="btnLab">LAB</button>
   <button class="btn" id="btnLog">LOG</button>
 </header>
 <main id="grid"></main>
 
+<div class="modal" id="labModal"><div class="box"><h2>LAB 6 STRATEGIES — PRACTICE (20 settlements cada)</h2><div id="labList"></div></div></div>
 <div class="modal" id="mesasModal"><div class="box"><h2>MESAS — Binary OTC</h2><div id="mesasList"></div></div></div>
 <aside id="logPanel"><div class="head"><h2>LOG — Consensus (humano)</h2><button class="btn" id="btnLogClose">fechar</button></div><div id="logBody"></div></aside>
 
@@ -210,6 +212,28 @@
     const body = $("logBody"); body.innerHTML = "";
     for (const entry of data?.entries ?? []) { const pre = document.createElement("pre"); pre.textContent = entry.human; body.append(pre); }
   };
+  let labOpen = false;
+  const refreshLab = async () => {
+    if (!labOpen) return;
+    const data = await api("/api/iq/lab/status");
+    const rows = data?.states ?? [];
+    const list = $("labList"); list.innerHTML = "";
+    const head = document.createElement("div"); head.className = "mesa-row"; head.innerHTML = '<span class="k"><b>ESTRATEGIA</b></span><span class="st"><b>SETTLED</b></span><span class="po"><b>W/L/D</b></span><span class="st"><b>OPEN</b></span><span class="po"><b>STATUS</b></span>';
+    list.append(head);
+    for (const row of rows) {
+      const line = document.createElement("div"); line.className = "mesa-row";
+      const k = document.createElement("span"); k.className = "k"; k.textContent = row.strategy_id;
+      const st = document.createElement("span"); st.className = "st"; st.textContent = row.settled_count + "/20";
+      const wl = document.createElement("span"); wl.className = "po"; wl.textContent = row.wins + "/" + row.losses + "/" + row.draws;
+      const op = document.createElement("span"); op.className = "st"; op.textContent = String(row.open_count ?? 0);
+      const sc = document.createElement("span"); sc.className = "po"; sc.textContent = row.complete ? "COMPLETE" : "RUNNING";
+      line.append(k, st, wl, op, sc); list.append(line);
+    }
+    if (!rows.length) list.textContent = "lab indisponivel (run ainda nao iniciado)";
+  };
+  $("btnLab").onclick = () => { labOpen = true; $("labModal").classList.add("on"); refreshLab(); };
+  $("labModal").onclick = (e) => { if (e.target === $("labModal")) { labOpen = false; $("labModal").classList.remove("on"); } };
+  setInterval(refreshLab, 10000);
   $("btnMesas").onclick = openMesas;
   $("mesasModal").onclick = (e) => { if (e.target === $("mesasModal")) $("mesasModal").classList.remove("on"); };
   $("btnLog").onclick = () => { state.logOpen = true; $("logPanel").classList.add("on"); refreshLog(); };

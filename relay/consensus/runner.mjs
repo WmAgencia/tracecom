@@ -5,7 +5,7 @@
  *   BUY/SELL -> janela final (revalidacao causal no tick 1s) -> safe cutoff -> Execution Gate -> ordem
  * Execucao desligada por padrao (observe-only) ate validacao; 1 ordem por vez garantida pelo runtime.
  */
-import { evaluateConsensus } from "./index.mjs";
+import { evaluateConsensus, evaluateConsensusFromSnapshot } from "./index.mjs";
 import { createConsensusLog } from "./log.mjs";
 
 export const CONSENSUS_RUNNER_VERSION = "consensus-runner-v1";
@@ -52,11 +52,11 @@ export class ConsensusRunner {
     return Boolean(row && this.now() - row.candidateAt <= this.maxOpportunityAgeMs);
   }
 
-  async observeMarket({ marketKey, marketType = null, candles = [], now = null, targetExpiryAt = null, payout = null } = {}) {
+  async observeMarket({ marketKey, marketType = null, candles = [], now = null, targetExpiryAt = null, payout = null, snapshot: providedSnapshot = null } = {}) {
     if (!this.enabled) return null;
     if (this.requireOtc && marketType !== "OTC") return null;
     const at = num(now) ?? this.now();
-    const result = evaluateConsensus({ marketKey, marketType, candles, now: at, payout, targetExpiryAt });
+    const result = providedSnapshot ? evaluateConsensusFromSnapshot(providedSnapshot) : evaluateConsensus({ marketKey, marketType, candles, now: at, payout, targetExpiryAt });
     this.counters.evaluations += 1;
     if (!result.snapshot) { this.counters.noSnapshot += 1; return null; }
     this.counters.snapshots += 1;

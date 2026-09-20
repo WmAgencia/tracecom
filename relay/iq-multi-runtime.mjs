@@ -72,6 +72,8 @@ import { RsiAgentsV3 } from "./rsi-agents-v3.mjs";
 import { RsiAgentsV4 } from "./rsi-agents-v4.mjs";
 import { RsiAgentsV2Live } from "./rsi-agents-v2-live.mjs";
 import { ConsensusRunner } from "./consensus/runner.mjs";
+import { LabRunner } from "./lab/runner.mjs";
+import { buildMarketSnapshot } from "./consensus/snapshot.mjs";
 import { IqMcpClient, IQ_MCP_ENDPOINTS } from "./iq-mcp-client.mjs";
 import { RsiAgentsV2Blitz } from "./rsi-agents-v2-blitz.mjs";
 import { RSI_V3_WATCH_POLICY, shouldEvaluate } from "./rsi-v3-watch.mjs";
@@ -107,7 +109,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = false, rsiAgentsV3Enabled = true, rsiAgentsV4Enabled = false, rsiAgentsV2LiveEnabled = false, rsiAgentsV2BlitzEnabled = false, consensusEnabled = true, consensusExecute = process.env.CONSENSUS_EXECUTE === "true", executionAllowlist = null, executionPolicyName = null } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = false, rsiAgentsV3Enabled = true, rsiAgentsV4Enabled = false, rsiAgentsV2LiveEnabled = false, rsiAgentsV2BlitzEnabled = false, consensusEnabled = true, consensusExecute = process.env.CONSENSUS_EXECUTE === "true", labEnabled = process.env.LAB6_ENABLED === "true", labRunId = null, labStake = null, executionAllowlist = null, executionPolicyName = null } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -117,6 +119,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.executionPolicyName = typeof executionPolicyName === "string" && executionPolicyName ? executionPolicyName : null;
     this.realMode = realMode; this.accountContext = accountContext; this.gate = gate; this.resolver = resolver;
     try { this.consensus = new ConsensusRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: consensusEnabled === true, execute: consensusExecute === true, emit: (type, payload) => this.#emitEvent(type, payload) }); } catch (error) { this.consensus = null; this.#safe(() => this.log("CONSENSUS_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
+    try { this.lab = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: labEnabled === true, runId: labRunId, stake: labStake, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete") void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload?.runId ?? this.lab?.runId })).catch(() => undefined); } }); void this.lab.start().catch(() => undefined); } catch (error) { this.lab = null; this.#safe(() => this.log("LAB_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     this.accountContext.onEvent = (event, payload) => this.#emitEvent(`account_context.${event.toLowerCase()}`, payload ?? {});
     this.decisionOverride = typeof decisionOverride === "function" ? decisionOverride : null; // diagnostico/testes deterministicos (nunca usado em producao)
     this.running = false; this.client = null; this.connection = null; this.stopRequested = false;
@@ -1444,13 +1447,18 @@ export class IqMultiRuntime extends EventEmitter {
 
   /** CONSENSUS CORE: avaliacao por candle (BINARY OTC apenas) + revalidacao causal no tick 1s. */
   #observeConsensus(ctx, list, now) {
-    if (!this.consensus?.enabled) return null;
+    const consensusOn = this.consensus?.enabled === true;
+    const labOn = this.lab?.enabled === true;
+    if (!consensusOn && !labOn) return null;
     if (ctx.marketType !== "OTC") return null;
     const serverNow = this.client?.serverNow?.() ?? now;
     const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
-    const promise = this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout });
+    const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt });
+    if (!snapshot) return null;
+    if (consensusOn) void this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout, snapshot });
+    if (labOn) void this.lab.observeMarket({ snapshot, marketKey: ctx.marketKey, targetExpiryAt, payout: ctx.payout });
     this.#scheduleV2LiveTicks();
-    return promise;
+    return snapshot;
   }
 
   /** Candles em lote para o GRID (uma chamada para todos os cards; sem 30 conexoes). */
@@ -1496,6 +1504,19 @@ export class IqMultiRuntime extends EventEmitter {
     return this.consensus.status();
   }
 
+  /** LAB 6 STRATEGIES: ordem EXCLUSIVAMENTE PRACTICE (bloqueio duro se modo/contexto != PRACTICE). */
+  async submitLabPracticeOrder({ marketKey, direction, strategyId, strategyTradeId, stake = null } = {}) {
+    if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("LAB_PRACTICE_ONLY", String(this.config.mode));
+    if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
+    const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 1);
+    return this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: 60, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId, entryTiming: { lab: true, strategyId, strategyTradeId } });
+  }
+
+  async labStatus() {
+    const states = await this.lab?.store?.strategyStates?.().catch(() => []) ?? [];
+    return { ...(this.lab?.status?.() ?? { enabled: false }), states, context: { mode: this.config.mode, accountContext: this.accountContext.context, realState: this.realMode.authorized() ? "ARMED" : "LOCKED", killSwitchEngaged: this.killSwitch.status().executionEnabled !== true }, scope: "BINARY_OTC_ONLY", practiceOnly: true };
+  }
+
   consensusStatus() {
     return {
       ...(this.consensus?.status?.() ?? { enabled: false }),
@@ -1539,15 +1560,21 @@ export class IqMultiRuntime extends EventEmitter {
         candles: list, targetExpiryAt, payout: ctx.payout, now, latency: {},
       });
     }
+    if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); }
     for (const ctx of this.markets.values()) {
       if (ctx.enabled !== true || ctx.availability !== "OPEN") continue;
-      if (!this.consensus?.hasActiveOpportunity(ctx.marketKey)) continue;
+      const consensusActive = this.consensus?.hasActiveOpportunity?.(ctx.marketKey) === true;
+      const labActive = this.lab?.hasActiveOpportunity?.(ctx.marketKey) === true;
+      if (!consensusActive && !labActive) continue;
       const serverNow = this.client?.serverNow?.() ?? now;
       const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
       if (now < targetExpiryAt - 45_000 || now > targetExpiryAt - 30_000) continue;
       const list = this.#candleList(ctx);
       if (list.length < 3) continue;
-      void this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout });
+      const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt });
+      if (!snapshot) continue;
+      if (consensusActive && this.consensus?.enabled) void this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout, snapshot });
+      if (labActive && this.lab?.enabled) void this.lab.observeMarket({ snapshot, marketKey: ctx.marketKey, targetExpiryAt, payout: ctx.payout });
     }
   }
 
