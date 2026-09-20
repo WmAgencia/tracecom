@@ -19,20 +19,21 @@
  * Nenhuma regra de estrategia aqui — apenas agendamento de I/O.
  */
 
-export const CRITICAL_SQL = /iq_audit_trail|iq_runtime_config|iq_markets|iq_executions|iq_rsi_instruments|iq_rsi_events_v4|iq_rsi_agent_state_v4|iq_rsi_opportunities_v4|iq_rsi_universe_v4|iq_auth_session|schema_migrations|iq_v4_export/i;
+export const CRITICAL_SQL = /iq_runtime_config|iq_markets|iq_executions|iq_rsi_instruments|iq_rsi_events_v4|iq_rsi_agent_state_v4|iq_rsi_opportunities_v4|iq_rsi_universe_v4|iq_auth_session|schema_migrations|iq_v4_export/i;
 
-export const PERSIST_SCHEDULER_VERSION = "persist-scheduler-v1";
+export const PERSIST_SCHEDULER_VERSION = "persist-scheduler-v2";
 
-export function createPersistScheduler({ pool, maxInFlight = 5, maxQueue = 120, breakerFailures = 6, breakerCooldownMs = 20_000, now = () => Date.now() } = {}) {
+export function createPersistScheduler({ pool, maxInFlight = 5, maxQueue = 120, maxCriticalQueue = 500, maxBestEffortPerSecond = 8, breakerFailures = 6, breakerCooldownMs = 20_000, now = () => Date.now() } = {}) {
   if (!pool || typeof pool.__rawQuery !== "function") throw new Error("PERSIST_SCHEDULER_POOL_REQUIRED");
-  const state = { inFlight: 0, queue: 0, dropped: 0, droppedLastMinute: 0, total: 0, critical: 0, bestEffort: 0, consecutiveFailures: 0, breakerUntil: 0, lastDropAt: 0 };
+  const state = { inFlight: 0, queue: 0, dropped: 0, criticalDropped: 0, total: 0, critical: 0, bestEffort: 0, rateLimited: 0, consecutiveFailures: 0, breakerUntil: 0, lastDropAt: 0, rateWindowAt: now(), rateWindowCount: 0 };
   const queue = [];
 
   function stats() {
     return {
       version: PERSIST_SCHEDULER_VERSION,
-      inFlight: state.inFlight, queue: state.queue, maxInFlight, maxQueue,
-      dropped: state.dropped, total: state.total, critical: state.critical, bestEffort: state.bestEffort,
+      inFlight: state.inFlight, queue: state.queue, maxInFlight, maxQueue, maxCriticalQueue, maxBestEffortPerSecond,
+      dropped: state.dropped, criticalDropped: state.criticalDropped, total: state.total,
+      critical: state.critical, bestEffort: state.bestEffort, rateLimited: state.rateLimited,
       consecutiveFailures: state.consecutiveFailures,
       breakerActive: now() < state.breakerUntil,
       breakerUntil: state.breakerUntil > now() ? new Date(state.breakerUntil).toISOString() : null,
@@ -48,11 +49,18 @@ export function createPersistScheduler({ pool, maxInFlight = 5, maxQueue = 120, 
     }
   }
 
-  function drop(bestEffortResult) {
+  function drop(reason, { criticalDrop = false } = {}) {
     state.dropped += 1;
-    state.droppedLastMinute += 1;
+    if (criticalDrop) state.criticalDropped += 1;
     state.lastDropAt = now();
-    return Promise.resolve(bestEffortResult);
+    return Promise.resolve({ rows: [], dropped: true, reason, bestEffort: !criticalDrop });
+  }
+
+  function rateOk() {
+    const t = now();
+    if (t - state.rateWindowAt >= 1_000) { state.rateWindowAt = t; state.rateWindowCount = 0; }
+    state.rateWindowCount += 1;
+    return state.rateWindowCount <= maxBestEffortPerSecond;
   }
 
   function query(text, params) {
@@ -61,9 +69,17 @@ export function createPersistScheduler({ pool, maxInFlight = 5, maxQueue = 120, 
     state.total += 1;
     if (critical) state.critical += 1; else state.bestEffort += 1;
 
-    // Best-effort saturado: dropa (nunca espalha a fila) — telemetria e descartavel.
-    if (!critical && (state.inFlight >= maxInFlight && queue.length >= maxQueue)) return drop({ rows: [], dropped: true, reason: "QUEUE_FULL", bestEffort: true });
-    if (!critical && now() < state.breakerUntil) return drop({ rows: [], dropped: true, reason: "BREAKER_OPEN", bestEffort: true });
+    // Criticos: sempre admitidos (config/markets/executions/MESAS/state de execucao).
+    // Fila de criticos e alta mas limitada — nunca cresce sem limite.
+    if (critical && queue.length >= maxCriticalQueue) return drop("CRITICAL_QUEUE_FULL", { criticalDrop: true });
+    // Best-effort: breaker aberto, fila cheia ou rate excedido => dropa (telemetria e descartavel).
+    if (!critical) {
+      if (now() < state.breakerUntil) return drop("BREAKER_OPEN");
+      if (state.inFlight >= maxInFlight && queue.length >= maxQueue) return drop("QUEUE_FULL");
+      if (!rateOk()) { state.rateLimited += 1; return drop("RATE_LIMITED"); }
+    } else {
+      rateOk(); // criticos contam no orcamento mas nunca sao dropados por rate
+    }
 
     return new Promise((resolve, reject) => {
       const run = () => {
@@ -72,7 +88,7 @@ export function createPersistScheduler({ pool, maxInFlight = 5, maxQueue = 120, 
           .catch((error) => {
             state.consecutiveFailures += 1;
             if (state.consecutiveFailures >= breakerFailures) state.breakerUntil = now() + breakerCooldownMs;
-            if (!critical) drop({ rows: [], dropped: true, reason: "DB_ERROR", bestEffort: true }).then(resolve);
+            if (!critical) drop("DB_ERROR").then(resolve);
             else reject(error);
           })
           .finally(() => { state.inFlight = Math.max(0, state.inFlight - 1); pump(); });
