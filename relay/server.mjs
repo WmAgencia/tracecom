@@ -58,7 +58,7 @@ const { ResearchLab } = await import('./research-lab/api.mjs');
 const researchLab = new ResearchLab({ pool, runtime: wsRuntime, log: (...args) => console.info(...args) });
 const { DualReportService } = await import('./dual-report-service.mjs');
 const dualReportService = new DualReportService({ pool });
-const sanitizedError = (error) => ({ error: String(error?.code ?? error?.message ?? error).slice(0, 160) });
+const sanitizedError = (error) => ({ error: String(error?.code ?? error?.message ?? error).slice(0, 160), detail: error?.detail ? String(error.detail).slice(0, 240) : undefined });
 const pepper = process.env.API_KEY_PEPPER || '';
 const staleMs = Number(process.env.LIVE_SESSION_STALE_MS || 60000);
 const clients = new Set();

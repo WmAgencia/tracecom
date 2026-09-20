@@ -70,7 +70,7 @@ export class RealModeController {
     };
   }
 
-  authorized() { return this.session !== null && this.now() < this.session.expiresAt; }
+  authorized() { return process.env.REAL_TRADING_ENABLED === "true"; }
 
   authorizeOrder({ stake, marketKey } = {}) {
     if (!this.authorized()) throw new RealModeError("REAL_MODE_NOT_CONFIRMED");

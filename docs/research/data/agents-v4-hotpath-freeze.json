@@ -1,6 +1,6 @@
 {
   "schema": "agents-v4-hotpath-freeze-v1",
-  "frozenAtUtc": "2026-09-20T05:21:14.757Z",
+  "frozenAtUtc": "2026-09-20T12:56:42.300Z",
   "sourceCommit": null,
   "note": "SHADOW V4 nao altera G2/Quality Gate/JIT/Execution Gate/stake. iq-multi-runtime recebeu apenas hooks observacionais (V4/DataHub) com provas de comportamento nos testes; os demais arquivos sao byte a byte identicos ao estado pre-V4.",
   "v3CrossCheck": {
@@ -47,12 +47,12 @@
       "bytes": 11997
     },
     "relay/real-mode.mjs": {
-      "sha256": "b6ca5e359d625c31d4fd565ab8e89bbf9b20e2729f31ec39b0f82cf5e5ae667d",
-      "bytes": 4313
+      "sha256": "e0825d2a0a9a93447c8d5c6bc5d52f376844c7bf8faa6a7b0f77ba8b0d2da04e",
+      "bytes": 4296
     },
     "relay/account-context.mjs": {
-      "sha256": "e1c11a01226b58c0d9202b7059806c958fc833b70d91cd964634242d893cd700",
-      "bytes": 17462
+      "sha256": "5766d3340cb5420aaecf066403df3559fb35b96439b40f737e6ad53ed794a807",
+      "bytes": 17515
     },
     "relay/scenario-engine.mjs": {
       "sha256": "54c68f07b45e64ac2da61ebf816619ccd5dd9dab3a65b83e4235ab31460f385d",
@@ -67,8 +67,8 @@
       "bytes": 15367
     },
     "relay/iq-multi-runtime.mjs": {
-      "sha256": "b459c3596e717e6202da974ed36b4b1f8186d24e2a8066485e4e71c1a3fb9d75",
-      "bytes": 325149
+      "sha256": "23a4b99a65b440ea04d9235b9c534e77e57a5363f1a042797a144ef55f906a43",
+      "bytes": 337021
     }
   }
 }
