@@ -1,13 +1,16 @@
 /**
  * LAB RUNNER — orquestra as 6 estrategias sobre UM snapshot por avaliacao (PRACTICE-only).
- * Capacidade: settled + open < 20 por estrategia (reserva de slot atomica no banco).
- * Recuperacao pos-restart: contadores e trades abertos vem do banco.
+ * Submissoes SERIALIZADAS globalmente (evita corrida reserve/release sob concorrencia de 30 mercados).
+ * Timeout duro no submit + checagem de execucao tardia (mantem atribuicao e nunca deixa reserva presa).
+ * Capacidade: settled + open < 20 por estrategia (reserva atomica no banco; open_count reconciliado
+ * a partir dos trades reais em cada ciclo e no start).
  */
 import { routeSnapshot } from "./router.mjs";
 import { LabStore, LAB_SETTLEMENT_CAP } from "./store.mjs";
 import { LAB_STRATEGY_IDS, LAB_EXPIRY_POLICY, labSpecsHash } from "./strategy-specs.mjs";
 
-export const LAB_RUNNER_VERSION = "lab-runner-v1";
+export const LAB_RUNNER_VERSION = "lab-runner-v2";
+const SUBMIT_TIMEOUT_MS = 12_000;
 
 function qualityOf(result) {
   const counter = (result.counterEvidence ?? []).length;
@@ -16,6 +19,7 @@ function qualityOf(result) {
   if (counter <= 1 && support >= 2) return "B";
   return "C";
 }
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class LabRunner {
   constructor({ runtime = null, pool = null, now = () => Date.now(), log = () => {}, emit = () => {}, enabled = false, runId = null, stake = null } = {}) {
@@ -27,7 +31,8 @@ export class LabRunner {
     this.store = new LabStore({ pool, runId: this.runId, specsHash: this.specsHash, stake: this.stake, expiryPolicy: LAB_EXPIRY_POLICY });
     this.states = new Map();
     for (const id of LAB_STRATEGY_IDS) this.states.set(id, { opportunity: null, lastDecision: null, lastSide: null, lastPersistAt: 0, recovered: null });
-    this.counters = { evaluations: 0, opportunities: 0, waits: 0, approvals: 0, blockedReal: 0, capacityBlocked: 0, submits: 0, rejected: 0, settled: 0, missed: 0, recoveredOpen: 0, recoveredSettled: 0 };
+    this.counters = { evaluations: 0, opportunities: 0, waits: 0, approvals: 0, blockedReal: 0, capacityBlocked: 0, submits: 0, rejected: 0, timeouts: 0, settled: 0, missed: 0, recoveredOpen: 0, recoveredSettled: 0 };
+    this.submitChain = Promise.resolve();
     this.started = false;
   }
 
@@ -49,6 +54,11 @@ export class LabRunner {
 
   practiceOk() {
     return String(this.runtime?.config?.mode).toUpperCase() === "PRACTICE" && this.runtime?.accountContext?.context === "PRACTICE";
+  }
+
+  hasActiveOpportunity(marketKey) {
+    for (const st of this.states.values()) { if (st.opportunity && st.opportunity.marketKey === marketKey && this.now() - st.opportunity.candidateAt <= 10 * 60_000) return true; }
+    return false;
   }
 
   async observeMarket({ snapshot, marketKey, targetExpiryAt = null, payout = null } = {}) {
@@ -79,40 +89,60 @@ export class LabRunner {
       if (at > expiry - LAB_EXPIRY_POLICY.safeCutoffMs) { this.counters.missed += 1; this.emit("lab.missed", { strategyId: result.strategyId, marketKey, at }); continue; }
       submissions.push({ result, expiry, candidateAt: st.opportunity?.candidateAt ?? at });
     }
-    for (const { result, expiry, candidateAt } of submissions) {
-      const st = this.states.get(result.strategyId);
-      const strategyTradeId = `lab:${this.runId}:${result.strategyId}:${marketKey}:${expiry}:${result.side}`;
-      const reserved = await this.store.reserveSlot(result.strategyId).catch(() => null);
-      if (!reserved) { this.counters.capacityBlocked += 1; this.emit("lab.capacity_blocked", { strategyId: result.strategyId, marketKey, at }); continue; }
-      try {
-        const order = await this.runtime.submitLabPracticeOrder({ marketKey, direction: result.side, strategyId: result.strategyId, strategyTradeId, stake: this.stake });
-        const accepted = Boolean(order && (order.brokerOrderId || order.requestId || order.executionId || ["ACKNOWLEDGED", "REQUESTED", "PENDING", "EXECUTED"].includes(String(order.state))));
-        if (!accepted) throw Object.assign(new Error(String(order?.reason ?? order?.state ?? "ORDER_NOT_ACCEPTED")), { code: "LAB_ORDER_NOT_ACCEPTED" });
-        this.counters.submits += 1;
-        st.opportunity = null;
-        await this.store.persistTrade({
-          strategyTradeId, strategyId: result.strategyId, strategyVersion: result.strategyVersion,
-          episodeId: snapshot?.indicators?.fib?.episodeId ?? null, snapshotId: result.snapshotId, decisionId: strategyTradeId,
-          marketKey, direction: result.side, stake: this.stake, payout: payout ?? snapshot?.payout ?? null,
-          requestedExpiry: new Date(expiry).toISOString(), candidateAt: new Date(candidateAt).toISOString(), expiryAt: new Date(expiry).toISOString(),
-          decision: result.decision, reason: result.reason, evidenceStrength: result.evidenceStrength, entryQuality: qualityOf(result),
-          supporting: result.supportingEvidence, counter: result.counterEvidence, specialistOutputs: result.specialistOutputs, entrySnapshot: snapshot,
-          executionId: order?.executionId ?? null, brokerOrderId: order?.brokerOrderId ?? null, state: String(order?.state ?? "REQUESTED"),
-        });
-        this.emit("lab.order", { strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId, executionId: order?.executionId ?? null, at });
-        this.log("LAB_ORDER", JSON.stringify({ strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId }));
-      } catch (error) {
-        await this.store.releaseReservation(result.strategyId).catch((error) => this.log("LAB_RELEASE_FAIL", String(error?.message ?? error).slice(0, 160)));
-        this.counters.rejected += 1;
-        this.emit("lab.order_rejected", { strategyId: result.strategyId, marketKey, code: String(error?.code ?? error?.message ?? error).slice(0, 120), at });
-      }
+    for (const submission of submissions) {
+      const run = () => this.#submitOne(submission, { marketKey, snapshot, payout });
+      const chained = this.submitChain.then(run, run);
+      this.submitChain = chained.catch(() => undefined);
+      await chained;
     }
     return results.length;
   }
 
-  hasActiveOpportunity(marketKey) {
-    for (const st of this.states.values()) { if (st.opportunity && st.opportunity.marketKey === marketKey && this.now() - st.opportunity.candidateAt <= 10 * 60_000) return true; }
-    return false;
+  async #submitOne({ result, expiry, candidateAt }, { marketKey, snapshot, payout }) {
+    const at = this.now();
+    const st = this.states.get(result.strategyId);
+    const strategyTradeId = `lab:${this.runId}:${result.strategyId}:${marketKey}:${expiry}:${result.side}`;
+    const reserved = await this.store.reserveSlot(result.strategyId).catch(() => null);
+    if (!reserved) { this.counters.capacityBlocked += 1; this.emit("lab.capacity_blocked", { strategyId: result.strategyId, marketKey, at }); return; }
+    try {
+      let order = null;
+      try {
+        order = await Promise.race([
+          this.runtime.submitLabPracticeOrder({ marketKey, direction: result.side, strategyId: result.strategyId, strategyTradeId, stake: this.stake }),
+          sleep(SUBMIT_TIMEOUT_MS).then(() => ({ __timeout: true })),
+        ]);
+      } catch (error) {
+        order = { __error: String(error?.code ?? error?.message ?? error) };
+      }
+      if (order?.__timeout === true || order?.__error) {
+        const late = await this.pool?.query?.("SELECT execution_id, broker_order_id, state FROM iq_executions WHERE decision_id=$1 LIMIT 1", [strategyTradeId]).catch(() => null);
+        const row = late?.rows?.[0] ?? null;
+        if (order?.__timeout === true && row) order = { state: row.state, executionId: row.execution_id, brokerOrderId: row.broker_order_id };
+        else {
+          if (order?.__timeout === true) { this.counters.timeouts += 1; this.log("LAB_SUBMIT_TIMEOUT", JSON.stringify({ strategyId: result.strategyId, marketKey, strategyTradeId })); }
+          throw Object.assign(new Error(order?.__error ?? "SUBMIT_TIMEOUT"), { code: order?.__error ?? "LAB_SUBMIT_TIMEOUT" });
+        }
+      }
+      const accepted = Boolean(order && (order.brokerOrderId || order.requestId || order.executionId || ["ACKNOWLEDGED", "REQUESTED", "PENDING", "EXECUTED"].includes(String(order.state))));
+      if (!accepted) throw Object.assign(new Error(String(order?.reason ?? order?.state ?? "ORDER_NOT_ACCEPTED")), { code: "LAB_ORDER_NOT_ACCEPTED" });
+      this.counters.submits += 1;
+      st.opportunity = null;
+      await this.store.persistTrade({
+        strategyTradeId, strategyId: result.strategyId, strategyVersion: result.strategyVersion,
+        episodeId: snapshot?.indicators?.fib?.episodeId ?? null, snapshotId: result.snapshotId, decisionId: strategyTradeId,
+        marketKey, direction: result.side, stake: this.stake, payout: payout ?? snapshot?.payout ?? null,
+        requestedExpiry: new Date(expiry).toISOString(), candidateAt: new Date(candidateAt).toISOString(), expiryAt: new Date(expiry).toISOString(),
+        decision: result.decision, reason: result.reason, evidenceStrength: result.evidenceStrength, entryQuality: qualityOf(result),
+        supporting: result.supportingEvidence, counter: result.counterEvidence, specialistOutputs: result.specialistOutputs, entrySnapshot: snapshot,
+        executionId: order?.executionId ?? null, brokerOrderId: order?.brokerOrderId ?? null, state: String(order?.state ?? "REQUESTED"),
+      });
+      this.emit("lab.order", { strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId, executionId: order?.executionId ?? null, at });
+      this.log("LAB_ORDER", JSON.stringify({ strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId }));
+    } catch (error) {
+      await this.store.releaseReservation(result.strategyId).catch((releaseError) => this.log("LAB_RELEASE_FAIL", String(releaseError?.message ?? releaseError).slice(0, 160)));
+      this.counters.rejected += 1;
+      this.emit("lab.order_rejected", { strategyId: result.strategyId, marketKey, code: String(error?.code ?? error?.message ?? error).slice(0, 120), at });
+    }
   }
 
   async pollSettlements() {
