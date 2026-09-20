@@ -160,6 +160,7 @@ export class RsiAgentsV2Live {
     if (!states.length) return null;
     const state = states.find((row) => row.decision === "BUY" || row.decision === "SELL") ?? states[0];
     const watch = state.watch ?? null;
+    const skillId = state.strategy ?? this.skillFor(marketKey);
     return {
       strategyId: skillId, strategyVersion: "v2-live", label: `RSI V2 LIVE ${state.instrumentType ?? ""}`.trim(),
       instrumentType: state.instrumentType ?? null, durationSeconds: state.durationSeconds ?? null,
