@@ -115,7 +115,9 @@ export function createMesasInstruments({ document: doc = document, fetchImpl = f
     await refresh();
   });
   root.querySelector("[data-bulk-off]").addEventListener("click", async () => {
-    await fetchJson(MESAS_ENDPOINTS.bulk, { method: "POST", body: JSON.stringify({ filter: bulkFilterFor(state.filter), enabled: false }) });
+    const confirmed = typeof window.confirm === "function" ? window.confirm("Desligar TODOS os instrumentos deste filtro? Isso pode zerar o universo executavel da V4.") : true;
+    if (!confirmed) return;
+    await fetchJson(MESAS_ENDPOINTS.bulk, { method: "POST", body: JSON.stringify({ filter: bulkFilterFor(state.filter), enabled: false, confirmZeroUniverse: true }) });
     await refresh();
   });
 

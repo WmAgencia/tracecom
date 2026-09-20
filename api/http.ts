@@ -575,6 +575,60 @@ function researchRateOk(bucket: string, limit: number, windowMs = 60_000): boole
 const shadowJobs = new Map<string, { status: string; createdAt: number; result: unknown }>();
 const shadowIdempotency = new Map<string, { createdAt: number; result: unknown }>();
 
+/* ------------------------------------------------------------------ *
+ * OPERATOR AUTH — mutacoes /api/iq/* exigem sessao de operador.
+ * - Chave de acesso: TRACECOM_OPERATOR_KEY (preferida) ou LIVE_API_ADMIN_KEY,
+ *   ou um tc_live_ valido verificado no relay. NUNCA embutida no browser.
+ * - Sessao: cookie HttpOnly assinado (HMAC), SameSite=Strict, Secure.
+ * - Fail closed: sem chave configurada => 503; sem cookie valido => 401.
+ * ------------------------------------------------------------------ */
+const OPERATOR_COOKIE = "tc_op";
+const OPERATOR_TTL_MS = 12 * 60 * 60 * 1000;
+function operatorAccessKey(): string { return (process.env.TRACECOM_OPERATOR_KEY ?? process.env.LIVE_API_ADMIN_KEY ?? "").trim(); }
+function operatorSigningSecret(): string { return (process.env.TRACECOM_OPERATOR_KEY ?? process.env.LIVE_API_ADMIN_KEY ?? process.env.TOKEN_SIGNING_SECRET ?? "").trim(); }
+function b64url(input: Buffer | string): string { return Buffer.from(input).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function signOperatorToken(secret: string, expiresAt: number): { token: string; signature: string } {
+  const payload = `${expiresAt}.${randomUUID()}`;
+  const signature = b64url(createHmac("sha256", secret).update(payload).digest());
+  return { token: `${payload}.${signature}`, signature };
+}
+function verifyOperatorToken(secret: string, token: string): boolean {
+  const parts = String(token ?? "").split(".");
+  if (parts.length !== 3) return false;
+  const [expiresRaw, nonce, signature] = parts;
+  const expiresAt = Number(expiresRaw);
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return false;
+  if (!nonce || nonce.length < 8 || !signature) return false;
+  const expected = b64url(createHmac("sha256", secret).update(`${expiresRaw}.${nonce}`).digest());
+  try { return safeKeyEquals(expected, signature); } catch { return false; }
+}
+function parseCookies(req: IncomingMessage): Record<string, string> {
+  const header = req.headers.cookie?.toString() ?? "";
+  const out: Record<string, string> = {};
+  for (const part of header.split(";")) {
+    const index = part.indexOf("=");
+    if (index <= 0) continue;
+    out[part.slice(0, index).trim()] = decodeURIComponent(part.slice(index + 1).trim());
+  }
+  return out;
+}
+function sameOriginOk(req: IncomingMessage): boolean {
+  const fetchSite = req.headers["sec-fetch-site"]?.toString();
+  if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") return false;
+  const origin = req.headers.origin?.toString();
+  if (!origin) return true; // agentes/CLI: ainda exigem cookie valido
+  try { const parsed = new URL(origin); return parsed.host === (req.headers.host?.toString() ?? ""); } catch { return false; }
+}
+function operatorAuthorized(req: IncomingMessage): { ok: boolean; reason: string; actor: string } {
+  const secret = operatorSigningSecret();
+  if (!secret) return { ok: false, reason: "operator_auth_not_configured", actor: "anonymous" };
+  if (!sameOriginOk(req)) return { ok: false, reason: "cross_origin_blocked", actor: "anonymous" };
+  const token = parseCookies(req)[OPERATOR_COOKIE] ?? "";
+  if (!verifyOperatorToken(secret, token)) return { ok: false, reason: "operator_auth_required", actor: "anonymous" };
+  return { ok: true, reason: "ok", actor: "operator" };
+}
+
+
 async function relayAdminSend(method: "POST" | "PUT", path: string, payload: unknown): Promise<boolean> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
   const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
@@ -599,12 +653,12 @@ async function relayAdminExchange(path: string, payload: unknown, timeoutMs = 20
   } catch { return null; }
 }
 /** Metodo generico com corpo/status reais (multi-market). */
-async function relayAdminJson(method: "GET" | "POST" | "PUT" | "DELETE", path: string, payload?: unknown, timeoutMs = 20_000): Promise<{ ok: boolean; status: number; body: Record<string, unknown> } | null> {
+async function relayAdminJson(method: "GET" | "POST" | "PUT" | "DELETE", path: string, payload?: unknown, timeoutMs = 20_000, extraHeaders: Record<string, string> = {}): Promise<{ ok: boolean; status: number; body: Record<string, unknown> } | null> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, "");
   const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim();
   if (!base || !admin) return null;
   try {
-    const response = await fetch(`${base}${path}`, { method, headers: { "content-type": "application/json", "x-relay-admin": admin }, body: payload === undefined ? undefined : JSON.stringify(payload), signal: AbortSignal.timeout(timeoutMs) });
+    const response = await fetch(`${base}${path}`, { method, headers: { "content-type": "application/json", "x-relay-admin": admin, ...extraHeaders }, body: payload === undefined ? undefined : JSON.stringify(payload), signal: AbortSignal.timeout(timeoutMs) });
     const body = await response.json().catch(() => ({})) as Record<string, unknown>;
     return { ok: response.ok, status: response.status, body };
   } catch { return null; }
@@ -626,14 +680,17 @@ export function mesasTogglePayload(input: Record<string, unknown> = {}): Record<
   };
 }
 /** Payload do bulk de MESAS (POST /api/iq/mesas/bulk). Regressao: payload vazio desligava tudo sem filtro. */
-export function mesasBulkPayload(input: Record<string, unknown> = {}): Record<string, unknown> {
+export function mesasBulkPayload(input: Record<string, unknown> = {}): Record<string, unknown> | null {
   const rawFilter = input.filter && typeof input.filter === "object" && !Array.isArray(input.filter) ? input.filter as Record<string, unknown> : {};
   const filter: Record<string, string> = {};
   if (typeof rawFilter.instrumentType === "string" && rawFilter.instrumentType) filter.instrumentType = rawFilter.instrumentType.slice(0, 16);
   if (typeof rawFilter.marketType === "string" && rawFilter.marketType) filter.marketType = rawFilter.marketType.slice(0, 12);
   if (typeof rawFilter.category === "string" && rawFilter.category) filter.category = rawFilter.category.slice(0, 12);
   if (typeof rawFilter.marketKey === "string" && rawFilter.marketKey) filter.marketKey = rawFilter.marketKey.slice(0, 40);
-  return { filter, enabled: input.enabled === true };
+  // Filtro e enabled sao OBRIGATORIOS: incompleto nunca vira "todos enabled=false".
+  if (Object.keys(filter).length === 0) return null;
+  if (typeof input.enabled !== "boolean") return null;
+  return { filter, enabled: input.enabled === true, confirmZeroUniverse: input.confirmZeroUniverse === true };
 }
 async function relayAdminGet(path: string): Promise<Record<string, unknown>> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, ""); const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim(); if (!base || !admin) throw new Error("relay_not_configured");
@@ -828,7 +885,38 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       json(200, { status: "CONFIGURED", provider: "openCodeGo", model: config && typeof config.model === "string" ? config.model : model, maskedKey: maskApiKey(apiKey), updatedAt: new Date().toISOString(), shadowOnly: true });
       return;
     }
+    if (path === "/api/auth/operator" && req.method === "POST") {
+      const key = operatorAccessKey();
+      if (!key) { json(503, { error: "operator_auth_not_configured" }); return; }
+      const clientIp = (req.headers["x-forwarded-for"]?.toString().split(",")[0] ?? req.socket?.remoteAddress ?? "unknown").trim();
+      const attemptLimit = Math.max(1, Number(process.env.OPERATOR_AUTH_MAX_ATTEMPTS) || 5);
+      const supplied = String(operationalInput.accessKey ?? "");
+      if (!supplied || !safeKeyEquals(key, supplied)) {
+        if (!researchRateOk(`operator_auth:${clientIp}`, attemptLimit)) { json(429, { error: "too_many_attempts" }); return; }
+        json(401, { error: "invalid_access_key" }); return;
+      }
+      researchLimits.delete(`operator_auth:${clientIp}`);
+      const secret = operatorSigningSecret();
+      if (!secret) { json(503, { error: "operator_auth_not_configured" }); return; }
+      const expiresAt = Date.now() + OPERATOR_TTL_MS;
+      const { token } = signOperatorToken(secret, expiresAt);
+      res.setHeader("Set-Cookie", `${OPERATOR_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${Math.floor(OPERATOR_TTL_MS / 1000)}`);
+      json(200, { ok: true, actor: "operator", expiresAt: new Date(expiresAt).toISOString(), practiceOnly: true });
+      return;
+    }
+    if (path === "/api/auth/logout" && req.method === "POST") {
+      res.setHeader("Set-Cookie", `${OPERATOR_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`);
+      json(200, { ok: true });
+      return;
+    }
     if (path.startsWith("/api/iq/") && (req.method === "GET" || req.method === "POST" || req.method === "PUT")) {
+      // MUTACOES OPERACIONAIS: sessao de operador obrigatoria (fail closed) + same-origin.
+      const mutation = req.method === "POST" || req.method === "PUT";
+      const auth = mutation ? operatorAuthorized(req) : { ok: true, reason: "read_only", actor: "read_only" };
+      if (!auth.ok) {
+        json(auth.reason === "cross_origin_blocked" ? 403 : auth.reason === "operator_auth_not_configured" ? 503 : 401, { error: auth.reason, practiceOnly: true });
+        return;
+      }
       const getPaths = ["/api/iq/status", "/api/iq/executions", "/api/iq/office", "/api/iq/markets", "/api/iq/events", "/api/iq/asset-map", "/api/iq/diagnostic/options", "/api/iq/broker-audit", "/api/iq/signals", "/api/iq/intelligence", "/api/iq/research/scoreboard", "/api/iq/research/shadow-lab", "/api/iq/research/timing-policy", "/api/iq/research/scenario-shadow", "/api/iq/research/agents-v4", "/api/iq/research/dual-reasoning", "/api/iq/research/dual-reasoning/report", "/api/iq/research/solo-reasoning", "/api/iq/research/solo-reasoning/report", "/api/iq/research/experiment/four-way/status", "/api/iq/research/experiment/four-way/report", "/api/iq/research/experiment/five-way/status", "/api/iq/research/indicator-5m", "/api/iq/research/rsi-reversal", "/api/iq/research/rsi-reversal/report", "/api/iq/research/rsi-variants", "/api/iq/research/rsi-variants/report", "/api/iq/research/rsi-agents", "/api/iq/research/rsi-agents-v2", "/api/iq/research/rsi-agents-v3", "/api/iq/research/rsi-agents-v4", "/api/iq/research/rsi-agents-v4/events", "/api/iq/research/rsi-agents-v4/funnel", "/api/iq/mesas", "/api/iq/instruments/blitz", "/api/iq/execution-routing", "/api/iq/research/lab/overview", "/api/iq/research/lab/factors", "/api/iq/research/lab/alphas", "/api/iq/research/lab/coverage", "/api/iq/research/lab/backtests", "/api/iq/research/lab/strategy-regime", "/api/iq/research/lab/journal-intelligence", "/api/iq/research/lab/drift", "/api/iq/research/lab/models", "/api/iq/research/lab/experiments", "/api/iq/research/lab/hypotheses", "/api/iq/research/lab/datasets", "/api/iq/research/lab/checkpoints", "/api/iq/research/lab/jobs", "/api/iq/research/lab/agents", "/api/iq/research/lab/comparison", "/api/iq/research/lab/ablation", "/api/iq/quality", "/api/iq/entry", "/api/iq/supervisor", "/api/iq/journal", "/api/iq/journal/agent", "/api/iq/knowledge", "/api/iq/knowledge/search", "/api/iq/second-brain", "/api/iq/hypotheses", "/api/iq/audit", "/api/iq/apprentice", "/api/iq/apprentice/trades", "/api/iq/stress/report", "/api/iq/account/context", "/api/iq/real/preflight"];
       const postPaths = ["/api/iq/connect", "/api/iq/verify-2fa", "/api/iq/disconnect", "/api/iq/arm", "/api/iq/disarm", "/api/iq/kill-switch", "/api/iq/test-order", "/api/iq/config/global-stake", "/api/iq/config/auto-execute", "/api/iq/mode", "/api/iq/real/confirm", "/api/iq/real/revoke", "/api/iq/real/arm", "/api/iq/real/disarm", "/api/iq/account/select", "/api/iq/stress/run", "/api/iq/stress/cancel", "/api/iq/knowledge/rebuild", "/api/iq/hypotheses", "/api/iq/hypotheses/evaluate", "/api/iq/journal/daily", "/api/iq/research/experiment/four-way/prepare", "/api/iq/research/experiment/four-way/arm", "/api/iq/research/experiment/four-way/stop", "/api/iq/research/rsi-reversal/prepare", "/api/iq/research/rsi-reversal/arm", "/api/iq/research/rsi-reversal/stop", "/api/iq/research/rsi-variants/prepare", "/api/iq/research/rsi-variants/arm", "/api/iq/research/rsi-variants/stop", "/api/iq/mesas/bulk"];
       const putPaths = ["/api/iq/market", "/api/iq/supervisor/config", "/api/iq/entry/config", "/api/iq/apprentice/config", "/api/iq/mesas"];
@@ -861,7 +949,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       }
       if (req.method === "PUT" && !putPaths.includes(path)) { json(405, { error: "method_not_allowed" }); return; }
       if (req.method === "POST" && !postPaths.includes(path)) { json(405, { error: "method_not_allowed" }); return; }
-      const payload: Record<string, unknown> = path === "/api/iq/connect" ? { email: String(operationalInput.email ?? "").trim(), password: String(operationalInput.password ?? "") }
+      const payload: Record<string, unknown> | null = path === "/api/iq/connect" ? { email: String(operationalInput.email ?? "").trim(), password: String(operationalInput.password ?? "") }
         : path === "/api/iq/verify-2fa" ? { code: String(operationalInput.code ?? "").trim() }
         : path === "/api/iq/arm" ? { limitBrl: Number(operationalInput.limitBrl), confirmation: String(operationalInput.confirmation ?? "").slice(0, 40) }
         : path === "/api/iq/kill-switch" ? { engaged: operationalInput.engaged === true }
@@ -888,6 +976,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         : path === "/api/iq/hypotheses/evaluate" ? { id: String(operationalInput.id ?? "").slice(0, 80) }
         : path === "/api/iq/test-order" ? { marketKey: typeof operationalInput.marketKey === "string" ? operationalInput.marketKey.slice(0, 40) : null, direction: String(operationalInput.direction ?? "").slice(0, 8), stake: Number(operationalInput.stake), horizonSeconds: Number(operationalInput.horizonSeconds) || 60, decisionId: typeof operationalInput.decisionId === "string" ? operationalInput.decisionId.slice(0, 120) : null, idempotencyKey: typeof operationalInput.idempotencyKey === "string" ? operationalInput.idempotencyKey.slice(0, 120) : null }
         : {};
+      if (path === "/api/iq/mesas/bulk" && payload === null) { json(400, { error: "invalid_mesas_bulk_payload", hint: "filter (instrumentType|marketType|category|marketKey) e enabled boolean sao obrigatorios" }); return; }
+      if (payload === null) { json(400, { error: "invalid_payload" }); return; }
       if (path === "/api/iq/connect" && (!payload.email || !payload.password)) { json(400, { error: "email_password_required" }); return; }
       if (path === "/api/iq/verify-2fa" && !payload.code) { json(400, { error: "code_required" }); return; }
       if (path === "/api/iq/arm" && (!Number.isFinite(Number(payload.limitBrl)) || Number(payload.limitBrl) <= 0 || Number(payload.limitBrl) > 100)) { json(400, { error: "invalid_limit_brl" }); return; }
@@ -896,7 +986,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (path === "/api/iq/market" && !String(payload.marketKey ?? "")) { json(400, { error: "market_key_required" }); return; }
       if (path === "/api/iq/config/global-stake" && (!Number.isFinite(Number(payload.value)) || Number(payload.value) <= 0 || Number(payload.value) > 100)) { json(400, { error: "invalid_global_stake" }); return; }
       if (path === "/api/iq/real/confirm" && !String(payload.phrase ?? "")) { json(400, { error: "real_confirmation_required" }); return; }
-      const result = await relayAdminJson(proxyMethodFor(path), path, payload, 20_000);
+      const result = await relayAdminJson(proxyMethodFor(path), path, payload, 20_000, { "x-tracecom-actor": auth.actor, "x-request-id": requestId, "x-tracecom-source": "edge" });
       if (!result) { json(502, { error: "iq_relay_unavailable" }); return; }
       if (!result.ok) { json(result.status >= 400 && result.status < 500 ? result.status : 502, { ...result.body, practiceOnly: path === "/api/iq/real/confirm" || path === "/api/iq/real/arm" || path === "/api/iq/mode" ? false : true, brokerAutomation: "WS_ONLY_PRACTICE" }); return; }
       const contextPaths = ["/api/iq/real/confirm", "/api/iq/real/arm", "/api/iq/real/disarm", "/api/iq/account/select"];

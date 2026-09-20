@@ -189,6 +189,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.configLoaded = false;
     this.configHydrated = false;
     this.rsiV4UniverseEmpty = false;
+    this.endpointCache = new Map();
     this.persistence = {
       lastSuccessAt: null, lastFailureAt: null, lastError: null, consecutiveFailures: 0, readOnlyDetectedAt: null,
       auditAttempts: 0, auditFailures: 0, auditLastOkAt: null, auditLastErrorAt: null, auditLastError: null,
@@ -510,9 +511,10 @@ export class IqMultiRuntime extends EventEmitter {
     try { client.unsubscribeCandles(ctx.activeId, CANDLE_SIZE_SECONDS); } catch { /* noop */ }
   }
 
-  setMarket(key, patch = {}, { persist = true } = {}) {
+  setMarket(key, patch = {}, { persist = true, actor = "system", requestId = null } = {}) {
     const ctx = this.markets.get(key);
     if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(key));
+    const previous = { enabled: ctx.enabled, paused: ctx.paused, configuredStake: ctx.configuredStake, maxStake: ctx.maxStake };
     const next = { ...patch };
     if (next.enabled === true && !ctx.enabled) {
       const active = this.activeMarketKeys();
@@ -543,12 +545,14 @@ export class IqMultiRuntime extends EventEmitter {
     ctx.revision = Number(ctx.revision || 0) + 1;
     if (persist) void this.#persistMarket(ctx);
     this.#emitEvent("market.config", { marketKey: key, enabled: ctx.enabled, paused: ctx.paused, maxStake: ctx.maxStake, configuredStake: ctx.configuredStake, revision: ctx.revision });
+    this.#auditRecord(`market_${key}_${this.now()}`, key, "MARKET_CONFIG", { oldValue: previous, newValue: { enabled: ctx.enabled, paused: ctx.paused, configuredStake: ctx.configuredStake, maxStake: ctx.maxStake }, patch: next, actor, requestId }, { persist: true });
     return this.#publicMarket(ctx);
   }
 
   /** Valor por operacao (configuredStake). APPLY TO ALL sobrescreve os valores individuais dos mercados alvo. */
-  applyGlobalMaxStake(value, keys = null) {
+  applyGlobalMaxStake(value, keys = null, meta = null) {
     const limit = Number(value);
+    const previousStake = Number(this.config.defaultStake) || null;
     if (!Number.isFinite(limit) || limit <= 0 || limit > this.config.hardCap) throw new IqWsError("INVALID_GLOBAL_STAKE", String(value));
     this.config.defaultStake = limit;
     this.config.globalMaxStake = Math.max(Number(this.config.globalMaxStake) || 0, limit);
@@ -566,12 +570,14 @@ export class IqMultiRuntime extends EventEmitter {
     }
     void this.#persistConfig();
     this.#emitEvent("config.global_stake", { defaultStake: limit, globalMaxStake: this.config.globalMaxStake, appliedTo: applied });
+    this.#auditRecord(`stake_${this.now()}`, null, "STAKE_CHANGE", { oldValue: previousStake, newValue: limit, appliedTo: applied, keys: Array.isArray(keys) ? keys.slice(0, 54) : null, actor: meta?.actor ?? "system", requestId: meta?.requestId ?? null }, { persist: true });
     return { defaultStake: limit, globalMaxStake: this.config.globalMaxStake, appliedTo: applied };
   }
 
-  setAutoExecute(enabled) { this.config.autoExecute = enabled === true; void this.#persistConfig(); return { autoExecute: this.config.autoExecute }; }
+  setAutoExecute(enabled, meta = null) { const previous = this.config.autoExecute === true; this.config.autoExecute = enabled === true; void this.#persistConfig(); this.#auditRecord(`auto_${this.now()}`, null, this.config.autoExecute ? "AUTO_ON" : "AUTO_OFF", { oldValue: previous, newValue: this.config.autoExecute, actor: meta?.actor ?? "system", requestId: meta?.requestId ?? null }, { persist: true }); return { autoExecute: this.config.autoExecute }; }
 
-  setMode(mode) {
+  setMode(mode, meta = null) {
+    const previousMode = this.config.mode;
     const next = mode === "REAL" ? "REAL" : "PRACTICE";
     if (next === this.config.mode) return this.modeState();
     if (next === "REAL" && !this.realMode.authorized()) throw new IqWsError("REAL_MODE_NOT_CONFIRMED");
@@ -581,6 +587,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.config.mode = next;
     void this.#persistConfig();
     this.#emitEvent("mode.changed", { mode: next, armed: false });
+    this.#auditRecord(`mode_${this.now()}`, null, "ACCOUNT_MODE_CHANGE", { oldValue: previousMode, newValue: next, armed: false, actor: meta?.actor ?? "system", requestId: meta?.requestId ?? null }, { persist: true });
     return this.modeState();
   }
 
@@ -728,14 +735,16 @@ export class IqMultiRuntime extends EventEmitter {
     return { ...status, realExecutionForbidden: true };
   }
 
-  setKillSwitch(engaged, reason = "UI") {
+  setKillSwitch(engaged, reason = "UI", meta = null) {
+    const previous = this.killSwitch.status().executionEnabled === true;
     if (engaged === true) { this.killSwitch.engage(); try { this.armState.disarm("KILL_SWITCH"); } catch { /* noop */ } this.realMode.revoke("KILL_SWITCH"); }
     else this.killSwitch.release();
     this.#emitEvent("kill_switch", { executionEnabled: this.killSwitch.status().executionEnabled, reason });
+    this.#auditRecord(`kill_switch_${this.now()}`, null, "KILL_SWITCH", { oldValue: previous, newValue: this.killSwitch.status().executionEnabled === true, reason: String(reason).slice(0, 60), actor: meta?.actor ?? "system", requestId: meta?.requestId ?? null }, { persist: true });
     return { killSwitch: this.killSwitch.status(), armState: this.armState.snapshot() };
   }
 
-  arm(limitBrl, { confirmation = false, actor = "ui" } = {}) {
+  arm(limitBrl, { confirmation = false, actor = "ui", requestId = null } = {}) {
     if (!this.account.practice.verified) throw new IqWsError("PRACTICE_ACCOUNT_NOT_VERIFIED");
     if (this.config.mode === "REAL" && !this.realMode.authorized()) throw new IqWsError("REAL_MODE_NOT_CONFIRMED");
     if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("KILL_SWITCH_ACTIVE");
@@ -753,10 +762,11 @@ export class IqMultiRuntime extends EventEmitter {
     const openMarkets = enabled.filter((ctx) => ctx.availability === "OPEN");
     const warning = openMarkets.length ? null : "NO_OPEN_MARKET_NOW";
     this.#emitEvent("execution.armed", { limitBrl: this.userLimitBrl, mode: this.config.mode, actor, warning, openMarkets: openMarkets.length });
+    this.#auditRecord(`arm_${this.now()}`, null, "ARM", { oldValue: false, newValue: arm.armed === true, limitBrl: this.userLimitBrl, mode: this.config.mode, openMarkets: openMarkets.length, warning, actor, requestId }, { persist: true });
     return { ...arm, userLimitBrl: this.userLimitBrl, mode: this.config.mode, currency: this.account.practice.currency, fxMode: this.account.practice.currency === "BRL" ? "BRL_NATIVE" : "NOMINAL_BROKER_CURRENCY_CAP", warning, openMarkets: openMarkets.length, marketsEnabled: enabled.length, markets: enabled.map((ctx) => ({ marketKey: ctx.marketKey, availability: ctx.availability })) };
   }
 
-  disarm(reason = "MANUAL") { this.#emitEvent("execution.disarmed", { reason }); return this.armState.disarm(reason); }
+  disarm(reason = "MANUAL", meta = null) { const previous = this.armState.snapshot().armed === true; const result = this.armState.disarm(reason); this.#emitEvent("execution.disarmed", { reason }); this.#auditRecord(`disarm_${this.now()}`, null, "DISARM", { oldValue: previous, newValue: result.armed === true, reason: String(reason).slice(0, 60), actor: meta?.actor ?? "system", requestId: meta?.requestId ?? null }, { persist: true }); return result; }
 
   connectionHealth() {
     const reasons = [];
@@ -1441,9 +1451,10 @@ export class IqMultiRuntime extends EventEmitter {
     }
   }
 
-  /** Lista para o MESAS (registry + disponibilidade viva). */
+  /** Lista para o MESAS (registry + disponibilidade viva). Cache curto + single-flight (nao compete com o runtime). */
   async mesasList() {
     if (!this.pool?.query) return { rows: [], totals: { total: 0, enabled: 0, byType: {}, byMarketType: {} } };
+    return this.cachedRead("mesas", 10_000, async () => {
     const rows = (await this.pool.query("SELECT market_key, instrument_type, duration_seconds, market_type, canonical, active_id, enabled, status, payout, source, updated_at FROM iq_rsi_instruments ORDER BY instrument_type, market_type, market_key")).rows ?? [];
     const view = rows.map((row) => {
       const ctx = this.markets.get(row.market_key);
@@ -1462,21 +1473,23 @@ export class IqMultiRuntime extends EventEmitter {
     const byType = {}; const byMarketType = {};
     for (const row of view) { byType[row.category] = (byType[row.category] ?? 0) + 1; byMarketType[row.marketType] = (byMarketType[row.marketType] ?? 0) + 1; }
     return { rows: view, totals: { total: view.length, enabled: view.filter((row) => row.enabled).length, byType, byMarketType } };
+    });
   }
 
-  async setInstrumentEnabled({ marketKey, instrumentType, durationSeconds = 60, enabled }) {
+  async setInstrumentEnabled({ marketKey, instrumentType, durationSeconds = 60, enabled, meta = null }) {
     if (!this.pool?.query) throw new IqWsError("MESAS_NO_DB");
     const type = String(instrumentType).toUpperCase();
+    const previous = (await this.pool.query("SELECT enabled FROM iq_rsi_instruments WHERE market_key=$1 AND instrument_type=$2 AND duration_seconds=$3", [marketKey, type, Number(durationSeconds)]).catch(() => ({ rows: [] }))).rows?.[0] ?? null;
     const result = await this.pool.query("UPDATE iq_rsi_instruments SET enabled=$4, updated_at=now() WHERE market_key=$1 AND instrument_type=$2 AND duration_seconds=$3 RETURNING *", [marketKey, type, Number(durationSeconds), enabled === true]);
     if (!result.rows?.length) throw new IqWsError("MESAS_INSTRUMENT_NOT_FOUND", `${marketKey}:${type}:${durationSeconds}`);
     this.#emitEvent("mesas.instrument", { marketKey, instrumentType: type, durationSeconds: Number(durationSeconds), enabled: enabled === true });
     // Auditoria persistida (MESAS controla o universo executavel V4; toggle nunca pode ser invisivel).
-    this.#auditRecord(`mesas_${type}_${marketKey}_${this.now()}`, marketKey, "MESAS_INSTRUMENT", { instrumentType: type, durationSeconds: Number(durationSeconds), enabled: enabled === true, actor: "OPERATOR_UI" }, { persist: true });
+    this.#auditRecord(`mesas_${type}_${marketKey}_${this.now()}`, marketKey, "MESAS_INSTRUMENT", { instrumentType: type, durationSeconds: Number(durationSeconds), oldValue: previous?.enabled ?? null, newValue: enabled === true, enabled: enabled === true, actor: meta?.actor ?? "OPERATOR_UI", requestId: meta?.requestId ?? null }, { persist: true });
     await this.refreshInstrumentRegistry({ force: true });
     return result.rows[0];
   }
 
-  async bulkSetInstruments({ filter = {}, enabled = false } = {}) {
+  async bulkSetInstruments({ filter = {}, enabled = false, confirmZeroUniverse = false, meta = null } = {}) {
     if (!this.pool?.query) throw new IqWsError("MESAS_NO_DB");
     const clauses = []; const values = [];
     if (filter.instrumentType) { values.push(String(filter.instrumentType).toUpperCase()); clauses.push(`instrument_type=$${values.length}`); }
@@ -1488,24 +1501,43 @@ export class IqMultiRuntime extends EventEmitter {
       else if (category === "CRYPTO") clauses.push("(canonical ILIKE '%BTC%' OR canonical ILIKE '%ETH%' OR canonical ILIKE '%LTC%' OR canonical ILIKE '%XRP%' OR canonical ILIKE '%ADA%' OR canonical ILIKE '%SOL%' OR canonical ILIKE '%DOGE%')");
     }
     if (filter.marketKey) { values.push(filter.marketKey); clauses.push(`market_key=$${values.length}`); }
+    // Fail closed: bulk sem filtro explicito NUNCA pode virar "todos".
+    if (!clauses.length) throw new IqWsError("MESAS_FILTER_REQUIRED", "filter explicito obrigatorio (instrumentType/marketType/category/marketKey)");
+    const where = `WHERE ${clauses.join(" AND ")}`;
+    const enabledBefore = Number((await this.pool.query("SELECT count(*)::int AS n FROM iq_rsi_instruments WHERE enabled=true")).rows?.[0]?.n) || 0;
+    let matchedEnabled = 0;
+    if (enabled !== true) {
+      matchedEnabled = Number((await this.pool.query(`SELECT count(*)::int AS n FROM iq_rsi_instruments ${where} AND enabled=true`, values)).rows?.[0]?.n) || 0;
+      const enabledAfter = enabledBefore - matchedEnabled;
+      if (enabledBefore > 0 && enabledAfter === 0 && confirmZeroUniverse !== true) {
+        throw new IqWsError("MESAS_ZERO_UNIVERSE_CONFIRMATION_REQUIRED", `desligaria ${matchedEnabled} de ${enabledBefore} instrumentos ativos; envie confirmZeroUniverse=true para confirmar`);
+      }
+    }
     values.push(enabled === true);
-    const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
     const result = await this.pool.query(`UPDATE iq_rsi_instruments SET enabled=$${values.length}, updated_at=now() ${where} RETURNING market_key, instrument_type`, values);
-    this.#emitEvent("mesas.bulk", { filter, enabled: enabled === true, changed: result.rows?.length ?? 0 });
-    this.#auditRecord(`mesas_bulk_${this.now()}`, null, "MESAS_BULK", { filter, enabled: enabled === true, changed: result.rows?.length ?? 0, actor: "OPERATOR_UI" }, { persist: true });
+    const changed = result.rows?.length ?? 0;
+    const enabledAfterFinal = enabled === true ? enabledBefore + changed : enabledBefore - matchedEnabled;
+    this.#emitEvent("mesas.bulk", { filter, enabled: enabled === true, changed, enabledBefore, enabledAfter: enabledAfterFinal });
+    this.#auditRecord(`mesas_bulk_${this.now()}`, null, "MESAS_BULK", { filter, enabled: enabled === true, confirmZeroUniverse: confirmZeroUniverse === true, changed, enabledBefore, enabledAfter: enabledAfterFinal, oldValue: enabledBefore, newValue: enabledAfterFinal, actor: meta?.actor ?? "OPERATOR_UI", requestId: meta?.requestId ?? null }, { persist: true });
+    if (enabled === true || enabledBefore === 0 || enabledAfterFinal > 0) {
+      // ok
+    } else {
+      this.#emitEvent("mesas.bulk_zero_universe", { filter, matchedEnabled, enabledBefore, enabledAfter: enabledAfterFinal, confirmZeroUniverse: confirmZeroUniverse === true, actor: meta?.actor ?? "OPERATOR_UI", requestId: meta?.requestId ?? null });
+      this.#safe(() => this.log("MESAS_BULK_ZERO_UNIVERSE", JSON.stringify({ matchedEnabled, enabledBefore, filter })));
+    }
     await this.refreshInstrumentRegistry({ force: true });
-    return { changed: result.rows?.length ?? 0, enabled: enabled === true };
+    return { changed, enabled: enabled === true, enabledBefore, enabledAfter: enabledAfterFinal };
   }
 
-  /** Eventos persistidos da V4 (read-only, auditoria do funil DETECT->WATCH->GATE->SUBMIT). */
+  /** Eventos persistidos da V4 (read-only, auditoria do funil DETECT->WATCH->GATE->SUBMIT). Cache curto + single-flight. */
   async rsiV4Events(params = {}) {
     if (!this.rsiAgentsV4?.events) return { events: [], unavailable: true };
-    return this.rsiAgentsV4.events(params);
+    return this.cachedRead(`v4-events:${params.marketKey ?? "-"}:${params.limit ?? 100}`, 5_000, () => this.rsiAgentsV4.events(params));
   }
 
   async rsiV4EventsFunnel(params = {}) {
     if (!this.rsiAgentsV4?.eventsFunnel) return { funnel: [], unavailable: true };
-    return this.rsiAgentsV4.eventsFunnel(params);
+    return this.cachedRead(`v4-funnel:${params.marketKey ?? "-"}`, 15_000, () => this.rsiAgentsV4.eventsFunnel(params));
   }
 
   /**
@@ -3242,7 +3274,40 @@ export class IqMultiRuntime extends EventEmitter {
       audit: { attempts: p.auditAttempts, failures: p.auditFailures, lastOkAt: p.auditLastOkAt, lastErrorAt: p.auditLastErrorAt, lastError: p.auditLastError },
       config: { lastOkAt: p.configLastOkAt, lastErrorAt: p.configLastErrorAt, lastError: p.configLastError },
       market: { lastOkAt: p.marketLastOkAt, lastErrorAt: p.marketLastErrorAt, lastError: p.marketLastError },
+      pool: this.poolStats(),
     };
+  }
+
+  /** Diagnostico do pool Postgres (sem segredos): usado para investigar saturacao/checkout timeout. */
+  poolStats() {
+    const pool = this.pool;
+    if (!pool) return null;
+    return {
+      total: Number.isFinite(Number(pool.totalCount)) ? Number(pool.totalCount) : null,
+      idle: Number.isFinite(Number(pool.idleCount)) ? Number(pool.idleCount) : null,
+      waiting: Number.isFinite(Number(pool.waitingCount)) ? Number(pool.waitingCount) : null,
+      max: Number.isFinite(Number(pool.options?.max)) ? Number(pool.options.max) : null,
+    };
+  }
+
+  /** Cache curto + single-flight para leituras de observabilidade (nunca compete com o runtime por conexoes). */
+  async cachedRead(key, ttlMs, loader) {
+    const now = this.now();
+    const hit = this.endpointCache.get(key);
+    if (hit?.pending) return hit.pending;
+    if (hit && now - hit.at < ttlMs) return hit.value;
+    const pending = (async () => {
+      try {
+        const value = await loader();
+        this.endpointCache.set(key, { at: this.now(), value });
+        return value;
+      } finally {
+        const current = this.endpointCache.get(key);
+        if (current?.pending) this.endpointCache.set(key, { at: current.at ?? 0, value: current.value });
+      }
+    })();
+    this.endpointCache.set(key, { at: hit?.at ?? 0, value: hit?.value, pending });
+    return pending;
   }
 
   /** Probe explicito de persistencia do audit trail (escrita 1 linha + leitura de volta). Usado apenas manualmente/pos-espaco. */

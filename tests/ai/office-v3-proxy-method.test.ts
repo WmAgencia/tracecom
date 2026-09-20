@@ -26,11 +26,19 @@ describe("MESAS reverse proxy (Vercel -> relay)", () => {
 
   it("payload do bulk NUNCA perde o filtro (regressao do desligamento global)", () => {
     const payload = mesasBulkPayload({ filter: { instrumentType: "BINARY", marketType: "OTC", unknown: "x" }, enabled: true });
-    expect(payload).toEqual({ filter: { instrumentType: "BINARY", marketType: "OTC" }, enabled: true });
+    expect(payload).toEqual({ filter: { instrumentType: "BINARY", marketType: "OTC" }, enabled: true, confirmZeroUniverse: false });
     const single = mesasBulkPayload({ filter: { marketKey: "EURUSD:OTC" }, enabled: true });
-    expect(single).toEqual({ filter: { marketKey: "EURUSD:OTC" }, enabled: true });
-    const filtered = mesasBulkPayload({ filter: { category: "BINARY" }, enabled: false });
-    expect(filtered).toEqual({ filter: { category: "BINARY" }, enabled: false });
-    expect(mesasBulkPayload({})).toEqual({ filter: {}, enabled: false });
+    expect(single).toEqual({ filter: { marketKey: "EURUSD:OTC" }, enabled: true, confirmZeroUniverse: false });
+    const filtered = mesasBulkPayload({ filter: { category: "BINARY" }, enabled: false, confirmZeroUniverse: true });
+    expect(filtered).toEqual({ filter: { category: "BINARY" }, enabled: false, confirmZeroUniverse: true });
+  });
+
+  it("bulk incompleto => null (400, nunca default destrutivo)", () => {
+    expect(mesasBulkPayload({})).toBeNull();
+    expect(mesasBulkPayload({ enabled: false })).toBeNull();
+    expect(mesasBulkPayload({ filter: {} })).toBeNull();
+    expect(mesasBulkPayload({ filter: { unknown: "x" }, enabled: true })).toBeNull();
+    expect(mesasBulkPayload({ filter: { instrumentType: "BINARY" } })).toBeNull();
+    expect(mesasBulkPayload({ filter: { instrumentType: "BINARY" }, enabled: "false" })).toBeNull();
   });
 });

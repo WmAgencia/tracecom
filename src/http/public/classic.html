@@ -280,6 +280,7 @@
 
   <dialog id="analysisDialog"><button id="closeDetails" class="quiet">FECHAR</button><pre id="analysisDetails"></pre></dialog>
   <dialog id="adminDialog"><div id="adminGenerateStep"><span class="kicker">OPENCODE FULL DIAGNOSTIC</span><p>Expiração: <input id="adminExpiration" type="number" min="0" value="0" /> dias (0 = sem expiração)</p><p class="fine">Scopes somente de leitura e pesquisa. Nenhum scope de broker ou ordem.</p><div class="controls"><button id="adminGenerateConfirm" class="secondary">GERAR API KEY</button><button id="adminRotateConfirm" class="quiet">ROTACIONAR</button><button id="adminRevokeConfirm" class="quiet" hidden>REVOGAR ATUAL</button><button id="adminClose" class="quiet">FECHAR</button></div><div id="adminKeyBox" hidden><span class="kicker">API KEY GERADA</span><pre id="adminKeyValue"></pre><p class="fine">Copie esta chave agora. Ela não poderá ser exibida novamente.</p><div class="controls"><button id="adminCopyKey" class="secondary">COPIAR CHAVE</button></div></div></div></dialog>
+  <script src="/office-v3/operator-auth.js"></script>
   <script type="module" src="/app.js"></script>
   <script type="module" src="/strategy-console.js"></script>
   <script type="module" src="/office.js"></script>
