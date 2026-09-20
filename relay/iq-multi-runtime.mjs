@@ -227,11 +227,20 @@ export class IqMultiRuntime extends EventEmitter {
     this.running = true; this.stopRequested = false;
     void this.knowledge.rebuild();
     void this.#runLoop();
+    // Auto-recuperacao: boot com DB lento nao pode deixar a config default (stake/autoExecute) presa para sempre.
+    if (!this.configHydrationRetry) {
+      this.configHydrationRetry = setInterval(() => {
+        if (!this.running || this.configHydrated || !this.pool) return;
+        void this.#loadPersistedConfig().catch(() => undefined);
+      }, 20_000);
+      if (typeof this.configHydrationRetry.unref === "function") this.configHydrationRetry.unref();
+    }
     return { started: true, version: RUNTIME_VERSION };
   }
 
   stop(reason = "STOP_REQUESTED") {
     this.running = false; this.stopRequested = true;
+    if (this.configHydrationRetry) { clearInterval(this.configHydrationRetry); this.configHydrationRetry = null; }
     if (this.availabilityTimer) { clearTimeout(this.availabilityTimer); this.availabilityTimer = null; }
     const waiter = this.#disconnectedWaiter; if (waiter) { this.#disconnectedWaiter = null; waiter(); }
     try { this.client?.close(reason); } catch { /* noop */ }
@@ -3359,7 +3368,7 @@ export class IqMultiRuntime extends EventEmitter {
         for (const ctx of enabled.slice(this.config.maxActiveMarkets)) { ctx.enabled = false; void this.#persistMarket(ctx); }
         this.#safe(() => this.log("IQ_MULTI_LIMIT_ENFORCED_ON_LOAD", JSON.stringify({ before: enabled.length, after: this.config.maxActiveMarkets })));
       }
-    } catch (error) { this.#safe(() => this.log("IQ_MULTI_CONFIG_LOAD_FAILED", String(error?.message ?? error).slice(0, 120))); }
+    } catch (error) { this.#safe(() => this.log("IQ_MULTI_CONFIG_LOAD_FAILED", String(error?.message ?? error).slice(0, 120))); this.configLoaded = false; this.configHydrated = false; }
   }
 
   async #loadDailyStats() {
