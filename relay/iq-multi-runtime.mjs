@@ -1405,16 +1405,19 @@ export class IqMultiRuntime extends EventEmitter {
       });
       this.rsiAgentsV4.assignUniverse(merged);
       const enabled = merged.filter((row) => row.enabled).length;
-      const empty = merged.length > 0 && enabled === 0;
+      const legacyEnabledOpen = [...this.markets.values()].filter((ctx) => ctx.enabled === true && ctx.availability === "OPEN").length;
+      // Alarme cobre registry vazio (total 0, ex.: DB recriado) e 0/N com mercados legados ligados.
+      const empty = enabled === 0 && this.configHydrated === true && legacyEnabledOpen > 0;
       if (empty && this.rsiV4UniverseEmpty !== true) {
         this.rsiV4UniverseEmpty = true;
         this.#emitEvent("rsi.v4.universe_empty", {
           total: merged.length, enabled, blocked: merged.length,
-          legacyEnabled: [...this.markets.values()].filter((ctx) => ctx.enabled).length,
-          reason: "MESAS_ZERO_ENABLED",
-          note: "Nenhum instrumento ligado em MESAS: o runner V4 avalia zero mercados (nenhuma ordem e possivel).",
+          registryEmpty: merged.length === 0,
+          legacyEnabled: legacyEnabledOpen,
+          reason: merged.length === 0 ? "MESAS_REGISTRY_EMPTY" : "MESAS_ZERO_ENABLED",
+          note: "Nenhum instrumento executavel em MESAS: o runner V4 avalia zero mercados (nenhuma ordem e possivel).",
         });
-        this.#safe(() => this.log("RSI_V4_UNIVERSE_EMPTY", JSON.stringify({ total: merged.length, legacyEnabled: [...this.markets.values()].filter((ctx) => ctx.enabled).length })));
+        this.#safe(() => this.log("RSI_V4_UNIVERSE_EMPTY", JSON.stringify({ total: merged.length, registryEmpty: merged.length === 0, legacyEnabled: legacyEnabledOpen })));
       } else if (!empty && this.rsiV4UniverseEmpty === true) {
         this.rsiV4UniverseEmpty = false;
         this.#emitEvent("rsi.v4.universe_restored", { total: merged.length, enabled });
@@ -1560,7 +1563,7 @@ export class IqMultiRuntime extends EventEmitter {
       entryMode: state.entryMode ?? null, expectedCushion: state.expectedCushion ?? null,
       watch: state.watch ?? null,
           strictV2Decision: state.strictV2Decision ?? null, pullbackV2Decision: state.pullbackV2Decision ?? null,
-          ...this.#executionMeta({ source: `agent-v4:${state.strategy}`, marketKey: ctx.marketKey }),
+          ...this.#executionMeta({ source: `agent-${state.strategy === "RSI_REVERSAL_V4" ? "v4" : "v3"}:${state.strategy}`, marketKey: ctx.marketKey }),
     });
   }
 

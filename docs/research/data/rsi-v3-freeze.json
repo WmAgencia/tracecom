@@ -1,6 +1,6 @@
 {
   "schema": "rsi-v3-freeze-v1",
-  "frozenAtUtc": "2026-09-19T23:45:52.957Z",
+  "frozenAtUtc": "2026-09-20T00:01:58.003Z",
   "sourceCommit": null,
   "noTuning": true,
   "strategy": "RSI_REVERSAL_PULLBACK_V3",
@@ -34,8 +34,8 @@
       "bytes": 70744
     },
     "relay/iq-multi-runtime.mjs": {
-      "sha256": "c42b7abfbe40638aa43b010c69fb0ba1cad8f9fa7e9bd7949ae537a0a8f404cc",
-      "bytes": 310374
+      "sha256": "dc31efba3fb1a6435ee2649eb12213d464252bdc6d7e0f54a06a75b36fd58242",
+      "bytes": 310744
     },
     "relay/rsi-skills-v2.mjs": {
       "sha256": "d67a8d671b548016363288ede246c7f8a6ed43419ed85b0d0da9480534f1e17c",

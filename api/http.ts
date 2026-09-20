@@ -621,7 +621,7 @@ export function mesasTogglePayload(input: Record<string, unknown> = {}): Record<
   return {
     marketKey: String(input.marketKey ?? "").slice(0, 40),
     instrumentType: String(input.instrumentType ?? "BINARY").slice(0, 16),
-    durationSeconds: Number.isFinite(Number(input.durationSeconds)) ? Number(input.durationSeconds) : 60,
+    durationSeconds: Number.isFinite(Number(input.durationSeconds)) && Number(input.durationSeconds) > 0 ? Number(input.durationSeconds) : 60,
     enabled: input.enabled === true,
   };
 }
