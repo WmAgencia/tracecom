@@ -1882,6 +1882,8 @@ export class IqMultiRuntime extends EventEmitter {
       const nowSec = Math.floor(stamp / 1000);
       const expired = expirations.find((ts) => ts >= nowSec + 30) ?? (Math.ceil((nowSec + 30) / 60) * 60);
       const expirationSize = expired - nowSec;
+      const recentMcp = (this.mcpBinaryRecent ?? []).filter((ts) => stamp - ts < 120_000);
+      if (recentMcp.length >= 2) throw new IqWsError("MCP_CONCURRENCY_CAP", String(recentMcp.length));
       let trade;
       try { trade = await mcp.placeTrade({ balanceId, assetId: asset.asset_id, direction: direction === "SELL" ? "SELL" : "BUY", amount, profitPercent: asset.profit_percent, expirationSize, expired }); }
       catch (error) { if (/profit|stale|price|expiration|size/i.test(String(error?.message ?? ""))) { this.binaryMcpAssets = await mcp.listAssets(); this.binaryMcpAssetsAt = this.now(); const fresh = this.binaryMcpAssets.find((a) => Number(a.asset_id) === Number(asset.asset_id)) ?? asset; trade = await mcp.placeTrade({ balanceId, assetId: fresh.asset_id, direction: direction === "SELL" ? "SELL" : "BUY", amount, profitPercent: fresh.profit_percent, expirationSize, expired }); } else throw error; }
@@ -1893,6 +1895,7 @@ export class IqMultiRuntime extends EventEmitter {
       if (this.pool?.query) await this.pool.query("INSERT INTO iq_executions(execution_id, requested_at, market_key, symbol, direction, stake, state, meta, broker_order_id, account_context, account_type, mode) VALUES($1, now(), $2, $3, $4, $5, 'ACKNOWLEDGED', $6::jsonb, $7, 'REAL', 'REAL', 'REAL')", [executionRowId, marketKey, String(marketKey).split(":")[0], direction, amount, JSON.stringify(meta), positionId !== null ? String(positionId) : null]).catch((error) => { this.#safe(() => this.log("MCP_BINARY_EXEC_INSERT_FAIL", String(error?.message ?? error).slice(0, 140))); });
       this.#emitEvent("order.mcp", { marketKey, assetId: asset.asset_id, amount, positionId, mode: "REAL", verify });
       if (positionId === null) throw new IqWsError("MCP_NO_POSITION_ID", JSON.stringify(trade ?? {}).slice(0, 200));
+      this.mcpBinaryRecent = [...recentMcp, stamp].slice(-20);
       return { state: "ACKNOWLEDGED", disposition: "EXECUTED", brokerOrderId: positionId, executionId: executionRowId, stake: amount, stakeRequested: requestedAmount, effectiveStake: amount, stakeUsed: amount, mode: "REAL", instrumentType: "BINARY", durationSeconds: expirationSize, verify };
     }
     const registry = this.rsiAgentsV2Live?.instruments?.get?.(`${marketKey}|BINARY`) ?? null;
