@@ -38,7 +38,8 @@ export const RSI_AGENTS_V2_LIVE_POLICY = Object.freeze({
   // GATE DE ELEGIBILIDADE DE ENTRADA (infra/execucao; nao altera o core V2 congelado):
   // a ordem so pode sair se o RSI AINDA estiver perto do extremo no momento da entrada
   // (BUY: <= buyMax; SELL: >= sellMin). Bollinger/DMI/ADX continuam sendo a confirmacao V2.
-  entryRsiNearExtreme: { buyMax: 25, sellMin: 75 }, // REGRA DO OPERADOR: entrada somente com RSI no extremo profundo (BUY<=25 / SELL>=75)
+  entryRsiNearExtreme: { buyMax: 25, sellMin: 75 }, // legado (nao bloqueia mais a entrada)
+  candidateExtreme: { buyMax: 25, sellMin: 75 },    // REGRA DO OPERADOR: candidato somente a partir de RSI <=25 / >=75
   watchPolicy: "ACTIVE_CANDIDATE+PRIORITY_FINAL_WATCH (preservado da V3.1)",
   routing: "RSI_V2_ONLY",
   singleBrokerPath: "runtime.submitAgentV2LiveOrder -> requestOrder",
@@ -165,13 +166,12 @@ export class RsiAgentsV2Live {
     return { purchaseCutoffAt: cutoff, entryWindowOpensAt: opens, entryWindowClosesAt: closes, safeMarginMs: margin, windowMs: closes - opens };
   }
 
-  /** Gate de entrada: o RSI precisa estar perto do extremo no instante da ordem (infra). */  #entryRsiEligible({ indicators, direction }) {
+  /** SPEC: quem autoriza a entrada e o Strategy Core V2 (confirmacao + revalidacao causal).
+   *  O RSI (<=25/>=75) filtra o CANDIDATO, nunca o instante da ordem. */
+  #entryRsiEligible({ indicators, direction }) {
     if (direction !== "BUY" && direction !== "SELL") return { ok: false, reason: "SEM_DIRECAO" };
     const rsi = num(indicators?.rsi);
-    if (rsi === null) return { ok: false, reason: "RSI_UNAVAILABLE" };
-    const gate = RSI_AGENTS_V2_LIVE_POLICY.entryRsiNearExtreme;
-    if (direction === "BUY") return rsi <= gate.buyMax ? { ok: true, rsi, reason: "RSI_LADO_OK_BUY" } : { ok: false, rsi, reason: "RSI_DO_LADO_ERRADO" };
-    return rsi >= gate.sellMin ? { ok: true, rsi, reason: "RSI_LADO_OK_SELL" } : { ok: false, rsi, reason: "RSI_DO_LADO_ERRADO" };
+    return { ok: true, rsi, reason: "V2_CORE_DECIDE" };
   }
 
   #cancelEpisode({ watchKey, marketKey, instrumentType, reason, episode }) {
@@ -310,6 +310,15 @@ export class RsiAgentsV2Live {
     if (!episode) {
       state.waitReason = update.event === "NO_CANDIDATE" ? "NO_CANDIDATE_RSI_NEUTRO" : update.event;
       state.reason = "RSI neutro: candidate somente nasce em extremo (<=30 / >=70)";
+      this.#setState(state); void this.#persistState(state); return state;
+    }
+    const candidateRsi = num(episode.candidateRsi);
+    const zone = RSI_AGENTS_V2_LIVE_POLICY.candidateExtreme;
+    const zoneOk = candidateRsi !== null && (candidateRsi <= zone.buyMax || candidateRsi >= zone.sellMin);
+    if (!zoneOk) {
+      state.waitReason = "CANDIDATE_RSI_FORA_DA_ZONA_75_25";
+      state.reason = "candidate RSI " + candidateRsi + " fora da zona do operador (<=" + zone.buyMax + " / >=" + zone.sellMin + ")";
+      this.counters.waits[state.waitReason] = (this.counters.waits[state.waitReason] ?? 0) + 1;
       this.#setState(state); void this.#persistState(state); return state;
     }
 
