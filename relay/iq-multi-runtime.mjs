@@ -519,6 +519,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   setMarket(key, patch = {}, { persist = true, actor = "system", requestId = null } = {}) {
     const ctx = this.markets.get(key);
+      if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(key));
     if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(key));
     const previous = { enabled: ctx.enabled, paused: ctx.paused, configuredStake: ctx.configuredStake, maxStake: ctx.maxStake };
     const next = { ...patch };
@@ -567,6 +568,7 @@ export class IqMultiRuntime extends EventEmitter {
     let applied = 0;
     for (const key of targets) {
       const ctx = this.markets.get(key);
+      if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(key));
       if (!ctx) continue;
       ctx.configuredStake = limit;
       if (Number(ctx.maxStake) < limit) ctx.maxStake = Math.min(this.config.hardCap, limit);
@@ -2621,7 +2623,7 @@ export class IqMultiRuntime extends EventEmitter {
       if (!existing.duplicateLogged) { existing.duplicateLogged = true; this.#emitEvent("signal.disposition", { marketKey: ctx.marketKey, action, disposition: "DUPLICATE", reason: "SINAL_JA_REGISTRADO", signalId: existing.id, ...signalMeta }); }
       return existing;
     }
-    const resolved = resolveFinalStake({ marketConfiguredStake: ctx.configuredStake, configuredStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, marketMaxStake: ctx.maxStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap });
+    const resolved = resolveFinalStake({ marketConfiguredStake: ctx?.configuredStake ?? null, configuredStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, marketMaxStake: ctx.maxStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap });
     const last = list[list.length - 1] ?? ctx.lastCandle ?? null;
     const horizonSeconds = BRAIN_HORIZON_SECONDS;
     const freshness = { fresh: Boolean(ctx.featureState?.fresh) && ctx.lastTickAt !== null && now - ctx.lastTickAt <= MARKET_TICK_AGE_MS, tickAgeMs: ctx.lastTickAt === null ? null : now - ctx.lastTickAt, reason: ctx.featureState?.freshnessReason ?? "NO_FEATURE" };
@@ -3052,6 +3054,7 @@ export class IqMultiRuntime extends EventEmitter {
       throw new IqWsError("EXECUTION_SOURCE_BLOCKED", `${routing.source} bloqueado pela politica ${routing.policy}`);
     }
     const ctx = this.markets.get(key);
+      if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(key));
     if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(key));
     if (!this.client || !this.session.connected) throw new IqWsError("WS_DISCONNECTED");
     if (this.pendingOrders.has(key)) throw new IqWsError("ORDER_IN_FLIGHT", key);
@@ -3060,7 +3063,7 @@ export class IqMultiRuntime extends EventEmitter {
     const last = this.#candleList(ctx).pop();
     const freshness = { fresh: Boolean(ctx.featureState?.fresh) && ctx.lastTickAt !== null && this.now() - ctx.lastTickAt <= MARKET_TICK_AGE_MS, tickAgeMs: ctx.lastTickAt === null ? null : this.now() - ctx.lastTickAt, reason: ctx.featureState?.freshnessReason ?? "NO_FEATURE" };
     const realAuthorized = this.config.mode === "REAL" && process.env.REAL_TRADING_ENABLED === "true";
-    const resolvedStake = resolveFinalStake({ requestedStake: Number.isFinite(Number(stake)) && Number(stake) > 0 ? Number(stake) : undefined, marketConfiguredStake: ctx.configuredStake, configuredStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, marketMaxStake: ctx.maxStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap });
+    const resolvedStake = resolveFinalStake({ requestedStake: Number.isFinite(Number(stake)) && Number(stake) > 0 ? Number(stake) : undefined, marketConfiguredStake: ctx?.configuredStake ?? null, configuredStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, marketMaxStake: ctx.maxStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap });
     const finalStake = resolvedStake.finalStake;
     if (!Number.isFinite(finalStake) || finalStake <= 0) throw new IqWsError("NO_STAKE_CONFIGURED");
     const requestedKey = String(idempotencyKey ?? `${key}:${decisionId ?? this.now()}`).slice(0, 160);
@@ -3073,7 +3076,7 @@ export class IqMultiRuntime extends EventEmitter {
     // Ordem manual/API e acao deliberada do operador; o gate de setup vale para decisoes AUTO do brain.
     const setupValid = source !== "AUTO_DECISION" || (brainSetup.setup !== "NO_VALID_SETUP" && brainSetup.setup !== "SYNTHETIC_TEST");
     const gateResult = this.gate.evaluate({
-      market: { ...ctx, maxStake: ctx.maxStake, marketKey: key }, marketKey: key, requestedMode: this.config.mode, realAuthorized,
+      market: { ...(ctx ?? {}), maxStake: ctx?.maxStake ?? this.config.hardCap, marketKey: key }, marketKey: key, requestedMode: this.config.mode, realAuthorized,
       connection: { connected: this.session.connected, timeValid: this.session.timeValid, host: this.session.host },
       serverTime: { ms: this.client.serverNow(), skewMs: this.session.clockSkewMs },
       freshness, decision: { action: decisionAction, ageMs: Number(decisionAgeMs) || 0, horizonSeconds, reason: ctx.decisionState.reason }, strategy: { valid: setupValid, variantId: brainSetup.setup, reason: setupValid ? null : "SEM_SETUP_VALIDO" },
@@ -3317,6 +3320,7 @@ export class IqMultiRuntime extends EventEmitter {
     const key = this.orderIndex.get(String(brokerOrderId));
     if (!key) return;
     const ctx = this.markets.get(key);
+      if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(key));
     const position = this.openPositions.get(key);
     if (!ctx || !position || position.settling === true) return;
     if (broker.result === "UNKNOWN") { this.#safe(() => this.log("IQ_MULTI_SETTLEMENT_UNKNOWN", JSON.stringify({ marketKey: key, brokerOrderId }))); return; }

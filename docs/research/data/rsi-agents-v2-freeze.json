@@ -1,6 +1,6 @@
 {
   "schema": "rsi-agents-v2-freeze-v1",
-  "frozenAtUtc": "2026-09-20T12:56:42.188Z",
+  "frozenAtUtc": "2026-09-20T13:02:46.434Z",
   "sourceCommit": null,
   "noTuning": true,
   "strategies": {
@@ -47,8 +47,8 @@
       "bytes": 5749
     },
     "relay/iq-multi-runtime.mjs": {
-      "sha256": "23a4b99a65b440ea04d9235b9c534e77e57a5363f1a042797a144ef55f906a43",
-      "bytes": 337021
+      "sha256": "0279ef4ba3ad61bdee5444bd4c95726011e71cbf0e0d0ce1671fb18bb79d6e45",
+      "bytes": 337343
     },
     "relay/rsi-v3-watch.mjs": {
       "sha256": "77fa2ad3bfb69d155346e99a069c5183eec9e4b1da90ac772a0c79df7f3558d5",
