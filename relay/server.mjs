@@ -30,7 +30,6 @@ const pool = new Pool({
   application_name: "tracecom-live-relay",
 });
 pool.on("error", (error) => console.info("PG_POOL_ERROR", String(error?.message ?? error).slice(0, 160)));
-pool.on("connect", (client) => { client.query("SET statement_timeout = 15000").catch(() => undefined); });
 // Backpressure: best-effort (shadow/telemetria) nao pode esgotar o pool; criticos passam.
 const __rawQuery = pool.query.bind(pool);
 pool.__rawQuery = (text, params) => (params === undefined ? __rawQuery(text) : __rawQuery(text, params));
