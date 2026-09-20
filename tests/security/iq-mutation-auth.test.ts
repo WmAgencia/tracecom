@@ -134,6 +134,45 @@ describe("SEGURANCA — mutacoes /api/iq/*", () => {
     expect(relayCalls[0]?.headers.actor).toBe("operator");
   });
 
+  it("sessao de PAINEL: emitida sem chave (same-origin) e valida sem mutar nada", async () => {
+    const panel = await fetch(`${appBase}/api/auth/panel`, { method: "POST", headers: { origin: appBase, "sec-fetch-site": "same-origin" } });
+    expect(panel.status).toBe(200);
+    const cookie = cookiesFrom(panel);
+    expect(cookie.startsWith("tc_op=")).toBe(true);
+    const session = await fetch(`${appBase}/api/auth/session`, { headers: { cookie } });
+    expect(session.status).toBe(200);
+    const body = await session.json() as Record<string, unknown>;
+    expect(body.ok).toBe(true);
+    expect(["operator", "panel"]).toContain(body.actor);
+    const anonymous = await fetch(`${appBase}/api/auth/session`);
+    expect(anonymous.status).toBe(401);
+    relayCalls.length = 0;
+    const mutation = await fetch(`${appBase}/api/iq/mesas`, { method: "PUT", headers: { "content-type": "application/json", cookie }, body: JSON.stringify({ marketKey: "EURUSD:OTC", instrumentType: "BINARY", durationSeconds: 60, enabled: true }) });
+    expect(mutation.status).toBe(200);
+    expect(relayCalls.length).toBe(1);
+    expect(relayCalls[0]?.method).toBe("PUT");
+  });
+
+  it("sessao de painel cross-origin => 403 (sem cookie emitido)", async () => {
+    const cross = await fetch(`${appBase}/api/auth/panel`, { method: "POST", headers: { origin: "https://evil.example", "sec-fetch-site": "cross-site" } });
+    expect(cross.status).toBe(403);
+  });
+
+  it("modo chave opcional (TRACECOM_OPERATOR_REQUIRE_KEY=true) bloqueia painel e mantem login por chave", async () => {
+    process.env.TRACECOM_OPERATOR_REQUIRE_KEY = "true";
+    try {
+      const panel = await fetch(`${appBase}/api/auth/panel`, { method: "POST", headers: { origin: appBase } });
+      expect(panel.status).toBe(403);
+      const login = await fetch(`${appBase}/api/auth/operator`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ accessKey: OPERATOR_KEY }) });
+      expect(login.status).toBe(200);
+      const cookie = cookiesFrom(login);
+      const mutation = await fetch(`${appBase}/api/iq/arm`, { method: "POST", headers: { "content-type": "application/json", cookie }, body: JSON.stringify({ limitBrl: 10, confirmation: "ARM_PRACTICE" }) });
+      expect(mutation.status).toBe(200);
+    } finally {
+      delete process.env.TRACECOM_OPERATOR_REQUIRE_KEY;
+    }
+  });
+
   it("login com chave errada => 401; chave certa => cookie HttpOnly/SameSite=Strict", async () => {
     const wrong = await fetch(`${appBase}/api/auth/operator`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ accessKey: "chave-errada" }) });
     expect(wrong.status).toBe(401);

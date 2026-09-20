@@ -777,7 +777,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   const isMutationMethod = methodUpper === "POST" || methodUpper === "PUT" || methodUpper === "PATCH" || methodUpper === "DELETE";
   let gateActor = "read_only";
   let gateAuth: { ok: boolean; reason: string; actor: string } = { ok: true, reason: "read_only", actor: "read_only" };
-  if (isMutationMethod && url.pathname.startsWith("/api/") && url.pathname !== "/api/auth/operator" && url.pathname !== "/api/auth/logout") {
+  if (isMutationMethod && url.pathname.startsWith("/api/") && url.pathname !== "/api/auth/operator" && url.pathname !== "/api/auth/panel" && url.pathname !== "/api/auth/logout") {
     const auth = operatorAuthorized(req);
     const researchPath = url.pathname.startsWith("/api/research/") || url.pathname.startsWith("/api/shadow/");
     if (auth.ok) { gateActor = "operator"; gateAuth = auth; }
@@ -907,6 +907,27 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (!stored) { json(502, { error: "provider_store_unavailable" }); return; }
       const config = await readAiProviderConfig();
       json(200, { status: "CONFIGURED", provider: "openCodeGo", model: config && typeof config.model === "string" ? config.model : model, maskedKey: maskApiKey(apiKey), updatedAt: new Date().toISOString(), shadowOnly: true });
+      return;
+    }
+    if (path === "/api/auth/panel" && (req.method === "POST" || req.method === "GET")) {
+      // Sessao do PAINEL: sem digitar chave. Emitida apenas para o proprio painel
+      // (same-origin/CSRF-safe) e registrada na auditoria. Modo chave opcional via env.
+      const requireKey = String(process.env.TRACECOM_OPERATOR_REQUIRE_KEY ?? "").toLowerCase() === "true";
+      if (requireKey) { json(403, { error: "key_required", hint: "TRACECOM_OPERATOR_REQUIRE_KEY=true: use /api/auth/operator" }); return; }
+      if (!sameOriginOk(req)) { json(403, { error: "cross_origin_blocked" }); return; }
+      const secret = operatorSigningSecret();
+      if (!secret) { json(503, { error: "operator_auth_not_configured" }); return; }
+      const expiresAt = Date.now() + OPERATOR_TTL_MS;
+      const { token } = signOperatorToken(secret, expiresAt);
+      res.setHeader("Set-Cookie", `${OPERATOR_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${Math.floor(OPERATOR_TTL_MS / 1000)}`);
+      json(200, { ok: true, actor: "panel", mode: "PANEL_SESSION", expiresAt: new Date(expiresAt).toISOString(), practiceOnly: true });
+      return;
+    }
+    if (path === "/api/auth/session" && req.method === "GET") {
+      // Read-only: valida a sessao sem executar nenhuma mutacao (usado em smoke/diagnostico).
+      const auth = operatorAuthorized(req);
+      if (!auth.ok) { json(auth.reason === "cross_origin_blocked" ? 403 : 401, { error: auth.reason, practiceOnly: true }); return; }
+      json(200, { ok: true, actor: auth.actor, practiceOnly: true });
       return;
     }
     if (path === "/api/auth/operator" && req.method === "POST") {

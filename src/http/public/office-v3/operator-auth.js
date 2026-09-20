@@ -1,21 +1,19 @@
 /**
- * TRACE/COM - OPERADOR (autenticacao de mutacoes)
+ * TRACE/COM - OPERADOR (mutacoes autenticadas sem digitar chave)
  *
- * As mutacoes /api/iq/* exigem sessao de operador (cookie HttpOnly emitido por
- * POST /api/auth/operator). Este shim:
- *   - intercepta SOMENTE mutacoes same-origin para /api/*;
- *   - em 401/403 pede a chave de acesso UMA vez (window.prompt) e troca por cookie;
- *   - repete a requisicao original apos autenticar;
- *   - nunca grava a chave no codigo, localStorage ou logs.
+ * As mutacoes /api/iq/* exigem sessao de operador (cookie HttpOnly assinado).
+ * O painel abre a sessao sozinho via POST /api/auth/panel (mesma origem), sem
+ * prompt e sem guardar nada no navegador. A chave por prompt so existe se o
+ * servidor exigir (TRACECOM_OPERATOR_REQUIRE_KEY=true) — nesse modo o painel
+ * informa o erro, mas continua sem embutir segredo nenhum no frontend.
  *
- * A chave e a configurada no servidor: TRACECOM_OPERATOR_KEY (preferida) ou LIVE_API_ADMIN_KEY.
  * GET nunca e afetado.
  */
 (() => {
   "use strict";
   const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
   let sessionActive = false;
-  let promptInFlight = null;
+  let bootstrapInFlight = null;
   const originalFetch = window.fetch ? window.fetch.bind(window) : null;
   if (!originalFetch) return;
 
@@ -32,49 +30,39 @@
     }
   }
 
-  async function unlockOperatorSession() {
+  async function ensurePanelSession() {
     if (sessionActive) return true;
-    if (promptInFlight) return promptInFlight;
-    promptInFlight = (async () => {
+    if (bootstrapInFlight) return bootstrapInFlight;
+    bootstrapInFlight = (async () => {
       try {
-        const key = window.prompt("Acesso de operador: informe a chave (ela nao fica salva no navegador).");
-        if (!key) return false;
-        const response = await originalFetch("/api/auth/operator", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ accessKey: key }),
-          credentials: "same-origin",
-        });
-        if (response.ok) {
-          sessionActive = true;
-          return true;
+        const response = await originalFetch("/api/auth/panel", { method: "POST", credentials: "same-origin" });
+        sessionActive = response.ok;
+        if (!response.ok && response.status !== 401) {
+          console.warn("[operator-auth] sessao de painel indisponivel", response.status);
         }
-        if (response.status === 429) window.alert("Muitas tentativas. Aguarde um minuto e tente novamente.");
-        else window.alert("Chave de operador invalida ou ausente no servidor. Nenhuma alteracao foi aplicada.");
-        return false;
+        return sessionActive;
       } catch {
         return false;
       } finally {
-        promptInFlight = null;
+        bootstrapInFlight = null;
       }
     })();
-    return promptInFlight;
+    return bootstrapInFlight;
   }
 
   async function operatorFetch(input, options = {}) {
     const response = await originalFetch(input, options);
     if (response.status !== 401) return response;
-    // Sessao expirada/invalida: descarta o cache em memoria e pede a chave de novo.
     sessionActive = false;
-    const unlocked = await unlockOperatorSession();
+    const unlocked = await ensurePanelSession();
     if (!unlocked) return response;
     return originalFetch(input, options);
   }
 
   window.fetch = (input, options) => (sameOriginApiMutation(input, options) ? operatorFetch(input, options) : originalFetch(input, options));
   window.__tcOperator = {
-    version: "operator-auth.1.0.0",
-    ensure: unlockOperatorSession,
+    version: "operator-auth.2.0.0",
+    ensure: ensurePanelSession,
     isSessionActive: () => sessionActive,
     logout: async () => {
       sessionActive = false;
