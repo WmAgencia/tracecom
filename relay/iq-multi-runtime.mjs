@@ -1865,8 +1865,10 @@ export class IqMultiRuntime extends EventEmitter {
       const canonical = String(marketKey).split(":")[0];
       const stamp = this.now();
       if (!this.binaryMcpAssets || stamp - (this.binaryMcpAssetsAt ?? 0) > 600_000) { this.binaryMcpAssets = await mcp.listAssets(); this.binaryMcpAssetsAt = stamp; }
-      const norm = (name) => String(name ?? "").replace(/\s*\(OTC\)\s*/i, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-      const asset = this.binaryMcpAssets.find((a) => norm(a.name) === canonical && (/OTC/i.test(String(a.name ?? "")) ? "OTC" : "NORMAL") === contract) ?? this.binaryMcpAssets.find((a) => norm(a.name) === canonical);
+      const norm = (name) => String(name ?? "").replace(/\(?\bOTC\b\)?/gi, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+      const pickAsset = (list) => list.find((a) => norm(a.name) === canonical && (/OTC/i.test(String(a.name ?? "")) ? "OTC" : "NORMAL") === contract) ?? list.find((a) => norm(a.name) === canonical) ?? null;
+      let asset = pickAsset(this.binaryMcpAssets);
+      if (!asset) { this.binaryMcpAssets = await mcp.listAssets(); this.binaryMcpAssetsAt = this.now(); asset = pickAsset(this.binaryMcpAssets); }
       if (!asset) throw new IqWsError("MCP_ASSET_NOT_FOUND", canonical);
       if (!this.binaryMcpBalances || stamp - (this.binaryMcpBalancesAt ?? 0) > 60_000) { this.binaryMcpBalances = await mcp.listBalances(); this.binaryMcpBalancesAt = stamp; }
       const balance = this.binaryMcpBalances.find((b) => /regular|real/i.test(String(b.type ?? ""))) ?? this.binaryMcpBalances[0];

@@ -38,7 +38,7 @@ export const RSI_AGENTS_V2_LIVE_POLICY = Object.freeze({
   // GATE DE ELEGIBILIDADE DE ENTRADA (infra/execucao; nao altera o core V2 congelado):
   // a ordem so pode sair se o RSI AINDA estiver perto do extremo no momento da entrada
   // (BUY: <= buyMax; SELL: >= sellMin). Bollinger/DMI/ADX continuam sendo a confirmacao V2.
-  entryRsiNearExtreme: { buyMax: 35, sellMin: 65 },
+  entryRsiNearExtreme: { buyMax: 50, sellMin: 50 }, // regra de lado: ordem so com a tese viva (RSI do lado certo); nao exigir retorno ao extremo
   watchPolicy: "ACTIVE_CANDIDATE+PRIORITY_FINAL_WATCH (preservado da V3.1)",
   routing: "RSI_V2_ONLY",
   singleBrokerPath: "runtime.submitAgentV2LiveOrder -> requestOrder",
@@ -170,8 +170,8 @@ export class RsiAgentsV2Live {
     const rsi = num(indicators?.rsi);
     if (rsi === null) return { ok: false, reason: "RSI_UNAVAILABLE" };
     const gate = RSI_AGENTS_V2_LIVE_POLICY.entryRsiNearExtreme;
-    if (direction === "BUY") return rsi <= gate.buyMax ? { ok: true, rsi, reason: "RSI_PERTO_EXTREMO_BUY" } : { ok: false, rsi, reason: "RSI_LONGE_DO_EXTREMO" };
-    return rsi >= gate.sellMin ? { ok: true, rsi, reason: "RSI_PERTO_EXTREMO_SELL" } : { ok: false, rsi, reason: "RSI_LONGE_DO_EXTREMO" };
+    if (direction === "BUY") return rsi <= gate.buyMax ? { ok: true, rsi, reason: "RSI_LADO_OK_BUY" } : { ok: false, rsi, reason: "RSI_DO_LADO_ERRADO" };
+    return rsi >= gate.sellMin ? { ok: true, rsi, reason: "RSI_LADO_OK_SELL" } : { ok: false, rsi, reason: "RSI_DO_LADO_ERRADO" };
   }
 
   #cancelEpisode({ watchKey, marketKey, instrumentType, reason, episode }) {
@@ -327,9 +327,9 @@ export class RsiAgentsV2Live {
       if (!decision.accepted || rsiGate.ok !== true) {
         state.waitReason = decision.accepted !== true
           ? (decision.counterEvidence.some((row) => row.severity === "HARD") ? `CONTRA_EVIDENCIA_${decision.reason}` : decision.reason)
-          : "RSI_LONGE_DO_EXTREMO";
+          : "RSI_DO_LADO_ERRADO";
         state.reason = decision.accepted === true
-          ? `RSI ${num(indicators.rsi)} fora da zona de extremo no momento da ordem (BUY<=${RSI_AGENTS_V2_LIVE_POLICY.entryRsiNearExtreme.buyMax} / SELL>=${RSI_AGENTS_V2_LIVE_POLICY.entryRsiNearExtreme.sellMin})`
+          ? `RSI ${num(indicators.rsi)} do lado errado da tese (BUY<=${RSI_AGENTS_V2_LIVE_POLICY.entryRsiNearExtreme.buyMax} / SELL>=${RSI_AGENTS_V2_LIVE_POLICY.entryRsiNearExtreme.sellMin})`
           : decision.reason;
         this.counters.waits[state.waitReason] = (this.counters.waits[state.waitReason] ?? 0) + 1;
         this.#setState(state); void this.#persistState(state); return state;
