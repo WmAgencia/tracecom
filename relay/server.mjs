@@ -7,6 +7,7 @@ import { frozenTick, getSelection, setSelection, frozenStats, selectionAudit, fr
 import { runVisionProvider, runTextProvider, runDecisionAgent, maskProviderKey } from './opencode-go.mjs';
 import { IqAuthSession } from './iqoption-auth.mjs';
 import { saveSession, loadSession, clearSession } from './iq-session-vault.mjs';
+import { createPersistScheduler } from './persist-scheduler.mjs';
 import { IqMultiRuntime } from './iq-multi-runtime.mjs';
 // RSI AGENTS V4: allowlist de execucao (somente RSI_REVERSAL_V4 pode chegar ao broker nesta rodada).
 import { RSI_V4_EXECUTION_ALLOWLIST } from './rsi-agents-v4.mjs';
@@ -20,7 +21,7 @@ import { Pool } from 'pg';
 const port = Number(process.env.PORT || 3000);
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: Math.max(2, Math.min(10, Number(process.env.PG_POOL_MAX) || 5)),
+  max: Math.max(2, Math.min(10, Number(process.env.PG_POOL_MAX) || 6)),
   idleTimeoutMillis: 10_000,
   connectionTimeoutMillis: 8_000,
   keepAlive: true,
@@ -28,6 +29,16 @@ const pool = new Pool({
 });
 pool.on("error", (error) => console.info("PG_POOL_ERROR", String(error?.message ?? error).slice(0, 160)));
 pool.on("connect", (client) => { client.query("SET statement_timeout = 15000").catch(() => undefined); });
+// Backpressure: best-effort (shadow/telemetria) nao pode esgotar o pool; criticos passam.
+const __rawQuery = pool.query.bind(pool);
+pool.__rawQuery = (text, params) => (params === undefined ? __rawQuery(text) : __rawQuery(text, params));
+const persistScheduler = createPersistScheduler({ pool, maxInFlight: Math.max(2, (Number(process.env.PG_POOL_MAX) || 6) - 1) });
+pool.query = (text, params, callback) => {
+  if (typeof params === "function") { callback = params; params = undefined; }
+  if (typeof callback === "function") return __rawQuery(text, params, callback);
+  return persistScheduler.query(text, params);
+};
+pool.schedulerStats = () => persistScheduler.stats();
 const mutationMeta = (req) => ({ actor: String(req.headers["x-tracecom-actor"] ?? "system").slice(0, 40), requestId: String(req.headers["x-request-id"] ?? "").slice(0, 64) || null });
 const iqAuth = new IqAuthSession();
 const IQ_SESSION_SECRET = () => process.env.TOKEN_SIGNING_SECRET || "";

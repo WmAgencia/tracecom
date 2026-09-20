@@ -3287,6 +3287,7 @@ export class IqMultiRuntime extends EventEmitter {
       idle: Number.isFinite(Number(pool.idleCount)) ? Number(pool.idleCount) : null,
       waiting: Number.isFinite(Number(pool.waitingCount)) ? Number(pool.waitingCount) : null,
       max: Number.isFinite(Number(pool.options?.max)) ? Number(pool.options.max) : null,
+      scheduler: typeof pool.schedulerStats === "function" ? pool.schedulerStats() : null,
     };
   }
 
