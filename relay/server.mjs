@@ -459,6 +459,7 @@ const server = http.createServer(async (req, res) => {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiAgentsStatus()), practiceOnly:true, realLocked:true, v3:true, frozen:true, controlsExecution:false }); }
   if(url.pathname === '/api/iq/research/rsi-agents-v4' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(wsRuntime.rsiAgentsV4?.status?.() ?? { error:'RSI_V4_UNAVAILABLE' }), practiceOnly:true, realLocked:true, shadowOnly:true, controlsExecution:false }); }
+  if(url.pathname === '/api/iq/research/consensus' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(wsRuntime.consensusStatus?.() ?? { error:'CONSENSUS_UNAVAILABLE' }), researchOnly:true, scope:'BINARY_OTC_ONLY' }); }
   if(url.pathname === '/api/iq/research/rsi-agents-v2-live' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(wsRuntime.rsiAgentsV2Live?.status?.() ?? { error:'RSI_V2_LIVE_UNAVAILABLE' }), practiceOnly:true, realLocked:true, strategyCore:'RSI_V2_ORIGINAL', scheduler:'CURRENT_ACTIVE_WATCH' }); }
   if(url.pathname === '/api/iq/research/rsi-agents-v4/events' && req.method === 'GET') {
