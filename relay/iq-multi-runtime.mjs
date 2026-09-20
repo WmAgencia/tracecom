@@ -72,6 +72,7 @@ import { RsiAgentsV3 } from "./rsi-agents-v3.mjs";
 import { RsiAgentsV4 } from "./rsi-agents-v4.mjs";
 import { RsiAgentsV2Live } from "./rsi-agents-v2-live.mjs";
 import { IqMcpClient, IQ_MCP_ENDPOINTS } from "./iq-mcp-client.mjs";
+import { RsiAgentsV2Blitz } from "./rsi-agents-v2-blitz.mjs";
 import { RSI_V3_WATCH_POLICY, shouldEvaluate } from "./rsi-v3-watch.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
@@ -105,7 +106,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = false, rsiAgentsV3Enabled = true, rsiAgentsV4Enabled = false, rsiAgentsV2LiveEnabled = false, executionAllowlist = null, executionPolicyName = null } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = false, rsiAgentsV3Enabled = true, rsiAgentsV4Enabled = false, rsiAgentsV2LiveEnabled = false, rsiAgentsV2BlitzEnabled = false, executionAllowlist = null, executionPolicyName = null } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -183,6 +184,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.rsiAgentsV4 = new RsiAgentsV4({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV4Enabled === true, controlsExecution: false });
     this.rsiAgentsV2Live = new RsiAgentsV2Live({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2LiveEnabled === true });
     this.iqMcp = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.blitz, log: this.log, now: this.now });
+    this.rsiAgentsV2Blitz = new RsiAgentsV2Blitz({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2BlitzEnabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -910,6 +912,8 @@ export class IqMultiRuntime extends EventEmitter {
       this.#safe(() => this.#observeRsiAgentsV4(ctx, list, now));
       // RSI AGENTS V2 LIVE (Strategy Core = V2 ORIGINAL; CONTROLADOR de execucao da rodada).
       this.#safe(() => this.#observeRsiAgentsV2Live(ctx, list, now));
+      // RSI AGENTS V2 BLITZ (API oficial MCP; 45s; fast lane = ativos com feed WS).
+      this.#safe(() => this.#observeRsiAgentsV2Blitz(ctx, list, now));
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
@@ -1451,6 +1455,7 @@ export class IqMultiRuntime extends EventEmitter {
   #observeRsiAgentsV2LiveTicks() {
     if (!this.rsiAgentsV2Live?.enabled) return;
     const now = this.now();
+    this.#pollBlitzSettlements();
     for (const ctx of this.markets.values()) {
       if (ctx.enabled !== true || ctx.availability !== "OPEN") continue;
       if (!this.rsiAgentsV2Live.hasActiveCandidate(ctx.marketKey)) continue;
@@ -1464,6 +1469,41 @@ export class IqMultiRuntime extends EventEmitter {
         candles: list, targetExpiryAt, payout: ctx.payout, now, latency: {},
       });
     }
+  }
+
+  /** V2 BLITZ por candle (fast lane: ativos Blitz com feed WS; 45s; ordem via MCP oficial). */
+  #observeRsiAgentsV2Blitz(ctx, list, now) {
+    if (!this.rsiAgentsV2Blitz?.enabled) return null;
+    if (!Array.isArray(list) || list.length < 3) return null;
+    const instruments = [...this.rsiAgentsV2Blitz.instruments.values()].filter((row) => row.marketKey === ctx.marketKey && row.enabled === true);
+    if (!instruments.length) return null;
+    const promises = instruments.map((row) => this.rsiAgentsV2Blitz.observeMarket({ marketKey: ctx.marketKey, instrumentType: "BLITZ_45S", durationSeconds: 45, candles: list, payout: ctx.payout, now }));
+    return Promise.all(promises).then((states) => { for (const state of states) this.#emitRsiAgentDecision(ctx, state, now); });
+  }
+
+  /** Settlement Blitz via API oficial (get_trade_history, 1 leitura/30s) — atualiza oportunidades/estado. */
+  #pollBlitzSettlements() {
+    if (!this.rsiAgentsV2Blitz?.enabled || !this.iqMcp?.enabled || !this.pool?.query) return;
+    const now = this.now();
+    if (now - (this.lastBlitzSettlePoll ?? 0) < 30_000) return;
+    this.lastBlitzSettlePoll = now;
+    void (async () => {
+      try {
+        const trades = await this.iqMcp.getTradeHistory({ limit: 30 });
+        for (const trade of trades) {
+          const raw = String(trade.result ?? "").toLowerCase();
+          const mapped = raw === "win" ? "WIN" : raw === "loose" || raw === "loss" ? "LOSS" : raw === "equal" || raw === "draw" ? "DRAW" : null;
+          if (!mapped) continue;
+          const positionId = String(trade.position_id ?? "");
+          if (!positionId) continue;
+          const row = (await this.pool.query("SELECT opportunity_id, market_key FROM iq_rsi_opportunities_v2live WHERE instrument_type='BLITZ_45S' AND order_id=$1 AND result IS NULL LIMIT 1", [positionId])).rows?.[0] ?? null;
+          if (!row) continue;
+          await this.pool.query("UPDATE iq_rsi_opportunities_v2live SET result=$2, profit=$3, expiry_price=$4, settlement_basis='IQ_MCP_BLITZ' WHERE opportunity_id=$1", [row.opportunity_id, mapped, num(trade.profit), num(trade.close_price)]).catch(() => undefined);
+          this.rsiAgentsV2Blitz.recordSettlement({ marketKey: row.market_key, result: mapped, profit: num(trade.profit) });
+          this.#emitEvent("blitz.settlement", { positionId, marketKey: row.market_key, result: mapped, profit: num(trade.profit) });
+        }
+      } catch (error) { this.#safe(() => this.log("BLITZ_SETTLE_POLL_FAIL", String(error?.message ?? error).slice(0, 120))); }
+    })();
   }
   async refreshInstrumentRegistry({ force = false } = {}) {
     if (!this.pool?.query || !this.rsiAgentsV4) return null;
@@ -1483,8 +1523,9 @@ export class IqMultiRuntime extends EventEmitter {
           activeId: ctx?.activeId ?? null, payout: ctx?.payout ?? toNum(row.payout),
         };
       });
-      this.rsiAgentsV4.assignUniverse(merged);
-      this.rsiAgentsV2Live?.assignUniverse?.(merged);
+      this.rsiAgentsV4.assignUniverse(merged.filter((row) => row.instrumentType === "BINARY"));
+      this.rsiAgentsV2Live?.assignUniverse?.(merged.filter((row) => row.instrumentType === "BINARY"));
+      this.rsiAgentsV2Blitz?.assignUniverse?.(merged.filter((row) => row.instrumentType === "BLITZ_45S"));
       const enabled = merged.filter((row) => row.enabled).length;
       const legacyEnabledOpen = [...this.markets.values()].filter((ctx) => ctx.enabled === true && ctx.availability === "OPEN").length;
       // Alarme cobre registry vazio (total 0, ex.: DB recriado) e 0/N com mercados legados ligados.

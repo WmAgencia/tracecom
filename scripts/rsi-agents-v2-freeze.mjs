@@ -20,6 +20,8 @@ export const RSI_V2_FREEZE_FILES = [
   "relay/rsi-skills-v2.mjs",
   "relay/rsi-agents-v2.mjs",
   "relay/rsi-agents-v2-live.mjs",
+  "relay/rsi-agents-v2-blitz.mjs",
+  "relay/iq-mcp-client.mjs",
   "relay/iq-multi-runtime.mjs",
   "relay/rsi-v3-watch.mjs",
   "relay/rsi-reversal.mjs",
