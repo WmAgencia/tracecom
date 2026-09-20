@@ -97,14 +97,16 @@ export class IqMcpClient {
     return this.writes.length < 10; // limite oficial: write 10/min
   }
 
-  async placeTrade({ balanceId, assetId, direction, amount, profitPercent, expirationSize }) {
+  async placeTrade({ balanceId, assetId, direction, amount, profitPercent, expirationSize, expired = null }) {
     if (!this.#writeAllowed()) throw Object.assign(new Error("IQ_MCP_WRITE_RATE_LIMIT"), { code: "IQ_MCP_WRITE_RATE_LIMIT" });
     this.writes.push(this.now());
     const wireDirection = String(direction).toUpperCase() === "BUY" || String(direction).toUpperCase() === "CALL" ? "call" : "put";
-    const data = IqMcpClient.unwrap(await this.callTool("place_trade", {
+    const payload = {
       balance_id: Number(balanceId), asset_id: Number(assetId), direction: wireDirection,
-      amount: Number(amount), profit_percent: Number(profitPercent), expiration_size: Number(expirationSize),
-    }));
+      amount: Number(amount), profit_percent: Number(profitPercent),
+    };
+    if (expired !== undefined && expired !== null) payload.expired = Number(expired); else payload.expiration_size = Number(expirationSize);
+    const data = IqMcpClient.unwrap(await this.callTool("place_trade", payload));
     return data ?? null;
   }
 }

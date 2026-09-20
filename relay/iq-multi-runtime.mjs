@@ -184,7 +184,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.rsiAgentsV4 = new RsiAgentsV4({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV4Enabled === true, controlsExecution: false });
     this.rsiAgentsV2Live = new RsiAgentsV2Live({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2LiveEnabled === true });
     this.iqMcp = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.blitz, log: this.log, now: this.now });
-    this.iqMcpBinary = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.binary, log: this.log, now: this.now });
+    this.iqMcpBinary = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.turbo, log: this.log, now: this.now }); // produto TURBO (expiracoes de 60s = nosso binario)
     this.rsiAgentsV2Blitz = new RsiAgentsV2Blitz({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2BlitzEnabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
@@ -1874,15 +1874,17 @@ export class IqMultiRuntime extends EventEmitter {
       if (!Number.isFinite(balanceId)) throw new IqWsError("MCP_BALANCE_UNAVAILABLE");
       const uiStake = Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : Number(this.stakeBrl ?? 1);
       const amount = Number(stake) > 0 ? Number(stake) : uiStake;
-      const sizes = Array.isArray(asset.expiration_sizes_seconds) && asset.expiration_sizes_seconds.length ? asset.expiration_sizes_seconds : [60];
-      const expirationSize = sizes.includes(60) ? 60 : sizes[0];
+      const expirations = Array.isArray(asset.expirations) ? asset.expirations.map(Number).filter((v) => Number.isFinite(v)).sort((a, b) => a - b) : [];
+      const nowSec = Math.floor(stamp / 1000);
+      const expired = expirations.find((ts) => ts >= nowSec + 30) ?? (Math.ceil((nowSec + 30) / 60) * 60);
+      const expirationSize = expired - nowSec;
       let trade;
-      try { trade = await mcp.placeTrade({ balanceId, assetId: asset.asset_id, direction: direction === "SELL" ? "SELL" : "BUY", amount, profitPercent: asset.profit_percent, expirationSize }); }
-      catch (error) { if (/profit|stale|price|expiration|size/i.test(String(error?.message ?? ""))) { this.binaryMcpAssets = await mcp.listAssets(); this.binaryMcpAssetsAt = this.now(); const fresh = this.binaryMcpAssets.find((a) => Number(a.asset_id) === Number(asset.asset_id)) ?? asset; trade = await mcp.placeTrade({ balanceId, assetId: fresh.asset_id, direction: direction === "SELL" ? "SELL" : "BUY", amount, profitPercent: fresh.profit_percent, expirationSize }); } else throw error; }
+      try { trade = await mcp.placeTrade({ balanceId, assetId: asset.asset_id, direction: direction === "SELL" ? "SELL" : "BUY", amount, profitPercent: asset.profit_percent, expirationSize, expired }); }
+      catch (error) { if (/profit|stale|price|expiration|size/i.test(String(error?.message ?? ""))) { this.binaryMcpAssets = await mcp.listAssets(); this.binaryMcpAssetsAt = this.now(); const fresh = this.binaryMcpAssets.find((a) => Number(a.asset_id) === Number(asset.asset_id)) ?? asset; trade = await mcp.placeTrade({ balanceId, assetId: fresh.asset_id, direction: direction === "SELL" ? "SELL" : "BUY", amount, profitPercent: fresh.profit_percent, expirationSize, expired }); } else throw error; }
       const positionId = trade?.position_id ?? trade?.id ?? trade?.position?.position_id ?? trade?.position?.id ?? trade?.data?.position_id ?? null;
       let verify = null;
       try { const positions = await mcp.listPositions(balanceId); const hist = await mcp.getTradeHistory({ limit: 5 }); verify = { positions: Array.isArray(positions) ? positions.length : null, history: Array.isArray(hist) ? hist.length : null, open: Array.isArray(positions) ? positions.slice(0, 2) : null }; } catch (error) { verify = { error: String(error?.message ?? error).slice(0, 120) }; }
-      const meta = { source: "agent-v2:" + (strategyId || "rsi-v2") + ":mcp-binary", accountContext: "REAL", mcp: true, assetId: asset.asset_id, entryMode, profitPercent: asset.profit_percent, expirationSize, positionId, rawTrade: trade, verify };
+      const meta = { source: "agent-v2:" + (strategyId || "rsi-v2") + ":mcp-binary", accountContext: "REAL", mcp: true, assetId: asset.asset_id, entryMode, profitPercent: asset.profit_percent, expirationSize, expired, positionId, rawTrade: trade, verify };
       if (this.pool?.query) await this.pool.query("INSERT INTO iq_executions(requested_at, market_key, direction, stake, state, meta, broker_order_id, account_context) VALUES(now(),$1,$2,$3,'ACKNOWLEDGED',$4::jsonb,$5,'REAL')", [marketKey, direction, amount, JSON.stringify(meta), positionId !== null ? String(positionId) : null]).catch((error) => { this.#safe(() => this.log("MCP_BINARY_EXEC_INSERT_FAIL", String(error?.message ?? error).slice(0, 140))); });
       this.#emitEvent("order.mcp", { marketKey, assetId: asset.asset_id, amount, positionId, mode: "REAL", verify });
       if (positionId === null) throw new IqWsError("MCP_NO_POSITION_ID", JSON.stringify(trade ?? {}).slice(0, 200));
