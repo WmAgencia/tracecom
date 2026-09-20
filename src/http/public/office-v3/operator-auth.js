@@ -64,6 +64,8 @@
   async function operatorFetch(input, options = {}) {
     const response = await originalFetch(input, options);
     if (response.status !== 401) return response;
+    // Sessao expirada/invalida: descarta o cache em memoria e pede a chave de novo.
+    sessionActive = false;
     const unlocked = await unlockOperatorSession();
     if (!unlocked) return response;
     return originalFetch(input, options);

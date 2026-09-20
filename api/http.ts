@@ -771,6 +771,30 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     res.end(JSON.stringify(body));
   };
 
+  // GATE GLOBAL: qualquer mutacao /api/* exige sessao de operador (ou chave de pesquisa
+  // para /api/research|shadow, que tem auth propria). Fail closed; GET nunca muta.
+  const methodUpper = (req.method ?? "GET").toUpperCase();
+  const isMutationMethod = methodUpper === "POST" || methodUpper === "PUT" || methodUpper === "PATCH" || methodUpper === "DELETE";
+  let gateActor = "read_only";
+  let gateAuth: { ok: boolean; reason: string; actor: string } = { ok: true, reason: "read_only", actor: "read_only" };
+  if (isMutationMethod && url.pathname.startsWith("/api/") && url.pathname !== "/api/auth/operator" && url.pathname !== "/api/auth/logout") {
+    const auth = operatorAuthorized(req);
+    const researchPath = url.pathname.startsWith("/api/research/") || url.pathname.startsWith("/api/shadow/");
+    if (auth.ok) { gateActor = "operator"; gateAuth = auth; }
+    else if (researchPath && await researchAuthorized(req)) { gateActor = "research"; }
+    else {
+      json(auth.reason === "cross_origin_blocked" ? 403 : auth.reason === "operator_auth_not_configured" ? 503 : 401, { error: auth.reason, practiceOnly: true });
+      return;
+    }
+  }
+  // GET broker-audit com orderProbe=1 CRIA posicao no broker (mutacao): exige operador.
+  if (methodUpper === "GET" && url.pathname === "/api/iq/broker-audit" && q.get("orderProbe") === "1") {
+    const auth = operatorAuthorized(req);
+    if (!auth.ok) { json(auth.reason === "cross_origin_blocked" ? 403 : 401, { error: auth.reason, practiceOnly: true }); return; }
+    gateActor = "operator";
+    gateAuth = auth;
+  }
+
   // Binance bloqueia alguns IPs de nuvem (HTTP 451). Retornamos disponível:false.
   const safeKlines = async (): Promise<Candle[] | string> => {
     try {
@@ -888,11 +912,14 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     if (path === "/api/auth/operator" && req.method === "POST") {
       const key = operatorAccessKey();
       if (!key) { json(503, { error: "operator_auth_not_configured" }); return; }
-      const clientIp = (req.headers["x-forwarded-for"]?.toString().split(",")[0] ?? req.socket?.remoteAddress ?? "unknown").trim();
+      const clientIp = (req.headers["x-real-ip"]?.toString() || req.headers["x-forwarded-for"]?.toString().split(",")[0] || req.socket?.remoteAddress || "unknown").trim();
       const attemptLimit = Math.max(1, Number(process.env.OPERATOR_AUTH_MAX_ATTEMPTS) || 5);
       const supplied = String(operationalInput.accessKey ?? "");
       if (!supplied || !safeKeyEquals(key, supplied)) {
-        if (!researchRateOk(`operator_auth:${clientIp}`, attemptLimit)) { json(429, { error: "too_many_attempts" }); return; }
+        // Bucket global nao-rotacionavel + bucket por IP (XFF pode ser forjado fora do proxy oficial).
+        const globalOk = researchRateOk("operator_auth:global", Math.max(10, attemptLimit * 6));
+        const ipOk = researchRateOk(`operator_auth:${clientIp}`, attemptLimit);
+        if (!globalOk || !ipOk) { json(429, { error: "too_many_attempts" }); return; }
         json(401, { error: "invalid_access_key" }); return;
       }
       researchLimits.delete(`operator_auth:${clientIp}`);
@@ -910,13 +937,6 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
     if (path.startsWith("/api/iq/") && (req.method === "GET" || req.method === "POST" || req.method === "PUT")) {
-      // MUTACOES OPERACIONAIS: sessao de operador obrigatoria (fail closed) + same-origin.
-      const mutation = req.method === "POST" || req.method === "PUT";
-      const auth = mutation ? operatorAuthorized(req) : { ok: true, reason: "read_only", actor: "read_only" };
-      if (!auth.ok) {
-        json(auth.reason === "cross_origin_blocked" ? 403 : auth.reason === "operator_auth_not_configured" ? 503 : 401, { error: auth.reason, practiceOnly: true });
-        return;
-      }
       const getPaths = ["/api/iq/status", "/api/iq/executions", "/api/iq/office", "/api/iq/markets", "/api/iq/events", "/api/iq/asset-map", "/api/iq/diagnostic/options", "/api/iq/broker-audit", "/api/iq/signals", "/api/iq/intelligence", "/api/iq/research/scoreboard", "/api/iq/research/shadow-lab", "/api/iq/research/timing-policy", "/api/iq/research/scenario-shadow", "/api/iq/research/agents-v4", "/api/iq/research/dual-reasoning", "/api/iq/research/dual-reasoning/report", "/api/iq/research/solo-reasoning", "/api/iq/research/solo-reasoning/report", "/api/iq/research/experiment/four-way/status", "/api/iq/research/experiment/four-way/report", "/api/iq/research/experiment/five-way/status", "/api/iq/research/indicator-5m", "/api/iq/research/rsi-reversal", "/api/iq/research/rsi-reversal/report", "/api/iq/research/rsi-variants", "/api/iq/research/rsi-variants/report", "/api/iq/research/rsi-agents", "/api/iq/research/rsi-agents-v2", "/api/iq/research/rsi-agents-v3", "/api/iq/research/rsi-agents-v4", "/api/iq/research/rsi-agents-v4/events", "/api/iq/research/rsi-agents-v4/funnel", "/api/iq/mesas", "/api/iq/instruments/blitz", "/api/iq/execution-routing", "/api/iq/research/lab/overview", "/api/iq/research/lab/factors", "/api/iq/research/lab/alphas", "/api/iq/research/lab/coverage", "/api/iq/research/lab/backtests", "/api/iq/research/lab/strategy-regime", "/api/iq/research/lab/journal-intelligence", "/api/iq/research/lab/drift", "/api/iq/research/lab/models", "/api/iq/research/lab/experiments", "/api/iq/research/lab/hypotheses", "/api/iq/research/lab/datasets", "/api/iq/research/lab/checkpoints", "/api/iq/research/lab/jobs", "/api/iq/research/lab/agents", "/api/iq/research/lab/comparison", "/api/iq/research/lab/ablation", "/api/iq/quality", "/api/iq/entry", "/api/iq/supervisor", "/api/iq/journal", "/api/iq/journal/agent", "/api/iq/knowledge", "/api/iq/knowledge/search", "/api/iq/second-brain", "/api/iq/hypotheses", "/api/iq/audit", "/api/iq/apprentice", "/api/iq/apprentice/trades", "/api/iq/stress/report", "/api/iq/account/context", "/api/iq/real/preflight"];
       const postPaths = ["/api/iq/connect", "/api/iq/verify-2fa", "/api/iq/disconnect", "/api/iq/arm", "/api/iq/disarm", "/api/iq/kill-switch", "/api/iq/test-order", "/api/iq/config/global-stake", "/api/iq/config/auto-execute", "/api/iq/mode", "/api/iq/real/confirm", "/api/iq/real/revoke", "/api/iq/real/arm", "/api/iq/real/disarm", "/api/iq/account/select", "/api/iq/stress/run", "/api/iq/stress/cancel", "/api/iq/knowledge/rebuild", "/api/iq/hypotheses", "/api/iq/hypotheses/evaluate", "/api/iq/journal/daily", "/api/iq/research/experiment/four-way/prepare", "/api/iq/research/experiment/four-way/arm", "/api/iq/research/experiment/four-way/stop", "/api/iq/research/rsi-reversal/prepare", "/api/iq/research/rsi-reversal/arm", "/api/iq/research/rsi-reversal/stop", "/api/iq/research/rsi-variants/prepare", "/api/iq/research/rsi-variants/arm", "/api/iq/research/rsi-variants/stop", "/api/iq/mesas/bulk"];
       const putPaths = ["/api/iq/market", "/api/iq/supervisor/config", "/api/iq/entry/config", "/api/iq/apprentice/config", "/api/iq/mesas"];
@@ -941,7 +961,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
           : path === "/api/iq/research/rsi-agents-v4/funnel" ? `${q.get("marketKey") ? `?marketKey=${encodeURIComponent(q.get("marketKey") as string)}` : ""}`
           : path === "/api/iq/mesas" && req.method === "GET" ? ""
           : "";
-        const result = await relayAdminJson("GET", `${path}${query}`);
+        const result = await relayAdminJson("GET", `${path}${query}`, undefined, 20_000, { "x-tracecom-actor": gateActor, "x-request-id": requestId, "x-tracecom-source": "edge" });
         if (!result) { if (path === "/api/iq/status") { json(200, { state: "DISCONNECTED", hasSession: false, lastError: "RELAY_UNAVAILABLE", practiceOnly: true }); return; } json(502, { error: "iq_relay_unavailable" }); return; }
         const contextPaths = ["/api/iq/office", "/api/iq/account/context", "/api/iq/real/preflight"];
         json(result.status, { ...result.body, ...(contextPaths.includes(path) ? {} : { practiceOnly: true }), brokerAutomation: "WS_ONLY_PRACTICE" });
@@ -986,7 +1006,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (path === "/api/iq/market" && !String(payload.marketKey ?? "")) { json(400, { error: "market_key_required" }); return; }
       if (path === "/api/iq/config/global-stake" && (!Number.isFinite(Number(payload.value)) || Number(payload.value) <= 0 || Number(payload.value) > 100)) { json(400, { error: "invalid_global_stake" }); return; }
       if (path === "/api/iq/real/confirm" && !String(payload.phrase ?? "")) { json(400, { error: "real_confirmation_required" }); return; }
-      const result = await relayAdminJson(proxyMethodFor(path), path, payload, 20_000, { "x-tracecom-actor": auth.actor, "x-request-id": requestId, "x-tracecom-source": "edge" });
+      const result = await relayAdminJson(proxyMethodFor(path), path, payload, 20_000, { "x-tracecom-actor": gateActor, "x-request-id": requestId, "x-tracecom-source": "edge" });
       if (!result) { json(502, { error: "iq_relay_unavailable" }); return; }
       if (!result.ok) { json(result.status >= 400 && result.status < 500 ? result.status : 502, { ...result.body, practiceOnly: path === "/api/iq/real/confirm" || path === "/api/iq/real/arm" || path === "/api/iq/mode" ? false : true, brokerAutomation: "WS_ONLY_PRACTICE" }); return; }
       const contextPaths = ["/api/iq/real/confirm", "/api/iq/real/arm", "/api/iq/real/disarm", "/api/iq/account/select"];

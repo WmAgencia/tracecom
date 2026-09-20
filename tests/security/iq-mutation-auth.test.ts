@@ -26,6 +26,8 @@ async function startRelay(): Promise<string> {
       if (url.pathname === "/api/iq/mesas" && req.method === "GET") { res.statusCode = 200; res.end(JSON.stringify({ rows: [], totals: { total: 0, enabled: 0 } })); return; }
       if (url.pathname === "/api/iq/mesas" && req.method === "PUT") { res.statusCode = 200; res.end(JSON.stringify({ instrument: { market_key: body?.marketKey ?? null, enabled: body?.enabled === true } })); return; }
       if (url.pathname === "/api/iq/mesas/bulk" && req.method === "POST") { res.statusCode = 200; res.end(JSON.stringify({ changed: 1, enabled: body?.enabled === true, received: body })); return; }
+      if (url.pathname === "/api/iq/broker-audit" && req.method === "GET") { res.statusCode = 200; res.end(JSON.stringify({ ok: true, probe: { marketKey: url.searchParams.get("probe") ?? null, orderProbe: url.searchParams.get("orderProbe") ?? null } })); return; }
+      if (url.pathname === "/api/ai/provider" && req.method === "PUT") { res.statusCode = 200; res.end(JSON.stringify({ ok: true })); return; }
       res.statusCode = 404; res.end(JSON.stringify({ error: "not_found" }));
     })();
   });
@@ -112,6 +114,24 @@ describe("SEGURANCA — mutacoes /api/iq/*", () => {
     const response = await fetch(`${appBase}/api/iq/arm`, { method: "GET" });
     expect(response.status).toBe(405);
     expect(relayCalls.length).toBe(0);
+  });
+
+  it("mutacoes FORA de /api/iq tambem exigem operador: /api/ai/provider e /api/strategies/selection", async () => {
+    const ai = await fetch(`${appBase}/api/ai/provider`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ provider: "openCodeGo", apiKey: "chave-do-atacante-com-tamanho-suficiente", model: "x" }) });
+    const selection = await fetch(`${appBase}/api/strategies/selection`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ family: "V3", horizonSeconds: 60, mode: "AUTO" }) });
+    expect([ai.status, selection.status]).toEqual([401, 401]);
+    expect(relayCalls.length).toBe(0);
+  });
+
+  it("GET broker-audit com orderProbe=1 (cria posicao) exige operador", async () => {
+    const anonymous = await fetch(`${appBase}/api/iq/broker-audit?probe=EURUSD:OTC&orderProbe=1`);
+    expect(anonymous.status).toBe(401);
+    expect(relayCalls.length).toBe(0);
+    const cookie = await login();
+    const authorized = await fetch(`${appBase}/api/iq/broker-audit?probe=EURUSD:OTC&orderProbe=1`, { headers: { cookie } });
+    expect(authorized.status).toBe(200);
+    expect(relayCalls[0]?.method).toBe("GET");
+    expect(relayCalls[0]?.headers.actor).toBe("operator");
   });
 
   it("login com chave errada => 401; chave certa => cookie HttpOnly/SameSite=Strict", async () => {
