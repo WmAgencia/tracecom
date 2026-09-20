@@ -35,6 +35,7 @@ export class LabRunner {
     if (!this.enabled || this.started) return;
     this.started = true;
     await this.store.ensureRun(LAB_STRATEGY_IDS).catch((error) => this.log("LAB_ENSURE_RUN_FAIL", String(error?.message ?? error).slice(0, 160)));
+    await this.store.reconcileOpenCounts().catch((error) => this.log("LAB_RECONCILE_FAIL", String(error?.message ?? error).slice(0, 160)));
     const recovered = await this.store.loadState(LAB_STRATEGY_IDS).catch(() => ({ strategies: [], openTrades: [] }));
     for (const row of recovered.strategies ?? []) {
       const st = this.states.get(row.strategy_id); if (!st) continue;
@@ -101,7 +102,7 @@ export class LabRunner {
         this.emit("lab.order", { strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId, executionId: order?.executionId ?? null, at });
         this.log("LAB_ORDER", JSON.stringify({ strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId }));
       } catch (error) {
-        await this.store.releaseReservation(result.strategyId).catch(() => undefined);
+        await this.store.releaseReservation(result.strategyId).catch((error) => this.log("LAB_RELEASE_FAIL", String(error?.message ?? error).slice(0, 160)));
         this.counters.rejected += 1;
         this.emit("lab.order_rejected", { strategyId: result.strategyId, marketKey, code: String(error?.code ?? error?.message ?? error).slice(0, 120), at });
       }
@@ -116,9 +117,10 @@ export class LabRunner {
 
   async pollSettlements() {
     if (!this.enabled || !this.started || !this.pool?.query) return;
+    await this.store.reconcileOpenCounts().catch(() => undefined);
     const rows = (await this.pool.query(
       `SELECT t.strategy_trade_id, t.strategy_id, e.broker_result, e.profit, e.settled_at
-       FROM iq_lab_trades t JOIN iq_executions e ON e.decision_id = t.strategy_trade_id
+       FROM iq_lab_trades t JOIN iq_executions e ON (e.decision_id = t.strategy_trade_id OR (t.execution_id IS NOT NULL AND e.execution_id = t.execution_id))
        WHERE t.run_id=$1 AND t.result IS NULL AND t.state IN ('REQUESTED','ACKNOWLEDGED') LIMIT 50`, [this.runId]).catch(() => ({ rows: [] }))).rows ?? [];
     for (const row of rows) {
       const mapped = ["WIN", "LOSS", "DRAW"].includes(row.broker_result) ? row.broker_result : null;

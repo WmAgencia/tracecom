@@ -58,6 +58,15 @@ export class LabStore {
     await this.pool.query("UPDATE iq_lab_strategy_state SET open_count = GREATEST(0, open_count - 1), updated_at = now() WHERE run_id=$1 AND strategy_id=$2", [this.runId, strategyId]);
   }
 
+  /** Fonte de verdade: open_count = trades REQUESTED/ACKNOWLEDGED sem resultado. Auto-cura de reservas fantasma. */
+  async reconcileOpenCounts() {
+    if (!this.pool?.query) return;
+    await this.pool.query(
+      "UPDATE iq_lab_strategy_state s SET open_count = (SELECT count(*)::int FROM iq_lab_trades t WHERE t.run_id = s.run_id AND t.strategy_id = s.strategy_id AND t.state IN ('REQUESTED','ACKNOWLEDGED') AND t.result IS NULL), updated_at = now() WHERE s.run_id = $1",
+      [this.runId],
+    );
+  }
+
   async persistTrade(trade) {
     if (!this.pool?.query) return;
     await this.pool.query(

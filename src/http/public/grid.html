@@ -215,9 +215,15 @@
   let labOpen = false;
   const refreshLab = async () => {
     if (!labOpen) return;
-    const data = await api("/api/iq/lab/status");
+    const list = $("labList");
+    list.innerHTML = "LAB LOADING...";
+    let data = null; let apiError = false;
+    try { const r = await fetch("/api/iq/lab/status"); if (r.ok) data = await r.json(); else apiError = true; } catch { apiError = true; }
+    if (apiError) { list.innerHTML = "LAB API ERROR (tentando novamente...)"; return; }
+    if (!data || data.error) { list.innerHTML = "LAB API ERROR"; return; }
+    if (data.started !== true) { list.innerHTML = "LAB NOT STARTED" + (data.runId ? " (run " + data.runId + ")" : ""); return; }
     const rows = data?.states ?? [];
-    const list = $("labList"); list.innerHTML = "";
+    list.innerHTML = "";
     const head = document.createElement("div"); head.className = "mesa-row"; head.innerHTML = '<span class="k"><b>ESTRATEGIA</b></span><span class="st"><b>SETTLED</b></span><span class="po"><b>W/L/D</b></span><span class="st"><b>OPEN</b></span><span class="po"><b>STATUS</b></span>';
     list.append(head);
     for (const row of rows) {
