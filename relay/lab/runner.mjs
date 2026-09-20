@@ -102,7 +102,14 @@ export class LabRunner {
     const at = this.now();
     const st = this.states.get(result.strategyId);
     const strategyTradeId = `lab:${this.runId}:${result.strategyId}:${marketKey}:${expiry}:${result.side}`;
-    const reserved = await this.store.reserveSlot(result.strategyId).catch(() => null);
+    const reserved = await this.store.reserveSlotWithTrade({
+      strategyTradeId, strategyId: result.strategyId, strategyVersion: result.strategyVersion,
+      episodeId: snapshot?.indicators?.fib?.episodeId ?? null, snapshotId: result.snapshotId, marketKey, direction: result.side,
+      stake: this.stake, payout: payout ?? snapshot?.payout ?? null, requestedExpiry: new Date(expiry).toISOString(),
+      expiryAt: new Date(expiry).toISOString(), candidateAt: new Date(candidateAt).toISOString(), decision: result.decision,
+      reason: result.reason, evidenceStrength: result.evidenceStrength, entryQuality: qualityOf(result),
+      supporting: result.supportingEvidence, counter: result.counterEvidence, specialistOutputs: result.specialistOutputs, entrySnapshot: snapshot,
+    }).catch((error) => { this.log("LAB_RESERVE_FAIL", String(error?.message ?? error).slice(0, 160)); return null; });
     if (!reserved) { this.counters.capacityBlocked += 1; this.emit("lab.capacity_blocked", { strategyId: result.strategyId, marketKey, at }); return; }
     try {
       let order = null;
@@ -127,20 +134,14 @@ export class LabRunner {
       if (!accepted) throw Object.assign(new Error(String(order?.reason ?? order?.state ?? "ORDER_NOT_ACCEPTED")), { code: "LAB_ORDER_NOT_ACCEPTED" });
       this.counters.submits += 1;
       st.opportunity = null;
-      await this.store.persistTrade({
-        strategyTradeId, strategyId: result.strategyId, strategyVersion: result.strategyVersion,
-        episodeId: snapshot?.indicators?.fib?.episodeId ?? null, snapshotId: result.snapshotId, decisionId: strategyTradeId,
-        marketKey, direction: result.side, stake: this.stake, payout: payout ?? snapshot?.payout ?? null,
-        requestedExpiry: new Date(expiry).toISOString(), candidateAt: new Date(candidateAt).toISOString(), expiryAt: new Date(expiry).toISOString(),
-        decision: result.decision, reason: result.reason, evidenceStrength: result.evidenceStrength, entryQuality: qualityOf(result),
-        supporting: result.supportingEvidence, counter: result.counterEvidence, specialistOutputs: result.specialistOutputs, entrySnapshot: snapshot,
-        executionId: order?.executionId ?? null, brokerOrderId: order?.brokerOrderId ?? null, state: String(order?.state ?? "REQUESTED"),
-      });
+      await this.store.updateTradeState({ strategyTradeId, state: String(order?.state ?? "REQUESTED"), executionId: order?.executionId ?? null, brokerOrderId: order?.brokerOrderId ?? null, actualExpiry: order?.expirationAt ?? null });
       this.emit("lab.order", { strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId, executionId: order?.executionId ?? null, at });
       this.log("LAB_ORDER", JSON.stringify({ strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId }));
     } catch (error) {
+      await this.store.updateTradeState({ strategyTradeId, state: "REJECTED" }).catch(() => undefined);
       await this.store.releaseReservation(result.strategyId).catch((releaseError) => this.log("LAB_RELEASE_FAIL", String(releaseError?.message ?? releaseError).slice(0, 160)));
       this.counters.rejected += 1;
+      this.log("LAB_ORDER_REJECTED", JSON.stringify({ strategyId: result.strategyId, marketKey, strategyTradeId, code: String(error?.code ?? error?.message ?? error).slice(0, 140) }));
       this.emit("lab.order_rejected", { strategyId: result.strategyId, marketKey, code: String(error?.code ?? error?.message ?? error).slice(0, 120), at });
     }
   }
