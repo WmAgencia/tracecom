@@ -1,6 +1,6 @@
 {
   "schema": "rsi-agents-v2-freeze-v1",
-  "frozenAtUtc": "2026-09-20T13:02:46.434Z",
+  "frozenAtUtc": "2026-09-20T13:08:53.190Z",
   "sourceCommit": null,
   "noTuning": true,
   "strategies": {

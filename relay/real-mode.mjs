@@ -55,14 +55,14 @@ export class RealModeController {
   }
 
   status() {
-    const active = this.session !== null && this.now() < this.session.expiresAt;
+    const active = this.session !== null && this.now() < this.session?.expiresAt;
     return {
       realModeEnabled: active,
-      realModeSessionId: active ? this.session.realModeSessionId : null,
-      confirmedAt: active ? this.session.confirmedAt : null,
-      expiresAt: active ? this.session.expiresAt : null,
-      maxStake: active ? this.session.maxStake : null,
-      realBalanceSeen: active ? this.session.realBalanceSeen : null,
+      realModeSessionId: active ? this.session?.realModeSessionId : null,
+      confirmedAt: active ? this.session?.confirmedAt : null,
+      expiresAt: active ? this.session?.expiresAt : null,
+      maxStake: active ? this.session?.maxStake : null,
+      realBalanceSeen: active ? this.session?.realBalanceSeen : null,
       lastRevokeReason: this.lastRevokeReason,
       hardCap: this.hardCap,
       phraseRequired: REAL_CONFIRMATION_PHRASE,
@@ -76,9 +76,9 @@ export class RealModeController {
     if (!this.authorized()) throw new RealModeError("REAL_MODE_NOT_CONFIRMED");
     const value = Number(stake);
     if (!Number.isFinite(value) || value <= 0) throw new RealModeError("REAL_STAKE_INVALID");
-    if (value > this.session.maxStake) throw new RealModeError("REAL_SESSION_STAKE_EXCEEDED", `${value} > ${this.session.maxStake}`);
+    if (value > this.session?.maxStake) throw new RealModeError("REAL_SESSION_STAKE_EXCEEDED", `${value} > ${this.session?.maxStake}`);
     this.#record("REAL_ORDER_AUTHORIZED", { stake: value, marketKey: marketKey ?? null });
-    return { realModeSessionId: this.session.realModeSessionId, maxStake: this.session.maxStake, stake: value };
+    return { realModeSessionId: this.session?.realModeSessionId, maxStake: this.session?.maxStake, stake: value };
   }
 
   revoke(reason = "MANUAL") {
