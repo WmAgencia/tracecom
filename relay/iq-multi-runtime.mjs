@@ -1448,6 +1448,7 @@ export class IqMultiRuntime extends EventEmitter {
         };
       });
       this.rsiAgentsV4.assignUniverse(merged);
+      this.rsiAgentsV2Live?.assignUniverse?.(merged);
       const enabled = merged.filter((row) => row.enabled).length;
       const legacyEnabledOpen = [...this.markets.values()].filter((ctx) => ctx.enabled === true && ctx.availability === "OPEN").length;
       // Alarme cobre registry vazio (total 0, ex.: DB recriado) e 0/N com mercados legados ligados.
