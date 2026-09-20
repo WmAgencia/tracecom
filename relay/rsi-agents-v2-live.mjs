@@ -19,7 +19,7 @@ import { watchModeFor, createWatchRecord, touchWatchRecord } from "./rsi-v3-watc
 import { effectiveSafeMarginMs, entryWindow } from "./rsi-reversal.mjs";
 
 export const RSI_AGENTS_V2_LIVE_VERSION = "rsi-agents-v2-live-v1";
-export const RSI_V2_LIVE_EXECUTION_ALLOWLIST = Object.freeze([`agent-v2:${STRICT_V2_ID}`, `agent-v2:${PULLBACK_V2_ID}`]);
+export const RSI_V2_LIVE_EXECUTION_ALLOWLIST = Object.freeze([`agent-v2:${STRICT_V2_ID}`, `agent-v2:${PULLBACK_V2_ID}`, "agent-v2:RSI_REVERSAL_V2_BLITZ"]);
 export const RSI_AGENTS_V2_LIVE_POLICY = Object.freeze({
   version: RSI_AGENTS_V2_LIVE_VERSION,
   mode: "NORMAL_RUNTIME_AGENT",

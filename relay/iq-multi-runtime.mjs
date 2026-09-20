@@ -71,6 +71,7 @@ import { RsiAgentsV2 } from "./rsi-agents-v2.mjs";
 import { RsiAgentsV3 } from "./rsi-agents-v3.mjs";
 import { RsiAgentsV4 } from "./rsi-agents-v4.mjs";
 import { RsiAgentsV2Live } from "./rsi-agents-v2-live.mjs";
+import { IqMcpClient, IQ_MCP_ENDPOINTS } from "./iq-mcp-client.mjs";
 import { RSI_V3_WATCH_POLICY, shouldEvaluate } from "./rsi-v3-watch.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
@@ -181,6 +182,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.rsiAgentsV3 = new RsiAgentsV3({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV3Enabled === true });
     this.rsiAgentsV4 = new RsiAgentsV4({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV4Enabled === true, controlsExecution: false });
     this.rsiAgentsV2Live = new RsiAgentsV2Live({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2LiveEnabled === true });
+    this.iqMcp = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.blitz, log: this.log, now: this.now });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -1802,6 +1804,89 @@ export class IqMultiRuntime extends EventEmitter {
     const officialCap = Math.min(Number(this.config.globalMaxStake) || expected, Number(ctx.maxStake) || expected, Number(this.config.hardCap) || expected);
     if (expected > officialCap) throw new IqWsError("AGENT_ORDER_STAKE_ABOVE_OFFICIAL_CAP", `${expected}>${officialCap}`);
     return this.requestOrder({ marketKey, direction, stake: requested, decisionId, idempotencyKey, source: "agent-v2:" + (strategyId || "rsi-agents-v2") + ":" + (skill || strategyId || "skill"), horizonSeconds: 60 });
+  }
+
+  /**
+   * REGISTRY BLITZ (API OFICIAL/MCP): importa TODOS os ativos habilitados com duracao 45s.
+   * Nunca inventa ativo: usa asset_id/name/profit_percent exatamente como o broker devolve.
+   */
+  async refreshBlitzRegistry({ force = false } = {}) {
+    if (!this.iqMcp?.enabled) return { ok: false, reason: "IQ_MCP_TOKEN_MISSING" };
+    if (!force && this.now() - (this.lastBlitzSync ?? 0) < 600_000) return { ok: true, cached: true };
+    this.lastBlitzSync = this.now();
+    try {
+      const assets = await this.iqMcp.listAssets({ onlyEnabled: true });
+      let upserted = 0;
+      for (const asset of assets) {
+        const name = String(asset.name ?? "");
+        const marketType = /\(OTC\)/i.test(name) ? "OTC" : "NORMAL";
+        const canonical = name.replace(/\s*\(OTC\)\s*/i, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+        const marketKey = `${canonical}:${marketType}`;
+        await this.pool.query(
+          `INSERT INTO iq_rsi_instruments(market_key, instrument_type, duration_seconds, market_type, canonical, active_id, enabled, status, payout, source, payload, updated_at)
+           VALUES($1,'BLITZ_45S',45,$2,$3,$4,true,'OPEN',$5,'IQ_MCP_BLITZ',$6::jsonb, now())
+           ON CONFLICT(market_key, instrument_type, duration_seconds) DO UPDATE SET active_id=$4, status='OPEN', payout=$5, payload=$6::jsonb, updated_at=now()`,
+          [marketKey, marketType, canonical, Number(asset.asset_id) || null, Number(asset.profit_percent) || null, JSON.stringify({ assetId: asset.asset_id, name, profitPercent: asset.profit_percent, sizes: asset.expiration_sizes_seconds ?? [], minAmount: asset.minimum_amount ?? null, maxAmount: asset.maximum_amount ?? null })],
+        ).catch(() => undefined);
+        upserted += 1;
+      }
+      this.blitzRegistry = { at: this.now(), total: upserted };
+      this.#emitEvent("blitz.registry", { total: upserted });
+      return { ok: true, total: upserted };
+    } catch (error) {
+      return { ok: false, reason: String(error?.code ?? error?.message ?? error).slice(0, 140) };
+    }
+  }
+
+  async blitzAssets() {
+    if (!this.pool?.query) return { rows: [], total: 0, enabled: 0 };
+    const rows = (await this.pool.query("SELECT market_key, canonical, market_type, active_id, enabled, status, payout, payload, updated_at FROM iq_rsi_instruments WHERE instrument_type='BLITZ_45S' AND duration_seconds=45 ORDER BY market_key")).rows ?? [];
+    return { rows, total: rows.length, enabled: rows.filter((row) => row.enabled === true).length, lastSync: this.blitzRegistry ?? null };
+  }
+
+  /**
+   * ORDEM BLITZ via API OFICIAL (MCP) — MESMO Execution Gate: PRACTICE, ARM, autoExecute, kill switch,
+   * stake R$10 e allowlist. Duracao fixa 45s. Nunca chamado sem aprovacao da estrategia.
+   */
+  async submitAgentBlitzOrder({ marketKey, direction, stake = 10, expectedStake = 10, idempotencyKey = null, entryMode = "BLITZ_IMMEDIATE_45S", decisionId = null } = {}) {
+    const source = "agent-v2:RSI_REVERSAL_V2_BLITZ:RSI_REVERSAL_V2_BLITZ";
+    const routing = this.#executionRouting(source);
+    if (!routing.allowed) {
+      this.#auditRecord(`routing_${this.now()}`, marketKey, "EXECUTION_SOURCE_BLOCKED", { marketKey, source, policy: routing.policy, controlsExecution: false }, { persist: true });
+      throw new IqWsError("EXECUTION_SOURCE_BLOCKED", `${source} bloqueado pela politica ${routing.policy}`);
+    }
+    if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("AGENT_ORDER_PRACTICE_ONLY", String(this.config.mode));
+    if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("AGENT_ORDER_ACCOUNT_NOT_PRACTICE", this.accountContext.context);
+    if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
+    if (this.config.autoExecute !== true) throw new IqWsError("AGENT_ORDER_AUTO_EXECUTE_OFF");
+    if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("AGENT_ORDER_KILL_SWITCH");
+    const requested = Number(stake); const expected = Number(expectedStake);
+    if (!Number.isFinite(requested) || requested <= 0) throw new IqWsError("AGENT_ORDER_STAKE_REQUIRED");
+    if (!Number.isFinite(expected) || expected !== requested) throw new IqWsError("AGENT_ORDER_STAKE_MISMATCH", `${requested}!=${expected}`);
+    if (expected > 10) throw new IqWsError("AGENT_ORDER_STAKE_ABOVE_OFFICIAL_CAP", `${expected}>10`);
+    const row = (await this.pool.query("SELECT active_id, payload FROM iq_rsi_instruments WHERE market_key=$1 AND instrument_type='BLITZ_45S' AND duration_seconds=45", [marketKey])).rows?.[0] ?? null;
+    if (!row) throw new IqWsError("BLITZ_ASSET_NOT_REGISTERED", String(marketKey));
+    const assetId = Number(row.active_id);
+    let profitPercent = Number(row.payload?.profitPercent);
+    if (!Number.isFinite(assetId) || !Number.isFinite(profitPercent)) throw new IqWsError("BLITZ_ASSET_METADATA_MISSING", String(marketKey));
+    const balances = await this.iqMcp.listBalances();
+    const practice = balances.find((b) => /practice/i.test(String(b.type ?? b.balance_type ?? "")) || b.is_practice === true) ?? balances[0] ?? null;
+    const balanceId = Number(practice?.balance_id ?? practice?.id);
+    if (!Number.isFinite(balanceId)) throw new IqWsError("BLITZ_BALANCE_UNAVAILABLE");
+    let result;
+    try {
+      result = await this.iqMcp.placeTrade({ balanceId, assetId, direction, amount: requested, profitPercent, expirationSize: 45 });
+    } catch (error) {
+      // profit_percent velho/divergente: re-sincroniza o registry e tenta 1x com o valor atual.
+      if (/profit|stale|price/i.test(String(error?.message ?? ""))) {
+        await this.refreshBlitzRegistry({ force: true });
+        const fresh = (await this.pool.query("SELECT payload FROM iq_rsi_instruments WHERE market_key=$1 AND instrument_type='BLITZ_45S' AND duration_seconds=45", [marketKey])).rows?.[0]?.payload ?? null;
+        profitPercent = Number(fresh?.profitPercent);
+        result = await this.iqMcp.placeTrade({ balanceId, assetId, direction, amount: requested, profitPercent, expirationSize: 45 });
+      } else throw error;
+    }
+    this.#emitEvent("blitz.order", { marketKey, assetId, direction, stake: requested, entryMode, positionId: result?.position_id ?? result?.id ?? null });
+    return { state: "ACKNOWLEDGED", disposition: "EXECUTED", brokerOrderId: result?.position_id ?? result?.id ?? null, executionId: `blitz-${assetId}-${this.now()}`, stake: requested, stakeRequested: requested, effectiveStake: requested, instrumentType: "BLITZ_45S", durationSeconds: 45, mode: "PRACTICE", entryMode, raw: result };
   }
 
   /** V1 e V2 nao executam nesta rodada (fail closed explicito). */

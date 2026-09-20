@@ -69,7 +69,8 @@ describe("V2 LIVE — Strategy Core original + infra moderna", () => {
     expect(runtimeSource.includes("#observeRsiAgentsV2Live")).toBe(true);
     expect(runtimeSource.includes("submitAgentV2LiveOrder")).toBe(true);
     expect(runtimeSource.includes("shouldEvaluate")).toBe(true);
-    expect(RSI_V2_LIVE_EXECUTION_ALLOWLIST).toEqual([`agent-v2:${STRICT_V2_ID}`, `agent-v2:${PULLBACK_V2_ID}`]);
+    expect(RSI_V2_LIVE_EXECUTION_ALLOWLIST).toEqual([`agent-v2:${STRICT_V2_ID}`, `agent-v2:${PULLBACK_V2_ID}`, "agent-v2:RSI_REVERSAL_V2_BLITZ"]);
+    expect(RSI_V2_LIVE_EXECUTION_ALLOWLIST.every((entry: string) => entry.startsWith("agent-v2:"))).toBe(true);
   });
 
   it("ordem nunca sai depois do cutoff (MISSED fail-closed) e candidate velho nao envia", async () => {

@@ -52,6 +52,8 @@ const armState = new ExecutionArmState();
 const killSwitch = new KillSwitch();
 const executionIdempotency = new IdempotencyStore();
 const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: RSI_V2_LIVE_EXECUTION_ALLOWLIST, executionPolicyName: 'RSI_V2_ONLY', rsiAgentsV2LiveEnabled: true, rsiAgentsV4Enabled: true, rsiAgentsV3Enabled: false });
+// BLITZ (API OFICIAL/MCP): importa todos os ativos habilitados com 45s no boot (e a cada 10 min no runtime).
+void wsRuntime.refreshBlitzRegistry();
 // QUANT / RESEARCH PLATFORM (fora do hot path; nao executa nada).
 const { ResearchLab } = await import('./research-lab/api.mjs');
 const researchLab = new ResearchLab({ pool, runtime: wsRuntime, log: (...args) => console.info(...args) });
@@ -470,6 +472,12 @@ const server = http.createServer(async (req, res) => {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const input = await body(req, 4000); try { const row = await wsRuntime.setInstrumentEnabled({ marketKey: String(input.marketKey ?? ''), instrumentType: String(input.instrumentType ?? 'BINARY'), durationSeconds: Number(input.durationSeconds ?? 60), enabled: input.enabled === true, meta: mutationMeta(req) }); return reply(res,200,{ instrument: row, practiceOnly:true }); } catch(error) { return reply(res,400,{ ...sanitizedError(error), practiceOnly:true }); } }
   if(url.pathname === '/api/iq/mesas/bulk' && req.method === 'POST') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const input = await body(req, 4000); try { const result = await wsRuntime.bulkSetInstruments({ filter: input.filter ?? {}, enabled: input.enabled === true, confirmZeroUniverse: input.confirmZeroUniverse === true, meta: mutationMeta(req) }); return reply(res,200,{ ...result, practiceOnly:true }); } catch(error) { return reply(res,400,{ ...sanitizedError(error), practiceOnly:true }); } }
+  if(url.pathname === '/api/iq/blitz/assets' && req.method === 'GET') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.blitzAssets()), practiceOnly:true }); }
+  if(url.pathname === '/api/iq/blitz/registry-sync' && req.method === 'POST') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const result = await wsRuntime.refreshBlitzRegistry({ force: true }); return reply(res, result.ok ? 200 : 502, { ...result, practiceOnly:true }); }
+  if(url.pathname === '/api/iq/blitz/test-order' && req.method === 'POST') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const input = await body(req, 4000); try { const order = await wsRuntime.submitAgentBlitzOrder({ marketKey: String(input.marketKey ?? ''), direction: input.direction === 'SELL' || input.direction === 'PUT' ? 'SELL' : 'BUY', stake: 10, expectedStake: 10, entryMode: 'PATH_TEST' }); return reply(res,200,{ order, practiceOnly:true }); } catch(error) { return reply(res,400,{ ...sanitizedError(error), practiceOnly:true }); } }
   if(url.pathname === '/api/iq/instruments/blitz' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); try { return reply(res,200,{ ...(await wsRuntime.discoverBlitzInstruments()), practiceOnly:true, readOnly:true }); } catch(error) { return reply(res,400,{ ...sanitizedError(error), practiceOnly:true }); } }
   if(url.pathname === '/api/iq/execution-routing' && req.method === 'GET') {
