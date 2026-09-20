@@ -32,6 +32,10 @@ export const RSI_AGENTS_V2_LIVE_POLICY = Object.freeze({
   finalWindowMs: 5000,
   minimumSafeMarginMs: 3000,
   turbCutoffMs: 30000,
+  // GATE DE ELEGIBILIDADE DE ENTRADA (infra/execucao; nao altera o core V2 congelado):
+  // a ordem so pode sair se o RSI AINDA estiver perto do extremo no momento da entrada
+  // (BUY: <= buyMax; SELL: >= sellMin). Bollinger/DMI/ADX continuam sendo a confirmacao V2.
+  entryRsiNearExtreme: { buyMax: 35, sellMin: 65 },
   watchPolicy: "ACTIVE_CANDIDATE+PRIORITY_FINAL_WATCH (preservado da V3.1)",
   routing: "RSI_V2_ONLY",
   singleBrokerPath: "runtime.submitAgentV2LiveOrder -> requestOrder",
@@ -141,6 +145,16 @@ export class RsiAgentsV2Live {
       checks: { strategy: skillId, status: result?.status ?? null },
       counterEvidence: [], entryReason: accepted ? [`V2_OK_${skillId}`] : [], cushion: null, hardBlocksChecked: [],
     };
+  }
+
+  /** Gate de entrada: o RSI precisa estar perto do extremo no instante da ordem (infra). */
+  #entryRsiEligible({ indicators, direction }) {
+    if (direction !== "BUY" && direction !== "SELL") return { ok: false, reason: "SEM_DIRECAO" };
+    const rsi = num(indicators?.rsi);
+    if (rsi === null) return { ok: false, reason: "RSI_UNAVAILABLE" };
+    const gate = RSI_AGENTS_V2_LIVE_POLICY.entryRsiNearExtreme;
+    if (direction === "BUY") return rsi <= gate.buyMax ? { ok: true, rsi, reason: "RSI_PERTO_EXTREMO_BUY" } : { ok: false, rsi, reason: "RSI_LONGE_DO_EXTREMO" };
+    return rsi >= gate.sellMin ? { ok: true, rsi, reason: "RSI_PERTO_EXTREMO_SELL" } : { ok: false, rsi, reason: "RSI_LONGE_DO_EXTREMO" };
   }
 
   #cancelEpisode({ watchKey, marketKey, instrumentType, reason, episode }) {
@@ -290,10 +304,16 @@ export class RsiAgentsV2Live {
     this.#evaluationsPush(opportunity, { at, price: num(indicators.bollinger?.close), rsi: num(indicators.rsi), position: num(indicators.bollinger?.position), plusDI: num(indicators.dmi?.plusDI), minusDI: num(indicators.dmi?.minusDI), adx: num(indicators.adx?.value), cushion: num(decision.cushion?.normalized), decision: decision.accepted ? decision.direction : "WAIT", reasonCodes: decision.accepted ? [] : decision.reasonCodes });
     void this.#persistOpportunity(opportunity);
 
+    const rsiGate = this.#entryRsiEligible({ indicators, direction: decision.accepted ? decision.direction : null });
+    state.entryRsiOk = rsiGate.ok === true; state.entryRsiReason = rsiGate.reason;
     if (isBinary) {
-      if (!decision.accepted) {
-        state.waitReason = decision.counterEvidence.some((row) => row.severity === "HARD") ? `CONTRA_EVIDENCIA_${decision.reason}` : decision.reason;
-        state.reason = decision.reason;
+      if (!decision.accepted || rsiGate.ok !== true) {
+        state.waitReason = decision.accepted !== true
+          ? (decision.counterEvidence.some((row) => row.severity === "HARD") ? `CONTRA_EVIDENCIA_${decision.reason}` : decision.reason)
+          : "RSI_LONGE_DO_EXTREMO";
+        state.reason = decision.accepted === true
+          ? `RSI ${num(indicators.rsi)} fora da zona de extremo no momento da ordem (BUY<=${RSI_AGENTS_V2_LIVE_POLICY.entryRsiNearExtreme.buyMax} / SELL>=${RSI_AGENTS_V2_LIVE_POLICY.entryRsiNearExtreme.sellMin})`
+          : decision.reason;
         this.counters.waits[state.waitReason] = (this.counters.waits[state.waitReason] ?? 0) + 1;
         this.#setState(state); void this.#persistState(state); return state;
       }
@@ -374,6 +394,7 @@ export class RsiAgentsV2Live {
       projectionPresent: true,
       noHardCounterEvidence: recheck.counterEvidence.every((row) => row.severity !== "HARD"),
       cushionNotFragile: true,
+      rsiNearExtremeAtSubmit: this.#entryRsiEligible({ indicators, direction: recheck.direction }).ok === true,
     };
     const precheckFailed = Object.entries(precheck).filter(([, ok]) => ok !== true).map(([key]) => key);
     if (precheckFailed.length) {

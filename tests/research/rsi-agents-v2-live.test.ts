@@ -81,6 +81,30 @@ describe("V2 LIVE — Strategy Core original + infra moderna", () => {
     expect(late.decision).not.toBe("BUY");
   });
 
+  it("gate de entrada: V2 aceita mas RSI longe do extremo (SELL 59) => bloqueia (RSI_LONGE_DO_EXTREMO)", async () => {
+    const runtime = fakeRuntime();
+    const seq = [
+      ind({ rsi: 76, rsiSlope: -1, bollinger: { ...ind().bollinger, position: 0.9, close: 1.19, touchUpper: true }, dmi: { plusDI: 33, minusDI: 21, spread: 12, plusSlope: 0.6, minusSlope: -0.3 }, adx: { value: 30, slope: 0.8 }, shortHorizonDirection: "BULLISH", shortMomentum: 0.7 }),
+      ind({ rsi: 59, rsiSlope: -1.4, bollinger: { ...ind().bollinger, position: 0.55, close: 1.16, touchUpper: true }, dmi: { plusDI: 24, minusDI: 27, spread: -3, plusSlope: -1.2, minusSlope: 1.4 }, adx: { value: 26, slope: -0.5 }, shortHorizonDirection: "BEARISH", shortMomentum: -0.8 }),
+    ];
+    let index = 0;
+    const accepted = { strategy: STRICT_V2_ID, direction: "SELL", decision: "SELL", accepted: true, status: "STRICT_CONFIRMED", reason: null };
+    const episode = { direction: "SELL", candidateAt: NOW - 60_000, candidateRsi: 76, candidatePrice: 1.19, touchedUpper: true };
+    const built = await build({
+      runtime,
+      skillsOverride: {
+        evaluateIndicatorsV2: () => seq[Math.min(index++, seq.length - 1)],
+        updateEpisodeV2: () => ({ episode, event: "CANDIDATE_CONTINUED" }),
+        evaluateV2: () => accepted,
+      },
+    });
+    await built.runner.observeMarket({ marketKey: KEY, instrumentType: "BINARY", candles: [candle(T - 60_000)], targetExpiryAt: T, payout: 87, now: T - 60_000 });
+    const out = await built.runner.observeMarket({ marketKey: KEY, instrumentType: "BINARY", candles: [candle(T - 35_000)], targetExpiryAt: T, payout: 87, now: T - 34_000 });
+    expect(runtime.calls).toHaveLength(0);
+    expect(out.waitReason).toBe("RSI_LONGE_DO_EXTREMO");
+    expect(out.entryRsiOk).toBe(false);
+  });
+
   it("prova positiva do caminho de ordem: aceitacao na janela final -> submitAgentV2LiveOrder + FINAL_EVALUATION", async () => {
     const runtime = fakeRuntime();
     const pool = fakePool();
