@@ -129,7 +129,7 @@ describe("HARDENING — boot/restart com DB lento", () => {
     const list = await runtime.mesasList();
     expect(list.source).toBe("IN_MEMORY_REGISTRY");
     expect(list.totals).toMatchObject({ total: 2, enabled: 1 });
-    expect(list.rows.find((row) => row.marketKey === KEY)?.enabled).toBe(true);
+    expect(list.rows.find((row: { marketKey?: string; enabled?: boolean }) => row.marketKey === KEY)?.enabled).toBe(true);
     expect(pool.calls.some((call) => call.text.includes("FROM iq_rsi_instruments"))).toBe(false);
     runtime.stop("TEST");
   });
