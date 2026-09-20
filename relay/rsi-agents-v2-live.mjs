@@ -232,7 +232,7 @@ export class RsiAgentsV2Live {
     const registry = this.instruments.get(registryKey) ?? null;
     const assignment = this.assignments.get(marketKey) ?? null;
     const list = Array.isArray(candles) ? candles : [];
-    const baseState = { agentId: `${this.skillFor(marketKey)}:${marketKey}:${type}`, marketKey, instrumentType: type, strategy: this.skillFor(marketKey), at, accountMode: "PRACTICE", requestedStake: this.stakeBrl, effectiveStake: null, orderId: null, executionId: null, decision: "WAIT", waitReason: null, reason: null, candidateAt: null, expiryAt: num(targetExpiryAt), durationSeconds: num(durationSeconds) ?? (type === "BINARY" ? RSI_V4_POLICY.blitzDurationSeconds : RSI_V4_POLICY.horizonSeconds) };
+    const baseState = { agentId: `${this.skillFor(marketKey)}:${marketKey}:${type}`, marketKey, instrumentType: type, strategy: this.skillFor(marketKey), at, accountMode: "PRACTICE", requestedStake: this.stakeBrl, effectiveStake: null, orderId: null, executionId: null, decision: "WAIT", waitReason: null, reason: null, candidateAt: null, expiryAt: num(targetExpiryAt), durationSeconds: num(durationSeconds) ?? (type === "BINARY" ? 60 : 60) };
 
     if (!registry || registry.enabled !== true) {
       const episode = this.episodes.get(registryKey) ?? null;
@@ -284,6 +284,7 @@ export class RsiAgentsV2Live {
     const opportunity = this.#opportunityRecord({ opportunityId, marketKey, marketType, instrumentType: type, durationSeconds: baseState.durationSeconds, episode, decision, indicators, targetExpiryAt, payout, at, state });
     const previousOpportunity = this.#opportunitiesGet(opportunityId);
     if (previousOpportunity?.payload?.entrySnapshot) opportunity.payload.entrySnapshot = previousOpportunity.payload.entrySnapshot;
+    if (Array.isArray(previousOpportunity?.evaluations) && previousOpportunity.evaluations.length) opportunity.evaluations = previousOpportunity.evaluations;
     this.#evaluationsPush(opportunity, { at, price: num(indicators.bollinger?.close), rsi: num(indicators.rsi), position: num(indicators.bollinger?.position), plusDI: num(indicators.dmi?.plusDI), minusDI: num(indicators.dmi?.minusDI), adx: num(indicators.adx?.value), cushion: num(decision.cushion?.normalized), decision: decision.accepted ? decision.direction : "WAIT", reasonCodes: decision.accepted ? [] : decision.reasonCodes });
     void this.#persistOpportunity(opportunity);
 
