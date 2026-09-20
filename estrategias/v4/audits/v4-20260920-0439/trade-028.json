@@ -1,0 +1,193 @@
+{
+  "tradeNumber": 28,
+  "identity": {
+    "market": "AUDJPY:OTC",
+    "instrumentType": "BINARY",
+    "marketType": "OTC",
+    "direction": "PUT",
+    "entryMode": "NORMAL_T5",
+    "duration": 60,
+    "stake": 10,
+    "payout": 82,
+    "accountMode": "PRACTICE"
+  },
+  "timestamps": {
+    "candidateAt": 1789880046116,
+    "candidateAtIso": "2026-09-20T04:54:06.116Z",
+    "entryAt": 1789880366823,
+    "entryAtIso": "2026-09-20T04:59:26.823Z",
+    "expiryAt": 1789880400000,
+    "expiryAtIso": "2026-09-20T05:00:00.000Z",
+    "safeCutoff": 1789880370000,
+    "safeCutoffIso": "2026-09-20T04:59:30.000Z",
+    "finalEvaluationAt": 1789880366080
+  },
+  "candidateToEntryMs": 320707,
+  "prices": {
+    "candidatePrice": 114.039675,
+    "entryPrice": 114.236265,
+    "expiryPrice": null,
+    "actualDisplacement": null
+  },
+  "candidateSnapshot": {
+    "rsi": 72.1408
+  },
+  "entrySnapshot": {
+    "rsi": 46.8725,
+    "rsiTrajectory": "LEAVING_EXTREME",
+    "bollinger": {
+      "close": 114.236265,
+      "lower": 114.22004961,
+      "upper": 114.28549239,
+      "width": 0.06544278,
+      "middle": 114.252771,
+      "position": 0.2478,
+      "expanding": true,
+      "touchLower": false,
+      "touchUpper": false,
+      "widthSlope": 0.00172386,
+      "outsideLower": false,
+      "outsideUpper": false,
+      "distanceToLower": 0.01621539,
+      "distanceToUpper": 0.04922739
+    },
+    "band": {
+      "width": 0.06544278,
+      "position": 0.2478,
+      "expanding": true,
+      "touchLower": false,
+      "touchUpper": false,
+      "widthSlope": 0.00172386,
+      "outsideLower": false,
+      "outsideUpper": false,
+      "rejectionLowerNow": false,
+      "rejectionUpperNow": false
+    },
+    "dmi": {
+      "plusDI": 21.2149,
+      "spread": -3.6873,
+      "minusDI": 24.9022,
+      "plusSlope": -4.6209,
+      "minusSlope": 3.7273,
+      "spreadSlope": -8.3482
+    },
+    "adx": {
+      "slope": -3.124,
+      "value": 17.5821,
+      "rising": false,
+      "strong": false,
+      "falling": true,
+      "stabilizing": false
+    },
+    "shortDirection": "BEARISH",
+    "noiseHorizon": 0.07577323,
+    "velocity": -0.7118,
+    "acceleration": -0.4018,
+    "expectedCushion": 0.6312,
+    "cushionClass": "STRONG",
+    "counterEvidenceAtEntry": [
+      {
+        "code": "ADX_FALLING_CONTEXT_ONLY",
+        "detail": {
+          "adxSlope": -7.1619
+        },
+        "severity": "SOFT"
+      },
+      {
+        "code": "REJECTION_FAILED",
+        "detail": {
+          "close": 114.219265,
+          "middle": 114.260227
+        },
+        "severity": "SOFT"
+      }
+    ],
+    "entryReason": [
+      "REVERSAO_BOLLINGER_OK",
+      "DMI_ADX_OK"
+    ],
+    "hardBlocksChecked": [
+      "OLD_DI_STILL_DOMINANT",
+      "ADX_SUPPORTING_OLD_DIRECTION",
+      "BAND_RIDING",
+      "STRONG_OPPOSITE_CANDLE",
+      "MOMENTUM_AGAINST",
+      "PRICE_STRUCTURE_INVALIDATED",
+      "CUSHION_TOO_SMALL"
+    ]
+  },
+  "grades": {
+    "grade": "C",
+    "reasons": [
+      "REJECTION_FAILED_SOFT"
+    ]
+  },
+  "timing": {
+    "evaluationCount": 65,
+    "maxEvaluationGapMs": 6317,
+    "finalEvaluationLeadMs": 920,
+    "submitLatencyMs": 743,
+    "timeToCutoffAtSubmitMs": 3177,
+    "missedInSession": 9
+  },
+  "evaluations": [
+    {
+      "at": 1789880430735,
+      "adx": 17.5821,
+      "rsi": 46.8725,
+      "price": 114.236265,
+      "plusDI": 21.2149,
+      "cushion": 0.6312,
+      "minusDI": 24.9022,
+      "decision": "SELL",
+      "position": 0.2478,
+      "reasonCodes": []
+    }
+  ],
+  "sources": {
+    "hasEntrySnapshot": true,
+    "opportunityId": "rsi-v4-opp:AUDJPY:OTC:BINARY:1789880046116",
+    "checks": {
+      "dmi": {
+        "adxRising": false,
+        "newDominant": true,
+        "newReacting": true,
+        "oldWeakening": true,
+        "adxStabilized": false,
+        "adxSupportingOld": false,
+        "oldStillDominant": false,
+        "strongConfirmation": false
+      },
+      "cushion": {
+        "class": "STRONG",
+        "normalized": 1.0817
+      },
+      "bollinger": {
+        "stretched": true,
+        "movedOffZone": true,
+        "rejectionNow": false,
+        "reenteredInside": true,
+        "bandRidingAgainst": false,
+        "strongContinuationAgainst": false
+      }
+    }
+  },
+  "settlement": {
+    "result": "LOSS",
+    "profit": -10,
+    "settledAt": "2026-09-20T05:00:00.745Z",
+    "state": "SETTLED",
+    "qualityClass": null,
+    "actualCushion": null,
+    "actualDisplacement": null
+  },
+  "lossTags": [
+    "CURRENT_STATE_CONTRADICTION",
+    "THIN_ENTRY",
+    "LATE_REVERSAL"
+  ],
+  "explanation": {
+    "whyEntered": "entryReason=REVERSAO_BOLLINGER_OK+DMI_ADX_OK | RSI 46.8725 | spread -3.6873 | ADX slope -3.124 | cushion 0.6312 | soft=ADX_FALLING_CONTEXT_ONLY+REJECTION_FAILED",
+    "whatHappened": "settlement LOSS (-10) | quality null | actualCushion n/a | actualDisplacement n/a"
+  }
+}

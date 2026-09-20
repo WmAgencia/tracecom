@@ -9,8 +9,8 @@ import { IqAuthSession } from './iqoption-auth.mjs';
 import { saveSession, loadSession, clearSession } from './iq-session-vault.mjs';
 import { createPersistScheduler } from './persist-scheduler.mjs';
 import { IqMultiRuntime } from './iq-multi-runtime.mjs';
-// RSI AGENTS V4: allowlist de execucao (somente RSI_REVERSAL_V4 pode chegar ao broker nesta rodada).
-import { RSI_V4_EXECUTION_ALLOWLIST } from './rsi-agents-v4.mjs';
+// RODADA V2 LIVE: Strategy Core = V2 ORIGINAL (rsi-skills-v2, congelada) + infraestrutura atual.
+import { RSI_V2_LIVE_EXECUTION_ALLOWLIST } from './rsi-agents-v2-live.mjs';
 import { scenarioShadowStatus } from './scenario-shadow.mjs';
 import { ExecutionArmState, KillSwitch, IdempotencyStore } from './iqoption-connector.mjs';
 import { buildCandles } from './experiment.mjs';
@@ -51,7 +51,7 @@ const admin = adminSecretEnv.length >= 16 ? adminSecretEnv : `UNCONFIGURED-${cry
 const armState = new ExecutionArmState();
 const killSwitch = new KillSwitch();
 const executionIdempotency = new IdempotencyStore();
-const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: RSI_V4_EXECUTION_ALLOWLIST, executionPolicyName: 'RSI_V4_ONLY', rsiAgentsV4Enabled: true, rsiAgentsV3Enabled: false });
+const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: RSI_V2_LIVE_EXECUTION_ALLOWLIST, executionPolicyName: 'RSI_V2_ONLY', rsiAgentsV2LiveEnabled: true, rsiAgentsV4Enabled: true, rsiAgentsV3Enabled: false });
 // QUANT / RESEARCH PLATFORM (fora do hot path; nao executa nada).
 const { ResearchLab } = await import('./research-lab/api.mjs');
 const researchLab = new ResearchLab({ pool, runtime: wsRuntime, log: (...args) => console.info(...args) });
@@ -457,7 +457,9 @@ const server = http.createServer(async (req, res) => {
   if(url.pathname === '/api/iq/research/rsi-agents-v3' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.rsiAgentsStatus()), practiceOnly:true, realLocked:true, v3:true, frozen:true, controlsExecution:false }); }
   if(url.pathname === '/api/iq/research/rsi-agents-v4' && req.method === 'GET') {
-    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(wsRuntime.rsiAgentsV4?.status?.() ?? { error:'RSI_V4_UNAVAILABLE' }), practiceOnly:true, realLocked:true }); }
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(wsRuntime.rsiAgentsV4?.status?.() ?? { error:'RSI_V4_UNAVAILABLE' }), practiceOnly:true, realLocked:true, shadowOnly:true, controlsExecution:false }); }
+  if(url.pathname === '/api/iq/research/rsi-agents-v2-live' && req.method === 'GET') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(wsRuntime.rsiAgentsV2Live?.status?.() ?? { error:'RSI_V2_LIVE_UNAVAILABLE' }), practiceOnly:true, realLocked:true, strategyCore:'RSI_V2_ORIGINAL', scheduler:'CURRENT_ACTIVE_WATCH' }); }
   if(url.pathname === '/api/iq/research/rsi-agents-v4/events' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const payload = await wsRuntime.rsiV4Events({ marketKey: url.searchParams.get('marketKey') || null, limit: Number(url.searchParams.get('limit')) || 100 }); return reply(res,200,{ ...payload, practiceOnly:true, realLocked:true, readOnly:true }); }
   if(url.pathname === '/api/iq/research/rsi-agents-v4/funnel' && req.method === 'GET') {

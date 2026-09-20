@@ -1,0 +1,187 @@
+{
+  "tradeNumber": 15,
+  "identity": {
+    "market": "GBPAUD:OTC",
+    "instrumentType": "BINARY",
+    "marketType": "OTC",
+    "direction": "PUT",
+    "entryMode": "NORMAL_T5",
+    "duration": 60,
+    "stake": 10,
+    "payout": 82,
+    "accountMode": "PRACTICE"
+  },
+  "timestamps": {
+    "candidateAt": 1789879735822,
+    "candidateAtIso": "2026-09-20T04:48:55.822Z",
+    "entryAt": 1789879826092,
+    "entryAtIso": "2026-09-20T04:50:26.092Z",
+    "expiryAt": 1789879860000,
+    "expiryAtIso": "2026-09-20T04:51:00.000Z",
+    "safeCutoff": 1789879830000,
+    "safeCutoffIso": "2026-09-20T04:50:30.000Z",
+    "finalEvaluationAt": 1789879825213
+  },
+  "candidateToEntryMs": 90270,
+  "prices": {
+    "candidatePrice": 1.865215,
+    "entryPrice": 1.865535,
+    "expiryPrice": null,
+    "actualDisplacement": null
+  },
+  "candidateSnapshot": {
+    "rsi": 70.3718
+  },
+  "entrySnapshot": {
+    "rsi": 46.7213,
+    "rsiTrajectory": "LEAVING_EXTREME",
+    "bollinger": {
+      "close": 1.865535,
+      "lower": 1.86528052,
+      "upper": 1.86614848,
+      "width": 0.00086796,
+      "middle": 1.8657145,
+      "position": 0.2932,
+      "expanding": false,
+      "touchLower": false,
+      "touchUpper": false,
+      "widthSlope": -0.00000534,
+      "outsideLower": false,
+      "outsideUpper": false,
+      "distanceToLower": 0.00025448,
+      "distanceToUpper": 0.00061348
+    },
+    "band": {
+      "width": 0.00086796,
+      "position": 0.2932,
+      "expanding": false,
+      "touchLower": false,
+      "touchUpper": false,
+      "widthSlope": -0.00000534,
+      "outsideLower": false,
+      "outsideUpper": false,
+      "rejectionLowerNow": false,
+      "rejectionUpperNow": false
+    },
+    "dmi": {
+      "plusDI": 22.3671,
+      "spread": 1.6462,
+      "minusDI": 20.7209,
+      "plusSlope": -5.3543,
+      "minusSlope": 4.6112,
+      "spreadSlope": -9.9655
+    },
+    "adx": {
+      "slope": -3.2775,
+      "value": 28.826,
+      "rising": false,
+      "strong": true,
+      "falling": true,
+      "stabilizing": false
+    },
+    "shortDirection": "BEARISH",
+    "noiseHorizon": 0.00060125,
+    "velocity": -0.2881,
+    "acceleration": 0.1152,
+    "expectedCushion": 0.7712,
+    "cushionClass": "STRONG",
+    "counterEvidenceAtEntry": [
+      {
+        "code": "ADX_FALLING_CONTEXT_ONLY",
+        "detail": {
+          "adxSlope": -5.4846
+        },
+        "severity": "SOFT"
+      },
+      {
+        "code": "REJECTION_FAILED",
+        "detail": {
+          "close": 1.865355,
+          "middle": 1.8654625
+        },
+        "severity": "SOFT"
+      }
+    ],
+    "entryReason": [
+      "REVERSAO_BOLLINGER_OK",
+      "DMI_ADX_OK"
+    ],
+    "hardBlocksChecked": [
+      "OLD_DI_STILL_DOMINANT",
+      "ADX_SUPPORTING_OLD_DIRECTION",
+      "BAND_RIDING",
+      "STRONG_OPPOSITE_CANDLE",
+      "MOMENTUM_AGAINST",
+      "PRICE_STRUCTURE_INVALIDATED",
+      "CUSHION_TOO_SMALL"
+    ]
+  },
+  "grades": {
+    "grade": "C",
+    "reasons": [
+      "REJECTION_FAILED_SOFT"
+    ]
+  },
+  "timing": {
+    "evaluationCount": 19,
+    "maxEvaluationGapMs": 6093,
+    "finalEvaluationLeadMs": 1787,
+    "submitLatencyMs": 879,
+    "timeToCutoffAtSubmitMs": 3908,
+    "missedInSession": 8
+  },
+  "evaluations": [
+    {
+      "at": 1789879936045,
+      "adx": 28.826,
+      "rsi": 46.7213,
+      "price": 1.865535,
+      "plusDI": 22.3671,
+      "cushion": 0.7712,
+      "minusDI": 20.7209,
+      "decision": "WAIT",
+      "position": 0.2932,
+      "reasonCodes": [
+        "OLD_DI_STILL_DOMINANT"
+      ]
+    }
+  ],
+  "sources": {
+    "hasEntrySnapshot": true,
+    "opportunityId": "rsi-v4-opp:GBPAUD:OTC:BINARY:1789879735822",
+    "checks": {
+      "dmi": {
+        "adxRising": false,
+        "newDominant": true,
+        "newReacting": true,
+        "oldWeakening": true,
+        "adxStabilized": false,
+        "adxSupportingOld": false,
+        "oldStillDominant": false,
+        "strongConfirmation": false
+      },
+      "cushion": {
+        "class": "STRONG",
+        "normalized": 0.8763
+      },
+      "bollinger": {
+        "stretched": true,
+        "movedOffZone": true,
+        "rejectionNow": false,
+        "reenteredInside": true,
+        "bandRidingAgainst": false,
+        "strongContinuationAgainst": false
+      }
+    }
+  },
+  "settlement": {
+    "result": "WIN",
+    "profit": 8.2,
+    "settledAt": "2026-09-20T04:51:00.158Z",
+    "state": "SETTLED",
+    "qualityClass": null,
+    "actualCushion": null,
+    "actualDisplacement": null
+  },
+  "winQuality": "THIN_WIN"
+}

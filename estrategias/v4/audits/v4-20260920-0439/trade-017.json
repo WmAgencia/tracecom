@@ -1,0 +1,192 @@
+{
+  "tradeNumber": 17,
+  "identity": {
+    "market": "EURCAD:OTC",
+    "instrumentType": "BINARY",
+    "marketType": "OTC",
+    "direction": "CALL",
+    "entryMode": "NORMAL_T5",
+    "duration": 60,
+    "stake": 10,
+    "payout": 82,
+    "accountMode": "PRACTICE"
+  },
+  "timestamps": {
+    "candidateAt": 1789879761075,
+    "candidateAtIso": "2026-09-20T04:49:21.075Z",
+    "entryAt": 1789879827162,
+    "entryAtIso": "2026-09-20T04:50:27.162Z",
+    "expiryAt": 1789879860000,
+    "expiryAtIso": "2026-09-20T04:51:00.000Z",
+    "safeCutoff": 1789879830000,
+    "safeCutoffIso": "2026-09-20T04:50:30.000Z",
+    "finalEvaluationAt": 1789879826313
+  },
+  "candidateToEntryMs": 66087,
+  "prices": {
+    "candidatePrice": 1.607275,
+    "entryPrice": 1.607515,
+    "expiryPrice": null,
+    "actualDisplacement": null
+  },
+  "candidateSnapshot": {
+    "rsi": 28.5892
+  },
+  "entrySnapshot": {
+    "rsi": 53.7091,
+    "rsiTrajectory": "LEAVING_EXTREME",
+    "bollinger": {
+      "close": 1.607515,
+      "lower": 1.60713996,
+      "upper": 1.60758904,
+      "width": 0.00044908,
+      "middle": 1.6073645,
+      "position": 0.8351,
+      "expanding": true,
+      "touchLower": false,
+      "touchUpper": false,
+      "widthSlope": 0.00001487,
+      "outsideLower": false,
+      "outsideUpper": false,
+      "distanceToLower": 0.00037504,
+      "distanceToUpper": 0.00007404
+    },
+    "band": {
+      "width": 0.00044908,
+      "position": 0.8351,
+      "expanding": true,
+      "touchLower": false,
+      "touchUpper": false,
+      "widthSlope": 0.00001487,
+      "outsideLower": false,
+      "outsideUpper": false,
+      "rejectionLowerNow": false,
+      "rejectionUpperNow": false
+    },
+    "dmi": {
+      "plusDI": 33.7168,
+      "spread": 3.7295,
+      "minusDI": 29.9873,
+      "plusSlope": 12.4493,
+      "minusSlope": -9.8551,
+      "spreadSlope": 22.3044
+    },
+    "adx": {
+      "slope": -3.8885,
+      "value": 25.5926,
+      "rising": false,
+      "strong": true,
+      "falling": true,
+      "stabilizing": false
+    },
+    "shortDirection": "BULLISH",
+    "noiseHorizon": 0.00036676,
+    "velocity": 0.6612,
+    "acceleration": -0.3778,
+    "expectedCushion": 1.0707,
+    "cushionClass": "STRONG",
+    "counterEvidenceAtEntry": [
+      {
+        "code": "ADX_FALLING_CONTEXT_ONLY",
+        "detail": {
+          "adxSlope": -3.8885
+        },
+        "severity": "SOFT"
+      },
+      {
+        "code": "REJECTION_FAILED",
+        "detail": {
+          "close": 1.607515,
+          "middle": 1.6073645
+        },
+        "severity": "SOFT"
+      }
+    ],
+    "entryReason": [
+      "REVERSAO_BOLLINGER_OK",
+      "DMI_ADX_OK"
+    ],
+    "hardBlocksChecked": [
+      "OLD_DI_STILL_DOMINANT",
+      "ADX_SUPPORTING_OLD_DIRECTION",
+      "BAND_RIDING",
+      "STRONG_OPPOSITE_CANDLE",
+      "MOMENTUM_AGAINST",
+      "PRICE_STRUCTURE_INVALIDATED",
+      "CUSHION_TOO_SMALL"
+    ]
+  },
+  "grades": {
+    "grade": "C",
+    "reasons": [
+      "REJECTION_FAILED_SOFT"
+    ]
+  },
+  "timing": {
+    "evaluationCount": 14,
+    "maxEvaluationGapMs": 6004,
+    "finalEvaluationLeadMs": 687,
+    "submitLatencyMs": 849,
+    "timeToCutoffAtSubmitMs": 2838,
+    "missedInSession": 7
+  },
+  "evaluations": [
+    {
+      "at": 1789879826313,
+      "adx": 25.5926,
+      "rsi": 53.7091,
+      "price": 1.607515,
+      "plusDI": 33.7168,
+      "cushion": 1.0707,
+      "minusDI": 29.9873,
+      "decision": "BUY",
+      "position": 0.8351,
+      "reasonCodes": []
+    }
+  ],
+  "sources": {
+    "hasEntrySnapshot": true,
+    "opportunityId": "rsi-v4-opp:EURCAD:OTC:BINARY:1789879761075",
+    "checks": {
+      "dmi": {
+        "adxRising": false,
+        "newDominant": true,
+        "newReacting": true,
+        "oldWeakening": true,
+        "adxStabilized": false,
+        "adxSupportingOld": false,
+        "oldStillDominant": false,
+        "strongConfirmation": false
+      },
+      "cushion": {
+        "class": "STRONG",
+        "normalized": 1.0707
+      },
+      "bollinger": {
+        "stretched": true,
+        "movedOffZone": true,
+        "rejectionNow": false,
+        "reenteredInside": true,
+        "bandRidingAgainst": false,
+        "strongContinuationAgainst": false
+      }
+    }
+  },
+  "settlement": {
+    "result": "LOSS",
+    "profit": -10,
+    "settledAt": "2026-09-20T04:51:00.383Z",
+    "state": "SETTLED",
+    "qualityClass": null,
+    "actualCushion": null,
+    "actualDisplacement": null
+  },
+  "lossTags": [
+    "CURRENT_STATE_CONTRADICTION",
+    "THIN_ENTRY"
+  ],
+  "explanation": {
+    "whyEntered": "entryReason=REVERSAO_BOLLINGER_OK+DMI_ADX_OK | RSI 53.7091 | spread 3.7295 | ADX slope -3.8885 | cushion 1.0707 | soft=ADX_FALLING_CONTEXT_ONLY+REJECTION_FAILED",
+    "whatHappened": "settlement LOSS (-10) | quality null | actualCushion n/a | actualDisplacement n/a"
+  }
+}

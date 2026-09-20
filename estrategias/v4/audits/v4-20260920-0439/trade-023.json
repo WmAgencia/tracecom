@@ -1,0 +1,88 @@
+{
+  "tradeNumber": 23,
+  "identity": {
+    "market": "AUDJPY:OTC",
+    "instrumentType": "BINARY",
+    "marketType": "OTC",
+    "direction": "PUT",
+    "entryMode": null,
+    "duration": 60,
+    "stake": 10,
+    "payout": null,
+    "accountMode": "PRACTICE"
+  },
+  "timestamps": {
+    "candidateAt": null,
+    "candidateAtIso": null,
+    "entryAt": 1789880126885,
+    "entryAtIso": "2026-09-20T04:55:26.885Z",
+    "expiryAt": 1789880160000,
+    "expiryAtIso": "2026-09-20T04:56:00.000Z",
+    "safeCutoff": 1789880130000,
+    "safeCutoffIso": "2026-09-20T04:55:30.000Z",
+    "finalEvaluationAt": 1789880126717.925
+  },
+  "candidateToEntryMs": null,
+  "prices": {
+    "candidatePrice": null,
+    "entryPrice": null,
+    "expiryPrice": null,
+    "actualDisplacement": null
+  },
+  "candidateSnapshot": {
+    "rsi": null
+  },
+  "entrySnapshot": {
+    "rsi": null,
+    "rsiTrajectory": null,
+    "bollinger": null,
+    "band": null,
+    "dmi": null,
+    "adx": null,
+    "shortDirection": null,
+    "noiseHorizon": null,
+    "velocity": null,
+    "acceleration": null,
+    "expectedCushion": null,
+    "cushionClass": null,
+    "counterEvidenceAtEntry": [],
+    "entryReason": [],
+    "hardBlocksChecked": []
+  },
+  "grades": {
+    "grade": "C",
+    "reasons": [
+      "SEM_CONFIRMACAO_FORTE"
+    ]
+  },
+  "timing": {
+    "evaluationCount": null,
+    "maxEvaluationGapMs": null,
+    "finalEvaluationLeadMs": null,
+    "submitLatencyMs": null,
+    "timeToCutoffAtSubmitMs": 3115,
+    "missedInSession": 9
+  },
+  "evaluations": [],
+  "sources": {
+    "hasEntrySnapshot": false,
+    "opportunityId": null,
+    "checks": null
+  },
+  "settlement": {
+    "result": "LOSS",
+    "profit": -10,
+    "settledAt": "2026-09-20T04:56:00.539Z",
+    "state": "SETTLED",
+    "qualityClass": null,
+    "actualCushion": null,
+    "actualDisplacement": null
+  },
+  "lossTags": [
+    "THIN_ENTRY"
+  ],
+  "explanation": {
+    "whyEntered": "entryReason=n/a | RSI null | spread undefined | ADX slope undefined | cushion null | soft=nenhum",
+    "whatHappened": "settlement LOSS (-10) | quality null | actualCushion n/a | actualDisplacement n/a"
+  }
+}

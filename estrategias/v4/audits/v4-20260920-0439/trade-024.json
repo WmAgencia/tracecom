@@ -1,0 +1,185 @@
+{
+  "tradeNumber": 24,
+  "identity": {
+    "market": "EURCHF:OTC",
+    "instrumentType": "BINARY",
+    "marketType": "OTC",
+    "direction": "PUT",
+    "entryMode": "NORMAL_T5",
+    "duration": 60,
+    "stake": 10,
+    "payout": 82,
+    "accountMode": "PRACTICE"
+  },
+  "timestamps": {
+    "candidateAt": 1789880076084,
+    "candidateAtIso": "2026-09-20T04:54:36.084Z",
+    "entryAt": 1789880186171,
+    "entryAtIso": "2026-09-20T04:56:26.171Z",
+    "expiryAt": 1789880220000,
+    "expiryAtIso": "2026-09-20T04:57:00.000Z",
+    "safeCutoff": 1789880190000,
+    "safeCutoffIso": "2026-09-20T04:56:30.000Z",
+    "finalEvaluationAt": 1789880185514
+  },
+  "candidateToEntryMs": 110087,
+  "prices": {
+    "candidatePrice": 0.932405,
+    "entryPrice": 0.932225,
+    "expiryPrice": null,
+    "actualDisplacement": null
+  },
+  "candidateSnapshot": {
+    "rsi": 75.1767
+  },
+  "entrySnapshot": {
+    "rsi": 45.6573,
+    "rsiTrajectory": "LEAVING_EXTREME",
+    "bollinger": {
+      "close": 0.932225,
+      "lower": 0.93213517,
+      "upper": 0.93272283,
+      "width": 0.00058766,
+      "middle": 0.932429,
+      "position": 0.1529,
+      "expanding": true,
+      "touchLower": false,
+      "touchUpper": false,
+      "widthSlope": 0.00002162,
+      "outsideLower": false,
+      "outsideUpper": false,
+      "distanceToLower": 0.00008983,
+      "distanceToUpper": 0.00049783
+    },
+    "band": {
+      "width": 0.00058766,
+      "position": 0.1529,
+      "expanding": true,
+      "touchLower": false,
+      "touchUpper": false,
+      "widthSlope": 0.00002162,
+      "outsideLower": false,
+      "outsideUpper": false,
+      "rejectionLowerNow": false,
+      "rejectionUpperNow": false
+    },
+    "dmi": {
+      "plusDI": 27.6739,
+      "spread": -3.6047,
+      "minusDI": 31.2786,
+      "plusSlope": -8.915,
+      "minusSlope": 14.2056,
+      "spreadSlope": -23.1205
+    },
+    "adx": {
+      "slope": -4.053,
+      "value": 25.3604,
+      "rising": false,
+      "strong": true,
+      "falling": true,
+      "stabilizing": false
+    },
+    "shortDirection": "BEARISH",
+    "noiseHorizon": 0.00038611,
+    "velocity": -0.7177,
+    "acceleration": -0.2691,
+    "expectedCushion": 1.2255,
+    "cushionClass": "STRONG",
+    "counterEvidenceAtEntry": [
+      {
+        "code": "ADX_FALLING_CONTEXT_ONLY",
+        "detail": {
+          "adxSlope": -4.053
+        },
+        "severity": "SOFT"
+      },
+      {
+        "code": "REJECTION_FAILED",
+        "detail": {
+          "close": 0.932225,
+          "middle": 0.932429
+        },
+        "severity": "SOFT"
+      }
+    ],
+    "entryReason": [
+      "REVERSAO_BOLLINGER_OK",
+      "DMI_ADX_OK"
+    ],
+    "hardBlocksChecked": [
+      "OLD_DI_STILL_DOMINANT",
+      "ADX_SUPPORTING_OLD_DIRECTION",
+      "BAND_RIDING",
+      "STRONG_OPPOSITE_CANDLE",
+      "MOMENTUM_AGAINST",
+      "PRICE_STRUCTURE_INVALIDATED",
+      "CUSHION_TOO_SMALL"
+    ]
+  },
+  "grades": {
+    "grade": "C",
+    "reasons": [
+      "REJECTION_FAILED_SOFT"
+    ]
+  },
+  "timing": {
+    "evaluationCount": 23,
+    "maxEvaluationGapMs": 6120,
+    "finalEvaluationLeadMs": 1486,
+    "submitLatencyMs": 657,
+    "timeToCutoffAtSubmitMs": 3829,
+    "missedInSession": 4
+  },
+  "evaluations": [
+    {
+      "at": 1789880185514,
+      "adx": 25.3604,
+      "rsi": 45.6573,
+      "price": 0.932225,
+      "plusDI": 27.6739,
+      "cushion": 1.2255,
+      "minusDI": 31.2786,
+      "decision": "SELL",
+      "position": 0.1529,
+      "reasonCodes": []
+    }
+  ],
+  "sources": {
+    "hasEntrySnapshot": true,
+    "opportunityId": "rsi-v4-opp:EURCHF:OTC:BINARY:1789880076084",
+    "checks": {
+      "dmi": {
+        "adxRising": false,
+        "newDominant": true,
+        "newReacting": true,
+        "oldWeakening": true,
+        "adxStabilized": false,
+        "adxSupportingOld": false,
+        "oldStillDominant": false,
+        "strongConfirmation": false
+      },
+      "cushion": {
+        "class": "STRONG",
+        "normalized": 1.2255
+      },
+      "bollinger": {
+        "stretched": true,
+        "movedOffZone": true,
+        "rejectionNow": false,
+        "reenteredInside": true,
+        "bandRidingAgainst": false,
+        "strongContinuationAgainst": false
+      }
+    }
+  },
+  "settlement": {
+    "result": "WIN",
+    "profit": 8.2,
+    "settledAt": "2026-09-20T04:57:00.458Z",
+    "state": "SETTLED",
+    "qualityClass": null,
+    "actualCushion": null,
+    "actualDisplacement": null
+  },
+  "winQuality": "THIN_WIN"
+}

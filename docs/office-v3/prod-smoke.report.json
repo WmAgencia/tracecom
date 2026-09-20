@@ -1,8 +1,8 @@
 {
-  "at": "2026-09-19T21:29:30.537Z",
+  "at": "2026-09-20T03:49:53.062Z",
   "baseUrl": "https://tracecom.consecom.com.br",
-  "total": 13,
-  "passed": 13,
+  "total": 15,
+  "passed": 15,
   "failed": 0,
   "results": [
     {
@@ -26,8 +26,8 @@
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "pnlText": "−R$ 42,47",
-        "settledPnl": -42.47
+        "pnlText": "R$ 0,00",
+        "settledPnl": 0
       }
     },
     {
@@ -36,9 +36,9 @@
       "evidence": "final-prod-boot.png",
       "detail": {
         "present": true,
-        "text": "RESULTADO DO DIA-R$ 42,4781 operações · 39W / 39L / 3DWR observado 50,0% · payout médio 86,2% (30 mercados abertos)HOJE-R$ 42,4781 operações · 39W / 39L / 3DSEMANA-R$ 679,23305 trades liquidadosMÊS-R$ 679,23305 trades liquidadosOPERAÇÕES81WINS39LOSSES39DRAWS3WR OBSERVADO50,0%PAYOUT MÉDIO86,2%MERCADOS ABERTOS30/54PRACTICEEQUITY · SÉRIE REAL",
+        "text": "RESULTADO DO DIAR$ 0,000 operações · 0W / 0L / 0DWR observado N/A · payout médio 83,4% (30 mercados abertos)HOJER$ 0,000 operações · 0W / 0L / 0DSEMANA-R$ 679,23305 trades liquidadosMÊS-R$ 679,23305 trades liquidadosOPERAÇÕES0WINS0LOSSES0DRAWS0WR OBSERVADON/APAYOUT MÉDIO83,4%MERCADOS ABERTOS30/54PRACTICEEQUITY · SEM DADOSSEM SÉRIE DE RESULTADO",
         "model": {
-          "day": "-R$ 42,47",
+          "day": "R$ 0,00",
           "week": "-R$ 679,23",
           "month": "-R$ 679,23"
         }
@@ -53,15 +53,15 @@
       }
     },
     {
-      "assertion": "RSI V3 unica em TODOS os agentes do Office",
+      "assertion": "RSI V4 unica em TODOS os agentes do Office (V3/V2 nao executam)",
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "strategy": "RSI_REVERSAL_PULLBACK_V3",
-        "eligible": 29,
+        "strategy": "RSI_REVERSAL_V4",
+        "enabled": 29,
         "desksWithTag": 29,
         "strategySet": [
-          "RSI_REVERSAL_PULLBACK_V3"
+          "RSI_REVERSAL_V4"
         ]
       }
     },
@@ -77,15 +77,16 @@
       }
     },
     {
-      "assertion": "EXECUTION ROUTING RSI_V3_ONLY: somente RSI_REVERSAL_PULLBACK_V3 pode chegar ao requestOrder",
+      "assertion": "EXECUTION ROUTING RSI_V4_ONLY: somente RSI_REVERSAL_V4 pode chegar ao requestOrder (historico bloqueado)",
       "pass": true,
       "evidence": "final-prod-boot.png",
       "detail": {
-        "policy": "RSI_V3_ONLY",
+        "policy": "RSI_V4_ONLY",
         "allowed": [
-          "RSI_REVERSAL_PULLBACK_V3"
+          "RSI_REVERSAL_V4"
         ],
         "blocked": [
+          "agent-v3:RSI_REVERSAL_PULLBACK_V3:RSI_REVERSAL_PULLBACK_V3:false",
           "agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2:false",
           "agent-v2:RSI_EXTREME_PULLBACK_V2:RSI_EXTREME_PULLBACK_V2:false",
           "agent:RSI_REVERSAL_STRICT:RSI_REVERSAL_STRICT_V1:false",
@@ -99,6 +100,37 @@
           "experiment:PRACTICE_FOUR_WAY_3X_TEST_V1:false",
           "experiment:INDICATOR_5M_V1:false"
         ]
+      }
+    },
+    {
+      "assertion": "MESAS de instrumentos respondendo com registry (BINARY presente; BLITZ so se descoberto)",
+      "pass": true,
+      "evidence": "final-prod-boot.png",
+      "detail": {
+        "totals": {
+          "total": 53,
+          "enabled": 29,
+          "byType": {
+            "BINARY": 53
+          },
+          "byMarketType": {
+            "OTC": 30,
+            "NORMAL": 23
+          }
+        }
+      }
+    },
+    {
+      "assertion": "BLITZ discovery read-only responde (supported/orderPath explicitos; nunca simula)",
+      "pass": true,
+      "evidence": "final-prod-boot.png",
+      "detail": {
+        "supported": false,
+        "durations": [],
+        "orderPath": {
+          "supported": false,
+          "reason": "BLITZ_NOT_OFFERED"
+        }
       }
     },
     {
@@ -127,7 +159,7 @@
         "WS": "ONLINE",
         "MODO": "PRACTICE · ZERO REAL",
         "CONTA": "PRACTICE",
-        "SALDO": "USD 71.60",
+        "SALDO": "USD 1000.00",
         "MCP": "SEM STATUS NO SNAPSHOT",
         "STAKE GLOBAL": "R$ 10.00 · teto R$ 100.00",
         "AUTO": "ON",

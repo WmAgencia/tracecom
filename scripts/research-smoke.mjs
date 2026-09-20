@@ -8,6 +8,7 @@ const CHECKS = [
   "/api/iq/office",
   "/api/iq/research/agents-v4",
   "/api/iq/research/rsi-agents-v4",
+  "/api/iq/research/rsi-agents-v2-live",
   "/api/iq/mesas",
   "/api/iq/instruments/blitz",
   "/api/iq/research/lab/overview",

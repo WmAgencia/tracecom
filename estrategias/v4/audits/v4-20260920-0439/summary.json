@@ -1,0 +1,65 @@
+{
+  "schema": "tracecon-v4-audit-summary-v1",
+  "runId": "v4-20260920-0439",
+  "generatedAtUtc": "2026-09-20T05:03:16.536Z",
+  "source": "iq_executions(agent-v4) + iq_rsi_opportunities_v4(entrySnapshot) + iq_rsi_events_v4",
+  "sampleSize": 31,
+  "wins": 16,
+  "losses": 15,
+  "draws": 0,
+  "wr": 51.61,
+  "averagePayout": 83.43,
+  "pnl": -15.8,
+  "gradeDistribution": {
+    "WIN": {
+      "C": 16
+    },
+    "LOSS": {
+      "C": 15
+    }
+  },
+  "winQualityDistribution": {
+    "THIN_WIN": 16
+  },
+  "lossTagDistribution": {
+    "CURRENT_STATE_CONTRADICTION": 12,
+    "THIN_ENTRY": 15,
+    "EARLY_REVERSAL": 1,
+    "OLD_TREND_STILL_TOO_STRONG": 1,
+    "LATE_REVERSAL": 5
+  },
+  "timingAudit": {
+    "trades": 31,
+    "postCutoffSubmissions": 0,
+    "finalEvaluationMissing": 0,
+    "finalLeadMs": {
+      "n": 28,
+      "mean": 1239.5357,
+      "min": 589,
+      "max": 1787
+    },
+    "maxEvaluationGapMs": {
+      "n": 28,
+      "mean": 6056.4643,
+      "max": 6596
+    },
+    "missedEventsInSession": 241,
+    "schedulerAttributableLosses": 0
+  },
+  "operatorObservation": {
+    "reported": {
+      "trades": 23,
+      "wins": 11,
+      "losses": 12,
+      "wr": 47.83
+    },
+    "verified": {
+      "trades": 31,
+      "wins": 16,
+      "losses": 15,
+      "wr": 51.61
+    },
+    "divergence": "DB tem 31 settlements reais (16W/15L); a contagem do operador era um snapshot parcial do momento."
+  },
+  "note": "Classificacao A/B/C/D feita SEM settlement; settlement revelado depois. Sem claim de edge."
+}

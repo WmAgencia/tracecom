@@ -89,6 +89,7 @@ async function main() {
         },
         canvasLogsBox: typeof api.worldModule().drawLogsBox === "function",
         rsiV3: office?.aux?.rsiAgentsV3 ?? null,
+        rsiV2Live: office?.aux?.rsiAgentsV2Live ?? null,
         rsiV4: office?.aux?.rsiAgentsV4 ?? null,
         rsiV2Frozen: office?.aux?.rsiAgentsV2 ?? null,
         strategyOrder: state.stations.map((station) => station.rsiAgent?.strategyId ?? null),
@@ -100,15 +101,15 @@ async function main() {
     assert("RESULTS DO DIA/SEMANA/MES legivel e sem NaN/undefined", boot.results.present === true && /RESULTADO DO DIA/.test(boot.results.text ?? "") && !/NaN|undefined/.test(boot.results.text ?? ""), "final-prod-boot.png", boot.results);
     assert("box de LOGS do canvas removido (somente overlay DOM)", boot.canvasLogsBox === false, null, { canvasLogsBox: boot.canvasLogsBox });
     const strategySet = [...new Set(boot.strategyOrder.filter(Boolean))];
-    assert("RSI V4 unica em TODOS os agentes do Office (V3/V2 nao executam)", Boolean(boot.rsiV4) && boot.rsiV4.strategy === "RSI_REVERSAL_V4" && boot.rsiV4.routing === "RSI_V4_ONLY" && boot.rsiV4.universe?.enabled >= 1 && strategySet.length === 1 && strategySet[0] === "RSI_REVERSAL_V4" && boot.desksWithTag >= 1, "final-prod-boot.png", { strategy: boot.rsiV4?.strategy, enabled: boot.rsiV4?.universe?.enabled, desksWithTag: boot.desksWithTag, strategySet });
+    assert("V2 ORIGINAL controla a execucao (Strategy Core V2 + infra atual); V4 em shadow", Boolean(boot.rsiV2Live) && boot.rsiV2Live.routing === "RSI_V2_ONLY" && boot.rsiV2Live.strategyCore === "RSI_V2_ORIGINAL" && strategySet.length >= 1 && strategySet.every((id) => id === "RSI_REVERSAL_STRICT_V2" || id === "RSI_EXTREME_PULLBACK_V2") && boot.desksWithTag >= 1 && boot.rsiV4?.controlsExecution === false, "final-prod-boot.png", { strategyCore: boot.rsiV2Live?.strategyCore, deskStrategies: strategySet, desksWithTag: boot.desksWithTag, v4Shadow: boot.rsiV4?.controlsExecution });
     assert("V2 congelada em shadow (sem execucao)", boot.rsiV2Frozen?.frozen === true && boot.rsiV2Frozen?.controlsExecution === false, null, boot.rsiV2Frozen);
 
     const routingResponse = await page.request.get(`${BASE_URL}/api/iq/execution-routing`);
     const routing = routingResponse.ok() ? await routingResponse.json() : null;
-    const v4Sources = ["agent-v4:RSI_REVERSAL_V4:RSI_REVERSAL_V4"];
+    const v2Sources = ["agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2", "agent-v2:RSI_EXTREME_PULLBACK_V2:RSI_EXTREME_PULLBACK_V2"];
     const allowedSources = (routing?.sources ?? []).filter((row) => row.controlsExecution === true);
-    const blockedOthers = (routing?.sources ?? []).filter((row) => !v4Sources.includes(row.source));
-    assert("EXECUTION ROUTING RSI_V4_ONLY: somente RSI_REVERSAL_V4 pode chegar ao requestOrder (historico bloqueado)", routing?.policy === "RSI_V4_ONLY" && allowedSources.length === 1 && allowedSources[0].strategyId === "RSI_REVERSAL_V4" && blockedOthers.length > 0 && blockedOthers.every((row) => row.controlsExecution === false && row.canReachRequestOrder === false), "final-prod-boot.png", { policy: routing?.policy, allowed: allowedSources.map((row) => row.strategyId), blocked: blockedOthers.map((row) => `${row.source}:${row.controlsExecution}`) });
+    const blockedOthers = (routing?.sources ?? []).filter((row) => !v2Sources.includes(row.source));
+    assert("EXECUTION ROUTING RSI_V2_ONLY: somente as duas skills V2 originais executam; V4/V3/G2 bloqueados", routing?.policy === "RSI_V2_ONLY" && allowedSources.length === 2 && allowedSources.every((row) => row.strategyId === "RSI_REVERSAL_STRICT_V2" || row.strategyId === "RSI_EXTREME_PULLBACK_V2") && blockedOthers.length > 0 && blockedOthers.every((row) => row.controlsExecution === false && row.canReachRequestOrder === false) && blockedOthers.some((row) => row.strategyId === "RSI_REVERSAL_V4"), "final-prod-boot.png", { policy: routing?.policy, allowed: allowedSources.map((row) => row.strategyId), v4Blocked: blockedOthers.some((row) => row.strategyId === "RSI_REVERSAL_V4") });
     const mesasResponse = await page.request.get(`${BASE_URL}/api/iq/mesas`);
     const mesas = mesasResponse.ok() ? await mesasResponse.json() : null;
     assert("MESAS de instrumentos respondendo com registry (BINARY presente; BLITZ so se descoberto)", mesas?.totals?.total >= 1 && Array.isArray(mesas?.rows) && mesas.rows.some((row) => row.instrumentType === "BINARY") && mesas.practiceOnly === true, "final-prod-boot.png", { totals: mesas?.totals ?? null });
