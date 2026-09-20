@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-20T11:27:08.642Z",
+  "at": "2026-09-20T11:40:18.437Z",
   "baseUrl": "https://tracecom.consecom.com.br",
   "total": 15,
   "passed": 15,
@@ -127,7 +127,7 @@
       "evidence": "final-prod-logs.png",
       "detail": {
         "columns": 11,
-        "rows": 200
+        "rows": 0
       }
     },
     {

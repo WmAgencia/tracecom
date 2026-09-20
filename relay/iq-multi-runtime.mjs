@@ -1828,8 +1828,10 @@ export class IqMultiRuntime extends EventEmitter {
 
   /** V2 LIVE: Strategy Core V2 ORIGINAL (rsi-skills-v2, congelada) com infraestrutura atual. */
   async submitAgentV2LiveOrder({ marketKey, direction, strategyId = null, skill = null, stake = 10, expectedStake = 10, decisionId = null, idempotencyKey = null, candidateAt = null, expiryAt = null, entryMode = null, projection = null, counterEvidence = [] } = {}) {
-    if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("AGENT_ORDER_PRACTICE_ONLY", String(this.config.mode));
-    if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("AGENT_ORDER_ACCOUNT_NOT_PRACTICE", this.accountContext.context);
+    const contextPractice = this.accountContext.context === ACCOUNT_PRACTICE;
+    const contextRealArmed = this.accountContext.context === ACCOUNT_REAL && this.realMode.authorized() === true;
+    if (!contextPractice && !contextRealArmed) throw new IqWsError("AGENT_ORDER_ACCOUNT_CONTEXT_BLOCKED", String(this.accountContext.context));
+    if (String(this.config.mode).toUpperCase() !== "PRACTICE" && !contextRealArmed) throw new IqWsError("AGENT_ORDER_PRACTICE_ONLY", String(this.config.mode));
     if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
     if (this.config.autoExecute !== true) throw new IqWsError("AGENT_ORDER_AUTO_EXECUTE_OFF");
     if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("AGENT_ORDER_KILL_SWITCH");
