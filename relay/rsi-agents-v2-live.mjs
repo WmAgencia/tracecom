@@ -39,7 +39,7 @@ export const RSI_AGENTS_V2_LIVE_POLICY = Object.freeze({
   // a ordem so pode sair se o RSI AINDA estiver perto do extremo no momento da entrada
   // (BUY: <= buyMax; SELL: >= sellMin). Bollinger/DMI/ADX continuam sendo a confirmacao V2.
   entryRsiNearExtreme: { buyMax: 25, sellMin: 75 }, // legado (nao bloqueia mais a entrada)
-  candidateExtreme: { buyMax: 25, sellMin: 75 },    // REGRA DO OPERADOR: candidato somente a partir de RSI <=25 / >=75
+  candidateExtreme: { buyMax: 25, sellMin: 75 },    // REGRA DO OPERADOR: opera somente reversao cujo EPISODIO tocou a zona profunda (<=25 / >=75); a entrada segue pela V2
   watchPolicy: "ACTIVE_CANDIDATE+PRIORITY_FINAL_WATCH (preservado da V3.1)",
   routing: "RSI_V2_ONLY",
   singleBrokerPath: "runtime.submitAgentV2LiveOrder -> requestOrder",
@@ -312,12 +312,18 @@ export class RsiAgentsV2Live {
       state.reason = "RSI neutro: candidate somente nasce em extremo (<=30 / >=70)";
       this.#setState(state); void this.#persistState(state); return state;
     }
-    const candidateRsi = num(episode.candidateRsi);
+    // REGRA DO OPERADOR (75/25): o EPISODIO precisa ter tocado a zona profunda (RSI <=25 / >=75) em algum momento.
     const zone = RSI_AGENTS_V2_LIVE_POLICY.candidateExtreme;
-    const zoneOk = candidateRsi !== null && (candidateRsi <= zone.buyMax || candidateRsi >= zone.sellMin);
-    if (!zoneOk) {
-      state.waitReason = "CANDIDATE_RSI_FORA_DA_ZONA_75_25";
-      state.reason = "candidate RSI " + candidateRsi + " fora da zona do operador (<=" + zone.buyMax + " / >=" + zone.sellMin + ")";
+    const deepMap = this.deepExtremes ?? (this.deepExtremes = new Map());
+    const deepPrev = deepMap.get(registryKey) ?? null;
+    if (!deepPrev || deepPrev.candidateAt !== episode.candidateAt) deepMap.set(registryKey, { candidateAt: episode.candidateAt, rsi: null, at: null });
+    const rsiNow = num(indicators.rsi);
+    if (rsiNow !== null && (rsiNow <= zone.buyMax || rsiNow >= zone.sellMin)) { const rec = deepMap.get(registryKey); if (rec.at === null) rec.at = at; rec.rsi = rsiNow; }
+    const deepRec = deepMap.get(registryKey);
+    state.deepExtremeAt = deepRec.at; state.deepExtremeRsi = deepRec.rsi;
+    if (deepRec.at === null) {
+      state.waitReason = "EPISODIO_SEM_EXTREMO_PROFUNDO_75_25";
+      state.reason = "episodio ainda nao tocou a zona profunda do operador (<=" + zone.buyMax + " / >=" + zone.sellMin + ")";
       this.counters.waits[state.waitReason] = (this.counters.waits[state.waitReason] ?? 0) + 1;
       this.#setState(state); void this.#persistState(state); return state;
     }
