@@ -51,7 +51,7 @@ const admin = adminSecretEnv.length >= 16 ? adminSecretEnv : `UNCONFIGURED-${cry
 const armState = new ExecutionArmState();
 const killSwitch = new KillSwitch();
 const executionIdempotency = new IdempotencyStore();
-const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: RSI_V2_LIVE_EXECUTION_ALLOWLIST, executionPolicyName: 'RSI_V2_ONLY', rsiAgentsV2LiveEnabled: true, rsiAgentsV2BlitzEnabled: false, rsiAgentsV4Enabled: true, rsiAgentsV3Enabled: false });
+const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: RSI_V2_LIVE_EXECUTION_ALLOWLIST, executionPolicyName: 'RSI_V2_ONLY', rsiAgentsV2LiveEnabled: false, rsiAgentsV2BlitzEnabled: false, rsiAgentsV4Enabled: false, rsiAgentsV3Enabled: false, scenarioShadowEnabled: false, scenarioTimingIntersectionEnabled: false, agentsV4Enabled: false, dualReasoningEnabled: false, soloReasoningEnabled: false, indicator5mEnabled: false, rsiReversalEnabled: false, rsiVariantsEnabled: false, dataHubEnabled: true, consensusEnabled: true });
 // BLITZ: desativado por decisao operacional (somente binarias). Nenhum registry fetch e feito.
 // QUANT / RESEARCH PLATFORM (fora do hot path; nao executa nada).
 const { ResearchLab } = await import('./research-lab/api.mjs');

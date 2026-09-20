@@ -1448,7 +1448,9 @@ export class IqMultiRuntime extends EventEmitter {
     if (ctx.marketType !== "OTC") return null;
     const serverNow = this.client?.serverNow?.() ?? now;
     const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
-    return this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout });
+    const promise = this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout });
+    this.#scheduleV2LiveTicks();
+    return promise;
   }
 
   /** Candles em lote para o GRID (uma chamada para todos os cards; sem 30 conexoes). */
@@ -1520,11 +1522,11 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   #observeRsiAgentsV2LiveTicks() {
-    if (!this.rsiAgentsV2Live?.enabled) return;
+    if (this.rsiAgentsV2Live?.enabled !== true && this.consensus?.enabled !== true) return;
     const now = this.now();
     this.#pollBlitzSettlements();
     this.#pollMcpBinarySettlements();
-    for (const ctx of this.markets.values()) {
+    if (this.rsiAgentsV2Live?.enabled === true) for (const ctx of this.markets.values()) {
       if (ctx.enabled !== true || ctx.availability !== "OPEN") continue;
       if (!this.rsiAgentsV2Live.hasActiveCandidate(ctx.marketKey)) continue;
       const serverNow = this.client?.serverNow?.() ?? now;
