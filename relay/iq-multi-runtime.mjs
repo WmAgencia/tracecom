@@ -41,7 +41,7 @@ import { ScenarioShadow, analyzeScenarioSnapshot, scenarioShadowStatus as buildS
 // INTERSECAO OBSERVACIONAL: unico ponto que compara scenario x timing (somente leitura dos dois estados).
 import { ScenarioTimingIntersectionShadow } from "./scenario-timing-intersection.mjs";
 import { ScenarioShadowSettlement } from "./scenario-shadow-settlement.mjs";
-import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, DEFAULT_GLOBAL_MAX_STAKE, concentrationExposure } from "./market-universe.mjs";
+import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
 // DATAHUB + PROFESSIONAL_AGENT_SYSTEM_V4 (SHADOW): observabilidade/benchmark. NUNCA decide nem executa.
 import { EventBus } from "./datahub/event-bus.mjs";
 import { buildT0Enriched } from "./datahub/t0-enriched.mjs";
@@ -1485,6 +1485,13 @@ export class IqMultiRuntime extends EventEmitter {
       ].join("\n"),
     }));
     return { entries };
+  }
+
+  setConsensusExecute(enabled) {
+    if (!this.consensus) throw new IqWsError("CONSENSUS_UNAVAILABLE");
+    this.consensus.execute = enabled === true;
+    this.#auditRecord(`consensus_execute_${this.now()}`, null, "CONSENSUS_EXECUTE_TOGGLE", { enabled: this.consensus.execute, mode: this.config.mode, accountContext: this.accountContext.context }, { persist: true, accountContext: this.accountContext.context });
+    return this.consensus.status();
   }
 
   consensusStatus() {

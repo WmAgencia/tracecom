@@ -12,7 +12,6 @@
 export const MAX_ACTIVE_MARKETS = 54;
 export const MAX_OPEN_POSITIONS_PER_MARKET = 1;
 export const HARD_CAP_STAKE = 100;
-export const DEFAULT_GLOBAL_MAX_STAKE = 2;
 
 export const MARKET_TYPES = ["NORMAL", "OTC"];
 

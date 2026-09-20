@@ -59,6 +59,10 @@ if (!flags.has("--skip-relay")) {
   // Sync robusto: TODOS os modulos-raiz do relay (inclui rsi-agents/rsi-variants/rsi-reversal/indicator-5m)
   // + os diretorios de runtime. Evita lista fixa desatualizada (fail-closed para deploy parcial).
   const relayRoot = path.join(ROOT, "relay");
+  const sourceMjs = new Set(fs.readdirSync(relayRoot).filter((name) => /\.(mjs|mts|json)$/i.test(name) && name !== "package-lock.json"));
+  for (const existing of fs.readdirSync(RELAY_DEPLOY_DIR)) {
+    if (/\.(mjs|mts)$/i.test(existing) && !sourceMjs.has(existing)) { fs.unlinkSync(path.join(RELAY_DEPLOY_DIR, existing)); console.log("PRUNE " + existing); }
+  }
   for (const entry of fs.readdirSync(relayRoot, { withFileTypes: true })) {
     if (entry.isFile() && /\.(mjs|mts|json)$/i.test(entry.name) && entry.name !== "package-lock.json") {
       fs.copyFileSync(path.join(relayRoot, entry.name), path.join(RELAY_DEPLOY_DIR, entry.name));
