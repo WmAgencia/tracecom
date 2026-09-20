@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+  <!--
+    TRACE/COM · ROOT SHELL — PIXEL OFFICE V3 (frontend principal em /).
+    Este documento é a experiência servida na raiz. O dashboard legado
+    permanece intacto em /classic.html (rollback em um passo — ver
+    docs/office-v3/promotion.md). A página direta /office-v3/office-v3.html
+    continua existindo. PRATICE/ZERO REAL, frontend apenas.
+  -->
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>TRACE/COM · PIXEL OFFICE V3</title>
+    <!-- Base absoluta: mantém assets relativos do V3 (ex.: blueprint-reference.png) resolvendo em /office-v3/ mesmo servido na raiz. -->
+    <base href="/office-v3/" />
+    <link rel="stylesheet" href="/office-v3/styles-v3.css" />
+    <style>
+      :root { --navy: #0d1b2e; }
+      html, body { margin: 0; height: 100%; background: var(--navy); overflow: hidden; }
+      #office-canvas { display: block; width: 100vw; height: 100vh; image-rendering: pixelated; }
+    </style>
+  </head>
+  <body>
+    <canvas id="office-canvas"></canvas>
+
+    <div id="office-topbar" class="tc-topbar"></div>
+    <div id="office-v4-status" class="tc-v4-status" hidden></div>
+
+    <div id="office-results" data-tc-v3="results" hidden></div>
+
+    <div id="office-mesas">
+      <button id="mesas-toggle" type="button" aria-expanded="false" aria-controls="mesas-panel">MESAS</button>
+      <div id="mesas-panel" hidden>
+        <input id="mesas-search" type="search" placeholder="buscar mercado…" aria-label="Buscar mercado" autocomplete="off" spellcheck="false" />
+        <div id="office-station-list" role="listbox" aria-label="Lista de mercados" tabindex="0"></div>
+      </div>
+    </div>
+
+    <div id="office-logs">
+      <button id="logs-toggle" type="button" aria-expanded="false" aria-controls="logs-panel">LOGS</button>
+      <section id="logs-panel" role="dialog" aria-label="Logs de eventos reais" hidden>
+        <header class="tc-logs-head">
+          <h2>LOGS · EVENTOS REAIS</h2>
+          <span id="logs-meta">aguardando eventos…</span>
+          <div id="logs-filters" class="tc-logs-filters" role="group" aria-label="Filtrar logs por fonte">
+            <button type="button" data-logs-filter="ALL" class="is-active" aria-pressed="true">TODOS</button>
+            <button type="button" data-logs-filter="V4" aria-pressed="false">V4</button>
+            <button type="button" data-logs-filter="G2" aria-pressed="false">G2</button>
+            <button type="button" data-logs-filter="MESAS" aria-pressed="false">MESAS</button>
+          </div>
+          <button id="logs-close" type="button" aria-label="Fechar logs">×</button>
+        </header>
+        <div class="tc-logs-columns" aria-hidden="true">
+          <span>HORA</span><span>AGENTE</span><span>MERCADO</span><span>ESTRATÉGIA</span><span>FONTE</span><span>EVENTO</span><span>DECISÃO</span><span>MOTIVO</span><span>ORDEM</span><span>RESULTADO / ERRO</span><span>EXEC</span>
+        </div>
+        <div id="logs-list" role="log" aria-live="polite"></div>
+        <footer class="tc-logs-foot">Fonte: GET /api/iq/events · somente eventos reais do runtime · nada sintetizado · PRACTICE</footer>
+      </section>
+    </div>
+
+    <div id="office-detail-root"></div>
+    <div class="hud bottom-left">espaço + arraste para mover · scroll para deslocar (Shift = horizontal) · Ctrl + scroll para zoom no cursor · clique numa mesa</div>
+    <div class="hud bottom-right" id="hud-camera">zoom 100%</div>
+    <div id="office-tooltip" hidden></div>
+    <div id="office-error" hidden></div>
+
+    <div id="office-detail">
+      <span class="close" id="detail-close">×</span>
+      <h3 id="detail-title">—</h3>
+      <div id="detail-rows"></div>
+    </div>
+
+    <div id="office-status">
+      <div>Carregando PIXEL OFFICE V3…</div>
+      <small id="office-status-detail">montando o mundo</small>
+    </div>
+
+    <script src="/office-v3/operator-auth.js"></script>
+    <script type="module" src="/office-v3/office-v3.js"></script>
+    <script type="module" src="/office-v3/mesas-instruments.js"></script>
+  </body>
+</html>

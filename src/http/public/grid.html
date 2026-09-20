@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TraceCom — Grid OTC</title>
+<style>
+  :root { --bg:#0b1220; --card:#111a2e; --line:#1f2b45; --txt:#e5e9f2; --dim:#8b97ad; --up:#22c55e; --down:#ef4444; --wait:#eab308; --watch:#38bdf8; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--txt); font:13px/1.4 system-ui,Segoe UI,Roboto,sans-serif; padding:10px 12px 40px; }
+  header { display:flex; align-items:center; gap:10px; padding:6px 2px 12px; flex-wrap:wrap; }
+  header h1 { font-size:15px; font-weight:700; letter-spacing:.4px; }
+  header .badge { font-size:11px; color:var(--dim); border:1px solid var(--line); border-radius:999px; padding:3px 9px; }
+  header .badge b { color:var(--txt); }
+  header .spacer { flex:1; }
+  button.btn { background:#16213a; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; }
+  button.btn:hover { border-color:#31426b; }
+  #grid { display:grid; grid-template-columns:repeat(10, minmax(0,1fr)); gap:8px; }
+  .cell { display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .result { height:16px; font-size:12px; font-weight:700; text-align:center; letter-spacing:.3px; }
+  .result.win { color:var(--up); } .result.loss { color:var(--down); } .result.draw { color:var(--dim); } .result.open { color:var(--watch); font-weight:600; }
+  .card { position:relative; aspect-ratio:4/3; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .3s,border-color .3s; }
+  .card.highlight { border-color:#f59e0b; box-shadow:0 0 0 2px rgba(245,158,11,.5); }
+  .chart { flex:2; min-height:0; width:100%; display:block; }
+  .name { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; border-top:1px solid var(--line); font-size:11.5px; font-weight:600; }
+  .chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:999px; border:1px solid var(--line); color:var(--dim); }
+  .chip.wait { color:var(--wait); border-color:#5a4a12; } .chip.watch { color:var(--watch); border-color:#0e4a63; } .chip.open { color:var(--up); border-color:#14532d; } .chip.off { color:#64748b; }
+  .modal { position:fixed; inset:0; background:rgba(3,7,18,.72); display:none; align-items:center; justify-content:center; z-index:50; }
+  .modal.on { display:flex; }
+  .modal .box { background:#0e1730; border:1px solid var(--line); border-radius:12px; width:min(760px,94vw); max-height:82vh; overflow:auto; padding:14px; }
+  .modal h2 { font-size:14px; margin-bottom:10px; }
+  .mesa-row { display:flex; align-items:center; gap:10px; padding:6px 8px; border-bottom:1px solid #16213a; cursor:pointer; }
+  .mesa-row:hover { background:#121d38; }
+  .mesa-row .k { flex:1; font-weight:600; }
+  .mesa-row .st { font-size:11px; color:var(--dim); width:70px; }
+  .mesa-row .po { font-size:11px; color:var(--dim); width:56px; }
+  .toggle { font-size:11px; padding:2px 10px; border-radius:999px; border:1px solid var(--line); background:#0b1220; color:var(--txt); cursor:pointer; }
+  .toggle.on { color:var(--up); border-color:#14532d; }
+  .toggle.off { color:#64748b; }
+  #logPanel { position:fixed; top:0; right:0; bottom:0; width:min(560px,94vw); background:#0a1122; border-left:1px solid var(--line); transform:translateX(102%); transition:transform .25s; z-index:60; display:flex; flex-direction:column; }
+  #logPanel.on { transform:none; }
+  #logPanel .head { display:flex; align-items:center; padding:10px 12px; border-bottom:1px solid var(--line); gap:8px; }
+  #logPanel .head h2 { font-size:13px; flex:1; }
+  #logBody { flex:1; overflow:auto; padding:10px 12px; }
+  #logBody pre { font:11.5px/1.5 ui-monospace,Consolas,monospace; color:#c9d4ea; white-space:pre-wrap; border-bottom:1px dashed #1b2740; padding:8px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>TraceCom · Grid Binary OTC</h1>
+  <span class="badge" id="bMode">modo: <b>…</b></span>
+  <span class="badge" id="bBal">saldo: <b>…</b></span>
+  <span class="badge" id="bCount">ativos: <b>…</b></span>
+  <span class="spacer"></span>
+  <button class="btn" id="btnMesas">MESAS</button>
+  <button class="btn" id="btnLog">LOG</button>
+</header>
+<main id="grid"></main>
+
+<div class="modal" id="mesasModal"><div class="box"><h2>MESAS — Binary OTC</h2><div id="mesasList"></div></div></div>
+<aside id="logPanel"><div class="head"><h2>LOG — Consensus (humano)</h2><button class="btn" id="btnLogClose">fechar</button></div><div id="logBody"></div></aside>
+
+<script src="/office-v3/operator-auth.js"></script>
+<script>
+(() => {
+  "use strict";
+  const state = { markets: [], cards: new Map(), results: new Map(), consensus: new Map(), lastCandles: 0, logOpen: false };
+  const $ = (id) => document.getElementById(id);
+  const api = async (path, options) => { const r = await fetch(path, options); return r.ok ? r.json().catch(() => null) : null; };
+  const fmtBrl = (v) => "R$ " + Number(v).toFixed(2).replace(".", ",");
+  const chipOf = (row) => {
+    if (row.status !== "OPEN") return ["OFF", "off"];
+    const exec = state.results.get(row.marketKey);
+    if (exec && exec.open) return ["OPEN", "open"];
+    const c = state.consensus.get(row.marketKey);
+    if (c && (c.decision === "BUY" || c.decision === "SELL")) return [c.decision, "watch"];
+    if (c && c.rsiState && c.rsiState !== "NEUTRAL") return ["WATCH", "watch"];
+    return ["WAIT", "wait"];
+  };
+  const resultOf = (row) => {
+    const exec = state.results.get(row.marketKey);
+    if (!exec) return { text: "", cls: "" };
+    if (exec.open) return { text: "OPEN", cls: "open" };
+    if (exec.result === "WIN") return { text: "+" + fmtBrl(exec.profit), cls: "win" };
+    if (exec.result === "LOSS") return { text: "-" + fmtBrl(Math.abs(exec.profit)), cls: "loss" };
+    if (exec.result === "DRAW") return { text: "R$ 0,00", cls: "draw" };
+    return { text: "", cls: "" };
+  };
+  const drawChart = (canvas, candles) => {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const list = Array.isArray(candles) ? candles.slice(-48) : [];
+    if (!list.length) { ctx.fillStyle = "#243352"; ctx.font = "10px system-ui"; ctx.fillText("sem feed", 8, h / 2); return; }
+    let min = Infinity, max = -Infinity;
+    for (const c of list) { if (c.low < min) min = c.low; if (c.high > max) max = c.high; }
+    const pad = (max - min) * 0.08 || 0.0001;
+    min -= pad; max += pad;
+    const y = (p) => h - ((p - min) / (max - min)) * h;
+    const cw = w / list.length;
+    for (let i = 0; i < list.length; i += 1) {
+      const c = list[i]; const x = i * cw + cw / 2; const up = c.close >= c.open;
+      ctx.strokeStyle = up ? "#22c55e" : "#ef4444"; ctx.fillStyle = ctx.strokeStyle; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, y(c.high)); ctx.lineTo(x, y(c.low)); ctx.stroke();
+      const bw = Math.max(1, cw * 0.6);
+      const yo = y(c.open), yc = y(c.close);
+      ctx.fillRect(x - bw / 2, Math.min(yo, yc), bw, Math.max(1, Math.abs(yc - yo)));
+    }
+    const last = list[list.length - 1];
+    ctx.strokeStyle = "#64748b"; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(0, y(last.close)); ctx.lineTo(w, y(last.close)); ctx.stroke(); ctx.setLineDash([]);
+  };
+  const buildGrid = () => {
+    const grid = $("grid"); grid.innerHTML = ""; state.cards.clear();
+    for (const row of state.markets) {
+      const cell = document.createElement("div"); cell.className = "cell"; cell.dataset.key = row.marketKey;
+      const result = document.createElement("div"); result.className = "result";
+      const card = document.createElement("div"); card.className = "card";
+      const canvas = document.createElement("canvas"); canvas.className = "chart";
+      const name = document.createElement("div"); name.className = "name";
+      const label = document.createElement("span"); label.textContent = row.marketKey.replace(":OTC", " OTC").replace("/", "/");
+      const chip = document.createElement("span"); chip.className = "chip";
+      name.append(label, chip); card.append(canvas, name); cell.append(result, card); grid.append(cell);
+      state.cards.set(row.marketKey, { result, chip, canvas, label });
+    }
+  };
+  const render = () => {
+    for (const row of state.markets) {
+      const card = state.cards.get(row.marketKey); if (!card) continue;
+      const r = resultOf(row); card.result.textContent = r.text; card.result.className = "result " + r.cls;
+      const [chipText, chipCls] = chipOf(row); card.chip.textContent = chipText; card.chip.className = "chip " + chipCls;
+      drawChart(card.canvas, state.lastCandles.get(row.marketKey));
+    }
+  };
+  state.lastCandles = new Map();
+  const refreshCandles = async () => {
+    const keys = state.markets.map((m) => m.marketKey);
+    if (!keys.length) return;
+    const data = await api("/api/iq/candles?limit=48&keys=" + encodeURIComponent(keys.join(",")));
+    if (!data?.rows) return;
+    for (const [key, candles] of Object.entries(data.rows)) state.lastCandles.set(key, candles);
+    render();
+  };
+  const refreshResults = async () => {
+    const data = await api("/api/iq/executions?accountContext=PRACTICE&limit=120");
+    const rows = data?.executions ?? [];
+    state.results.clear();
+    for (const row of rows) {
+      const key = row.market_key ?? row.marketKey; if (!key) continue;
+      if (state.results.has(key)) continue;
+      const settled = String(row.state).toUpperCase() === "SETTLED";
+      state.results.set(key, { open: !settled, result: row.broker_result ?? null, profit: Number(row.profit ?? 0) });
+    }
+    render();
+  };
+  const refreshConsensus = async () => {
+    const data = await api("/api/iq/research/consensus");
+    state.consensus.clear();
+    for (const d of data?.recent ?? []) state.consensus.set(d.marketKey, d);
+    render();
+  };
+  const refreshHeader = async () => {
+    const st = await api("/api/iq/status");
+    if (st) {
+      $("bMode").innerHTML = "modo: <b>" + (st.mode ?? "?") + "</b>";
+      const bal = st.account?.practice?.balance;
+      $("bBal").innerHTML = "saldo: <b>" + (bal !== undefined ? fmtBrl(bal) : "?") + "</b>";
+    }
+  };
+  const loadMarkets = async () => {
+    const data = await api("/api/iq/mesas");
+    const rows = (data?.rows ?? []).filter((r) => r.instrumentType === "BINARY" && r.marketType === "OTC");
+    state.markets = rows.sort((a, b) => String(a.marketKey).localeCompare(String(b.marketKey)));
+    $("bCount").innerHTML = "ativos: <b>" + state.markets.length + "</b>";
+    buildGrid(); await refreshCandles(); await refreshResults();
+  };
+  const openMesas = async () => {
+    const data = await api("/api/iq/mesas");
+    const rows = (data?.rows ?? []).filter((r) => r.instrumentType === "BINARY" && r.marketType === "OTC");
+    const list = $("mesasList"); list.innerHTML = "";
+    for (const row of rows) {
+      const line = document.createElement("div"); line.className = "mesa-row";
+      const k = document.createElement("span"); k.className = "k"; k.textContent = row.marketKey;
+      const st = document.createElement("span"); st.className = "st"; st.textContent = row.status ?? "?";
+      const po = document.createElement("span"); po.className = "po"; po.textContent = (row.payout ?? "-") + "%";
+      const tg = document.createElement("button"); tg.className = "toggle " + (row.enabled ? "on" : "off"); tg.textContent = row.enabled ? "ON" : "OFF";
+      tg.onclick = async (event) => {
+        event.stopPropagation();
+        await api("/api/iq/mesas", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ marketKey: row.marketKey, instrumentType: "BINARY", durationSeconds: 60, enabled: !row.enabled }) });
+        await openMesas(); await loadMarkets();
+      };
+      line.append(k, st, po, tg);
+      line.onclick = () => {
+        $("mesasModal").classList.remove("on");
+        const cell = document.querySelector('.cell[data-key="' + row.marketKey + '"]');
+        if (cell) { cell.scrollIntoView({ behavior: "smooth", block: "center" }); const card = cell.querySelector(".card"); card.classList.add("highlight"); setTimeout(() => card.classList.remove("highlight"), 3000); }
+      };
+      list.append(line);
+    }
+    $("mesasModal").classList.add("on");
+  };
+  const refreshLog = async () => {
+    if (!state.logOpen) return;
+    const data = await api("/api/iq/research/consensus/log?limit=30");
+    const body = $("logBody"); body.innerHTML = "";
+    for (const entry of data?.entries ?? []) { const pre = document.createElement("pre"); pre.textContent = entry.human; body.append(pre); }
+  };
+  $("btnMesas").onclick = openMesas;
+  $("mesasModal").onclick = (e) => { if (e.target === $("mesasModal")) $("mesasModal").classList.remove("on"); };
+  $("btnLog").onclick = () => { state.logOpen = true; $("logPanel").classList.add("on"); refreshLog(); };
+  $("btnLogClose").onclick = () => { state.logOpen = false; $("logPanel").classList.remove("on"); };
+  window.addEventListener("resize", render);
+  (async () => {
+    await refreshHeader(); await loadMarkets(); await refreshConsensus();
+    setInterval(refreshCandles, 3000);
+    setInterval(refreshResults, 5000);
+    setInterval(refreshConsensus, 6000);
+    setInterval(refreshHeader, 15000);
+    setInterval(refreshLog, 6000);
+    setInterval(loadMarkets, 60000);
+  })();
+})();
+</script>
+</body>
+</html>

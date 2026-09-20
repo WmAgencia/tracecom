@@ -1451,6 +1451,42 @@ export class IqMultiRuntime extends EventEmitter {
     return this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout });
   }
 
+  /** Candles em lote para o GRID (uma chamada para todos os cards; sem 30 conexoes). */
+  candlesBatch(keys = [], limit = 40) {
+    const bounded = Math.max(10, Math.min(120, Number(limit) || 40));
+    const rows = {};
+    for (const key of (Array.isArray(keys) ? keys : []).slice(0, 40)) {
+      const ctx = this.markets.get(String(key));
+      if (!ctx) { rows[key] = null; continue; }
+      const list = this.#candleList(ctx) ?? [];
+      rows[key] = list.slice(-bounded).map((candle) => ({ bucketEnd: Number(candle.bucketEnd), open: Number(candle.open), high: Number(candle.high), low: Number(candle.low), close: Number(candle.close) }));
+    }
+    return { rows, at: this.now() };
+  }
+
+  /** LOG humano do CONSENSUS (ultimas decisoes persistidas) para o painel LOG. */
+  async consensusLog({ limit = 50, marketKey = null } = {}) {
+    if (!this.pool?.query) return { entries: [] };
+    const bounded = Math.max(1, Math.min(200, Number(limit) || 50));
+    const rows = marketKey
+      ? (await this.pool.query("SELECT at, market_key, decision, side, reason, evidence_strength, rsi, rsi_state, rsi_trajectory, bollinger_state, dmi_state, pa_structure FROM iq_consensus_decisions WHERE market_key=$1 ORDER BY at DESC LIMIT $2", [marketKey, bounded])).rows
+      : (await this.pool.query("SELECT at, market_key, decision, side, reason, evidence_strength, rsi, rsi_state, rsi_trajectory, bollinger_state, dmi_state, pa_structure FROM iq_consensus_decisions ORDER BY at DESC LIMIT $1", [bounded])).rows;
+    const n1 = (value) => (Number.isFinite(Number(value)) ? Number(Number(value).toFixed(1)) : "-");
+    const entries = rows.map((row) => ({
+      at: row.at, marketKey: row.market_key, decision: row.decision, side: row.side, reason: row.reason,
+      evidenceStrength: row.evidence_strength, rsi: row.rsi, rsiState: row.rsi_state,
+      bollingerState: row.bollinger_state, dmiState: row.dmi_state, paStructure: row.pa_structure,
+      human: [
+        `${row.market_key}  [${new Date(row.at).toISOString().slice(11, 19)}]`,
+        `RSI: ${n1(row.rsi)} state=${row.rsi_state ?? "-"} trajectory=${(row.rsi_trajectory ?? []).map(n1).join(" -> ")}`,
+        `BOLLINGER: ${row.bollinger_state ?? "-"}  DMI/ADX: ${row.dmi_state ?? "-"}  PRICE ACTION: ${row.pa_structure ?? "-"}`,
+        `DECISOR: ${row.decision}${row.side ? " " + row.side : ""}`,
+        `REASON: ${row.reason ?? "-"}`,
+      ].join("\n"),
+    }));
+    return { entries };
+  }
+
   consensusStatus() {
     return {
       ...(this.consensus?.status?.() ?? { enabled: false }),
