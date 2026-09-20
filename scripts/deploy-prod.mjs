@@ -9,7 +9,7 @@ import path from "node:path";
 import process from "node:process";
 
 const ROOT = process.cwd();
-const RELAY_DEPLOY_DIR = process.env.TRACECOM_RELAY_DEPLOY_DIR ?? path.join(process.env.LOCALAPPDATA ?? "", "Temp", "opencode", "relay-deploy", "relay");
+const RELAY_DEPLOY_DIR = process.env.TRACECOM_RELAY_DEPLOY_DIR ?? path.join(process.env.LOCALAPPDATA ?? "", "Temp", "opencode", "relay-deploy-new", "tracecom-live-relay");
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const flags = new Set(process.argv.slice(2));
 const dry = flags.has("--dry");
