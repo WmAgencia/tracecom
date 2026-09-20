@@ -231,7 +231,10 @@ export class IqMultiRuntime extends EventEmitter {
     if (!this.configHydrationRetry) {
       this.configHydrationRetry = setInterval(() => {
         if (!this.running || this.configHydrated || !this.pool) return;
-        void this.#loadPersistedConfig().catch(() => undefined);
+        void this.#loadPersistedConfig().then(() => {
+          // Depois de hidratar: se a config persistida nao tem mercados ativos, aplica o default (com persistencia).
+          if (this.configHydrated && !this.activeMarketKeys().length) this.#applyDefaultSelection();
+        }).catch(() => undefined);
       }, 20_000);
       if (typeof this.configHydrationRetry.unref === "function") this.configHydrationRetry.unref();
     }
@@ -367,7 +370,7 @@ export class IqMultiRuntime extends EventEmitter {
       for (const instrument of ["binary-option", "turbo-option"]) client.send("subscribeMessage", { name: "commission-changed", params: { routingFilters: { instrument_type: instrument } }, version: "1.0" });
       this.#safe(() => this.log("IQ_MULTI_PAYOUT_SUBSCRIBED", "binary-option,turbo-option"));
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_PAYOUT_SUBSCRIBE_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 80))); }
-    if (!this.activeMarketKeys().length) this.#applyDefaultSelection();
+    if (!this.activeMarketKeys().length && this.configHydrated === true) this.#applyDefaultSelection();
     for (const ctx of this.markets.values()) this.#subscribeCtx(client, ctx);
     // Fontes externas reais ainda nao integradas: registra NO_FEED honesto (nunca inventa noticia/macro).
     this.intelligence.publish("MACRO", { note: "sem integracao externa de macro conectada" }, { source: "none", sourceType: "EXTERNAL", dataQuality: "UNAVAILABLE", status: "NO_FEED" });
