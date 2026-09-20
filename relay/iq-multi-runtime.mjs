@@ -586,7 +586,7 @@ export class IqMultiRuntime extends EventEmitter {
     const previousMode = this.config.mode;
     const next = mode === "REAL" ? "REAL" : "PRACTICE";
     if (next === this.config.mode) return this.modeState();
-    if (next === "REAL" && !(this.realMode.authorized() || (this.accountContext.context === ACCOUNT_REAL && this.accountContext.isRealArmed() === true && process.env.REAL_TRADING_ENABLED === "true"))) throw new IqWsError("REAL_MODE_NOT_CONFIRMED");
+    if (next === "REAL" && process.env.REAL_TRADING_ENABLED === "true" !== true) throw new IqWsError("REAL_MODE_REQUIRES_ENV");
     try { this.armState.disarm("MODE_SWITCH"); } catch { /* noop */ }
     if (next === "PRACTICE") this.realMode.revoke("MODE_SWITCH_TO_PRACTICE");
     // Fase 6: sem Strategy Manager; Performance Supervisor nao altera metodologia em REAL.
@@ -752,7 +752,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   arm(limitBrl, { confirmation = false, actor = "ui", requestId = null } = {}) {
     if (!this.account.practice.verified) throw new IqWsError("PRACTICE_ACCOUNT_NOT_VERIFIED");
-    if (this.config.mode === "REAL" && !(this.realMode.authorized() || (this.accountContext.context === ACCOUNT_REAL && this.accountContext.isRealArmed() === true && process.env.REAL_TRADING_ENABLED === "true"))) throw new IqWsError("REAL_MODE_NOT_CONFIRMED");
+    if (this.config.mode === "REAL" && process.env.REAL_TRADING_ENABLED === "true" !== true) throw new IqWsError("REAL_MODE_REQUIRES_ENV");
     if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("KILL_SWITCH_ACTIVE");
     const health = this.connectionHealth();
     if (!health.healthy) throw new IqWsError("CONNECTION_UNHEALTHY", health.reasons.join(","));
@@ -1829,7 +1829,7 @@ export class IqMultiRuntime extends EventEmitter {
   /** V2 LIVE: Strategy Core V2 ORIGINAL (rsi-skills-v2, congelada) com infraestrutura atual. */
   async submitAgentV2LiveOrder({ marketKey, direction, strategyId = null, skill = null, stake = 10, expectedStake = 10, decisionId = null, idempotencyKey = null, candidateAt = null, expiryAt = null, entryMode = null, projection = null, counterEvidence = [] } = {}) {
     const contextPractice = this.accountContext.context === ACCOUNT_PRACTICE;
-    const contextRealArmed = this.accountContext.context === ACCOUNT_REAL && (this.realMode.authorized() === true || (this.accountContext.isRealArmed() === true && process.env.REAL_TRADING_ENABLED === "true"));
+    const contextRealArmed = this.config.mode === "REAL" && process.env.REAL_TRADING_ENABLED === "true";
     if (!contextPractice && !contextRealArmed) throw new IqWsError("AGENT_ORDER_ACCOUNT_CONTEXT_BLOCKED", String(this.accountContext.context));
     if (String(this.config.mode).toUpperCase() !== "PRACTICE" && !contextRealArmed) throw new IqWsError("AGENT_ORDER_PRACTICE_ONLY", String(this.config.mode));
     if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
@@ -2625,7 +2625,7 @@ export class IqMultiRuntime extends EventEmitter {
     const last = list[list.length - 1] ?? ctx.lastCandle ?? null;
     const horizonSeconds = BRAIN_HORIZON_SECONDS;
     const freshness = { fresh: Boolean(ctx.featureState?.fresh) && ctx.lastTickAt !== null && now - ctx.lastTickAt <= MARKET_TICK_AGE_MS, tickAgeMs: ctx.lastTickAt === null ? null : now - ctx.lastTickAt, reason: ctx.featureState?.freshnessReason ?? "NO_FEATURE" };
-    const realAuthorized = this.config.mode === "REAL" && (this.realMode.authorized() || (this.accountContext.context === ACCOUNT_REAL && this.accountContext.isRealArmed() === true && process.env.REAL_TRADING_ENABLED === "true"));
+    const realAuthorized = this.config.mode === "REAL" && process.env.REAL_TRADING_ENABLED === "true";
     const brainValid = Boolean(brain?.setup && brain.setup !== "NO_VALID_SETUP");
     const gate = this.gate.evaluate({
       market: options?.probe === true ? { ...ctx, marketKey: ctx.marketKey, availability: "OPEN", paused: false } : { ...ctx, marketKey: ctx.marketKey }, marketKey: ctx.marketKey, requestedMode: this.config.mode, realAuthorized,
@@ -3059,7 +3059,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.config.mode === "REAL" && !this.account.real.available) throw new IqWsError("REAL_BALANCE_UNAVAILABLE");
     const last = this.#candleList(ctx).pop();
     const freshness = { fresh: Boolean(ctx.featureState?.fresh) && ctx.lastTickAt !== null && this.now() - ctx.lastTickAt <= MARKET_TICK_AGE_MS, tickAgeMs: ctx.lastTickAt === null ? null : this.now() - ctx.lastTickAt, reason: ctx.featureState?.freshnessReason ?? "NO_FEATURE" };
-    const realAuthorized = this.config.mode === "REAL" && (this.realMode.authorized() || (this.accountContext.context === ACCOUNT_REAL && this.accountContext.isRealArmed() === true && process.env.REAL_TRADING_ENABLED === "true"));
+    const realAuthorized = this.config.mode === "REAL" && process.env.REAL_TRADING_ENABLED === "true";
     const resolvedStake = resolveFinalStake({ requestedStake: Number.isFinite(Number(stake)) && Number(stake) > 0 ? Number(stake) : undefined, marketConfiguredStake: ctx.configuredStake, configuredStake: this.config.defaultStake, calculatedBankrollStake: this.config.calculatedBankrollStake, marketMaxStake: ctx.maxStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap });
     const finalStake = resolvedStake.finalStake;
     if (!Number.isFinite(finalStake) || finalStake <= 0) throw new IqWsError("NO_STAKE_CONFIGURED");
