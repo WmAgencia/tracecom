@@ -422,7 +422,7 @@ export class RsiAgentsV2Live {
     }
     try {
       const order = await this.runtime.submitAgentV2LiveOrder({
-        marketKey, direction: recheck.direction, strategyId: skillId, skill: skillId, stake: (Number(this.runtime?.config?.globalMaxStake) > 0 ? Number(this.runtime.config.globalMaxStake) : this.stakeBrl), expectedStake: (Number(this.runtime?.config?.globalMaxStake) > 0 ? Number(this.runtime.config.globalMaxStake) : RSI_AGENTS_V2_LIVE_POLICY.stakeBrl),
+        marketKey, direction: recheck.direction, strategyId: skillId, skill: skillId, stake: (Number(this.runtime?.config?.defaultStake) > 0 ? Number(this.runtime.config.defaultStake) : this.stakeBrl), expectedStake: (Number(this.runtime?.config?.defaultStake) > 0 ? Number(this.runtime.config.defaultStake) : RSI_AGENTS_V2_LIVE_POLICY.stakeBrl),
         idempotencyKey, decisionId: state.agentId, candidateAt: episode.candidateAt, expiryAt, instrumentType, durationSeconds,
         entryMode, projection: recheck.cushion?.projection ?? null, counterEvidence: recheck.counterEvidence,
       });

@@ -473,6 +473,11 @@ const server = http.createServer(async (req, res) => {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const input = await body(req, 4000); try { const result = await wsRuntime.bulkSetInstruments({ filter: input.filter ?? {}, enabled: input.enabled === true, confirmZeroUniverse: input.confirmZeroUniverse === true, meta: mutationMeta(req) }); return reply(res,200,{ ...result, practiceOnly:true }); } catch(error) { return reply(res,400,{ ...sanitizedError(error), practiceOnly:true }); } }
   if(url.pathname === '/api/iq/research/rsi-agents-v2-blitz' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(wsRuntime.rsiAgentsV2Blitz?.status?.() ?? { error:'RSI_V2_BLITZ_UNAVAILABLE' }), practiceOnly:true, realLocked:true, brokerPath:'IQ_MCP_BLITZ' }); }
+  if(url.pathname === '/api/iq/engine/test-order' && req.method === 'POST') {
+    if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const input = await body(req, 4000);
+    const uiStake = Number(wsRuntime.config?.defaultStake) > 0 ? Number(wsRuntime.config.defaultStake) : 1;
+    try { const order = await wsRuntime.requestOrder({ marketKey: String(input.marketKey ?? 'EURUSD:OTC'), direction: input.direction === 'SELL' || input.direction === 'PUT' ? 'SELL' : 'BUY', stake: uiStake, source: 'agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2', horizonSeconds: 60, idempotencyKey: 'engine-path-test:' + Date.now(), entryTiming: { pathTest: true } }); return reply(res,200,{ order, stakeUsed: uiStake, mode: wsRuntime.config.mode }); } catch(error) { return reply(res,400,{ ...sanitizedError(error) }); }
+  }
   if(url.pathname === '/api/iq/blitz/assets' && req.method === 'GET') {
     if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(await wsRuntime.blitzAssets()), practiceOnly:true }); }
   if(url.pathname === '/api/iq/instruments/blitz' && req.method === 'GET') {
