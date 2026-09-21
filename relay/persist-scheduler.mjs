@@ -19,7 +19,7 @@
  * Nenhuma regra de estrategia aqui — apenas agendamento de I/O.
  */
 
-export const CRITICAL_SQL = /tc-critical|to_regclass|iq_runtime_config|iq_markets|iq_executions|iq_rsi_instruments|iq_rsi_events_v4|iq_rsi_agent_state_v4|iq_rsi_opportunities_v4|iq_rsi_universe_v4|iq_auth_session|schema_migrations|iq_v4_export|iq_lab_/i;
+export const CRITICAL_SQL = /tc-critical|to_regclass|iq_runtime_config|iq_markets|iq_executions|iq_rsi_instruments|iq_rsi_events_v4|iq_rsi_agent_state_v4|iq_rsi_opportunities_v4|iq_rsi_universe_v4|iq_auth_session|schema_migrations|iq_v4_export|iq_lab_|iq_perf_epoch|iq_mcp_config/i;
 
 export const PERSIST_SCHEDULER_VERSION = "persist-scheduler-v3";
 
