@@ -1563,7 +1563,7 @@ export class IqMultiRuntime extends EventEmitter {
         candles: list, targetExpiryAt, payout: ctx.payout, now, latency: {},
       });
     }
-    if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); }
+    if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); }
     for (const ctx of this.markets.values()) {
       if (ctx.enabled !== true || ctx.availability !== "OPEN") continue;
       const consensusActive = this.consensus?.hasActiveOpportunity?.(ctx.marketKey) === true;

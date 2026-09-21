@@ -236,6 +236,15 @@
       line.append(k, st, wl, op, sc); list.append(line);
     }
     if (!rows.length) list.textContent = "lab indisponivel (run ainda nao iniciado)";
+    const exp = data?.experiments?.s04Bollinger50;
+    if (exp && exp.started) {
+      const sep = document.createElement("div"); sep.className = "mesa-row"; sep.innerHTML = '<span class="k"><b>S04 BOLLINGER — RUN 50 (independente)</b></span><span class="st"><b>SETTLED</b></span><span class="po"><b>W/L/D</b></span><span class="st"><b>OPEN</b></span><span class="po"><b>STATUS</b></span>';
+      list.append(sep);
+      const st = (exp.states ?? [])[0] ?? null;
+      const line = document.createElement("div"); line.className = "mesa-row";
+      line.innerHTML = '<span class="k">S04_BOLLINGER_MEAN_REVERSION</span><span class="st">' + (st ? st.settled_count : 0) + '/50</span><span class="po">' + (st ? st.wins + "/" + st.losses + "/" + st.draws : "0/0/0") + '</span><span class="st">' + (st ? st.open_count : 0) + '</span><span class="po">' + (st && st.complete ? "COMPLETE" : "RUNNING") + '</span>';
+      list.append(line);
+    }
   };
   $("btnLab").onclick = () => { labOpen = true; $("labModal").classList.add("on"); refreshLab(); };
   $("labModal").onclick = (e) => { if (e.target === $("labModal")) { labOpen = false; $("labModal").classList.remove("on"); } };
