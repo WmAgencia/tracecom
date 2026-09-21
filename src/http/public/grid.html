@@ -10,19 +10,26 @@
   body { background:var(--bg); color:var(--txt); font:13px/1.4 system-ui,Segoe UI,Roboto,sans-serif; padding:10px 12px 40px; }
   header { display:flex; align-items:center; gap:10px; padding:6px 2px 12px; flex-wrap:wrap; }
   header h1 { font-size:15px; font-weight:700; letter-spacing:.4px; }
-  header .badge { font-size:11px; color:var(--dim); border:1px solid var(--line); border-radius:999px; padding:3px 9px; }
+  header .badge { font-size:11px; color:var(--dim); border:1px solid var(--line); border-radius:999px; padding:3px 9px; white-space:nowrap; }
   header .badge b { color:var(--txt); }
   header .spacer { flex:1; }
   button.btn { background:#16213a; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; }
   button.btn:hover { border-color:#31426b; }
+  .switch { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:999px; padding:3px 10px 3px 4px; background:#0e1730; cursor:pointer; user-select:none; }
+  .switch .track { width:42px; height:20px; border-radius:999px; background:#1f2b45; position:relative; transition:background .2s; }
+  .switch .knob { position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#8b97ad; transition:transform .2s, background .2s; }
+  .switch.real .track { background:#14532d; }
+  .switch.real .knob { transform:translateX(22px); background:#22c55e; }
+  .switch .label { font-size:11px; font-weight:700; letter-spacing:.4px; color:var(--dim); }
+  .switch.real .label { color:var(--up); }
   #grid { display:grid; grid-template-columns:repeat(10, minmax(0,1fr)); gap:8px; }
-  .cell { display:flex; flex-direction:column; gap:3px; min-width:0; }
-  .result { height:16px; font-size:12px; font-weight:700; text-align:center; letter-spacing:.3px; }
-  .result.win { color:var(--up); } .result.loss { color:var(--down); } .result.draw { color:var(--dim); } .result.open { color:var(--watch); font-weight:600; }
-  .card { position:relative; aspect-ratio:4/3; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .3s,border-color .3s; }
+  .cell { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .result { height:15px; font-size:11.5px; font-weight:700; text-align:center; letter-spacing:.2px; }
+  .result.win { color:var(--up); } .result.loss { color:var(--down); } .result.draw { color:var(--dim); }
+  .card { position:relative; aspect-ratio:3/5; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .3s,border-color .3s; }
   .card.highlight { border-color:#f59e0b; box-shadow:0 0 0 2px rgba(245,158,11,.5); }
   .chart { flex:2; min-height:0; width:100%; display:block; }
-  .name { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; border-top:1px solid var(--line); font-size:11.5px; font-weight:600; }
+  .name { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border-top:1px solid var(--line); font-size:10.5px; font-weight:600; padding:2px; text-align:center; }
   .chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:999px; border:1px solid var(--line); color:var(--dim); }
   .chip.wait { color:var(--wait); border-color:#5a4a12; } .chip.watch { color:var(--watch); border-color:#0e4a63; } .chip.open { color:var(--up); border-color:#14532d; } .chip.off { color:#64748b; }
   .modal { position:fixed; inset:0; background:rgba(3,7,18,.72); display:none; align-items:center; justify-content:center; z-index:50; }
@@ -48,9 +55,12 @@
 <body>
 <header>
   <h1>TraceCom · Grid Binary OTC</h1>
-  <span class="badge" id="bMode">modo: <b>…</b></span>
+  <div class="switch" id="modeSwitch" title="Alternar PRACTICE ⇄ REAL">
+    <div class="track"><div class="knob"></div></div>
+    <span class="label" id="modeLabel">PRACTICE</span>
+  </div>
   <span class="badge" id="bBal">saldo: <b>…</b></span>
-  <span class="badge" id="bCount">ativos: <b>…</b></span>
+  <span class="badge" id="bCount" title="">ativos: <b>…</b></span>
   <span class="spacer"></span>
   <button class="btn" id="btnMesas">MESAS</button>
   <button class="btn" id="btnLab">LAB</button>
@@ -58,20 +68,23 @@
 </header>
 <main id="grid"></main>
 
-<div class="modal" id="labModal"><div class="box"><h2>LAB 6 STRATEGIES — PRACTICE (20 settlements cada)</h2><div id="labList"></div></div></div>
+<div class="modal" id="labModal"><div class="box"><h2>LAB / EXPERIMENTOS</h2><div id="labList"></div></div></div>
 <div class="modal" id="mesasModal"><div class="box"><h2>MESAS — Binary OTC</h2><div id="mesasList"></div></div></div>
-<aside id="logPanel"><div class="head"><h2>LOG — Consensus (humano)</h2><button class="btn" id="btnLogClose">fechar</button></div><div id="logBody"></div></aside>
+<aside id="logPanel"><div class="head"><h2>LOG — conversa dos agentes</h2><button class="btn" id="btnLogClose">fechar</button></div><div id="logBody"></div></aside>
 
 <script src="/office-v3/operator-auth.js"></script>
 <script>
 (() => {
   "use strict";
-  const state = { markets: [], cards: new Map(), results: new Map(), consensus: new Map(), lastCandles: 0, logOpen: false };
+  const state = { markets: [], cards: new Map(), results: new Map(), consensus: new Map(), candles: new Map(), lastDraw: new Map(), lastResultText: new Map(), lastChip: new Map(), mode: "PRACTICE" };
   const $ = (id) => document.getElementById(id);
   const api = async (path, options) => { const r = await fetch(path, options); return r.ok ? r.json().catch(() => null) : null; };
-  const fmtBrl = (v) => "R$ " + Number(v).toFixed(2).replace(".", ",");
+  const fmt = (v) => Number(v).toFixed(2).replace(".", ",");
+  const fmtSigned = (v) => (Number(v) >= 0 ? "+" : "-") + fmt(Math.abs(Number(v)));
+  const setText = (el, text) => { if (el && el.textContent !== text) el.textContent = text; };
+
   const chipOf = (row) => {
-    const candles = state.lastCandles.get(row.marketKey);
+    const candles = state.candles.get(row.marketKey);
     if (!candles || !candles.length) return ["SEM FEED", "off"];
     if (row.status !== "OPEN") return ["OFF", "off"];
     const exec = state.results.get(row.marketKey);
@@ -83,12 +96,9 @@
   };
   const resultOf = (row) => {
     const exec = state.results.get(row.marketKey);
-    if (!exec) return { text: "", cls: "" };
-    if (exec.open) return { text: "OPEN", cls: "open" };
-    if (exec.result === "WIN") return { text: "+" + fmtBrl(exec.profit), cls: "win" };
-    if (exec.result === "LOSS") return { text: "-" + fmtBrl(Math.abs(exec.profit)), cls: "loss" };
+    if (!exec || exec.open || exec.result === null || exec.result === undefined) return { text: "", cls: "" };
     if (exec.result === "DRAW") return { text: "R$ 0,00", cls: "draw" };
-    return { text: "", cls: "" };
+    return { text: fmtSigned(exec.profit), cls: Number(exec.profit) >= 0 ? "win" : "loss" };
   };
   const drawChart = (canvas, candles) => {
     const dpr = window.devicePixelRatio || 1;
@@ -98,7 +108,7 @@
     const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    const list = Array.isArray(candles) ? candles.slice(-48) : [];
+    const list = Array.isArray(candles) ? candles.slice(-40) : [];
     if (!list.length) { ctx.fillStyle = "#243352"; ctx.font = "10px system-ui"; ctx.fillText("sem feed", 8, h / 2); return; }
     let min = Infinity, max = -Infinity;
     for (const c of list) { if (c.low < min) min = c.low; if (c.high > max) max = c.high; }
@@ -117,6 +127,7 @@
     const last = list[list.length - 1];
     ctx.strokeStyle = "#64748b"; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(0, y(last.close)); ctx.lineTo(w, y(last.close)); ctx.stroke(); ctx.setLineDash([]);
   };
+
   const buildGrid = () => {
     const grid = $("grid"); grid.innerHTML = ""; state.cards.clear();
     for (const row of state.markets) {
@@ -125,61 +136,98 @@
       const card = document.createElement("div"); card.className = "card";
       const canvas = document.createElement("canvas"); canvas.className = "chart";
       const name = document.createElement("div"); name.className = "name";
-      const label = document.createElement("span"); label.textContent = row.marketKey.replace(":OTC", " OTC").replace("/", "/");
+      const label = document.createElement("span"); label.textContent = row.marketKey.replace(":OTC", " OTC");
       const chip = document.createElement("span"); chip.className = "chip";
       name.append(label, chip); card.append(canvas, name); cell.append(result, card); grid.append(cell);
-      state.cards.set(row.marketKey, { result, chip, canvas, label });
+      state.cards.set(row.marketKey, { result, chip, canvas });
     }
   };
-  const render = () => {
+  const renderText = () => {
     for (const row of state.markets) {
       const card = state.cards.get(row.marketKey); if (!card) continue;
-      const r = resultOf(row); card.result.textContent = r.text; card.result.className = "result " + r.cls;
-      const [chipText, chipCls] = chipOf(row); card.chip.textContent = chipText; card.chip.className = "chip " + chipCls;
-      drawChart(card.canvas, state.lastCandles.get(row.marketKey));
+      const r = resultOf(row);
+      const rKey = r.text + "|" + r.cls;
+      if (state.lastResultText.get(row.marketKey) !== rKey) { state.lastResultText.set(row.marketKey, rKey); card.result.textContent = r.text; card.result.className = "result " + r.cls; }
+      const [chipText, chipCls] = chipOf(row);
+      const cKey = chipText + "|" + chipCls;
+      if (state.lastChip.get(row.marketKey) !== cKey) { state.lastChip.set(row.marketKey, cKey); card.chip.textContent = chipText; card.chip.className = "chip " + chipCls; }
     }
   };
-  state.lastCandles = new Map();
   const refreshCandles = async () => {
     const keys = state.markets.map((m) => m.marketKey);
     if (!keys.length) return;
-    const data = await api("/api/iq/candles?limit=48&keys=" + encodeURIComponent(keys.join(",")));
+    const data = await api("/api/iq/candles?limit=40&keys=" + encodeURIComponent(keys.join(",")));
     if (!data?.rows) return;
-    for (const [key, candles] of Object.entries(data.rows)) state.lastCandles.set(key, candles);
-    render();
+    for (const [key, candles] of Object.entries(data.rows)) {
+      const list = Array.isArray(candles) ? candles : [];
+      const lastBucket = list.length ? list[list.length - 1].bucketEnd : 0;
+      if (state.lastDraw.get(key) === lastBucket) continue;
+      state.lastDraw.set(key, lastBucket);
+      state.candles.set(key, list);
+      const card = state.cards.get(key);
+      if (card) drawChart(card.canvas, list);
+    }
+    renderText();
   };
   const refreshResults = async () => {
-    const data = await api("/api/iq/executions?accountContext=PRACTICE&limit=120");
+    const ctx = state.mode === "REAL" ? "REAL" : "PRACTICE";
+    const data = await api("/api/iq/executions?accountContext=" + ctx + "&limit=200");
     const rows = data?.executions ?? [];
     state.results.clear();
     for (const row of rows) {
       const key = row.market_key ?? row.marketKey; if (!key) continue;
       if (state.results.has(key)) continue;
       const settled = String(row.state).toUpperCase() === "SETTLED";
-      state.results.set(key, { open: !settled, result: row.broker_result ?? null, profit: Number(row.profit ?? 0) });
+      state.results.set(key, { open: !settled, result: settled ? (row.broker_result ?? null) : null, profit: Number(row.profit ?? 0) });
     }
-    render();
+    renderText();
   };
   const refreshConsensus = async () => {
     const data = await api("/api/iq/research/consensus");
     state.consensus.clear();
     for (const d of data?.recent ?? []) state.consensus.set(d.marketKey, d);
-    render();
+    renderText();
   };
   const refreshHeader = async () => {
     const st = await api("/api/iq/status");
-    if (st) {
-      $("bMode").innerHTML = "modo: <b>" + (st.mode ?? "?") + "</b>";
-      const bal = st.account?.practice?.balance;
-      $("bBal").innerHTML = "saldo: <b>" + (bal !== undefined ? fmtBrl(bal) : "?") + "</b>";
-    }
+    if (!st) return;
+    const mode = String(st.mode ?? "PRACTICE").toUpperCase();
+    state.mode = mode;
+    const sw = $("modeSwitch");
+    if (sw.classList.contains("real") !== (mode === "REAL")) sw.classList.toggle("real", mode === "REAL");
+    setText($("modeLabel"), mode === "REAL" ? "REAL" : "PRACTICE");
+    const bal = mode === "REAL" ? st.account?.real?.balance : st.account?.practice?.balance;
+    const cur = mode === "REAL" ? (st.account?.real?.currency ?? "BRL") : (st.account?.practice?.currency ?? "USD");
+    setText($("bBal"), "saldo: " + (bal !== undefined ? (cur === "BRL" ? "R$ " + fmt(bal) : "$ " + fmt(bal)) : "?"));
   };
-  const loadMarkets = async () => {
+  const refreshActive = async () => {
     const data = await api("/api/iq/mesas");
     const rows = (data?.rows ?? []).filter((r) => r.instrumentType === "BINARY" && r.marketType === "OTC");
-    state.markets = rows.sort((a, b) => String(a.marketKey).localeCompare(String(b.marketKey)));
-    $("bCount").innerHTML = "ativos: <b>" + state.markets.length + "</b>";
-    buildGrid(); await refreshCandles(); await refreshResults();
+    const active = rows.filter((r) => r.enabled === true && r.status === "OPEN");
+    setText($("bCount"), "ativos: " + active.length);
+    $("bCount").title = active.map((r) => r.marketKey).join(", ");
+    if (rows.length !== state.markets.length || rows.some((r, i) => state.markets[i]?.marketKey !== r.marketKey)) {
+      state.markets = rows.sort((a, b) => String(a.marketKey).localeCompare(String(b.marketKey)));
+      buildGrid();
+      state.lastDraw.clear(); state.lastResultText.clear(); state.lastChip.clear();
+      await refreshCandles();
+    }
+  };
+  const switchMode = async () => {
+    const toReal = state.mode !== "REAL";
+    const sw = $("modeSwitch"); sw.style.pointerEvents = "none";
+    try {
+      if (toReal) {
+        await api("/api/iq/account/select", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ context: "REAL" }) });
+        await api("/api/iq/real/arm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ phrase: "CONFIRMAR E ARMAR REAL", acknowledgeRisk: true, maxStake: 2 }) });
+        await api("/api/iq/mode", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "REAL" }) });
+      } else {
+        await api("/api/iq/mode", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "PRACTICE" }) });
+        await api("/api/iq/real/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) });
+        await api("/api/iq/account/select", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ context: "PRACTICE" }) });
+      }
+    } finally { sw.style.pointerEvents = ""; }
+    await refreshHeader(); await refreshResults(); await refreshConsensus();
   };
   const openMesas = async () => {
     const data = await api("/api/iq/mesas");
@@ -194,7 +242,7 @@
       tg.onclick = async (event) => {
         event.stopPropagation();
         await api("/api/iq/mesas", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ marketKey: row.marketKey, instrumentType: "BINARY", durationSeconds: 60, enabled: !row.enabled }) });
-        await openMesas(); await loadMarkets();
+        await openMesas(); await refreshActive();
       };
       line.append(k, st, po, tg);
       line.onclick = () => {
@@ -206,62 +254,59 @@
     }
     $("mesasModal").classList.add("on");
   };
-  const refreshLog = async () => {
-    if (!state.logOpen) return;
-    const data = await api("/api/iq/research/consensus/log?limit=30");
-    const body = $("logBody"); body.innerHTML = "";
-    for (const entry of data?.entries ?? []) { const pre = document.createElement("pre"); pre.textContent = entry.human; body.append(pre); }
-  };
-  let labOpen = false;
   const refreshLab = async () => {
     if (!labOpen) return;
     const list = $("labList");
-    list.innerHTML = "LAB LOADING...";
     let data = null; let apiError = false;
     try { const r = await fetch("/api/iq/lab/status"); if (r.ok) data = await r.json(); else apiError = true; } catch { apiError = true; }
     if (apiError) { list.innerHTML = "LAB API ERROR (tentando novamente...)"; return; }
     if (!data || data.error) { list.innerHTML = "LAB API ERROR"; return; }
-    if (data.started !== true) { list.innerHTML = "LAB NOT STARTED" + (data.runId ? " (run " + data.runId + ")" : ""); return; }
     const rows = data?.states ?? [];
     list.innerHTML = "";
-    const head = document.createElement("div"); head.className = "mesa-row"; head.innerHTML = '<span class="k"><b>ESTRATEGIA</b></span><span class="st"><b>SETTLED</b></span><span class="po"><b>W/L/D</b></span><span class="st"><b>OPEN</b></span><span class="po"><b>STATUS</b></span>';
+    const head = document.createElement("div"); head.className = "mesa-row"; head.innerHTML = '<span class="k"><b>LAB 6 (run principal)</b></span><span class="st"><b>SETTLED</b></span><span class="po"><b>W/L/D</b></span><span class="st"><b>OPEN</b></span><span class="po"><b>STATUS</b></span>';
     list.append(head);
     for (const row of rows) {
       const line = document.createElement("div"); line.className = "mesa-row";
-      const k = document.createElement("span"); k.className = "k"; k.textContent = row.strategy_id;
-      const st = document.createElement("span"); st.className = "st"; st.textContent = row.settled_count + "/20";
-      const wl = document.createElement("span"); wl.className = "po"; wl.textContent = row.wins + "/" + row.losses + "/" + row.draws;
-      const op = document.createElement("span"); op.className = "st"; op.textContent = String(row.open_count ?? 0);
-      const sc = document.createElement("span"); sc.className = "po"; sc.textContent = row.complete ? "COMPLETE" : "RUNNING";
-      line.append(k, st, wl, op, sc); list.append(line);
-    }
-    if (!rows.length) list.textContent = "lab indisponivel (run ainda nao iniciado)";
-    const exp = data?.experiments?.s04Bollinger50;
-    if (exp && exp.started) {
-      const sep = document.createElement("div"); sep.className = "mesa-row"; sep.innerHTML = '<span class="k"><b>S04 BOLLINGER — RUN 50 (independente)</b></span><span class="st"><b>SETTLED</b></span><span class="po"><b>W/L/D</b></span><span class="st"><b>OPEN</b></span><span class="po"><b>STATUS</b></span>';
-      list.append(sep);
-      const st = (exp.states ?? [])[0] ?? null;
-      const line = document.createElement("div"); line.className = "mesa-row";
-      line.innerHTML = '<span class="k">S04_BOLLINGER_MEAN_REVERSION</span><span class="st">' + (st ? st.settled_count : 0) + '/50</span><span class="po">' + (st ? st.wins + "/" + st.losses + "/" + st.draws : "0/0/0") + '</span><span class="st">' + (st ? st.open_count : 0) + '</span><span class="po">' + (st && st.complete ? "COMPLETE" : "RUNNING") + '</span>';
+      line.innerHTML = '<span class="k">' + row.strategy_id + '</span><span class="st">' + row.settled_count + '/20</span><span class="po">' + row.wins + "/" + row.losses + "/" + row.draws + '</span><span class="st">' + (row.open_count ?? 0) + '</span><span class="po">' + (row.complete ? "COMPLETE" : "RUNNING") + '</span>';
       list.append(line);
     }
+    if (!rows.length) list.textContent = data.started === true ? "LAB RUNNING (sem states)" : "LAB NOT STARTED";
+    for (const [key, label, cap] of [["agenticRsiFib", "AGENTIC RSI+FIB", 50], ["s04Bollinger50", "S04 BOLLINGER — RUN 50", 50]]) {
+      const exp = data?.experiments?.[key];
+      if (!exp || exp.started !== true) continue;
+      const sep = document.createElement("div"); sep.className = "mesa-row"; sep.innerHTML = '<span class="k"><b>' + label + ' (independente)</b></span><span class="st"><b>SETTLED</b></span><span class="po"><b>W/L/D</b></span><span class="st"><b>OPEN</b></span><span class="po"><b>STATUS</b></span>';
+      list.append(sep);
+      for (const s of (exp.states ?? [])) {
+        const line = document.createElement("div"); line.className = "mesa-row";
+        line.innerHTML = '<span class="k">' + s.strategy_id + '</span><span class="st">' + s.settled_count + '/' + cap + '</span><span class="po">' + s.wins + "/" + s.losses + "/" + s.draws + '</span><span class="st">' + (s.open_count ?? 0) + '</span><span class="po">' + (s.complete ? "COMPLETE" : "RUNNING") + '</span>';
+        list.append(line);
+      }
+    }
   };
-  $("btnLab").onclick = () => { labOpen = true; $("labModal").classList.add("on"); refreshLab(); };
-  $("labModal").onclick = (e) => { if (e.target === $("labModal")) { labOpen = false; $("labModal").classList.remove("on"); } };
-  setInterval(refreshLab, 10000);
+  const refreshLog = async () => {
+    if (!logOpen) return;
+    const data = await api("/api/iq/research/consensus/log?limit=30");
+    const body = $("logBody"); body.innerHTML = "";
+    for (const entry of data?.entries ?? []) { const pre = document.createElement("pre"); pre.textContent = entry.human; body.append(pre); }
+  };
+  let labOpen = false; let logOpen = false;
+  $("modeSwitch").onclick = switchMode;
   $("btnMesas").onclick = openMesas;
   $("mesasModal").onclick = (e) => { if (e.target === $("mesasModal")) $("mesasModal").classList.remove("on"); };
-  $("btnLog").onclick = () => { state.logOpen = true; $("logPanel").classList.add("on"); refreshLog(); };
-  $("btnLogClose").onclick = () => { state.logOpen = false; $("logPanel").classList.remove("on"); };
-  window.addEventListener("resize", render);
+  $("btnLab").onclick = () => { labOpen = true; $("labModal").classList.add("on"); refreshLab(); };
+  $("labModal").onclick = (e) => { if (e.target === $("labModal")) { labOpen = false; $("labModal").classList.remove("on"); } };
+  $("btnLog").onclick = () => { logOpen = true; $("logPanel").classList.add("on"); refreshLog(); };
+  $("btnLogClose").onclick = () => { logOpen = false; $("logPanel").classList.remove("on"); };
+  window.addEventListener("resize", () => { for (const row of state.markets) { const card = state.cards.get(row.marketKey); if (card) drawChart(card.canvas, state.candles.get(row.marketKey)); } });
   (async () => {
-    await refreshHeader(); await loadMarkets(); await refreshConsensus();
-    setInterval(refreshCandles, 3000);
-    setInterval(refreshResults, 5000);
-    setInterval(refreshConsensus, 6000);
-    setInterval(refreshHeader, 15000);
+    await refreshHeader(); await refreshActive(); await refreshConsensus(); await refreshResults(); await refreshCandles();
+    setInterval(refreshCandles, 1000);
+    setInterval(refreshHeader, 3000);
+    setInterval(refreshResults, 3000);
+    setInterval(refreshConsensus, 5000);
+    setInterval(refreshActive, 10000);
     setInterval(refreshLog, 6000);
-    setInterval(loadMarkets, 60000);
+    setInterval(refreshLab, 10000);
   })();
 })();
 </script>
