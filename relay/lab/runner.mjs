@@ -28,7 +28,7 @@ export class LabRunner {
     this.enabled = enabled === true;
     this.runId = runId ?? `lab6-20260920-practice`;
     this.specsHash = labSpecsHash();
-    this.stake = Number(stake) > 0 ? Number(stake) : (Number(runtime?.config?.defaultStake) > 0 ? Number(runtime.config.defaultStake) : 1);
+    this.explicitStake = Number(stake) > 0 ? Number(stake) : null; // resolvido dinamicamente no submit (config do painel manda)
     this.strategies = Array.isArray(strategies) && strategies.length ? strategies : LAB_STRATEGY_IDS;
     this.cap = Number.isFinite(Number(cap)) && Number(cap) > 0 ? Number(cap) : LAB_SETTLEMENT_CAP;
     this.sourceRunId = sourceRunId; this.sourceStrategy = sourceStrategy; this.reportRootDir = reportRootDir;
@@ -43,6 +43,9 @@ export class LabRunner {
     this.submitBusy = false;
     this.started = false;
   }
+
+  /** Stake efetivo: explicito do runner ou o default do painel NO MOMENTO da ordem (nao congela no boot). */
+  get stake() { if (Number(this.explicitStake) > 0) return Number(this.explicitStake); const cfg = Number(this.runtime?.config?.defaultStake); return cfg > 0 ? cfg : 1; }
 
   async start() {
     if (!this.enabled || this.started) return;

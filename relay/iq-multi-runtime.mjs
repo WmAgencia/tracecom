@@ -124,7 +124,7 @@ export class IqMultiRuntime extends EventEmitter {
     try { this.consensus = new ConsensusRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: consensusEnabled === true, execute: consensusExecute === true, emit: (type, payload) => this.#emitEvent(type, payload) }); } catch (error) { this.consensus = null; this.#safe(() => this.log("CONSENSUS_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     try { this.lab = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: labEnabled === true, runId: labRunId, stake: labStake, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.lab?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.lab.reportRootDir })).catch(() => undefined); } }); void this.lab.start().catch(() => undefined); } catch (error) { this.lab = null; this.#safe(() => this.log("LAB_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     try { this.labS04 = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: labS04Enabled === true, runId: labS04RunId ?? "s04-bollinger-50-20260921", stake: labStake, strategies: ["S04_BOLLINGER_MEAN_REVERSION"], cap: 50, sourceRunId: labRunId ?? "lab6-20260920-practice", sourceStrategy: "S04_BOLLINGER_MEAN_REVERSION", reportRootDir: "estrategias/experiments/s04-bollinger-50", emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.labS04?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.labS04.reportRootDir })).catch(() => undefined); } }); void this.labS04.start().catch(() => undefined); } catch (error) { this.labS04 = null; this.#safe(() => this.log("LAB_S04_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
-    try { this.agentic = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: agenticEnabled === true, runId: agenticRunId ?? "agentic-rsi-fib-20260921", stake: labStake, strategies: [AGENTIC_STRATEGY_ID], cap: 50, reportRootDir: "estrategias/experiments/agentic-rsi-fib", evaluate: (snapshot) => { const graph = runAgentGraph(snapshot, { safetyPct: this.agentSafetyPct, filters: this.agentFilters }); if (this.safetyShadow) void this.safetyShadow.record(graph, snapshot).catch(() => undefined); return [agentGraphToStrategyResult(graph)].filter(Boolean); }, entryWindowOpenMs: 34_000, entryWindowCloseMs: 31_500, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.agentic?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.agentic.reportRootDir })).catch(() => undefined); } }); void this.agentic.start().catch(() => undefined); } catch (error) { this.agentic = null; this.#safe(() => this.log("AGENTIC_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
+    try { this.agentic = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: agenticEnabled === true, runId: agenticRunId ?? "agentic-rsi-fib-20260921", stake: labStake, strategies: [AGENTIC_STRATEGY_ID], cap: 50, reportRootDir: "estrategias/experiments/agentic-rsi-fib", evaluate: (snapshot) => { this.lastEvaluationAt = this.now(); const graph = runAgentGraph(snapshot, { safetyPct: this.agentSafetyPct, filters: this.agentFilters }); if (this.safetyShadow) void this.safetyShadow.record(graph, snapshot).catch(() => undefined); return [agentGraphToStrategyResult(graph)].filter(Boolean); }, entryWindowOpenMs: 34_000, entryWindowCloseMs: 31_500, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.agentic?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.agentic.reportRootDir })).catch(() => undefined); } }); void this.agentic.start().catch(() => undefined); } catch (error) { this.agentic = null; this.#safe(() => this.log("AGENTIC_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     this.agentSafetyFromEnv = agenticSafetyPct !== null && agenticSafetyPct !== undefined && String(agenticSafetyPct).trim() !== "" && Number.isFinite(Number(agenticSafetyPct));
     this.agentSafetyPct = this.agentSafetyFromEnv ? Math.max(0, Math.min(100, Math.round(Number(agenticSafetyPct)))) : 100;
     this.autoArmPractice = autoArmPractice === true;
@@ -265,6 +265,10 @@ export class IqMultiRuntime extends EventEmitter {
         }).catch(() => undefined);
       }, 20_000);
       if (typeof this.configHydrationRetry.unref === "function") this.configHydrationRetry.unref();
+    if (!this.evalWatchdogTimer) {
+      this.evalWatchdogTimer = setInterval(() => { if (!this.running) return; void this.#evaluationWatchdog().catch(() => undefined); }, 60_000);
+      if (typeof this.evalWatchdogTimer.unref === "function") this.evalWatchdogTimer.unref();
+    }
     if (this.autoArmPractice && !this.autoArmTimer) {
       this.autoArmTimer = setInterval(() => { if (!this.running) return; void this.#autoArmPractice().catch(() => undefined); }, 30_000);
       if (typeof this.autoArmTimer.unref === "function") this.autoArmTimer.unref();
@@ -290,6 +294,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.safetyShadowTimer) { clearInterval(this.safetyShadowTimer); this.safetyShadowTimer = null; }
     if (this.maintenanceTimer) { clearInterval(this.maintenanceTimer); this.maintenanceTimer = null; }
     if (this.autoArmTimer) { clearInterval(this.autoArmTimer); this.autoArmTimer = null; }
+    if (this.evalWatchdogTimer) { clearInterval(this.evalWatchdogTimer); this.evalWatchdogTimer = null; }
     const waiter = this.#disconnectedWaiter; if (waiter) { this.#disconnectedWaiter = null; waiter(); }
     try { this.client?.close(reason); } catch { /* noop */ }
     this.client = null;
@@ -1679,6 +1684,20 @@ export class IqMultiRuntime extends EventEmitter {
 
   candlesArchiveStatus() { return this.candlesArchive?.status() ?? { version: "candles-archive-v1", ready: false, days: [] }; }
   candlesArchiveDay(date) { return this.candlesArchive?.dayGzip(date) ?? null; }
+
+  /** Watchdog: feed vivo sem avaliacao por 2+ min => re-agenda ticks; se persistir => forca reconexao do WS. */
+  async #evaluationWatchdog() {
+    const feedLive = Boolean(this.client) && this.session?.connected === true;
+    const sinceConnect = this.now() - Number(this.connectionStartedAt ?? 0);
+    const stalledMs = this.now() - Number(this.lastEvaluationAt ?? 0);
+    if (!feedLive || sinceConnect < 180_000 || stalledMs < 120_000) { this.evalWatchdogAttempts = 0; return null; }
+    this.evalWatchdogAttempts = (this.evalWatchdogAttempts ?? 0) + 1;
+    const action = this.evalWatchdogAttempts === 1 ? "RESCHEDULE_TICKS" : "WS_RECONNECT";
+    this.#safe(() => this.log("EVAL_WATCHDOG", JSON.stringify({ stalledMs, sinceConnect, attempt: this.evalWatchdogAttempts, action })));
+    if (action === "RESCHEDULE_TICKS") { this.rsiAgentsV2LiveTickTimer = null; this.#scheduleV2LiveTicks(); return action; }
+    try { this.client?.close("EVAL_WATCHDOG"); } catch { /* noop */ }
+    return action;
+  }
 
   async #autoArmPractice() {
     if (this.autoArmPractice !== true) return null;
