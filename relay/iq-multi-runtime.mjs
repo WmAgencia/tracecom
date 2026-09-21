@@ -3331,7 +3331,7 @@ export class IqMultiRuntime extends EventEmitter {
     // Ordem manual/API e acao deliberada do operador; o gate de setup vale para decisoes AUTO do brain.
     const setupValid = source !== "AUTO_DECISION" || (brainSetup.setup !== "NO_VALID_SETUP" && brainSetup.setup !== "SYNTHETIC_TEST");
     const gateResult = this.gate.evaluate({
-      market: { ...(ctx ?? {}), maxStake: ctx?.maxStake ?? this.config.hardCap, marketKey: key }, marketKey: key, requestedMode: this.config.mode, realAuthorized,
+      market: { ...(ctx ?? {}), availability: this.#marketTradable(ctx) ? "OPEN" : (ctx?.availability ?? null), maxStake: ctx?.maxStake ?? this.config.hardCap, marketKey: key }, marketKey: key, requestedMode: this.config.mode, realAuthorized,
       connection: { connected: this.session.connected, timeValid: this.session.timeValid, host: this.session.host },
       serverTime: { ms: this.client.serverNow(), skewMs: this.session.clockSkewMs },
       freshness, decision: { action: decisionAction, ageMs: Number(decisionAgeMs) || 0, horizonSeconds, reason: ctx.decisionState.reason }, strategy: { valid: setupValid, variantId: brainSetup.setup, reason: setupValid ? null : "SEM_SETUP_VALIDO" },
