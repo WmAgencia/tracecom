@@ -19,9 +19,10 @@ const EVALUATORS = Object.freeze([
   [S06_ID, evaluateS06],
 ]);
 
-export function routeSnapshot(snapshot) {
+export function routeSnapshot(snapshot, { only = null } = {}) {
   if (!snapshot) return [];
-  return EVALUATORS.map(([strategyId, evaluate]) => {
+  const evaluators = Array.isArray(only) && only.length ? EVALUATORS.filter(([id]) => only.includes(id)) : EVALUATORS;
+  return evaluators.map(([strategyId, evaluate]) => {
     const result = evaluate(snapshot);
     return { ...result, strategyId: result.strategyId ?? strategyId, snapshotId: result.snapshotId ?? snapshot.snapshotId };
   });

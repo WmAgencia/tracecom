@@ -44,8 +44,12 @@ export async function generateLabReport({ pool, runId, rootDir = "estrategias/la
   const outDir = path.join(rootDir, runId);
   for (const sub of ["strategy-specs", "trades", "reports", "raw"]) fs.mkdirSync(path.join(outDir, sub), { recursive: true });
 
+  const run = (await pool.query("SELECT * FROM iq_lab_runs WHERE run_id=$1", [runId]).catch(() => ({ rows: [] }))).rows?.[0] ?? null;
   const manifest = {
     runId, labVersion: LAB_VERSION, specsHash: labSpecsHash(), generatedAtUtc: new Date().toISOString(),
+    sourceRunId: run?.source_run_id ?? null, sourceStrategy: run?.source_strategy ?? null,
+    sourceStrategySpecHash: run?.specs_hash ?? labSpecsHash(), currentStrategySpecHash: labSpecsHash(),
+    specsEquivalent: run?.specs_hash ? run.specs_hash === labSpecsHash() : null,
     settlementCap: LAB_SETTLEMENT_CAP, stakePolicy: LAB_STAKE_POLICY, expiryPolicy: LAB_EXPIRY_POLICY,
     strategies: LAB_STRATEGY_IDS, totalTrades: trades.length,
     status: states.every((s) => s.complete) && states.length === LAB_STRATEGY_IDS.length ? "COMPLETE" : "RUNNING",
@@ -93,9 +97,8 @@ export async function generateLabReport({ pool, runId, rootDir = "estrategias/la
     `# LAB 6 — comparativo (run ${runId})`, "",
     "| Strategy | Trades | W | L | D | WR(excl) | WR(incl) | PnL | AvgPayout | Opps | WAIT rate | Trades/h | AvgEvid | Quality A/B/C |",
     "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
-    ...LAB_STRATEGY_IDS.map((id) => { const s = perStrategy[id]; const waitRate = s.opportunities ? round2((100 * s.waits) / s.opportunities) : null; return `| ${id} | ${s.trades} | ${s.wins} | ${s.losses} | ${s.draws} | ${s.wrExclDraw ?? "-"} | ${s.wrInclDraw ?? "-"} | ${s.pnl ?? "-"} | ${s.avgPayout ?? "-"} | ${s.opportunities} | ${waitRate ?? "-"}% | ${s.tradesPerHour ?? "-"} | ${s.avgEvidenceStrength ?? "-"} | ${s.entryQuality.A}/${s.entryQuality.B}/${s.entryQuality.C} |`; }),
-    "", `## S01 vs S06 (Fibonacci adicionou valor?)`,
-    `- S01 trades: ${s01.length} · S06 trades: ${s06.length} · overlap mesmo ativo/minuto: ${overlap}`,
+    ...Object.keys(perStrategy).map((id) => { const s = perStrategy[id]; const waitRate = s.opportunities ? round2((100 * s.waits) / s.opportunities) : null; return `| ${id} | ${s.trades} | ${s.wins} | ${s.losses} | ${s.draws} | ${s.wrExclDraw ?? "-"} | ${s.wrInclDraw ?? "-"} | ${s.pnl ?? "-"} | ${s.avgPayout ?? "-"} | ${s.opportunities} | ${waitRate ?? "-"}% | ${s.tradesPerHour ?? "-"} | ${s.avgEvidenceStrength ?? "-"} | ${s.entryQuality.A}/${s.entryQuality.B}/${s.entryQuality.C} |`; }),
+    ...(s01.length || s06.length ? ["", `## S01 vs S06 (Fibonacci adicionou valor?)`, `- S01 trades: ${s01.length} · S06 trades: ${s06.length} · overlap mesmo ativo/minuto: ${overlap}`] : []),
     "", "> Relatorio descritivo. 20 settlements/estrategia = amostra exploratoria. Nenhuma conclusao de edge.",
   ].join("\n");
   fs.writeFileSync(path.join(outDir, "reports", "comparative.md"), comparative);

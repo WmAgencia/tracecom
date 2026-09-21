@@ -7,7 +7,9 @@ CREATE TABLE IF NOT EXISTS iq_lab_runs (
   specs_hash text NOT NULL,
   stake numeric NOT NULL DEFAULT 0,
   expiry_policy jsonb NOT NULL DEFAULT '{}'::jsonb,
-  account_context text NOT NULL DEFAULT 'PRACTICE'
+  account_context text NOT NULL DEFAULT 'PRACTICE',
+  source_run_id text,
+  source_strategy text
 );
 CREATE TABLE IF NOT EXISTS iq_lab_strategy_state (
   run_id text NOT NULL,

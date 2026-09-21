@@ -6,15 +6,17 @@ export const LAB_STORE_VERSION = "lab-store-v1";
 export const LAB_SETTLEMENT_CAP = 20;
 
 export class LabStore {
-  constructor({ pool, runId, specsHash, stake, expiryPolicy = {} } = {}) {
+  constructor({ pool, runId, specsHash, stake, expiryPolicy = {}, cap = LAB_SETTLEMENT_CAP, sourceRunId = null, sourceStrategy = null } = {}) {
     this.pool = pool; this.runId = runId; this.specsHash = specsHash; this.stake = stake; this.expiryPolicy = expiryPolicy;
+    this.cap = Number.isFinite(Number(cap)) && Number(cap) > 0 ? Number(cap) : LAB_SETTLEMENT_CAP;
+    this.sourceRunId = sourceRunId; this.sourceStrategy = sourceStrategy;
   }
 
   async ensureRun(strategyIds = []) {
     if (!this.pool?.query) return;
     await this.pool.query(
-      "INSERT INTO iq_lab_runs(run_id, specs_hash, stake, expiry_policy, status, account_context) VALUES($1,$2,$3,$4::jsonb,'RUNNING','PRACTICE') ON CONFLICT (run_id) DO NOTHING",
-      [this.runId, this.specsHash, this.stake, JSON.stringify(this.expiryPolicy)],
+      "INSERT INTO iq_lab_runs(run_id, specs_hash, stake, expiry_policy, status, account_context, source_run_id, source_strategy) VALUES($1,$2,$3,$4::jsonb,'RUNNING','PRACTICE',$5,$6) ON CONFLICT (run_id) DO NOTHING",
+      [this.runId, this.specsHash, this.stake, JSON.stringify(this.expiryPolicy), this.sourceRunId, this.sourceStrategy],
     );
     if (Array.isArray(strategyIds) && strategyIds.length) {
       const values = strategyIds.map((_, index) => "($1, $" + (index + 2) + ")").join(", ");
@@ -31,7 +33,7 @@ export class LabStore {
       `UPDATE iq_lab_strategy_state SET open_count = open_count + 1, updated_at = now()
        WHERE run_id=$1 AND strategy_id=$2 AND complete = false AND settled_count + open_count < $3
        RETURNING settled_count, open_count`,
-      [this.runId, strategyId, LAB_SETTLEMENT_CAP],
+      [this.runId, strategyId, this.cap],
     )).rows?.[0] ?? null;
     return row;
   }
@@ -50,7 +52,7 @@ export class LabStore {
        SELECT $4,$1,$2,$5,$6,$7,$4,$8,$9,$10,$11,$12,$13,$14,now(),$15,$16,$17,$18,$19::jsonb,$20::jsonb,$21::jsonb,$22::jsonb,'SUBMITTED' FROM slot
        ON CONFLICT (strategy_trade_id) DO NOTHING
        RETURNING strategy_trade_id`,
-      [this.runId, trade.strategyId, 20, trade.strategyTradeId, trade.strategyVersion, trade.episodeId ?? null, trade.snapshotId ?? null, trade.marketKey, trade.direction, trade.stake, trade.payout ?? null, trade.requestedExpiry ?? null, trade.expiryAt ?? null, trade.candidateAt ?? null, trade.decision, String(trade.reason ?? "").slice(0, 500), trade.evidenceStrength ?? null, trade.entryQuality ?? null, JSON.stringify(trade.supporting ?? []), JSON.stringify(trade.counter ?? []), JSON.stringify(trade.specialistOutputs ?? {}), JSON.stringify(trade.entrySnapshot ?? {})],
+      [this.runId, trade.strategyId, this.cap, trade.strategyTradeId, trade.strategyVersion, trade.episodeId ?? null, trade.snapshotId ?? null, trade.marketKey, trade.direction, trade.stake, trade.payout ?? null, trade.requestedExpiry ?? null, trade.expiryAt ?? null, trade.candidateAt ?? null, trade.decision, String(trade.reason ?? "").slice(0, 500), trade.evidenceStrength ?? null, trade.entryQuality ?? null, JSON.stringify(trade.supporting ?? []), JSON.stringify(trade.counter ?? []), JSON.stringify(trade.specialistOutputs ?? {}), JSON.stringify(trade.entrySnapshot ?? {})],
     )).rows?.[0] ?? null;
     if (row) return row;
     const existing = (await this.pool.query("SELECT strategy_trade_id FROM iq_lab_trades WHERE strategy_trade_id=$1", [trade.strategyTradeId])).rows?.[0] ?? null;
@@ -75,7 +77,7 @@ export class LabStore {
          updated_at = now()
        WHERE run_id=$1 AND strategy_id=$2
        RETURNING settled_count, open_count, wins, losses, draws, complete`,
-      [this.runId, strategyId, win, loss, draw, LAB_SETTLEMENT_CAP],
+      [this.runId, strategyId, win, loss, draw, this.cap],
     )).rows?.[0] ?? null;
     return row;
   }

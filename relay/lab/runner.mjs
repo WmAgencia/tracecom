@@ -23,15 +23,18 @@ function qualityOf(result) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class LabRunner {
-  constructor({ runtime = null, pool = null, now = () => Date.now(), log = () => {}, emit = () => {}, enabled = false, runId = null, stake = null } = {}) {
+  constructor({ runtime = null, pool = null, now = () => Date.now(), log = () => {}, emit = () => {}, enabled = false, runId = null, stake = null, strategies = null, cap = null, sourceRunId = null, sourceStrategy = null, reportRootDir = "estrategias/lab-6" } = {}) {
     this.runtime = runtime; this.pool = pool; this.now = now; this.log = log; this.emit = emit;
     this.enabled = enabled === true;
     this.runId = runId ?? `lab6-20260920-practice`;
     this.specsHash = labSpecsHash();
     this.stake = Number(stake) > 0 ? Number(stake) : (Number(runtime?.config?.defaultStake) > 0 ? Number(runtime.config.defaultStake) : 1);
-    this.store = new LabStore({ pool, runId: this.runId, specsHash: this.specsHash, stake: this.stake, expiryPolicy: LAB_EXPIRY_POLICY });
+    this.strategies = Array.isArray(strategies) && strategies.length ? strategies : LAB_STRATEGY_IDS;
+    this.cap = Number.isFinite(Number(cap)) && Number(cap) > 0 ? Number(cap) : LAB_SETTLEMENT_CAP;
+    this.sourceRunId = sourceRunId; this.sourceStrategy = sourceStrategy; this.reportRootDir = reportRootDir;
+    this.store = new LabStore({ pool, runId: this.runId, specsHash: this.specsHash, stake: this.stake, expiryPolicy: LAB_EXPIRY_POLICY, cap: this.cap, sourceRunId, sourceStrategy });
     this.states = new Map();
-    for (const id of LAB_STRATEGY_IDS) this.states.set(id, { opportunity: null, lastDecision: null, lastSide: null, lastPersistAt: 0, recovered: null });
+    for (const id of this.strategies) this.states.set(id, { opportunity: null, lastDecision: null, lastSide: null, lastPersistAt: 0, recovered: null });
     this.counters = { evaluations: 0, opportunities: 0, waits: 0, approvals: 0, blockedReal: 0, capacityBlocked: 0, submits: 0, rejected: 0, timeouts: 0, settled: 0, missed: 0, recoveredOpen: 0, recoveredSettled: 0 };
     this.submitQueue = [];
     this.submitBusy = false;
@@ -41,9 +44,9 @@ export class LabRunner {
   async start() {
     if (!this.enabled || this.started) return;
     this.started = true;
-    await this.store.ensureRun(LAB_STRATEGY_IDS).catch((error) => this.log("LAB_ENSURE_RUN_FAIL", String(error?.message ?? error).slice(0, 160)));
+    await this.store.ensureRun(this.strategies).catch((error) => this.log("LAB_ENSURE_RUN_FAIL", String(error?.message ?? error).slice(0, 160)));
     await this.store.reconcileOpenCounts().catch((error) => this.log("LAB_RECONCILE_FAIL", String(error?.message ?? error).slice(0, 160)));
-    const recovered = await this.store.loadState(LAB_STRATEGY_IDS).catch(() => ({ strategies: [], openTrades: [] }));
+    const recovered = await this.store.loadState(this.strategies).catch(() => ({ strategies: [], openTrades: [] }));
     for (const row of recovered.strategies ?? []) {
       const st = this.states.get(row.strategy_id); if (!st) continue;
       st.recovered = { settled: row.settled_count, open: row.open_count, wins: row.wins, losses: row.losses, draws: row.draws, complete: row.complete };
@@ -68,7 +71,7 @@ export class LabRunner {
     this.counters.evaluations += 1;
     if (!this.practiceOk()) { this.counters.blockedReal += 1; return null; }
     const at = this.now();
-    const results = routeSnapshot(snapshot);
+    const results = routeSnapshot(snapshot, { only: this.strategies });
     const submissions = [];
     for (const result of results) {
       const st = this.states.get(result.strategyId); if (!st) continue;
@@ -187,7 +190,7 @@ export class LabRunner {
       this.emit("lab.settlement", { strategyId: row.strategy_id, strategyTradeId: row.strategy_trade_id, result: mapped, pnl: Number(row.profit ?? 0) });
     }
     const states = await this.store.strategyStates().catch(() => []);
-    if (states.length === LAB_STRATEGY_IDS.length && states.every((row) => row.complete === true)) {
+    if (states.length === this.strategies.length && states.every((row) => row.complete === true)) {
       await this.store.finishRun().catch(() => undefined);
       this.emit("lab.complete", { runId: this.runId });
     }
@@ -196,7 +199,8 @@ export class LabRunner {
   status() {
     return {
       version: LAB_RUNNER_VERSION, enabled: this.enabled, started: this.started, runId: this.runId,
-      specsHash: this.specsHash, stake: this.stake, practiceOnly: true, settlementCap: LAB_SETTLEMENT_CAP,
+      specsHash: this.specsHash, stake: this.stake, practiceOnly: true, settlementCap: this.cap,
+      strategiesConfigured: this.strategies, sourceRunId: this.sourceRunId, sourceStrategy: this.sourceStrategy, reportRootDir: this.reportRootDir,
       counters: { ...this.counters },
       strategies: [...this.states.entries()].map(([strategyId, st]) => ({ strategyId, opportunity: st.opportunity ? { side: st.opportunity.side, ageMs: this.now() - st.opportunity.candidateAt } : null, recovered: st.recovered })),
     };
