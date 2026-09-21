@@ -1490,7 +1490,7 @@ export class IqMultiRuntime extends EventEmitter {
   #observeConsensus(ctx, list, now) {
     const consensusOn = this.consensus?.enabled === true;
     const labOn = this.lab?.enabled === true;
-    if (!consensusOn && !labOn) return null;
+    if (!consensusOn && !labOn && this.agentic?.enabled !== true) return null;
     if (ctx.marketType !== "OTC") return null;
     const serverNow = this.client?.serverNow?.() ?? now;
     const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
@@ -1745,7 +1745,7 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   #observeRsiAgentsV2LiveTicks() {
-    if (this.rsiAgentsV2Live?.enabled !== true && this.consensus?.enabled !== true) return;
+    if (this.rsiAgentsV2Live?.enabled !== true && this.consensus?.enabled !== true && this.agentic?.enabled !== true) return;
     const now = this.now();
     this.#pollBlitzSettlements();
     this.#pollMcpBinarySettlements();
