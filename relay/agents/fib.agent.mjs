@@ -5,7 +5,7 @@
  * BUY: espelho (leg de BAIXA; fundo do leg com reacao, ou rejeicao da 1a zona acima).
  * Leg rompido (preco segue alem do extremo) = continuacao -> bloqueio.
  */
-export const FIB_AGENT_VERSION = "agent-fib-v2-reversal";
+export const FIB_AGENT_VERSION = "agent-fib-v3-reversal-range";
 const num = (v) => (v === null || v === undefined ? null : (Number.isFinite(Number(v)) ? Number(v) : null));
 const round = (v, d = 4) => (Number.isFinite(Number(v)) ? Number(Number(v).toFixed(d)) : null);
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
@@ -18,21 +18,25 @@ export function analyzeFibAgent(snapshot) {
   const base = { agent: "FIB", version: FIB_AGENT_VERSION, snapshotId, state: "NO_CONTEXT", direction: "NEUTRAL", strength: 0, supportingEvidence: [], counterEvidence: [], observations: [], episodeId: fib?.episodeId ?? null };
   if (!fib || close === null) return base;
 
-  const bullishLeg = fib.direction === "BULLISH_LEG";
-  const side = bullishLeg ? "SELL" : "BUY";
-  const extreme = bullishLeg ? num(fib.anchorB?.price) : num(fib.anchorB?.price);
   const anchorA = num(fib.anchorA?.price);
+  const anchorB = num(fib.anchorB?.price);
+  const prices = [anchorA, anchorB].filter((v) => Number.isFinite(v));
+  if (prices.length < 2) return base;
+  const top = Math.max(...prices); const bottom = Math.min(...prices); const range = top - bottom;
+  const side = Math.abs(close - top) <= Math.abs(close - bottom) ? "SELL" : "BUY";
+  const bullishLeg = side === "SELL";
   const tolerance = num(fib.tolerance) ?? 0;
-  const levels = fib.levels ?? {};
-  const firstZones = ["23.6", "38.2"];
-  const inFirstZone = firstZones.filter((level) => Number.isFinite(Number(levels[level])) && Math.abs(close - Number(levels[level])) <= tolerance);
+  const extreme = side === "SELL" ? top : bottom;
+  const zone236 = side === "SELL" ? top - range * 0.236 : bottom + range * 0.236;
+  const zone382 = side === "SELL" ? top - range * 0.382 : bottom + range * 0.382;
+  const inFirstZone = [zone236, zone382].filter((level) => Math.abs(close - level) <= tolerance).map((level) => level === zone236 ? "23.6" : "38.2");
   const last = candles[candles.length - 1] ?? null; const prev = candles[candles.length - 2] ?? null;
   const reactionAgainstLeg = Boolean(last && (bullishLeg
     ? Number(last.close) < Number(last.open) && Number(last.close) < Number(prev?.close ?? Number(last.open))
     : Number(last.close) > Number(last.open) && Number(last.close) > Number(prev?.close ?? Number(last.open))));
   const atExtreme = extreme !== null && Math.abs(close - extreme) <= tolerance;
   const brokeExtreme = extreme !== null && (bullishLeg ? close > extreme + tolerance : close < extreme - tolerance);
-  const brokeAnchor = anchorA !== null ? (bullishLeg ? close < anchorA : close > anchorA) : false;
+  const brokeAnchor = side === "SELL" ? close < bottom : close > top;
 
   let state = "NO_CONTEXT";
   if (brokeAnchor) state = "ZONE_BROKEN";
