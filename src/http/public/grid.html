@@ -175,7 +175,7 @@
   <span class="ok"><span class="dot"></span> <span id="footConn">Conectado</span></span>
 </div>
 
-<div class="modal" id="configModal"><div class="box"><h2>Configurações — API do MCP oficial</h2><p style="font-size:11.5px;color:#8b97ad;margin-bottom:10px">Cole o token da API MCP oficial da sua conta (turbo). Ele fica salvo no servidor e passa a ser usado pelos agentes; o valor atual aparece mascarado.</p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mcpTokenInput" placeholder="token do MCP oficial" style="flex:1;min-width:280px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="mcpSave">SALVAR</button><button class="btn" id="mcpClear">LIMPAR</button></div><div id="mcpStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div><div style="margin-top:16px;border-top:1px solid #1c2942;padding-top:14px"><h3 style="font-size:12.5px;color:#e8edf7;margin-bottom:6px">Segurança dos agentes</h3><p style="font-size:11.5px;color:#8b97ad;margin-bottom:8px">100% = regras atuais (mais rígido). Abaixo, o consenso passa a tolerar vetos fracos nesta ordem: Fib leg &rarr; Fib zona &rarr; ATR climático &rarr; ADX antigo &rarr; RSI acelerando &rarr; ATR morto &rarr; Bollinger walk. Mais trades, menos segurança.</p><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><input id="safetyInput" type="number" min="0" max="100" step="5" value="100" style="width:86px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><input id="safetyRange" type="range" min="0" max="100" step="5" value="100" style="flex:1;min-width:220px" /><button class="btn arm" id="safetySave">SALVAR</button></div><div id="safetyStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div><div id="safetyShadow" style="font-size:11.5px;color:#8b97ad;margin-top:12px">—</div></div></div></div>
+<div class="modal" id="configModal"><div class="box"><h2>Configurações — API do MCP oficial</h2><p style="font-size:11.5px;color:#8b97ad;margin-bottom:10px">Cole o token da API MCP oficial da sua conta (turbo). Ele fica salvo no servidor e passa a ser usado pelos agentes; o valor atual aparece mascarado.</p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mcpTokenInput" placeholder="token do MCP oficial" style="flex:1;min-width:280px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="mcpSave">SALVAR</button><button class="btn" id="mcpClear">LIMPAR</button></div><div id="mcpStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div><div style="margin-top:16px;border-top:1px solid #1c2942;padding-top:14px"><h3 style="font-size:12.5px;color:#e8edf7;margin-bottom:6px">Segurança dos agentes</h3><p style="font-size:11.5px;color:#8b97ad;margin-bottom:8px">100% = regras atuais (mais rígido). Abaixo, o consenso passa a tolerar vetos fracos nesta ordem: Fib leg &rarr; Fib zona &rarr; ATR climático &rarr; ADX antigo &rarr; RSI acelerando &rarr; ATR morto &rarr; Bollinger walk. Mais trades, menos segurança.</p><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select id="safetySelect" style="flex:1;min-width:280px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px"></select><button class="btn arm" id="safetySave">SALVAR</button></div><div id="safetyStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div><div id="safetyShadow" style="font-size:11.5px;color:#8b97ad;margin-top:12px">—</div></div></div></div>
 <div class="modal" id="labModal"><div class="box"><h2>LAB / EXPERIMENTOS</h2><div id="labList"></div></div></div>
 <div class="modal" id="mesasModal"><div class="box"><h2>MESAS — Binary OTC</h2><div id="mesasList"></div></div></div>
 <aside id="logPanel"><div class="head"><h2>LOG — conversa dos agentes</h2><button class="btn" id="btnLogClose">fechar</button></div><div id="logBody"></div></aside>
@@ -486,28 +486,43 @@
       + "<th style='padding:4px 6px'>Segurança</th><th style='padding:4px 6px'>Entradas</th><th style='padding:4px 6px'>Liquidadas</th><th style='padding:4px 6px'>WR</th><th style='padding:4px 6px'>Break-even</th><th style='padding:4px 6px'>Margem</th><th style='padding:4px 6px'>PnL paper</th><th style='padding:4px 6px'>Ritmo</th></tr></thead><tbody>"
       + rows + "</tbody></table><div style='color:#8b97ad;margin-top:6px'>Paper trades liquidados pelo feed (stake 1). Margem = WR - break-even do payout médio.</div>";
   };
+  const fmtWr = (r) => (r.winRate == null ? "sem WR" : "WR " + String(r.winRate).replace(".", ",") + "%");
   const refreshAgentConfig = async () => {
     const data = await api("/api/iq/agents/config");
+    const shadow = await api("/api/iq/agents/shadow?hours=6");
     if (data) {
       state.agentSafetyPct = Number(data.safetyPct ?? 100);
-      $("safetyInput").value = state.agentSafetyPct;
-      $("safetyRange").value = state.agentSafetyPct;
+      state.agentVariant = String(data.variant ?? data.safetyPct ?? 100);
       const color = state.agentSafetyPct >= 100 ? "#4ade80" : state.agentSafetyPct >= 70 ? "#facc15" : "#f87171";
-      $("safetyStatus").innerHTML = "Segurança atual: <b style='color:" + color + "'>" + state.agentSafetyPct + "%</b>" + (data.fromEnv ? " (env)" : "") + " · níveis A/B: " + (data.shadowLevels ?? []).join(", ");
+      $("safetyStatus").innerHTML = "Seguranca ativa: <b style='color:" + color + "'>" + state.agentVariant + "%</b>" + (data.fromEnv ? " (env)" : "") + " · auto-arm: " + (data.autoArmPractice ? "ON" : "OFF") + " · niveis A/B: " + (data.shadowLevels ?? []).join(", ");
+      const rows = [...(shadow?.levels ?? [])].filter((r) => r.settled > 0 || r.entries > 0);
+      rows.sort((a, b) => {
+        const aCur = String(a.label ?? a.level) === state.agentVariant ? 1 : 0;
+        const bCur = String(b.label ?? b.level) === state.agentVariant ? 1 : 0;
+        if (aCur !== bCur) return bCur - aCur;
+        const aw = a.winRate == null ? -1 : Number(a.winRate);
+        const bw = b.winRate == null ? -1 : Number(b.winRate);
+        if (bw !== aw) return bw - aw;
+        return Number(b.entries ?? 0) - Number(a.entries ?? 0);
+      });
+      const sel = $("safetySelect");
+      sel.innerHTML = rows.map((r) => {
+        const label = String(r.label ?? r.level);
+        const isCur = label === state.agentVariant;
+        return "<option value='" + label + "'" + (isCur ? " selected" : "") + ">" + label + (isCur ? " (ativo)" : "") + " · " + fmtWr(r) + " · n=" + (r.settled ?? 0) + " · margem " + (r.edge == null ? "-" : (r.edge >= 0 ? "+" : "") + String(r.edge).replace(".", ",") + "pp") + "</option>";
+      }).join("");
+      if (!rows.length) sel.innerHTML = "<option value='" + state.agentVariant + "'>" + state.agentVariant + "% (sem amostra ainda)</option>";
     }
-    const shadow = await api("/api/iq/agents/shadow?hours=6");
     renderSafetyShadow(shadow);
   };
   const saveAgentConfig = async () => {
-    const value = Number($("safetyInput").value);
-    const saved = await api("/api/iq/agents/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ safetyPct: value }) });
+    const value = $("safetySelect").value;
+    const saved = await api("/api/iq/agents/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ variant: value }) });
     if (!saved) { $("safetyStatus").innerHTML = "<b style='color:#f87171'>nao foi possivel salvar</b> — sessao do painel expirou. Recarregue a pagina (Ctrl+F5) e tente de novo."; return; }
     await refreshAgentConfig();
     $("safetyStatus").innerHTML += " · <b style='color:#4ade80'>salvo</b>";
   };
   $("safetySave").onclick = saveAgentConfig;
-  $("safetyRange").oninput = (e) => { $("safetyInput").value = e.target.value; };
-  $("safetyInput").oninput = (e) => { $("safetyRange").value = e.target.value; };
   $("navConfig").onclick = () => { $("navConfig").classList.add("on"); $("configModal").classList.add("on"); refreshMcp(); refreshAgentConfig(); };
   $("configModal").onclick = (e) => { if (e.target === $("configModal")) { $("navConfig").classList.remove("on"); $("configModal").classList.remove("on"); } };
   $("mcpSave").onclick = saveMcp;

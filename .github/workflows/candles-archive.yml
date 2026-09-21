@@ -1,0 +1,58 @@
+name: candles-archive
+
+# Arquivamento dos candles de 5s do relay (binario OTC + Blitz) no proprio repo.
+# - Roda a cada 3h (e manualmente via workflow_dispatch).
+# - Mantem janela rolante de 3 dias (arquivos mais antigos sao apagados).
+# - O token do arquivo (somente leitura de candles) vem do secret RELAY_ARCHIVE_TOKEN.
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: candles-archive
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Baixar candles do dia (relay)
+        env:
+          ARCHIVE_TOKEN: ${{ secrets.RELAY_ARCHIVE_TOKEN }}
+        run: |
+          set -u
+          DATE=$(date -u +%F)
+          mkdir -p data/candles
+          code=$(curl -sS -o "data/candles/$DATE.csv.gz" -w "%{http_code}" \
+            -H "x-archive-token: $ARCHIVE_TOKEN" \
+            "https://tracecom-live-relay-production-4e43.up.railway.app/api/iq/candles/archive?date=$DATE" || echo "000")
+          if [ "$code" != "200" ]; then
+            rm -f "data/candles/$DATE.csv.gz"
+            echo "sem arquivo para $DATE (http $code)"
+          else
+            echo "arquivado $DATE ($(du -h "data/candles/$DATE.csv.gz" | cut -f1))"
+          fi
+
+      - name: Manter apenas os ultimos 3 dias
+        run: |
+          mkdir -p data/candles
+          find data/candles -name '*.csv.gz' -mtime +3 -print -delete || true
+
+      - name: Commit e push
+        run: |
+          git config user.name "tracecom-archive-bot"
+          git config user.email "archive-bot@users.noreply.github.com"
+          git add data/candles
+          if git diff --cached --quiet; then
+            echo "sem mudancas"
+            exit 0
+          fi
+          git commit -m "candles: arquivo de $(date -u +%F)"
+          git push

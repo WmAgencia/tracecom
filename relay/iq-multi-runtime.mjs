@@ -75,6 +75,7 @@ import { ConsensusRunner } from "./consensus/runner.mjs";
 import { LabRunner } from "./lab/runner.mjs";
 import { runAgentGraph, agentGraphToStrategyResult, AGENTIC_STRATEGY_ID } from "./agents/graph.mjs";
 import { SafetyShadow, parseSafetyLevels, SAFETY_SHADOW_RUN_ID } from "./agents/safety-shadow.mjs";
+import { CandlesArchive } from "./candles-archive.mjs";
 import { buildMarketSnapshot } from "./consensus/snapshot.mjs";
 import { IqMcpClient, IQ_MCP_ENDPOINTS } from "./iq-mcp-client.mjs";
 import { RsiAgentsV2Blitz } from "./rsi-agents-v2-blitz.mjs";
@@ -111,7 +112,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = false, rsiAgentsV3Enabled = true, rsiAgentsV4Enabled = false, rsiAgentsV2LiveEnabled = false, rsiAgentsV2BlitzEnabled = false, consensusEnabled = true, consensusExecute = process.env.CONSENSUS_EXECUTE === "true", labEnabled = process.env.LAB6_ENABLED === "true", labRunId = null, labStake = null, labS04Enabled = process.env.S04_50_ENABLED === "true", labS04RunId = process.env.S04_50_RUN_ID ?? null, agenticEnabled = process.env.AGENTIC_ENABLED === "true", agenticRunId = process.env.AGENTIC_RUN_ID ?? null, agenticSafetyPct = process.env.AGENTIC_SAFETY_PCT ?? null, agenticShadowLevels = process.env.AGENTIC_SHADOW_LEVELS ?? null, executionAllowlist = null, executionPolicyName = null } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = false, rsiAgentsV3Enabled = true, rsiAgentsV4Enabled = false, rsiAgentsV2LiveEnabled = false, rsiAgentsV2BlitzEnabled = false, consensusEnabled = true, consensusExecute = process.env.CONSENSUS_EXECUTE === "true", labEnabled = process.env.LAB6_ENABLED === "true", labRunId = null, labStake = null, labS04Enabled = process.env.S04_50_ENABLED === "true", labS04RunId = process.env.S04_50_RUN_ID ?? null, agenticEnabled = process.env.AGENTIC_ENABLED === "true", agenticRunId = process.env.AGENTIC_RUN_ID ?? null, agenticSafetyPct = process.env.AGENTIC_SAFETY_PCT ?? null, agenticShadowLevels = process.env.AGENTIC_SHADOW_LEVELS ?? null, autoArmPractice = process.env.AUTO_ARM_PRACTICE === "true", executionAllowlist = null, executionPolicyName = null } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -123,9 +124,13 @@ export class IqMultiRuntime extends EventEmitter {
     try { this.consensus = new ConsensusRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: consensusEnabled === true, execute: consensusExecute === true, emit: (type, payload) => this.#emitEvent(type, payload) }); } catch (error) { this.consensus = null; this.#safe(() => this.log("CONSENSUS_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     try { this.lab = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: labEnabled === true, runId: labRunId, stake: labStake, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.lab?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.lab.reportRootDir })).catch(() => undefined); } }); void this.lab.start().catch(() => undefined); } catch (error) { this.lab = null; this.#safe(() => this.log("LAB_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     try { this.labS04 = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: labS04Enabled === true, runId: labS04RunId ?? "s04-bollinger-50-20260921", stake: labStake, strategies: ["S04_BOLLINGER_MEAN_REVERSION"], cap: 50, sourceRunId: labRunId ?? "lab6-20260920-practice", sourceStrategy: "S04_BOLLINGER_MEAN_REVERSION", reportRootDir: "estrategias/experiments/s04-bollinger-50", emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.labS04?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.labS04.reportRootDir })).catch(() => undefined); } }); void this.labS04.start().catch(() => undefined); } catch (error) { this.labS04 = null; this.#safe(() => this.log("LAB_S04_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
-    try { this.agentic = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: agenticEnabled === true, runId: agenticRunId ?? "agentic-rsi-fib-20260921", stake: labStake, strategies: [AGENTIC_STRATEGY_ID], cap: 50, reportRootDir: "estrategias/experiments/agentic-rsi-fib", evaluate: (snapshot) => { const graph = runAgentGraph(snapshot, { safetyPct: this.agentSafetyPct }); if (this.safetyShadow) void this.safetyShadow.record(graph, snapshot).catch(() => undefined); return [agentGraphToStrategyResult(graph)].filter(Boolean); }, entryWindowOpenMs: 34_000, entryWindowCloseMs: 31_500, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.agentic?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.agentic.reportRootDir })).catch(() => undefined); } }); void this.agentic.start().catch(() => undefined); } catch (error) { this.agentic = null; this.#safe(() => this.log("AGENTIC_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
+    try { this.agentic = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: agenticEnabled === true, runId: agenticRunId ?? "agentic-rsi-fib-20260921", stake: labStake, strategies: [AGENTIC_STRATEGY_ID], cap: 50, reportRootDir: "estrategias/experiments/agentic-rsi-fib", evaluate: (snapshot) => { const graph = runAgentGraph(snapshot, { safetyPct: this.agentSafetyPct, filters: this.agentFilters }); if (this.safetyShadow) void this.safetyShadow.record(graph, snapshot).catch(() => undefined); return [agentGraphToStrategyResult(graph)].filter(Boolean); }, entryWindowOpenMs: 34_000, entryWindowCloseMs: 31_500, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.agentic?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.agentic.reportRootDir })).catch(() => undefined); } }); void this.agentic.start().catch(() => undefined); } catch (error) { this.agentic = null; this.#safe(() => this.log("AGENTIC_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     this.agentSafetyFromEnv = agenticSafetyPct !== null && agenticSafetyPct !== undefined && String(agenticSafetyPct).trim() !== "" && Number.isFinite(Number(agenticSafetyPct));
     this.agentSafetyPct = this.agentSafetyFromEnv ? Math.max(0, Math.min(100, Math.round(Number(agenticSafetyPct)))) : 100;
+    this.autoArmPractice = autoArmPractice === true;
+    try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
+    this.agentVariant = "";
+    this.agentFilters = null;
     try {
       this.safetyShadow = agenticEnabled === true ? new SafetyShadow({ pool, now: this.now, log: this.log, levels: parseSafetyLevels(agenticShadowLevels), entryOffsetMs: 32_750, entryToleranceMs: 1_250, candles: (marketKey, limit) => this.candlesBatch([marketKey], limit) }) : null;
     } catch (error) { this.safetyShadow = null; this.#safe(() => this.log("SAFETY_SHADOW_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
@@ -260,6 +265,11 @@ export class IqMultiRuntime extends EventEmitter {
         }).catch(() => undefined);
       }, 20_000);
       if (typeof this.configHydrationRetry.unref === "function") this.configHydrationRetry.unref();
+    if (this.autoArmPractice && !this.autoArmTimer) {
+      this.autoArmTimer = setInterval(() => { if (!this.running) return; void this.#autoArmPractice().catch(() => undefined); }, 30_000);
+      if (typeof this.autoArmTimer.unref === "function") this.autoArmTimer.unref();
+      setTimeout(() => { if (this.running) void this.#autoArmPractice().catch(() => undefined); }, 5_000).unref?.();
+    }
     if (!this.maintenanceTimer) {
       this.maintenanceTimer = setInterval(() => { if (!this.running) return; void this.runDbMaintenance().catch(() => undefined); }, 6 * 3600 * 1000);
       if (typeof this.maintenanceTimer.unref === "function") this.maintenanceTimer.unref();
@@ -279,6 +289,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.availabilityTimer) { clearTimeout(this.availabilityTimer); this.availabilityTimer = null; }
     if (this.safetyShadowTimer) { clearInterval(this.safetyShadowTimer); this.safetyShadowTimer = null; }
     if (this.maintenanceTimer) { clearInterval(this.maintenanceTimer); this.maintenanceTimer = null; }
+    if (this.autoArmTimer) { clearInterval(this.autoArmTimer); this.autoArmTimer = null; }
     const waiter = this.#disconnectedWaiter; if (waiter) { this.#disconnectedWaiter = null; waiter(); }
     try { this.client?.close(reason); } catch { /* noop */ }
     this.client = null;
@@ -891,6 +902,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.now() - lastTickEmit >= 1_000) { this.lastTickEmit.set(ctx.marketKey, this.now()); this.#emitEvent("market.tick", { marketKey: ctx.marketKey, price: candle.close, ageMs: this.now() - candle.receivedAt }); }
     this.#updateIndicative(ctx);
     this.#maybeEvaluate(ctx);
+    this.#safe(() => this.candlesArchive?.record(ctx.marketKey, candle));
   }
 
   #recordLatency(ctx, stage, value) { const list = ctx.latency[stage]; list.push(Math.max(0, Math.round(value))); if (list.length > this.maxLatencySamples) list.splice(0, list.length - this.maxLatencySamples); }
@@ -1660,11 +1672,25 @@ export class IqMultiRuntime extends EventEmitter {
     } catch (error) {
       this.#safe(() => this.log("DB_MAINTENANCE_FAIL", String(error?.message ?? error).slice(0, 160)));
     }
+    try { this.candlesArchive?.prune(); } catch { /* noop */ }
     this.#safe(() => this.log("DB_MAINTENANCE", JSON.stringify(out)));
     return out;
   }
 
-  agentConfigState() { return { safetyPct: this.agentSafetyPct, shadowLevels: this.safetyShadow ? this.safetyShadow.levels.map((spec) => spec.label) : [], shadowRunId: SAFETY_SHADOW_RUN_ID, fromEnv: this.agentSafetyFromEnv === true }; }
+  candlesArchiveStatus() { return this.candlesArchive?.status() ?? { version: "candles-archive-v1", ready: false, days: [] }; }
+  candlesArchiveDay(date) { return this.candlesArchive?.dayGzip(date) ?? null; }
+
+  async #autoArmPractice() {
+    if (this.autoArmPractice !== true) return null;
+    if (String(this.config.mode).toUpperCase() !== "PRACTICE") return null;
+    if (this.armState.armed === true) return null;
+    if (this.killSwitch.status().executionEnabled !== true) return null;
+    if (this.account?.practice?.verified !== true) return null;
+    try { const out = this.arm(2, { confirmation: true, actor: "auto" }); this.#safe(() => this.log("AUTO_ARM_PRACTICE", JSON.stringify({ at: this.now(), armed: out?.armed === true }))); return out; } catch { return null; }
+  }
+
+  agentConfigState() { return { safetyPct: this.agentSafetyPct, variant: this.agentVariant || String(this.agentSafetyPct), filters: this.agentFilters ?? null, shadowLevels: this.safetyShadow ? this.safetyShadow.levels.map((spec) => spec.label) : [], shadowRunId: SAFETY_SHADOW_RUN_ID, fromEnv: this.agentSafetyFromEnv === true, autoArmPractice: this.autoArmPractice === true }; }
+  async setAgentVariant(variant) { const raw = String(variant ?? "").trim().toUpperCase(); const match = raw.match(/^(\d{1,3})\s*([A-Z]{0,3})$/); if (!match) throw new IqWsError("AGENT_VARIANT_INVALID", raw.slice(0, 20)); const safety = Math.max(0, Math.min(100, Math.round(Number(match[1])))); const v = match[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S") } : null; this.agentSafetyPct = safety; this.agentSafetyFromEnv = false; this.agentVariant = String(safety) + v; this.agentFilters = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze) ? filters : null; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, updated_at=now() WHERE id=1", [safety, this.agentVariant]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_SET", JSON.stringify({ variant: this.agentVariant }))); return this.agentConfigState(); }
   async setAgentSafetyPct(pct) { const value = Math.round(Number(pct)); if (!Number.isFinite(value) || value < 0 || value > 100) throw new IqWsError("AGENT_SAFETY_INVALID", String(pct)); this.agentSafetyPct = value; this.agentSafetyFromEnv = false; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, updated_at=now() WHERE id=1", [value]).catch(() => undefined); this.#safe(() => this.log("AGENT_SAFETY_SET", JSON.stringify({ safetyPct: value }))); return this.agentConfigState(); }
   async setShadowLevels(levels) { const parsed = parseSafetyLevels(levels); if (!parsed.length) throw new IqWsError("AGENT_SHADOW_LEVELS_INVALID", String(levels)); this.safetyShadow?.setLevels(parsed.map((spec) => spec.label)); if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET shadow_levels=$1, updated_at=now() WHERE id=1", [parsed.map((spec) => spec.label).join(",")]).catch(() => undefined); return this.agentConfigState(); }
   async safetyShadowReport(hours = 6) { return this.safetyShadow ? this.safetyShadow.report(hours) : { version: "safety-shadow-v1", runId: SAFETY_SHADOW_RUN_ID, levels: [], activeLevels: [] }; }
@@ -4034,7 +4060,7 @@ export class IqMultiRuntime extends EventEmitter {
         if (row.hypotheses_json && Array.isArray(row.hypotheses_json.items)) for (const item of row.hypotheses_json.items) this.hypotheses.items.set(item.id, item);
         if (row.apprentice_json && sameGeneration) this.apprentice.loadFrom(row.apprentice_json);
         if (row.mode === "REAL") { this.config.mode = "REAL"; this.realMode.revoke("RESTART"); }
-        try { const agentRow = (await this.pool.query("SELECT safety_pct, shadow_levels FROM iq_agent_config WHERE id=1")).rows?.[0] ?? null; if (agentRow) { if (!this.agentSafetyFromEnv && Number.isFinite(Number(agentRow.safety_pct))) this.agentSafetyPct = Math.max(0, Math.min(100, Math.round(Number(agentRow.safety_pct)))); if (this.safetyShadow) this.safetyShadow.setLevels(agentRow.shadow_levels); } } catch { /* best effort */ }
+        try { const agentRow = (await this.pool.query("SELECT safety_pct, shadow_levels, active_variant FROM iq_agent_config WHERE id=1")).rows?.[0] ?? null; if (agentRow) { if (!this.agentSafetyFromEnv && Number.isFinite(Number(agentRow.safety_pct))) this.agentSafetyPct = Math.max(0, Math.min(100, Math.round(Number(agentRow.safety_pct)))); if (this.safetyShadow) this.safetyShadow.setLevels(agentRow.shadow_levels); const av = typeof agentRow.active_variant === "string" ? agentRow.active_variant.trim().toUpperCase() : ""; const m = av.match(/^(\d{1,3})([A-Z]{0,3})$/); if (m) { this.agentVariant = m[1] + (m[2] || ""); const v = m[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S") } : null; this.agentFilters = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze) ? filters : null; } } } catch { /* best effort */ }
       }
       const markets = (await this.pool.query("SELECT * FROM iq_markets")).rows;
       for (const market of markets) {
