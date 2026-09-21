@@ -1584,6 +1584,23 @@ export class IqMultiRuntime extends EventEmitter {
     return { test: true, marketKey, targetExpiryAt, decision: decision.decision, side: decision.side, reason: decision.reason, conversation: graph.conversation, order: { state: order?.state ?? null, brokerOrderId: order?.brokerOrderId ?? null, executionId: order?.executionId ?? null } };
   }
 
+  /** LOG humano da conversa dos agentes (agentic) para o painel LOG. */
+  async agenticLog({ limit = 40 } = {}) {
+    if (!this.pool?.query) return { entries: [] };
+    const bounded = Math.max(1, Math.min(200, Number(limit) || 40));
+    const rows = (await this.pool.query("SELECT at, market_key, decision, side, reason, payload FROM iq_lab_decisions WHERE run_id=$1 AND payload <> '{}'::jsonb ORDER BY at DESC LIMIT $2", [this.agentic?.runId ?? "agentic-rsi-fib-20260921", bounded]).catch(() => ({ rows: [] }))).rows ?? [];
+    const entries = rows.map((row) => {
+      const payload = row.payload ?? {};
+      const opinions = payload.opinions ?? {};
+      const lines = [row.market_key + "  [" + new Date(row.at).toISOString().slice(11, 19) + "]"];
+      for (const key of ["rsi", "bollinger", "adx", "atr", "fib"]) { const agent = opinions[key]; if (agent?.opinion) lines.push(String(agent.agent ?? key).toUpperCase() + ": " + agent.opinion); }
+      lines.push("DECISOR: " + row.decision + (row.side ? " " + row.side : ""));
+      lines.push("REASON: " + (row.reason ?? "-"));
+      return { at: row.at, marketKey: row.market_key, decision: row.decision, side: row.side, human: lines.join("\n") };
+    });
+    return { entries };
+  }
+
   async labStatus() {
     const states = await this.lab?.store?.strategyStates?.().catch(() => []) ?? [];
     const s04States = await this.labS04?.store?.strategyStates?.().catch(() => []) ?? [];

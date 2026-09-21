@@ -29,7 +29,7 @@ export function runConsensusAgent({ snapshot, opinions } = {}) {
   if (rsi.state === "EXTREME_ACCELERATING") counterEvidence.push({ code: "RSI_EXTREMO_ACELERANDO", detail: `slope ${rsi.rsi} acelerando para o extremo` });
   if (fib?.state === "ZONE_BROKEN") counterEvidence.push({ code: "FIB_ZONE_BROKEN", detail: "anchor do leg perdido" });
   if (fib?.state === "OUT_OF_ZONE") counterEvidence.push({ code: "FIB_FORA_DE_ZONA", detail: "fora das zonas 38.2/50.0/61.8" });
-  if (fib?.state === "IN_ZONE") counterEvidence.push({ code: "FIB_SEM_REACAO", detail: "na zona sem reacao" });
+  if (["AT_EXTREME", "IN_RETRACEMENT", "IN_ZONE"].includes(fib?.state)) counterEvidence.push({ code: "FIB_SEM_REACAO", detail: "sem reacao no extremo/zona ainda" });
 
   const rsiQuality = Boolean(rsi.divergence || rsi.failureSwing || rsi.crossback);
   if (rsiQuality) supportingEvidence.push({ code: "RSI_QUALIDADE", detail: rsi.divergence ? `divergencia ${rsi.divergence.toLowerCase()}` : rsi.failureSwing ? `failure swing ${rsi.failureSwing.toLowerCase()}` : "crossback do extremo" });
@@ -47,7 +47,7 @@ export function runConsensusAgent({ snapshot, opinions } = {}) {
   const atrSupports = atr?.state === "NORMAL" && atr?.climactic !== true;
   if (atrSupports) supportingEvidence.push({ code: "ATR_SUPORTE", detail: `ratio ${atr?.ratio}` });
   const fibAligned = fib?.direction === side;
-  const fibSupports = fib?.state === "ZONE_REACTION" && fibAligned;
+  const fibSupports = (fib?.state === "AT_EXTREME_REACTION" || fib?.state === "ZONE_REJECTION" || fib?.state === "ZONE_REACTION") && fibAligned;
   if (fibSupports) supportingEvidence.push({ code: "FIB_CONFLUENCIA", detail: `reacao na zona ${(fib.inZone ?? []).join("/")} (leg ${fib.direction})` });
   if (!fibAligned) counterEvidence.push({ code: "FIB_LEG_INCOMPATIVEL", detail: `leg ${fib?.direction} nao confirma a queda/alta da tese ${side}` });
 

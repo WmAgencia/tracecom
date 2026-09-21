@@ -339,7 +339,7 @@
   };
   const refreshLog = async () => {
     if (!logOpen) return;
-    const data = await api("/api/iq/research/consensus/log?limit=30");
+    const data = await api("/api/iq/agents/log?limit=30");
     const body = $("logBody"); body.innerHTML = "";
     for (const entry of data?.entries ?? []) { const pre = document.createElement("pre"); pre.textContent = entry.human; body.append(pre); }
   };
