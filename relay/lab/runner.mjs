@@ -61,7 +61,10 @@ export class LabRunner {
   }
 
   practiceOk() {
-    return String(this.runtime?.config?.mode).toUpperCase() === "PRACTICE" && this.runtime?.accountContext?.context === "PRACTICE";
+    // Avaliacao roda em PRACTICE e REAL (o gasto real e decidido no submit: armado envia, desarmado dry-run).
+    const mode = String(this.runtime?.config?.mode ?? "").toUpperCase();
+    const ctx = String(this.runtime?.accountContext?.context ?? "").toUpperCase();
+    return (mode === "PRACTICE" || mode === "REAL") && (ctx === "PRACTICE" || ctx === "REAL");
   }
 
   hasActiveOpportunity(marketKey) {
