@@ -60,9 +60,9 @@ export class LabStore {
     return null;
   }
 
-  async updateTradeState({ strategyTradeId, state, executionId = null, brokerOrderId = null, actualExpiry = null }) {
+  async updateTradeState({ strategyTradeId, state, executionId = null, brokerOrderId = null, actualExpiry = null, rejectReason = null }) {
     if (!this.pool?.query) return;
-    await this.pool.query("UPDATE iq_lab_trades SET state=$2, execution_id=COALESCE($3, execution_id), broker_order_id=COALESCE($4, broker_order_id), actual_expiry=COALESCE($5, actual_expiry), updated_at=now() WHERE strategy_trade_id=$1", [strategyTradeId, state, executionId, brokerOrderId, actualExpiry]);
+    await this.pool.query("UPDATE iq_lab_trades SET state=$2, execution_id=COALESCE($3, execution_id), broker_order_id=COALESCE($4, broker_order_id), actual_expiry=COALESCE($5, actual_expiry), reject_reason=COALESCE($6, reject_reason), updated_at=now() WHERE strategy_trade_id=$1", [strategyTradeId, state, executionId, brokerOrderId, actualExpiry, rejectReason]);
   }
 
   async releaseSlot(strategyId, { result = null } = {}) {

@@ -14,7 +14,7 @@ export const AGENTIC_GRAPH_VERSION = "agentic-graph-v1";
 export const AGENTIC_STRATEGY_ID = "AGENTIC_RSI_FIB_V1";
 export const AGENTIC_STRATEGY_VERSION = "agentic-rsi-fib-v1";
 
-export function runAgentGraph(snapshot) {
+export function runAgentGraph(snapshot, { safetyPct = 100, filters = null } = {}) {
   const startedAt = Date.now();
   if (!snapshot) return null;
   const opinions = {
@@ -24,7 +24,7 @@ export function runAgentGraph(snapshot) {
     atr: analyzeAtrAgent(snapshot),
     fib: analyzeFibAgent(snapshot),
   };
-  const consensus = runConsensusAgent({ snapshot, opinions });
+  const consensus = runConsensusAgent({ snapshot, opinions, safetyPct, filters });
   return { version: AGENTIC_GRAPH_VERSION, snapshotId: snapshot.snapshotId, at: snapshot.at, opinions, consensus, conversation: consensus.conversation, latencyMs: Date.now() - startedAt };
 }
 

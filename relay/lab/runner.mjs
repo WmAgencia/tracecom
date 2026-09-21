@@ -95,7 +95,7 @@ export class LabRunner {
       if (changed || stale) {
         if (!st.persistByMarket) st.persistByMarket = new Map();
         st.persistByMarket.set(persistKey, { decision: result.decision, side: result.side ?? null, at });
-        void this.store.persistDecision({ strategyId: result.strategyId, marketKey, snapshotId: result.snapshotId, decision: result.decision, side: result.side, reason: result.reason, evidenceStrength: result.evidenceStrength, counter: result.counterEvidence, payload: result.specialistOutputs ?? null }).catch(() => undefined);
+        void this.store.persistDecision({ strategyId: result.strategyId, marketKey, snapshotId: result.snapshotId, decision: result.decision, side: result.side, reason: result.reason, evidenceStrength: result.evidenceStrength, counter: result.counterEvidence, payload: result.opportunity === true ? (result.specialistOutputs ?? null) : { graph: result.specialistOutputs?.graph ?? null, opinions: { rsi: result.specialistOutputs?.opinions?.rsi ?? null }, slim: true } }).catch(() => undefined);
       }
       if (!approved) continue;
       const expiry = Number(targetExpiryAt);
@@ -176,7 +176,7 @@ export class LabRunner {
       this.emit("lab.order", { strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId, executionId: order?.executionId ?? null, at });
       this.log("LAB_ORDER", JSON.stringify({ strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId }));
     } catch (error) {
-      await this.store.updateTradeState({ strategyTradeId, state: "REJECTED" }).catch(() => undefined);
+      await this.store.updateTradeState({ strategyTradeId, state: "REJECTED", rejectReason: String(error?.code ?? error?.message ?? error).slice(0, 200) }).catch(() => undefined);
       await this.store.releaseReservation(result.strategyId).catch((releaseError) => this.log("LAB_RELEASE_FAIL", String(releaseError?.message ?? releaseError).slice(0, 160)));
       this.counters.rejected += 1;
       this.log("LAB_ORDER_REJECTED", JSON.stringify({ strategyId: result.strategyId, marketKey, strategyTradeId, code: String(error?.code ?? error?.message ?? error).slice(0, 140) }));

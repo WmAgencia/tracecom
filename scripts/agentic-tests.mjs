@@ -5,6 +5,8 @@ const require = createRequire(new URL("../relay/package.json", import.meta.url))
 const pg = require("pg");
 import { buildMarketSnapshot } from "../relay/consensus/snapshot.mjs";
 import { runAgentGraph, agentGraphToStrategyResult, AGENTIC_STRATEGY_ID } from "../relay/agents/graph.mjs";
+import { detectConstantMove, runConsensusAgent } from "../relay/agents/consensus.agent.mjs";
+import { parseSafetyLevels } from "../relay/agents/safety-shadow.mjs";
 import { LabRunner } from "../relay/lab/runner.mjs";
 import { LabStore } from "../relay/lab/store.mjs";
 
@@ -72,6 +74,57 @@ try {
   const { runConsensusAgent } = await import("../relay/agents/consensus.agent.mjs");
   const synthetic = runConsensusAgent({ snapshot, opinions: { rsi: { trigger: true, side: "SELL", rsi: 75, state: "CROSSBACK", divergence: null, failureSwing: null, crossback: true, line50Ok: true, quality: 0.6, opinion: "teste" }, bollinger: { regime: "RANGE", rejection: "UPPER", walkSide: null, position: 0.9, strength: 0.5, opinion: "teste" }, adx: { regime: "RANGE", dominance: "PLUS", adx: 18, perSide: { SELL: { oldTrendWeakening: true, oppositeReacting: true, newDominance: false, oldStrengthening: false } }, strength: 0.4, opinion: "teste" }, atr: { state: "NORMAL", climactic: false, ratio: 1, opinion: "teste" }, fib: { state: "ZONE_REACTION", direction: "BUY", inZone: ["50.0"], strength: 0.7, opinion: "teste" } } });
   check(12, "Fib com leg incompativel bloqueia a tese (semantica de reversao)", synthetic.decision === "WAIT" && synthetic.counterEvidence.some((r) => r.code === "FIB_LEG_INCOMPATIVEL"));
+
+  const safetyLevels = [100, 90, 85, 80, 70, 60, 50, 40, 30, 20, 10, 0];
+  const safetyRuns = safetyLevels.map((level) => ({ level, decision: runAgentGraph(snapshot, { safetyPct: level }).consensus.decision }));
+  const approvedAt = (level) => { const row = safetyRuns.find((r) => r.level === level); return row?.decision === "BUY" || row?.decision === "SELL"; };
+  const monotonic = safetyLevels.every((level, index) => index === 0 || !approvedAt(safetyLevels[index - 1]) || approvedAt(level));
+  check(13, "seguranca: aprovacao monotonica (abaixar nunca bloqueia o que ja passava)", monotonic, safetyRuns.map((r) => r.level + ":" + r.decision).join(" "));
+  const zeroSafety = runAgentGraph(snapshot, { safetyPct: 0 }).consensus;
+  check(14, "seguranca 0% aprova todo gatilho (tolerancia total)", zeroSafety.decision === "BUY" || zeroSafety.decision === "SELL");
+  const strictSafety = runAgentGraph(snapshot, { safetyPct: 100 }).consensus;
+  check(15, "seguranca 100% mantem tolerancia zero (budget 0)", strictSafety.tolerance?.budget === 0 && strictSafety.tolerance?.safetyPct === 100);
+
+  const steadyCloses = Array.from({ length: 90 }, (_, i) => base + unit * 0.4 * (90 - i));
+  const steadyCandles = makeCandles({ closes: steadyCloses });
+  const steadySnap = buildMarketSnapshot({ marketKey: "T:OTC", marketType: "OTC", candles: steadyCandles, now: steadyCandles[steadyCandles.length - 1].bucketEnd });
+  const steadyDet = detectConstantMove({ snapshot: steadySnap, side: "BUY", atrNormalized: unit * 0.5, adxValue: 40, adxSlope: 2 });
+  check(16, "detector de constancia identifica queda constante contra tese BUY", steadyDet.constant === true, steadyDet.detail);
+  const choppyDet = detectConstantMove({ snapshot: { recentCandles: neutral() }, side: "BUY", atrNormalized: unit * 0.5, adxValue: 40, adxSlope: 2 });
+  check(17, "detector nao marca mercado lateral como constancia", choppyDet.constant === false, choppyDet.detail);
+  const syntheticOpinions = {
+    rsi: { trigger: true, side: "BUY", rsi: 27, state: "EXTREME", divergence: "BULLISH", failureSwing: null, crossback: false, quality: 0.8, line50Ok: true },
+    bollinger: { regime: "RANGE", rejection: "LOWER", strength: 0.6, state: "RANGE", position: 0.2, walkSide: null },
+    adx: { regime: "TREND", dominance: "MINUS", adx: 40, adxSlope: 2, perSide: { BUY: { oldStrengthening: false, oldTrendWeakening: true, oppositeReacting: false, newDominance: false }, SELL: {} } },
+    atr: { state: "NORMAL", climactic: false, ratio: 1, atrNormalized: unit * 0.5, strength: 0.5 },
+    fib: { direction: "BUY", state: "ZONE_REJECTION", inZone: [38.2], strength: 0.6 },
+  };
+  const forcedConsensus = runConsensusAgent({ snapshot: steadySnap, opinions: syntheticOpinions, safetyPct: 50 });
+  check(18, "constancia contra a tese barra em qualquer nivel (veto sempre ativo)", forcedConsensus.decision === "WAIT" && String(forcedConsensus.reason).includes("MOVIMENTO_CONSTANTE_CONTRA"), String(forcedConsensus.reason).slice(0, 90));
+  const nonConstantConsensus = runAgentGraph(snapshot, { safetyPct: 50 }).consensus;
+  check(20, "movimento nao-constante segue aprovando (sem regressao)", nonConstantConsensus.decision === "SELL", String(nonConstantConsensus.reason).slice(0, 70));
+  const flatCandles = neutral();
+  const flatSnap = buildMarketSnapshot({ marketKey: "T:OTC", marketType: "OTC", candles: flatCandles, now: flatCandles[flatCandles.length - 1].bucketEnd });
+  const withLast = (candle) => ({ ...flatSnap, recentCandles: [...(flatSnap.recentCandles ?? []).slice(0, -1), candle] });
+  const redLast = { bucketStart: 0, bucketEnd: 0, open: 1.1, high: 1.1005, low: 1.0985, close: 1.099 };
+  const greenLast = { bucketStart: 0, bucketEnd: 0, open: 1.099, high: 1.101, low: 1.0985, close: 1.1005 };
+  const cfBlocked = runConsensusAgent({ snapshot: withLast(redLast), opinions: syntheticOpinions, safetyPct: 50, filters: { confirmation: true } });
+  check(21, "filtro CF barra quando o ultimo candle ainda esta contra a tese", cfBlocked.decision === "WAIT" && String(cfBlocked.reason).includes("SEM_CONFIRMACAO_REVERSAO"), String(cfBlocked.reason).slice(0, 80));
+  const cfOk = runConsensusAgent({ snapshot: withLast(greenLast), opinions: syntheticOpinions, safetyPct: 50, filters: { confirmation: true } });
+  check(22, "filtro CF libera quando o candle ja virou na direcao da tese", cfOk.decision === "BUY", String(cfOk.reason).slice(0, 60));
+  const withStoch = (k, d, kLag) => ({ ...withLast(greenLast), indicators: { ...flatSnap.indicators, stochastic: { k, d, kLag } } });
+  const stBlocked = runConsensusAgent({ snapshot: withStoch(55, 50, 60), opinions: syntheticOpinions, safetyPct: 50, filters: { stochastic: true } });
+  check(23, "filtro ST barra quando o stochastic nao esta no extremo", stBlocked.decision === "WAIT" && String(stBlocked.reason).includes("STOCH_SEM_EXTREMO"), String(stBlocked.reason).slice(0, 80));
+  const stOk = runConsensusAgent({ snapshot: withStoch(12, 15, 8), opinions: syntheticOpinions, safetyPct: 50, filters: { stochastic: true } });
+  check(24, "filtro ST libera no extremo com k virando", stOk.decision === "BUY", String(stOk.reason).slice(0, 60));
+  const squeezeOpinions = { ...syntheticOpinions, bollinger: { ...syntheticOpinions.bollinger, squeeze: true, regime: "SQUEEZE", state: "SQUEEZE" } };
+  const sqBlocked = runConsensusAgent({ snapshot: withLast(greenLast), opinions: squeezeOpinions, safetyPct: 50, filters: { noSqueeze: true } });
+  check(25, "filtro S barra entradas durante squeeze", sqBlocked.decision === "WAIT" && String(sqBlocked.reason).includes("SQUEEZE_SEM_REVERSAO"), String(sqBlocked.reason).slice(0, 80));
+  const sqOk = runConsensusAgent({ snapshot: withLast(greenLast), opinions: syntheticOpinions, safetyPct: 50, filters: { noSqueeze: true } });
+  check(26, "filtro S libera fora do squeeze", sqOk.decision === "BUY", String(sqOk.reason).slice(0, 60));
+  const parsedLevels = parseSafetyLevels("100,90,80,70,50,50C");
+  check(19, "niveis shadow aceitam variante (50C)", parsedLevels.length === 6 && parsedLevels.some((l) => l.label === "50C" && l.variant === "C" && l.safetyPct === 50));
+
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\nAGENTIC_TESTS ${failed.length === 0 ? "ALL_PASS" : "FAILURES=" + failed.length} (${results.length - failed.length}/${results.length})`);

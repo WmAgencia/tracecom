@@ -125,7 +125,7 @@ try {
   check(18, "Execution Gate continua funcionando (rejeicao devolve slot)", rejectRunner.counters.rejected >= 1, `rejected=${rejectRunner.counters.rejected}`);
 
   const grid = fs.readFileSync(new URL("../src/http/public/grid.html", import.meta.url), "utf8");
-  check(19, "frontend grid continua funcionando", grid.includes("Grid Binary OTC") && grid.includes("/api/iq/candles"));
+  check(19, "frontend grid continua funcionando", grid.includes("MESAS") && grid.includes("id=\"grid\"") && grid.includes("/api/iq/candles"));
   const server = fs.readFileSync(new URL("../relay/server.mjs", import.meta.url), "utf8");
   check(20, "LOG continua funcionando (rota consensus/log + lab decisions)", server.includes("/api/iq/research/consensus/log") && fs.existsSync(new URL("../relay/lab/store.mjs", import.meta.url)));
 

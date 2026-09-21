@@ -26,6 +26,32 @@ CREATE TABLE IF NOT EXISTS iq_lab_strategy_state (
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (run_id, strategy_id)
 );
+CREATE TABLE IF NOT EXISTS iq_agent_config (
+  id integer PRIMARY KEY DEFAULT 1,
+  safety_pct integer NOT NULL DEFAULT 100,
+  shadow_levels text NOT NULL DEFAULT '100,90,80,70,50',
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS iq_shadow_trades (
+  id bigserial PRIMARY KEY,
+  run_id text NOT NULL,
+  level integer NOT NULL,
+  market_key text NOT NULL,
+  side text NOT NULL,
+  entry_price numeric,
+  close_price numeric,
+  payout numeric,
+  expiry_at timestamptz NOT NULL,
+  snapshot_id text,
+  reason text,
+  result text,
+  pnl numeric,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  settled_at timestamptz,
+  UNIQUE (run_id, level, market_key, expiry_at)
+);
+
 CREATE TABLE IF NOT EXISTS iq_lab_trades (
   strategy_trade_id text PRIMARY KEY,
   run_id text NOT NULL,
@@ -54,6 +80,7 @@ CREATE TABLE IF NOT EXISTS iq_lab_trades (
   execution_id text,
   broker_order_id text,
   state text NOT NULL DEFAULT 'REQUESTED',
+  reject_reason text,
   excluded boolean NOT NULL DEFAULT false,
   settlement_at timestamptz,
   entry_price numeric,

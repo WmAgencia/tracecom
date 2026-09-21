@@ -7,7 +7,23 @@ export const CONSENSUS_AGENT_VERSION = "agent-consensus-v1";
 const round = (v, d = 4) => (Number.isFinite(Number(v)) ? Number(Number(v).toFixed(d)) : null);
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-export function runConsensusAgent({ snapshot, opinions } = {}) {
+export const VETO_SEVERITY = Object.freeze({ MOVIMENTO_CONSTANTE_CONTRA: 99, SEM_CONFIRMACAO_REVERSAO: 99, STOCH_SEM_EXTREMO: 99, SQUEEZE_SEM_REVERSAO: 99, FIB_LEG_INCOMPATIVEL: 1, FIB_ZONE_BROKEN: 2, ATR_MOVIMENTO_CLIMATICO: 3, ADX_TENDENCIA_ANTIGA_FORTALECENDO: 4, RSI_EXTREMO_ACELERANDO: 5, ATR_MERCADO_MORTO: 6, BOLLINGER_WALK_CONTRA: 7 });
+const MISSING_SEVERITY = Object.freeze({ "LOCALIZACAO(Bollinger OU Fib)": 3, ATR: 4, ADX: 5, RSI_QUALIDADE: 6 });
+const safetyOf = (v) => (Number.isFinite(Number(v)) ? Math.max(0, Math.min(100, Number(v))) : 100);
+const budgetOf = (safety) => (safety >= 100 ? 0 : safety <= 0 ? 99 : Math.floor((100 - safety) / 5));
+const tolerate = (items, budget, severityOf) => {
+  const sorted = [...items].sort((a, b) => severityOf(a) - severityOf(b));
+  const tolerated = []; const blocking = []; let used = 0;
+  for (const item of sorted) {
+    const cost = severityOf(item);
+    if (used + cost <= budget) { used += cost; tolerated.push(item); } else blocking.push(item);
+  }
+  return { tolerated, blocking, used };
+};
+
+export function runConsensusAgent({ snapshot, opinions, safetyPct = 100, filters = null } = {}) {
+  const safety = safetyOf(safetyPct);
+  const budget = budgetOf(safety);
   const snapshotId = snapshot?.snapshotId ?? null;
   const at = snapshot?.at ?? Date.now();
   const rsi = opinions?.rsi ?? null; const bollinger = opinions?.bollinger ?? null; const adx = opinions?.adx ?? null;
@@ -31,6 +47,30 @@ export function runConsensusAgent({ snapshot, opinions } = {}) {
   if (fib?.state === "OUT_OF_ZONE") counterEvidence.push({ code: "FIB_FORA_DE_ZONA", detail: "fora das zonas 38.2/50.0/61.8" });
   if (["AT_EXTREME", "IN_RETRACEMENT", "IN_ZONE"].includes(fib?.state)) counterEvidence.push({ code: "FIB_SEM_REACAO", detail: "sem reacao no extremo/zona ainda" });
 
+  const constancia = detectConstantMove({ snapshot, side, atrNormalized: atr?.atrNormalized, adxValue: adx?.adx, adxSlope: adx?.adxSlope });
+  if (constancia.constant) counterEvidence.push({ code: "MOVIMENTO_CONSTANTE_CONTRA", detail: constancia.detail });
+
+  if (filters?.confirmation === true) {
+    const candles = Array.isArray(snapshot?.recentCandles) ? snapshot.recentCandles : [];
+    const last = candles[candles.length - 1] ?? null;
+    const candleTurned = last ? (buy ? Number(last.close) > Number(last.open) : Number(last.close) < Number(last.open)) : false;
+    const crossback = rsi?.crossback === true;
+    if (!candleTurned && !crossback) counterEvidence.push({ code: "SEM_CONFIRMACAO_REVERSAO", detail: "ultimo candle 5s ainda contra a tese e RSI sem crossback" });
+  }
+  if (filters?.noSqueeze === true) {
+    const isSqueeze = bollinger?.squeeze === true || String(bollinger?.regime ?? bollinger?.state ?? "").toUpperCase() === "SQUEEZE";
+    if (isSqueeze) counterEvidence.push({ code: "SQUEEZE_SEM_REVERSAO", detail: "Bollinger em squeeze (risco de breakout contra a reversao)" });
+  }
+  if (filters?.stochastic === true) {
+    const stoch = snapshot?.indicators?.stochastic ?? null;
+    const k = Number(stoch?.k);
+    const kLag = Number(stoch?.kLag);
+    if (Number.isFinite(k)) {
+      const zoneOk = buy ? (k <= 25 && (!Number.isFinite(kLag) || k > kLag)) : (k >= 75 && (!Number.isFinite(kLag) || k < kLag));
+      if (!zoneOk) counterEvidence.push({ code: "STOCH_SEM_EXTREMO", detail: "k " + k.toFixed(1) + " d " + String(stoch?.d ?? "-") + " kLag " + (Number.isFinite(kLag) ? kLag.toFixed(1) : "-") });
+    }
+  }
+
   const rsiQuality = Boolean(rsi.divergence || rsi.failureSwing || rsi.crossback);
   if (rsiQuality) supportingEvidence.push({ code: "RSI_QUALIDADE", detail: rsi.divergence ? `divergencia ${rsi.divergence.toLowerCase()}` : rsi.failureSwing ? `failure swing ${rsi.failureSwing.toLowerCase()}` : "crossback do extremo" });
   else counterEvidence.push({ code: "RSI_SEM_QUALIDADE", detail: "extremo sem divergencia/failure swing/crossback (apenas alerta)" });
@@ -51,30 +91,69 @@ export function runConsensusAgent({ snapshot, opinions } = {}) {
   if (fibSupports) supportingEvidence.push({ code: "FIB_CONFLUENCIA", detail: `reacao na zona ${(fib.inZone ?? []).join("/")} (leg ${fib.direction})` });
   if (!fibAligned) counterEvidence.push({ code: "FIB_LEG_INCOMPATIVEL", detail: `leg ${fib?.direction} nao confirma a queda/alta da tese ${side}` });
 
-  const hardBlocked = counterEvidence.some((row) => ["FIB_LEG_INCOMPATIVEL", "ATR_MERCADO_MORTO", "ATR_MOVIMENTO_CLIMATICO", "BOLLINGER_WALK_CONTRA", "ADX_TENDENCIA_ANTIGA_FORTALECENDO", "RSI_EXTREMO_ACELERANDO", "FIB_ZONE_BROKEN"].includes(row.code));
+  const vetoRows = counterEvidence.filter((row) => VETO_SEVERITY[row.code] != null);
+  const vetoPick = tolerate(vetoRows, budget, (row) => VETO_SEVERITY[row.code]);
+  const hardBlocked = vetoPick.blocking.length > 0;
   const evidenceStrength = clamp01(0.3 * (rsi.quality ?? 0) + 0.2 * (bollinger?.strength ?? 0) + 0.2 * (adx?.strength ?? 0) + 0.1 * (atrSupports ? 1 : 0) + 0.2 * (fib?.strength ?? 0));
 
   if (hardBlocked) {
     return { ...base, side, evidenceStrength: round(evidenceStrength, 4), supportingEvidence, counterEvidence,
-      reason: `Oportunidade ${side} barrada: ${counterEvidence.filter((r) => hardBlockedCodes.includes(r.code)).map((r) => r.code).join("+")}.`,
-      conversation: buildConversation(opinions, `Bloqueio duro: ${counterEvidence.filter((r) => hardBlockedCodes.includes(r.code)).map((r) => r.code).join("+")}`) };
+      reason: `Oportunidade ${side} barrada: ${vetoPick.blocking.map((r) => r.code).join("+")}.`,
+      tolerance: { safetyPct: safety, budget, tolerated: vetoPick.tolerated.map((r) => r.code) },
+      conversation: buildConversation(opinions, `Bloqueio duro: ${vetoPick.blocking.map((r) => r.code).join("+")}`) };
   }
   const locationOk = bollingerSupports || fibSupports;
-  const missing = [!rsiQuality ? "RSI_QUALIDADE" : null, !adxSupports ? "ADX" : null, !atrSupports ? "ATR" : null, !locationOk ? "LOCALIZACAO(Bollinger OU Fib)" : null].filter(Boolean);
+  const missingAll = [!rsiQuality ? "RSI_QUALIDADE" : null, !adxSupports ? "ADX" : null, !atrSupports ? "ATR" : null, !locationOk ? "LOCALIZACAO(Bollinger OU Fib)" : null].filter(Boolean);
+  const missingPick = tolerate(missingAll, budget - vetoPick.used, (item) => MISSING_SEVERITY[item] ?? 9);
+  const missing = missingPick.blocking;
+  const toleratedMissing = missingPick.tolerated;
   if (missing.length) {
     return { ...base, side, evidenceStrength: round(evidenceStrength, 4), supportingEvidence, counterEvidence,
       reason: `Confluencia incompleta para ${side}: falta ${missing.join(" + ")}. WAIT.`,
+      tolerance: { safetyPct: safety, budget, tolerated: [...vetoPick.tolerated.map((r) => r.code), ...toleratedMissing] },
       conversation: buildConversation(opinions, `Falta confluencia: ${missing.join(" + ")}`) };
   }
   return {
     agent: "CONSENSUS", version: CONSENSUS_AGENT_VERSION, snapshotId, at, decision: side, side, evidenceStrength: round(evidenceStrength, 4),
     supportingEvidence, counterEvidence,
-    reason: `Reversao ${side} confirmada: RSI ${rsi.rsi} (${rsi.state.toLowerCase()}) + Bollinger ${bollinger?.rejection ?? bollinger?.regime} + ADX ${adx?.regime}/${adx?.dominance} + ATR normal + Fibonacci ${(fib?.inZone ?? []).join("/")}.`,
+    tolerance: { safetyPct: safety, budget, tolerated: [...vetoPick.tolerated.map((r) => r.code), ...toleratedMissing] },
+    reason: `Reversao ${side} confirmada: RSI ${rsi.rsi} (${rsi.state.toLowerCase()}) + Bollinger ${bollinger?.rejection ?? bollinger?.regime} + ADX ${adx?.regime}/${adx?.dominance} + ATR normal + Fibonacci ${(fib?.inZone ?? []).join("/")}.` + (safety < 100 ? ` [seguranca ${safety}%]` : ""),
     conversation: buildConversation(opinions, `Confluencia completa -> ${side}`),
   };
 }
 
-const hardBlockedCodes = ["FIB_LEG_INCOMPATIVEL", "ATR_MERCADO_MORTO", "ATR_MOVIMENTO_CLIMATICO", "BOLLINGER_WALK_CONTRA", "ADX_TENDENCIA_ANTIGA_FORTALECENDO", "RSI_EXTREMO_ACELERANDO", "FIB_ZONE_BROKEN"];
+
+export function detectConstantMove({ snapshot, side, atrNormalized = null, adxValue = null, adxSlope = null, lookback = 8 } = {}) {
+  const candles = Array.isArray(snapshot?.recentCandles) ? snapshot.recentCandles.slice(-lookback) : [];
+  if (candles.length < 6) return { constant: false, detail: "dados insuficientes" };
+  const first = Number(candles[0]?.close);
+  const last = Number(candles[candles.length - 1]?.close);
+  if (!Number.isFinite(first) || !Number.isFinite(last)) return { constant: false, detail: "candles invalidos" };
+  const net = last - first;
+  const against = side === "BUY" ? -1 : 1;
+  const dirMove = net > 0 ? 1 : net < 0 ? -1 : 0;
+  if (dirMove === 0 || dirMove !== against) return { constant: false, detail: "sem movimento contra a tese" };
+  let sameDir = 0; let run = first; let maxAdverse = 0;
+  for (let i = 1; i < candles.length; i += 1) {
+    const close = Number(candles[i]?.close);
+    const prev = Number(candles[i - 1]?.close);
+    if (!Number.isFinite(close) || !Number.isFinite(prev)) continue;
+    if (Math.sign(close - prev) === dirMove) sameDir += 1;
+    if (dirMove < 0) { run = Math.min(run, close); maxAdverse = Math.max(maxAdverse, close - run); }
+    else { run = Math.max(run, close); maxAdverse = Math.max(maxAdverse, run - close); }
+  }
+  const legs = candles.length - 1;
+  const consistency = legs > 0 ? sameDir / legs : 0;
+  const lastClose = Number(candles[candles.length - 1]?.close);
+  const atr = Number(atrNormalized) > 0 && Number.isFinite(lastClose) && lastClose > 0 ? Number(atrNormalized) * lastClose : null;
+  const netAtr = atr ? Math.abs(net) / atr : null;
+  const pullbackRatio = atr ? maxAdverse / atr : null;
+  const adxOk = !Number.isFinite(Number(adxValue)) || Number(adxValue) >= 30;
+  const slopeOk = !Number.isFinite(Number(adxSlope)) || Number(adxSlope) > 0;
+  const moveOk = netAtr === null || netAtr >= 1.2;
+  const constant = consistency >= 0.72 && (pullbackRatio === null || pullbackRatio <= 0.6) && moveOk && adxOk && slopeOk;
+  return { constant, detail: "net " + (netAtr === null ? net.toFixed(6) : netAtr.toFixed(2) + "xATR") + " contra a tese, consistencia " + (consistency * 100).toFixed(0) + "%, pullback " + (pullbackRatio === null ? "-" : pullbackRatio.toFixed(2) + "xATR") + ", ADX " + (Number.isFinite(Number(adxValue)) ? adxValue : "-") + " slope " + (Number.isFinite(Number(adxSlope)) ? adxSlope : "-") };
+}
 
 function buildConversation(opinions, consensusLine = null) {
   const lines = [];

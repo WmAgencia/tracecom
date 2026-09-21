@@ -175,7 +175,7 @@
   <span class="ok"><span class="dot"></span> <span id="footConn">Conectado</span></span>
 </div>
 
-<div class="modal" id="configModal"><div class="box"><h2>Configurações — API do MCP oficial</h2><p style="font-size:11.5px;color:#8b97ad;margin-bottom:10px">Cole o token da API MCP oficial da sua conta (turbo). Ele fica salvo no servidor e passa a ser usado pelos agentes; o valor atual aparece mascarado.</p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mcpTokenInput" placeholder="token do MCP oficial" style="flex:1;min-width:280px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="mcpSave">SALVAR</button><button class="btn" id="mcpClear">LIMPAR</button></div><div id="mcpStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div></div></div>
+<div class="modal" id="configModal"><div class="box"><h2>Configurações — API do MCP oficial</h2><p style="font-size:11.5px;color:#8b97ad;margin-bottom:10px">Cole o token da API MCP oficial da sua conta (turbo). Ele fica salvo no servidor e passa a ser usado pelos agentes; o valor atual aparece mascarado.</p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mcpTokenInput" placeholder="token do MCP oficial" style="flex:1;min-width:280px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="mcpSave">SALVAR</button><button class="btn" id="mcpClear">LIMPAR</button></div><div id="mcpStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div><div style="margin-top:16px;border-top:1px solid #1c2942;padding-top:14px"><h3 style="font-size:12.5px;color:#e8edf7;margin-bottom:6px">Segurança dos agentes</h3><p style="font-size:11.5px;color:#8b97ad;margin-bottom:8px">100% = regras atuais (mais rígido). Abaixo, o consenso passa a tolerar vetos fracos nesta ordem: Fib leg &rarr; Fib zona &rarr; ATR climático &rarr; ADX antigo &rarr; RSI acelerando &rarr; ATR morto &rarr; Bollinger walk. Mais trades, menos segurança.</p><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><input id="safetyInput" type="number" min="0" max="100" step="5" value="100" style="width:86px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><input id="safetyRange" type="range" min="0" max="100" step="5" value="100" style="flex:1;min-width:220px" /><button class="btn arm" id="safetySave">SALVAR</button></div><div id="safetyStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div><div id="safetyShadow" style="font-size:11.5px;color:#8b97ad;margin-top:12px">—</div></div></div></div>
 <div class="modal" id="labModal"><div class="box"><h2>LAB / EXPERIMENTOS</h2><div id="labList"></div></div></div>
 <div class="modal" id="mesasModal"><div class="box"><h2>MESAS — Binary OTC</h2><div id="mesasList"></div></div></div>
 <aside id="logPanel"><div class="head"><h2>LOG — conversa dos agentes</h2><button class="btn" id="btnLogClose">fechar</button></div><div id="logBody"></div></aside>
@@ -184,7 +184,7 @@
 <script>
 (() => {
   "use strict";
-  const state = { markets: [], cards: new Map(), results: new Map(), consensus: new Map(), agentic: new Map(), candles: new Map(), lastDraw: new Map(), lastResultText: new Map(), lastChip: new Map(), mode: "PRACTICE", perf: null };
+  const state = { markets: [], cards: new Map(), results: new Map(), consensus: new Map(), agentic: new Map(), candles: new Map(), lastDraw: new Map(), lastResultText: new Map(), lastChip: new Map(), mode: "PRACTICE", perf: null, agentSafetyPct: 100 };
   const $ = (id) => document.getElementById(id);
   const api = async (path, options) => { const r = await fetch(path, options); return r.ok ? r.json().catch(() => null) : null; };
   const fmt = (v) => Number(v).toFixed(2).replace(".", ",");
@@ -301,8 +301,11 @@
     for (const row of rows) {
       const key = row.market_key ?? row.marketKey; if (!key) continue;
       if (state.results.has(key)) continue;
-      const settled = String(row.state).toUpperCase() === "SETTLED";
-      state.results.set(key, { open: !settled, result: settled ? (row.broker_result ?? null) : null, profit: Number(row.profit ?? 0), direction: row.direction ?? null, entryPrice: row.entry_price ?? null, stake: row.stake ?? null, payout: row.payout ?? null });
+      const st = String(row.state).toUpperCase();
+      const openStates = st === "REQUESTED" || st === "ACKNOWLEDGED" || st === "SUBMITTED" || st === "PENDING_ACK" || st === "PENDING" || st === "UNKNOWN" || st === "OPEN";
+      const settled = st === "SETTLED";
+      if (!openStates && !settled) continue;
+      state.results.set(key, { open: openStates, result: settled ? (row.broker_result ?? null) : null, profit: Number(row.profit ?? 0), direction: row.direction ?? null, entryPrice: row.entry_price ?? null, stake: row.stake ?? null, payout: row.payout ?? null });
     }
     renderText();
   };
@@ -460,7 +463,52 @@
   const refreshMcp = async () => { const data = await api("/api/iq/mcp/config"); const el = $("mcpStatus"); if (!data) { el.textContent = "API MCP: indisponível"; return; } el.innerHTML = "API MCP: " + (data.configured ? "<b style='color:#4ade80'>configurada</b> (" + data.masked + ")" : "<b style='color:#f87171'>não configurada</b>") + " · endpoint " + data.endpoint; };
   const saveMcp = async () => { const token = $("mcpTokenInput").value.trim(); if (!token) return; const r = await api("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token }) }); if (r) { $("mcpTokenInput").value = ""; await refreshMcp(); } };
   const clearMcp = async () => { await api("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: "" }) }); await refreshMcp(); };
-  $("navConfig").onclick = () => { $("navConfig").classList.add("on"); $("configModal").classList.add("on"); refreshMcp(); };
+  const renderSafetyShadow = (data) => {
+    const el = $("safetyShadow");
+    const levels = data?.levels ?? [];
+    if (!levels.length) { el.innerHTML = "Sem dados ainda — o medidor roda junto com os agentes e liquida pelo feed a cada minuto."; return; }
+    const rows = levels.map((r) => {
+      const isCurrent = Number(r.level) === Number(state.agentSafetyPct);
+      const edge = r.edge == null ? "—" : (r.edge >= 0 ? "+" : "") + r.edge + "pp";
+      const edgeColor = r.edge == null ? "#8b97ad" : r.edge >= 0 ? "#4ade80" : "#f87171";
+      const pnlColor = Number(r.pnl) >= 0 ? "#4ade80" : "#f87171";
+      return "<tr" + (isCurrent ? " style='background:#0e1a2f'" : "") + ">"
+        + "<td style='padding:4px 6px'><b>" + (r.label ?? (r.level + "%")) + "</b>" + (isCurrent ? " &#9679;" : "") + "</td>"
+        + "<td style='padding:4px 6px'>" + r.entries + "</td>"
+        + "<td style='padding:4px 6px'>" + r.settled + "</td>"
+        + "<td style='padding:4px 6px'>" + (r.winRate == null ? "—" : r.winRate + "%") + "</td>"
+        + "<td style='padding:4px 6px;color:#8b97ad'>" + (r.breakeven == null ? "—" : r.breakeven + "%") + "</td>"
+        + "<td style='padding:4px 6px;color:" + edgeColor + "'><b>" + edge + "</b></td>"
+        + "<td style='padding:4px 6px;color:" + pnlColor + "'>" + (Number(r.pnl) >= 0 ? "+" : "") + Number(r.pnl).toFixed(2) + "</td>"
+        + "<td style='padding:4px 6px;color:#8b97ad'>" + r.entriesPerHour + "/h</td></tr>";
+    }).join("");
+    el.innerHTML = "<table style='width:100%;border-collapse:collapse;font-size:11.5px'><thead><tr style='color:#8b97ad;text-align:left'>"
+      + "<th style='padding:4px 6px'>Segurança</th><th style='padding:4px 6px'>Entradas</th><th style='padding:4px 6px'>Liquidadas</th><th style='padding:4px 6px'>WR</th><th style='padding:4px 6px'>Break-even</th><th style='padding:4px 6px'>Margem</th><th style='padding:4px 6px'>PnL paper</th><th style='padding:4px 6px'>Ritmo</th></tr></thead><tbody>"
+      + rows + "</tbody></table><div style='color:#8b97ad;margin-top:6px'>Paper trades liquidados pelo feed (stake 1). Margem = WR - break-even do payout médio.</div>";
+  };
+  const refreshAgentConfig = async () => {
+    const data = await api("/api/iq/agents/config");
+    if (data) {
+      state.agentSafetyPct = Number(data.safetyPct ?? 100);
+      $("safetyInput").value = state.agentSafetyPct;
+      $("safetyRange").value = state.agentSafetyPct;
+      const color = state.agentSafetyPct >= 100 ? "#4ade80" : state.agentSafetyPct >= 70 ? "#facc15" : "#f87171";
+      $("safetyStatus").innerHTML = "Segurança atual: <b style='color:" + color + "'>" + state.agentSafetyPct + "%</b>" + (data.fromEnv ? " (env)" : "") + " · níveis A/B: " + (data.shadowLevels ?? []).join(", ");
+    }
+    const shadow = await api("/api/iq/agents/shadow?hours=6");
+    renderSafetyShadow(shadow);
+  };
+  const saveAgentConfig = async () => {
+    const value = Number($("safetyInput").value);
+    const saved = await api("/api/iq/agents/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ safetyPct: value }) });
+    if (!saved) { $("safetyStatus").innerHTML = "<b style='color:#f87171'>nao foi possivel salvar</b> — sessao do painel expirou. Recarregue a pagina (Ctrl+F5) e tente de novo."; return; }
+    await refreshAgentConfig();
+    $("safetyStatus").innerHTML += " · <b style='color:#4ade80'>salvo</b>";
+  };
+  $("safetySave").onclick = saveAgentConfig;
+  $("safetyRange").oninput = (e) => { $("safetyInput").value = e.target.value; };
+  $("safetyInput").oninput = (e) => { $("safetyRange").value = e.target.value; };
+  $("navConfig").onclick = () => { $("navConfig").classList.add("on"); $("configModal").classList.add("on"); refreshMcp(); refreshAgentConfig(); };
   $("configModal").onclick = (e) => { if (e.target === $("configModal")) { $("navConfig").classList.remove("on"); $("configModal").classList.remove("on"); } };
   $("mcpSave").onclick = saveMcp;
   $("mcpClear").onclick = clearMcp;
