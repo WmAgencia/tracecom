@@ -879,6 +879,14 @@ export class IqMultiRuntime extends EventEmitter {
 
   #candleList(ctx) { return [...ctx.candles.values()].sort((a, b) => a.bucketStart - b.bucketStart); }
 
+  /** OTC e 24/7: disponibilidade real = feed vivo (tick recente), nao o flag stale do init. */
+  #marketTradable(ctx, now = this.now()) {
+    if (ctx?.enabled !== true) return false;
+    if (ctx.availability === "OPEN") return true;
+    if (ctx.marketType === "OTC" && Number.isFinite(Number(ctx.lastTickAt)) && now - Number(ctx.lastTickAt) < 30_000) return true;
+    return false;
+  }
+
   #maybeEvaluate(ctx) {
     const now = this.now();
     if (ctx.featureState && now - ctx.featureState.builtAt < 1_000) return;
@@ -1461,7 +1469,6 @@ export class IqMultiRuntime extends EventEmitter {
     if (consensusOn) void this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout, snapshot });
     if (labOn) void this.lab.observeMarket({ snapshot, marketKey: ctx.marketKey, targetExpiryAt, payout: ctx.payout });
     if (this.labS04?.enabled === true) void this.labS04.observeMarket({ snapshot, marketKey: ctx.marketKey, targetExpiryAt, payout: ctx.payout });
-    if (this.agentic?.enabled === true) void this.agentic.observeMarket({ snapshot, marketKey: ctx.marketKey, targetExpiryAt, payout: ctx.payout });
     this.#scheduleV2LiveTicks();
     return snapshot;
   }
@@ -1521,7 +1528,8 @@ export class IqMultiRuntime extends EventEmitter {
     const states = await this.lab?.store?.strategyStates?.().catch(() => []) ?? [];
     const s04States = await this.labS04?.store?.strategyStates?.().catch(() => []) ?? [];
     const agenticStates = await this.agentic?.store?.strategyStates?.().catch(() => []) ?? [];
-    return { ...(this.lab?.status?.() ?? { enabled: false }), states, experiments: { s04Bollinger50: this.labS04 ? { ...this.labS04.status(), states: s04States } : { enabled: false }, agenticRsiFib: this.agentic ? { ...this.agentic.status(), states: agenticStates } : { enabled: false } }, context: { mode: this.config.mode, accountContext: this.accountContext.context, realState: this.realMode.authorized() ? "ARMED" : "LOCKED", killSwitchEngaged: this.killSwitch.status().executionEnabled !== true }, scope: "BINARY_OTC_ONLY", practiceOnly: true };
+    const agenticRecent = this.agentic?.enabled && this.pool?.query ? (await this.pool.query("SELECT DISTINCT ON (market_key) market_key, decision, side, reason, at, payload->'opinions'->'rsi'->>'rsi' AS rsi, payload->'opinions'->'rsi'->>'state' AS rsi_state, payload->'opinions'->'fib'->>'state' AS fib_state FROM iq_lab_decisions WHERE run_id=$1 ORDER BY market_key, at DESC", [this.agentic.runId]).catch(() => ({ rows: [] }))).rows ?? [] : [];
+    return { ...(this.lab?.status?.() ?? { enabled: false }), states, experiments: { s04Bollinger50: this.labS04 ? { ...this.labS04.status(), states: s04States } : { enabled: false }, agenticRsiFib: this.agentic ? { ...this.agentic.status(), states: agenticStates, recent: agenticRecent } : { enabled: false } }, context: { mode: this.config.mode, accountContext: this.accountContext.context, realState: this.realMode.authorized() ? "ARMED" : "LOCKED", killSwitchEngaged: this.killSwitch.status().executionEnabled !== true }, scope: "BINARY_OTC_ONLY", practiceOnly: true };
   }
 
   consensusStatus() {
@@ -1555,7 +1563,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.#pollBlitzSettlements();
     this.#pollMcpBinarySettlements();
     if (this.rsiAgentsV2Live?.enabled === true) for (const ctx of this.markets.values()) {
-      if (ctx.enabled !== true || ctx.availability !== "OPEN") continue;
+      if (!this.#marketTradable(ctx)) continue;
       if (!this.rsiAgentsV2Live.hasActiveCandidate(ctx.marketKey)) continue;
       const serverNow = this.client?.serverNow?.() ?? now;
       const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
@@ -1568,13 +1576,29 @@ export class IqMultiRuntime extends EventEmitter {
       });
     }
     if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); }
+    if (this.agentic?.enabled === true) {
+      const cache = this.agenticSnapshotCache ?? (this.agenticSnapshotCache = new Map());
+      for (const ctx of this.markets.values()) {
+        if (ctx.marketType !== "OTC" || !this.#marketTradable(ctx)) continue;
+        const list = this.#candleList(ctx);
+        if (list.length < 3) continue;
+        const cacheKey = String(list[list.length - 1]?.bucketEnd ?? 0) + "|" + String(ctx.lastTickAt ?? 0);
+        let entry = cache.get(ctx.marketKey) ?? null;
+        if (!entry || entry.key !== cacheKey) {
+          const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt: Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000 });
+          if (!snapshot) continue;
+          entry = { key: cacheKey, snapshot };
+          cache.set(ctx.marketKey, entry);
+        }
+        void this.agentic.observeMarket({ snapshot: entry.snapshot, marketKey: ctx.marketKey, targetExpiryAt: Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000, payout: ctx.payout });
+      }
+    }
     for (const ctx of this.markets.values()) {
-      if (ctx.enabled !== true || ctx.availability !== "OPEN") continue;
+      if (!this.#marketTradable(ctx)) continue;
       const consensusActive = this.consensus?.hasActiveOpportunity?.(ctx.marketKey) === true;
       const labActive = this.lab?.hasActiveOpportunity?.(ctx.marketKey) === true;
       const labS04Active = this.labS04?.hasActiveOpportunity?.(ctx.marketKey) === true;
-      const agenticActive = this.agentic?.hasActiveOpportunity?.(ctx.marketKey) === true;
-      if (!consensusActive && !labActive && !labS04Active && !agenticActive) continue;
+      if (!consensusActive && !labActive && !labS04Active) continue;
       const serverNow = this.client?.serverNow?.() ?? now;
       const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
       if (now < targetExpiryAt - 45_000 || now > targetExpiryAt - 30_000) continue;
@@ -1585,7 +1609,6 @@ export class IqMultiRuntime extends EventEmitter {
       if (consensusActive && this.consensus?.enabled) void this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout, snapshot });
       if (labActive && this.lab?.enabled) void this.lab.observeMarket({ snapshot, marketKey: ctx.marketKey, targetExpiryAt, payout: ctx.payout });
       if (labS04Active && this.labS04?.enabled) void this.labS04.observeMarket({ snapshot, marketKey: ctx.marketKey, targetExpiryAt, payout: ctx.payout });
-      if (agenticActive && this.agentic?.enabled) void this.agentic.observeMarket({ snapshot, marketKey: ctx.marketKey, targetExpiryAt, payout: ctx.payout });
     }
   }
 

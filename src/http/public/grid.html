@@ -83,7 +83,7 @@
 <script>
 (() => {
   "use strict";
-  const state = { markets: [], cards: new Map(), results: new Map(), consensus: new Map(), candles: new Map(), lastDraw: new Map(), lastResultText: new Map(), lastChip: new Map(), mode: "PRACTICE" };
+  const state = { markets: [], cards: new Map(), results: new Map(), consensus: new Map(), agentic: new Map(), candles: new Map(), lastDraw: new Map(), lastResultText: new Map(), lastChip: new Map(), mode: "PRACTICE" };
   const $ = (id) => document.getElementById(id);
   const api = async (path, options) => { const r = await fetch(path, options); return r.ok ? r.json().catch(() => null) : null; };
   const fmt = (v) => Number(v).toFixed(2).replace(".", ",");
@@ -93,9 +93,12 @@
   const chipOf = (row) => {
     const candles = state.candles.get(row.marketKey);
     if (!candles || !candles.length) return ["SEM FEED", "off"];
-    if (row.status !== "OPEN") return ["OFF", "off"];
+    if (row.enabled !== true) return ["OFF", "off"];
     const exec = state.results.get(row.marketKey);
     if (exec && exec.open) return ["OPEN", "open"];
+    const a = state.agentic.get(row.marketKey);
+    if (a && (a.decision === "BUY" || a.decision === "SELL")) return [a.decision, "watch"];
+    if (a && a.rsi_state && a.rsi_state !== "NEUTRAL") return ["WATCH", "watch"];
     const c = state.consensus.get(row.marketKey);
     if (c && (c.decision === "BUY" || c.decision === "SELL")) return [c.decision, "watch"];
     if (c && c.rsiState && c.rsiState !== "NEUTRAL") return ["WATCH", "watch"];
@@ -197,6 +200,9 @@
     const data = await api("/api/iq/research/consensus");
     state.consensus.clear();
     for (const d of data?.recent ?? []) state.consensus.set(d.marketKey, d);
+    const lab = await api("/api/iq/lab/status");
+    state.agentic.clear();
+    for (const d of (lab?.experiments?.agenticRsiFib?.recent ?? [])) state.agentic.set(d.market_key ?? d.marketKey, d);
     renderText();
   };
   const refreshHeader = async () => {
