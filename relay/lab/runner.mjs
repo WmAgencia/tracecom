@@ -153,6 +153,14 @@ export class LabRunner {
           throw Object.assign(new Error(order?.__error ?? "SUBMIT_ERROR"), { code: order?.__error ?? "LAB_SUBMIT_ERROR" });
         }
       }
+      if (order?.dryRun === true) {
+        this.counters.dryRuns = (this.counters.dryRuns ?? 0) + 1;
+        await this.store.updateTradeState({ strategyTradeId, state: "DRY_RUN" }).catch(() => undefined);
+        await this.store.releaseReservation(result.strategyId).catch(() => undefined);
+        this.emit("lab.real_dry_run", { strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId, at });
+        this.log("LAB_DRY_RUN", JSON.stringify({ strategyId: result.strategyId, marketKey, side: result.side, strategyTradeId }));
+        return;
+      }
       const accepted = Boolean(order && (order.brokerOrderId || order.requestId || order.executionId || ["ACKNOWLEDGED", "REQUESTED", "PENDING", "EXECUTED"].includes(String(order.state))));
       if (!accepted) throw Object.assign(new Error(String(order?.reason ?? order?.state ?? "ORDER_NOT_ACCEPTED")), { code: "LAB_ORDER_NOT_ACCEPTED" });
       this.counters.submits += 1;

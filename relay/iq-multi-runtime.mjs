@@ -1516,9 +1516,24 @@ export class IqMultiRuntime extends EventEmitter {
     return this.consensus.status();
   }
 
-  /** LAB 6 STRATEGIES: ordem EXCLUSIVAMENTE PRACTICE (bloqueio duro se modo/contexto != PRACTICE). */
+  /** LAB/AGENTIC: PRACTICE executa; REAL entra em DRY-RUN por padrao (monta a ordem, registra, NAO envia).
+   *  Envio real somente com REAL_DRY_RUN=false (autorizacao explicita) e reusa o caminho oficial turbo MCP. */
   async submitLabPracticeOrder({ marketKey, direction, strategyId, strategyTradeId, stake = null } = {}) {
-    if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("LAB_PRACTICE_ONLY", String(this.config.mode));
+    const mode = String(this.config.mode).toUpperCase();
+    if (mode !== "PRACTICE") {
+      if (this.accountContext.context !== ACCOUNT_REAL && this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_REAL_CONTEXT_INVALID", String(this.accountContext.context));
+      const dryRun = process.env.REAL_DRY_RUN !== "false";
+      const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2);
+      if (dryRun) {
+        const intent = { marketKey, direction, strategyId, strategyTradeId, stake: amount, mode, expiryAt: null, at: this.now() };
+        this.log("REAL_DRY_RUN", JSON.stringify(intent));
+        this.#emitEvent("lab.real_dry_run", intent);
+        return { state: "DRY_RUN", dryRun: true, brokerOrderId: null, executionId: null, requestId: null, stake: amount, mode: "REAL" };
+      }
+      if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
+      if (this.accountContext.context !== ACCOUNT_REAL || this.accountContext.armed !== true) throw new IqWsError("LAB_REAL_CONTEXT_NOT_ARMED", String(this.accountContext.context));
+      return this.submitAgentV2LiveOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", strategyId, skill: strategyId, stake: amount, expectedStake: amount, entryMode: "AGENTIC_REAL", idempotencyKey: strategyTradeId });
+    }
     if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
     const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 1);
     return this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: 60, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId });
@@ -1526,7 +1541,6 @@ export class IqMultiRuntime extends EventEmitter {
 
   /** TESTE PONTA-A-PONTA do pipeline agentic (PRACTICE-only): gatilho RSI simulado -> agentes -> consenso -> IQ Option. */
   async agenticTestRun({ marketKey, forceSide = null, waitForWindow = true, forceOrder = false } = {}) {
-    if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("LAB_PRACTICE_ONLY", String(this.config.mode));
     if (!this.agentic?.enabled) throw new IqWsError("AGENTIC_DISABLED");
     const ctx = this.markets.get(String(marketKey));
     if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
