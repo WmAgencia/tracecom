@@ -15,6 +15,11 @@
   header .spacer { flex:1; }
   button.btn { background:#16213a; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; }
   button.btn:hover { border-color:#31426b; }
+  button.btn.arm { background:#14532d; border-color:#166534; color:#dcfce7; font-weight:700; letter-spacing:.5px; }
+  button.btn.arm:hover { border-color:#22c55e; }
+  button.btn.arm.armed { background:#22c55e; color:#052e16; }
+  input.stake { width:72px; background:#0b1220; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:6px 8px; font-size:12px; text-align:center; }
+  input.stake:focus { outline:none; border-color:#31426b; }
   .switch { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:999px; padding:3px 10px 3px 4px; background:#0e1730; cursor:pointer; user-select:none; }
   .switch .track { width:42px; height:20px; border-radius:999px; background:#1f2b45; position:relative; transition:background .2s; }
   .switch .knob { position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#8b97ad; transition:transform .2s, background .2s; }
@@ -62,6 +67,8 @@
   <span class="badge" id="bBal">saldo: <b>…</b></span>
   <span class="badge" id="bCount" title="">ativos: <b>…</b></span>
   <span class="spacer"></span>
+  <button class="btn arm" id="btnArm">ATIVAR</button>
+  <input class="stake" id="stakeInput" type="number" min="2" step="0.5" value="2" title="valor fixo por operacao (todos os ativos)" />
   <button class="btn" id="btnMesas">MESAS</button>
   <button class="btn" id="btnLab">LAB</button>
   <button class="btn" id="btnLog">LOG</button>
@@ -200,10 +207,33 @@
     const sw = $("modeSwitch");
     if (sw.classList.contains("real") !== (mode === "REAL")) sw.classList.toggle("real", mode === "REAL");
     setText($("modeLabel"), mode === "REAL" ? "REAL" : "PRACTICE");
-    const acc = st.account ?? null;
+    const ctx = await api("/api/iq/account/context");
+    const acc = mode === "REAL" ? (ctx?.realAccount ?? null) : (ctx?.practiceAccount ?? null);
     const bal = acc?.balance;
     const cur = String(acc?.currency ?? (mode === "REAL" ? "BRL" : "USD"));
     setText($("bBal"), "saldo: " + (bal !== undefined && bal !== null ? (cur === "BRL" ? "R$ " + fmt(bal) : "$ " + fmt(bal)) : "?"));
+    const armed = st?.execution?.armed === true;
+    const btn = $("btnArm");
+    if (btn.classList.contains("armed") !== armed) btn.classList.toggle("armed", armed);
+    setText(btn, armed ? "ARMADO" : "ATIVAR");
+  };
+  const armNow = async () => {
+    const stake = Math.max(2, Number($("stakeInput").value) || 2);
+    $("stakeInput").value = String(stake);
+    await api("/api/iq/config/global-stake", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value: stake }) });
+    await api("/api/iq/kill-switch", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ engaged: false }) });
+    await api("/api/iq/config/auto-execute", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ enabled: true }) });
+    if (state.mode === "REAL") {
+      await api("/api/iq/account/select", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ context: "REAL" }) });
+      await api("/api/iq/real/arm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ phrase: "CONFIRMAR E ARMAR REAL", acknowledgeRisk: true, maxStake: stake }) });
+      await api("/api/iq/mode", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "REAL" }) });
+    }
+    await api("/api/iq/arm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirmation: "ARM_PRACTICE", limitBrl: stake }) });
+    await refreshHeader();
+  };
+  const disarmNow = async () => {
+    await api("/api/iq/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) });
+    await refreshHeader();
   };
   const refreshActive = async () => {
     const data = await api("/api/iq/mesas");
@@ -292,6 +322,7 @@
     for (const entry of data?.entries ?? []) { const pre = document.createElement("pre"); pre.textContent = entry.human; body.append(pre); }
   };
   let labOpen = false; let logOpen = false;
+  $("btnArm").onclick = async () => { const armed = $("btnArm").classList.contains("armed"); $("btnArm").style.pointerEvents = "none"; try { if (armed) await disarmNow(); else await armNow(); } finally { $("btnArm").style.pointerEvents = ""; } };
   $("modeSwitch").onclick = switchMode;
   $("btnMesas").onclick = openMesas;
   $("mesasModal").onclick = (e) => { if (e.target === $("mesasModal")) $("mesasModal").classList.remove("on"); };
