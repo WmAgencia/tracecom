@@ -158,8 +158,10 @@
     if (!keys.length) return;
     const data = await api("/api/iq/candles?limit=40&keys=" + encodeURIComponent(keys.join(",")));
     if (!data?.rows) return;
+    let live = 0; const liveKeys = [];
     for (const [key, candles] of Object.entries(data.rows)) {
       const list = Array.isArray(candles) ? candles : [];
+      if (list.length > 0) { live += 1; liveKeys.push(key); }
       const lastBucket = list.length ? list[list.length - 1].bucketEnd : 0;
       if (state.lastDraw.get(key) === lastBucket) continue;
       state.lastDraw.set(key, lastBucket);
@@ -167,6 +169,8 @@
       const card = state.cards.get(key);
       if (card) drawChart(card.canvas, list);
     }
+    setText($("bCount"), "ativos: " + live);
+    $("bCount").title = liveKeys.join(", ");
     renderText();
   };
   const refreshResults = async () => {
@@ -196,16 +200,14 @@
     const sw = $("modeSwitch");
     if (sw.classList.contains("real") !== (mode === "REAL")) sw.classList.toggle("real", mode === "REAL");
     setText($("modeLabel"), mode === "REAL" ? "REAL" : "PRACTICE");
-    const bal = mode === "REAL" ? st.account?.real?.balance : st.account?.practice?.balance;
-    const cur = mode === "REAL" ? (st.account?.real?.currency ?? "BRL") : (st.account?.practice?.currency ?? "USD");
-    setText($("bBal"), "saldo: " + (bal !== undefined ? (cur === "BRL" ? "R$ " + fmt(bal) : "$ " + fmt(bal)) : "?"));
+    const acc = st.account ?? null;
+    const bal = acc?.balance;
+    const cur = String(acc?.currency ?? (mode === "REAL" ? "BRL" : "USD"));
+    setText($("bBal"), "saldo: " + (bal !== undefined && bal !== null ? (cur === "BRL" ? "R$ " + fmt(bal) : "$ " + fmt(bal)) : "?"));
   };
   const refreshActive = async () => {
     const data = await api("/api/iq/mesas");
     const rows = (data?.rows ?? []).filter((r) => r.instrumentType === "BINARY" && r.marketType === "OTC");
-    const active = rows.filter((r) => r.enabled === true && r.status === "OPEN");
-    setText($("bCount"), "ativos: " + active.length);
-    $("bCount").title = active.map((r) => r.marketKey).join(", ");
     if (rows.length !== state.markets.length || rows.some((r, i) => state.markets[i]?.marketKey !== r.marketKey)) {
       state.markets = rows.sort((a, b) => String(a.marketKey).localeCompare(String(b.marketKey)));
       buildGrid();
