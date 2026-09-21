@@ -193,6 +193,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.rsiAgentsV2Live = new RsiAgentsV2Live({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2LiveEnabled === true });
     this.iqMcp = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.blitz, log: this.log, now: this.now });
     this.iqMcpBinary = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.turbo, log: this.log, now: this.now }); // produto TURBO (expiracoes de 60s = nosso binario)
+    void this.loadMcpToken();
     this.rsiAgentsV2Blitz = new RsiAgentsV2Blitz({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2BlitzEnabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
@@ -1601,10 +1602,35 @@ export class IqMultiRuntime extends EventEmitter {
     return { entries };
   }
 
+  /** Token do MCP oficial configuravel pelo painel (persistido; env continua como fallback). */
+  async loadMcpToken() {
+    if (!this.pool?.query) return null;
+    const row = (await this.pool.query("SELECT token FROM iq_mcp_config WHERE id=1").catch(() => ({ rows: [] }))).rows?.[0] ?? null;
+    if (row?.token) { this.iqMcp?.setToken?.(row.token); this.iqMcpBinary?.setToken?.(row.token); this.log("MCP_TOKEN_LOADED", "from-db"); return true; }
+    return false;
+  }
+
+  async setMcpToken(token) {
+    if (!this.pool?.query) throw new IqWsError("MCP_CONFIG_NO_DB");
+    const clean = String(token ?? "").trim();
+    if (clean && clean.length < 12) throw new IqWsError("MCP_TOKEN_INVALID", "curto");
+    await this.pool.query("INSERT INTO iq_mcp_config(id, token, updated_at) VALUES(1, $1, now()) ON CONFLICT (id) DO UPDATE SET token=$1, updated_at=now()", [clean || null]);
+    this.iqMcp?.setToken?.(clean || null); this.iqMcpBinary?.setToken?.(clean || null);
+    this.#auditRecord(`mcp_token_${this.now()}`, null, "MCP_TOKEN_UPDATED", { hasToken: Boolean(clean), tail: clean ? clean.slice(-4) : null }, { persist: true });
+    return this.mcpConfigStatus();
+  }
+
+  mcpConfigStatus() {
+    const token = this.iqMcpBinary?.token ?? this.iqMcp?.token ?? null;
+    return { configured: Boolean(token), masked: token ? "••••" + String(token).slice(-4) : null, endpoint: IQ_MCP_ENDPOINTS.turbo, enabled: this.iqMcpBinary?.enabled === true };
+  }
+
   /** Resumo de performance (PRACTICE) para o dashboard: hoje/semana/mes + ativos ativos. */
   async performanceSummary() {
     if (!this.pool?.query) return null;
-    const scope = "account_context='PRACTICE'";
+    const epochRow = (await this.pool.query("SELECT perf_since FROM iq_perf_epoch WHERE id=1").catch(() => ({ rows: [] }))).rows?.[0] ?? null;
+    const epoch = epochRow?.perf_since ?? null;
+    const scope = "account_context='PRACTICE'" + (epoch ? " AND requested_at >= '" + new Date(epoch).toISOString() + "'" : "");
     const q = async (interval) => (await this.pool.query("SELECT count(*) FILTER (WHERE broker_result IN ('WIN','LOSS','DRAW'))::int AS trades, count(*) FILTER (WHERE broker_result='WIN')::int AS wins, count(*) FILTER (WHERE broker_result='LOSS')::int AS losses, count(*) FILTER (WHERE broker_result='DRAW')::int AS draws, coalesce(sum(profit) FILTER (WHERE broker_result IS NOT NULL),0)::numeric AS pnl FROM iq_executions WHERE " + scope + " AND requested_at >= " + interval)).rows[0];
     const today = await q("date_trunc('day', now())").catch(() => null);
     const week = await q("date_trunc('week', now())").catch(() => null);

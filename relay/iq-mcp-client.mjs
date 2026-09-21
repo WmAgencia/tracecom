@@ -25,6 +25,8 @@ export class IqMcpClient {
 
   get enabled() { return Boolean(this.token); }
 
+  setToken(token) { this.token = token ? String(token).trim() : null; return this.enabled; }
+
   async #rpc(method, params, { notification = false } = {}) {
     if (!this.enabled) throw Object.assign(new Error("IQ_MCP_TOKEN ausente"), { code: "IQ_MCP_TOKEN_MISSING" });
     const headers = { "content-type": "application/json", accept: "application/json, text/event-stream", authorization: `Bearer ${this.token}` };

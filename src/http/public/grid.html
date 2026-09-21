@@ -107,9 +107,6 @@
   <div class="brand"><span class="bars"><i style="height:7px"></i><i style="height:12px"></i><i style="height:16px"></i><i style="height:10px"></i></span>TraceCon<small>™</small></div>
   <div class="navitems">
     <button class="on" id="navDash">Dashboard</button>
-    <button id="navAtivos">Ativos</button>
-    <button id="navEstrategias">Estratégias</button>
-    <button id="navRelatorios">Relatórios</button>
     <button id="navConfig">Configurações</button>
   </div>
   <span class="spacer"></span>
@@ -163,8 +160,6 @@
   <div class="sechead">
     <h2><span style="color:#60a5fa">◈</span> Ativos OTC <span class="sub">Monitoramento em tempo real de <b id="subN">0</b> ativos</span></h2>
     <span class="spacer"></span>
-    <span class="chipctl" style="color:#e8edf7">▦ Grade</span>
-    <span class="chipctl">☰ Lista</span>
     <span class="chipctl" style="color:#4ade80;border-color:#14532d">● Mercado OTC</span>
     <span class="clock" id="clock">--:--:--</span>
   </div>
@@ -180,6 +175,7 @@
   <span class="ok"><span class="dot"></span> <span id="footConn">Conectado</span></span>
 </div>
 
+<div class="modal" id="configModal"><div class="box"><h2>Configurações — API do MCP oficial</h2><p style="font-size:11.5px;color:#8b97ad;margin-bottom:10px">Cole o token da API MCP oficial da sua conta (turbo). Ele fica salvo no servidor e passa a ser usado pelos agentes; o valor atual aparece mascarado.</p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mcpTokenInput" placeholder="token do MCP oficial" style="flex:1;min-width:280px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="mcpSave">SALVAR</button><button class="btn" id="mcpClear">LIMPAR</button></div><div id="mcpStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div></div></div>
 <div class="modal" id="labModal"><div class="box"><h2>LAB / EXPERIMENTOS</h2><div id="labList"></div></div></div>
 <div class="modal" id="mesasModal"><div class="box"><h2>MESAS — Binary OTC</h2><div id="mesasList"></div></div></div>
 <aside id="logPanel"><div class="head"><h2>LOG — conversa dos agentes</h2><button class="btn" id="btnLogClose">fechar</button></div><div id="logBody"></div></aside>
@@ -205,10 +201,7 @@
     const exec = state.results.get(row.marketKey);
     if (exec && exec.open) { const dir = (exec.direction === "CALL" || exec.direction === "BUY") ? "BUY" : "SELL"; return [dir, dir === "BUY" ? "buy" : "sell"]; }
     const a = state.agentic.get(row.marketKey);
-    if (a && (a.decision === "BUY" || a.decision === "SELL")) return [a.decision, a.decision === "BUY" ? "buy" : "sell"];
-    if (a && a.side && a.decision === "WAIT" && a.rsi_state && a.rsi_state !== "NEUTRAL") return ["WAIT", "wait"];
-    const c = state.consensus.get(row.marketKey);
-    if (c && (c.decision === "BUY" || c.decision === "SELL")) return [c.decision, c.decision === "BUY" ? "buy" : "sell"];
+    if (a && a.side && a.rsi_state && a.rsi_state !== "NEUTRAL") return ["WAIT", "wait"];
     return ["ASSISTINDO", "assist"];
   };
   const resultOf = (row) => {
@@ -464,7 +457,13 @@
   $("btnLog").onclick = () => { logOpen = true; $("logPanel").classList.add("on"); refreshLog(); };
   $("btnLogClose").onclick = () => { logOpen = false; $("logPanel").classList.remove("on"); };
   $("navDash").onclick = () => { $("navDash").classList.add("on"); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  $("navAtivos").onclick = () => { $("navAtivos").classList.add("on"); $("grid").scrollIntoView({ behavior: "smooth", block: "start" }); };
+  const refreshMcp = async () => { const data = await api("/api/iq/mcp/config"); const el = $("mcpStatus"); if (!data) { el.textContent = "API MCP: indisponível"; return; } el.innerHTML = "API MCP: " + (data.configured ? "<b style='color:#4ade80'>configurada</b> (" + data.masked + ")" : "<b style='color:#f87171'>não configurada</b>") + " · endpoint " + data.endpoint; };
+  const saveMcp = async () => { const token = $("mcpTokenInput").value.trim(); if (!token) return; const r = await api("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token }) }); if (r) { $("mcpTokenInput").value = ""; await refreshMcp(); } };
+  const clearMcp = async () => { await api("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: "" }) }); await refreshMcp(); };
+  $("navConfig").onclick = () => { $("navConfig").classList.add("on"); $("configModal").classList.add("on"); refreshMcp(); };
+  $("configModal").onclick = (e) => { if (e.target === $("configModal")) { $("navConfig").classList.remove("on"); $("configModal").classList.remove("on"); } };
+  $("mcpSave").onclick = saveMcp;
+  $("mcpClear").onclick = clearMcp;
   $("searchInput").oninput = (e) => { const q = String(e.target.value ?? "").toUpperCase(); for (const [key, card] of state.cards.entries()) { const cell = card.chip.closest(".cell"); if (cell) cell.style.display = !q || key.includes(q) ? "" : "none"; } };
   window.addEventListener("resize", () => { for (const row of state.markets) { const card = state.cards.get(row.marketKey); if (card) drawChart(card.canvas, state.candles.get(row.marketKey)); } });
   setInterval(() => { const d = new Date(); setText($("clock"), d.toLocaleTimeString("pt-BR")); }, 1000);
