@@ -76,6 +76,9 @@ import { LabRunner } from "./lab/runner.mjs";
 import { runAgentGraph, agentGraphToStrategyResult, AGENTIC_STRATEGY_ID } from "./agents/graph.mjs";
 import { SafetyShadow, parseSafetyLevels, SAFETY_SHADOW_RUN_ID } from "./agents/safety-shadow.mjs";
 import { CandlesArchive } from "./candles-archive.mjs";
+import { BlitzLab, BLITZ_EXPIRATION_SECONDS } from "./blitz-lab.mjs";
+
+const AGENTIC_BLITZ_STRATEGY_ID = "AGENTIC_BLITZ_45S";
 import { buildMarketSnapshot } from "./consensus/snapshot.mjs";
 import { IqMcpClient, IQ_MCP_ENDPOINTS } from "./iq-mcp-client.mjs";
 import { RsiAgentsV2Blitz } from "./rsi-agents-v2-blitz.mjs";
@@ -129,6 +132,15 @@ export class IqMultiRuntime extends EventEmitter {
     this.agentSafetyPct = this.agentSafetyFromEnv ? Math.max(0, Math.min(100, Math.round(Number(agenticSafetyPct)))) : 100;
     this.autoArmPractice = autoArmPractice === true;
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
+    this.blitzLastEntryAt = new Map();
+    this.blitzSnapshotCache = new Map();
+    try {
+      this.blitzLab = agenticEnabled === true ? new BlitzLab({ runtime: this, pool, log: this.log, now: this.now, expirationSeconds: BLITZ_EXPIRATION_SECONDS }) : null;
+    } catch (error) { this.blitzLab = null; this.#safe(() => this.log("BLITZ_LAB_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
+    try {
+      this.blitzRun = agenticEnabled === true ? new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: true, runId: "agentic-blitz-45s", stake: labStake, strategies: [AGENTIC_BLITZ_STRATEGY_ID], cap: 100, reportRootDir: "estrategias/experiments/agentic-blitz", evaluate: (snapshot) => { this.lastEvaluationAt = this.now(); const graph = runAgentGraph(snapshot, { safetyPct: this.agentSafetyPct, filters: this.agentFilters }); const base = agentGraphToStrategyResult(graph); return base ? [{ ...base, strategyId: AGENTIC_BLITZ_STRATEGY_ID, strategyVersion: "agentic-blitz-45s-v1" }] : []; }, entryWindowOpenMs: 60_000, entryWindowCloseMs: 1_000 }) : null;
+      if (this.blitzRun) void this.blitzRun.start().catch(() => undefined);
+    } catch (error) { this.blitzRun = null; this.#safe(() => this.log("BLITZ_RUN_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentVariant = "";
     this.agentFilters = null;
     try {
@@ -1569,6 +1581,13 @@ export class IqMultiRuntime extends EventEmitter {
       return this.submitAgentV2LiveOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", strategyId, skill: strategyId, stake: amount, expectedStake: amount, entryMode: "AGENTIC_REAL", idempotencyKey: strategyTradeId });
     }
     if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
+    if (String(strategyId ?? "").includes("BLITZ")) {
+      if (this.armState.armed !== true) throw new IqWsError("BLITZ_NOT_ARMED");
+      if (this.config.autoExecute !== true) throw new IqWsError("BLITZ_AUTO_EXECUTE_OFF");
+      if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("BLITZ_KILL_SWITCH");
+      const blitzStake = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2);
+      return this.blitzLab.submit({ marketKey, direction, stake: blitzStake, strategyId, strategyTradeId, payout: this.markets.get(marketKey)?.payout ?? null });
+    }
     const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 1);
     return this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: 60, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId });
   }
@@ -1800,7 +1819,7 @@ export class IqMultiRuntime extends EventEmitter {
         candles: list, targetExpiryAt, payout: ctx.payout, now, latency: {},
       });
     }
-    if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); void this.#sweepStaleExecutions(); }
+    if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); void this.blitzRun?.pollSettlements(); void this.blitzLab?.pollSettlements(); void this.#sweepStaleExecutions(); }
     if (this.agentic?.enabled === true) {
       const cache = this.agenticSnapshotCache ?? (this.agenticSnapshotCache = new Map());
       for (const ctx of this.markets.values()) {
@@ -1816,6 +1835,24 @@ export class IqMultiRuntime extends EventEmitter {
           cache.set(ctx.marketKey, entry);
         }
         void this.agentic.observeMarket({ snapshot: entry.snapshot, marketKey: ctx.marketKey, targetExpiryAt: Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000, payout: ctx.payout });
+      }
+    }
+    if (this.blitzRun?.enabled === true && this.blitzLab?.enabled === true) {
+      for (const ctx of this.markets.values()) {
+        if (ctx.marketType !== "OTC" || !this.#marketTradable(ctx)) continue;
+        if (now - (this.blitzLastEntryAt.get(ctx.marketKey) ?? 0) < 60_000) continue;
+        const list = this.#candleList(ctx);
+        if (list.length < 3) continue;
+        const cacheKey = String(list[list.length - 1]?.bucketEnd ?? 0) + "|" + String(ctx.lastTickAt ?? 0);
+        let entry = this.blitzSnapshotCache.get(ctx.marketKey) ?? null;
+        const targetExpiryAt = now + BLITZ_EXPIRATION_SECONDS * 1000;
+        if (!entry || entry.key !== cacheKey) {
+          const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt });
+          if (!snapshot) continue;
+          entry = { key: cacheKey, snapshot };
+          this.blitzSnapshotCache.set(ctx.marketKey, entry);
+        }
+        void this.blitzRun.observeMarket({ snapshot: entry.snapshot, marketKey: ctx.marketKey, targetExpiryAt, payout: ctx.payout });
       }
     }
     for (const ctx of this.markets.values()) {
