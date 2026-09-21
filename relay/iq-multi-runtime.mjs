@@ -1525,7 +1525,7 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   /** TESTE PONTA-A-PONTA do pipeline agentic (PRACTICE-only): gatilho RSI simulado -> agentes -> consenso -> IQ Option. */
-  async agenticTestRun({ marketKey, forceSide = null, waitForWindow = true } = {}) {
+  async agenticTestRun({ marketKey, forceSide = null, waitForWindow = true, forceOrder = false } = {}) {
     if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("LAB_PRACTICE_ONLY", String(this.config.mode));
     if (!this.agentic?.enabled) throw new IqWsError("AGENTIC_DISABLED");
     const ctx = this.markets.get(String(marketKey));
@@ -1534,7 +1534,8 @@ export class IqMultiRuntime extends EventEmitter {
     if (list.length < 60) throw new IqWsError("INSUFFICIENT_CANDLES", String(list.length));
     const now = this.now();
     const serverNow = this.client?.serverNow?.() ?? now;
-    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    let targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    if (serverNow > targetExpiryAt - 30_000) targetExpiryAt += 60_000;
     let snapshot = buildMarketSnapshot({ marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt });
     if (!snapshot) throw new IqWsError("SNAPSHOT_UNAVAILABLE");
     if (forceSide === "BUY" || forceSide === "SELL") {
@@ -1542,7 +1543,10 @@ export class IqMultiRuntime extends EventEmitter {
       snapshot = { ...snapshot, indicators: { ...snapshot.indicators, rsi: rsiValue, rsiTrajectory: [...(snapshot.indicators.rsiTrajectory ?? []).slice(0, -1), rsiValue], rsiSlope: forceSide === "SELL" ? 0.2 : -0.2 } };
     }
     const graph = runAgentGraph(snapshot);
-    const decision = graph.consensus;
+    let decision = graph.consensus;
+    if ((decision.decision !== "BUY" && decision.decision !== "SELL") && forceOrder === true && (decision.side === "BUY" || decision.side === "SELL")) {
+      decision = { ...decision, decision: decision.side, reason: "[PATH_TEST_FORCED] " + String(decision.reason ?? "").slice(0, 300) };
+    }
     if (decision.decision !== "BUY" && decision.decision !== "SELL") {
       return { test: true, marketKey, targetExpiryAt, decision: "WAIT", side: decision.side, reason: decision.reason, conversation: graph.conversation, order: null };
     }
