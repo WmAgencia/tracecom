@@ -59,7 +59,8 @@ export function runConsensusAgent({ snapshot, opinions } = {}) {
       reason: `Oportunidade ${side} barrada: ${counterEvidence.filter((r) => hardBlockedCodes.includes(r.code)).map((r) => r.code).join("+")}.`,
       conversation: buildConversation(opinions, `Bloqueio duro: ${counterEvidence.filter((r) => hardBlockedCodes.includes(r.code)).map((r) => r.code).join("+")}`) };
   }
-  const missing = [!rsiQuality ? "RSI_QUALIDADE" : null, !bollingerSupports ? "BOLLINGER" : null, !adxSupports ? "ADX" : null, !atrSupports ? "ATR" : null, !fibSupports ? "FIB" : null].filter(Boolean);
+  const locationOk = bollingerSupports || fibSupports;
+  const missing = [!rsiQuality ? "RSI_QUALIDADE" : null, !adxSupports ? "ADX" : null, !atrSupports ? "ATR" : null, !locationOk ? "LOCALIZACAO(Bollinger OU Fib)" : null].filter(Boolean);
   if (missing.length) {
     return { ...base, side, evidenceStrength: round(evidenceStrength, 4), supportingEvidence, counterEvidence,
       reason: `Confluencia incompleta para ${side}: falta ${missing.join(" + ")}. WAIT.`,
@@ -73,7 +74,7 @@ export function runConsensusAgent({ snapshot, opinions } = {}) {
   };
 }
 
-const hardBlockedCodes = ["FIB_LEG_INCOMPATIVEL", "ATR_MERCADO_MORTO", "ATR_MOVIMENTO_CLIMATICO", "BOLLINGER_WALK_CONTRA", "BOLLINGER_FORA_INFERIOR", "BOLLINGER_FORA_SUPERIOR", "ADX_TENDENCIA_ANTIGA_FORTALECENDO", "RSI_EXTREMO_ACELERANDO", "FIB_ZONE_BROKEN", "FIB_FORA_DE_ZONA", "FIB_SEM_REACAO"];
+const hardBlockedCodes = ["FIB_LEG_INCOMPATIVEL", "ATR_MERCADO_MORTO", "ATR_MOVIMENTO_CLIMATICO", "BOLLINGER_WALK_CONTRA", "ADX_TENDENCIA_ANTIGA_FORTALECENDO", "RSI_EXTREMO_ACELERANDO", "FIB_ZONE_BROKEN"];
 
 function buildConversation(opinions, consensusLine = null) {
   const lines = [];
