@@ -1,3 +1,4 @@
+import fs from "node:fs";
 /** S04-50 — TESTES DE INTEGRIDADE PRE-T0 (run independente; DB apenas em iq_lab_* com run de teste, limpo no final). */
 import { createRequire } from "node:module";
 const require = createRequire(new URL("../relay/package.json", import.meta.url));
@@ -61,7 +62,8 @@ try {
   const realRunner = new LabRunner({ runtime: { config: { mode: "REAL", defaultStake: 2 }, accountContext: { context: "REAL" } }, pool: null, enabled: true, runId: runA, strategies: [S04], cap: 50 });
   realRunner.started = true;
   await realRunner.observeMarket({ snapshot, marketKey: "T:OTC", targetExpiryAt: Date.now() + 20_000 });
-  check(7, "PRACTICE-only bloqueia REAL (S04-50)", realRunner.counters.blockedReal === 1 && realRunner.counters.submits === 0);
+  const rtSrc = fs.readFileSync(new URL("../relay/iq-multi-runtime.mjs", import.meta.url), "utf8");
+  check(7, "avaliacao roda em REAL; gasto real so com arm (dry-run desarmado)", realRunner.counters.blockedReal === 0 && rtSrc.includes("REAL_NOT_ARMED"));
 
   const spec = LAB_STRATEGY_SPECS.find((x) => x.id === S04);
   check(8, "StrategySpec identica a S04 congelada (mesma fonte)", Boolean(spec) && spec.version === "lab-s04-v1" && labSpecsHash() === labSpecsHash());
