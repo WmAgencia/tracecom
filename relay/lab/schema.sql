@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS iq_lab_decisions (
   side text,
   reason text,
   evidence_strength numeric,
-  counter jsonb NOT NULL DEFAULT '[]'::jsonb
+  counter jsonb NOT NULL DEFAULT '[]'::jsonb,
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE INDEX IF NOT EXISTS iq_lab_decisions_run_strategy_at ON iq_lab_decisions (run_id, strategy_id, at DESC);

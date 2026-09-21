@@ -67,6 +67,10 @@ try {
   const extra = await store.reserveSlot(AGENTIC_STRATEGY_ID);
   check(11, "cap 50 funciona (50 reservados, 51o bloqueado)", reserved === 50 && extra === null);
 
+  const { runConsensusAgent } = await import("../relay/agents/consensus.agent.mjs");
+  const synthetic = runConsensusAgent({ snapshot, opinions: { rsi: { trigger: true, side: "SELL", rsi: 75, state: "CROSSBACK", divergence: null, failureSwing: null, crossback: true, line50Ok: true, quality: 0.6, opinion: "teste" }, bollinger: { regime: "RANGE", rejection: "UPPER", walkSide: null, position: 0.9, strength: 0.5, opinion: "teste" }, adx: { regime: "RANGE", dominance: "PLUS", adx: 18, perSide: { SELL: { oldTrendWeakening: true, oppositeReacting: true, newDominance: false, oldStrengthening: false } }, strength: 0.4, opinion: "teste" }, atr: { state: "NORMAL", climactic: false, ratio: 1, opinion: "teste" }, fib: { state: "ZONE_REACTION", direction: "BUY", inZone: ["50.0"], strength: 0.7, opinion: "teste" } } });
+  check(12, "Fib com leg incompativel bloqueia a tese (semantica de reversao)", synthetic.decision === "WAIT" && synthetic.counterEvidence.some((r) => r.code === "FIB_LEG_INCOMPATIVEL"));
+
   const failed = results.filter((r) => !r.ok);
   console.log(`\nAGENTIC_TESTS ${failed.length === 0 ? "ALL_PASS" : "FAILURES=" + failed.length} (${results.length - failed.length}/${results.length})`);
   if (failed.length) process.exitCode = 1;

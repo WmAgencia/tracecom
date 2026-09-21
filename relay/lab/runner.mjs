@@ -86,7 +86,7 @@ export class LabRunner {
       const stale = at - st.lastPersistAt > 60_000;
       if (changed || stale) {
         st.lastDecision = result.decision; st.lastSide = result.side ?? null; st.lastPersistAt = at;
-        void this.store.persistDecision({ strategyId: result.strategyId, marketKey, snapshotId: result.snapshotId, decision: result.decision, side: result.side, reason: result.reason, evidenceStrength: result.evidenceStrength, counter: result.counterEvidence }).catch(() => undefined);
+        void this.store.persistDecision({ strategyId: result.strategyId, marketKey, snapshotId: result.snapshotId, decision: result.decision, side: result.side, reason: result.reason, evidenceStrength: result.evidenceStrength, counter: result.counterEvidence, payload: result.specialistOutputs ?? null }).catch(() => undefined);
       }
       if (!approved) continue;
       const expiry = Number(targetExpiryAt);

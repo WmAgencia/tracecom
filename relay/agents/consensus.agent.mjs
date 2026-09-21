@@ -46,8 +46,10 @@ export function runConsensusAgent({ snapshot, opinions } = {}) {
 
   const atrSupports = atr?.state === "NORMAL" && atr?.climactic !== true;
   if (atrSupports) supportingEvidence.push({ code: "ATR_SUPORTE", detail: `ratio ${atr?.ratio}` });
-  const fibSupports = fib?.state === "ZONE_REACTION";
-  if (fibSupports) supportingEvidence.push({ code: "FIB_CONFLUENCIA", detail: `reacao na zona ${(fib.inZone ?? []).join("/")}` });
+  const fibAligned = fib?.direction === side;
+  const fibSupports = fib?.state === "ZONE_REACTION" && fibAligned;
+  if (fibSupports) supportingEvidence.push({ code: "FIB_CONFLUENCIA", detail: `reacao na zona ${(fib.inZone ?? []).join("/")} (leg ${fib.direction})` });
+  if (!fibAligned) counterEvidence.push({ code: "FIB_LEG_INCOMPATIVEL", detail: `leg ${fib?.direction} nao confirma a queda/alta da tese ${side}` });
 
   const hardBlocked = counterEvidence.some((row) => ["ATR_MERCADO_MORTO", "ATR_MOVIMENTO_CLIMATICO", "BOLLINGER_WALK_CONTRA", "BOLLINGER_FORA_INFERIOR", "BOLLINGER_FORA_SUPERIOR", "ADX_TENDENCIA_ANTIGA_FORTALECENDO", "RSI_EXTREMO_ACELERANDO", "FIB_ZONE_BROKEN", "FIB_FORA_DE_ZONA", "FIB_SEM_REACAO"].includes(row.code));
   const evidenceStrength = clamp01(0.3 * (rsi.quality ?? 0) + 0.2 * (bollinger?.strength ?? 0) + 0.2 * (adx?.strength ?? 0) + 0.1 * (atrSupports ? 1 : 0) + 0.2 * (fib?.strength ?? 0));
@@ -71,7 +73,7 @@ export function runConsensusAgent({ snapshot, opinions } = {}) {
   };
 }
 
-const hardBlockedCodes = ["ATR_MERCADO_MORTO", "ATR_MOVIMENTO_CLIMATICO", "BOLLINGER_WALK_CONTRA", "BOLLINGER_FORA_INFERIOR", "BOLLINGER_FORA_SUPERIOR", "ADX_TENDENCIA_ANTIGA_FORTALECENDO", "RSI_EXTREMO_ACELERANDO", "FIB_ZONE_BROKEN", "FIB_FORA_DE_ZONA", "FIB_SEM_REACAO"];
+const hardBlockedCodes = ["FIB_LEG_INCOMPATIVEL", "ATR_MERCADO_MORTO", "ATR_MOVIMENTO_CLIMATICO", "BOLLINGER_WALK_CONTRA", "BOLLINGER_FORA_INFERIOR", "BOLLINGER_FORA_SUPERIOR", "ADX_TENDENCIA_ANTIGA_FORTALECENDO", "RSI_EXTREMO_ACELERANDO", "FIB_ZONE_BROKEN", "FIB_FORA_DE_ZONA", "FIB_SEM_REACAO"];
 
 function buildConversation(opinions, consensusLine = null) {
   const lines = [];

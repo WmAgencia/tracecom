@@ -108,9 +108,9 @@ export class LabStore {
   async persistDecision(row) {
     if (!this.pool?.query) return;
     await this.pool.query(
-      `INSERT INTO iq_lab_decisions(run_id, strategy_id, market_key, snapshot_id, decision, side, reason, evidence_strength, counter)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)`,
-      [this.runId, row.strategyId, row.marketKey, row.snapshotId ?? null, row.decision, row.side ?? null, String(row.reason ?? "").slice(0, 400), row.evidenceStrength ?? null, JSON.stringify(row.counter ?? [])],
+      `INSERT INTO iq_lab_decisions(run_id, strategy_id, market_key, snapshot_id, decision, side, reason, evidence_strength, counter, payload)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb)`,
+      [this.runId, row.strategyId, row.marketKey, row.snapshotId ?? null, row.decision, row.side ?? null, String(row.reason ?? "").slice(0, 400), row.evidenceStrength ?? null, JSON.stringify(row.counter ?? []), JSON.stringify(row.payload ?? {})],
     );
   }
 
