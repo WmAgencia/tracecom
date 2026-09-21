@@ -550,5 +550,7 @@ function startFrozenLoop(pool){
   setInterval(async()=>{ if(busy) return; busy=true; try { const out=await frozenTick(pool); if(out.created>0) console.info('FROZEN_SIGNALS', JSON.stringify({created:out.created,candles:out.candles,asset:out.asset??null})); } catch(error){ console.error('FROZEN_TICK_ERROR', error.message); } finally { busy=false; } }, 15000);
   setInterval(async()=>{ try { const out=await maybeAutoSelect(pool); if(out.changed) console.info('FROZEN_AUTO_SWITCH', JSON.stringify(out)); } catch(error){ console.error('FROZEN_AUTO_ERROR', error.message); } }, 300000);
 }
+process.on("unhandledRejection", (reason) => { try { console.error("RELAY_UNHANDLED_REJECTION", String(reason?.stack ?? reason).slice(0, 600)); } catch { /* noop */ } });
+process.on("uncaughtException", (error) => { try { console.error("RELAY_UNCAUGHT_EXCEPTION", String(error?.stack ?? error).slice(0, 900)); } catch { /* noop */ } });
 server.listen(port,()=>{console.log(`tracecom-live-relay listening on ${port}`); if(process.env.SHADOW_EXPERIMENT_DISABLED !== 'true') startExperimentLoop(pool); if(process.env.FROZEN_STRATEGIES_DISABLED !== 'true') startFrozenLoop(pool);});
 

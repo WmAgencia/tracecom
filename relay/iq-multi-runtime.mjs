@@ -1509,7 +1509,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("LAB_PRACTICE_ONLY", String(this.config.mode));
     if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
     const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 1);
-    return this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: 60, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId, entryTiming: { lab: true, strategyId, strategyTradeId } });
+    return this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: 60, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId });
   }
 
   async labStatus() {
