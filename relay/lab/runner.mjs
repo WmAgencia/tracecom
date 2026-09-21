@@ -78,7 +78,7 @@ export class LabRunner {
       if (approved) this.counters.approvals += 1; else this.counters.waits += 1;
       const changed = st.lastDecision !== result.decision || st.lastSide !== (result.side ?? null);
       const stale = at - st.lastPersistAt > 60_000;
-      if (changed || approved || stale) {
+      if (changed || stale) {
         st.lastDecision = result.decision; st.lastSide = result.side ?? null; st.lastPersistAt = at;
         void this.store.persistDecision({ strategyId: result.strategyId, marketKey, snapshotId: result.snapshotId, decision: result.decision, side: result.side, reason: result.reason, evidenceStrength: result.evidenceStrength, counter: result.counterEvidence }).catch(() => undefined);
       }
@@ -91,7 +91,17 @@ export class LabRunner {
     }
     for (const submission of submissions) {
       const run = () => this.#submitOne(submission, { marketKey, snapshot, payout });
-      const chained = this.submitChain.then(run, run);
+      const guarded = () => Promise.race([
+        run(),
+        sleep(45_000).then(async () => {
+          const strategyTradeId = `lab:${this.runId}:${submission.result.strategyId}:${marketKey}:${submission.expiry}:${submission.result.side}`;
+          await this.store.updateTradeState({ strategyTradeId, state: "EXPIRED_TIMEOUT" }).catch(() => undefined);
+          await this.store.releaseReservation(submission.result.strategyId).catch(() => undefined);
+          this.counters.rejected += 1;
+          this.log("LAB_SUBMIT_WATCHDOG", JSON.stringify({ strategyId: submission.result.strategyId, marketKey, strategyTradeId }));
+        }),
+      ]);
+      const chained = this.submitChain.then(guarded, guarded);
       this.submitChain = chained.catch(() => undefined);
       await chained;
     }
@@ -149,6 +159,10 @@ export class LabRunner {
   async pollSettlements() {
     if (!this.enabled || !this.started || !this.pool?.query) return;
     await this.store.reconcileOpenCounts().catch(() => undefined);
+    const stale = (await this.pool.query(
+      "UPDATE iq_lab_trades SET state='EXPIRED_STALE', updated_at=now() WHERE run_id=$1 AND result IS NULL AND state IN ('SUBMITTED','UNKNOWN','REQUESTED','ACKNOWLEDGED') AND entry_at < now() - interval '5 minutes' RETURNING strategy_id",
+      [this.runId]).catch(() => ({ rows: [] }))).rows ?? [];
+    for (const row of stale) { await this.store.releaseReservation(row.strategy_id).catch(() => undefined); this.log("LAB_STALE_EXPIRED", JSON.stringify({ strategyId: row.strategy_id })); }
     const rows = (await this.pool.query(
       `SELECT t.strategy_trade_id, t.strategy_id, e.broker_result, e.profit, e.settled_at
        FROM iq_lab_trades t JOIN iq_executions e ON (e.decision_id = t.strategy_trade_id OR (t.execution_id IS NOT NULL AND e.execution_id = t.execution_id))

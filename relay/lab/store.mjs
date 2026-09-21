@@ -94,21 +94,6 @@ export class LabStore {
     );
   }
 
-  async persistTrade(trade) {
-    if (!this.pool?.query) return;
-    await this.pool.query(
-      `INSERT INTO iq_lab_trades(strategy_trade_id, run_id, strategy_id, strategy_version, episode_id, snapshot_id, decision_id, market_key, direction, stake, payout,
-        requested_expiry, actual_expiry, candidate_at, entry_at, expiry_at, decision, reason, evidence_strength, entry_quality, supporting, counter, specialist_outputs, entry_snapshot, execution_id, broker_order_id, state)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,now(),$15,$16,$17,$18,$19,$20::jsonb,$21::jsonb,$22::jsonb,$23::jsonb,$24,$25,$26)
-       ON CONFLICT (strategy_trade_id) DO NOTHING`,
-      [trade.strategyTradeId, this.runId, trade.strategyId, trade.strategyVersion, trade.episodeId ?? null, trade.snapshotId ?? null, trade.decisionId ?? trade.strategyTradeId,
-       trade.marketKey, trade.direction, trade.stake, trade.payout ?? null, trade.requestedExpiry ?? null, trade.actualExpiry ?? null, trade.candidateAt ?? null, trade.expiryAt ?? null,
-       trade.decision, String(trade.reason ?? "").slice(0, 500), trade.evidenceStrength ?? null, trade.entryQuality ?? null,
-       JSON.stringify(trade.supporting ?? []), JSON.stringify(trade.counter ?? []), JSON.stringify(trade.specialistOutputs ?? {}), JSON.stringify(trade.entrySnapshot ?? {}),
-       trade.executionId ?? null, trade.brokerOrderId ?? null, trade.state ?? "REQUESTED"],
-    );
-  }
-
   async markTradeSettled({ strategyTradeId, settlementAt = null, entryPrice = null, settlementPrice = null, result, pnl }) {
     if (!this.pool?.query) return;
     await this.pool.query(
