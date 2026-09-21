@@ -174,13 +174,13 @@ export class LabRunner {
       [this.runId]).catch(() => ({ rows: [] }))).rows ?? [];
     for (const row of lateAcks) this.log("LAB_LATE_ACK_ATTRIBUTED", JSON.stringify({ strategyTradeId: row.strategy_trade_id }));
     const stale = (await this.pool.query(
-      "UPDATE iq_lab_trades SET state='EXPIRED_STALE', updated_at=now() WHERE run_id=$1 AND result IS NULL AND state IN ('SUBMITTED','PENDING_ACK','UNKNOWN','REQUESTED','ACKNOWLEDGED') AND entry_at < now() - interval '5 minutes' RETURNING strategy_id",
+      "UPDATE iq_lab_trades t SET state='EXPIRED_STALE', updated_at=now() WHERE t.run_id=$1 AND t.result IS NULL AND t.state IN ('SUBMITTED','PENDING_ACK','UNKNOWN','REQUESTED','ACKNOWLEDGED') AND t.entry_at < now() - interval '5 minutes' AND NOT EXISTS (SELECT 1 FROM iq_executions e WHERE e.decision_id = t.strategy_trade_id AND e.broker_result IS NOT NULL) RETURNING t.strategy_id",
       [this.runId]).catch(() => ({ rows: [] }))).rows ?? [];
     for (const row of stale) { await this.store.releaseReservation(row.strategy_id).catch(() => undefined); this.log("LAB_STALE_EXPIRED", JSON.stringify({ strategyId: row.strategy_id })); }
     const rows = (await this.pool.query(
       `SELECT t.strategy_trade_id, t.strategy_id, e.broker_result, e.profit, e.settled_at
        FROM iq_lab_trades t JOIN iq_executions e ON (e.decision_id = t.strategy_trade_id OR (t.execution_id IS NOT NULL AND e.execution_id = t.execution_id))
-       WHERE t.run_id=$1 AND t.result IS NULL AND t.state IN ('REQUESTED','ACKNOWLEDGED') LIMIT 50`, [this.runId]).catch(() => ({ rows: [] }))).rows ?? [];
+,`, [this.runId]).catch(() => ({ rows: [] }))).rows ?? [];
     for (const row of rows) {
       const mapped = ["WIN", "LOSS", "DRAW"].includes(row.broker_result) ? row.broker_result : null;
       if (!mapped) continue;
