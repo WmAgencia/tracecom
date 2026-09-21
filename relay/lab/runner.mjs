@@ -23,7 +23,7 @@ function qualityOf(result) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class LabRunner {
-  constructor({ runtime = null, pool = null, now = () => Date.now(), log = () => {}, emit = () => {}, enabled = false, runId = null, stake = null, strategies = null, cap = null, sourceRunId = null, sourceStrategy = null, reportRootDir = "estrategias/lab-6" } = {}) {
+  constructor({ runtime = null, pool = null, now = () => Date.now(), log = () => {}, emit = () => {}, enabled = false, runId = null, stake = null, strategies = null, cap = null, sourceRunId = null, sourceStrategy = null, reportRootDir = "estrategias/lab-6", evaluate = null } = {}) {
     this.runtime = runtime; this.pool = pool; this.now = now; this.log = log; this.emit = emit;
     this.enabled = enabled === true;
     this.runId = runId ?? `lab6-20260920-practice`;
@@ -32,6 +32,7 @@ export class LabRunner {
     this.strategies = Array.isArray(strategies) && strategies.length ? strategies : LAB_STRATEGY_IDS;
     this.cap = Number.isFinite(Number(cap)) && Number(cap) > 0 ? Number(cap) : LAB_SETTLEMENT_CAP;
     this.sourceRunId = sourceRunId; this.sourceStrategy = sourceStrategy; this.reportRootDir = reportRootDir;
+    this.evaluate = typeof evaluate === "function" ? evaluate : null;
     this.store = new LabStore({ pool, runId: this.runId, specsHash: this.specsHash, stake: this.stake, expiryPolicy: LAB_EXPIRY_POLICY, cap: this.cap, sourceRunId, sourceStrategy });
     this.states = new Map();
     for (const id of this.strategies) this.states.set(id, { opportunity: null, lastDecision: null, lastSide: null, lastPersistAt: 0, recovered: null });
@@ -71,7 +72,7 @@ export class LabRunner {
     this.counters.evaluations += 1;
     if (!this.practiceOk()) { this.counters.blockedReal += 1; return null; }
     const at = this.now();
-    const results = routeSnapshot(snapshot, { only: this.strategies });
+    const results = this.evaluate ? this.evaluate(snapshot) : routeSnapshot(snapshot, { only: this.strategies });
     const submissions = [];
     for (const result of results) {
       const st = this.states.get(result.strategyId); if (!st) continue;
