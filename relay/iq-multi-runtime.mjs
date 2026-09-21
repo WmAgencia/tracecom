@@ -1601,6 +1601,20 @@ export class IqMultiRuntime extends EventEmitter {
     return { entries };
   }
 
+  /** Resumo de performance (PRACTICE) para o dashboard: hoje/semana/mes + ativos ativos. */
+  async performanceSummary() {
+    if (!this.pool?.query) return null;
+    const scope = "account_context='PRACTICE'";
+    const q = async (interval) => (await this.pool.query("SELECT count(*) FILTER (WHERE broker_result IN ('WIN','LOSS','DRAW'))::int AS trades, count(*) FILTER (WHERE broker_result='WIN')::int AS wins, count(*) FILTER (WHERE broker_result='LOSS')::int AS losses, count(*) FILTER (WHERE broker_result='DRAW')::int AS draws, coalesce(sum(profit) FILTER (WHERE broker_result IS NOT NULL),0)::numeric AS pnl FROM iq_executions WHERE " + scope + " AND requested_at >= " + interval)).rows[0];
+    const today = await q("date_trunc('day', now())").catch(() => null);
+    const week = await q("date_trunc('week', now())").catch(() => null);
+    const month = await q("date_trunc('month', now())").catch(() => null);
+    const daily = (await this.pool.query("SELECT to_char(date_trunc('day', requested_at), 'DD/MM') AS day, coalesce(sum(profit) FILTER (WHERE broker_result IS NOT NULL),0)::numeric AS pnl FROM iq_executions WHERE " + scope + " AND requested_at >= now() - interval '7 days' GROUP BY 1 ORDER BY min(requested_at)").catch(() => ({ rows: [] }))).rows ?? [];
+    const activeAssets = [...this.markets.values()].filter((ctx) => this.#marketTradable(ctx)).length;
+    const withWr = (row) => row ? { ...row, pnl: Number(row.pnl), wr: (row.wins + row.losses) > 0 ? Number(((100 * row.wins) / (row.wins + row.losses)).toFixed(1)) : null } : null;
+    return { today: withWr(today), week: { ...withWr(week), daily }, month: withWr(month), activeAssets, connected: this.session.connected === true, at: this.now() };
+  }
+
   async labStatus() {
     const states = await this.lab?.store?.strategyStates?.().catch(() => []) ?? [];
     const s04States = await this.labS04?.store?.strategyStates?.().catch(() => []) ?? [];
