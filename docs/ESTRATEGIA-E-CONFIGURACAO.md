@@ -24,6 +24,10 @@
 5. **Janela de entrada: T-34s .. T-31,5s** antes do vencimento (3–4s antes do corte do broker em T-30) — a análise roda em tempo real desde o gatilho; a ordem sai o mais tarde possível.
 6. Execução: 1 ordem por vez, stake do painel, **PRACTICE** (real só com arm explícito do operador).
 
+**Nomes das estratégias no painel (seletor):** Rigida 100/90/80/70 · **Base 50%** · Base + Confirmacao (CF) · Base + Stochastic (ST) · Base + Sem Squeeze (SQ) · Confirmacao + Stochastic · Completa (CF+ST+SQ). O seletor mostra WR, ritmo (entradas/h) e margem; a ATIVA fica no topo.
+
+**Auto-recuperacao:** `AUTO_ARM_PRACTICE=true` re-arma sozinho (pratica) · watchdog de avaliacao (re-agenda ticks; se persistir, reconecta o WS) · sweeper de execucoes presas (libera o lock de 1 ordem) · stake resolvido no momento da ordem (config do painel).
+
 **Níveis do medidor A/B (mesma entrada, lado a lado):** `50` (base) · `50F` (+confirmação de candle) · `50T` (+Stochastic 14,3,3 no extremo) · `50FT` · `50S` (+sem squeeze) · `50FTS` · e os níveis 100/90/80/70 para referência.
 
 ## 2. Configuração em produção (snapshot)

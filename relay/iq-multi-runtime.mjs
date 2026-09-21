@@ -1685,6 +1685,25 @@ export class IqMultiRuntime extends EventEmitter {
   candlesArchiveStatus() { return this.candlesArchive?.status() ?? { version: "candles-archive-v1", ready: false, days: [] }; }
   candlesArchiveDay(date) { return this.candlesArchive?.dayGzip(date) ?? null; }
 
+  /** Sweeper: execucao vencida sem settlement nunca pode segurar o lock (1 ordem por vez) para sempre. */
+  async #sweepStaleExecutions() {
+    if (!this.pool?.query) return null;
+    try {
+      const res = await this.pool.query("UPDATE iq_executions SET state='EXPIRED_UNSETTLED', error=coalesce(error,'expirada sem settlement (sweeper)'), settled_at=now() WHERE state IN ('REQUESTED','ACKNOWLEDGED','PENDING_ACK','UNKNOWN') AND broker_result IS NULL AND coalesce(expiration_at, requested_at + interval '2 minutes') < now() - interval '2 minutes' RETURNING market_key");
+      if (res?.rowCount) {
+        for (const row of res.rows) {
+          const key = row.market_key;
+          if (this.openPositions?.has(key)) this.openPositions.delete(key);
+          if (this.pendingOrders?.has(key)) this.pendingOrders.delete(key);
+          const ctx = this.markets.get(key);
+          if (ctx) ctx.positionState = { ...ctx.positionState, status: "SETTLED", settledAt: this.now(), result: "EXPIRED_UNSETTLED" };
+        }
+        this.#safe(() => this.log("STALE_EXECUTION_SWEEP", JSON.stringify({ n: res.rowCount, markets: res.rows.map((r) => r.market_key).slice(0, 6) })));
+      }
+      return res?.rowCount ?? 0;
+    } catch (error) { this.#safe(() => this.log("STALE_EXECUTION_SWEEP_FAIL", String(error?.message ?? error).slice(0, 140))); return null; }
+  }
+
   /** Watchdog: feed vivo sem avaliacao por 2+ min => re-agenda ticks; se persistir => forca reconexao do WS. */
   async #evaluationWatchdog() {
     const feedLive = Boolean(this.client) && this.session?.connected === true;
@@ -1710,7 +1729,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   agentConfigState() { return { safetyPct: this.agentSafetyPct, variant: this.agentVariant || String(this.agentSafetyPct), filters: this.agentFilters ?? null, shadowLevels: this.safetyShadow ? this.safetyShadow.levels.map((spec) => spec.label) : [], shadowRunId: SAFETY_SHADOW_RUN_ID, fromEnv: this.agentSafetyFromEnv === true, autoArmPractice: this.autoArmPractice === true }; }
   async setAgentVariant(variant) { const raw = String(variant ?? "").trim().toUpperCase(); const match = raw.match(/^(\d{1,3})\s*([A-Z]{0,3})$/); if (!match) throw new IqWsError("AGENT_VARIANT_INVALID", raw.slice(0, 20)); const safety = Math.max(0, Math.min(100, Math.round(Number(match[1])))); const v = match[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S") } : null; this.agentSafetyPct = safety; this.agentSafetyFromEnv = false; this.agentVariant = String(safety) + v; this.agentFilters = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze) ? filters : null; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, updated_at=now() WHERE id=1", [safety, this.agentVariant]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_SET", JSON.stringify({ variant: this.agentVariant }))); return this.agentConfigState(); }
-  async setAgentSafetyPct(pct) { const value = Math.round(Number(pct)); if (!Number.isFinite(value) || value < 0 || value > 100) throw new IqWsError("AGENT_SAFETY_INVALID", String(pct)); this.agentSafetyPct = value; this.agentSafetyFromEnv = false; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, updated_at=now() WHERE id=1", [value]).catch(() => undefined); this.#safe(() => this.log("AGENT_SAFETY_SET", JSON.stringify({ safetyPct: value }))); return this.agentConfigState(); }
+  async setAgentSafetyPct(pct) { const value = Math.round(Number(pct)); if (!Number.isFinite(value) || value < 0 || value > 100) throw new IqWsError("AGENT_SAFETY_INVALID", String(pct)); this.agentSafetyPct = value; this.agentSafetyFromEnv = false; this.agentVariant = String(value); this.agentFilters = null; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, updated_at=now() WHERE id=1", [value, this.agentVariant]).catch(() => undefined); this.#safe(() => this.log("AGENT_SAFETY_SET", JSON.stringify({ safetyPct: value }))); return this.agentConfigState(); }
   async setShadowLevels(levels) { const parsed = parseSafetyLevels(levels); if (!parsed.length) throw new IqWsError("AGENT_SHADOW_LEVELS_INVALID", String(levels)); this.safetyShadow?.setLevels(parsed.map((spec) => spec.label)); if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET shadow_levels=$1, updated_at=now() WHERE id=1", [parsed.map((spec) => spec.label).join(",")]).catch(() => undefined); return this.agentConfigState(); }
   async safetyShadowReport(hours = 6) { return this.safetyShadow ? this.safetyShadow.report(hours) : { version: "safety-shadow-v1", runId: SAFETY_SHADOW_RUN_ID, levels: [], activeLevels: [] }; }
 
@@ -1781,7 +1800,7 @@ export class IqMultiRuntime extends EventEmitter {
         candles: list, targetExpiryAt, payout: ctx.payout, now, latency: {},
       });
     }
-    if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); }
+    if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); void this.#sweepStaleExecutions(); }
     if (this.agentic?.enabled === true) {
       const cache = this.agenticSnapshotCache ?? (this.agenticSnapshotCache = new Map());
       for (const ctx of this.markets.values()) {

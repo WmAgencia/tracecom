@@ -8,11 +8,40 @@
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/http.ts" },
-    { "source": "/health", "destination": "/api/http.ts" },
-    { "source": "/extension/(.*)", "destination": "/api/http.ts" },
-    { "source": "/research", "destination": "/research/index.html" },
-    { "source": "/dashboard", "destination": "/classic.html" },
-    { "source": "/classic", "destination": "/classic.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/http.ts"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/http.ts"
+    },
+    {
+      "source": "/extension/(.*)",
+      "destination": "/api/http.ts"
+    },
+    {
+      "source": "/research",
+      "destination": "/research/index.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/classic.html"
+    },
+    {
+      "source": "/classic",
+      "destination": "/classic.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/grid.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
+    }
   ]
 }
