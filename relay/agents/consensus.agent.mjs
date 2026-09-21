@@ -25,7 +25,7 @@ export function runConsensusAgent({ snapshot, opinions } = {}) {
   if (bollinger?.walkSide === (buy ? "LOWER" : "UPPER")) counterEvidence.push({ code: "BOLLINGER_WALK_CONTRA", detail: `preco caminhando na banda ${bollinger.walkSide.toLowerCase()} contra a tese` });
   if (buy && bollinger?.state === "EXPANSION" && bollinger?.position !== null && bollinger.position < 0.2 && bollinger?.rejection !== "LOWER") counterEvidence.push({ code: "BOLLINGER_FORA_INFERIOR", detail: "fechando fora da banda inferior sem reentrada" });
   if (!buy && bollinger?.state === "EXPANSION" && bollinger?.position !== null && bollinger.position > 0.8 && bollinger?.rejection !== "UPPER") counterEvidence.push({ code: "BOLLINGER_FORA_SUPERIOR", detail: "fechando fora da banda superior sem reentrada" });
-  if (oppositeAdx?.oldStrengthening === true) counterEvidence.push({ code: "ADX_TENDENCIA_ANTIGA_FORTALECENDO", detail: "DI antigo fortalecendo com ADX subindo" });
+  if (sideAdx?.oldStrengthening === true) counterEvidence.push({ code: "ADX_TENDENCIA_ANTIGA_FORTALECENDO", detail: "tendencia antiga (contra a tese) fortalecendo com ADX subindo" });
   if (rsi.state === "EXTREME_ACCELERATING") counterEvidence.push({ code: "RSI_EXTREMO_ACELERANDO", detail: `slope ${rsi.rsi} acelerando para o extremo` });
   if (fib?.state === "ZONE_BROKEN") counterEvidence.push({ code: "FIB_ZONE_BROKEN", detail: "anchor do leg perdido" });
   if (fib?.state === "OUT_OF_ZONE") counterEvidence.push({ code: "FIB_FORA_DE_ZONA", detail: "fora das zonas 38.2/50.0/61.8" });
@@ -40,7 +40,7 @@ export function runConsensusAgent({ snapshot, opinions } = {}) {
   if (bollingerSupports) supportingEvidence.push({ code: "BOLLINGER_SUPORTE", detail: bollinger.rejection ? `rejeicao ${bollinger.rejection.toLowerCase()}` : "regime de range" });
   else counterEvidence.push({ code: "BOLLINGER_SEM_SUPORTE", detail: `regime ${bollinger?.regime ?? "?"} sem rejeicao a favor` });
 
-  const adxSupports = adx?.regime === "RANGE" || sideAdx?.oldTrendWeakening === true || sideAdx?.oppositeReacting === true || sideAdx?.newDominance === true;
+  const adxSupports = sideAdx?.oldStrengthening !== true && (adx?.regime === "RANGE" || sideAdx?.oldTrendWeakening === true || sideAdx?.oppositeReacting === true || sideAdx?.newDominance === true);
   if (adxSupports) supportingEvidence.push({ code: "ADX_SUPORTE", detail: `regime ${adx?.regime} dominancia ${adx?.dominance}` });
   else counterEvidence.push({ code: "ADX_SEM_SUPORTE", detail: `tendencia antiga ainda forte (ADX ${adx?.adx})` });
 

@@ -87,10 +87,13 @@ export class LabRunner {
       }
       const approved = result.decision === "BUY" || result.decision === "SELL";
       if (approved) this.counters.approvals += 1; else this.counters.waits += 1;
-      const changed = st.lastDecision !== result.decision || st.lastSide !== (result.side ?? null);
-      const stale = at - st.lastPersistAt > 60_000;
+      const persistKey = result.strategyId + "|" + marketKey;
+      const prev = st.persistByMarket?.get(persistKey) ?? null;
+      const changed = !prev || prev.decision !== result.decision || prev.side !== (result.side ?? null);
+      const stale = !prev || at - prev.at > 60_000;
       if (changed || stale) {
-        st.lastDecision = result.decision; st.lastSide = result.side ?? null; st.lastPersistAt = at;
+        if (!st.persistByMarket) st.persistByMarket = new Map();
+        st.persistByMarket.set(persistKey, { decision: result.decision, side: result.side ?? null, at });
         void this.store.persistDecision({ strategyId: result.strategyId, marketKey, snapshotId: result.snapshotId, decision: result.decision, side: result.side, reason: result.reason, evidenceStrength: result.evidenceStrength, counter: result.counterEvidence, payload: result.specialistOutputs ?? null }).catch(() => undefined);
       }
       if (!approved) continue;
