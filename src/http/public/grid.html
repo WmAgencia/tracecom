@@ -94,6 +94,7 @@
     const candles = state.candles.get(row.marketKey);
     if (!candles || !candles.length) return ["SEM FEED", "off"];
     if (row.enabled !== true) return ["OFF", "off"];
+    if (row.status !== "OPEN") return ["SEM COMPRA", "wait"];
     const exec = state.results.get(row.marketKey);
     if (exec && exec.open && (exec.direction === "CALL" || exec.direction === "BUY" || exec.direction === "PUT" || exec.direction === "SELL")) {
       const dir = exec.direction === "CALL" || exec.direction === "BUY" ? "BUY" : "SELL";
