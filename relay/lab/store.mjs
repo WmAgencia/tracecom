@@ -89,7 +89,7 @@ export class LabStore {
   async reconcileOpenCounts() {
     if (!this.pool?.query) return;
     await this.pool.query(
-      "UPDATE iq_lab_strategy_state s SET open_count = (SELECT count(*)::int FROM iq_lab_trades t WHERE t.run_id = s.run_id AND t.strategy_id = s.strategy_id AND t.state IN ('SUBMITTED','REQUESTED','ACKNOWLEDGED') AND t.result IS NULL), updated_at = now() WHERE s.run_id = $1",
+      "UPDATE iq_lab_strategy_state s SET open_count = (SELECT count(*)::int FROM iq_lab_trades t WHERE t.run_id = s.run_id AND t.strategy_id = s.strategy_id AND t.state IN ('SUBMITTED','PENDING_ACK','UNKNOWN','REQUESTED','ACKNOWLEDGED') AND t.result IS NULL AND t.excluded = false), updated_at = now() WHERE s.run_id = $1",
       [this.runId],
     );
   }
