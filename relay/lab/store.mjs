@@ -48,11 +48,11 @@ export class LabStore {
          RETURNING 1
        )
        INSERT INTO iq_lab_trades(strategy_trade_id, run_id, strategy_id, strategy_version, episode_id, snapshot_id, decision_id, market_key, direction, stake, payout,
-         requested_expiry, expiry_at, candidate_at, entry_at, decision, reason, evidence_strength, entry_quality, supporting, counter, specialist_outputs, entry_snapshot, state)
-       SELECT $4,$1,$2,$5,$6,$7,$4,$8,$9,$10,$11,$12,$13,$14,now(),$15,$16,$17,$18,$19::jsonb,$20::jsonb,$21::jsonb,$22::jsonb,'SUBMITTED' FROM slot
+         requested_expiry, expiry_at, candidate_at, entry_at, decision, reason, evidence_strength, entry_quality, supporting, counter, specialist_outputs, entry_snapshot, state, excluded)
+       SELECT $4,$1,$2,$5,$6,$7,$4,$8,$9,$10,$11,$12,$13,$14,now(),$15,$16,$17,$18,$19::jsonb,$20::jsonb,$21::jsonb,$22::jsonb,'SUBMITTED',$23 FROM slot
        ON CONFLICT (strategy_trade_id) DO NOTHING
        RETURNING strategy_trade_id`,
-      [this.runId, trade.strategyId, this.cap, trade.strategyTradeId, trade.strategyVersion, trade.episodeId ?? null, trade.snapshotId ?? null, trade.marketKey, trade.direction, trade.stake, trade.payout ?? null, trade.requestedExpiry ?? null, trade.expiryAt ?? null, trade.candidateAt ?? null, trade.decision, String(trade.reason ?? "").slice(0, 500), trade.evidenceStrength ?? null, trade.entryQuality ?? null, JSON.stringify(trade.supporting ?? []), JSON.stringify(trade.counter ?? []), JSON.stringify(trade.specialistOutputs ?? {}), JSON.stringify(trade.entrySnapshot ?? {})],
+      [this.runId, trade.strategyId, this.cap, trade.strategyTradeId, trade.strategyVersion, trade.episodeId ?? null, trade.snapshotId ?? null, trade.marketKey, trade.direction, trade.stake, trade.payout ?? null, trade.requestedExpiry ?? null, trade.expiryAt ?? null, trade.candidateAt ?? null, trade.decision, String(trade.reason ?? "").slice(0, 500), trade.evidenceStrength ?? null, trade.entryQuality ?? null, JSON.stringify(trade.supporting ?? []), JSON.stringify(trade.counter ?? []), JSON.stringify(trade.specialistOutputs ?? {}), JSON.stringify(trade.entrySnapshot ?? {}), trade.excluded === true],
     )).rows?.[0] ?? null;
     if (row) return row;
     const existing = (await this.pool.query("SELECT strategy_trade_id FROM iq_lab_trades WHERE strategy_trade_id=$1", [trade.strategyTradeId])).rows?.[0] ?? null;

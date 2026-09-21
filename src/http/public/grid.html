@@ -36,7 +36,7 @@
   .chart { flex:2; min-height:0; width:100%; display:block; }
   .name { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border-top:1px solid var(--line); font-size:10.5px; font-weight:600; padding:2px; text-align:center; }
   .chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:999px; border:1px solid var(--line); color:var(--dim); }
-  .chip.wait { color:var(--wait); border-color:#5a4a12; } .chip.watch { color:var(--watch); border-color:#0e4a63; } .chip.open { color:var(--up); border-color:#14532d; } .chip.off { color:#64748b; }
+  .chip.wait { color:var(--wait); border-color:#5a4a12; } .chip.watch { color:var(--watch); border-color:#0e4a63; } .chip.open { color:var(--up); border-color:#14532d; } .chip.off { color:#64748b; } .chip.assist { color:#7dd3fc; border-color:#0c4a6e; }
   .modal { position:fixed; inset:0; background:rgba(3,7,18,.72); display:none; align-items:center; justify-content:center; z-index:50; }
   .modal.on { display:flex; }
   .modal .box { background:#0e1730; border:1px solid var(--line); border-radius:12px; width:min(760px,94vw); max-height:82vh; overflow:auto; padding:14px; }
@@ -95,18 +95,33 @@
     if (!candles || !candles.length) return ["SEM FEED", "off"];
     if (row.enabled !== true) return ["OFF", "off"];
     const exec = state.results.get(row.marketKey);
-    if (exec && exec.open) return ["OPEN", "open"];
+    if (exec && exec.open && (exec.direction === "CALL" || exec.direction === "BUY" || exec.direction === "PUT" || exec.direction === "SELL")) {
+      const dir = exec.direction === "CALL" || exec.direction === "BUY" ? "BUY" : "SELL";
+      return [dir, "open"];
+    }
     const a = state.agentic.get(row.marketKey);
     if (a && (a.decision === "BUY" || a.decision === "SELL")) return [a.decision, "watch"];
-    if (a && a.rsi_state && a.rsi_state !== "NEUTRAL") return ["WATCH", "watch"];
+    if (a && a.side && (a.decision === "WAIT") && a.rsi_state && a.rsi_state !== "NEUTRAL") return ["WAIT", "wait"];
     const c = state.consensus.get(row.marketKey);
     if (c && (c.decision === "BUY" || c.decision === "SELL")) return [c.decision, "watch"];
-    if (c && c.rsiState && c.rsiState !== "NEUTRAL") return ["WATCH", "watch"];
-    return ["WAIT", "wait"];
+    return ["ASSISTINDO", "assist"];
   };
   const resultOf = (row) => {
     const exec = state.results.get(row.marketKey);
-    if (!exec || exec.open || exec.result === null || exec.result === undefined) return { text: "", cls: "" };
+    if (!exec) return { text: "", cls: "" };
+    if (exec.open) {
+      const candles = state.candles.get(row.marketKey);
+      const price = candles && candles.length ? Number(candles[candles.length - 1].close) : null;
+      const entry = Number(exec.entryPrice);
+      const stake = Number(exec.stake) || 2;
+      const payout = Number(exec.payout);
+      if (price === null || !Number.isFinite(entry) || entry <= 0) return { text: "", cls: "" };
+      const up = exec.direction === "CALL" || exec.direction === "BUY";
+      const winning = up ? price > entry : price < entry;
+      const value = winning ? stake * ((Number.isFinite(payout) ? payout : 90) / 100) : -stake;
+      return { text: fmtSigned(value), cls: value >= 0 ? "win" : "loss" };
+    }
+    if (exec.result === null || exec.result === undefined) return { text: "", cls: "" };
     if (exec.result === "DRAW") return { text: "R$ 0,00", cls: "draw" };
     return { text: fmtSigned(exec.profit), cls: Number(exec.profit) >= 0 ? "win" : "loss" };
   };
@@ -192,7 +207,7 @@
       const key = row.market_key ?? row.marketKey; if (!key) continue;
       if (state.results.has(key)) continue;
       const settled = String(row.state).toUpperCase() === "SETTLED";
-      state.results.set(key, { open: !settled, result: settled ? (row.broker_result ?? null) : null, profit: Number(row.profit ?? 0) });
+      state.results.set(key, { open: !settled, result: settled ? (row.broker_result ?? null) : null, profit: Number(row.profit ?? 0), direction: row.direction ?? null, entryPrice: row.entry_price ?? null, stake: row.stake ?? null, payout: row.payout ?? null });
     }
     renderText();
   };

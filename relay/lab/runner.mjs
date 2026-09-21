@@ -23,7 +23,7 @@ function qualityOf(result) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class LabRunner {
-  constructor({ runtime = null, pool = null, now = () => Date.now(), log = () => {}, emit = () => {}, enabled = false, runId = null, stake = null, strategies = null, cap = null, sourceRunId = null, sourceStrategy = null, reportRootDir = "estrategias/lab-6", evaluate = null } = {}) {
+  constructor({ runtime = null, pool = null, now = () => Date.now(), log = () => {}, emit = () => {}, enabled = false, runId = null, stake = null, strategies = null, cap = null, sourceRunId = null, sourceStrategy = null, reportRootDir = "estrategias/lab-6", evaluate = null, entryWindowOpenMs = 45_000, entryWindowCloseMs = null } = {}) {
     this.runtime = runtime; this.pool = pool; this.now = now; this.log = log; this.emit = emit;
     this.enabled = enabled === true;
     this.runId = runId ?? `lab6-20260920-practice`;
@@ -33,6 +33,8 @@ export class LabRunner {
     this.cap = Number.isFinite(Number(cap)) && Number(cap) > 0 ? Number(cap) : LAB_SETTLEMENT_CAP;
     this.sourceRunId = sourceRunId; this.sourceStrategy = sourceStrategy; this.reportRootDir = reportRootDir;
     this.evaluate = typeof evaluate === "function" ? evaluate : null;
+    this.entryWindowOpenMs = Number(entryWindowOpenMs) > 0 ? Number(entryWindowOpenMs) : 45_000;
+    this.entryWindowCloseMs = Number(entryWindowCloseMs) > 0 ? Number(entryWindowCloseMs) : LAB_EXPIRY_POLICY.safeCutoffMs;
     this.store = new LabStore({ pool, runId: this.runId, specsHash: this.specsHash, stake: this.stake, expiryPolicy: LAB_EXPIRY_POLICY, cap: this.cap, sourceRunId, sourceStrategy });
     this.states = new Map();
     for (const id of this.strategies) this.states.set(id, { opportunity: null, lastDecision: null, lastSide: null, lastPersistAt: 0, recovered: null });
@@ -91,8 +93,8 @@ export class LabRunner {
       if (!approved) continue;
       const expiry = Number(targetExpiryAt);
       if (!Number.isFinite(expiry)) continue;
-      if (at < expiry - 45_000) continue;
-      if (at > expiry - LAB_EXPIRY_POLICY.safeCutoffMs) { this.counters.missed += 1; this.emit("lab.missed", { strategyId: result.strategyId, marketKey, at }); continue; }
+      if (at < expiry - this.entryWindowOpenMs) continue;
+      if (at > expiry - this.entryWindowCloseMs) { this.counters.missed += 1; this.emit("lab.missed", { strategyId: result.strategyId, marketKey, at }); continue; }
       submissions.push({ result, expiry, candidateAt: st.opportunity?.candidateAt ?? at });
     }
     for (const submission of submissions) {
@@ -175,13 +177,13 @@ export class LabRunner {
       [this.runId]).catch(() => ({ rows: [] }))).rows ?? [];
     for (const row of lateAcks) this.log("LAB_LATE_ACK_ATTRIBUTED", JSON.stringify({ strategyTradeId: row.strategy_trade_id }));
     const stale = (await this.pool.query(
-      "UPDATE iq_lab_trades t SET state='EXPIRED_STALE', updated_at=now() WHERE t.run_id=$1 AND t.result IS NULL AND t.state IN ('SUBMITTED','PENDING_ACK','UNKNOWN','REQUESTED','ACKNOWLEDGED') AND t.entry_at < now() - interval '5 minutes' AND NOT EXISTS (SELECT 1 FROM iq_executions e WHERE e.decision_id = t.strategy_trade_id AND e.broker_result IS NOT NULL) RETURNING t.strategy_id",
+      "UPDATE iq_lab_trades t SET state='EXPIRED_STALE', updated_at=now() WHERE t.run_id=$1 AND t.result IS NULL AND t.state IN ('SUBMITTED','PENDING_ACK','UNKNOWN','REQUESTED','ACKNOWLEDGED') AND t.entry_at < now() - interval '5 minutes' AND t.excluded = false AND NOT EXISTS (SELECT 1 FROM iq_executions e WHERE e.decision_id = t.strategy_trade_id AND e.broker_result IS NOT NULL) RETURNING t.strategy_id",
       [this.runId]).catch(() => ({ rows: [] }))).rows ?? [];
     for (const row of stale) { await this.store.releaseReservation(row.strategy_id).catch(() => undefined); this.log("LAB_STALE_EXPIRED", JSON.stringify({ strategyId: row.strategy_id })); }
     const rows = (await this.pool.query(
       `SELECT t.strategy_trade_id, t.strategy_id, e.broker_result, e.profit, e.settled_at
-       FROM iq_lab_trades t JOIN iq_executions e ON (e.decision_id = t.strategy_trade_id OR (t.execution_id IS NOT NULL AND e.execution_id = t.execution_id))
-,`, [this.runId]).catch(() => ({ rows: [] }))).rows ?? [];
+       FROM iq_lab_trades t JOIN iq_executions e ON (e.decision_id = t.strategy_trade_id OR (t.execution_id IS NOT NULL AND e.execution_id = t.execution_id)) WHERE t.run_id=$1 AND t.result IS NULL AND t.excluded = false AND t.state IN ('SUBMITTED','PENDING_ACK','UNKNOWN','REQUESTED','ACKNOWLEDGED') LIMIT 50
+`, [this.runId]).catch(() => ({ rows: [] }))).rows ?? [];
     for (const row of rows) {
       const mapped = ["WIN", "LOSS", "DRAW"].includes(row.broker_result) ? row.broker_result : null;
       if (!mapped) continue;

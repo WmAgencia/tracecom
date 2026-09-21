@@ -122,7 +122,7 @@ export class IqMultiRuntime extends EventEmitter {
     try { this.consensus = new ConsensusRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: consensusEnabled === true, execute: consensusExecute === true, emit: (type, payload) => this.#emitEvent(type, payload) }); } catch (error) { this.consensus = null; this.#safe(() => this.log("CONSENSUS_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     try { this.lab = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: labEnabled === true, runId: labRunId, stake: labStake, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.lab?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.lab.reportRootDir })).catch(() => undefined); } }); void this.lab.start().catch(() => undefined); } catch (error) { this.lab = null; this.#safe(() => this.log("LAB_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     try { this.labS04 = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: labS04Enabled === true, runId: labS04RunId ?? "s04-bollinger-50-20260921", stake: labStake, strategies: ["S04_BOLLINGER_MEAN_REVERSION"], cap: 50, sourceRunId: labRunId ?? "lab6-20260920-practice", sourceStrategy: "S04_BOLLINGER_MEAN_REVERSION", reportRootDir: "estrategias/experiments/s04-bollinger-50", emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.labS04?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.labS04.reportRootDir })).catch(() => undefined); } }); void this.labS04.start().catch(() => undefined); } catch (error) { this.labS04 = null; this.#safe(() => this.log("LAB_S04_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
-    try { this.agentic = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: agenticEnabled === true, runId: agenticRunId ?? "agentic-rsi-fib-20260921", stake: labStake, strategies: [AGENTIC_STRATEGY_ID], cap: 50, reportRootDir: "estrategias/experiments/agentic-rsi-fib", evaluate: (snapshot) => [agentGraphToStrategyResult(runAgentGraph(snapshot))].filter(Boolean), emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.agentic?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.agentic.reportRootDir })).catch(() => undefined); } }); void this.agentic.start().catch(() => undefined); } catch (error) { this.agentic = null; this.#safe(() => this.log("AGENTIC_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
+    try { this.agentic = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: agenticEnabled === true, runId: agenticRunId ?? "agentic-rsi-fib-20260921", stake: labStake, strategies: [AGENTIC_STRATEGY_ID], cap: 50, reportRootDir: "estrategias/experiments/agentic-rsi-fib", evaluate: (snapshot) => [agentGraphToStrategyResult(runAgentGraph(snapshot))].filter(Boolean), entryWindowOpenMs: 60_000, entryWindowCloseMs: 30_000, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.agentic?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.agentic.reportRootDir })).catch(() => undefined); } }); void this.agentic.start().catch(() => undefined); } catch (error) { this.agentic = null; this.#safe(() => this.log("AGENTIC_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     this.accountContext.onEvent = (event, payload) => this.#emitEvent(`account_context.${event.toLowerCase()}`, payload ?? {});
     this.decisionOverride = typeof decisionOverride === "function" ? decisionOverride : null; // diagnostico/testes deterministicos (nunca usado em producao)
     this.running = false; this.client = null; this.connection = null; this.stopRequested = false;
@@ -1522,6 +1522,49 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
     const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 1);
     return this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: 60, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId });
+  }
+
+  /** TESTE PONTA-A-PONTA do pipeline agentic (PRACTICE-only): gatilho RSI simulado -> agentes -> consenso -> IQ Option. */
+  async agenticTestRun({ marketKey, forceSide = null, waitForWindow = true } = {}) {
+    if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("LAB_PRACTICE_ONLY", String(this.config.mode));
+    if (!this.agentic?.enabled) throw new IqWsError("AGENTIC_DISABLED");
+    const ctx = this.markets.get(String(marketKey));
+    if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
+    const list = this.#candleList(ctx);
+    if (list.length < 60) throw new IqWsError("INSUFFICIENT_CANDLES", String(list.length));
+    const now = this.now();
+    const serverNow = this.client?.serverNow?.() ?? now;
+    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    let snapshot = buildMarketSnapshot({ marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt });
+    if (!snapshot) throw new IqWsError("SNAPSHOT_UNAVAILABLE");
+    if (forceSide === "BUY" || forceSide === "SELL") {
+      const rsiValue = forceSide === "SELL" ? 76 : 24;
+      snapshot = { ...snapshot, indicators: { ...snapshot.indicators, rsi: rsiValue, rsiTrajectory: [...(snapshot.indicators.rsiTrajectory ?? []).slice(0, -1), rsiValue], rsiSlope: forceSide === "SELL" ? 0.2 : -0.2 } };
+    }
+    const graph = runAgentGraph(snapshot);
+    const decision = graph.consensus;
+    if (decision.decision !== "BUY" && decision.decision !== "SELL") {
+      return { test: true, marketKey, targetExpiryAt, decision: "WAIT", side: decision.side, reason: decision.reason, conversation: graph.conversation, order: null };
+    }
+    if (waitForWindow === true) {
+      const openAt = targetExpiryAt - 60_000;
+      while (this.now() < openAt) await new Promise((resolve) => setTimeout(resolve, 1_000));
+      const closeAt = targetExpiryAt - 30_000;
+      if (this.now() > closeAt) return { test: true, marketKey, targetExpiryAt, decision: decision.decision, side: decision.side, reason: "FORA_DA_JANELA_T60_T30", conversation: graph.conversation, order: null };
+    }
+    const strategyTradeId = "lab:" + this.agentic.runId + ":PATH_TEST:" + marketKey + ":" + targetExpiryAt + ":" + decision.side;
+    const order = await this.submitLabPracticeOrder({ marketKey, direction: decision.side, strategyId: "AGENTIC_PATH_TEST", strategyTradeId, stake: Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2 });
+    await this.agentic.store.reserveSlotWithTrade({
+      strategyTradeId, strategyId: this.agentic.strategies[0], strategyVersion: "path-test", marketKey, direction: decision.side,
+      stake: Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2, payout: snapshot.payout ?? null,
+      requestedExpiry: new Date(targetExpiryAt).toISOString(), expiryAt: new Date(targetExpiryAt).toISOString(), candidateAt: new Date(now).toISOString(),
+      decision: decision.decision, reason: "[PATH_TEST] " + String(decision.reason ?? "").slice(0, 400), evidenceStrength: decision.evidenceStrength,
+      entryQuality: "PATH_TEST", supporting: decision.supportingEvidence, counter: decision.counterEvidence,
+      specialistOutputs: { graph: graph.version, opinions: graph.opinions, consensus: decision, conversation: graph.conversation, latencyMs: graph.latencyMs },
+      entrySnapshot: snapshot, excluded: true,
+    }).catch((error) => this.#safe(() => this.log("AGENTIC_TEST_PERSIST_FAIL", String(error?.message ?? error).slice(0, 140))));
+    if (order?.executionId) await this.agentic.store.updateTradeState({ strategyTradeId, state: String(order.state ?? "REQUESTED"), executionId: order.executionId, brokerOrderId: order.brokerOrderId ?? null }).catch(() => undefined);
+    return { test: true, marketKey, targetExpiryAt, decision: decision.decision, side: decision.side, reason: decision.reason, conversation: graph.conversation, order: { state: order?.state ?? null, brokerOrderId: order?.brokerOrderId ?? null, executionId: order?.executionId ?? null } };
   }
 
   async labStatus() {
