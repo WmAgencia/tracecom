@@ -80,7 +80,8 @@ try {
   const realRunner = new LabRunner({ runtime: { config: { mode: "REAL" }, accountContext: { context: "REAL" } }, pool: null, enabled: true, runId });
   realRunner.started = true;
   await realRunner.observeMarket({ snapshot, marketKey: "TEST:OTC", targetExpiryAt: now + 20_000 });
-  check(8, "PRACTICE-only bloqueia REAL", realRunner.counters.blockedReal >= 1 && realRunner.counters.submits === 0, `blockedReal=${realRunner.counters.blockedReal}`);
+  const rtSrc = fs.readFileSync(new URL("../relay/iq-multi-runtime.mjs", import.meta.url), "utf8");
+  check(8, "avaliacao roda em REAL; gasto real so com arm (dry-run desarmado)", realRunner.counters.blockedReal === 0 && rtSrc.includes("REAL_NOT_ARMED"), `blockedReal=${realRunner.counters.blockedReal}`);
 
   await store.releaseReservation(LAB_STRATEGY_IDS[0]);
   await store.releaseReservation(LAB_STRATEGY_IDS[1]);

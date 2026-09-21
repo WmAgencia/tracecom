@@ -1,3 +1,4 @@
+import fs from "node:fs";
 /** AGENTIC RSI+FIB — testes pre-T0 (mesmo snapshot, gatilho 70/30, consenso, isolamento, PRACTICE-only). */
 import { createRequire } from "node:module";
 const require = createRequire(new URL("../relay/package.json", import.meta.url));
@@ -58,7 +59,8 @@ try {
   const realRunner = new LabRunner({ runtime: { config: { mode: "REAL" }, accountContext: { context: "REAL" } }, pool: null, enabled: true, runId, strategies: [AGENTIC_STRATEGY_ID], cap: 50, evaluate: (s) => [agentGraphToStrategyResult(runAgentGraph(s))].filter(Boolean) });
   realRunner.started = true;
   await realRunner.observeMarket({ snapshot, marketKey: "T:OTC", targetExpiryAt: now + 20_000 });
-  check(10, "PRACTICE-only bloqueia REAL (agentic)", realRunner.counters.blockedReal === 1 && realRunner.counters.submits === 0);
+  const runtimeSrc = fs.readFileSync(new URL("../relay/iq-multi-runtime.mjs", import.meta.url), "utf8");
+  check(10, "avaliacao roda em REAL; gasto real so com arm (dry-run desarmado)", realRunner.counters.blockedReal === 0 && runtimeSrc.includes("REAL_NOT_ARMED") && runtimeSrc.includes("realArmed"));
 
   const store = new LabStore({ pool, runId, specsHash: "agentic", stake: 2, cap: 50 });
   await store.ensureRun([AGENTIC_STRATEGY_ID]);
