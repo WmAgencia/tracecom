@@ -1521,17 +1521,16 @@ export class IqMultiRuntime extends EventEmitter {
   async submitLabPracticeOrder({ marketKey, direction, strategyId, strategyTradeId, stake = null } = {}) {
     const mode = String(this.config.mode).toUpperCase();
     if (mode !== "PRACTICE") {
-      if (this.accountContext.context !== ACCOUNT_REAL && this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_REAL_CONTEXT_INVALID", String(this.accountContext.context));
-      const dryRun = process.env.REAL_DRY_RUN !== "false";
       const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2);
-      if (dryRun) {
-        const intent = { marketKey, direction, strategyId, strategyTradeId, stake: amount, mode, expiryAt: null, at: this.now() };
+      // Gasto real SOMENTE com arm explicito da conta REAL pelo operador (front): execucao armada + contexto REAL armado.
+      const realArmed = this.armState.armed === true && this.accountContext.context === ACCOUNT_REAL && this.accountContext.armed === true;
+      const forcedDryRun = process.env.REAL_DRY_RUN === "true";
+      if (!realArmed || forcedDryRun) {
+        const intent = { marketKey, direction, strategyId, strategyTradeId, stake: amount, mode, armed: realArmed, dryRunReason: forcedDryRun ? "REAL_DRY_RUN_ENV" : "REAL_NOT_ARMED", at: this.now() };
         this.log("REAL_DRY_RUN", JSON.stringify(intent));
         this.#emitEvent("lab.real_dry_run", intent);
         return { state: "DRY_RUN", dryRun: true, brokerOrderId: null, executionId: null, requestId: null, stake: amount, mode: "REAL" };
       }
-      if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
-      if (this.accountContext.context !== ACCOUNT_REAL || this.accountContext.armed !== true) throw new IqWsError("LAB_REAL_CONTEXT_NOT_ARMED", String(this.accountContext.context));
       return this.submitAgentV2LiveOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", strategyId, skill: strategyId, stake: amount, expectedStake: amount, entryMode: "AGENTIC_REAL", idempotencyKey: strategyTradeId });
     }
     if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
@@ -2081,7 +2080,8 @@ export class IqMultiRuntime extends EventEmitter {
       const uiStake = Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : Number(this.stakeBrl ?? 1);
       const requestedAmount = Number(stake) > 0 ? Number(stake) : uiStake;
       const BROKER_MIN_AMOUNT_BRL = 2;
-      const BROKER_MAX_AMOUNT_BRL = 2;
+      const armedMaxStake = Number(this.accountContext?.armedMeta?.maxStake ?? this.realMode?.session?.maxStake ?? 2);
+      const BROKER_MAX_AMOUNT_BRL = Number.isFinite(armedMaxStake) && armedMaxStake >= BROKER_MIN_AMOUNT_BRL ? armedMaxStake : BROKER_MIN_AMOUNT_BRL;
       const amount = Math.min(Math.max(requestedAmount, BROKER_MIN_AMOUNT_BRL), BROKER_MAX_AMOUNT_BRL);
       const balanceAmount = Number(balance?.amount ?? NaN);
       if (Number.isFinite(balanceAmount) && balanceAmount < amount) throw new IqWsError("MCP_INSUFFICIENT_BALANCE", balanceAmount + " < " + amount);
