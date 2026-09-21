@@ -33,7 +33,8 @@ export class LabRunner {
     this.states = new Map();
     for (const id of LAB_STRATEGY_IDS) this.states.set(id, { opportunity: null, lastDecision: null, lastSide: null, lastPersistAt: 0, recovered: null });
     this.counters = { evaluations: 0, opportunities: 0, waits: 0, approvals: 0, blockedReal: 0, capacityBlocked: 0, submits: 0, rejected: 0, timeouts: 0, settled: 0, missed: 0, recoveredOpen: 0, recoveredSettled: 0 };
-    this.submitChain = Promise.resolve();
+    this.submitQueue = [];
+    this.submitBusy = false;
     this.started = false;
   }
 
@@ -91,12 +92,22 @@ export class LabRunner {
       submissions.push({ result, expiry, candidateAt: st.opportunity?.candidateAt ?? at });
     }
     for (const submission of submissions) {
-      const run = () => this.#submitOne(submission, { marketKey, snapshot, payout });
-      const chained = this.submitChain.then(run, run);
-      this.submitChain = chained.catch(() => undefined);
-      await chained;
+      if (this.submitQueue.length >= 40) { this.counters.capacityBlocked += 1; continue; }
+      await new Promise((resolve) => {
+        this.submitQueue.push({ submission, marketKey, snapshot, payout, resolve });
+        this.#pumpSubmitQueue();
+      });
     }
     return results.length;
+  }
+
+  #pumpSubmitQueue() {
+    if (this.submitBusy) return;
+    const next = this.submitQueue.shift();
+    if (!next) return;
+    this.submitBusy = true;
+    const job = this.#submitOne(next.submission, { marketKey: next.marketKey, snapshot: next.snapshot, payout: next.payout });
+    Promise.resolve(job).catch(() => undefined).finally(() => { this.submitBusy = false; next.resolve(); this.#pumpSubmitQueue(); });
   }
 
   async #submitOne({ result, expiry, candidateAt }, { marketKey, snapshot, payout }) {
