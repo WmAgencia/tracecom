@@ -9,7 +9,8 @@ import { LAB_STRATEGY_SPECS, LAB_STRATEGY_IDS, labSpecsHash, LAB_STAKE_POLICY, L
 const round2 = (v) => (Number.isFinite(Number(v)) ? Number(Number(v).toFixed(2)) : null);
 const pct = (part, total) => (total > 0 ? round2((100 * part) / total) : null);
 
-function statsFor(trades) {
+function statsFor(allTrades) {
+  const trades = allTrades.filter((t) => t.excluded !== true);
   const settled = trades.filter((t) => t.result);
   const wins = settled.filter((t) => t.result === "WIN").length;
   const losses = settled.filter((t) => t.result === "LOSS").length;
@@ -26,7 +27,7 @@ function statsFor(trades) {
   const times = trades.map((t) => Date.parse(t.entry_at)).filter(Number.isFinite).sort((a, b) => a - b);
   const spanHours = times.length > 1 ? (times[times.length - 1] - times[0]) / 3600_000 : null;
   return {
-    trades: trades.length, settled: settled.length, wins, losses, draws,
+    trades: trades.length, settled: settled.length, wins, losses, draws, excluded: allTrades.length - trades.length,
     wrExclDraw: pct(wins, wins + losses), wrInclDraw: pct(wins, settled.length),
     pnl: round2(pnl), avgPayout: payouts.length ? round2(payouts.reduce((a, b) => a + b, 0) / payouts.length) : null,
     avgEvidenceStrength: evidence.length ? round2(evidence.reduce((a, b) => a + b, 0) / evidence.length) : null,

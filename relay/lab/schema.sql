@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS iq_lab_trades (
   execution_id text,
   broker_order_id text,
   state text NOT NULL DEFAULT 'REQUESTED',
+  excluded boolean NOT NULL DEFAULT false,
   settlement_at timestamptz,
   entry_price numeric,
   settlement_price numeric,
