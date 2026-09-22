@@ -20,10 +20,12 @@ export class BlitzLab {
     this.expirationSeconds = Math.max(5, Math.min(300, Number(expirationSeconds) || BLITZ_EXPIRATION_SECONDS));
     this.balanceId = null;
     this.stats = { submits: 0, settled: 0, errors: 0, lastError: null, lastOrderAt: null };
+    this.pausedUntil = 0;
     this.client = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.blitz, log: this.log, now: this.now });
   }
 
   setToken(token) { return this.client.setToken(token); }
+  get paused() { return this.now() < Number(this.pausedUntil ?? 0); }
   get enabled() { return this.client.enabled; }
 
   async #balance() {
@@ -63,6 +65,7 @@ export class BlitzLab {
       result = await this.client.placeTrade({ balanceId, assetId, direction, amount, profitPercent: profitPercent ?? 80, expirationSize: this.expirationSeconds });
     } catch (error) {
       this.stats.errors += 1; this.stats.lastError = String(error?.code ?? error?.message ?? error).slice(0, 140);
+      if (String(this.stats.lastError).includes("IQ_MCP_BAD_RESPONSE") || String(this.stats.lastError).includes("IQ_MCP_BUSY") || String(this.stats.lastError).includes("RATE_LIMIT")) this.pausedUntil = this.now() + 300_000;
       if (this.pool?.query) await this.pool.query("UPDATE iq_executions SET state='REJECTED', error=$2, settled_at=now() WHERE execution_id=$1", [executionId, this.stats.lastError]).catch(() => undefined);
       throw error;
     }

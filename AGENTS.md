@@ -35,6 +35,14 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 - **A lógica deve ser simples.** Se não for necessário, não escreva.
 - Ao remover algo, remover por completo (código + rotas + tabelas + docs), sem deixar rastros.
 
+## 3.1 LÓGICA SIMPLES (REGRA PERMANENTE)
+
+- **Sempre** escrever a lógica mais simples que resolve o problema. Simples de entender, simples de corrigir.
+- Proibido gambiarra: sem flags escondidas, sem remendos, sem duplicar caminhos, sem "jeitinho".
+- Um problema, uma causa, uma correção no ponto certo (ex.: falha de rede → retry no cliente, não em cada chamador).
+- Antes de corrigir: **auditar todo o caminho** do problema (todas as partes que tocam o fluxo) e corrigir a causa raiz.
+- Sempre remover o que ficou órfão (código, rotas, linhas) — zero resíduo.
+
 ## 4. CHECKPOINTS E NÃO-REGRESSÃO
 
 - Antes de mudanças maiores: **commit + tag `checkpoint-*`**.

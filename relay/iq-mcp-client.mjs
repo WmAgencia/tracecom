@@ -29,6 +29,8 @@ export class IqMcpClient {
 
   async #rpc(method, params, { notification = false } = {}) {
     if (!this.enabled) throw Object.assign(new Error("IQ_MCP_TOKEN ausente"), { code: "IQ_MCP_TOKEN_MISSING" });
+    // O MCP as vezes responde 202 (aceito) SEM corpo quando esta ocupado: tenta de novo ate obter o JSON.
+    for (let attempt = 0; attempt < 6; attempt += 1) {
     const headers = { "content-type": "application/json", accept: "application/json, text/event-stream", authorization: `Bearer ${this.token}` };
     if (this.sessionId) headers["mcp-session-id"] = this.sessionId;
     const body = notification ? { jsonrpc: "2.0", method, params } : { jsonrpc: "2.0", id: this.nextId++, method, params };
@@ -37,9 +39,12 @@ export class IqMcpClient {
     const text = await response.text();
     let json = null;
     try { json = JSON.parse(text); } catch { const line = text.split(/\r?\n/).find((l) => l.startsWith("data:")); if (line) { try { json = JSON.parse(line.slice(5).trim()); } catch { /* noop */ } } }
+    if (!json && (response.status === 202 || response.status === 200) && attempt < 5) { await new Promise((r) => setTimeout(r, 2500)); continue; }
     if (!json) throw Object.assign(new Error(`IQ_MCP_BAD_RESPONSE_${response.status}`), { code: "IQ_MCP_BAD_RESPONSE" });
     if (json.error) throw Object.assign(new Error(String(json.error.message ?? "IQ_MCP_ERROR").slice(0, 200)), { code: `IQ_MCP_${json.error.code ?? "ERROR"}`, detail: json.error });
     return json.result ?? null;
+    }
+    throw Object.assign(new Error("IQ_MCP_BUSY_202"), { code: "IQ_MCP_BUSY_202" });
   }
 
   async #ensureSession() {

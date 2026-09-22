@@ -1588,6 +1588,8 @@ export class IqMultiRuntime extends EventEmitter {
       return this.submitAgentV2LiveOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", strategyId, skill: strategyId, stake: amount, expectedStake: amount, entryMode: "AGENTIC_REAL", idempotencyKey: strategyTradeId });
     }
     if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
+    // Desarmado: registra a intencao como DRY_RUN (mede) sem floodar REJECTED nem enviar ordem.
+    if (this.armState.armed !== true) return { state: "DRY_RUN", dryRun: true, dryRunReason: "NOT_ARMED", brokerOrderId: null, executionId: null, stake: Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2), mode: "PRACTICE" };
     if (this.agentExecBinary !== true && !String(strategyId ?? "").includes("BLITZ")) throw new IqWsError("BINARY_EXEC_DISABLED");
     if (String(strategyId ?? "").includes("BLITZ")) {
       if (this.agentExecBlitz !== true) throw new IqWsError("BLITZ_EXEC_DISABLED");
@@ -1850,7 +1852,7 @@ export class IqMultiRuntime extends EventEmitter {
         void this.agentic.observeMarket({ snapshot: entry.snapshot, marketKey: ctx.marketKey, targetExpiryAt: Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000, payout: ctx.payout });
       }
     }
-    if (this.blitzRun?.enabled === true && this.blitzLab?.enabled === true) {
+    if (this.blitzRun?.enabled === true && this.blitzLab?.enabled === true && this.blitzLab.paused !== true) {
       let blitzRecent = 0;
       for (const t of this.blitzLastEntryAt.values()) if (now - t < 60_000) blitzRecent += 1;
       for (const ctx of this.markets.values()) {
