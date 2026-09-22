@@ -1,0 +1,30 @@
+import { ExecutionGate } from "file:///D:/tracecom/repo/relay/execution/execution-gate.mjs";
+let pass = 0; let fail = 0;
+const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
+const gate = new ExecutionGate({ now: () => 1_700_000_000_000 });
+const active = { status: "ACTIVE", executable: true, strategyHash: "sha256:abc" };
+const base = { strategy: active, expirySeconds: 300, instrumentType: "BINARY", accountMode: "PRACTICE", timing: { ok: true, reason: "ENTRY_WINDOW_OPEN" } };
+
+ok("ativada permite PRACTICE", gate.decide(base).allowed === true && gate.decide(base).accountMode === "PRACTICE");
+ok("researchOnly nega", gate.decide({ ...base, researchOnly: true }).code === "RESEARCH_ONLY_DENY");
+ok("kill switch nega antes de tudo", gate.decide({ ...base, researchOnly: true, killSwitchEngaged: true }).code === "KILL_SWITCH_ENGAGED");
+ok("sem strategy nega", gate.decide({ ...base, strategy: null }).code === "STRATEGY_MISSING");
+ok("executable false nega", gate.decide({ ...base, strategy: { ...active, executable: false } }).code === "STRATEGY_NOT_EXECUTABLE");
+ok("V2 PENDING_IMPLEMENTATION nega (invariante)", gate.decide({ ...base, strategy: { ...active, status: "PENDING_IMPLEMENTATION" } }).code === "STRATEGY_NOT_ACTIVE");
+ok("READY_FOR_DEPLOY nega (so ACTIVE executa)", gate.decide({ ...base, strategy: { ...active, status: "READY_FOR_DEPLOY" } }).code === "STRATEGY_NOT_ACTIVE");
+ok("sem hash nega", gate.decide({ ...base, strategy: { status: "ACTIVE", executable: true } }).code === "STRATEGY_HASH_MISSING");
+ok("instrumento nao-BINARY nega", gate.decide({ ...base, instrumentType: "TURBO" }).code === "BINARY_ONLY");
+ok("expiracao 60 nega", gate.decide({ ...base, expirySeconds: 60 }).code === "EXPIRY_NOT_300S");
+ok("expiracao 180 nega", gate.decide({ ...base, expirySeconds: 180 }).code === "EXPIRY_NOT_300S");
+ok("janela fechada nega", gate.decide({ ...base, timing: { ok: false, reason: "ENTRY_WINDOW_CLOSED" } }).code === "ENTRY_WINDOW_CLOSED");
+ok("timing ausente nao bloqueia sozinho", gate.decide({ ...base, timing: null }).allowed === true);
+ok("REAL sem arm nega (fail-closed)", gate.decide({ ...base, accountMode: "REAL", realArmed: false }).code === "REAL_FAIL_CLOSED");
+ok("REAL armado sem contexto REAL nega", gate.decide({ ...base, accountMode: "REAL", realArmed: true }).code === "REAL_ACCOUNT_CONTEXT_REQUIRED");
+ok("REAL armado com contexto REAL permite", gate.decide({ ...base, accountMode: "REAL", realArmed: true, accountContext: { mode: "REAL" } }).allowed === true && gate.decide({ ...base, accountMode: "REAL", realArmed: true, accountContext: { mode: "REAL" } }).executionMode === "REAL_ORDER");
+ok("modo invalido nega", gate.decide({ ...base, accountMode: "LIVE" }).code === "ACCOUNT_MODE_INVALID");
+ok("PRACTICE com contexto REAL nega", gate.decide({ ...base, accountContext: { mode: "REAL" } }).code === "ACCOUNT_CONTEXT_MISMATCH");
+const denied = gate.decide({ ...base, strategy: { ...active, status: "PENDING_IMPLEMENTATION" } });
+ok("negado nao expoe conta/modo", denied.accountMode === null && denied.executionMode === "NONE" && denied.allowed === false);
+
+console.log(fail === 0 ? `EXECUTION_GATE_TESTS ALL_PASS (${pass}/${pass})` : `EXECUTION_GATE_TESTS FAIL (${fail})`);
+process.exit(fail === 0 ? 0 : 1);
