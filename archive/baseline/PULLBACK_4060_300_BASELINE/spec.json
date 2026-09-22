@@ -1,0 +1,57 @@
+{
+  "strategyId": "PULLBACK_4060_300",
+  "label": "Pullback 300s (RSI 40/60)",
+  "profileId": "agentic-custom:PULLBACK_4060_300",
+  "strategyHash": "sha256:26dceb743b3f0d88a6bea10bf8646deb836236e3a7de91702bd323289438b3dd",
+  "sourceCommit": "489e7d01413b3bcde8d88323f2478503146ed02f",
+  "sourceFiles": {
+    "relay/agents/custom-strategies.mjs": "sha256:26dceb743b3f0d88a6bea10bf8646deb836236e3a7de91702bd323289438b3dd",
+    "relay/consensus/snapshot.mjs": "sha256:7e951a6d6aeb189e6d5ad5963b708a257e5c24e68ba6dd56615febbbfe66e470",
+    "relay/agents/candle.agent.mjs": "sha256:67dd630da530db4d6d11158feb4f069557cf4f17da33b4e8dd65199150da06a6",
+    "relay/agents/rsi.agent.mjs": "sha256:a950977376271f05023c6b7e83a0d31cce38fd848d83e1d0ea6ecd31eae2ce84",
+    "relay/agents/adx.agent.mjs": "sha256:f7c0e79aa36ff1bbc4ff9d35d9fdf468d72a50bc025946ebd457cdf76d6c5361",
+    "relay/agents/atr.agent.mjs": "sha256:c84a9d31f18fb32b08e42bd5a62aa447a8c75c9abb6bbdef5ccdc95a4c24d222",
+    "relay/agents/bollinger.agent.mjs": "sha256:f60e0d66e3075f4f34455e54409541a75cf7f2754ec88227a455dd8da58be74e"
+  },
+  "params": {
+    "expirySeconds": 300,
+    "direction": "estrutura UP => BUY; estrutura DOWN => SELL (swingStructure HH/HL vs LH/LL, fallback candle.trend + dominancia)",
+    "rsi": {
+      "buyMax": 40,
+      "sellMin": 60
+    },
+    "gate": {
+      "atr": "state != DEAD e !climactic",
+      "adx": "regime != RANGE",
+      "slope": "bollinger.middleSlope alinhado a direcao",
+      "choch": "veta se CHoCH contra a estrutura"
+    },
+    "cooldownSecondsPerAsset": 60
+  },
+  "timing": {
+    "entry": "custom strategies avaliam a qualquer momento (cooldown 60s por ativo/estrategia)",
+    "expiry": "at + 300s",
+    "settlement": "candle do feed que cobre o vencimento (+-12s)"
+  },
+  "measurement": {
+    "source": "iq_shadow_trades",
+    "level": 0,
+    "variant": "PULLBACK_4060_300",
+    "runs": [
+      {
+        "run_id": "agentic-blitz-shadow-v1",
+        "settled": "2",
+        "wins": "2",
+        "losses": "0"
+      },
+      {
+        "run_id": "agentic-safety-shadow-v1",
+        "settled": "91",
+        "wins": "50",
+        "losses": "41"
+      }
+    ]
+  },
+  "frozenAt": "2026-09-22T21:53:19.302Z",
+  "note": "Baseline definida por spec/hash/codigo. Os numeros observados sao estatisticas DESTA MESMA spec e continuam crescendo com novas observacoes (nao criam nova versao)."
+}

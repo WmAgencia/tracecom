@@ -1,0 +1,19 @@
+{
+  "strategyVersion": "PULLBACK_4060_300_AGENTIC_V2",
+  "parent": "PULLBACK_4060_300_BASELINE",
+  "parentStrategyHash": "sha256:26dceb743b3f0d88a6bea10bf8646deb836236e3a7de91702bd323289438b3dd",
+  "newStrategyHash": null,
+  "newStrategyHashNote": "definido quando a implementacao V2 (Etapas 2-3) existir; so entao a V2 pode operar",
+  "createdAt": "2026-09-22T21:53:19.302Z",
+  "changeDescription": "Nova arquitetura: Asset Agent por ativo (contexto 3h / 2160 candles, ring buffer + hidratacao), especialistas (RSI, DMI/ADX, Bollinger, ATR, PriceAction) recebendo AssetContext primeiro, Consensus sem confidence (BUY/SELL/WAIT + thesis/blockers/invalidations), 300s unico, BINARY OTC only, sem Blitz, um unico caminho de execucao com Account Router (PRACTICE/REAL mesma inteligencia).",
+  "statsEpoch": "2026-09-22T21:53:19.302Z",
+  "stats": {
+    "operations": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "winRate": null
+  },
+  "runId": "pullback-4060-300-agentic-v2",
+  "status": "PENDING_IMPLEMENTATION — NAO OPERA (Etapas 2-3 antes de qualquer deploy/execucao)"
+}

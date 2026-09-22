@@ -1,0 +1,25 @@
+{
+  "capturedAt": "2026-09-22T21:53:19.302Z",
+  "settled": 93,
+  "wins": 52,
+  "losses": 41,
+  "draws": 0,
+  "open": 8,
+  "winRate": 55.9,
+  "firstAt": "2026-09-22T19:52:45.696Z",
+  "lastAt": "2026-09-22T21:51:25.467Z",
+  "byRun": [
+    {
+      "run_id": "agentic-blitz-shadow-v1",
+      "settled": "2",
+      "wins": "2",
+      "losses": "0"
+    },
+    {
+      "run_id": "agentic-safety-shadow-v1",
+      "settled": "91",
+      "wins": "50",
+      "losses": "41"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+name: snapshot
+
+# Snapshots grandes (zip/manifest) NAO entram no historico do git.
+# Git = historico do codigo. Snapshot = artifact de workflow (retencao GitHub).
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Gerar manifesto + zip do codigo operacional
+        run: node scripts/backup-manifest.mjs
+      - name: Publicar snapshot como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tracecom-snapshot-${{ github.run_number }}
+          path: |
+            backups/manifest-*.txt
+            backups/tracecom-*.zip
+          retention-days: 90
