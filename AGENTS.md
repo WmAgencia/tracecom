@@ -121,3 +121,9 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 - PROVA do invariante central: V2 PENDING_IMPLEMENTATION e READY_FOR_DEPLOY -> STRATEGY_NOT_ACTIVE (so ACTIVE executa); teste explicito.
 - TESTES: scripts/execution-gate-tests.mjs 19/19.
 - PROXIMO (2.7-2.9): AccountRouter (paridade Practice/Real: MESMO AssetContext/specialists/consensus, unica diferenca = conta) e Revalidation (re-checar gate imediatamente antes do submit) + ligacao do Binary300Timing ao Gate no caminho novo; depois fechamento 2.10 e 2.2 restante.
+
+### Progresso 2.2/2.5 - defaults fail-closed + fim do Turbo 1m
+- DEFAULTS do construtor: scenarioShadow/scenarioTiming/agentsV4/dualReasoning/soloReasoning/indicator5m/rsiReversal/rsiVariants/rsiAgentsV3 = false (antes true) — construcao sem flags NAO habilita legado (fail-closed). Mantidos true apenas dataHubEnabled e consensusEnabled (produto atual).
+- TURBO 1m MORTO: 9x Math.ceil(serverNow/60_000)*60_000 substituidos por nextOperationalExpiryAt(serverNow) (binary300.mjs); TURBO_RESTANTE=0; nenhum fallback 60s capaz de chegar ao broker.
+- EVIDENCIA: smoke -> legacyEnabled=NENHUM, agentic=OK, labs REMOVED, initFails=NENHUM; binary300 21/21; gate 19/19; agentic 44/44; lab6 20/20; build OK.
+- PENDENTE 2.2: remocao fisica das instanciacoes/referencias (shadowLab/timingShadow/scenario*/indicator5m/agentsV4/rsiAgentsV3/V4/V2Live/iqMcp/fourWay) — hoje incapazes de operar (flags false + defaults false); extrair funcoes puras uteis se houver. Proximo: 2.7 Revalidation, 2.8 ligacao Timing->Gate, 2.9 AccountRouter, prova do caminho unico, 2.10.
