@@ -77,7 +77,6 @@ import { runAgentGraph, agentGraphToStrategyResult, AGENTIC_STRATEGY_ID } from "
 import { SafetyShadow, parseSafetyLevels, SAFETY_SHADOW_RUN_ID } from "./agents/safety-shadow.mjs";
 import { CandlesArchive } from "./candles-archive.mjs";
 import { customStrategyById, evaluateCustomStrategies, CUSTOM_STRATEGIES } from "./agents/custom-strategies.mjs";
-import { BlitzLab } from "./blitz-lab.mjs";
 
 const BLITZ_EXPIRATION_SECONDS = 60; // WS turbo: minimo de 60s (o WS nao oferece Blitz; o MCP throttla)
 
@@ -139,9 +138,6 @@ export class IqMultiRuntime extends EventEmitter {
     this.agentExecBinary = true;
     this.agentExecBlitz = true;
     this.blitzLastEntryAt = new Map();
-    try {
-      this.blitzLab = agenticEnabled === true ? new BlitzLab({ runtime: this, pool, log: this.log, now: this.now, expirationSeconds: BLITZ_EXPIRATION_SECONDS }) : null;
-    } catch (error) { this.blitzLab = null; this.#safe(() => this.log("BLITZ_LAB_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     try {
       this.blitzShadow = agenticEnabled === true ? new SafetyShadow({ pool, now: this.now, log: this.log, levels: parseSafetyLevels(agenticShadowLevels), entryOffsetMs: BLITZ_EXPIRATION_SECONDS * 1000, entryToleranceMs: 1_500, runId: "agentic-blitz-shadow-v1", candles: (marketKey, limit) => this.candlesBatch([marketKey], limit) }) : null;
     } catch (error) { this.blitzShadow = null; this.#safe(() => this.log("BLITZ_SHADOW_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
@@ -1684,7 +1680,6 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   async setMcpToken(token) {
-    try { this.blitzLab?.setToken?.(token); } catch { /* noop */ }
     if (!this.pool?.query) throw new IqWsError("MCP_CONFIG_NO_DB");
     const clean = String(token ?? "").trim();
     if (clean && clean.length < 12) throw new IqWsError("MCP_TOKEN_INVALID", "curto");
@@ -1847,7 +1842,7 @@ export class IqMultiRuntime extends EventEmitter {
         candles: list, targetExpiryAt, payout: ctx.payout, now, latency: {},
       });
     }
-    if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); void this.blitzRun?.pollSettlements(); void this.blitzLab?.pollSettlements(); void this.blitzShadow?.settle(); void this.#sweepStaleExecutions(); }
+    if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); void this.blitzRun?.pollSettlements(); void this.blitzShadow?.settle(); void this.#sweepStaleExecutions(); }
     if (this.agentic?.enabled === true) {
       const cache = this.agenticSnapshotCache ?? (this.agenticSnapshotCache = new Map());
       for (const ctx of this.markets.values()) {
@@ -1865,7 +1860,7 @@ export class IqMultiRuntime extends EventEmitter {
         void this.agentic.observeMarket({ snapshot: entry.snapshot, marketKey: ctx.marketKey, targetExpiryAt: Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000, payout: ctx.payout });
       }
     }
-    if (this.blitzRun?.enabled === true && this.blitzLab?.enabled === true && this.blitzLab.paused !== true) {
+    if (this.blitzRun?.enabled === true) {
       let blitzRecent = 0;
       for (const t of this.blitzLastEntryAt.values()) if (now - t < 60_000) blitzRecent += 1;
       for (const ctx of this.markets.values()) {
