@@ -74,7 +74,6 @@ import { RsiAgentsV2Live } from "./rsi-agents-v2-live.mjs";
 import { ConsensusRunner } from "./consensus/runner.mjs";
 import { LabRunner } from "./lab/runner.mjs";
 import { runAgentGraph, agentGraphToStrategyResult, AGENTIC_STRATEGY_ID } from "./agents/graph.mjs";
-import { pickPreferredSide, wilsonLower, SIDE_PREFERENCE_VERSION } from "./agents/side-preference.mjs";
 import { SafetyShadow, parseSafetyLevels, SAFETY_SHADOW_RUN_ID } from "./agents/safety-shadow.mjs";
 import { CandlesArchive } from "./candles-archive.mjs";
 import { customStrategyById, evaluateCustomStrategies, CUSTOM_STRATEGIES } from "./agents/custom-strategies.mjs";
@@ -138,15 +137,6 @@ export class IqMultiRuntime extends EventEmitter {
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentExecBinary = true;
     this.agentExecBlitz = true;
-    this.blitzLastEntryAt = new Map();
-    try {
-      this.blitzShadow = agenticEnabled === true ? new SafetyShadow({ pool, now: this.now, log: this.log, levels: parseSafetyLevels(agenticShadowLevels ?? "50"), entryOffsetMs: 31_500, entryToleranceMs: 500, runId: "agentic-blitz-shadow-v1", candles: (marketKey, limit) => this.candlesBatch([marketKey], limit) }) : null;
-    } catch (error) { this.blitzShadow = null; this.#safe(() => this.log("BLITZ_SHADOW_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
-    this.blitzSnapshotCache = new Map();
-    try {
-      this.blitzRun = agenticEnabled === true ? new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: true, runId: "agentic-blitz-45s", stake: labStake, strategies: [AGENTIC_BLITZ_STRATEGY_ID], cap: 1000, reportRootDir: "estrategias/experiments/agentic-blitz", evaluate: (snapshot) => { this.lastEvaluationAt = this.now(); const graph = runAgentGraph(snapshot, { safetyPct: this.agentSafetyPctBlitz ?? this.agentSafetyPct, filters: this.agentFiltersBlitz }); if (this.blitzShadow) void this.blitzShadow.record(graph, snapshot).catch(() => undefined); const base = agentGraphToStrategyResult(graph); if (!base) return []; const customBlitz = this.agentCustomStrategyBlitz; if (customBlitz) { const side = customBlitz.gate({ snapshot, opinions: graph.opinions }) === true ? customBlitz.signal({ snapshot, opinions: graph.opinions }) : null; return [{ ...base, strategyId: AGENTIC_BLITZ_STRATEGY_ID, decision: side ?? "WAIT", side: side ?? null }]; } return [{ ...base, strategyId: AGENTIC_BLITZ_STRATEGY_ID, strategyVersion: "agentic-blitz-45s-v1" }]; }, entryWindowOpenMs: 32_000, entryWindowCloseMs: 31_000 }) : null;
-      if (this.blitzRun) void this.blitzRun.start().catch(() => undefined);
-    } catch (error) { this.blitzRun = null; this.#safe(() => this.log("BLITZ_RUN_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentVariant = "";
     this.agentFilters = null;
     this.agentVariantBlitz = "";
@@ -254,7 +244,6 @@ export class IqMultiRuntime extends EventEmitter {
     this.perfSummaryCache = null;
     this.dbBytesCache = null;
     this.maintenanceBusy = false;
-    this.sidePreference = { version: SIDE_PREFERENCE_VERSION, preferred: "BLITZ", at: 0, binary: null, blitz: null };
     this.lastTickEmit = new Map();
   }
 
@@ -1600,21 +1589,6 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
     // Desarmado: registra a intencao como DRY_RUN (mede) sem floodar REJECTED nem enviar ordem.
     if (this.armState.armed !== true) return { state: "DRY_RUN", dryRun: true, dryRunReason: "NOT_ARMED", brokerOrderId: null, executionId: null, stake: Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2), mode: "PRACTICE" };
-    // Troca automatica binario x blitz: com os dois ativos, so o lado de melhor WR (com constancia) envia.
-    if (this.agentExecBinary === true && this.agentExecBlitz === true) {
-      const preferred = this.sidePreference?.preferred ?? "BLITZ";
-      const isBlitz = String(strategyId ?? "").toUpperCase().includes("BLITZ");
-      if ((preferred === "BLITZ") !== isBlitz) return { state: "DRY_RUN", dryRun: true, dryRunReason: "AUTO_SWITCH_" + preferred, brokerOrderId: null, executionId: null, stake: Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2), mode: "PRACTICE" };
-    }
-    if (String(strategyId ?? "").includes("BLITZ")) {
-      if (this.armState.armed !== true) throw new IqWsError("BLITZ_NOT_ARMED");
-      if (this.config.autoExecute !== true) throw new IqWsError("BLITZ_AUTO_EXECUTE_OFF");
-      if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("BLITZ_KILL_SWITCH");
-      const blitzStake = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2);
-      this.blitzLastEntryAt.set(marketKey, this.now()); // cooldown por ativo em TODA tentativa (evita retentativa por segundo)
-      // Mesmo caminho do binario (WS turbo 60s) - o produto Blitz nao esta disponivel de forma confiavel.
-      return this.requestOrder({ marketKey, direction, stake: blitzStake, horizonSeconds: 60, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId });
-    }
     const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 1);
     return this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: this.agentExpirySeconds, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId });
   }
@@ -1758,23 +1732,6 @@ export class IqMultiRuntime extends EventEmitter {
     return out;
   }
 
-  /** Escolha automatica do lado (binario x blitz) pelo melhor WR com constancia (Wilson 95%). */
-  async refreshSidePreference() {
-    if (!this.pool?.query) return this.sidePreference;
-    try {
-      const rawQuery = (text, params) => (typeof this.pool.__rawQuery === "function" ? this.pool.__rawQuery(text, params) : this.pool.query(text, params));
-      const epoch = (await rawQuery("SELECT perf_since FROM iq_perf_epoch WHERE id=1").catch(() => ({ rows: [] }))).rows?.[0]?.perf_since ?? null;
-      const binaryRun = this.agentic?.runId ?? "agentic-rsi-fib-20260921";
-      const blitzRun = this.blitzRun?.runId ?? "agentic-blitz-45s";
-      const rows = (await rawQuery("SELECT run_id, count(*) FILTER (WHERE result='WIN')::int AS w, count(*) FILTER (WHERE result IN ('WIN','LOSS'))::int AS n FROM iq_lab_trades WHERE run_id = ANY($1::text[]) AND entry_at >= coalesce($2::timestamptz, '1970-01-01'::timestamptz) GROUP BY run_id", [[binaryRun, blitzRun], epoch])).rows ?? [];
-      const statOf = (runId) => { const row = rows.find((r) => r.run_id === runId); const n = Number(row?.n ?? 0); const w = Number(row?.w ?? 0); return { n, wins: w, wr: n ? Number((100 * w / n).toFixed(1)) : null, low: wilsonLower(w, n) }; };
-      const binary = statOf(binaryRun); const blitz = statOf(blitzRun);
-      const preferred = pickPreferredSide(binary, blitz);
-      this.sidePreference = { version: SIDE_PREFERENCE_VERSION, preferred, at: this.now(), binary, blitz };
-    } catch (error) { this.#safe(() => this.log("SIDE_PREFERENCE_FAIL", String(error?.message ?? error).slice(0, 140))); }
-    return this.sidePreference;
-  }
-
   candlesArchiveStatus() { return this.candlesArchive?.status() ?? { version: "candles-archive-v1", ready: false, days: [] }; }
   candlesArchiveDay(date) { return this.candlesArchive?.dayGzip(date) ?? null; }
 
@@ -1820,7 +1777,7 @@ export class IqMultiRuntime extends EventEmitter {
     try { const out = this.arm(2, { confirmation: true, actor: "auto" }); this.#safe(() => this.log("AUTO_ARM_PRACTICE", JSON.stringify({ at: this.now(), armed: out?.armed === true }))); return out; } catch { return null; }
   }
 
-  agentConfigState() { return { safetyPct: this.agentSafetyPct, variant: this.agentVariant || String(this.agentSafetyPct), variantBlitz: this.agentVariantBlitz || String(this.agentSafetyPctBlitz ?? this.agentSafetyPct), filters: this.agentFilters ?? null, binaryExec: this.agentExecBinary === true, blitzExec: this.agentExecBlitz === true, shadowLevels: this.safetyShadow ? this.safetyShadow.levels.map((spec) => spec.label) : [], shadowRunId: SAFETY_SHADOW_RUN_ID, fromEnv: this.agentSafetyFromEnv === true, autoArmPractice: this.autoArmPractice === true, autoSwitch: { preferred: this.sidePreference?.preferred ?? "BLITZ", binary: this.sidePreference?.binary ?? null, blitz: this.sidePreference?.blitz ?? null, updatedAt: this.sidePreference?.at ?? null } }; }
+  agentConfigState() { return { safetyPct: this.agentSafetyPct, variant: this.agentVariant || String(this.agentSafetyPct), variantBlitz: this.agentVariantBlitz || String(this.agentSafetyPctBlitz ?? this.agentSafetyPct), filters: this.agentFilters ?? null, binaryExec: this.agentExecBinary === true, blitzExec: this.agentExecBlitz === true, shadowLevels: this.safetyShadow ? this.safetyShadow.levels.map((spec) => spec.label) : [], shadowRunId: SAFETY_SHADOW_RUN_ID, fromEnv: this.agentSafetyFromEnv === true, autoArmPractice: this.autoArmPractice === true }; }
   async setAgentExec({ binary = null, blitz = null } = {}) { if (binary !== null) this.agentExecBinary = binary === true; if (blitz !== null) this.agentExecBlitz = blitz === true; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET binary_exec_enabled=$1, blitz_exec_enabled=$2, updated_at=now() WHERE id=1", [this.agentExecBinary, this.agentExecBlitz]).catch(() => undefined); this.#safe(() => this.log("AGENT_EXEC_SET", JSON.stringify({ binary: this.agentExecBinary, blitz: this.agentExecBlitz }))); return this.agentConfigState(); }
   async blitzReport(hours = 6) { const shadow = this.blitzShadow ? await this.blitzShadow.report(hours) : { levels: [] }; const real = await this.blitzStats(hours); return { ...shadow, real }; }
   async blitzStats(hours = 6) { if (!this.pool?.query) return { trades: 0 }; const bounded = Math.max(1, Math.min(72, Number(hours) || 6)); const epoch = (await this.pool.query("SELECT perf_since FROM iq_perf_epoch WHERE id=1").catch(() => ({ rows: [] }))).rows?.[0]?.perf_since ?? null;
@@ -1905,7 +1862,6 @@ export class IqMultiRuntime extends EventEmitter {
       });
     }
     if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); void this.blitzRun?.pollSettlements(); void this.blitzShadow?.settle(); void this.#sweepStaleExecutions(); }
-    if (now - (this.lastSidePrefAt ?? 0) > 60_000) { this.lastSidePrefAt = now; void this.refreshSidePreference().catch(() => undefined); }
     if (this.agentic?.enabled === true) {
       const cache = this.agenticSnapshotCache ?? (this.agenticSnapshotCache = new Map());
       for (const ctx of this.markets.values()) {
@@ -1921,27 +1877,6 @@ export class IqMultiRuntime extends EventEmitter {
           cache.set(ctx.marketKey, entry);
         }
         void this.agentic.observeMarket({ snapshot: entry.snapshot, marketKey: ctx.marketKey, targetExpiryAt: Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000, payout: ctx.payout });
-      }
-    }
-    if (this.blitzRun?.enabled === true) {
-      let blitzRecent = 0;
-      for (const t of this.blitzLastEntryAt.values()) if (now - t < 60_000) blitzRecent += 1;
-      for (const ctx of this.markets.values()) {
-        if (blitzRecent >= 6) break;
-        if (!this.#marketTradable(ctx)) continue;
-        if (now - (this.blitzLastEntryAt.get(ctx.marketKey) ?? 0) < 60_000) continue;
-        const list = this.#candleList(ctx);
-        if (list.length < 3) continue;
-        const cacheKey = String(list[list.length - 1]?.bucketEnd ?? 0) + "|" + String(ctx.lastTickAt ?? 0);
-        let entry = this.blitzSnapshotCache.get(ctx.marketKey) ?? null;
-        const targetExpiryAt = Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000;
-        if (!entry || entry.key !== cacheKey) {
-          const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt, livePrice: Number.isFinite(Number(ctx.lastTick?.price)) ? Number(ctx.lastTick.price) : null });
-          if (!snapshot) continue;
-          entry = { key: cacheKey, snapshot };
-          this.blitzSnapshotCache.set(ctx.marketKey, entry);
-        }
-        void this.blitzRun.observeMarket({ snapshot: entry.snapshot, marketKey: ctx.marketKey, targetExpiryAt, payout: ctx.payout });
       }
     }
     for (const ctx of this.markets.values()) {

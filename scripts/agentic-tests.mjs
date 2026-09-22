@@ -7,7 +7,6 @@ import { buildMarketSnapshot } from "../relay/consensus/snapshot.mjs";
 import { runAgentGraph, agentGraphToStrategyResult, AGENTIC_STRATEGY_ID } from "../relay/agents/graph.mjs";
 import { detectConstantMove, runConsensusAgent } from "../relay/agents/consensus.agent.mjs";
 import { analyzeCandleAgent } from "../relay/agents/candle.agent.mjs";
-import { pickPreferredSide } from "../relay/agents/side-preference.mjs";
 import { CUSTOM_STRATEGIES } from "../relay/agents/custom-strategies.mjs";
 import { parseSafetyLevels } from "../relay/agents/safety-shadow.mjs";
 import { LabRunner } from "../relay/lab/runner.mjs";
@@ -168,9 +167,6 @@ try {
   check(32, "candle gate libera com reversao a favor", gateOk.decision === "BUY", String(gateOk.reason).slice(0, 60));
   const parsed4 = parseSafetyLevels("5FTSC");
   check(33, "niveis shadow aceitam 4 letras (5FTSC)", parsed4.length === 1 && parsed4[0].label === "5FTSC" && parsed4[0].variant === "FTSC");
-  check(34, "troca automatica: binario com melhor WR/constancia vence", pickPreferredSide({ n: 20, wins: 12, low: 0.4 }, { n: 20, wins: 10, low: 0.3 }) === "BINARY");
-  check(35, "troca automatica: blitz com melhor WR/constancia vence", pickPreferredSide({ n: 20, wins: 10, low: 0.3 }, { n: 20, wins: 12, low: 0.4 }) === "BLITZ");
-  check(36, "troca automatica: sem amostra minima fica no blitz", pickPreferredSide({ n: 2, wins: 2, low: 0.3 }, { n: 3, wins: 1, low: 0.1 }) === "BLITZ");
   const parsedLevels = parseSafetyLevels("100,90,80,70,50,50C");
   check(19, "niveis shadow aceitam variante (50C)", parsedLevels.length === 6 && parsedLevels.some((l) => l.label === "50C" && l.variant === "C" && l.safetyPct === 50));
 
