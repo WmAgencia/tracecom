@@ -156,7 +156,8 @@ export class SafetyShadow {
       [this.runId, String(bounded)]
     ).catch(() => ({ rows: [] }))).rows ?? [];
     const activeLabels = new Set([...this.levels.map((spec) => spec.label), ...CUSTOM_STRATEGIES.map((strategy) => strategy.id)]);
-    const levels = rows.filter((row) => activeLabels.has(String(row.level) + String(row.variant ?? ""))).map((row) => {
+    const labelOf = (row) => (Number(row.level) === 0 && row.variant ? String(row.variant) : String(row.level) + String(row.variant ?? ""));
+    const levels = rows.filter((row) => activeLabels.has(labelOf(row))).map((row) => {
       const decided = Number(row.wins) + Number(row.losses);
       const wr = decided > 0 ? Number((100 * Number(row.wins) / decided).toFixed(1)) : null;
       const breakeven = Number(row.avg_payout) > 0 ? Number((100 / (1 + Number(row.avg_payout) / 100)).toFixed(1)) : null;
