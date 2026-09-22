@@ -115,3 +115,9 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 - PROVA da semantica legada: Math.ceil(serverNow/60_000)*60_000 (Turbo 1m) repetido em 8 pontos do iq-multi-runtime (1430/1456/1485/1506/1592/1836/1870/2402/2420) -> deve ser substituido por Binary300Timing quando o caminho unico (2.6-2.9) entrar.
 - TESTES: scripts/binary300-tests.mjs 21/21 (EXPIRY_NOT_300S p/ 60/180/null, NO_SERVER_TIME, offset, fronteira exata -> proxima, janela fechada no deadline, aberta 1ms antes, sem campo REAL).
 - PROXIMO (2.6-2.9): ExecutionGate/AccountRouter/Revalidation com invariantes status!=ACTIVE->DENY e researchOnly->DENY; depois 2.2 restante (shadowLab/timingShadow/scenario*/indicator5m/agentsV4/rsiAgentsV3/V4/V2Live com referencias diretas a editar).
+
+### Progresso 2.6 (atualizado)
+- CRIADO relay/execution/execution-gate.mjs: ExecutionGate.decide() puro e deterministico com ordem fixa de guardas (KILL_SWITCH_ENGAGED > RESEARCH_ONLY_DENY > STRATEGY_MISSING > STRATEGY_NOT_EXECUTABLE > STRATEGY_NOT_ACTIVE > STRATEGY_HASH_MISSING > BINARY_ONLY > EXPIRY_NOT_300S > timing > REAL_FAIL_CLOSED > REAL_ACCOUNT_CONTEXT_REQUIRED > ACCOUNT_MODE_INVALID > ACCOUNT_CONTEXT_MISMATCH); negacao retorna accountMode=null e executionMode=NONE.
+- PROVA do invariante central: V2 PENDING_IMPLEMENTATION e READY_FOR_DEPLOY -> STRATEGY_NOT_ACTIVE (so ACTIVE executa); teste explicito.
+- TESTES: scripts/execution-gate-tests.mjs 19/19.
+- PROXIMO (2.7-2.9): AccountRouter (paridade Practice/Real: MESMO AssetContext/specialists/consensus, unica diferenca = conta) e Revalidation (re-checar gate imediatamente antes do submit) + ligacao do Binary300Timing ao Gate no caminho novo; depois fechamento 2.10 e 2.2 restante.
