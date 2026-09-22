@@ -9,6 +9,7 @@
  *    resultado e `result`/`pnl` de paper (stake 1), nunca confundido com execucao.
  */
 import { runConsensusAgent } from "./consensus.agent.mjs";
+import { CUSTOM_STRATEGIES } from "./custom-strategies.mjs";
 
 export const SAFETY_SHADOW_RUN_ID = "agentic-safety-shadow-v1";
 export const SAFETY_SHADOW_VERSION = "safety-shadow-v1";
@@ -44,6 +45,7 @@ export class SafetyShadow {
     this.entryOffsetMs = entryOffsetMs;
     this.entryToleranceMs = entryToleranceMs;
     this.pending = new Set();
+    this.customLastAt = new Map();
     this.stats = { calls: 0, inWindow: 0, outOfWindow: 0, noExpiry: 0, recorded: 0, settled: 0, noData: 0, skipped: 0, errors: 0, lastDeltaMs: null };
   }
 
@@ -52,33 +54,42 @@ export class SafetyShadow {
     return this.levels;
   }
 
-  /** Registra entradas de paper no instante do fechamento da janela de entrada (T-40s). */
+  /** Registra entradas de paper: estrategias custom (sem janela) + niveis de seguranca (janela T-34..T-31,5). */
   async record(graph, snapshot) {
     this.stats.calls += 1;
     if (!this.pool?.query || !graph?.opinions || !snapshot) return;
     const expiryAt = Number(snapshot.targetExpiryAt ?? 0);
     const at = Number(snapshot.at ?? 0);
     if (!expiryAt || !at) { this.stats.noExpiry += 1; return; }
-    const entryMoment = expiryAt - this.entryOffsetMs;
-    const delta = at - entryMoment;
-    if (Math.abs(delta) > this.entryToleranceMs) { this.stats.outOfWindow += 1; this.stats.lastDeltaMs = Math.round(delta); return; }
-    this.stats.inWindow += 1;
     const entryPrice = Number(snapshot.ohlc?.close);
     if (!Number.isFinite(entryPrice)) return;
     const marketKey = String(snapshot.marketKey ?? "");
     if (!marketKey) return;
     const payout = Number.isFinite(Number(snapshot.payout)) ? Number(snapshot.payout) : null;
     const rows = [];
-    for (const spec of this.levels) {
-      const key = `${marketKey}|${expiryAt}|${spec.label}`;
-      if (this.pending.has(key)) continue;
-      const v = String(spec.variant ?? "").toUpperCase();
-      const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S") } : null;
-      const consensus = runConsensusAgent({ snapshot, opinions: graph.opinions, safetyPct: spec.safetyPct, filters: filters && (filters.confirmation || filters.stochastic || filters.noSqueeze) ? filters : null });
-      if (consensus.decision !== "BUY" && consensus.decision !== "SELL") continue;
-      this.pending.add(key);
-      rows.push({ level: spec.safetyPct, variant: spec.variant, marketKey, side: consensus.decision, entryPrice, payout, expiryAt, snapshotId: graph.snapshotId ?? null, reason: String(consensus.reason ?? "").slice(0, 300) });
+    // Estrategias custom: entram a qualquer momento, expiracao propria, cooldown 60s por ativo/estrategia.
+    for (const strategy of CUSTOM_STRATEGIES) {
+      const key = marketKey + "|" + strategy.id;
+      if (at - (this.customLastAt.get(key) ?? 0) < 60_000) continue;
+      const side = strategy.gate({ snapshot, opinions: graph.opinions }) === true ? strategy.signal({ snapshot, opinions: graph.opinions }) : null;
+      if (!side) continue;
+      this.customLastAt.set(key, at);
+      rows.push({ level: 0, variant: strategy.id, marketKey, side, entryPrice, payout, expiryAt: at + strategy.expirySeconds * 1000, snapshotId: graph.snapshotId ?? null, reason: strategy.label });
     }
+    // Niveis de seguranca: so no fechamento da janela de entrada.
+    const entryMoment = expiryAt - this.entryOffsetMs;
+    const delta = at - entryMoment;
+    if (Math.abs(delta) <= this.entryToleranceMs) {
+      this.stats.inWindow += 1;
+      for (const spec of this.levels) {
+        const key = `${marketKey}|${expiryAt}|${spec.label}`;
+        if (this.pending.has(key)) continue;
+        const consensus = runConsensusAgent({ snapshot, opinions: graph.opinions, safetyPct: spec.safetyPct });
+        if (consensus.decision !== "BUY" && consensus.decision !== "SELL") continue;
+        this.pending.add(key);
+        rows.push({ level: spec.safetyPct, variant: spec.variant, marketKey, side: consensus.decision, entryPrice, payout, expiryAt, snapshotId: graph.snapshotId ?? null, reason: String(consensus.reason ?? "").slice(0, 300) });
+      }
+    } else { this.stats.outOfWindow += 1; this.stats.lastDeltaMs = Math.round(delta); }
     for (const row of rows) {
       try {
         await this.pool.query(
@@ -144,13 +155,13 @@ export class SafetyShadow {
        GROUP BY level, variant ORDER BY level DESC, variant ASC`,
       [this.runId, String(bounded)]
     ).catch(() => ({ rows: [] }))).rows ?? [];
-    const activeLabels = new Set(this.levels.map((spec) => spec.label));
+    const activeLabels = new Set([...this.levels.map((spec) => spec.label), ...CUSTOM_STRATEGIES.map((strategy) => strategy.id)]);
     const levels = rows.filter((row) => activeLabels.has(String(row.level) + String(row.variant ?? ""))).map((row) => {
       const decided = Number(row.wins) + Number(row.losses);
       const wr = decided > 0 ? Number((100 * Number(row.wins) / decided).toFixed(1)) : null;
       const breakeven = Number(row.avg_payout) > 0 ? Number((100 / (1 + Number(row.avg_payout) / 100)).toFixed(1)) : null;
       return {
-        level: Number(row.level), variant: String(row.variant ?? ""), label: String(row.level) + String(row.variant ?? ""), entries: Number(row.entries), settled: Number(row.settled), wins: Number(row.wins), losses: Number(row.losses), draws: Number(row.draws), noData: Number(row.no_data),
+        level: Number(row.level), variant: String(row.variant ?? ""), label: Number(row.level) === 0 && row.variant ? String(row.variant) : String(row.level) + String(row.variant ?? ""), entries: Number(row.entries), settled: Number(row.settled), wins: Number(row.wins), losses: Number(row.losses), draws: Number(row.draws), noData: Number(row.no_data),
         winRate: wr, breakeven: breakeven, edge: wr != null && breakeven != null ? Number((wr - breakeven).toFixed(1)) : null,
         pnl: Number(row.pnl), avgPayout: Number(Number(row.avg_payout).toFixed(1)), entriesPerHour: Number((Number(row.entries) / bounded).toFixed(1)),
       };
