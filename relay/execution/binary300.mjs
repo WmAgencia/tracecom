@@ -22,6 +22,12 @@ export function isOperationalExpiry(seconds) {
   try { assertOperationalExpiry(seconds); return true; } catch { return false; }
 }
 
+export function nextOperationalExpiryAt(serverTimeMs) {
+  const t = Number(serverTimeMs);
+  if (!Number.isFinite(t)) throw new ExpiryPolicyError("INVALID_SERVER_TIME", `serverTime ${String(serverTimeMs)}`);
+  return (Math.floor(t / OPERATIONAL_BUCKET_MS) + 1) * OPERATIONAL_BUCKET_MS;
+}
+
 export class Binary300Timing {
   constructor({ now = () => Date.now(), minLeadMs = DEFAULT_MIN_LEAD_MS } = {}) {
     this.now = now;
@@ -51,7 +57,7 @@ export class Binary300Timing {
 
   bucketEnd(serverTimeMs = this.serverNow()) { return this.bucketStart(serverTimeMs) + OPERATIONAL_BUCKET_MS; }
 
-  targetExpiryAt(serverTimeMs = this.serverNow()) { return (Math.floor(serverTimeMs / OPERATIONAL_BUCKET_MS) + 1) * OPERATIONAL_BUCKET_MS; }
+  targetExpiryAt(serverTimeMs = this.serverNow()) { return nextOperationalExpiryAt(serverTimeMs); }
 
   deadlineAt(serverTimeMs = this.serverNow()) { return this.targetExpiryAt(serverTimeMs) - this.minLeadMs; }
 

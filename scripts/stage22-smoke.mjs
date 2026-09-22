@@ -1,10 +1,14 @@
 import { IqMultiRuntime } from "file:///D:/tracecom/repo/relay/iq-multi-runtime.mjs";
 const logs = [];
 const pool = { query: async () => ({ rows: [] }) };
-const rt = new IqMultiRuntime({ pool, log: (m) => logs.push(String(m)), agenticEnabled: false, executionAllowlist: [] });
+const rt = new IqMultiRuntime({ pool, log: (m) => logs.push(String(m)) });
 console.log("SMOKE agentic=" + (rt.agentic ? "OK" : "NULL"));
 console.log("SMOKE lab=" + (rt.lab === undefined ? "REMOVED" : "PRESENT"));
 console.log("SMOKE labS04=" + (rt.labS04 === undefined ? "REMOVED" : "PRESENT"));
+const legacy = ["scenarioShadow", "scenarioTiming", "agentsV4", "dualReasoning", "soloReasoning", "indicator5m", "rsiReversal", "rsiVariants", "rsiAgentsV3", "rsiAgentsV4", "rsiAgentsV2Live", "rsiAgentsV2"];
+const enabled = legacy.filter((name) => rt[name]?.enabled === true);
+console.log("SMOKE legacyEnabled=" + (enabled.length === 0 ? "NENHUM" : enabled.join(",")));
 const fails = logs.filter((l) => /INIT_FAIL/.test(l));
 console.log("SMOKE initFails=" + (fails.length ? fails.join(" | ") : "NENHUM"));
-process.exit(0);
+console.log("SMOKE consensus=" + (rt.consensus ? "PRESENTE" : "AUSENTE") + " dataHub=" + (rt.dh || rt.dataHub ? "PRESENTE" : "verificar"));
+process.exit(enabled.length === 0 && rt.agentic && rt.lab === undefined && rt.labS04 === undefined ? 0 : 1);

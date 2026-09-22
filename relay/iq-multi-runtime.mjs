@@ -16,6 +16,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { EventEmitter } from "node:events";
+import { nextOperationalExpiryAt } from "./execution/binary300.mjs";
 import { IqWsClient, IqWsError, IQ_WS_CANDIDATE_HOSTS, CANDLE_SIZE_SECONDS, classifyBalances, computeExpiration, normalizeCandle, parseSettlement, toEpochMs, EXPECTED_EURUSD_ACTIVE_ID_FROM_REPO, EXPECTED_EURUSD_OTC_ACTIVE_ID_FROM_REPO } from "./iqoption-ws.mjs";
 import { buildFeatureContext, freshnessGate } from "./feature-engine.mjs";
 import { executionGate, applyBrokerAcknowledgement, compareSettlement, ExecutionArmState, IdempotencyStore, KillSwitch, MAX_PRACTICE_STAKE_BRL } from "./iqoption-connector.mjs";
@@ -114,7 +115,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = true, scenarioTimingIntersectionEnabled = true, agentsV4Enabled = true, dataHubEnabled = true, dualReasoningEnabled = true, soloReasoningEnabled = true, indicator5mEnabled = true, rsiReversalEnabled = true, rsiVariantsEnabled = true, rsiAgentsEnabled = false, rsiAgentsV2Enabled = false, rsiAgentsV3Enabled = true, rsiAgentsV4Enabled = false, rsiAgentsV2LiveEnabled = false, rsiAgentsV2BlitzEnabled = false, consensusEnabled = true, consensusExecute = process.env.CONSENSUS_EXECUTE === "true", agenticEnabled = process.env.AGENTIC_ENABLED === "true", agenticRunId = process.env.AGENTIC_RUN_ID ?? null, labStake = null, agenticSafetyPct = process.env.AGENTIC_SAFETY_PCT ?? null, agenticShadowLevels = process.env.AGENTIC_SHADOW_LEVELS ?? null, autoArmPractice = process.env.AUTO_ARM_PRACTICE === "true", executionAllowlist = null, executionPolicyName = null } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = false, scenarioTimingIntersectionEnabled = false, agentsV4Enabled = false, dataHubEnabled = true, dualReasoningEnabled = false, soloReasoningEnabled = false, indicator5mEnabled = false, rsiReversalEnabled = false, rsiVariantsEnabled = false, rsiAgentsEnabled = false, rsiAgentsV2Enabled = false, rsiAgentsV3Enabled = false, rsiAgentsV4Enabled = false, rsiAgentsV2LiveEnabled = false, rsiAgentsV2BlitzEnabled = false, consensusEnabled = true, consensusExecute = process.env.CONSENSUS_EXECUTE === "true", agenticEnabled = process.env.AGENTIC_ENABLED === "true", agenticRunId = process.env.AGENTIC_RUN_ID ?? null, labStake = null, agenticSafetyPct = process.env.AGENTIC_SAFETY_PCT ?? null, agenticShadowLevels = process.env.AGENTIC_SHADOW_LEVELS ?? null, autoArmPractice = process.env.AUTO_ARM_PRACTICE === "true", executionAllowlist = null, executionPolicyName = null } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -1427,7 +1428,7 @@ export class IqMultiRuntime extends EventEmitter {
     void this.rsiAgentsV3.assignUniverse([...this.markets.values()]);
     if (!this.rsiAgentsV3.assignments.has(ctx.marketKey)) return null;
     const serverNow = this.client?.serverNow?.() ?? now;
-    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    const targetExpiryAt = nextOperationalExpiryAt(serverNow);
     const ackSamples = ctx.latency?.orderAck ?? [];
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
@@ -1453,7 +1454,7 @@ export class IqMultiRuntime extends EventEmitter {
     void this.refreshInstrumentRegistry();
     if (!this.rsiAgentsV4.assignments.has(ctx.marketKey)) return null;
     const serverNow = this.client?.serverNow?.() ?? now;
-    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    const targetExpiryAt = nextOperationalExpiryAt(serverNow);
     const ackSamples = ctx.latency?.orderAck ?? [];
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
@@ -1482,7 +1483,7 @@ export class IqMultiRuntime extends EventEmitter {
     void this.refreshInstrumentRegistry();
     if (!this.rsiAgentsV2Live.assignments.has(ctx.marketKey)) return null;
     const serverNow = this.client?.serverNow?.() ?? now;
-    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    const targetExpiryAt = nextOperationalExpiryAt(serverNow);
     const ackSamples = ctx.latency?.orderAck ?? [];
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
@@ -1503,7 +1504,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (!consensusOn && !labOn && this.agentic?.enabled !== true) return null;
     if (ctx.marketType !== "OTC") return null;
     const serverNow = this.client?.serverNow?.() ?? now;
-    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    const targetExpiryAt = nextOperationalExpiryAt(serverNow);
     const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt });
     if (!snapshot) return null;
     if (consensusOn) void this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout, snapshot });
@@ -1589,7 +1590,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (list.length < 60) throw new IqWsError("INSUFFICIENT_CANDLES", String(list.length));
     const now = this.now();
     const serverNow = this.client?.serverNow?.() ?? now;
-    let targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    let targetExpiryAt = nextOperationalExpiryAt(serverNow);
     if (serverNow > targetExpiryAt - 30_000) targetExpiryAt += 60_000;
     let snapshot = buildMarketSnapshot({ marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt });
     if (!snapshot) throw new IqWsError("SNAPSHOT_UNAVAILABLE");
@@ -1833,7 +1834,7 @@ export class IqMultiRuntime extends EventEmitter {
       if (!this.#marketTradable(ctx)) continue;
       if (!this.rsiAgentsV2Live.hasActiveCandidate(ctx.marketKey)) continue;
       const serverNow = this.client?.serverNow?.() ?? now;
-      const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+      const targetExpiryAt = nextOperationalExpiryAt(serverNow);
       if (now < targetExpiryAt - 45_000 || now > targetExpiryAt - 30_000) continue;
       const list = this.#candleList(ctx);
       if (list.length < 3) continue;
@@ -1867,7 +1868,7 @@ export class IqMultiRuntime extends EventEmitter {
       const labS04Active = this.labS04?.hasActiveOpportunity?.(ctx.marketKey) === true;
       if (!consensusActive && !labActive && !labS04Active) continue;
       const serverNow = this.client?.serverNow?.() ?? now;
-      const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+      const targetExpiryAt = nextOperationalExpiryAt(serverNow);
       if (now < targetExpiryAt - 45_000 || now > targetExpiryAt - 30_000) continue;
       const list = this.#candleList(ctx);
       if (list.length < 3) continue;
@@ -2399,7 +2400,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (now - (ctx.rsiVariantsAt ?? 0) < 5_000) return null;
     ctx.rsiVariantsAt = now;
     const serverNow = this.client?.serverNow?.() ?? now;
-    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000;
+    const targetExpiryAt = nextOperationalExpiryAt(serverNow);
     const ackSamples = ctx.latency?.orderAck ?? [];
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
@@ -2417,7 +2418,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (now - (ctx.rsi5sAt ?? 0) < 5_000) return null; // avaliacao a cada ~5s por mercado
     ctx.rsi5sAt = now;
     const serverNow = this.client?.serverNow?.() ?? now;
-    const targetExpiryAt = Math.ceil(serverNow / 60_000) * 60_000; // mesma expiracao Turbo 1m
+    const targetExpiryAt = nextOperationalExpiryAt(serverNow);
     const ackSamples = ctx.latency?.orderAck ?? [];
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
