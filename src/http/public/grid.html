@@ -163,7 +163,7 @@
     <span class="chipctl" style="color:#4ade80;border-color:#14532d">● Mercado OTC</span>
     <span class="clock" id="clock">--:--:--</span>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start"><section><div style="display:flex;align-items:center;gap:10px;margin:0 2px 8px"><span style="font-size:12px;font-weight:700;color:#c7d2e5">Binarios OTC</span><span style="flex:1"></span><span id="swBinaryWrap" style="display:inline-flex;align-items:center;width:40px;height:22px;background:#1c2942;border-radius:999px;padding:2px;cursor:pointer;transition:.2s"><span id="swBinary" style="width:18px;height:18px;background:#8b97ad;border-radius:50%;transition:.2s"></span></span></div><main id="grid"></main></section><section style="border-left:1px solid #1c2942;padding-left:14px"><div style="display:flex;align-items:center;gap:10px;margin:0 2px 8px"><span style="font-size:12px;font-weight:700;color:#c7d2e5">Blitz OTC 45s</span><span style="flex:1"></span><span id="swBlitzWrap" style="display:inline-flex;align-items:center;width:40px;height:22px;background:#1c2942;border-radius:999px;padding:2px;cursor:pointer;transition:.2s"><span id="swBlitz" style="width:18px;height:18px;background:#8b97ad;border-radius:50%;transition:.2s"></span></span></div><main id="gridBlitz"></main></section></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start"><section><div style="display:flex;align-items:center;gap:10px;margin:0 2px 8px"><span style="font-size:12px;font-weight:700;color:#c7d2e5">Binarios OTC</span><span style="flex:1"></span><span style="font-size:10px;font-weight:800;letter-spacing:.4px;color:#4ade80;border:1px solid #14532d;background:#0c1f14;border-radius:999px;padding:2px 8px">ATIVO</span></div><main id="grid"></main></section><section style="border-left:1px solid #1c2942;padding-left:14px"><div style="display:flex;align-items:center;gap:10px;margin:0 2px 8px"><span style="font-size:12px;font-weight:700;color:#c7d2e5">Blitz OTC 45s</span><span style="flex:1"></span><span style="font-size:10px;font-weight:800;letter-spacing:.4px;color:#4ade80;border:1px solid #14532d;background:#0c1f14;border-radius:999px;padding:2px 8px">ATIVO</span></div><main id="gridBlitz"></main></section></div>
 </div>
 
 <div class="foot">
@@ -490,7 +490,7 @@
       "</div>";
     if (!levels.length && !blitzRows.length) { el.innerHTML = "Sem dados ainda — o medidor roda junto com os agentes e liquida pelo feed a cada minuto."; return; }
   };
-  const STRATEGY_NAMES = { "BANDA_300": "Banda (rejeicao) 300s", "CONTRA_MOM6_TREND_WALK": "Contra-Momento6 + Trend/Walk 300s", "50": "TraceCom Base" };
+  const STRATEGY_NAMES = { "50": "TraceCom Estendida (15min + 6 agentes)", "CONT_300": "Continuacao 300s (candle+ADX)", "PULLBACK_150": "Pullback 150s (RSI contra tendencia)", "PULLBACK_300": "Pullback 300s (RSI contra tendencia)", "PULLBACK_X300": "Pullback 300s com retorno do RSI", "PULLBACK_LOOSE_300": "Pullback 300s solto (RSI 35/65)", "PULLBACK_4060_180": "Pullback 180s (RSI 40/60)", "PULLBACK_4060_300": "Pullback 300s (RSI 40/60)", "PULLBACK_X4060_300": "Pullback 300s 40/60 com retorno do RSI", "PULLBACK_4560_300": "Pullback 300s solto (RSI 45/55)", "PULLBACK_XTIGHT_300": "Pullback 300s restrito (estrutura+pullback+dominancia)" };
   const strategyName = (label) => STRATEGY_NAMES[String(label)] ?? ("Nivel " + label);
   const fmtWr = (r) => (r.winRate == null ? "sem WR" : "WR " + String(r.winRate).replace(".", ",") + "%");
   const fmtRitmo = (r) => (r.entriesPerHour == null ? "-" : String(r.entriesPerHour).replace(".", ",") + "/h");
@@ -525,20 +525,16 @@
       if (!rows.length) sel.innerHTML = "<option value='" + state.agentVariant + "'>" + state.agentVariant + "% (sem amostra ainda)</option>";
 
       const setSwitch = (id, on) => { const dot = $(id); const wrap = $(id + "Wrap"); if (!dot || !wrap) return; dot.style.transform = on ? "translateX(18px)" : "translateX(0)"; dot.style.background = on ? "#4ade80" : "#8b97ad"; wrap.style.background = on ? "#14532d" : "#1c2942"; };
-      setSwitch("swBinary", data.binaryExec === true);
-      setSwitch("swBlitz", data.blitzExec === true);
+      setSwitch("swBinary", true);
+      setSwitch("swBlitz", true);
+      const sw = data.autoSwitch ?? null;
+      if (sw) $("safetyStatus").innerHTML += " · troca automatica: <b style='color:#4ade80'>" + String(sw.preferred ?? "BLITZ") + "</b>" + (sw.binary && sw.blitz ? " (bin " + (sw.binary.wr ?? "-") + "% n=" + sw.binary.n + " x blitz " + (sw.blitz.wr ?? "-") + "% n=" + sw.blitz.n + ")" : "");
     }
     renderSafetyShadow(shadow, blitz);
   };
-  const toggleExec = async (which) => {
-    const data = await api("/api/iq/agents/config");
-    if (!data) return;
-    const payload = which === "binary" ? { binaryExec: !(data.binaryExec === true) } : { blitzExec: !(data.blitzExec === true) };
-    const saved = await api("/api/iq/agents/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
-    if (saved) await refreshAgentConfig();
-  };
-  $("swBinaryWrap").onclick = () => toggleExec("binary");
-  $("swBlitzWrap").onclick = () => toggleExec("blitz");
+  const toggleExec = async () => { /* interruptores removidos: os dois lados ficam ativos e a troca e automatica pelo melhor WR */ };
+  if ($("swBinaryWrap")) $("swBinaryWrap").onclick = () => toggleExec();
+  if ($("swBlitzWrap")) $("swBlitzWrap").onclick = () => toggleExec();
   const saveAgentConfig = async () => {
     const value = $("safetySelect").value;
     const saved = await api("/api/iq/agents/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ variant: value }) });

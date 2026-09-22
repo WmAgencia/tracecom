@@ -74,6 +74,7 @@ import { RsiAgentsV2Live } from "./rsi-agents-v2-live.mjs";
 import { ConsensusRunner } from "./consensus/runner.mjs";
 import { LabRunner } from "./lab/runner.mjs";
 import { runAgentGraph, agentGraphToStrategyResult, AGENTIC_STRATEGY_ID } from "./agents/graph.mjs";
+import { pickPreferredSide, wilsonLower, SIDE_PREFERENCE_VERSION } from "./agents/side-preference.mjs";
 import { SafetyShadow, parseSafetyLevels, SAFETY_SHADOW_RUN_ID } from "./agents/safety-shadow.mjs";
 import { CandlesArchive } from "./candles-archive.mjs";
 import { customStrategyById, evaluateCustomStrategies, CUSTOM_STRATEGIES } from "./agents/custom-strategies.mjs";
@@ -129,7 +130,7 @@ export class IqMultiRuntime extends EventEmitter {
     try { this.consensus = new ConsensusRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: consensusEnabled === true, execute: consensusExecute === true, emit: (type, payload) => this.#emitEvent(type, payload) }); } catch (error) { this.consensus = null; this.#safe(() => this.log("CONSENSUS_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     try { this.lab = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: labEnabled === true, runId: labRunId, stake: labStake, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.lab?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.lab.reportRootDir })).catch(() => undefined); } }); void this.lab.start().catch(() => undefined); } catch (error) { this.lab = null; this.#safe(() => this.log("LAB_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     try { this.labS04 = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: labS04Enabled === true, runId: labS04RunId ?? "s04-bollinger-50-20260921", stake: labStake, strategies: ["S04_BOLLINGER_MEAN_REVERSION"], cap: 50, sourceRunId: labRunId ?? "lab6-20260920-practice", sourceStrategy: "S04_BOLLINGER_MEAN_REVERSION", reportRootDir: "estrategias/experiments/s04-bollinger-50", emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.labS04?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.labS04.reportRootDir })).catch(() => undefined); } }); void this.labS04.start().catch(() => undefined); } catch (error) { this.labS04 = null; this.#safe(() => this.log("LAB_S04_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
-    try { this.agentic = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: agenticEnabled === true, runId: agenticRunId ?? "agentic-rsi-fib-20260921", stake: labStake, strategies: [AGENTIC_STRATEGY_ID], cap: 1000, reportRootDir: "estrategias/experiments/agentic-rsi-fib", evaluate: (snapshot) => { this.lastEvaluationAt = this.now(); const graph = runAgentGraph(snapshot, { safetyPct: this.agentSafetyPct, filters: this.agentFilters }); if (this.safetyShadow) void this.safetyShadow.record(graph, snapshot).catch(() => undefined); const base = agentGraphToStrategyResult(graph); if (!base) return []; const custom = this.agentCustomStrategy; if (custom) { const side = custom.gate({ snapshot, opinions: graph.opinions }) === true ? custom.signal({ snapshot, opinions: graph.opinions }) : null; return [{ ...base, decision: side ?? "WAIT", side: side ?? null }]; } return [base]; }, entryWindowOpenMs: 33_000, entryWindowCloseMs: 31_500, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.agentic?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.agentic.reportRootDir })).catch(() => undefined); } }); void this.agentic.start().catch(() => undefined); } catch (error) { this.agentic = null; this.#safe(() => this.log("AGENTIC_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
+    try { this.agentic = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: agenticEnabled === true, runId: agenticRunId ?? "agentic-rsi-fib-20260921", stake: labStake, strategies: [AGENTIC_STRATEGY_ID], cap: 1000, reportRootDir: "estrategias/experiments/agentic-rsi-fib", evaluate: (snapshot) => { this.lastEvaluationAt = this.now(); const graph = runAgentGraph(snapshot, { safetyPct: this.agentSafetyPct, filters: this.agentFilters }); if (this.safetyShadow) void this.safetyShadow.record(graph, snapshot).catch(() => undefined); const base = agentGraphToStrategyResult(graph); if (!base) return []; const custom = this.agentCustomStrategy; if (custom) { const side = custom.gate({ snapshot, opinions: graph.opinions }) === true ? custom.signal({ snapshot, opinions: graph.opinions }) : null; return [{ ...base, decision: side ?? "WAIT", side: side ?? null }]; } return [base]; }, entryWindowOpenMs: 32_000, entryWindowCloseMs: 31_000, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.agentic?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.agentic.reportRootDir })).catch(() => undefined); } }); void this.agentic.start().catch(() => undefined); } catch (error) { this.agentic = null; this.#safe(() => this.log("AGENTIC_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     this.agentSafetyFromEnv = agenticSafetyPct !== null && agenticSafetyPct !== undefined && String(agenticSafetyPct).trim() !== "" && Number.isFinite(Number(agenticSafetyPct));
     this.agentSafetyPct = this.agentSafetyFromEnv ? Math.max(0, Math.min(100, Math.round(Number(agenticSafetyPct)))) : 100;
     this.autoArmPractice = autoArmPractice === true;
@@ -139,11 +140,11 @@ export class IqMultiRuntime extends EventEmitter {
     this.agentExecBlitz = true;
     this.blitzLastEntryAt = new Map();
     try {
-      this.blitzShadow = agenticEnabled === true ? new SafetyShadow({ pool, now: this.now, log: this.log, levels: parseSafetyLevels(agenticShadowLevels), entryOffsetMs: BLITZ_EXPIRATION_SECONDS * 1000, entryToleranceMs: 1_500, runId: "agentic-blitz-shadow-v1", candles: (marketKey, limit) => this.candlesBatch([marketKey], limit) }) : null;
+      this.blitzShadow = agenticEnabled === true ? new SafetyShadow({ pool, now: this.now, log: this.log, levels: parseSafetyLevels(agenticShadowLevels ?? "50"), entryOffsetMs: 31_500, entryToleranceMs: 500, runId: "agentic-blitz-shadow-v1", candles: (marketKey, limit) => this.candlesBatch([marketKey], limit) }) : null;
     } catch (error) { this.blitzShadow = null; this.#safe(() => this.log("BLITZ_SHADOW_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.blitzSnapshotCache = new Map();
     try {
-      this.blitzRun = agenticEnabled === true ? new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: true, runId: "agentic-blitz-45s", stake: labStake, strategies: [AGENTIC_BLITZ_STRATEGY_ID], cap: 1000, reportRootDir: "estrategias/experiments/agentic-blitz", evaluate: (snapshot) => { this.lastEvaluationAt = this.now(); const graph = runAgentGraph(snapshot, { safetyPct: this.agentSafetyPctBlitz ?? this.agentSafetyPct, filters: this.agentFiltersBlitz }); if (this.blitzShadow) void this.blitzShadow.record(graph, snapshot).catch(() => undefined); const base = agentGraphToStrategyResult(graph); if (!base) return []; const customBlitz = this.agentCustomStrategyBlitz; if (customBlitz) { const side = customBlitz.gate({ snapshot, opinions: graph.opinions }) === true ? customBlitz.signal({ snapshot, opinions: graph.opinions }) : null; return [{ ...base, strategyId: AGENTIC_BLITZ_STRATEGY_ID, decision: side ?? "WAIT", side: side ?? null }]; } return [{ ...base, strategyId: AGENTIC_BLITZ_STRATEGY_ID, strategyVersion: "agentic-blitz-45s-v1" }]; }, entryWindowOpenMs: 60_000, entryWindowCloseMs: 1_000 }) : null;
+      this.blitzRun = agenticEnabled === true ? new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: true, runId: "agentic-blitz-45s", stake: labStake, strategies: [AGENTIC_BLITZ_STRATEGY_ID], cap: 1000, reportRootDir: "estrategias/experiments/agentic-blitz", evaluate: (snapshot) => { this.lastEvaluationAt = this.now(); const graph = runAgentGraph(snapshot, { safetyPct: this.agentSafetyPctBlitz ?? this.agentSafetyPct, filters: this.agentFiltersBlitz }); if (this.blitzShadow) void this.blitzShadow.record(graph, snapshot).catch(() => undefined); const base = agentGraphToStrategyResult(graph); if (!base) return []; const customBlitz = this.agentCustomStrategyBlitz; if (customBlitz) { const side = customBlitz.gate({ snapshot, opinions: graph.opinions }) === true ? customBlitz.signal({ snapshot, opinions: graph.opinions }) : null; return [{ ...base, strategyId: AGENTIC_BLITZ_STRATEGY_ID, decision: side ?? "WAIT", side: side ?? null }]; } return [{ ...base, strategyId: AGENTIC_BLITZ_STRATEGY_ID, strategyVersion: "agentic-blitz-45s-v1" }]; }, entryWindowOpenMs: 32_000, entryWindowCloseMs: 31_000 }) : null;
       if (this.blitzRun) void this.blitzRun.start().catch(() => undefined);
     } catch (error) { this.blitzRun = null; this.#safe(() => this.log("BLITZ_RUN_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentVariant = "";
@@ -155,7 +156,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.agentExpirySeconds = 60;
     this.agentExpirySecondsBlitz = BLITZ_EXPIRATION_SECONDS;
     try {
-      this.safetyShadow = agenticEnabled === true ? new SafetyShadow({ pool, now: this.now, log: this.log, levels: parseSafetyLevels(agenticShadowLevels ?? "50"), entryOffsetMs: 32_250, entryToleranceMs: 750, candles: (marketKey, limit) => this.candlesBatch([marketKey], limit) }) : null;
+      this.safetyShadow = agenticEnabled === true ? new SafetyShadow({ pool, now: this.now, log: this.log, levels: parseSafetyLevels(agenticShadowLevels ?? "50"), entryOffsetMs: 31_500, entryToleranceMs: 500, candles: (marketKey, limit) => this.candlesBatch([marketKey], limit) }) : null;
     } catch (error) { this.safetyShadow = null; this.#safe(() => this.log("SAFETY_SHADOW_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     this.accountContext.onEvent = (event, payload) => this.#emitEvent(`account_context.${event.toLowerCase()}`, payload ?? {});
     this.decisionOverride = typeof decisionOverride === "function" ? decisionOverride : null; // diagnostico/testes deterministicos (nunca usado em producao)
@@ -250,6 +251,10 @@ export class IqMultiRuntime extends EventEmitter {
     this.availabilityTimer = null;
     this.equityCurveCache = []; this.equityRefreshedAt = 0;
     this.periodPnlCache = { weekly: null, monthly: null, weeklyTrades: null, monthlyTrades: null, context: null, refreshedAt: 0 };
+    this.perfSummaryCache = null;
+    this.dbBytesCache = null;
+    this.maintenanceBusy = false;
+    this.sidePreference = { version: SIDE_PREFERENCE_VERSION, preferred: "BLITZ", at: 0, binary: null, blitz: null };
     this.lastTickEmit = new Map();
   }
 
@@ -298,7 +303,7 @@ export class IqMultiRuntime extends EventEmitter {
       setTimeout(() => { if (this.running) void this.#autoArmPractice().catch(() => undefined); }, 5_000).unref?.();
     }
     if (!this.maintenanceTimer) {
-      this.maintenanceTimer = setInterval(() => { if (!this.running) return; void this.runDbMaintenance().catch(() => undefined); }, 6 * 3600 * 1000);
+      this.maintenanceTimer = setInterval(() => { if (!this.running) return; void this.runDbMaintenance().catch(() => undefined); }, 10 * 60 * 1000);
       if (typeof this.maintenanceTimer.unref === "function") this.maintenanceTimer.unref();
       setTimeout(() => { if (this.running) void this.runDbMaintenance().catch(() => undefined); }, 120_000).unref?.();
     }
@@ -1595,6 +1600,12 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
     // Desarmado: registra a intencao como DRY_RUN (mede) sem floodar REJECTED nem enviar ordem.
     if (this.armState.armed !== true) return { state: "DRY_RUN", dryRun: true, dryRunReason: "NOT_ARMED", brokerOrderId: null, executionId: null, stake: Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2), mode: "PRACTICE" };
+    // Troca automatica binario x blitz: com os dois ativos, so o lado de melhor WR (com constancia) envia.
+    if (this.agentExecBinary === true && this.agentExecBlitz === true) {
+      const preferred = this.sidePreference?.preferred ?? "BLITZ";
+      const isBlitz = String(strategyId ?? "").toUpperCase().includes("BLITZ");
+      if ((preferred === "BLITZ") !== isBlitz) return { state: "DRY_RUN", dryRun: true, dryRunReason: "AUTO_SWITCH_" + preferred, brokerOrderId: null, executionId: null, stake: Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2), mode: "PRACTICE" };
+    }
     if (String(strategyId ?? "").includes("BLITZ")) {
       if (this.armState.armed !== true) throw new IqWsError("BLITZ_NOT_ARMED");
       if (this.config.autoExecute !== true) throw new IqWsError("BLITZ_AUTO_EXECUTE_OFF");
@@ -1696,25 +1707,72 @@ export class IqMultiRuntime extends EventEmitter {
 
   /** Retencao automatica + reclaim: evita lotar o banco (limite 500MB no Free). */
   async runDbMaintenance() {
-    if (!this.pool?.query) return null;
-    const out = { decisions: -1, shadow: -1, vacuum: false, dbBytes: null };
+    if (!this.pool?.query || this.maintenanceBusy === true) return null;
+    this.maintenanceBusy = true;
+    const out = { decisions: -1, shadow: -1, consensus: -1, observations: -1, timing: -1, trades: -1, executions: -1, auditDropped: 0, vacuum: [], dbBytes: null, level: "OK" };
     try {
-      const d1 = await this.pool.query("DELETE FROM iq_lab_decisions WHERE ctid IN (SELECT ctid FROM iq_lab_decisions WHERE at < now() - interval '24 hours' LIMIT 20000)");
-      out.decisions = d1.rowCount ?? 0;
-      const d2 = await this.pool.query("DELETE FROM iq_shadow_trades WHERE created_at < now() - interval '7 days'");
-      out.shadow = d2.rowCount ?? 0;
-      const size = await this.pool.query("SELECT pg_database_size(current_database())::bigint AS b");
-      out.dbBytes = Number(size.rows?.[0]?.b ?? 0);
-      if (out.dbBytes > 300 * 1024 * 1024 && out.decisions >= 0) {
-        await this.pool.query("VACUUM (FULL) iq_lab_decisions");
-        out.vacuum = true;
+      const rawQuery = (text, params) => (typeof this.pool.__rawQuery === "function" ? this.pool.__rawQuery(text, params) : this.pool.query(text, params));
+      const sizeOf = async () => Number((await rawQuery("SELECT pg_database_size(current_database())::bigint AS b")).rows?.[0]?.b ?? 0);
+      const del = async (label, sql) => { const r = await this.pool.query(sql).catch(() => null); if (r) out[label] = r.rowCount ?? 0; };
+      const epoch = (await this.pool.query("SELECT perf_since FROM iq_perf_epoch WHERE id=1").catch(() => ({ rows: [] }))).rows?.[0]?.perf_since ?? null;
+      out.dbBytes = await sizeOf();
+      // Retencao por tempo (lotes pequenos; nunca trava o banco).
+      await del("decisions", "DELETE FROM iq_lab_decisions WHERE ctid IN (SELECT ctid FROM iq_lab_decisions WHERE at < now() - interval '24 hours' LIMIT 20000)");
+      await del("shadow", "DELETE FROM iq_shadow_trades WHERE ctid IN (SELECT ctid FROM iq_shadow_trades WHERE created_at < " + (epoch ? "'" + new Date(epoch).toISOString() + "'::timestamptz" : "now() - interval '7 days'") + " LIMIT 20000)");
+      await del("consensus", "DELETE FROM iq_consensus_decisions WHERE ctid IN (SELECT ctid FROM iq_consensus_decisions WHERE at < now() - interval '24 hours' LIMIT 20000)");
+      await del("observations", "DELETE FROM iq_shadow_observations WHERE ctid IN (SELECT ctid FROM iq_shadow_observations WHERE created_at < now() - interval '24 hours' LIMIT 20000)");
+      await del("timing", "DELETE FROM iq_timing_policy_observations WHERE ctid IN (SELECT ctid FROM iq_timing_policy_observations WHERE created_at < now() - interval '48 hours' LIMIT 20000)");
+      await del("trades", "DELETE FROM iq_lab_trades WHERE ctid IN (SELECT ctid FROM iq_lab_trades WHERE entry_at < now() - interval '3 days' LIMIT 20000)");
+      await del("executions", "DELETE FROM iq_executions WHERE ctid IN (SELECT ctid FROM iq_executions WHERE requested_at < now() - interval '35 days' LIMIT 20000)");
+      const parts = (await this.pool.query("SELECT tablename FROM pg_tables WHERE tablename LIKE 'iq_audit_trail_%'").catch(() => ({ rows: [] }))).rows ?? [];
+      const dropAuditOlderThan = async (days) => { let n = 0; for (const p of parts) { const m = String(p.tablename).match(/^iq_audit_trail_(\d{4})(\d{2})(\d{2})$/); if (!m) continue; const day = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])); if (day < Date.now() - days * 86_400_000) { const r = await this.pool.query("DROP TABLE IF EXISTS " + p.tablename).catch(() => null); if (r) n += 1; } } return n; };
+      out.auditDropped = await dropAuditOlderThan(1);
+      // Guarda de tamanho: escalona a limpeza antes de chegar ao limite de 500 MB do free.
+      let size = await sizeOf();
+      if (size > 420 * 1024 * 1024) {
+        out.level = "HARD";
+        await del("decisions", "DELETE FROM iq_lab_decisions WHERE ctid IN (SELECT ctid FROM iq_lab_decisions WHERE at < now() - interval '6 hours' LIMIT 40000)");
+        await this.pool.query("TRUNCATE TABLE iq_timing_policy_observations").catch(() => undefined);
+        await this.pool.query("TRUNCATE TABLE iq_consensus_decisions").catch(() => undefined);
+        await this.pool.query("TRUNCATE TABLE iq_shadow_observations").catch(() => undefined);
+        size = await sizeOf();
       }
+      if (size > 460 * 1024 * 1024) {
+        out.level = "CRITICAL";
+        await this.pool.query("TRUNCATE TABLE iq_lab_decisions").catch(() => undefined);
+        await this.pool.query("TRUNCATE TABLE live_access_logs").catch(() => undefined);
+        await dropAuditOlderThan(1);
+        size = await sizeOf();
+      }
+      if (size < 470 * 1024 * 1024 && ((out.decisions ?? 0) > 0 || (out.trades ?? 0) > 0)) {
+        for (const table of ["iq_lab_decisions", "iq_lab_trades"]) { try { await this.pool.query("VACUUM (FULL, ANALYZE) " + table); out.vacuum.push(table); } catch { /* noop */ } }
+        size = await sizeOf();
+      }
+      out.dbBytes = size;
+      this.dbBytesCache = size;
     } catch (error) {
       this.#safe(() => this.log("DB_MAINTENANCE_FAIL", String(error?.message ?? error).slice(0, 160)));
-    }
+    } finally { this.maintenanceBusy = false; }
     try { this.candlesArchive?.prune(); } catch { /* noop */ }
     this.#safe(() => this.log("DB_MAINTENANCE", JSON.stringify(out)));
     return out;
+  }
+
+  /** Escolha automatica do lado (binario x blitz) pelo melhor WR com constancia (Wilson 95%). */
+  async refreshSidePreference() {
+    if (!this.pool?.query) return this.sidePreference;
+    try {
+      const rawQuery = (text, params) => (typeof this.pool.__rawQuery === "function" ? this.pool.__rawQuery(text, params) : this.pool.query(text, params));
+      const epoch = (await rawQuery("SELECT perf_since FROM iq_perf_epoch WHERE id=1").catch(() => ({ rows: [] }))).rows?.[0]?.perf_since ?? null;
+      const binaryRun = this.agentic?.runId ?? "agentic-rsi-fib-20260921";
+      const blitzRun = this.blitzRun?.runId ?? "agentic-blitz-45s";
+      const rows = (await rawQuery("SELECT run_id, count(*) FILTER (WHERE result='WIN')::int AS w, count(*) FILTER (WHERE result IN ('WIN','LOSS'))::int AS n FROM iq_lab_trades WHERE run_id = ANY($1::text[]) AND entry_at >= coalesce($2::timestamptz, '1970-01-01'::timestamptz) GROUP BY run_id", [[binaryRun, blitzRun], epoch])).rows ?? [];
+      const statOf = (runId) => { const row = rows.find((r) => r.run_id === runId); const n = Number(row?.n ?? 0); const w = Number(row?.w ?? 0); return { n, wins: w, wr: n ? Number((100 * w / n).toFixed(1)) : null, low: wilsonLower(w, n) }; };
+      const binary = statOf(binaryRun); const blitz = statOf(blitzRun);
+      const preferred = pickPreferredSide(binary, blitz);
+      this.sidePreference = { version: SIDE_PREFERENCE_VERSION, preferred, at: this.now(), binary, blitz };
+    } catch (error) { this.#safe(() => this.log("SIDE_PREFERENCE_FAIL", String(error?.message ?? error).slice(0, 140))); }
+    return this.sidePreference;
   }
 
   candlesArchiveStatus() { return this.candlesArchive?.status() ?? { version: "candles-archive-v1", ready: false, days: [] }; }
@@ -1762,22 +1820,24 @@ export class IqMultiRuntime extends EventEmitter {
     try { const out = this.arm(2, { confirmation: true, actor: "auto" }); this.#safe(() => this.log("AUTO_ARM_PRACTICE", JSON.stringify({ at: this.now(), armed: out?.armed === true }))); return out; } catch { return null; }
   }
 
-  agentConfigState() { return { safetyPct: this.agentSafetyPct, variant: this.agentVariant || String(this.agentSafetyPct), variantBlitz: this.agentVariantBlitz || String(this.agentSafetyPctBlitz ?? this.agentSafetyPct), filters: this.agentFilters ?? null, binaryExec: this.agentExecBinary === true, blitzExec: this.agentExecBlitz === true, shadowLevels: this.safetyShadow ? this.safetyShadow.levels.map((spec) => spec.label) : [], shadowRunId: SAFETY_SHADOW_RUN_ID, fromEnv: this.agentSafetyFromEnv === true, autoArmPractice: this.autoArmPractice === true }; }
+  agentConfigState() { return { safetyPct: this.agentSafetyPct, variant: this.agentVariant || String(this.agentSafetyPct), variantBlitz: this.agentVariantBlitz || String(this.agentSafetyPctBlitz ?? this.agentSafetyPct), filters: this.agentFilters ?? null, binaryExec: this.agentExecBinary === true, blitzExec: this.agentExecBlitz === true, shadowLevels: this.safetyShadow ? this.safetyShadow.levels.map((spec) => spec.label) : [], shadowRunId: SAFETY_SHADOW_RUN_ID, fromEnv: this.agentSafetyFromEnv === true, autoArmPractice: this.autoArmPractice === true, autoSwitch: { preferred: this.sidePreference?.preferred ?? "BLITZ", binary: this.sidePreference?.binary ?? null, blitz: this.sidePreference?.blitz ?? null, updatedAt: this.sidePreference?.at ?? null } }; }
   async setAgentExec({ binary = null, blitz = null } = {}) { if (binary !== null) this.agentExecBinary = binary === true; if (blitz !== null) this.agentExecBlitz = blitz === true; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET binary_exec_enabled=$1, blitz_exec_enabled=$2, updated_at=now() WHERE id=1", [this.agentExecBinary, this.agentExecBlitz]).catch(() => undefined); this.#safe(() => this.log("AGENT_EXEC_SET", JSON.stringify({ binary: this.agentExecBinary, blitz: this.agentExecBlitz }))); return this.agentConfigState(); }
   async blitzReport(hours = 6) { const shadow = this.blitzShadow ? await this.blitzShadow.report(hours) : { levels: [] }; const real = await this.blitzStats(hours); return { ...shadow, real }; }
   async blitzStats(hours = 6) { if (!this.pool?.query) return { trades: 0 }; const bounded = Math.max(1, Math.min(72, Number(hours) || 6)); const epoch = (await this.pool.query("SELECT perf_since FROM iq_perf_epoch WHERE id=1").catch(() => ({ rows: [] }))).rows?.[0]?.perf_since ?? null;
     const row = (await this.pool.query("SELECT count(*) FILTER (WHERE result IN ('WIN','LOSS','DRAW'))::int AS settled, count(*) FILTER (WHERE result='WIN')::int AS wins, count(*) FILTER (WHERE result='LOSS')::int AS losses, count(*) FILTER (WHERE result='DRAW')::int AS draws, coalesce(sum(pnl) FILTER (WHERE result IN ('WIN','LOSS','DRAW')),0)::numeric AS pnl, coalesce(avg(payout) FILTER (WHERE result IN ('WIN','LOSS')),0)::numeric AS avg_payout FROM iq_lab_trades WHERE run_id='agentic-blitz-45s' AND entry_at >= greatest(now() - ($1 || ' hours')::interval, coalesce($2::timestamptz, '1970-01-01'::timestamptz))", [String(bounded), epoch]).catch(() => ({ rows: [] }))).rows?.[0] ?? null; if (!row) return { trades: 0 }; const decided = Number(row.wins) + Number(row.losses); const wr = decided > 0 ? Number((100 * Number(row.wins) / decided).toFixed(1)) : null; const breakeven = Number(row.avg_payout) > 0 ? Number((100 / (1 + Number(row.avg_payout) / 100)).toFixed(1)) : null; return { runId: "agentic-blitz-45s", expirationSeconds: BLITZ_EXPIRATION_SECONDS, settled: Number(row.settled), wins: Number(row.wins), losses: Number(row.losses), draws: Number(row.draws), winRate: wr, breakeven, edge: wr != null && breakeven != null ? Number((wr - breakeven).toFixed(1)) : null, pnl: Number(row.pnl), entriesPerHour: Number((Number(row.settled) / bounded).toFixed(1)) }; }
   async setAgentVariantBlitz(variant) { const custom = customStrategyById(variant); if (custom) { this.agentCustomStrategyBlitz = custom; this.agentVariantBlitz = custom.id; this.agentFiltersBlitz = null; this.agentExpirySecondsBlitz = custom.expirySeconds; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET active_variant_blitz=$1, updated_at=now() WHERE id=1", [custom.id]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_BLITZ_SET", JSON.stringify({ variant: custom.id }))); return this.agentConfigState(); }
-    const raw = String(variant ?? "").trim().toUpperCase(); const match = raw.match(/^(\d{1,3})\s*([A-Z]{0,3})$/); if (!match) throw new IqWsError("AGENT_VARIANT_BLITZ_INVALID", raw.slice(0, 20)); const safety = Math.max(0, Math.min(100, Math.round(Number(match[1])))); const v = match[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S") } : null; this.agentSafetyPctBlitz = safety; this.agentVariantBlitz = String(safety) + v; this.agentFiltersBlitz = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze) ? filters : null; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET active_variant_blitz=$1, updated_at=now() WHERE id=1", [this.agentVariantBlitz]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_BLITZ_SET", JSON.stringify({ variant: this.agentVariantBlitz }))); return this.agentConfigState(); }
+    const raw = String(variant ?? "").trim().toUpperCase(); const match = raw.match(/^(\d{1,3})\s*([A-Z]{0,4})$/); if (!match) throw new IqWsError("AGENT_VARIANT_BLITZ_INVALID", raw.slice(0, 20)); const safety = Math.max(0, Math.min(100, Math.round(Number(match[1])))); const v = match[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S"), candle: v.includes("C") } : null; this.agentSafetyPctBlitz = safety; this.agentVariantBlitz = String(safety) + v; this.agentFiltersBlitz = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze || filters.candle) ? filters : null; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET active_variant_blitz=$1, updated_at=now() WHERE id=1", [this.agentVariantBlitz]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_BLITZ_SET", JSON.stringify({ variant: this.agentVariantBlitz }))); return this.agentConfigState(); }
   async setAgentVariant(variant) { const custom = customStrategyById(variant); if (custom) { this.agentCustomStrategy = custom; this.agentCustomStrategyBlitz = custom; this.agentVariant = custom.id; this.agentVariantBlitz = custom.id; this.agentFilters = null; this.agentFiltersBlitz = null; this.agentExpirySeconds = custom.expirySeconds; this.agentExpirySecondsBlitz = custom.expirySeconds; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, updated_at=now() WHERE id=1", [this.agentSafetyPct, custom.id]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_SET", JSON.stringify({ variant: custom.id }))); return this.agentConfigState(); }
-    const raw = String(variant ?? "").trim().toUpperCase(); const match = raw.match(/^(\d{1,3})\s*([A-Z]{0,3})$/); if (!match) throw new IqWsError("AGENT_VARIANT_INVALID", raw.slice(0, 20)); const safety = Math.max(0, Math.min(100, Math.round(Number(match[1])))); const v = match[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S") } : null; this.agentCustomStrategy = null; this.agentCustomStrategyBlitz = null; this.agentSafetyPct = safety; this.agentSafetyPctBlitz = safety; this.agentSafetyFromEnv = false; this.agentVariant = String(safety) + v; this.agentVariantBlitz = String(safety) + v; this.agentFilters = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze) ? filters : null; this.agentFiltersBlitz = this.agentFilters; this.agentExpirySeconds = 60; this.agentExpirySecondsBlitz = BLITZ_EXPIRATION_SECONDS; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, active_variant_blitz=$2, updated_at=now() WHERE id=1", [safety, this.agentVariant]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_SET", JSON.stringify({ variant: this.agentVariant }))); return this.agentConfigState(); }
+    const raw = String(variant ?? "").trim().toUpperCase(); const match = raw.match(/^(\d{1,3})\s*([A-Z]{0,4})$/); if (!match) throw new IqWsError("AGENT_VARIANT_INVALID", raw.slice(0, 20)); const safety = Math.max(0, Math.min(100, Math.round(Number(match[1])))); const v = match[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S"), candle: v.includes("C") } : null; this.agentCustomStrategy = null; this.agentCustomStrategyBlitz = null; this.agentSafetyPct = safety; this.agentSafetyPctBlitz = safety; this.agentSafetyFromEnv = false; this.agentVariant = String(safety) + v; this.agentVariantBlitz = String(safety) + v; this.agentFilters = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze || filters.candle) ? filters : null; this.agentFiltersBlitz = this.agentFilters; this.agentExpirySeconds = 60; this.agentExpirySecondsBlitz = BLITZ_EXPIRATION_SECONDS; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, active_variant_blitz=$2, updated_at=now() WHERE id=1", [safety, this.agentVariant]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_SET", JSON.stringify({ variant: this.agentVariant }))); return this.agentConfigState(); }
   async setAgentSafetyPct(pct) { const value = Math.round(Number(pct)); if (!Number.isFinite(value) || value < 0 || value > 100) throw new IqWsError("AGENT_SAFETY_INVALID", String(pct)); this.agentSafetyPct = value; this.agentSafetyFromEnv = false; this.agentVariant = String(value); this.agentFilters = null; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, updated_at=now() WHERE id=1", [value, this.agentVariant]).catch(() => undefined); this.#safe(() => this.log("AGENT_SAFETY_SET", JSON.stringify({ safetyPct: value }))); return this.agentConfigState(); }
-  async setShadowLevels(levels) { const parsed = parseSafetyLevels(levels); if (!parsed.length) throw new IqWsError("AGENT_SHADOW_LEVELS_INVALID", String(levels)); this.safetyShadow?.setLevels(parsed.map((spec) => spec.label)); if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET shadow_levels=$1, updated_at=now() WHERE id=1", [parsed.map((spec) => spec.label).join(",")]).catch(() => undefined); return this.agentConfigState(); }
+  async setShadowLevels(levels) { const parsed = parseSafetyLevels(levels); if (!parsed.length) throw new IqWsError("AGENT_SHADOW_LEVELS_INVALID", String(levels)); const labels = parsed.map((spec) => spec.label); this.safetyShadow?.setLevels(labels); this.blitzShadow?.setLevels(labels); if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET shadow_levels=$1, updated_at=now() WHERE id=1", [labels.join(",")]).catch(() => undefined); return this.agentConfigState(); }
   async safetyShadowReport(hours = 6) { return this.safetyShadow ? this.safetyShadow.report(hours) : { version: "safety-shadow-v1", runId: SAFETY_SHADOW_RUN_ID, levels: [], activeLevels: [] }; }
 
   /** Resumo de performance (PRACTICE) para o dashboard: hoje/semana/mes + ativos ativos. */
   async performanceSummary() {
     if (!this.pool?.query) return null;
+    const cached = this.perfSummaryCache;
+    if (cached && this.now() - cached.at < 60_000) return cached.data;
     const epochRow = (await this.pool.query("SELECT perf_since FROM iq_perf_epoch WHERE id=1").catch(() => ({ rows: [] }))).rows?.[0] ?? null;
     const epoch = epochRow?.perf_since ?? null;
     const scope = "account_context='PRACTICE'" + (epoch ? " AND requested_at >= '" + new Date(epoch).toISOString() + "'" : "");
@@ -1788,7 +1848,9 @@ export class IqMultiRuntime extends EventEmitter {
     const daily = (await this.pool.query("SELECT to_char(date_trunc('day', requested_at), 'DD/MM') AS day, coalesce(sum(profit) FILTER (WHERE broker_result IS NOT NULL),0)::numeric AS pnl FROM iq_executions WHERE " + scope + " AND requested_at >= now() - interval '7 days' GROUP BY 1 ORDER BY min(requested_at)").catch(() => ({ rows: [] }))).rows ?? [];
     const activeAssets = [...this.markets.values()].filter((ctx) => this.#marketTradable(ctx)).length;
     const withWr = (row) => row ? { ...row, pnl: Number(row.pnl), wr: (row.wins + row.losses) > 0 ? Number(((100 * row.wins) / (row.wins + row.losses)).toFixed(1)) : null } : null;
-    return { today: withWr(today), week: { ...withWr(week), daily }, month: withWr(month), activeAssets, connected: this.session.connected === true, at: this.now() };
+    const result = { today: withWr(today), week: { ...withWr(week), daily }, month: withWr(month), activeAssets, connected: this.session.connected === true, at: this.now() };
+    this.perfSummaryCache = { at: this.now(), data: result };
+    return result;
   }
 
   async labStatus() {
@@ -1843,16 +1905,17 @@ export class IqMultiRuntime extends EventEmitter {
       });
     }
     if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); void this.blitzRun?.pollSettlements(); void this.blitzShadow?.settle(); void this.#sweepStaleExecutions(); }
+    if (now - (this.lastSidePrefAt ?? 0) > 60_000) { this.lastSidePrefAt = now; void this.refreshSidePreference().catch(() => undefined); }
     if (this.agentic?.enabled === true) {
       const cache = this.agenticSnapshotCache ?? (this.agenticSnapshotCache = new Map());
       for (const ctx of this.markets.values()) {
-        if (ctx.marketType !== "OTC" || !this.#marketTradable(ctx)) continue;
+        if (!this.#marketTradable(ctx)) continue;
         const list = this.#candleList(ctx);
         if (list.length < 3) continue;
         const cacheKey = String(list[list.length - 1]?.bucketEnd ?? 0) + "|" + String(ctx.lastTickAt ?? 0);
         let entry = cache.get(ctx.marketKey) ?? null;
         if (!entry || entry.key !== cacheKey) {
-          const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt: Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000 });
+          const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt: Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000, livePrice: Number.isFinite(Number(ctx.lastTick?.price)) ? Number(ctx.lastTick.price) : null });
           if (!snapshot) continue;
           entry = { key: cacheKey, snapshot };
           cache.set(ctx.marketKey, entry);
@@ -1865,15 +1928,15 @@ export class IqMultiRuntime extends EventEmitter {
       for (const t of this.blitzLastEntryAt.values()) if (now - t < 60_000) blitzRecent += 1;
       for (const ctx of this.markets.values()) {
         if (blitzRecent >= 6) break;
-        if (ctx.marketType !== "OTC" || !this.#marketTradable(ctx)) continue;
+        if (!this.#marketTradable(ctx)) continue;
         if (now - (this.blitzLastEntryAt.get(ctx.marketKey) ?? 0) < 60_000) continue;
         const list = this.#candleList(ctx);
         if (list.length < 3) continue;
         const cacheKey = String(list[list.length - 1]?.bucketEnd ?? 0) + "|" + String(ctx.lastTickAt ?? 0);
         let entry = this.blitzSnapshotCache.get(ctx.marketKey) ?? null;
-        const targetExpiryAt = now + BLITZ_EXPIRATION_SECONDS * 1000;
+        const targetExpiryAt = Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000;
         if (!entry || entry.key !== cacheKey) {
-          const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt });
+          const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt, livePrice: Number.isFinite(Number(ctx.lastTick?.price)) ? Number(ctx.lastTick.price) : null });
           if (!snapshot) continue;
           entry = { key: cacheKey, snapshot };
           this.blitzSnapshotCache.set(ctx.marketKey, entry);
@@ -1892,7 +1955,7 @@ export class IqMultiRuntime extends EventEmitter {
       if (now < targetExpiryAt - 45_000 || now > targetExpiryAt - 30_000) continue;
       const list = this.#candleList(ctx);
       if (list.length < 3) continue;
-      const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt });
+      const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt, livePrice: Number.isFinite(Number(ctx.lastTick?.price)) ? Number(ctx.lastTick.price) : null });
       if (!snapshot) continue;
       if (consensusActive && this.consensus?.enabled) void this.consensus.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, targetExpiryAt, payout: ctx.payout, snapshot });
       if (labActive && this.lab?.enabled) void this.lab.observeMarket({ snapshot, marketKey: ctx.marketKey, targetExpiryAt, payout: ctx.payout });
@@ -4013,6 +4076,7 @@ export class IqMultiRuntime extends EventEmitter {
       state,
       alerts,
       dbReady: this.dbReady ?? null,
+      dbBytes: this.dbBytesCache ?? null,
       readOnly,
       auditPersisting: !(readOnly || auditFailing),
       lastSuccessAt: p.lastSuccessAt,
@@ -4164,7 +4228,7 @@ export class IqMultiRuntime extends EventEmitter {
         if (row.hypotheses_json && Array.isArray(row.hypotheses_json.items)) for (const item of row.hypotheses_json.items) this.hypotheses.items.set(item.id, item);
         if (row.apprentice_json && sameGeneration) this.apprentice.loadFrom(row.apprentice_json);
         if (row.mode === "REAL") { this.config.mode = "REAL"; this.realMode.revoke("RESTART"); }
-        try { const agentRow = (await this.pool.query("SELECT safety_pct, shadow_levels, active_variant, active_variant_blitz, binary_exec_enabled, blitz_exec_enabled FROM iq_agent_config WHERE id=1")).rows?.[0] ?? null; if (agentRow) { const ab = typeof agentRow.active_variant_blitz === "string" ? agentRow.active_variant_blitz.trim().toUpperCase() : ""; const mb = ab.match(/^(\d{1,3})([A-Z]{0,3})$/); if (mb) { this.agentVariantBlitz = mb[1] + (mb[2] || ""); const vb = mb[2] || ""; const fb = vb ? { confirmation: vb.includes("F"), stochastic: vb.includes("T"), noSqueeze: vb.includes("S") } : null; this.agentSafetyPctBlitz = Math.max(0, Math.min(100, Math.round(Number(mb[1])))); this.agentFiltersBlitz = fb && (fb.confirmation || fb.stochastic || fb.noSqueeze) ? fb : null; } if (agentRow.binary_exec_enabled !== null && agentRow.binary_exec_enabled !== undefined) this.agentExecBinary = agentRow.binary_exec_enabled === true; if (agentRow.blitz_exec_enabled !== null && agentRow.blitz_exec_enabled !== undefined) this.agentExecBlitz = agentRow.blitz_exec_enabled === true; if (!this.agentSafetyFromEnv && Number.isFinite(Number(agentRow.safety_pct))) this.agentSafetyPct = Math.max(0, Math.min(100, Math.round(Number(agentRow.safety_pct)))); if (this.safetyShadow) this.safetyShadow.setLevels(agentRow.shadow_levels); const av = typeof agentRow.active_variant === "string" ? agentRow.active_variant.trim().toUpperCase() : ""; const m = av.match(/^(\d{1,3})([A-Z]{0,3})$/); if (m) { this.agentVariant = m[1] + (m[2] || ""); const v = m[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S") } : null; this.agentFilters = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze) ? filters : null; } } } catch { /* best effort */ }
+        try { const agentRow = (await this.pool.query("SELECT safety_pct, shadow_levels, active_variant, active_variant_blitz, binary_exec_enabled, blitz_exec_enabled FROM iq_agent_config WHERE id=1")).rows?.[0] ?? null; if (agentRow) { const ab = typeof agentRow.active_variant_blitz === "string" ? agentRow.active_variant_blitz.trim().toUpperCase() : ""; const mb = ab.match(/^(\d{1,3})([A-Z]{0,4})$/); if (mb) { this.agentVariantBlitz = mb[1] + (mb[2] || ""); const vb = mb[2] || ""; const fb = vb ? { confirmation: vb.includes("F"), stochastic: vb.includes("T"), noSqueeze: vb.includes("S"), candle: vb.includes("C") } : null; this.agentSafetyPctBlitz = Math.max(0, Math.min(100, Math.round(Number(mb[1])))); this.agentFiltersBlitz = fb && (fb.confirmation || fb.stochastic || fb.noSqueeze || fb.candle) ? fb : null; } if (agentRow.binary_exec_enabled !== null && agentRow.binary_exec_enabled !== undefined) this.agentExecBinary = agentRow.binary_exec_enabled === true; if (agentRow.blitz_exec_enabled !== null && agentRow.blitz_exec_enabled !== undefined) this.agentExecBlitz = agentRow.blitz_exec_enabled === true; if (!this.agentSafetyFromEnv && Number.isFinite(Number(agentRow.safety_pct))) this.agentSafetyPct = Math.max(0, Math.min(100, Math.round(Number(agentRow.safety_pct)))); if (this.safetyShadow) this.safetyShadow.setLevels(agentRow.shadow_levels); if (this.blitzShadow) this.blitzShadow.setLevels(agentRow.shadow_levels); const av = typeof agentRow.active_variant === "string" ? agentRow.active_variant.trim().toUpperCase() : ""; const m = av.match(/^(\d{1,3})([A-Z]{0,4})$/); if (m) { this.agentVariant = m[1] + (m[2] || ""); const v = m[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S"), candle: v.includes("C") } : null; this.agentFilters = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze || filters.candle) ? filters : null; } } } catch { /* best effort */ }
       }
       const markets = (await this.pool.query("SELECT * FROM iq_markets")).rows;
       for (const market of markets) {
@@ -4224,15 +4288,16 @@ export class IqMultiRuntime extends EventEmitter {
     try {
       if (!this.pool || !await this.#ensureDb()) return this.periodPnlCache;
       const context = this.accountContext.context === ACCOUNT_REAL ? ACCOUNT_REAL : ACCOUNT_PRACTICE;
+      const epoch = (await this.pool.query("SELECT perf_since FROM iq_perf_epoch WHERE id=1").catch(() => ({ rows: [] }))).rows?.[0]?.perf_since ?? null;
       const row = (await this.pool.query(
         `SELECT
-           COALESCE(sum(profit) FILTER (WHERE settled_at >= date_trunc('week', now())), 0)::float AS weekly_pnl,
-           COALESCE(sum(profit) FILTER (WHERE settled_at >= date_trunc('month', now())), 0)::float AS monthly_pnl,
-           count(*) FILTER (WHERE settled_at >= date_trunc('week', now()))::int AS weekly_trades,
-           count(*) FILTER (WHERE settled_at >= date_trunc('month', now()))::int AS monthly_trades,
+           COALESCE(sum(profit) FILTER (WHERE settled_at >= greatest(date_trunc('week', now()), coalesce($2::timestamptz, '1970-01-01'::timestamptz))), 0)::float AS weekly_pnl,
+           COALESCE(sum(profit) FILTER (WHERE settled_at >= greatest(date_trunc('month', now()), coalesce($2::timestamptz, '1970-01-01'::timestamptz))), 0)::float AS monthly_pnl,
+           count(*) FILTER (WHERE settled_at >= greatest(date_trunc('week', now()), coalesce($2::timestamptz, '1970-01-01'::timestamptz)))::int AS weekly_trades,
+           count(*) FILTER (WHERE settled_at >= greatest(date_trunc('month', now()), coalesce($2::timestamptz, '1970-01-01'::timestamptz)))::int AS monthly_trades,
            count(*)::int AS total_settled
          FROM iq_executions
-         WHERE state='SETTLED' AND account_context=$1 AND settled_at >= date_trunc('month', now())`, [context],
+         WHERE state='SETTLED' AND account_context=$1 AND settled_at >= greatest(date_trunc('month', now()), coalesce($2::timestamptz, '1970-01-01'::timestamptz))`, [context, epoch],
       )).rows[0];
       const weekly = row && row.weekly_pnl !== null && row.weekly_pnl !== undefined ? Number(row.weekly_pnl) : null;
       const monthly = row && row.monthly_pnl !== null && row.monthly_pnl !== undefined ? Number(row.monthly_pnl) : null;

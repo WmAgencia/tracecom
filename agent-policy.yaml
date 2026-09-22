@@ -1,0 +1,64 @@
+# agent-policy.yaml — TraceCom (bootstrap agent-redline)
+# Red-zone: mudanças aqui exigem checkpoint (architecture-review).
+version: 1
+
+project:
+  name: tracecom
+
+zones:
+  red:
+    - path: relay/iq-multi-runtime.mjs
+      reason: runtime core (runners, execucao, config, manutencao)
+      checkpoint: architecture-review
+    - path: relay/agents/**
+      reason: agentes, grafo, consenso e estrategias (source of truth da decisao)
+      checkpoint: architecture-review
+    - path: relay/lab/runner.mjs
+      reason: runner de submissao (execucao practice)
+      checkpoint: architecture-review
+    - path: relay/lab/store.mjs
+      reason: persistencia de trades/decisoes
+      checkpoint: architecture-review
+    - path: relay/server.mjs
+      reason: rotas HTTP e wiring de runtime
+      checkpoint: architecture-review
+    - path: scripts/deploy-prod.mjs
+      reason: caminho de deploy
+      checkpoint: architecture-review
+    - path: .github/workflows/**
+      reason: automacoes de CI/arquivamento
+      checkpoint: architecture-review
+    - path: AGENTS.md
+      reason: regras inviolaveis do projeto
+      checkpoint: architecture-review
+    - path: docs/ESTRATEGIA-E-CONFIGURACAO.md
+      reason: cofre da estrategia e configuracao
+      checkpoint: architecture-review
+
+  blue:
+    - path: scripts/**
+      reason: utilitarios de teste/backtest/backup
+    - path: docs/**
+      reason: documentacao
+    - path: backups/**
+      reason: artefatos de backup
+
+prRules:
+  maxChangedFiles:
+    warn: 40
+    fail: 80
+  maxLinesChanged:
+    warn: 1500
+    fail: 3000
+
+checkpoints:
+  architecture-review:
+    description: Revisao de arquitetura para mudancas estruturais (exige pedido explicito do operador)
+    satisfiedBy:
+      - codeownerApproval
+      - label: architecture-reviewed
+
+modes:
+  default: shadow
+  perCheck:
+    boundary_violation: binding

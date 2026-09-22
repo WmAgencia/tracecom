@@ -39,9 +39,11 @@ function run(command, args, { cwd = ROOT, shell = process.platform === "win32" }
   return execFileSync(command, args, { cwd, stdio: "inherit", shell });
 }
 
-// PREFLIGHT
-run("git", ["status", "-sb"]);
-run("git", ["log", "--oneline", "-1"]);
+// PREFLIGHT (informativo; git pode nao existir no ambiente de deploy — nao bloqueia)
+try {
+  run("git", ["status", "-sb"]);
+  run("git", ["log", "--oneline", "-1"]);
+} catch { console.warn("git indisponivel no ambiente; preflight de VCS pulado (informativo)."); }
 
 // TESTS + BUILD
 if (!flags.has("--skip-tests")) {
