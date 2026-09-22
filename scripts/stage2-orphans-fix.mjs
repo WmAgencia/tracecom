@@ -1,0 +1,10 @@
+﻿import fs from "node:fs";
+const SV = "D:/tracecom/repo/relay/server.mjs";
+const text = fs.readFileSync(SV, "utf8");
+const eol = text.includes("\r\n") ? "\r\n" : "\n";
+const lines = text.split(eol);
+const orphans = [];
+lines.forEach((l, i) => { if (/^\s*if\(req\.headers\[.x-relay-admin/.test(l) && !l.includes("url.pathname")) orphans.push(i); });
+console.log("ORFAOS=" + orphans.length + " linhas=" + orphans.map((i) => i + 1).join(","));
+const out = lines.filter((_, i) => !orphans.includes(i));
+fs.writeFileSync(SV, out.join(eol));

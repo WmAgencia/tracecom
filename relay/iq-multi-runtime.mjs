@@ -35,43 +35,26 @@ import { ApprenticeDesk } from "./apprentice.mjs";
 import { ExternalFeedSync } from "./external-feeds.mjs";
 import { ENTRY_TIMING_VERSION, DEFAULT_ENTRY_LEAD_MS, DEFAULT_MAX_DRIFT_MS, MIN_ENTRY_LEAD_MS, MAX_ENTRY_LEAD_MS, nextEntryWindow, dynamicEntryLeadMs, compareCandidateSnapshots, comparableSnapshot, makeCandidate, revalidateCandidate, EntryTimingExperiment } from "./entry-timing.mjs";
 import { TRADE_QUALITY_VERSION, ARM_IDS, DEFAULT_MIN_TRADE_QUALITY_SCORE, MIN_TRADE_QUALITY_SCORE_LIMIT, MAX_TRADE_QUALITY_SCORE_LIMIT, evaluateShadowArms, featuresFromSnapshot, performanceHealth, BREAK_EVEN_WR, scoreTradeQuality, entryLocationCheck, finalMicrostructureVeto } from "./trade-quality.mjs";
-import { ShadowLab, decisionSourceOf, PROSPECTIVE_CHECKPOINT_N } from "./shadow-lab.mjs";
-import { LateWindowTimingShadow, TIMING_POLICY_CURRENT, TIMING_POLICY_LATE, LATE_WINDOW_POLICY, LATE_WINDOW_VERSION, adaptiveLateMarginMs } from "./late-window-timing.mjs";
+import {  decisionSourceOf, PROSPECTIVE_CHECKPOINT_N  } from "./shadow-lab.mjs";
+import {  TIMING_POLICY_CURRENT, TIMING_POLICY_LATE, LATE_WINDOW_POLICY, LATE_WINDOW_VERSION, adaptiveLateMarginMs  } from "./late-window-timing.mjs";
 // SCENARIO ENGINE V3 (SHADOW): observacao independente. NUNCA toca Brain/Trader/Critic/Consensus/Quality Gate/JIT/Execution Gate.
-import { ScenarioShadow, analyzeScenarioSnapshot, scenarioShadowStatus as buildScenarioShadowStatus, setScenarioEngineLogSink } from "./scenario-shadow.mjs";
+import {  analyzeScenarioSnapshot, scenarioShadowStatus as buildScenarioShadowStatus, setScenarioEngineLogSink  } from "./scenario-shadow.mjs";
 // INTERSECAO OBSERVACIONAL: unico ponto que compara scenario x timing (somente leitura dos dois estados).
-import { ScenarioTimingIntersectionShadow } from "./scenario-timing-intersection.mjs";
-import { ScenarioShadowSettlement } from "./scenario-shadow-settlement.mjs";
 import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
 // DATAHUB + PROFESSIONAL_AGENT_SYSTEM_V4 (SHADOW): observabilidade/benchmark. NUNCA decide nem executa.
 import { EventBus } from "./datahub/event-bus.mjs";
 import { buildT0Enriched } from "./datahub/t0-enriched.mjs";
 import { dataQualityInputFromRuntime, DATA_QUALITY_THRESHOLDS } from "./datahub/data-quality-agent.mjs";
-import { AgentsV4Engine } from "./agents-v4/engine.mjs";
-import { AgentsV4Persistence } from "./agents-v4/persistence.mjs";
-import { AgentsV4Settlement } from "./agents-v4/settlement.mjs";
-// DUAL_REASONING_V1_SHADOW: experimento independente (A estrutural x B curto prazo). NUNCA executa.
-import { DualReasoningEngine } from "./dual-reasoning.mjs";
 // Sidecar EXTERNO de deltas de mercado entre rodadas (observacao unidirecional; nunca alimenta A/B/Sintese).
-import { DualRoundMarketDeltaObserver } from "./dual-round-observer.mjs";
 // SOLO_REASONING_V1_SHADOW: controle de simplicidade (1 analista, 1 passada). NUNCA executa.
-import { SoloReasoningEngine } from "./solo-reasoning.mjs";
 // PRACTICE_FOUR_WAY_3X_TEST_V1: harness de execucao experimental (DRY_RUN default; nunca segundo caminho de broker).
-import { FourWayExperiment, EXPERIMENT_ID as FOUR_WAY_EXPERIMENT_ID } from "./four-way-experiment.mjs";
+import {  EXPERIMENT_ID as FOUR_WAY_EXPERIMENT_ID  } from "./four-way-experiment.mjs";
 // INDICATOR_5M_V1: control group simples (RSI + DMI/ADX + Bollinger) com entrada tardia.
-import { Indicator5MEngine, effectiveSafetyMarginMs } from "./indicator-5m.mjs";
 // RSI_REVERSAL_CONFLUENCE_V1: experimento separado (RSI extremo + Bollinger + DMI/ADX, janela T-5s).
-import { RsiReversalExperiment } from "./rsi-reversal.mjs";
 // RSI_STRICT_PULLBACK_2X2_V1: comparativo separado (STRICT vs PULLBACK) sobre 10 OTCs, caps no banco.
-import { RsiVariantsRunner } from "./rsi-variants.mjs";
 // RSI AGENTS 5x5: 10 agentes da rodada anterior (V1) — PAUSADOS durante a migracao (nenhuma ordem).
-import { RsiAgents5x5 } from "./rsi-agents-5x5.mjs";
 // RSI AGENTS V2: 50/50 STRICT/PULLBACK da rodada anterior — CONGELADOS (nao executam; decisao V2 apenas em shadow).
-import { RsiAgentsV2 } from "./rsi-agents-v2.mjs";
 // RSI AGENTS V3: estrategia UNICA RSI_REVERSAL_PULLBACK_V3 em todo o universo elegivel (executa via submitAgentV3Order).
-import { RsiAgentsV3 } from "./rsi-agents-v3.mjs";
-import { RsiAgentsV4 } from "./rsi-agents-v4.mjs";
-import { RsiAgentsV2Live } from "./rsi-agents-v2-live.mjs";
 import { ConsensusRunner } from "./consensus/runner.mjs";
 import { LabRunner } from "./lab/runner.mjs";
 import { runAgentGraph, agentGraphToStrategyResult, AGENTIC_STRATEGY_ID } from "./agents/graph.mjs";
@@ -115,7 +98,7 @@ export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = false, scenarioTimingIntersectionEnabled = false, agentsV4Enabled = false, dataHubEnabled = true, dualReasoningEnabled = false, soloReasoningEnabled = false, indicator5mEnabled = false, rsiReversalEnabled = false, rsiVariantsEnabled = false, rsiAgentsEnabled = false, rsiAgentsV2Enabled = false, rsiAgentsV3Enabled = false, rsiAgentsV4Enabled = false, rsiAgentsV2LiveEnabled = false, rsiAgentsV2BlitzEnabled = false, consensusEnabled = true, consensusExecute = process.env.CONSENSUS_EXECUTE === "true", agenticEnabled = process.env.AGENTIC_ENABLED === "true", agenticRunId = process.env.AGENTIC_RUN_ID ?? null, labStake = null, agenticSafetyPct = process.env.AGENTIC_SAFETY_PCT ?? null, agenticShadowLevels = process.env.AGENTIC_SHADOW_LEVELS ?? null, autoArmPractice = process.env.AUTO_ARM_PRACTICE === "true", executionAllowlist = null, executionPolicyName = null } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = false, scenarioTimingIntersectionEnabled = false, agentsV4Enabled = false, dataHubEnabled = true, dualReasoningEnabled = false, soloReasoningEnabled = false, indicator5mEnabled = false, rsiAgentsV2BlitzEnabled = false, consensusEnabled = true, consensusExecute = process.env.CONSENSUS_EXECUTE === "true", agenticEnabled = process.env.AGENTIC_ENABLED === "true", agenticRunId = process.env.AGENTIC_RUN_ID ?? null, labStake = null, agenticSafetyPct = process.env.AGENTIC_SAFETY_PCT ?? null, agenticShadowLevels = process.env.AGENTIC_SHADOW_LEVELS ?? null, autoArmPractice = process.env.AUTO_ARM_PRACTICE === "true", executionAllowlist = null, executionPolicyName = null } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -168,45 +151,15 @@ export class IqMultiRuntime extends EventEmitter {
     this.feeds = new ExternalFeedSync({ universe: UNIVERSE, log: this.log, apply: (kind, items) => this.#applyExternalItems(kind, items) });
     this.jit = new EntryTimingExperiment({ now });
     // PROSPECTIVE SHADOW LAB: observacao/contrafactual de pesquisa. NUNCA controla execucao.
-    this.shadowLab = new ShadowLab({ pool, now, log: this.log });
     // LATE WINDOW TIMING (Fase 4): LATE_WINDOW_V2 vs CURRENT_V1. SHADOW_ONLY, nunca envia ordem.
-    this.timingShadow = new LateWindowTimingShadow({ pool, now, log: this.log });
     // SCENARIO ENGINE V3 (SHADOW): estado proprio, independente do timing (nunca chama metodos do timing).
-    this.scenarioShadow = new ScenarioShadow({ pool, now, log: this.log, enabled: scenarioShadowEnabled === true });
     // INTERSECAO OBSERVACIONAL: compara os dois estados como dado (nunca controla nenhum dos lados).
-    this.scenarioTimingIntersection = new ScenarioTimingIntersectionShadow({ pool, now, log: this.log, enabled: scenarioTimingIntersectionEnabled === true });
     // LIQUIDACAO CAUSAL OBSERVACIONAL das observacoes prospectivas do cenario (nunca broker, nunca decide).
-    this.scenarioSettlement = new ScenarioShadowSettlement({ scenarioShadow: this.scenarioShadow, pool, now, log: this.log });
     setScenarioEngineLogSink((event, payload) => this.#safe(() => this.log(event, payload)));
     // DATAHUB (event bus nao bloqueante) + AGENT SYSTEM V4 (SHADOW). Missing pool => memoria apenas.
     this.dataHub = dataHubEnabled === true ? new EventBus({ now: this.now, log: this.log }) : null;
     if (this.dataHub) this.dataHub.subscribe({ id: "runtime-telemetry", maxQueue: 256, handler: () => {} });
-    this.agentsV4Persistence = new AgentsV4Persistence({ pool, now: this.now, log: this.log });
-    this.agentsV4 = new AgentsV4Engine({ dataHub: this.dataHub, persistence: this.agentsV4Persistence, now: this.now, log: this.log, enabled: agentsV4Enabled === true });
-    this.agentsV4Settlement = new AgentsV4Settlement({
-      observationSource: this.agentsV4, persistence: this.agentsV4Persistence, now: this.now, log: this.log,
-      onSettled: (observation) => this.#safe(() => this.dataHub?.publish({
-        eventType: "SETTLEMENT", marketKey: observation.marketKey, marketType: observation.marketType, activeId: observation.activeId,
-        producer: "agents-v4", source: "agents-v4-settlement", provenance: { basis: "CAUSAL_COUNTERFACTUAL", provenance: "PROSPECTIVE_SHADOW", observationId: observation.id },
-        accountContext: observation.accountContext, payload: { result: observation.theoreticalResult, basis: "CAUSAL_COUNTERFACTUAL", observationId: observation.id },
-      })),
-    });
-    this.agentsV4.attachSettlement(this.agentsV4Settlement);
-    // DUAL_REASONING_V1_SHADOW (experimento independente; sem LLM no deadline; zero ordem).
-    this.dual = new DualReasoningEngine({ pool, dataHub: this.dataHub, now: this.now, log: this.log, enabled: dualReasoningEnabled === true });
-    this.dualObserver = new DualRoundMarketDeltaObserver({ pool, now: this.now, log: this.log, enabled: dualReasoningEnabled === true });
-    this.solo = new SoloReasoningEngine({ pool, now: this.now, log: this.log, enabled: soloReasoningEnabled === true });
-    this.fourWay = new FourWayExperiment({ pool, runtime: this, now: this.now, log: this.log, minStakeBrl: 1 });
-    this.indicator5m = new Indicator5MEngine({ pool, now: this.now, log: this.log, enabled: indicator5mEnabled === true });
-    this.rsiReversal = new RsiReversalExperiment({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiReversalEnabled === true });
-    this.rsiVariants = new RsiVariantsRunner({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiVariantsEnabled === true });
-    this.rsiAgents = new RsiAgents5x5({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsEnabled === true });
-    // V2: 50/50 dinamico; V1 fica explicitamente pausado (enabled=false) durante a migracao.
-    this.rsiAgentsV2 = new RsiAgentsV2({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2Enabled === true });
-    // V3: estrategia unica no universo elegivel; V2 permanece congelada apenas como referencia/shadow.
-    this.rsiAgentsV3 = new RsiAgentsV3({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV3Enabled === true });
-    this.rsiAgentsV4 = new RsiAgentsV4({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV4Enabled === true, controlsExecution: false });
-    this.rsiAgentsV2Live = new RsiAgentsV2Live({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2LiveEnabled === true });
+    this.agentsV4?.attachSettlement(null);
     this.iqMcp = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.blitz, log: this.log, now: this.now });
     this.iqMcpBinary = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.turbo, log: this.log, now: this.now }); // produto TURBO (expiracoes de 60s = nosso binario)
     void this.loadMcpToken();
@@ -309,7 +262,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.realMode.revoke("RUNTIME_STOP");
     this.accountContext.lock("RUNTIME_STOP");
     try { this.armState.disarm("WS_DISCONNECTED"); } catch { /* noop */ }
-    for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason }); this.#setAgent(ctx, "OFFLINE", "RUNTIME_STOP"); this.timingShadow.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "SESSION_LOST" }); this.#observeScenarioTimingIntersectionsForMarket(ctx.marketKey); }
+    for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason }); this.#setAgent(ctx, "OFFLINE", "RUNTIME_STOP"); this.timingShadow?.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "SESSION_LOST" }); this.#observeScenarioTimingIntersectionsForMarket(ctx.marketKey); }
     return { stopped: true, reason };
   }
 
@@ -351,7 +304,7 @@ export class IqMultiRuntime extends EventEmitter {
         this.realMode.revoke("WS_DISCONNECTED");
         // FAIL CLOSED: qualquer queda de WS rebaixa REAL para LOCKED imediatamente.
         this.accountContext.lock("WS_DISCONNECTED");
-        for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason: "WS_DISCONNECTED" }); this.timingShadow.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "WS_DISCONNECTED" }); this.#observeScenarioTimingIntersectionsForMarket(ctx.marketKey); if (ctx.enabled) this.#setAgent(ctx, ctx.availability === "OPEN" ? "WAIT" : "UNAVAILABLE", "WS_DISCONNECTED"); }
+        for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason: "WS_DISCONNECTED" }); this.timingShadow?.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "WS_DISCONNECTED" }); this.#observeScenarioTimingIntersectionsForMarket(ctx.marketKey); if (ctx.enabled) this.#setAgent(ctx, ctx.availability === "OPEN" ? "WAIT" : "UNAVAILABLE", "WS_DISCONNECTED"); }
       }
       if (!this.running || this.stopRequested) break;
       const delay = RECONNECT_BACKOFF_MS[Math.min(attempt, RECONNECT_BACKOFF_MS.length - 1)];
@@ -947,27 +900,27 @@ export class IqMultiRuntime extends EventEmitter {
       this.ab.settle({ marketKey: ctx.marketKey, candles: list, index: list.length - 1 });
       this.jit.settle({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // SHADOW LAB: settle causal (mesma regra do #causalSettlement) das oportunidades NAO executadas.
-      void this.shadowLab.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      void this.shadowLab?.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // LATE WINDOW TIMING (SHADOW): liquidacao causal do braco LATE_WINDOW_V2 (nunca broker).
-      this.timingShadow.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      this.timingShadow?.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // SCENARIO SHADOW (PROSPECTIVE): liquidacao causal observacional no expiry (nunca broker, nunca decide).
-      void this.scenarioSettlement.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      void this.scenarioSettlement?.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // AGENTS V4 (SHADOW): liquidacao causal das observacoes V4 pendentes (nunca broker).
-      this.agentsV4Settlement.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      this.agentsV4Settlement?.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // DUAL_REASONING (SHADOW): liquidacao causal PROSPECTIVE_SHADOW (nunca broker).
-      this.dual.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      this.dual?.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // SOLO_REASONING (SHADOW): liquidacao causal do final e do contrafactual da tese inicial.
-      this.solo.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      this.solo?.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // RSI_REVERSAL (PRACTICE experiment): liquidacao causal observacional.
-      this.rsiReversal.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      this.rsiReversal?.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // INDICATOR_5M_V1: liquidacao causal (PROSPECTIVE_SHADOW; nunca broker).
-      this.indicator5m.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      this.indicator5m?.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // RSI_REVERSAL (experimento PRACTICE): avaliacao por mercado (isolada) + liquidacao causal.
       this.#safe(() => this.#observeRsiReversal(ctx, list, now));
-      this.rsiReversal.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      this.rsiReversal?.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // RSI VARIANTS 2x2 (STRICT x PULLBACK; 10 OTCs dinamicos): avaliacao + liquidacao causal.
       this.#safe(() => this.#observeRsiVariants(ctx, list, now));
-      this.rsiVariants.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
+      this.rsiVariants?.settleCausal({ marketKey: ctx.marketKey, candles: list, index: list.length - 1, nowMs: now });
       // RSI AGENTS 5x5 (agentes normais): avaliacao por mercado atribuido.
       this.#safe(() => this.#observeRsiAgents(ctx, list, now));
       // RSI AGENTS V4 (MESAS-driven; UNICO executavel da rodada V4 quando habilitado).
@@ -1160,8 +1113,8 @@ export class IqMultiRuntime extends EventEmitter {
       // OBSERVABILIDADE: se begin() supersede a observacao LATE anterior da mesma janela, a interseccao
       // antiga precisa ser reobservada com o desfecho real (antes ficava presa em LATE_OBSERVING).
       const windowKey = `${ctx.marketKey}:${candidate.targetExpiryAt}`;
-      const previousTiming = this.timingShadow.getByWindow(windowKey);
-      const observation = this.timingShadow.begin({
+      const previousTiming = this.timingShadow?.getByWindow(windowKey);
+      const observation = this.timingShadow?.begin({
         marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, agentId: this.#agentId(ctx),
         candidateId: candidate.id, correlationId: candidate.correlationId ?? null, direction: action,
         candidateSnapshot: candidate.initialFull ?? snapshot ?? {}, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt,
@@ -1178,7 +1131,7 @@ export class IqMultiRuntime extends EventEmitter {
   /** Reavalia TODAS as janelas LATE abertas do mercado (expiracao corrente e anterior). Nunca envia ordem. */
   #observeTimingShadow(ctx, { action, trader, critic, consensus, fresh, now, list }) {
     if (this.config.jitEnabled !== true) return null;
-    const actives = this.timingShadow.activeObservationsForMarket(ctx.marketKey);
+    const actives = this.timingShadow?.activeObservationsForMarket(ctx.marketKey);
     if (!actives.length) return null;
     const serverNow = this.client?.serverNow?.() ?? now;
     const finalDecision = { action, regime: ctx.decisionState?.regime ?? null, setup: trader?.setup ?? null, trigger: trader?.trigger ?? null, criticVerdict: critic?.traderAssessment ?? null, consensusStatus: consensus?.status ?? null };
@@ -1198,7 +1151,7 @@ export class IqMultiRuntime extends EventEmitter {
         const quality = scoreTradeQuality(qualityFeatures);
         const location = entryLocationCheck(qualityFeatures);
         const microVeto = finalMicrostructureVeto({ direction, atr: qualityFeatures.atr, lastTick: ctx.lastTick ? { price: ctx.lastTick.price, ageMs: ctx.lastTick.ageMs ?? null } : null, lastClose: ctx.lastCandle?.close ?? null });
-        this.timingShadow.observe({
+        this.timingShadow?.observe({
           marketKey: ctx.marketKey, candidateId: active.candidateId, atMs: now, serverNowMs: serverNow,
           final: finalDecision, freshness: { fresh: fresh?.fresh === true, reason: fresh?.reason ?? null }, latestSnapshot: latest,
           score: quality.score, threshold, locationOk: location.ok, microVeto: microVeto.veto,
@@ -1217,7 +1170,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.config.scenarioShadowEnabled !== true) return null;
     try {
       const snapshot = candidate.initialFull ?? this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
-      const observation = this.scenarioShadow.observe({
+      const observation = this.scenarioShadow?.observe({
         snapshot, direction: candidate.action,
         traderView: { action, currentDecision: ctx.decisionState?.action ?? null, waitReason: ctx.decisionState?.waitReason ?? null },
         criticView: { traderAssessment: critic?.traderAssessment ?? null, independentAction: critic?.independentAction ?? null, contradictions: critic?.contradictions ?? [], riskFlags: critic?.riskFlags ?? [] },
@@ -1240,13 +1193,13 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.config.scenarioShadowEnabled !== true) return null;
     const candidate = ctx.candidate;
     if (!candidate) return null;
-    const observation = this.scenarioShadow.getByCandidate(candidate.id);
+    const observation = this.scenarioShadow?.getByCandidate(candidate.id);
     if (!observation) return null;
     try {
       const stage = observation.stages.some((row) => row.stage === "REVALIDATION_1") ? "REVALIDATION_2" : "REVALIDATION_1";
       const snapshot = this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
       const analysis = analyzeScenarioSnapshot({ snapshot, direction: candidate.action });
-      const result = this.scenarioShadow.recordStage({ candidateId: candidate.id, stage, analysis, location: trader?.location ?? null, momentum: trader?.momentum ?? null, atMs: now, source: "RUNTIME_OBSERVE" });
+      const result = this.scenarioShadow?.recordStage({ candidateId: candidate.id, stage, analysis, location: trader?.location ?? null, momentum: trader?.momentum ?? null, atMs: now, source: "RUNTIME_OBSERVE" });
       this.#observeScenarioTimingIntersection(candidate.id);
       return result;
     } catch (error) { this.#safe(() => this.log("IQ_SCENARIO_SHADOW_OBSERVE_FAILED", String(error?.message ?? error).slice(0, 160))); return null; }
@@ -1256,11 +1209,11 @@ export class IqMultiRuntime extends EventEmitter {
   #finalizeScenarioShadow(ctx, { candidate, action, trader, critic, consensus, now }) {
     if (this.config.scenarioShadowEnabled !== true) return null;
     try {
-      const observation = this.scenarioShadow.getByCandidate(candidate.id);
+      const observation = this.scenarioShadow?.getByCandidate(candidate.id);
       if (!observation) return null;
       const snapshot = this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
       const analysis = analyzeScenarioSnapshot({ snapshot, direction: candidate.action });
-      const result = this.scenarioShadow.revalidateFinal({
+      const result = this.scenarioShadow?.revalidateFinal({
         candidateId: candidate.id, analysis, atMs: now, deadlineAt: candidate.targetEntryAt,
         timingView: { timingPolicyVersion: TIMING_POLICY_CURRENT, currentTimingPolicyVersion: TIMING_POLICY_CURRENT, deadlineAt: candidate.targetEntryAt, source: "RUNTIME_REVALIDATION" },
         location: trader?.location ?? null, momentum: trader?.momentum ?? null,
@@ -1274,7 +1227,7 @@ export class IqMultiRuntime extends EventEmitter {
   #observeScenarioTimingIntersectionsForMarket(marketKey) {
     if (this.config.scenarioTimingIntersectionEnabled !== true) return 0;
     let count = 0;
-    for (const observation of this.timingShadow.list()) {
+    for (const observation of this.timingShadow?.list()) {
       if (observation?.marketKey !== marketKey || !observation.candidateId) continue;
       if (observation.outcome === "OBSERVING") continue;
       if (this.#observeScenarioTimingIntersection(observation.candidateId)) count += 1;
@@ -1287,10 +1240,10 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.config.scenarioTimingIntersectionEnabled !== true) return null;
     if (!candidateId) return null;
     try {
-      const scenarioObservation = this.scenarioShadow.getByCandidate(candidateId);
-      const timingObservation = this.timingShadow.getByCandidate(candidateId);
+      const scenarioObservation = this.scenarioShadow?.getByCandidate(candidateId);
+      const timingObservation = this.timingShadow?.getByCandidate(candidateId);
       if (!scenarioObservation && !timingObservation) return null;
-      return this.scenarioTimingIntersection.observe({ scenarioObservation, timingObservation, atMs: this.now() });
+      return this.scenarioTimingIntersection?.observe({ scenarioObservation, timingObservation, atMs: this.now() });
     } catch (error) { this.#safe(() => this.log("IQ_SCENARIO_TIMING_INTERSECTION_FAILED", String(error?.message ?? error).slice(0, 160))); return null; }
   }
 
@@ -1322,7 +1275,6 @@ export class IqMultiRuntime extends EventEmitter {
     this.#finalizeScenarioShadow(ctx, { candidate, action, trader, critic, consensus, now });
     // AGENTS V4 (SHADOW): reavaliacao final observacional no instante do JIT.
     this.#safe(() => this.#finalizeAgentsV4Candidate(ctx, { candidate, now, list: this.#candleList(ctx) }));
-    // DUAL_REASONING_V1_SHADOW: round final T2 + cross-examination final + DUAL_SYNTHESIS_V1 (observacional).
     this.#safe(() => this.#finalizeDual(ctx, candidate, action, now));
     // INDICATOR_5M_V1: revalidacao no limite + encaminhamento ao harness (DRY_RUN nao envia ordem).
     this.#safe(() => this.#finalizeIndicator5M(ctx, candidate, now));
@@ -1350,7 +1302,7 @@ export class IqMultiRuntime extends EventEmitter {
     const gateReason = gateAccepted ? (this.config.qualityGateEnabled !== true ? "QUALITY_GATE_DISABLED" : null)
       : !location.ok ? "VALID_SETUP_BUT_BAD_ENTRY_PRICE" : microVeto.veto ? `MICROSTRUCTURE_${microVeto.reason}` : "QUALITY_SCORE_BELOW_THRESHOLD";
     const jitFull = this.#candidateSnapshot(ctx, { action, trader, critic, consensus, now });
-    const observation = this.shadowLab.observeCandidate({
+    const observation = this.shadowLab?.observeCandidate({
       marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, agentId: this.#agentId(ctx),
       candidateId: candidate.id, correlationId: correlationId ?? candidate.id, decisionSource: "G2_AUTO",
       candidateAt: candidate.createdAt, decisionAt: now, jitAt: now, sendAt: now, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt,
@@ -1361,9 +1313,9 @@ export class IqMultiRuntime extends EventEmitter {
       currentExecution: "PENDING", currentExecutionReason: null, gateAccepted, gateReason,
     });
     if (this.config.qualityGateEnabled === true) {
-      if (!location.ok) { this.shadowLab.markExecution({ observationId: observation?.id ?? null, candidateId: candidate.id, currentExecution: "REJECT", reason: "VALID_SETUP_BUT_BAD_ENTRY_PRICE" }); this.#cancelCandidate(ctx, "VALID_SETUP_BUT_BAD_ENTRY_PRICE", { reasons: location.reasons, score: quality.score }); return; }
-      if (microVeto.veto) { this.shadowLab.markExecution({ observationId: observation?.id ?? null, candidateId: candidate.id, currentExecution: "REJECT", reason: `MICROSTRUCTURE_${microVeto.reason}` }); this.#cancelCandidate(ctx, `MICROSTRUCTURE_${microVeto.reason}`, microVeto.detail ?? {}); return; }
-      if (quality.score < this.#minTradeQualityScore()) { this.shadowLab.markExecution({ observationId: observation?.id ?? null, candidateId: candidate.id, currentExecution: "REJECT", reason: "QUALITY_SCORE_BELOW_THRESHOLD" }); this.#cancelCandidate(ctx, "QUALITY_SCORE_BELOW_THRESHOLD", { score: quality.score, threshold: this.#minTradeQualityScore(), failedChecks: quality.checks.filter((check) => !check.ok).map((check) => check.id) }); return; }
+      if (!location.ok) { this.shadowLab?.markExecution({ observationId: observation?.id ?? null, candidateId: candidate.id, currentExecution: "REJECT", reason: "VALID_SETUP_BUT_BAD_ENTRY_PRICE" }); this.#cancelCandidate(ctx, "VALID_SETUP_BUT_BAD_ENTRY_PRICE", { reasons: location.reasons, score: quality.score }); return; }
+      if (microVeto.veto) { this.shadowLab?.markExecution({ observationId: observation?.id ?? null, candidateId: candidate.id, currentExecution: "REJECT", reason: `MICROSTRUCTURE_${microVeto.reason}` }); this.#cancelCandidate(ctx, `MICROSTRUCTURE_${microVeto.reason}`, microVeto.detail ?? {}); return; }
+      if (quality.score < this.#minTradeQualityScore()) { this.shadowLab?.markExecution({ observationId: observation?.id ?? null, candidateId: candidate.id, currentExecution: "REJECT", reason: "QUALITY_SCORE_BELOW_THRESHOLD" }); this.#cancelCandidate(ctx, "QUALITY_SCORE_BELOW_THRESHOLD", { score: quality.score, threshold: this.#minTradeQualityScore(), failedChecks: quality.checks.filter((check) => !check.ok).map((check) => check.id) }); return; }
     }
     const entryTiming = {
       candidateId: candidate.id, action, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, targetExpirySec: Math.round(candidate.targetExpiryAt / 1000),
@@ -1382,8 +1334,8 @@ export class IqMultiRuntime extends EventEmitter {
         payload: { executionId: record?.executionId ?? null, disposition: record?.disposition ?? null, reason: record?.reason ?? null, stakeFinal: record?.stakeFinal ?? null },
       }));
     }
-    this.timingShadow.markCurrentSend({ candidateId: candidate.id, executionId: record?.executionId ?? null, disposition: record?.disposition ?? null, reason: record?.reason ?? null, atMs: this.now() });
-    this.shadowLab.markExecution({
+    this.timingShadow?.markCurrentSend({ candidateId: candidate.id, executionId: record?.executionId ?? null, disposition: record?.disposition ?? null, reason: record?.reason ?? null, atMs: this.now() });
+    this.shadowLab?.markExecution({
       observationId: observation?.id ?? null, candidateId: candidate.id, executionId: record?.executionId ?? null,
       currentExecution: record?.disposition === "EXECUTED" ? "EXECUTE" : "REJECT",
       reason: record?.disposition === "EXECUTED" ? null : (record?.disposition === "DUPLICATE" ? "CANDIDATE_DUPLICATE" : (record?.reason ?? "BLOCKED")),
@@ -1414,7 +1366,7 @@ export class IqMultiRuntime extends EventEmitter {
     // V3.1 WATCH: candidate vivo => sem throttle generico (exatamente 1 avaliacao por candle de 5s,
     // event-driven pelo fechamento do candle); sem candidate => throttle curto anti-duplicata.
     // Dedupe por candle (bucketEnd) nos dois modos: nunca avalia o mesmo candle duas vezes.
-    const candidateActive = this.rsiAgentsV3.hasActiveCandidate?.(ctx.marketKey) === true;
+    const candidateActive = this.rsiAgentsV3?.hasActiveCandidate?.(ctx.marketKey) === true;
     const bucketEnd = Number(list?.[list.length - 1]?.bucketEnd);
     const evaluate = shouldEvaluate({
       now, lastAt: ctx.rsiAgentsAt ?? null,
@@ -1425,15 +1377,15 @@ export class IqMultiRuntime extends EventEmitter {
     ctx.rsiAgentsAt = now;
     if (Number.isFinite(bucketEnd)) ctx.rsiAgentsBucket = bucketEnd;
     // Universo reconciliado periodicamente (throttle interno): mercado novo entra; mercado que sai do feed fica bloqueado.
-    void this.rsiAgentsV3.assignUniverse([...this.markets.values()]);
-    if (!this.rsiAgentsV3.assignments.has(ctx.marketKey)) return null;
+    void this.rsiAgentsV3?.assignUniverse([...this.markets.values()]);
+    if (!this.rsiAgentsV3?.assignments.has(ctx.marketKey)) return null;
     const serverNow = this.client?.serverNow?.() ?? now;
     const targetExpiryAt = nextOperationalExpiryAt(serverNow);
     const ackSamples = ctx.latency?.orderAck ?? [];
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
     const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
-    const promise = this.rsiAgentsV3.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 } });
+    const promise = this.rsiAgentsV3?.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 } });
     if (promise && typeof promise.then === "function") promise.then((state) => this.#emitRsiAgentDecision(ctx, state, now)).catch(() => undefined);
     return promise;
   }
@@ -1441,7 +1393,7 @@ export class IqMultiRuntime extends EventEmitter {
   /* ------------------- RSI AGENTS V4 (MESAS-driven; ordem via submitAgentV4Order) ------------------- */
   #observeRsiAgentsV4(ctx, list, now) {
     if (!this.rsiAgentsV4?.enabled) return null;
-    const candidateActive = this.rsiAgentsV4.hasActiveCandidate(ctx.marketKey, "BINARY") === true || this.rsiAgentsV4.hasActiveCandidate(ctx.marketKey, "BLITZ_45S") === true;
+    const candidateActive = this.rsiAgentsV4?.hasActiveCandidate(ctx.marketKey, "BINARY") === true || this.rsiAgentsV4?.hasActiveCandidate(ctx.marketKey, "BLITZ_45S") === true;
     const bucketEnd = Number(list?.[list.length - 1]?.bucketEnd);
     const evaluate = shouldEvaluate({
       now, lastAt: ctx.rsiAgentsV4At ?? null,
@@ -1452,15 +1404,15 @@ export class IqMultiRuntime extends EventEmitter {
     ctx.rsiAgentsV4At = now;
     if (Number.isFinite(bucketEnd)) ctx.rsiAgentsV4Bucket = bucketEnd;
     void this.refreshInstrumentRegistry();
-    if (!this.rsiAgentsV4.assignments.has(ctx.marketKey)) return null;
+    if (!this.rsiAgentsV4?.assignments.has(ctx.marketKey)) return null;
     const serverNow = this.client?.serverNow?.() ?? now;
     const targetExpiryAt = nextOperationalExpiryAt(serverNow);
     const ackSamples = ctx.latency?.orderAck ?? [];
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
     const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
-    const instruments = [...this.rsiAgentsV4.instruments.values()].filter((row) => row.marketKey === ctx.marketKey && row.enabled === true);
-    const promises = instruments.map((row) => this.rsiAgentsV4.observeMarket({
+    const instruments = [...this.rsiAgentsV4?.instruments.values()].filter((row) => row.marketKey === ctx.marketKey && row.enabled === true);
+    const promises = instruments.map((row) => this.rsiAgentsV4?.observeMarket({
       marketKey: ctx.marketKey, instrumentType: row.instrumentType, durationSeconds: row.durationSeconds, marketType: ctx.marketType,
       candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 },
     }));
@@ -1470,7 +1422,7 @@ export class IqMultiRuntime extends EventEmitter {
   /* ------------------- RSI AGENTS V2 LIVE (Strategy Core = V2 ORIGINAL; infra atual) ------------------- */
   #observeRsiAgentsV2Live(ctx, list, now) {
     if (!this.rsiAgentsV2Live?.enabled) return null;
-    const candidateActive = this.rsiAgentsV2Live.hasActiveCandidate(ctx.marketKey) === true;
+    const candidateActive = this.rsiAgentsV2Live?.hasActiveCandidate(ctx.marketKey) === true;
     const bucketEnd = Number(list?.[list.length - 1]?.bucketEnd);
     const evaluate = shouldEvaluate({
       now, lastAt: ctx.rsiAgentsV2LiveAt ?? null,
@@ -1481,14 +1433,14 @@ export class IqMultiRuntime extends EventEmitter {
     ctx.rsiAgentsV2LiveAt = now;
     if (Number.isFinite(bucketEnd)) ctx.rsiAgentsV2LiveBucket = bucketEnd;
     void this.refreshInstrumentRegistry();
-    if (!this.rsiAgentsV2Live.assignments.has(ctx.marketKey)) return null;
+    if (!this.rsiAgentsV2Live?.assignments.has(ctx.marketKey)) return null;
     const serverNow = this.client?.serverNow?.() ?? now;
     const targetExpiryAt = nextOperationalExpiryAt(serverNow);
     const ackSamples = ctx.latency?.orderAck ?? [];
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
     const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
-    const promise = this.rsiAgentsV2Live.observeMarket({
+    const promise = this.rsiAgentsV2Live?.observeMarket({
       marketKey: ctx.marketKey, instrumentType: "BINARY", durationSeconds: 60, marketType: ctx.marketType,
       candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 },
     });
@@ -1572,7 +1524,7 @@ export class IqMultiRuntime extends EventEmitter {
         this.#emitEvent("lab.real_dry_run", intent);
         return { state: "DRY_RUN", dryRun: true, brokerOrderId: null, executionId: null, requestId: null, stake: amount, mode: "REAL" };
       }
-      return this.submitAgentV2LiveOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", strategyId, skill: strategyId, stake: amount, expectedStake: amount, entryMode: "AGENTIC_REAL", idempotencyKey: strategyTradeId });
+      throw new IqWsError("REAL_LEGACY_V2_PATH_DISABLED", "REAL fail-closed: caminho legado V2Live removido na reconstrucao");
     }
     if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
     // Desarmado: registra a intencao como DRY_RUN (mede) sem floodar REJECTED nem enviar ordem.
@@ -1832,13 +1784,13 @@ export class IqMultiRuntime extends EventEmitter {
     this.#pollMcpBinarySettlements();
     if (this.rsiAgentsV2Live?.enabled === true) for (const ctx of this.markets.values()) {
       if (!this.#marketTradable(ctx)) continue;
-      if (!this.rsiAgentsV2Live.hasActiveCandidate(ctx.marketKey)) continue;
+      if (!this.rsiAgentsV2Live?.hasActiveCandidate(ctx.marketKey)) continue;
       const serverNow = this.client?.serverNow?.() ?? now;
       const targetExpiryAt = nextOperationalExpiryAt(serverNow);
       if (now < targetExpiryAt - 45_000 || now > targetExpiryAt - 30_000) continue;
       const list = this.#candleList(ctx);
       if (list.length < 3) continue;
-      void this.rsiAgentsV2Live.observeMarket({
+      void this.rsiAgentsV2Live?.observeMarket({
         marketKey: ctx.marketKey, instrumentType: "BINARY", durationSeconds: 60, marketType: ctx.marketType,
         candles: list, targetExpiryAt, payout: ctx.payout, now, latency: {},
       });
@@ -1901,7 +1853,7 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   async refreshInstrumentRegistry({ force = false } = {}) {
-    if (!this.pool?.query || !this.rsiAgentsV4) return null;
+    if (!this.pool?.query || !null) return null;
     if (!force && this.now() - (this.lastInstrumentSync ?? 0) < 15_000) return null;
     this.lastInstrumentSync = this.now();
     if (this.registrySyncInFlight === true) return null;
@@ -1918,7 +1870,7 @@ export class IqMultiRuntime extends EventEmitter {
           activeId: ctx?.activeId ?? null, payout: ctx?.payout ?? toNum(row.payout),
         };
       });
-      this.rsiAgentsV4.assignUniverse(merged.filter((row) => row.instrumentType === "BINARY"));
+      this.rsiAgentsV4?.assignUniverse(merged.filter((row) => row.instrumentType === "BINARY"));
       this.rsiAgentsV2Live?.assignUniverse?.(merged.filter((row) => row.instrumentType === "BINARY"));
       const enabled = merged.filter((row) => row.enabled).length;
       const legacyEnabledOpen = [...this.markets.values()].filter((ctx) => ctx.enabled === true && ctx.availability === "OPEN").length;
@@ -1969,12 +1921,12 @@ export class IqMultiRuntime extends EventEmitter {
    *  (o registry e sincronizado do banco a cada 15s e apos cada mutacao); DB apenas no cold start. */
   async mesasList() {
     if (!this.pool?.query) return { rows: [], totals: { total: 0, enabled: 0, byType: {}, byMarketType: {} } };
-    const inMemory = this.rsiAgentsV4 ? [...this.rsiAgentsV4.instruments.values()] : [];
+    const inMemory = null ? [...this.rsiAgentsV4?.instruments.values()] : [];
     if (inMemory.length > 0) {
       const view = inMemory.map((row) => this.#mesasView(row));
       const byType = {}; const byMarketType = {};
       for (const row of view) { byType[row.category] = (byType[row.category] ?? 0) + 1; byMarketType[row.marketType] = (byMarketType[row.marketType] ?? 0) + 1; }
-      return { rows: view, totals: { total: view.length, enabled: view.filter((row) => row.enabled).length, byType, byMarketType }, source: "IN_MEMORY_REGISTRY", syncedAt: this.rsiAgentsV4.universe?.at ?? null };
+      return { rows: view, totals: { total: view.length, enabled: view.filter((row) => row.enabled).length, byType, byMarketType }, source: "IN_MEMORY_REGISTRY", syncedAt: this.rsiAgentsV4?.universe?.at ?? null };
     }
     return this.cachedRead("mesas", 10_000, async () => {
     const rows = (await this.pool.query("SELECT market_key, instrument_type, duration_seconds, market_type, canonical, active_id, enabled, status, payout, source, updated_at FROM iq_rsi_instruments ORDER BY instrument_type, market_type, market_key")).rows ?? [];
@@ -2002,7 +1954,7 @@ export class IqMultiRuntime extends EventEmitter {
       activeId: toNum(ctx?.activeId ?? row.activeId ?? row.active_id),
       enabled: row.enabled === true,
       source: row.source ?? "IN_MEMORY_REGISTRY",
-      updatedAt: row.updatedAt ?? row.updated_at ?? (this.rsiAgentsV4?.universe?.at ? new Date(this.rsiAgentsV4.universe.at).toISOString() : null),
+      updatedAt: row.updatedAt ?? row.updated_at ?? (this.rsiAgentsV4?.universe?.at ? new Date(this.rsiAgentsV4?.universe.at).toISOString() : null),
     };
   }
 
@@ -2062,12 +2014,12 @@ export class IqMultiRuntime extends EventEmitter {
   /** Eventos persistidos da V4 (read-only, auditoria do funil DETECT->WATCH->GATE->SUBMIT). Cache curto + single-flight. */
   async rsiV4Events(params = {}) {
     if (!this.rsiAgentsV4?.events) return { events: [], unavailable: true };
-    return this.cachedRead(`v4-events:${params.marketKey ?? "-"}:${params.limit ?? 100}`, 5_000, () => this.rsiAgentsV4.events(params));
+    return this.cachedRead(`v4-events:${params.marketKey ?? "-"}:${params.limit ?? 100}`, 5_000, () => this.rsiAgentsV4?.events(params));
   }
 
   async rsiV4EventsFunnel(params = {}) {
     if (!this.rsiAgentsV4?.eventsFunnel) return { funnel: [], unavailable: true };
-    return this.cachedRead(`v4-funnel:${params.marketKey ?? "-"}`, 15_000, () => this.rsiAgentsV4.eventsFunnel(params));
+    return this.cachedRead(`v4-funnel:${params.marketKey ?? "-"}`, 15_000, () => this.rsiAgentsV4?.eventsFunnel(params));
   }
 
   /**
@@ -2141,64 +2093,7 @@ export class IqMultiRuntime extends EventEmitter {
     });
   }
 
-  /**
-   * Caminho NORMAL de ordem V3 (UNICO executavel desta rodada): exige ARM PRACTICE + autoExecute +
-   * kill switch OFF + migracao V3 completa + assignment V3 valido + stake esperada (R$10) nos limites oficiais.
-   * Sempre termina em requestOrder (Execution Gate unico). REAL nunca passa.
-   */
-  async submitAgentV3Order({ marketKey, direction, strategyId = null, skill = null, stake = 10, expectedStake = 10, decisionId = null, idempotencyKey = null, candidateAt = null, expiryAt = null, entryMode = null, projection = null, shadow = null } = {}) {
-    if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("AGENT_ORDER_PRACTICE_ONLY", String(this.config.mode));
-    if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("AGENT_ORDER_ACCOUNT_NOT_PRACTICE", this.accountContext.context);
-    if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
-    if (this.config.autoExecute !== true) throw new IqWsError("AGENT_ORDER_AUTO_EXECUTE_OFF");
-    if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("AGENT_ORDER_KILL_SWITCH");
-    if (this.rsiAgentsV3?.migration?.complete !== true) throw new IqWsError("AGENT_ORDER_MIGRATION_IN_PROGRESS");
-    const assignment = this.rsiAgentsV3?.assignments?.get(marketKey);
-    if (!assignment || assignment.strategy !== strategyId) throw new IqWsError("AGENT_ORDER_ASSIGNMENT_MISMATCH", `${marketKey}:${strategyId}`);
-    if (assignment.blocked === true || assignment.eligible !== true) throw new IqWsError("AGENT_ORDER_ASSIGNMENT_BLOCKED", assignment.blockReason ?? "NOT_ELIGIBLE");
-    const ctx = this.markets.get(marketKey);
-    if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
-    const requested = Number(stake);
-    const expected = Number(expectedStake);
-    if (!Number.isFinite(requested) || requested <= 0) throw new IqWsError("AGENT_ORDER_STAKE_REQUIRED");
-    if (!Number.isFinite(expected) || expected !== requested) throw new IqWsError("AGENT_ORDER_STAKE_MISMATCH", `${requested}!=${expected}`);
-    const officialCap = Math.min(Number(this.config.globalMaxStake) || expected, Number(ctx.maxStake) || expected, Number(this.config.hardCap) || expected);
-    if (expected > officialCap) throw new IqWsError("AGENT_ORDER_STAKE_ABOVE_OFFICIAL_CAP", `${expected}>${officialCap}`);
-    return this.requestOrder({ marketKey, direction, stake: requested, decisionId, idempotencyKey, source: "agent-v3:" + (strategyId || "rsi-agents-v3") + ":" + (skill || strategyId || "skill"), horizonSeconds: 60 });
-  }
 
-  /**
-   * Caminho normal de ordem V4 (UNICO executavel apos a rodada V4): BINARY sincronizado com o broker;
-   * BLITZ somente quando o instrumento foi DESCOBERTO e o caminho de ordem verificado (fail-closed).
-   * Sempre termina em requestOrder (Execution Gate unico). REAL nunca passa.
-   */
-  async submitAgentV4Order({ marketKey, direction, strategyId = null, skill = null, stake = 10, expectedStake = 10, decisionId = null, idempotencyKey = null, candidateAt = null, expiryAt = null, instrumentType = "BINARY", durationSeconds = 60, entryMode = null, projection = null, counterEvidence = [] } = {}) {
-    if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("AGENT_ORDER_PRACTICE_ONLY", String(this.config.mode));
-    if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("AGENT_ORDER_ACCOUNT_NOT_PRACTICE", this.accountContext.context);
-    if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
-    if (this.config.autoExecute !== true) throw new IqWsError("AGENT_ORDER_AUTO_EXECUTE_OFF");
-    if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("AGENT_ORDER_KILL_SWITCH");
-    if (this.rsiAgentsV4?.migration?.complete !== true) throw new IqWsError("AGENT_ORDER_MIGRATION_IN_PROGRESS");
-    const registry = this.rsiAgentsV4?.instruments?.get?.(`${marketKey}|${String(instrumentType).toUpperCase()}`) ?? null;
-    if (!registry || registry.enabled !== true) throw new IqWsError("AGENT_ORDER_MARKET_DISABLED_BY_USER", `${marketKey}:${instrumentType}`);
-    const ctx = this.markets.get(marketKey);
-    if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
-    const requested = Number(stake);
-    const expected = Number(expectedStake);
-    if (!Number.isFinite(requested) || requested <= 0) throw new IqWsError("AGENT_ORDER_STAKE_REQUIRED");
-    if (!Number.isFinite(expected) || expected !== requested) throw new IqWsError("AGENT_ORDER_STAKE_MISMATCH", `${requested}!=${expected}`);
-    const officialCap = Math.min(Number(this.config.globalMaxStake) || expected, Number(ctx.maxStake) || expected, Number(this.config.hardCap) || expected);
-    if (expected > officialCap) throw new IqWsError("AGENT_ORDER_STAKE_ABOVE_OFFICIAL_CAP", `${expected}>${officialCap}`);
-    const instrument = String(instrumentType).toUpperCase();
-    const source = "agent-v4:" + (strategyId || "rsi-agents-v4") + ":" + (skill || strategyId || "skill");
-    if (instrument === "BLITZ_45S" || instrument === "BLITZ") {
-      const duration = Number(durationSeconds) || 45;
-      const capability = await this.#blitzCapability({ marketKey, durationSeconds: duration });
-      if (capability.supported !== true) throw new IqWsError("BLITZ_ORDER_PATH_UNSUPPORTED", capability.reason);
-      return this.requestOrder({ marketKey, direction, stake: requested, decisionId, idempotencyKey, source, horizonSeconds: duration, entryTiming: { instrumentType: "BLITZ_45S", durationSeconds: duration, requestedDuration: duration } });
-    }
-    return this.requestOrder({ marketKey, direction, stake: requested, decisionId, idempotencyKey, source, horizonSeconds: 60 });
-  }
 
   /**
    * BLITZ so executa quando o instrumento foi descoberto no broker E o caminho de ordem foi verificado.
@@ -2220,78 +2115,6 @@ export class IqMultiRuntime extends EventEmitter {
     }
   }
 
-  /** V2 LIVE: Strategy Core V2 ORIGINAL (rsi-skills-v2, congelada) com infraestrutura atual. */
-  async submitAgentV2LiveOrder({ marketKey, direction, strategyId = null, skill = null, stake = 10, expectedStake = 10, decisionId = null, idempotencyKey = null, candidateAt = null, expiryAt = null, entryMode = null, projection = null, counterEvidence = [] } = {}) {
-    const contextPractice = this.accountContext.context === ACCOUNT_PRACTICE;
-    const contextRealArmed = this.config.mode === "REAL" && process.env.REAL_TRADING_ENABLED === "true";
-    if (!contextPractice && !contextRealArmed) throw new IqWsError("AGENT_ORDER_ACCOUNT_CONTEXT_BLOCKED", String(this.accountContext.context));
-    if (String(this.config.mode).toUpperCase() !== "PRACTICE" && !contextRealArmed) throw new IqWsError("AGENT_ORDER_PRACTICE_ONLY", String(this.config.mode));
-    if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
-    if (this.config.autoExecute !== true) throw new IqWsError("AGENT_ORDER_AUTO_EXECUTE_OFF");
-    if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("AGENT_ORDER_KILL_SWITCH");
-    if (this.rsiAgentsV2Live?.migration?.complete !== true) throw new IqWsError("AGENT_ORDER_MIGRATION_IN_PROGRESS");
-    if (this.config.mode === "REAL") {
-      const stamp = this.now();
-      const inFlight = this.mcpBinaryInFlight ?? null;
-      if (inFlight && stamp - Number(inFlight.at ?? 0) < 180_000) throw new IqWsError("MCP_SINGLE_ORDER_LOCK", String(inFlight.positionId ?? "PENDING"));
-      this.mcpBinaryInFlight = { at: stamp, positionId: null };
-      try {
-      const mcp = this.iqMcpBinary;
-      if (!mcp?.enabled) throw new IqWsError("MCP_UNAVAILABLE");
-      const contract = String(marketKey).includes(":OTC") ? "OTC" : "NORMAL";
-      const canonical = String(marketKey).split(":")[0];
-      if (!this.binaryMcpAssets || stamp - (this.binaryMcpAssetsAt ?? 0) > 600_000) { this.binaryMcpAssets = await mcp.listAssets(); this.binaryMcpAssetsAt = stamp; }
-      const norm = (name) => String(name ?? "").replace(/\(?\bOTC\b\)?/gi, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-      const pickAsset = (list) => list.find((a) => norm(a.name) === canonical && (/OTC/i.test(String(a.name ?? "")) ? "OTC" : "NORMAL") === contract) ?? list.find((a) => norm(a.name) === canonical) ?? null;
-      let asset = pickAsset(this.binaryMcpAssets);
-      if (!asset) { this.binaryMcpAssets = await mcp.listAssets(); this.binaryMcpAssetsAt = this.now(); asset = pickAsset(this.binaryMcpAssets); }
-      if (!asset) throw new IqWsError("MCP_ASSET_NOT_FOUND", canonical);
-      if (!this.binaryMcpBalances || stamp - (this.binaryMcpBalancesAt ?? 0) > 60_000) { this.binaryMcpBalances = await mcp.listBalances(); this.binaryMcpBalancesAt = stamp; }
-      const balance = this.binaryMcpBalances.find((b) => /regular|real/i.test(String(b.type ?? ""))) ?? this.binaryMcpBalances[0];
-      const balanceId = Number(balance?.balance_id ?? balance?.id);
-      if (!Number.isFinite(balanceId)) throw new IqWsError("MCP_BALANCE_UNAVAILABLE");
-      const uiStake = Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : Number(this.stakeBrl ?? 1);
-      const requestedAmount = Number(stake) > 0 ? Number(stake) : uiStake;
-      const BROKER_MIN_AMOUNT_BRL = 2;
-      const armedMaxStake = Number(this.accountContext?.armedMeta?.maxStake ?? this.realMode?.session?.maxStake ?? 2);
-      const BROKER_MAX_AMOUNT_BRL = Number.isFinite(armedMaxStake) && armedMaxStake >= BROKER_MIN_AMOUNT_BRL ? armedMaxStake : BROKER_MIN_AMOUNT_BRL;
-      const amount = Math.min(Math.max(requestedAmount, BROKER_MIN_AMOUNT_BRL), BROKER_MAX_AMOUNT_BRL);
-      const balanceAmount = Number(balance?.amount ?? NaN);
-      if (Number.isFinite(balanceAmount) && balanceAmount < amount) throw new IqWsError("MCP_INSUFFICIENT_BALANCE", balanceAmount + " < " + amount);
-      const expirations = Array.isArray(asset.expirations) ? asset.expirations.map(Number).filter((v) => Number.isFinite(v)).sort((a, b) => a - b) : [];
-      const nowSec = Math.floor(stamp / 1000);
-      const expired = expirations.find((ts) => ts >= nowSec + 30) ?? (Math.ceil((nowSec + 30) / 60) * 60);
-      const expirationSize = expired - nowSec;
-      const recentMcp = (this.mcpBinaryRecent ?? []).filter((ts) => stamp - ts < 120_000);
-      if (recentMcp.length >= 2) throw new IqWsError("MCP_CONCURRENCY_CAP", String(recentMcp.length));
-      let trade;
-      try { trade = await mcp.placeTrade({ balanceId, assetId: asset.asset_id, direction: direction === "SELL" ? "SELL" : "BUY", amount, profitPercent: asset.profit_percent, expirationSize, expired }); }
-      catch (error) { if (/profit|stale|price|expiration|size/i.test(String(error?.message ?? ""))) { this.binaryMcpAssets = await mcp.listAssets(); this.binaryMcpAssetsAt = this.now(); const fresh = this.binaryMcpAssets.find((a) => Number(a.asset_id) === Number(asset.asset_id)) ?? asset; trade = await mcp.placeTrade({ balanceId, assetId: fresh.asset_id, direction: direction === "SELL" ? "SELL" : "BUY", amount, profitPercent: fresh.profit_percent, expirationSize, expired }); } else throw error; }
-      const positionId = trade?.position_id ?? trade?.id ?? trade?.position?.position_id ?? trade?.position?.id ?? trade?.data?.position_id ?? null;
-      let verify = null;
-      try { const positions = await mcp.listPositions(balanceId); const hist = await mcp.getTradeHistory({ limit: 5 }); verify = { positions: Array.isArray(positions) ? positions.length : null, history: Array.isArray(hist) ? hist.length : null, open: Array.isArray(positions) ? positions.slice(0, 2) : null }; } catch (error) { verify = { error: String(error?.message ?? error).slice(0, 120) }; }
-      const meta = { source: "agent-v2:" + (strategyId || "rsi-v2") + ":mcp-binary", accountContext: "REAL", mcp: true, assetId: asset.asset_id, entryMode, profitPercent: asset.profit_percent, expirationSize, expired, positionId, amountRequested: requestedAmount, brokerMinAmount: BROKER_MIN_AMOUNT_BRL, amountClamped: amount !== requestedAmount, rawTrade: trade, verify };
-      const executionRowId = "mcp-binary-" + (positionId !== null ? String(positionId) : "null-" + stamp);
-      if (this.pool?.query) await this.pool.query("INSERT INTO iq_executions(execution_id, requested_at, market_key, symbol, direction, stake, state, meta, broker_order_id, account_context, account_type, mode) VALUES($1, now(), $2, $3, $4, $5, 'ACKNOWLEDGED', $6::jsonb, $7, 'REAL', 'REAL', 'REAL')", [executionRowId, marketKey, String(marketKey).split(":")[0], direction, amount, JSON.stringify(meta), positionId !== null ? String(positionId) : null]).catch((error) => { this.#safe(() => this.log("MCP_BINARY_EXEC_INSERT_FAIL", String(error?.message ?? error).slice(0, 140))); });
-      this.#emitEvent("order.mcp", { marketKey, assetId: asset.asset_id, amount, positionId, mode: "REAL", verify });
-      if (positionId === null) throw new IqWsError("MCP_NO_POSITION_ID", JSON.stringify(trade ?? {}).slice(0, 200));
-      this.mcpBinaryRecent = [...recentMcp, stamp].slice(-20);
-      this.mcpBinaryInFlight = { at: this.now(), positionId };
-      return { state: "ACKNOWLEDGED", disposition: "EXECUTED", brokerOrderId: positionId, executionId: executionRowId, stake: amount, stakeRequested: requestedAmount, effectiveStake: amount, stakeUsed: amount, mode: "REAL", instrumentType: "BINARY", durationSeconds: expirationSize, verify };
-      } catch (error) { this.mcpBinaryInFlight = null; throw error; }
-    }
-    const registry = this.rsiAgentsV2Live?.instruments?.get?.(`${marketKey}|BINARY`) ?? null;
-    if (!registry || registry.enabled !== true) throw new IqWsError("AGENT_ORDER_MARKET_DISABLED_BY_USER", `${marketKey}:BINARY`);
-    const ctx = this.markets.get(marketKey);
-    if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(marketKey));
-    const requested = Number(stake);
-    const expected = Number(expectedStake);
-    if (!Number.isFinite(requested) || requested <= 0) throw new IqWsError("AGENT_ORDER_STAKE_REQUIRED");
-    if (!Number.isFinite(expected) || expected !== requested) throw new IqWsError("AGENT_ORDER_STAKE_MISMATCH", `${requested}!=${expected}`);
-    const officialCap = Math.min(Number(this.config.globalMaxStake) || expected, Number(ctx.maxStake) || expected, Number(this.config.hardCap) || expected);
-    if (expected > officialCap) throw new IqWsError("AGENT_ORDER_STAKE_ABOVE_OFFICIAL_CAP", `${expected}>${officialCap}`);
-    return this.requestOrder({ marketKey, direction, stake: requested, decisionId, idempotencyKey, source: "agent-v2:" + (strategyId || "rsi-agents-v2") + ":" + (skill || strategyId || "skill"), horizonSeconds: 60 });
-  }
 
   /**
    * REGISTRY BLITZ (API OFICIAL/MCP): importa TODOS os ativos habilitados com duracao 45s.
@@ -2331,50 +2154,6 @@ export class IqMultiRuntime extends EventEmitter {
     return { rows, total: rows.length, enabled: rows.filter((row) => row.enabled === true).length, lastSync: this.blitzRegistry ?? null };
   }
 
-  /**
-   * ORDEM BLITZ via API OFICIAL (MCP) — MESMO Execution Gate: PRACTICE, ARM, autoExecute, kill switch,
-   * stake R$10 e allowlist. Duracao fixa 45s. Nunca chamado sem aprovacao da estrategia.
-   */
-  async submitAgentBlitzOrder({ marketKey, direction, stake = 10, expectedStake = 10, idempotencyKey = null, entryMode = "BLITZ_IMMEDIATE_45S", decisionId = null } = {}) {
-    const source = "agent-v2:RSI_REVERSAL_V2_BLITZ:RSI_REVERSAL_V2_BLITZ";
-    const routing = this.#executionRouting(source);
-    if (!routing.allowed) {
-      this.#auditRecord(`routing_${this.now()}`, marketKey, "EXECUTION_SOURCE_BLOCKED", { marketKey, source, policy: routing.policy, controlsExecution: false }, { persist: true });
-      throw new IqWsError("EXECUTION_SOURCE_BLOCKED", `${source} bloqueado pela politica ${routing.policy}`);
-    }
-    if (String(this.config.mode).toUpperCase() !== "PRACTICE") throw new IqWsError("AGENT_ORDER_PRACTICE_ONLY", String(this.config.mode));
-    if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("AGENT_ORDER_ACCOUNT_NOT_PRACTICE", this.accountContext.context);
-    if (this.armState.armed !== true) throw new IqWsError("AGENT_ORDER_SYSTEM_NOT_ARMED");
-    if (this.config.autoExecute !== true) throw new IqWsError("AGENT_ORDER_AUTO_EXECUTE_OFF");
-    if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("AGENT_ORDER_KILL_SWITCH");
-    const requested = Number(stake); const expected = Number(expectedStake);
-    if (!Number.isFinite(requested) || requested <= 0) throw new IqWsError("AGENT_ORDER_STAKE_REQUIRED");
-    if (!Number.isFinite(expected) || expected !== requested) throw new IqWsError("AGENT_ORDER_STAKE_MISMATCH", `${requested}!=${expected}`);
-    if (expected > 10) throw new IqWsError("AGENT_ORDER_STAKE_ABOVE_OFFICIAL_CAP", `${expected}>10`);
-    const row = (await this.pool.query("SELECT active_id, payload FROM iq_rsi_instruments WHERE market_key=$1 AND instrument_type='BLITZ_45S' AND duration_seconds=45", [marketKey])).rows?.[0] ?? null;
-    if (!row) throw new IqWsError("BLITZ_ASSET_NOT_REGISTERED", String(marketKey));
-    const assetId = Number(row.active_id);
-    let profitPercent = Number(row.payload?.profitPercent);
-    if (!Number.isFinite(assetId) || !Number.isFinite(profitPercent)) throw new IqWsError("BLITZ_ASSET_METADATA_MISSING", String(marketKey));
-    const balances = await this.iqMcp.listBalances();
-    const practice = balances.find((b) => /practice/i.test(String(b.type ?? b.balance_type ?? "")) || b.is_practice === true) ?? balances[0] ?? null;
-    const balanceId = Number(practice?.balance_id ?? practice?.id);
-    if (!Number.isFinite(balanceId)) throw new IqWsError("BLITZ_BALANCE_UNAVAILABLE");
-    let result;
-    try {
-      result = await this.iqMcp.placeTrade({ balanceId, assetId, direction, amount: requested, profitPercent, expirationSize: 45 });
-    } catch (error) {
-      // profit_percent velho/divergente: re-sincroniza o registry e tenta 1x com o valor atual.
-      if (/profit|stale|price/i.test(String(error?.message ?? ""))) {
-        await this.refreshBlitzRegistry({ force: true });
-        const fresh = (await this.pool.query("SELECT payload FROM iq_rsi_instruments WHERE market_key=$1 AND instrument_type='BLITZ_45S' AND duration_seconds=45", [marketKey])).rows?.[0]?.payload ?? null;
-        profitPercent = Number(fresh?.profitPercent);
-        result = await this.iqMcp.placeTrade({ balanceId, assetId, direction, amount: requested, profitPercent, expirationSize: 45 });
-      } else throw error;
-    }
-    this.#emitEvent("blitz.order", { marketKey, assetId, direction, stake: requested, entryMode, positionId: result?.position_id ?? result?.id ?? null });
-    return { state: "ACKNOWLEDGED", disposition: "EXECUTED", brokerOrderId: result?.position_id ?? result?.id ?? null, executionId: `blitz-${assetId}-${this.now()}`, stake: requested, stakeRequested: requested, effectiveStake: requested, instrumentType: "BLITZ_45S", durationSeconds: 45, mode: "PRACTICE", entryMode, raw: result };
-  }
 
   /** V1 e V2 nao executam nesta rodada (fail closed explicito). */
   async submitAgentOrder() {
@@ -2387,7 +2166,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   /** Status V3 (rotas legadas /rsi-agents e /rsi-agents-v2 reportam V3 + estado das anteriores). */
   async rsiAgentsStatus() {
-    const status = await this.rsiAgentsV3.status();
+    const status = await this.rsiAgentsV3?.status();
     const officialStake = { policyStakeBrl: status.stakeBrl ?? null, calculatedBankrollStake: this.config.calculatedBankrollStake, globalMaxStake: this.config.globalMaxStake, hardCap: this.config.hardCap, defaultStake: this.config.defaultStake };
     return { ...status, stake: officialStake, legacyV2: { module: "rsi-agents-v2", frozen: true, enabled: this.rsiAgentsV2?.enabled === true, controlsExecution: false }, context: { mode: this.config.mode, accountContext: this.accountContext.context, armed: this.armState.armed === true, autoExecute: this.config.autoExecute === true, killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, realState: this.realMode.authorized() ? "ARMED" : "LOCKED" }, realAllowlistUntouched: true };
   }
@@ -2395,8 +2174,8 @@ export class IqMultiRuntime extends EventEmitter {
   /* ------------------- RSI VARIANTS 2x2 (STRICT x PULLBACK; 10 OTCs; ordem so via harness) ------------------- */
   #observeRsiVariants(ctx, list, now) {
     if (!this.rsiVariants?.enabled) return null;
-    this.rsiVariants.selectOtcUniverse([...this.markets.values()]);
-    if (!this.rsiVariants.otcKeys?.includes(ctx.marketKey)) return null;
+    this.rsiVariants?.selectOtcUniverse([...this.markets.values()]);
+    if (!this.rsiVariants?.otcKeys?.includes(ctx.marketKey)) return null;
     if (now - (ctx.rsiVariantsAt ?? 0) < 5_000) return null;
     ctx.rsiVariantsAt = now;
     const serverNow = this.client?.serverNow?.() ?? now;
@@ -2405,12 +2184,12 @@ export class IqMultiRuntime extends EventEmitter {
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
     const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
-    return this.rsiVariants.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 } });
+    return this.rsiVariants?.observeMarket({ marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, candles: list, targetExpiryAt, payout: ctx.payout, now, latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 } });
   }
-  async rsiVariantsStatus() { const status = await this.rsiVariants.status(); return { ...status, context: { accountContext: this.accountContext.context, realState: this.realMode.authorized() ? "ARMED" : "LOCKED", killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, brokerConnected: this.session.connected === true }, realAllowlistUntouched: true, fiveWayUntouched: true, rsiReversalUntouched: true }; }
-  async rsiVariantsPrepare() { return this.rsiVariants.prepare({ preflight: this.#rsiReversalPreflight() }); }
-  async rsiVariantsArm({ phrase = "", actor = "owner" } = {}) { return this.rsiVariants.arm({ phrase, actor, preflight: this.#rsiReversalPreflight() }); }
-  async rsiVariantsStop(reason = "MANUAL_STOP") { return this.rsiVariants.stop(reason); }
+  async rsiVariantsStatus() { const status = await this.rsiVariants?.status(); return { ...status, context: { accountContext: this.accountContext.context, realState: this.realMode.authorized() ? "ARMED" : "LOCKED", killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, brokerConnected: this.session.connected === true }, realAllowlistUntouched: true, fiveWayUntouched: true, rsiReversalUntouched: true }; }
+  async rsiVariantsPrepare() { return this.rsiVariants?.prepare({ preflight: this.#rsiReversalPreflight() }); }
+  async rsiVariantsArm({ phrase = "", actor = "owner" } = {}) { return this.rsiVariants?.arm({ phrase, actor, preflight: this.#rsiReversalPreflight() }); }
+  async rsiVariantsStop(reason = "MANUAL_STOP") { return this.rsiVariants?.stop(reason); }
 
   /* ------------------- RSI_REVERSAL_CONFLUENCE_V1 (experimento separado; ordem so via harness) ------------------- */
   #observeRsiReversal(ctx, list, now) {
@@ -2423,7 +2202,7 @@ export class IqMultiRuntime extends EventEmitter {
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
     const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
-    return this.rsiReversal.observeMarket({
+    return this.rsiReversal?.observeMarket({
       marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId, candles: list,
       targetExpiryAt, payout: ctx.payout, now,
       latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 30, jitterMs: 300, bufferMs: 150 },
@@ -2431,12 +2210,12 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   async rsiReversalStatus() {
-    const status = await this.rsiReversal.status();
+    const status = await this.rsiReversal?.status();
     return { ...status, context: { accountContext: this.accountContext.context, realState: this.realMode.authorized() ? "ARMED" : "LOCKED", killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, brokerConnected: this.session.connected === true }, realAllowlistUntouched: true, fiveWayUntouched: true };
   }
-  async rsiReversalPrepare() { return this.rsiReversal.prepare({ preflight: this.#rsiReversalPreflight() }); }
-  async rsiReversalArm({ phrase = "", actor = "owner" } = {}) { return this.rsiReversal.arm({ phrase, actor, preflight: this.#rsiReversalPreflight() }); }
-  async rsiReversalStop(reason = "MANUAL_STOP") { return this.rsiReversal.stop(reason); }
+  async rsiReversalPrepare() { return this.rsiReversal?.prepare({ preflight: this.#rsiReversalPreflight() }); }
+  async rsiReversalArm({ phrase = "", actor = "owner" } = {}) { return this.rsiReversal?.arm({ phrase, actor, preflight: this.#rsiReversalPreflight() }); }
+  async rsiReversalStop(reason = "MANUAL_STOP") { return this.rsiReversal?.stop(reason); }
   #rsiReversalPreflight() {
     return { accountContext: this.accountContext.context, realState: this.realMode.authorized() ? "ARMED" : "LOCKED", killSwitchEngaged: this.killSwitch.status().executionEnabled !== true, brokerConnected: this.session.connected === true, stakeBrl: 1 };
   }
@@ -2448,7 +2227,7 @@ export class IqMultiRuntime extends EventEmitter {
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     const persistSamples = ctx.latency?.dbPersist ?? [];
     const persistP95 = persistSamples.length ? [...persistSamples].sort((a, b) => a - b)[Math.min(persistSamples.length - 1, Math.ceil(0.95 * persistSamples.length) - 1)] : 0;
-    const observation = this.indicator5m.observeCandidate({
+    const observation = this.indicator5m?.observeCandidate({
       marketKey: ctx.marketKey, marketType: ctx.marketType, candles: this.#candleList(ctx),
       targetEntryAt: candidate.targetEntryAt ?? null, targetExpiryAt: candidate.targetExpiryAt ?? null, payout: ctx.payout,
       latency: { ackP95Ms: ackP95, persistP95Ms: persistP95, decisionMs: 50, jitterMs: 300, bufferMs: 150 },
@@ -2459,12 +2238,12 @@ export class IqMultiRuntime extends EventEmitter {
 
   #finalizeIndicator5M(ctx, candidate, now) {
     if (!this.indicator5m?.enabled || !candidate || !ctx.indicator5mId) return null;
-    const observation = this.indicator5m.revalidateFinal({ observationId: ctx.indicator5mId, candles: this.#candleList(ctx), atMs: now });
+    const observation = this.indicator5m?.revalidateFinal({ observationId: ctx.indicator5mId, candles: this.#candleList(ctx), atMs: now });
     if (!observation || observation.status !== "READY") return observation;
     const ackSamples = ctx.latency?.orderAck ?? [];
     const ackP95 = ackSamples.length ? [...ackSamples].sort((a, b) => a - b)[Math.min(ackSamples.length - 1, Math.ceil(0.95 * ackSamples.length) - 1)] : 0;
     // Encaminha ao MESMO harness/Execution Gate; em DRY_RUN apenas registra WOULD_EXECUTE.
-    void this.fourWay.observeDecision({
+    void this.fourWay?.observeDecision({
       strategyId: "INDICATOR_5M_V1", opportunityId: candidate.id, decisionId: candidate.id,
       marketKey: ctx.marketKey, marketType: ctx.marketType, direction: observation.direction,
       scenario: observation.initialDecision?.confluence ?? null, whyNow: observation.initialDecision?.whyNow ?? null,
@@ -2482,14 +2261,14 @@ export class IqMultiRuntime extends EventEmitter {
 
   /** Status do INDICATOR_5M_V1 (control group; DRY_RUN ate ARM explicito do harness). */
   indicator5mStatus() {
-    const status = this.indicator5m.status();
-    return { ...status, enabled: this.config.indicator5mShadowEnabled === true && this.indicator5m.enabled === true, isolation: { shadowOnly: true, controlsExecution: false, sendsOrders: false, sameExpiryRequired: true, autoInvert: false, minimumSafetyMarginMs: 3000 }, realAllowlistUntouched: true };
+    const status = this.indicator5m?.status();
+    return { ...status, enabled: this.config.indicator5mShadowEnabled === true && this.indicator5m?.enabled === true, isolation: { shadowOnly: true, controlsExecution: false, sendsOrders: false, sameExpiryRequired: true, autoInvert: false, minimumSafetyMarginMs: 3000 }, realAllowlistUntouched: true };
   }
 
   /* ------------------- HARNESS PRACTICE_FIVE_WAY_3X_TEST_V1 (DRY_RUN default) ------------------- */
   /** Observa as decisoes finais JA existentes (nao recalcula); WAIT nunca executa. */
   #observeFourWay(ctx, candidate, now, action) {
-    if (!this.fourWay || !candidate) return null;
+    if (!null || !candidate) return null;
     const snapshotBase = { marketKey: ctx.marketKey, marketType: ctx.marketType, regime: ctx.decisionState?.regime ?? null, setup: ctx.decisionState?.setup ?? null, payout: ctx.payout };
     const context = {
       accountContext: this.accountContext.context,
@@ -2509,7 +2288,7 @@ export class IqMultiRuntime extends EventEmitter {
     ];
     for (const definition of definitions) {
       if (definition.direction !== "BUY" && definition.direction !== "SELL") continue;
-      void this.fourWay.observeDecision({
+      void this.fourWay?.observeDecision({
         strategyId: definition.strategyId, opportunityId: candidate.id, decisionId: candidate.id,
         marketKey: ctx.marketKey, marketType: ctx.marketType, direction: definition.direction,
         scenario: definition.snapshot.scenario ?? null, whyNow: definition.snapshot.whyNow ?? null,
@@ -2529,7 +2308,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   /** Status do harness 4x3 (DRY_RUN por padrao; arm independente do REAL). */
   async fourWayStatus() {
-    const status = await this.fourWay.status();
+    const status = await this.fourWay?.status();
     return {
       ...status,
       context: {
@@ -2547,7 +2326,7 @@ export class IqMultiRuntime extends EventEmitter {
   #observeSolo(ctx, candidate, now) {
     if (!this.solo?.enabled || !candidate) return null;
     const t0 = this.#buildT0ForV4(ctx, this.#candleList(ctx), { now, candidate });
-    return this.solo.observe({
+    return this.solo?.observe({
       t0,
       candidate: { candidateId: candidate.id, correlationId: candidate.correlationId ?? null, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, payout: ctx.payout },
       g2Action: candidate.action ?? null, v4Action: ctx.lastAgentsV4?.action ?? null,
@@ -2555,41 +2334,40 @@ export class IqMultiRuntime extends EventEmitter {
     });
   }
 
-  /* ------------------- DUAL_REASONING_V1_SHADOW (experimento independente) ------------------- */
   #dualObservationId(ctx, candidate) { return `dual:${ctx?.marketKey ?? "UNKNOWN"}:${candidate?.id ?? "unknown"}`; }
   #observeDualRound1(ctx, candidate, now) {
     if (!this.dual?.enabled || !candidate) return null;
     const t0 = this.#buildT0ForV4(ctx, this.#candleList(ctx), { now, candidate });
-    const dualResult = this.dual.observeRound1({
+    const dualResult = this.dual?.observeRound1({
       t0, candidate: { candidateId: candidate.id, correlationId: candidate.correlationId ?? null, targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, payout: ctx.payout },
       g2Action: candidate.action ?? null, v4Action: ctx.lastAgentsV4?.action ?? null, execution: this.#agentsV4Execution(ctx, { now, candidate }),
     });
     // Sidecar: observa o T0 ja produzido, apos a rodada; nunca influencia a decisao.
-    this.dualObserver.observe({ observationId: this.#dualObservationId(ctx, candidate), marketKey: ctx.marketKey, round: "R1", t0 });
+    this.dualObserver?.observe({ observationId: this.#dualObservationId(ctx, candidate), marketKey: ctx.marketKey, round: "R1", t0 });
     return dualResult;
   }
   #observeDualRound2(ctx, candidate, now) {
     if (!this.dual?.enabled || !candidate || candidate.evaluations < 1) return null;
     const observationId = this.#dualObservationId(ctx, candidate);
-    if (!this.dual.observations.has(observationId)) return null;
+    if (!this.dual?.observations.has(observationId)) return null;
     const t0 = this.#buildT0ForV4(ctx, this.#candleList(ctx), { now, candidate });
-    const dualResult = this.dual.observeRound2({ observationId, t0, execution: this.#agentsV4Execution(ctx, { now, candidate }), g2Action: candidate.action ?? null, v4Action: ctx.lastAgentsV4?.action ?? null });
-    this.dualObserver.observe({ observationId, marketKey: ctx.marketKey, round: "R2", t0 });
+    const dualResult = this.dual?.observeRound2({ observationId, t0, execution: this.#agentsV4Execution(ctx, { now, candidate }), g2Action: candidate.action ?? null, v4Action: ctx.lastAgentsV4?.action ?? null });
+    this.dualObserver?.observe({ observationId, marketKey: ctx.marketKey, round: "R2", t0 });
     return dualResult;
   }
   #finalizeDual(ctx, candidate, action, now) {
     if (!this.dual?.enabled || !candidate) return null;
     const observationId = this.#dualObservationId(ctx, candidate);
-    if (!this.dual.observations.has(observationId)) return null;
+    if (!this.dual?.observations.has(observationId)) return null;
     const t0 = this.#buildT0ForV4(ctx, this.#candleList(ctx), { now, candidate });
-    const timingObservation = this.timingShadow.getByCandidate(candidate.id);
-    const dualResult = this.dual.finalize({
+    const timingObservation = this.timingShadow?.getByCandidate(candidate.id);
+    const dualResult = this.dual?.finalize({
       observationId, t0, execution: this.#agentsV4Execution(ctx, { now, candidate }),
       candidate: { targetEntryAt: candidate.targetEntryAt, targetExpiryAt: candidate.targetExpiryAt, payout: ctx.payout },
       g2Action: candidate.action ?? null, v4Action: action ?? null,
       lateView: timingObservation ? { lateVerdict: timingObservation.late?.verdict ?? null } : null,
     });
-    this.dualObserver.observe({ observationId, marketKey: ctx.marketKey, round: "FINAL", t0 });
+    this.dualObserver?.observe({ observationId, marketKey: ctx.marketKey, round: "FINAL", t0 });
     return dualResult;
   }
 
@@ -2651,7 +2429,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (now - (ctx.agentsV4MarketAt ?? 0) < 15_000) return null;
     ctx.agentsV4MarketAt = now;
     const t0 = this.#buildT0ForV4(ctx, list, { now });
-    const view = this.agentsV4.observeMarketState({ t0, risk: this.#agentsV4RiskContext(ctx, now), dataQualityInput: this.#agentsV4DataQuality(ctx, now) });
+    const view = this.agentsV4?.observeMarketState({ t0, risk: this.#agentsV4RiskContext(ctx, now), dataQualityInput: this.#agentsV4DataQuality(ctx, now) });
     if (view && this.dataHub) {
       this.#safe(() => this.dataHub.publish({
         eventType: "FEATURE_SNAPSHOT", marketKey: ctx.marketKey, marketType: ctx.marketType, activeId: ctx.activeId,
@@ -2705,7 +2483,7 @@ export class IqMultiRuntime extends EventEmitter {
   #observeAgentsV4Candidate(ctx, { candidate, action, trader, critic, consensus, now, list }) {
     if (!this.agentsV4?.enabled) return null;
     const t0 = this.#buildT0ForV4(ctx, list, { now, candidate });
-    const observation = this.agentsV4.observeCandidate({
+    const observation = this.agentsV4?.observeCandidate({
       t0,
       candidate: {
         candidateId: candidate.id, correlationId: candidate.correlationId ?? null, createdAt: candidate.createdAt,
@@ -2714,7 +2492,7 @@ export class IqMultiRuntime extends EventEmitter {
       },
       g2Action: action,
       v3Runner: () => {
-        const scenario = this.scenarioShadow.getByCandidate(candidate.id);
+        const scenario = this.scenarioShadow?.getByCandidate(candidate.id);
         const analysis = scenario?.traderScenario ?? scenario?.finalScenario ?? null;
         return { action: scenario?.finalAction ?? "WAIT", primaryScenario: analysis?.primaryScenario ?? null, marketRegime: analysis?.marketRegime ?? null, version: "SCENARIO_ENGINE_V3_FROZEN" };
       },
@@ -2738,7 +2516,7 @@ export class IqMultiRuntime extends EventEmitter {
     const observationId = ctx.lastAgentsV4?.observationId ?? null;
     if (!observationId) return null;
     const t0 = this.#buildT0ForV4(ctx, list, { now, candidate });
-    return this.agentsV4.finalize({
+    return this.agentsV4?.finalize({
       observationId, t0,
       execution: this.#agentsV4Execution(ctx, { now, candidate }),
       risk: this.#agentsV4RiskContext(ctx, now),
@@ -2788,7 +2566,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (!candidate) return null;
     if (candidate.finalizeTimer) { clearTimeout(candidate.finalizeTimer); candidate.finalizeTimer = null; }
     candidate.status = "CANCELLED"; candidate.cancelReason = reason; candidate.closedAt = this.now();
-    this.timingShadow.markCurrentCancel({ candidateId: candidate.id, reason, atMs: this.now() });
+    this.timingShadow?.markCurrentCancel({ candidateId: candidate.id, reason, atMs: this.now() });
     this.#observeScenarioTimingIntersection(candidate.id);
     ctx.lastCandidate = { ...candidate, initialFull: undefined };
     ctx.candidate = null;
@@ -2853,7 +2631,7 @@ export class IqMultiRuntime extends EventEmitter {
     const now = this.now();
     const serverNow = this.client?.serverNow?.() ?? now;
     const latency = this.#timingLatencySamples();
-    const markets = [...this.markets.values()].flatMap((ctx) => this.timingShadow.activeObservationsForMarket(ctx.marketKey).map((observation) => ({
+    const markets = [...this.markets.values()].flatMap((ctx) => this.timingShadow?.activeObservationsForMarket(ctx.marketKey).map((observation) => ({
       marketKey: ctx.marketKey, marketType: ctx.marketType, candidateId: observation.candidateId, direction: observation.direction,
       targetEntryAt: observation.targetEntryAt, targetExpiryAt: observation.targetExpiryAt,
       cutoffExclusiveAt: observation.policy?.window?.cutoffExclusiveAt ?? null, lateDeadlineAt: observation.late?.deadlineAt ?? null,
@@ -2870,19 +2648,19 @@ export class IqMultiRuntime extends EventEmitter {
       scope: LATE_WINDOW_POLICY.scope, cutoffRule: LATE_WINDOW_POLICY.cutoffRule,
       margin: adaptiveLateMarginMs(latency),
       latencySamples: { ack: latency.ackSamples.length, persist: latency.persistSamples.length, decision: latency.decisionSamples.length },
-      markets, summary: this.timingShadow.summary(), persist: this.timingShadow.statusSnapshot().persist,
+      markets, summary: this.timingShadow?.summary(), persist: this.timingShadow?.statusSnapshot().persist,
     };
   }
 
   /** SCENARIO ENGINE V3 (SHADOW): status/observacoes + intersecao observacional com o timing (nunca executa). */
   scenarioShadowStatus() {
-    const status = buildScenarioShadowStatus({ observations: this.scenarioShadow.list(), enabled: this.config.scenarioShadowEnabled === true });
+    const status = buildScenarioShadowStatus({ observations: this.scenarioShadow?.list(), enabled: this.config.scenarioShadowEnabled === true });
     return {
       ...status,
       enabled: this.config.scenarioShadowEnabled === true,
-      persist: { ...status.persist, mode: this.scenarioShadow.pool ? "POSTGRES" : "MEMORY" },
-      settlement: this.scenarioSettlement.status(),
-      intersections: this.scenarioTimingIntersection.status(),
+      persist: { ...status.persist, mode: this.scenarioShadow?.pool ? "POSTGRES" : "MEMORY" },
+      settlement: this.scenarioSettlement?.status(),
+      intersections: this.scenarioTimingIntersection?.status(),
       isolation: {
         ...status.isolation,
         scenarioControlsTiming: false, timingControlsScenario: false, mutatesNeither: true,
@@ -2893,10 +2671,10 @@ export class IqMultiRuntime extends EventEmitter {
 
   /** Status do PROFESSIONAL_AGENT_SYSTEM_V4 (SHADOW) + DataHub. Nunca controla execucao. */
   agentsV4Status() {
-    const status = this.agentsV4.status({ benchmarkLimit: 500 });
+    const status = this.agentsV4?.status({ benchmarkLimit: 500 });
     return {
       ...status,
-      enabled: this.config.agentsV4ShadowEnabled === true && this.agentsV4.enabled === true,
+      enabled: this.config.agentsV4ShadowEnabled === true && this.agentsV4?.enabled === true,
       accountContext: this.accountContext.context,
       dataHub: this.dataHub ? { ...this.dataHub.stats(), epoch: this.dataHub.epochNumber } : null,
       isolation: {
@@ -2909,24 +2687,23 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
-  /** Status do DUAL_REASONING_V1_SHADOW (experimento independente; nunca executa). */
   dualReasoningStatus() {
-    const status = this.dual.status();
+    const status = this.dual?.status();
     return {
       ...status,
-      enabled: this.config.dualReasoningShadowEnabled === true && this.dual.enabled === true,
+      enabled: this.config.dualReasoningShadowEnabled === true && this.dual?.enabled === true,
       isolation: { shadowOnly: true, controlsExecution: false, sendsOrders: false, redTeamUntouched: true, lateWindowDecoupled: true, g2Untouched: true, v3Untouched: true, v4Untouched: true, stakeUntouched: true, realAllowlistUntouched: true },
-      observer: this.dualObserver.status(),
+      observer: this.dualObserver?.status(),
       realAllowlistUntouched: true,
     };
   }
 
   /** Status do SOLO_REASONING_V1_SHADOW (controle de simplicidade; nunca executa). */
   soloReasoningStatus() {
-    const status = this.solo.status();
+    const status = this.solo?.status();
     return {
       ...status,
-      enabled: this.config.soloReasoningShadowEnabled === true && this.solo.enabled === true,
+      enabled: this.config.soloReasoningShadowEnabled === true && this.solo?.enabled === true,
       isolation: { shadowOnly: true, controlsExecution: false, sendsOrders: false, rounds: 1, voting: false, committees: false, g2Untouched: true, v3Untouched: true, v4Untouched: true, dualUntouched: true, lateWindowDecoupled: true, stakeUntouched: true, realAllowlistUntouched: true },
       realAllowlistUntouched: true,
     };
@@ -2935,7 +2712,7 @@ export class IqMultiRuntime extends EventEmitter {
   /** Relatorio observacional do SOLO (rolling; checkpoints imutaveis sao gerados pelo script). */
   async soloReport() {
     const status = this.soloReasoningStatus();
-    const observations = this.solo.list();
+    const observations = this.solo?.list();
     const cohort = observations.filter((o) => o.direction === "BUY" || o.direction === "SELL");
     return {
       version: status.version, mode: "SHADOW_ONLY", generatedAtUtc: new Date().toISOString(),
@@ -2952,7 +2729,7 @@ export class IqMultiRuntime extends EventEmitter {
   /** Liga/desliga APENAS o experimento Solo Reasoning. */
   setSoloReasoningEnabled(enabled) {
     this.config.soloReasoningShadowEnabled = enabled === true;
-    this.solo.setEnabled(enabled === true);
+    this.solo?.setEnabled(enabled === true);
     this.#emitEvent("solo.reasoning.config", { enabled: this.config.soloReasoningShadowEnabled });
     return { enabled: this.config.soloReasoningShadowEnabled };
   }
@@ -2960,7 +2737,7 @@ export class IqMultiRuntime extends EventEmitter {
   /** Liga/desliga APENAS o experimento Dual Reasoning. */
   setDualReasoningEnabled(enabled) {
     this.config.dualReasoningShadowEnabled = enabled === true;
-    this.dual.setEnabled(enabled === true);
+    this.dual?.setEnabled(enabled === true);
     this.#emitEvent("dual.reasoning.config", { enabled: this.config.dualReasoningShadowEnabled });
     return { enabled: this.config.dualReasoningShadowEnabled };
   }
@@ -2968,7 +2745,7 @@ export class IqMultiRuntime extends EventEmitter {
   /** Liga/desliga APENAS a observacao V4 (G2/V3/JIT seguem identicos; nao toca producao). */
   setAgentsV4Enabled(enabled) {
     this.config.agentsV4ShadowEnabled = enabled === true;
-    this.agentsV4.setEnabled(enabled === true);
+    this.agentsV4?.setEnabled(enabled === true);
     this.#emitEvent("agents.v4.config", { enabled: this.config.agentsV4ShadowEnabled });
     return { enabled: this.config.agentsV4ShadowEnabled };
   }
@@ -2976,7 +2753,7 @@ export class IqMultiRuntime extends EventEmitter {
   /** Liga/desliga APENAS a observacao de cenario (o timing continua identico; nao toca producao). */
   setScenarioShadowEnabled(enabled) {
     this.config.scenarioShadowEnabled = enabled === true;
-    this.scenarioShadow.setEnabled(enabled === true);
+    this.scenarioShadow?.setEnabled(enabled === true);
     this.#emitEvent("scenario.shadow.config", { enabled: this.config.scenarioShadowEnabled });
     return { enabled: this.config.scenarioShadowEnabled };
   }
@@ -2984,7 +2761,7 @@ export class IqMultiRuntime extends EventEmitter {
   /** Liga/desliga APENAS a intersecao observacional (nenhum dos dois lados e afetado). */
   setScenarioTimingIntersectionEnabled(enabled) {
     this.config.scenarioTimingIntersectionEnabled = enabled === true;
-    this.scenarioTimingIntersection.setEnabled(enabled === true);
+    this.scenarioTimingIntersection?.setEnabled(enabled === true);
     return { enabled: this.config.scenarioTimingIntersectionEnabled };
   }
 
@@ -3288,7 +3065,7 @@ export class IqMultiRuntime extends EventEmitter {
       decisionSource: trade.snapshot?.decisionSource ?? null,
     }));
     return {
-      ...this.shadowLab.status({ executedTrades }),
+      ...this.shadowLab?.status({ executedTrades }),
       checkpointN: PROSPECTIVE_CHECKPOINT_N,
       note: "SHADOW_ONLY; GATE_CORRECTED_SHADOW/H1/H2/H3/degradacao/contrafactual nunca entram no PnL do broker.",
     };
@@ -3705,9 +3482,9 @@ export class IqMultiRuntime extends EventEmitter {
     const position = { marketKey: pending.marketKey, mode: pending.mode, accountContext: pending.accountContext ?? ACCOUNT_PRACTICE, direction: pending.direction, stake: pending.stake, entryPrice: pending.entryPrice, brokerOrderId, expirationSec: pending.expirationSec, openedAt: ackedAt, executionId: pending.executionId, source, connectionId: pending.connectionId, correlationId: pending.correlationId ?? null, infraProbe: pending.infraProbe === true, t0Snapshot: pending.t0Snapshot ?? entryTimingAck?.t0Snapshot ?? null, entryTiming: entryTimingAck, decisionSnapshot: ctx ? { ...this.#decisionSnapshot(ctx, pending), entryTiming: entryTimingAck } : null };
     this.openPositions.set(pending.marketKey, position);
     // SHADOW LAB (observacional): completa H1/H2 com o preco de entrada efetivo do runtime.
-    if (entryTimingAck?.candidateId) this.shadowLab.markEntry({ observationId: entryTimingAck.shadowObservationId ?? null, candidateId: entryTimingAck.candidateId, executionId: pending.executionId, actualEntryPrice: pending.entryPrice, entryAt: ackedAt });
+    if (entryTimingAck?.candidateId) this.shadowLab?.markEntry({ observationId: entryTimingAck.shadowObservationId ?? null, candidateId: entryTimingAck.candidateId, executionId: pending.executionId, actualEntryPrice: pending.entryPrice, entryAt: ackedAt });
     // LATE WINDOW TIMING (SHADOW): registra ACK + expiracao aceita da perna CURRENT_V1 (nao decide nada).
-    if (entryTimingAck?.candidateId) this.timingShadow.markCurrentAck({ candidateId: entryTimingAck.candidateId, atMs: ackedAt, brokerOrderId, brokerExpirationSec, entryPrice: pending.entryPrice });
+    if (entryTimingAck?.candidateId) this.timingShadow?.markCurrentAck({ candidateId: entryTimingAck.candidateId, atMs: ackedAt, brokerOrderId, brokerExpirationSec, entryPrice: pending.entryPrice });
     // INTERSECAO OBSERVACIONAL (SHADOW): compara estado do cenario x timing (nunca controla nada).
     if (entryTimingAck?.candidateId) this.#observeScenarioTimingIntersection(entryTimingAck.candidateId);
     if (expirationMismatch) {
@@ -3744,8 +3521,8 @@ export class IqMultiRuntime extends EventEmitter {
   async #failPending(pending, state, reason) {
     if (pending.ackResolved) return;
     pending.ackResolved = true;
-    if (pending.entryTiming?.candidateId) this.shadowLab.markExecution({ observationId: pending.entryTiming.shadowObservationId ?? null, candidateId: pending.entryTiming.candidateId, executionId: pending.executionId, currentExecution: "REJECT", reason: String(reason ?? state).slice(0, 80) });
-    if (pending.entryTiming?.candidateId) this.timingShadow.markCurrentReject({ candidateId: pending.entryTiming.candidateId, reason: String(reason ?? state).slice(0, 120), atMs: this.now() });
+    if (pending.entryTiming?.candidateId) this.shadowLab?.markExecution({ observationId: pending.entryTiming.shadowObservationId ?? null, candidateId: pending.entryTiming.candidateId, executionId: pending.executionId, currentExecution: "REJECT", reason: String(reason ?? state).slice(0, 80) });
+    if (pending.entryTiming?.candidateId) this.timingShadow?.markCurrentReject({ candidateId: pending.entryTiming.candidateId, reason: String(reason ?? state).slice(0, 120), atMs: this.now() });
     this.pendingOrders.delete(pending.marketKey);
     const ctx = this.markets.get(pending.marketKey);
     if (ctx) { ctx.positionState = { ...ctx.positionState, status: state }; this.#setAgent(ctx, state === "REJECTED" ? "ERROR" : state, String(reason).slice(0, 80)); }
@@ -3773,10 +3550,10 @@ export class IqMultiRuntime extends EventEmitter {
     const comparison = compareSettlement(broker.result, settlement.result);
     const settledAt = this.now();
     ctx.positionState = { ...ctx.positionState, status: "SETTLED", settledAt, result: broker.result, profit: broker.profit, brokerOrderId };
-    if (position.entryTiming?.candidateId) this.timingShadow.markCurrentSettle({ candidateId: position.entryTiming.candidateId, result: broker.result, profit: broker.profit, stake: position.stake, atMs: settledAt });
+    if (position.entryTiming?.candidateId) this.timingShadow?.markCurrentSettle({ candidateId: position.entryTiming.candidateId, result: broker.result, profit: broker.profit, stake: position.stake, atMs: settledAt });
     // SCENARIO ENGINE V3 (SHADOW): outcome BROKER_EXECUTED (pos-classificacao; nunca realimenta T0).
     if (position.entryTiming?.candidateId) {
-      this.scenarioShadow.recordOutcome({ candidateId: position.entryTiming.candidateId, result: broker.result, profit: broker.profit, stake: position.stake, payout: ctx.payout, settlementBasis: "BROKER_EXECUTED", atMs: settledAt });
+      this.scenarioShadow?.recordOutcome({ candidateId: position.entryTiming.candidateId, result: broker.result, profit: broker.profit, stake: position.stake, payout: ctx.payout, settlementBasis: "BROKER_EXECUTED", atMs: settledAt });
       this.#observeScenarioTimingIntersection(position.entryTiming.candidateId);
     }
     const settlementContext = position.accountContext === ACCOUNT_REAL ? ACCOUNT_REAL : ACCOUNT_PRACTICE;
@@ -3824,7 +3601,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.#auditRecord(position.correlationId ?? `corr${position.executionId}`, key, "PROFESSOR_REVIEW", { decisionQuality: review.decisionQuality, outcome: review.outcome, mistakes: review.mistakes.map((mistake) => mistake.code), wouldWaitBeBetter: review.wouldWaitBeBetter }, { persist: true });
     void this.journal.recordTrade({ tradeId: position.executionId, decisionId: ctx.decisionState?.decisionId ?? null, correlationId: position.correlationId ?? null, agentId: this.#agentId(ctx), marketKey: key, marketType: ctx.marketType, entryAt: position.openedAt ?? null, settlementAt: settledAt, payout: ctx.payout, stake: position.stake, direction: position.direction, result: broker.result, profit: broker.profit, accountContext: settlementContext, snapshot, review: reviewWithTiming, initialReview, initialSnapshot, entryTiming: position.entryTiming ?? null, intelligence: ctx.agents?.intelligenceContext ?? null });
     // SHADOW LAB (observacional): settlement BROKER_EXECUTED + janela POST diagnostic_only. Nunca entra no P&L do broker.
-    void this.shadowLab.settleExecuted({
+    void this.shadowLab?.settleExecuted({
       observationId: position.entryTiming?.shadowObservationId ?? null,
       candidateId: position.entryTiming?.candidateId ?? null, executionId: position.executionId, tradeId: position.executionId,
       brokerResult: broker.result, profit: broker.profit, stake: position.stake, payout: ctx.payout,
@@ -4231,7 +4008,7 @@ export class IqMultiRuntime extends EventEmitter {
       lastSignal: ctx.lastSignal, lastDecision: ctx.lastDecision, lastTrade: ctx.lastTrade,
       selectionReason: ctx.selectionReason ?? null, brainGeneration: BRAIN_GENERATION,
       rsiAgent: this.rsiAgentsV2Live?.stateFor(ctx.marketKey) ?? this.rsiAgentsV4?.stateFor(ctx.marketKey) ?? this.rsiAgentsV3?.stateFor(ctx.marketKey) ?? null,
-      rsiInstruments: this.rsiAgentsV4 ? [...this.rsiAgentsV4.instruments.values()].filter((row) => row.marketKey === ctx.marketKey).map((row) => ({ instrumentType: row.instrumentType, durationSeconds: row.durationSeconds, enabled: row.enabled === true, payout: row.payout ?? null, status: row.status ?? null })) : [],
+      rsiInstruments: null ? [...this.rsiAgentsV4?.instruments.values()].filter((row) => row.marketKey === ctx.marketKey).map((row) => ({ instrumentType: row.instrumentType, durationSeconds: row.durationSeconds, enabled: row.enabled === true, payout: row.payout ?? null, status: row.status ?? null })) : [],
       entryTiming: this.#publicEntryTiming(ctx, this.client?.serverNow?.() ?? this.now()),
     };
   }
