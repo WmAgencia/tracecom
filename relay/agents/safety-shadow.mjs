@@ -151,7 +151,7 @@ export class SafetyShadow {
               coalesce(sum(pnl) FILTER (WHERE result IN ('WIN','LOSS','DRAW')), 0)::numeric AS pnl,
               coalesce(avg(payout) FILTER (WHERE result IN ('WIN','LOSS')), 0)::numeric AS avg_payout
        FROM iq_shadow_trades
-       WHERE run_id=$1 AND created_at >= now() - ($2 || ' hours')::interval
+       WHERE run_id=$1 AND created_at >= greatest(now() - ($2 || ' hours')::interval, coalesce((SELECT perf_since FROM iq_perf_epoch WHERE id=1), '1970-01-01'::timestamptz))
        GROUP BY level, variant ORDER BY level DESC, variant ASC`,
       [this.runId, String(bounded)]
     ).catch(() => ({ rows: [] }))).rows ?? [];
