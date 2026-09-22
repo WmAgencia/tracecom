@@ -83,7 +83,6 @@ const BLITZ_EXPIRATION_SECONDS = 60; // WS turbo: minimo de 60s (o WS nao oferec
 const AGENTIC_BLITZ_STRATEGY_ID = "AGENTIC_BLITZ_45S";
 import { buildMarketSnapshot } from "./consensus/snapshot.mjs";
 import { IqMcpClient, IQ_MCP_ENDPOINTS } from "./iq-mcp-client.mjs";
-import { RsiAgentsV2Blitz } from "./rsi-agents-v2-blitz.mjs";
 import { RSI_V3_WATCH_POLICY, shouldEvaluate } from "./rsi-v3-watch.mjs";
 
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
@@ -219,7 +218,6 @@ export class IqMultiRuntime extends EventEmitter {
     this.iqMcp = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.blitz, log: this.log, now: this.now });
     this.iqMcpBinary = new IqMcpClient({ endpoint: IQ_MCP_ENDPOINTS.turbo, log: this.log, now: this.now }); // produto TURBO (expiracoes de 60s = nosso binario)
     void this.loadMcpToken();
-    this.rsiAgentsV2Blitz = new RsiAgentsV2Blitz({ pool, runtime: this, now: this.now, log: this.log, enabled: rsiAgentsV2BlitzEnabled === true });
     this.agentState = new Map();
     this.audit = []; this.correlationSeq = 0;
     this.agentLatency = [];
@@ -986,8 +984,6 @@ export class IqMultiRuntime extends EventEmitter {
       this.#safe(() => this.#observeRsiAgentsV2Live(ctx, list, now));
       // CONSENSUS CORE V1 (nova arquitetura experimental: snapshot + 4 especialistas + decisor; BINARY OTC).
       this.#safe(() => this.#observeConsensus(ctx, list, now));
-      // RSI AGENTS V2 BLITZ (API oficial MCP; 45s; fast lane = ativos com feed WS).
-      this.#safe(() => this.#observeRsiAgentsV2Blitz(ctx, list, now));
       this.apprentice.observeCandle({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, index: list.length - 1, features: this.#brainFeatures(list, ctx.featureState?.context ?? null), context: ctx.featureState?.context ?? null, payout: ctx.payout, atMs: now });
     }
     this.#publishInternalIntelligence(now);
@@ -1846,7 +1842,6 @@ export class IqMultiRuntime extends EventEmitter {
   #observeRsiAgentsV2LiveTicks() {
     if (this.rsiAgentsV2Live?.enabled !== true && this.consensus?.enabled !== true && this.agentic?.enabled !== true) return;
     const now = this.now();
-    this.#pollBlitzSettlements();
     this.#pollMcpBinarySettlements();
     if (this.rsiAgentsV2Live?.enabled === true) for (const ctx of this.markets.values()) {
       if (!this.#marketTradable(ctx)) continue;
@@ -1861,7 +1856,7 @@ export class IqMultiRuntime extends EventEmitter {
         candles: list, targetExpiryAt, payout: ctx.payout, now, latency: {},
       });
     }
-    if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); void this.blitzRun?.pollSettlements(); void this.blitzShadow?.settle(); void this.#sweepStaleExecutions(); }
+    if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); void this.#sweepStaleExecutions(); }
     if (this.agentic?.enabled === true) {
       const cache = this.agenticSnapshotCache ?? (this.agenticSnapshotCache = new Map());
       for (const ctx of this.markets.values()) {
