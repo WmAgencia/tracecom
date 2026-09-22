@@ -277,14 +277,16 @@ export function computeExpiration(serverTimestampSeconds, durationMinutes) {
   return { expiration: candidates[bestIndex], optionTypeId: bestIndex < 5 ? 3 : 1, optionKind: bestIndex < 5 ? "turbo" : "binary", durationMinutes: duration, reference: "iqoptionapi/expiration.py" };
 }
 
-export function buildOrderRequest({ price, activeId, direction, expiration, optionTypeId, balanceId }) {
+export function buildOrderRequest({ price, activeId, direction, expiration, optionTypeId, balanceId, expirationSize = null, version = "1.0" }) {
   const normalized = direction === "CALL" || direction === "BUY" ? "call" : direction === "PUT" || direction === "SELL" ? "put" : null;
   if (!normalized) throw new IqWsError("INVALID_DIRECTION");
   if (!Number.isFinite(Number(price)) || Number(price) <= 0) throw new IqWsError("INVALID_PRICE");
   if (!Number.isFinite(Number(activeId))) throw new IqWsError("ACTIVE_ID_REQUIRED");
   if (!Number.isFinite(Number(expiration))) throw new IqWsError("EXPIRATION_REQUIRED");
   if (!Number.isFinite(Number(balanceId))) throw new IqWsError("BALANCE_ID_REQUIRED");
-  return { name: "sendMessage", msg: { body: { price: Number(price), active_id: Number(activeId), expired: Number(expiration), direction: normalized, option_type_id: Number(optionTypeId), user_balance_id: Number(balanceId) }, name: "binary-options.open-option", version: "1.0" } };
+  const body = { price: Number(price), active_id: Number(activeId), expired: Number(expiration), direction: normalized, option_type_id: Number(optionTypeId), user_balance_id: Number(balanceId) };
+  if (Number.isFinite(Number(expirationSize))) body.expiration_size = Number(expirationSize);
+  return { name: "sendMessage", msg: { body, name: "binary-options.open-option", version } };
 }
 
 export function parseSettlement(msg) {
@@ -468,9 +470,9 @@ export class IqWsClient extends EventEmitter {
   }
 
   /** Ordem PRACTICE pela buyv3. Retorna requestId; ACK chega por eventos (option/buyComplete/result). */
-  placeOrder({ price, activeId, direction, expiration, optionTypeId, balanceId, requestId }) {
+  placeOrder({ price, activeId, direction, expiration, optionTypeId, balanceId, requestId, expirationSize = null, version = "1.0" }) {
     const id = requestId ?? this.uuid().replace(/-/g, "").slice(0, 12);
-    const request = buildOrderRequest({ price, activeId, direction, expiration, optionTypeId, balanceId });
+    const request = buildOrderRequest({ price, activeId, direction, expiration, optionTypeId, balanceId, expirationSize, version });
     this.send(request.name, request.msg, id);
     return id;
   }
