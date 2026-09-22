@@ -52,7 +52,7 @@ export class BlitzLab {
     // Persist-first: registra a execucao antes do envio (mesmo padrao do binario).
     if (this.pool?.query) {
       await this.pool.query(
-        "INSERT INTO iq_executions (execution_id, decision_id, market_key, mode, account_type, account_context, direction, stake, currency, state, payout, requested_at, expiration_at, meta) VALUES ($1,$2,$3,'PRACTICE','PRACTICE','PRACTICE',$4,$5,'USD','REQUESTED',$6,now(),$7,$8::jsonb) ON CONFLICT (execution_id) DO NOTHING",
+        "INSERT INTO iq_executions (execution_id, decision_id, market_key, symbol, mode, account_type, account_context, direction, stake, currency, state, payout, requested_at, expiration_at, meta) VALUES ($1,$2,$3,$3,'PRACTICE','PRACTICE','PRACTICE',$4,$5,'USD','REQUESTED',$6,now(),$7,$8::jsonb) ON CONFLICT (execution_id) DO NOTHING",
         [executionId, strategyTradeId ?? null, marketKey, String(direction).toUpperCase() === "SELL" ? "PUT" : "CALL", amount, profitPercent, expirationAt.toISOString(), JSON.stringify({ blitz: true, expirationSeconds: this.expirationSeconds, strategyId: strategyId ?? null })]
       ).catch(() => undefined);
     }
@@ -80,13 +80,15 @@ export class BlitzLab {
     return { state: "ACKNOWLEDGED", brokerOrderId, executionId, expirationAt: expirationAt.toISOString(), stake: amount, mode: "PRACTICE", blitz: true };
   }
 
+  async #mcpWithRetry(fn, tries = 3) { let last = null; for (let i = 0; i < tries; i += 1) { try { return await fn(); } catch (error) { last = error; await new Promise((r) => setTimeout(r, 2000)); } } throw last ?? new Error("IQ_MCP_RETRY_FAILED"); }
+
   /** Liquida as execucoes Blitz pendentes pelo trade history do MCP. */
   async pollSettlements() {
     if (!this.enabled || !this.pool?.query) return null;
     if (this.now() - (this.lastPollAt ?? 0) < 20_000) return null;
     this.lastPollAt = this.now();
     try {
-      const history = await this.client.getTradeHistory({ limit: 50 });
+      const history = await this.#mcpWithRetry(() => this.client.getTradeHistory({ limit: 50 }));
       for (const trade of Array.isArray(history) ? history : []) {
         const raw = String(trade?.result ?? "").toLowerCase();
         const mapped = raw === "win" ? "WIN" : raw === "loose" || raw === "loss" ? "LOSS" : raw === "equal" || raw === "draw" ? "DRAW" : null;

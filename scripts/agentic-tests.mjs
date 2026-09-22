@@ -99,8 +99,10 @@ try {
     atr: { state: "NORMAL", climactic: false, ratio: 1, atrNormalized: unit * 0.5, strength: 0.5 },
     fib: { direction: "BUY", state: "ZONE_REJECTION", inZone: [38.2], strength: 0.6 },
   };
-  const forcedConsensus = runConsensusAgent({ snapshot: steadySnap, opinions: syntheticOpinions, safetyPct: 50 });
-  check(18, "constancia contra a tese barra em qualquer nivel (veto sempre ativo)", forcedConsensus.decision === "WAIT" && String(forcedConsensus.reason).includes("MOVIMENTO_CONSTANTE_CONTRA"), String(forcedConsensus.reason).slice(0, 90));
+  const strictConstancia = runConsensusAgent({ snapshot: steadySnap, opinions: syntheticOpinions, safetyPct: 100 });
+  check(18, "constancia contra a tese barra na Seguranca 100% (rigida)", strictConstancia.decision === "WAIT" && String(strictConstancia.reason).includes("MOVIMENTO_CONSTANTE_CONTRA"), String(strictConstancia.reason).slice(0, 90));
+  const relaxedConstancia = runConsensusAgent({ snapshot: steadySnap, opinions: syntheticOpinions, safetyPct: 50 });
+  check(18.5, "constancia e tolerada na Seguranca 50% (fluxo validado volta a operar)", relaxedConstancia.decision === "BUY", String(relaxedConstancia.reason).slice(0, 70));
   const nonConstantConsensus = runAgentGraph(snapshot, { safetyPct: 50 }).consensus;
   check(20, "movimento nao-constante segue aprovando (sem regressao)", nonConstantConsensus.decision === "SELL", String(nonConstantConsensus.reason).slice(0, 70));
   const flatCandles = neutral();

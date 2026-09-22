@@ -7,7 +7,7 @@ export const CONSENSUS_AGENT_VERSION = "agent-consensus-v1";
 const round = (v, d = 4) => (Number.isFinite(Number(v)) ? Number(Number(v).toFixed(d)) : null);
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-export const VETO_SEVERITY = Object.freeze({ MOVIMENTO_CONSTANTE_CONTRA: 99, SEM_CONFIRMACAO_REVERSAO: 99, STOCH_SEM_EXTREMO: 99, SQUEEZE_SEM_REVERSAO: 99, FIB_LEG_INCOMPATIVEL: 1, FIB_ZONE_BROKEN: 2, ATR_MOVIMENTO_CLIMATICO: 3, ADX_TENDENCIA_ANTIGA_FORTALECENDO: 4, RSI_EXTREMO_ACELERANDO: 5, ATR_MERCADO_MORTO: 6, BOLLINGER_WALK_CONTRA: 7 });
+export const VETO_SEVERITY = Object.freeze({ MOVIMENTO_CONSTANTE_CONTRA: 8, SEM_CONFIRMACAO_REVERSAO: 99, STOCH_SEM_EXTREMO: 99, SQUEEZE_SEM_REVERSAO: 99, FIB_LEG_INCOMPATIVEL: 1, FIB_ZONE_BROKEN: 2, ATR_MOVIMENTO_CLIMATICO: 3, ADX_TENDENCIA_ANTIGA_FORTALECENDO: 4, RSI_EXTREMO_ACELERANDO: 5, ATR_MERCADO_MORTO: 6, BOLLINGER_WALK_CONTRA: 7 });
 const MISSING_SEVERITY = Object.freeze({ "LOCALIZACAO(Bollinger OU Fib)": 3, ATR: 4, ADX: 5, RSI_QUALIDADE: 6 });
 const safetyOf = (v) => (Number.isFinite(Number(v)) ? Math.max(0, Math.min(100, Number(v))) : 100);
 const budgetOf = (safety) => (safety >= 100 ? 0 : safety <= 0 ? 99 : Math.floor((100 - safety) / 5));

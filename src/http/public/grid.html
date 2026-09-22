@@ -175,7 +175,11 @@
   <span class="ok"><span class="dot"></span> <span id="footConn">Conectado</span></span>
 </div>
 
-<div class="modal" id="configModal"><div class="box"><h2>Configurações — API do MCP oficial</h2><p style="font-size:11.5px;color:#8b97ad;margin-bottom:10px">Cole o token da API MCP oficial da sua conta (turbo). Ele fica salvo no servidor e passa a ser usado pelos agentes; o valor atual aparece mascarado.</p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mcpTokenInput" placeholder="token do MCP oficial" style="flex:1;min-width:280px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="mcpSave">SALVAR</button><button class="btn" id="mcpClear">LIMPAR</button></div><div id="mcpStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div><div style="margin-top:16px;border-top:1px solid #1c2942;padding-top:14px"><h3 style="font-size:12.5px;color:#e8edf7;margin-bottom:6px">Segurança dos agentes</h3><p style="font-size:11.5px;color:#8b97ad;margin-bottom:8px">100% = regras atuais (mais rígido). Abaixo, o consenso passa a tolerar vetos fracos nesta ordem: Fib leg &rarr; Fib zona &rarr; ATR climático &rarr; ADX antigo &rarr; RSI acelerando &rarr; ATR morto &rarr; Bollinger walk. Mais trades, menos segurança.</p><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select id="safetySelect" style="flex:1;min-width:300px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:12px;padding:11px 38px 11px 14px;font-size:12.5px;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#8b97ad 50%),linear-gradient(135deg,#8b97ad 50%,transparent 50%);background-position:calc(100% - 19px) 55%,calc(100% - 14px) 55%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03)"></select><button class="btn arm" id="safetySave">SALVAR</button></div><div id="safetyStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div><div style="font-size:11px;color:#6b7a94;margin-top:6px">CF = candle de confirmacao (ja virou) · ST = Stochastic no extremo · SQ = evita squeeze · o numero e a Seguranca (100% = rigida, 50% = tolera vetos fracos)</div><div id="safetyShadow" style="font-size:11.5px;color:#8b97ad;margin-top:12px">—</div></div></div></div>
+<div class="modal" id="configModal"><div class="box"><h2>Configurações — API do MCP oficial</h2><p style="font-size:11.5px;color:#8b97ad;margin-bottom:10px">Cole o token da API MCP oficial da sua conta (turbo). Ele fica salvo no servidor e passa a ser usado pelos agentes; o valor atual aparece mascarado.</p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mcpTokenInput" placeholder="token do MCP oficial" style="flex:1;min-width:280px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="mcpSave">SALVAR</button><button class="btn" id="mcpClear">LIMPAR</button></div><div id="mcpStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div><div style="margin-top:16px;border-top:1px solid #1c2942;padding-top:14px"><h3 style="font-size:12.5px;color:#e8edf7;margin-bottom:6px">Segurança dos agentes</h3><p style="font-size:11.5px;color:#8b97ad;margin-bottom:8px">100% = regras atuais (mais rígido). Abaixo, o consenso passa a tolerar vetos fracos nesta ordem: Fib leg &rarr; Fib zona &rarr; ATR climático &rarr; ADX antigo &rarr; RSI acelerando &rarr; ATR morto &rarr; Bollinger walk. Mais trades, menos segurança.</p><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select id="safetySelect" style="flex:1;min-width:300px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:12px;padding:11px 38px 11px 14px;font-size:12.5px;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#8b97ad 50%),linear-gradient(135deg,#8b97ad 50%,transparent 50%);background-position:calc(100% - 19px) 55%,calc(100% - 14px) 55%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03)"></select><button class="btn arm" id="safetySave">SALVAR</button></div><div id="safetyStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div>
+<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:12px">
+  <label style="display:flex;gap:9px;align-items:center;font-size:12.5px;color:#c7d2e5;cursor:pointer"><span style="display:inline-flex;align-items:center;width:40px;height:22px;background:#1c2942;border-radius:999px;padding:2px;transition:.2s" id="swBinaryWrap"><span id="swBinary" style="width:18px;height:18px;background:#8b97ad;border-radius:50%;transition:.2s"></span></span>Operar Binarios OTC</label>
+  <label style="display:flex;gap:9px;align-items:center;font-size:12.5px;color:#c7d2e5;cursor:pointer"><span style="display:inline-flex;align-items:center;width:40px;height:22px;background:#1c2942;border-radius:999px;padding:2px;transition:.2s" id="swBlitzWrap"><span id="swBlitz" style="width:18px;height:18px;background:#8b97ad;border-radius:50%;transition:.2s"></span></span>Operar Blitz OTC (45s)</label>
+</div><div style="font-size:11px;color:#6b7a94;margin-top:6px">CF = candle de confirmacao (ja virou) · ST = Stochastic no extremo · SQ = evita squeeze · o numero e a Seguranca (100% = rigida, 50% = tolera vetos fracos)</div><div id="safetyShadow" style="font-size:11.5px;color:#8b97ad;margin-top:12px">—</div></div></div></div>
 <div class="modal" id="labModal"><div class="box"><h2>LAB / EXPERIMENTOS</h2><div id="labList"></div></div></div>
 <div class="modal" id="mesasModal"><div class="box"><h2>MESAS — Binary OTC</h2><div id="mesasList"></div></div></div>
 <aside id="logPanel"><div class="head"><h2>LOG — conversa dos agentes</h2><button class="btn" id="btnLogClose">fechar</button></div><div id="logBody"></div></aside>
@@ -463,10 +467,28 @@
   const refreshMcp = async () => { const data = await api("/api/iq/mcp/config"); const el = $("mcpStatus"); if (!data) { el.textContent = "API MCP: indisponível"; return; } el.innerHTML = "API MCP: " + (data.configured ? "<b style='color:#4ade80'>configurada</b> (" + data.masked + ")" : "<b style='color:#f87171'>não configurada</b>") + " · endpoint " + data.endpoint; };
   const saveMcp = async () => { const token = $("mcpTokenInput").value.trim(); if (!token) return; const r = await api("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token }) }); if (r) { $("mcpTokenInput").value = ""; await refreshMcp(); } };
   const clearMcp = async () => { await api("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: "" }) }); await refreshMcp(); };
-  const renderSafetyShadow = (data) => {
+  const renderTable = (rows) => {
+    const head = "<tr>" + ["Estrategias", "Operacoes", "WR", "Break-even", "PnL", "Ritmo"].map((h) => "<th style='padding:5px 8px;color:#8b97ad;font-weight:600;text-align:left;border-bottom:1px solid #1c2942'>" + h + "</th>").join("") + "</tr>";
+    const body = rows.map((r, i) => {
+      const zebra = i % 2 === 0 ? "#0d1526" : "transparent";
+      const wrColor = r.winRate == null ? "#8b97ad" : (r.edge != null && r.edge >= 0 ? "#4ade80" : "#f87171");
+      const pnlColor = Number(r.pnl) >= 0 ? "#4ade80" : "#f87171";
+      const cell = (v, color) => "<td style='padding:5px 8px;color:" + (color ?? "#e8edf7") + "'>" + v + "</td>";
+      return "<tr style='background:" + zebra + "'>" + cell("<b>" + r.name + "</b>") + cell(r.settled ?? 0) + cell(r.winRate == null ? "-" : String(r.winRate).replace(".", ",") + "%", wrColor) + cell(r.breakeven == null ? "-" : String(r.breakeven).replace(".", ",") + "%", "#8b97ad") + cell((Number(r.pnl) >= 0 ? "+" : "") + Number(r.pnl ?? 0).toFixed(2).replace(".", ","), pnlColor) + cell((r.entriesPerHour == null ? "-" : String(r.entriesPerHour).replace(".", ",") + "/h"), "#8b97ad") + "</tr>";
+    }).join("");
+    if (!rows.length) return "<div style='color:#6b7a94;padding:8px 2px'>sem amostra ainda</div>";
+    return "<table style='width:100%;border-collapse:collapse;font-size:11.5px'>" + head + body + "</table>";
+  };
+  const renderSafetyShadow = (data, blitz) => {
     const el = $("safetyShadow");
     const levels = data?.levels ?? [];
-    if (!levels.length) { el.innerHTML = "Sem dados ainda — o medidor roda junto com os agentes e liquida pelo feed a cada minuto."; return; }
+    const binaryRows = levels.map((r) => ({ name: strategyName(String(r.label ?? r.level)), settled: r.settled, winRate: r.winRate, edge: r.edge, breakeven: r.breakeven, pnl: r.pnl, entriesPerHour: r.entriesPerHour }));
+    const blitzRows = blitz && (blitz.settled > 0 || blitz.winRate != null) ? [{ name: "Blitz 45s", settled: blitz.settled, winRate: blitz.winRate, edge: blitz.edge, breakeven: blitz.breakeven, pnl: blitz.pnl, entriesPerHour: blitz.entriesPerHour }] : [];
+    el.innerHTML = "<div style='display:grid;grid-template-columns:1fr 1fr;gap:16px'>" +
+      "<div style='background:#0b1220;border:1px solid #1c2942;border-radius:12px;padding:10px'><div style='font-size:12px;color:#e8edf7;font-weight:700;margin-bottom:6px'>Binarios OTC</div>" + renderTable(binaryRows) + "</div>" +
+      "<div style='background:#0b1220;border:1px solid #1c2942;border-radius:12px;padding:10px'><div style='font-size:12px;color:#e8edf7;font-weight:700;margin-bottom:6px'>Blitz OTC 45s</div>" + renderTable(blitzRows) + "</div>" +
+      "</div>";
+    if (!levels.length && !blitzRows.length) { el.innerHTML = "Sem dados ainda — o medidor roda junto com os agentes e liquida pelo feed a cada minuto."; return; }
     const rows = levels.map((r) => {
       const isCurrent = Number(r.level) === Number(state.agentSafetyPct);
       const edge = r.edge == null ? "—" : (r.edge >= 0 ? "+" : "") + r.edge + "pp";
@@ -494,6 +516,7 @@
   const refreshAgentConfig = async () => {
     const data = await api("/api/iq/agents/config");
     const shadow = await api("/api/iq/agents/shadow?hours=6");
+    const blitz = await api("/api/iq/agents/blitz?hours=6");
     if (data) {
       state.agentSafetyPct = Number(data.safetyPct ?? 100);
       state.agentVariant = String(data.variant ?? data.safetyPct ?? 100);
@@ -518,9 +541,21 @@
         return "<option value='" + label + "'" + (isCur ? " selected" : "") + ">" + strategyName(label) + (isCur ? "  (ATIVA)" : "") + "  -  " + fmtWr(r) + "  -  " + fmtRitmo(r) + "  -  margem " + fmtEdge(r) + "  (n=" + (r.settled ?? 0) + ")</option>";
       }).join("");
       if (!rows.length) sel.innerHTML = "<option value='" + state.agentVariant + "'>" + state.agentVariant + "% (sem amostra ainda)</option>";
+      const setSwitch = (id, on) => { const dot = $(id); const wrap = $(id + "Wrap"); if (!dot || !wrap) return; dot.style.transform = on ? "translateX(18px)" : "translateX(0)"; dot.style.background = on ? "#4ade80" : "#8b97ad"; wrap.style.background = on ? "#14532d" : "#1c2942"; };
+      setSwitch("swBinary", data.binaryExec === true);
+      setSwitch("swBlitz", data.blitzExec === true);
     }
-    renderSafetyShadow(shadow);
+    renderSafetyShadow(shadow, blitz);
   };
+  const toggleExec = async (which) => {
+    const data = await api("/api/iq/agents/config");
+    if (!data) return;
+    const payload = which === "binary" ? { binaryExec: !(data.binaryExec === true) } : { blitzExec: !(data.blitzExec === true) };
+    const saved = await api("/api/iq/agents/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+    if (saved) await refreshAgentConfig();
+  };
+  $("swBinaryWrap").onclick = () => toggleExec("binary");
+  $("swBlitzWrap").onclick = () => toggleExec("blitz");
   const saveAgentConfig = async () => {
     const value = $("safetySelect").value;
     const saved = await api("/api/iq/agents/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ variant: value }) });
