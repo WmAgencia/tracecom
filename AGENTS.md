@@ -74,3 +74,28 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 - Sem duplicacao de inteligencia PRACTICE/REAL (uma decisao; Account Router escolhe a conta no final).
 - Codigo simples: sem camada/abstracao/fallback sem justificativa; sem caminhos legacy operacionais.
 - Backups: manifest no git; snapshots zip via artifact de workflow (nunca no historico do git).
+
+## ESTADO DA RECONSTRUCAO CONTROLADA (handoff)
+
+**Ponto de retomada: commit 4332e24 (branch main, pushed).**
+
+### Concluido
+- Fase 0: skills (agent-redline, simplify-codebase, aislop configurado) + Superpowers v6.4.1 instalado (plugin registrado; carrega no boot) + backup (commit, tag pre-reconstrucao-2026-09-22, manifest SHA256, zip 62,6MB) + agent-policy.yaml.
+- Etapa 1: PULLBACK_4060_300_BASELINE congelada por spec/hash (archive/baseline/, strategyHash sha256:26dceb74..., source commit 489e7d0) + PULLBACK_4060_300_AGENTIC_V2 criada (parent/hash/epoch 2026-09-22T21:53:19Z, runId pullback-4060-300-agentic-v2, status PENDING_IMPLEMENTATION, executable=false).
+- Etapa 2 (parcial): Blitz com CAPACIDADE ZERO (runner/shadow/tick/submit/rotas/api/módulo RsiAgentsV2Blitz arquivado/campos+setters+config neutralizados/gate binary-only) · side-preference removido · market-state-classifier + blitz-lab removidos (dead code provado) · research-worker classificado RESEARCH_ONLY · testes 44/44 + 20/20 verdes a cada corte.
+
+### Pendente (ordem de execucao)
+1. Etapa 2.2: deswiring dos runners antigos (rsi-agents-v2/v3/v4, rsi-v4, rsi-reversal, rsi-variants, agents-v4, scenario-*, four-way, dual/solo, shadow-lab, frozen-strategies, indicator-5m) com prova de consumidor individual; extrair funcao pura util quando houver (ex.: indicator-5m).
+2. Etapa 2.4/2.5: OPERATIONAL_EXPIRY_SECONDS=300 como unica source of truth + Binary300Timing (server time/buckets/deadline/safe cutoff do contrato real; nunca REAL para descobrir timing).
+3. Etapa 2.6-2.9: caminho unico (ConsensusDecision -> Revalidation -> Binary300Timing -> ExecutionGate -> AccountRouter) com invariantes (status != ACTIVE -> DENY; researchOnly -> DENY).
+4. Etapa 2.10: fechamento (node --check, build, smokes, aislop escopado) + metricas de complexidade.
+5. Etapa 3: Asset Agent (3h/2160 candles ring buffer + hydration), Feature Engine incremental, 5 especialistas com AssetContext-first, Consensus BUY/SELL/WAIT sem confidence, Decision Snapshot, fixtures causais.
+6. Etapa 4: frontend (History lista+detalhe, sem Blitz/duration/seletor antigo, LOG novo).
+7. Etapa 5: DB fields + invariants/CI + docs + paridade PRACTICE/REAL + E2E PRACTICE (path-test excluido de metricas) + REAL dry-run only.
+8. Etapa 6: deploy + hydration + discovery + PRACTICE conforme config + REAL DISARMED + FREEZE da V2 (mudanca futura = V3 + novo hash + novo epoch).
+
+### Regra de execucao
+- PROVE FIRST / CHANGE SECOND / VERIFY THIRD; commits pequenos por marco; push a cada marco validado.
+- Nao usar git reset --hard, force push, rewrite de historico, delete de baseline/tags.
+- Nao commitar ZIPs grandes (snapshots via artifact de workflow).
+- Relatorio final completo SOMENTE quando Etapas 2-6 estiverem verificadas.
