@@ -1596,6 +1596,7 @@ export class IqMultiRuntime extends EventEmitter {
       if (this.config.autoExecute !== true) throw new IqWsError("BLITZ_AUTO_EXECUTE_OFF");
       if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("BLITZ_KILL_SWITCH");
       const blitzStake = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2);
+      this.blitzLastEntryAt.set(marketKey, this.now()); // cooldown por ativo em TODA tentativa (evita retentativa por segundo)
       // Ordem pelo WS (mesmo caminho confiavel do binario), com expiracao 60s (turbo).
       return this.requestOrder({ marketKey, direction, stake: blitzStake, horizonSeconds: BLITZ_EXPIRATION_SECONDS, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId });
     }
