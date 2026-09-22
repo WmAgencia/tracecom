@@ -41,8 +41,8 @@ ctxB.ingestMany(series);
 ok("determinismo (mesma serie = mesmo snapshot)", JSON.stringify(ctxB.snapshot()) === JSON.stringify(snap));
 
 const ring = new AssetContext({ marketKey: "X" });
-let at = BASE; for (let i = 0; i < 2200; i += 1) { ring.ingest({ at, open: 1, high: 1.001, low: 0.999, close: 1 }); at += 60_000; }
-ok("ring buffer limita a 2160", ring.candles.length === ASSET_CONTEXT_WINDOW_CANDLES && ring.candles[0].at === BASE + 40 * 60_000);
+let at = BASE; for (let i = 0; i < 2200; i += 1) { ring.ingest({ at, open: 1, high: 1.001, low: 0.999, close: 1 }); at += 5_000; }
+ok("ring buffer limita a 2160 (5s) e cobertura temporal a 3h", ring.candles.length === ASSET_CONTEXT_WINDOW_CANDLES && ring.coverageMs() <= 3 * 60 * 60 * 1000 && ring.candles[0].at === BASE + 40 * 5_000);
 
 const ctxC = new AssetContext({ marketKey: "EURUSD-OTC" });
 const hyd = ctxC.hydrate(series);

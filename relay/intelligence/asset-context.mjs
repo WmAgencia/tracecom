@@ -1,6 +1,11 @@
 export const ASSET_CONTEXT_WINDOW_CANDLES = 2160;
 export const ASSET_CONTEXT_PIVOT_K = 2;
 export const ASSET_CONTEXT_MAX_EVENTS = 64;
+export const MAX_CONTEXT_AGE_MS = 3 * 60 * 60 * 1000;
+export const OPERATIONAL_CANDLE_INTERVAL_MS = 5000;
+export const MIN_CONTEXT_OBSERVATIONS = 25;
+export const GAP_FACTOR = 10;
+export const GAP_RATIO_MAX = 0.02;
 
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
 
@@ -31,17 +36,67 @@ export class AssetContext {
     this.lastCHoCH = null;
     this.version = 0;
     this.hydratedAt = null;
+    this.intervalMs = null;
+    this.counts = { ingested: 0, invalid: 0, outOfOrder: 0 };
   }
 
   get lastCandle() { return this.candles[this.candles.length - 1] ?? null; }
 
+  #updateInterval(at) {
+    const last = this.lastCandle;
+    if (!last) return;
+    const diff = at - last.at;
+    if (diff <= 0) return;
+    this.intervalMs = this.intervalMs === null ? diff : Math.min(this.intervalMs, diff);
+  }
+
+  #pruneByTime() {
+    const last = this.lastCandle;
+    if (!last) return;
+    const cutoff = last.at - MAX_CONTEXT_AGE_MS;
+    let drop = 0;
+    while (drop < this.candles.length && this.candles[drop].at < cutoff) drop += 1;
+    if (drop) this.candles.splice(0, drop);
+    if (this.candles.length > this.maxCandles) this.candles.splice(0, this.candles.length - this.maxCandles);
+  }
+
+  coverageMs() { return this.candles.length >= 2 ? this.lastCandle.at - this.candles[0].at : 0; }
+
+  gaps() {
+    const n = this.candles.length;
+    if (n < 2) return { count: 0, maxGapMs: 0, gapRatio: 0, comparisons: 0 };
+    const base = this.intervalMs ?? OPERATIONAL_CANDLE_INTERVAL_MS;
+    let count = 0; let maxGapMs = 0;
+    for (let i = 1; i < n; i += 1) {
+      const diff = this.candles[i].at - this.candles[i - 1].at;
+      if (diff > base * 2) { count += 1; if (diff > maxGapMs) maxGapMs = diff; }
+    }
+    return { count, maxGapMs, gapRatio: count / (n - 1), comparisons: n - 1 };
+  }
+
+  assessReadiness({ expectedIntervalMs = OPERATIONAL_CANDLE_INTERVAL_MS, minObservations = MIN_CONTEXT_OBSERVATIONS, maxAgeMs = MAX_CONTEXT_AGE_MS } = {}) {
+    const observations = this.candles.length;
+    const coverageMs = this.coverageMs();
+    const g = this.gaps();
+    const base = { observations, coverageMs, intervalMs: this.intervalMs, expectedIntervalMs, gapRatio: g.gapRatio, maxGapMs: g.maxGapMs, rejectedInvalid: this.counts.invalid, rejectedOutOfOrder: this.counts.outOfOrder };
+    if (observations < minObservations) return { status: "FAILED", reason: "INSUFFICIENT_OBSERVATIONS", ...base };
+    if (!this.intervalMs) return { status: "FAILED", reason: "INTERVAL_UNKNOWN", ...base };
+    if (Math.abs(this.intervalMs - expectedIntervalMs) > expectedIntervalMs * 0.5) return { status: "PARTIAL", reason: "INTERVAL_INCOMPATIBLE", ...base };
+    if (coverageMs + this.intervalMs < maxAgeMs) return { status: "PARTIAL", reason: "COVERAGE_INSUFFICIENT", ...base };
+    if (g.maxGapMs > this.intervalMs * GAP_FACTOR) return { status: "PARTIAL", reason: "GAP_TOO_LARGE", ...base };
+    if (g.gapRatio > GAP_RATIO_MAX) return { status: "PARTIAL", reason: "GAP_RATIO_HIGH", ...base };
+    return { status: "READY", reason: null, ...base };
+  }
+
   ingest(candle) {
     const at = num(candle?.at); const high = num(candle?.high); const low = num(candle?.low); const close = num(candle?.close);
-    if (at === null || high === null || low === null || close === null) return false;
+    if (at === null || high === null || low === null || close === null) { this.counts.invalid += 1; return false; }
     const last = this.lastCandle;
-    if (last && at <= last.at) return false;
+    if (last && at <= last.at) { this.counts.outOfOrder += 1; return false; }
+    this.#updateInterval(at);
     this.candles.push({ at, open: num(candle.open) ?? close, high, low, close });
-    if (this.candles.length > this.maxCandles) this.candles.splice(0, this.candles.length - this.maxCandles);
+    this.counts.ingested += 1;
+    this.#pruneByTime();
     this.#confirmPivots();
     this.#updateStructure();
     this.#detectBreaks();
@@ -162,6 +217,10 @@ export class AssetContext {
       zones: this.zones(),
       pullback: this.pullback(),
       hydratedAt: this.hydratedAt,
+      intervalMs: this.intervalMs,
+      coverageMs: this.coverageMs(),
+      gapRatio: this.gaps().gapRatio,
+      counts: { ...this.counts },
     };
   }
 }
