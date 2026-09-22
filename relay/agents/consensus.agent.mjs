@@ -7,7 +7,7 @@ export const CONSENSUS_AGENT_VERSION = "agent-consensus-v1";
 const round = (v, d = 4) => (Number.isFinite(Number(v)) ? Number(Number(v).toFixed(d)) : null);
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-export const VETO_SEVERITY = Object.freeze({ MOVIMENTO_CONSTANTE_CONTRA: 8, SEM_CONFIRMACAO_REVERSAO: 99, STOCH_SEM_EXTREMO: 99, SQUEEZE_SEM_REVERSAO: 99, FIB_LEG_INCOMPATIVEL: 1, FIB_ZONE_BROKEN: 2, ATR_MOVIMENTO_CLIMATICO: 3, ADX_TENDENCIA_ANTIGA_FORTALECENDO: 4, RSI_EXTREMO_ACELERANDO: 5, ATR_MERCADO_MORTO: 6, BOLLINGER_WALK_CONTRA: 7 });
+export const VETO_SEVERITY = Object.freeze({ MOVIMENTO_CONSTANTE_CONTRA: 8, SEM_CONFIRMACAO_REVERSAO: 99, STOCH_SEM_EXTREMO: 99, SQUEEZE_SEM_REVERSAO: 99, CANDLE_GATE_SEM_REVERSAO: 99, FIB_LEG_INCOMPATIVEL: 1, FIB_ZONE_BROKEN: 2, ATR_MOVIMENTO_CLIMATICO: 3, RSI_REGIME_CONTRA_FRACA: 3, ADX_TENDENCIA_ANTIGA_FORTALECENDO: 4, ADX_PRECO_CONTRA_TENDENCIA: 4, ATR_EXPANDINDO_CONTRA: 4, RSI_EXTREMO_ACELERANDO: 5, CANDLE_CONTRA: 5, CANDLE_CONTRA_TENDENCIA: 5, BOLLINGER_BW_EXPANDINDO_CONTRA: 5, ATR_MERCADO_MORTO: 6, BOLLINGER_WALK_CONTRA: 7, RSI_REGIME_CONTRA: 7, ADX_DI_CONTRA: 7 });
 const MISSING_SEVERITY = Object.freeze({ "LOCALIZACAO(Bollinger OU Fib)": 3, ATR: 4, ADX: 5, RSI_QUALIDADE: 6 });
 const safetyOf = (v) => (Number.isFinite(Number(v)) ? Math.max(0, Math.min(100, Number(v))) : 100);
 const budgetOf = (safety) => (safety >= 100 ? 0 : safety <= 0 ? 99 : Math.floor((100 - safety) / 5));
@@ -27,7 +27,7 @@ export function runConsensusAgent({ snapshot, opinions, safetyPct = 100, filters
   const snapshotId = snapshot?.snapshotId ?? null;
   const at = snapshot?.at ?? Date.now();
   const rsi = opinions?.rsi ?? null; const bollinger = opinions?.bollinger ?? null; const adx = opinions?.adx ?? null;
-  const atr = opinions?.atr ?? null; const fib = opinions?.fib ?? null;
+  const atr = opinions?.atr ?? null; const fib = opinions?.fib ?? null; const candle = opinions?.candle ?? null;
   const base = { agent: "CONSENSUS", version: CONSENSUS_AGENT_VERSION, snapshotId, at, decision: "WAIT", side: null, evidenceStrength: 0, supportingEvidence: [], counterEvidence: [], reason: "", conversation: [] };
   if (!rsi?.trigger) return { ...base, reason: `Sem oportunidade: RSI ${rsi?.rsi ?? "-"} fora de 70/30.`, conversation: buildConversation(opinions) };
 
@@ -38,7 +38,10 @@ export function runConsensusAgent({ snapshot, opinions, safetyPct = 100, filters
 
   if (atr?.state === "DEAD") counterEvidence.push({ code: "ATR_MERCADO_MORTO", detail: `ratio ${atr.ratio}` });
   if (atr?.climactic === true) counterEvidence.push({ code: "ATR_MOVIMENTO_CLIMATICO", detail: "volatilidade climatica com tendencia forte" });
+  if (atr?.volTrend === "EXPANDING") counterEvidence.push({ code: "ATR_EXPANDINDO_CONTRA", detail: `volatilidade expandindo ${atr.volRatio}x (movimento com forca: fade arriscado)` });
   if (bollinger?.walkSide === (buy ? "LOWER" : "UPPER")) counterEvidence.push({ code: "BOLLINGER_WALK_CONTRA", detail: `preco caminhando na banda ${bollinger.walkSide.toLowerCase()} contra a tese` });
+  if (bollinger?.walkSide === (buy ? "LOWER" : "UPPER") && bollinger?.bwTrend === "EXPANDING") counterEvidence.push({ code: "BOLLINGER_BW_EXPANDINDO_CONTRA", detail: "walk com bandwidth expandindo (walk forte: nao fade)" });
+  else if (bollinger?.walkSide === (buy ? "LOWER" : "UPPER") && bollinger?.bwTrend === "CONTRACTING") supportingEvidence.push({ code: "BOLLINGER_WALK_EXAURINDO", detail: "walk perdendo bandwidth (exaustao a favor da reversao)" });
   if (buy && bollinger?.state === "EXPANSION" && bollinger?.position !== null && bollinger.position < 0.2 && bollinger?.rejection !== "LOWER") counterEvidence.push({ code: "BOLLINGER_FORA_INFERIOR", detail: "fechando fora da banda inferior sem reentrada" });
   if (!buy && bollinger?.state === "EXPANSION" && bollinger?.position !== null && bollinger.position > 0.8 && bollinger?.rejection !== "UPPER") counterEvidence.push({ code: "BOLLINGER_FORA_SUPERIOR", detail: "fechando fora da banda superior sem reentrada" });
   if (sideAdx?.oldStrengthening === true) counterEvidence.push({ code: "ADX_TENDENCIA_ANTIGA_FORTALECENDO", detail: "tendencia antiga (contra a tese) fortalecendo com ADX subindo" });
@@ -80,9 +83,25 @@ export function runConsensusAgent({ snapshot, opinions, safetyPct = 100, filters
   if (bollingerSupports) supportingEvidence.push({ code: "BOLLINGER_SUPORTE", detail: bollinger.rejection ? `rejeicao ${bollinger.rejection.toLowerCase()}` : "regime de range" });
   else counterEvidence.push({ code: "BOLLINGER_SEM_SUPORTE", detail: `regime ${bollinger?.regime ?? "?"} sem rejeicao a favor` });
 
+  if (candle?.structure === "CONTINUATION" && candle.direction && candle.direction !== side) {
+    counterEvidence.push({ code: "CANDLE_CONTRA", detail: `candles/price action em continuacao ${candle.direction.toLowerCase()} (${candle.state ?? "-"})` });
+  } else if (candle?.structure === "REVERSAL" && candle.direction === side) {
+    supportingEvidence.push({ code: "CANDLE_SUPORTE", detail: `padrao de reversao ${candle.state ?? "-"} a favor de ${side}` });
+  } else if (candle?.rejection && ((buy && candle.rejection === "LOWER") || (!buy && candle.rejection === "UPPER"))) {
+    supportingEvidence.push({ code: "CANDLE_REJEICAO", detail: `rejeicao de candle ${candle.rejection.toLowerCase()}` });
+  } else if (candle && candle.structure === "UNCLEAR") {
+    counterEvidence.push({ code: "CANDLE_SEM_LEITURA", detail: "candles sem padrao claro no extremo" });
+  }
+  if (filters?.candle === true) {
+    const candleOk = Boolean(candle && ((candle.structure === "REVERSAL" && candle.direction === side) || candle.rejection === (buy ? "LOWER" : "UPPER")));
+    if (!candleOk) counterEvidence.push({ code: "CANDLE_GATE_SEM_REVERSAO", detail: "candle gate: sem padrao de reversao no extremo a favor da tese" });
+  }
+
   const adxSupports = sideAdx?.oldStrengthening !== true && (adx?.regime === "RANGE" || sideAdx?.oldTrendWeakening === true || sideAdx?.oppositeReacting === true || sideAdx?.newDominance === true);
   if (adxSupports) supportingEvidence.push({ code: "ADX_SUPORTE", detail: `regime ${adx?.regime} dominancia ${adx?.dominance}` });
   else counterEvidence.push({ code: "ADX_SEM_SUPORTE", detail: `tendencia antiga ainda forte (ADX ${adx?.adx})` });
+  if (sideAdx?.trendStrengthening === true) counterEvidence.push({ code: "ADX_DI_CONTRA", detail: "DMI separando com ADX subindo contra a tese (tendencia fortalecendo: nao fade)" });
+  else if (sideAdx?.priceTrendAgainst === true) counterEvidence.push({ code: "ADX_PRECO_CONTRA_TENDENCIA", detail: "preco ja percorreu a tendencia dominante contra a tese" });
 
   const atrSupports = atr?.state === "NORMAL" && atr?.climactic !== true;
   if (atrSupports) supportingEvidence.push({ code: "ATR_SUPORTE", detail: `ratio ${atr?.ratio}` });
@@ -123,7 +142,7 @@ export function runConsensusAgent({ snapshot, opinions, safetyPct = 100, filters
 }
 
 
-export function detectConstantMove({ snapshot, side, atrNormalized = null, adxValue = null, adxSlope = null, lookback = 8 } = {}) {
+export function detectConstantMove({ snapshot, side, atrNormalized = null, adxValue = null, adxSlope = null, lookback = 60 } = {}) {
   const candles = Array.isArray(snapshot?.recentCandles) ? snapshot.recentCandles.slice(-lookback) : [];
   if (candles.length < 6) return { constant: false, detail: "dados insuficientes" };
   const first = Number(candles[0]?.close);
@@ -157,7 +176,7 @@ export function detectConstantMove({ snapshot, side, atrNormalized = null, adxVa
 
 function buildConversation(opinions, consensusLine = null) {
   const lines = [];
-  for (const key of ["rsi", "bollinger", "adx", "atr", "fib"]) {
+  for (const key of ["rsi", "bollinger", "adx", "atr", "fib", "candle"]) {
     const agent = opinions?.[key];
     if (agent) lines.push({ agent: agent.agent, opinion: agent.opinion, state: agent.state, direction: agent.direction });
   }

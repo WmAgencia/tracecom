@@ -8,6 +8,7 @@ import { analyzeBollingerAgent } from "./bollinger.agent.mjs";
 import { analyzeAdxAgent } from "./adx.agent.mjs";
 import { analyzeAtrAgent } from "./atr.agent.mjs";
 import { analyzeFibAgent } from "./fib.agent.mjs";
+import { analyzeCandleAgent } from "./candle.agent.mjs";
 import { runConsensusAgent } from "./consensus.agent.mjs";
 
 export const AGENTIC_GRAPH_VERSION = "agentic-graph-v1";
@@ -23,6 +24,7 @@ export function runAgentGraph(snapshot, { safetyPct = 100, filters = null } = {}
     adx: analyzeAdxAgent(snapshot),
     atr: analyzeAtrAgent(snapshot),
     fib: analyzeFibAgent(snapshot),
+    candle: analyzeCandleAgent(snapshot),
   };
   const consensus = runConsensusAgent({ snapshot, opinions, safetyPct, filters });
   return { version: AGENTIC_GRAPH_VERSION, snapshotId: snapshot.snapshotId, at: snapshot.at, opinions, consensus, conversation: consensus.conversation, latencyMs: Date.now() - startedAt };

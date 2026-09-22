@@ -9,6 +9,12 @@ import { rsiWilder, atrWilder } from "../feature-engine.mjs";
 
 export const CONSENSUS_VERSION = "consensus-core-v1";
 const MIN_CLOSED_CANDLES = 60;
+// Historico entregue aos agentes: 30 min de candles de 5s (nada alem disso entra no snapshot; nao vai ao banco).
+export const RECENT_CANDLES_LIMIT = 360;
+// Trajetoria do RSI: 120 amostras = 10 min (leitura de "sobe, segura no extremo, desce").
+export const RSI_TRAJECTORY_SAMPLES = 120;
+// Mediana do ATR normalizado: 180 amostras = 15 min.
+export const ATR_MEDIAN_SAMPLES = 180;
 
 const num = (value) => (value === null || value === undefined || value === "" ? null : (Number.isFinite(Number(value)) ? Number(value) : null));
 const round = (value, digits = 4) => (Number.isFinite(Number(value)) ? Number(Number(value).toFixed(digits)) : null);
@@ -78,19 +84,19 @@ function deepFreeze(value) {
   return Object.freeze(value);
 }
 
-export function buildMarketSnapshot({ marketKey, marketType = null, candles = [], now = Date.now(), payout = null, targetExpiryAt = null } = {}) {
+export function buildMarketSnapshot({ marketKey, marketType = null, candles = [], now = Date.now(), payout = null, targetExpiryAt = null, livePrice = null } = {}) {
   const at = num(now) ?? Date.now();
   const list = (Array.isArray(candles) ? candles : []).filter((candle) => Number.isFinite(Number(candle?.close)) && Number.isFinite(Number(candle?.bucketEnd)) && Number(candle.bucketEnd) <= at);
   const indicators = evaluateIndicatorsV2({ candles: list, now: at });
   if (indicators.closedCandles < MIN_CLOSED_CANDLES) return null;
 
-  const recent = list.slice(-30).map((candle) => ({
+  const recent = list.slice(-RECENT_CANDLES_LIMIT).map((candle) => ({
     bucketStart: num(candle.bucketStart), bucketEnd: num(candle.bucketEnd),
     open: num(candle.open), high: num(candle.high), low: num(candle.low), close: num(candle.close),
   }));
   const closes = list.map((candle) => Number(candle.close));
   const trajectory = [];
-  for (let back = 4; back >= 0; back -= 1) {
+  for (let back = RSI_TRAJECTORY_SAMPLES - 1; back >= 0; back -= 1) {
     const slice = closes.slice(0, closes.length - back);
     const value = slice.length > 15 ? rsiWilder(slice, 14) : null;
     trajectory.push(value === null ? null : round(value, 4));
@@ -118,7 +124,7 @@ export function buildMarketSnapshot({ marketKey, marketType = null, candles = []
   const swingFib = swingFibContext(list, atr);
   const atrNormalized = atr !== null && closes.length ? atr / closes[closes.length - 1] : null;
   const atrNormSamples = [];
-  for (let i = 1; i <= Math.min(60, list.length - 15); i += 1) { const a = atrWilder(list.slice(0, list.length - i), 14); if (a !== null) atrNormSamples.push(a / Number(list[list.length - i - 1]?.close ?? closes[closes.length - 1])); }
+  for (let i = 1; i <= Math.min(ATR_MEDIAN_SAMPLES, list.length - 15); i += 1) { const a = atrWilder(list.slice(0, list.length - i), 14); if (a !== null) atrNormSamples.push(a / Number(list[list.length - i - 1]?.close ?? closes[closes.length - 1])); }
   atrNormSamples.sort((x, y) => x - y);
   const atrNormalizedMedian60 = atrNormSamples.length ? atrNormSamples[Math.floor(atrNormSamples.length / 2)] : null;
   const last = recent[recent.length - 1] ?? null;
@@ -130,6 +136,7 @@ export function buildMarketSnapshot({ marketKey, marketType = null, candles = []
     marketKey, marketType, payout, targetExpiryAt,
     at, bucketEnd: last?.bucketEnd ?? null,
     ohlc: last ? { open: last.open, high: last.high, low: last.low, close: last.close } : null,
+    livePrice: num(livePrice) === null ? null : round(num(livePrice), 8),
     recentCandles: recent,
     indicators: {
       rsi: indicators.rsi, rsiPrevious: indicators.rsiPrevious, rsiSlope: indicators.rsiSlope, rsiTrajectory: trajectory,

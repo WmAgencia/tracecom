@@ -93,7 +93,7 @@ export class LabRunner {
       const persistKey = result.strategyId + "|" + marketKey;
       const prev = st.persistByMarket?.get(persistKey) ?? null;
       const changed = !prev || prev.decision !== result.decision || prev.side !== (result.side ?? null);
-      const stale = !prev || at - prev.at > 60_000;
+      const stale = !prev || at - prev.at > 300_000;
       st.lastDecision = result.decision; st.lastSide = result.side ?? null; st.lastPersistAt = at;
       if (changed || stale) {
         if (!st.persistByMarket) st.persistByMarket = new Map();

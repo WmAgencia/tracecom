@@ -21,7 +21,7 @@ export function parseSafetyLevels(value) {
   for (const item of source) {
     const raw = String(item ?? "").trim().toUpperCase();
     if (!raw) continue;
-    const match = raw.match(/^(\d{1,3})\s*([A-Z]{0,3})$/);
+    const match = raw.match(/^(\d{1,3})\s*([A-Z]{0,4})$/);
     if (!match) continue;
     const safetyPct = Math.max(0, Math.min(100, Math.round(Number(match[1]))));
     const variant = match[2] || "";
@@ -61,7 +61,7 @@ export class SafetyShadow {
     const expiryAt = Number(snapshot.targetExpiryAt ?? 0);
     const at = Number(snapshot.at ?? 0);
     if (!expiryAt || !at) { this.stats.noExpiry += 1; return; }
-    const entryPrice = Number(snapshot.ohlc?.close);
+    const entryPrice = Number(snapshot.livePrice ?? snapshot.ohlc?.close);
     if (!Number.isFinite(entryPrice)) return;
     const marketKey = String(snapshot.marketKey ?? "");
     if (!marketKey) return;
@@ -84,19 +84,27 @@ export class SafetyShadow {
       for (const spec of this.levels) {
         const key = `${marketKey}|${expiryAt}|${spec.label}`;
         if (this.pending.has(key)) continue;
-        const consensus = runConsensusAgent({ snapshot, opinions: graph.opinions, safetyPct: spec.safetyPct });
+        const variantFilters = spec.variant ? { confirmation: spec.variant.includes("F"), stochastic: spec.variant.includes("T"), noSqueeze: spec.variant.includes("S"), candle: spec.variant.includes("C") } : null;
+        const filters = variantFilters && (variantFilters.confirmation || variantFilters.stochastic || variantFilters.noSqueeze || variantFilters.candle) ? variantFilters : null;
+        const consensus = runConsensusAgent({ snapshot, opinions: graph.opinions, safetyPct: spec.safetyPct, filters });
         if (consensus.decision !== "BUY" && consensus.decision !== "SELL") continue;
         this.pending.add(key);
         rows.push({ level: spec.safetyPct, variant: spec.variant, marketKey, side: consensus.decision, entryPrice, payout, expiryAt, snapshotId: graph.snapshotId ?? null, reason: String(consensus.reason ?? "").slice(0, 300) });
       }
     } else { this.stats.outOfWindow += 1; this.stats.lastDeltaMs = Math.round(delta); }
-    for (const row of rows) {
+    if (rows.length) {
       try {
+        const params = [];
+        const values = rows.map((row) => {
+          const base = params.length;
+          params.push(this.runId, row.level, row.variant, row.marketKey, row.side, row.entryPrice, row.payout, row.expiryAt, row.snapshotId, row.reason);
+          return `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},to_timestamp($${base + 8}/1000.0),$${base + 9},$${base + 10})`;
+        });
         await this.pool.query(
-          "INSERT INTO iq_shadow_trades (run_id, level, variant, market_key, side, entry_price, payout, expiry_at, snapshot_id, reason) VALUES ($1,$2,$3,$4,$5,$6,$7,to_timestamp($8/1000.0),$9,$10) ON CONFLICT (run_id, level, variant, market_key, expiry_at) DO NOTHING",
-          [this.runId, row.level, row.variant, row.marketKey, row.side, row.entryPrice, row.payout, row.expiryAt, row.snapshotId, row.reason]
+          "INSERT INTO iq_shadow_trades (run_id, level, variant, market_key, side, entry_price, payout, expiry_at, snapshot_id, reason) VALUES " + values.join(",") + " ON CONFLICT (run_id, level, variant, market_key, expiry_at) DO NOTHING",
+          params
         );
-        this.stats.recorded += 1;
+        this.stats.recorded += rows.length;
       } catch (error) {
         this.stats.errors += 1;
         this.log("SAFETY_SHADOW_RECORD_FAIL", String(error?.message ?? error).slice(0, 140));
