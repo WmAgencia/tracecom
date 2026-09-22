@@ -118,7 +118,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.agentVariant = "";
     this.agentFilters = null;
     this.agentCustomStrategy = null;
-    this.agentExpirySeconds = 60;
+    this.agentExpirySeconds = 300;
     try {
       this.safetyShadow = agenticEnabled === true ? new SafetyShadow({ pool, now: this.now, log: this.log, levels: parseSafetyLevels(agenticShadowLevels ?? "50"), entryOffsetMs: 31_500, entryToleranceMs: 500, candles: (marketKey, limit) => this.candlesBatch([marketKey], limit) }) : null;
     } catch (error) { this.safetyShadow = null; this.#safe(() => this.log("SAFETY_SHADOW_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
@@ -2303,7 +2303,7 @@ export class IqMultiRuntime extends EventEmitter {
   async experimentRequestOrder({ marketKey, direction, stake, decisionId = null, idempotencyKey = null, strategyId = null, experimentId = null } = {}) {
     if (experimentId !== FOUR_WAY_EXPERIMENT_ID) throw new IqWsError("EXPERIMENT_ID_MISMATCH", String(experimentId));
     if (ACCOUNT_PRACTICE !== this.accountContext.context) throw new IqWsError("EXPERIMENT_PRACTICE_ONLY", this.accountContext.context);
-    return this.requestOrder({ marketKey, direction, stake, decisionId, idempotencyKey, source: `experiment:${strategyId ?? "unknown"}`, horizonSeconds: 60 });
+    throw new IqWsError("EXPERIMENT_LEGACY_BROKER_PATH_DISABLED", "experiment submit legado desativado na reconstrucao");
   }
 
   /** Status do harness 4x3 (DRY_RUN por padrao; arm independente do REAL). */
@@ -2885,7 +2885,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (disposition === "BLOCKED" || disposition === "DUPLICATE") return record;
     try {
       const orderSource = signalSource;
-      const result = await this.requestOrder({ marketKey: ctx.marketKey, direction: action, stake: null, decisionId: `auto_${ctx.marketKey}_${bucket}`, idempotencyKey, source: orderSource, horizonSeconds, decisionAgeMs: Math.max(0, this.now() - now), entryTiming, infraProbe: options?.infra === true });
+      throw new IqWsError("AUTO_LEGACY_BROKER_PATH_DISABLED", "auto path legado desativado na reconstrucao");
       if (result.duplicate) { record.disposition = "DUPLICATE"; record.reason = "IDEMPOTENCIA"; stats.executed = Math.max(0, stats.executed - 1); stats.duplicate += 1; }
       else {
         record.executionId = result.executionId ?? null; record.brokerOrderId = result.brokerOrderId ?? null; record.ackAt = result.state === "ACKNOWLEDGED" ? this.now() : null;

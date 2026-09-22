@@ -265,7 +265,7 @@ async function testIqOrder(direction) {
   const confirmed = window.confirm(`ENVIAR ordem PRACTICE de teste?\n\n${direction === "BUY" ? "BUY (CALL)" : "SELL (PUT)"} · stake ${formatBRL(stake)}\nUMA ordem, depois AUTO-DISARM.\nSem ACK = UNKNOWN e nunca reenvia.`);
   if (!confirmed) return;
   setText("iqExecutionDetail", "Enviando ordem PRACTICE de teste (aguardando ACK real)…");
-  try { const result = await jpost("/api/iq/test-order", { direction, stake, horizonSeconds: 60 }); setText("iqExecutionDetail", `Resultado: ${result.state}${result.brokerOrderId ? ` · ordem ${result.brokerOrderId}` : ""}${result.reason ? ` · ${result.reason}` : ""}`); } catch (error) { setText("iqExecutionDetail", `Falha no teste: ${String(error?.message || error).slice(0, 140)}`); }
+  try { const result = await jpost("/api/iq/test-order", { direction, stake, horizonSeconds: 300 }); setText("iqExecutionDetail", `Resultado: ${result.state}${result.brokerOrderId ? ` · ordem ${result.brokerOrderId}` : ""}${result.reason ? ` · ${result.reason}` : ""}`); } catch (error) { setText("iqExecutionDetail", `Falha no teste: ${String(error?.message || error).slice(0, 140)}`); }
   await loadIqStatus();
   await loadIqExecutions();
 }
