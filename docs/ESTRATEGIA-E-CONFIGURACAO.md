@@ -26,6 +26,8 @@
 
 **Nomes das estratégias no painel (seletor):** Rigida 100/90/80/70 · **Base 50%** · Base + Confirmacao (CF) · Base + Stochastic (ST) · Base + Sem Squeeze (SQ) · Confirmacao + Stochastic · Completa (CF+ST+SQ). O seletor mostra WR, ritmo (entradas/h) e margem; a ATIVA fica no topo.
 
+**Execucao (2026-09-22):** cap das runs = 1000 (nao travam mais em 50) · janela dos binarios T-50s..T-31,5s · Blitz 45s com limite de 6 ordens/min (rate limit do MCP) e liquidacao pelo FEED (close no vencimento vs entrada) · interruptores de execucao (binario/blitz) SOMENTE no dashboard · contadores e estado das runs zerados pela epoca.
+
 **Auto-recuperacao:** `AUTO_ARM_PRACTICE=true` re-arma sozinho (pratica) · watchdog de avaliacao (re-agenda ticks; se persistir, reconecta o WS) · sweeper de execucoes presas (libera o lock de 1 ordem) · stake resolvido no momento da ordem (config do painel).
 
 **Níveis do medidor A/B (mesma entrada, lado a lado):** `50` (base) · `50F` (+confirmação de candle) · `50T` (+Stochastic 14,3,3 no extremo) · `50FT` · `50S` (+sem squeeze) · `50FTS` · e os níveis 100/90/80/70 para referência.
