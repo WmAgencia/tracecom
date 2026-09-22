@@ -1775,9 +1775,6 @@ export class IqMultiRuntime extends EventEmitter {
 
   agentConfigState() { return { safetyPct: this.agentSafetyPct, variant: this.agentVariant || String(this.agentSafetyPct), variantBlitz: this.agentVariantBlitz || String(this.agentSafetyPctBlitz ?? this.agentSafetyPct), filters: this.agentFilters ?? null, binaryExec: this.agentExecBinary === true, blitzExec: this.agentExecBlitz === true, shadowLevels: this.safetyShadow ? this.safetyShadow.levels.map((spec) => spec.label) : [], shadowRunId: SAFETY_SHADOW_RUN_ID, fromEnv: this.agentSafetyFromEnv === true, autoArmPractice: this.autoArmPractice === true }; }
   async setAgentExec({ binary = null, blitz = null } = {}) { if (binary !== null) this.agentExecBinary = binary === true; if (blitz !== null) this.agentExecBlitz = blitz === true; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET binary_exec_enabled=$1, blitz_exec_enabled=$2, updated_at=now() WHERE id=1", [this.agentExecBinary, this.agentExecBlitz]).catch(() => undefined); this.#safe(() => this.log("AGENT_EXEC_SET", JSON.stringify({ binary: this.agentExecBinary, blitz: this.agentExecBlitz }))); return this.agentConfigState(); }
-  async blitzReport(hours = 6) { const shadow = this.blitzShadow ? await this.blitzShadow.report(hours) : { levels: [] }; const real = await this.blitzStats(hours); return { ...shadow, real }; }
-  async blitzStats(hours = 6) { if (!this.pool?.query) return { trades: 0 }; const bounded = Math.max(1, Math.min(72, Number(hours) || 6)); const epoch = (await this.pool.query("SELECT perf_since FROM iq_perf_epoch WHERE id=1").catch(() => ({ rows: [] }))).rows?.[0]?.perf_since ?? null;
-    const row = (await this.pool.query("SELECT count(*) FILTER (WHERE result IN ('WIN','LOSS','DRAW'))::int AS settled, count(*) FILTER (WHERE result='WIN')::int AS wins, count(*) FILTER (WHERE result='LOSS')::int AS losses, count(*) FILTER (WHERE result='DRAW')::int AS draws, coalesce(sum(pnl) FILTER (WHERE result IN ('WIN','LOSS','DRAW')),0)::numeric AS pnl, coalesce(avg(payout) FILTER (WHERE result IN ('WIN','LOSS')),0)::numeric AS avg_payout FROM iq_lab_trades WHERE run_id='agentic-blitz-45s' AND entry_at >= greatest(now() - ($1 || ' hours')::interval, coalesce($2::timestamptz, '1970-01-01'::timestamptz))", [String(bounded), epoch]).catch(() => ({ rows: [] }))).rows?.[0] ?? null; if (!row) return { trades: 0 }; const decided = Number(row.wins) + Number(row.losses); const wr = decided > 0 ? Number((100 * Number(row.wins) / decided).toFixed(1)) : null; const breakeven = Number(row.avg_payout) > 0 ? Number((100 / (1 + Number(row.avg_payout) / 100)).toFixed(1)) : null; return { runId: "agentic-blitz-45s", expirationSeconds: BLITZ_EXPIRATION_SECONDS, settled: Number(row.settled), wins: Number(row.wins), losses: Number(row.losses), draws: Number(row.draws), winRate: wr, breakeven, edge: wr != null && breakeven != null ? Number((wr - breakeven).toFixed(1)) : null, pnl: Number(row.pnl), entriesPerHour: Number((Number(row.settled) / bounded).toFixed(1)) }; }
   async setAgentVariantBlitz(variant) { const custom = customStrategyById(variant); if (custom) { this.agentCustomStrategyBlitz = custom; this.agentVariantBlitz = custom.id; this.agentFiltersBlitz = null; this.agentExpirySecondsBlitz = custom.expirySeconds; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET active_variant_blitz=$1, updated_at=now() WHERE id=1", [custom.id]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_BLITZ_SET", JSON.stringify({ variant: custom.id }))); return this.agentConfigState(); }
     const raw = String(variant ?? "").trim().toUpperCase(); const match = raw.match(/^(\d{1,3})\s*([A-Z]{0,4})$/); if (!match) throw new IqWsError("AGENT_VARIANT_BLITZ_INVALID", raw.slice(0, 20)); const safety = Math.max(0, Math.min(100, Math.round(Number(match[1])))); const v = match[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S"), candle: v.includes("C") } : null; this.agentSafetyPctBlitz = safety; this.agentVariantBlitz = String(safety) + v; this.agentFiltersBlitz = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze || filters.candle) ? filters : null; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET active_variant_blitz=$1, updated_at=now() WHERE id=1", [this.agentVariantBlitz]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_BLITZ_SET", JSON.stringify({ variant: this.agentVariantBlitz }))); return this.agentConfigState(); }
   async setAgentVariant(variant) { const custom = customStrategyById(variant); if (custom) { this.agentCustomStrategy = custom; this.agentCustomStrategyBlitz = custom; this.agentVariant = custom.id; this.agentVariantBlitz = custom.id; this.agentFilters = null; this.agentFiltersBlitz = null; this.agentExpirySeconds = custom.expirySeconds; this.agentExpirySecondsBlitz = custom.expirySeconds; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, updated_at=now() WHERE id=1", [this.agentSafetyPct, custom.id]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_SET", JSON.stringify({ variant: custom.id }))); return this.agentConfigState(); }
@@ -1913,40 +1910,6 @@ export class IqMultiRuntime extends EventEmitter {
     } catch (error) { this.#safe(() => this.log("MCP_BINARY_SETTLE_FAIL", String(error?.message ?? error).slice(0, 120))); }
   }
 
-  /** V2 BLITZ por candle (fast lane: ativos Blitz com feed WS; 45s; ordem via MCP oficial). */
-  #observeRsiAgentsV2Blitz(ctx, list, now) {
-    if (!this.rsiAgentsV2Blitz?.enabled) return null;
-    if (!Array.isArray(list) || list.length < 3) return null;
-    const instruments = [...this.rsiAgentsV2Blitz.instruments.values()].filter((row) => row.marketKey === ctx.marketKey && row.enabled === true);
-    if (!instruments.length) return null;
-    const promises = instruments.map((row) => this.rsiAgentsV2Blitz.observeMarket({ marketKey: ctx.marketKey, instrumentType: "BLITZ_45S", durationSeconds: 45, candles: list, payout: ctx.payout, now }));
-    return Promise.all(promises).then((states) => { for (const state of states) this.#emitRsiAgentDecision(ctx, state, now); });
-  }
-
-  /** Settlement Blitz via API oficial (get_trade_history, 1 leitura/30s) — atualiza oportunidades/estado. */
-  #pollBlitzSettlements() {
-    if (!this.rsiAgentsV2Blitz?.enabled || !this.iqMcp?.enabled || !this.pool?.query) return;
-    const now = this.now();
-    if (now - (this.lastBlitzSettlePoll ?? 0) < 30_000) return;
-    this.lastBlitzSettlePoll = now;
-    void (async () => {
-      try {
-        const trades = await this.iqMcp.getTradeHistory({ limit: 30 });
-        for (const trade of trades) {
-          const raw = String(trade.result ?? "").toLowerCase();
-          const mapped = raw === "win" ? "WIN" : raw === "loose" || raw === "loss" ? "LOSS" : raw === "equal" || raw === "draw" ? "DRAW" : null;
-          if (!mapped) continue;
-          const positionId = String(trade.position_id ?? "");
-          if (!positionId) continue;
-          const row = (await this.pool.query("SELECT opportunity_id, market_key FROM iq_rsi_opportunities_v2live WHERE instrument_type='BLITZ_45S' AND order_id=$1 AND result IS NULL LIMIT 1", [positionId])).rows?.[0] ?? null;
-          if (!row) continue;
-          await this.pool.query("UPDATE iq_rsi_opportunities_v2live SET result=$2, profit=$3, expiry_price=$4, settlement_basis='IQ_MCP_BLITZ' WHERE opportunity_id=$1", [row.opportunity_id, mapped, num(trade.profit), num(trade.close_price)]).catch(() => undefined);
-          this.rsiAgentsV2Blitz.recordSettlement({ marketKey: row.market_key, result: mapped, profit: num(trade.profit) });
-          this.#emitEvent("blitz.settlement", { positionId, marketKey: row.market_key, result: mapped, profit: num(trade.profit) });
-        }
-      } catch (error) { this.#safe(() => this.log("BLITZ_SETTLE_POLL_FAIL", String(error?.message ?? error).slice(0, 120))); }
-    })();
-  }
   async refreshInstrumentRegistry({ force = false } = {}) {
     if (!this.pool?.query || !this.rsiAgentsV4) return null;
     if (!force && this.now() - (this.lastInstrumentSync ?? 0) < 15_000) return null;
