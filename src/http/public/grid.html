@@ -490,7 +490,7 @@
       "</div>";
     if (!levels.length && !blitzRows.length) { el.innerHTML = "Sem dados ainda — o medidor roda junto com os agentes e liquida pelo feed a cada minuto."; return; }
   };
-  const STRATEGY_NAMES = { "BANDA_300": "Banda (rejeicao) 300s", "BANDA_TREND_RANGE": "Banda + Trend/Range 300s", "BANDA_TREND_SQUEEZE": "Banda + Trend/Squeeze 300s", "CONTRA_MOM6_TREND_WALK": "Contra-Momento6 + Trend/Walk 300s", "100": "Rigida 100%", "90": "Rigida 90%", "80": "Rigida 80%", "70": "Rigida 70%", "50": "Base 50%", "50F": "Base + Confirmacao", "50T": "Base + Stochastic", "50FT": "Confirmacao + Stochastic", "50S": "Base + Sem Squeeze", "50FTS": "Completa (CF+ST+SQ)" };
+  const STRATEGY_NAMES = { "BANDA_300": "Banda (rejeicao) 300s", "BANDA_TREND_RANGE": "Banda + Trend/Range 300s", "BANDA_TREND_SQUEEZE": "Banda + Trend/Squeeze 300s", "CONTRA_MOM6_TREND_WALK": "Contra-Momento6 + Trend/Walk 300s", "100": "Rigida 100%", "90": "Rigida 90%", "80": "Rigida 80%", "70": "Rigida 70%", "50": "TraceCom Base", "50F": "Base + Confirmacao", "50T": "Base + Stochastic", "50FT": "Confirmacao + Stochastic", "50S": "Base + Sem Squeeze", "50FTS": "Completa (CF+ST+SQ)" };
   const strategyName = (label) => STRATEGY_NAMES[String(label)] ?? ("Nivel " + label);
   const fmtWr = (r) => (r.winRate == null ? "sem WR" : "WR " + String(r.winRate).replace(".", ",") + "%");
   const fmtRitmo = (r) => (r.entriesPerHour == null ? "-" : String(r.entriesPerHour).replace(".", ",") + "/h");
