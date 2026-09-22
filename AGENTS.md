@@ -99,3 +99,7 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 - Nao usar git reset --hard, force push, rewrite de historico, delete de baseline/tags.
 - Nao commitar ZIPs grandes (snapshots via artifact de workflow).
 - Relatorio final completo SOMENTE quando Etapas 2-6 estiverem verificadas.
+
+### Progresso 2.2 (atualizado)
+- CORTADO: rotas POST prepare/arm/stop do four-way-experiment + paths da API (unico caminho legado capaz de ordem via arm; default do modulo e DRY_RUN). Status/report GET seguem read-only.
+- PROXIMO (2.2): deswiring completo do four-way (instanciacao/observeDecision/fourWayStatus/cohort) e dos demais runners antigos (rsi-agents-v2/v3/v4, rsi-v4, rsi-reversal, rsi-variants, agents-v4, scenario-*, dual/solo, shadow-lab, frozen-strategies, indicator-5m) — todos hoje construidos-desabilitados por flags do server (prova no server.mjs:54); extrair funcao pura util quando houver (ex.: indicator-5m) e entao remover as instanciacoes/rotas.
