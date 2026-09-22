@@ -127,3 +127,11 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 - TURBO 1m MORTO: 9x Math.ceil(serverNow/60_000)*60_000 substituidos por nextOperationalExpiryAt(serverNow) (binary300.mjs); TURBO_RESTANTE=0; nenhum fallback 60s capaz de chegar ao broker.
 - EVIDENCIA: smoke -> legacyEnabled=NENHUM, agentic=OK, labs REMOVED, initFails=NENHUM; binary300 21/21; gate 19/19; agentic 44/44; lab6 20/20; build OK.
 - PENDENTE 2.2: remocao fisica das instanciacoes/referencias (shadowLab/timingShadow/scenario*/indicator5m/agentsV4/rsiAgentsV3/V4/V2Live/iqMcp/fourWay) — hoje incapazes de operar (flags false + defaults false); extrair funcoes puras uteis se houver. Proximo: 2.7 Revalidation, 2.8 ligacao Timing->Gate, 2.9 AccountRouter, prova do caminho unico, 2.10.
+
+### Progresso 2.7-2.9 (caminho unico composto)
+- relay/execution/revalidation.mjs: Revalidation.evaluate -> DECISION_MISSING/DECISION_SIDE_INVALID/DECISION_TIMESTAMP_MISSING/DECISION_STALE (>5s)/timing/decisao do gate; so BUY/SELL.
+- relay/execution/account-router.mjs: decisionFingerprint (marketKey|side|strategyId|strategyVersion|strategyHash|snapshotId|decidedAt), assertParity (ACCOUNT_PARITY_VIOLATION), AccountRouter.route -> ROTED_PRACTICE/ROUTED_REAL, REAL exige realArmed+context.mode=REAL, requiresConfirmation=true, negacao nao expoe conta.
+- relay/execution/single-path.mjs: SinglePath.evaluate compoe timing.canSubmit -> gate.decide -> revalidation -> router; sucesso = SINGLE_PATH_ALLOWED com expiryAt/deadlineAt/conta/fingerprint.
+- PROVA (item 6): scripts/single-path-tests.mjs 19/19 - PRACTICE e REAL com MESMA decisao => MESMA expiracao/DEADLINE/FINGERPRINT (paridade); V2 pendente negada nos dois modos; Turbo 60s/BINARY-only/researchOnly/kill switch/decisao velha/WAIT/sem serverTime negados.
+- GATE: ordem de guardas corrigida (status!=ACTIVE ANTES de executable) - invariante semantico.
+- PENDENTE item 1 (2.2 fisico): remover instanciacoes/referencias fisicas dos legados (shadowLab/timingShadow/scenario*/indicator5m/agentsV4/rsiAgentsV3/V4/V2Live/iqMcp/fourWay) - hoje ja incapazes de operar; extrair funcoes puras uteis. 2.10 (smokes/metricas/aislop/fechamento) fica gated ate esse fisico concluir.
