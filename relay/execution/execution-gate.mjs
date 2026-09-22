@@ -23,8 +23,8 @@ export class ExecutionGate {
     if (killSwitchEngaged === true) return refuse("KILL_SWITCH_ENGAGED");
     if (researchOnly === true) return refuse("RESEARCH_ONLY_DENY");
     if (!strategy || typeof strategy !== "object") return refuse("STRATEGY_MISSING");
-    if (strategy.executable !== true) return refuse("STRATEGY_NOT_EXECUTABLE", { status: strategy.status ?? null });
     if (strategy.status !== STRATEGY_STATUS_ACTIVE) return refuse("STRATEGY_NOT_ACTIVE", { status: strategy.status ?? null });
+    if (strategy.executable !== true) return refuse("STRATEGY_NOT_EXECUTABLE", { status: strategy.status ?? null });
     if (strategy.hashPresent === false || strategy.strategyHash === null || strategy.strategyHash === undefined) return refuse("STRATEGY_HASH_MISSING");
     if (instrumentType !== "BINARY") return refuse("BINARY_ONLY", { instrumentType });
     try { assertOperationalExpiry(expirySeconds); } catch (error) { return refuse(error?.code ?? "EXPIRY_POLICY_ERROR", { expirySeconds }); }
