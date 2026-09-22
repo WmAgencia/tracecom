@@ -103,3 +103,9 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 ### Progresso 2.2 (atualizado)
 - CORTADO: rotas POST prepare/arm/stop do four-way-experiment + paths da API (unico caminho legado capaz de ordem via arm; default do modulo e DRY_RUN). Status/report GET seguem read-only.
 - PROXIMO (2.2): deswiring completo do four-way (instanciacao/observeDecision/fourWayStatus/cohort) e dos demais runners antigos (rsi-agents-v2/v3/v4, rsi-v4, rsi-reversal, rsi-variants, agents-v4, scenario-*, dual/solo, shadow-lab, frozen-strategies, indicator-5m) — todos hoje construidos-desabilitados por flags do server (prova no server.mjs:54); extrair funcao pura util quando houver (ex.: indicator-5m) e entao remover as instanciacoes/rotas.
+
+### Progresso 2.2 - lote labs (atualizado)
+- CORTADO: instanciacoes LabRunner legadas (lab runId lab6 + labS04 bollinger-50) e params labEnabled/labRunId/labS04Enabled/labS04RunId; referencias restantes no runtime sao null-safe; rota /api/iq/lab/status vira no-op com researchOnly=true.
+- FIX CRITICO: param labStake PRESERVADO (consumido pelo runner agentic linha 127) — sem ele o catch silencioso mataria o runner atual (agentic=null).
+- EVIDENCIA: scripts/stage22-smoke.mjs -> agentic=OK, lab=REMOVED, labS04=REMOVED, initFails=NENHUM; agentic 44/44; lab6 20/20.
+- SCAN null-safety dos demais legados (linhas_sem_?.): shadowLab 10, timingShadow 17, fourWay 4, agentsV4 8, indicator5m 5, rsiAgentsV3 5, rsiAgentsV4 11, rsiAgentsV2Live 5, iqMcp 4, scenarioShadow 12 -> cada um exige editar referencias diretas antes de remover; proximo lote recomendado: shadowLab + timingShadow (shadow-only, sem ordem) ou scenario*.
