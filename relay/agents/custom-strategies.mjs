@@ -15,37 +15,6 @@ export const CUSTOM_STRATEGIES = Object.freeze([
       return rejection === "LOWER" ? "BUY" : rejection === "UPPER" ? "SELL" : null;
     },
   },
-  {
-    id: "BANDA_TREND_RANGE",
-    label: "Banda + Trend/Range 300s",
-    expirySeconds: 300,
-    gate: ({ opinions }) => opinions?.adx?.regime === "TREND" && opinions?.bollinger?.regime === "RANGE",
-    signal: ({ opinions }) => {
-      const rejection = opinions?.bollinger?.rejection;
-      return rejection === "LOWER" ? "BUY" : rejection === "UPPER" ? "SELL" : null;
-    },
-  },
-  {
-    id: "BANDA_TREND_SQUEEZE",
-    label: "Banda + Trend/Squeeze 300s",
-    expirySeconds: 300,
-    gate: ({ opinions }) => opinions?.adx?.regime === "TREND" && opinions?.bollinger?.regime === "SQUEEZE",
-    signal: ({ opinions }) => {
-      const rejection = opinions?.bollinger?.rejection;
-      return rejection === "LOWER" ? "BUY" : rejection === "UPPER" ? "SELL" : null;
-    },
-  },
-  {
-    id: "CONTRA_MOM6_TREND_WALK",
-    label: "Contra-Momento6 + Trend/Walk 300s",
-    expirySeconds: 300,
-    gate: ({ opinions }) => opinions?.adx?.regime === "TREND" && opinions?.bollinger?.regime === "WALK",
-    signal: ({ snapshot }) => {
-      const closes = (snapshot?.recentCandles ?? []).map((c) => Number(c.close));
-      if (closes.length < 7) return null;
-      return closes[closes.length - 1] > closes[closes.length - 7] ? "SELL" : "BUY";
-    },
-  },
 ]);
 
 export const customStrategyById = (id) => CUSTOM_STRATEGIES.find((s) => s.id === String(id ?? "").toUpperCase()) ?? null;
