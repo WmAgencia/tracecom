@@ -11,4 +11,6 @@ console.log("SMOKE legacyEnabled=" + (enabled.length === 0 ? "NENHUM" : enabled.
 const fails = logs.filter((l) => /INIT_FAIL/.test(l));
 console.log("SMOKE initFails=" + (fails.length ? fails.join(" | ") : "NENHUM"));
 console.log("SMOKE consensus=" + (rt.consensus ? "PRESENTE" : "AUSENTE") + " dataHub=" + (rt.dh || rt.dataHub ? "PRESENTE" : "verificar"));
-process.exit(enabled.length === 0 && rt.agentic && rt.lab === undefined && rt.labS04 === undefined ? 0 : 1);
+const health = rt.intelligenceStatus?.().assetIntelligence ?? null;
+console.log("SMOKE assetIntelligence=" + (rt.assetIntelligence ? "INSTANCIADO" : "AUSENTE") + " ready=" + (health?.intelligenceReady === true) + " strategy=" + (health?.strategyStatus ?? "?") + " assets=" + (health?.assetsTotal ?? "?"));
+process.exit(enabled.length === 0 && rt.agentic && rt.lab === undefined && rt.labS04 === undefined && rt.assetIntelligence && health?.intelligenceReady === true && health?.strategyStatus === "PENDING_IMPLEMENTATION" ? 0 : 1);

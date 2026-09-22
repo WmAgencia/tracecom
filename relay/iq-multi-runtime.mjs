@@ -58,6 +58,7 @@ import {  EXPERIMENT_ID as FOUR_WAY_EXPERIMENT_ID  } from "./four-way-experiment
 import { ConsensusRunner } from "./consensus/runner.mjs";
 import { LabRunner } from "./lab/runner.mjs";
 import { runAgentGraph, agentGraphToStrategyResult, AGENTIC_STRATEGY_ID } from "./agents/graph.mjs";
+import { RuntimeIntelligence } from "./intelligence/runtime-adapter.mjs";
 import { SafetyShadow, parseSafetyLevels, SAFETY_SHADOW_RUN_ID } from "./agents/safety-shadow.mjs";
 import { CandlesArchive } from "./candles-archive.mjs";
 import { customStrategyById, evaluateCustomStrategies, CUSTOM_STRATEGIES } from "./agents/custom-strategies.mjs";
@@ -108,7 +109,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.executionPolicyName = typeof executionPolicyName === "string" && executionPolicyName ? executionPolicyName : null;
     this.realMode = realMode; this.accountContext = accountContext; this.gate = gate; this.resolver = resolver;
     try { this.consensus = new ConsensusRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: consensusEnabled === true, execute: consensusExecute === true, emit: (type, payload) => this.#emitEvent(type, payload) }); } catch (error) { this.consensus = null; this.#safe(() => this.log("CONSENSUS_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
-    try { this.agentic = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: agenticEnabled === true, runId: agenticRunId ?? "agentic-rsi-fib-20260921", stake: labStake, strategies: [AGENTIC_STRATEGY_ID], cap: 1000, reportRootDir: "estrategias/experiments/agentic-rsi-fib", evaluate: (snapshot) => { this.lastEvaluationAt = this.now(); const graph = runAgentGraph(snapshot, { safetyPct: this.agentSafetyPct, filters: this.agentFilters }); if (this.safetyShadow) void this.safetyShadow.record(graph, snapshot).catch(() => undefined); const base = agentGraphToStrategyResult(graph); if (!base) return []; const custom = this.agentCustomStrategy; if (custom) { const side = custom.gate({ snapshot, opinions: graph.opinions }) === true ? custom.signal({ snapshot, opinions: graph.opinions }) : null; return [{ ...base, decision: side ?? "WAIT", side: side ?? null }]; } return [base]; }, entryWindowOpenMs: 32_000, entryWindowCloseMs: 31_000, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.agentic?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.agentic.reportRootDir })).catch(() => undefined); } }); void this.agentic.start().catch(() => undefined); } catch (error) { this.agentic = null; this.#safe(() => this.log("AGENTIC_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
+    try { this.agentic = new LabRunner({ runtime: this, pool, now: this.now, log: this.log, enabled: agenticEnabled === true, runId: agenticRunId ?? "agentic-rsi-fib-20260921", stake: labStake, strategies: [AGENTIC_STRATEGY_ID], cap: 1000, reportRootDir: "estrategias/experiments/agentic-rsi-fib", evaluate: (snapshot) => { this.lastEvaluationAt = this.now(); return []; }, entryWindowOpenMs: 32_000, entryWindowCloseMs: 31_000, emit: (type, payload) => { this.#emitEvent(type, payload); if (type === "lab.complete" && payload?.runId === this.agentic?.runId) void import("./lab/report.mjs").then((module) => module.generateLabReport({ pool: this.pool, runId: payload.runId, rootDir: this.agentic.reportRootDir })).catch(() => undefined); } }); void this.agentic.start().catch(() => undefined); } catch (error) { this.agentic = null; this.#safe(() => this.log("AGENTIC_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
     this.agentSafetyFromEnv = agenticSafetyPct !== null && agenticSafetyPct !== undefined && String(agenticSafetyPct).trim() !== "" && Number.isFinite(Number(agenticSafetyPct));
     this.agentSafetyPct = this.agentSafetyFromEnv ? Math.max(0, Math.min(100, Math.round(Number(agenticSafetyPct)))) : 100;
     this.autoArmPractice = autoArmPractice === true;
@@ -140,6 +141,12 @@ export class IqMultiRuntime extends EventEmitter {
     this.signalLog = []; this.signalStats = new Map(); this.signalSeq = 0;
     this.intelligence = new GlobalIntelligenceState({ now });
     this.secondBrain = new SecondBrainAdapter({ log: this.log });
+    this.assetIntelligence = null;
+    this.assetIntelligenceError = null;
+    try {
+      this.assetIntelligence = new RuntimeIntelligence({ now: this.now, strategy: { version: "PULLBACK_4060_300_AGENTIC_V2", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: null } });
+      void this.assetIntelligence.start().then((report) => { this.#safe(() => this.log("ASSET_INTELLIGENCE_START", JSON.stringify(report ?? {}))); }).catch((error) => { this.assetIntelligenceError = String(error?.message ?? error).slice(0, 140); this.#safe(() => this.log("ASSET_INTELLIGENCE_START_FAIL", this.assetIntelligenceError)); });
+    } catch (error) { this.assetIntelligence = null; this.assetIntelligenceError = String(error?.message ?? error).slice(0, 140); this.#safe(() => this.log("ASSET_INTELLIGENCE_INIT_FAIL", this.assetIntelligenceError)); }
     this.knowledge = new TradingKnowledgeRetriever({ rootDir: path.join(path.dirname(fileURLToPath(import.meta.url)), "knowledge"), secondBrain: this.secondBrain, now, log: this.log });
     this.research = new SetupResearchEngine({ now });
     this.ab = new ABExperiment({ now });
@@ -810,6 +817,8 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   #ingestCandle(ctx, raw, { receivedAt, serverTimestamp, connectionId, batch = false }) {
+
+    this.#pipeClosedCandle(ctx, raw);
     let candle;
     try {
       candle = normalizeCandle(raw, { symbol: ctx.display, activeId: ctx.activeId, serverTimestamp, receivedAt, connectionId, sizeSeconds: CANDLE_SIZE_SECONDS });
@@ -2933,7 +2942,18 @@ export class IqMultiRuntime extends EventEmitter {
 
   /* ------------------------------- intelligence / research / supervisor / knowledge ------------------------------- */
 
-  intelligenceStatus() { return { version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS], feeds: this.feeds.status(), knowledge: this.knowledge.status(), secondBrain: this.secondBrain.status(), brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION }; }
+  #pipeClosedCandle(ctx, raw) {
+    try {
+      if (!this.assetIntelligence || !ctx?.marketKey || !raw || Array.isArray(raw)) return;
+      const at = Number(raw.at ?? raw.time ?? raw.ts ?? raw.timestamp ?? raw.t);
+      const open = Number(raw.open ?? raw.o); const high = Number(raw.high ?? raw.h);
+      const low = Number(raw.low ?? raw.l); const close = Number(raw.close ?? raw.c);
+      if (![at, open, high, low, close].every(Number.isFinite) || at <= 0) return;
+      this.assetIntelligence.onClosedCandle(ctx.marketKey, { at: at < 1_000_000_000_000 ? at * 1000 : at, open, high, low, close });
+    } catch (error) { this.#safe(() => this.log("PIPE_FEED_FAIL", String(error?.message ?? error).slice(0, 120))); }
+  }
+
+  intelligenceStatus() { return { assetIntelligence: (this.assetIntelligence?.health?.() ?? { intelligenceReady: false, degraded: true, initError: this.assetIntelligenceError ?? "NOT_INSTANTIATED", assetsTotal: 0, assetsReady: 0, assetsPartial: 0, assetsFailed: 0, lastPipelineUpdateAt: null }), version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS], feeds: this.feeds.status(), knowledge: this.knowledge.status(), secondBrain: this.secondBrain.status(), brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION }; }
 
   /** Publica itens externos reais (nunca inventados; item sem publishedAt nao entra). */
   #applyExternalItems(kind, items) {
