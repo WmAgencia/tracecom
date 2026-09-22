@@ -131,6 +131,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.agentSafetyFromEnv = agenticSafetyPct !== null && agenticSafetyPct !== undefined && String(agenticSafetyPct).trim() !== "" && Number.isFinite(Number(agenticSafetyPct));
     this.agentSafetyPct = this.agentSafetyFromEnv ? Math.max(0, Math.min(100, Math.round(Number(agenticSafetyPct)))) : 100;
     this.autoArmPractice = autoArmPractice === true;
+    this.autoArmSuppressed = false;
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentExecBinary = true;
     this.agentExecBlitz = true;
@@ -810,6 +811,7 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   arm(limitBrl, { confirmation = false, actor = "ui", requestId = null } = {}) {
+    this.autoArmSuppressed = false;
     if (!this.account.practice.verified) throw new IqWsError("PRACTICE_ACCOUNT_NOT_VERIFIED");
     if (this.config.mode === "REAL" && process.env.REAL_TRADING_ENABLED === "true" !== true) throw new IqWsError("REAL_MODE_REQUIRES_ENV");
     if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("KILL_SWITCH_ACTIVE");
@@ -831,7 +833,7 @@ export class IqMultiRuntime extends EventEmitter {
     return { ...arm, userLimitBrl: this.userLimitBrl, mode: this.config.mode, currency: this.account.practice.currency, fxMode: this.account.practice.currency === "BRL" ? "BRL_NATIVE" : "NOMINAL_BROKER_CURRENCY_CAP", warning, openMarkets: openMarkets.length, marketsEnabled: enabled.length, markets: enabled.map((ctx) => ({ marketKey: ctx.marketKey, availability: ctx.availability })) };
   }
 
-  disarm(reason = "MANUAL", meta = null) { const previous = this.armState.snapshot().armed === true; const result = this.armState.disarm(reason); this.#emitEvent("execution.disarmed", { reason }); this.#auditRecord(`disarm_${this.now()}`, null, "DISARM", { oldValue: previous, newValue: result.armed === true, reason: String(reason).slice(0, 60), actor: meta?.actor ?? "system", requestId: meta?.requestId ?? null }, { persist: true }); return result; }
+  disarm(reason = "MANUAL", meta = null) { if (String(reason).toUpperCase().includes("MANUAL")) this.autoArmSuppressed = true; const previous = this.armState.snapshot().armed === true; const result = this.armState.disarm(reason); this.#emitEvent("execution.disarmed", { reason }); this.#auditRecord(`disarm_${this.now()}`, null, "DISARM", { oldValue: previous, newValue: result.armed === true, reason: String(reason).slice(0, 60), actor: meta?.actor ?? "system", requestId: meta?.requestId ?? null }, { persist: true }); return result; }
 
   connectionHealth() {
     const reasons = [];
@@ -1742,7 +1744,7 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   async #autoArmPractice() {
-    if (this.autoArmPractice !== true) return null;
+    if (this.autoArmPractice !== true || this.autoArmSuppressed === true) return null;
     if (String(this.config.mode).toUpperCase() !== "PRACTICE") return null;
     if (this.armState.armed === true) return null;
     if (this.killSwitch.status().executionEnabled !== true) return null;

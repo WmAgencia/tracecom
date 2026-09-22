@@ -489,24 +489,6 @@
       "<div style='background:#0b1220;border:1px solid #1c2942;border-radius:12px;padding:10px'><div style='font-size:12px;color:#e8edf7;font-weight:700;margin-bottom:6px'>Blitz OTC 45s</div>" + renderTable(blitzRows) + "</div>" +
       "</div>";
     if (!levels.length && !blitzRows.length) { el.innerHTML = "Sem dados ainda — o medidor roda junto com os agentes e liquida pelo feed a cada minuto."; return; }
-    const rows = levels.map((r) => {
-      const isCurrent = Number(r.level) === Number(state.agentSafetyPct);
-      const edge = r.edge == null ? "—" : (r.edge >= 0 ? "+" : "") + r.edge + "pp";
-      const edgeColor = r.edge == null ? "#8b97ad" : r.edge >= 0 ? "#4ade80" : "#f87171";
-      const pnlColor = Number(r.pnl) >= 0 ? "#4ade80" : "#f87171";
-      return "<tr" + (isCurrent ? " style='background:#0e1a2f'" : "") + ">"
-        + "<td style='padding:4px 6px'><b>" + strategyName(String(r.label ?? r.level)) + "</b>" + (isCurrent ? " &#9679;" : "") + "</td>"
-        + "<td style='padding:4px 6px'>" + r.entries + "</td>"
-        + "<td style='padding:4px 6px'>" + r.settled + "</td>"
-        + "<td style='padding:4px 6px'>" + (r.winRate == null ? "—" : r.winRate + "%") + "</td>"
-        + "<td style='padding:4px 6px;color:#8b97ad'>" + (r.breakeven == null ? "—" : r.breakeven + "%") + "</td>"
-        + "<td style='padding:4px 6px;color:" + edgeColor + "'><b>" + edge + "</b></td>"
-        + "<td style='padding:4px 6px;color:" + pnlColor + "'>" + (Number(r.pnl) >= 0 ? "+" : "") + Number(r.pnl).toFixed(2) + "</td>"
-        + "<td style='padding:4px 6px;color:#8b97ad'>" + r.entriesPerHour + "/h</td></tr>";
-    }).join("");
-    el.innerHTML = "<table style='width:100%;border-collapse:collapse;font-size:11.5px'><thead><tr style='color:#8b97ad;text-align:left'>"
-      + "<th style='padding:4px 6px'>Segurança</th><th style='padding:4px 6px'>Entradas</th><th style='padding:4px 6px'>Liquidadas</th><th style='padding:4px 6px'>WR</th><th style='padding:4px 6px'>Break-even</th><th style='padding:4px 6px'>Margem</th><th style='padding:4px 6px'>PnL paper</th><th style='padding:4px 6px'>Ritmo</th></tr></thead><tbody>"
-      + rows + "</tbody></table><div style='color:#8b97ad;margin-top:6px'>Paper trades liquidados pelo feed (stake 1). Margem = WR - break-even do payout médio.</div>";
   };
   const STRATEGY_NAMES = { "100": "Rigida 100%", "90": "Rigida 90%", "80": "Rigida 80%", "70": "Rigida 70%", "50": "Base 50%", "50F": "Base + Confirmacao", "50T": "Base + Stochastic", "50FT": "Confirmacao + Stochastic", "50S": "Base + Sem Squeeze", "50FTS": "Completa (CF+ST+SQ)" };
   const strategyName = (label) => STRATEGY_NAMES[String(label)] ?? ("Nivel " + label);
