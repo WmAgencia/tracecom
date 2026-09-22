@@ -15,11 +15,12 @@ const series = mk5s(2161, NOW - 10_800_000);
 const V2 = { version: "PULLBACK_4060_300_AGENTIC_V2", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: null };
 const intel = new RuntimeIntelligence({ now: () => NOW, strategy: V2, loader: async (key) => (key === "A-OTC" ? series : key === "B-OTC" ? mk5s(1200, NOW - 6_000_000) : []) });
 
-ok("health antes do start: not ready / degraded", intel.health().intelligenceReady === true && intel.health().assetsTotal === 0 && intel.health().degraded === true);
+const h0 = intel.health();
+ok("bloqueador 1: 0 assets -> initialized=true, intelligenceReady=FALSE, DEGRADED, execucao DENY", h0.initialized === true && h0.intelligenceReady === false && h0.state === "DEGRADED" && h0.assetsTotal === 0 && intel.allowsExecution("A-OTC").allowed === false && intel.allowsExecution("A-OTC").reason === "INTELLIGENCE_DEGRADED");
 const report = await intel.start(["A-OTC", "B-OTC", "C-OTC"]);
 ok("start hidrata por ativo (1 READY, 1 PARTIAL, 1 FAILED)", report.ready === 1 && report.partial === 1 && report.failed === 1);
 const h = intel.health();
-ok("health expoe inteligencia e contagens sem segredo", h.intelligenceReady === true && h.assetsTotal === 3 && h.assetsReady === 1 && h.assetsPartial === 1 && h.assetsFailed === 1 && h.strategyVersion === V2.version && h.strategyStatus === "PENDING_IMPLEMENTATION");
+ok("health expoe inteligencia e contagens sem segredo", h.state === "READY" && h.intelligenceReady === true && h.assetsTotal === 3 && h.assetsReady === 1 && h.assetsPartial === 1 && h.assetsFailed === 1 && h.observedIntervalMs === 5000 && h.strategyVersion === V2.version && h.strategyStatus === "PENDING_IMPLEMENTATION");
 
 ok("feed ABSENT antes de candle", intel.feedStatusFor("A-OTC") === FEED_ABSENT);
 const c1 = mk5s(1, series[series.length - 1].at + 5000)[0];

@@ -17,10 +17,12 @@ export class RuntimeIntelligence {
     this.lastClosedByAsset = new Map();
     this.lastPipelineUpdateAt = null;
     this.ready = false;
+    this.initialized = false;
     this.initError = null;
     try {
       if (!this.registry) throw new Error("PIPELINE_REGISTRY_NULL");
       this.ready = true;
+      this.initialized = true;
     } catch (error) {
       this.ready = false;
       this.initError = String(error?.message ?? error).slice(0, 120);
@@ -30,6 +32,7 @@ export class RuntimeIntelligence {
   async start(marketKeys = []) {
     try {
       const report = await this.registry.hydrateAll(marketKeys);
+      this.lastHydrationAt = this.now();
       this.lastPipelineUpdateAt = this.now();
       return report;
     } catch (error) {
@@ -88,10 +91,14 @@ export class RuntimeIntelligence {
     const assetsReady = status.filter((s) => s.hydration === HYDRATION_READY).length;
     const assetsPartial = status.filter((s) => s.hydration === "HYDRATION_PARTIAL").length;
     const assetsFailed = status.filter((s) => s.hydration === "HYDRATION_FAILED").length;
-    const intelligenceReady = this.ready === true && this.initError === null;
+    const initialized = this.initialized === true && this.initError === null;
+    const observedIntervalMs = status.find((s) => s.intervalMs)?.intervalMs ?? null;
+    const state = initialized === false ? "NOT_READY" : status.length === 0 || assetsReady === 0 ? "DEGRADED" : "READY";
     return {
-      intelligenceReady,
-      degraded: intelligenceReady === false || assetsReady === 0,
+      state,
+      initialized,
+      intelligenceReady: state === "READY",
+      degraded: state !== "READY",
       initError: this.initError,
       strategyVersion: this.strategy?.version ?? null,
       strategyStatus: this.strategy?.status ?? null,
@@ -99,13 +106,16 @@ export class RuntimeIntelligence {
       assetsReady,
       assetsPartial,
       assetsFailed,
+      observedIntervalMs,
       lastPipelineUpdateAt: this.lastPipelineUpdateAt,
+      lastHydrationAt: this.lastHydrationAt ?? null,
       expectedIntervalMs: this.expectedIntervalMs,
     };
   }
 
   allowsExecution(marketKey) {
-    if (!this.ready || this.initError) return { allowed: false, reason: "INTELLIGENCE_NOT_READY" };
+    const health = this.health();
+    if (health.state !== "READY") return { allowed: false, reason: health.state === "NOT_READY" ? "INTELLIGENCE_NOT_READY" : "INTELLIGENCE_DEGRADED" };
     const pipeline = this.registry.get(marketKey);
     if (!pipeline || pipeline.hydration !== HYDRATION_READY) return { allowed: false, reason: "HYDRATION_NOT_READY" };
     if (this.feedStatusFor(marketKey) !== FEED_OK) return { allowed: false, reason: "FEED_NOT_OK" };
