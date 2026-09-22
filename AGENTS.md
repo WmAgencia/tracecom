@@ -135,3 +135,16 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 - PROVA (item 6): scripts/single-path-tests.mjs 19/19 - PRACTICE e REAL com MESMA decisao => MESMA expiracao/DEADLINE/FINGERPRINT (paridade); V2 pendente negada nos dois modos; Turbo 60s/BINARY-only/researchOnly/kill switch/decisao velha/WAIT/sem serverTime negados.
 - GATE: ordem de guardas corrigida (status!=ACTIVE ANTES de executable) - invariante semantico.
 - PENDENTE item 1 (2.2 fisico): remover instanciacoes/referencias fisicas dos legados (shadowLab/timingShadow/scenario*/indicator5m/agentsV4/rsiAgentsV3/V4/V2Live/iqMcp/fourWay) - hoje ja incapazes de operar; extrair funcoes puras uteis. 2.10 (smokes/metricas/aislop/fechamento) fica gated ate esse fisico concluir.
+
+### ETAPA 2 FECHADA (d810181 + este commit) - evidencias
+- runtime startup smoke: stage22-smoke -> agentic=OK, labs REMOVED, legacyEnabled=NENHUM, initFails=NENHUM.
+- build/typecheck: tsc + postbuild OK.
+- API smoke: 114 rotas; 0 refs a handlers removidos; producao /health 200 {ok,db:true,dbBytes~393MB}; boot local NAO executado de proposito (evitar segundo relay/ordens).
+- frontend smoke: 0 refs a endpoints legados; assets copiados no build.
+- DB nao-destrutivo: DB_SMOKE=OK select1=true mb=395 tabelas=133.
+- PRACTICE sem REAL: nenhuma ordem enviada; REAL fail-closed provado (gate 19/19: REAL sem arm -> REAL_FAIL_CLOSED; caminho REAL legado -> REAL_LEGACY_V2_PATH_DISABLED).
+- aislop escopado: 59/100 (== baseline; sem piora), 793 arquivos.
+- metricas: runtime 4526->4187 (-339); server 565->525 (-40).
+- auditoria de paths: TURBO_1M_RESIDUAL=0; placeTrade=0; unicas funcoes de ordem = requestOrder + submitLabPracticeOrder; rotas de arm restantes = /api/iq/arm|disarm (pratica) e /api/iq/real/arm|disarm (fail-closed).
+- PARIDADE: single-path 19/19 prova mesma decisao+timing+fingerprint em PRACTICE e REAL; garantia de AssetContext/features/specialists/Consensus identicos sera implementada/testada na ETAPA 3 (ainda nao existem).
+- PENDENTE ETAPA 3 (proximo): AssetAgent por ativo (ring buffer 3h/2160 candles 1m + hidratacao pos-restart; regime UPTREND/DOWNTREND/RANGE/TRANSITION; BOS/CHoCH causal; zonas S/R MICRO/LOCAL/STRUCTURAL por ATR; PULLBACK/TREND_RESUMING/REVERSAL_RISK/REVERSAL_CONFIRMED) -> Feature Engine incremental (1x por tick) -> 5 especialistas AssetContext-first (RSI/DMI-ADX/Bollinger/ATR/PriceAction; domainAssessment/supporting/counter/blockers) -> Consensus BUY/SELL/WAIT sem confidence -> Decision Snapshot imutavel; testes com fixtures causais + paridade de contexto entre contas. Retomada: ler este handoff.
