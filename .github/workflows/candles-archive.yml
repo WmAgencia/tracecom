@@ -2,6 +2,7 @@ name: candles-archive
 
 # Arquivamento dos candles de 5s do relay (binario OTC + Blitz) no proprio repo.
 # - Roda a cada 3h (e manualmente via workflow_dispatch).
+# - ACUMULA: faz merge com o arquivo do dia ja existente (dedupe por market+bucketEnd).
 # - Mantem janela rolante de 3 dias (arquivos mais antigos sao apagados).
 # - O token do arquivo (somente leitura de candles) vem do secret RELAY_ARCHIVE_TOKEN.
 
@@ -23,21 +24,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Baixar candles do dia (relay)
+      - name: Baixar candles do dia (relay) e acumular no repo
         env:
           ARCHIVE_TOKEN: ${{ secrets.RELAY_ARCHIVE_TOKEN }}
         run: |
           set -u
           DATE=$(date -u +%F)
           mkdir -p data/candles
-          code=$(curl -sS -o "data/candles/$DATE.csv.gz" -w "%{http_code}" \
+          OUT="data/candles/$DATE.csv.gz"
+          TMP="data/candles/$DATE.new.csv.gz"
+          code=$(curl -sS -o "$TMP" -w "%{http_code}" \
             -H "x-archive-token: $ARCHIVE_TOKEN" \
             "https://tracecom-live-relay-production-4e43.up.railway.app/api/iq/candles/archive?date=$DATE" || echo "000")
           if [ "$code" != "200" ]; then
-            rm -f "data/candles/$DATE.csv.gz"
+            rm -f "$TMP"
             echo "sem arquivo para $DATE (http $code)"
           else
-            echo "arquivado $DATE ($(du -h "data/candles/$DATE.csv.gz" | cut -f1))"
+            if [ -f "$OUT" ]; then
+              { zcat "$OUT" | head -n 1; { zcat "$OUT" | tail -n +2; zcat "$TMP" | tail -n +2; } | sort -u -t, -k1,2; } | gzip -9 > "$OUT.merged"
+              mv "$OUT.merged" "$OUT"
+            else
+              mv "$TMP" "$OUT"
+            fi
+            rm -f "$TMP"
+            echo "acumulado $DATE ($(du -h "$OUT" | cut -f1))"
           fi
 
       - name: Manter apenas os ultimos 3 dias
@@ -54,5 +64,5 @@ jobs:
             echo "sem mudancas"
             exit 0
           fi
-          git commit -m "candles: arquivo de $(date -u +%F)"
+          git commit -m "candles: arquivo acumulado de $(date -u +%F)"
           git push
