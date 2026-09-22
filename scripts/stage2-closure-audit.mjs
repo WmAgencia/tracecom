@@ -30,7 +30,7 @@ console.log("INSTANCIAS_LEGADAS_RESIDUAIS=" + (residual.length ? residual.join("
 const nullSafe = legacyInstances.map((n) => ({ n, unsafe: rt.split("\n").filter((l) => new RegExp("this\\." + n + "(?![\\w.?])|this\\." + n + "\\.(?!\\?)").test(l)).length })).filter((x) => x.unsafe > 0);
 console.log("REFS_NAO_NULLSAFE=" + (nullSafe.length ? nullSafe.map((x) => `${x.n}:${x.unsafe}`).join(",") : "NENHUMA"));
 
-const run = (cmd) => execSync(cmd, { cwd: root, encoding: "utf8" }).trim();
+const run = (cmd) => execSync(cmd, { cwd: root, encoding: "utf8", env: { ...process.env, PATH: "C:\\Users\\junin\\AppData\\Local\\Temp\\opencode\\tools\\minigit\\cmd;" + process.env.PATH } }).trim();
 const before = run('git show eec8f73:relay/iq-multi-runtime.mjs').split("\n").length;
 const after = rt.split("\n").length;
 const serverBefore = run('git show eec8f73:relay/server.mjs').split("\n").length;

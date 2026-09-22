@@ -1805,12 +1805,12 @@ export class IqMultiRuntime extends EventEmitter {
         const cacheKey = String(list[list.length - 1]?.bucketEnd ?? 0) + "|" + String(ctx.lastTickAt ?? 0);
         let entry = cache.get(ctx.marketKey) ?? null;
         if (!entry || entry.key !== cacheKey) {
-          const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt: Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000, livePrice: Number.isFinite(Number(ctx.lastTick?.price)) ? Number(ctx.lastTick.price) : null });
+          const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt: nextOperationalExpiryAt(this.client?.serverNow?.() ?? now), livePrice: Number.isFinite(Number(ctx.lastTick?.price)) ? Number(ctx.lastTick.price) : null });
           if (!snapshot) continue;
           entry = { key: cacheKey, snapshot };
           cache.set(ctx.marketKey, entry);
         }
-        void this.agentic.observeMarket({ snapshot: entry.snapshot, marketKey: ctx.marketKey, targetExpiryAt: Math.ceil((this.client?.serverNow?.() ?? now) / 60_000) * 60_000, payout: ctx.payout });
+        void this.agentic.observeMarket({ snapshot: entry.snapshot, marketKey: ctx.marketKey, targetExpiryAt: nextOperationalExpiryAt(this.client?.serverNow?.() ?? now), payout: ctx.payout });
       }
     }
     for (const ctx of this.markets.values()) {
