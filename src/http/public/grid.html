@@ -67,7 +67,7 @@
   .sechead .spacer { flex:1; }
   .chipctl { font-size:11px; color:var(--dim); border:1px solid var(--line); border-radius:8px; padding:5px 10px; background:#0c1628; }
   .clock { font-size:12px; color:#cbd5e1; font-variant-numeric:tabular-nums; }
-  #grid { display:grid; grid-template-columns:repeat(10, minmax(0,1fr)); gap:8px; }
+  #grid, #gridBlitz { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:8px; }
   .cell { display:flex; flex-direction:column; gap:2px; min-width:0; }
   .result { height:15px; font-size:11.5px; font-weight:800; text-align:center; }
   .result.win { color:var(--up); } .result.loss { color:var(--down); } .result.draw { color:var(--dim); }
@@ -163,7 +163,7 @@
     <span class="chipctl" style="color:#4ade80;border-color:#14532d">● Mercado OTC</span>
     <span class="clock" id="clock">--:--:--</span>
   </div>
-  <main id="grid"></main>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start"><section><div style="display:flex;align-items:center;gap:10px;margin:0 2px 8px"><span style="font-size:12px;font-weight:700;color:#c7d2e5">Binarios OTC</span><span style="flex:1"></span><span id="swBinaryWrap" style="display:inline-flex;align-items:center;width:40px;height:22px;background:#1c2942;border-radius:999px;padding:2px;cursor:pointer;transition:.2s"><span id="swBinary" style="width:18px;height:18px;background:#8b97ad;border-radius:50%;transition:.2s"></span></span></div><main id="grid"></main></section><section style="border-left:1px solid #1c2942;padding-left:14px"><div style="display:flex;align-items:center;gap:10px;margin:0 2px 8px"><span style="font-size:12px;font-weight:700;color:#c7d2e5">Blitz OTC 45s</span><span style="flex:1"></span><span id="swBlitzWrap" style="display:inline-flex;align-items:center;width:40px;height:22px;background:#1c2942;border-radius:999px;padding:2px;cursor:pointer;transition:.2s"><span id="swBlitz" style="width:18px;height:18px;background:#8b97ad;border-radius:50%;transition:.2s"></span></span></div><main id="gridBlitz"></main></section></div>
 </div>
 
 <div class="foot">
@@ -188,7 +188,7 @@
 <script>
 (() => {
   "use strict";
-  const state = { markets: [], cards: new Map(), results: new Map(), consensus: new Map(), agentic: new Map(), candles: new Map(), lastDraw: new Map(), lastResultText: new Map(), lastChip: new Map(), mode: "PRACTICE", perf: null, agentSafetyPct: 100 };
+  const state = { markets: [], cards: new Map(), results: new Map(), consensus: new Map(), agentic: new Map(), candles: new Map(), lastDraw: new Map(), lastResultText: new Map(), lastChip: new Map(), mode: "PRACTICE", perf: null, agentSafetyPct: 100, blitzCards: new Map(), blitzResults: new Map(), lastBlitzResultText: new Map(), lastBlitzChip: new Map() };
   const $ = (id) => document.getElementById(id);
   const api = async (path, options) => { const r = await fetch(path, options); return r.ok ? r.json().catch(() => null) : null; };
   const fmt = (v) => Number(v).toFixed(2).replace(".", ",");
@@ -198,18 +198,18 @@
   const FLAGS = { EUR:"🇪🇺", USD:"🇺🇸", GBP:"🇬🇧", JPY:"🇯🇵", AUD:"🇦🇺", CAD:"🇨🇦", CHF:"🇨🇭", NZD:"🇳🇿", BTC:"₿", MXN:"🇲🇽", TRY:"🇹🇷", ZAR:"🇿🇦", BRL:"🇧🇷", SGD:"🇸🇬", NOK:"🇳🇴", PLN:"🇵🇱", HKD:"🇭🇰", TRY:"🇹🇷", THB:"🇹🇭", INR:"🇮🇳", IDR:"🇮🇩", MYR:"🇲🇾", PHP:"🇵🇭", VND:"🇻🇳", AED:"🇦🇪", SAR:"🇸🇦", ARS:"🇦🇷", CLP:"🇨🇱", COP:"🇨🇴", PEN:"🇵🇪", BDT:"🇧🇩", BOB:"🇧🇴", DOP:"🇩🇴", NGN:"🇳🇬", PKR:"🇵🇰", EGP:"🇪🇬" };
   const flagFor = (key) => { const canon = String(key).split(":")[0]; const base = canon.slice(0,3), quote = canon.slice(3,6); if (FLAGS[quote] && !["EUR","USD","GBP","JPY","AUD","CAD","CHF","NZD"].includes(quote)) return FLAGS[quote]; return FLAGS[base] ?? "🏳️"; };
 
-  const chipOf = (row) => {
+  const chipOf = (row, results = state.results) => {
     const candles = state.candles.get(row.marketKey);
     if (!candles || !candles.length) return ["SEM FEED", "off"];
     if (row.enabled !== true) return ["OFF", "off"];
-    const exec = state.results.get(row.marketKey);
+    const exec = results.get(row.marketKey);
     if (exec && exec.open) { const dir = (exec.direction === "CALL" || exec.direction === "BUY") ? "BUY" : "SELL"; return [dir, dir === "BUY" ? "buy" : "sell"]; }
     const a = state.agentic.get(row.marketKey);
     if (a && a.side && a.rsi_state && a.rsi_state !== "NEUTRAL") return ["WAIT", "wait"];
     return ["ASSISTINDO", "assist"];
   };
-  const resultOf = (row) => {
-    const exec = state.results.get(row.marketKey);
+  const resultOf = (row, results = state.results) => {
+    const exec = results.get(row.marketKey);
     if (!exec) return { text: "", cls: "" };
     if (exec.open) {
       const candles = state.candles.get(row.marketKey);
@@ -250,8 +250,7 @@
     const last = list[list.length - 1];
     ctx.strokeStyle = "#64748b"; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(0, y(last.close)); ctx.lineTo(w, y(last.close)); ctx.stroke(); ctx.setLineDash([]);
   };
-  const buildGrid = () => {
-    const grid = $("grid"); grid.innerHTML = ""; state.cards.clear();
+  const buildGridInto = (containerId, cardsMap) => { const grid = $(containerId); grid.innerHTML = ""; cardsMap.clear();
     for (const row of state.markets) {
       const cell = document.createElement("div"); cell.className = "cell"; cell.dataset.key = row.marketKey;
       const result = document.createElement("div"); result.className = "result";
@@ -261,21 +260,20 @@
       const flag = document.createElement("span"); flag.className = "flag"; flag.textContent = flagFor(row.marketKey);
       const label = document.createElement("span"); label.textContent = row.marketKey.replace(":OTC", ":OTC");
       const chip = document.createElement("div"); chip.className = "chip";
-      name.append(flag, label); card.append(canvas, name, chip); cell.append(result, card); grid.append(cell);
-      state.cards.set(row.marketKey, { result, chip, canvas });
-    }
-  };
-  const renderText = () => {
+      name.append(flag, label); card.append(canvas, name, chip); cell.append(result, card); grid.append(cell); cardsMap.set(row.marketKey, { result, chip, canvas }); } };
+  const buildGrid = () => { buildGridInto("grid", state.cards); buildGridInto("gridBlitz", state.blitzCards); };
+  const renderTextSide = (cards, results, lastText, lastChip) => {
     for (const row of state.markets) {
-      const card = state.cards.get(row.marketKey); if (!card) continue;
-      const r = resultOf(row);
+      const card = cards.get(row.marketKey); if (!card) continue;
+      const r = resultOf(row, results);
       const rKey = r.text + "|" + r.cls;
-      if (state.lastResultText.get(row.marketKey) !== rKey) { state.lastResultText.set(row.marketKey, rKey); card.result.textContent = r.text; card.result.className = "result " + r.cls; }
-      const [chipText, chipCls] = chipOf(row);
+      if (lastText.get(row.marketKey) !== rKey) { lastText.set(row.marketKey, rKey); card.result.textContent = r.text; card.result.className = "result " + r.cls; }
+      const [chipText, chipCls] = chipOf(row, results);
       const cKey = chipText + "|" + chipCls;
-      if (state.lastChip.get(row.marketKey) !== cKey) { state.lastChip.set(row.marketKey, cKey); card.chip.textContent = chipText; card.chip.className = "chip " + chipCls; }
+      if (lastChip.get(row.marketKey) !== cKey) { lastChip.set(row.marketKey, cKey); card.chip.textContent = chipText; card.chip.className = "chip " + chipCls; }
     }
   };
+  const renderText = () => { renderTextSide(state.cards, state.results, state.lastResultText, state.lastChip); renderTextSide(state.blitzCards, state.blitzResults, state.lastBlitzResultText, state.lastBlitzChip); };
   const refreshCandles = async () => {
     const keys = state.markets.map((m) => m.marketKey);
     if (!keys.length) return;
@@ -291,6 +289,8 @@
       state.candles.set(key, list);
       const card = state.cards.get(key);
       if (card) drawChart(card.canvas, list);
+      const bcard = state.blitzCards.get(key);
+      if (bcard) drawChart(bcard.canvas, list);
     }
     setText($("subN"), String(live));
     setText($("footActive"), String(live));
@@ -302,14 +302,17 @@
     const data = await api("/api/iq/executions?accountContext=" + ctx + "&limit=200");
     const rows = data?.executions ?? [];
     state.results.clear();
+    state.blitzResults.clear();
     for (const row of rows) {
       const key = row.market_key ?? row.marketKey; if (!key) continue;
-      if (state.results.has(key)) continue;
+      const isBlitz = row.meta?.blitz === true;
+      const target = isBlitz ? state.blitzResults : state.results;
+      if (target.has(key)) continue;
       const st = String(row.state).toUpperCase();
       const openStates = st === "REQUESTED" || st === "ACKNOWLEDGED" || st === "SUBMITTED" || st === "PENDING_ACK" || st === "PENDING" || st === "UNKNOWN" || st === "OPEN";
       const settled = st === "SETTLED";
       if (!openStates && !settled) continue;
-      state.results.set(key, { open: openStates, result: settled ? (row.broker_result ?? null) : null, profit: Number(row.profit ?? 0), direction: row.direction ?? null, entryPrice: row.entry_price ?? null, stake: row.stake ?? null, payout: row.payout ?? null });
+      target.set(key, { open: openStates, result: settled ? (row.broker_result ?? null) : null, profit: Number(row.profit ?? 0), direction: row.direction ?? null, entryPrice: row.entry_price ?? null, stake: row.stake ?? null, payout: row.payout ?? null });
     }
     renderText();
   };
@@ -402,7 +405,7 @@
       }
     } finally { sw.style.pointerEvents = ""; }
     await refreshHeader(); await refreshResults(); await refreshConsensus();
-  };
+  void refreshAgentConfig(); };
   const openMesas = async () => {
     const data = await api("/api/iq/mesas");
     const rows = (data?.rows ?? []).filter((r) => r.instrumentType === "BINARY" && r.marketType === "OTC");
