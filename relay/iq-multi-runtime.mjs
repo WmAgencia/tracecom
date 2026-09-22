@@ -1601,8 +1601,8 @@ export class IqMultiRuntime extends EventEmitter {
       if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("BLITZ_KILL_SWITCH");
       const blitzStake = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2);
       this.blitzLastEntryAt.set(marketKey, this.now()); // cooldown por ativo em TODA tentativa (evita retentativa por segundo)
-      // Ordem BLITZ real pelo WS (option_type_id 12 + expiration_size em segundos).
-      return this.requestOrder({ marketKey, direction, stake: blitzStake, horizonSeconds: 45, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId, blitz: true });
+      // Mesmo caminho do binario (WS turbo 60s) - o produto Blitz nao esta disponivel de forma confiavel.
+      return this.requestOrder({ marketKey, direction, stake: blitzStake, horizonSeconds: 60, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId });
     }
     const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 1);
     return this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: this.agentExpirySeconds, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId });
@@ -3542,7 +3542,7 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
-  async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = 60, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false, blitz = false } = {}) {
+  async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = 60, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false } = {}) {
     // Trava UNICA dos interruptores: fonte Blitz exige Blitz ligado; qualquer outra exige Binarios ligado.
     const isBlitzSource = String(source ?? "").toUpperCase().includes("BLITZ");
     if (isBlitzSource ? this.agentExecBlitz !== true : this.agentExecBinary !== true) throw new IqWsError(isBlitzSource ? "BLITZ_EXEC_DISABLED" : "BINARY_EXEC_DISABLED");
@@ -3624,8 +3624,7 @@ export class IqMultiRuntime extends EventEmitter {
       record = registered.record;
     }
     const serverSec = (this.client.serverNow() ?? this.now()) / 1000;
-    const blitzSize = Math.max(5, Math.round(Number(horizonSeconds)));
-    const expiration = blitz === true ? { expiration: Math.floor(serverSec) + blitzSize, optionTypeId: 12, optionKind: "blitz", durationMinutes: null, expirationSize: blitzSize } : computeExpiration(serverSec, Math.max(1, Math.round(Number(horizonSeconds) / 60)));
+    const expiration = computeExpiration(serverSec, Math.max(1, Math.round(Number(horizonSeconds) / 60)));
     if (expiration.optionKind === "turbo" && Array.isArray(ctx.instrumentTypes) && ctx.instrumentTypes.length && !ctx.instrumentTypes.includes("turbo")) throw new IqWsError("INSTRUMENT_NOT_AVAILABLE_FOR_HORIZON", `${key}: turbo indisponivel (${ctx.instrumentTypes.join(",")})`);
     // JIT: o contrato precisa expirar exatamente no targetExpiryAt do candidato; fail-closed se o broker nao aceitar essa janela.
     if (entryTiming?.targetExpirySec && Number(expiration.expiration) !== Number(entryTiming.targetExpirySec)) throw new IqWsError("ENTRY_EXPIRATION_MISMATCH", `broker=${expiration.expiration} target=${entryTiming.targetExpirySec}`);
@@ -3657,7 +3656,7 @@ export class IqMultiRuntime extends EventEmitter {
         this.accountContext.recordRealAttempt("SEND", { strategy: this.accountContext.armedMeta?.strategy ?? null, agentVersion: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, candidateId: entryTiming?.candidateId ?? null, decisionId: decisionId ?? null, stake: finalStake, marketKey: key, direction: decisionAction, expiry: expiration.expiration, send: true, ack: null, brokerOrderId: null, settlement: null, executionId: record.executionId, idempotencyKey: requestedKey, mode });
         this.#auditRecord(record.executionId, key, "REAL_ORDER_SENT", { accountContext: ACCOUNT_REAL, strategy: this.accountContext.armedMeta?.strategy ?? null, agentVersion: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, candidateId: entryTiming?.candidateId ?? null, decisionId: decisionId ?? null, stake: finalStake, direction: directionAction, expiry: expiration.expiration, source }, { persist: true, accountContext: ACCOUNT_REAL });
       }
-      this.client.placeOrder({ price: finalStake, activeId: ctx.activeId, direction: directionWire, expiration: expiration.expiration, optionTypeId: expiration.optionTypeId, balanceId, requestId: requestedKey, expirationSize: expiration.expirationSize ?? null, version: expiration.optionKind === "blitz" ? "2.0" : "1.0" });
+      this.client.placeOrder({ price: finalStake, activeId: ctx.activeId, direction: directionWire, expiration: expiration.expiration, optionTypeId: expiration.optionTypeId, balanceId, requestId: requestedKey });
       this.#safe(() => this.log("IQ_MULTI_ORDER_SENT", JSON.stringify({ marketKey: key, executionId: record.executionId, direction: directionWire, stake: finalStake, mode, activeId: ctx.activeId, expiration: expiration.expiration, optionKind: expiration.optionKind, source })));
     } catch (error) {
       this.pendingOrders.delete(key);
