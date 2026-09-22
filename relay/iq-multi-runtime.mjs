@@ -1589,9 +1589,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
     // Desarmado: registra a intencao como DRY_RUN (mede) sem floodar REJECTED nem enviar ordem.
     if (this.armState.armed !== true) return { state: "DRY_RUN", dryRun: true, dryRunReason: "NOT_ARMED", brokerOrderId: null, executionId: null, stake: Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2), mode: "PRACTICE" };
-    if (this.agentExecBinary !== true && !String(strategyId ?? "").includes("BLITZ")) throw new IqWsError("BINARY_EXEC_DISABLED");
     if (String(strategyId ?? "").includes("BLITZ")) {
-      if (this.agentExecBlitz !== true) throw new IqWsError("BLITZ_EXEC_DISABLED");
       if (this.armState.armed !== true) throw new IqWsError("BLITZ_NOT_ARMED");
       if (this.config.autoExecute !== true) throw new IqWsError("BLITZ_AUTO_EXECUTE_OFF");
       if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("BLITZ_KILL_SWITCH");
@@ -3537,6 +3535,9 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = 60, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false } = {}) {
+    // Trava UNICA dos interruptores: fonte Blitz exige Blitz ligado; qualquer outra exige Binarios ligado.
+    const isBlitzSource = String(source ?? "").toUpperCase().includes("BLITZ");
+    if (isBlitzSource ? this.agentExecBlitz !== true : this.agentExecBinary !== true) throw new IqWsError(isBlitzSource ? "BLITZ_EXEC_DISABLED" : "BINARY_EXEC_DISABLED");
     const routing = this.#executionRouting(source);
     if (!routing.allowed) {
       this.#safe(() => this.log("IQ_MULTI_EXECUTION_SOURCE_BLOCKED", JSON.stringify({ marketKey: key, source: routing.source, policy: routing.policy, reason: routing.reason ?? "EXECUTION_SOURCE_BLOCKED" })));

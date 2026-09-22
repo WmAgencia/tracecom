@@ -58,12 +58,15 @@ const rsiAt = (closes, end, period = 14) => {
 const LEVELS = [100, 90, 80, 70, 50];
 const VARIANTS = ["", "F", "T", "FT", "S", "FTS"];
 const TIMINGS = [0, 1, 2, 3, 6];          // candles de espera apos o sinal (0/5/10/15/30s)
-const EXPIRY_CANDLES = 12;                 // 60s
+const EXPIRIES = [6, 9, 12, 24, 36];       // 30s, 45s, 60s, 120s, 180s
+const EXPIRY_CANDLES = 12;                 // (legado) 60s
 const variantFilters = (v) => (v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S") } : null);
 const strategies = [];
 for (const level of LEVELS) for (const variant of VARIANTS) strategies.push({ label: String(level) + variant, level, variant, filters: variantFilters(variant) });
 
-const stats = new Map(strategies.map((s) => [s.label, new Map(TIMINGS.map((t) => [t, { w: 0, l: 0, d: 0 }]))]));
+const keyOf = (label, wait, expiry) => label + "|" + wait + "|" + expiry;
+const stats = new Map();
+const bump = (label, wait, expiry, half, outcome) => { const k = keyOf(label, wait, expiry) + "|" + half; const row = stats.get(k) ?? { label, wait, expiry, half, w: 0, l: 0, d: 0 }; row[outcome] += 1; stats.set(k, row); };
 
 // ---------- replay ----------
 let triggers = 0;
@@ -80,18 +83,32 @@ for (const { market, candles } of series) {
       rsi: analyzeRsiAgent(snapshot), bollinger: analyzeBollingerAgent(snapshot), adx: analyzeAdxAgent(snapshot),
       atr: analyzeAtrAgent(snapshot), fib: analyzeFibAgent(snapshot),
     };
+    const half = i < candles.length * 0.7 ? "in" : "out";     // 70% descoberta / 30% validacao (sem vies)
+    const decisions = [];
     for (const strategy of strategies) {
       const consensus = runConsensusAgent({ snapshot, opinions, safetyPct: strategy.level, filters: strategy.filters });
-      if (consensus.decision !== "BUY" && consensus.decision !== "SELL") continue;
+      if (consensus.decision === "BUY" || consensus.decision === "SELL") decisions.push({ label: strategy.label, side: consensus.decision });
+    }
+    // familias extras (pre-declaradas): continuacao (com o RSI), toque na banda (reversao) e rompimento de range
+    if (opinions.rsi?.trigger === true && opinions.rsi.side) decisions.push({ label: "CONT_RSI", side: opinions.rsi.side === "BUY" ? "SELL" : "BUY" });
+    if (opinions.bollinger?.rejection === "LOWER") decisions.push({ label: "BANDA_LOWER", side: "BUY" });
+    if (opinions.bollinger?.rejection === "UPPER") decisions.push({ label: "BANDA_UPPER", side: "SELL" });
+    const win = candles.slice(Math.max(0, i - 20), i + 1);
+    const hi = Math.max(...win.map((c) => c.high)); const lo = Math.min(...win.map((c) => c.low));
+    if (candles[i].close > hi - 1e-9) decisions.push({ label: "ROMPE_TOPO", side: "BUY" });
+    if (candles[i].close < lo + 1e-9) decisions.push({ label: "ROMPE_FUNDO", side: "SELL" });
+    for (const d of decisions) {
       for (const wait of TIMINGS) {
-        const entryIndex = i + 1 + wait;                        // entrada no candle SEGUINTE (+ espera)
-        const expiryIndex = entryIndex + EXPIRY_CANDLES;
-        if (expiryIndex >= candles.length) continue;
-        const entry = candles[entryIndex].close;
-        const exit = candles[expiryIndex].close;
-        const up = consensus.decision === "BUY";
-        const outcome = exit === entry ? "d" : (up ? exit > entry : exit < entry) ? "w" : "l";
-        stats.get(strategy.label).get(wait)[outcome] += 1;
+        for (const expiry of EXPIRIES) {
+          const entryIndex = i + 1 + wait;                      // entrada no candle SEGUINTE (+ espera)
+          const expiryIndex = entryIndex + expiry;
+          if (expiryIndex >= candles.length) continue;
+          const entry = candles[entryIndex].close;
+          const exit = candles[expiryIndex].close;
+          const up = d.side === "BUY";
+          const outcome = exit === entry ? "d" : (up ? exit > entry : exit < entry) ? "w" : "l";
+          bump(d.label, wait, expiry, half, outcome);
+        }
       }
     }
   }
@@ -99,17 +116,16 @@ for (const { market, candles } of series) {
 
 // ---------- relatorio ----------
 console.log("GATILHOS=" + triggers);
-console.log("\nESTRATEGIA | ESPERA | TRADES | WR | EDGE(89%)");
-const rows = [];
-for (const strategy of strategies) {
-  for (const wait of TIMINGS) {
-    const s = stats.get(strategy.label).get(wait);
-    const n = s.w + s.l;
-    if (n < 30) continue;
-    const wr = (100 * s.w) / n;
-    rows.push({ label: strategy.label, wait, n, wr, edge: wr - 52.9, d: s.d });
-  }
-}
-rows.sort((a, b) => b.wr - a.wr);
-for (const r of rows.slice(0, 40)) console.log(String(r.label).padStart(6) + " | " + String(r.wait * 5 + "s").padStart(5) + " | " + String(r.n).padStart(6) + " | " + r.wr.toFixed(1) + "% | " + (r.edge >= 0 ? "+" : "") + r.edge.toFixed(1) + "pp (d=" + r.d + ")");
-console.log("\nMELHOR_WR=" + (rows[0] ? rows[0].label + " @" + rows[0].wait * 5 + "s = " + rows[0].wr.toFixed(1) + "% (n=" + rows[0].n + ")" : "-"));
+const all = [...stats.values()].filter((r) => r.half === "in" && r.w + r.l >= 100);
+all.sort((a, b) => (b.w / (b.w + b.l)) - (a.w / (a.w + a.l)));
+console.log("\nIN-SAMPLE (descoberta, n>=100): top 15");
+for (const r of all.slice(0, 15)) { const n = r.w + r.l; const wr = 100 * r.w / n; console.log("  " + r.label.padEnd(14) + " espera=" + (r.wait * 5 + "s").padStart(4) + " exp=" + (r.expiry * 5 + "s").padStart(5) + " n=" + String(n).padStart(5) + " WR=" + wr.toFixed(1) + "%"); }
+const outRows = [...stats.values()].filter((r) => r.half === "out" && r.w + r.l >= 60);
+outRows.sort((a, b) => (b.w / (b.w + b.l)) - (a.w / (a.w + a.l)));
+console.log("\nOUT-OF-SAMPLE (validacao, n>=60): top 15");
+for (const r of outRows.slice(0, 15)) { const n = r.w + r.l; const wr = 100 * r.w / n; console.log("  " + r.label.padEnd(14) + " espera=" + (r.wait * 5 + "s").padStart(4) + " exp=" + (r.expiry * 5 + "s").padStart(5) + " n=" + String(n).padStart(5) + " WR=" + wr.toFixed(1) + "%"); }
+const inTop = all.slice(0, 20).map((r) => keyOf(r.label, r.wait, r.expiry));
+const outMap = new Map([...stats.values()].filter((r) => r.half === "out").map((r) => [keyOf(r.label, r.wait, r.expiry), r]));
+console.log("\nCANDIDATOS (top20 in-sample) validados fora da amostra:");
+for (const k of inTop) { const r = outMap.get(k); if (!r) continue; const n = r.w + r.l; if (!n) continue; const wr = 100 * r.w / n; console.log("  " + r.label.padEnd(14) + " espera=" + (r.wait * 5 + "s").padStart(4) + " exp=" + (r.expiry * 5 + "s").padStart(5) + " n=" + String(n).padStart(4) + " WR_out=" + wr.toFixed(1) + "%"); }
+console.log("\nACIMA_DE_70_IN=" + all.filter((r) => (100 * r.w / (r.w + r.l)) > 70).length + " ACIMA_DE_70_OUT=" + outRows.filter((r) => (100 * r.w / (r.w + r.l)) > 70).length);
