@@ -109,3 +109,9 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 - FIX CRITICO: param labStake PRESERVADO (consumido pelo runner agentic linha 127) — sem ele o catch silencioso mataria o runner atual (agentic=null).
 - EVIDENCIA: scripts/stage22-smoke.mjs -> agentic=OK, lab=REMOVED, labS04=REMOVED, initFails=NENHUM; agentic 44/44; lab6 20/20.
 - SCAN null-safety dos demais legados (linhas_sem_?.): shadowLab 10, timingShadow 17, fourWay 4, agentsV4 8, indicator5m 5, rsiAgentsV3 5, rsiAgentsV4 11, rsiAgentsV2Live 5, iqMcp 4, scenarioShadow 12 -> cada um exige editar referencias diretas antes de remover; proximo lote recomendado: shadowLab + timingShadow (shadow-only, sem ordem) ou scenario*.
+
+### Progresso 2.5 (atualizado)
+- CRIADO relay/execution/binary300.mjs: OPERATIONAL_EXPIRY_SECONDS=300, ExpiryPolicyError, assertOperationalExpiry/isOperationalExpiry, Binary300Timing (syncServerTime/offset, serverNow, bucketStart/bucketEnd, targetExpiryAt ESTRITO = (floor(t/300000)+1)*300000, deadlineAt=t_exp-minLead 5s, secondsToExpiry, canSubmit fail-closed, snapshot). Sem comentarios/REAL; aditivo, runtime intocado.
+- PROVA da semantica legada: Math.ceil(serverNow/60_000)*60_000 (Turbo 1m) repetido em 8 pontos do iq-multi-runtime (1430/1456/1485/1506/1592/1836/1870/2402/2420) -> deve ser substituido por Binary300Timing quando o caminho unico (2.6-2.9) entrar.
+- TESTES: scripts/binary300-tests.mjs 21/21 (EXPIRY_NOT_300S p/ 60/180/null, NO_SERVER_TIME, offset, fronteira exata -> proxima, janela fechada no deadline, aberta 1ms antes, sem campo REAL).
+- PROXIMO (2.6-2.9): ExecutionGate/AccountRouter/Revalidation com invariantes status!=ACTIVE->DENY e researchOnly->DENY; depois 2.2 restante (shadowLab/timingShadow/scenario*/indicator5m/agentsV4/rsiAgentsV3/V4/V2Live com referencias diretas a editar).
