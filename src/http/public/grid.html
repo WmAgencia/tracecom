@@ -483,7 +483,7 @@
     const el = $("safetyShadow");
     const levels = data?.levels ?? [];
     const binaryRows = levels.map((r) => ({ name: strategyName(String(r.label ?? r.level)), settled: r.settled, winRate: r.winRate, edge: r.edge, breakeven: r.breakeven, pnl: r.pnl, entriesPerHour: r.entriesPerHour }));
-    const blitzRows = blitz && (blitz.settled > 0 || blitz.winRate != null) ? [{ name: "Blitz 45s", settled: blitz.settled, winRate: blitz.winRate, edge: blitz.edge, breakeven: blitz.breakeven, pnl: blitz.pnl, entriesPerHour: blitz.entriesPerHour }] : [];
+    const blitzRows = (blitz?.levels ?? []).map((r) => ({ name: strategyName(String(r.label ?? r.level)), settled: r.settled, winRate: r.winRate, edge: r.edge, breakeven: r.breakeven, pnl: r.pnl, entriesPerHour: r.entriesPerHour }));
     el.innerHTML = "<div style='display:grid;grid-template-columns:1fr 1fr;gap:16px'>" +
       "<div style='background:#0b1220;border:1px solid #1c2942;border-radius:12px;padding:10px'><div style='font-size:12px;color:#e8edf7;font-weight:700;margin-bottom:6px'>Binarios OTC</div>" + renderTable(binaryRows) + "</div>" +
       "<div style='background:#0b1220;border:1px solid #1c2942;border-radius:12px;padding:10px'><div style='font-size:12px;color:#e8edf7;font-weight:700;margin-bottom:6px'>Blitz OTC 45s</div>" + renderTable(blitzRows) + "</div>" +

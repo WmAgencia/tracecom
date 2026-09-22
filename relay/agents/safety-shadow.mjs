@@ -34,8 +34,9 @@ export function parseSafetyLevels(value) {
 }
 
 export class SafetyShadow {
-  constructor({ pool, levels = DEFAULT_SHADOW_LEVELS, now = () => Date.now(), log = () => {}, candles = null, entryOffsetMs = 40_000, entryToleranceMs = 2_500 } = {}) {
+  constructor({ pool, levels = DEFAULT_SHADOW_LEVELS, now = () => Date.now(), log = () => {}, candles = null, entryOffsetMs = 40_000, entryToleranceMs = 2_500, runId = SAFETY_SHADOW_RUN_ID } = {}) {
     this.pool = pool;
+    this.runId = runId;
     this.levels = parseSafetyLevels(levels);
     this.now = now;
     this.log = log;
@@ -82,7 +83,7 @@ export class SafetyShadow {
       try {
         await this.pool.query(
           "INSERT INTO iq_shadow_trades (run_id, level, variant, market_key, side, entry_price, payout, expiry_at, snapshot_id, reason) VALUES ($1,$2,$3,$4,$5,$6,$7,to_timestamp($8/1000.0),$9,$10) ON CONFLICT (run_id, level, variant, market_key, expiry_at) DO NOTHING",
-          [SAFETY_SHADOW_RUN_ID, row.level, row.variant, row.marketKey, row.side, row.entryPrice, row.payout, row.expiryAt, row.snapshotId, row.reason]
+          [this.runId, row.level, row.variant, row.marketKey, row.side, row.entryPrice, row.payout, row.expiryAt, row.snapshotId, row.reason]
         );
         this.stats.recorded += 1;
       } catch (error) {
@@ -97,7 +98,7 @@ export class SafetyShadow {
     if (!this.pool?.query || typeof this.candles !== "function") return;
     const due = await this.pool.query(
       "SELECT id, market_key AS \"marketKey\", side, entry_price AS \"entryPrice\", payout, expiry_at AS \"expiryAt\" FROM iq_shadow_trades WHERE run_id=$1 AND settled_at IS NULL AND expiry_at <= now() AND expiry_at > now() - interval '10 minutes' ORDER BY expiry_at LIMIT 60",
-      [SAFETY_SHADOW_RUN_ID]
+      [this.runId]
     ).catch(() => ({ rows: [] }));
     for (const row of due.rows ?? []) {
       try {
@@ -119,7 +120,7 @@ export class SafetyShadow {
         this.log("SAFETY_SHADOW_SETTLE_FAIL", String(error?.message ?? error).slice(0, 140));
       }
     }
-    await this.pool.query("UPDATE iq_shadow_trades SET result='NO_DATA', settled_at=now() WHERE run_id=$1 AND settled_at IS NULL AND expiry_at < now() - interval '10 minutes'", [SAFETY_SHADOW_RUN_ID])
+    await this.pool.query("UPDATE iq_shadow_trades SET result='NO_DATA', settled_at=now() WHERE run_id=$1 AND settled_at IS NULL AND expiry_at < now() - interval '10 minutes'", [this.runId])
       .then((r) => { this.stats.noData += r.rowCount ?? 0; })
       .catch(() => undefined);
   }
@@ -141,7 +142,7 @@ export class SafetyShadow {
        FROM iq_shadow_trades
        WHERE run_id=$1 AND created_at >= now() - ($2 || ' hours')::interval
        GROUP BY level, variant ORDER BY level DESC, variant ASC`,
-      [SAFETY_SHADOW_RUN_ID, String(bounded)]
+      [this.runId, String(bounded)]
     ).catch(() => ({ rows: [] }))).rows ?? [];
     const activeLabels = new Set(this.levels.map((spec) => spec.label));
     const levels = rows.filter((row) => activeLabels.has(String(row.level) + String(row.variant ?? ""))).map((row) => {
@@ -154,6 +155,6 @@ export class SafetyShadow {
         pnl: Number(row.pnl), avgPayout: Number(Number(row.avg_payout).toFixed(1)), entriesPerHour: Number((Number(row.entries) / bounded).toFixed(1)),
       };
     });
-    return { version: SAFETY_SHADOW_VERSION, runId: SAFETY_SHADOW_RUN_ID, hours: bounded, levels, stats: { ...this.stats }, activeLevels: this.levels.map((spec) => spec.label) };
+    return { version: SAFETY_SHADOW_VERSION, runId: this.runId, hours: bounded, levels, stats: { ...this.stats }, activeLevels: this.levels.map((spec) => spec.label) };
   }
 }
