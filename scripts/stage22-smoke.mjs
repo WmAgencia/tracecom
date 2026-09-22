@@ -1,0 +1,10 @@
+import { IqMultiRuntime } from "file:///D:/tracecom/repo/relay/iq-multi-runtime.mjs";
+const logs = [];
+const pool = { query: async () => ({ rows: [] }) };
+const rt = new IqMultiRuntime({ pool, log: (m) => logs.push(String(m)), agenticEnabled: false, executionAllowlist: [] });
+console.log("SMOKE agentic=" + (rt.agentic ? "OK" : "NULL"));
+console.log("SMOKE lab=" + (rt.lab === undefined ? "REMOVED" : "PRESENT"));
+console.log("SMOKE labS04=" + (rt.labS04 === undefined ? "REMOVED" : "PRESENT"));
+const fails = logs.filter((l) => /INIT_FAIL/.test(l));
+console.log("SMOKE initFails=" + (fails.length ? fails.join(" | ") : "NENHUM"));
+process.exit(0);
