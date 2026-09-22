@@ -62,3 +62,15 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 
 - Faça **somente** o que foi pedido. Em caso de dúvida, **perguntar antes** de alterar.
 - Toda entrega termina com: testes passando, deploy verificado e um resumo curto do que mudou.
+
+
+## Reconstrucao controlada (2026-09-22)
+
+- Blitz PROIBIDO no runtime (zero caminho operacional).
+- Horizonte operacional unico = 300s (nenhuma ordem com 30/45/60/150/180).
+- Uma unica estrategia operacional: familia PULLBACK_4060_300 (V2 = PULLBACK_4060_300_AGENTIC_V2).
+- Mudancas de estrategia exigem pedido explicito do operador; apos o deploy da V2: FREEZE (sem tuning durante coleta; mudanca = V3 + novo statsEpoch).
+- PULLBACK_4060_300_BASELINE nunca e apagada (archive/baseline).
+- Sem duplicacao de inteligencia PRACTICE/REAL (uma decisao; Account Router escolhe a conta no final).
+- Codigo simples: sem camada/abstracao/fallback sem justificativa; sem caminhos legacy operacionais.
+- Backups: manifest no git; snapshots zip via artifact de workflow (nunca no historico do git).
