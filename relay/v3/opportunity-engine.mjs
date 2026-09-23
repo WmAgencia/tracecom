@@ -125,7 +125,7 @@ export class ExpirationOpportunityEngine {
       if (window.ok !== true) { this.enforceWindow(opportunityId, at); return opportunity; }
       const beforeTarget = at < opportunity.targetSendAt;
       opportunity.status = beforeTarget ? "FINAL_REVIEW" : outcome === "APPROVE_BUY" ? "APPROVED_BUY" : "APPROVED_SELL";
-      opportunity.finalDecision = { at, result: outcome, scenario: asset?.scenario ?? null, agreement: consensus?.agreement ?? null, timing: window.derived };
+      opportunity.finalDecision = { at, result: outcome, direction: outcome === "APPROVE_BUY" ? "UP" : outcome === "APPROVE_SELL" ? "DOWN" : "NONE", scenario: asset?.scenario ?? null, agreement: consensus?.agreement ?? null, timing: window.derived };
       this.counters.approved += 1;
       return opportunity;
     }

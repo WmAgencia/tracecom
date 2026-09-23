@@ -23,6 +23,7 @@ import { factPrompt } from "./agents/prompts.mjs";
 import { buildPacketEnvelope } from "./agents/fact-packets.mjs";
 import { collectInputNumbers } from "./agents/schemas.mjs";
 import { candleFeedBlockReason } from "./feed-guard.mjs";
+import { canonicalDecisionDirection } from "./final-gate.mjs";
 import { ExecutionScheduler } from "./scheduler.mjs";
 import { stableStringify } from "../intelligence/features.mjs";
 
@@ -179,6 +180,8 @@ export class V3Runtime {
     const consensus = approvalsAllowed
       ? { result: agentResult.result, agreement: agentResult.consensus.agreement, direction: agentResult.consensus.direction, independentAssessment: agentResult.consensus.independentAssessment ?? null, assetComparison: agentResult.consensus.assetComparison ?? null, challenge: { reasons: agentResult.consensus.reasons ?? [], challengeSteps: (agentResult.finalGate?.checks ?? []).map((check) => ({ id: check.id, ok: check.ok, detail: check.detail })) }, independent: agentResult.consensus, bilateral: null, bestCounterCase: null }
       : { ...deterministicConsensus, result: "AGENT_UNAVAILABLE", agreement: "INSUFFICIENT_EVIDENCE" };
+    // AUTORIDADE DIRECIONAL: sempre do Consensus Final. Asset permanece hipotese independente (nunca sobrescreve).
+    const canonicalDirection = canonicalDecisionDirection(consensus);
 
     const cycle = {
       at, tteMs: window.derived?.tteMs ?? null, closedCandleId, featureSnapshotId,
@@ -186,7 +189,8 @@ export class V3Runtime {
       specialistStates: { rsi: specialists.rsi?.assessment ?? null, dmi: specialists.dmi?.assessment ?? null, bollinger: specialists.bollinger?.assessment ?? null, atr: specialists.atr?.assessment ?? null, priceAction: specialists.priceAction?.assessment ?? null },
       agentSpecialistStates: approvalsAllowed ? Object.fromEntries(Object.entries(agentResult.specialists).map(([role, output]) => [role, output?.assessment ?? null])) : null,
       assetScenario: asset?.scenario ?? null, assetDirection: asset?.direction ?? null, assetState: asset?.state ?? null,
-      consensusResult: consensus.result, agreement: consensus.agreement,
+      consensusResult: consensus.result, consensusDirection: consensus?.direction ?? null, canonicalDirection,
+      agreement: consensus.agreement,
       changedSincePreviousCycle: asset?.changedSincePreviousCycle ?? [],
       status: asset?.state ?? "WAIT",
       agentMode: this.agentMode,
@@ -200,11 +204,11 @@ export class V3Runtime {
     if (approvalsAllowed) this.prevByMarket.set(marketKey, { ...specialists, asset });
 
     if ((consensus.result === "APPROVE_BUY" || consensus.result === "APPROVE_SELL") && !["MISSED_5M_ENTRY_WINDOW", "CANCELLED"].includes(opportunity.status)) {
-      const finalDecision = { result: consensus.result, at, tteMs: window.derived?.tteMs ?? null, scenario: asset?.scenario ?? null, direction: asset?.direction ?? null, agentMode: this.agentMode, agreement: consensus.agreement };
+      const finalDecision = { result: consensus.result, at, tteMs: window.derived?.tteMs ?? null, scenario: asset?.scenario ?? null, direction: canonicalDirection, agentMode: this.agentMode, agreement: consensus.agreement };
       const snapshot = buildV3DecisionSnapshot({ strategy: this.strategy, opportunity, cycles: opportunity.cycles, asset, consensus, specialists, measurements, finalDecision, timing: window.derived });
       this.counters.snapshots += 1;
       this.counters.approvals += 1;
-      const scheduled = this.scheduler.schedule({ opportunityId: opportunity.opportunityId, expirationAt: opportunity.expirationAt, targetSendAt: opportunity.targetSendAt, hardCutoffAt: opportunity.hardStrategicCutoffAt, brokerNow: at, context: { result: consensus.result, snapshotHash: snapshot.snapshotHash, direction: asset?.direction ?? null } });
+      const scheduled = this.scheduler.schedule({ opportunityId: opportunity.opportunityId, expirationAt: opportunity.expirationAt, targetSendAt: opportunity.targetSendAt, hardCutoffAt: opportunity.hardStrategicCutoffAt, brokerNow: at, context: { result: consensus.result, snapshotHash: snapshot.snapshotHash, direction: canonicalDirection } });
       if (scheduled.scheduled) this.counters.scheduled += 1;
       opportunity.finalDecision = { ...opportunity.finalDecision, snapshotHash: snapshot.snapshotHash, executionBlocked: this.executionEnabled ? "V3_EXECUTION_NOT_WIRED" : "V3_NOT_ACTIVE" };
       opportunity.executionRef = { ...(opportunity.executionRef ?? {}), scheduledSendAt: opportunity.targetSendAt, scheduledAt: at, submit: false, blocked: opportunity.finalDecision.executionBlocked };
@@ -220,8 +224,8 @@ export class V3Runtime {
     if (this.latencySamples.length > 500) this.latencySamples.shift();
     this.counters.candleCycles += 1;
     this.lastCycleAt = at;
-    this.log("V3_CYCLE", stableStringify({ opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, scenario: asset?.scenario, direction: asset?.direction ?? null, state: asset?.state, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs }));
-    return { opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, assetState: asset?.state ?? null, scenario: asset?.scenario ?? null, direction: asset?.direction ?? null, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs };
+    this.log("V3_CYCLE", stableStringify({ opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, scenario: asset?.scenario, assetDirection: asset?.direction ?? null, consensusDirection: consensus?.direction ?? null, canonicalDirection, state: asset?.state, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs }));
+    return { opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, assetState: asset?.state ?? null, scenario: asset?.scenario ?? null, direction: canonicalDirection, assetDirection: asset?.direction ?? null, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs };
   }
 
   /** Disparo no alvo (~TTE302): revalida tudo; observe-only nunca envia ordem. */
@@ -232,7 +236,9 @@ export class V3Runtime {
     if (!opportunity) return { opportunityId: intent.opportunityId, fired: true, result: "OPPORTUNITY_GONE" };
     const execution = ExpirationTargetTiming.execution({ expirationAt: opportunity.expirationAt, brokerNow, purchaseDeadlineAt: opportunity.purchaseDeadlineAt });
     const lastCycle = opportunity.cycles[opportunity.cycles.length - 1] ?? null;
-    const direction = opportunity.finalDecision?.result === "APPROVE_SELL" ? "DOWN" : "UP";
+    // DIRECAO CANONICA: preferir a direcao persistida (Consensus); fallback derivado do result. NUNCA do Asset.
+    const storedDirection = opportunity.finalDecision?.direction;
+    const direction = storedDirection === "UP" || storedDirection === "DOWN" ? storedDirection : opportunity.finalDecision?.result === "APPROVE_SELL" ? "DOWN" : "UP";
     const relevantInvalidations = (lastCycle?.asset?.invalidations ?? []).filter((item) => (String(item.code).includes("BEARISH") ? direction !== "DOWN" : String(item.code).includes("BULLISH") ? direction !== "UP" : true));
     const checks = {
       executionWindow: execution.ok === true, executionCode: execution.code, tteMs: execution.derived?.tteMs ?? null,

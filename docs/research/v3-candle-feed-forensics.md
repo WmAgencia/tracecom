@@ -4,9 +4,10 @@ Data: 2026-09-23 (UTC) · Missão: investigar o desaparecimento de candles antes
 Resultado: **causa raiz comprovada** (bug no cliente de auditoria, não no feed) + **lacuna real corrigida** (sem backfill no boot/reconnect)
 + observabilidade por camadas + fail-closed com motivos. `READY_FOR_LIVE_AUDIT = YES`. Nenhuma ordem; 0 provider calls.
 
-- V3 hash final: `sha256:7b066cd0d5c18794b6fb8985a98f39709d53d09816aaa59cb90e553b15327c9b` (mudou: `relay/v3/runtime.mjs` + `relay/v3/feed-guard.mjs` novos)
+- V3 hash final: `sha256:04a7936741e12b7e9d1c7e940149d5fce5a9dcaacd541da532c602354dfcec9d`
+  (linhagem: `a5a81fcc…` [pré-forense] → `7b066cd0…` [health+guard+backfill] → `04a79367…` [consistency patch 0.1/0.2])
 - V2 frozen intocado: `sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0`
-- Commits: `e0eadf8` (health+guard+shape), `cba8335` (backfill get-candles v2), `ecb6084` (predicate real/OTC/background), `07ae63f` (retry 60s), `9eefe49` (retry 60s final)
+- Commits: `e0eadf8` (health+guard+shape), `cba8335` (backfill get-candles v2), `ecb6084` (predicate real/OTC/background), `07ae63f`/`9eefe49` (retry), `00086eb` (doc), + commit do consistency patch (0.1/0.2)
 - Flags: `V3_AGENTS_ENABLED=false` · `V3_ENABLED=true` (OBSERVE_ONLY) · `AUTO_ARM_PRACTICE=false` · 0 ordens · 0 PATH_TEST
 
 ## 1. Caminho completo do candle (mapeado)

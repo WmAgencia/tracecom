@@ -36,6 +36,7 @@ export function buildV3DecisionSnapshot({ strategy = null, opportunity, cycles =
     asset: asset ? { scenario: asset.scenario, state: asset.state, direction: asset.direction, reasoningSummary: asset.reasoningSummary, bestCounterCase: asset.bestCounterCase } : null,
     consensus: consensus ? { independent: consensus.independent, agreement: consensus.agreement, result: consensus.result, challenge: consensus.challenge } : null,
     finalDecision,
+  canonicalDirection: finalDecision?.direction ?? null,
     createdAt: Date.now(),
   };
   const hash = `sha256:${crypto.createHash("sha256").update(stableStringify(snapshot)).digest("hex")}`;

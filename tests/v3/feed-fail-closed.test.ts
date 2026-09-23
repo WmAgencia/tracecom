@@ -9,7 +9,7 @@ const runtimeModule = await import("../../relay/v3/runtime.mjs");
 // @ts-expect-error - relay ESM sem tipagem
 const guardModule = await import("../../relay/v3/feed-guard.mjs");
 const { V3Runtime } = runtimeModule as any;
-const { candleFeedBlockReason, MIN_CANDLES_FOR_V3 } = guardModule as any;
+const { candleFeedBlockReason, MIN_CANDLES_FOR_V3, V3_CANDLE_BLOCK_REASONS, V3_RELAY_BLOCK_REASONS, V3_FEED_BLOCK_REASONS } = guardModule as any;
 
 const exp = ALIGNED_BASE + 300_000;
 const activeFor = (expirationAt: number) => ({ id: 76, name: "EURUSD-OTC", enabled: true, is_suspended: false, deadtime: 30, option: { expiration_times: [Math.round(expirationAt / 1000)], profit: { commission: 18 } } });
@@ -72,5 +72,19 @@ describe("V3 feed guard — runtime fail-closed (sem LLM)", () => {
     expect(status.candleFeed.reasons.MARKET_NOT_SUBSCRIBED).toBe(1);
     expect(status.counters.agentCycles).toBe(0);
     expect(status.counters.lastFeedBlockedMarket).toBe("activeId:76");
+  });
+
+  it("contrato de motivos: 3 de candle (aqui) + 2 de relay (disconnect/subscription) = 5 distintos", () => {
+    expect([...V3_CANDLE_BLOCK_REASONS]).toEqual(["NO_CANDLE_HISTORY", "INSUFFICIENT_CANDLES", "CANDLE_FEED_STALE"]);
+    expect([...V3_RELAY_BLOCK_REASONS]).toEqual(["CANDLE_FEED_DISCONNECTED", "MARKET_NOT_SUBSCRIBED"]);
+    expect(new Set([...V3_FEED_BLOCK_REASONS]).size).toBe(5);
+    for (const reason of V3_FEED_BLOCK_REASONS) {
+      const runtime = makeRuntime();
+      runtime.noteFeedBlocked(reason, "X");
+      expect(runtime.status().candleFeed.reasons[reason]).toBe(1);
+    }
+    // candleFeedBlockReason NUNCA devolve os motivos de relay (classificados na camada certa).
+    expect(V3_CANDLE_BLOCK_REASONS).not.toContain("CANDLE_FEED_DISCONNECTED");
+    expect(V3_CANDLE_BLOCK_REASONS).not.toContain("MARKET_NOT_SUBSCRIBED");
   });
 });

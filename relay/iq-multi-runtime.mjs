@@ -597,6 +597,7 @@ export class IqMultiRuntime extends EventEmitter {
       this.lastSubscriptionAt = this.now();
     } catch (error) {
       ctx.subscriptionState = "FAILED";
+      this.#safe(() => this.v3?.noteFeedBlocked?.("MARKET_NOT_SUBSCRIBED", ctx.marketKey));
       this.#safe(() => this.log("IQ_MULTI_SUBSCRIBE_FAILED", `${ctx.marketKey}:${String(error?.code ?? error?.message ?? error).slice(0, 80)}`));
     }
   }

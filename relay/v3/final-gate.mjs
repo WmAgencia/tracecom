@@ -11,6 +11,14 @@ export const GATE_RESULTS = Object.freeze(["APPROVE_BUY", "APPROVE_SELL", "CANCE
 const APPROVALS = new Set(["APPROVE_BUY", "APPROVE_SELL"]);
 export const EXPECTED_AGENT_CALLS = 7;
 
+/** Autoridade direcional FINAL: SEMPRE do Consensus Final (LLM). Asset e hipotese independente, nunca sobrescreve. */
+export function canonicalDecisionDirection(consensus) {
+  const result = consensus?.result ?? null;
+  if (result === "APPROVE_BUY") return "UP";
+  if (result === "APPROVE_SELL") return "DOWN";
+  return "NONE";
+}
+
 export function executionGate({
   consensus = null,
   calls = [],
