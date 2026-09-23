@@ -3115,14 +3115,16 @@ export class IqMultiRuntime extends EventEmitter {
   /** Selftest READ-ONLY dos agentes LLM reais: um ciclo sobre dados atuais. Nunca envia ordem. */
   async v3AgentSelftest({ marketKey = null } = {}) {
     if (!this.v3) throw new IqWsError("V3_DISABLED");
-    const key = marketKey && this.markets.has(marketKey) ? String(marketKey) : [...this.markets.values()].find((ctx) => this.#candleList(ctx).length >= 60)?.marketKey ?? null;
-    if (!key) throw new IqWsError("NO_MARKET_DATA");
-    const candles = this.#candleList(this.markets.get(key));
+    let key = marketKey && this.markets.has(marketKey) ? String(marketKey) : [...this.markets.values()].find((ctx) => this.#candleList(ctx).length >= 60)?.marketKey ?? null;
+    let candles = key ? this.#candleList(this.markets.get(key)) : [];
+    let source = "LIVE_MARKET";
+    if (!key || candles.length < 60) { const fixture = await import("./v3/selftest-fixture.mjs"); key = "SELFTEST:SYNTHETIC"; candles = fixture.syntheticSeries({ candles: 120 }); source = "SYNTHETIC_SELFTEST"; }
     const measurements = measureAll(candles, { marketKey: key, cycleNumber: 0 });
     if (!measurements) throw new IqWsError("MEASUREMENTS_UNAVAILABLE");
     const brokerNow = Number.isFinite(Number(this.client?.serverNow?.())) ? Number(this.client.serverNow()) : this.now();
     const expirationAt = derivedExpirationAt(brokerNow);
-    return { marketKey: key, candles: candles.length, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow }, ...(await this.v3.agentSelftest({ measurements, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow } })) };
+    const result = await this.v3.agentSelftest({ measurements, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow } });
+    return { marketKey: key, source, candles: candles.length, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow }, ...result };
   }
 
   /** View operacional por ativo (GRID/LOG): productState do backend + AnalysisState (WAIT observavel). */
