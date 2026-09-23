@@ -23,13 +23,13 @@ export async function runAgentCycle({ client, measurements, specialists = null, 
   if (specialistCalls.some((call) => call.status !== "OK")) { result.reason = "AGENT_UNAVAILABLE"; return result; }
   const agentSpecialists = Object.fromEntries(SPECIALIST_ROLES.map((role) => [role, specialistCalls.find((call) => call.role === role)?.output]));
 
-  const assetCall = await client.call({ role: "ASSET", requestId: requestId("ASSET"), prompt: assetPayload({ measurements, specialists: agentSpecialists, previousAssessment, expiration, cycleNumber }) });
-  result.agentCalls.push(summary(assetCall));
-  if (assetCall.status !== "OK") { result.reason = "AGENT_UNAVAILABLE"; return result; }
-
-  const independentCall = await client.call({ role: "CONSENSUS_INDEPENDENT", requestId: requestId("CONSENSUS_INDEPENDENT"), prompt: consensusBasePayload({ measurements, specialists: agentSpecialists, expiration, cycleNumber }) });
-  result.agentCalls.push(summary(independentCall));
-  if (independentCall.status !== "OK") { result.reason = "AGENT_UNAVAILABLE"; return result; }
+  // Asset e Consensus independente recebem os MESMOS fatos e nao dependem um do outro: rodam em paralelo.
+  const [assetCall, independentCall] = await Promise.all([
+    client.call({ role: "ASSET", requestId: requestId("ASSET"), prompt: assetPayload({ measurements, specialists: agentSpecialists, previousAssessment, expiration, cycleNumber }) }),
+    client.call({ role: "CONSENSUS_INDEPENDENT", requestId: requestId("CONSENSUS_INDEPENDENT"), prompt: consensusBasePayload({ measurements, specialists: agentSpecialists, expiration, cycleNumber }) }),
+  ]);
+  result.agentCalls.push(summary(assetCall), summary(independentCall));
+  if (assetCall.status !== "OK" || independentCall.status !== "OK") { result.reason = "AGENT_UNAVAILABLE"; return result; }
 
   const finalPrompt = JSON.stringify({
     cycleNumber,
