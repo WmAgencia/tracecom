@@ -881,7 +881,16 @@ export class IqMultiRuntime extends EventEmitter {
       // (candles-generated reenvia historico por protocolo; isso e esperado e nao degrada os dados).
       if (!batch && candle.bucketEnd <= receivedAt) ctx.dqWindow?.duplicateAt?.push(receivedAt);
     }
-    if (ctx.stats.lastBucketStart === null || candle.bucketStart > ctx.stats.lastBucketStart) ctx.stats.lastBucketStart = candle.bucketStart;
+    if (ctx.stats.lastBucketStart === null || candle.bucketStart > ctx.stats.lastBucketStart) {
+      if (ctx.stats.lastBucketStart !== null && candle.bucketStart > ctx.stats.lastBucketStart + CANDLE_SIZE_SECONDS * 1000) {
+        const diag = ctx.candleSkipDiag ?? (ctx.candleSkipDiag = { logged: 0 });
+        if (diag.logged < 5) {
+          diag.logged += 1;
+          this.#safe(() => this.log("IQ_MULTI_CANDLE_SKIP", JSON.stringify({ marketKey: ctx.marketKey, prevBucketStart: ctx.stats.lastBucketStart, bucketStart: candle.bucketStart, deltaMs: candle.bucketStart - ctx.stats.lastBucketStart, rawAt: raw?.at ?? raw?.t ?? null, rawFrom: raw?.from ?? raw?.start ?? null, rawTo: raw?.to ?? raw?.end ?? null, rawSize: raw?.size ?? null, msgKeys: Object.keys(raw ?? {}).slice(0, 14), receivedAt, serverTimestamp })));
+        }
+      }
+      ctx.stats.lastBucketStart = candle.bucketStart;
+    }
     const existing = ctx.candles.get(candle.bucketStart);
     ctx.candles.set(candle.bucketStart, { ...(existing ?? {}), ...candle });
     if (ctx.candles.size > MAX_CANDLE_BUFFER) ctx.candles.delete(Math.min(...ctx.candles.keys()));
