@@ -35,6 +35,7 @@ export const V3_DECISION_FILES = Object.freeze([
   "relay/v3/decision-snapshot.mjs",
   "relay/v3/scheduler.mjs",
   "relay/v3/runtime.mjs",
+  "relay/v3/feed-guard.mjs",
   "relay/v3/final-gate.mjs",
   "relay/v3/agents/schemas.mjs",
   "relay/v3/agents/prompts.mjs",

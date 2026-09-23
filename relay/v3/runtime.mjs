@@ -22,6 +22,7 @@ import { runAgentCycle, agentLatencyStats, SPECIALIST_ROLES, WAVE1_ROLES, V3_AGE
 import { factPrompt } from "./agents/prompts.mjs";
 import { buildPacketEnvelope } from "./agents/fact-packets.mjs";
 import { collectInputNumbers } from "./agents/schemas.mjs";
+import { candleFeedBlockReason } from "./feed-guard.mjs";
 import { ExecutionScheduler } from "./scheduler.mjs";
 import { stableStringify } from "../intelligence/features.mjs";
 
@@ -52,7 +53,7 @@ export class V3Runtime {
     this.queueDepth = 0;
     this.maxQueueDepth = 0;
     this.agentCalls = [];
-    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, snapshots: 0, approvals: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, agentCycles: 0, agentUnavailable: 0, deadlineAborts: 0, scheduled: 0, schedulerFired: 0 };
+    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, snapshots: 0, approvals: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, agentCycles: 0, agentUnavailable: 0, deadlineAborts: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null };
     this.lastError = null;
     this.lastCycleAt = null;
     this.latencySamples = [];
@@ -126,10 +127,13 @@ export class V3Runtime {
     if (!opportunity) { this.counters.cyclesSkippedNoOpportunity += 1; return null; }
     const window = ExpirationTargetTiming.analysis({ expirationAt: opportunity.expirationAt, brokerNow: at });
     if (window.ok !== true) { this.counters.cyclesSkippedWindow += 1; this.engine.enforceWindow(opportunity.opportunityId, at); return null; }
-    if (!Array.isArray(candles) || candles.length < 40) return null;
+    const feedBlock = candleFeedBlockReason({ candles, brokerNow: at });
+    if (feedBlock) { this.#noteFeedBlocked(feedBlock, marketKey, at); return null; }
     const startedAt = this.now();
     const measurements = measureAll(candles, { marketKey, cycleNumber: opportunity.cycles.length + 1 });
-    if (!measurements) return null;
+    if (!measurements) { this.#noteFeedBlocked("INSUFFICIENT_CANDLES", marketKey, at); return null; }
+    const staleBlock = candleFeedBlockReason({ candles, brokerNow: at, closedCandleAt: measurements.closedCandleAt });
+    if (staleBlock === "CANDLE_FEED_STALE") { this.#noteFeedBlocked(staleBlock, marketKey, at); return null; }
     const closedCandleId = measurements.closedCandleId;
     if (this.lastClosedCandleId.get(marketKey) === closedCandleId) { this.counters.cyclesSkippedDuplicateCandle += 1; return null; }
     this.lastClosedCandleId.set(marketKey, closedCandleId);
@@ -301,6 +305,18 @@ export class V3Runtime {
     return { count: values.length, p50: at(0.5), p95: at(0.95), p99: at(0.99), max: values.length ? values[values.length - 1] : null };
   }
 
+  #noteFeedBlocked(reason, marketKey = null, at = null) {
+    if (!reason) return;
+    this.counters.candleFeedBlocked += 1;
+    this.counters.feedBlockedReasons[reason] = (this.counters.feedBlockedReasons[reason] ?? 0) + 1;
+    this.counters.lastFeedBlockedReason = reason;
+    this.counters.lastFeedBlockedMarket = marketKey ?? null;
+    this.counters.lastFeedBlockedAt = at ?? this.now();
+  }
+
+  /** Diagnostico externo (relay): registra bloqueio de feed SEM chamar agentes. */
+  noteFeedBlocked(reason, marketKey = null) { this.#noteFeedBlocked(reason, marketKey); }
+
   status() {
     return {
       version: V3_RUNTIME_VERSION,
@@ -315,6 +331,13 @@ export class V3Runtime {
       scheduler: this.scheduler.status(),
       queue: { depth: this.queueDepth, maxDepth: this.maxQueueDepth, markets: this.queues.size },
       counters: { ...this.counters },
+      candleFeed: {
+        blocked: this.counters.candleFeedBlocked,
+        reasons: { ...this.counters.feedBlockedReasons },
+        lastReason: this.counters.lastFeedBlockedReason,
+        lastMarketKey: this.counters.lastFeedBlockedMarket,
+        lastAt: this.counters.lastFeedBlockedAt,
+      },
       latency: this.latencyStats(),
       engine: this.engine.stats(),
       discovery: this.discovery.status(),

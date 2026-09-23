@@ -61,6 +61,7 @@ import { runAgentGraph, agentGraphToStrategyResult, AGENTIC_STRATEGY_ID } from "
 import { RuntimeIntelligence } from "./intelligence/runtime-adapter.mjs";
 import { HYDRATION_PENDING } from "./intelligence/asset-pipeline.mjs";
 import { CandleStore } from "./intelligence/candle-store.mjs";
+import { candleFeedHealth, marketFeedHealth } from "./intelligence/candle-feed-health.mjs";
 import { SinglePath } from "./execution/single-path.mjs";
 import { IntelligenceDispatch } from "./execution/intelligence-dispatch.mjs";
 import { loadOperationalStrategy } from "./execution/operational-strategy.mjs";
@@ -225,7 +226,11 @@ export class IqMultiRuntime extends EventEmitter {
     this.agentLatency = [];
     this.events = []; this.eventSeq = 0;
     this.stress = { running: false, report: null };
-    this.metrics = { messages: 0, candles: 0, reorder: 0, duplicates: 0, rejected: 0, startedAt: null, cpuBase: process.cpuUsage(), reconnects: 0 };
+    this.metrics = { messages: 0, candles: 0, reorder: 0, duplicates: 0, rejected: 0, startedAt: null, cpuBase: process.cpuUsage(), reconnects: 0, candlesReceivedTotal: 0, candlesStoredTotal: 0, lastMarketMessageAt: null };
+    this.processStartedAt = null;
+    this.lastSubscriptionAt = null;
+    this.lastReconnectAt = null;
+    this.marketBlockedLog = new Map();
     this.reconcile = { lastRunAt: null, checked: 0, settled: 0, unknown: 0, error: null };
     this.configLoaded = false;
     this.configHydrated = false;
@@ -253,7 +258,7 @@ export class IqMultiRuntime extends EventEmitter {
       enabled: false, paused: false, maxStake: HARD_CAP_STAKE, configuredStake: null, strategy: null, strategyVariantId: null, revision: 0,
       activeId: null, instrumentTypes: [], availability: "UNKNOWN", payout: null, payoutSource: null, resolvedAt: null,
       connectionHealth: { connected: false, lastMessageAt: null, gaps: 0 },
-      serverTime: null, lastTick: null, lastTickAt: null,
+      serverTime: null, lastTick: null, lastTickAt: null, subscriptionState: "UNSUBSCRIBED",
       candles: new Map(), lastCandle: null, featureState: null, decisionState: { action: "WAIT", reason: "BOOT", evaluatedAt: null },
       positionState: { status: "IDLE", direction: null, entryPrice: null, stake: null, brokerOrderId: null, requestId: null, expirationSec: null, openedAt: null, settledAt: null, result: null, profit: null, mode: null },
       settlementState: { lastResult: null, lastProfit: null, lastAt: null, daily: emptyDailyStats() },
@@ -270,6 +275,7 @@ export class IqMultiRuntime extends EventEmitter {
   start() {
     if (this.running) return { started: false, reason: "ALREADY_RUNNING" };
     this.running = true; this.stopRequested = false;
+    this.processStartedAt = this.processStartedAt ?? this.now();
     void this.knowledge.rebuild();
     void this.#runLoop();
     // Auto-recuperacao: boot com DB lento nao pode deixar a config default (stake/autoExecute) presa para sempre.
@@ -342,6 +348,7 @@ export class IqMultiRuntime extends EventEmitter {
         const ready = await client.connect({ ssid });
         this.client = client;
         this.connection = ready;
+        if (attempt > 0) { this.lastReconnectAt = this.now(); }
         this.reconnects = attempt > 0 ? this.reconnects + 1 : this.reconnects;
         this.metrics.reconnects = this.reconnects;
         this.connectionStartedAt = this.now();
@@ -353,6 +360,7 @@ export class IqMultiRuntime extends EventEmitter {
         attempt = 0;
         await new Promise((resolve) => { this.#disconnectedWaiter = resolve; if (!this.running) resolve(); });
       } catch (error) {
+        this.lastError = String(error?.code ?? error?.message ?? error).slice(0, 160);
         this.#safe(() => this.log("IQ_MULTI_CONNECT_FAILED", JSON.stringify({ code: error?.code ?? "UNKNOWN", detail: String(error?.message ?? error).slice(0, 160) })));
       } finally {
         this.client = null; this.#disconnectedWaiter = null;
@@ -362,7 +370,7 @@ export class IqMultiRuntime extends EventEmitter {
         this.realMode.revoke("WS_DISCONNECTED");
         // FAIL CLOSED: qualquer queda de WS rebaixa REAL para LOCKED imediatamente.
         this.accountContext.lock("WS_DISCONNECTED");
-        for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason: "WS_DISCONNECTED" }); this.timingShadow?.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "WS_DISCONNECTED" }); this.#observeScenarioTimingIntersectionsForMarket(ctx.marketKey); if (ctx.enabled) this.#setAgent(ctx, ctx.availability === "OPEN" ? "WAIT" : "UNAVAILABLE", "WS_DISCONNECTED"); }
+        for (const ctx of this.markets.values()) { if (ctx.candidate) this.#cancelCandidate(ctx, "CANDIDATE_SESSION_LOST", { reason: "WS_DISCONNECTED" }); this.timingShadow?.finalize({ marketKey: ctx.marketKey, atMs: this.now(), reason: "WS_DISCONNECTED" }); this.#observeScenarioTimingIntersectionsForMarket(ctx.marketKey); if (ctx.enabled) { this.#setAgent(ctx, ctx.availability === "OPEN" ? "WAIT" : "UNAVAILABLE", "WS_DISCONNECTED"); this.#safe(() => this.v3?.noteFeedBlocked?.("CANDLE_FEED_DISCONNECTED", ctx.marketKey)); } }
       }
       if (!this.running || this.stopRequested) break;
       const delay = RECONNECT_BACKOFF_MS[Math.min(attempt, RECONNECT_BACKOFF_MS.length - 1)];
@@ -578,13 +586,29 @@ export class IqMultiRuntime extends EventEmitter {
   #subscribeCtx(client, ctx) {
     if (!client || !this.session.connected) return;
     if (!ctx.enabled || ctx.activeId === null || ctx.activeId === undefined) { ctx.connectionHealth = { ...ctx.connectionHealth, connected: false }; return; }
-    try { client.subscribeCandles(ctx.activeId, CANDLE_SIZE_SECONDS); ctx.connectionHealth = { ...ctx.connectionHealth, connected: true }; }
-    catch (error) { this.#safe(() => this.log("IQ_MULTI_SUBSCRIBE_FAILED", `${ctx.marketKey}:${String(error?.code ?? error?.message ?? error).slice(0, 80)}`)); }
+    try {
+      client.subscribeCandles(ctx.activeId, CANDLE_SIZE_SECONDS);
+      ctx.subscriptionState = "SUBSCRIBED";
+      ctx.connectionHealth = { ...ctx.connectionHealth, connected: true };
+      this.lastSubscriptionAt = this.now();
+    } catch (error) {
+      ctx.subscriptionState = "FAILED";
+      this.#safe(() => this.log("IQ_MULTI_SUBSCRIBE_FAILED", `${ctx.marketKey}:${String(error?.code ?? error?.message ?? error).slice(0, 80)}`));
+    }
   }
 
   #unsubscribeCtx(client, ctx) {
     if (!client || ctx.activeId === null) return;
-    try { client.unsubscribeCandles(ctx.activeId, CANDLE_SIZE_SECONDS); } catch { /* noop */ }
+    try { client.unsubscribeCandles(ctx.activeId, CANDLE_SIZE_SECONDS); ctx.subscriptionState = "UNSUBSCRIBED"; } catch { /* noop */ }
+  }
+
+  subscriptionCount() { return [...this.markets.values()].filter((ctx) => ctx.subscriptionState === "SUBSCRIBED").length; }
+  candleFeedStatus({ maxAgeMs = MARKET_TICK_AGE_MS, minCandles = 40 } = {}) {
+    return candleFeedHealth({
+      session: this.session, markets: this.markets, metrics: this.metrics, reconnects: this.reconnects, now: this.now(),
+      startedAt: this.processStartedAt, lastSubscriptionAt: this.lastSubscriptionAt, lastReconnectAt: this.lastReconnectAt,
+      lastError: this.lastError, maxAgeMs, minCandles,
+    });
   }
 
   setMarket(key, patch = {}, { persist = true, actor = "system", requestId = null } = {}) {
@@ -889,12 +913,19 @@ export class IqMultiRuntime extends EventEmitter {
     for (const raw of rawList) {
       const activeId = Number(raw?.active_id);
       const ctx = [...this.markets.values()].find((market) => market.enabled && Number(market.activeId) === activeId) ?? null;
-      if (!ctx) continue; // ativo desconhecido/desabilitado: NUNCA roteia para outro mercado
+      if (!ctx) {
+        // Ativo desconhecido/desabilitado: NUNCA roteia para outro mercado. Registra o motivo (throttle 60s por activeId).
+        const now = this.now(); const last = this.marketBlockedLog.get(activeId) ?? 0;
+        if (now - last > 60_000) { this.marketBlockedLog.set(activeId, now); this.#safe(() => this.v3?.noteFeedBlocked?.("MARKET_NOT_SUBSCRIBED", `activeId:${activeId}`)); }
+        continue;
+      }
       this.#ingestCandle(ctx, raw, { receivedAt, serverTimestamp, connectionId: event.connectionId, batch: allSizes });
     }
   }
 
   #ingestCandle(ctx, raw, { receivedAt, serverTimestamp, connectionId, batch = false }) {
+    this.metrics.candlesReceivedTotal += 1;
+    this.metrics.lastMarketMessageAt = receivedAt;
 
     let candle;
     try {
@@ -916,7 +947,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (!ctx.candles.has(candle.bucketStart)) {
       if (ctx.stats.lastBucketStart !== null && candle.bucketStart < ctx.stats.lastBucketStart) { ctx.stats.reorder += 1; ctx.dqWindow?.reorderAt?.push(receivedAt); }
       else if (ctx.stats.lastBucketStart !== null && candle.bucketStart > ctx.stats.lastBucketStart + CANDLE_SIZE_SECONDS * 1000) { ctx.stats.gaps += 1; ctx.dqWindow?.gapAt?.push(receivedAt); }
-      ctx.stats.candlesProcessed += 1; this.metrics.candles += 1;
+      ctx.stats.candlesProcessed += 1; this.metrics.candles += 1; this.metrics.candlesStoredTotal += 1;
     } else {
       ctx.stats.duplicates += 1;
       // Para o DQ, so conta anomalia real: reentrega de bucket JA FECHADO fora de mensagem em lote
@@ -1569,17 +1600,19 @@ export class IqMultiRuntime extends EventEmitter {
     return snapshot;
   }
 
-  /** Candles em lote para o GRID (uma chamada para todos os cards; sem 30 conexoes). */
+  /** Candles em lote para o GRID (uma chamada para todos os cards; sem 30 conexoes).
+   *  Shape EXPLICITO: { rows: { [marketKey]: candle[] | null }, at, requested, found, unknown } — nunca misturar metadados com marketKeys. */
   candlesBatch(keys = [], limit = 40) {
     const bounded = Math.max(10, Math.min(120, Number(limit) || 40));
+    const requested = (Array.isArray(keys) ? keys : []).slice(0, 40).map((key) => String(key));
     const rows = {};
-    for (const key of (Array.isArray(keys) ? keys : []).slice(0, 40)) {
-      const ctx = this.markets.get(String(key));
+    for (const key of requested) {
+      const ctx = this.markets.get(key);
       if (!ctx) { rows[key] = null; continue; }
       const list = this.#candleList(ctx) ?? [];
       rows[key] = list.slice(-bounded).map((candle) => ({ bucketEnd: Number(candle.bucketEnd), open: Number(candle.open), high: Number(candle.high), low: Number(candle.low), close: Number(candle.close) }));
     }
-    return { rows, at: this.now() };
+    return { rows, at: this.now(), requested: requested.length, found: requested.filter((key) => Array.isArray(rows[key])).length, unknown: requested.filter((key) => rows[key] === null) };
   }
 
   /** LOG humano do CONSENSUS (ultimas decisoes persistidas) para o painel LOG. */
@@ -3123,10 +3156,11 @@ export class IqMultiRuntime extends EventEmitter {
     if (!key || candles.length < 60) { const fixture = await import("./v3/selftest-fixture.mjs"); key = "SELFTEST:SYNTHETIC"; candles = fixture.syntheticSeries({ candles: 120 }); source = "SYNTHETIC_SELFTEST"; }
     const measurements = measureAll(candles, { marketKey: key, cycleNumber: 0 });
     if (!measurements) throw new IqWsError("MEASUREMENTS_UNAVAILABLE");
+    const feed = key && this.markets.has(key) ? marketFeedHealth(this.markets.get(key), { now: this.now(), maxAgeMs: MARKET_TICK_AGE_MS }) : null;
     const brokerNow = Number.isFinite(Number(this.client?.serverNow?.())) ? Number(this.client.serverNow()) : this.now();
     const expirationAt = derivedExpirationAt(brokerNow);
     const result = await this.v3.agentSelftest({ measurements, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow }, mode, role, concurrency });
-    return { marketKey: key, source, mode, role, candles: candles.length, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow }, ...result };
+    return { marketKey: key, source, feedReady: source === "LIVE_MARKET" ? feed?.feedReady === true : false, feedReason: source === "LIVE_MARKET" && feed?.feedReady !== true ? (feed?.reasons?.[0] ?? null) : null, mode, role, candles: candles.length, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow }, ...result };
   }
 
   /** View operacional por ativo (GRID/LOG): productState do backend + AnalysisState (WAIT observavel). */
@@ -4605,7 +4639,12 @@ export class IqMultiRuntime extends EventEmitter {
       mode: this.config.mode,
       activeCount: office.activeCount, activeLimit: office.activeLimit,
       realMode: this.realMode.status().realModeEnabled,
-      marketsSummary: office.markets.map((market) => ({ marketKey: market.marketKey, marketType: market.marketType, enabled: market.enabled, availability: market.availability, activeId: market.activeId, candles5s: market.candles5s, agentState: market.agentState, payout: market.payout, maxStake: market.maxStake })),
+      marketsSummary: office.markets.map((market) => {
+        const ctx = this.markets.get(market.marketKey);
+        const health = ctx ? marketFeedHealth(ctx, { now: this.now(), maxAgeMs: MARKET_TICK_AGE_MS }) : null;
+        return { marketKey: market.marketKey, marketType: market.marketType, enabled: market.enabled, availability: market.availability, activeId: market.activeId, candles5s: market.candles5s, agentState: market.agentState, payout: market.payout, maxStake: market.maxStake, storedCandles: health?.storedCandles ?? 0, lastCandleAt: health?.lastCandleAt ?? null, feedAgeMs: health?.ageMs ?? null, subscriptionState: health?.subscriptionState ?? "UNKNOWN", feedReady: health?.feedReady === true };
+      }),
+      candleFeed: this.candleFeedStatus(),
     };
   }
 
