@@ -2,11 +2,48 @@
   "strategyVersion": "PULLBACK_4060_300_AGENTIC_V2",
   "parent": "PULLBACK_4060_300_BASELINE",
   "parentStrategyHash": "sha256:26dceb743b3f0d88a6bea10bf8646deb836236e3a7de91702bd323289438b3dd",
-  "newStrategyHash": null,
-  "newStrategyHashNote": "definido quando a implementacao V2 (Etapas 2-3) existir; so entao a V2 pode operar",
+  "strategyHash": "sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0",
+  "newStrategyHash": "sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0",
+  "newStrategyHashNote": "hash deterministico de asset-context/features/specialists/consensus/decision-snapshot/asset-pipeline + policy 300s/5s/3h + baseline congelada; sem frontend/CSS/deploy/logs",
+  "sourceCommit": "e8d9b9b",
   "createdAt": "2026-09-22T21:53:19.302Z",
-  "changeDescription": "Nova arquitetura: Asset Agent por ativo (contexto 3h / 2160 candles, ring buffer + hidratacao), especialistas (RSI, DMI/ADX, Bollinger, ATR, PriceAction) recebendo AssetContext primeiro, Consensus sem confidence (BUY/SELL/WAIT + thesis/blockers/invalidations), 300s unico, BINARY OTC only, sem Blitz, um unico caminho de execucao com Account Router (PRACTICE/REAL mesma inteligencia).",
   "statsEpoch": "2026-09-22T21:53:19.302Z",
+  "operationalExpirySeconds": 300,
+  "operationalCandleIntervalMs": 5000,
+  "maxContextAgeMs": 10800000,
+  "readinessPolicy": {
+    "minContextObservations": 25,
+    "contextWindowCandles": 2160,
+    "intervalToleranceRatio": 0.5,
+    "gapFactor": 10,
+    "gapRatioMax": 0.02,
+    "coverageRule": "coverageMs + intervalMs >= maxContextAgeMs",
+    "intervalRule": "|intervalMs - expectedIntervalMs| <= expectedIntervalMs * intervalToleranceRatio",
+    "gapRule": "maxGapMs <= intervalMs * gapFactor && gapRatio <= gapRatioMax"
+  },
+  "specialists": {
+    "version": "specialists-v1",
+    "order": [
+      "rsi",
+      "dmi",
+      "bollinger",
+      "atr",
+      "priceAction"
+    ],
+    "each": "recebe AssetContext/FeatureSnapshot unico (featuresVersion/featuresAt identicos); sem recalculo por especialista"
+  },
+  "consensusVersion": "consensus-v1",
+  "decisionSnapshotVersion": "decision-snapshot-v1",
+  "featuresVersion": "features-v1",
+  "decisionFiles": {
+    "relay/intelligence/asset-context.mjs": "sha256:9d6dfdc110d8677709287e5bea2e26610299bc5320bb7ae16a36608efb38d97d",
+    "relay/intelligence/features.mjs": "sha256:8cf7385af688355b06978a18f58690cb68b52221cf97b2e41059e9934a943c5e",
+    "relay/intelligence/specialists.mjs": "sha256:2c1a6bab24449ca3009b2a875d02e4457e9a8fd2842099e911c2fc1da46f615a",
+    "relay/intelligence/consensus.mjs": "sha256:5cb28ab7b84933eff3511c4faf9e069f460fc0d8aac29956556cf2f1fc950734",
+    "relay/intelligence/decision-snapshot.mjs": "sha256:592e4466836dc0c38201d7efd085a82793227f85631d1ff4a6cbd1b13efc3c1f",
+    "relay/intelligence/asset-pipeline.mjs": "sha256:3576e969b57c81220c60cdd65786374b6266cafee07edb2906fcbf8b1988f36d",
+    "relay/execution/binary300.mjs": "sha256:499f999076326cc0cd3563945627d89dd321c50e3c3b29a13e86639df9411c4a"
+  },
   "stats": {
     "operations": 0,
     "wins": 0,
@@ -15,5 +52,7 @@
     "winRate": null
   },
   "runId": "pullback-4060-300-agentic-v2",
-  "status": "PENDING_IMPLEMENTATION — NAO OPERA (Etapas 2-3 antes de qualquer deploy/execucao)"
+  "status": "READY_FOR_DEPLOY",
+  "executable": false,
+  "changeDescription": "Nova arquitetura: Asset Agent por ativo (contexto 3h / 2160 candles, ring buffer + hidratacao), especialistas (RSI, DMI/ADX, Bollinger, ATR, PriceAction) recebendo AssetContext primeiro, Consensus sem confidence (BUY/SELL/WAIT + thesis/blockers/invalidations), 300s unico, BINARY OTC only, sem Blitz, um unico caminho de execucao com Account Router (PRACTICE/REAL mesma inteligencia)."
 }
