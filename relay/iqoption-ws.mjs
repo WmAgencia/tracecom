@@ -449,12 +449,13 @@ export class IqWsClient extends EventEmitter {
   }
 
   /** Historico real de candles (protocolo get-candles v2, referencia iqoptionapi ja validada no projeto).
+   *  Resposta esperada: name "candles" com msg.candles[] (NUNCA aceita eventos do stream live).
    *  NUNCA fabrica: se o broker nao responder, lanca timeout e o chamador segue com o stream live. */
-  getCandlesHistory({ activeId, size = CANDLE_SIZE_SECONDS, count = 300, to = null, timeoutMs = 10_000 } = {}) {
-    const body = { active_id: Number(activeId), size: Number(size), count: Math.max(1, Math.min(1000, Number(count) || 300)) };
-    if (Number.isFinite(Number(to))) body.to = Number(to);
+  getCandlesHistory({ activeId, size = CANDLE_SIZE_SECONDS, count = 300, to = null, timeoutMs = 12_000 } = {}) {
+    const serverTo = Number.isFinite(Number(to)) ? Number(to) : (Number.isFinite(Number(this.serverNow?.())) ? Number(this.serverNow()) : Date.now());
+    const body = { active_id: Number(activeId), size: Number(size), to: serverTo, count: Math.max(1, Math.min(1000, Number(count) || 300)), "": "" };
     return this.request("sendMessage", { name: "get-candles", version: "2.0", body }, {
-      predicate: (message) => message?.name === "candles" || message?.name === "candles-generated",
+      predicate: (message) => message?.name === "candles" && Array.isArray(message?.msg?.candles),
       timeoutMs, timeoutCode: "GET_CANDLES_TIMEOUT",
     });
   }

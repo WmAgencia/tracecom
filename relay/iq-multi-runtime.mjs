@@ -449,10 +449,9 @@ export class IqMultiRuntime extends EventEmitter {
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_PAYOUT_SUBSCRIBE_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 80))); }
     if (!this.activeMarketKeys().length && this.configHydrated === true) this.#applyDefaultSelection();
     await this.#ensureIntelligenceHydration();
-    // BACKFILL REAL: repopula o buffer com historico do broker ANTES de assinar o stream (dedupe por bucket).
-    const history = await this.#rehydrateCandleHistory(client);
-    this.#safe(() => this.log("IQ_MULTI_CANDLE_HISTORY", JSON.stringify(history)));
     for (const ctx of this.markets.values()) this.#subscribeCtx(client, ctx);
+    // BACKFILL REAL em background (nao bloqueia o stream): historico do broker para OTC habilitado.
+    void this.#rehydrateCandleHistory(client).then((history) => this.#safe(() => this.log("IQ_MULTI_CANDLE_HISTORY", JSON.stringify(history)))).catch(() => undefined);
     // Fontes externas reais ainda nao integradas: registra NO_FEED honesto (nunca inventa noticia/macro).
     this.intelligence.publish("MACRO", { note: "sem integracao externa de macro conectada" }, { source: "none", sourceType: "EXTERNAL", dataQuality: "UNAVAILABLE", status: "NO_FEED" });
     this.intelligence.publish("NEWS", { note: "sem integracao externa de noticias conectada" }, { source: "none", sourceType: "EXTERNAL", dataQuality: "UNAVAILABLE", status: "NO_FEED" });
@@ -617,19 +616,20 @@ export class IqMultiRuntime extends EventEmitter {
 
   /** BACKFILL REAL no boot/reconnect: historico do broker (get-candles v2) para os mercados habilitados.
    *  NUNCA fabrica candle; falha em um mercado nao impede os outros. Dedupe por bucketStart; so fechados. */
-  async #rehydrateCandleHistory(client, { count = HISTORY_BACKFILL_CANDLES, timeoutMs = 10_000, concurrency = 4 } = {}) {
-    if (!client) return { targets: 0, markets: 0, loaded: 0, failed: 0, skipped: 0 };
-    const targets = [...this.markets.values()].filter((ctx) => ctx.enabled && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < count);
-    if (!targets.length) return { targets: 0, markets: 0, loaded: 0, failed: 0, skipped: 0 };
+  async #rehydrateCandleHistory(client, { count = HISTORY_BACKFILL_CANDLES, timeoutMs = 12_000, concurrency = 3 } = {}) {
+    if (!client) return { targets: 0, markets: 0, loaded: 0, failed: 0, empty: 0, skipped: 0 };
+    const targets = [...this.markets.values()].filter((ctx) => ctx.enabled && ctx.marketType === "OTC" && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < count);
+    if (!targets.length) return { targets: 0, markets: 0, loaded: 0, failed: 0, empty: 0, skipped: 0 };
     const serverNow = Number.isFinite(Number(client.serverNow?.())) ? Number(client.serverNow()) : this.now();
     const queue = [...targets];
-    let markets = 0; let loaded = 0; let failed = 0; let skipped = 0;
+    let markets = 0; let loaded = 0; let failed = 0; let empty = 0; let skipped = 0;
     const worker = async () => {
       while (queue.length) {
         const ctx = queue.shift();
         try {
-          const { response } = await client.getCandlesHistory({ activeId: ctx.activeId, size: CANDLE_SIZE_SECONDS, count, timeoutMs });
+          const { response } = await client.getCandlesHistory({ activeId: ctx.activeId, size: CANDLE_SIZE_SECONDS, count, to: serverNow, timeoutMs });
           const rows = extractHistoryCandles(response?.msg ?? response, { sizeSeconds: CANDLE_SIZE_SECONDS });
+          if (!rows.length) { empty += 1; continue; }
           const seeded = seedCandlesFromHistory({
             existing: ctx.candles, rows, sizeSeconds: CANDLE_SIZE_SECONDS, serverNow,
             maxBuffer: MAX_CANDLE_BUFFER, normalize: normalizeCandle, sourceTag: "BROKER_HISTORY", receivedAt: this.now(),
@@ -649,7 +649,7 @@ export class IqMultiRuntime extends EventEmitter {
     await Promise.all(Array.from({ length: Math.min(concurrency, targets.length) }, worker));
     this.metrics.historyLoadedTotal += loaded;
     this.metrics.historyMarketsTotal = markets;
-    return { targets: targets.length, markets, loaded, failed, skipped };
+    return { targets: targets.length, markets, loaded, failed, empty, skipped };
   }
 
   setMarket(key, patch = {}, { persist = true, actor = "system", requestId = null } = {}) {
