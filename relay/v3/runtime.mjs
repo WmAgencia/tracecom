@@ -66,7 +66,10 @@ export class V3Runtime {
   #adoptDueFronts(brokerNow = null) {
     let discovered = 0;
     for (const front of this.discovery.due(brokerNow)) {
-      if (this.engine.activeFor(front.marketKey)) continue;
+      // Fronteira ja registrada (mesmo expirada/MISSED) nunca e re-adotada: o proximo boundary
+      // entra sozinho quando o relogio avanca. Evita contadores inflados e CPU por candle.
+      const opportunityId = ExpirationOpportunityEngine.opportunityId(front.marketKey, front.expirationAt);
+      if (this.engine.get(opportunityId)) continue;
       const offer = front.offer ?? {};
       const result = this.engine.discover({
         marketKey: front.marketKey, activeId: offer.activeId ?? null, expirationAt: front.expirationAt,

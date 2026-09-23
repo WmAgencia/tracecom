@@ -45,6 +45,7 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
     expect(cycles.length).toBeGreaterThanOrEqual(3);
     const after = runtime.opportunities()[0];
     expect(after.cycles.length).toBe(cycles.length);
+    expect(runtime.status().engine.counters.duplicatesBlocked).toBe(0);
     expect(after.cycles.every((cycle: any) => cycle.assetState && cycle.consensusResult && cycle.specialists?.rsi)).toBe(true);
     expect(queries.some((sql) => sql.includes("INSERT INTO iq_v3_opportunities"))).toBe(true);
     expect(queries.some((sql) => sql.includes("INSERT INTO iq_v3_cycles"))).toBe(true);
