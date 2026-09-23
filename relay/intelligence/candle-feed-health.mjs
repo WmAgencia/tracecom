@@ -80,6 +80,7 @@ export function candleFeedHealth({
     marketsSubscribed: subscribedRows.length, marketsWithCandles: withCandles.length, marketsReady: enabledReady.length,
     lastMarketMessageAt: finite(metrics.lastMarketMessageAt), lastCandleAt, oldestCandleAt, ageMs,
     candlesReceivedTotal: Number(metrics.candlesReceivedTotal ?? 0), candlesStoredTotal: Number(metrics.candlesStoredTotal ?? metrics.candles ?? 0),
+    historyLoadedTotal: Number(metrics.historyLoadedTotal ?? 0), historyMarketsTotal: Number(metrics.historyMarketsTotal ?? 0),
     rejectedTotal: Number(metrics.rejected ?? 0),
     reconnectCount: Number(reconnects ?? 0), lastReconnectAt: finite(lastReconnectAt), lastSubscriptionAt: finite(lastSubscriptionAt),
     lastError: lastError ?? null, startedAt: finite(startedAt),
