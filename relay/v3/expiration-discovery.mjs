@@ -32,19 +32,31 @@ const percentile = (values, fraction) => {
 
 export function parseActiveExpirations(active) {
   const option = active?.option ?? {};
-  const rows = [];
+  const timestamps = [];
+  const durations = new Set();
   const push = (value) => {
     if (value === null || value === undefined) return;
     if (Array.isArray(value)) { for (const item of value) push(item); return; }
     if (typeof value === "object") { push(value.expiration ?? value.expired ?? value.time ?? value.at); return; }
-    const ms = toMs(value);
-    if (ms !== null) rows.push(ms);
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return;
+    // Evidencia real de producao (2026-09-23): `option.expiration_times` traz DURACOES
+    // (ex.: 60000 = 60s, 900000 = 15min), nao timestamps. Timestamps reais sao epoch
+    // (>= 1e9 s ou >= 1e12 ms). Nada de inferir expiry a partir de duracao.
+    if (n >= 1e12) timestamps.push(n);
+    else if (n >= 1e9) timestamps.push(n * 1000);
+    else durations.add(n < 1000 ? n * 1000 : n);
   };
   push(option.expiration_times);
   push(option.exp_time);
   const deadtimeRaw = Number(active?.deadtime);
   const deadtimeMs = Number.isFinite(deadtimeRaw) && deadtimeRaw > 0 ? (deadtimeRaw > 1000 ? deadtimeRaw : deadtimeRaw * 1000) : null;
-  return { expirations: [...new Set(rows)].sort((a, b) => a - b), deadtimeMs, buybackDeadtimeMs: (() => { const raw = Number(active?.buyback_deadtime); return Number.isFinite(raw) && raw > 0 ? (raw > 1000 ? raw : raw * 1000) : null; })() };
+  return {
+    timestamps: [...new Set(timestamps)].sort((a, b) => a - b),
+    allowedDurationsMs: [...durations].sort((a, b) => a - b),
+    deadtimeMs,
+    buybackDeadtimeMs: (() => { const raw = Number(active?.buyback_deadtime); return Number.isFinite(raw) && raw > 0 ? (raw > 1000 ? raw : raw * 1000) : null; })(),
+  };
 }
 
 export class ExpirationDiscovery {
@@ -72,11 +84,12 @@ export class ExpirationDiscovery {
       const active = row?.active ?? {};
       if (!marketKey) continue;
       const parsed = parseActiveExpirations(active);
-      if (!parsed.expirations.length) continue;
-      const state = this.byMarket.get(marketKey) ?? { marketKey, deadtimeMs: parsed.deadtimeMs, expirations: new Map(), lastPayout: null, lastEnabled: null };
+      const state = this.byMarket.get(marketKey) ?? { marketKey, section: row.section ?? null, deadtimeMs: null, allowedDurationsMs: [], timestamps: new Map(), lastEnabled: null };
       state.deadtimeMs = parsed.deadtimeMs ?? state.deadtimeMs;
+      state.allowedDurationsMs = parsed.allowedDurationsMs.length ? parsed.allowedDurationsMs : state.allowedDurationsMs;
+      state.section = row.section ?? state.section;
       state.lastEnabled = active?.enabled === true && active?.is_suspended !== true;
-      for (const expirationAt of parsed.expirations) {
+      for (const expirationAt of parsed.timestamps) {
         const key = `${marketKey}|${expirationAt}`;
         if (this.offers.has(key)) { this.duplicateCount += 1; continue; }
         const tteMs = expirationAt - at;
@@ -85,10 +98,10 @@ export class ExpirationDiscovery {
           deadtimeMs: parsed.deadtimeMs, buybackDeadtimeMs: parsed.buybackDeadtimeMs,
           payout: Number(active?.option?.profit?.commission) >= 0 ? Number((100 - Number(active.option.profit.commission)).toFixed(2)) : null,
           buyable: active?.enabled === true && active?.is_suspended !== true,
-          source: "initialization-data.option.expiration_times",
+          source: "initialization-data.timestamps",
         };
         this.offers.set(key, offer);
-        state.expirations.set(expirationAt, { expirationAt, firstSeenAt: at, firstSeenTteMs: tteMs });
+        state.timestamps.set(expirationAt, { expirationAt, firstSeenAt: at, firstSeenTteMs: tteMs });
         newOffers += 1;
         this.samples.push(offer);
         if (this.samples.length > this.maxSamples) this.samples.splice(0, this.samples.length - this.maxSamples);
@@ -99,16 +112,21 @@ export class ExpirationDiscovery {
     return { newOffers, markets: this.byMarket.size };
   }
 
-  /** Frente compravel: primeira expiration com TTE > deadtime do broker. */
-  front(marketKey, brokerNow = null) {
+  /**
+   * Frente compravel DERIVADA do relogio do broker: proxima fronteira operacional
+   * (multiplo de operativeDurationMs) que ainda pode ser comprada (TTE > deadtime).
+   * A IQ nao publica a lista de expirations absolutas (confirmado em producao:
+   * `option.expiration_times` = duracoes); a expiration-alvo e validada pelo ACK.
+   */
+  front(marketKey, brokerNow = null, { operativeDurationMs = 300_000 } = {}) {
     const at = Number.isFinite(Number(brokerNow)) ? Number(brokerNow) : this.now();
     const state = this.byMarket.get(String(marketKey));
     if (!state) return null;
     const deadtimeMs = Number.isFinite(Number(state.deadtimeMs)) ? Number(state.deadtimeMs) : 0;
-    const candidates = [...state.expirations.keys()].filter((expirationAt) => expirationAt - at > deadtimeMs).sort((a, b) => a - b);
-    if (!candidates.length) return null;
-    const expirationAt = candidates[0];
-    return { marketKey: String(marketKey), expirationAt, tteMs: expirationAt - at, deadtimeMs, offer: this.offers.get(`${marketKey}|${expirationAt}`) ?? null };
+    let expirationAt = (Math.floor(at / operativeDurationMs) + 1) * operativeDurationMs;
+    let guard = 0;
+    while (expirationAt - at <= deadtimeMs && guard < 12) { expirationAt += operativeDurationMs; guard += 1; }
+    return { marketKey: String(marketKey), expirationAt, tteMs: expirationAt - at, deadtimeMs, operativeDurationMs, allowedDurationsMs: state.allowedDurationsMs, offer: this.offers.get(`${marketKey}|${expirationAt}`) ?? null };
   }
 
   /** Oportunidades candidatas: frente compravel com TTE <= discoveryMaxTteMs. */
@@ -125,17 +143,15 @@ export class ExpirationDiscovery {
 
   distribution() {
     const values = [...this.offers.values()].map((offer) => offer.firstSeenTteMs).filter((value) => Number.isFinite(value));
-    const cadence = [];
-    for (const state of this.byMarket.values()) {
-      const sorted = [...state.expirations.keys()].sort((a, b) => a - b);
-      for (let index = 1; index < sorted.length; index += 1) cadence.push(sorted[index] - sorted[index - 1]);
-    }
+    const durations = [...new Set([...this.byMarket.values()].flatMap((state) => state.allowedDurationsMs))].sort((a, b) => a - b);
+    const deadtimes = [...new Set([...this.byMarket.values()].map((state) => state.deadtimeMs).filter((value) => Number.isFinite(value)))].sort((a, b) => a - b);
     return {
       offers: values.length,
       markets: this.byMarket.size,
       firstSeenTteMs: { min: values.length ? Math.min(...values) : null, median: median(values), p95: percentile(values, 0.95), max: values.length ? Math.max(...values) : null },
-      cadenceMs: { min: cadence.length ? Math.min(...cadence) : null, median: median(cadence), p95: percentile(cadence, 0.95), max: cadence.length ? Math.max(...cadence) : null, samples: cadence.length },
-      deadtimeMs: [...new Set([...this.byMarket.values()].map((state) => state.deadtimeMs).filter((value) => Number.isFinite(value)))],
+      allowedDurationsMs: durations,
+      deadtimeMs: deadtimes,
+      note: "Producao (2026-09-23): option.expiration_times = DURACOES (60s/900s), nao timestamps; a expiration-alvo e derivada de brokerNow+deadtime e validada pelo ACK.",
     };
   }
 
@@ -148,7 +164,7 @@ export class ExpirationDiscovery {
       markets: this.byMarket.size,
       offers: this.offers.size,
       distribution: this.distribution(),
-      marketDetail: [...this.byMarket.values()].map((state) => ({ marketKey: state.marketKey, deadtimeMs: state.deadtimeMs, enabled: state.lastEnabled, expirations: [...state.expirations.keys()].sort((a, b) => a - b).slice(0, 6) })),
+      marketDetail: [...this.byMarket.values()].map((state) => ({ marketKey: state.marketKey, section: state.section, deadtimeMs: state.deadtimeMs, allowedDurationsMs: state.allowedDurationsMs, enabled: state.lastEnabled })).slice(0, 120),
     };
   }
 }

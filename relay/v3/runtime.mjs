@@ -10,7 +10,7 @@
  * Nesta fase nada e enviado ao broker: executionRef registra o bloqueio com motivo.
  */
 import crypto from "node:crypto";
-import { ExpirationDiscovery, parseActiveExpirations } from "./expiration-discovery.mjs";
+import { ExpirationDiscovery } from "./expiration-discovery.mjs";
 import { ExpirationOpportunityEngine } from "./opportunity-engine.mjs";
 import { ExpirationTargetTiming } from "./timing.mjs";
 import { measureAll } from "./measurements.mjs";
@@ -53,9 +53,7 @@ export class V3Runtime {
           const activeId = Number(id);
           const marketKey = marketKeyByActiveId?.get?.(activeId) ?? activeByMarketKey?.get?.(activeId) ?? null;
           if (!marketKey) continue;
-          const parsed = parseActiveExpirations(active);
-          if (!parsed.expirations.length) continue;
-          actives.push({ marketKey, activeId, active: { ...active, id: activeId } });
+          actives.push({ marketKey, activeId, section, active: { ...active, id: activeId } });
         }
       }
       if (!actives.length) return { actives: 0, discovered: 0 };
@@ -76,8 +74,9 @@ export class V3Runtime {
       });
       if (result.created) {
         discovered += 1;
-        this.log("V3_OPPORTUNITY_DISCOVERED", stableStringify({ opportunityId: result.opportunity.opportunityId, firstSeenTteMs: result.opportunity.firstSeenTteMs, deadtimeMs: front.deadtimeMs }));
+        this.log("V3_OPPORTUNITY_DISCOVERED", stableStringify({ opportunityId: result.opportunity.opportunityId, firstSeenTteMs: result.opportunity.firstSeenTteMs, deadtimeMs: front.deadtimeMs, allowedDurationsMs: front.allowedDurationsMs ?? null }));
         void this.#persistOpportunity(result.opportunity);
+        void this.persistOffer({ marketKey: front.marketKey, expirationAt: front.expirationAt, activeId: offer.activeId ?? null, firstSeenAt: result.opportunity.firstSeenAt, firstSeenTteMs: result.opportunity.firstSeenTteMs, deadtimeMs: front.deadtimeMs ?? null, payout: offer.payout ?? null, buyable: offer.buyable ?? null, source: offer.source ?? "broker-clock-derived" });
       }
     }
     return discovered;
@@ -86,6 +85,9 @@ export class V3Runtime {
   /** Um ciclo por candle fechado; so dentro de (hardCutoff, discoveryWindow]. */
   onClosedCandle({ marketKey, candles, brokerNow = null } = {}) {
     const at = Number.isFinite(Number(brokerNow)) ? Number(brokerNow) : this.now();
+    // A frente compravel e derivada do relogio do broker: adota a cada candle fechado (5s),
+    // dando resolucao de 5s a descoberta (~TTE 330) sem depender do poll de initialization (60s).
+    if (this.discovery.byMarket.size) this.#adoptDueFronts(at);
     const opportunity = this.engine.activeFor(String(marketKey));
     if (!opportunity) { this.counters.cyclesSkippedNoOpportunity += 1; return null; }
     const window = ExpirationTargetTiming.canSubmit({ expirationAt: opportunity.expirationAt, brokerNow: at, purchaseDeadlineAt: opportunity.purchaseDeadlineAt });

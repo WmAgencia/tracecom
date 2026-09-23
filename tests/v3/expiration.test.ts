@@ -20,15 +20,17 @@ const TTE302 = EXP - 302_000;
 const TTE299 = EXP - 299_000;
 
 const activeWith = (expirations: number[], { deadtime = 30, id = 76, enabled = true } = {}) => ({ id, name: "EURUSD-OTC", enabled, is_suspended: false, deadtime, option: { expiration_times: expirations.map((ms) => Math.round(ms / 1000)), exp_time: Math.round(expirations[0]! / 1000), profit: { commission: 18 } } });
+const durationActive = ({ deadtime = 30, id = 76, durations = [60000, 900000] } = {}) => ({ id, name: "EURUSD-OTC", enabled: true, is_suspended: false, deadtime, option: { expiration_times: durations, profit: { commission: 18 } } });
 
-describe("V3 expiration — hipotese 5m30 (discovery)", () => {
-  it("A: expiration aparece com TTE≈330 => opportunity criada; B: mesma expiration nunca duplica", () => {
+describe("V3 expiration — descoberta real (protocolo IQ)", () => {
+  it("A: frente compravel derivada do relogio do broker entra em ~TTE330 => opportunity criada; B: nunca duplica", () => {
     const discovery = new ExpirationDiscovery({ now: () => TTE330 });
-    discovery.ingest({ actives: [{ marketKey: "EURUSD:OTC", active: activeWith([EXP]) }], brokerNow: TTE330 });
+    discovery.ingest({ actives: [{ marketKey: "EURUSD:OTC", section: "binary", active: durationActive() }], brokerNow: TTE330 });
     const front = discovery.front("EURUSD:OTC", TTE330);
     expect(front.expirationAt).toBe(EXP);
     expect(front.tteMs).toBe(330_000);
     expect(front.deadtimeMs).toBe(30_000);
+    expect(front.allowedDurationsMs).toEqual([60000, 900000]);
     const engine = new ExpirationOpportunityEngine({ now: () => TTE330 });
     const first = engine.discover({ marketKey: "EURUSD:OTC", expirationAt: EXP, brokerNow: TTE330, deadtimeMs: 30_000 });
     const second = engine.discover({ marketKey: "EURUSD:OTC", expirationAt: EXP, brokerNow: TTE330, deadtimeMs: 30_000 });
@@ -36,7 +38,6 @@ describe("V3 expiration — hipotese 5m30 (discovery)", () => {
     expect(second.created).toBe(false);
     expect(engine.stats().opportunities).toBe(1);
     expect(engine.stats().counters.duplicatesBlocked).toBe(1);
-    // TTE acima da janela de descoberta nao cria nada
     const early = engine.discover({ marketKey: "GBPUSD:OTC", expirationAt: EXP + 300_000, brokerNow: TTE330, deadtimeMs: 30_000 });
     expect(early.created).toBe(false);
     expect(early.error).toBe("TTE_ABOVE_DISCOVERY_WINDOW");
@@ -45,7 +46,6 @@ describe("V3 expiration — hipotese 5m30 (discovery)", () => {
   it("C: nova expiration no minuto seguinte cria NOVA opportunity (ids distintos)", () => {
     const engine = new ExpirationOpportunityEngine({ now: () => TTE330 });
     const first = engine.discover({ marketKey: "EURUSD:OTC", expirationAt: EXP, brokerNow: TTE330, deadtimeMs: 30_000 });
-    // A proxima expiration so entra na janela de descoberta quando o relogio avanca (~30s antes da anterior expirar)
     const tooEarly = engine.discover({ marketKey: "EURUSD:OTC", expirationAt: EXP + 300_000, brokerNow: TTE330, deadtimeMs: 30_000 });
     expect(tooEarly.created).toBe(false);
     expect(tooEarly.error).toBe("TTE_ABOVE_DISCOVERY_WINDOW");
@@ -56,33 +56,36 @@ describe("V3 expiration — hipotese 5m30 (discovery)", () => {
     expect(engine.discover({ marketKey: "EURUSD:OTC", expirationAt: EXP + 300_000, brokerNow: EXP - 30_000 }).created).toBe(false);
   });
 
-  it("frente compravel ignora expirations abaixo do deadtime do broker", () => {
-    const discovery = new ExpirationDiscovery({ now: () => TTE330 });
-    discovery.ingest({ actives: [{ marketKey: "EURUSD:OTC", active: activeWith([TTE305 - 275_000, EXP]) }], brokerNow: TTE305 });
+  it("frente compravel ignora fronteira dentro do deadtime do broker", () => {
+    const discovery = new ExpirationDiscovery({ now: () => TTE305 });
+    discovery.ingest({ actives: [{ marketKey: "EURUSD:OTC", section: "binary", active: durationActive() }], brokerNow: TTE305 });
     const front = discovery.front("EURUSD:OTC", TTE305);
+    // TTE305: a fronteira imediata (EXP-300s) esta a 5s => abaixo do deadtime 30s; a frente e EXP (TTE 305s)
     expect(front.expirationAt).toBe(EXP);
     expect(front.tteMs).toBe(305_000);
   });
 
-  it("distribuicao firstSeenTteMs e cadencia ficam mensuraveis", () => {
+  it("evidencia de producao: durations e deadtime ficam mensuraveis; timestamps (quando existirem) viram offers", () => {
     const discovery = new ExpirationDiscovery({ now: () => TTE330 });
-    discovery.ingest({ actives: [{ marketKey: "EURUSD:OTC", active: activeWith([EXP - 300_000, EXP]) }], brokerNow: TTE330 });
-    discovery.ingest({ actives: [{ marketKey: "EURUSD:OTC", active: activeWith([EXP, EXP + 300_000]) }], brokerNow: TTE302 });
+    discovery.ingest({ actives: [{ marketKey: "EURUSD:OTC", section: "binary", active: durationActive() }], brokerNow: TTE330 });
     const dist = discovery.distribution();
-    expect(dist.offers).toBe(3);
-    // O broker lista expirations futuras alem da janela de deteccao (602s): por isso a oportunidade
-    // so nasce quando a frente entra em <=330s — nunca por inferencia de relogio.
-    expect(dist.firstSeenTteMs.max).toBe(602_000);
-    expect(dist.firstSeenTteMs.min).toBe(30_000);
-    expect(dist.cadenceMs.samples).toBeGreaterThan(0);
-    expect(dist.cadenceMs.median).toBe(300_000);
+    expect(dist.allowedDurationsMs).toEqual([60000, 900000]);
     expect(dist.deadtimeMs).toContain(30_000);
+    expect(dist.offers).toBe(0);
+    // payload com timestamp absoluto continua suportado (secao que publique lista real)
+    const withTimestamps = new ExpirationDiscovery({ now: () => TTE330 });
+    withTimestamps.ingest({ actives: [{ marketKey: "EURUSD:OTC", section: "turbo", active: activeWith([EXP]) }], brokerNow: TTE330 });
+    expect(withTimestamps.distribution().offers).toBe(1);
+    expect(withTimestamps.distribution().firstSeenTteMs.max).toBe(330_000);
   });
 
-  it("parse defende formatos: epoch s, ms e objeto", () => {
-    expect(parseActiveExpirations({ option: { expiration_times: [Math.round(EXP / 1000)] } }).expirations).toEqual([EXP]);
-    expect(parseActiveExpirations({ option: { expiration_times: [EXP] } }).expirations).toEqual([EXP]);
-    expect(parseActiveExpirations({ option: { exp_time: { expiration: EXP } } }).expirations).toEqual([EXP]);
+  it("parse distingue duracao (ms/s) de timestamp epoch (s/ms)", () => {
+    expect(parseActiveExpirations({ option: { expiration_times: [60000, 900000] } }).allowedDurationsMs).toEqual([60000, 900000]);
+    expect(parseActiveExpirations({ option: { expiration_times: [60, 900] } }).allowedDurationsMs).toEqual([60000, 900000]);
+    expect(parseActiveExpirations({ option: { expiration_times: [Math.round(EXP / 1000)] } }).timestamps).toEqual([EXP]);
+    expect(parseActiveExpirations({ option: { expiration_times: [EXP] } }).timestamps).toEqual([EXP]);
+    expect(parseActiveExpirations({ option: { exp_time: { expiration: EXP } } }).timestamps).toEqual([EXP]);
+    expect(parseActiveExpirations({ option: { expiration_times: [60000] }, deadtime: 300 }).deadtimeMs).toBe(300_000);
   });
 });
 

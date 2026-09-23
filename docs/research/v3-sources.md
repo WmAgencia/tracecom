@@ -17,6 +17,25 @@ Separacao obrigatoria: **SOURCE-BACKED** (conceito documentado na fonte) vs
 | KIRKPATRICK_DAHLQUIST_2016 | Charles D. Kirkpatrick, Julie R. Dahlquist | Technical Analysis: The Complete Resource for Financial Market Technicians (3rd ed.) | Pearson | 2016 | Livro profissional (companion do CMT) | confirmacao por momentum, testes de sistemas, evidencias academicas a favor/contra, price action | Pearson catalog (3rd ed.) | 2026-09-23 |
 | TRACECOM_V3_OPS | TraceCom | Definicoes operacionais internas da V3 | TraceCom | 2026 | Definicao interna | BOS/CHoCH formalizados, limiares de volatilidade, profundidade de pullback, contratos de expiracao/janela de entrada | docs/research/v3-*-playbook.md | 2026-09-23 |
 
+## Achado de protocolo (producao, 2026-09-23) — evidencia real da IQ
+
+Observacao read-only do payload real (`initialization-data` v3, 54 mercados OTC):
+
+- `active.option.expiration_times` = **duracoes em ms** (ex.: `[60000, 900000]` = 60s e 15min),
+  **nao** timestamps absolutos de expiracao. `option.exp_time` tambem nao traz agenda.
+- `active.deadtime` = segundos ate o broker parar de vender aquela expiration (30s tipico;
+  300s em parte dos ativos de 15min).
+- Conclusao honesta: a IQ **nao publica a lista de expirations absolutas** neste canal.
+  A hipotese "expiration aparece em ~TTE330" nao e observavel como evento do broker; o que
+  existe e o **relogio do broker + deadtime**, que determinam qual fronteira ainda e compravel.
+- Implementacao V3 resultante: `ExpirationDiscovery.front()` deriva a frente compravel
+  (multiplo operacional de 300s com TTE > deadtime) a cada candle fechado (resolucao de 5s);
+  a expiration-alvo e **preservada exatamente** ate o envio e a aceitacao e verificada pelo ACK
+  (mismatch = `BROKER_EXPIRATION_MISMATCH`, alerta grave). `allowedDurationsMs` e
+  `deadtimeMs` ficam registrados como evidencia por ativo.
+- Codigo: `relay/v3/expiration-discovery.mjs::parseActiveExpirations/front`; testes:
+  `tests/v3/expiration.test.ts` (inclusive o caso de payload com timestamps, se um dia existir).
+
 ## Notas de honestidade intelectual
 
 - **BOS/CHoCH**: termos de origem comunitaria (SMC/ICT) **sem definicao academica padronizada**;

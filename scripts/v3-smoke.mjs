@@ -27,8 +27,8 @@ ok("manifesto V3 PENDING_IMPLEMENTATION/executable=false e hash deterministico",
 })());
 
 const discovery = new ExpirationDiscovery({ now: () => EXP - 330_000 });
-discovery.ingest({ actives: [{ marketKey: "EURUSD:OTC", active: { id: 76, enabled: true, deadtime: 30, option: { expiration_times: [Math.round(EXP / 1000)] } } }], brokerNow: EXP - 330_000 });
-ok("discovery mede TTE real (~330s) e deadtime do broker", discovery.front("EURUSD:OTC", EXP - 330_000).tteMs === 330_000 && discovery.status().distribution.deadtimeMs.includes(30_000));
+discovery.ingest({ actives: [{ marketKey: "EURUSD:OTC", section: "binary", active: { id: 76, enabled: true, deadtime: 30, option: { expiration_times: [60000, 900000] } } }], brokerNow: EXP - 330_000 });
+ok("discovery deriva a frente compravel do relogio (~330s) e registra durations/deadtime reais", discovery.front("EURUSD:OTC", EXP - 330_000).tteMs === 330_000 && discovery.status().distribution.deadtimeMs.includes(30_000) && discovery.status().distribution.allowedDurationsMs.includes(900_000));
 
 const engine = new ExpirationOpportunityEngine({ now: () => EXP - 330_000 });
 const created = engine.discover({ marketKey: "EURUSD:OTC", expirationAt: EXP, brokerNow: EXP - 330_000, deadtimeMs: 30_000 });
