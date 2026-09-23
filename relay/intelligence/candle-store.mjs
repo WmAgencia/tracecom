@@ -69,7 +69,13 @@ export class CandleStore {
     if (!this.ready || !marketKey) return [];
     const since = Number.isFinite(Number(sinceMs)) ? Number(sinceMs) : this.now() - MAX_CONTEXT_AGE_MS - this.intervalMs;
     const boundedLimit = Math.max(2, Math.min(ASSET_CONTEXT_WINDOW_CANDLES + 120, Number(limit) || DEFAULT_LOAD_LIMIT));
-    const rows = (await this.pool.query("SELECT at, open, high, low, close FROM iq_candles_5s WHERE market_key=$1 AND interval_ms=$2 AND at >= $3 ORDER BY at ASC LIMIT $4", [String(marketKey), this.intervalMs, since, boundedLimit])).rows ?? [];
+    const sql = "SELECT at, open, high, low, close FROM iq_candles_5s WHERE market_key=$1 AND interval_ms=$2 AND at >= $3 ORDER BY at ASC LIMIT $4";
+    const params = [String(marketKey), this.intervalMs, since, boundedLimit];
+    let result = await this.pool.query(sql, params);
+    // Nunca tratar um drop do scheduler como "sem historico": uma retentativa antes de desistir.
+    if (result?.dropped === true) result = await this.pool.query(sql, params);
+    if (result?.dropped === true) throw new Error("CANDLE_STORE_LOAD_DROPPED");
+    const rows = result?.rows ?? [];
     return rows.map((row) => ({ at: num(row.at), open: num(row.open), high: num(row.high), low: num(row.low), close: num(row.close) })).filter((row) => row.at !== null && row.close !== null);
   }
 

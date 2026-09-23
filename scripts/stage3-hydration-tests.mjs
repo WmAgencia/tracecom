@@ -126,5 +126,19 @@ class FakePool {
   ok("store nao filtra por futuro (dado bruto preservado) mas pipeline recusa", loaded.length === 1);
 }
 
+/* 7) hydration nunca trata drop do scheduler como "sem historico" (retentativa + erro duro) */
+{
+  let calls = 0;
+  const rows = series.map((c) => ({ at: c.at, open: c.open, high: c.high, low: c.low, close: c.close }));
+  const flakyPool = { query: async () => { calls += 1; return calls === 1 ? { rows: [], dropped: true, reason: "BEST_EFFORT_DROPPED" } : { rows, rowCount: rows.length }; } };
+  const store = new CandleStore({ pool: flakyPool, now: () => NOW });
+  const first = await store.loadRecent("EURUSD:OTC");
+  ok("loadRecent reexecuta quando o scheduler dropa a leitura", calls === 2 && first.length === series.length);
+  const alwaysDrop = new CandleStore({ pool: { query: async () => ({ rows: [], dropped: true }) }, now: () => NOW });
+  let threw = false;
+  try { await alwaysDrop.loadRecent("EURUSD:OTC"); } catch { threw = true; }
+  ok("drop persistente vira erro estruturado (fail-closed, nunca historico vazio silencioso)", threw === true);
+}
+
 console.log(fail === 0 ? `HYDRATION_TESTS ALL_PASS (${pass}/${pass})` : `HYDRATION_TESTS FAIL (${fail})`);
 process.exit(fail === 0 ? 0 : 1);
