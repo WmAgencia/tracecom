@@ -66,6 +66,21 @@ export const ASSET_SCHEMA = {
   },
 };
 
+const CONSENSUS_ARRAY_FIELDS = Object.freeze(["supportingEvidence", "counterEvidence", "bestCaseForUp", "bestCaseAgainstUp", "bestCaseForDown", "bestCaseAgainstDown", "marketAmbiguities", "reasons", "blockers", "invalidations"]);
+
+/** Normalizacao determinista e sem perda: o modelo as vezes emite um campo de lista como string unica.
+ *  String -> [string]; null/undefined -> []. Nunca inventa conteudo, nunca descarta conteudo. */
+export function normalizeAgentOutput(role, output) {
+  if (!output || typeof output !== "object" || role !== "CONSENSUS_FINAL") return output;
+  const normalized = { ...output };
+  for (const key of CONSENSUS_ARRAY_FIELDS) {
+    const value = normalized[key];
+    if (value === null || value === undefined) normalized[key] = [];
+    else if (typeof value === "string") normalized[key] = [value];
+  }
+  return normalized;
+}
+
 /** Consensus FINAL: unica segunda onda LLM. Interpreta evidence ANTES de comparar com o Asset (anti-anchoring),
  *  faz red-team bilateral e decide APPROVE_BUY | APPROVE_SELL | CANCEL. Sem confidence %, sem votacao. */
 export const CONSENSUS_FINAL_SCHEMA = {
@@ -73,18 +88,14 @@ export const CONSENSUS_FINAL_SCHEMA = {
   fields: ["independentAssessment", "assetComparison", "scenario", "direction", "agreement", "supportingEvidence", "counterEvidence", "bestCaseForUp", "bestCaseAgainstUp", "bestCaseForDown", "bestCaseAgainstDown", "blockers", "invalidations", "marketAmbiguities", "reasons", "result"],
   validate(output) {
     if (!output || typeof output !== "object") return "not_object";
-    if (!isString(output.independentAssessment, 320)) return "independentAssessment";
-    if (!isString(output.assetComparison, 320)) return "assetComparison";
+    if (!isString(output.independentAssessment, 480)) return "independentAssessment";
+    if (!isString(output.assetComparison, 480)) return "assetComparison";
     if (!scenarioValid(output.scenario)) return "scenario";
     if (!["UP", "DOWN", "NONE"].includes(output.direction)) return "direction";
     if (!["AGREE", "PARTIAL", "DISAGREE"].includes(output.agreement)) return "agreement";
-    if (!isStringArray(output.supportingEvidence ?? [], { max: 6, itemMax: 200 })) return "supportingEvidence";
-    if (!isStringArray(output.counterEvidence ?? [], { max: 6, itemMax: 200 })) return "counterEvidence";
-    for (const key of ["bestCaseForUp", "bestCaseAgainstUp", "bestCaseForDown", "bestCaseAgainstDown", "marketAmbiguities", "reasons"]) {
-      if (!isStringArray(output[key] ?? [], { max: 6, itemMax: 200 })) return key;
+    for (const key of CONSENSUS_ARRAY_FIELDS) {
+      if (!isStringArray(output[key] ?? [], { max: 6, itemMax: 320 })) return key;
     }
-    if (!isStringArray(output.blockers ?? [])) return "blockers";
-    if (!isStringArray(output.invalidations ?? [])) return "invalidations";
     if (!["APPROVE_BUY", "APPROVE_SELL", "CANCEL"].includes(output.result)) return "result";
     if (output.result === "APPROVE_BUY" && output.direction !== "UP") return "result_direction_conflict";
     if (output.result === "APPROVE_SELL" && output.direction !== "DOWN") return "result_direction_conflict";

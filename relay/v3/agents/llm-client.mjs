@@ -5,7 +5,7 @@
  */
 import crypto from "node:crypto";
 import { runTextProvider } from "../../opencode-go.mjs";
-import { validateAgentOutput } from "./schemas.mjs";
+import { validateAgentOutput, normalizeAgentOutput } from "./schemas.mjs";
 import { systemPromptFor } from "./prompts.mjs";
 import { agentRequestOptions, CAPABILITIES } from "./capabilities.mjs";
 
@@ -31,7 +31,7 @@ export function rescueJsonExcerpt(text) {
   return candidate.slice(start, start + 200);
 }
 
-const DEFAULT_MAX_TOKENS_BY_ROLE = Object.freeze({ PRICE_ACTION: 768, ASSET: 768, CONSENSUS_FINAL: 1100 });
+const DEFAULT_MAX_TOKENS_BY_ROLE = Object.freeze({ PRICE_ACTION: 768, ASSET: 768, CONSENSUS_FINAL: 1600 });
 
 export function createLlmAgentClient({ pool = null, runner = null, now = () => Date.now(), maxTokens = 512, maxTokensByRole = null } = {}) {
   const run = typeof runner === "function" ? runner : pool ? (options) => runTextProvider(pool, options) : null;
@@ -84,6 +84,7 @@ export function createLlmAgentClient({ pool = null, runner = null, now = () => D
         let parsed = result?.parsed ?? null;
         if (!parsed && typeof result?.text === "string") { try { parsed = JSON.parse(result.text); } catch { parsed = null; } }
         if (!parsed) return finish({ ...common, status: "ERROR", reason: "INVALID_JSON", rawExcerpt: rescueJsonExcerpt(result?.text) });
+        parsed = normalizeAgentOutput(role, parsed);
         const validation = validateAgentOutput(role, parsed, { inputNumbers });
         if (validation.ok !== true) return finish({ ...common, status: "ERROR", reason: `SCHEMA_${validation.error}${validation.token ? `(${validation.token})` : ""}`, output: null, rawExcerpt: JSON.stringify(parsed).slice(0, 400) });
         return finish({ ...common, status: "OK", reason: null, output: parsed, schemaValid: true, semanticValid: true });
@@ -111,7 +112,7 @@ export function createScriptedAgentClient(script = {}, { now = () => Date.now() 
       const latencyMs = Number.isFinite(Number(value.latencyMs)) ? Number(value.latencyMs) : 1;
       if (value.sleepMs > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(Number(value.sleepMs), 50)));
       if (value.status === "ERROR") return { status: "ERROR", reason: value.reason ?? "SCRIPTED_ERROR", role, latencyMs, model: "stub", output: null, schemaValid: false, semanticValid: false, usage: value.usage ?? null, finishReason: value.finishReason ?? null, httpStatus: value.httpStatus ?? null };
-      const output = value.output ?? value;
+      const output = normalizeAgentOutput(role, value.output ?? value);
       const validation = validateAgentOutput(role, output, { inputNumbers });
       if (validation.ok !== true) return { status: "ERROR", reason: `SCHEMA_${validation.error}`, role, latencyMs, model: "stub", output: null, schemaValid: false, semanticValid: false, usage: null, finishReason: null, httpStatus: null };
       return { status: "OK", reason: null, role, latencyMs, model: "stub", output, schemaValid: true, semanticValid: true, usage: value.usage ?? { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }, finishReason: value.finishReason ?? "stop", httpStatus: 200 };

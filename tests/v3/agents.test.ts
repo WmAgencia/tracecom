@@ -19,7 +19,7 @@ const teamModule = await import("../../relay/v3/agents/team.mjs");
 const gateModule = await import("../../relay/v3/final-gate.mjs");
 // @ts-expect-error - relay ESM sem tipagem
 const packetsModule = await import("../../relay/v3/agents/fact-packets.mjs");
-const { validateAgentOutput, numericGroundingError, collectInputNumbers } = schemas as any;
+const { validateAgentOutput, numericGroundingError, collectInputNumbers, normalizeAgentOutput } = schemas as any;
 const { CAPABILITIES, agentRequestOptions } = capabilities as any;
 const { createScriptedAgentClient, createLlmAgentClient, rescueJsonExcerpt } = clientModule as any;
 const { runAgentCycle, SPECIALIST_ROLES, WAVE1_ROLES, CONSENSUS_ROLE } = teamModule as any;
@@ -93,6 +93,14 @@ describe("V3 schemas — compactos + semantica", () => {
     expect(validateAgentOutput("CONSENSUS_FINAL", consensusFinalOutput({ result: "APPROVE_SELL" })).error).toBe("result_direction_conflict");
     expect(validateAgentOutput("CONSENSUS_FINAL", consensusFinalOutput({ result: "HOLD" })).error).toBe("result");
     expect(validateAgentOutput("CONSENSUS_FINAL", consensusFinalOutput({ scenario: "NAO_EXISTE" })).error).toBe("scenario");
+  });
+
+  it("normalizacao determinista: campo de lista emitido como string vira [string] sem perda", () => {
+    const normalized = normalizeAgentOutput("CONSENSUS_FINAL", consensusFinalOutput({ reasons: "motivo unico", marketAmbiguities: null }));
+    expect(normalized.reasons).toEqual(["motivo unico"]);
+    expect(normalized.marketAmbiguities).toEqual([]);
+    expect(validateAgentOutput("CONSENSUS_FINAL", normalized).ok).toBe(true);
+    expect(validateAgentOutput("CONSENSUS_FINAL", consensusFinalOutput({ reasons: "x".repeat(400) })).ok).toBe(false);
   });
 
   it("ancoragem numerica: numeros inventados rejeitados; numeros do input aceitos", () => {
