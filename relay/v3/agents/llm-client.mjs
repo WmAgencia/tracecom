@@ -8,22 +8,29 @@ import { systemPromptFor } from "./prompts.mjs";
 
 export const V3_AGENT_CLIENT_VERSION = "v3-agent-client-v1";
 
-/** Resgate de JSON: o modelo as vezes embrulha em ```json ... ``` ou adiciona prosa. */
+/** Resgate de JSON robusto: fences, multiplos objetos balanceados e prosa ao redor.
+ *  Prefere o ULTIMO objeto parseavel (o output do agente tende a vir por ultimo). */
 export function extractJson(text) {
   const raw = String(text ?? "").trim();
   if (!raw) return null;
+  const candidates = [];
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fenced ? fenced[1] : raw;
-  try { return JSON.parse(candidate); } catch { /* continua */ }
-  const start = candidate.indexOf("{");
-  if (start === -1) return null;
-  let depth = 0;
-  for (let index = start; index < candidate.length; index += 1) {
-    const char = candidate[index];
-    if (char === "{") depth += 1;
-    else if (char === "}") {
-      depth -= 1;
-      if (depth === 0) { try { return JSON.parse(candidate.slice(start, index + 1)); } catch { return null; } }
+  if (fenced) candidates.push(fenced[1]);
+  candidates.push(raw);
+  for (const candidate of candidates) {
+    try { return JSON.parse(candidate); } catch { /* continua */ }
+    const starts = [];
+    for (let index = 0; index < candidate.length; index += 1) if (candidate[index] === "{") starts.push(index);
+    for (const start of starts.reverse()) {
+      let depth = 0;
+      for (let index = start; index < candidate.length; index += 1) {
+        const char = candidate[index];
+        if (char === "{") depth += 1;
+        else if (char === "}") {
+          depth -= 1;
+          if (depth === 0) { try { return JSON.parse(candidate.slice(start, index + 1)); } catch { break; } }
+        }
+      }
     }
   }
   return null;
@@ -40,7 +47,7 @@ export function createLlmAgentClient({ pool = null, runner = null, now = () => D
       try {
         const result = await run({ system: systemPromptFor(role), prompt, maxTokens, requestId, sessionContext });
         const latencyMs = Number.isFinite(Number(result?.latencyMs)) ? Number(result.latencyMs) : Math.max(0, now() - startedAt);
-        const parsed = result?.parsed ?? extractJson(result?.text);
+        const parsed = extractJson(result?.text) ?? result?.parsed;
         if (result?.status !== "OK" && !parsed) return { status: "ERROR", reason: result?.reason ?? "INVALID_JSON", role, latencyMs, model: result?.model ?? null, output: null, schemaValid: false, rawExcerpt: String(result?.text ?? "").slice(0, 280) };
         if (!parsed) return { status: "ERROR", reason: "INVALID_JSON", role, latencyMs, model: result?.model ?? null, output: null, schemaValid: false, rawExcerpt: String(result?.text ?? "").slice(0, 280) };
         const validation = validateAgentOutput(role, parsed);
