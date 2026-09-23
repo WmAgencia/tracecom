@@ -103,12 +103,17 @@ describe("V3 schemas — compactos + semantica", () => {
     expect(validateAgentOutput("CONSENSUS_FINAL", consensusFinalOutput({ reasons: "x".repeat(400) })).ok).toBe(false);
   });
 
-  it("ancoragem numerica: numeros inventados rejeitados; numeros do input aceitos", () => {
+  it("ancoragem numerica: prosa e sanitizada (warning) e estrutura segue fail-closed", () => {
     const inputNumbers = collectInputNumbers(measurements);
     expect(numericGroundingError({ detail: "RSI 45 com slope 1.2" }, inputNumbers)).toBeNull();
     const invented = numericGroundingError({ detail: "RSI 87.5" }, inputNumbers);
     expect(invented?.error).toBe("invented_number");
-    expect(validateAgentOutput("RSI", specialistOutput("RSI", { facts: [{ code: "RSI_SLOPE", direction: "UP", strength: "STRONG", detail: "ADX 87.5" }] }), { inputNumbers }).error).toBe("invented_number");
+    // Prosa opcional: numero inventado vira warning + sanitizacao (agente continua valido).
+    const prose = validateAgentOutput("RSI", specialistOutput("RSI", { facts: [{ code: "RSI_SLOPE", direction: "UP", strength: "STRONG", detail: "ADX 87.5" }] }), { inputNumbers });
+    expect(prose.ok).toBe(true);
+    expect(prose.groundingWarnings.length).toBeGreaterThanOrEqual(1);
+    // Estrutura (blocker/invalidation/facts.code): fail-closed.
+    expect(validateAgentOutput("RSI", specialistOutput("RSI", { blockers: ["ADX 87.5"] }), { inputNumbers }).error).toBe("invented_number");
   });
 });
 
@@ -243,10 +248,11 @@ describe("V3 team — Wave 1 (6 paralelos) + Wave 2 (Consensus Final decisor)", 
     }
     expect(promptByRole.RSI).not.toContain("DMI_ADX estado do dominio");
     expect(promptByRole.DMI_ADX).not.toContain("RSI estado do dominio");
-    // Consensus: deterministic facts + 5 specialists + Asset no bloco final.
+    // Consensus: deterministic facts + 5 specialists (compacto: role/facts/blockers, sem prosa) + Asset no bloco final.
     expect(promptByRole[CONSENSUS_ROLE]).toContain("deterministicFacts");
     expect(promptByRole[CONSENSUS_ROLE]).toContain("specialistEvidence");
-    for (const role of SPECIALIST_ROLES) expect(promptByRole[CONSENSUS_ROLE]).toContain(`${role} estado do dominio`);
+    for (const role of SPECIALIST_ROLES) expect(promptByRole[CONSENSUS_ROLE]).toContain(`"role":"${role}"`);
+    expect(promptByRole[CONSENSUS_ROLE]).not.toContain("estado do dominio");
     expect(promptByRole[CONSENSUS_ROLE]).toContain("ASSET_THESIS_TO_CHALLENGE");
     expect(promptByRole[CONSENSUS_ROLE]).toContain("estrutura de alta intacta");
     const consensusPrompt = promptByRole[CONSENSUS_ROLE] ?? "";

@@ -40,6 +40,7 @@ const summary = (call) => ({
   reasoningTokens: call.reasoningTokens ?? tokenField(call.usage?.completion_tokens_details, "reasoning_tokens"),
   totalTokens: call.totalTokens ?? tokenField(call.usage, "total_tokens"),
   payloadChars: call.payloadChars ?? null, payloadBytes: call.payloadBytes ?? null,
+  groundingWarnings: Array.isArray(call.groundingWarnings) ? call.groundingWarnings.length : 0,
   rawExcerpt: call.rawExcerpt ?? null,
 });
 

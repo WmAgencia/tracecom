@@ -110,38 +110,77 @@ export const ROLE_SCHEMA = Object.freeze({
   ASSET: "ASSET", CONSENSUS_FINAL: "CONSENSUS_FINAL",
 });
 
-/** Ancoragem numerica: todo numero citado no output deve existir no input (ou ser pequeno/estrutural).
- *  Tolerancias: igualdade arredondada (precisao do token), fracao estrutural pequena e
- *  aproximacao relativa de ate 2% (min 0.5) — o suficiente para "~80" de um input 82.26 NAO passar,
- *  mas "50" de um input 50.85 passar. Inventar valores (ex.: RSI 87 com input 45) falha. */
-export function numericGroundingError(output, inputNumbers, { structuralMax = 20, structuralConstants = [14, 20, 25, 30, 50, 70, 75, 80, 100], relativeTolerance = 0.02, minTolerance = 0.5 } = {}) {
-  const inputs = [];
-  const rounded = new Map();
-  const allowRounded = (value, decimals) => {
-    if (!rounded.has(decimals)) rounded.set(decimals, new Set());
-    rounded.get(decimals).add(String(Number(Number(value).toFixed(decimals))));
-  };
+/** Opcoes default de ancoragem numerica (ver isGroundedToken). */
+const GROUNDING_OPTIONS = { structuralMax: 20, structuralConstants: [14, 20, 25, 30, 50, 70, 75, 80, 100], relativeTolerance: 0.02, minTolerance: 0.5 };
+
+/** Um token numerico e considerado ancorado? (mesma logica do grounding global). */
+function isGroundedToken(token, inputs, rounded, options = {}) {
+  const { structuralMax, structuralConstants, relativeTolerance, minTolerance } = { ...GROUNDING_OPTIONS, ...options };
+  const value = Number(token);
+  if (!Number.isFinite(value)) return true;
+  const decimals = (String(token).split(".")[1] ?? "").length;
+  if (rounded.get(Math.min(decimals, 4))?.has(String(value))) return true;
+  if (Math.abs(value) <= structuralMax && Number.isInteger(value)) return true;
+  if (Number.isInteger(value) && structuralConstants.includes(value)) return true;
+  if (/^(19|20)\d{2}$/.test(String(token))) return true;
+  const tolerance = (input) => Math.max(minTolerance, Math.abs(input) * relativeTolerance);
+  return inputs.some((input) => Math.abs(value - input) <= tolerance(input) || Math.abs(Math.abs(value) - Math.abs(input)) <= tolerance(input));
+}
+
+function buildGroundingIndex(inputNumbers) {
+  const inputs = []; const rounded = new Map();
+  const allowRounded = (value, decimals) => { if (!rounded.has(decimals)) rounded.set(decimals, new Set()); rounded.get(decimals).add(String(Number(Number(value).toFixed(decimals)))); };
   for (const value of inputNumbers ?? []) {
     const number = Number(value);
     if (!Number.isFinite(number)) continue;
     inputs.push(number);
     for (let decimals = 0; decimals <= 4; decimals += 1) allowRounded(number, decimals);
   }
+  return { inputs, rounded };
+}
+
+/** Numeric grounding: todo numero citado deve existir no input (ou ser pequeno/estrutural).
+ *  Tolerancias: igualdade arredondada (precisao do token), fracao estrutural pequena e
+ *  aproximacao relativa de ate 2% (min 0.5) — o suficiente para "~80" de um input 82.26 NAO passar,
+ *  mas "50" de um input 50.85 passar. Inventar valores (ex.: RSI 87 com input 45) falha. */
+export function numericGroundingError(output, inputNumbers, options = {}) {
+  const { inputs, rounded } = buildGroundingIndex(inputNumbers);
   const tokens = JSON.stringify(output ?? {}).match(/-?\d+(?:\.\d+)?/g) ?? [];
   for (const token of tokens) {
-    const value = Number(token);
-    if (!Number.isFinite(value)) continue;
-    const decimals = (token.split(".")[1] ?? "").length;
-    if (rounded.get(Math.min(decimals, 4))?.has(String(value))) continue;
-    if (Math.abs(value) <= structuralMax && Number.isInteger(value)) continue;
-    if (Number.isInteger(value) && structuralConstants.includes(value)) continue;
-    if (/^(19|20)\d{2}$/.test(token)) continue;
-    const tolerance = (input) => Math.max(minTolerance, Math.abs(input) * relativeTolerance);
-    const near = inputs.some((input) => Math.abs(value - input) <= tolerance(input) || Math.abs(Math.abs(value) - Math.abs(input)) <= tolerance(input));
-    if (near) continue;
+    if (isGroundedToken(token, inputs, rounded, options)) continue;
     return { error: "invented_number", token };
   }
   return null;
+}
+
+/** Campos de PROSA (opcionais/descritivos): numero inventado aqui vira warning + sanitizacao,
+ *  NUNCA derruba o agente. Campos estruturados continuam fail-closed (numericGroundingError). */
+const PROSE_FIELDS = Object.freeze(["assessment", "thesis", "bestCounterCase", "independentAssessment", "assetComparison", "disagreement"]);
+
+export function numericGroundingAudit(output, inputNumbers, options = {}) {
+  const { inputs, rounded } = buildGroundingIndex(inputNumbers);
+  const warnings = [];
+  const sanitizeString = (value, path) => {
+    if (typeof value !== "string") return value;
+    return value.replace(/-?\d+(?:\.\d+)?/g, (token) => {
+      if (isGroundedToken(token, inputs, rounded, options)) return token;
+      warnings.push({ path, token });
+      return "[numero]";
+    });
+  };
+  if (output && typeof output === "object") {
+    for (const field of PROSE_FIELDS) if (typeof output[field] === "string") output[field] = sanitizeString(output[field], field);
+    if (Array.isArray(output.facts)) {
+      output.facts.forEach((fact, index) => {
+        if (fact && typeof fact.detail === "string") fact.detail = sanitizeString(fact.detail, `facts.${index}.detail`);
+      });
+    }
+  }
+  const structured = output && typeof output === "object" ? { ...output, ...Object.fromEntries(PROSE_FIELDS.map((field) => [field, undefined])) } : output;
+  if (Array.isArray(structured?.facts)) structured.facts = structured.facts.map((fact) => ({ ...fact, detail: undefined }));
+  const grounding = numericGroundingError(structured, inputNumbers, options);
+  if (grounding) return { error: "invented_number", token: grounding.token, warnings };
+  return { error: null, token: null, warnings };
 }
 
 /** Coleta numeros do input (measurements + timing) para a ancoragem. */
@@ -165,6 +204,10 @@ export function validateAgentOutput(role, output, { inputNumbers = null } = {}) 
   if (!schema) return { ok: false, error: "UNKNOWN_ROLE" };
   const error = schema.validate(output);
   if (error) return { ok: false, error };
-  if (inputNumbers) { const grounding = numericGroundingError(output, inputNumbers); if (grounding) return { ok: false, error: grounding.error, token: grounding.token }; }
-  return { ok: true, error: null };
+  if (inputNumbers) {
+    const audit = numericGroundingAudit(output, inputNumbers);
+    if (audit.error) return { ok: false, error: audit.error, token: audit.token };
+    return { ok: true, error: null, groundingWarnings: audit.warnings };
+  }
+  return { ok: true, error: null, groundingWarnings: [] };
 }

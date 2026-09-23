@@ -32,7 +32,7 @@ export const V3_RUNTIME_VERSION = "v3-runtime-v2";
 const defaultStrategy = Object.freeze({ version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: null, statsEpoch: null });
 
 export class V3Runtime {
-  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null, agentSafetyMarginMs = 2_000, estimatedWaveMs = null, estimatedFullCycleMs = null, estimatedDeltaCycleMs = null, maxAgentCycles = 2 } = {}) {
+  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null, agentSafetyMarginMs = 2_000, estimatedWaveMs = null, estimatedFullCycleMs = null, estimatedDeltaCycleMs = null, maxAgentCycles = 1 } = {}) {
     this.now = now;
     this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
     this.pool = pool;
@@ -48,6 +48,7 @@ export class V3Runtime {
     this.maxAgentCycles = Math.max(1, Number(maxAgentCycles) || 2);
     this.cycleInFlight = new Set();
     this.latestCandles = new Map();
+    this.persistBarriers = new Map();
     this.agentArchitecture = V3_AGENT_ARCHITECTURE;
     this.brokerNow = typeof brokerNow === "function" ? brokerNow : null;
     this.scheduler = scheduler ?? new ExecutionScheduler({ now, onFire: (intent) => this.#onExecutionFire(intent), log: this.log });
@@ -103,7 +104,7 @@ export class V3Runtime {
       if (result.created) {
         discovered += 1;
         this.log("V3_OPPORTUNITY_DISCOVERED", stableStringify({ opportunityId: result.opportunity.opportunityId, firstSeenTteMs: result.opportunity.firstSeenTteMs, deadtimeMs: front.deadtimeMs, allowedDurationsMs: front.allowedDurationsMs ?? null }));
-        void this.#persistOpportunity(result.opportunity);
+        this.#trackOpportunityPersist(result.opportunity);
         void this.persistOffer({ marketKey: front.marketKey, expirationAt: front.expirationAt, activeId: offer.activeId ?? null, firstSeenAt: result.opportunity.firstSeenAt, firstSeenTteMs: result.opportunity.firstSeenTteMs, deadtimeMs: front.deadtimeMs ?? null, payout: offer.payout ?? null, buyable: offer.buyable ?? null, source: offer.source ?? "broker-clock-derived" });
       }
     }
@@ -272,7 +273,7 @@ export class V3Runtime {
       }
     }
 
-    void this.#persistCycle(opportunity.opportunityId, cycle);
+    void this.#persistCycleAfterParent(opportunity.opportunityId, cycle);
     if (CLOSED_STATES.includes(opportunity.status) || opportunity.finalizedAt !== null) void this.#persistOpportunity(opportunity);
     const latencyMs = Math.max(0, this.now() - startedAt);
     this.latencySamples.push(latencyMs);
@@ -280,7 +281,7 @@ export class V3Runtime {
     this.counters.candleCycles += 1;
     this.lastCycleAt = at;
     this.log("V3_CYCLE", stableStringify({ opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, scenario: asset?.scenario, assetDirection: asset?.direction ?? null, consensusDirection: consensus?.direction ?? null, canonicalDirection, state: asset?.state, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs }));
-    return { opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, closedCandleAt: measurements.closedCandleAt, assetState: asset?.state ?? null, scenario: asset?.scenario ?? null, direction: canonicalDirection, assetDirection: asset?.direction ?? null, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs };
+    return { opportunityId: opportunity.opportunityId, cycle: cycleNumber, tteMs: cycle.tteMs, closedCandleAt: measurements.closedCandleAt, assetState: asset?.state ?? null, scenario: asset?.scenario ?? null, direction: canonicalDirection, assetDirection: asset?.direction ?? null, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs };
   }
 
   /** Disparo no alvo (~TTE302): revalida tudo; observe-only nunca envia ordem. */
@@ -318,6 +319,23 @@ export class V3Runtime {
     await this.#persistOpportunity(opportunity);
     this.log("V3_SCHEDULER_FIRED_OBSERVE_ONLY", stableStringify({ opportunityId: opportunity.opportunityId, tteMs: checks.tteMs, result: opportunity.finalDecision?.result ?? null }));
     return { opportunityId: opportunity.opportunityId, fired: true, ...checks, submit: false };
+  }
+
+  /** Barrier de persistencia: a opportunity pai e salva ANTES de qualquer ciclo (evita FK violation).
+   *  Nunca adiciona latencia ao pipeline de analise: o insert roda em background. */
+  #trackOpportunityPersist(opportunity) {
+    const key = opportunity.opportunityId;
+    if (this.persistBarriers.has(key)) return this.persistBarriers.get(key);
+    const promise = this.#persistOpportunity(opportunity).catch(() => false);
+    this.persistBarriers.set(key, promise);
+    return promise;
+  }
+
+  async #persistCycleAfterParent(opportunityId, cycle) {
+    const opportunity = this.engine.get(opportunityId);
+    const barrier = this.persistBarriers.get(opportunityId) ?? (opportunity ? this.#trackOpportunityPersist(opportunity) : null);
+    if (barrier) await barrier;
+    return this.#persistCycle(opportunityId, cycle);
   }
 
   async #persistOpportunity(opportunity) {

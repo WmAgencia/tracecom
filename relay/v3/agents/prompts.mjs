@@ -9,12 +9,13 @@
  */
 import { PLAYBOOKS, SOURCES } from "../playbooks.mjs";
 
-export const V3_PROMPTS_VERSION = "v3-agent-prompts-v3";
+export const V3_PROMPTS_VERSION = "v3-agent-prompts-v4";
 
 export const STATIC_PREFIX = [
   "TraceCom V3 agent. Responda SOMENTE um unico objeto JSON valido (JSON mode). Sem markdown, sem prosa fora do JSON.",
-  "Os fatos numericos vem do FACT COMPILER deterministico do backend e sao AUTORIDADE: interprete-os; nunca recalcule nem invente numeros.",
-  "ENUMS ESTRITOS: direction ∈ {UP, DOWN, NONE}; strength ∈ {WEAK, MODERATE, STRONG} (intensidade da evidencia — NUNCA use NORMAL/SHALLOW/DEEP aqui; profundidade de pullback vai em detail).",
+  "CODE OWNS NUMBERS; LLM OWNS INTERPRETATION. NUNCA escreva numeros, percentuais, contagens ou unidades para indicadores (ex.: PROIBIDO 'ADX caiu 13.33', 'bandas +268%', 'RSI 38.81'). Os numeros reais ja existem no FACT PACKET do backend.",
+  "Descreva QUALITATIVAMENTE: 'ADX enfraquecendo', 'bandas em expansao', 'momentum perdendo forca', 'pullback profundo'. Nunca recalcule, converta, arredonde ou invente valores.",
+  "ENUMS ESTRITOS: direction ∈ {UP, DOWN, NONE}; strength ∈ {WEAK, MODERATE, STRONG} (intensidade da evidencia — NUNCA use NORMAL/SHALLOW/DEEP aqui).",
   "NUNCA use informacao futura. Seja conciso: assessment <= 1 frase; no maximo 6 fatos; listas curtas.",
   "Sem percentual de confianca. Sem votacao. Nao use as palavras BUY/SELL/CALL/PUT.",
 ].join("\n");
@@ -36,7 +37,16 @@ const ROLE_SECTION = Object.freeze({
 const SCENARIO_ID_LIST = "TREND_CONTINUATION, PULLBACK_CONTINUATION, DEEP_PULLBACK_STRUCTURE_THREAT, STRUCTURAL_REVERSAL, BREAKOUT, FAILED_BREAKOUT, BREAKDOWN, FAILED_BREAKDOWN, BREAKOUT_RETEST, COMPRESSION, EXPANSION, RANGE, TRANSITION, EXHAUSTION, STRUCTURAL_ZONE_REJECTION, TREND_WEAKENING, TREND_RESUMPTION, NO_SETUP";
 
 const ASSET_SECTION = "PAPEL: ASSET AGENT — interprete o SNAPSHOT CROSS-DOMAIN de fatos deterministicos e forme sua propria leitura global do mercado (voce NAO recebe especialistas nem consensus). Classifique o CENARIO (tipo) e a DIRECAO separadamente, escreva a thesis e o estado operacional. Seja conservador: sem confirmacao estrutural => WAIT; sem cenario relevante => NO_SETUP. Explique o melhor contra-caso da sua propria tese (bestCounterCase <= 2 frases). scenario DEVE ser EXATAMENTE um id da Scenario Library: " + SCENARIO_ID_LIST + ". direction ∈ {UP, DOWN, NONE}; state ∈ {NO_SETUP, WAIT, BUY_CANDIDATE, SELL_CANDIDATE}.";
-const CONSENSUS_SECTION = "PAPEL: CONSENSUS FINAL — voce e o DECISOR DE MERCADO do ciclo. Ordem logica OBRIGATORIA: (A) interprete deterministicFacts + specialistEvidence e escreva independentAssessment SEM considerar o bloco ASSET_THESIS_TO_CHALLENGE; (B) SO DEPOIS compare com o bloco ASSET_THESIS_TO_CHALLENGE e escreva assetComparison; (C) construa o RED TEAM dos DOIS lados (bestCaseForUp/AgainstUp/ForDown/AgainstDown); (D) registre supportingEvidence, counterEvidence, blockers, invalidations, marketAmbiguities, reasons; (E) conclua result ∈ {APPROVE_BUY, APPROVE_SELL, CANCEL}. independentAssessment e assetComparison: no maximo 2 frases curtas cada (<=480 caracteres). Listas: itens curtos (<=320 caracteres). Nao valide o Asset automaticamente: procure ativamente a melhor contra-tese. Sem confidence %. scenario DEVE ser EXATAMENTE um id da Scenario Library: " + SCENARIO_ID_LIST + ". APPROVE_BUY exige direction UP; APPROVE_SELL exige direction DOWN.";
+const CONSENSUS_SECTION = "PAPEL: CONSENSUS FINAL — voce e o DECISOR DE MERCADO do ciclo. Raciocine OBRIGATORIAMENTE nesta ordem: " +
+  "(A) forme sua LEITURA PROPRIA do mercado usando apenas deterministicFacts e specialistEvidence, SEM usar a conclusao do Asset; escreva independentAssessment; " +
+  "(B) identifique a MELHOR TESE DE ALTA; (C) tente REFUTA-LA (bestCaseAgainstUp); " +
+  "(D) identifique a MELHOR TESE DE BAIXA; (E) tente REFUTA-LA (bestCaseAgainstDown); " +
+  "(F) audite os 5 especialistas buscando contradicoes, evidencia fragil/redundante, exaustao, estrutura incompativel, volatilidade insuficiente e ambiguidade; " +
+  "(G) trate ASSET_THESIS_TO_CHALLENGE como HIPOTESE A SER DESAFIADA, nunca confirmada automaticamente (assetComparison); " +
+  "(H) decida SOMENTE result ∈ {APPROVE_BUY, APPROVE_SELL, CANCEL}. " +
+  "REGRAS DE CANCELAMENTO: se as evidencias nao sobreviverem ao red-team => CANCEL; se houver ambiguidade relevante => CANCEL; se direcao e estrutura nao forem coerentes => CANCEL. " +
+  "independentAssessment e assetComparison: no maximo 2 frases curtas cada. NUNCA escreva numeros (o backend ja fornece os valores). Sem confidence %. " +
+  "scenario DEVE ser EXATAMENTE um id da Scenario Library: " + SCENARIO_ID_LIST + ". APPROVE_BUY exige direction UP; APPROVE_SELL exige direction DOWN.";
 
 const SCHEMA_SECTION = Object.freeze({
   RSI: '{"assessment":"...","facts":[{"code":"RSI_SLOPE","direction":"UP|DOWN|NONE","strength":"WEAK|MODERATE|STRONG","detail":"curto"}],"blockers":[],"invalidations":[],"changed":[],"watch":[],"playbooks":["RSI_TRAJECTORY"],"sources":["WILDER_1978"]}',
@@ -67,8 +77,8 @@ export function digestMeasurements(m) {
   };
 }
 
-const compactFacts = (facts) => (Array.isArray(facts) ? facts.slice(0, 6).map((fact) => ({ code: fact.code, direction: fact.direction, strength: fact.strength, detail: fact.detail ?? null })) : facts);
-const compactSpecialist = (role, agent) => (agent ? { role, assessment: agent.assessment, facts: compactFacts(agent.facts), blockers: agent.blockers ?? [], invalidations: agent.invalidations ?? [] } : null);
+const compactFacts = (facts) => (Array.isArray(facts) ? facts.slice(0, 6).map((fact) => ({ code: fact.code, direction: fact.direction, strength: fact.strength })) : facts);
+const compactSpecialist = (role, agent) => (agent ? { role, facts: compactFacts(agent.facts), blockers: agent.blockers ?? [], invalidations: agent.invalidations ?? [] } : null);
 const compactChange = (envelope) => {
   if (!envelope || envelope.mode === "FULL") return null;
   const detail = { role: envelope.role, changed: envelope.delta.changed.slice(0, 8), eventsNew: envelope.delta.eventsNew, eventsRemoved: envelope.delta.eventsRemoved };

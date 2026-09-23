@@ -169,7 +169,7 @@ export class IqMultiRuntime extends EventEmitter {
           agentSafetyMarginMs: Number(process.env.V3_AGENT_SAFETY_MARGIN_MS) || 2_000,
           estimatedFullCycleMs: Number(process.env.V3_AGENT_ESTIMATED_FULL_MS) || 15_000,
           estimatedDeltaCycleMs: Number(process.env.V3_AGENT_ESTIMATED_DELTA_MS) || 14_000,
-          maxAgentCycles: Number(process.env.V3_AGENT_MAX_CYCLES) || 2,
+          maxAgentCycles: Number(process.env.V3_AGENT_MAX_CYCLES) || 1,
           brokerNow: () => { const value = this.client?.serverNow?.(); return Number.isFinite(Number(value)) ? Number(value) : this.now(); },
         })
       : null;

@@ -35,7 +35,7 @@ const setup = (scriptFn: (cycle: number, role: string) => any, { margin = 2_000,
   const now = () => brokerClock;
   const inner = createScriptedAgentClient(byCycle(scriptFn), { now });
   const agents = { available: true, async call(input: any) { prompts.push({ role: input.role, prompt: input.prompt, cycle: cycleOf(input.requestId) }); return inner.call(input); } };
-  const runtime = new V3Runtime({ strategy, agents, now, brokerNow: now, agentSafetyMarginMs: margin, estimatedFullCycleMs: full, estimatedDeltaCycleMs: delta, scheduler });
+  const runtime = new V3Runtime({ strategy, agents, now, brokerNow: now, agentSafetyMarginMs: margin, estimatedFullCycleMs: full, estimatedDeltaCycleMs: delta, maxAgentCycles: 2, scheduler });
   runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
   const step = async (tte: number) => {
     brokerClock = exp - tte;
@@ -181,7 +181,7 @@ describe("V3 multi-cycle — revisao pre-send (NO SUNK COST)", () => {
     expect(runtime.status().counters.agentUnavailable).toBeGreaterThanOrEqual(1);
     const after = runtime.opportunities()[0];
     expect(after.tentativeDecision?.result).not.toBe("APPROVE_BUY");
-    expect(after.finalDecision?.result ?? "CANCEL").toBe("CANCEL");
+    expect(["CANCEL", "AGENT_UNAVAILABLE"]).toContain(after.finalDecision?.result ?? "CANCEL");
     expect(scheduled.filter((entry) => entry.context?.final === true)).toHaveLength(0);
   });
 });
@@ -195,7 +195,7 @@ describe("V3 multi-cycle — revisao pre-send (NO SUNK COST)", () => {
     const inner = createScriptedAgentClient(slowScript, { now: () => brokerClock });
     const prompts: Array<{ role: string; prompt: string }> = [];
     const agents = { available: true, async call(input: any) { prompts.push({ role: input.role, prompt: input.prompt }); return inner.call(input); } };
-    const runtime = new V3Runtime({ strategy, agents, now: () => brokerClock, brokerNow: () => brokerClock, agentSafetyMarginMs: 2_000, estimatedFullCycleMs: 1_000, estimatedDeltaCycleMs: 1_000, scheduler });
+    const runtime = new V3Runtime({ strategy, agents, now: () => brokerClock, brokerNow: () => brokerClock, agentSafetyMarginMs: 2_000, estimatedFullCycleMs: 1_000, estimatedDeltaCycleMs: 1_000, maxAgentCycles: 2, scheduler });
     runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
     brokerClock = exp - 327_000;
     const c1Candles = candlesFromCloses(closes, { startAt: brokerClock - closes.length * 5_000 });

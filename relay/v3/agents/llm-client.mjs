@@ -87,7 +87,7 @@ export function createLlmAgentClient({ pool = null, runner = null, now = () => D
         parsed = normalizeAgentOutput(role, parsed);
         const validation = validateAgentOutput(role, parsed, { inputNumbers });
         if (validation.ok !== true) return finish({ ...common, status: "ERROR", reason: `SCHEMA_${validation.error}${validation.token ? `(${validation.token})` : ""}`, output: null, rawExcerpt: JSON.stringify(parsed).slice(0, 400) });
-        return finish({ ...common, status: "OK", reason: null, output: parsed, schemaValid: true, semanticValid: true });
+        return finish({ ...common, status: "OK", reason: null, output: parsed, schemaValid: true, semanticValid: true, groundingWarnings: validation.groundingWarnings ?? [] });
       } catch (error) {
         return finish({ ...withSession, status: "ERROR", reason: error?.name === "AbortError" ? "TIMEOUT" : "AGENT_ERROR", latencyMs: Math.max(0, now() - startedAtMs) });
       }
@@ -115,7 +115,7 @@ export function createScriptedAgentClient(script = {}, { now = () => Date.now() 
       const output = normalizeAgentOutput(role, value.output ?? value);
       const validation = validateAgentOutput(role, output, { inputNumbers });
       if (validation.ok !== true) return { status: "ERROR", reason: `SCHEMA_${validation.error}`, role, latencyMs, model: "stub", output: null, schemaValid: false, semanticValid: false, usage: null, finishReason: null, httpStatus: null };
-      return { status: "OK", reason: null, role, latencyMs, model: "stub", output, schemaValid: true, semanticValid: true, usage: value.usage ?? { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }, finishReason: value.finishReason ?? "stop", httpStatus: 200 };
+      return { status: "OK", reason: null, role, latencyMs, model: "stub", output, schemaValid: true, semanticValid: true, groundingWarnings: validation.groundingWarnings ?? [], usage: value.usage ?? { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }, finishReason: value.finishReason ?? "stop", httpStatus: 200 };
     },
   };
 }

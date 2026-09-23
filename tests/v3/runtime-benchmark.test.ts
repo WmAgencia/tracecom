@@ -46,7 +46,7 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
       const cycle = await runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow });
       if (cycle) cycles.push(cycle);
     }
-    expect(cycles.length).toBe(2); // maxAgentCycles=2 (FULL + DELTA); demais candles sao ignorados
+    expect(cycles.length).toBe(1); // operacional single-cycle (maxAgentCycles=1)
     const after = runtime.opportunities()[0];
     expect(after.cycles.length).toBe(cycles.length);
     expect(runtime.status().engine.counters.duplicatesBlocked).toBe(0);
@@ -78,15 +78,15 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
     expect(cycle).toBeTruthy();
     expect(["NO_SETUP", "WAIT"]).toContain(cycle.assetState);
     const opportunity = runtime.opportunities()[0];
-    expect(["NO_SETUP", "WAIT", "BUY_CANDIDATE", "SELL_CANDIDATE"]).toContain(opportunity.status);
-    if (opportunity.finalDecision) expect(opportunity.finalDecision.executionBlocked).toBeDefined();
+    expect(["NO_SETUP", "WAIT", "BUY_CANDIDATE", "SELL_CANDIDATE", "CANCELLED"]).toContain(opportunity.status);
+    if (opportunity.finalDecision) expect(["CANCEL", "APPROVE_BUY", "APPROVE_SELL", "AGENT_UNAVAILABLE"]).toContain(opportunity.finalDecision.result);
     expect(runtime.status().executionEnabled).toBe(false);
   });
 
   it("aprovacao LLM real => snapshot imutavel + scheduler agenda ~TTE302 (observe-only, zero ordem)", async () => {
     const agents = createScriptedAgentClient(approveScript(), { now: () => brokerClock });
     let brokerClock = exp - 320_000;
-    const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: "sha256:v3-test", statsEpoch: "epoch-v3" }, agents, now: () => brokerClock, brokerNow: () => brokerClock, agentSafetyMarginMs: 1_000, estimatedWaveMs: 500 });
+    const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: "sha256:v3-test", statsEpoch: "epoch-v3" }, agents, now: () => brokerClock, brokerNow: () => brokerClock, agentSafetyMarginMs: 1_000, estimatedWaveMs: 500, maxAgentCycles: 1 });
     expect(runtime.status().agentMode).toBe("LLM");
     runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
     const closes = approvalSeries({ candles: 120 }).map((candle) => candle.close);
@@ -106,9 +106,9 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
     expect(runtime.status().scheduler.counters.scheduled).toBeGreaterThanOrEqual(1);
     expect(runtime.status().agents.latency.CONSENSUS_FINAL.count).toBeGreaterThanOrEqual(1);
     expect(runtime.status().executionEnabled).toBe(false);
-    // disparo no alvo (freeze agenda para TTE 302; com maxAgentCycles=2 o ultimo schedule e no C2 ~TTE322)
+    // disparo no alvo: single-cycle agenda no freeze (C1 ~TTE327 => delay ~25s)
     brokerClock = exp - 302_000;
-    await new Promise((resolve) => setTimeout(resolve, 20_600));
+    await new Promise((resolve) => setTimeout(resolve, 25_600));
     expect(opportunity.executionRef?.fireAt).toBeTruthy();
     expect(opportunity.executionRef?.submit).toBe(false);
     expect(runtime.status().counters.schedulerFired).toBeGreaterThanOrEqual(1);
@@ -145,12 +145,12 @@ describe("V3 benchmark — agentes LLM (latencia simulada; 30 ativos)", () => {
     const p95 = sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * 0.95))] ?? 0;
     const status = runtime.status();
     console.log(`V3_AGENT_BENCHMARK cycles=${cycles} assets=30 waves=${waves.length} p95=${p95}ms maxDepth=${status.queue.maxDepth} agentCalls=${status.agents.calls} agentP95=${status.agents.latency.CONSENSUS_FINAL?.p95}ms`);
-    expect(cycles).toBe(30 * 2); // maxAgentCycles=2 por opportunity
+    expect(cycles).toBe(30 * 1); // single-cycle operacional
     expect(p95).toBeLessThan(4_000);
     expect(status.queue.maxDepth).toBeGreaterThanOrEqual(2);
-    // orcamento default (safety 2s; estimates 15s/14s): ondas 327/322 rodam C1/C2; 317/312 sao bloqueadas por maxCycles
-    expect(status.agents.calls).toBe(30 * 7 * 2);
-    expect(status.counters.cyclesSkippedMaxCycles).toBeGreaterThanOrEqual(30 * 2);
+    // single-cycle: apenas a primeira onda por oportunidade; demais candles bloqueados por maxCycles
+    expect(status.agents.calls).toBe(30 * 7 * 1);
+    expect(status.counters.cyclesSkippedMaxCycles).toBeGreaterThanOrEqual(30 * 3);
     expect(status.counters.cyclesSkippedWindow).toBe(0);
     expect(status.executionEnabled).toBe(false);
   }, 120_000);
