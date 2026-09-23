@@ -2984,6 +2984,7 @@ export class IqMultiRuntime extends EventEmitter {
   #pipeClosedCandle(ctx, candle) {
     try {
       if (!this.assetIntelligence || !ctx?.marketKey || !candle || Array.isArray(candle)) return;
+      if (ctx.marketType !== "OTC") return; // BINARY OTC ONLY: NORMAL nunca alimenta a inteligencia (nem cria pipeline)
       const at = Number(candle.bucketEnd ?? candle.bucketStart ?? candle.at);
       const open = Number(candle.open); const high = Number(candle.high);
       const low = Number(candle.low); const close = Number(candle.close);

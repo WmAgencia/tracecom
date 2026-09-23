@@ -88,6 +88,14 @@ function mkRuntime() {
   rt.ingestEvent("candle-generated", { msg: { active_id: 1, size: 5, at: Math.round((bucketStart + 10_000) / 1000), open: 1.35, high: 1.351, low: 1.349, close: 1.3505 }, receivedAt: serverNow, connectionId: "c1" });
   await new Promise((resolve) => setTimeout(resolve, 20));
   ok("E2E: transicao de bucket fecha o anterior (uma vez por candle)", recorded.length === 2 && recorded[1].candle.at === bucketStart + 10_000 && intel.feedStatusFor("EURUSD:OTC") === "OK");
+  {
+    const normal = rt.markets.get("EURUSD:NORMAL");
+    normal.enabled = true; normal.availability = "OPEN"; normal.activeId = 2; normal.payout = 90; normal.instrumentTypes = ["turbo", "binary"];
+    const before = intel.registry.status().length;
+    rt.ingestEvent("candle-generated", { msg: { active_id: 2, size: 5, at: Math.round(bucketStart / 1000), open: 1.35, high: 1.351, low: 1.349, close: 1.3505 }, receivedAt: serverNow, connectionId: "c1" });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    ok("E2E: BINARY OTC only - NORMAL nao alimenta nem cria pipeline na inteligencia", intel.registry.status().length === before && !intel.registry.status().some((s) => s.marketKey === "EURUSD:NORMAL") && recorded.every((r) => r.marketKey === "EURUSD:OTC"));
+  }
   pipeline.evaluate(buyFeatures);
   const summary = await rt.pumpIntelligenceDecisions();
   ok("E2E: runtime.pump -> SinglePath -> requestOrder (fronteira unica)", summary?.submitted?.length === 1 && calls.length === 1 && calls[0].horizonSeconds === 300 && calls[0].source === "intelligence:PULLBACK_4060_300_AGENTIC_V2");
