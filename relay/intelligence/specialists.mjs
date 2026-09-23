@@ -1,5 +1,7 @@
 import { deepFreeze } from "./features.mjs";
 
+export const SPECIALISTS_VERSION = "specialists-v1";
+
 const out = (specialist, features, { domainAssessment, supportingEvidence = [], counterEvidence = [], blockers = [], summary }) => deepFreeze({
   specialist,
   featuresVersion: features.version,

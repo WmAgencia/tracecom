@@ -1,5 +1,7 @@
 import { computeAtr } from "./asset-context.mjs";
 
+export const FEATURES_VERSION = "features-v1";
+
 export function deepFreeze(value) {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
     Object.freeze(value);

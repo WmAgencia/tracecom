@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import { deepFreeze, stableStringify } from "./features.mjs";
 
+export const DECISION_SNAPSHOT_VERSION = "decision-snapshot-v1";
+
 export function buildDecisionSnapshot({ features, specialists, consensus: consensusResult, decidedAt, expirySeconds = 300, timing = null }) {
   if (!features) throw new Error("SNAPSHOT_FEATURES_REQUIRED");
   if (!consensusResult) throw new Error("SNAPSHOT_CONSENSUS_REQUIRED");

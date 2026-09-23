@@ -1,5 +1,6 @@
 import { deepFreeze } from "./features.mjs";
 
+export const CONSENSUS_VERSION = "consensus-v1";
 const ORDER = ["rsi", "dmi", "bollinger", "atr", "priceAction"];
 
 export function consensus(features, specialists) {
