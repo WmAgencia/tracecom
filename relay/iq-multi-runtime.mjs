@@ -682,7 +682,7 @@ export class IqMultiRuntime extends EventEmitter {
    *  normaliza NORMAL stale (NOT_OFFERED/sem activeId) para disabled. Nunca remove do grid. */
   async reconcileMarketUniverse({ persist = false } = {}) {
     if (!this.pool) return { skipped: "NO_POOL" };
-    const rawQuery = typeof this.pool.__rawQuery === "function" ? (sql, params) => this.pool.__rawQuery(sql, params) : (sql, params) => this.pool.query(sql, params);
+    const rawQuery = (sql, params) => this.pool.query(`/* tc-critical */ ${sql}`, params);
     let rows = [];
     try {
       const result = await rawQuery("SELECT market_key, enabled, market_type, availability, active_id FROM iq_markets");
