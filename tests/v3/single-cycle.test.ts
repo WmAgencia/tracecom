@@ -101,15 +101,47 @@ describe("V3 single-cycle operacional", () => {
     expect(runtime.status().counters.cyclesSkippedMaxCycles).toBeGreaterThanOrEqual(1);
   });
 
-  it("I. persistCycle aguarda a opportunity pai (barrier FK)", async () => {
+  it("H2. TEST SCOPE: allowlist so limita LLM; universo intacto e reversivel", async () => {
+    const { runtime, calls, step, opportunity } = makeRuntime(approveScript());
+    runtime.setOpportunityScope(["OTHER:OTC"]);
+    const skipped = await step(325_000);
+    expect(skipped).toBeNull();
+    expect(calls.length).toBe(0);
+    expect(runtime.status().counters.cyclesSkippedScope).toBe(1);
+    expect(opportunity().cycles.length).toBe(0);
+    runtime.setOpportunityScope(null);
+    const cycle = await step(320_000);
+    expect(cycle?.cycle).toBe(1);
+    expect(calls.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it("H3. agents indisponivel registra motivo exato (V3_AGENTS_DISABLED)", async () => {
+    const scheduled: any[] = [];
+    const scheduler = { schedule: (intent: any) => { scheduled.push(intent); return { scheduled: true, intent }; }, cancel: () => true, status: () => ({ pending: 0, counters: {} }) };
+    const nowRef = { value: exp - 330_000 };
+    const runtime = new V3Runtime({ strategy, agents: null, now: () => nowRef.value, brokerNow: () => nowRef.value, agentSafetyMarginMs: 2_000, estimatedFullCycleMs: 1_000, estimatedDeltaCycleMs: 1_000, scheduler });
+    runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
+    nowRef.value = exp - 325_000;
+    const candles = candlesFromCloses(closes, { startAt: nowRef.value - closes.length * 5_000 });
+    await runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow: nowRef.value });
+    const cycle = runtime.opportunities()[0].cycles[0];
+    expect(cycle.agents.available).toBe(false);
+    expect(cycle.agents.reason).toBe("V3_AGENTS_DISABLED");
+    expect(runtime.status().counters.agentUnavailableReasons.V3_AGENTS_DISABLED).toBeGreaterThanOrEqual(1);
+  });
+
+  it("I. persistCycle aguarda a opportunity pai (barrier FK) e re-tenta quando o pool dropa", async () => {
     const order: string[] = [];
-    const pool = { query: async (sql: string) => { if (sql.includes("INSERT INTO iq_v3_opportunities")) { order.push("opportunity:start"); await new Promise((resolve) => setTimeout(resolve, 30)); order.push("opportunity:done"); } else if (sql.includes("INSERT INTO iq_v3_cycles")) { order.push("cycle"); } return { rows: [], rowCount: 1 }; } };
-    const { step } = makeRuntime(approveScript(), { pool });
+    let cycleAttempts = 0;
+    const pool = { query: async (sql: string) => { if (sql.includes("INSERT INTO iq_v3_opportunities")) { order.push("opportunity:start"); await new Promise((resolve) => setTimeout(resolve, 30)); order.push("opportunity:done"); } else if (sql.includes("INSERT INTO iq_v3_cycles")) { cycleAttempts += 1; order.push("cycle:attempt" + cycleAttempts); if (cycleAttempts === 1) return { rows: [], dropped: true, reason: "RATE_LIMITED" }; order.push("cycle:done"); } return { rows: [], rowCount: 1 }; } };
+    const { runtime, step } = makeRuntime(approveScript(), { pool });
     await step(325_000);
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     expect(order).toContain("opportunity:done");
-    expect(order).toContain("cycle");
-    expect(order.indexOf("opportunity:done")).toBeLessThan(order.indexOf("cycle"));
+    expect(order).toContain("cycle:done");
+    expect(order.indexOf("opportunity:done")).toBeLessThan(order.indexOf("cycle:attempt1"));
+    expect(cycleAttempts).toBeGreaterThanOrEqual(2);
+    expect(runtime.status().counters.persistDropped).toBeGreaterThanOrEqual(1);
   });
 
   it("J. discovery event-driven: C1 imediato com TTE ~330 (sem esperar novo candle)", async () => {

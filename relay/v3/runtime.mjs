@@ -60,7 +60,8 @@ export class V3Runtime {
     this.queueDepth = 0;
     this.maxQueueDepth = 0;
     this.agentCalls = [];
-    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, cyclesSkippedMaxCycles: 0, cyclesSkippedOverlap: 0, snapshots: 0, approvals: 0, tentativeApprovals: 0, finalizations: 0, schedulerCancelled: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, agentCycles: 0, agentUnavailable: 0, deadlineAborts: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null };
+    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, cyclesSkippedMaxCycles: 0, cyclesSkippedOverlap: 0, cyclesSkippedScope: 0, snapshots: 0, approvals: 0, tentativeApprovals: 0, finalizations: 0, schedulerCancelled: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, persistDropped: 0, persistDroppedFinal: 0, agentCycles: 0, agentUnavailable: 0, agentUnavailableReasons: {}, deadlineAborts: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null };
+    this.opportunityScope = null;
     this.lastError = null;
     this.lastCycleAt = null;
     this.latencySamples = [];
@@ -149,6 +150,8 @@ export class V3Runtime {
     if (this.discovery.byMarket.size) this.#adoptDueFronts(at);
     const opportunity = this.engine.activeFor(String(marketKey));
     if (!opportunity) { this.counters.cyclesSkippedNoOpportunity += 1; return null; }
+    // TEST SCOPE: allowlist TEMPORARIA apenas para chamadas LLM (nunca altera universo/subscriptions).
+    if (this.opportunityScope !== null && !this.opportunityScope.includes(String(marketKey))) { this.counters.cyclesSkippedScope += 1; return null; }
     const window = ExpirationTargetTiming.analysis({ expirationAt: opportunity.expirationAt, brokerNow: at });
     if (window.ok !== true) { this.counters.cyclesSkippedWindow += 1; this.engine.enforceWindow(opportunity.opportunityId, at); return null; }
     if (opportunity.cycles.length >= this.maxAgentCycles) { this.counters.cyclesSkippedMaxCycles += 1; return null; }
@@ -176,9 +179,11 @@ export class V3Runtime {
     const analysisMustFinishBy = opportunity.targetSendAt - this.agentSafetyMarginMs;
     const cycleBudgetMs = analysisMustFinishBy - at;
     let agentResult = null;
+    let agentsReason = null;
     if (this.agents?.available) {
       const budgetMs = cycleBudgetMs;
       if (budgetMs < estimatedCycleMs) {
+        agentsReason = "DEADLINE";
         this.counters.cyclesSkippedDeadline += 1;
         this.log("V3_AGENT_CYCLE_SKIPPED_DEADLINE", stableStringify({ opportunityId: opportunity.opportunityId, budgetMs, estimatedCycleMs, cycleNumber: opportunity.cycles.length + 1 }));
       } else {
@@ -198,10 +203,16 @@ export class V3Runtime {
         if (this.agentCalls.length > 2_000) this.agentCalls.splice(0, this.agentCalls.length - 2_000);
         if (agentResult.available !== true) {
           this.counters.agentUnavailable += 1;
+          agentsReason = agentResult.reason ?? "PROVIDER_ERROR";
           if (agentResult.reason === "ANALYSIS_DEADLINE") this.counters.deadlineAborts += 1;
+        } else {
+          agentsReason = null;
         }
       }
+    } else {
+      agentsReason = "V3_AGENTS_DISABLED";
     }
+    if (agentsReason) this.counters.agentUnavailableReasons[agentsReason] = (this.counters.agentUnavailableReasons[agentsReason] ?? 0) + 1;
     // Fail-closed: sem agentes LLM validos NAO existe approval (determinismo continua coletando dados).
     const approvalsAllowed = agentResult?.available === true;
     const specialists = deterministicSpecialists;
@@ -229,7 +240,7 @@ export class V3Runtime {
       estimatedCycleLatency: estimatedCycleMs,
       actualCycleLatency: agentResult?.latency?.total ?? null,
       deadlineAbort: agentResult?.reason === "ANALYSIS_DEADLINE",
-      agents: { available: approvalsAllowed, calls: agentResult?.agentCalls ?? [] },
+      agents: { available: approvalsAllowed, calls: agentResult?.agentCalls ?? [], reason: agentsReason },
       deterministic: { asset: deterministicAsset?.scenario ?? null, direction: deterministicAsset?.direction ?? null, state: deterministicAsset?.state ?? null, consensus: deterministicConsensus.result },
       measurements, specialists, asset, consensus,
     };
@@ -348,29 +359,41 @@ export class V3Runtime {
 
   async #persistOpportunity(opportunity) {
     if (!this.pool?.query) return false;
-    try {
-      await this.pool.query(
-        `INSERT INTO iq_v3_opportunities(opportunity_id,strategy_version,strategy_hash,market_key,active_id,expiration_at,first_seen_at,first_seen_tte_ms,target_send_at,hard_cutoff_at,purchase_deadline_at,payout,buyability,status,final_decision,execution_ref,cycles_count,snapshot_hash,agent_mode,scheduled_send_at,scheduled_fire_at,revalidation,closed_at,closed_reason,updated_at)
-         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16::jsonb,$17,$18,$19,$20,$21,$22::jsonb,$23,$24,now())
-         ON CONFLICT(opportunity_id) DO UPDATE SET status=EXCLUDED.status, final_decision=COALESCE(EXCLUDED.final_decision,iq_v3_opportunities.final_decision), execution_ref=COALESCE(EXCLUDED.execution_ref,iq_v3_opportunities.execution_ref), cycles_count=EXCLUDED.cycles_count, snapshot_hash=COALESCE(EXCLUDED.snapshot_hash,iq_v3_opportunities.snapshot_hash), agent_mode=COALESCE(EXCLUDED.agent_mode,iq_v3_opportunities.agent_mode), scheduled_send_at=COALESCE(EXCLUDED.scheduled_send_at,iq_v3_opportunities.scheduled_send_at), scheduled_fire_at=COALESCE(EXCLUDED.scheduled_fire_at,iq_v3_opportunities.scheduled_fire_at), revalidation=COALESCE(EXCLUDED.revalidation,iq_v3_opportunities.revalidation), closed_at=EXCLUDED.closed_at, closed_reason=EXCLUDED.closed_reason, updated_at=now()`,
-        [opportunity.opportunityId, this.strategy?.version ?? null, this.strategy?.strategyHash ?? null, opportunity.marketKey, opportunity.activeId ?? null, new Date(opportunity.expirationAt).toISOString(), new Date(opportunity.firstSeenAt).toISOString(), opportunity.firstSeenTteMs, new Date(opportunity.targetSendAt).toISOString(), new Date(opportunity.hardStrategicCutoffAt).toISOString(), opportunity.purchaseDeadlineAt ? new Date(opportunity.purchaseDeadlineAt).toISOString() : null, opportunity.payout ?? null, opportunity.buyability ?? null, opportunity.status, opportunity.finalDecision ? JSON.stringify(opportunity.finalDecision) : null, opportunity.executionRef ? JSON.stringify(opportunity.executionRef) : null, opportunity.cycles.length, opportunity.finalDecision?.snapshotHash ?? null, this.agentMode, opportunity.executionRef?.scheduledSendAt ? new Date(opportunity.executionRef.scheduledSendAt).toISOString() : null, opportunity.executionRef?.fireAt ? new Date(opportunity.executionRef.fireAt).toISOString() : null, opportunity.executionRef?.checks ? JSON.stringify(opportunity.executionRef.checks) : null, opportunity.closedAt ? new Date(opportunity.closedAt).toISOString() : null, opportunity.closedReason ?? null],
-      );
-      this.counters.persisted += 1;
-      return true;
-    } catch (error) { this.counters.persistErrors += 1; this.log("V3_PERSIST_OPPORTUNITY_FAIL", String(error?.message ?? error).slice(0, 140)); return false; }
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const result = await this.pool.query(
+          `INSERT INTO iq_v3_opportunities(opportunity_id,strategy_version,strategy_hash,market_key,active_id,expiration_at,first_seen_at,first_seen_tte_ms,target_send_at,hard_cutoff_at,purchase_deadline_at,payout,buyability,status,final_decision,execution_ref,cycles_count,snapshot_hash,agent_mode,scheduled_send_at,scheduled_fire_at,revalidation,closed_at,closed_reason,updated_at)
+           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16::jsonb,$17,$18,$19,$20,$21,$22::jsonb,$23,$24,now())
+           ON CONFLICT(opportunity_id) DO UPDATE SET status=EXCLUDED.status, final_decision=COALESCE(EXCLUDED.final_decision,iq_v3_opportunities.final_decision), execution_ref=COALESCE(EXCLUDED.execution_ref,iq_v3_opportunities.execution_ref), cycles_count=EXCLUDED.cycles_count, snapshot_hash=COALESCE(EXCLUDED.snapshot_hash,iq_v3_opportunities.snapshot_hash), agent_mode=COALESCE(EXCLUDED.agent_mode,iq_v3_opportunities.agent_mode), scheduled_send_at=COALESCE(EXCLUDED.scheduled_send_at,iq_v3_opportunities.scheduled_send_at), scheduled_fire_at=COALESCE(EXCLUDED.scheduled_fire_at,iq_v3_opportunities.scheduled_fire_at), revalidation=COALESCE(EXCLUDED.revalidation,iq_v3_opportunities.revalidation), closed_at=EXCLUDED.closed_at, closed_reason=EXCLUDED.closed_reason, updated_at=now()`,
+          [opportunity.opportunityId, this.strategy?.version ?? null, this.strategy?.strategyHash ?? null, opportunity.marketKey, opportunity.activeId ?? null, new Date(opportunity.expirationAt).toISOString(), new Date(opportunity.firstSeenAt).toISOString(), opportunity.firstSeenTteMs, new Date(opportunity.targetSendAt).toISOString(), new Date(opportunity.hardStrategicCutoffAt).toISOString(), opportunity.purchaseDeadlineAt ? new Date(opportunity.purchaseDeadlineAt).toISOString() : null, opportunity.payout ?? null, opportunity.buyability ?? null, opportunity.status, opportunity.finalDecision ? JSON.stringify(opportunity.finalDecision) : null, opportunity.executionRef ? JSON.stringify(opportunity.executionRef) : null, opportunity.cycles.length, opportunity.finalDecision?.snapshotHash ?? null, this.agentMode, opportunity.executionRef?.scheduledSendAt ? new Date(opportunity.executionRef.scheduledSendAt).toISOString() : null, opportunity.executionRef?.fireAt ? new Date(opportunity.executionRef.fireAt).toISOString() : null, opportunity.executionRef?.checks ? JSON.stringify(opportunity.executionRef.checks) : null, opportunity.closedAt ? new Date(opportunity.closedAt).toISOString() : null, opportunity.closedReason ?? null],
+        );
+        if (result?.dropped === true) { this.counters.persistDropped += 1; await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1))); continue; }
+        this.counters.persisted += 1;
+        return true;
+      } catch (error) { this.counters.persistErrors += 1; this.log("V3_PERSIST_OPPORTUNITY_FAIL", String(error?.message ?? error).slice(0, 140)); return false; }
+    }
+    this.counters.persistDroppedFinal += 1;
+    this.log("V3_PERSIST_OPPORTUNITY_DROPPED", String(opportunity.opportunityId));
+    return false;
   }
 
   async #persistCycle(opportunityId, cycle) {
     if (!this.pool?.query) return false;
-    try {
-      await this.pool.query(
-        `INSERT INTO iq_v3_cycles(opportunity_id,cycle_number,at,tte_ms,closed_candle_id,price,feature_snapshot_id,asset_scenario,asset_state,consensus_result,agreement,payload,created_at)
-         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,now())
-         ON CONFLICT(opportunity_id,cycle_number) DO NOTHING`,
-        [opportunityId, cycle.cycleNumber, new Date(cycle.at).toISOString(), cycle.tteMs, cycle.closedCandleId, cycle.price, cycle.featureSnapshotId, cycle.assetScenario, cycle.assetState, cycle.consensusResult, cycle.agreement, JSON.stringify({ specialistStates: cycle.specialistStates, agentSpecialistStates: cycle.agentSpecialistStates ?? null, changedSincePreviousCycle: cycle.changedSincePreviousCycle, bestCounterCase: cycle.asset?.bestCounterCase ?? null, reasons: cycle.consensus?.challenge?.reasons ?? [], agentMode: cycle.agentMode ?? null, agents: cycle.agents ?? null, deterministic: cycle.deterministic ?? null })],
-      );
-      return true;
-    } catch (error) { this.counters.persistErrors += 1; this.log("V3_PERSIST_CYCLE_FAIL", String(error?.message ?? error).slice(0, 140)); return false; }
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const result = await this.pool.query(
+          `INSERT INTO iq_v3_cycles(opportunity_id,cycle_number,at,tte_ms,closed_candle_id,price,feature_snapshot_id,asset_scenario,asset_state,consensus_result,agreement,payload,created_at)
+           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,now())
+           ON CONFLICT(opportunity_id,cycle_number) DO NOTHING`,
+          [opportunityId, cycle.cycleNumber, new Date(cycle.at).toISOString(), cycle.tteMs, cycle.closedCandleId, cycle.price, cycle.featureSnapshotId, cycle.assetScenario, cycle.assetState, cycle.consensusResult, cycle.agreement, JSON.stringify({ specialistStates: cycle.specialistStates, agentSpecialistStates: cycle.agentSpecialistStates ?? null, changedSincePreviousCycle: cycle.changedSincePreviousCycle, bestCounterCase: cycle.asset?.bestCounterCase ?? null, reasons: cycle.consensus?.challenge?.reasons ?? [], agentMode: cycle.agentMode ?? null, agents: cycle.agents ?? null, deterministic: cycle.deterministic ?? null })],
+        );
+        if (result?.dropped === true) { this.counters.persistDropped += 1; await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1))); continue; }
+        return true;
+      } catch (error) { this.counters.persistErrors += 1; this.log("V3_PERSIST_CYCLE_FAIL", String(error?.message ?? error).slice(0, 140)); return false; }
+    }
+    this.counters.persistDroppedFinal += 1;
+    this.log("V3_PERSIST_CYCLE_DROPPED", stableStringify({ opportunityId, cycleNumber: cycle?.cycleNumber ?? null }));
+    return false;
   }
 
   /** Callback do ExpirationDiscovery para persistir ofertas (observacao read-only). */
@@ -409,6 +432,13 @@ export class V3Runtime {
     this.counters.lastFeedBlockedAt = at ?? this.now();
   }
 
+  /** TEST SCOPE somente-LLM: allowlist temporaria (null = todos). Nunca persiste, nunca altera universo. */
+  setOpportunityScope(keys = null) {
+    this.opportunityScope = Array.isArray(keys) && keys.length ? keys.map((key) => String(key)) : null;
+    this.log("V3_OPPORTUNITY_SCOPE", stableStringify({ scope: this.opportunityScope }));
+    return this.opportunityScope;
+  }
+
   /** Diagnostico externo (relay): registra bloqueio de feed SEM chamar agentes. */
   noteFeedBlocked(reason, marketKey = null) { this.#noteFeedBlocked(reason, marketKey); }
 
@@ -423,6 +453,7 @@ export class V3Runtime {
       agentSafetyMarginMs: this.agentSafetyMarginMs,
       estimatedWaveMs: this.estimatedWaveMs,
       lifecycle: { maxAgentCycles: this.maxAgentCycles, analysisSafetyMarginMs: this.agentSafetyMarginMs, estimatedFullCycleMs: this.estimatedFullCycleMs, estimatedDeltaCycleMs: this.estimatedDeltaCycleMs },
+      opportunityScope: this.opportunityScope,
       agents: { available: this.agents?.available === true, calls: this.agentCalls.length, latency: agentLatencyStats(this.agentCalls) },
       scheduler: this.scheduler.status(),
       queue: { depth: this.queueDepth, maxDepth: this.maxQueueDepth, markets: this.queues.size },

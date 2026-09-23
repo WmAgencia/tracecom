@@ -160,8 +160,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.intelligenceDispatch = null;
     this.operationalStrategy = loadOperationalStrategy();
     // V3 (expiration-driven): observe-only, desligada por padrao; nunca ativa sozinha.
-    this.v3Strategy = process.env.V3_ENABLED === "true" ? loadOperationalStrategy({ manifestPath: "estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V3.json" }) : null;
-    this.v3 = this.v3Strategy
+    this.v3Strategy = process.env.V3_ENABLED === "true" ? loadOperationalStrategy({ manifestPath: "estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V3.json" }) : null;    this.v3 = this.v3Strategy
       ? new V3Runtime({
           now: this.now, pool, log: this.log,
           strategy: { version: this.v3Strategy.version, status: this.v3Strategy.status, executable: this.v3Strategy.executable, strategyHash: this.v3Strategy.strategyHash, statsEpoch: this.v3Strategy.manifest?.statsEpoch ?? null },
@@ -173,7 +172,7 @@ export class IqMultiRuntime extends EventEmitter {
           brokerNow: () => { const value = this.client?.serverNow?.(); return Number.isFinite(Number(value)) ? Number(value) : this.now(); },
         })
       : null;
-    this.candleStore = new CandleStore({ pool, now: this.now, log: this.log });
+    if (this.v3 && process.env.V3_TEST_ALLOWLIST) this.v3.setOpportunityScope(String(process.env.V3_TEST_ALLOWLIST).split(",").map((key) => key.trim()).filter(Boolean));    this.candleStore = new CandleStore({ pool, now: this.now, log: this.log });
     this.singlePath = new SinglePath({ now: this.now });
     try {
       this.assetIntelligence = new RuntimeIntelligence({ now: this.now, strategy: this.operationalStrategy, loader: (marketKey) => this.candleStore.loadRecent(marketKey) });
@@ -337,7 +336,7 @@ export class IqMultiRuntime extends EventEmitter {
   onSessionRemoved() { this.stop("SESSION_DISCONNECTED"); }
 
   /** Recarrega configuracao persistida (diagnostico/teste; restart real usa o mesmo caminho no boot). */
-  async reloadConfiguration() { this.configLoaded = false; await this.#loadPersistedConfig(); return { defaultStake: this.config.defaultStake, revision: this.config.revision, markets: [...this.markets.values()].filter((ctx) => ctx.enabled).map((ctx) => ({ marketKey: ctx.marketKey, configuredStake: ctx.configuredStake, setup: ctx.decisionState?.setup ?? null })) }; }
+  async reloadConfiguration() { this.configLoaded = false; await this.#loadPersistedConfig(); await this.reconcileMarketUniverse(); return { defaultStake: this.config.defaultStake, revision: this.config.revision, markets: [...this.markets.values()].filter((ctx) => ctx.enabled).map((ctx) => ({ marketKey: ctx.marketKey, configuredStake: ctx.configuredStake, setup: ctx.decisionState?.setup ?? null })) }; }
 
   async #runLoop() {
     let attempt = 0;
@@ -437,6 +436,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   async #bootstrap(client) {
     await this.#loadPersistedConfig();
+    await this.reconcileMarketUniverse();
     await this.#refreshBrokerAvailability(client, "BOOTSTRAP");
     try { const { response } = await client.getBalances(); this.#applyBalances(response.msg); } catch (error) { this.#safe(() => this.log("IQ_MULTI_BALANCES_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 120))); }
     try {
@@ -671,6 +671,42 @@ export class IqMultiRuntime extends EventEmitter {
       if (!active) continue;
       void this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles, brokerNow }).catch(() => undefined);
     }
+  }
+
+  /** TEST SCOPE somente-LLM (nunca altera universo/subscriptions/DB). */
+  setV3TestScope(keys = null) { return this.v3?.setOpportunityScope?.(keys) ?? null; }
+  async endV3TestScope() { this.v3?.setOpportunityScope?.(null); return this.reconcileMarketUniverse(); }
+
+  /** Reconcilia o universo monitorado com iq_markets (idempotente). NAO sobrescreve config valida:
+   *  aplica apenas diferencas reais; habilita so quando o broker oferece (OPEN + activeId);
+   *  normaliza NORMAL stale (NOT_OFFERED/sem activeId) para disabled. Nunca remove do grid. */
+  async reconcileMarketUniverse({ persist = false } = {}) {
+    if (!this.pool?.query) return { skipped: "NO_POOL" };
+    let rows = [];
+    try {
+      const result = await this.pool.query("SELECT market_key, enabled, market_type, availability, active_id FROM iq_markets");
+      if (result?.dropped === true) return { skipped: "DB_DROPPED" };
+      rows = result?.rows ?? [];
+    } catch (error) { this.#safe(() => this.log("V3_RECONCILE_DB_FAIL", String(error?.message).slice(0, 120))); return { error: true }; }
+    let enabledApplied = 0; let disabledApplied = 0; let notAvailable = 0; let staleNormal = 0;
+    for (const row of rows) {
+      const ctx = this.markets.get(String(row.market_key));
+      if (!ctx) continue;
+      const desired = row.enabled === true;
+      const isStaleNormal = ctx.marketType === "NORMAL" && (row.availability === "NOT_OFFERED" || row.active_id === null || row.active_id === undefined);
+      const effective = isStaleNormal ? false : desired;
+      if (ctx.enabled === effective) continue;
+      if (effective === true) {
+        if (ctx.availability !== "OPEN" || ctx.activeId === null || ctx.activeId === undefined) { notAvailable += 1; continue; }
+        try { this.setMarket(ctx.marketKey, { enabled: true }, { persist: false, actor: "reconcile" }); enabledApplied += 1; } catch { notAvailable += 1; }
+      } else {
+        try { this.setMarket(ctx.marketKey, { enabled: false }, { persist: persist && desired, actor: "reconcile" }); disabledApplied += 1; if (isStaleNormal) staleNormal += 1; } catch { /* noop */ }
+      }
+    }
+    this.#ensureIntelligenceHydration();
+    this.#safe(() => this.log("V3_RECONCILE_MARKETS", JSON.stringify({ enabledApplied, disabledApplied, notAvailable, staleNormal, enabled: this.activeMarketKeys().length })));
+    this.#emitEvent("markets.reconciled", { enabledApplied, disabledApplied, notAvailable, staleNormal });
+    return { enabledApplied, disabledApplied, notAvailable, staleNormal, enabled: this.activeMarketKeys().length };
   }
 
   /** Retry throttled (1x/60s por mercado) para contextos OTC ativados/criados apos o boot ou que falharam. */
