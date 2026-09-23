@@ -77,6 +77,15 @@ CONSENSUS_BILATERAL 900.
 - Prod: `V3_AGENTS_ENABLED=false` ao final do soak de observacao (medicao concluida); `V3_ENABLED=true`
   (OBSERVE_ONLY), `executable=false`, estrategia `PENDING_IMPLEMENTATION`.
 
+### 6.1 Soak de observacao em prod (pos-deploy `ad3c255`)
+
+Com `V3_AGENTS_ENABLED=true` por alguns minutos, 2 execucoes do selftest FULL no runtime de producao:
+`available=true`, `result=CANCEL` (gate deterministico sobre fixture sintetica), wall total
+9603ms e 9445ms (waveA 4323ms / waveB 5280ms na primeira), 7/7 papeis com `errors=0` e
+`schemaValidRate=1`; PRICE_ACTION 4228ms; CONSENSUS_BILATERAL 5253ms. `V3_AGENTS_ENABLED` desligado em
+seguida; status final `agentMode=DETERMINISTIC_OBSERVE`, `executionMode=OBSERVE_ONLY`.
+Nenhuma ordem criada ou enviada; nenhum PATH_TEST/REAL.
+
 ## 7. Estado e nao-acoes
 
 - V2 frozen intocado (`V2_FROZEN_IMMUTABLE PASS`); V3 nao ativado; nenhuma ordem; PRACTICE auto-exec OFF;
