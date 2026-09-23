@@ -16,6 +16,7 @@ export const SUITES = Object.freeze([
   "stage3-broker-contract-tests.mjs",
   "stage3-strategy-hash-tests.mjs",
   "stage4-frontend-tests.mjs",
+  "stage4-ops-ui-tests.mjs",
   "stage5-e2e-practice-tests.mjs",
   "binary300-tests.mjs",
   "execution-gate-tests.mjs",

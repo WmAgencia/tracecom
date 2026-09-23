@@ -14,13 +14,20 @@ const server = fs.readFileSync(new URL("../relay/server.mjs", import.meta.url), 
   for (const label of ["MESAS", "LOG", "HISTÓRICO", "CONFIGURAÇÕES"]) ok(`navegacao contem ${label}`, grid.includes(`>${label}<`) || grid.includes(`"${label}"`) || grid.includes(label));
 }
 
-/* 2) legado removido da UI */
+/* 2) legado removido da UI + controles operacionais unificados */
 {
   ok("UI sem Blitz", !/blitz/i.test(grid));
   ok("UI sem seletor de duracao 30/45/60/150/180", !/(30|45|60|150|180)s?<\/option>/.test(grid) && !/horizonSeconds|durationSeconds:\s*(30|45|60|150|180)\b/.test(grid));
   ok("UI sem confidence/percentual de certeza", !/confidence|certeza|seguran[cç]a\s+ativa/i.test(grid));
   ok("UI sem seletor de estrategia antiga/LAB/seguranca", !/safetySelect|safetySave|labModal|labList|gridBlitz|PULLBACK_150|PULLBACK_180|STRATEGY_NAMES/.test(grid));
-  ok("UI sem auto-arm REAL (arm real separado e explicito)", !/switchMode/.test(grid) && /btnRealArm/.test(grid) && /CONFIRMAR E ARMAR REAL/.test(grid));
+  ok("SEARCH_REMOVED: busca de ativos removida (HTML/CSS/listener)", !/searchInput/.test(grid) && !/\.search\b/.test(grid) && !/Buscar ativo/i.test(grid) && !/oninput/.test(grid));
+  ok("ONE_EXECUTION_TOGGLE: um unico botao de execucao", (grid.match(/id="btnExecutionToggle"/g) ?? []).length === 1 && !/btnArm\b/.test(grid) && !/btnRealArm/.test(grid) && /toggleExecution/.test(grid));
+  ok("NO_SEPARATE_REAL_ARM_BUTTON: sem botao ARMAR REAL (confirmacao REAL mantida)", !/>ARMAR REAL</.test(grid) && /CONFIRMAR E ARMAR REAL/.test(grid) && /\/api\/iq\/real\/arm/.test(grid));
+  ok("botao unico usa estado do backend + labels ATIVAR/DESATIVAR", grid.includes("executionButtonState") && grid.includes("state.practiceArmed") && grid.includes("state.realArmed") && !/armed\s*\?\s*"ARMADO"/.test(grid));
+  const selectFn = grid.slice(grid.indexOf("const selectAccount ="), grid.indexOf("const selectAccount =") + 1400);
+  ok("troca de conta usa switchDisarmPlan (nunca auto-arma)", grid.includes("switchDisarmPlan") && /\/api\/iq\/real\/disarm/.test(selectFn) && !/armPracticeNow|armRealNow|"\/api\/iq\/arm"/.test(selectFn));
+  ok("cards usam cardResultFor (V2-only, janela curta) e nunca PATH_TEST/legado", grid.includes("cardResultFor") && grid.includes("isV2Operational") && !/exec\.open\s*\?\s*\["ABERTA"/.test(grid));
+  ok("painel OBSERVAÇÃO V2 presente com buildV2Report + ops-ui.js", grid.includes("Observação V2") && grid.includes("obsBody") && grid.includes("buildV2Report") && grid.includes('src="/ops-ui.js"'));
 }
 
 /* 3) grid consome productState do backend (nao recalcula estrategia) */
