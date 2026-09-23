@@ -3,6 +3,8 @@ import { RuntimeIntelligence } from "../relay/intelligence/runtime-adapter.mjs";
 import { deepFreeze } from "../relay/intelligence/features.mjs";
 import { operationalAllowlist, OPERATIONAL_EXECUTION_POLICY_NAME } from "../relay/execution/operational-policy.mjs";
 
+process.env.PATH_TEST_ENABLED = "true";
+
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
 

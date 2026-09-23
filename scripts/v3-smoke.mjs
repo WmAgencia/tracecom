@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+/** V3 SMOKE — sanidade rapida do nucleo V3 (roda no run-all; nenhum caminho de ordem). */
+import { ExpirationTargetTiming, buildV3OrderIntent, assertExactExpirationTarget } from "../relay/v3/timing.mjs";
+import { ExpirationDiscovery } from "../relay/v3/expiration-discovery.mjs";
+import { ExpirationOpportunityEngine } from "../relay/v3/opportunity-engine.mjs";
+import { measureAll } from "../relay/v3/measurements.mjs";
+import { runSpecialists } from "../relay/v3/specialists.mjs";
+import { classifyAsset } from "../relay/v3/asset-agent.mjs";
+import { runConsensus } from "../relay/v3/consensus.mjs";
+import { validatePlaybooks } from "../relay/v3/playbooks.mjs";
+import { validateScenarioLibrary } from "../relay/v3/scenarios.mjs";
+import { V3Runtime } from "../relay/v3/runtime.mjs";
+import { computeV3StrategyHash, V3_MANIFEST_PATH } from "./v3-strategy-hash.mjs";
+import fs from "node:fs";
+
+let pass = 0; let fail = 0;
+const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
+
+const BASE = Math.floor(Date.now() / 300_000) * 300_000;
+const EXP = BASE + 300_000;
+
+ok("playbooks e scenario library validos", validatePlaybooks().ok && validateScenarioLibrary().ok && validatePlaybooks().count >= 25);
+ok("manifesto V3 PENDING_IMPLEMENTATION/executable=false e hash deterministico", (() => {
+  const manifest = JSON.parse(fs.readFileSync(V3_MANIFEST_PATH, "utf8"));
+  const computed = computeV3StrategyHash();
+  return manifest.status === "PENDING_IMPLEMENTATION" && manifest.executable === false && manifest.strategyHash === computed.strategyHash && computed.strategyHash === computeV3StrategyHash().strategyHash;
+})());
+
+const discovery = new ExpirationDiscovery({ now: () => EXP - 330_000 });
+discovery.ingest({ actives: [{ marketKey: "EURUSD:OTC", active: { id: 76, enabled: true, deadtime: 30, option: { expiration_times: [Math.round(EXP / 1000)] } } }], brokerNow: EXP - 330_000 });
+ok("discovery mede TTE real (~330s) e deadtime do broker", discovery.front("EURUSD:OTC", EXP - 330_000).tteMs === 330_000 && discovery.status().distribution.deadtimeMs.includes(30_000));
+
+const engine = new ExpirationOpportunityEngine({ now: () => EXP - 330_000 });
+const created = engine.discover({ marketKey: "EURUSD:OTC", expirationAt: EXP, brokerNow: EXP - 330_000, deadtimeMs: 30_000 });
+ok("opportunity deduplicada por marketKey+expirationAt", created.created === true && engine.discover({ marketKey: "EURUSD:OTC", expirationAt: EXP, brokerNow: EXP - 330_000 }).created === false);
+const opportunity = engine.get(created.opportunity.opportunityId);
+ok("alvo de envio em TTE=302 e corte duro em TTE=300", opportunity.targetSendAt === EXP - 302_000 && opportunity.hardStrategicCutoffAt === EXP - 300_000);
+ok("intent exato e guard negam expiration trocada", buildV3OrderIntent({ opportunity, brokerNow: EXP - 302_000, stake: 2, direction: "BUY" }).intent.exactExpirationAt === Math.round(EXP / 1000) && assertExactExpirationTarget({ opportunity, requestedExpirationAt: (EXP + 300_000) / 1000 }).ok === false);
+engine.enforceWindow(opportunity.opportunityId, EXP - 299_000);
+ok("TTE<=300 => MISSED_5M_ENTRY_WINDOW (nunca persegue)", opportunity.status === "MISSED_5M_ENTRY_WINDOW");
+
+const closes = Array.from({ length: 120 }, (_, index) => 1.35 + index * 0.00005 + Math.sin(index / 5) * 0.0004);
+const candles = closes.map((close, index) => { const prev = index ? closes[index - 1] : close; const open = close - (close - prev) * 0.3; return { at: EXP - (119 - index) * 5_000, open, high: Math.max(open, close) + 0.0004, low: Math.min(open, close) - 0.0004, close }; });
+const measurements = measureAll(candles, { marketKey: "EURUSD:OTC" });
+const specialists = runSpecialists({ measurements });
+const asset = classifyAsset({ measurements, specialists });
+const consensus = runConsensus({ measurements, asset, timing: { ok: true, code: "ENTRY_WINDOW_OPEN", tteMs: 305_000 } });
+ok("pipeline deterministico: measurements -> specialists -> Asset -> Consensus", measurements.rsi.value !== null && specialists.rsi && ["BUY_CANDIDATE", "SELL_CANDIDATE", "WAIT", "NO_SETUP"].includes(asset.state) && ["APPROVE_BUY", "APPROVE_SELL", "CANCEL"].includes(consensus.result));
+
+const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false }, now: () => EXP - 330_000 });
+ok("runtime V3 nasce observe-only (sem execucao, sem caminho de ordem)", runtime.status().executionMode === "OBSERVE_ONLY" && runtime.status().executionEnabled === false && !/requestOrder\s*\(|placeOrder\s*\(/.test(fs.readFileSync(new URL("../relay/v3/runtime.mjs", import.meta.url), "utf8")));
+
+console.log(fail === 0 ? `V3_SMOKE ALL_PASS (${pass}/${pass})` : `V3_SMOKE FAIL (${fail})`);
+process.exit(fail === 0 ? 0 : 1);

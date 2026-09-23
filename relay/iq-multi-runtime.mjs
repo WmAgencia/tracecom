@@ -65,6 +65,8 @@ import { SinglePath } from "./execution/single-path.mjs";
 import { IntelligenceDispatch } from "./execution/intelligence-dispatch.mjs";
 import { loadOperationalStrategy } from "./execution/operational-strategy.mjs";
 import { matchPendingOrder, pendingCandidates, matchClosedOption } from "./execution/order-ack-matcher.mjs";
+import { V3Runtime } from "./v3/runtime.mjs";
+import { ExpirationTargetTiming } from "./v3/timing.mjs";
 import { SafetyShadow, parseSafetyLevels, SAFETY_SHADOW_RUN_ID } from "./agents/safety-shadow.mjs";
 import { CandlesArchive } from "./candles-archive.mjs";
 import { customStrategyById, evaluateCustomStrategies, CUSTOM_STRATEGIES } from "./agents/custom-strategies.mjs";
@@ -152,6 +154,11 @@ export class IqMultiRuntime extends EventEmitter {
     this.assetIntelligenceError = null;
     this.intelligenceDispatch = null;
     this.operationalStrategy = loadOperationalStrategy();
+    // V3 (expiration-driven): observe-only, desligada por padrao; nunca ativa sozinha.
+    this.v3Strategy = process.env.V3_ENABLED === "true" ? loadOperationalStrategy({ manifestPath: "estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V3.json" }) : null;
+    this.v3 = this.v3Strategy
+      ? new V3Runtime({ now: this.now, pool, log: this.log, strategy: { version: this.v3Strategy.version, status: this.v3Strategy.status, executable: this.v3Strategy.executable, strategyHash: this.v3Strategy.strategyHash, statsEpoch: this.v3Strategy.manifest?.statsEpoch ?? null } })
+      : null;
     this.candleStore = new CandleStore({ pool, now: this.now, log: this.log });
     this.singlePath = new SinglePath({ now: this.now });
     try {
@@ -484,6 +491,13 @@ export class IqMultiRuntime extends EventEmitter {
     try {
       const { response } = await client.getInitializationData();
       this.resolver.ingestInitializationData(response.msg);
+      if (this.v3) {
+        try {
+          const marketKeyByActiveId = new Map();
+          for (const row of this.resolver.status().markets) { if (row.activeId !== null && row.activeId !== undefined) marketKeyByActiveId.set(Number(row.activeId), row.marketKey); }
+          this.v3.onInitializationData(response.msg, { brokerNow: this.client?.serverNow?.() ?? this.now(), marketKeyByActiveId });
+        } catch (error) { this.#safe(() => this.log("V3_DISCOVERY_FAIL", String(error?.message ?? error).slice(0, 120))); }
+      }
       this.#applyResolver({ reason });
       const { response: options } = await client.getOptions({ limit: 30, instrumentType: "binary,turbo", balanceId: this.account.practice.balanceId ?? this.account.real.balanceId });
       this.resolver.ingestAuxiliary(options.msg);
@@ -915,6 +929,7 @@ export class IqMultiRuntime extends EventEmitter {
     ctx.stats.messages += 1;
     ctx.lastTick = { price: candle.close, bucketStart: candle.bucketStart, bucketEnd: candle.bucketEnd, serverTimestamp: candle.serverTimestamp, receivedAt: candle.receivedAt, ageMs: this.now() - candle.receivedAt, source: candle.source, segmentId: candle.segmentId };
     ctx.lastCandle = candle; ctx.lastTickAt = receivedAt;
+    if (this.v3) this.#safe(() => this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: this.#candleList(ctx), brokerNow: this.client?.serverNow?.() ?? this.now() }));
     ctx.serverTime = serverTimestamp;
     ctx.connectionHealth = { ...ctx.connectionHealth, connected: true, lastMessageAt: receivedAt };
     // DATAHUB: tick ring real (candle updates do feed) + eventos CANDLE_5S/MARKET_TICK. Nunca bloqueia.
@@ -1590,6 +1605,7 @@ export class IqMultiRuntime extends EventEmitter {
   /** PATH_TEST: PRACTICE-only, 300s fixo, testOnly/excludedFromStats. REAL entra em DRY-RUN (nunca envia).
    *  Nao decide conta (AccountRouter decide); nao tem logica LAB residual. */
   async submitPathTestOrder({ marketKey, direction, strategyId, strategyTradeId, stake = null } = {}) {
+    if (process.env.PATH_TEST_ENABLED !== "true") throw new IqWsError("PATH_TEST_DISABLED", "PATH_TEST_ENABLED != true");
     const mode = String(this.config.mode).toUpperCase();
     if (mode !== "PRACTICE") {
       const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2);
@@ -3084,6 +3100,11 @@ export class IqMultiRuntime extends EventEmitter {
 
   intelligenceStatus() { return { assetIntelligence: (this.assetIntelligence?.health?.() ?? { intelligenceReady: false, degraded: true, initError: this.assetIntelligenceError ?? "NOT_INSTANTIATED", assetsTotal: 0, assetsReady: 0, assetsPartial: 0, assetsFailed: 0, lastPipelineUpdateAt: null }), strategy: { version: this.operationalStrategy?.version ?? null, status: this.operationalStrategy?.status ?? "UNAVAILABLE", executable: this.operationalStrategy?.executable === true, strategyHash: this.operationalStrategy?.strategyHash ?? null }, dispatch: (this.intelligenceDispatch?.status?.() ?? { wired: false, counters: null }), candleStore: (this.candleStore?.status?.() ?? { ready: false }), version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS], feeds: this.feeds.status(), knowledge: this.knowledge.status(), secondBrain: this.secondBrain.status(), brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION }; }
 
+  /* --------------------------------- V3 (observe-only) --------------------------------- */
+  v3Status() { return this.v3?.status() ?? { version: "v3-runtime-v1", enabled: false, executionMode: "DISABLED", strategy: null, engine: null, discovery: null }; }
+  v3Opportunities(options = {}) { return this.v3?.opportunities(options) ?? []; }
+  v3Discovery() { return this.v3?.discoveryStatus() ?? null; }
+
   /** View operacional por ativo (GRID/LOG): productState do backend + AnalysisState (WAIT observavel). */
   intelligenceAssets() {
     const strategy = { version: this.operationalStrategy?.version ?? null, status: this.operationalStrategy?.status ?? "UNAVAILABLE", executable: this.operationalStrategy?.executable === true, strategyHash: this.operationalStrategy?.strategyHash ?? null };
@@ -3620,8 +3641,6 @@ export class IqMultiRuntime extends EventEmitter {
       sources: [
         row("intelligence:PULLBACK_4060_300_AGENTIC_V2", null, "PULLBACK_4060_300_AGENTIC_V2"),
         row("pathtest:AGENTIC_PATH_TEST", null, "AGENTIC_PATH_TEST"),
-        row("ui:smoke", null, "UI_SMOKE"),
-        row("agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2", "RSI_REVERSAL_STRICT_V2:<marketKey>", "RSI_REVERSAL_STRICT_V2"),
         row("AUTO_DECISION", "trader:<marketKey>", `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`),
         row("MANUAL", null, null),
         row("experiment:RSI_REVERSAL_CONFLUENCE_V1", null, "RSI_REVERSAL_CONFLUENCE_V1"),
@@ -3630,7 +3649,7 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
-  async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = OPERATIONAL_EXPIRY_SECONDS, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false, operational = null } = {}) {
+  async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = OPERATIONAL_EXPIRY_SECONDS, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false, operational = null, exactExpirationAt = null } = {}) {
     // Trava UNICA: qualquer ordem exige o interruptor de Binarios ligado (Blitz extinto).
     if (this.agentExecBinary !== true) throw new IqWsError("BINARY_EXEC_DISABLED");
     const routing = this.#executionRouting(source);
@@ -3713,7 +3732,18 @@ export class IqMultiRuntime extends EventEmitter {
       record = registered.record;
     }
     const serverSec = (this.client.serverNow() ?? this.now()) / 1000;
-    const expiration = computeExpiration(serverSec, Math.max(1, Math.round(Number(horizonSeconds) / 60)));
+    // V3: quando a expiration EXATA e informada (offer da IQ que originou a opportunity), ela e
+    // preservada integralmente — nunca recalcular bucket/arredondar/trocar. Alinhamento 300s e obrigatorio.
+    const exactSec = Number(exactExpirationAt);
+    const hasExactExpiration = Number.isFinite(exactSec) && exactSec > 0;
+    const expiration = hasExactExpiration
+      ? (() => {
+          const exactMs = exactSec * 1000;
+          if (exactMs % 300_000 !== 0) throw new IqWsError("ENTRY_EXPIRATION_ALIGNMENT", String(exactExpirationAt));
+          if (exactMs <= serverSec * 1000) throw new IqWsError("ENTRY_WINDOW_CLOSED", "exact expiration already passed");
+          return { expiration: exactSec, optionTypeId: 3, optionKind: "turbo", durationMinutes: 5, reference: "v3/exact-expiration" };
+        })()
+      : computeExpiration(serverSec, Math.max(1, Math.round(Number(horizonSeconds) / 60)));
     if (expiration.optionKind === "turbo" && Array.isArray(ctx.instrumentTypes) && ctx.instrumentTypes.length && !ctx.instrumentTypes.includes("turbo")) throw new IqWsError("INSTRUMENT_NOT_AVAILABLE_FOR_HORIZON", `${key}: turbo indisponivel (${ctx.instrumentTypes.join(",")})`);
     // JIT: o contrato precisa expirar exatamente no targetExpiryAt do candidato; fail-closed se o broker nao aceitar essa janela.
     if (entryTiming?.targetExpirySec && Number(expiration.expiration) !== Number(entryTiming.targetExpirySec)) throw new IqWsError("ENTRY_EXPIRATION_MISMATCH", `broker=${expiration.expiration} target=${entryTiming.targetExpirySec}`);
@@ -3726,9 +3756,10 @@ export class IqMultiRuntime extends EventEmitter {
       accountContext: orderContext,
       stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, activeId: ctx.activeId, symbol: ctx.display, expirationSec: expiration.expiration, optionKind: expiration.optionKind,
       entryPrice, requestedAt: this.now(), connectionId: this.connection?.connectionId ?? null, autoDisarmAfterAck: autoDisarmAfterAck === true, source, ackResolved: false, settling: false,
+      exactExpirationAt: Number.isFinite(Number(exactExpirationAt)) ? Number(exactExpirationAt) : null,
       correlationId: ctx.agents?.correlationId ?? `corr_exec_${record.executionId}`,
       infraProbe: infraProbe === true,
-      operational: operational ? { strategyVersion: operational.strategyVersion ?? null, strategyHash: operational.strategyHash ?? null, statsEpoch: operational.statsEpoch ?? null, snapshotHash: operational.snapshotHash ?? null, decisionSnapshot: operational.decisionSnapshot ?? null, testOnly: operational.testOnly === true, excludedFromStats: operational.excludedFromStats === true } : (entryTiming?.pathTest === true ? { strategyVersion: "PATH_TEST", strategyHash: null, statsEpoch: null, snapshotHash: null, decisionSnapshot: null, testOnly: true, excludedFromStats: true } : null),
+      operational: operational ? { strategyVersion: operational.strategyVersion ?? null, strategyHash: operational.strategyHash ?? null, statsEpoch: operational.statsEpoch ?? null, snapshotHash: operational.snapshotHash ?? null, decisionSnapshot: operational.decisionSnapshot ?? null, v3OpportunityId: operational.v3OpportunityId ?? null, v3PurchaseDeadlineAt: Number.isFinite(Number(operational.v3PurchaseDeadlineAt)) ? Number(operational.v3PurchaseDeadlineAt) : null, testOnly: operational.testOnly === true, excludedFromStats: operational.excludedFromStats === true } : (entryTiming?.pathTest === true ? { strategyVersion: "PATH_TEST", strategyHash: null, statsEpoch: null, snapshotHash: null, decisionSnapshot: null, testOnly: true, excludedFromStats: true } : null),
       entryTiming: entryTiming ? { candidateId: entryTiming.candidateId, targetEntryAt: entryTiming.targetEntryAt, targetExpiryAt: entryTiming.targetExpiryAt, targetExpirySec: Number(entryTiming.targetExpirySec ?? Math.round(entryTiming.targetExpiryAt / 1000)), submitAt: entryTiming.submitAt, submitAtMs, entryLeadMs: entryTiming.entryLeadMs, revalidatedAt: entryTiming.revalidatedAt, candidateChangedBeforeEntry: entryTiming.candidateChangedBeforeEntry === true, shadowArms: entryTiming.shadowArms ?? null, t0Snapshot: entryTiming.t0Snapshot ?? entryTiming.initialSnapshot ?? null, shadowObservationId: entryTiming.shadowObservationId ?? null, directionChanges: (entryTiming.changedFields ?? []).filter((change) => change.field === "action").length } : null,
     };
     this.#auditRecord(pending.correlationId, key, "ORDER_SENT", { executionId: record.executionId, direction: directionWire, stake: finalStake, requestedStake: resolvedStake.requestedStake, stakeSource: resolvedStake.source, mode, source, expiration: expiration.expiration, optionKind: expiration.optionKind, candidateId: entryTiming?.candidateId ?? null, targetEntryAt: entryTiming?.targetEntryAt ?? null, submitAtMs, entryLeadMs: entryTiming?.entryLeadMs ?? null }, { persist: true });
@@ -3738,7 +3769,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.#setAgent(ctx, "ORDERING", source);
     this.#emitEvent("order.pending", { marketKey: key, direction: directionWire, stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, mode, expirationSec: expiration.expiration, source, ...this.#executionMeta({ source, marketKey: key }) });
     const persistStartedAt = this.now();
-    const persisted = await this.#persistExecution({ executionId: record.executionId, idempotencyKey: requestedKey, decisionId: record.payload?.decisionId ?? decisionId ?? null, marketKey: key, mode, accountContext: orderContext, connectionId: pending.connectionId, accountType: mode, brokerOrderId: null, symbol: ctx.display, activeId: ctx.activeId, direction: directionWire, stake: finalStake, currency: mode === "REAL" ? this.account.real.currency : this.account.practice.currency, state: "REQUESTED", requestId: requestedKey, expirationAt: nowIso(expiration.expiration * 1000), entryPrice, payout: ctx.payout, optionKind: expiration.optionKind, strategyVersion: pending.operational?.strategyVersion ?? null, strategyHash: pending.operational?.strategyHash ?? null, statsEpoch: pending.operational?.statsEpoch ?? null, snapshotHash: pending.operational?.snapshotHash ?? null, decisionSnapshot: pending.operational?.decisionSnapshot ?? null, testOnly: pending.operational?.testOnly === true || infraProbe === true, excludedFromStats: pending.operational?.excludedFromStats === true || infraProbe === true, meta: { source, infraProbe: infraProbe === true, excludedFromStats: infraProbe === true, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, setup: brainSetup.setup, strategyVariantId: null, strategySource: pending.operational?.strategyVersion ?? `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, entryTiming: pending.entryTiming ? { candidateId: pending.entryTiming.candidateId, targetEntryAt: pending.entryTiming.targetEntryAt, targetExpiryAt: pending.entryTiming.targetExpiryAt, submitAt: pending.entryTiming.submitAt, submitAtMs, entryLeadMs: pending.entryTiming.entryLeadMs, revalidatedAt: pending.entryTiming.revalidatedAt, candidateChangedBeforeEntry: pending.entryTiming.candidateChangedBeforeEntry } : null } });
+    const persisted = await this.#persistExecution({ executionId: record.executionId, idempotencyKey: requestedKey, decisionId: record.payload?.decisionId ?? decisionId ?? null, marketKey: key, mode, accountContext: orderContext, connectionId: pending.connectionId, accountType: mode, brokerOrderId: null, symbol: ctx.display, activeId: ctx.activeId, direction: directionWire, stake: finalStake, currency: mode === "REAL" ? this.account.real.currency : this.account.practice.currency, state: "REQUESTED", requestId: requestedKey, expirationAt: nowIso(expiration.expiration * 1000), entryPrice, payout: ctx.payout, optionKind: expiration.optionKind, strategyVersion: pending.operational?.strategyVersion ?? null, strategyHash: pending.operational?.strategyHash ?? null, statsEpoch: pending.operational?.statsEpoch ?? null, snapshotHash: pending.operational?.snapshotHash ?? null, decisionSnapshot: pending.operational?.decisionSnapshot ?? null, testOnly: pending.operational?.testOnly === true || infraProbe === true, excludedFromStats: pending.operational?.excludedFromStats === true || infraProbe === true, meta: { source, infraProbe: infraProbe === true, excludedFromStats: infraProbe === true, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, setup: brainSetup.setup, strategyVariantId: null, strategySource: pending.operational?.strategyVersion ?? `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, v3OpportunityId: pending.operational?.v3OpportunityId ?? null, entryTiming: pending.entryTiming ? { candidateId: pending.entryTiming.candidateId, targetEntryAt: pending.entryTiming.targetEntryAt, targetExpiryAt: pending.entryTiming.targetExpiryAt, submitAt: pending.entryTiming.submitAt, submitAtMs, entryLeadMs: pending.entryTiming.entryLeadMs, revalidatedAt: pending.entryTiming.revalidatedAt, candidateChangedBeforeEntry: pending.entryTiming.candidateChangedBeforeEntry } : null } });
     this.#recordLatency(ctx, "dbPersist", Math.max(0, this.now() - persistStartedAt));
     // FAIL-CLOSED: sem intencao duravel nao existe ordem. Nunca envia ordem orfa.
     if (persisted !== true) {
@@ -4227,8 +4258,16 @@ export class IqMultiRuntime extends EventEmitter {
     if (!Number.isFinite(expiryAtMs) || expiryAtMs <= 0) return deny("ENTRY_WINDOW_CLOSED", "INVALID_EXPIRY");
     // Janela congelada Binary300 (expiry exatamente 300s e lead minimo) so vale para o
     // caminho operacional V2; ordens legadas/manuais mantem a politica do proprio horizonte.
+    // V3: quando a ordem carrega a expiration EXATA da opportunity, a autoridade e a
+    // ExpirationTargetTiming (TTE em (300s,330s] + purchase deadline) — nunca o "proximo bucket",
+    // que em TTE~302 aponta para a expiration iminente e estaria errado.
+    const v3Exact = Number(pending.exactExpirationAt);
     const operationalWindow = Boolean(pending.operational) || Number.isFinite(Number(pending.entryTiming?.targetExpirySec));
-    if (operationalWindow) {
+    if (Number.isFinite(v3Exact) && v3Exact > 0 && pending.operational?.v3OpportunityId) {
+      if (Math.round(v3Exact) * 1000 !== expiryAtMs) return deny("ENTRY_EXPIRATION_MISMATCH", `order=${Math.round(v3Exact)} pending=${pending.expirationSec}`);
+      const v3Window = ExpirationTargetTiming.canSubmit({ expirationAt: expiryAtMs, brokerNow: serverNowMs, purchaseDeadlineAt: pending.operational?.v3PurchaseDeadlineAt ?? null });
+      if (v3Window.ok !== true) return deny(String(v3Window.code ?? "ENTRY_WINDOW_CLOSED"), `tte=${v3Window.derived?.tteMs ?? null}`);
+    } else if (operationalWindow) {
       // pending.expirationSec e o EXPIRY ABSOLUTO (epoch s) da ordem; a autoridade congela a
       // duracao em OPERATIONAL_EXPIRY_SECONDS e exige que a janela resultante seja exatamente a da ordem.
       const windowCheck = this.singlePath?.timing?.canSubmit ? this.singlePath.timing.canSubmit({ expirySeconds: OPERATIONAL_EXPIRY_SECONDS, serverTimeMs: serverNowMs }) : null;

@@ -1,0 +1,83 @@
+{
+  "strategyVersion": "PULLBACK_4060_300_AGENTIC_V3",
+  "nomenclature": "PULLBACK_4060_300_AGENTIC_V3",
+  "status": "PENDING_IMPLEMENTATION",
+  "executable": false,
+  "frozen": false,
+  "createdAt": "2026-09-23T15:00:00.000Z",
+  "parent": "PULLBACK_4060_300_AGENTIC_V2",
+  "parentStrategyHash": "sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0",
+  "sourceCommit": "9323d033a809d49f276d44059548d60d6b0eaf1c",
+  "statsEpoch": "2026-09-23T15:00:00.000Z",
+  "stats": {
+    "opportunities": 0,
+    "noSetup": 0,
+    "wait": 0,
+    "candidates": 0,
+    "approved": 0,
+    "cancelled": 0,
+    "missedWindow": 0,
+    "executed": 0,
+    "settled": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "winRate": null,
+    "pnl": 0
+  },
+  "strategyHash": "sha256:5877d402a3c9a4c128b480aeb68b54b8e4050170b1e1b211bc3f3026d0d69f00",
+  "newStrategyHash": "sha256:5877d402a3c9a4c128b480aeb68b54b8e4050170b1e1b211bc3f3026d0d69f00",
+  "decisionFiles": [
+    "relay/v3/timing.mjs",
+    "relay/v3/expiration-discovery.mjs",
+    "relay/v3/opportunity-engine.mjs",
+    "relay/v3/measurements.mjs",
+    "relay/v3/playbooks.mjs",
+    "relay/v3/scenarios.mjs",
+    "relay/v3/specialists.mjs",
+    "relay/v3/asset-agent.mjs",
+    "relay/v3/consensus.mjs",
+    "relay/v3/decision-snapshot.mjs",
+    "relay/v3/runtime.mjs",
+    "relay/intelligence/features.mjs",
+    "relay/intelligence/asset-context.mjs",
+    "relay/execution/binary300.mjs"
+  ],
+  "policy": {
+    "operationalExpirySeconds": 300,
+    "discoveryMaxTteMs": 330000,
+    "targetHoldSeconds": 300,
+    "entryLeadMs": 2000,
+    "hardCutoffTteMs": 300000,
+    "candleIntervalMs": 5000,
+    "contextMs": 10800000,
+    "scenarioLibraryVersion": "v3-scenario-library-v1",
+    "finalChallengeResults": [
+      "APPROVE_BUY",
+      "APPROVE_SELL",
+      "CANCEL"
+    ]
+  },
+  "architecture": {
+    "opportunitySource": "IQ_EXPIRATION_REAL (initialization-data.option.expiration_times)",
+    "entry": "exact expirationAt da opportunity; targetSendAt = expirationAt - 302s; hard cutoff TTE<=300s",
+    "cycles": "multiplos ciclos por candle fechado de 5s dentro de (300s, 330s]",
+    "specialists": [
+      "RSI",
+      "DMI_ADX",
+      "BOLLINGER",
+      "ATR",
+      "PRICE_ACTION"
+    ],
+    "asset": "cenario via Scenario Library (sem votacao)",
+    "consensus": "classificacao independente + comparacao + FINAL CHALLENGE",
+    "execution": "OBSERVE_ONLY (V3_EXECUTE=false); nenhuma ordem nesta fase",
+    "statsSeparation": "iq_v3_* (opportunity analytics) jamais misturado com stats V2"
+  },
+  "notes": [
+    "V3 nasce PENDING_IMPLEMENTATION; nunca vira ACTIVE automaticamente.",
+    "Nao reutiliza stats da V2; novo statsEpoch e novas tabelas iq_v3_*.",
+    "REAL permanece DISARMED; PRACTICE auto-execution desligada durante construcao/observacao."
+  ],
+  "updatedAt": "2026-09-23T15:09:21.265Z"
+}

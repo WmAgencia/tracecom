@@ -31,6 +31,6 @@ jobs:
       - name: Suites + invariantes (fail-closed)
         run: node scripts/run-all-tests.mjs
       - name: Security suites (hermeticas: PGlite/Postgres, edge auth, requestOrder simulado)
-        run: npx vitest run tests/security
+        run: npx vitest run tests/security tests/v3
       - name: Baseline imutavel
         run: node scripts/stage3-strategy-hash-tests.mjs

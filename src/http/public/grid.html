@@ -180,6 +180,7 @@
     <div class="k">Expiração</div><div id="cfgExpiry">300s (bucket de 5 min)</div>
     <div class="k">Candle</div><div id="cfgCandle">—</div>
     <div class="k">Cobertura</div><div id="cfgCoverage">3h (time-based)</div>
+    <div class="k">V3 (expiration-driven)</div><div id="cfgV3">—</div>
   </div>
   <div class="sect">API MCP oficial (token)</div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mcpTokenInput" placeholder="token do MCP oficial" style="flex:1;min-width:260px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="mcpSave">SALVAR</button><button class="btn" id="mcpClear">LIMPAR</button></div>
@@ -388,6 +389,8 @@
     setText($("cfgHash"), state.strategy?.strategyHash ?? "—");
     const cs = state.intelligence?.candleStore;
     setText($("cfgCandle"), cs ? (cs.intervalMs / 1000) + "s nativo (gravados " + (cs.stats?.written ?? 0) + ")" : "—");
+    const v3 = await api("/api/iq/v3/status");
+    setText($("cfgV3"), !v3 ? "indisponível" : (v3.strategy?.version ?? "V3") + " · " + (v3.strategy?.status ?? "—") + " · executável=" + (v3.strategy?.executable === true) + " · " + (v3.executionMode ?? "—") + " · opportunities=" + (v3.engine?.opportunities ?? 0));
   };
   const armPracticeNow = async () => {
     const stake = Math.max(2, Number($("stakeInput").value) || 2); $("stakeInput").value = String(stake);
@@ -514,6 +517,31 @@
     if (recent.length) {
       const div = document.createElement("div"); div.className = "logentry";
       div.innerHTML = "<b>Execução</b> <span class='dim'>últimas ordens</span><br>" + recent.map((r) => esc(String(r.requestedAt ?? "").slice(11, 19)) + " " + esc(r.marketKey) + " " + esc(r.direction) + " " + esc(r.state) + " " + esc(r.brokerResult ?? "")).join("<br>");
+      body.append(div);
+    }
+    void renderV3Log(body);
+  };
+  // V3: timeline detalhada por opportunity (filtravel no proprio LOG; grid principal continua limpo).
+  const renderV3Log = async (body) => {
+    const data = await api("/api/iq/v3/opportunities?limit=30");
+    if (!body || !data || !Array.isArray(data.opportunities)) return;
+    const header = document.createElement("div"); header.className = "logentry";
+    header.innerHTML = "<b>V3 — opportunities (expiration-driven)</b> <span class='dim'>" + (state.v3Filter ? "filtro " + esc(state.v3Filter) : "todas") + "</span>";
+    body.append(header);
+    if (!data.opportunities.length) {
+      const empty = document.createElement("div"); empty.className = "logentry"; empty.innerHTML = "<span class='dim'>nenhuma opportunity registrada (V3 observe-only)</span>"; body.append(empty); return;
+    }
+    for (const op of data.opportunities) {
+      if (state.v3Filter && !String(op.marketKey).includes(state.v3Filter) && !String(op.status).includes(state.v3Filter)) continue;
+      const div = document.createElement("div"); div.className = "logentry";
+      const lines = [];
+      lines.push("<b>V3 " + esc(op.marketKey) + "@" + esc(String(op.expirationAt ?? "").slice(11, 19)) + "Z</b> <span class='dim'>" + esc(op.status) + " · TTE inicial " + Math.round(Number(op.firstSeenTteMs ?? 0) / 1000) + "s · payout " + esc(op.payout ?? "—") + "</span>");
+      for (const cycle of (op.cycles ?? [])) {
+        const states = cycle.specialistStates ?? {};
+        lines.push("<span class='dim'>CICLO " + esc(cycle.cycleNumber) + " · TTE " + Math.round(Number(cycle.tteMs ?? 0) / 1000) + "s · " + esc(String(cycle.closedCandleId ?? "").slice(-8)) + ":</span> " + esc(cycle.assetScenario ?? "—") + " → <b>" + esc(cycle.assetState ?? "—") + "</b> · consensus " + esc(cycle.consensusResult ?? "—") + " (" + esc(cycle.agreement ?? "—") + ") · " + esc(Object.entries(states).map(([key, value]) => key + "=" + value).join(" ")));
+      }
+      if (op.finalDecision) lines.push("<span class='dim'>FINAL CHALLENGE:</span> " + esc(op.finalDecision.result ?? op.status) + (op.finalDecision.snapshotHash ? " · snapshot " + esc(String(op.finalDecision.snapshotHash).slice(0, 18)) + "…" : "") + (op.finalDecision.executionBlocked ? " · execução " + esc(op.finalDecision.executionBlocked) : ""));
+      div.innerHTML = lines.join("<br>");
       body.append(div);
     }
   };
