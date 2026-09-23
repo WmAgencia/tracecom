@@ -8,7 +8,7 @@ export const V3_AGENT_TEAM_VERSION = "v3-agent-team-v1";
 
 export const SPECIALIST_ROLES = Object.freeze(["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION"]);
 
-const summary = (call) => ({ role: call.role, status: call.status, reason: call.reason ?? null, latencyMs: call.latencyMs ?? null, model: call.model ?? null, schemaValid: call.schemaValid === true });
+const summary = (call) => ({ role: call.role, status: call.status, reason: call.reason ?? null, latencyMs: call.latencyMs ?? null, model: call.model ?? null, schemaValid: call.schemaValid === true, rawExcerpt: call.rawExcerpt ?? null });
 
 export async function runAgentCycle({ client, measurements, specialists = null, previousByRole = {}, previousAssessment = null, expiration = null, cycleNumber = null, requestIdPrefix = "v3" } = {}) {
   const result = { version: V3_AGENT_TEAM_VERSION, cycleNumber, available: false, reason: null, specialists: null, asset: null, independent: null, consensus: null, agentCalls: [], result: "CANCEL" };

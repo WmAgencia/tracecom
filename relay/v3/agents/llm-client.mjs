@@ -29,7 +29,7 @@ export function extractJson(text) {
   return null;
 }
 
-export function createLlmAgentClient({ pool = null, runner = null, now = () => Date.now(), maxTokens = 2200 } = {}) {
+export function createLlmAgentClient({ pool = null, runner = null, now = () => Date.now(), maxTokens = 2600 } = {}) {
   const run = typeof runner === "function" ? runner : pool ? (options) => runTextProvider(pool, options) : null;
   return {
     version: V3_AGENT_CLIENT_VERSION,
@@ -41,10 +41,10 @@ export function createLlmAgentClient({ pool = null, runner = null, now = () => D
         const result = await run({ system: systemPromptFor(role), prompt, maxTokens, requestId, sessionContext });
         const latencyMs = Number.isFinite(Number(result?.latencyMs)) ? Number(result.latencyMs) : Math.max(0, now() - startedAt);
         const parsed = result?.parsed ?? extractJson(result?.text);
-        if (result?.status !== "OK" && !parsed) return { status: "ERROR", reason: result?.reason ?? "INVALID_JSON", role, latencyMs, model: result?.model ?? null, output: null, schemaValid: false };
-        if (!parsed) return { status: "ERROR", reason: "INVALID_JSON", role, latencyMs, model: result?.model ?? null, output: null, schemaValid: false };
+        if (result?.status !== "OK" && !parsed) return { status: "ERROR", reason: result?.reason ?? "INVALID_JSON", role, latencyMs, model: result?.model ?? null, output: null, schemaValid: false, rawExcerpt: String(result?.text ?? "").slice(0, 280) };
+        if (!parsed) return { status: "ERROR", reason: "INVALID_JSON", role, latencyMs, model: result?.model ?? null, output: null, schemaValid: false, rawExcerpt: String(result?.text ?? "").slice(0, 280) };
         const validation = validateAgentOutput(role, parsed);
-        if (validation.ok !== true) return { status: "ERROR", reason: `SCHEMA_${validation.error}`, role, latencyMs, model: result?.model ?? null, output: null, schemaValid: false };
+        if (validation.ok !== true) return { status: "ERROR", reason: `SCHEMA_${validation.error}`, role, latencyMs, model: result?.model ?? null, output: null, schemaValid: false, rawExcerpt: JSON.stringify(parsed).slice(0, 280) };
         return { status: "OK", reason: null, role, latencyMs, model: result?.model ?? null, output: parsed, schemaValid: true };
       } catch (error) {
         return { status: "ERROR", reason: error?.name === "AbortError" ? "TIMEOUT" : "AGENT_ERROR", role, latencyMs: Math.max(0, now() - startedAt), model: null, output: null, schemaValid: false };

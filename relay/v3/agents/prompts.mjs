@@ -50,7 +50,8 @@ export function playbookContext(domain) {
 }
 
 const COMMON_RULES = [
-  "Voce e um agente do TraceCom V3 (decisao assistida por evidencia). Responda SOMENTE JSON (sem markdown).",
+  "Voce e um agente do TraceCom V3 (decisao assistida por evidencia). Responda SOMENTE com UM objeto JSON valido, sem markdown, sem explicacoes antes ou depois. O primeiro caractere deve ser { e o ultimo }.",
+  "Seja CONCISO: no maximo 2 itens por lista de texto; numeros com ate 4 casas; sem repetir o payload.",
   "Os numeros determinísticos vem do backend e sao AUTORIDADE: use como dados, nunca recalcule nem invente.",
   "NUNCA use informacao futura. Analise somente o candle fechado e o historico fornecido.",
   "Especialistas NAO decidem direcao final e NAO usam BUY/SELL/CALL/PUT: descrevem fatos do dominio com direcao (UP/DOWN/null).",
