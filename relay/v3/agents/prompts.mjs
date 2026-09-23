@@ -1,133 +1,99 @@
 /**
- * V3 — AGENT PROMPTS (compilacao de contexto; nunca envia livro inteiro).
- * Carrega os Agent.md/playbooks uma vez (cache), extrai ids/regras e monta o system prompt
- * por papel + payload determinístico. Prompt delta: ciclo anterior + novo candle + measurements.
+ * V3 — PROMPTS v2: STATIC PREFIX + ROLE PLAYBOOK + SCHEMA + DYNAMIC DELTA.
+ *
+ * O prefixo estatico e byte-identical entre chamadas (cache/routing do provider).
+ * O playbook por papel e estavel (ids + regras-chave); nunca enviamos documentos inteiros.
+ * O contexto dinamico e um DIGEST compacto (nao 2160 candles; nao measurements completos).
  */
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { PLAYBOOKS, SOURCES } from "../playbooks.mjs";
 
-export const V3_PROMPTS_VERSION = "v3-agent-prompts-v1";
+export const V3_PROMPTS_VERSION = "v3-agent-prompts-v2";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-const AGENT_DOCS = {
-  RSI: "docs/agents/v3/RSI.md",
-  DMI_ADX: "docs/agents/v3/DMI-ADX.md",
-  BOLLINGER: "docs/agents/v3/BOLLINGER.md",
-  ATR: "docs/agents/v3/ATR.md",
-  PRICE_ACTION: "docs/agents/v3/PRICE-ACTION.md",
-  ASSET: "docs/agents/v3/ASSET.md",
-  CONSENSUS: "docs/agents/v3/CONSENSUS.md",
-};
+export const STATIC_PREFIX = [
+  "TraceCom V3 agent. Responda SOMENTE um unico objeto JSON valido (JSON mode). Sem markdown, sem prosa fora do JSON.",
+  "Os numeros determinísticos vem do backend e sao AUTORIDADE: use exatamente os valores do NORMALIZED STATE; nunca recalcule nem invente numeros.",
+  "ENUMS ESTRITOS: direction ∈ {UP, DOWN, NONE}; strength ∈ {WEAK, MODERATE, STRONG} (intensidade da evidencia — NUNCA use NORMAL/SHALLOW/DEEP aqui; profundidade de pullback vai em detail).",
+  "NUNCA use informacao futura. Seja conciso: assessment <= 1 frase; no maximo 6 fatos; listas curtas.",
+  "Sem percentual de confianca. Sem votacao. Nao use as palavras BUY/SELL/CALL/PUT.",
+].join("\n");
 
-const cache = new Map();
-function loadDoc(relative) {
-  if (cache.has(relative)) return cache.get(relative);
-  let text = "";
-  try { text = fs.readFileSync(path.join(ROOT, relative), "utf8"); } catch { text = ""; }
-  const compiled = text.split(/\r?\n/).filter((line) => line.trim().length > 0).slice(0, 80).join("\n").slice(0, 6_000);
-  cache.set(relative, compiled);
-  return compiled;
+const PLAYBOOK_DOMAIN = { RSI: "RSI", DMI_ADX: "DMI", BOLLINGER: "BOLLINGER", ATR: "ATR", PRICE_ACTION: "PRICE_ACTION" };
+
+function playbookLine(domain) {
+  return Object.values(PLAYBOOKS).filter((playbook) => playbook.domain === domain).map((playbook) => `${playbook.id} (${playbook.tracecomDefined ? "tracecom" : "source"}:${playbook.sources.join("+")})`).join("; ");
 }
 
-/** Contexto de playbooks por dominio: apenas ids + regras-chave + source ids (compacto e auditavel). */
-export function playbookContext(domain) {
-  const playbooks = Object.values(PLAYBOOKS).filter((playbook) => playbook.domain === domain);
-  return playbooks.map((playbook) => ({
-    id: playbook.id,
-    concept: playbook.concept,
-    sources: playbook.sources,
-    sourceBacked: playbook.tracecomDefined === false,
-    keyRules: [
-      ...(playbook.interpretation?.supporting ?? []).slice(0, 1).map((rule) => `support: ${rule}`),
-      ...(playbook.interpretation?.counter ?? []).slice(0, 1).map((rule) => `counter: ${rule}`),
-      ...(playbook.interpretation?.blockers ?? []).slice(0, 2).map((rule) => `blocker: ${rule}`),
-      ...(playbook.interpretation?.invalidations ?? []).slice(0, 1).map((rule) => `invalidation: ${rule}`),
-      `watch: ${(playbook.commonMisinterpretations ?? [])[0] ?? "n/a"}`,
-    ],
-  }));
-}
+const ROLE_SECTION = Object.freeze({
+  RSI: "PAPEL: RSI SPECIALIST — descreva estado do momentum com fatos direcionais (direction UP/DOWN/NONE). Nao julgue a tese (sem support/counter). Fatos tipicos: RSI_SLOPE, RSI_CROSSBACK, RSI_PERSISTENCE, RSI_DIVERGENCE, RSI_FAILURE_SWING, RSI_ZONE_CONTEXT (zona extrema e CONTEXTO). Playbooks: " + playbookLine("RSI"),
+  DMI_ADX: "PAPEL: DMI/ADX SPECIALIST — ADX e FORCA, +DI/-DI sao direcao. Fatos: DI_DOMINANCE, DI_TAKEOVER, ADX_STRENGTHENING, ADX_WEAKENING. Playbooks: " + playbookLine("DMI"),
+  BOLLINGER: "PAPEL: BOLLINGER SPECIALIST — posicao relativa e volatilidade de banda; tag NAO e sinal. Fatos: BAND_WALK, BAND_REENTRY, BAND_REJECTION, MIDLINE_SLOPE, SQUEEZE_CONTEXT. Playbooks: " + playbookLine("BOLLINGER"),
+  ATR: "PAPEL: ATR SPECIALIST — volatilidade sem direcao. Fatos: VOL_REGIME, VOL_EXPANSION, VOL_CONTRACTION, LARGE_WICK, ZONE_TOLERANCE. Playbooks: " + playbookLine("ATR"),
+  PRICE_ACTION: "PAPEL: PRICE ACTION SPECIALIST — estrutura causal (pivots confirmados). Fatos: TREND, BOS, CHOCH (invalida a estrutura anterior; direction = nova direcao), PULLBACK, BREAKOUT, BREAKDOWN, RETEST, FAILED_BREAKOUT/BREAKDOWN, DECISIVE_CANDLE. Playbooks: " + playbookLine("PRICE_ACTION"),
+});
 
-const COMMON_RULES = [
-  "Voce e um agente do TraceCom V3 (decisao assistida por evidencia). Responda SOMENTE com UM objeto JSON valido, sem markdown, sem explicacoes antes ou depois. O primeiro caractere deve ser { e o ultimo }.",
-  "Seja CONCISO: no maximo 2 itens por lista de texto; numeros com ate 4 casas; sem repetir o payload.",
-  "Os numeros determinísticos vem do backend e sao AUTORIDADE: use como dados, nunca recalcule nem invente.",
-  "NUNCA use informacao futura. Analise somente o candle fechado e o historico fornecido.",
-  "Especialistas NAO decidem direcao final e NAO usam BUY/SELL/CALL/PUT: descrevem fatos do dominio com direcao (UP/DOWN/null).",
-  "Sem percentual de confianca. Sem votacao. Sem obrigacao de operar.",
-];
+const SCHEMA_SECTION = Object.freeze({
+  RSI: '{"assessment":"...","facts":[{"code":"RSI_SLOPE","direction":"UP|DOWN|NONE","strength":"WEAK|MODERATE|STRONG","detail":"curto"}],"blockers":[],"invalidations":[],"changed":[],"watch":[],"playbooks":["RSI_TRAJECTORY"],"sources":["WILDER_1978"]}',
+  DMI_ADX: '{"assessment":"...","facts":[{"code":"DI_DOMINANCE","direction":"UP|DOWN|NONE","strength":"WEAK|MODERATE|STRONG","detail":"curto"}],"blockers":[],"invalidations":[],"changed":[],"watch":[],"playbooks":["DMI_STRENGTH_VS_DIRECTION"],"sources":["WILDER_1978"]}',
+  BOLLINGER: '{"assessment":"...","facts":[{"code":"BAND_WALK","direction":"UP|DOWN|NONE","strength":"WEAK|MODERATE|STRONG","detail":"curto"}],"blockers":[],"invalidations":[],"changed":[],"watch":[],"playbooks":["BOLLINGER_WALK"],"sources":["BOLLINGER_OFFICIAL_RULES"]}',
+  ATR: '{"assessment":"...","facts":[{"code":"VOL_REGIME","direction":"NONE","strength":"WEAK|MODERATE|STRONG","detail":"curto"}],"blockers":[],"invalidations":[],"changed":[],"watch":[],"playbooks":["ATR_NORMALIZATION"],"sources":["WILDER_1978"]}',
+  PRICE_ACTION: '{"assessment":"...","facts":[{"code":"TREND","direction":"UP|DOWN|NONE","strength":"WEAK|MODERATE|STRONG","detail":"curto"}],"blockers":[],"invalidations":[],"changed":[],"watch":[],"playbooks":["PA_TREND_STRUCTURE"],"sources":["EDWARDS_MAGEE_2018"]}',
+  ASSET: '{"scenario":"PULLBACK_CONTINUATION","direction":"UP|DOWN|NONE","state":"NO_SETUP|WAIT|BUY_CANDIDATE|SELL_CANDIDATE","bestCounterCase":"...","blockers":[],"invalidations":[],"changed":[],"watch":[]}',
+  CONSENSUS_BILATERAL: '{"scenario":"PULLBACK_CONTINUATION","direction":"UP|DOWN|NONE","evidenceFamilies":[{"family":"STRUCTURE","supports":"resumo"}],"bestCaseForUp":[],"bestCaseAgainstUp":[],"bestCaseForDown":[],"bestCaseAgainstDown":[],"blockers":[],"invalidations":[],"marketAmbiguities":[]}',
+});
+
+const SCENARIO_ID_LIST = "TREND_CONTINUATION, PULLBACK_CONTINUATION, DEEP_PULLBACK_STRUCTURE_THREAT, STRUCTURAL_REVERSAL, BREAKOUT, FAILED_BREAKOUT, BREAKDOWN, FAILED_BREAKDOWN, BREAKOUT_RETEST, COMPRESSION, EXPANSION, RANGE, TRANSITION, EXHAUSTION, STRUCTURAL_ZONE_REJECTION, TREND_WEAKENING, TREND_RESUMPTION, NO_SETUP";
+
+const ASSET_SECTION = "PAPEL: ASSET AGENT — classifique o CENARIO (tipo, semantica da Scenario Library) e a DIRECAO separadamente, e o estado operacional. Seja conservador: sem confirmacao estrutural => WAIT; sem cenario relevante => NO_SETUP. Explique o melhor contra-caso da sua propria tese (bestCounterCase <= 2 frases). scenario DEVE ser EXATAMENTE um id da Scenario Library: " + SCENARIO_ID_LIST + ". direction ∈ {UP, DOWN, NONE}; state ∈ {NO_SETUP, WAIT, BUY_CANDIDATE, SELL_CANDIDATE}.";
+const CONSENSUS_SECTION = "PAPEL: CONSENSUS INDEPENDENTE — classifique o mercado SEM conhecer a tese do Asset e faca o RED TEAM DOS DOIS LADOS: bestCaseForUp, bestCaseAgainstUp, bestCaseForDown, bestCaseAgainstDown, ambiguidades e blockers/invalidations. Sem votacao. scenario DEVE ser EXATAMENTE um id da Scenario Library: " + SCENARIO_ID_LIST + ".";
 
 export function systemPromptFor(role) {
-  if (role === "ASSET") {
-    return [
-      ...COMMON_RULES,
-      "PAPEL: ASSET AGENT — identifique o CENARIO (Scenario Library) separando TIPO e DIRECAO, e o estado operacional (NO_SETUP/WAIT/BUY_CANDIDATE/SELL_CANDIDATE).",
-      "Cenarios simetricos: TREND_CONTINUATION, PULLBACK_CONTINUATION, TREND_RESUMPTION, STRUCTURAL_REVERSAL, DEEP_PULLBACK_STRUCTURE_THREAT, BREAKOUT_RETEST. Eventos: BREAKOUT(UP), BREAKDOWN(DOWN), FAILED_BREAKOUT(DOWN), FAILED_BREAKDOWN(UP), COMPRESSION, EXPANSION, RANGE, TRANSITION, EXHAUSTION, STRUCTURAL_ZONE_REJECTION, TREND_WEAKENING.",
-      "BUY_CANDIDATE/SELL_CANDIDATE exigem CONFIRMACAO ESTRUTURAL (BOS/crossback/candle decisivo/rompimento/reteste) e nenhuma invalidacao contraria. Sem confirmacao => WAIT. Sem cenario relevante => NO_SETUP.",
-      loadDoc(AGENT_DOCS.ASSET),
-      'RETORNE JSON: {"scenario":string,"direction":"UP"|"DOWN"|null,"state":"NO_SETUP"|"WAIT"|"BUY_CANDIDATE"|"SELL_CANDIDATE","supportingEvidence":string[],"counterEvidence":string[],"blockers":string[],"invalidations":string[],"bestCounterCase":string,"changedSincePreviousCycle":string[],"nextEvidenceToWatch":string[]}',
-    ].join("\n");
-  }
-  if (role === "CONSENSUS_INDEPENDENT") {
-    return [
-      ...COMMON_RULES,
-      "PAPEL: CONSENSUS INDEPENDENTE — classifique o MESMO mercado SEM conhecer a conclusao do Asset (evitar anchoring).",
-      "Use a mesma Scenario Library e os fatos dos especialistas. Sem votacao: pesos por familia de evidencia e invalidations tem precedencia.",
-      loadDoc(AGENT_DOCS.CONSENSUS),
-      'RETORNE JSON: {"scenario":string,"direction":"UP"|"DOWN"|null,"evidence":string[],"reasoningSummary":string}',
-    ].join("\n");
-  }
-  if (role === "CONSENSUS_FINAL") {
-    return [
-      ...COMMON_RULES,
-      "PAPEL: FINAL CHALLENGE — compare a tese do Asset com a sua classificacao independente; assuma a tese ERRADA e construa o melhor caso contrario; verifique blockers/invalidations/mudancas/timing.",
-      "Resultado SOMENTE APPROVE_BUY | APPROVE_SELL | CANCEL. APPROVE exige agreement=AGREE e nenhuma invalidacao relevante. Duvida => CANCEL.",
-      loadDoc(AGENT_DOCS.CONSENSUS),
-      'RETORNE JSON: {"agreement":"AGREE"|"DISAGREE"|"INSUFFICIENT_EVIDENCE","result":"APPROVE_BUY"|"APPROVE_SELL"|"CANCEL","bestCounterCase":string,"challengeSteps":string[],"reasons":string[]}',
-    ].join("\n");
-  }
-  const domain = role === "DMI_ADX" ? "DMI" : role;
-  const sources = [...new Set(playbookContext(domain).flatMap((playbook) => playbook.sources))];
-  return [
-    ...COMMON_RULES,
-    `PAPEL: ESPECIALISTA ${role} — descreva o estado do dominio com FATOS DIRECIONAIS (direction UP/DOWN/null). Nao rotule support/counter: isso e do Asset/Consensus.`,
-    "PLAYBOOKS DISPONIVEIS (use os ids em playbooksUsed):",
-    JSON.stringify(playbookContext(domain)),
-    `SOURCE IDS DISPONIVEIS: ${JSON.stringify(sources.filter((id) => SOURCES[id]).slice(0, 20))}`,
-    loadDoc(AGENT_DOCS[role] ?? AGENT_DOCS.RSI),
-    'RETORNE JSON: {"domainAssessment":string,"observations":string[],"deterministicFacts":[{"family":string,"code":string,"direction":"UP"|"DOWN"|null,"detail":any}],"counterFacts":string[],"blockers":string[],"invalidations":string[],"changedSincePreviousCycle":string[],"nextEvidenceToWatch":string[],"playbooksUsed":string[],"sourcesUsed":string[]}',
-  ].join("\n");
+  return [STATIC_PREFIX, ROLE_SECTION[role] ?? (role === "ASSET" ? ASSET_SECTION : CONSENSUS_SECTION), "SCHEMA:", SCHEMA_SECTION[role] ?? SCHEMA_SECTION.ASSET].join("\n");
 }
 
-export function specialistPayload({ role, measurements, previousCycle = null, cycleNumber = null, expiration = null }) {
-  return JSON.stringify({
-    role, cycleNumber,
-    expiration: expiration ? { expirationAt: expiration.expirationAt, tteMs: expiration.tteMs, brokerNow: expiration.brokerNow } : null,
-    closedCandle: measurements?.closedCandle ?? null,
-    deterministicMeasurements: measurements ? {
-      rsi: measurements.rsi, dmi: measurements.dmi, bollinger: measurements.bollinger, atr: measurements.atr,
-      structure: measurements.structure, pullback: measurements.pullback, impulse: measurements.impulse, micro: measurements.micro, breakoutRetest: measurements.breakoutRetest,
-    } : null,
-    previousCycle: previousCycle ? { role: previousCycle.role, assessment: previousCycle.assessment, facts: previousCycle.facts, changed: previousCycle.changedSincePreviousCycle } : null,
-  }).slice(0, 18_000);
+/** Digest compacto do estado determinístico (apenas o essencial; numeros reais do backend). */
+export function digestMeasurements(m) {
+  if (!m) return null;
+  const s = m.structure ?? {}; const r = m.rsi ?? {}; const d = m.dmi ?? {}; const b = m.bollinger ?? {}; const a = m.atr ?? {}; const p = m.pullback ?? {}; const mi = m.micro ?? {}; const im = m.impulse ?? {}; const br = m.breakoutRetest ?? {};
+  return {
+    closedCandle: m.closedCandle ?? null,
+    structure: { trend: s.trend, lastBOS: s.lastBOS ?? null, lastCHoCH: s.lastCHoCH ?? null, lastHigh: s.lastHigh ?? null, lastLow: s.lastLow ?? null },
+    pullback: p, micro: mi, impulse: im, breakoutRetest: br,
+    rsi: { value: r.value, zone: r.zone, slope: r.slope, crossback: r.crossback ?? null, persistence: r.persistence ?? null, momentum: r.momentum, failureSwing: r.failureSwing ?? null, divergence: r.divergence ?? [] },
+    dmi: { adx: d.adx, adxSlope: d.adxSlope, plusDi: d.plusDi, minusDi: d.minusDi, spread: d.spread, dominance: d.dominance, trendState: d.trendState, takeover: d.takeover },
+    bollinger: { percentB: b.percentB, bandwidth: b.bandwidth, midlineSlope: b.midlineSlope, bandWalk: b.bandWalk, reentry: b.reentry, rejection: b.rejection, squeeze: b.squeeze },
+    atr: { atr: a.atr, atrPct: a.atrPct, volRatio: a.volRatio, regime: a.regime, normalizedRange: a.normalizedRange, normalizedImpulse: a.normalizedImpulse, normalizedPullback: a.normalizedPullback, wickNormalization: a.wickNormalization },
+  };
 }
 
-export function assetPayload({ measurements, specialists, previousAssessment = null, expiration = null, cycleNumber = null }) {
+export function specialistDelta({ role, measurements, previous = null, cycleNumber = null, timing = null }) {
   return JSON.stringify({
-    cycleNumber,
-    expiration: expiration ? { expirationAt: expiration.expirationAt, tteMs: expiration.tteMs } : null,
-    marketContext: measurements ? { closedCandle: measurements.closedCandle, structure: measurements.structure, pullback: measurements.pullback, dmi: measurements.dmi, atr: measurements.atr, bollinger: measurements.bollinger, rsi: measurements.rsi, impulse: measurements.impulse, micro: measurements.micro, breakoutRetest: measurements.breakoutRetest } : null,
-    specialists: Object.values(specialists ?? {}).filter(Boolean).map((agent) => ({ role: agent.role, domainAssessment: agent.assessment, facts: agent.facts, blockers: agent.blockers, invalidations: agent.invalidations })),
-    previousAssessment: previousAssessment ? { scenario: previousAssessment.scenario, direction: previousAssessment.direction, state: previousAssessment.state } : null,
-  }).slice(0, 24_000);
+    cycle: cycleNumber,
+    timing: timing ? { expirationAt: timing.expirationAt, tteMs: timing.tteMs, phase: timing.phase ?? null } : null,
+    state: digestMeasurements(measurements),
+    previous: previous ? { assessment: previous.assessment ?? null, facts: previous.facts ?? null } : null,
+  });
 }
 
-export function consensusBasePayload({ measurements, specialists, expiration = null, cycleNumber = null }) {
+const compactFacts = (facts) => (Array.isArray(facts) ? facts.slice(0, 6).map((fact) => ({ code: fact.code, direction: fact.direction, strength: fact.strength, detail: fact.detail ?? null })) : facts);
+const compactSpecialist = (agent) => (agent ? { role: agent.role, assessment: agent.assessment, facts: compactFacts(agent.facts), blockers: agent.blockers ?? [], invalidations: agent.invalidations ?? [] } : null);
+
+export function assetDelta({ measurements, specialists, previousAssessment = null, cycleNumber = null, timing = null }) {
   return JSON.stringify({
-    cycleNumber,
-    expiration: expiration ? { expirationAt: expiration.expirationAt, tteMs: expiration.tteMs } : null,
-    marketContext: measurements ? { closedCandle: measurements.closedCandle, structure: measurements.structure, pullback: measurements.pullback, dmi: measurements.dmi, atr: measurements.atr, bollinger: measurements.bollinger, rsi: measurements.rsi, impulse: measurements.impulse, micro: measurements.micro, breakoutRetest: measurements.breakoutRetest } : null,
-    specialists: Object.values(specialists ?? {}).filter(Boolean).map((agent) => ({ role: agent.role, domainAssessment: agent.assessment, facts: agent.facts, blockers: agent.blockers, invalidations: agent.invalidations })),
-  }).slice(0, 24_000);
+    cycle: cycleNumber,
+    timing: timing ? { expirationAt: timing.expirationAt, tteMs: timing.tteMs } : null,
+    state: digestMeasurements(measurements),
+    specialists: Object.values(specialists ?? {}).map(compactSpecialist),
+    previous: previousAssessment ? { scenario: previousAssessment.scenario, direction: previousAssessment.direction, state: previousAssessment.state } : null,
+  });
 }
+
+export function consensusDelta({ measurements, specialists, cycleNumber = null, timing = null }) {
+  return JSON.stringify({
+    cycle: cycleNumber,
+    timing: timing ? { expirationAt: timing.expirationAt, tteMs: timing.tteMs } : null,
+    state: digestMeasurements(measurements),
+    specialists: Object.values(specialists ?? {}).map(compactSpecialist),
+  });
+}
+
+export function availableSourceIds() { return Object.keys(SOURCES); }

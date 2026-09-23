@@ -1,103 +1,169 @@
 /**
- * V3 — SCHEMAS dos agentes (JSON validado; fail-closed se invalido).
- * Nenhum schema permite campo de confianca percentual; especialistas nao emitem BUY/SELL.
+ * V3 — SCHEMAS COMPACTOS + VALIDACAO SEMANTICA (structured output; fail-closed).
+ *
+ * Especialistas NAO escrevem ensaio: assessment curto + fatos + blockers/invalidations.
+ * Numeros determinísticos ficam no contexto/log (nao repetir measurements inteiros).
+ * Validacao semantica: ids de playbook/source conhecidos e numeros citados ancorados no input.
  */
-export const V3_AGENT_SCHEMA_VERSION = "v3-agent-schemas-v1";
+import { PLAYBOOKS, SOURCES } from "../playbooks.mjs";
+import { SCENARIO_IDS } from "../scenarios.mjs";
 
-const isString = (v, { max = 400 } = {}) => typeof v === "string" && v.trim().length > 0 && v.length <= max;
-const isStringArray = (v, { max = 12, itemMax = 400 } = {}) => Array.isArray(v) && v.length <= max && v.every((x) => isString(x, { max: itemMax }));
-const isDirection = (v) => v === "UP" || v === "DOWN" || v === null || v === undefined;
+export const V3_AGENT_SCHEMA_VERSION = "v3-agent-schemas-v2";
 
-function validateFacts(value) {
-  if (!Array.isArray(value) || value.length === 0 || value.length > 16) return "facts";
-  for (const item of value) {
-    if (!item || typeof item !== "object") return "facts.item";
-    if (!isString(item.family, { max: 40 }) || !isString(item.code, { max: 80 }) || !isDirection(item.direction)) return "facts.item.fields";
-  }
-  return null;
-}
+const SCENARIO_ID_SET = new Set(SCENARIO_IDS);
+const scenarioValid = (scenario) => isString(scenario, 48) && SCENARIO_ID_SET.has(scenario);
+
+export const DIRECTIONS = Object.freeze(["UP", "DOWN", "NONE"]);
+export const STRENGTHS = Object.freeze(["WEAK", "MODERATE", "STRONG"]);
+
+const isString = (value, max = 400) => typeof value === "string" && value.trim().length > 0 && value.length <= max;
+const isStringArray = (value, { max = 8, itemMax = 160 } = {}) => Array.isArray(value) && value.length <= max && value.every((item) => isString(item, itemMax));
+const factsValid = (facts) => {
+  if (!Array.isArray(facts) || facts.length === 0 || facts.length > 12) return false;
+  return facts.every((fact) => fact && typeof fact === "object"
+    && isString(fact.code, 48) && /^[A-Z_]{3,48}$/.test(fact.code)
+    && DIRECTIONS.includes(fact.direction)
+    && STRENGTHS.includes(fact.strength)
+    && (fact.detail === null || fact.detail === undefined || (typeof fact.detail === "string" && fact.detail.length <= 240)));
+};
 
 export const SPECIALIST_SCHEMA = {
   role: "SPECIALIST",
+  fields: ["assessment", "facts", "blockers", "invalidations", "changed", "watch", "playbooks", "sources"],
   validate(output) {
     if (!output || typeof output !== "object") return "not_object";
-    if (!isString(output.domainAssessment, { max: 160 })) return "domainAssessment";
-    if (!isStringArray(output.observations, { max: 12 })) return "observations";
-    if (validateFacts(output.deterministicFacts)) return "deterministicFacts";
-    if (!isStringArray(output.counterFacts ?? [], { max: 12 })) return "counterFacts";
-    if (!isStringArray(output.blockers ?? [], { max: 8 })) return "blockers";
-    if (!isStringArray(output.invalidations ?? [], { max: 8 })) return "invalidations";
-    if (!isStringArray(output.changedSincePreviousCycle ?? [], { max: 8 })) return "changedSincePreviousCycle";
-    if (!isStringArray(output.nextEvidenceToWatch ?? [], { max: 8 })) return "nextEvidenceToWatch";
-    if (!isStringArray(output.playbooksUsed ?? [], { max: 12 })) return "playbooksUsed";
-    if (!isStringArray(output.sourcesUsed ?? [], { max: 12 })) return "sourcesUsed";
-    const text = JSON.stringify(output);
-    if (/\b(BUY|SELL|CALL|PUT)\b/.test(text)) return "directional_decision_language";
-    if (/confidence|percent/i.test(text)) return "confidence_not_allowed";
+    if (!isString(output.assessment, 220)) return "assessment";
+    if (!factsValid(output.facts)) return "facts";
+    if (!isStringArray(output.blockers ?? [])) return "blockers";
+    if (!isStringArray(output.invalidations ?? [])) return "invalidations";
+    if (!isStringArray(output.changed ?? [])) return "changed";
+    if (!isStringArray(output.watch ?? [])) return "watch";
+    if (!isStringArray(output.playbooks ?? [], { max: 10, itemMax: 64 })) return "playbooks";
+    if (!isStringArray(output.sources ?? [], { max: 10, itemMax: 64 })) return "sources";
+    for (const id of output.playbooks ?? []) if (!PLAYBOOKS[id]) return "unknown_playbook";
+    for (const id of output.sources ?? []) if (!SOURCES[id] && id !== "TRACECOM_V3_OPS") return "unknown_source";
     return null;
   },
 };
 
 export const ASSET_SCHEMA = {
   role: "ASSET",
+  fields: ["scenario", "direction", "state", "bestCounterCase", "blockers", "invalidations", "changed", "watch"],
   validate(output) {
     if (!output || typeof output !== "object") return "not_object";
-    if (!isString(output.scenario, { max: 60 })) return "scenario";
-    if (!isDirection(output.direction)) return "direction";
+    if (!scenarioValid(output.scenario)) return "scenario";
+    if (!["UP", "DOWN", "NONE"].includes(output.direction)) return "direction";
     if (!["NO_SETUP", "WAIT", "BUY_CANDIDATE", "SELL_CANDIDATE"].includes(output.state)) return "state";
     if (output.direction === "UP" && output.state === "SELL_CANDIDATE") return "state_direction_conflict";
     if (output.direction === "DOWN" && output.state === "BUY_CANDIDATE") return "state_direction_conflict";
-    if (!isStringArray(output.supportingEvidence ?? [], { max: 12 })) return "supportingEvidence";
-    if (!isStringArray(output.counterEvidence ?? [], { max: 12 })) return "counterEvidence";
-    if (!isStringArray(output.blockers ?? [], { max: 8 })) return "blockers";
-    if (!isStringArray(output.invalidations ?? [], { max: 8 })) return "invalidations";
-    if (!isString(output.bestCounterCase, { max: 600 })) return "bestCounterCase";
-    if (!isStringArray(output.changedSincePreviousCycle ?? [], { max: 8 })) return "changedSincePreviousCycle";
-    if (/confidence|percent/i.test(JSON.stringify(output))) return "confidence_not_allowed";
+    if (!isString(output.bestCounterCase, 480)) return "bestCounterCase";
+    if (!isStringArray(output.blockers ?? [])) return "blockers";
+    if (!isStringArray(output.invalidations ?? [])) return "invalidations";
+    if (!isStringArray(output.changed ?? [])) return "changed";
+    if (!isStringArray(output.watch ?? [])) return "watch";
     return null;
   },
 };
 
-export const CONSENSUS_INDEPENDENT_SCHEMA = {
-  role: "CONSENSUS_INDEPENDENT",
+/** Consensus independente: classifica o mercado E faz o red-team BILATERAL antes de ver o Asset. */
+export const CONSENSUS_BILATERAL_SCHEMA = {
+  role: "CONSENSUS_BILATERAL",
+  fields: ["scenario", "direction", "evidenceFamilies", "bestCaseForUp", "bestCaseAgainstUp", "bestCaseForDown", "bestCaseAgainstDown", "blockers", "invalidations", "marketAmbiguities"],
   validate(output) {
     if (!output || typeof output !== "object") return "not_object";
-    if (!isString(output.scenario, { max: 60 })) return "scenario";
-    if (!isDirection(output.direction)) return "direction";
-    if (!isStringArray(output.evidence ?? [], { max: 12 })) return "evidence";
-    if (!isString(output.reasoningSummary, { max: 600 })) return "reasoningSummary";
+    if (!scenarioValid(output.scenario)) return "scenario";
+    if (!["UP", "DOWN", "NONE"].includes(output.direction)) return "direction";
+    if (!Array.isArray(output.evidenceFamilies) || output.evidenceFamilies.length === 0 || output.evidenceFamilies.length > 6) return "evidenceFamilies";
+    for (const item of output.evidenceFamilies) {
+      if (!item || typeof item !== "object" || !isString(item.family, 40) || !isString(item.supports, 200)) return "evidenceFamilies.item";
+    }
+    for (const key of ["bestCaseForUp", "bestCaseAgainstUp", "bestCaseForDown", "bestCaseAgainstDown", "marketAmbiguities"]) {
+      if (!isStringArray(output[key] ?? [], { max: 6, itemMax: 200 })) return key;
+    }
+    if (!isStringArray(output.blockers ?? [])) return "blockers";
+    if (!isStringArray(output.invalidations ?? [])) return "invalidations";
     return null;
   },
 };
 
+/** Chamada final do modo 3-wave (benchmark A): ve Asset + Consensus independente. */
 export const CONSENSUS_FINAL_SCHEMA = {
   role: "CONSENSUS_FINAL",
+  fields: ["agreement", "result", "bestCounterCase", "reasons"],
   validate(output) {
     if (!output || typeof output !== "object") return "not_object";
     if (!["AGREE", "DISAGREE", "INSUFFICIENT_EVIDENCE"].includes(output.agreement)) return "agreement";
     if (!["APPROVE_BUY", "APPROVE_SELL", "CANCEL"].includes(output.result)) return "result";
-    if (!isString(output.bestCounterCase, { max: 600 })) return "bestCounterCase";
-    if (!isStringArray(output.challengeSteps ?? [], { max: 12 })) return "challengeSteps";
-    if (!isStringArray(output.reasons ?? [], { max: 8 })) return "reasons";
+    if (!isString(output.bestCounterCase, 320)) return "bestCounterCase";
+    if (!isStringArray(output.reasons ?? [], { max: 6 })) return "reasons";
     if (output.result === "APPROVE_BUY" && output.agreement !== "AGREE") return "approve_requires_agreement";
     if (output.result === "APPROVE_SELL" && output.agreement !== "AGREE") return "approve_requires_agreement";
-    if (/confidence|percent/i.test(JSON.stringify(output))) return "confidence_not_allowed";
     return null;
   },
 };
 
-export const AGENT_SCHEMAS = Object.freeze({ SPECIALIST: SPECIALIST_SCHEMA, ASSET: ASSET_SCHEMA, CONSENSUS_INDEPENDENT: CONSENSUS_INDEPENDENT_SCHEMA, CONSENSUS_FINAL: CONSENSUS_FINAL_SCHEMA });
+export const AGENT_SCHEMAS = Object.freeze({ SPECIALIST: SPECIALIST_SCHEMA, ASSET: ASSET_SCHEMA, CONSENSUS_BILATERAL: CONSENSUS_BILATERAL_SCHEMA, CONSENSUS_FINAL: CONSENSUS_FINAL_SCHEMA });
 
-/** Papeis de agente -> schema (5 especialistas compartilham o contrato SPECIALIST). */
 export const ROLE_SCHEMA = Object.freeze({
   RSI: "SPECIALIST", DMI_ADX: "SPECIALIST", BOLLINGER: "SPECIALIST", ATR: "SPECIALIST", PRICE_ACTION: "SPECIALIST",
-  ASSET: "ASSET", CONSENSUS_INDEPENDENT: "CONSENSUS_INDEPENDENT", CONSENSUS_FINAL: "CONSENSUS_FINAL",
+  ASSET: "ASSET", CONSENSUS_BILATERAL: "CONSENSUS_BILATERAL", CONSENSUS_FINAL: "CONSENSUS_FINAL",
 });
 
-export function validateAgentOutput(role, output) {
+/** Ancoragem numerica: todo numero citado no output deve existir no input (ou ser pequeno/estrutural).
+ *  Tolerancias: igualdade arredondada (precisao do token), fracao estrutural pequena e
+ *  aproximacao relativa de ate 2% (min 0.5) — o suficiente para "~80" de um input 82.26 NAO passar,
+ *  mas "50" de um input 50.85 passar. Inventar valores (ex.: RSI 87 com input 45) falha. */
+export function numericGroundingError(output, inputNumbers, { structuralMax = 20, structuralConstants = [14, 20, 25, 30, 50, 70, 75, 80, 100], relativeTolerance = 0.02, minTolerance = 0.5 } = {}) {
+  const inputs = [];
+  const rounded = new Map();
+  const allowRounded = (value, decimals) => {
+    if (!rounded.has(decimals)) rounded.set(decimals, new Set());
+    rounded.get(decimals).add(String(Number(Number(value).toFixed(decimals))));
+  };
+  for (const value of inputNumbers ?? []) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) continue;
+    inputs.push(number);
+    for (let decimals = 0; decimals <= 4; decimals += 1) allowRounded(number, decimals);
+  }
+  const tokens = JSON.stringify(output ?? {}).match(/-?\d+(?:\.\d+)?/g) ?? [];
+  for (const token of tokens) {
+    const value = Number(token);
+    if (!Number.isFinite(value)) continue;
+    const decimals = (token.split(".")[1] ?? "").length;
+    if (rounded.get(Math.min(decimals, 4))?.has(String(value))) continue;
+    if (Math.abs(value) <= structuralMax && Number.isInteger(value)) continue;
+    if (Number.isInteger(value) && structuralConstants.includes(value)) continue;
+    if (/^(19|20)\d{2}$/.test(token)) continue;
+    const tolerance = (input) => Math.max(minTolerance, Math.abs(input) * relativeTolerance);
+    const near = inputs.some((input) => Math.abs(value - input) <= tolerance(input) || Math.abs(Math.abs(value) - Math.abs(input)) <= tolerance(input));
+    if (near) continue;
+    return { error: "invented_number", token };
+  }
+  return null;
+}
+
+/** Coleta numeros do input (measurements + timing) para a ancoragem. */
+export function collectInputNumbers(measurements, timing = null) {
+  const out = [];
+  const walk = (value, depth = 0) => {
+    if (depth > 6 || value === null || value === undefined) return;
+    if (typeof value === "number") { if (Number.isFinite(value)) out.push(value); return; }
+    if (typeof value === "string") { const asNumber = Number(value); if (Number.isFinite(asNumber) && value.trim() !== "") out.push(asNumber); return; }
+    if (Array.isArray(value)) { for (const item of value.slice(0, 60)) walk(item, depth + 1); return; }
+    if (typeof value === "object") { for (const item of Object.values(value)) walk(item, depth + 1); }
+  };
+  walk(measurements);
+  if (timing) walk(timing);
+  return out;
+}
+
+export function validateAgentOutput(role, output, { inputNumbers = null } = {}) {
   const schemaName = ROLE_SCHEMA[role];
   const schema = schemaName ? AGENT_SCHEMAS[schemaName] : null;
   if (!schema) return { ok: false, error: "UNKNOWN_ROLE" };
   const error = schema.validate(output);
-  return error ? { ok: false, error } : { ok: true, error: null };
+  if (error) return { ok: false, error };
+  if (inputNumbers) { const grounding = numericGroundingError(output, inputNumbers); if (grounding) return { ok: false, error: grounding.error, token: grounding.token }; }
+  return { ok: true, error: null };
 }

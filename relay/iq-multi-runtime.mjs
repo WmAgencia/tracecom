@@ -163,7 +163,10 @@ export class IqMultiRuntime extends EventEmitter {
       ? new V3Runtime({
           now: this.now, pool, log: this.log,
           strategy: { version: this.v3Strategy.version, status: this.v3Strategy.status, executable: this.v3Strategy.executable, strategyHash: this.v3Strategy.strategyHash, statsEpoch: this.v3Strategy.manifest?.statsEpoch ?? null },
-          agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ pool, now: this.now }) : null,
+          agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ pool, now: this.now, maxTokens: Number(process.env.V3_AGENT_MAX_TOKENS) || 512 }) : null,
+          agentSafetyMarginMs: Number(process.env.V3_AGENT_SAFETY_MARGIN_MS) || 8_000,
+          estimatedWaveMs: Number(process.env.V3_AGENT_ESTIMATED_MS) || 12_000,
+          architecture: process.env.V3_AGENT_ARCHITECTURE === "THREE_WAVE" ? "THREE_WAVE" : "TWO_WAVE",
           brokerNow: () => { const value = this.client?.serverNow?.(); return Number.isFinite(Number(value)) ? Number(value) : this.now(); },
         })
       : null;
@@ -3113,7 +3116,7 @@ export class IqMultiRuntime extends EventEmitter {
   v3Opportunities(options = {}) { return this.v3?.opportunities(options) ?? []; }
   v3Discovery() { return this.v3?.discoveryStatus() ?? null; }
   /** Selftest READ-ONLY dos agentes LLM reais: um ciclo sobre dados atuais. Nunca envia ordem. */
-  async v3AgentSelftest({ marketKey = null } = {}) {
+  async v3AgentSelftest({ marketKey = null, mode = "FULL", role = "RSI", concurrency = 5 } = {}) {
     if (!this.v3) throw new IqWsError("V3_DISABLED");
     let key = marketKey && this.markets.has(marketKey) ? String(marketKey) : [...this.markets.values()].find((ctx) => this.#candleList(ctx).length >= 60)?.marketKey ?? null;
     let candles = key ? this.#candleList(this.markets.get(key)) : [];
@@ -3123,8 +3126,8 @@ export class IqMultiRuntime extends EventEmitter {
     if (!measurements) throw new IqWsError("MEASUREMENTS_UNAVAILABLE");
     const brokerNow = Number.isFinite(Number(this.client?.serverNow?.())) ? Number(this.client.serverNow()) : this.now();
     const expirationAt = derivedExpirationAt(brokerNow);
-    const result = await this.v3.agentSelftest({ measurements, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow } });
-    return { marketKey: key, source, candles: candles.length, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow }, ...result };
+    const result = await this.v3.agentSelftest({ measurements, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow }, mode, role, concurrency });
+    return { marketKey: key, source, mode, role, candles: candles.length, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow }, ...result };
   }
 
   /** View operacional por ativo (GRID/LOG): productState do backend + AnalysisState (WAIT observavel). */

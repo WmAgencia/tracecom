@@ -12,8 +12,12 @@ export const TEXT_TIMEOUT_MS = 20_000;
 export const DEFAULT_MODEL = "deepseek-v4.1-flash";
 export const DEFAULT_PROVIDER = "openCodeGo";
 
-/** session id derivado da sessao/contexto (sem segredos, sem valor global eterno). */
+/** session id derivado da sessao/contexto (sem segredos, sem valor global eterno).
+ *  `sessionKey` (quando presente) gera um id ESTAVEL por papel+opportunity (roteamento/cache). */
 export function sessionFor(context = {}) {
+  if (typeof context.sessionKey === "string" && context.sessionKey.length > 0) {
+    return `tc-${crypto.createHash("sha256").update(context.sessionKey).digest("hex").slice(0, 16)}`;
+  }
   const basis = [context.sessionId, context.traceId, context.segmentId, context.requestId].filter((value) => typeof value === "string" && value.length > 0).join("|");
   const digest = crypto.createHash("sha256").update(basis || crypto.randomUUID()).digest("hex").slice(0, 16);
   return `tc-${digest}`;
@@ -56,12 +60,12 @@ export function buildVisionRequest({ model, imageDataUrl, prompt, sessionId }) {
   };
 }
 
-export function buildTextRequest({ model, system, prompt, sessionId, maxTokens = 1500 }) {
-  return {
-    url: `${OPENCODE_GO_BASE}/chat/completions`,
-    headers: { "content-type": "application/json", "x-opencode-session": sessionId },
-    body: { model, max_tokens: maxTokens, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] },
-  };
+export function buildTextRequest({ model, system, prompt, sessionId, maxTokens = 1500, temperature = null, responseFormat = null, reasoningEffort = null }) {
+  const body = { model, max_tokens: maxTokens, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] };
+  if (temperature !== null) body.temperature = temperature;
+  if (responseFormat !== null) body.response_format = responseFormat;
+  if (reasoningEffort !== null) body.reasoning_effort = reasoningEffort;
+  return { url: `${OPENCODE_GO_BASE}/chat/completions`, headers: { "content-type": "application/json", "x-opencode-session": sessionId }, body };
 }
 
 export function parseStructured(text) {
@@ -187,25 +191,25 @@ export async function runVisionProvider(pool, { imageDataUrl, frameId = null, re
   }
 }
 
-export async function runTextProvider(pool, { system = "You are a cautious quantitative analyst. Do not provide execution instructions.", prompt, maxTokens = 1500, requestId = null, sessionContext = {} }) {
+export async function runTextProvider(pool, { system = "You are a cautious quantitative analyst. Do not provide execution instructions.", prompt, maxTokens = 1500, requestId = null, sessionContext = {}, temperature = null, responseFormat = null, reasoningEffort = null, timeoutMs = null } = {}) {
   const config = await loadProviderConfig(pool);
   const sessionId = sessionFor({ ...sessionContext, requestId });
-  if (!config || config.provider !== "openCodeGo") return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", requestId, sessionId, model: null, text: null, parsed: null, latencyMs: null };
+  if (!config || config.provider !== "openCodeGo") return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", requestId, sessionId, model: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null };
   const model = resolveModel(config);
-  const request = buildTextRequest({ model, system, prompt, sessionId, maxTokens });
+  const request = buildTextRequest({ model, system, prompt, sessionId, maxTokens, temperature, responseFormat, reasoningEffort });
   try {
-    const result = await callProvider(request, config.apiKey, TEXT_TIMEOUT_MS);
+    const result = await callProvider(request, config.apiKey, Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0 ? Number(timeoutMs) : TEXT_TIMEOUT_MS);
     const body = (() => { try { return JSON.parse(result.text); } catch { return null; } })();
     const answer = body?.choices?.[0]?.message?.content;
     const text = typeof answer === "string" ? answer : Array.isArray(answer) ? answer.map((part) => part?.text ?? "").join("") : null;
     const parsed = parseStructured(text ?? "");
     const status = result.status === 200 && text ? "OK" : "ERROR";
-    console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ model, requestId, status, latencyMs: result.latencyMs, sessionId, parsed: Boolean(parsed) }));
-    return { status, reason: status === "OK" ? null : result.status === 200 ? "INVALID_JSON" : `HTTP_${result.status}`, requestId, sessionId, model, text, parsed, latencyMs: result.latencyMs };
+    console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ model, requestId, status, latencyMs: result.latencyMs, sessionId, parsed: Boolean(parsed), finishReason: body?.choices?.[0]?.finish_reason ?? null, httpStatus: result.status }));
+    return { status, reason: status === "OK" ? null : result.status === 200 ? "INVALID_JSON" : `HTTP_${result.status}`, requestId, sessionId, model, text, parsed, latencyMs: result.latencyMs, usage: body?.usage ?? null, finishReason: body?.choices?.[0]?.finish_reason ?? null, httpStatus: result.status };
   } catch (error) {
     const reason = error?.name === "AbortError" ? "TIMEOUT" : "ERROR";
     console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ model, requestId, status: "ERROR", reason, sessionId }));
-    return { status: "ERROR", reason, requestId, sessionId, model, text: null, parsed: null, latencyMs: null };
+    return { status: "ERROR", reason, requestId, sessionId, model, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
   }
 }
 

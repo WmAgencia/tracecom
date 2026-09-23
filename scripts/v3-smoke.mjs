@@ -17,7 +17,7 @@ import { runAgentCycle } from "../relay/v3/agents/team.mjs";
 import { computeV3StrategyHash, V3_MANIFEST_PATH } from "./v3-strategy-hash.mjs";
 import fs from "node:fs";
 
-const specialistStub = (role) => ({ domainAssessment: `${role} ok`, observations: ["obs"], deterministicFacts: [{ family: role === "PRICE_ACTION" ? "STRUCTURE" : "MOMENTUM", code: `${role}_FACT`, direction: "UP", detail: null }], counterFacts: [], blockers: [], invalidations: [], changedSincePreviousCycle: [], nextEvidenceToWatch: ["next"], playbooksUsed: [], sourcesUsed: ["WILDER_1978"] });
+const specialistStub = (role) => ({ assessment: `${role} ok`, facts: [{ code: `${role}_FACT`, direction: "UP", strength: "MODERATE", detail: "curto" }], blockers: [], invalidations: [], changed: [], watch: ["next"], playbooks: [], sources: ["WILDER_1978"] });
 
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
@@ -79,15 +79,14 @@ ok("ANALYSIS (330->300) e EXECUTION (~302) sao funcoes distintas", analysis.ok =
 {
   const script = {
     RSI: specialistStub("RSI"), DMI_ADX: specialistStub("DMI_ADX"), BOLLINGER: specialistStub("BOLLINGER"), ATR: specialistStub("ATR"), PRICE_ACTION: specialistStub("PRICE_ACTION"),
-    ASSET: { scenario: "TREND_CONTINUATION", direction: "UP", state: "BUY_CANDIDATE", supportingEvidence: ["BOS"], counterEvidence: [], blockers: [], invalidations: [], bestCounterCase: "CHoCH bearish", changedSincePreviousCycle: [], nextEvidenceToWatch: [] },
-    CONSENSUS_INDEPENDENT: { scenario: "TREND_CONTINUATION", direction: "UP", evidence: ["BOS"], reasoningSummary: "alta" },
-    CONSENSUS_FINAL: { agreement: "AGREE", result: "APPROVE_BUY", bestCounterCase: "CHoCH bearish", challengeSteps: ["ok"], reasons: [] },
+    ASSET: { scenario: "TREND_CONTINUATION", direction: "UP", state: "BUY_CANDIDATE", bestCounterCase: "CHoCH bearish", blockers: [], invalidations: [], changed: [], watch: [] },
+    CONSENSUS_BILATERAL: { scenario: "TREND_CONTINUATION", direction: "UP", evidenceFamilies: [{ family: "STRUCTURE", supports: "BOS" }, { family: "MOMENTUM", supports: "crossback" }], bestCaseForUp: ["HH/HL"], bestCaseAgainstUp: ["CHoCH bearish"], bestCaseForDown: ["perda do swing"], bestCaseAgainstDown: ["BOS recente"], blockers: [], invalidations: [], marketAmbiguities: [] },
   };
   const okCycle = await runAgentCycle({ client: createScriptedAgentClient(script), measurements: { closedCandle: { at: 1 } }, cycleNumber: 1 });
   const failScript = { ...script, ASSET: { status: "ERROR", reason: "TIMEOUT" } };
   const failCycle = await runAgentCycle({ client: createScriptedAgentClient(failScript), measurements: { closedCandle: { at: 1 } }, cycleNumber: 2 });
   ok("timeout de agente => AGENT_UNAVAILABLE/CANCEL (fail-closed)", failCycle.available === false && failCycle.reason === "AGENT_UNAVAILABLE" && failCycle.result === "CANCEL");
-  ok("agentes reais (interface provider) aprovam com agreement", okCycle.available === true && okCycle.result === "APPROVE_BUY" && okCycle.agentCalls.length === 8);
+  ok("agentes reais (interface provider) aprovam com Final Gate deterministico (7 chamadas, 2 ondas)", okCycle.available === true && okCycle.result === "APPROVE_BUY" && okCycle.agentCalls.length === 7 && okCycle.finalGate?.result === "APPROVE_BUY");
 }
 
 console.log(fail === 0 ? `V3_SMOKE ALL_PASS (${pass}/${pass})` : `V3_SMOKE FAIL (${fail})`);

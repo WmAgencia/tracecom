@@ -87,7 +87,9 @@ export class ExpirationOpportunityEngine {
     opportunity.cycles.push(entry);
     if (opportunity.cycles.length > this.maxCycles) opportunity.cycles.splice(0, opportunity.cycles.length - this.maxCycles);
     this.counters.cycles += 1;
-    opportunity.status = entry.status ?? opportunity.status;
+    // Nunca rebaixar decisao ja tomada (FINAL_REVIEW/APPROVED/EXECUTING) com ciclo posterior.
+    const PROTECTED = ["FINAL_REVIEW", "APPROVED_BUY", "APPROVED_SELL", "EXECUTING", "ACKNOWLEDGED"];
+    if (!PROTECTED.includes(opportunity.status)) opportunity.status = entry.status ?? opportunity.status;
     if (opportunity.status === "NO_SETUP") this.counters.noSetup += 1;
     else if (opportunity.status === "WAIT") this.counters.wait += 1;
     else if (CANDIDATE_STATES.includes(opportunity.status)) this.counters.candidates += 1;
@@ -128,6 +130,8 @@ export class ExpirationOpportunityEngine {
       return opportunity;
     }
     if (asset?.state === "NO_SETUP" && opportunity.cycles.length >= 1) { this.#close(opportunity, "NO_SETUP", "FIRST_FULL_CYCLE_NO_SETUP"); return opportunity; }
+    // NUNCA rebaixar uma decisao ja tomada (aprovacao/review) por um ciclo sem agentes (fallback determinístico).
+    if (["FINAL_REVIEW", "APPROVED_BUY", "APPROVED_SELL", "EXECUTING", "ACKNOWLEDGED"].includes(opportunity.status)) return opportunity;
     if (asset?.state === "WAIT") { opportunity.status = "WAIT"; return opportunity; }
     if (asset?.state === "BUY_CANDIDATE" || asset?.state === "SELL_CANDIDATE") { opportunity.status = asset.state; return opportunity; }
     this.#close(opportunity, "CANCELLED", "CONSENSUS_CANCEL");

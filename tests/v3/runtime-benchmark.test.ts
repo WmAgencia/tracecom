@@ -84,14 +84,14 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
   });
 
   it("aprovacao LLM real => snapshot imutavel + scheduler agenda ~TTE302 (observe-only, zero ordem)", async () => {
-    const agents = createScriptedAgentClient(approveScript());
+    const agents = createScriptedAgentClient(approveScript(), { now: () => brokerClock });
     let brokerClock = exp - 320_000;
-    const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: "sha256:v3-test", statsEpoch: "epoch-v3" }, agents, now: () => brokerClock, brokerNow: () => brokerClock });
+    const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: "sha256:v3-test", statsEpoch: "epoch-v3" }, agents, now: () => brokerClock, brokerNow: () => brokerClock, agentSafetyMarginMs: 1_000, estimatedWaveMs: 500 });
     expect(runtime.status().agentMode).toBe("LLM");
     runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
     const closes = approvalSeries({ candles: 120 }).map((candle) => candle.close);
     let approved = null;
-    for (const tte of [327_000, 322_000, 317_000, 312_000, 307_000, 302_000]) {
+    for (const tte of [327_000, 322_000, 317_000, 312_000, 307_000]) {
       const brokerNow = exp - tte;
       const candles = candlesFromCloses(closes, { startAt: brokerNow - closes.length * 5_000 });
       const cycle = await runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow });
@@ -103,16 +103,16 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
     expect(opportunity.finalDecision?.snapshotHash).toMatch(/^sha256:/);
     expect(opportunity.finalDecision?.executionBlocked).toBe("V3_NOT_ACTIVE");
     expect(runtime.status().counters.snapshots).toBeGreaterThanOrEqual(1);
-    expect(runtime.status().scheduler.pending).toBeGreaterThanOrEqual(1);
-    expect(runtime.status().agents.latency.CONSENSUS_FINAL.count).toBeGreaterThanOrEqual(1);
+    expect(runtime.status().scheduler.counters.scheduled).toBeGreaterThanOrEqual(1);
+    expect(runtime.status().agents.latency.CONSENSUS_BILATERAL.count).toBeGreaterThanOrEqual(1);
     expect(runtime.status().executionEnabled).toBe(false);
-    // disparo no alvo (delay 0): broker avanca para TTE~302 e o scheduler revalida observe-only
+    // disparo no alvo (agendado para TTE 302 ~= 5s apos o ultimo ciclo LLM): broker avanca e o scheduler revalida observe-only
     brokerClock = exp - 302_000;
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await new Promise((resolve) => setTimeout(resolve, 5_400));
     expect(opportunity.executionRef?.fireAt).toBeTruthy();
     expect(opportunity.executionRef?.submit).toBe(false);
     expect(runtime.status().counters.schedulerFired).toBeGreaterThanOrEqual(1);
-  });
+  }, 20_000);
 });
 
 describe("V3 benchmark — agentes LLM (latencia simulada; 30 ativos)", () => {
@@ -121,9 +121,9 @@ describe("V3 benchmark — agentes LLM (latencia simulada; 30 ativos)", () => {
     const script: Record<string, any> = {};
     for (const role of ["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION"]) script[role] = { ...base[role], sleepMs: 1, latencyMs: 1 };
     script.ASSET = { ...base.ASSET, sleepMs: 2, latencyMs: 2 };
-    script.CONSENSUS_INDEPENDENT = { ...base.CONSENSUS_INDEPENDENT, sleepMs: 2, latencyMs: 2 };
-    script.CONSENSUS_FINAL = { ...base.CONSENSUS_FINAL, sleepMs: 2, latencyMs: 2 };
-    const agents = createScriptedAgentClient(script);
+    script.CONSENSUS_BILATERAL = { ...base.CONSENSUS_BILATERAL, sleepMs: 2, latencyMs: 2 };
+    
+    const agents = createScriptedAgentClient(script, { now: () => Date.now() });
     const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false }, agents });
     const markets = Array.from({ length: 30 }, (_, index) => `M${index}:OTC`);
     const actives: Record<string, any> = {};
@@ -144,11 +144,13 @@ describe("V3 benchmark — agentes LLM (latencia simulada; 30 ativos)", () => {
     const sorted = [...latencies].sort((a, b) => a - b);
     const p95 = sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * 0.95))] ?? 0;
     const status = runtime.status();
-    console.log(`V3_AGENT_BENCHMARK cycles=${cycles} assets=30 waves=${waves.length} p95=${p95}ms maxDepth=${status.queue.maxDepth} agentCalls=${status.agents.calls} agentP95=${status.agents.latency.CONSENSUS_FINAL?.p95}ms`);
+    console.log(`V3_AGENT_BENCHMARK cycles=${cycles} assets=30 waves=${waves.length} p95=${p95}ms maxDepth=${status.queue.maxDepth} agentCalls=${status.agents.calls} agentP95=${status.agents.latency.CONSENSUS_BILATERAL?.p95}ms`);
     expect(cycles).toBe(30 * waves.length);
     expect(p95).toBeLessThan(4_000);
     expect(status.queue.maxDepth).toBeGreaterThanOrEqual(2);
-    expect(status.agents.calls).toBe(30 * waves.length * 8);
+    // orcamento default (safety 8s, estimated 12s): ondas em TTE 327/322 (17s/12s) rodam LLM; 317/312 sao puladas
+    expect(status.agents.calls).toBe(30 * 7 * 2);
+    expect(status.counters.cyclesSkippedDeadline).toBeGreaterThanOrEqual(30 * 2);
     expect(status.counters.cyclesSkippedWindow).toBe(0);
     expect(status.executionEnabled).toBe(false);
   }, 120_000);

@@ -18,7 +18,9 @@ import { runSpecialists } from "./specialists.mjs";
 import { classifyAsset } from "./asset-agent.mjs";
 import { runConsensus } from "./consensus.mjs";
 import { buildV3DecisionSnapshot } from "./decision-snapshot.mjs";
-import { runAgentCycle, agentLatencyStats } from "./agents/team.mjs";
+import { runAgentCycle, agentLatencyStats, SPECIALIST_ROLES } from "./agents/team.mjs";
+import { specialistDelta } from "./agents/prompts.mjs";
+import { collectInputNumbers } from "./agents/schemas.mjs";
 import { ExecutionScheduler } from "./scheduler.mjs";
 import { stableStringify } from "../intelligence/features.mjs";
 
@@ -27,7 +29,7 @@ export const V3_RUNTIME_VERSION = "v3-runtime-v2";
 const defaultStrategy = Object.freeze({ version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: null, statsEpoch: null });
 
 export class V3Runtime {
-  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null } = {}) {
+  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null, agentSafetyMarginMs = 8_000, estimatedWaveMs = 12_000, architecture = "TWO_WAVE" } = {}) {
     this.now = now;
     this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
     this.pool = pool;
@@ -36,6 +38,9 @@ export class V3Runtime {
     this.engine = engine ?? new ExpirationOpportunityEngine({ now });
     this.agents = agents;
     this.agentMode = agentMode ?? (agents?.available ? "LLM" : "DETERMINISTIC_OBSERVE");
+    this.agentSafetyMarginMs = Math.max(0, Number(agentSafetyMarginMs) || 8_000);
+    this.estimatedWaveMs = Math.max(1_000, Number(estimatedWaveMs) || 12_000);
+    this.agentArchitecture = architecture === "THREE_WAVE" ? "THREE_WAVE" : "TWO_WAVE";
     this.brokerNow = typeof brokerNow === "function" ? brokerNow : null;
     this.scheduler = scheduler ?? new ExecutionScheduler({ now, onFire: (intent) => this.#onExecutionFire(intent), log: this.log });
     this.prevByMarket = new Map();
@@ -44,7 +49,7 @@ export class V3Runtime {
     this.queueDepth = 0;
     this.maxQueueDepth = 0;
     this.agentCalls = [];
-    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, snapshots: 0, approvals: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, agentCycles: 0, agentUnavailable: 0, scheduled: 0, schedulerFired: 0 };
+    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, snapshots: 0, approvals: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, agentCycles: 0, agentUnavailable: 0, deadlineAborts: 0, scheduled: 0, schedulerFired: 0 };
     this.lastError = null;
     this.lastCycleAt = null;
     this.latencySamples = [];
@@ -135,11 +140,26 @@ export class V3Runtime {
 
     let agentResult = null;
     if (this.agents?.available) {
-      agentResult = await runAgentCycle({ client: this.agents, measurements, specialists: deterministicSpecialists, previousByRole, previousAssessment: previous.asset ?? null, expiration: { expirationAt: opportunity.expirationAt, tteMs: window.derived?.tteMs ?? null, brokerNow: at }, cycleNumber });
-      this.counters.agentCycles += 1;
-      this.agentCalls.push(...agentResult.agentCalls);
-      if (this.agentCalls.length > 2_000) this.agentCalls.splice(0, this.agentCalls.length - 2_000);
-      if (agentResult.available !== true) this.counters.agentUnavailable += 1;
+      // Orcamento de analise (duracao): termina ANTES do targetSendAt, com margem para scheduler/revalidacao/persistencia.
+      const budgetMs = (opportunity.targetSendAt - this.agentSafetyMarginMs) - at;
+      if (budgetMs < this.estimatedWaveMs) {
+        this.counters.cyclesSkippedDeadline += 1;
+        this.log("V3_AGENT_CYCLE_SKIPPED_DEADLINE", stableStringify({ opportunityId: opportunity.opportunityId, budgetMs, estimatedWaveMs: this.estimatedWaveMs }));
+      } else {
+        agentResult = await runAgentCycle({
+          client: this.agents, measurements, specialists: deterministicSpecialists, previousByRole, previousAssessment: previous.asset ?? null,
+          expiration: { expirationAt: opportunity.expirationAt, tteMs: window.derived?.tteMs ?? null, brokerNow: at },
+          cycleNumber, opportunityId: opportunity.opportunityId, budgetMs, architecture: this.agentArchitecture,
+          now: this.now,
+        });
+        this.counters.agentCycles += 1;
+        this.agentCalls.push(...agentResult.agentCalls);
+        if (this.agentCalls.length > 2_000) this.agentCalls.splice(0, this.agentCalls.length - 2_000);
+        if (agentResult.available !== true) {
+          this.counters.agentUnavailable += 1;
+          if (agentResult.reason === "ANALYSIS_DEADLINE") this.counters.deadlineAborts += 1;
+        }
+      }
     }
     // Fail-closed: sem agentes LLM validos NAO existe approval (determinismo continua coletando dados).
     const approvalsAllowed = agentResult?.available === true;
@@ -148,7 +168,7 @@ export class V3Runtime {
       ? { scenario: agentResult.asset.scenario, direction: agentResult.asset.direction, state: agentResult.asset.state, blockers: (agentResult.asset.blockers ?? []).map((code) => ({ code })), invalidations: (agentResult.asset.invalidations ?? []).map((code) => ({ code })), bestCounterCase: agentResult.asset.bestCounterCase, changedSincePreviousCycle: (agentResult.asset.changedSincePreviousCycle ?? []).map((field) => ({ field, from: null, to: null })) }
       : { ...deterministicAsset, state: "WAIT" };
     const consensus = approvalsAllowed
-      ? { result: agentResult.result, agreement: agentResult.consensus.agreement, challenge: { reasons: agentResult.consensus.reasons ?? [], challengeSteps: (agentResult.consensus.challengeSteps ?? []).map((detail, index) => ({ id: `LLM_${agentResult.consensus.result}_${index}`, ok: null, detail })) }, independent: agentResult.independent, bestCounterCase: agentResult.consensus.bestCounterCase }
+      ? { result: agentResult.result, agreement: agentResult.consensus.agreement, challenge: { reasons: agentResult.consensus.reasons ?? [], challengeSteps: (agentResult.consensus.challengeSteps ?? []).map((step) => ({ id: step.id, ok: step.ok, detail: step.detail })) }, independent: agentResult.independent, bilateral: agentResult.consensus.bilateral ?? null, bestCounterCase: agentResult.consensus.bestCounterCase }
       : { ...deterministicConsensus, result: "AGENT_UNAVAILABLE", agreement: "INSUFFICIENT_EVIDENCE" };
 
     const cycle = {
@@ -283,6 +303,9 @@ export class V3Runtime {
       executionEnabled: this.executionEnabled,
       executionMode: "OBSERVE_ONLY",
       agentMode: this.agentMode,
+      agentArchitecture: this.agentArchitecture,
+      agentSafetyMarginMs: this.agentSafetyMarginMs,
+      estimatedWaveMs: this.estimatedWaveMs,
       agents: { available: this.agents?.available === true, calls: this.agentCalls.length, latency: agentLatencyStats(this.agentCalls) },
       scheduler: this.scheduler.status(),
       queue: { depth: this.queueDepth, maxDepth: this.maxQueueDepth, markets: this.queues.size },
@@ -298,15 +321,35 @@ export class V3Runtime {
   opportunities(options = {}) { return this.engine.list(options); }
   discoveryStatus() { return this.discovery.status(); }
 
-  /** Selftest read-only dos agentes reais (sem ordem): um ciclo completo sobre measurements fornecidos. */
-  async agentSelftest({ measurements, specialists = null, expiration = null, cycleNumber = 0 } = {}) {
+  /** Selftest READ-ONLY dos agentes reais (sem ordem). Modos: SINGLE | WAVE_A | FULL | CONCURRENCY. */
+  async agentSelftest({ measurements, specialists = null, expiration = null, cycleNumber = 0, mode = "FULL", role = "RSI", concurrency = 5, budgetMs = null } = {}) {
     if (!this.agents?.available) return { available: false, reason: "AGENT_UNAVAILABLE", agentMode: this.agentMode };
-    const result = await runAgentCycle({ client: this.agents, measurements, specialists: specialists ?? runSpecialists({ measurements }), previousByRole: {}, previousAssessment: null, expiration, cycleNumber, requestIdPrefix: "selftest" });
-    this.agentCalls.push(...result.agentCalls);
+    const client = this.agents;
+    const inputNumbers = collectInputNumbers(measurements, expiration);
+    const timing = expiration ? { expirationAt: expiration.expirationAt, tteMs: expiration.tteMs ?? null, phase: expiration.phase ?? null } : null;
+    const startedAt = this.now();
+    if (mode === "SINGLE") {
+      const chosen = SPECIALIST_ROLES.includes(role) ? role : "RSI";
+      const call = await client.call({ role: chosen, requestId: `selftest:${cycleNumber}:${chosen}`, opportunityId: "selftest", budgetMs, inputNumbers, prompt: specialistDelta({ role: chosen, measurements, cycleNumber, timing }) });
+      return { available: call.status === "OK", reason: call.reason, result: call.status === "OK" ? "AGENT_OK" : "AGENT_UNAVAILABLE", agentMode: this.agentMode, agentCalls: [call], latency: agentLatencyStats([call]), asset: null, independent: null, consensus: null, finalGate: null, wallMs: Math.max(0, this.now() - startedAt) };
+    }
+    if (mode === "WAVE_A") {
+      const calls = await Promise.all(SPECIALIST_ROLES.map((roleName) => client.call({ role: roleName, requestId: `selftest:${cycleNumber}:${roleName}`, opportunityId: "selftest", budgetMs, inputNumbers, prompt: specialistDelta({ role: roleName, measurements, cycleNumber, timing }) })));
+      const available = calls.every((call) => call.status === "OK");
+      return { available, reason: available ? null : "AGENT_UNAVAILABLE", result: available ? "AGENT_OK" : "AGENT_UNAVAILABLE", agentMode: this.agentMode, agentCalls: calls, latency: agentLatencyStats(calls), asset: null, independent: null, consensus: null, finalGate: null, wallMs: Math.max(0, this.now() - startedAt) };
+    }
+    if (mode === "CONCURRENCY") {
+      const total = Math.max(1, Math.min(30, Number(concurrency) || 5));
+      const calls = await Promise.all(Array.from({ length: total }, (_, index) => client.call({ role: "RSI", requestId: `selftest:conc:${index}`, opportunityId: "selftest-conc", budgetMs, inputNumbers, prompt: specialistDelta({ role: "RSI", measurements, cycleNumber, timing }) })));
+      const available = calls.filter((call) => call.status === "OK").length;
+      return { available: available > 0, reason: available === total ? null : "PARTIAL", result: `${available}/${total}`, agentMode: this.agentMode, agentCalls: calls, latency: agentLatencyStats(calls), wallMs: Math.max(0, this.now() - startedAt) };
+    }
+    const result = await runAgentCycle({ client, measurements, specialists: specialists ?? runSpecialists({ measurements }), expiration, cycleNumber, opportunityId: "selftest", budgetMs, architecture: this.agentArchitecture, now: this.now });
     return {
-      available: result.available, reason: result.reason, result: result.result, agentMode: this.agentMode,
-      agentCalls: result.agentCalls, asset: result.asset, independent: result.independent, consensus: result.consensus,
-      latency: agentLatencyStats(result.agentCalls),
+      available: result.available, reason: result.reason, result: result.result, architecture: result.architecture, agentMode: this.agentMode,
+      agentCalls: result.agentCalls, latency: { ...agentLatencyStats(result.agentCalls), wall: result.latency },
+      asset: result.asset, independent: result.independent, finalGate: result.finalGate ?? null, consensus: result.consensus,
+      wallMs: Math.max(0, this.now() - startedAt),
     };
   }
 }

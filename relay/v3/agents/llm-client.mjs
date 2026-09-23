@@ -1,84 +1,99 @@
 /**
- * V3 — LLM AGENT CLIENT (usa a abstração existente: opencode-go/DeepSeek V4.1 Flash).
- * Fail-closed: timeout/erro/JSON invalido/schema invalido => status ERROR (nunca approval).
+ * V3 — LLM AGENT CLIENT v2: structured output (json_object), reasoning off, session estavel, deadline.
+ * Fail-closed: JSON estrito invalido/truncado/schema/semantica => AGENT_UNAVAILABLE.
+ * O resgate de JSON (fences/balanced) fica apenas como DIAGNOSTICO (rawExcerpt), nunca como sucesso no modo structured.
  */
 import { runTextProvider } from "../../opencode-go.mjs";
 import { validateAgentOutput } from "./schemas.mjs";
 import { systemPromptFor } from "./prompts.mjs";
+import { agentRequestOptions, CAPABILITIES } from "./capabilities.mjs";
 
-export const V3_AGENT_CLIENT_VERSION = "v3-agent-client-v1";
+export const V3_AGENT_CLIENT_VERSION = "v3-agent-client-v2";
 
-/** Resgate de JSON robusto: fences, multiplos objetos balanceados e prosa ao redor.
- *  Prefere o ULTIMO objeto parseavel (o output do agente tende a vir por ultimo). */
-export function extractJson(text) {
+/** Resgate apenas diagnostico (nao promove a sucesso). */
+export function rescueJsonExcerpt(text) {
   const raw = String(text ?? "").trim();
   if (!raw) return null;
-  const candidates = [];
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fenced) candidates.push(fenced[1]);
-  candidates.push(raw);
-  for (const candidate of candidates) {
-    try { return JSON.parse(candidate); } catch { /* continua */ }
-    const starts = [];
-    for (let index = 0; index < candidate.length; index += 1) if (candidate[index] === "{") starts.push(index);
-    for (const start of starts.reverse()) {
-      let depth = 0;
-      for (let index = start; index < candidate.length; index += 1) {
-        const char = candidate[index];
-        if (char === "{") depth += 1;
-        else if (char === "}") {
-          depth -= 1;
-          if (depth === 0) { try { return JSON.parse(candidate.slice(start, index + 1)); } catch { break; } }
-        }
-      }
-    }
+  const candidate = fenced ? fenced[1] : raw;
+  const start = candidate.indexOf("{");
+  if (start === -1) return raw.slice(0, 160);
+  let depth = 0;
+  for (let index = start; index < candidate.length; index += 1) {
+    const char = candidate[index];
+    if (char === "{") depth += 1;
+    else if (char === "}") { depth -= 1; if (depth === 0) return candidate.slice(start, Math.min(index + 1, start + 200)); }
   }
-  return null;
+  return candidate.slice(start, start + 200);
 }
 
-export function createLlmAgentClient({ pool = null, runner = null, now = () => Date.now(), maxTokens = 2600 } = {}) {
+const DEFAULT_MAX_TOKENS_BY_ROLE = Object.freeze({ PRICE_ACTION: 768, ASSET: 768, CONSENSUS_BILATERAL: 900 });
+
+export function createLlmAgentClient({ pool = null, runner = null, now = () => Date.now(), maxTokens = 512, maxTokensByRole = null } = {}) {
   const run = typeof runner === "function" ? runner : pool ? (options) => runTextProvider(pool, options) : null;
+  const baseOptions = agentRequestOptions({ maxTokens });
+  const tokensFor = (role) => {
+    const configured = maxTokensByRole?.[role] ?? DEFAULT_MAX_TOKENS_BY_ROLE[role];
+    return Number.isFinite(Number(configured)) ? Number(configured) : baseOptions.maxTokens;
+  };
   return {
     version: V3_AGENT_CLIENT_VERSION,
     available: typeof run === "function",
-    async call({ role, prompt, requestId, sessionContext = {} }) {
+    capabilities: CAPABILITIES,
+    async call({ role, prompt, requestId, opportunityId = null, budgetMs = null, timeoutMs = null, inputNumbers = null, sessionContext = {} }) {
       const startedAt = now();
-      if (typeof run !== "function") return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", role, latencyMs: null, model: null, output: null, schemaValid: false };
+      const base = { role, requestId, model: null, output: null, schemaValid: false, semanticValid: false, usage: null, finishReason: null, httpStatus: null };
+      if (typeof run !== "function") return { ...base, status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", latencyMs: null };
+      const hasBudget = Number.isFinite(Number(budgetMs)) && Number(budgetMs) > 0;
+      if (hasBudget && Number(budgetMs) <= 500) return { ...base, status: "ERROR", reason: "ANALYSIS_DEADLINE", latencyMs: Math.max(0, now() - startedAt) };
+      const effectiveTimeout = hasBudget ? Math.min(Number(timeoutMs) > 0 ? Number(timeoutMs) : Number(budgetMs), Number(budgetMs)) : (Number(timeoutMs) > 0 ? Number(timeoutMs) : null);
       try {
-        const result = await run({ system: systemPromptFor(role), prompt, maxTokens, requestId, sessionContext });
+        const result = await run({
+          system: systemPromptFor(role), prompt, maxTokens: tokensFor(role), requestId,
+          sessionContext: { ...sessionContext, sessionKey: opportunityId ? `v3:${opportunityId}:${role}` : (sessionContext.sessionKey ?? requestId) },
+          temperature: baseOptions.temperature, responseFormat: baseOptions.responseFormat, reasoningEffort: baseOptions.reasoningEffort,
+          timeoutMs: effectiveTimeout,
+        });
         const latencyMs = Number.isFinite(Number(result?.latencyMs)) ? Number(result.latencyMs) : Math.max(0, now() - startedAt);
-        const parsed = extractJson(result?.text) ?? result?.parsed;
-        if (result?.status !== "OK" && !parsed) return { status: "ERROR", reason: result?.reason ?? "INVALID_JSON", role, latencyMs, model: result?.model ?? null, output: null, schemaValid: false, rawExcerpt: String(result?.text ?? "").slice(0, 280) };
-        if (!parsed) return { status: "ERROR", reason: "INVALID_JSON", role, latencyMs, model: result?.model ?? null, output: null, schemaValid: false, rawExcerpt: String(result?.text ?? "").slice(0, 280) };
-        const validation = validateAgentOutput(role, parsed);
-        if (validation.ok !== true) return { status: "ERROR", reason: `SCHEMA_${validation.error}`, role, latencyMs, model: result?.model ?? null, output: null, schemaValid: false, rawExcerpt: JSON.stringify(parsed).slice(0, 280) };
-        return { status: "OK", reason: null, role, latencyMs, model: result?.model ?? null, output: parsed, schemaValid: true };
+        const common = { ...base, latencyMs, model: result?.model ?? null, usage: result?.usage ?? null, finishReason: result?.finishReason ?? null, httpStatus: result?.httpStatus ?? null };
+        if (result?.reason === "TIMEOUT" && hasBudget) return { ...common, status: "ERROR", reason: "ANALYSIS_DEADLINE" };
+        if (result?.status !== "OK") return { ...common, status: "ERROR", reason: result?.reason ?? "PROVIDER_ERROR", rawExcerpt: rescueJsonExcerpt(result?.text) };
+        if (result?.finishReason === "length" && CAPABILITIES.truncationIsFailure) return { ...common, status: "ERROR", reason: "TRUNCATED", rawExcerpt: rescueJsonExcerpt(result?.text) };
+        // Structured mode: EXIGE JSON estrito (parse do provider ou do proprio texto).
+        let parsed = result?.parsed ?? null;
+        if (!parsed && typeof result?.text === "string") { try { parsed = JSON.parse(result.text); } catch { parsed = null; } }
+        if (!parsed) return { ...common, status: "ERROR", reason: "INVALID_JSON", rawExcerpt: rescueJsonExcerpt(result?.text) };
+        const validation = validateAgentOutput(role, parsed, { inputNumbers });
+        if (validation.ok !== true) return { ...common, status: "ERROR", reason: `SCHEMA_${validation.error}${validation.token ? `(${validation.token})` : ""}`, output: null, rawExcerpt: JSON.stringify(parsed).slice(0, 400) };
+        return { ...common, status: "OK", reason: null, output: parsed, schemaValid: true, semanticValid: true };
       } catch (error) {
-        return { status: "ERROR", reason: error?.name === "AbortError" ? "TIMEOUT" : "AGENT_ERROR", role, latencyMs: Math.max(0, now() - startedAt), model: null, output: null, schemaValid: false };
+        return { ...base, status: "ERROR", reason: error?.name === "AbortError" ? "TIMEOUT" : "AGENT_ERROR", latencyMs: Math.max(0, now() - startedAt) };
       }
     },
   };
 }
 
-/** Stub deterministico para testes (mesma interface; nunca chama rede). */
-export function createScriptedAgentClient(script = {}) {
+/** Stub deterministico para testes (mesma interface; nunca chama rede). `now` deve ser o mesmo
+ *  relogio do runtime sob teste (broker time), senao deadlines divergem. */
+export function createScriptedAgentClient(script = {}, { now = () => Date.now() } = {}) {
   const calls = [];
   return {
     version: "v3-agent-client-scripted",
     available: true,
     calls,
-    async call({ role, requestId }) {
-      calls.push({ role, requestId });
-      const entry = typeof script === "function" ? script({ role, requestId }) : script[role];
-      const value = typeof entry === "function" ? entry({ role, requestId }) : entry;
-      if (!value) return { status: "ERROR", reason: "SCRIPT_MISSING", role, latencyMs: 1, model: "stub", output: null, schemaValid: false };
+    async call({ role, requestId, opportunityId = null, budgetMs = null, inputNumbers = null }) {
+      calls.push({ role, requestId, opportunityId });
+      if (Number.isFinite(Number(budgetMs)) && Number(budgetMs) > 0 && Number(budgetMs) <= 500) return { status: "ERROR", reason: "ANALYSIS_DEADLINE", role, latencyMs: 0, model: "stub", output: null, schemaValid: false, semanticValid: false, usage: null, finishReason: null, httpStatus: null };
+      const entry = typeof script === "function" ? script({ role, requestId, opportunityId }) : script[role];
+      const value = typeof entry === "function" ? entry({ role, requestId, opportunityId }) : entry;
+      if (!value) return { status: "ERROR", reason: "SCRIPT_MISSING", role, latencyMs: 1, model: "stub", output: null, schemaValid: false, semanticValid: false, usage: null, finishReason: null, httpStatus: null };
       const latencyMs = Number.isFinite(Number(value.latencyMs)) ? Number(value.latencyMs) : 1;
-      if (value.sleepMs > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(Number(value.sleepMs), 25)));
-      if (value.status === "ERROR") return { status: "ERROR", reason: value.reason ?? "SCRIPTED_ERROR", role, latencyMs, model: "stub", output: null, schemaValid: false };
+      if (value.sleepMs > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(Number(value.sleepMs), 50)));
+      if (value.status === "ERROR") return { status: "ERROR", reason: value.reason ?? "SCRIPTED_ERROR", role, latencyMs, model: "stub", output: null, schemaValid: false, semanticValid: false, usage: value.usage ?? null, finishReason: value.finishReason ?? null, httpStatus: value.httpStatus ?? null };
       const output = value.output ?? value;
-      const validation = validateAgentOutput(role, output);
-      if (validation.ok !== true) return { status: "ERROR", reason: `SCHEMA_${validation.error}`, role, latencyMs, model: "stub", output: null, schemaValid: false };
-      return { status: "OK", reason: null, role, latencyMs, model: "stub", output, schemaValid: true };
+      const validation = validateAgentOutput(role, output, { inputNumbers });
+      if (validation.ok !== true) return { status: "ERROR", reason: `SCHEMA_${validation.error}`, role, latencyMs, model: "stub", output: null, schemaValid: false, semanticValid: false, usage: null, finishReason: null, httpStatus: null };
+      return { status: "OK", reason: null, role, latencyMs, model: "stub", output, schemaValid: true, semanticValid: true, usage: value.usage ?? { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }, finishReason: value.finishReason ?? "stop", httpStatus: 200 };
     },
   };
 }
