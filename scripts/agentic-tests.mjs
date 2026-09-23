@@ -54,7 +54,7 @@ try {
   const strategyResult = agentGraphToStrategyResult(graph);
   check(8, "adaptador de estrategia (agentic) consistente", strategyResult.strategyId === AGENTIC_STRATEGY_ID && strategyResult.opportunity === true);
 
-  const fakeRuntime = { config: { mode: "PRACTICE", defaultStake: 2 }, accountContext: { context: "PRACTICE" }, submitLabPracticeOrder: async () => ({ state: "ACKNOWLEDGED", brokerOrderId: "T1" }) };
+  const fakeRuntime = { config: { mode: "PRACTICE", defaultStake: 2 }, accountContext: { context: "PRACTICE" }, submitPathTestOrder: async () => ({ state: "ACKNOWLEDGED", brokerOrderId: "T1" }) };
   const runner = new LabRunner({ runtime: fakeRuntime, pool: null, enabled: true, runId, strategies: [AGENTIC_STRATEGY_ID], cap: 50, evaluate: (s) => [agentGraphToStrategyResult(runAgentGraph(s))].filter(Boolean) });
   runner.started = true;
   await runner.observeMarket({ snapshot, marketKey: "T:OTC", targetExpiryAt: now + 20_000, payout: 80 });
@@ -64,7 +64,8 @@ try {
   realRunner.started = true;
   await realRunner.observeMarket({ snapshot, marketKey: "T:OTC", targetExpiryAt: now + 20_000 });
   const runtimeSrc = fs.readFileSync(new URL("../relay/iq-multi-runtime.mjs", import.meta.url), "utf8");
-  check(10, "avaliacao roda em REAL; gasto real so com arm (dry-run desarmado)", realRunner.counters.blockedReal === 0 && runtimeSrc.includes("REAL_NOT_ARMED") && runtimeSrc.includes("realArmed"));
+  const dispatchSrc = fs.readFileSync(new URL("../relay/execution/intelligence-dispatch.mjs", import.meta.url), "utf8");
+  check(10, "avaliacao roda em REAL; gasto real so com arm (dry-run desarmado)", realRunner.counters.blockedReal === 0 && runtimeSrc.includes("TEST_PATH_PRACTICE_ONLY") && dispatchSrc.includes("realArmed"));
 
   const store = new LabStore({ pool, runId, specsHash: "agentic", stake: 2, cap: 50 });
   await store.ensureRun([AGENTIC_STRATEGY_ID]);

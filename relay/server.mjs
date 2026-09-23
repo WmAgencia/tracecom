@@ -9,8 +9,7 @@ import { IqAuthSession } from './iqoption-auth.mjs';
 import { saveSession, loadSession, clearSession } from './iq-session-vault.mjs';
 import { createPersistScheduler } from './persist-scheduler.mjs';
 import { IqMultiRuntime } from './iq-multi-runtime.mjs';
-// RODADA V2 LIVE: Strategy Core = V2 ORIGINAL (rsi-skills-v2, congelada) + infraestrutura atual.
-import { RSI_V2_LIVE_EXECUTION_ALLOWLIST } from './rsi-agents-v2-live.mjs';
+import { operationalAllowlist, OPERATIONAL_EXECUTION_POLICY_NAME } from './execution/operational-policy.mjs';
 import { scenarioShadowStatus } from './scenario-shadow.mjs';
 import { ExecutionArmState, KillSwitch, IdempotencyStore } from './iqoption-connector.mjs';
 import { buildCandles } from './experiment.mjs';
@@ -51,7 +50,7 @@ const admin = adminSecretEnv.length >= 16 ? adminSecretEnv : `UNCONFIGURED-${cry
 const armState = new ExecutionArmState();
 const killSwitch = new KillSwitch();
 const executionIdempotency = new IdempotencyStore();
-const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: [...RSI_V2_LIVE_EXECUTION_ALLOWLIST, "lab:S01_RSI_REVERSAL", "lab:S02_MACD_MOMENTUM", "lab:S03_EMA_PULLBACK_TREND", "lab:S04_BOLLINGER_MEAN_REVERSION", "lab:S05_STOCHASTIC_REVERSAL", "lab:S06_RSI_FIBONACCI_REVERSAL", "lab:AGENTIC_RSI_FIB_V1", "lab:AGENTIC_BLITZ_45S", "lab:AGENTIC_PATH_TEST"], executionPolicyName: 'RSI_V2_PLUS_LAB6_PRACTICE', rsiAgentsV2LiveEnabled: false, rsiAgentsV2BlitzEnabled: false, rsiAgentsV4Enabled: false, rsiAgentsV3Enabled: false, scenarioShadowEnabled: false, scenarioTimingIntersectionEnabled: false, agentsV4Enabled: false, dualReasoningEnabled: false, soloReasoningEnabled: false, indicator5mEnabled: false, rsiReversalEnabled: false, rsiVariantsEnabled: false, dataHubEnabled: true, consensusEnabled: true });
+const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: operationalAllowlist(), executionPolicyName: OPERATIONAL_EXECUTION_POLICY_NAME, rsiAgentsV2LiveEnabled: false, rsiAgentsV2BlitzEnabled: false, rsiAgentsV4Enabled: false, rsiAgentsV3Enabled: false, scenarioShadowEnabled: false, scenarioTimingIntersectionEnabled: false, agentsV4Enabled: false, dualReasoningEnabled: false, soloReasoningEnabled: false, indicator5mEnabled: false, rsiReversalEnabled: false, rsiVariantsEnabled: false, dataHubEnabled: true, consensusEnabled: true });
 // BLITZ: desativado por decisao operacional (somente binarias). Nenhum registry fetch e feito.
 // QUANT / RESEARCH PLATFORM (fora do hot path; nao executa nada).
 const { ResearchLab } = await import('./research-lab/api.mjs');

@@ -16,7 +16,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { EventEmitter } from "node:events";
-import { nextOperationalExpiryAt } from "./execution/binary300.mjs";
+import { nextOperationalExpiryAt, OPERATIONAL_EXPIRY_SECONDS } from "./execution/binary300.mjs";
 import { IqWsClient, IqWsError, IQ_WS_CANDIDATE_HOSTS, CANDLE_SIZE_SECONDS, classifyBalances, computeExpiration, normalizeCandle, parseSettlement, toEpochMs, EXPECTED_EURUSD_ACTIVE_ID_FROM_REPO, EXPECTED_EURUSD_OTC_ACTIVE_ID_FROM_REPO } from "./iqoption-ws.mjs";
 import { buildFeatureContext, freshnessGate } from "./feature-engine.mjs";
 import { executionGate, applyBrokerAcknowledgement, compareSettlement, ExecutionArmState, IdempotencyStore, KillSwitch, MAX_PRACTICE_STAKE_BRL } from "./iqoption-connector.mjs";
@@ -59,6 +59,11 @@ import { ConsensusRunner } from "./consensus/runner.mjs";
 import { LabRunner } from "./lab/runner.mjs";
 import { runAgentGraph, agentGraphToStrategyResult, AGENTIC_STRATEGY_ID } from "./agents/graph.mjs";
 import { RuntimeIntelligence } from "./intelligence/runtime-adapter.mjs";
+import { HYDRATION_PENDING } from "./intelligence/asset-pipeline.mjs";
+import { CandleStore } from "./intelligence/candle-store.mjs";
+import { SinglePath } from "./execution/single-path.mjs";
+import { IntelligenceDispatch } from "./execution/intelligence-dispatch.mjs";
+import { loadOperationalStrategy } from "./execution/operational-strategy.mjs";
 import { SafetyShadow, parseSafetyLevels, SAFETY_SHADOW_RUN_ID } from "./agents/safety-shadow.mjs";
 import { CandlesArchive } from "./candles-archive.mjs";
 import { customStrategyById, evaluateCustomStrategies, CUSTOM_STRATEGIES } from "./agents/custom-strategies.mjs";
@@ -119,7 +124,6 @@ export class IqMultiRuntime extends EventEmitter {
     this.agentVariant = "";
     this.agentFilters = null;
     this.agentCustomStrategy = null;
-    this.agentExpirySeconds = 300;
     try {
       this.safetyShadow = agenticEnabled === true ? new SafetyShadow({ pool, now: this.now, log: this.log, levels: parseSafetyLevels(agenticShadowLevels ?? "50"), entryOffsetMs: 31_500, entryToleranceMs: 500, candles: (marketKey, limit) => this.candlesBatch([marketKey], limit) }) : null;
     } catch (error) { this.safetyShadow = null; this.#safe(() => this.log("SAFETY_SHADOW_INIT_FAIL", String(error?.message ?? error).slice(0, 140))); }
@@ -143,10 +147,36 @@ export class IqMultiRuntime extends EventEmitter {
     this.secondBrain = new SecondBrainAdapter({ log: this.log });
     this.assetIntelligence = null;
     this.assetIntelligenceError = null;
+    this.intelligenceDispatch = null;
+    this.operationalStrategy = loadOperationalStrategy();
+    this.candleStore = new CandleStore({ pool, now: this.now, log: this.log });
+    this.singlePath = new SinglePath({ now: this.now });
     try {
-      this.assetIntelligence = new RuntimeIntelligence({ now: this.now, strategy: { version: "PULLBACK_4060_300_AGENTIC_V2", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: null } });
+      this.assetIntelligence = new RuntimeIntelligence({ now: this.now, strategy: this.operationalStrategy, loader: (marketKey) => this.candleStore.loadRecent(marketKey) });
+      this.intelligenceDispatch = new IntelligenceDispatch({
+        intelligence: this.assetIntelligence,
+        singlePath: this.singlePath,
+        strategy: this.operationalStrategy,
+        requestOrder: (input) => this.requestOrder(input),
+        killSwitchEngaged: () => this.killSwitch.status().executionEnabled !== true,
+        accountMode: () => (this.config.mode === "REAL" ? ACCOUNT_REAL : ACCOUNT_PRACTICE),
+        realArmed: () => this.armState.armed === true && this.accountContext.context === ACCOUNT_REAL && this.accountContext.armed === true,
+        accountContext: () => ({ mode: this.accountContext.context }),
+        serverTimeMs: () => { const value = this.client?.serverNow?.(); return Number.isFinite(Number(value)) ? Number(value) : null; },
+        marketStateFor: (marketKey) => {
+          const ctx = this.markets.get(marketKey);
+          if (!ctx) return { tradable: false, purchaseStatus: "UNAVAILABLE" };
+          const tradable = ctx.marketType === "OTC" && ctx.enabled === true && ctx.paused !== true && ctx.availability === "OPEN" && ctx.activeId !== null;
+          const payoutKnown = ctx.payout !== null && ctx.payout !== undefined;
+          const purchaseStatus = ctx.availability === "OPEN" && (!payoutKnown || Number(ctx.payout) > 0) ? "AVAILABLE" : "UNAVAILABLE";
+          return { tradable, purchaseStatus };
+        },
+        sourceFor: () => `intelligence:${this.operationalStrategy?.version ?? "UNKNOWN"}`,
+        log: this.log,
+        now: this.now,
+      });
       void this.assetIntelligence.start().then((report) => { this.#safe(() => this.log("ASSET_INTELLIGENCE_START", JSON.stringify(report ?? {}))); }).catch((error) => { this.assetIntelligenceError = String(error?.message ?? error).slice(0, 140); this.#safe(() => this.log("ASSET_INTELLIGENCE_START_FAIL", this.assetIntelligenceError)); });
-    } catch (error) { this.assetIntelligence = null; this.assetIntelligenceError = String(error?.message ?? error).slice(0, 140); this.#safe(() => this.log("ASSET_INTELLIGENCE_INIT_FAIL", this.assetIntelligenceError)); }
+    } catch (error) { this.assetIntelligence = null; this.intelligenceDispatch = null; this.assetIntelligenceError = String(error?.message ?? error).slice(0, 140); this.#safe(() => this.log("ASSET_INTELLIGENCE_INIT_FAIL", this.assetIntelligenceError)); }
     this.knowledge = new TradingKnowledgeRetriever({ rootDir: path.join(path.dirname(fileURLToPath(import.meta.url)), "knowledge"), secondBrain: this.secondBrain, now, log: this.log });
     this.research = new SetupResearchEngine({ now });
     this.ab = new ABExperiment({ now });
@@ -229,6 +259,7 @@ export class IqMultiRuntime extends EventEmitter {
         void this.#loadPersistedConfig().then(() => {
           // Depois de hidratar: se a config persistida nao tem mercados ativos, aplica o default (com persistencia).
           if (this.configHydrated && !this.activeMarketKeys().length) this.#applyDefaultSelection();
+          this.#ensureIntelligenceHydration();
         }).catch(() => undefined);
       }, 20_000);
       if (typeof this.configHydrationRetry.unref === "function") this.configHydrationRetry.unref();
@@ -388,6 +419,7 @@ export class IqMultiRuntime extends EventEmitter {
       this.#safe(() => this.log("IQ_MULTI_PAYOUT_SUBSCRIBED", "binary-option,turbo-option"));
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_PAYOUT_SUBSCRIBE_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 80))); }
     if (!this.activeMarketKeys().length && this.configHydrated === true) this.#applyDefaultSelection();
+    this.#ensureIntelligenceHydration();
     for (const ctx of this.markets.values()) this.#subscribeCtx(client, ctx);
     // Fontes externas reais ainda nao integradas: registra NO_FEED honesto (nunca inventa noticia/macro).
     this.intelligence.publish("MACRO", { note: "sem integracao externa de macro conectada" }, { source: "none", sourceType: "EXTERNAL", dataQuality: "UNAVAILABLE", status: "NO_FEED" });
@@ -399,18 +431,19 @@ export class IqMultiRuntime extends EventEmitter {
     void this.refreshPeriodPnl();
   }
 
-  /** Default: ativa somente mercados NORMAL disponiveis (nunca troca NORMAL por OTC em silencio).
-   *  OTC so entra se o operador habilitar explicitamente (setMarket) ou via config persistida. */
+  /** Default do produto BINARY OTC ONLY: ativa somente mercados OTC disponiveis (NORMAL nao opera).
+   *  OTC continua explicito via config persistida/setMarket; nunca ha fallback silencioso NORMAL->OTC. */
   #applyDefaultSelection() {
-    const normals = [...this.markets.values()].filter((ctx) => ctx.marketType === "NORMAL" && ctx.availability === "OPEN" && ctx.activeId !== null);
-    const selected = normals.slice(0, this.config.maxActiveMarkets);
+    const otc = [...this.markets.values()].filter((ctx) => ctx.marketType === "OTC" && ctx.availability === "OPEN" && ctx.activeId !== null);
+    const selected = otc.slice(0, this.config.maxActiveMarkets);
     for (const ctx of selected) {
-      try { ctx.enabled = true; ctx.selectionReason = "AUTO_DEFAULT_NORMAL_AVAILABLE"; } catch { /* noop */ }
+      try { ctx.enabled = true; ctx.selectionReason = "AUTO_DEFAULT_OTC_AVAILABLE"; } catch { /* noop */ }
     }
-    this.#safe(() => this.log("IQ_MULTI_DEFAULT_SELECTION", JSON.stringify({ selected: selected.map((ctx) => ctx.marketKey), normalAvailable: normals.length, otcAvailable: [...this.markets.values()].filter((ctx) => ctx.marketType === "OTC" && ctx.availability === "OPEN").length })));
-    this.#emitEvent("markets.default_selection", { selected: selected.map((ctx) => ctx.marketKey), normalAvailable: normals.length });
+    this.#safe(() => this.log("IQ_MULTI_DEFAULT_SELECTION", JSON.stringify({ selected: selected.map((ctx) => ctx.marketKey), otcAvailable: otc.length, normalAvailable: [...this.markets.values()].filter((ctx) => ctx.marketType === "NORMAL" && ctx.availability === "OPEN").length })));
+    this.#emitEvent("markets.default_selection", { selected: selected.map((ctx) => ctx.marketKey), otcAvailable: otc.length });
     void this.#persistConfig();
     for (const ctx of selected) void this.#persistMarket(ctx);
+    this.#ensureIntelligenceHydration();
   }
 
   #applyBalances(msg) {
@@ -509,6 +542,7 @@ export class IqMultiRuntime extends EventEmitter {
     }
     this.#safe(() => this.log("IQ_MULTI_RESOLVED", JSON.stringify({ reason, resolved: this.resolver.resolvedCount(), open: this.marketsOpenCount(), sampleKeys: this.resolver.sampleActiveKeys })));
     this.#emitEvent("markets.resolved", { reason, resolved: this.resolver.resolvedCount() });
+    this.#ensureIntelligenceHydration();
     return changed;
   }
 
@@ -539,6 +573,7 @@ export class IqMultiRuntime extends EventEmitter {
       if (ctx.availability !== "OPEN" || ctx.activeId === null) throw new IqWsError("MARKET_UNAVAILABLE", `${key}:${ctx.availability}`);
       ctx.enabled = true;
       this.#subscribeCtx(this.client, ctx);
+      this.#ensureIntelligenceHydration();
     } else if (next.enabled === false && ctx.enabled) {
       ctx.enabled = false;
       this.#unsubscribeCtx(this.client, ctx);
@@ -1518,28 +1553,23 @@ export class IqMultiRuntime extends EventEmitter {
     return this.consensus.status();
   }
 
-  /** LAB/AGENTIC: PRACTICE executa; REAL entra em DRY-RUN por padrao (monta a ordem, registra, NAO envia).
-   *  Envio real somente com REAL_DRY_RUN=false (autorizacao explicita) e reusa o caminho oficial turbo MCP. */
-  async submitLabPracticeOrder({ marketKey, direction, strategyId, strategyTradeId, stake = null } = {}) {
+  /** PATH_TEST: PRACTICE-only, 300s fixo, testOnly/excludedFromStats. REAL entra em DRY-RUN (nunca envia).
+   *  Nao decide conta (AccountRouter decide); nao tem logica LAB residual. */
+  async submitPathTestOrder({ marketKey, direction, strategyId, strategyTradeId, stake = null } = {}) {
     const mode = String(this.config.mode).toUpperCase();
     if (mode !== "PRACTICE") {
       const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2);
-      // Gasto real SOMENTE com arm explicito da conta REAL pelo operador (front): execucao armada + contexto REAL armado.
-      const realArmed = this.armState.armed === true && this.accountContext.context === ACCOUNT_REAL && this.accountContext.armed === true;
-      const forcedDryRun = process.env.REAL_DRY_RUN === "true";
-      if (!realArmed || forcedDryRun) {
-        const intent = { marketKey, direction, strategyId, strategyTradeId, stake: amount, mode, armed: realArmed, dryRunReason: forcedDryRun ? "REAL_DRY_RUN_ENV" : "REAL_NOT_ARMED", at: this.now() };
-        this.log("REAL_DRY_RUN", JSON.stringify(intent));
-        this.#emitEvent("lab.real_dry_run", intent);
-        return { state: "DRY_RUN", dryRun: true, brokerOrderId: null, executionId: null, requestId: null, stake: amount, mode: "REAL" };
-      }
-      throw new IqWsError("REAL_LEGACY_V2_PATH_DISABLED", "REAL fail-closed: caminho legado V2Live removido na reconstrucao");
+      const intent = { marketKey, direction, strategyId, strategyTradeId, stake: amount, mode, testOnly: true, excludedFromStats: true, dryRunReason: "TEST_PATH_PRACTICE_ONLY", at: this.now() };
+      this.log("PATH_TEST_REAL_DRY_RUN", JSON.stringify(intent));
+      this.#emitEvent("pathtest.real_dry_run", intent);
+      return { state: "DRY_RUN", dryRun: true, brokerOrderId: null, executionId: null, requestId: null, stake: amount, mode: "REAL", testOnly: true, excludedFromStats: true };
     }
-    if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("LAB_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
-    // Desarmado: registra a intencao como DRY_RUN (mede) sem floodar REJECTED nem enviar ordem.
-    if (this.armState.armed !== true) return { state: "DRY_RUN", dryRun: true, dryRunReason: "NOT_ARMED", brokerOrderId: null, executionId: null, stake: Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2), mode: "PRACTICE" };
+    if (this.accountContext.context !== ACCOUNT_PRACTICE) throw new IqWsError("PATH_TEST_PRACTICE_ONLY_CONTEXT", String(this.accountContext.context));
     const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 1);
-    return this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: this.agentExpirySeconds, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "lab:" + strategyId });
+    // Desarmado: registra a intencao como DRY_RUN (mede) sem floodar REJECTED nem enviar ordem.
+    if (this.armState.armed !== true) return { state: "DRY_RUN", dryRun: true, dryRunReason: "NOT_ARMED", brokerOrderId: null, executionId: null, stake: amount, mode: "PRACTICE", testOnly: true, excludedFromStats: true };
+    const order = await this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: OPERATIONAL_EXPIRY_SECONDS, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "pathtest:" + strategyId });
+    return { ...order, testOnly: true, excludedFromStats: true };
   }
 
   /** TESTE PONTA-A-PONTA do pipeline agentic (PRACTICE-only): gatilho RSI simulado -> agentes -> consenso -> IQ Option. */
@@ -1574,7 +1604,7 @@ export class IqMultiRuntime extends EventEmitter {
       if (this.now() > closeAt) return { test: true, marketKey, targetExpiryAt, decision: decision.decision, side: decision.side, reason: "FORA_DA_JANELA_T60_T30", conversation: graph.conversation, order: null };
     }
     const strategyTradeId = "lab:" + this.agentic.runId + ":PATH_TEST:" + marketKey + ":" + targetExpiryAt + ":" + decision.side;
-    const order = await this.submitLabPracticeOrder({ marketKey, direction: decision.side, strategyId: "AGENTIC_PATH_TEST", strategyTradeId, stake: Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2 });
+    const order = await this.submitPathTestOrder({ marketKey, direction: decision.side, strategyId: "AGENTIC_PATH_TEST", strategyTradeId, stake: Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2 });
     await this.agentic.store.reserveSlotWithTrade({
       strategyTradeId, strategyId: this.agentic.strategies[0], strategyVersion: "path-test", marketKey, direction: decision.side,
       stake: Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 2, payout: snapshot.payout ?? null,
@@ -1647,6 +1677,7 @@ export class IqMultiRuntime extends EventEmitter {
       await del("timing", "DELETE FROM iq_timing_policy_observations WHERE ctid IN (SELECT ctid FROM iq_timing_policy_observations WHERE created_at < now() - interval '48 hours' LIMIT 20000)");
       await del("trades", "DELETE FROM iq_lab_trades WHERE ctid IN (SELECT ctid FROM iq_lab_trades WHERE entry_at < now() - interval '3 days' LIMIT 20000)");
       await del("executions", "DELETE FROM iq_executions WHERE ctid IN (SELECT ctid FROM iq_executions WHERE requested_at < now() - interval '35 days' LIMIT 20000)");
+      out.candles5s = await (this.candleStore?.prune?.() ?? Promise.resolve(0));
       const parts = (await this.pool.query("SELECT tablename FROM pg_tables WHERE tablename LIKE 'iq_audit_trail_%'").catch(() => ({ rows: [] }))).rows ?? [];
       const dropAuditOlderThan = async (days) => { let n = 0; for (const p of parts) { const m = String(p.tablename).match(/^iq_audit_trail_(\d{4})(\d{2})(\d{2})$/); if (!m) continue; const day = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])); if (day < Date.now() - days * 86_400_000) { const r = await this.pool.query("DROP TABLE IF EXISTS " + p.tablename).catch(() => null); if (r) n += 1; } } return n; };
       out.auditDropped = await dropAuditOlderThan(1);
@@ -1728,8 +1759,8 @@ export class IqMultiRuntime extends EventEmitter {
 
   agentConfigState() { return { safetyPct: this.agentSafetyPct, variant: this.agentVariant || String(this.agentSafetyPct), filters: this.agentFilters ?? null, binaryExec: this.agentExecBinary === true, shadowLevels: this.safetyShadow ? this.safetyShadow.levels.map((spec) => spec.label) : [], shadowRunId: SAFETY_SHADOW_RUN_ID, fromEnv: this.agentSafetyFromEnv === true, autoArmPractice: this.autoArmPractice === true }; }
   async setAgentExec({ binary = null } = {}) { if (binary !== null) this.agentExecBinary = binary === true; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET binary_exec_enabled=$1, updated_at=now() WHERE id=1", [this.agentExecBinary]).catch(() => undefined); this.#safe(() => this.log("AGENT_EXEC_SET", JSON.stringify({ binary: this.agentExecBinary }))); return this.agentConfigState(); }
-  async setAgentVariant(variant) { const custom = customStrategyById(variant); if (custom) { this.agentCustomStrategy = custom; this.agentVariant = custom.id; this.agentFilters = null; this.agentExpirySeconds = custom.expirySeconds; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, updated_at=now() WHERE id=1", [this.agentSafetyPct, custom.id]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_SET", JSON.stringify({ variant: custom.id }))); return this.agentConfigState(); }
-    const raw = String(variant ?? "").trim().toUpperCase(); const match = raw.match(/^(\d{1,3})\s*([A-Z]{0,4})$/); if (!match) throw new IqWsError("AGENT_VARIANT_INVALID", raw.slice(0, 20)); const safety = Math.max(0, Math.min(100, Math.round(Number(match[1])))); const v = match[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S"), candle: v.includes("C") } : null; this.agentCustomStrategy = null; this.agentSafetyPct = safety; this.agentSafetyFromEnv = false; this.agentVariant = String(safety) + v; this.agentFilters = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze || filters.candle) ? filters : null; this.agentExpirySeconds = 60; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, updated_at=now() WHERE id=1", [safety, this.agentVariant]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_SET", JSON.stringify({ variant: this.agentVariant }))); return this.agentConfigState(); }
+  async setAgentVariant(variant) { const custom = customStrategyById(variant); if (custom) { this.agentCustomStrategy = custom; this.agentVariant = custom.id; this.agentFilters = null; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, updated_at=now() WHERE id=1", [this.agentSafetyPct, custom.id]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_SET", JSON.stringify({ variant: custom.id }))); return this.agentConfigState(); }
+    const raw = String(variant ?? "").trim().toUpperCase(); const match = raw.match(/^(\d{1,3})\s*([A-Z]{0,4})$/); if (!match) throw new IqWsError("AGENT_VARIANT_INVALID", raw.slice(0, 20)); const safety = Math.max(0, Math.min(100, Math.round(Number(match[1])))); const v = match[2] || ""; const filters = v ? { confirmation: v.includes("F"), stochastic: v.includes("T"), noSqueeze: v.includes("S"), candle: v.includes("C") } : null; this.agentCustomStrategy = null; this.agentSafetyPct = safety; this.agentSafetyFromEnv = false; this.agentVariant = String(safety) + v; this.agentFilters = filters && (filters.confirmation || filters.stochastic || filters.noSqueeze || filters.candle) ? filters : null; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, updated_at=now() WHERE id=1", [safety, this.agentVariant]).catch(() => undefined); this.#safe(() => this.log("AGENT_VARIANT_SET", JSON.stringify({ variant: this.agentVariant }))); return this.agentConfigState(); }
   async setAgentSafetyPct(pct) { const value = Math.round(Number(pct)); if (!Number.isFinite(value) || value < 0 || value > 100) throw new IqWsError("AGENT_SAFETY_INVALID", String(pct)); this.agentSafetyPct = value; this.agentSafetyFromEnv = false; this.agentVariant = String(value); this.agentFilters = null; if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET safety_pct=$1, active_variant=$2, updated_at=now() WHERE id=1", [value, this.agentVariant]).catch(() => undefined); this.#safe(() => this.log("AGENT_SAFETY_SET", JSON.stringify({ safetyPct: value }))); return this.agentConfigState(); }
   async setShadowLevels(levels) { const parsed = parseSafetyLevels(levels); if (!parsed.length) throw new IqWsError("AGENT_SHADOW_LEVELS_INVALID", String(levels)); const labels = parsed.map((spec) => spec.label); this.safetyShadow?.setLevels(labels); if (this.pool?.query) await this.pool.query("UPDATE iq_agent_config SET shadow_levels=$1, updated_at=now() WHERE id=1", [labels.join(",")]).catch(() => undefined); return this.agentConfigState(); }
   async safetyShadowReport(hours = 6) { return this.safetyShadow ? this.safetyShadow.report(hours) : { version: "safety-shadow-v1", runId: SAFETY_SHADOW_RUN_ID, levels: [], activeLevels: [] }; }
@@ -1788,6 +1819,7 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   #observeRsiAgentsV2LiveTicks() {
+    void this.pumpIntelligenceDecisions();
     if (this.rsiAgentsV2Live?.enabled !== true && this.consensus?.enabled !== true && this.agentic?.enabled !== true) return;
     const now = this.now();
     this.#pollMcpBinarySettlements();
@@ -2949,11 +2981,47 @@ export class IqMultiRuntime extends EventEmitter {
       const open = Number(raw.open ?? raw.o); const high = Number(raw.high ?? raw.h);
       const low = Number(raw.low ?? raw.l); const close = Number(raw.close ?? raw.c);
       if (![at, open, high, low, close].every(Number.isFinite) || at <= 0) return;
-      this.assetIntelligence.onClosedCandle(ctx.marketKey, { at: at < 1_000_000_000_000 ? at * 1000 : at, open, high, low, close });
+      const candle = { at: at < 1_000_000_000_000 ? at * 1000 : at, open, high, low, close };
+      const result = this.assetIntelligence.onClosedCandle(ctx.marketKey, candle);
+      if (result?.processed === true) {
+        this.candleStore?.record(ctx.marketKey, candle);
+        void this.pumpIntelligenceDecisions();
+      }
     } catch (error) { this.#safe(() => this.log("PIPE_FEED_FAIL", String(error?.message ?? error).slice(0, 120))); }
   }
 
-  intelligenceStatus() { return { assetIntelligence: (this.assetIntelligence?.health?.() ?? { intelligenceReady: false, degraded: true, initError: this.assetIntelligenceError ?? "NOT_INSTANTIATED", assetsTotal: 0, assetsReady: 0, assetsPartial: 0, assetsFailed: 0, lastPipelineUpdateAt: null }), version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS], feeds: this.feeds.status(), knowledge: this.knowledge.status(), secondBrain: this.secondBrain.status(), brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION }; }
+  /** Caminho unico: decisao READY+BUY/SELL -> SinglePath (Revalidation->Binary300Timing->Gate->Router) -> requestOrder. */
+  async pumpIntelligenceDecisions() {
+    if (!this.intelligenceDispatch) return null;
+    try {
+      const summary = await this.intelligenceDispatch.dispatchOnce();
+      if (summary.submitted.length) this.#safe(() => this.log("INTELLIGENCE_SUBMITTED", JSON.stringify(summary.submitted)));
+      else if (summary.denied.length) this.#safe(() => this.log("INTELLIGENCE_DENIED", JSON.stringify(summary.denied.slice(0, 4))));
+      return summary;
+    } catch (error) {
+      this.#safe(() => this.log("INTELLIGENCE_DISPATCH_FAIL", String(error?.message ?? error).slice(0, 140)));
+      return null;
+    }
+  }
+
+  /** Hidrata a inteligencia dos ativos OTC habilitados que ainda estao PENDING (uma vez por ativo). */
+  #ensureIntelligenceHydration() {
+    if (!this.assetIntelligence) return null;
+    const pending = [...this.markets.values()]
+      .filter((ctx) => ctx.marketType === "OTC" && ctx.enabled === true)
+      .map((ctx) => ctx.marketKey)
+      .filter((marketKey) => { const pipeline = this.assetIntelligence.registry.get(marketKey); return !pipeline || pipeline.hydration === HYDRATION_PENDING; });
+    if (!pending.length) return null;
+    void this.assetIntelligence.start(pending).then((report) => {
+      this.#safe(() => this.log("ASSET_INTELLIGENCE_HYDRATE", JSON.stringify({ requested: pending.length, ready: report?.ready ?? 0, partial: report?.partial ?? 0, failed: report?.failed ?? 0 })));
+    }).catch((error) => {
+      this.assetIntelligenceError = String(error?.message ?? error).slice(0, 140);
+      this.#safe(() => this.log("ASSET_INTELLIGENCE_HYDRATE_FAIL", this.assetIntelligenceError));
+    });
+    return pending;
+  }
+
+  intelligenceStatus() { return { assetIntelligence: (this.assetIntelligence?.health?.() ?? { intelligenceReady: false, degraded: true, initError: this.assetIntelligenceError ?? "NOT_INSTANTIATED", assetsTotal: 0, assetsReady: 0, assetsPartial: 0, assetsFailed: 0, lastPipelineUpdateAt: null }), strategy: { version: this.operationalStrategy?.version ?? null, status: this.operationalStrategy?.status ?? "UNAVAILABLE", executable: this.operationalStrategy?.executable === true, strategyHash: this.operationalStrategy?.strategyHash ?? null }, dispatch: (this.intelligenceDispatch?.status?.() ?? { wired: false, counters: null }), candleStore: (this.candleStore?.status?.() ?? { ready: false }), version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS], feeds: this.feeds.status(), knowledge: this.knowledge.status(), secondBrain: this.secondBrain.status(), brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION }; }
 
   /** Publica itens externos reais (nunca inventados; item sem publishedAt nao entra). */
   #applyExternalItems(kind, items) {
@@ -3266,25 +3334,19 @@ export class IqMultiRuntime extends EventEmitter {
       practiceOnly: String(this.config.mode).toUpperCase() === "PRACTICE",
       singleGate: "runtime.requestOrder (Execution Gate unico)",
       sources: [
-        row("agent-v4:RSI_REVERSAL_V4:RSI_REVERSAL_V4", "RSI_REVERSAL_V4:<marketKey>", "RSI_REVERSAL_V4"),
-        row("agent-v3:RSI_REVERSAL_PULLBACK_V3:RSI_REVERSAL_PULLBACK_V3", "RSI_REVERSAL_PULLBACK_V3:<marketKey>", "RSI_REVERSAL_PULLBACK_V3"),
+        row("intelligence:PULLBACK_4060_300_AGENTIC_V2", null, "PULLBACK_4060_300_AGENTIC_V2"),
+        row("pathtest:AGENTIC_PATH_TEST", null, "AGENTIC_PATH_TEST"),
+        row("ui:smoke", null, "UI_SMOKE"),
         row("agent-v2:RSI_REVERSAL_STRICT_V2:RSI_REVERSAL_STRICT_V2", "RSI_REVERSAL_STRICT_V2:<marketKey>", "RSI_REVERSAL_STRICT_V2"),
-        row("agent-v2:RSI_EXTREME_PULLBACK_V2:RSI_EXTREME_PULLBACK_V2", "RSI_EXTREME_PULLBACK_V2:<marketKey>", "RSI_EXTREME_PULLBACK_V2"),
-        row("agent:RSI_REVERSAL_STRICT:RSI_REVERSAL_STRICT_V1", null, "RSI_REVERSAL_STRICT_V1"),
-        row("agent:RSI_EXTREME_PULLBACK:RSI_EXTREME_PULLBACK_V1", null, "RSI_EXTREME_PULLBACK_V1"),
         row("AUTO_DECISION", "trader:<marketKey>", `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`),
-        row("DIAGNOSTIC_SIGNAL", "trader:<marketKey>", `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`),
         row("MANUAL", null, null),
-        row("INFRA_PROBE", null, "INFRA_PROBE"),
         row("experiment:RSI_REVERSAL_CONFLUENCE_V1", null, "RSI_REVERSAL_CONFLUENCE_V1"),
-        row("experiment:RSI_STRICT_PULLBACK_2X2_V1", null, "RSI_STRICT_PULLBACK_2X2_V1"),
-        row("experiment:PRACTICE_FOUR_WAY_3X_TEST_V1", null, "PRACTICE_FOUR_WAY_3X_TEST_V1"),
         row("experiment:INDICATOR_5M_V1", null, "INDICATOR_5M_V1"),
       ],
     };
   }
 
-  async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = 60, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false } = {}) {
+  async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = OPERATIONAL_EXPIRY_SECONDS, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false } = {}) {
     // Trava UNICA: qualquer ordem exige o interruptor de Binarios ligado (Blitz extinto).
     if (this.agentExecBinary !== true) throw new IqWsError("BINARY_EXEC_DISABLED");
     const routing = this.#executionRouting(source);

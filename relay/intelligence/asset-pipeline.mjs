@@ -37,6 +37,8 @@ export class AssetPipeline {
     this.hydration = HYDRATION_PENDING;
     this.hydrationDetail = { loaded: 0, at: null, reason: null, coverageMs: 0, intervalMs: null, observations: 0, gapRatio: 0, future: 0, rejected: 0 };
     this.readiness = null;
+    this.readinessOptions = { expectedIntervalMs: OPERATIONAL_CANDLE_INTERVAL_MS, maxAgeMs: MAX_CONTEXT_AGE_MS, minObservations: MIN_CONTEXT_OBSERVATIONS };
+    this.intervalIncompatible = false;
     this.features = null;
     this.specialists = null;
     this.consensus = null;
@@ -50,6 +52,8 @@ export class AssetPipeline {
   get observable() { return this.hydration !== HYDRATION_FAILED && this.ctx.candles.length >= this.minCandles; }
 
   hydrate(candles = [], { expectedIntervalMs = OPERATIONAL_CANDLE_INTERVAL_MS, maxAgeMs = MAX_CONTEXT_AGE_MS, minObservations = MIN_CONTEXT_OBSERVATIONS } = {}) {
+    this.readinessOptions = { expectedIntervalMs, maxAgeMs, minObservations };
+    this.intervalIncompatible = false;
     try {
       const list = Array.isArray(candles) ? candles : [];
       if (!list.length) {
@@ -74,6 +78,7 @@ export class AssetPipeline {
         rejected: readiness.rejectedInvalid + readiness.rejectedOutOfOrder,
       };
       if (future > 0) { this.hydration = HYDRATION_FAILED; this.hydrationDetail.reason = "FUTURE_CANDLES"; return this.hydration; }
+      if (readiness.reason === "INTERVAL_INCOMPATIBLE") this.intervalIncompatible = true;
       this.hydration = readiness.status === "READY" ? HYDRATION_READY : readiness.status === "PARTIAL" ? HYDRATION_PARTIAL : HYDRATION_FAILED;
       if (this.ready) this.#recompute();
       return this.hydration;
@@ -86,8 +91,26 @@ export class AssetPipeline {
 
   onCandle(candle) {
     if (!this.ctx.ingest(candle)) return null;
-    if (!this.ready) return null;
+    if (!this.ready) {
+      this.#reassess();
+      if (!this.ready) return null;
+    }
     return this.#recompute();
+  }
+
+  #reassess() {
+    if (this.ready || this.intervalIncompatible) return false;
+    if (this.hydrationDetail.reason === "FUTURE_CANDLES") return false;
+    const readiness = this.ctx.assessReadiness(this.readinessOptions);
+    this.readiness = readiness;
+    this.hydrationDetail = { ...this.hydrationDetail, at: this.now(), reason: readiness.reason, coverageMs: readiness.coverageMs, intervalMs: readiness.intervalMs, observations: readiness.observations, gapRatio: readiness.gapRatio };
+    if (readiness.status !== "READY") {
+      this.hydration = readiness.status === "PARTIAL" ? HYDRATION_PARTIAL : HYDRATION_FAILED;
+      return false;
+    }
+    this.hydration = HYDRATION_READY;
+    this.hydrationDetail.reason = null;
+    return true;
   }
 
   evaluate(features = null) {

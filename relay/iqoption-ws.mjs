@@ -265,6 +265,11 @@ export function computeExpiration(serverTimestampSeconds, durationMinutes) {
   const duration = Math.max(1, Math.round(Number(durationMinutes) || 1));
   const nowSec = Math.floor(Number(serverTimestampSeconds));
   if (!Number.isFinite(nowSec) || nowSec <= 0) throw new IqWsError("SERVER_TIME_REQUIRED");
+  // 300s operacional: expiracao ESTRITA no bucket de 5 minutos (mesma autoridade do Binary300Timing).
+  if (duration === 5) {
+    const expiration = (Math.floor(nowSec / 300) + 1) * 300;
+    return { expiration, optionTypeId: 3, optionKind: "turbo", durationMinutes: 5, reference: "tracecom/binary300-bucket" };
+  }
   let expDateSec = Math.floor(nowSec / 60) * 60;
   const nextMinute = expDateSec + 60;
   if (nextMinute - nowSec > 30) expDateSec = nextMinute; else expDateSec = nextMinute + 60;

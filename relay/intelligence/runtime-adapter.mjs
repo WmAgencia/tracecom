@@ -6,13 +6,13 @@ export const FEED_OK = "OK";
 export const FEED_STALE = "STALE";
 
 export class RuntimeIntelligence {
-  constructor({ now = () => Date.now(), loader = null, strategy = null, expectedIntervalMs = 5000, feedStaleMs = 30_000, seenLimit = 4096 } = {}) {
+  constructor({ now = () => Date.now(), loader = null, strategy = null, expectedIntervalMs = 5000, feedStaleMs = 30_000, seenLimit = 4096, hydrationOptions = null } = {}) {
     this.now = now;
     this.expectedIntervalMs = expectedIntervalMs;
     this.feedStaleMs = feedStaleMs;
     this.seenLimit = seenLimit;
     this.strategy = strategy;
-    this.registry = new PipelineRegistry({ now, loader });
+    this.registry = new PipelineRegistry({ now, loader, hydrationOptions });
     this.seen = new Set();
     this.lastClosedByAsset = new Map();
     this.lastPipelineUpdateAt = null;

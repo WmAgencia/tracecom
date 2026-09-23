@@ -53,7 +53,7 @@ try {
   const leak = (snapFuture.recentCandles ?? []).some((c) => c.bucketEnd > now) || (snapFuture.provenance?.closedCandles ?? 0) > (snapshot.provenance?.closedCandles ?? 0);
   check(2, "sem future-data leak", leak === false, `closed=${snapFuture.provenance?.closedCandles}`);
 
-  const fakeRuntime = { config: { mode: "PRACTICE", defaultStake: 2 }, accountContext: { context: "PRACTICE" }, submitLabPracticeOrder: async () => ({ state: "ACKNOWLEDGED", brokerOrderId: "T1", executionId: "E1" }) };
+  const fakeRuntime = { config: { mode: "PRACTICE", defaultStake: 2 }, accountContext: { context: "PRACTICE" }, submitPathTestOrder: async () => ({ state: "ACKNOWLEDGED", brokerOrderId: "T1", executionId: "E1" }) };
   const runnerA = new LabRunner({ runtime: fakeRuntime, pool: null, enabled: true, runId });
   runnerA.started = true;
   await runnerA.observeMarket({ snapshot, marketKey: "TEST:OTC", targetExpiryAt: now + 20_000, payout: 80 });
@@ -81,7 +81,7 @@ try {
   realRunner.started = true;
   await realRunner.observeMarket({ snapshot, marketKey: "TEST:OTC", targetExpiryAt: now + 20_000 });
   const rtSrc = fs.readFileSync(new URL("../relay/iq-multi-runtime.mjs", import.meta.url), "utf8");
-  check(8, "avaliacao roda em REAL; gasto real so com arm (dry-run desarmado)", realRunner.counters.blockedReal === 0 && rtSrc.includes("REAL_NOT_ARMED"), `blockedReal=${realRunner.counters.blockedReal}`);
+  check(8, "avaliacao roda em REAL; gasto real so com arm (dry-run desarmado)", realRunner.counters.blockedReal === 0 && rtSrc.includes("TEST_PATH_PRACTICE_ONLY"), `blockedReal=${realRunner.counters.blockedReal}`);
 
   await store.releaseReservation(LAB_STRATEGY_IDS[0]);
   await store.releaseReservation(LAB_STRATEGY_IDS[1]);
@@ -119,7 +119,7 @@ try {
   await runnerCut.observeMarket({ snapshot, marketKey: "TEST:OTC", targetExpiryAt: now + 3_000, payout: 80 });
   check(17, "safe cutoff continua funcionando", runnerCut.counters.missed >= 1 && runnerCut.counters.submits === before, `missed=${runnerCut.counters.missed}`);
 
-  const rejectRunner = new LabRunner({ runtime: { config: { mode: "PRACTICE", defaultStake: 2 }, accountContext: { context: "PRACTICE" }, submitLabPracticeOrder: async () => { throw Object.assign(new Error("not armed"), { code: "EXECUTION_NOT_ARMED" }); } }, pool, enabled: true, runId });
+  const rejectRunner = new LabRunner({ runtime: { config: { mode: "PRACTICE", defaultStake: 2 }, accountContext: { context: "PRACTICE" }, submitPathTestOrder: async () => { throw Object.assign(new Error("not armed"), { code: "EXECUTION_NOT_ARMED" }); } }, pool, enabled: true, runId });
   rejectRunner.started = true;
   await rejectRunner.observeMarket({ snapshot, marketKey: "TEST:OTC", targetExpiryAt: Date.now() + 20_000, payout: 80 });
   check(18, "Execution Gate continua funcionando (rejeicao devolve slot)", rejectRunner.counters.rejected >= 1, `rejected=${rejectRunner.counters.rejected}`);

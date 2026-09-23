@@ -143,7 +143,7 @@ export class LabRunner {
       let order = null;
       try {
         order = await Promise.race([
-          this.runtime.submitLabPracticeOrder({ marketKey, direction: result.side, strategyId: result.strategyId, strategyTradeId, stake: this.stake }),
+          this.runtime.submitPathTestOrder({ marketKey, direction: result.side, strategyId: result.strategyId, strategyTradeId, stake: this.stake }),
           sleep(SUBMIT_TIMEOUT_MS).then(() => ({ __timeout: true })),
         ]);
       } catch (error) {
