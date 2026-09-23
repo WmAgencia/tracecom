@@ -5,7 +5,7 @@ import { loadOperationalStrategy } from "../relay/execution/operational-strategy
 
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
-const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
+const sha256 = (value) => crypto.createHash("sha256").update(String(value).replace(/\r\n/g, "\n")).digest("hex");
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
 const computed = computeStrategyHash({ manifest });
@@ -20,7 +20,7 @@ ok("manifesto referencia parent/baseline e sourceCommit do codigo", manifest.par
 ok("manifesto nao tem campo de confidence/percentual de certeza", !Object.keys(manifest).some((k) => /confidence|certeza/i.test(k)) && manifest.stats.winRate === null);
 
 const baselineSpec = JSON.parse(fs.readFileSync(`${BASELINE_DIR}/spec.json`, "utf8"));
-const baselineFile = `sha256:${sha256(fs.readFileSync(`${BASELINE_DIR}/custom-strategies.mjs`))}`;
+const baselineFile = `sha256:${sha256(fs.readFileSync(`${BASELINE_DIR}/custom-strategies.mjs`, "utf8"))}`;
 ok("baseline congelada intacta (hash do arquivo == parentStrategyHash)", baselineFile === manifest.parentStrategyHash && baselineSpec.strategyHash === manifest.parentStrategyHash);
 
 ok("hash cobre somente semantica de decisao (sem frontend/CSS/deploy/logs)", DECISION_FILES.length === 7 && DECISION_FILES.every((f) => f.startsWith("relay/intelligence/") || f === "relay/execution/binary300.mjs") && !DECISION_FILES.some((f) => /public|http|dist|css|deploy|log/i.test(f)));

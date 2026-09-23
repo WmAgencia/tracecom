@@ -15,7 +15,7 @@ import { computeFeatures, deepFreeze } from "../relay/intelligence/features.mjs"
 let pass = 0; let fail = 0;
 const ok = (name, condition, detail = "") => { if (condition) { pass += 1; console.log(`PASS ${name}`); } else { fail += 1; console.log(`FAIL ${name}${detail ? " :: " + detail : ""}`); } };
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
-const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
+const sha256 = (value) => crypto.createHash("sha256").update(String(value).replace(/\r\n/g, "\n")).digest("hex");
 const NOW = 1_800_000_000_000;
 const runtime = read("relay/iq-multi-runtime.mjs");
 const server = read("relay/server.mjs");

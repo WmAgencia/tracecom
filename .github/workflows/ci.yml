@@ -17,6 +17,8 @@ jobs:
           node-version: 22
       - name: Install
         run: (npm ci || npm install)
+      - name: Install relay deps
+        run: cd relay && (npm install --omit=dev)
       - name: Typecheck + build
         run: npm run build
       - name: Node syntax check (runtime critico)

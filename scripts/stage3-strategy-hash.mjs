@@ -25,7 +25,8 @@ export const DECISION_FILES = Object.freeze([
 ]);
 
 const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
-const fileHash = (relative) => `sha256:${sha256(fs.readFileSync(path.join(ROOT, relative)))}`;
+const normalized = (value) => String(value).replace(/\r\n/g, "\n");
+const fileHash = (relative) => `sha256:${sha256(normalized(fs.readFileSync(path.join(ROOT, relative), "utf8")))}`;
 
 export function strategyPolicy({ overrides = {} } = {}) {
   return {
@@ -50,7 +51,7 @@ export function computeStrategyHash({ overrides = {}, manifest = null } = {}) {
   const source = manifest ?? JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
   const baselineSpec = JSON.parse(fs.readFileSync(path.join(BASELINE_DIR, "spec.json"), "utf8"));
   const files = Object.fromEntries(DECISION_FILES.map((relative) => [relative, fileHash(relative)]));
-  const baselineFile = `sha256:${sha256(fs.readFileSync(path.join(BASELINE_DIR, "custom-strategies.mjs")))}`;
+  const baselineFile = `sha256:${sha256(normalized(fs.readFileSync(path.join(BASELINE_DIR, "custom-strategies.mjs"), "utf8")))}`;
   const body = {
     strategyVersion: "PULLBACK_4060_300_AGENTIC_V2",
     parent: source.parent,
@@ -73,7 +74,7 @@ export function updateManifest({ sourceCommit = null } = {}) {
     strategyHash,
     newStrategyHash: strategyHash,
     newStrategyHashNote: "hash deterministico de asset-context/features/specialists/consensus/decision-snapshot/asset-pipeline + policy 300s/5s/3h + baseline congelada; sem frontend/CSS/deploy/logs",
-    sourceCommit,
+    sourceCommit: sourceCommit ?? manifest.sourceCommit ?? null,
     createdAt: manifest.createdAt,
     statsEpoch: manifest.statsEpoch,
     operationalExpirySeconds: policy.operationalExpirySeconds,
