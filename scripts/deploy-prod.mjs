@@ -75,6 +75,13 @@ if (!flags.has("--skip-relay")) {
     fs.mkdirSync(path.join(RELAY_DEPLOY_DIR, dir), { recursive: true });
     fs.cpSync(path.join(ROOT, "relay", dir), path.join(RELAY_DEPLOY_DIR, dir), { recursive: true });
   }
+  // Manifesto da estrategia operacional: o runtime le no boot (status ACTIVE/READY_FOR_DEPLOY).
+  const manifestSource = path.join(ROOT, "estrategias", "strategy-versions");
+  if (fs.existsSync(manifestSource)) {
+    const manifestTarget = path.join(RELAY_DEPLOY_DIR, "estrategias", "strategy-versions");
+    fs.mkdirSync(manifestTarget, { recursive: true });
+    for (const file of fs.readdirSync(manifestSource).filter((name) => name.endsWith(".json"))) fs.copyFileSync(path.join(manifestSource, file), path.join(manifestTarget, file));
+  }
   assertRailwayOrAbort();
   run("npx", ["@railway/cli", "up", "-d", "-s", "tracecom-live-relay"], { cwd: RELAY_DEPLOY_DIR, shell: process.platform === "win32" });
 }

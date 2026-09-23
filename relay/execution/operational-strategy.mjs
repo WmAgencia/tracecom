@@ -8,21 +8,34 @@ export const STRATEGY_STATUS_READY_FOR_DEPLOY = "READY_FOR_DEPLOY";
 
 const normalizeStatus = (value) => String(value ?? "").trim().split(/[\s\u2014-]+/)[0].toUpperCase();
 
-export function loadOperationalStrategy({ rootDir = null, manifestPath = OPERATIONAL_MANIFEST_PATH } = {}) {
-  try {
-    const root = rootDir ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-    const file = path.isAbsolute(manifestPath) ? manifestPath : path.join(root, manifestPath);
-    const manifest = JSON.parse(fs.readFileSync(file, "utf8"));
-    const strategyHash = manifest.newStrategyHash ?? manifest.strategyHash ?? null;
-    const status = normalizeStatus(manifest.status);
-    return Object.freeze({
-      version: manifest.strategyVersion ?? null,
-      status,
-      executable: status === STRATEGY_STATUS_ACTIVE && typeof strategyHash === "string" && strategyHash.length > 0,
-      strategyHash: typeof strategyHash === "string" && strategyHash.length > 0 ? strategyHash : null,
-      manifest,
-    });
-  } catch (error) {
-    return Object.freeze({ version: null, status: "UNAVAILABLE", executable: false, strategyHash: null, error: String(error?.message ?? error).slice(0, 140) });
+/** Candidatos: layout do repo (relay/..), deploy do relay (manifesto copiado para o dir do relay) e cwd. */
+function manifestCandidates(rootDir, manifestPath) {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const roots = rootDir ? [rootDir] : [path.resolve(here, "..", ".."), here, process.cwd()];
+  const list = [];
+  for (const root of roots) {
+    list.push(path.isAbsolute(manifestPath) ? manifestPath : path.join(root, manifestPath));
+    list.push(path.join(root, path.basename(manifestPath)));
   }
+  return [...new Set(list)];
+}
+
+export function loadOperationalStrategy({ rootDir = null, manifestPath = OPERATIONAL_MANIFEST_PATH } = {}) {
+  let lastError = null;
+  for (const file of manifestCandidates(rootDir, manifestPath)) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(file, "utf8"));
+      const strategyHash = manifest.newStrategyHash ?? manifest.strategyHash ?? null;
+      const status = normalizeStatus(manifest.status);
+      return Object.freeze({
+        version: manifest.strategyVersion ?? null,
+        status,
+        executable: status === STRATEGY_STATUS_ACTIVE && typeof strategyHash === "string" && strategyHash.length > 0,
+        strategyHash: typeof strategyHash === "string" && strategyHash.length > 0 ? strategyHash : null,
+        manifestPath: file,
+        manifest,
+      });
+    } catch (error) { lastError = error; }
+  }
+  return Object.freeze({ version: null, status: "UNAVAILABLE", executable: false, strategyHash: null, manifestPath: null, error: String(lastError?.message ?? lastError).slice(0, 140) });
 }

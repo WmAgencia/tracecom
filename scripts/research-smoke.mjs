@@ -26,7 +26,6 @@ const CHECKS = [
   "/api/iq/research/lab/checkpoints",
   "/api/iq/research/lab/jobs",
   "/api/iq/research/lab/comparison",
-  "/api/iq/research/scenario-shadow",
   "/api/iq/quality",
   "/research/index.html",
 ];

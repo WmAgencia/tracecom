@@ -1,4 +1,6 @@
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import crypto from "node:crypto";
 import { computeStrategyHash, strategyPolicy, DECISION_FILES, MANIFEST_PATH, BASELINE_DIR } from "./stage3-strategy-hash.mjs";
 import { loadOperationalStrategy } from "../relay/execution/operational-strategy.mjs";
@@ -29,6 +31,19 @@ ok("policy do hash reflete as constantes reais (300/5000/3h)", strategyPolicy().
 
 const strategy = loadOperationalStrategy();
 ok("loader do runtime le READY_FOR_DEPLOY com hash definido e executavel=false", strategy.status === "READY_FOR_DEPLOY" && strategy.executable === false && strategy.strategyHash === manifest.strategyHash && strategy.version === "PULLBACK_4060_300_AGENTIC_V2");
+
+{
+  const deployRoot = fs.mkdtempSync(path.join(os.tmpdir(), "tracecom-manifest-"));
+  fs.mkdirSync(path.join(deployRoot, "estrategias", "strategy-versions"), { recursive: true });
+  fs.copyFileSync(MANIFEST_PATH, path.join(deployRoot, "estrategias", "strategy-versions", "PULLBACK_4060_300_AGENTIC_V2.json"));
+  const nested = loadOperationalStrategy({ rootDir: deployRoot });
+  const flatRoot = fs.mkdtempSync(path.join(os.tmpdir(), "tracecom-manifest-flat-"));
+  fs.copyFileSync(MANIFEST_PATH, path.join(flatRoot, "PULLBACK_4060_300_AGENTIC_V2.json"));
+  const flat = loadOperationalStrategy({ rootDir: flatRoot });
+  ok("loader encontra o manifesto no layout de deploy (nested e flat)", nested.status === "READY_FOR_DEPLOY" && nested.strategyHash === manifest.strategyHash && flat.status === "READY_FOR_DEPLOY" && flat.strategyHash === manifest.strategyHash);
+  fs.rmSync(deployRoot, { recursive: true, force: true });
+  fs.rmSync(flatRoot, { recursive: true, force: true });
+}
 
 console.log(fail === 0 ? `STRATEGY_HASH_TESTS ALL_PASS (${pass}/${pass})` : `STRATEGY_HASH_TESTS FAIL (${fail})`);
 process.exit(fail === 0 ? 0 : 1);
