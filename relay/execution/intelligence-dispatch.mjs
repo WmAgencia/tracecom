@@ -94,6 +94,15 @@ export class IntelligenceDispatch {
         horizonSeconds: OPERATIONAL_EXPIRY_SECONDS,
         source: this.sourceFor ? this.sourceFor(marketKey) : `intelligence:${this.strategy?.version ?? "UNKNOWN"}`,
         entryTiming: { targetExpiryAt: first.timing.expiryAt, targetExpirySec: Math.round(first.timing.expiryAt / 1000), revalidatedAt: first.revalidation?.at ?? this.now() },
+        operational: {
+          strategyVersion: item.decision.strategyVersion ?? this.strategy?.version ?? null,
+          strategyHash: item.decision.strategyHash ?? this.strategy?.strategyHash ?? null,
+          statsEpoch: this.strategy?.statsEpoch ?? this.strategy?.manifest?.statsEpoch ?? null,
+          snapshotHash: snapshotId,
+          decisionSnapshot: item.snapshot,
+          testOnly: false,
+          excludedFromStats: false,
+        },
       });
     } catch (caught) {
       error = String(caught?.code ?? caught?.message ?? caught).slice(0, 160);

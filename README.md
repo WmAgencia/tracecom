@@ -1,5 +1,18 @@
 # TRACECON
 
+## Operação reconstruída (2026-09-22) — Binary OTC 300s
+
+A operação do relay foi reconstruída para **UM único caminho**:
+
+- **BINARY OTC only** · **300 segundos only** (bucket de 5 min) · **candle nativo 5s da IQ** · **contexto de até 3h por ativo**.
+- **Uma inteligência:** AssetContext → FeatureEngine (1x por atualização) → 5 especialistas (RSI, DMI/ADX, Bollinger, ATR, PriceAction) → Consensus **BUY/SELL/WAIT sem confidence** → DecisionSnapshot imutável.
+- **Um caminho de execução:** DecisionSnapshot → Revalidation → Binary300Timing → ExecutionGate → AccountRouter (PRACTICE/REAL) → `requestOrder` (fronteira única de broker).
+- **PRACTICE e REAL usam a mesma inteligência**; a conta é escolhida só no router. REAL é fail-closed e fica **desarmado após deploy**.
+- **Sem Blitz**, sem runners antigos, sem auto-tuning. `PULLBACK_4060_300_AGENTIC_V2` (`sha256:3e9364e2...`, manifesto em `estrategias/strategy-versions/`) é a única estratégia operacional; baseline congelada em `archive/baseline/PULLBACK_4060_300_BASELINE/`.
+- Testes/invariantes: `node scripts/run-all-tests.mjs` (suítes + invariantes + smoke). CI em `.github/workflows/ci.yml`.
+
+Detalhes de estratégia/configuração: `docs/ESTRATEGIA-E-CONFIGURACAO.md`. Estado/handoff: `AGENTS.md`.
+
 Sistema de **inteligência e análise de mercado** — não é corretora. Não executa
 ordens, não custodia dinheiro, não fabrica dados. Investiga um cenário antes de
 concluir e pode responder **WAIT** quando não há evidências suficientes.

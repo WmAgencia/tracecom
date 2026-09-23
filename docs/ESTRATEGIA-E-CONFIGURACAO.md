@@ -1,57 +1,55 @@
 # TraceCom — Estratégia ativa e configuração (checkpoint vivo)
 
-> **Este documento é o "cofre" da configuração que está funcionando.** Sempre que algo for
-> alterado no sistema, atualizar aqui primeiro e gerar um novo backup (`scripts/backup-config.mjs`).
-> Última atualização: **2026-09-21 22:05 UTC** · commit `13f803d` · tag `checkpoint-2026-09-21-agentic-safety`.
+> **Este documento é o "cofre" da configuração que está valendo.** Sempre que algo for alterado
+> no sistema, atualizar aqui primeiro e gerar um novo backup (`scripts/backup-config.mjs`).
+> Última atualização: **2026-09-22** — reconstrução controlada (binário OTC 300s, V2 agentic).
 
-## 1. Estratégia ativa — AGENTIC RSI + FIBONACCI (Binário OTC)
+## 1. Estratégia ativa — PULLBACK_4060_300_AGENTIC_V2 (Binary OTC 300s)
 
-**Arquitetura:** 5 agentes especialistas + 1 consenso senior, todos sobre o MESMO snapshot imutável:
+**Escopo único do produto:** BINARY OTC, expiração de 300 segundos (bucket de 5 minutos), candle nativo de 5s da IQ, contexto de até 3h por ativo.
 
 | Camada | Arquivo | Papel |
 |---|---|---|
-| Agentes | `relay/agents/rsi.agent.mjs`, `bollinger.agent.mjs`, `adx.agent.mjs`, `atr.agent.mjs`, `fib.agent.mjs` | opiniões estruturadas (sem LLM no hot path) |
-| Consenso | `relay/agents/consensus.agent.mjs` | síntese semântica (nunca votação) → BUY/SELL/WAIT |
-| Grafo | `relay/agents/graph.mjs` | orquestra os 5 agentes + consenso (1 snapshot → 1 decisão) |
-| Medidor A/B | `relay/agents/safety-shadow.mjs` | trades de papel liquidados pelo feed, por nível/variante |
+| Asset Context | `relay/intelligence/asset-context.mjs` | 3h time-based, pivôs causais, HH/HL/LH/LL, BOS/CHoCH, zonas, pullback |
+| Feature Engine | `relay/intelligence/features.mjs` | 1 computação por atualização (RSI14, DMI/ADX14, Bollinger20/2, ATR, Price Action) |
+| 5 Especialistas | `relay/intelligence/specialists.mjs` | RSI, DMI/ADX, Bollinger, ATR, PriceAction — todos com o MESMO AssetContext/FeatureSnapshot |
+| Consensus | `relay/intelligence/consensus.mjs` | BUY/SELL/WAIT + thesis/blockers/invalidations (sem confidence) |
+| Decision Snapshot | `relay/intelligence/decision-snapshot.mjs` | deep-freeze + hash SHA256 determinístico (300s obrigatório; WAIT recusado) |
+| Asset Pipeline | `relay/intelligence/asset-pipeline.mjs` | por ativo: hydration PENDING/READY/PARTIAL/FAILED; WAIT nunca gera snapshot |
+| Runtime Adapter | `relay/intelligence/runtime-adapter.mjs` | UMA inteligência por runtime; dedup de candle fechado; health |
+| Caminho único | `relay/execution/single-path.mjs` | DecisionSnapshot → Revalidation → Binary300Timing → ExecutionGate → AccountRouter |
+| Timing | `relay/execution/binary300.mjs` | `OPERATIONAL_EXPIRY_SECONDS=300`; bucket de 5 min; deadline -5s; fail-closed |
+| Gate | `relay/execution/execution-gate.mjs` | status != ACTIVE → DENY; researchOnly → DENY; BINARY only; REAL fail-closed |
+| Roteador | `relay/execution/account-router.mjs` | PRACTICE/REAL decididos SOMENTE aqui; mesma decisão/fingerprint |
+| Dispatch | `relay/execution/intelligence-dispatch.mjs` | decisions() → SinglePath → requestOrder (fronteira única de broker) |
+| Persistência 5s | `relay/intelligence/candle-store.mjs` + migration 051 | candles nativos 5s (asset+interval+at), retenção 3h30, hydration cross-restart |
 
-**Regras de entrada (o que está valendo):**
-1. Gatilho: RSI(14) em 5s toca **≥70 (SELL) / ≤30 (BUY)**.
-2. Confluência obrigatória: qualidade do RSI (divergência / failure swing / crossback) **+** ADX a favor **+** ATR vivo **+** localização (Bollinger com rejeição/range **ou** Fibonacci com reação na zona).
-3. **Vetos sempre ativos:** `MOVIMENTO_CONSTANTE_CONTRA` (movimento contínuo contra a tese: ≥72% dos candles, pullback ≤0,6×ATR, ≥1,2×ATR, ADX ≥30 subindo), `SEM_CONFIRMACAO_REVERSAO`*, `STOCH_SEM_EXTREMO`*, `SQUEEZE_SEM_REVERSAO`* (*ativos quando ligados no nível/variante), `FIB_LEG_INCOMPATIVEL`, `ATR_MERCADO_MORTO/CLIMATICO`, `BOLLINGER_WALK_CONTRA`, `ADX_TENDENCIA_ANTIGA_FORTALECENDO`, `RSI_EXTREMO_ACELERANDO`, `FIB_ZONE_BROKEN`.
-4. **Segurança (0–100%)**: 100% = todos os vetos valem (rígido). Abaixo disso o consenso passa a tolerar vetos fracos na ordem: Fib leg → Fib zona → ATR climático → ADX antigo → RSI acelerando → ATR morto → Bollinger walk.
-   - **Valor em produção: 50%** (destrava o "Bollinger walk", mantendo o resto).
-5. **Janela de entrada: T-34s .. T-31,5s** antes do vencimento (3–4s antes do corte do broker em T-30) — a análise roda em tempo real desde o gatilho; a ordem sai o mais tarde possível.
-6. Execução: 1 ordem por vez, stake do painel, **PRACTICE** (real só com arm explícito do operador).
+**Regras de entrada da V2:**
+1. Estrutura UPTREND/DOWNTREND confirmada por swings; pullback SHALLOW/NORMAL ativo.
+2. RSI em zona LOW/OVERSOLD (BUY) ou HIGH/OVERBOUGHT (SELL); DMI/ADX a favor; ATR operável.
+3. Zero blockers (ADX_RANGE, ATR_EXPANDING, ATR_DEAD, STRUCTURE_THREATENING, CHOCH_AGAINST).
+4. Saída apenas BUY/SELL/WAIT — nunca percentual de confiança.
+5. Execução: 1 ordem por ativo, stake do painel, PRACTICE; REAL somente com arm explícito do operador (após deploy: `realArmed=false`).
 
-**Nomes das estratégias no painel (seletor):** Rigida 100/90/80/70 · **Base 50%** · Base + Confirmacao (CF) · Base + Stochastic (ST) · Base + Sem Squeeze (SQ) · Confirmacao + Stochastic · Completa (CF+ST+SQ). O seletor mostra WR, ritmo (entradas/h) e margem; a ATIVA fica no topo.
+**Identidade da V2 (congelada por código):**
+- `strategyHash`: `sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0`
+- Manifesto: `estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V2.json` (status `READY_FOR_DEPLOY`; só vira `ACTIVE` na Etapa 6)
+- Parent (baseline congelada): `PULLBACK_4060_300_BASELINE` — `sha256:26dceb743b3f0d88a6bea10bf8646deb836236e3a7de91702bd323289438b3dd` (`archive/baseline/`)
+- statsEpoch da V2: `2026-09-22T21:53:19.302Z` (N=0/W=0/L=0/D=0 até a primeira operação estratégica)
 
-**Execucao (2026-09-22):** cap das runs = 1000 (nao travam mais em 50) · janela dos binarios T-50s..T-31,5s · Blitz 45s com limite de 6 ordens/min (rate limit do MCP) e liquidacao pelo FEED (close no vencimento vs entrada) · interruptores de execucao (binario/blitz) SOMENTE no dashboard · contadores e estado das runs zerados pela epoca.
+## 2. Configuração operacional (runtime)
 
-**Auto-recuperacao:** `AUTO_ARM_PRACTICE=true` re-arma sozinho (pratica) · watchdog de avaliacao (re-agenda ticks; se persistir, reconecta o WS) · sweeper de execucoes presas (libera o lock de 1 ordem) · stake resolvido no momento da ordem (config do painel).
+- **Modo:** PRACTICE · conta REAL desarmada por padrão (fail-closed)
+- **Expiração:** 300s única (`OPERATIONAL_EXPIRY_SECONDS`); 30/45/60/150/180 não têm capacidade de submit
+- **Candle:** 5s nativo (`CANDLE_SIZE_SECONDS=5`); intervalo esperado 5000ms
+- **Contexto:** 3h time-based (`MAX_CONTEXT_AGE_MS=10800000`)
+- **Readiness:** min 25 observações, intervalo compatível (±50%), cobertura ≥ 3h−1 intervalo, gap ≤ 10× intervalo, gapRatio ≤ 2%
+- **Broker:** `requestOrder` é a única fronteira; allowlist `OPERATIONAL_V2_PLUS_TEST_PATHS` (operacional `intelligence:*` + testes `pathtest:*`/`ui:smoke`/`agent-v2:*` PRACTICE-only)
+- **Blitz:** extinto (capacidade zero)
+- **Auto-tuning:** proibido — qualquer mudança futura = V3 + novo strategyHash + novo statsEpoch
 
-**Níveis do medidor A/B (mesma entrada, lado a lado):** `50` (base) · `50F` (+confirmação de candle) · `50T` (+Stochastic 14,3,3 no extremo) · `50FT` · `50S` (+sem squeeze) · `50FTS` · e os níveis 100/90/80/70 para referência.
+## 3. Medição
 
-## 2. Configuração em produção (snapshot)
-
-- **Modo:** PRACTICE · auto_execute: true · stake default: 1 · arm: ARM_PRACTICE (R$ 2)
-- **Segurança dos agentes:** **50%** · níveis A/B: `100,90,80,70,50,50F,50FT,50FTS,50S,50T`
-- **Run agentic:** `agentic-rsi-fib-20260921` (cap 50) · 30 OTC habilitados (Binary OTC only)
-- **Contadores zerados desde:** 2026-09-21T16:53:38Z (`iq_perf_epoch`)
-- **MCP oficial:** configurado (turbo; token fora do backup) · endpoint `turbo-options.mcp.iqoption.com`
-- **Desempenho desde o deploy 21:33Z (stake 1):** 10 ops · 9 WIN · 1 DRAW · 0 LOSS · **+7,38** (WR 100% dos decididos)
-
-## 3. Infra
-
-- Relay: `https://tracecom-live-relay-production-4e43.up.railway.app` (Railway, service `tracecom-live-relay`)
-- Front: `https://tracecom.consecom.com.br` (Vercel, projeto `tracecom`)
-- DB: Supabase (free) — **manter < 475 MB**; retenção automática de 24h em `iq_lab_decisions` + `VACUUM FULL` quando > 300 MB (`runDbMaintenance`).
-- Backups: `scripts/backup-config.mjs` (gera zip sem segredos) · `scripts/restore-config.mjs` (dry-run/aplica).
-
-## 4. O que NÃO pode regredir
-
-1. Janela de entrada T-34..T-31,5s (entrada tardia).
-2. Segurança 50% e os vetos duros (constância, walk, fib, ATR).
-3. Execução só em PRACTICE até decisão explícita de real.
-4. Retenção/limpeza do banco (nunca deixar passar de ~475 MB).
-5. Este documento + backup atualizado a cada mudança.
+- Estatísticas da V2 separadas: `GET /api/iq/strategy/stats?version=PULLBACK_4060_300_AGENTIC_V2` (exclui `excluded_from_stats=true`)
+- PATH_TEST (`testOnly=true`, `excludedFromStats=true`) nunca entra em estatística
+- Baseline mantém histórico próprio em `archive/baseline/PULLBACK_4060_300_BASELINE/stats-snapshot.json`

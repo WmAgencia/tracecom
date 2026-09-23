@@ -1568,7 +1568,7 @@ export class IqMultiRuntime extends EventEmitter {
     const amount = Number(stake) > 0 ? Number(stake) : (Number(this.config?.defaultStake) > 0 ? Number(this.config.defaultStake) : 1);
     // Desarmado: registra a intencao como DRY_RUN (mede) sem floodar REJECTED nem enviar ordem.
     if (this.armState.armed !== true) return { state: "DRY_RUN", dryRun: true, dryRunReason: "NOT_ARMED", brokerOrderId: null, executionId: null, stake: amount, mode: "PRACTICE", testOnly: true, excludedFromStats: true };
-    const order = await this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: OPERATIONAL_EXPIRY_SECONDS, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "pathtest:" + strategyId });
+    const order = await this.requestOrder({ marketKey, direction: direction === "SELL" ? "SELL" : "BUY", stake: amount, horizonSeconds: OPERATIONAL_EXPIRY_SECONDS, decisionId: strategyTradeId, idempotencyKey: strategyTradeId, source: "pathtest:" + strategyId, operational: { strategyVersion: "PATH_TEST", strategyHash: null, statsEpoch: null, snapshotHash: null, decisionSnapshot: null, testOnly: true, excludedFromStats: true } });
     return { ...order, testOnly: true, excludedFromStats: true };
   }
 
@@ -3023,6 +3023,69 @@ export class IqMultiRuntime extends EventEmitter {
 
   intelligenceStatus() { return { assetIntelligence: (this.assetIntelligence?.health?.() ?? { intelligenceReady: false, degraded: true, initError: this.assetIntelligenceError ?? "NOT_INSTANTIATED", assetsTotal: 0, assetsReady: 0, assetsPartial: 0, assetsFailed: 0, lastPipelineUpdateAt: null }), strategy: { version: this.operationalStrategy?.version ?? null, status: this.operationalStrategy?.status ?? "UNAVAILABLE", executable: this.operationalStrategy?.executable === true, strategyHash: this.operationalStrategy?.strategyHash ?? null }, dispatch: (this.intelligenceDispatch?.status?.() ?? { wired: false, counters: null }), candleStore: (this.candleStore?.status?.() ?? { ready: false }), version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS], feeds: this.feeds.status(), knowledge: this.knowledge.status(), secondBrain: this.secondBrain.status(), brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION }; }
 
+  /** View operacional por ativo (GRID/LOG): productState do backend + AnalysisState (WAIT observavel). */
+  intelligenceAssets() {
+    const strategy = { version: this.operationalStrategy?.version ?? null, status: this.operationalStrategy?.status ?? "UNAVAILABLE", executable: this.operationalStrategy?.executable === true, strategyHash: this.operationalStrategy?.strategyHash ?? null };
+    if (!this.assetIntelligence) return { assets: [], strategy, dispatch: null, candleStore: this.candleStore?.status?.() ?? null, health: { state: "NOT_READY", intelligenceReady: false } };
+    const rows = [];
+    const seen = new Set();
+    for (const status of this.assetIntelligence.registry.status()) {
+      seen.add(status.marketKey);
+      const ctx = this.markets.get(status.marketKey);
+      const enabled = ctx?.enabled === true && ctx?.paused !== true;
+      const payoutKnown = ctx?.payout !== null && ctx?.payout !== undefined;
+      const purchaseStatus = ctx?.availability === "OPEN" && (!payoutKnown || Number(ctx.payout) > 0) ? "AVAILABLE" : "UNAVAILABLE";
+      const pipeline = this.assetIntelligence.registry.get(status.marketKey);
+      rows.push({
+        marketKey: status.marketKey,
+        enabled,
+        marketType: ctx?.marketType ?? "OTC",
+        availability: ctx?.availability ?? null,
+        payout: ctx?.payout ?? null,
+        productState: this.assetIntelligence.productStateFor(status.marketKey, { enabled, purchaseStatus }),
+        hydration: status.hydration,
+        hydrationReason: status.hydrationReason,
+        feedStatus: this.assetIntelligence.feedStatusFor(status.marketKey),
+        consensusSide: status.consensusSide,
+        candles: status.candles,
+        coverageMs: status.coverageMs,
+        intervalMs: status.intervalMs,
+        gapRatio: status.gapRatio,
+        featuresVersion: status.featuresVersion,
+        featuresAt: status.featuresAt,
+        lastSnapshotId: status.lastSnapshotId,
+        analysis: pipeline?.analysisState?.() ?? null,
+      });
+    }
+    for (const ctx of this.markets.values()) {
+      if (ctx.marketType !== "OTC" || ctx.enabled !== true || seen.has(ctx.marketKey)) continue;
+      const payoutKnown = ctx.payout !== null && ctx.payout !== undefined;
+      rows.push({ marketKey: ctx.marketKey, enabled: true, marketType: "OTC", availability: ctx.availability ?? null, payout: ctx.payout ?? null, productState: this.assetIntelligence.productStateFor(ctx.marketKey, { enabled: true, purchaseStatus: ctx.availability === "OPEN" && (!payoutKnown || Number(ctx.payout) > 0) ? "AVAILABLE" : "UNAVAILABLE" }), hydration: "HYDRATION_PENDING", hydrationReason: "PENDING_HYDRATION", feedStatus: this.assetIntelligence.feedStatusFor(ctx.marketKey), consensusSide: null, candles: 0, coverageMs: 0, intervalMs: null, gapRatio: 0, featuresVersion: null, featuresAt: null, lastSnapshotId: null, analysis: null });
+    }
+    return { assets: rows.sort((a, b) => String(a.marketKey).localeCompare(String(b.marketKey))), strategy, dispatch: this.intelligenceDispatch?.status?.() ?? null, candleStore: this.candleStore?.status?.() ?? null, health: this.assetIntelligence.health() };
+  }
+
+  /** Estatisticas por strategyVersion (V2 separada da baseline; PATH_TEST/REPLAY excluidos). */
+  async strategyStats(strategyVersion, { days = 30 } = {}) {
+    const empty = { strategyVersion: strategyVersion ?? null, operations: 0, wins: 0, losses: 0, draws: 0, pnl: 0, winRate: null, days: Math.max(1, Math.min(365, Number(days) || 30)) };
+    if (!this.pool?.query || !strategyVersion) return empty;
+    const rows = (await this.pool.query("SELECT broker_result, profit FROM iq_executions WHERE strategy_version=$1 AND excluded_from_stats=false AND state='SETTLED' AND requested_at >= now() - make_interval(days => $2::int)", [String(strategyVersion), empty.days]).catch(() => ({ rows: [] }))).rows ?? [];
+    const out = { ...empty };
+    for (const row of rows) {
+      const result = String(row.broker_result ?? "").toUpperCase();
+      if (result !== "WIN" && result !== "LOSS" && result !== "DRAW") continue;
+      out.operations += 1;
+      if (result === "WIN") out.wins += 1;
+      else if (result === "LOSS") out.losses += 1;
+      else out.draws += 1;
+      out.pnl += Number(row.profit ?? 0) || 0;
+    }
+    const settled = out.wins + out.losses;
+    out.winRate = settled > 0 ? Math.round((100 * out.wins / settled) * 10) / 10 : null;
+    out.pnl = Math.round(out.pnl * 100) / 100;
+    return out;
+  }
+
   /** Publica itens externos reais (nunca inventados; item sem publishedAt nao entra). */
   #applyExternalItems(kind, items) {
     let applied = 0;
@@ -3346,7 +3409,7 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
-  async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = OPERATIONAL_EXPIRY_SECONDS, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false } = {}) {
+  async requestOrder({ marketKey: key, direction, stake = null, decisionId = null, horizonSeconds = OPERATIONAL_EXPIRY_SECONDS, idempotencyKey = null, source = "MANUAL", autoDisarmAfterAck = false, decisionAgeMs = 0, entryTiming = null, infraProbe = false, operational = null } = {}) {
     // Trava UNICA: qualquer ordem exige o interruptor de Binarios ligado (Blitz extinto).
     if (this.agentExecBinary !== true) throw new IqWsError("BINARY_EXEC_DISABLED");
     const routing = this.#executionRouting(source);
@@ -3442,6 +3505,7 @@ export class IqMultiRuntime extends EventEmitter {
       entryPrice, requestedAt: this.now(), connectionId: this.connection?.connectionId ?? null, autoDisarmAfterAck: autoDisarmAfterAck === true, source, ackResolved: false, settling: false,
       correlationId: ctx.agents?.correlationId ?? `corr_exec_${record.executionId}`,
       infraProbe: infraProbe === true,
+      operational: operational ? { strategyVersion: operational.strategyVersion ?? null, strategyHash: operational.strategyHash ?? null, statsEpoch: operational.statsEpoch ?? null, snapshotHash: operational.snapshotHash ?? null, decisionSnapshot: operational.decisionSnapshot ?? null, testOnly: operational.testOnly === true, excludedFromStats: operational.excludedFromStats === true } : (entryTiming?.pathTest === true ? { strategyVersion: "PATH_TEST", strategyHash: null, statsEpoch: null, snapshotHash: null, decisionSnapshot: null, testOnly: true, excludedFromStats: true } : null),
       entryTiming: entryTiming ? { candidateId: entryTiming.candidateId, targetEntryAt: entryTiming.targetEntryAt, targetExpiryAt: entryTiming.targetExpiryAt, targetExpirySec: Number(entryTiming.targetExpirySec ?? Math.round(entryTiming.targetExpiryAt / 1000)), submitAt: entryTiming.submitAt, submitAtMs, entryLeadMs: entryTiming.entryLeadMs, revalidatedAt: entryTiming.revalidatedAt, candidateChangedBeforeEntry: entryTiming.candidateChangedBeforeEntry === true, shadowArms: entryTiming.shadowArms ?? null, t0Snapshot: entryTiming.t0Snapshot ?? entryTiming.initialSnapshot ?? null, shadowObservationId: entryTiming.shadowObservationId ?? null, directionChanges: (entryTiming.changedFields ?? []).filter((change) => change.field === "action").length } : null,
     };
     this.#auditRecord(pending.correlationId, key, "ORDER_SENT", { executionId: record.executionId, direction: directionWire, stake: finalStake, requestedStake: resolvedStake.requestedStake, stakeSource: resolvedStake.source, mode, source, expiration: expiration.expiration, optionKind: expiration.optionKind, candidateId: entryTiming?.candidateId ?? null, targetEntryAt: entryTiming?.targetEntryAt ?? null, submitAtMs, entryLeadMs: entryTiming?.entryLeadMs ?? null }, { persist: true });
@@ -3451,7 +3515,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.#setAgent(ctx, "ORDERING", source);
     this.#emitEvent("order.pending", { marketKey: key, direction: directionWire, stake: finalStake, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, mode, expirationSec: expiration.expiration, source, ...this.#executionMeta({ source, marketKey: key }) });
     const persistStartedAt = this.now();
-    await this.#persistExecution({ executionId: record.executionId, idempotencyKey: requestedKey, decisionId: record.payload?.decisionId ?? decisionId ?? null, marketKey: key, mode, accountContext: orderContext, connectionId: pending.connectionId, accountType: mode, brokerOrderId: null, symbol: ctx.display, activeId: ctx.activeId, direction: directionWire, stake: finalStake, currency: mode === "REAL" ? this.account.real.currency : this.account.practice.currency, state: "REQUESTED", requestId: requestedKey, expirationAt: nowIso(expiration.expiration * 1000), entryPrice, payout: ctx.payout, optionKind: expiration.optionKind, meta: { source, infraProbe: infraProbe === true, excludedFromStats: infraProbe === true, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, setup: brainSetup.setup, strategyVariantId: null, strategySource: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, entryTiming: pending.entryTiming ? { candidateId: pending.entryTiming.candidateId, targetEntryAt: pending.entryTiming.targetEntryAt, targetExpiryAt: pending.entryTiming.targetExpiryAt, submitAt: pending.entryTiming.submitAt, submitAtMs, entryLeadMs: pending.entryTiming.entryLeadMs, revalidatedAt: pending.entryTiming.revalidatedAt, candidateChangedBeforeEntry: pending.entryTiming.candidateChangedBeforeEntry } : null } });
+    await this.#persistExecution({ executionId: record.executionId, idempotencyKey: requestedKey, decisionId: record.payload?.decisionId ?? decisionId ?? null, marketKey: key, mode, accountContext: orderContext, connectionId: pending.connectionId, accountType: mode, brokerOrderId: null, symbol: ctx.display, activeId: ctx.activeId, direction: directionWire, stake: finalStake, currency: mode === "REAL" ? this.account.real.currency : this.account.practice.currency, state: "REQUESTED", requestId: requestedKey, expirationAt: nowIso(expiration.expiration * 1000), entryPrice, payout: ctx.payout, optionKind: expiration.optionKind, strategyVersion: pending.operational?.strategyVersion ?? null, strategyHash: pending.operational?.strategyHash ?? null, statsEpoch: pending.operational?.statsEpoch ?? null, snapshotHash: pending.operational?.snapshotHash ?? null, decisionSnapshot: pending.operational?.decisionSnapshot ?? null, testOnly: pending.operational?.testOnly === true || infraProbe === true, excludedFromStats: pending.operational?.excludedFromStats === true || infraProbe === true, meta: { source, infraProbe: infraProbe === true, excludedFromStats: infraProbe === true, stakeRequested: resolvedStake.requestedStake, stakeSource: resolvedStake.source, stakeAdjustment: resolvedStake.adjustment, setup: brainSetup.setup, strategyVariantId: null, strategySource: pending.operational?.strategyVersion ?? `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, entryTiming: pending.entryTiming ? { candidateId: pending.entryTiming.candidateId, targetEntryAt: pending.entryTiming.targetEntryAt, targetExpiryAt: pending.entryTiming.targetExpiryAt, submitAt: pending.entryTiming.submitAt, submitAtMs, entryLeadMs: pending.entryTiming.entryLeadMs, revalidatedAt: pending.entryTiming.revalidatedAt, candidateChangedBeforeEntry: pending.entryTiming.candidateChangedBeforeEntry } : null } });
     this.#recordLatency(ctx, "dbPersist", Math.max(0, this.now() - persistStartedAt));
     try {
       const balanceId = mode === "REAL" ? this.account.real.balanceId : this.account.practice.balanceId;
@@ -3893,14 +3957,14 @@ export class IqMultiRuntime extends EventEmitter {
     try {
       if (!await this.#ensureDb()) { this.#recordPersistResult("execution", false, { code: "DB_UNAVAILABLE", message: "execution persistence unavailable (db not ready)" }); return false; }
       const updated = await this.pool.query(
-        `UPDATE iq_executions SET idempotency_key=COALESCE($2,idempotency_key), decision_id=COALESCE($3,decision_id), market_key=COALESCE($4,market_key), mode=COALESCE($5,mode), connection_id=COALESCE($6,connection_id), account_type=COALESCE($7,account_type), broker_order_id=COALESCE($8,broker_order_id), symbol=COALESCE($9,symbol), active_id=COALESCE($10,active_id), direction=COALESCE($11,direction), stake=COALESCE($12,stake), currency=COALESCE($13,currency), state=$14, request_id=COALESCE($15,request_id), expiration_at=COALESCE($16,expiration_at), entry_price=COALESCE($17,entry_price), acked_at=COALESCE($18,acked_at), settled_at=COALESCE($19,settled_at), broker_result=COALESCE($20,broker_result), causal_result=COALESCE($21,causal_result), settlement_mismatch=($22 OR settlement_mismatch), profit=COALESCE($23,profit), error=COALESCE($24,error), payout=COALESCE($25,payout), option_kind=COALESCE($26,option_kind), meta=COALESCE(iq_executions.meta,'{}'::jsonb) || COALESCE($27::jsonb,'{}'::jsonb), account_context=COALESCE($28,account_context), updated_at=now() WHERE execution_id=$1`,
-        [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.marketKey ?? null, row.mode ?? null, row.connectionId ?? null, row.accountType ?? null, row.brokerOrderId ?? null, row.symbol ?? null, row.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, row.payout ?? null, row.optionKind ?? null, row.meta ? JSON.stringify(row.meta) : null, row.accountContext ?? (row.mode === "REAL" ? ACCOUNT_REAL : null)],
+        `UPDATE iq_executions SET idempotency_key=COALESCE($2,idempotency_key), decision_id=COALESCE($3,decision_id), market_key=COALESCE($4,market_key), mode=COALESCE($5,mode), connection_id=COALESCE($6,connection_id), account_type=COALESCE($7,account_type), broker_order_id=COALESCE($8,broker_order_id), symbol=COALESCE($9,symbol), active_id=COALESCE($10,active_id), direction=COALESCE($11,direction), stake=COALESCE($12,stake), currency=COALESCE($13,currency), state=$14, request_id=COALESCE($15,request_id), expiration_at=COALESCE($16,expiration_at), entry_price=COALESCE($17,entry_price), acked_at=COALESCE($18,acked_at), settled_at=COALESCE($19,settled_at), broker_result=COALESCE($20,broker_result), causal_result=COALESCE($21,causal_result), settlement_mismatch=($22 OR settlement_mismatch), profit=COALESCE($23,profit), error=COALESCE($24,error), payout=COALESCE($25,payout), option_kind=COALESCE($26,option_kind), meta=COALESCE(iq_executions.meta,'{}'::jsonb) || COALESCE($27::jsonb,'{}'::jsonb), account_context=COALESCE($28,account_context), strategy_version=COALESCE($29,strategy_version), strategy_hash=COALESCE($30,strategy_hash), stats_epoch=COALESCE($31,stats_epoch), snapshot_hash=COALESCE($32,snapshot_hash), decision_snapshot=COALESCE($33::jsonb,decision_snapshot), test_only=($34 OR test_only), excluded_from_stats=($35 OR excluded_from_stats), updated_at=now() WHERE execution_id=$1`,
+        [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.marketKey ?? null, row.mode ?? null, row.connectionId ?? null, row.accountType ?? null, row.brokerOrderId ?? null, row.symbol ?? null, row.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, row.payout ?? null, row.optionKind ?? null, row.meta ? JSON.stringify(row.meta) : null, row.accountContext ?? (row.mode === "REAL" ? ACCOUNT_REAL : null), row.strategyVersion ?? null, row.strategyHash ?? null, row.statsEpoch ?? null, row.snapshotHash ?? null, row.decisionSnapshot ? JSON.stringify(row.decisionSnapshot) : null, row.testOnly === true, row.excludedFromStats === true],
       );
       if ((updated.rowCount ?? 0) === 0) {
         await this.pool.query(
-          `INSERT INTO iq_executions(execution_id,idempotency_key,decision_id,market_key,mode,connection_id,account_type,broker_order_id,symbol,active_id,direction,stake,currency,state,request_id,expiration_at,entry_price,acked_at,settled_at,broker_result,causal_result,settlement_mismatch,profit,error,payout,option_kind,meta,account_context,requested_at,updated_at)
-           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,now(),now())`,
-          [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.marketKey ?? null, row.mode ?? "PRACTICE", row.connectionId ?? null, row.accountType ?? "PRACTICE", row.brokerOrderId ?? null, row.symbol ?? null, row.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, row.payout ?? null, row.optionKind ?? null, row.meta ? JSON.stringify(row.meta) : JSON.stringify({}), row.accountContext ?? (row.mode === "REAL" ? ACCOUNT_REAL : ACCOUNT_PRACTICE)],
+          `INSERT INTO iq_executions(execution_id,idempotency_key,decision_id,market_key,mode,connection_id,account_type,broker_order_id,symbol,active_id,direction,stake,currency,state,request_id,expiration_at,entry_price,acked_at,settled_at,broker_result,causal_result,settlement_mismatch,profit,error,payout,option_kind,meta,account_context,strategy_version,strategy_hash,stats_epoch,snapshot_hash,decision_snapshot,test_only,excluded_from_stats,requested_at,updated_at)
+           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33::jsonb,$34,$35,now(),now())`,
+          [row.executionId, row.idempotencyKey ?? null, row.decisionId ?? null, row.marketKey ?? null, row.mode ?? "PRACTICE", row.connectionId ?? null, row.accountType ?? "PRACTICE", row.brokerOrderId ?? null, row.symbol ?? null, row.activeId ?? null, row.direction ?? null, row.stake ?? null, row.currency ?? null, row.state, row.requestId ?? null, row.expirationAt ?? null, row.entryPrice ?? null, row.ackedAt ?? null, row.settledAt ?? null, row.brokerResult ?? null, row.causalResult ?? null, row.mismatch === true, row.profit ?? null, row.error ?? null, row.payout ?? null, row.optionKind ?? null, row.meta ? JSON.stringify(row.meta) : JSON.stringify({}), row.accountContext ?? (row.mode === "REAL" ? ACCOUNT_REAL : ACCOUNT_PRACTICE), row.strategyVersion ?? null, row.strategyHash ?? null, row.statsEpoch ?? null, row.snapshotHash ?? null, row.decisionSnapshot ? JSON.stringify(row.decisionSnapshot) : null, row.testOnly === true, row.excludedFromStats === true],
         );
       }
       this.#recordPersistResult("execution", true);
@@ -3917,7 +3981,7 @@ export class IqMultiRuntime extends EventEmitter {
       if (accountContext) { args.push(accountContext); filters.push(`account_context=$${args.length}`); }
       try { const epochRow = (await this.pool.query("SELECT perf_since FROM iq_perf_epoch WHERE id=1")).rows?.[0] ?? null; if (epochRow?.perf_since) { args.push(new Date(epochRow.perf_since).toISOString()); filters.push(`requested_at >= $${args.length}::timestamptz`); } } catch {}
       const where = filters.length ? ` WHERE ${filters.join(" AND ")}` : "";
-      return (await this.pool.query(`SELECT execution_id AS "executionId", idempotency_key AS "idempotencyKey", decision_id AS "decisionId", market_key AS "marketKey", mode, account_type AS "accountType", account_context AS "accountContext", broker_order_id AS "brokerOrderId", symbol, active_id AS "activeId", direction, stake, currency, state, entry_price AS "entryPrice", broker_result AS "brokerResult", causal_result AS "causalResult", settlement_mismatch AS "settlementMismatch", profit, payout, error, meta, requested_at AS "requestedAt", acked_at AS "ackedAt", settled_at AS "settledAt", expiration_at AS "expirationAt" FROM iq_executions${where} ORDER BY requested_at DESC LIMIT $1`, args)).rows.map((row) => ({ ...row, settlementMismatch: row.settlementMismatch === true }));
+      return (await this.pool.query(`SELECT execution_id AS "executionId", idempotency_key AS "idempotencyKey", decision_id AS "decisionId", market_key AS "marketKey", mode, account_type AS "accountType", account_context AS "accountContext", broker_order_id AS "brokerOrderId", symbol, active_id AS "activeId", direction, stake, currency, state, entry_price AS "entryPrice", broker_result AS "brokerResult", causal_result AS "causalResult", settlement_mismatch AS "settlementMismatch", profit, payout, error, meta, strategy_version AS "strategyVersion", strategy_hash AS "strategyHash", stats_epoch AS "statsEpoch", snapshot_hash AS "snapshotHash", decision_snapshot AS "decisionSnapshot", test_only AS "testOnly", excluded_from_stats AS "excludedFromStats", requested_at AS "requestedAt", acked_at AS "ackedAt", settled_at AS "settledAt", expiration_at AS "expirationAt" FROM iq_executions${where} ORDER BY requested_at DESC LIMIT $1`, args)).rows.map((row) => ({ ...row, settlementMismatch: row.settlementMismatch === true, testOnly: row.testOnly === true, excludedFromStats: row.excludedFromStats === true }));
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_EXECUTIONS_READ_FAILED", String(error?.message ?? error).slice(0, 120))); return []; }
   }
 

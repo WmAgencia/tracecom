@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>TraceCon — Dashboard</title>
+<title>TraceCon — Binary OTC 300s</title>
 <style>
   :root { --bg:#070d1a; --panel:#0d1526; --panel2:#111b30; --card:#0f1a2e; --line:#1c2942; --txt:#e8edf7; --dim:#8b97ad; --up:#22c55e; --down:#ef4444; --blue:#3b82f6; --wait:#94a3b8; --watch:#38bdf8; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { background:var(--bg); color:var(--txt); font:13px/1.4 system-ui,Segoe UI,Roboto,sans-serif; padding:0 0 34px; }
-  .nav { display:flex; align-items:center; gap:18px; padding:10px 18px; background:linear-gradient(180deg,#0a1222,#08101f); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:30; }
+  .nav { display:flex; align-items:center; gap:14px; padding:10px 18px; background:linear-gradient(180deg,#0a1222,#08101f); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:30; }
   .brand { display:flex; align-items:center; gap:8px; font-weight:800; letter-spacing:.4px; font-size:15px; }
   .brand .bars { display:inline-flex; gap:2px; align-items:flex-end; height:16px; }
   .brand .bars i { display:block; width:3px; background:linear-gradient(180deg,#60a5fa,#2563eb); border-radius:1px; }
@@ -18,60 +18,52 @@
   .navitems button.on { color:var(--txt); background:#16233d; }
   .navitems button:hover { color:var(--txt); }
   .nav .spacer { flex:1; }
-  .search { display:flex; align-items:center; gap:6px; background:#0c1628; border:1px solid var(--line); border-radius:999px; padding:6px 12px; color:var(--dim); font-size:12px; min-width:190px; }
+  .search { display:flex; align-items:center; gap:6px; background:#0c1628; border:1px solid var(--line); border-radius:999px; padding:6px 12px; color:var(--dim); font-size:12px; min-width:170px; }
   .search input { background:none; border:none; outline:none; color:var(--txt); font-size:12px; width:100%; }
-  .navbtn { background:#0c1628; border:1px solid var(--line); border-radius:999px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:var(--dim); cursor:pointer; }
   .user { display:flex; align-items:center; gap:8px; }
   .user .av { width:30px; height:30px; border-radius:50%; background:#16233d; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; color:#93c5fd; }
   .user .nm { font-size:11.5px; font-weight:700; line-height:1.1; }
   .user .st { font-size:10px; color:var(--up); display:flex; align-items:center; gap:4px; }
   .dot { width:7px; height:7px; border-radius:50%; background:var(--up); display:inline-block; }
   .ctrl { display:flex; align-items:center; gap:8px; }
-  .switch { display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:999px; padding:3px 10px 3px 4px; background:#0c1628; cursor:pointer; user-select:none; }
-  .switch .track { width:38px; height:18px; border-radius:999px; background:#1f2b45; position:relative; transition:background .2s; }
-  .switch .knob { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#8b97ad; transition:transform .2s, background .2s; }
-  .switch.real .track { background:#14532d; } .switch.real .knob { transform:translateX(20px); background:#22c55e; }
-  .switch .label { font-size:10.5px; font-weight:800; letter-spacing:.4px; color:var(--dim); } .switch.real .label { color:var(--up); }
+  .acctsel { display:flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; background:#0c1628; }
+  .acctsel button { background:none; border:none; color:var(--dim); font-size:11px; font-weight:800; letter-spacing:.4px; padding:6px 12px; cursor:pointer; }
+  .acctsel button.on { background:#16233d; color:var(--txt); }
+  .acctsel button.real.on { background:#7f1d1d; color:#fecaca; }
   .badge { font-size:11px; color:var(--dim); border:1px solid var(--line); border-radius:999px; padding:4px 10px; white-space:nowrap; background:#0c1628; }
   .badge b { color:var(--txt); }
   button.btn { background:#0c1628; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; }
   button.btn:hover { border-color:#31426b; }
   button.btn.arm { background:#14532d; border-color:#166534; color:#dcfce7; font-weight:800; letter-spacing:.5px; }
   button.btn.arm.armed { background:#22c55e; color:#052e16; }
+  button.btn.realarm { background:#7f1d1d; border-color:#991b1b; color:#fecaca; font-weight:800; }
+  button.btn[disabled] { opacity:.45; cursor:not-allowed; }
   input.stake { width:64px; background:#0c1628; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:6px 8px; font-size:12px; text-align:center; }
   .wrap { padding:14px 18px 0; }
-  .sumgrid { display:grid; grid-template-columns:1.15fr 1.5fr 1fr; gap:12px; }
+  .sumgrid { display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:12px; }
   .pcard { background:linear-gradient(180deg,var(--panel2),var(--panel)); border:1px solid var(--line); border-radius:14px; padding:14px; position:relative; overflow:hidden; }
   .pcard h3 { font-size:12.5px; color:#c7d2e5; display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-  .pcard h3 .ico { color:#60a5fa; }
   .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-  .kpi .l { font-size:10.5px; color:var(--dim); } .kpi .v { font-size:20px; font-weight:800; }
+  .kpi .l { font-size:10.5px; color:var(--dim); } .kpi .v { font-size:19px; font-weight:800; }
   .kpi .v.up { color:var(--up); } .kpi .v.down { color:var(--down); }
   .bar { height:8px; border-radius:999px; background:#1e293b; overflow:hidden; display:flex; margin-top:12px; }
   .bar .w { background:linear-gradient(90deg,#16a34a,#22c55e); } .bar .l { background:linear-gradient(90deg,#ef4444,#b91c1c); }
   .note { font-size:10.5px; color:var(--dim); margin-top:8px; }
   .profit { display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
-  .profit .big { font-size:40px; font-weight:900; color:#4ade80; letter-spacing:-1px; text-shadow:0 0 24px rgba(74,222,128,.25); }
-  .profit .lbl { font-size:13px; color:#cbd5e1; font-weight:700; }
+  .profit .big { font-size:34px; font-weight:900; color:#4ade80; letter-spacing:-1px; }
+  .profit .lbl { font-size:12px; color:#cbd5e1; font-weight:700; }
   .pill { position:absolute; top:12px; right:12px; font-size:10.5px; font-weight:700; color:#4ade80; border:1px solid #14532d; background:#0c2a17; border-radius:999px; padding:3px 10px; display:flex; align-items:center; gap:6px; }
-  .spark { width:100%; height:54px; margin-top:6px; }
-  .weekrow { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
-  .wcol .l { font-size:10.5px; color:var(--dim); } .wcol .v { font-size:22px; font-weight:800; color:#4ade80; }
-  .bars7 { display:flex; align-items:flex-end; gap:4px; height:46px; }
-  .bars7 i { width:8px; border-radius:3px 3px 0 0; background:linear-gradient(180deg,#3b82f6,#1d4ed8); display:block; }
-  .gauge { width:54px; height:54px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:conic-gradient(#22c55e calc(var(--p) * 1%), #1e293b 0); }
-  .gauge span { width:42px; height:42px; border-radius:50%; background:var(--panel); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
   .sechead { display:flex; align-items:center; gap:10px; margin:16px 0 10px; }
   .sechead h2 { font-size:14px; font-weight:800; display:flex; align-items:center; gap:8px; }
   .sechead .sub { font-size:11.5px; color:var(--dim); }
   .sechead .spacer { flex:1; }
   .chipctl { font-size:11px; color:var(--dim); border:1px solid var(--line); border-radius:8px; padding:5px 10px; background:#0c1628; }
   .clock { font-size:12px; color:#cbd5e1; font-variant-numeric:tabular-nums; }
-  #grid, #gridBlitz { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:8px; }
+  #grid { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:8px; }
   .cell { display:flex; flex-direction:column; gap:2px; min-width:0; }
   .result { height:15px; font-size:11.5px; font-weight:800; text-align:center; }
   .result.win { color:var(--up); } .result.loss { color:var(--down); } .result.draw { color:var(--dim); }
-  .card { position:relative; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; }
+  .card { position:relative; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; }
   .card.highlight { border-color:#f59e0b; box-shadow:0 0 0 2px rgba(245,158,11,.5); }
   .chart { width:100%; height:96px; display:block; }
   .name { display:flex; align-items:center; gap:6px; padding:5px 8px 3px; font-size:10.5px; font-weight:700; }
@@ -81,144 +73,152 @@
   .chip.sell { color:#450a0a; background:#ef4444; border-color:#dc2626; }
   .chip.assist { color:#94a3b8; background:#141f36; }
   .chip.wait { color:#eab308; background:#1c1a10; border-color:#5a4a12; }
+  .chip.nocompra { color:#f59e0b; background:#1f1a0c; border-color:#7c5a12; }
   .chip.off { color:#64748b; background:#0f172a; }
-  .foot { position:fixed; left:0; right:0; bottom:0; display:flex; align-items:center; gap:14px; padding:8px 18px; background:#0a1222; border-top:1px solid var(--line); font-size:11px; color:var(--dim); }
+  .foot { position:fixed; left:0; right:0; bottom:0; display:flex; align-items:center; gap:14px; padding:8px 18px; background:#0a1222; border-top:1px solid var(--line); font-size:11px; color:var(--dim); z-index:20; }
   .foot .spacer { flex:1; }
   .foot .ok { display:flex; align-items:center; gap:6px; color:#cbd5e1; }
   .modal { position:fixed; inset:0; background:rgba(3,7,18,.72); display:none; align-items:center; justify-content:center; z-index:50; }
   .modal.on { display:flex; }
-  .modal .box { background:#0e1730; border:1px solid var(--line); border-radius:12px; width:min(780px,94vw); max-height:82vh; overflow:auto; padding:14px; }
+  .modal .box { background:#0e1730; border:1px solid var(--line); border-radius:12px; width:min(920px,94vw); max-height:86vh; overflow:auto; padding:14px; }
   .modal h2 { font-size:14px; margin-bottom:10px; }
   .mesa-row { display:flex; align-items:center; gap:10px; padding:6px 8px; border-bottom:1px solid #16213a; cursor:pointer; }
   .mesa-row:hover { background:#121d38; }
   .mesa-row .k { flex:1; font-weight:600; } .mesa-row .st { font-size:11px; color:var(--dim); width:70px; } .mesa-row .po { font-size:11px; color:var(--dim); width:56px; }
   .toggle { font-size:11px; padding:2px 10px; border-radius:999px; border:1px solid var(--line); background:#0b1220; color:var(--txt); cursor:pointer; }
   .toggle.on { color:var(--up); border-color:#14532d; } .toggle.off { color:#64748b; }
-  #logPanel { position:fixed; top:0; right:0; bottom:0; width:min(560px,94vw); background:#0a1122; border-left:1px solid var(--line); transform:translateX(102%); transition:transform .25s; z-index:60; display:flex; flex-direction:column; }
-  #logPanel.on { transform:none; }
-  #logPanel .head { display:flex; align-items:center; padding:10px 12px; border-bottom:1px solid var(--line); gap:8px; }
-  #logPanel .head h2 { font-size:13px; flex:1; }
-  #logBody { flex:1; overflow:auto; padding:10px 12px; }
-  #logBody pre { font:11.5px/1.5 ui-monospace,Consolas,monospace; color:#c9d4ea; white-space:pre-wrap; border-bottom:1px dashed #1b2740; padding:8px 0; }
+  aside.panel { position:fixed; top:0; right:0; bottom:0; width:min(620px,96vw); background:#0a1122; border-left:1px solid var(--line); transform:translateX(102%); transition:transform .25s; z-index:60; display:flex; flex-direction:column; }
+  aside.panel.on { transform:none; }
+  aside.panel .head { display:flex; align-items:center; padding:10px 12px; border-bottom:1px solid var(--line); gap:8px; }
+  aside.panel .head h2 { font-size:13px; flex:1; }
+  aside.panel .body { flex:1; overflow:auto; padding:10px 12px; }
+  .logentry { border-bottom:1px dashed #1b2740; padding:8px 0; font-size:11.5px; }
+  .logentry b { color:#e8edf7; } .logentry .dim { color:var(--dim); }
+  table.hist { width:100%; border-collapse:collapse; font-size:11.5px; }
+  table.hist th { text-align:left; color:var(--dim); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--line); position:sticky; top:0; background:#0a1122; }
+  table.hist td { padding:6px 8px; border-bottom:1px solid #131f36; }
+  table.hist tr:hover td { background:#101c33; cursor:pointer; }
+  .kv { display:grid; grid-template-columns:160px 1fr; gap:4px 10px; font-size:11.5px; }
+  .kv .k { color:var(--dim); }
+  .sect { margin:12px 0 6px; font-size:12.5px; font-weight:800; color:#c7d2e5; border-top:1px solid var(--line); padding-top:10px; }
+  pre.json { font:11px/1.5 ui-monospace,Consolas,monospace; color:#c9d4ea; white-space:pre-wrap; background:#0b1220; border:1px solid var(--line); border-radius:8px; padding:8px; }
 </style>
 </head>
 <body>
 <nav class="nav">
   <div class="brand"><span class="bars"><i style="height:7px"></i><i style="height:12px"></i><i style="height:16px"></i><i style="height:10px"></i></span>TraceCon<small>™</small></div>
   <div class="navitems">
-    <button class="on" id="navDash">Dashboard</button>
-    <button id="navConfig">Configurações</button>
+    <button id="navMesas">MESAS</button>
+    <button id="navLog">LOG</button>
+    <button id="navHist">HISTÓRICO</button>
+    <button id="navConfig">CONFIGURAÇÕES</button>
   </div>
   <span class="spacer"></span>
   <div class="search"><span>⌕</span><input id="searchInput" placeholder="Buscar ativo..." /></div>
   <div class="ctrl">
-    <div class="switch" id="modeSwitch" title="Alternar PRACTICE ⇄ REAL"><div class="track"><div class="knob"></div></div><span class="label" id="modeLabel">PRACTICE</span></div>
+    <div class="acctsel" id="acctSel" title="Conta de destino (a inteligência é a mesma)">
+      <button id="acctPractice" class="on">PRACTICE</button>
+      <button id="acctReal" class="real">REAL</button>
+    </div>
     <span class="badge" id="bBal">saldo: <b>…</b></span>
     <button class="btn arm" id="btnArm">ATIVAR</button>
-    <input class="stake" id="stakeInput" type="number" min="2" step="0.5" value="2" title="valor fixo por operacao" />
-    <button class="btn" id="btnMesas">MESAS</button>
-    <button class="btn" id="btnLab">LAB</button>
-    <button class="btn" id="btnLog">LOG</button>
+    <button class="btn realarm" id="btnRealArm" disabled title="Armar REAL exige frase de confirmação">ARMAR REAL</button>
+    <input class="stake" id="stakeInput" type="number" min="2" step="0.5" value="2" title="valor fixo por operação" />
   </div>
-  <div class="navbtn" title="Alertas">🔔</div>
-  <div class="user"><div class="av">TS</div><div><div class="nm">Trader</div><div class="st"><span class="dot"></span>Online</div></div></div>
+  <div class="user"><div class="av">TS</div><div><div class="nm">Trader</div><div class="st"><span class="dot"></span><span id="connTxt">Online</span></div></div></div>
 </nav>
 
 <div class="wrap">
   <div class="sumgrid">
     <section class="pcard">
-      <h3><span class="ico">◉</span> Desempenho de Operações <span class="spacer" style="flex:1"></span> <span class="chipctl">Hoje</span></h3>
+      <h3><span class="ico">◉</span> V2 — <span id="strategyTitle">PULLBACK_4060_300_AGENTIC_V2</span> <span class="spacer" style="flex:1"></span> <span class="chipctl" id="strategyStatus">—</span></h3>
       <div class="kpis">
-        <div class="kpi"><div class="l">WR observado</div><div class="v" id="kpiWr">—</div></div>
+        <div class="kpi"><div class="l">WR (W/L)</div><div class="v" id="kpiWr">—</div></div>
         <div class="kpi"><div class="l">Operações</div><div class="v" id="kpiOps">0</div></div>
         <div class="kpi"><div class="l">Wins</div><div class="v up" id="kpiWins">0</div></div>
         <div class="kpi"><div class="l">Losses</div><div class="v down" id="kpiLosses">0</div></div>
       </div>
       <div class="bar" id="kpiBar"><div class="w" style="width:0%"></div><div class="l" style="width:0%"></div></div>
-      <div class="note">Disciplina hoje, resultados sempre. ᯤ</div>
+      <div class="note" id="strategyHashNote">statsEpoch — · PnL V2: <b id="kpiPnl">R$ 0,00</b></div>
     </section>
     <section class="pcard profit">
       <div class="pill" id="dayPill"><span class="dot"></span>Dia neutro</div>
-      <div class="lbl">Lucro do dia</div>
+      <div class="lbl">Lucro do dia (conta selecionada)</div>
       <div class="big" id="dayPnl">+ R$ 0,00</div>
-      <canvas class="spark" id="sparkDay"></canvas>
-      <div class="note" id="dayDelta">— em relação a ontem</div>
+      <div class="note" id="dayDelta">—</div>
     </section>
     <section class="pcard">
-      <h3><span class="ico">▦</span> Lucro da semana <span class="spacer" style="flex:1"></span> <span class="chipctl">Esta semana</span></h3>
-      <div class="weekrow">
-        <div class="wcol"><div class="v" id="weekPnl">+ R$ 0,00</div></div>
-        <div class="bars7" id="bars7"></div>
+      <h3><span class="ico">▦</span> Inteligência</h3>
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi"><div class="l">Estado</div><div class="v" id="intelState" style="font-size:13px">—</div></div>
+        <div class="kpi"><div class="l">Ativos READY</div><div class="v" id="intelReady">0</div></div>
+        <div class="kpi"><div class="l">Feed</div><div class="v" id="intelFeed" style="font-size:13px">—</div></div>
       </div>
-      <div class="weekrow" style="margin-top:12px">
-        <div class="wcol"><div class="l">Lucro do mês</div><div class="v" id="monthPnl" style="font-size:16px">+ R$ 0,00</div></div>
-        <div style="display:flex;align-items:center;gap:8px"><div class="l" style="font-size:10.5px;color:var(--dim)">Ativos ativos agora</div><div class="gauge" id="gaugeActive" style="--p:0"><span id="gaugeN">0</span></div></div>
-      </div>
+      <div class="note" id="intelNote">—</div>
     </section>
   </div>
 
   <div class="sechead">
-    <h2><span style="color:#60a5fa">◈</span> Ativos OTC <span class="sub">Monitoramento em tempo real de <b id="subN">0</b> ativos</span></h2>
+    <h2><span style="color:#60a5fa">◈</span> Ativos Binary OTC 300s <span class="sub">Monitoramento em tempo real de <b id="subN">0</b> ativos</span></h2>
     <span class="spacer"></span>
-    <span class="chipctl" style="color:#4ade80;border-color:#14532d">● Mercado OTC</span>
+    <span class="chipctl" style="color:#4ade80;border-color:#14532d">● 300s único</span>
     <span class="clock" id="clock">--:--:--</span>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start"><section><div style="display:flex;align-items:center;gap:10px;margin:0 2px 8px"><span style="font-size:12px;font-weight:700;color:#c7d2e5">Binarios OTC</span><span style="flex:1"></span><span style="font-size:10px;font-weight:800;letter-spacing:.4px;color:#4ade80;border:1px solid #14532d;background:#0c1f14;border-radius:999px;padding:2px 8px">ATIVO</span></div><main id="grid"></main></section><section style="border-left:1px solid #1c2942;padding-left:14px"><div style="display:flex;align-items:center;gap:10px;margin:0 2px 8px"><span style="font-size:12px;font-weight:700;color:#c7d2e5">Blitz OTC 45s</span><span style="flex:1"></span><span style="font-size:10px;font-weight:800;letter-spacing:.4px;color:#4ade80;border:1px solid #14532d;background:#0c1f14;border-radius:999px;padding:2px 8px">ATIVO</span></div><main id="gridBlitz"></main></section></div>
+  <main id="grid"></main>
 </div>
 
 <div class="foot">
   <div class="brand" style="font-size:12px"><span class="bars"><i style="height:6px"></i><i style="height:10px"></i><i style="height:13px"></i></span>TraceCon<small>™</small></div>
   <span>Mais que trades. Rastreemos resultados.</span>
   <span class="spacer"></span>
-  <span class="ok"><span class="dot"></span> Sistema operacional</span>
-  <span class="ok"><span class="dot"></span> <b id="footActive">0</b>/<b id="footTotal">0</b> ativos online</span>
-  <span class="ok"><span class="dot"></span> <span id="footConn">Conectado</span></span>
+  <span class="ok"><span class="dot"></span> <b id="footActive">0</b>/<b id="footTotal">0</b> ativos</span>
+  <span class="ok"><span class="dot"></span> <span id="footConn">—</span></span>
+  <span class="ok"><span class="dot"></span> <span id="footReal">REAL desarmado</span></span>
 </div>
 
-<div class="modal" id="configModal"><div class="box"><h2>Configurações — API do MCP oficial</h2><p style="font-size:11.5px;color:#8b97ad;margin-bottom:10px">Cole o token da API MCP oficial da sua conta (turbo). Ele fica salvo no servidor e passa a ser usado pelos agentes; o valor atual aparece mascarado.</p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mcpTokenInput" placeholder="token do MCP oficial" style="flex:1;min-width:280px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="mcpSave">SALVAR</button><button class="btn" id="mcpClear">LIMPAR</button></div><div id="mcpStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div><div style="margin-top:16px;border-top:1px solid #1c2942;padding-top:14px"><h3 style="font-size:12.5px;color:#e8edf7;margin-bottom:6px">Segurança dos agentes</h3><p style="font-size:11.5px;color:#8b97ad;margin-bottom:8px">100% = regras atuais (mais rígido). Abaixo, o consenso passa a tolerar vetos fracos nesta ordem: Fib leg &rarr; Fib zona &rarr; ATR climático &rarr; ADX antigo &rarr; RSI acelerando &rarr; ATR morto &rarr; Bollinger walk. Mais trades, menos segurança.</p><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><span style="font-size:11.5px;color:#8b97ad;min-width:64px">Estrategia</span><select id="safetySelect" style="flex:1;min-width:300px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:12px;padding:11px 38px 11px 14px;font-size:12.5px;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#8b97ad 50%),linear-gradient(135deg,#8b97ad 50%,transparent 50%);background-position:calc(100% - 19px) 55%,calc(100% - 14px) 55%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03)"></select><button class="btn arm" id="safetySave">SALVAR</button></div><div id="safetyStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div>
-<div style="font-size:11px;color:#6b7a94;margin-top:6px">CF = candle de confirmacao (ja virou) · ST = Stochastic no extremo · SQ = evita squeeze · o numero e a Seguranca (100% = rigida, 50% = tolera vetos fracos)</div><div id="safetyShadow" style="font-size:11.5px;color:#8b97ad;margin-top:12px">—</div></div></div></div>
-<div class="modal" id="labModal"><div class="box"><h2>LAB / EXPERIMENTOS</h2><div id="labList"></div></div></div>
-<div class="modal" id="mesasModal"><div class="box"><h2>MESAS — Binary OTC</h2><div id="mesasList"></div></div></div>
-<aside id="logPanel"><div class="head"><h2>LOG — conversa dos agentes</h2><button class="btn" id="btnLogClose">fechar</button></div><div id="logBody"></div></aside>
+<div class="modal" id="configModal"><div class="box"><h2>CONFIGURAÇÕES</h2>
+  <div class="sect" style="border-top:none;padding-top:0">Estratégia operacional</div>
+  <div class="kv">
+    <div class="k">Strategy Version</div><div id="cfgVersion">—</div>
+    <div class="k">Status</div><div id="cfgStatus">—</div>
+    <div class="k">Strategy Hash</div><div id="cfgHash" style="word-break:break-all">—</div>
+    <div class="k">Expiração</div><div id="cfgExpiry">300s (bucket de 5 min)</div>
+    <div class="k">Candle</div><div id="cfgCandle">—</div>
+    <div class="k">Cobertura</div><div id="cfgCoverage">3h (time-based)</div>
+  </div>
+  <div class="sect">API MCP oficial (token)</div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mcpTokenInput" placeholder="token do MCP oficial" style="flex:1;min-width:260px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="mcpSave">SALVAR</button><button class="btn" id="mcpClear">LIMPAR</button></div>
+  <div id="mcpStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div>
+  <div class="sect">Conta</div>
+  <div class="kv"><div class="k">Selecionada</div><div id="cfgAccount">PRACTICE</div><div class="k">REAL</div><div id="cfgReal">DESARMADO (fail-closed)</div></div>
+</div></div>
+
+<div class="modal" id="mesasModal"><div class="box"><h2>MESAS — Binary OTC 300s</h2><div id="mesasList"></div></div></div>
+<div class="modal" id="histModal"><div class="box"><h2>HISTÓRICO — operações</h2><div id="histList"></div></div></div>
+<div class="modal" id="detailModal"><div class="box"><h2>Detalhe da operação</h2><div id="detailBody"></div></div></div>
+<aside class="panel" id="logPanel"><div class="head"><h2>LOG — Asset Agent · RSI · DMI/ADX · Bollinger · ATR · Price Action · Consensus · Execução</h2><button class="btn" id="btnLogClose">fechar</button></div><div class="body" id="logBody"></div></aside>
 
 <script src="/office-v3/operator-auth.js"></script>
 <script>
 (() => {
   "use strict";
-  const state = { markets: [], cards: new Map(), results: new Map(), consensus: new Map(), agentic: new Map(), candles: new Map(), lastDraw: new Map(), lastResultText: new Map(), lastChip: new Map(), mode: "PRACTICE", perf: null, agentSafetyPct: 100, blitzCards: new Map(), blitzResults: new Map(), lastBlitzResultText: new Map(), lastBlitzChip: new Map() };
+  const state = { assets: [], cards: new Map(), results: new Map(), candles: new Map(), lastDraw: new Map(), lastResultText: new Map(), lastChip: new Map(), mode: "PRACTICE", strategy: null, intelligence: null, history: [], logOpen: false, histOpen: false };
   const $ = (id) => document.getElementById(id);
   const api = async (path, options) => { const r = await fetch(path, options); return r.ok ? r.json().catch(() => null) : null; };
   const fmt = (v) => Number(v).toFixed(2).replace(".", ",");
   const fmtSigned = (v) => (Number(v) >= 0 ? "+" : "-") + fmt(Math.abs(Number(v)));
   const brl = (v) => (Number(v) >= 0 ? "+ R$ " : "- R$ ") + fmt(Math.abs(Number(v)));
   const setText = (el, text) => { if (el && el.textContent !== text) el.textContent = text; };
-  const FLAGS = { EUR:"🇪🇺", USD:"🇺🇸", GBP:"🇬🇧", JPY:"🇯🇵", AUD:"🇦🇺", CAD:"🇨🇦", CHF:"🇨🇭", NZD:"🇳🇿", BTC:"₿", MXN:"🇲🇽", TRY:"🇹🇷", ZAR:"🇿🇦", BRL:"🇧🇷", SGD:"🇸🇬", NOK:"🇳🇴", PLN:"🇵🇱", HKD:"🇭🇰", TRY:"🇹🇷", THB:"🇹🇭", INR:"🇮🇳", IDR:"🇮🇩", MYR:"🇲🇾", PHP:"🇵🇭", VND:"🇻🇳", AED:"🇦🇪", SAR:"🇸🇦", ARS:"🇦🇷", CLP:"🇨🇱", COP:"🇨🇴", PEN:"🇵🇪", BDT:"🇧🇩", BOB:"🇧🇴", DOP:"🇩🇴", NGN:"🇳🇬", PKR:"🇵🇰", EGP:"🇪🇬" };
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const FLAGS = { EUR:"🇪🇺", USD:"🇺🇸", GBP:"🇬🇧", JPY:"🇯🇵", AUD:"🇦🇺", CAD:"🇨🇦", CHF:"🇨🇭", NZD:"🇳🇿", MXN:"🇲🇽", TRY:"🇹🇷", ZAR:"🇿🇦", BRL:"🇧🇷" };
   const flagFor = (key) => { const canon = String(key).split(":")[0]; const base = canon.slice(0,3), quote = canon.slice(3,6); if (FLAGS[quote] && !["EUR","USD","GBP","JPY","AUD","CAD","CHF","NZD"].includes(quote)) return FLAGS[quote]; return FLAGS[base] ?? "🏳️"; };
 
-  const chipOf = (row, results = state.results) => {
-    const candles = state.candles.get(row.marketKey);
-    if (!candles || !candles.length) return ["SEM FEED", "off"];
-    if (row.enabled !== true) return ["OFF", "off"];
-    const exec = results.get(row.marketKey);
-    if (exec && exec.open) { const dir = (exec.direction === "CALL" || exec.direction === "BUY") ? "BUY" : "SELL"; return [dir, dir === "BUY" ? "buy" : "sell"]; }
-    const a = state.agentic.get(row.marketKey);
-    if (a && a.side && a.rsi_state && a.rsi_state !== "NEUTRAL") return ["WAIT", "wait"];
-    return ["ASSISTINDO", "assist"];
-  };
-  const resultOf = (row, results = state.results) => {
-    const exec = results.get(row.marketKey);
+  const CHIP_CLASS = { "BUY": "buy", "SELL": "sell", "WAIT": "wait", "ASSISTINDO": "assist", "SEM COMPRA": "nocompra", "SEM FEED": "off", "OFF": "off" };
+  const chipOf = (asset) => { const text = String(asset?.productState ?? "OFF"); return [text, CHIP_CLASS[text] ?? "off"]; };
+  const resultOf = (key) => {
+    const exec = state.results.get(key);
     if (!exec) return { text: "", cls: "" };
-    if (exec.open) {
-      const candles = state.candles.get(row.marketKey);
-      const price = candles && candles.length ? Number(candles[candles.length - 1].close) : null;
-      const entry = Number(exec.entryPrice); const stake = Number(exec.stake) || 2; const payout = Number(exec.payout);
-      if (price === null || !Number.isFinite(entry) || entry <= 0) return { text: "", cls: "" };
-      const up = exec.direction === "CALL" || exec.direction === "BUY";
-      const winning = up ? price > entry : price < entry;
-      const value = winning ? stake * ((Number.isFinite(payout) ? payout : 90) / 100) : -stake;
-      return { text: fmtSigned(value), cls: value >= 0 ? "win" : "loss" };
-    }
-    if (exec.result === null || exec.result === undefined) return { text: "", cls: "" };
+    if (exec.open) return { text: "ABERTA", cls: "draw" };
     if (exec.result === "DRAW") return { text: "R$ 0,00", cls: "draw" };
     return { text: fmtSigned(exec.profit), cls: Number(exec.profit) >= 0 ? "win" : "loss" };
   };
@@ -247,124 +247,118 @@
     const last = list[list.length - 1];
     ctx.strokeStyle = "#64748b"; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(0, y(last.close)); ctx.lineTo(w, y(last.close)); ctx.stroke(); ctx.setLineDash([]);
   };
-  const buildGridInto = (containerId, cardsMap) => { const grid = $(containerId); grid.innerHTML = ""; cardsMap.clear();
-    for (const row of state.markets) {
-      const cell = document.createElement("div"); cell.className = "cell"; cell.dataset.key = row.marketKey;
+  const buildGrid = () => { const grid = $("grid"); grid.innerHTML = ""; state.cards.clear();
+    for (const asset of state.assets) {
+      const cell = document.createElement("div"); cell.className = "cell"; cell.dataset.key = asset.marketKey;
       const result = document.createElement("div"); result.className = "result";
       const card = document.createElement("div"); card.className = "card";
       const canvas = document.createElement("canvas"); canvas.className = "chart";
       const name = document.createElement("div"); name.className = "name";
-      const flag = document.createElement("span"); flag.className = "flag"; flag.textContent = flagFor(row.marketKey);
-      const label = document.createElement("span"); label.textContent = row.marketKey.replace(":OTC", ":OTC");
+      const flag = document.createElement("span"); flag.className = "flag"; flag.textContent = flagFor(asset.marketKey);
+      const label = document.createElement("span"); label.textContent = asset.marketKey;
       const chip = document.createElement("div"); chip.className = "chip";
-      name.append(flag, label); card.append(canvas, name, chip); cell.append(result, card); grid.append(cell); cardsMap.set(row.marketKey, { result, chip, canvas }); } };
-  const buildGrid = () => { buildGridInto("grid", state.cards); buildGridInto("gridBlitz", state.blitzCards); };
-  const renderTextSide = (cards, results, lastText, lastChip) => {
-    for (const row of state.markets) {
-      const card = cards.get(row.marketKey); if (!card) continue;
-      const r = resultOf(row, results);
+      name.append(flag, label); card.append(canvas, name, chip); cell.append(result, card); grid.append(cell);
+      card.onclick = () => openDetailForMarket(asset.marketKey);
+      state.cards.set(asset.marketKey, { result, chip, canvas }); } };
+  const renderText = () => {
+    for (const asset of state.assets) {
+      const card = state.cards.get(asset.marketKey); if (!card) continue;
+      const r = resultOf(asset.marketKey);
       const rKey = r.text + "|" + r.cls;
-      if (lastText.get(row.marketKey) !== rKey) { lastText.set(row.marketKey, rKey); card.result.textContent = r.text; card.result.className = "result " + r.cls; }
-      const [chipText, chipCls] = chipOf(row, results);
+      if (state.lastResultText.get(asset.marketKey) !== rKey) { state.lastResultText.set(asset.marketKey, rKey); card.result.textContent = r.text; card.result.className = "result " + r.cls; }
+      const [chipText, chipCls] = chipOf(asset);
       const cKey = chipText + "|" + chipCls;
-      if (lastChip.get(row.marketKey) !== cKey) { lastChip.set(row.marketKey, cKey); card.chip.textContent = chipText; card.chip.className = "chip " + chipCls; }
+      if (state.lastChip.get(asset.marketKey) !== cKey) { state.lastChip.set(asset.marketKey, cKey); card.chip.textContent = chipText; card.chip.className = "chip " + chipCls; }
     }
   };
-  const renderText = () => { renderTextSide(state.cards, state.results, state.lastResultText, state.lastChip); renderTextSide(state.blitzCards, state.blitzResults, state.lastBlitzResultText, state.lastBlitzChip); };
   const refreshCandles = async () => {
-    const keys = state.markets.map((m) => m.marketKey);
+    const keys = state.assets.map((a) => a.marketKey);
     if (!keys.length) return;
     const data = await api("/api/iq/candles?limit=40&keys=" + encodeURIComponent(keys.join(",")));
     if (!data?.rows) return;
-    let live = 0; const liveKeys = [];
+    let live = 0;
     for (const [key, candles] of Object.entries(data.rows)) {
       const list = Array.isArray(candles) ? candles : [];
-      if (list.length > 0) { live += 1; liveKeys.push(key); }
+      if (list.length > 0) live += 1;
       const lastBucket = list.length ? list[list.length - 1].bucketEnd : 0;
       if (state.lastDraw.get(key) === lastBucket) continue;
       state.lastDraw.set(key, lastBucket);
       state.candles.set(key, list);
       const card = state.cards.get(key);
       if (card) drawChart(card.canvas, list);
-      const bcard = state.blitzCards.get(key);
-      if (bcard) drawChart(bcard.canvas, list);
     }
     setText($("subN"), String(live));
     setText($("footActive"), String(live));
-    $("footActive").parentElement.title = liveKeys.join(", ");
-    renderText();
   };
   const refreshResults = async () => {
     const ctx = state.mode === "REAL" ? "REAL" : "PRACTICE";
     const data = await api("/api/iq/executions?accountContext=" + ctx + "&limit=200");
     const rows = data?.executions ?? [];
     state.results.clear();
-    state.blitzResults.clear();
     for (const row of rows) {
-      const key = row.market_key ?? row.marketKey; if (!key) continue;
-      const isBlitz = row.meta?.blitz === true;
-      const target = isBlitz ? state.blitzResults : state.results;
-      if (target.has(key)) continue;
+      const key = row.marketKey ?? row.market_key; if (!key) continue;
+      if (state.results.has(key)) continue;
       const st = String(row.state).toUpperCase();
-      const openStates = st === "REQUESTED" || st === "ACKNOWLEDGED" || st === "SUBMITTED" || st === "PENDING_ACK" || st === "PENDING" || st === "UNKNOWN" || st === "OPEN";
+      const openStates = ["REQUESTED", "ACKNOWLEDGED", "SUBMITTED", "PENDING_ACK", "PENDING", "UNKNOWN", "OPEN"].includes(st);
       const settled = st === "SETTLED";
       if (!openStates && !settled) continue;
-      target.set(key, { open: openStates, result: settled ? (row.broker_result ?? null) : null, profit: Number(row.profit ?? 0), direction: row.direction ?? null, entryPrice: row.entry_price ?? null, stake: row.stake ?? null, payout: row.payout ?? null });
+      state.results.set(key, { open: openStates, result: settled ? (row.brokerResult ?? null) : null, profit: Number(row.profit ?? 0) });
     }
     renderText();
   };
-  const refreshConsensus = async () => {
-    const data = await api("/api/iq/research/consensus");
-    state.consensus.clear();
-    for (const d of data?.recent ?? []) state.consensus.set(d.marketKey, d);
-    const lab = await api("/api/iq/lab/status");
-    state.agentic.clear();
-    for (const d of (lab?.experiments?.agenticRsiFib?.recent ?? [])) state.agentic.set(d.market_key ?? d.marketKey, d);
+  const refreshIntelligence = async () => {
+    const data = await api("/api/iq/intelligence/assets");
+    if (!data) return;
+    state.intelligence = data;
+    state.strategy = data.strategy ?? null;
+    const next = data.assets ?? [];
+    const changed = next.length !== state.assets.length || next.some((a, i) => state.assets[i]?.marketKey !== a.marketKey);
+    state.assets = next;
+    if (changed) { buildGrid(); state.lastDraw.clear(); state.lastResultText.clear(); state.lastChip.clear(); await refreshCandles(); }
     renderText();
+    const health = data.health ?? {};
+    setText($("intelState"), String(health.state ?? "—"));
+    setText($("intelReady"), String(health.assetsReady ?? 0));
+    setText($("intelFeed"), health.observedIntervalMs ? (health.observedIntervalMs / 1000) + "s" : "—");
+    setText($("intelNote"), "assets " + (health.assetsTotal ?? 0) + " · ready " + (health.assetsReady ?? 0) + " · partial " + (health.assetsPartial ?? 0) + " · failed " + (health.assetsFailed ?? 0) + " · candles " + (data.candleStore?.stats?.written ?? 0) + " gravados");
+    setText($("strategyStatus"), (state.strategy?.status ?? "—") + (state.strategy?.executable === true ? " (executável)" : " (não executa)"));
+    setText($("strategyTitle"), state.strategy?.version ?? "—");
+    setText($("footTotal"), String(state.assets.length));
+    if (state.logOpen) renderLog();
+  };
+  const refreshStrategyStats = async () => {
+    const version = state.strategy?.version;
+    if (!version) return;
+    const data = await api("/api/iq/strategy/stats?version=" + encodeURIComponent(version) + "&days=30");
+    if (!data) return;
+    setText($("kpiWr"), data.winRate !== null && data.winRate !== undefined ? fmt(data.winRate) + "%" : "—");
+    setText($("kpiOps"), String(data.operations ?? 0));
+    setText($("kpiWins"), String(data.wins ?? 0));
+    setText($("kpiLosses"), String(data.losses ?? 0));
+    const settled = (data.wins ?? 0) + (data.losses ?? 0);
+    const w = settled > 0 ? (100 * data.wins) / settled : 0;
+    $("kpiBar").children[0].style.width = w + "%";
+    $("kpiBar").children[1].style.width = (settled > 0 ? 100 - w : 0) + "%";
+    setText($("kpiPnl"), brl(data.pnl ?? 0));
+    $("kpiPnl").style.color = Number(data.pnl ?? 0) >= 0 ? "#4ade80" : "#f87171";
   };
   const refreshPerf = async () => {
     const data = await api("/api/iq/performance");
     if (!data) return;
-    state.perf = data;
     const t = data.today ?? null;
-    setText($("kpiWr"), t?.wr !== null && t?.wr !== undefined ? fmt(t.wr) + "%" : "—");
-    setText($("kpiOps"), String(t?.trades ?? 0));
-    setText($("kpiWins"), String(t?.wins ?? 0));
-    setText($("kpiLosses"), String(t?.losses ?? 0));
-    const settled = (t?.wins ?? 0) + (t?.losses ?? 0);
-    const w = settled > 0 ? (100 * t.wins) / settled : 0;
-    $("kpiBar").children[0].style.width = w + "%";
-    $("kpiBar").children[1].style.width = (settled > 0 ? 100 - w : 0) + "%";
     const pnl = Number(t?.pnl ?? 0);
     setText($("dayPnl"), brl(pnl));
     $("dayPnl").style.color = pnl >= 0 ? "#4ade80" : "#f87171";
     $("dayPill").innerHTML = '<span class="dot" style="background:' + (pnl >= 0 ? "#22c55e" : "#ef4444") + '"></span>' + (pnl > 0 ? "Dia positivo" : pnl < 0 ? "Dia negativo" : "Dia neutro");
-    const week = Number(data.week?.pnl ?? 0); const month = Number(data.month?.pnl ?? 0);
-    setText($("weekPnl"), brl(week)); $("weekPnl").style.color = week >= 0 ? "#4ade80" : "#f87171";
-    setText($("monthPnl"), brl(month)); $("monthPnl").style.color = month >= 0 ? "#4ade80" : "#f87171";
-    const daily = data.week?.daily ?? [];
-    const maxAbs = Math.max(1, ...daily.map((d) => Math.abs(Number(d.pnl))));
-    $("bars7").innerHTML = daily.map((d) => '<i style="height:' + Math.max(6, Math.round((Math.abs(Number(d.pnl)) / maxAbs) * 46)) + 'px;background:' + (Number(d.pnl) >= 0 ? "linear-gradient(180deg,#3b82f6,#1d4ed8)" : "linear-gradient(180deg,#ef4444,#b91c1c)") + '" title="' + d.day + " " + fmtSigned(d.pnl) + '"></i>').join("");
-    const active = Number(data.activeAssets ?? 0); const total = state.markets.length || 30;
-    $("gaugeActive").style.setProperty("--p", String(Math.round((100 * active) / Math.max(1, total))));
-    setText($("gaugeN"), String(active));
-    setText($("footTotal"), String(total));
-    setText($("footConn"), data.connected === true ? "Conectado" : "Desconectado");
-    $("footConn").style.color = data.connected === true ? "#4ade80" : "#f87171";
-    const y = data.week?.daily ?? []; const prev = y.length > 1 ? Number(y[y.length - 2]?.pnl ?? 0) : 0;
-    const delta = prev !== 0 ? ((pnl - prev) / Math.abs(prev)) * 100 : null;
-    setText($("dayDelta"), delta === null ? "— em relação a ontem" : (delta >= 0 ? "↗ +" : "↘ ") + fmt(delta) + "% em relação a ontem");
-    const canvas = $("sparkDay"); const cw = canvas.clientWidth, ch = canvas.clientHeight;
-    if (cw && ch) { const dpr = window.devicePixelRatio || 1; canvas.width = Math.round(cw * dpr); canvas.height = Math.round(ch * dpr); const c2 = canvas.getContext("2d"); c2.setTransform(dpr, 0, 0, dpr, 0, 0); c2.clearRect(0, 0, cw, ch); const pts = y.map((d) => Number(d.pnl)); if (pts.length >= 2) { let mn = Math.min(...pts, 0), mx = Math.max(...pts, 0); if (mx - mn < 0.01) mx = mn + 0.01; const yy = (v) => ch - ((v - mn) / (mx - mn)) * ch; c2.strokeStyle = "#22c55e"; c2.lineWidth = 2; c2.beginPath(); pts.forEach((v, i) => { const x = (i / (pts.length - 1)) * cw; if (i === 0) c2.moveTo(x, yy(v)); else c2.lineTo(x, yy(v)); }); c2.stroke(); c2.lineTo(cw, ch); c2.lineTo(0, ch); c2.closePath(); c2.fillStyle = "rgba(34,197,94,.12)"; c2.fill(); } }
+    setText($("dayDelta"), "ops " + (t?.trades ?? 0) + " · W " + (t?.wins ?? 0) + " · L " + (t?.losses ?? 0) + " · " + (data.connected === true ? "broker conectado" : "broker desconectado"));
   };
   const refreshHeader = async () => {
     const st = await api("/api/iq/status");
     if (!st) return;
     const mode = String(st.mode ?? "PRACTICE").toUpperCase();
     state.mode = mode;
-    const sw = $("modeSwitch");
-    if (sw.classList.contains("real") !== (mode === "REAL")) sw.classList.toggle("real", mode === "REAL");
-    setText($("modeLabel"), mode === "REAL" ? "REAL" : "PRACTICE");
+    $("acctPractice").classList.toggle("on", mode !== "REAL");
+    $("acctReal").classList.toggle("on", mode === "REAL");
     const ctx = await api("/api/iq/account/context");
     const acc = mode === "REAL" ? (ctx?.realAccount ?? null) : (ctx?.practiceAccount ?? null);
     const bal = acc?.balance; const cur = String(acc?.currency ?? (mode === "REAL" ? "BRL" : "USD"));
@@ -373,193 +367,156 @@
     const btn = $("btnArm");
     if (btn.classList.contains("armed") !== armed) btn.classList.toggle("armed", armed);
     setText(btn, armed ? "ARMADO" : "ATIVAR");
+    const realArmed = ctx?.realArmed === true || ctx?.real?.armed === true;
+    setText($("footReal"), realArmed ? "REAL ARMADO" : "REAL desarmado");
+    $("footReal").style.color = realArmed ? "#f87171" : "#94a3b8";
+    setText($("cfgAccount"), mode);
+    setText($("cfgReal"), realArmed ? "ARMADO" : "DESARMADO (fail-closed)");
+    setText($("connTxt"), st?.connected === true ? "Online" : "Offline");
+    setText($("footConn"), st?.connected === true ? "broker conectado" : "broker desconectado");
+    $("footConn").style.color = st?.connected === true ? "#4ade80" : "#f87171";
+    setText($("cfgVersion"), state.strategy?.version ?? "—");
+    setText($("cfgStatus"), (state.strategy?.status ?? "—") + " · executável=" + (state.strategy?.executable === true));
+    setText($("cfgHash"), state.strategy?.strategyHash ?? "—");
+    const cs = state.intelligence?.candleStore;
+    setText($("cfgCandle"), cs ? (cs.intervalMs / 1000) + "s nativo (gravados " + (cs.stats?.written ?? 0) + ")" : "—");
   };
   const armNow = async () => {
     const stake = Math.max(2, Number($("stakeInput").value) || 2); $("stakeInput").value = String(stake);
     await api("/api/iq/config/global-stake", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value: stake }) });
     await api("/api/iq/kill-switch", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ engaged: false }) });
     await api("/api/iq/config/auto-execute", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ enabled: true }) });
-    if (state.mode === "REAL") {
-      await api("/api/iq/account/select", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ context: "REAL" }) });
-      await api("/api/iq/real/arm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ phrase: "CONFIRMAR E ARMAR REAL", acknowledgeRisk: true, maxStake: stake }) });
-      await api("/api/iq/mode", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "REAL" }) });
-    }
     await api("/api/iq/arm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirmation: "ARM_PRACTICE", limitBrl: stake }) });
     await refreshHeader();
   };
   const disarmNow = async () => { await api("/api/iq/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) }); await refreshHeader(); };
-  const switchMode = async () => {
-    const toReal = state.mode !== "REAL"; const sw = $("modeSwitch"); sw.style.pointerEvents = "none";
-    try {
-      if (toReal) {
-        await api("/api/iq/account/select", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ context: "REAL" }) });
-        await api("/api/iq/real/arm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ phrase: "CONFIRMAR E ARMAR REAL", acknowledgeRisk: true, maxStake: Math.max(2, Number($("stakeInput").value) || 2) }) });
-        await api("/api/iq/mode", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "REAL" }) });
-      } else {
-        await api("/api/iq/mode", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "PRACTICE" }) });
-        await api("/api/iq/real/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) });
-        await api("/api/iq/account/select", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ context: "PRACTICE" }) });
-      }
-    } finally { sw.style.pointerEvents = ""; }
-    await refreshHeader(); await refreshResults(); await refreshConsensus();
-  void refreshAgentConfig(); };
+  const selectAccount = async (context) => {
+    await api("/api/iq/account/select", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ context }) });
+    await api("/api/iq/mode", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: context === "REAL" ? "REAL" : "PRACTICE" }) });
+    if (context !== "REAL") await api("/api/iq/real/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) });
+    await refreshHeader(); await refreshResults();
+  };
+  const armRealNow = async () => {
+    if (state.mode !== "REAL") { alert("Selecione REAL antes de armar."); return; }
+    const phrase = window.prompt("Digite a frase para armar REAL: CONFIRMAR E ARMAR REAL");
+    if (phrase !== "CONFIRMAR E ARMAR REAL") return;
+    const stake = Math.max(2, Number($("stakeInput").value) || 2);
+    await api("/api/iq/real/arm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ phrase, acknowledgeRisk: true, maxStake: stake }) });
+    await refreshHeader();
+  };
   const openMesas = async () => {
     const data = await api("/api/iq/mesas");
     const rows = (data?.rows ?? []).filter((r) => r.instrumentType === "BINARY" && r.marketType === "OTC");
     const list = $("mesasList"); list.innerHTML = "";
+    if (!rows.length) { list.textContent = "Nenhum instrumento Binary OTC no registry."; }
     for (const row of rows) {
       const line = document.createElement("div"); line.className = "mesa-row";
       const k = document.createElement("span"); k.className = "k"; k.textContent = flagFor(row.marketKey) + " " + row.marketKey;
       const st = document.createElement("span"); st.className = "st"; st.textContent = row.status ?? "?";
       const po = document.createElement("span"); po.className = "po"; po.textContent = (row.payout ?? "-") + "%";
       const tg = document.createElement("button"); tg.className = "toggle " + (row.enabled ? "on" : "off"); tg.textContent = row.enabled ? "ON" : "OFF";
-      tg.onclick = async (event) => { event.stopPropagation(); await api("/api/iq/mesas", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ marketKey: row.marketKey, instrumentType: "BINARY", durationSeconds: 60, enabled: !row.enabled }) }); await openMesas(); await refreshActive(); };
+      tg.onclick = async (event) => { event.stopPropagation(); await api("/api/iq/mesas", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ marketKey: row.marketKey, instrumentType: "BINARY", durationSeconds: 300, enabled: !row.enabled }) }); await openMesas(); await refreshIntelligence(); };
       line.append(k, st, po, tg);
       line.onclick = () => { $("mesasModal").classList.remove("on"); const cell = document.querySelector('.cell[data-key="' + row.marketKey + '"]'); if (cell) { cell.scrollIntoView({ behavior: "smooth", block: "center" }); const card = cell.querySelector(".card"); card.classList.add("highlight"); setTimeout(() => card.classList.remove("highlight"), 3000); } };
       list.append(line);
     }
     $("mesasModal").classList.add("on");
   };
-  let labOpen = false; let logOpen = false;
-  const refreshLab = async () => {
-    if (!labOpen) return;
-    const list = $("labList");
-    let data = null; let apiError = false;
-    try { const r = await fetch("/api/iq/lab/status"); if (r.ok) data = await r.json(); else apiError = true; } catch { apiError = true; }
-    if (apiError) { list.innerHTML = "LAB API ERROR (tentando novamente...)"; return; }
-    if (!data || data.error) { list.innerHTML = "LAB API ERROR"; return; }
-    const rows = data?.states ?? [];
-    list.innerHTML = "";
-    const head = document.createElement("div"); head.className = "mesa-row"; head.innerHTML = '<span class="k"><b>LAB 6 (run principal)</b></span><span class="st"><b>SETTLED</b></span><span class="po"><b>W/L/D</b></span><span class="st"><b>OPEN</b></span><span class="po"><b>STATUS</b></span>';
-    list.append(head);
-    for (const row of rows) { const line = document.createElement("div"); line.className = "mesa-row"; line.innerHTML = '<span class="k">' + row.strategy_id + '</span><span class="st">' + row.settled_count + '/20</span><span class="po">' + row.wins + "/" + row.losses + "/" + row.draws + '</span><span class="st">' + (row.open_count ?? 0) + '</span><span class="po">' + (row.complete ? "COMPLETE" : "RUNNING") + '</span>'; list.append(line); }
-    for (const [key, label, cap] of [["agenticRsiFib", "AGENTIC RSI+FIB", 50], ["s04Bollinger50", "S04 BOLLINGER — RUN 50", 50]]) {
-      const exp = data?.experiments?.[key];
-      if (!exp || exp.started !== true) continue;
-      const sep = document.createElement("div"); sep.className = "mesa-row"; sep.innerHTML = '<span class="k"><b>' + label + ' (independente)</b></span><span class="st"><b>SETTLED</b></span><span class="po"><b>W/L/D</b></span><span class="st"><b>OPEN</b></span><span class="po"><b>STATUS</b></span>'; list.append(sep);
-      for (const s of (exp.states ?? [])) { const line = document.createElement("div"); line.className = "mesa-row"; line.innerHTML = '<span class="k">' + s.strategy_id + '</span><span class="st">' + s.settled_count + '/' + cap + '</span><span class="po">' + s.wins + "/" + s.losses + "/" + s.draws + '</span><span class="st">' + (s.open_count ?? 0) + '</span><span class="po">' + (s.complete ? "COMPLETE" : "RUNNING") + '</span>'; list.append(line); }
-    }
+  const openHistory = async () => {
+    const ctx = state.mode === "REAL" ? "REAL" : "PRACTICE";
+    const data = await api("/api/iq/executions?accountContext=" + ctx + "&limit=100");
+    state.history = data?.executions ?? [];
+    const list = $("histList");
+    if (!state.history.length) { list.innerHTML = "<div style='color:#6b7a94;padding:8px 2px'>sem operações ainda</div>"; $("histModal").classList.add("on"); return; }
+    const head = "<tr><th>Hora</th><th>Ativo</th><th>Direção</th><th>Resultado</th><th>PnL</th><th>Conta</th><th>Strategy Version</th></tr>";
+    const body = state.history.map((row, index) => {
+      const st = String(row.state).toUpperCase();
+      const result = st === "SETTLED" ? String(row.brokerResult ?? "—") : (["REQUESTED", "ACKNOWLEDGED"].includes(st) ? "ABERTA" : st);
+      const pnl = st === "SETTLED" ? fmtSigned(row.profit ?? 0) : "—";
+      const cls = st === "SETTLED" ? (String(row.brokerResult) === "WIN" ? "#4ade80" : String(row.brokerResult) === "LOSS" ? "#f87171" : "#8b97ad") : "#8b97ad";
+      const dir = row.direction === "CALL" || row.direction === "BUY" ? "BUY" : "SELL";
+      return "<tr data-i='" + index + "'><td>" + esc(String(row.requestedAt ?? "").slice(11, 19)) + "</td><td>" + esc(row.marketKey) + "</td><td>" + dir + "</td><td style='color:" + cls + "'>" + esc(result) + "</td><td style='color:" + cls + "'>" + pnl + "</td><td>" + esc(row.accountContext ?? row.accountType ?? "—") + "</td><td>" + esc(row.strategyVersion ?? "—") + "</td></tr>";
+    }).join("");
+    list.innerHTML = "<table class='hist'>" + head + body + "</table>";
+    for (const tr of list.querySelectorAll("tr[data-i]")) tr.onclick = () => openDetail(state.history[Number(tr.dataset.i)]);
+    $("histModal").classList.add("on");
   };
-  const refreshLog = async () => {
-    if (!logOpen) return;
-    const data = await api("/api/iq/agents/log?limit=30");
+  const renderList = (items) => (Array.isArray(items) && items.length ? "<ul style='margin:4px 0 0 16px'>" + items.map((i) => "<li>" + esc(typeof i === "string" ? i : JSON.stringify(i)) + "</li>").join("") + "</ul>" : "<span class='k'>—</span>");
+  const openDetail = (row) => {
+    if (!row) return;
+    const snap = row.decisionSnapshot ?? null;
+    const features = snap?.features ?? null;
+    const specialists = snap?.specialists ?? [];
+    const consensus = snap?.consensus ?? null;
+    const ctx = features ? { regime: features.regime, structure: features.structure, candles: features.candles, pullback: features.priceAction?.pullback ?? null } : null;
+    const dir = row.direction === "CALL" || row.direction === "BUY" ? "BUY" : "SELL";
+    const specHtml = specialists.map((s) => "<div class='kv'><div class='k'>" + esc(s.specialist) + "</div><div>" + esc(s.domainAssessment) + " · blockers " + esc((s.blockers ?? []).join(",") || "—") + "</div></div>").join("");
+    $("detailBody").innerHTML =
+      "<div class='sect' style='border-top:none;padding-top:0'>ASSET CONTEXT</div>" +
+      (ctx ? "<div class='kv'><div class='k'>Regime</div><div>" + esc(ctx.regime) + "</div><div class='k'>Estrutura</div><div>" + esc(ctx.structure) + "</div><div class='k'>Candles no contexto</div><div>" + esc(ctx.candles) + "</div><div class='k'>Pullback</div><div>" + esc(ctx.pullback ? (ctx.pullback.depth + " / " + ctx.pullback.distanceAtr + " ATR") : "—") + "</div></div>" : "<div class='k'>snapshot sem AssetContext (operação legada/PATH_TEST)</div>") +
+      "<div class='sect'>SPECIALISTS</div>" + (specHtml || "<div class='k'>—</div>") +
+      "<div class='sect'>CONSENSUS</div>" + (consensus ? "<div class='kv'><div class='k'>Decisão</div><div>" + esc(consensus.side) + "</div><div class='k'>Thesis</div><div>" + renderList(consensus.thesis) + "</div><div class='k'>Supporting</div><div>" + renderList(consensus.supportingEvidence) + "</div><div class='k'>Counter</div><div>" + renderList(consensus.counterEvidence) + "</div><div class='k'>Blockers</div><div>" + renderList(consensus.blockers) + "</div><div class='k'>Invalidations</div><div>" + renderList(consensus.invalidations) + "</div></div>" : "<div class='k'>—</div>") +
+      "<div class='sect'>DECISION SNAPSHOT</div><div class='kv'><div class='k'>decisionId</div><div>" + esc(row.decisionId ?? "—") + "</div><div class='k'>snapshotHash</div><div style='word-break:break-all'>" + esc(row.snapshotHash ?? snap?.id ?? "—") + "</div><div class='k'>strategyVersion</div><div>" + esc(row.strategyVersion ?? "—") + "</div><div class='k'>strategyHash</div><div style='word-break:break-all'>" + esc(row.strategyHash ?? "—") + "</div><div class='k'>statsEpoch</div><div>" + esc(row.statsEpoch ?? "—") + "</div></div>" +
+      "<div class='sect'>EXECUTION</div><div class='kv'><div class='k'>decisionTimestamp</div><div>" + esc(snap?.decidedAt ? new Date(Number(snap.decidedAt)).toISOString() : "—") + "</div><div class='k'>entry</div><div>" + esc(row.entryPrice ?? "—") + "</div><div class='k'>expiry</div><div>" + esc(row.expirationAt ?? "—") + "</div><div class='k'>stake</div><div>" + esc(row.stake ?? "—") + "</div><div class='k'>payout</div><div>" + esc(row.payout ?? "—") + "</div><div class='k'>account</div><div>" + esc(row.accountContext ?? row.accountType ?? "—") + "</div><div class='k'>brokerOrderId</div><div>" + esc(row.brokerOrderId ?? "—") + "</div></div>" +
+      "<div class='sect'>SETTLEMENT</div><div class='kv'><div class='k'>Resultado</div><div>" + esc(row.brokerResult ?? row.state ?? "—") + "</div><div class='k'>PnL</div><div>" + esc(row.profit ?? "—") + "</div></div>" +
+      (row.testOnly || row.excludedFromStats ? "<div class='note'>PATH_TEST — excluído das estatísticas</div>" : "");
+    $("detailModal").classList.add("on");
+  };
+  const openDetailForMarket = (marketKey) => {
+    const row = state.history.find((h) => h.marketKey === marketKey) ?? null;
+    if (row) openDetail(row);
+    else openHistory();
+  };
+  const renderLog = () => {
     const body = $("logBody"); body.innerHTML = "";
-    for (const entry of data?.entries ?? []) { const pre = document.createElement("pre"); pre.textContent = entry.human; body.append(pre); }
-  };
-  const refreshActive = async () => {
-    const data = await api("/api/iq/mesas");
-    const rows = (data?.rows ?? []).filter((r) => r.instrumentType === "BINARY" && r.marketType === "OTC");
-    if (rows.length !== state.markets.length || rows.some((r, i) => state.markets[i]?.marketKey !== r.marketKey)) {
-      state.markets = rows.sort((a, b) => String(a.marketKey).localeCompare(String(b.marketKey)));
-      buildGrid(); state.lastDraw.clear(); state.lastResultText.clear(); state.lastChip.clear(); await refreshCandles();
+    for (const asset of state.assets) {
+      const a = asset.analysis;
+      const div = document.createElement("div"); div.className = "logentry";
+      const lines = [];
+      lines.push("<b>" + esc(asset.marketKey) + "</b> <span class='dim'>" + esc(asset.productState) + " · hydration " + esc(asset.hydration) + " · feed " + esc(asset.feedStatus) + "</span>");
+      if (a?.context) lines.push("<span class='dim'>Asset Agent:</span> regime=" + esc(a.context.regime) + " estrutura=" + esc(a.context.structure) + " candles=" + esc(a.context.candles) + " cobertura=" + Math.round(Number(a.context.coverageMs ?? 0) / 60000) + "min");
+      for (const s of (a?.specialists ?? [])) lines.push("<span class='dim'>" + esc(s.specialist) + ":</span> " + esc(s.domainAssessment) + (s.blockers?.length ? " · blockers " + esc(s.blockers.join(",")) : ""));
+      lines.push("<span class='dim'>Consensus:</span> <b>" + esc(a?.consensus ?? "—") + "</b> " + (a?.reason?.length ? esc(a.reason.join("; ")) : ""));
+      div.innerHTML = lines.join("<br>");
+      body.append(div);
     }
-    setText($("footTotal"), String(state.markets.length));
+    const recent = state.history.slice(0, 8);
+    if (recent.length) {
+      const div = document.createElement("div"); div.className = "logentry";
+      div.innerHTML = "<b>Execução</b> <span class='dim'>últimas ordens</span><br>" + recent.map((r) => esc(String(r.requestedAt ?? "").slice(11, 19)) + " " + esc(r.marketKey) + " " + esc(r.direction) + " " + esc(r.state) + " " + esc(r.brokerResult ?? "")).join("<br>");
+      body.append(div);
+    }
   };
-  $("modeSwitch").onclick = switchMode;
-  $("btnArm").onclick = async () => { const armed = $("btnArm").classList.contains("armed"); $("btnArm").style.pointerEvents = "none"; try { if (armed) await disarmNow(); else await armNow(); } finally { $("btnArm").style.pointerEvents = ""; } };
-  $("btnMesas").onclick = openMesas;
-  $("mesasModal").onclick = (e) => { if (e.target === $("mesasModal")) $("mesasModal").classList.remove("on"); };
-  $("btnLab").onclick = () => { labOpen = true; $("labModal").classList.add("on"); refreshLab(); };
-  $("labModal").onclick = (e) => { if (e.target === $("labModal")) { labOpen = false; $("labModal").classList.remove("on"); } };
-  $("btnLog").onclick = () => { logOpen = true; $("logPanel").classList.add("on"); refreshLog(); };
-  $("btnLogClose").onclick = () => { logOpen = false; $("logPanel").classList.remove("on"); };
-  $("navDash").onclick = () => { $("navDash").classList.add("on"); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const refreshMcp = async () => { const data = await api("/api/iq/mcp/config"); const el = $("mcpStatus"); if (!data) { el.textContent = "API MCP: indisponível"; return; } el.innerHTML = "API MCP: " + (data.configured ? "<b style='color:#4ade80'>configurada</b> (" + data.masked + ")" : "<b style='color:#f87171'>não configurada</b>") + " · endpoint " + data.endpoint; };
+  const refreshMcp = async () => { const data = await api("/api/iq/mcp/config"); const el = $("mcpStatus"); if (!data) { el.textContent = "API MCP: indisponível"; return; } el.innerHTML = "API MCP: " + (data.configured ? "<b style='color:#4ade80'>configurada</b> (" + esc(data.masked) + ")" : "<b style='color:#f87171'>não configurada</b>"); };
   const saveMcp = async () => { const token = $("mcpTokenInput").value.trim(); if (!token) return; const r = await api("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token }) }); if (r) { $("mcpTokenInput").value = ""; await refreshMcp(); } };
   const clearMcp = async () => { await api("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: "" }) }); await refreshMcp(); };
-  const renderTable = (rows) => {
-    const head = "<tr>" + ["Estrategias", "Operacoes", "WR", "Break-even", "PnL", "Ritmo"].map((h) => "<th style='padding:5px 8px;color:#8b97ad;font-weight:600;text-align:left;border-bottom:1px solid #1c2942'>" + h + "</th>").join("") + "</tr>";
-    const body = rows.map((r, i) => {
-      const zebra = i % 2 === 0 ? "#0d1526" : "transparent";
-      const wrColor = r.winRate == null ? "#8b97ad" : (r.edge != null && r.edge >= 0 ? "#4ade80" : "#f87171");
-      const pnlColor = Number(r.pnl) >= 0 ? "#4ade80" : "#f87171";
-      const cell = (v, color) => "<td style='padding:5px 8px;color:" + (color ?? "#e8edf7") + "'>" + v + "</td>";
-      return "<tr style='background:" + zebra + "'>" + cell("<b>" + r.name + "</b>") + cell(r.settled ?? 0) + cell(r.winRate == null ? "-" : String(r.winRate).replace(".", ",") + "%", wrColor) + cell(r.breakeven == null ? "-" : String(r.breakeven).replace(".", ",") + "%", "#8b97ad") + cell((Number(r.pnl) >= 0 ? "+" : "") + Number(r.pnl ?? 0).toFixed(2).replace(".", ","), pnlColor) + cell((r.entriesPerHour == null ? "-" : String(r.entriesPerHour).replace(".", ",") + "/h"), "#8b97ad") + "</tr>";
-    }).join("");
-    if (!rows.length) return "<div style='color:#6b7a94;padding:8px 2px'>sem amostra ainda</div>";
-    return "<table style='width:100%;border-collapse:collapse;font-size:11.5px'>" + head + body + "</table>";
-  };
-  const renderSafetyShadow = (data, blitz) => {
-    const el = $("safetyShadow");
-    const levels = data?.levels ?? [];
-    const binaryRows = levels.map((r) => ({ name: strategyName(String(r.label ?? r.level)), settled: r.settled, winRate: r.winRate, edge: r.edge, breakeven: r.breakeven, pnl: r.pnl, entriesPerHour: r.entriesPerHour }));
-    const blitzRows = (blitz?.levels ?? []).map((r) => ({ name: strategyName(String(r.label ?? r.level)), settled: r.settled, winRate: r.winRate, edge: r.edge, breakeven: r.breakeven, pnl: r.pnl, entriesPerHour: r.entriesPerHour }));
-    el.innerHTML = "<div style='display:grid;grid-template-columns:1fr 1fr;gap:16px'>" +
-      "<div style='background:#0b1220;border:1px solid #1c2942;border-radius:12px;padding:10px'><div style='font-size:12px;color:#e8edf7;font-weight:700;margin-bottom:6px'>Binarios OTC</div>" + renderTable(binaryRows) + "</div>" +
-      "<div style='background:#0b1220;border:1px solid #1c2942;border-radius:12px;padding:10px'><div style='font-size:12px;color:#e8edf7;font-weight:700;margin-bottom:6px'>Blitz OTC 45s</div>" + renderTable(blitzRows) + "</div>" +
-      "</div>";
-    if (!levels.length && !blitzRows.length) { el.innerHTML = "Sem dados ainda — o medidor roda junto com os agentes e liquida pelo feed a cada minuto."; return; }
-  };
-  const STRATEGY_NAMES = { "50": "TraceCom Estendida (15min + 6 agentes)", "CONT_300": "Continuacao 300s (candle+ADX)", "PULLBACK_150": "Pullback 150s (RSI contra tendencia)", "PULLBACK_300": "Pullback 300s (RSI contra tendencia)", "PULLBACK_X300": "Pullback 300s com retorno do RSI", "PULLBACK_LOOSE_300": "Pullback 300s solto (RSI 35/65)", "PULLBACK_4060_180": "Pullback 180s (RSI 40/60)", "PULLBACK_4060_300": "Pullback 300s (RSI 40/60)", "PULLBACK_X4060_300": "Pullback 300s 40/60 com retorno do RSI", "PULLBACK_4560_300": "Pullback 300s solto (RSI 45/55)", "PULLBACK_XTIGHT_300": "Pullback 300s restrito (estrutura+pullback+dominancia)" };
-  const strategyName = (label) => STRATEGY_NAMES[String(label)] ?? ("Nivel " + label);
-  const fmtWr = (r) => (r.winRate == null ? "sem WR" : "WR " + String(r.winRate).replace(".", ",") + "%");
-  const fmtRitmo = (r) => (r.entriesPerHour == null ? "-" : String(r.entriesPerHour).replace(".", ",") + "/h");
-  const fmtEdge = (r) => (r.edge == null ? "-" : (r.edge >= 0 ? "+" : "") + String(r.edge).replace(".", ",") + "pp");
-  const refreshAgentConfig = async () => {
-    const data = await api("/api/iq/agents/config");
-    const shadow = await api("/api/iq/agents/shadow?hours=6");
-    const blitz = await api("/api/iq/agents/blitz?hours=6");
-    if (data) {
-      state.agentSafetyPct = Number(data.safetyPct ?? 100);
-      state.agentVariant = String(data.variant ?? data.safetyPct ?? 100);
-      const color = state.agentSafetyPct >= 100 ? "#4ade80" : state.agentSafetyPct >= 70 ? "#facc15" : "#f87171";
-      $("safetyStatus").innerHTML = "Seguranca ativa: <b style='color:" + color + "'>" + state.agentVariant + "%</b>" + (data.fromEnv ? " (env)" : "") + " · auto-arm: " + (data.autoArmPractice ? "ON" : "OFF") + " · niveis A/B: " + (data.shadowLevels ?? []).join(", ");
-      const reportByLabel = new Map((shadow?.levels ?? []).map((r) => [String(r.label ?? r.level), r]));
-      const allLabels = [...new Set([...(data.shadowLevels ?? []), ...(shadow?.levels ?? []).map((r) => String(r.label ?? r.level)), state.agentVariant])];
-      const rows = allLabels.map((label) => reportByLabel.get(label) ?? { label, level: Number(String(label).replace(/[^0-9]/g, "")) || 0, entries: 0, settled: 0, winRate: null, edge: null, entriesPerHour: null });
-      rows.sort((a, b) => {
-        const aCur = String(a.label ?? a.level) === state.agentVariant ? 1 : 0;
-        const bCur = String(b.label ?? b.level) === state.agentVariant ? 1 : 0;
-        if (aCur !== bCur) return bCur - aCur;
-        const aw = a.winRate == null ? -1 : Number(a.winRate);
-        const bw = b.winRate == null ? -1 : Number(b.winRate);
-        if (bw !== aw) return bw - aw;
-        return Number(b.entries ?? 0) - Number(a.entries ?? 0);
-      });
-      const sel = $("safetySelect");
-      sel.innerHTML = rows.map((r) => {
-        const label = String(r.label ?? r.level);
-        const isCur = label === state.agentVariant;
-        return "<option value='" + label + "'" + (isCur ? " selected" : "") + ">" + strategyName(label) + (isCur ? "  (ATIVA)" : "") + "  -  " + fmtWr(r) + "  -  " + fmtRitmo(r) + "  -  margem " + fmtEdge(r) + "  (n=" + (r.settled ?? 0) + ")</option>";
-      }).join("");
-      if (!rows.length) sel.innerHTML = "<option value='" + state.agentVariant + "'>" + state.agentVariant + "% (sem amostra ainda)</option>";
 
-      const setSwitch = (id, on) => { const dot = $(id); const wrap = $(id + "Wrap"); if (!dot || !wrap) return; dot.style.transform = on ? "translateX(18px)" : "translateX(0)"; dot.style.background = on ? "#4ade80" : "#8b97ad"; wrap.style.background = on ? "#14532d" : "#1c2942"; };
-      setSwitch("swBinary", true);
-      setSwitch("swBlitz", true);
-      const sw = data.autoSwitch ?? null;
-      if (sw) $("safetyStatus").innerHTML += " · troca automatica: <b style='color:#4ade80'>" + String(sw.preferred ?? "BLITZ") + "</b>" + (sw.binary && sw.blitz ? " (bin " + (sw.binary.wr ?? "-") + "% n=" + sw.binary.n + " x blitz " + (sw.blitz.wr ?? "-") + "% n=" + sw.blitz.n + ")" : "");
-    }
-    renderSafetyShadow(shadow, blitz);
-  };
-  const toggleExec = async () => { /* interruptores removidos: os dois lados ficam ativos e a troca e automatica pelo melhor WR */ };
-  if ($("swBinaryWrap")) $("swBinaryWrap").onclick = () => toggleExec();
-  if ($("swBlitzWrap")) $("swBlitzWrap").onclick = () => toggleExec();
-  const saveAgentConfig = async () => {
-    const value = $("safetySelect").value;
-    const saved = await api("/api/iq/agents/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ variant: value }) });
-    if (!saved) { $("safetyStatus").innerHTML = "<b style='color:#f87171'>nao foi possivel salvar</b> — sessao do painel expirou. Recarregue a pagina (Ctrl+F5) e tente de novo."; return; }
-    await refreshAgentConfig();
-    $("safetyStatus").innerHTML += " · <b style='color:#4ade80'>salvo</b>";
-  };
-  $("safetySave").onclick = saveAgentConfig;
-  $("navConfig").onclick = () => { $("navConfig").classList.add("on"); $("configModal").classList.add("on"); refreshMcp(); refreshAgentConfig(); };
-  $("configModal").onclick = (e) => { if (e.target === $("configModal")) { $("navConfig").classList.remove("on"); $("configModal").classList.remove("on"); } };
+  $("navMesas").onclick = openMesas;
+  $("mesasModal").onclick = (e) => { if (e.target === $("mesasModal")) $("mesasModal").classList.remove("on"); };
+  $("navLog").onclick = () => { state.logOpen = true; $("logPanel").classList.add("on"); renderLog(); };
+  $("btnLogClose").onclick = () => { state.logOpen = false; $("logPanel").classList.remove("on"); };
+  $("navHist").onclick = openHistory;
+  $("histModal").onclick = (e) => { if (e.target === $("histModal")) $("histModal").classList.remove("on"); };
+  $("detailModal").onclick = (e) => { if (e.target === $("detailModal")) $("detailModal").classList.remove("on"); };
+  $("navConfig").onclick = async () => { $("configModal").classList.add("on"); await refreshMcp(); await refreshHeader(); };
+  $("configModal").onclick = (e) => { if (e.target === $("configModal")) $("configModal").classList.remove("on"); };
   $("mcpSave").onclick = saveMcp;
   $("mcpClear").onclick = clearMcp;
+  $("acctPractice").onclick = () => selectAccount("PRACTICE");
+  $("acctReal").onclick = () => { selectAccount("REAL"); $("btnRealArm").disabled = false; };
+  $("btnArm").onclick = async () => { const armed = $("btnArm").classList.contains("armed"); $("btnArm").style.pointerEvents = "none"; try { if (armed) await disarmNow(); else await armNow(); } finally { $("btnArm").style.pointerEvents = ""; } };
+  $("btnRealArm").onclick = armRealNow;
   $("searchInput").oninput = (e) => { const q = String(e.target.value ?? "").toUpperCase(); for (const [key, card] of state.cards.entries()) { const cell = card.chip.closest(".cell"); if (cell) cell.style.display = !q || key.includes(q) ? "" : "none"; } };
-  window.addEventListener("resize", () => { for (const row of state.markets) { const card = state.cards.get(row.marketKey); if (card) drawChart(card.canvas, state.candles.get(row.marketKey)); } });
+  window.addEventListener("resize", () => { for (const asset of state.assets) { const card = state.cards.get(asset.marketKey); if (card) drawChart(card.canvas, state.candles.get(asset.marketKey)); } });
   setInterval(() => { const d = new Date(); setText($("clock"), d.toLocaleTimeString("pt-BR")); }, 1000);
   (async () => {
-    await refreshHeader(); await refreshActive(); await refreshConsensus(); await refreshResults(); await refreshPerf(); await refreshCandles();
+    await refreshIntelligence(); await refreshHeader(); await refreshResults(); await refreshPerf(); await refreshStrategyStats(); await refreshCandles();
     setInterval(refreshCandles, 1000);
+    setInterval(refreshIntelligence, 2000);
     setInterval(refreshHeader, 3000);
     setInterval(refreshResults, 3000);
-    setInterval(refreshConsensus, 5000);
     setInterval(refreshPerf, 5000);
-    setInterval(refreshActive, 10000);
-    setInterval(refreshLog, 6000);
-    setInterval(refreshLab, 10000);
+    setInterval(refreshStrategyStats, 10000);
   })();
 })();
 </script>

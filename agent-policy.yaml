@@ -19,6 +19,18 @@ zones:
     - path: relay/lab/store.mjs
       reason: persistencia de trades/decisoes
       checkpoint: architecture-review
+    - path: relay/intelligence/**
+      reason: AssetContext/FeatureEngine/especialistas/consensus/snapshot (semantica da decisao V2)
+      checkpoint: architecture-review
+    - path: relay/execution/**
+      reason: timing 300s, gate, revalidation, router e dispatch (caminho unico de execucao)
+      checkpoint: architecture-review
+    - path: relay/migrations/**
+      reason: schema do banco (candles 5s, rastreio de trades)
+      checkpoint: architecture-review
+    - path: src/http/public/grid.html
+      reason: frontend operacional (MESAS/LOG/HISTORICO/CONFIGURACOES)
+      checkpoint: architecture-review
     - path: relay/server.mjs
       reason: rotas HTTP e wiring de runtime
       checkpoint: architecture-review
