@@ -654,11 +654,11 @@ export class IqMultiRuntime extends EventEmitter {
     return { targets: targets.length, markets, loaded, failed, empty, skipped };
   }
 
-  /** Retry throttled (1x/5min por mercado) para contextos OTC ativados/criados apos o boot. */
+  /** Retry throttled (1x/60s por mercado) para contextos OTC ativados/criados apos o boot ou que falharam. */
   #maybeRehydrateCandles() {
     if (!this.session.connected || !this.client) return;
     const now = this.now();
-    const stale = [...this.markets.values()].filter((ctx) => ctx.enabled && ctx.marketType === "OTC" && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < 40 && now - (ctx.historyTriedAt ?? 0) > 300_000);
+    const stale = [...this.markets.values()].filter((ctx) => ctx.enabled && ctx.marketType === "OTC" && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < 40 && now - (ctx.historyTriedAt ?? 0) > 60_000);
     if (!stale.length) return;
     void this.#rehydrateCandleHistory(this.client, { only: stale })
       .then((history) => { if (history.loaded > 0) this.#safe(() => this.log("IQ_MULTI_CANDLE_HISTORY_RETRY", JSON.stringify(history))); })
