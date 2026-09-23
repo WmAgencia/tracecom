@@ -695,7 +695,11 @@ export class IqMultiRuntime extends EventEmitter {
       const desired = row.enabled === true;
       const isStaleNormal = ctx.marketType === "NORMAL" && (row.availability === "NOT_OFFERED" || row.active_id === null || row.active_id === undefined);
       const effective = isStaleNormal ? false : desired;
-      if (ctx.enabled === effective) continue;
+      if (ctx.enabled === effective) {
+        // Normalizacao stale precisa persistir mesmo que o runtime ja esteja disabled.
+        if (isStaleNormal && desired === true) { try { this.setMarket(ctx.marketKey, { enabled: false }, { persist: true, actor: "reconcile" }); staleNormal += 1; } catch { /* noop */ } }
+        continue;
+      }
       if (effective === true) {
         if (ctx.availability !== "OPEN" || ctx.activeId === null || ctx.activeId === undefined) { notAvailable += 1; continue; }
         try { this.setMarket(ctx.marketKey, { enabled: true }, { persist: false, actor: "reconcile" }); enabledApplied += 1; } catch { notAvailable += 1; }

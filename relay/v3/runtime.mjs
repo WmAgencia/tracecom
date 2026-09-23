@@ -370,7 +370,7 @@ export class V3Runtime {
         if (result?.dropped === true) { this.counters.persistDropped += 1; await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1))); continue; }
         this.counters.persisted += 1;
         return true;
-      } catch (error) { this.counters.persistErrors += 1; this.log("V3_PERSIST_OPPORTUNITY_FAIL", String(error?.message ?? error).slice(0, 140)); return false; }
+      } catch (error) { this.counters.persistErrors += 1; this.counters.persistLastError = String(error?.message ?? error).slice(0, 180); this.log("V3_PERSIST_OPPORTUNITY_FAIL", String(error?.message ?? error).slice(0, 140)); return false; }
     }
     this.counters.persistDroppedFinal += 1;
     this.log("V3_PERSIST_OPPORTUNITY_DROPPED", String(opportunity.opportunityId));
@@ -389,7 +389,7 @@ export class V3Runtime {
         );
         if (result?.dropped === true) { this.counters.persistDropped += 1; await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1))); continue; }
         return true;
-      } catch (error) { this.counters.persistErrors += 1; this.log("V3_PERSIST_CYCLE_FAIL", String(error?.message ?? error).slice(0, 140)); return false; }
+      } catch (error) { this.counters.persistErrors += 1; this.counters.persistLastError = String(error?.message ?? error).slice(0, 180); this.log("V3_PERSIST_CYCLE_FAIL", String(error?.message ?? error).slice(0, 140)); return false; }
     }
     this.counters.persistDroppedFinal += 1;
     this.log("V3_PERSIST_CYCLE_DROPPED", stableStringify({ opportunityId, cycleNumber: cycle?.cycleNumber ?? null }));
