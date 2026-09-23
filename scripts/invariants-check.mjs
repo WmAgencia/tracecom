@@ -80,6 +80,7 @@ ok("ACCOUNT_ONLY_AT_ROUTER", !/selectedAccount/.test(dispatch) && !/selectedAcco
 ok("TEST_PATH_PRACTICE_ONLY", /TEST_PATH_PRACTICE_ONLY/.test(runtime) && /submitPathTestOrder/.test(runtime) && !/submitLabPracticeOrder/.test(runtime));
 ok("TEST_PATH_EXCLUDED_FROM_STATS", /entryTiming\?\.pathTest === true \? \{ strategyVersion: "PATH_TEST"/.test(runtime) && /excluded_from_stats=false/.test(runtime) && /testOnly: true, excludedFromStats: true/.test(runtime) && /entryTiming: \{ pathTest: true \}/.test(server) && /account_context='PRACTICE' AND excluded_from_stats=false/.test(runtime));
 ok("HYDRATION_CANNOT_BE_DROPPED", /iq_candles_5s/.test(read("relay/persist-scheduler.mjs")) && /CANDLE_STORE_LOAD_DROPPED/.test(read("relay/intelligence/candle-store.mjs")));
+ok("HYDRATION_BEFORE_FEED", /await this\.#ensureIntelligenceHydration\(\)/.test(runtime) && runtime.indexOf("await this.#ensureIntelligenceHydration()") < runtime.indexOf("for (const ctx of this.markets.values()) this.#subscribeCtx(client, ctx)"));
 ok("PRODUCT_STATES_BACKEND", productState({ enabled: true, feedStatus: "OK", hydration: "HYDRATION_READY", consensusSide: "BUY" }) === "BUY" && productState({ enabled: true, feedStatus: "ABSENT", hydration: "HYDRATION_READY", consensusSide: "BUY" }) === "SEM FEED" && productState({ enabled: true, feedStatus: "OK", purchaseStatus: "UNAVAILABLE", hydration: "HYDRATION_READY", consensusSide: "BUY" }) === "SEM COMPRA");
 
 console.log(fail === 0 ? `INVARIANTS ALL_PASS (${pass}/${pass})` : `INVARIANTS FAIL (${fail})`);

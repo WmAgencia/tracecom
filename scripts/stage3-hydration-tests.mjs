@@ -81,6 +81,8 @@ class FakePool {
   ok("cross-restart: boot B (restart) reconstroi estado identico", reportB.ready === 1 && pipeB.hydration === HYDRATION_READY && stableStringify(pipeA.ctx.snapshot()) === stableStringify(pipeB.ctx.snapshot()));
   ok("cross-restart: FeatureEngine reconstruido (mesma featuresVersion/at)", pipeA.features?.version === pipeB.features?.version && pipeA.features?.at === pipeB.features?.at && pipeB.featuresComputed === 1);
   ok("health apos restart: READY/intelligenceReady com intervalo observado 5000", bootB.health().state === "READY" && bootB.health().observedIntervalMs === 5000 && bootB.health().intelligenceReady === true);
+  const diag = pipeB.ctx.gaps();
+  ok("hydration expoe diagnostico direto (firstAt/lastAt/maxGapMs/gaps)", Number.isFinite(pipeB.ctx.candles[0]?.at) && Number.isFinite(pipeB.ctx.lastCandle?.at) && Number.isFinite(diag.maxGapMs) && diag.count >= 0);
 }
 
 /* 3) loader falhando no boot -> FAILED por ativo, sem excecao (fail-closed) */

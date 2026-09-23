@@ -420,7 +420,7 @@ export class IqMultiRuntime extends EventEmitter {
       this.#safe(() => this.log("IQ_MULTI_PAYOUT_SUBSCRIBED", "binary-option,turbo-option"));
     } catch (error) { this.#safe(() => this.log("IQ_MULTI_PAYOUT_SUBSCRIBE_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 80))); }
     if (!this.activeMarketKeys().length && this.configHydrated === true) this.#applyDefaultSelection();
-    this.#ensureIntelligenceHydration();
+    await this.#ensureIntelligenceHydration();
     for (const ctx of this.markets.values()) this.#subscribeCtx(client, ctx);
     // Fontes externas reais ainda nao integradas: registra NO_FEED honesto (nunca inventa noticia/macro).
     this.intelligence.publish("MACRO", { note: "sem integracao externa de macro conectada" }, { source: "none", sourceType: "EXTERNAL", dataQuality: "UNAVAILABLE", status: "NO_FEED" });
@@ -444,7 +444,6 @@ export class IqMultiRuntime extends EventEmitter {
     this.#emitEvent("markets.default_selection", { selected: selected.map((ctx) => ctx.marketKey), otcAvailable: otc.length });
     void this.#persistConfig();
     for (const ctx of selected) void this.#persistMarket(ctx);
-    this.#ensureIntelligenceHydration();
   }
 
   #applyBalances(msg) {
@@ -3021,7 +3020,8 @@ export class IqMultiRuntime extends EventEmitter {
     }
   }
 
-  /** Hidrata a inteligencia dos ativos OTC habilitados que ainda estao PENDING (uma vez por ativo). */
+  /** Hidrata a inteligencia dos ativos OTC habilitados que ainda estao PENDING (uma vez por ativo).
+   *  Retorna a promise da hidratacao para o boot poder aguardar antes de assinar o feed (sem corrida). */
   #ensureIntelligenceHydration() {
     if (!this.assetIntelligence) return null;
     const pending = [...this.markets.values()]
@@ -3029,13 +3029,14 @@ export class IqMultiRuntime extends EventEmitter {
       .map((ctx) => ctx.marketKey)
       .filter((marketKey) => { const pipeline = this.assetIntelligence.registry.get(marketKey); return !pipeline || pipeline.hydration === HYDRATION_PENDING; });
     if (!pending.length) return null;
-    void this.assetIntelligence.start(pending).then((report) => {
+    return this.assetIntelligence.start(pending).then((report) => {
       this.#safe(() => this.log("ASSET_INTELLIGENCE_HYDRATE", JSON.stringify({ requested: pending.length, ready: report?.ready ?? 0, partial: report?.partial ?? 0, failed: report?.failed ?? 0 })));
+      return report;
     }).catch((error) => {
       this.assetIntelligenceError = String(error?.message ?? error).slice(0, 140);
       this.#safe(() => this.log("ASSET_INTELLIGENCE_HYDRATE_FAIL", this.assetIntelligenceError));
+      return null;
     });
-    return pending;
   }
 
   intelligenceStatus() { return { assetIntelligence: (this.assetIntelligence?.health?.() ?? { intelligenceReady: false, degraded: true, initError: this.assetIntelligenceError ?? "NOT_INSTANTIATED", assetsTotal: 0, assetsReady: 0, assetsPartial: 0, assetsFailed: 0, lastPipelineUpdateAt: null }), strategy: { version: this.operationalStrategy?.version ?? null, status: this.operationalStrategy?.status ?? "UNAVAILABLE", executable: this.operationalStrategy?.executable === true, strategyHash: this.operationalStrategy?.strategyHash ?? null }, dispatch: (this.intelligenceDispatch?.status?.() ?? { wired: false, counters: null }), candleStore: (this.candleStore?.status?.() ?? { ready: false }), version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS], feeds: this.feeds.status(), knowledge: this.knowledge.status(), secondBrain: this.secondBrain.status(), brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION }; }
@@ -3053,6 +3054,7 @@ export class IqMultiRuntime extends EventEmitter {
       const payoutKnown = ctx?.payout !== null && ctx?.payout !== undefined;
       const purchaseStatus = ctx?.availability === "OPEN" && (!payoutKnown || Number(ctx.payout) > 0) ? "AVAILABLE" : "UNAVAILABLE";
       const pipeline = this.assetIntelligence.registry.get(status.marketKey);
+      const gaps = pipeline?.ctx?.gaps?.() ?? { count: 0, maxGapMs: 0, gapRatio: 0 };
       rows.push({
         marketKey: status.marketKey,
         enabled,
@@ -3065,9 +3067,14 @@ export class IqMultiRuntime extends EventEmitter {
         feedStatus: this.assetIntelligence.feedStatusFor(status.marketKey),
         consensusSide: status.consensusSide,
         candles: status.candles,
+        firstAt: pipeline?.ctx?.candles?.[0]?.at ?? null,
+        lastAt: status.featuresAt ?? pipeline?.ctx?.lastCandle?.at ?? null,
+        maxGapMs: gaps.maxGapMs,
+        gaps: gaps.count,
         coverageMs: status.coverageMs,
         intervalMs: status.intervalMs,
         gapRatio: status.gapRatio,
+        rejectedOutOfOrder: pipeline?.ctx?.counts?.outOfOrder ?? 0,
         featuresVersion: status.featuresVersion,
         featuresAt: status.featuresAt,
         lastSnapshotId: status.lastSnapshotId,
