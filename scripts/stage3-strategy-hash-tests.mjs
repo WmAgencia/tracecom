@@ -48,5 +48,17 @@ ok("loader do runtime le o manifesto com hash definido e executavel coerente", [
   fs.rmSync(flatRoot, { recursive: true, force: true });
 }
 
+/* Fase 7: `executable:false` explicito no manifesto e autoridade — nunca inferido do status. */
+{
+  const overrideRoot = fs.mkdtempSync(path.join(os.tmpdir(), "tracecom-manifest-locked-"));
+  fs.writeFileSync(path.join(overrideRoot, "PULLBACK_4060_300_AGENTIC_V2.json"), JSON.stringify({ ...manifest, executable: false }));
+  const locked = loadOperationalStrategy({ rootDir: overrideRoot });
+  ok("manifesto ACTIVE com executable:false => loader nao executa (fail-closed)", locked.status === "ACTIVE" && locked.executable === false && locked.strategyHash === manifest.strategyHash);
+  fs.writeFileSync(path.join(overrideRoot, "PULLBACK_4060_300_AGENTIC_V2.json"), JSON.stringify({ ...manifest, status: "READY_FOR_DEPLOY", executable: true }));
+  const notActive = loadOperationalStrategy({ rootDir: overrideRoot });
+  ok("manifesto executable:true mas status != ACTIVE => loader nao executa", notActive.status === "READY_FOR_DEPLOY" && notActive.executable === false);
+  fs.rmSync(overrideRoot, { recursive: true, force: true });
+}
+
 console.log(fail === 0 ? `STRATEGY_HASH_TESTS ALL_PASS (${pass}/${pass})` : `STRATEGY_HASH_TESTS FAIL (${fail})`);
 process.exit(fail === 0 ? 0 : 1);

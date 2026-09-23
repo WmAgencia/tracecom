@@ -26,6 +26,7 @@ export const SUITES = Object.freeze([
   "single-path-tests.mjs",
   "agentic-tests.mjs",
   "lab6-tests.mjs",
+  "secret-scan.mjs",
   "invariants-check.mjs",
 ]);
 

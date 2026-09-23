@@ -22,7 +22,9 @@ function candles() {
   return closes.map((close, i) => { const open = i === 0 ? close : closes[i - 1]; const bucketEnd = START_MS + (i + 1) * STEP_MS; return { bucketStart: bucketEnd - STEP_MS, bucketEnd, open, high: Math.max(open, close) + unit, low: Math.min(open, close) - unit, close }; });
 }
 
-const pool = new pg.Pool({ connectionString: "postgresql://postgres.cladmauwmuoeqongxzwb:Eqvpanp.050323@aws-0-us-west-2.pooler.supabase.com:5432/postgres?sslmode=no-verify", max: 2, ssl: { rejectUnauthorized: false } });
+const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL || "";
+if (!TEST_DATABASE_URL) { console.log("SKIP: TEST_DATABASE_URL ausente (suite de integracao; nunca usa DATABASE_URL de producao)"); process.exit(0); }
+const pool = new pg.Pool({ connectionString: TEST_DATABASE_URL, max: 2, ssl: { rejectUnauthorized: false } });
 const runA = `s04-50-tests-a-${Date.now()}`;
 const runB = `s04-50-tests-b-${Date.now()}`;
 

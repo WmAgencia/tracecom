@@ -204,6 +204,10 @@
   const Ops = window.OpsUI;
   const $ = (id) => document.getElementById(id);
   const api = async (path, options) => { const r = await fetch(path, options); return r.ok ? r.json().catch(() => null) : null; };
+  let notifyTimer = null;
+  const notify = (text) => { const el = $("footConn"); if (!el) return; el.textContent = text; el.style.color = "#f87171"; if (notifyTimer) clearTimeout(notifyTimer); notifyTimer = setTimeout(() => { notifyTimer = null; void refreshHeader(); }, 6000); };
+  // Fase 7: mutacao com falha (null) interrompe a sequencia — nunca segue para o proximo passo.
+  const apiStrict = async (path, options) => { const result = await api(path, options); if (result === null) notify("falha em " + path + " — ação interrompida"); return result; };
   const fmt = (v) => Number(v).toFixed(2).replace(".", ",");
   const fmtSigned = (v) => (Number(v) >= 0 ? "+" : "-") + fmt(Math.abs(Number(v)));
   const brl = (v) => (Number(v) >= 0 ? "+ R$ " : "- R$ ") + fmt(Math.abs(Number(v)));
@@ -387,22 +391,29 @@
   };
   const armPracticeNow = async () => {
     const stake = Math.max(2, Number($("stakeInput").value) || 2); $("stakeInput").value = String(stake);
-    await api("/api/iq/config/global-stake", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value: stake }) });
-    await api("/api/iq/kill-switch", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ engaged: false }) });
-    await api("/api/iq/config/auto-execute", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ enabled: true }) });
-    await api("/api/iq/arm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirmation: "ARM_PRACTICE", limitBrl: stake }) });
+    const steps = [
+      ["/api/iq/config/global-stake", { value: stake }],
+      ["/api/iq/kill-switch", { engaged: false }],
+      ["/api/iq/config/auto-execute", { enabled: true }],
+      ["/api/iq/arm", { confirmation: "ARM_PRACTICE", limitBrl: stake }],
+    ];
+    for (const [path, body] of steps) {
+      if (await apiStrict(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }) === null) return false;
+    }
     await refreshHeader();
+    return true;
   };
-  const disarmPracticeNow = async () => { await api("/api/iq/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) }); await refreshHeader(); };
+  const disarmPracticeNow = async () => { const ok = await apiStrict("/api/iq/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) }); await refreshHeader(); return ok !== null; };
   const armRealNow = async () => {
-    if (state.mode !== "REAL") { alert("Selecione REAL antes de ativar."); return; }
+    if (state.mode !== "REAL") { notify("selecione REAL antes de ativar"); return false; }
     const phrase = window.prompt("Digite a frase para ativar REAL: CONFIRMAR E ARMAR REAL");
-    if (phrase !== "CONFIRMAR E ARMAR REAL") return;
+    if (phrase !== "CONFIRMAR E ARMAR REAL") return false;
     const stake = Math.max(2, Number($("stakeInput").value) || 2);
-    await api("/api/iq/real/arm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ phrase, acknowledgeRisk: true, maxStake: stake }) });
+    const ok = await apiStrict("/api/iq/real/arm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ phrase, acknowledgeRisk: true, maxStake: stake }) });
     await refreshHeader();
+    return ok !== null;
   };
-  const disarmRealNow = async () => { await api("/api/iq/real/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) }); await refreshHeader(); };
+  const disarmRealNow = async () => { const ok = await apiStrict("/api/iq/real/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) }); await refreshHeader(); return ok !== null; };
   const toggleExecution = async () => {
     const btn = $("btnExecutionToggle"); btn.style.pointerEvents = "none";
     try {
@@ -415,11 +426,12 @@
   const selectAccount = async (context) => {
     const to = context === "REAL" ? "REAL" : "PRACTICE";
     const plan = Ops.switchDisarmPlan({ to, practiceArmed: state.practiceArmed, realArmed: state.realArmed });
-    if (plan.disarm.includes("PRACTICE")) await api("/api/iq/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) });
-    if (plan.disarm.includes("REAL")) await api("/api/iq/real/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) });
-    await api("/api/iq/account/select", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ context: to }) });
-    await api("/api/iq/mode", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: to }) });
-    if (to === "PRACTICE") await api("/api/iq/real/disarm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) });
+    const post = { method: "POST", headers: { "content-type": "application/json" } };
+    if (plan.disarm.includes("PRACTICE")) { if (await apiStrict("/api/iq/disarm", { ...post, body: JSON.stringify({}) }) === null) return; }
+    if (plan.disarm.includes("REAL")) { if (await apiStrict("/api/iq/real/disarm", { ...post, body: JSON.stringify({}) }) === null) return; }
+    if (await apiStrict("/api/iq/account/select", { ...post, body: JSON.stringify({ context: to }) }) === null) return;
+    if (await apiStrict("/api/iq/mode", { ...post, body: JSON.stringify({ mode: to }) }) === null) return;
+    if (to === "PRACTICE") { if (await apiStrict("/api/iq/real/disarm", { ...post, body: JSON.stringify({}) }) === null) return; }
     await refreshHeader(); await refreshResults();
   };
   const openMesas = async () => {
@@ -433,7 +445,7 @@
       const st = document.createElement("span"); st.className = "st"; st.textContent = row.status ?? "?";
       const po = document.createElement("span"); po.className = "po"; po.textContent = (row.payout ?? "-") + "%";
       const tg = document.createElement("button"); tg.className = "toggle " + (row.enabled ? "on" : "off"); tg.textContent = row.enabled ? "ON" : "OFF";
-      tg.onclick = async (event) => { event.stopPropagation(); await api("/api/iq/mesas", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ marketKey: row.marketKey, instrumentType: "BINARY", durationSeconds: 300, enabled: !row.enabled }) }); await openMesas(); await refreshIntelligence(); };
+      tg.onclick = async (event) => { event.stopPropagation(); const result = await apiStrict("/api/iq/mesas", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ marketKey: row.marketKey, instrumentType: "BINARY", durationSeconds: 300, enabled: !row.enabled }) }); if (result === null) return; await openMesas(); await refreshIntelligence(); };
       line.append(k, st, po, tg);
       line.onclick = () => { $("mesasModal").classList.remove("on"); const cell = document.querySelector('.cell[data-key="' + row.marketKey + '"]'); if (cell) { cell.scrollIntoView({ behavior: "smooth", block: "center" }); const card = cell.querySelector(".card"); card.classList.add("highlight"); setTimeout(() => card.classList.remove("highlight"), 3000); } };
       list.append(line);
@@ -506,8 +518,8 @@
     }
   };
   const refreshMcp = async () => { const data = await api("/api/iq/mcp/config"); const el = $("mcpStatus"); if (!data) { el.textContent = "API MCP: indisponível"; return; } el.innerHTML = "API MCP: " + (data.configured ? "<b style='color:#4ade80'>configurada</b> (" + esc(data.masked) + ")" : "<b style='color:#f87171'>não configurada</b>"); };
-  const saveMcp = async () => { const token = $("mcpTokenInput").value.trim(); if (!token) return; const r = await api("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token }) }); if (r) { $("mcpTokenInput").value = ""; await refreshMcp(); } };
-  const clearMcp = async () => { await api("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: "" }) }); await refreshMcp(); };
+const saveMcp = async () => { const token = $("mcpTokenInput").value.trim(); if (!token) return; const r = await apiStrict("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token }) }); if (r) { $("mcpTokenInput").value = ""; await refreshMcp(); } };
+const clearMcp = async () => { const r = await apiStrict("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: "" }) }); if (r === null) return; await refreshMcp(); };
 
   $("navMesas").onclick = openMesas;
   $("mesasModal").onclick = (e) => { if (e.target === $("mesasModal")) $("mesasModal").classList.remove("on"); };

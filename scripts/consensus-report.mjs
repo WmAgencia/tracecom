@@ -9,7 +9,9 @@ const require = createRequire(new URL("../relay/package.json", import.meta.url))
 const pg = require("pg");
 
 const hours = Math.max(1, Math.min(72, Number(process.argv[2]) || 6));
-const pool = new pg.Pool({ connectionString: "postgresql://postgres.cladmauwmuoeqongxzwb:Eqvpanp.050323@aws-0-us-west-2.pooler.supabase.com:5432/postgres?sslmode=no-verify", max: 2, ssl: { rejectUnauthorized: false } });
+const TEST_DATABASE_URL = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || "";
+if (!TEST_DATABASE_URL) { console.error("CONSENSUS_REPORT_FAILED: defina SUPABASE_DB_URL (nenhuma credencial hardcoded)"); process.exit(1); }
+const pool = new pg.Pool({ connectionString: TEST_DATABASE_URL, max: 2, ssl: { rejectUnauthorized: false } });
 const n2 = (v) => (Number.isFinite(Number(v)) ? Number(Number(v).toFixed(2)) : null);
 const pct = (part, total) => (total > 0 ? n2((100 * part) / total) + "%" : "n/a");
 

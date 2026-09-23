@@ -26,8 +26,8 @@ const outDir = outArgIndex >= 0 && process.argv[outArgIndex + 1]
   ? path.resolve(process.argv[outArgIndex + 1])
   : path.join(root, "backups");
 
-const CONNECTION = process.env.SUPABASE_DB_URL
-  || "postgresql://postgres.cladmauwmuoeqongxzwb:Eqvpanp.050323@aws-0-us-west-2.pooler.supabase.com:5432/postgres?sslmode=no-verify";
+const CONNECTION = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || "";
+if (!CONNECTION) { console.error("BACKUP_CONFIG_FAILED: defina SUPABASE_DB_URL (nenhuma credencial hardcoded)"); process.exit(1); }
 
 const maskToken = (value) => (value ? "••••" + String(value).slice(-4) : null);
 

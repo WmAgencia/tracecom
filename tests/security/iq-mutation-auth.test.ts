@@ -110,9 +110,18 @@ describe("SEGURANCA — mutacoes /api/iq/*", () => {
     expect(relayCalls.length).toBe(0);
   });
 
-  it("GET nunca muta: GET /api/iq/arm => 405 sem relay", async () => {
+  it("GET privado anonimo nunca muta e exige operador: GET /api/iq/arm => 401 sem relay", async () => {
     const response = await fetch(`${appBase}/api/iq/arm`, { method: "GET" });
-    expect(response.status).toBe(405);
+    expect(response.status).toBe(401);
+    expect(relayCalls.length).toBe(0);
+  });
+
+  it("GETs privados anonimos => 401 (status/account/context/stats/observability) sem relay", async () => {
+    const urls = ["/api/iq/status", "/api/iq/account/context", "/api/iq/strategy/stats", "/api/iq/strategy/observability"];
+    for (const url of urls) {
+      const response = await fetch(`${appBase}${url}`);
+      expect(response.status, url).toBe(401);
+    }
     expect(relayCalls.length).toBe(0);
   });
 
@@ -134,20 +143,28 @@ describe("SEGURANCA — mutacoes /api/iq/*", () => {
     expect(relayCalls[0]?.headers.actor).toBe("operator");
   });
 
-  it("sessao de PAINEL: emitida sem chave (same-origin) e valida sem mutar nada", async () => {
+  it("sessao de PAINEL sem chave => 401 fail-closed (same-origin NAO e identidade)", async () => {
     const panel = await fetch(`${appBase}/api/auth/panel`, { method: "POST", headers: { origin: appBase, "sec-fetch-site": "same-origin" } });
+    expect(panel.status).toBe(401);
+    expect((panel.headers.get("set-cookie") ?? "").startsWith("tc_op=")).toBe(false);
+    const status = await fetch(`${appBase}/api/iq/status`, { headers: { origin: appBase, "sec-fetch-site": "same-origin" } });
+    expect(status.status).toBe(401);
+    expect(relayCalls.length).toBe(0);
+  });
+
+  it("sessao de PAINEL com prova de chave (x-operator-key) => sessao valida; GET privado autenticado", async () => {
+    const panel = await fetch(`${appBase}/api/auth/panel`, { method: "POST", headers: { origin: appBase, "sec-fetch-site": "same-origin", "x-operator-key": OPERATOR_KEY } });
     expect(panel.status).toBe(200);
     const cookie = cookiesFrom(panel);
     expect(cookie.startsWith("tc_op=")).toBe(true);
     const session = await fetch(`${appBase}/api/auth/session`, { headers: { cookie } });
     expect(session.status).toBe(200);
     const body = await session.json() as Record<string, unknown>;
-    expect(body.ok).toBe(true);
     expect(["operator", "panel"]).toContain(body.actor);
     const anonymous = await fetch(`${appBase}/api/auth/session`);
     expect(anonymous.status).toBe(401);
     relayCalls.length = 0;
-    const mutation = await fetch(`${appBase}/api/iq/mesas`, { method: "PUT", headers: { "content-type": "application/json", cookie }, body: JSON.stringify({ marketKey: "EURUSD:OTC", instrumentType: "BINARY", durationSeconds: 60, enabled: true }) });
+    const mutation = await fetch(`${appBase}/api/iq/mesas`, { method: "PUT", headers: { "content-type": "application/json", cookie }, body: JSON.stringify({ marketKey: "EURUSD:OTC", instrumentType: "BINARY", durationSeconds: 300, enabled: true }) });
     expect(mutation.status).toBe(200);
     expect(relayCalls.length).toBe(1);
     expect(relayCalls[0]?.method).toBe("PUT");
@@ -158,11 +175,11 @@ describe("SEGURANCA — mutacoes /api/iq/*", () => {
     expect(cross.status).toBe(403);
   });
 
-  it("modo chave opcional (TRACECOM_OPERATOR_REQUIRE_KEY=true) bloqueia painel e mantem login por chave", async () => {
+  it("TRACECOM_OPERATOR_REQUIRE_KEY nao altera o contrato: painel SEMPRE exige prova de chave; chave segue valida", async () => {
     process.env.TRACECOM_OPERATOR_REQUIRE_KEY = "true";
     try {
       const panel = await fetch(`${appBase}/api/auth/panel`, { method: "POST", headers: { origin: appBase } });
-      expect(panel.status).toBe(403);
+      expect(panel.status).toBe(401);
       const login = await fetch(`${appBase}/api/auth/operator`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ accessKey: OPERATOR_KEY }) });
       expect(login.status).toBe(200);
       const cookie = cookiesFrom(login);

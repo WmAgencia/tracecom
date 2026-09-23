@@ -30,5 +30,7 @@ jobs:
           node --check relay/intelligence/asset-pipeline.mjs
       - name: Suites + invariantes (fail-closed)
         run: node scripts/run-all-tests.mjs
+      - name: Security suites (hermeticas: PGlite/Postgres, edge auth, requestOrder simulado)
+        run: npx vitest run tests/security
       - name: Baseline imutavel
         run: node scripts/stage3-strategy-hash-tests.mjs

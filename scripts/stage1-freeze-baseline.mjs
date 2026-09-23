@@ -4,7 +4,9 @@ import crypto from "node:crypto";
 import { createRequire } from "node:module";
 const require2 = createRequire("D:/tracecom/repo/relay/package.json");
 const pg = require2("pg");
-const pool = new pg.Pool({ connectionString: "postgresql://postgres.cladmauwmuoeqongxzwb:Eqvpanp.050323@aws-0-us-west-2.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=no-verify", ssl: { rejectUnauthorized: false }, max: 1, connectionTimeoutMillis: 30000 });
+const DB_URL = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || "";
+if (!DB_URL) { console.error("STAGE1_FREEZE_FAILED: defina SUPABASE_DB_URL (nenhuma credencial hardcoded)"); process.exit(1); }
+const pool = new pg.Pool({ connectionString: DB_URL, ssl: { rejectUnauthorized: false }, max: 1, connectionTimeoutMillis: 30000 });
 const q = async (sql) => { try { return (await pool.query(sql)).rows; } catch (e) { return [{ erro: e.message.slice(0, 160) }]; } };
 
 const ROOT = "D:/tracecom/repo";

@@ -48,6 +48,25 @@ const setConnected = ({ connected, timeValid = true, verified = true, balanceId 
   ok("queda -> status volta a desconectado (sem fila/estado stale)", rt.status().connection.execution.ready === false && rt.pendingOrders.size === 0);
 }
 
+/* 4b) Fase 7: prontidao de execucao POR CONTA — PRACTICE nunca e prova de REAL */
+{
+  setConnected({ connected: true, timeValid: true, verified: true, balanceId: 1250741747 });
+  rt.account.real = { available: false, balanceId: null, balance: null, currency: null };
+  const practiceContext = rt.status().connection.execution;
+  ok("contexto PRACTICE: ready=true (practice) mas readyReal=false (sem conta real)", practiceContext.ready === true && practiceContext.readyPractice === true && practiceContext.readyReal === false && practiceContext.account === "PRACTICE");
+  rt.account.real = { available: true, balanceId: 777, balance: 500, currency: "BRL" };
+  rt.accountContext.select("REAL");
+  rt.accountContext.reportRealAccount({ available: true, balance: 500, currency: "BRL", balanceId: 777 });
+  const realContext = rt.status().connection.execution;
+  ok("contexto REAL: readyReal=true com conta real acessivel; ready segue a conta selecionada", realContext.account === "REAL" && realContext.readyReal === true && realContext.ready === true);
+  rt.account.real = { available: false, balanceId: null, balance: null, currency: null };
+  const realMissing = rt.status().connection.execution;
+  ok("contexto REAL sem conta real: ready=false com REAL_ACCOUNT_NOT_READY (pratica nao serve de prova)", realMissing.ready === false && realMissing.readyReal === false && realMissing.reasons.includes("REAL_ACCOUNT_NOT_READY") && realMissing.readyPractice === true);
+  rt.accountContext.select("PRACTICE");
+  rt.account.real = { available: false, balanceId: null, balance: null, currency: null };
+  setConnected({ connected: false });
+}
+
 /* 5) REAL continua fail-closed */
 {
   const status = rt.status();

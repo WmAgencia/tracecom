@@ -72,13 +72,17 @@ export class RealModeController {
 
   authorized() { return process.env.REAL_TRADING_ENABLED === "true"; }
 
+  /** Sessao REAL ativa (confirmada e nao expirada). Autoridade unica com `authorized()` + accountContext. */
+  sessionActive() { return this.session !== null && this.now() < this.session.expiresAt; }
+
   authorizeOrder({ stake, marketKey } = {}) {
     if (!this.authorized()) throw new RealModeError("REAL_MODE_NOT_CONFIRMED");
+    if (!this.sessionActive()) throw new RealModeError("REAL_MODE_SESSION_REQUIRED");
     const value = Number(stake);
     if (!Number.isFinite(value) || value <= 0) throw new RealModeError("REAL_STAKE_INVALID");
-    if (value > this.session?.maxStake) throw new RealModeError("REAL_SESSION_STAKE_EXCEEDED", `${value} > ${this.session?.maxStake}`);
+    if (value > this.session.maxStake) throw new RealModeError("REAL_SESSION_STAKE_EXCEEDED", `${value} > ${this.session.maxStake}`);
     this.#record("REAL_ORDER_AUTHORIZED", { stake: value, marketKey: marketKey ?? null });
-    return { realModeSessionId: this.session?.realModeSessionId, maxStake: this.session?.maxStake, stake: value };
+    return { realModeSessionId: this.session.realModeSessionId, maxStake: this.session.maxStake, stake: value };
   }
 
   revoke(reason = "MANUAL") {

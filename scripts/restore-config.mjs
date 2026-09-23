@@ -47,9 +47,10 @@ const upsert = async (pool, table, row, keyColumn = "id") => {
   console.log(`  ${table}: aplicado`);
 };
 
+const RESTORE_DB_URL = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || "";
+if (!RESTORE_DB_URL) { console.error("RESTORE_CONFIG_FAILED: defina SUPABASE_DB_URL (nenhuma credencial hardcoded)"); process.exit(1); }
 const pool = new pg.Pool({
-  connectionString: process.env.SUPABASE_DB_URL
-    || "postgresql://postgres.cladmauwmuoeqongxzwb:Eqvpanp.050323@aws-0-us-west-2.pooler.supabase.com:5432/postgres?sslmode=no-verify",
+  connectionString: RESTORE_DB_URL,
   max: 1, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 30_000,
 });
 

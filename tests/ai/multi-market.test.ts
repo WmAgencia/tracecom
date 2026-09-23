@@ -21,6 +21,12 @@ const CONNECTION_ID = "conn-multi-1";
 const FAKE_SSID = "FAKE_SSID_NEVER_LEAK_1234567890";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const durablePool = () => ({
+  query: async (sql: string) => sql.includes("to_regclass")
+    ? { rows: [{ table_name: "iq_executions", read_only: "off" }], rowCount: 1 }
+    : { rows: [], rowCount: 1 },
+});
+
 function seedMarket(runtime: any, key: string, { activeId, close = 1.1, payout = 85, candles = 5, enabled = true }: { activeId: number; close?: number; payout?: number; candles?: number; enabled?: boolean }) {
   const ctx = runtime.markets.get(key);
   ctx.availability = "OPEN"; ctx.activeId = activeId; ctx.payout = payout; ctx.payoutSource = "test"; ctx.enabled = enabled; ctx.maxStake = 2;
@@ -33,7 +39,7 @@ function seedMarket(runtime: any, key: string, { activeId, close = 1.1, payout =
 }
 
 function multiFixture(overrides: Record<string, unknown> = {}) {
-  const runtime = new IqMultiRuntime({ pool: null, getSsid: () => FAKE_SSID, now: () => Date.now(), log: () => {}, ackTimeoutMs: 80, ...overrides }) as any;
+  const runtime = new IqMultiRuntime({ pool: durablePool(), getSsid: () => FAKE_SSID, now: () => Date.now(), log: () => {}, ackTimeoutMs: 80, ...overrides }) as any;
   runtime.session = { connected: true, host: "ws.iqoption.com", connectionId: CONNECTION_ID, serverTimeMs: Date.now(), clockSkewMs: 0, timeValid: true, connectedAt: Date.now() };
   runtime.connection = { connectionId: CONNECTION_ID, host: "ws.iqoption.com", serverTimeMs: Date.now(), clockSkewMs: 0, timeValid: true };
   runtime.account = { practice: { verified: true, balanceId: 555, balance: 10_000, currency: "USD" }, real: { available: true, balanceId: 777, balance: 500, currency: "USD" }, hasReal: true, checkedAt: Date.now(), type: "PRACTICE" };

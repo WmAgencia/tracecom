@@ -27,10 +27,12 @@ export function loadOperationalStrategy({ rootDir = null, manifestPath = OPERATI
       const manifest = JSON.parse(fs.readFileSync(file, "utf8"));
       const strategyHash = manifest.newStrategyHash ?? manifest.strategyHash ?? null;
       const status = normalizeStatus(manifest.status);
+      // Fase 7: `executable` explicito do manifesto e autoridade — nunca inferido apenas do status.
+      const explicitExecutable = manifest.executable === undefined ? true : manifest.executable === true;
       return Object.freeze({
         version: manifest.strategyVersion ?? null,
         status,
-        executable: status === STRATEGY_STATUS_ACTIVE && typeof strategyHash === "string" && strategyHash.length > 0,
+        executable: explicitExecutable && status === STRATEGY_STATUS_ACTIVE && typeof strategyHash === "string" && strategyHash.length > 0,
         strategyHash: typeof strategyHash === "string" && strategyHash.length > 0 ? strategyHash : null,
         manifestPath: file,
         manifest,

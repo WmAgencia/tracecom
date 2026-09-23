@@ -159,10 +159,11 @@ describe("AgentsV4Engine", () => {
     expect(status.markets[0].opinion).toBeTruthy();
   });
 
-  it("REAL allowlist permanece intacto (somente PROFESSIONAL_BRAIN_G2)", async () => {
+  it("REAL allowlist permanece intacto (identidade = versão operacional congelada)", async () => {
     // @ts-expect-error - relay ESM sem tipagem
     const accountContext = await import("../../relay/account-context.mjs");
-    expect(accountContext.REAL_STRATEGY_ALLOWLIST.allowed).toEqual(["PROFESSIONAL_BRAIN_G2"]);
+    expect(accountContext.REAL_STRATEGY_ALLOWLIST.allowed).toContain("PULLBACK_4060_300_AGENTIC_V2");
+    expect(accountContext.REAL_STRATEGY_ALLOWLIST.allowed).not.toContain("PROFESSIONAL_BRAIN_G2");
     expect(accountContext.REAL_STRATEGY_ALLOWLIST.shadowOnly).toContain("AGENT_V4");
   });
 });

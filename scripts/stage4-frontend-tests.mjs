@@ -32,6 +32,13 @@ const server = fs.readFileSync(new URL("../relay/server.mjs", import.meta.url), 
   ok("NO_ORPHAN_OBSERVATION_DOM: ids/classes da observacao inexistentes", !/id="obs/.test(grid) && !/class="obs/.test(grid));
   ok("three summary cards remain (V2/Lucro/Inteligencia) e grid logo em seguida", (grid.match(/<section class="pcard/g) ?? []).length === 3 && grid.indexOf('<main id="grid">') < grid.indexOf('class="foot"') && !/Observação/.test(grid.slice(grid.indexOf("sumgrid"), grid.indexOf('<main id="grid">'))));
   ok("broker status com fonte explicita (connection.execution.ready), sem 'connected' ambiguo", grid.includes("connection?.execution") && grid.includes("execConn?.ready") && !/st\?\.connected|st\.connected/.test(grid));
+  /* Fase 7: mutacao com falha (null) interrompe a sequencia — nunca segue para o proximo passo. */
+  ok("MUTATION_FAIL_FAST: apiStrict existe e avisa falha sem seguir", /const apiStrict = async/.test(grid) && /result === null\) notify/.test(grid));
+  const armFn = grid.slice(grid.indexOf("const armPracticeNow"), grid.indexOf("const armPracticeNow") + 900);
+  ok("ARM_PRACTICE nao segue apos falha (steps + return false)", /const steps = \[/.test(armFn) && /=== null\) return false/.test(armFn));
+  const selectFnFailFast = grid.slice(grid.indexOf("const selectAccount ="), grid.indexOf("const openMesas"));
+  ok("selectAccount aborta a sequencia em qualquer falha", (selectFnFailFast.match(/=== null\) return;/g) ?? []).length >= 4);
+  ok("toggle de MESAS nao refaz refresh apos falha", /apiStrict\("\/api\/iq\/mesas"[\s\S]{0,240}result === null\) return; await openMesas\(\)/.test(grid));
 }
 
 /* 3) grid consome productState do backend (nao recalcula estrategia) */

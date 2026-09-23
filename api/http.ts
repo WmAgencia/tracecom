@@ -29,6 +29,7 @@ import { quantShadowDecision } from "../src/quant-v2/quant-fusion.js";
 import { analyzeTechnicalState } from "../src/vision/technical-analyst.js";
 import { OperationalController } from "../src/vision/operational-controller.js";
 import { decideOperationalGate, horizonCompatibility, makeSelection, type LatestOperationalSignal, type StrategySelection } from "../src/strategies/selection.js";
+import { operatorGateDecision, panelSessionDecision } from "../src/security/operator-gate.js";
 
 type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -692,6 +693,19 @@ export function mesasBulkPayload(input: Record<string, unknown> = {}): Record<st
   if (typeof input.enabled !== "boolean") return null;
   return { filter, enabled: input.enabled === true, confirmZeroUniverse: input.confirmZeroUniverse === true };
 }
+/** Query string dos endpoints de estrategia (stats/observability) — allowlist explicita.
+ *  A11: o edge NUNCA repassa query bruta; version/strategyHash passam por formato, days e clampado. */
+export function strategyQueryParams(searchParams: URLSearchParams): string {
+  const token = /^[A-Za-z0-9._:-]{1,120}$/;
+  const params = new URLSearchParams();
+  const version = String(searchParams.get("version") ?? "").trim();
+  const hash = String(searchParams.get("strategyHash") ?? "").trim();
+  const days = Math.max(1, Math.min(365, Number(searchParams.get("days")) || 30));
+  if (token.test(version)) params.set("version", version);
+  if (token.test(hash)) params.set("strategyHash", hash);
+  params.set("days", String(days));
+  return params.toString();
+}
 async function relayAdminGet(path: string): Promise<Record<string, unknown>> {
   const base = process.env.TRACECOM_LIVE_RELAY_URL?.replace(/\/$/, ""); const admin = process.env.TRACECOM_LIVE_RELAY_ADMIN_SECRET?.trim(); if (!base || !admin) throw new Error("relay_not_configured");
   const response = await fetch(`${base}${path}`, { headers: { "x-relay-admin": admin }, signal: AbortSignal.timeout(8_000) }); if (!response.ok) throw new Error(`relay_${response.status}`); return await response.json() as Record<string, unknown>;
@@ -771,28 +785,21 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     res.end(JSON.stringify(body));
   };
 
-  // GATE GLOBAL: qualquer mutacao /api/* exige sessao de operador (ou chave de pesquisa
-  // para /api/research|shadow, que tem auth propria). Fail closed; GET nunca muta.
+  // GATE GLOBAL (fail-closed): mutations /api/* e GETs de rotas privadas exigem sessao de
+  // operador (cookie assinado) ou chave de pesquisa em /api/research|shadow. same-origin e
+  // apenas CSRF, nunca identidade. /api/live/* tem auth propria (Bearer) e segue para o handler.
   const methodUpper = (req.method ?? "GET").toUpperCase();
-  const isMutationMethod = methodUpper === "POST" || methodUpper === "PUT" || methodUpper === "PATCH" || methodUpper === "DELETE";
+  const auth = operatorAuthorized(req);
+  const researchPath = url.pathname.startsWith("/api/research/") || url.pathname.startsWith("/api/shadow/");
+  const gateDecision = operatorGateDecision({ method: methodUpper, pathname: url.pathname, operatorCookieValid: auth.ok, researchKeyValid: researchPath && await researchAuthorized(req) });
   let gateActor = "read_only";
   let gateAuth: { ok: boolean; reason: string; actor: string } = { ok: true, reason: "read_only", actor: "read_only" };
-  if (isMutationMethod && url.pathname.startsWith("/api/") && url.pathname !== "/api/auth/operator" && url.pathname !== "/api/auth/panel" && url.pathname !== "/api/auth/logout") {
-    const auth = operatorAuthorized(req);
-    const researchPath = url.pathname.startsWith("/api/research/") || url.pathname.startsWith("/api/shadow/");
-    if (auth.ok) { gateActor = "operator"; gateAuth = auth; }
-    else if (researchPath && await researchAuthorized(req)) { gateActor = "research"; }
-    else {
-      json(auth.reason === "cross_origin_blocked" ? 403 : auth.reason === "operator_auth_not_configured" ? 503 : 401, { error: auth.reason, practiceOnly: true });
-      return;
-    }
-  }
-  // GET broker-audit com orderProbe=1 CRIA posicao no broker (mutacao): exige operador.
-  if (methodUpper === "GET" && url.pathname === "/api/iq/broker-audit" && q.get("orderProbe") === "1") {
-    const auth = operatorAuthorized(req);
-    if (!auth.ok) { json(auth.reason === "cross_origin_blocked" ? 403 : 401, { error: auth.reason, practiceOnly: true }); return; }
-    gateActor = "operator";
-    gateAuth = auth;
+  if (gateDecision.mode === "operator") { gateActor = "operator"; gateAuth = auth; }
+  else if (gateDecision.mode === "research") { gateActor = "research"; }
+  else if (gateDecision.mode === "deny") {
+    const status = auth.reason === "cross_origin_blocked" ? 403 : auth.reason === "operator_auth_not_configured" ? 503 : (gateDecision.status ?? 401);
+    json(status, { error: auth.reason === "ok" ? gateDecision.error : auth.reason, practiceOnly: true });
+    return;
   }
 
   // Binance bloqueia alguns IPs de nuvem (HTTP 451). Retornamos disponível:false.
@@ -910,13 +917,18 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
     if (path === "/api/auth/panel" && (req.method === "POST" || req.method === "GET")) {
-      // Sessao do PAINEL: sem digitar chave. Emitida apenas para o proprio painel
-      // (same-origin/CSRF-safe) e registrada na auditoria. Modo chave opcional via env.
-      const requireKey = String(process.env.TRACECOM_OPERATOR_REQUIRE_KEY ?? "").toLowerCase() === "true";
-      if (requireKey) { json(403, { error: "key_required", hint: "TRACECOM_OPERATOR_REQUIRE_KEY=true: use /api/auth/operator" }); return; }
-      if (!sameOriginOk(req)) { json(403, { error: "cross_origin_blocked" }); return; }
+      // Sessao do PAINEL: exige PROVA DE CHAVE (header x-operator-key ou body.accessKey).
+      // same-origin/Sec-Fetch-Site e apenas CSRF; sem chave configurada -> fail-closed (503).
+      const key = operatorAccessKey();
+      const supplied = String(req.headers["x-operator-key"] ?? operationalInput?.accessKey ?? "");
+      const decision = panelSessionDecision({ keyConfigured: key.length > 0, keyValid: key.length > 0 && supplied.length > 0 && safeKeyEquals(key, supplied), sameOrigin: sameOriginOk(req) });
+      if (!decision.allow) {
+        if (decision.error === "operator_key_required" && !researchRateOk(`operator_auth:panel`, Math.max(1, Number(process.env.OPERATOR_AUTH_MAX_ATTEMPTS) || 5))) { json(429, { error: "too_many_attempts", practiceOnly: true }); return; }
+        json(decision.status, { error: decision.error, practiceOnly: true });
+        return;
+      }
       const secret = operatorSigningSecret();
-      if (!secret) { json(503, { error: "operator_auth_not_configured" }); return; }
+      if (!secret) { json(503, { error: "operator_auth_not_configured", practiceOnly: true }); return; }
       const expiresAt = Date.now() + OPERATOR_TTL_MS;
       const { token } = signOperatorToken(secret, expiresAt);
       res.setHeader("Set-Cookie", `${OPERATOR_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${Math.floor(OPERATOR_TTL_MS / 1000)}`);
@@ -982,6 +994,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
           : path === "/api/iq/real/preflight" ? `${q.get("strategy") ? `?strategy=${encodeURIComponent(String(q.get("strategy")))}` : "?"}${q.get("stake") ? `&stake=${encodeURIComponent(String(q.get("stake")))}` : ""}${q.get("marketKey") ? `&marketKey=${encodeURIComponent(String(q.get("marketKey")))}` : ""}`
           : path === "/api/iq/research/rsi-agents-v4/events" ? `?limit=${Math.max(1, Math.min(500, Number(q.get("limit")) || 100))}${q.get("marketKey") ? `&marketKey=${encodeURIComponent(q.get("marketKey") as string)}` : ""}`
           : path === "/api/iq/research/rsi-agents-v4/funnel" ? `${q.get("marketKey") ? `?marketKey=${encodeURIComponent(q.get("marketKey") as string)}` : ""}`
+          : path === "/api/iq/strategy/stats" || path === "/api/iq/strategy/observability" ? `?${strategyQueryParams(q)}`
           : path === "/api/iq/mesas" && req.method === "GET" ? ""
           : "";
         const result = await relayAdminJson("GET", `${path}${query}`, undefined, 20_000, { "x-tracecom-actor": gateActor, "x-request-id": requestId, "x-tracecom-source": "edge" });

@@ -1,7 +1,7 @@
 /** Ajustes finais — contratos: banca 5%, provider seguro, share ação, métricas de sessão, labels operacionais. */
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import handler from "../../api/http";
 
 const read = (path: string): string => readFileSync(new URL(path, import.meta.url), "utf8");
@@ -80,7 +80,14 @@ describe("métricas de sessão — causais e sem contaminação", () => {
 
 describe("provider de IA — segurança da API key", () => {
   const servers: Array<ReturnType<typeof createServer>> = [];
-  afterAll(async () => { await Promise.all(servers.splice(0).map((server) => new Promise<void>((resolve) => server.close(() => resolve())))); });
+  const OPERATOR_KEY = "test-operator-key-final-adjustments";
+  const previousOperatorKey = process.env.TRACECOM_OPERATOR_KEY;
+  beforeAll(() => { process.env.TRACECOM_OPERATOR_KEY = OPERATOR_KEY; });
+  afterAll(async () => {
+    if (previousOperatorKey === undefined) delete process.env.TRACECOM_OPERATOR_KEY;
+    else process.env.TRACECOM_OPERATOR_KEY = previousOperatorKey;
+    await Promise.all(servers.splice(0).map((server) => new Promise<void>((resolve) => server.close(() => resolve()))));
+  });
   async function endpoint(): Promise<string> {
     const server = createServer((req, res) => { void handler(req, res); });
     servers.push(server);
@@ -88,9 +95,18 @@ describe("provider de IA — segurança da API key", () => {
     const address = server.address(); if (!address || typeof address === "string") throw new Error("no_address");
     return `http://127.0.0.1:${address.port}`;
   }
-  it("GET sem configuração retorna NOT_CONFIGURED sem vazar chave", async () => {
+  async function operatorCookie(base: string): Promise<string> {
+    process.env.TRACECOM_OPERATOR_KEY = OPERATOR_KEY;
+    const response = await fetch(`${base}/api/auth/operator`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ accessKey: OPERATOR_KEY }) });
+    expect(response.status).toBe(200);
+    return (response.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
+  }
+  it("GET anonimo exige operador (401); autenticado retorna NOT_CONFIGURED sem vazar chave", async () => {
     const base = await endpoint();
-    const response = await fetch(`${base}/api/ai/provider`);
+    const anonymous = await fetch(`${base}/api/ai/provider`);
+    expect(anonymous.status).toBe(401);
+    const cookie = await operatorCookie(base);
+    const response = await fetch(`${base}/api/ai/provider`, { headers: { cookie } });
     expect(response.status).toBe(200);
     const body = await response.text();
     expect(body).toContain("NOT_CONFIGURED");
@@ -98,10 +114,11 @@ describe("provider de IA — segurança da API key", () => {
   });
   it("PUT rejeita chave curta e nunca ecoa a chave válida quando o store falha", async () => {
     const base = await endpoint();
-    const short = await fetch(`${base}/api/ai/provider`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ apiKey: "curta" }) });
+    const cookie = await operatorCookie(base);
+    const short = await fetch(`${base}/api/ai/provider`, { method: "PUT", headers: { "content-type": "application/json", cookie }, body: JSON.stringify({ apiKey: "curta" }) });
     expect(short.status).toBe(400);
     const secret = `sk-test-${"x".repeat(28)}`;
-    const stored = await fetch(`${base}/api/ai/provider`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ apiKey: secret }) });
+    const stored = await fetch(`${base}/api/ai/provider`, { method: "PUT", headers: { "content-type": "application/json", cookie }, body: JSON.stringify({ apiKey: secret }) });
     const body = await stored.text();
     expect(body).not.toContain(secret);
     expect([200, 502]).toContain(stored.status);

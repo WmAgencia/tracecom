@@ -35,8 +35,9 @@ describe("IqMultiRuntime x Agents V4 (SHADOW)", () => {
     runtime.stop("TEST");
   });
 
-  it("REAL allowlist congelado permanece somente PROFESSIONAL_BRAIN_G2 (V4 segue SHADOW)", () => {
-    expect(accountContext.REAL_STRATEGY_ALLOWLIST.allowed).toEqual(["PROFESSIONAL_BRAIN_G2"]);
+  it("REAL allowlist congelado usa a versão operacional (nunca G2) e V4 segue SHADOW", () => {
+    expect(accountContext.REAL_STRATEGY_ALLOWLIST.allowed).toContain("PULLBACK_4060_300_AGENTIC_V2");
+    expect(accountContext.REAL_STRATEGY_ALLOWLIST.allowed).not.toContain("PROFESSIONAL_BRAIN_G2");
     expect(accountContext.REAL_STRATEGY_ALLOWLIST.shadowOnly).toContain("AGENT_V4");
     expect(accountContext.REAL_STRATEGY_ALLOWLIST.shadowOnly).toContain("SCENARIO_ENGINE_V3_FROZEN");
     expect(accountContext.REAL_STRATEGY_ALLOWLIST.shadowOnly).toContain("LATE_WINDOW_V2");

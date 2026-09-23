@@ -32,9 +32,11 @@ const makeRow = (index, patch = {}) => ({
 });
 
 class ObsPool {
-  constructor(rows) { this.rows = rows; this.queries = []; }
+  constructor(rows) { this.rows = rows; this.queries = []; this.calls = []; this.failAll = false; }
   async query(sql, params) {
     this.queries.push(sql);
+    this.calls.push({ sql, params: Array.isArray(params) ? [...params] : [] });
+    if (this.failAll) throw new Error("connection terminated unexpectedly");
     const [version, , hash] = params;
     const operational = this.rows.filter((r) => r.strategyVersion === version && r.testOnly !== true && r.excludedFromStats !== true && r.accountContext === "PRACTICE" && r.state === "SETTLED" && ["WIN", "LOSS", "DRAW"].includes(r.brokerResult));
     const agg = (list) => ({
@@ -63,6 +65,9 @@ class ObsPool {
     if (sql.includes("obs:by-pullback")) return { rows: group((r) => r.decisionSnapshot?.features?.priceAction?.pullback?.depth ?? "UNKNOWN") };
     if (sql.includes("obs:rolling")) {
       return { rows: [...operational].sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt)).slice(0, 100).map((r) => ({ broker_result: r.brokerResult, profit: r.profit })) };
+    }
+    if (sql.includes("SELECT broker_result, profit") && !sql.includes("obs:")) {
+      return { rows: operational.map((r) => ({ broker_result: r.brokerResult, profit: r.profit })) };
     }
     if (sql.includes("obs:integrity")) {
       const scoped = this.rows.filter((r) => r.strategyVersion === version);
@@ -139,6 +144,43 @@ const runtimeFor = (rows) => new IqMultiRuntime({ pool: new ObsPool(rows), log: 
   const rt = runtimeFor([]);
   const report = await rt.strategyObservability(V2, { days: 30, strategyHash: HASH });
   ok("N=0 -> wr null, pnl 0, label muito pequena, sem erro", report.sample.n === 0 && report.sample.wr === null && report.sample.pnl === 0 && report.sample.label === "amostra muito pequena" && report.integrity.ok === true);
+  ok("N=0 legitimo: available=true e integrity verificada", report.available === true && report.integrity.verified === true && report.error === null);
+}
+
+/* 6b) A04: bindings exatos — cada query recebe EXATAMENTE os parametros que referencia */
+{
+  const rt = runtimeFor(Array.from({ length: 30 }, (_, i) => makeRow(i)));
+  await rt.strategyObservability(V2, { days: 30, strategyHash: HASH });
+  const bound = rt.pool.calls.filter((call) => /obs:/.test(call.sql));
+  const referenced = (sql) => Math.max(0, ...(sql.match(/\$(\d+)/g) ?? ["$0"]).map((token) => Number(token.slice(1))));
+  ok("A04: toda query obs recebe N params = maior placeholder $N referenciado", bound.length >= 8 && bound.every((call) => referenced(call.sql) === call.params.length));
+  await rt.strategyObservability(V2, { days: 30 });
+  const withoutHash = rt.pool.calls.slice(-8).filter((call) => /obs:/.test(call.sql));
+  ok("A04: sem hash as queries continuam com bindings exatos (2 params na amostra, 3 na integridade)", withoutHash.length >= 8 && withoutHash.every((call) => referenced(call.sql) === call.params.length) && withoutHash.some((call) => call.params.length === 2));
+}
+
+/* 6c) A05: erro de leitura => available=false, integridade UNVERIFIED (nunca N=0 ok) */
+{
+  const rt = runtimeFor(Array.from({ length: 10 }, (_, i) => makeRow(i)));
+  rt.pool.failAll = true;
+  const report = await rt.strategyObservability(V2, { days: 30, strategyHash: HASH });
+  ok("A05: erro de DB => available=false, integrity.verified=false, ok=null, alerta UNVERIFIED", report.available === false && report.integrity.verified === false && report.integrity.ok === null && report.integrity.counts === null && report.integrity.alerts.some((alert) => alert.code === "UNVERIFIED") && report.error?.code === "OBS_DB_ERROR");
+  ok("A05: erro nunca vira 'N=0 ok' (label indisponivel)", report.sample.label.includes("indisponivel"));
+  const stats = await runtimeFor([makeRow(1)]).strategyStats(V2, { days: 30, strategyHash: HASH });
+  const statsPoolRuntime = runtimeFor([makeRow(1)]);
+  statsPoolRuntime.pool.failAll = true;
+  const statsFailed = await statsPoolRuntime.strategyStats(V2, { days: 30, strategyHash: HASH });
+  ok("A05: stats com DB ausente => available=false com error", stats.available === true && statsFailed.available === false && Boolean(statsFailed.error));
+}
+
+/* 6d) A06: stats e observability leem o MESMO universo canonico */
+{
+  const rows = [...Array.from({ length: 40 }, (_, i) => makeRow(i)), makeRow(9001, { testOnly: true }), makeRow(9002, { excludedFromStats: true }), makeRow(9003, { accountContext: "REAL", accountType: "REAL" })];
+  const rt = runtimeFor(rows);
+  const obs = await rt.strategyObservability(V2, { days: 30, strategyHash: HASH });
+  const stats = await rt.strategyStats(V2, { days: 30, strategyHash: HASH });
+  ok("A06: stats.operations === observability.sample.n (mesmo filtro canonico)", stats.operations === obs.sample.n && stats.operations === 40);
+  ok("A06: filtro canonico compartilhado presente em ambos os SQL", rt.pool.queries.some((sql) => sql.includes("SELECT broker_result, profit") && sql.includes("test_only=false") && sql.includes("account_context='PRACTICE'")));
 }
 
 /* 7) policy de expiracao/instrumento na integridade */

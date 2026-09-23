@@ -41,6 +41,12 @@ const READY_INPUT = Object.freeze({
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const durablePool = () => ({
+  query: async (sql: string) => sql.includes("to_regclass")
+    ? { rows: [{ table_name: "iq_executions", read_only: "off" }], rowCount: 1 }
+    : { rows: [], rowCount: 1 },
+});
+
 function controllerFixture(overrides: Record<string, unknown> = {}) {
   return new AccountContextController({ now: () => 1_000_000, hardCap: 100, realTradingEnabled: false, ...overrides }) as any;
 }
@@ -49,12 +55,12 @@ function armedController(overrides: Record<string, unknown> = {}) {
   const controller = controllerFixture({ realTradingEnabled: true, ...overrides });
   controller.select("REAL");
   controller.reportRealAccount({ available: true, balance: 500, currency: "BRL", balanceId: 777 });
-  controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PROFESSIONAL_BRAIN_G2", preflightInput: { ...READY_INPUT, strategy: "PROFESSIONAL_BRAIN_G2" } });
+  controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PULLBACK_4060_300_AGENTIC_V2", preflightInput: { ...READY_INPUT, strategy: "PULLBACK_4060_300_AGENTIC_V2" } });
   return controller;
 }
 
 function runtimeFixture(overrides: Record<string, unknown> = {}) {
-  const runtime = new IqMultiRuntime({ pool: null, getSsid: () => "FAKE_SSID", now: () => Date.now(), log: () => {}, ackTimeoutMs: 60, ...overrides }) as any;
+  const runtime = new IqMultiRuntime({ pool: durablePool(), getSsid: () => "FAKE_SSID", now: () => Date.now(), log: () => {}, ackTimeoutMs: 60, ...overrides }) as any;
   runtime.session = { connected: true, host: "ws.iqoption.com", connectionId: "conn-ctx-1", serverTimeMs: Date.now(), clockSkewMs: 0, timeValid: true, connectedAt: Date.now() };
   runtime.connection = { connectionId: "conn-ctx-1", host: "ws.iqoption.com", serverTimeMs: Date.now(), clockSkewMs: 0, timeValid: true };
   runtime.account = { practice: { verified: true, balanceId: 555, balance: 10_000, currency: "BRL" }, real: { available: true, balanceId: 777, balance: 500, currency: "BRL" }, hasReal: true, checkedAt: Date.now(), type: "PRACTICE" };
@@ -94,7 +100,7 @@ describe("ACCOUNT CONTEXT — seleção e estados", () => {
     const controller = controllerFixture({ realTradingEnabled: true });
     controller.select("REAL");
     controller.reportRealAccount({ available: true, balance: 500, currency: "BRL", balanceId: 777 });
-    controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PROFESSIONAL_BRAIN_G2", preflightInput: { ...READY_INPUT, strategy: "PROFESSIONAL_BRAIN_G2" } });
+    controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PULLBACK_4060_300_AGENTIC_V2", preflightInput: { ...READY_INPUT, strategy: "PULLBACK_4060_300_AGENTIC_V2" } });
     expect(controller.status().state).toBe("REAL · ARMED");
     controller.select("PRACTICE");
     expect(controller.status().state).toBe("PRACTICE");
@@ -132,35 +138,35 @@ describe("ACCOUNT CONTEXT — seleção e estados", () => {
 describe("ACCOUNT CONTEXT — arm REAL (confirmacao explicita)", () => {
   it("arm exige accountContext=REAL", () => {
     const controller = controllerFixture({ realTradingEnabled: true });
-    expect(() => controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PROFESSIONAL_BRAIN_G2" })).toThrowError(/ACCOUNT_CONTEXT_NOT_REAL/);
+    expect(() => controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PULLBACK_4060_300_AGENTIC_V2" })).toThrowError(/ACCOUNT_CONTEXT_NOT_REAL/);
   });
 
   it("arm exige a frase literal CONFIRMAR E ARMAR REAL", () => {
     const controller = controllerFixture({ realTradingEnabled: true });
     controller.select("REAL");
     controller.reportRealAccount({ available: true, balance: 500, currency: "BRL", balanceId: 777 });
-    expect(() => controller.arm({ confirmationPhrase: "OPERAR CONTA REAL", acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PROFESSIONAL_BRAIN_G2" })).toThrowError(/REAL_CONFIRMATION_PHRASE_MISMATCH/);
+    expect(() => controller.arm({ confirmationPhrase: "OPERAR CONTA REAL", acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PULLBACK_4060_300_AGENTIC_V2" })).toThrowError(/REAL_CONFIRMATION_PHRASE_MISMATCH/);
   });
 
   it("arm exige acknowledge de risco", () => {
     const controller = controllerFixture({ realTradingEnabled: true });
     controller.select("REAL");
     controller.reportRealAccount({ available: true, balance: 500, currency: "BRL", balanceId: 777 });
-    expect(() => controller.arm({ confirmationPhrase: PHRASE, acknowledge: false, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PROFESSIONAL_BRAIN_G2" })).toThrowError(/REAL_ACK_REQUIRED/);
+    expect(() => controller.arm({ confirmationPhrase: PHRASE, acknowledge: false, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PULLBACK_4060_300_AGENTIC_V2" })).toThrowError(/REAL_ACK_REQUIRED/);
   });
 
   it("arm exige saldo real resolvido no servidor", () => {
     const controller = controllerFixture({ realTradingEnabled: true });
     controller.select("REAL");
     controller.reportRealAccount({ available: true, balance: 500, currency: "BRL", balanceId: 777 });
-    expect(() => controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: null, realBalanceId: 777, maxStake: 2, strategy: "PROFESSIONAL_BRAIN_G2" })).toThrowError(/REAL_BALANCE_UNAVAILABLE/);
+    expect(() => controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: null, realBalanceId: 777, maxStake: 2, strategy: "PULLBACK_4060_300_AGENTIC_V2" })).toThrowError(/REAL_BALANCE_UNAVAILABLE/);
   });
 
   it("arm bloqueia stake acima do hard cap", () => {
     const controller = controllerFixture({ realTradingEnabled: true, hardCap: 100 });
     controller.select("REAL");
     controller.reportRealAccount({ available: true, balance: 500, currency: "BRL", balanceId: 777 });
-    expect(() => controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 101, strategy: "PROFESSIONAL_BRAIN_G2" })).toThrowError(/REAL_MAX_STAKE_ABOVE_HARD_CAP/);
+    expect(() => controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 101, strategy: "PULLBACK_4060_300_AGENTIC_V2" })).toThrowError(/REAL_MAX_STAKE_ABOVE_HARD_CAP/);
   });
 
   it("arm bloqueia estrategia experimental fora do allowlist", () => {
@@ -176,7 +182,7 @@ describe("ACCOUNT CONTEXT — arm REAL (confirmacao explicita)", () => {
     const controller = controllerFixture({ realTradingEnabled: false });
     controller.select("REAL");
     controller.reportRealAccount({ available: true, balance: 500, currency: "BRL", balanceId: 777 });
-    expect(() => controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PROFESSIONAL_BRAIN_G2", preflightInput: { ...READY_INPUT, strategy: "PROFESSIONAL_BRAIN_G2" } })).toThrowError(/REAL_PREFLIGHT_BLOCKED/);
+    expect(() => controller.arm({ confirmationPhrase: PHRASE, acknowledge: true, realBalance: 500, realBalanceId: 777, maxStake: 2, strategy: "PULLBACK_4060_300_AGENTIC_V2", preflightInput: { ...READY_INPUT, strategy: "PULLBACK_4060_300_AGENTIC_V2" } })).toThrowError(/REAL_PREFLIGHT_BLOCKED/);
     expect(controller.armed).toBe(false);
   });
 
@@ -186,14 +192,14 @@ describe("ACCOUNT CONTEXT — arm REAL (confirmacao explicita)", () => {
     expect(status.state).toBe("REAL · ARMED");
     expect(status.armed).toBe(true);
     expect(status.realExecutionEnabled).toBe(true);
-    expect(status.strategy).toBe("PROFESSIONAL_BRAIN_G2");
+    expect(status.strategy).toBe("PULLBACK_4060_300_AGENTIC_V2");
     expect(status.armedMaxStake).toBe(2);
     expect(status.maxRealStake).toBe(100);
   });
 });
 
 describe("REAL GATE — envio bloqueado por qualquer falha", () => {
-  const send = (controller: any, overrides: Record<string, unknown> = {}) => controller.evaluateSend({ ...READY_INPUT, strategy: "PROFESSIONAL_BRAIN_G2", ...overrides });
+  const send = (controller: any, overrides: Record<string, unknown> = {}) => controller.evaluateSend({ ...READY_INPUT, strategy: "PULLBACK_4060_300_AGENTIC_V2", ...overrides });
 
   it("kill switch engatado bloqueia envio REAL", () => {
     const result = send(armedController(), { killSwitch: { engaged: true, executionEnabled: false } });
@@ -290,15 +296,16 @@ describe("FAIL CLOSED — restart, reconnect e lock", () => {
     controller.lock("KILL_SWITCH");
     expect(controller.status().armed).toBe(false);
     expect(controller.status().lockedReason).toBe("KILL_SWITCH");
-    expect(controller.evaluateSend({ ...READY_INPUT, strategy: "PROFESSIONAL_BRAIN_G2" }).ok).toBe(false);
+    expect(controller.evaluateSend({ ...READY_INPUT, strategy: "PULLBACK_4060_300_AGENTIC_V2" }).ok).toBe(false);
   });
 });
 
 describe("ALLOWLIST e isolamento de dados", () => {
-  it("allowlist congelada: só PROFESSIONAL_BRAIN_G2; experimentais permanecem SHADOW", () => {
+  it("allowlist congelada: identidade REAL = versão operacional congelada; experimentais permanecem SHADOW", () => {
     expect(Object.isFrozen(REAL_STRATEGY_ALLOWLIST)).toBe(true);
     expect(Object.isFrozen(REAL_STRATEGY_ALLOWLIST.allowed)).toBe(true);
-    expect(REAL_STRATEGY_ALLOWLIST.allowed).toEqual(["PROFESSIONAL_BRAIN_G2"]);
+    expect(REAL_STRATEGY_ALLOWLIST.allowed).toContain("PULLBACK_4060_300_AGENTIC_V2");
+    expect(REAL_STRATEGY_ALLOWLIST.allowed).not.toContain("PROFESSIONAL_BRAIN_G2");
     for (const strategy of ["SCENARIO_ENGINE_V3_FROZEN", "AGENT_V4", "LATE_WINDOW_V2", "ALPHA_PACK_V1", "ML_SHADOW", "NEW_PLAYBOOKS_V1"]) {
       expect(REAL_STRATEGY_ALLOWLIST.shadowOnly).toContain(strategy);
       expect(REAL_STRATEGY_ALLOWLIST.allowed).not.toContain(strategy);
@@ -337,7 +344,7 @@ describe("AUDITORIA REAL", () => {
   it("trilha registra todos os campos obrigatórios por estágio", () => {
     const controller = armedController();
     controller.recordRealAttempt("SEND", {
-      strategy: "PROFESSIONAL_BRAIN_G2", agentVersion: "PROFESSIONAL_BRAIN_G2", candidateId: "cand_1", decisionId: "dec_1",
+      strategy: "PULLBACK_4060_300_AGENTIC_V2", agentVersion: "PULLBACK_4060_300_AGENTIC_V2", candidateId: "cand_1", decisionId: "dec_1",
       stake: 2, marketKey: "EURUSD:NORMAL", direction: "BUY", expiry: 1_700_000_060, send: true, ack: null, brokerOrderId: null, settlement: null,
     });
     controller.recordRealAttempt("ACK", { brokerOrderId: "ORD-1", ack: "ACKNOWLEDGED", send: true, marketKey: "EURUSD:NORMAL" });
@@ -347,7 +354,7 @@ describe("AUDITORIA REAL", () => {
     const ack = audit.find((row: any) => row.event === "REAL_ACK");
     const settlement = audit.find((row: any) => row.event === "REAL_SETTLEMENT");
     for (const record of [send, ack, settlement]) expect(record).toBeTruthy();
-    expect(send).toMatchObject({ accountContext: "REAL", stage: "SEND", strategy: "PROFESSIONAL_BRAIN_G2", agentVersion: "PROFESSIONAL_BRAIN_G2", candidateId: "cand_1", decisionId: "dec_1", stake: 2, marketKey: "EURUSD:NORMAL", direction: "BUY", expiry: 1_700_000_060, send: true });
+    expect(send).toMatchObject({ accountContext: "REAL", stage: "SEND", strategy: "PULLBACK_4060_300_AGENTIC_V2", agentVersion: "PULLBACK_4060_300_AGENTIC_V2", candidateId: "cand_1", decisionId: "dec_1", stake: 2, marketKey: "EURUSD:NORMAL", direction: "BUY", expiry: 1_700_000_060, send: true });
     expect(ack).toMatchObject({ brokerOrderId: "ORD-1", ack: "ACKNOWLEDGED" });
     expect(settlement).toMatchObject({ settlement: { result: "WIN", profit: 1.7 } });
   });
@@ -416,22 +423,31 @@ describe("RUNTIME — office isolado por accountContext", () => {
   });
 
   it("runtime.armReal com tudo pronto fica REAL · ARMED e NUNCA envia ordem", () => {
-    const controller = new AccountContextController({ now: () => Date.now(), hardCap: 100, realTradingEnabled: true });
-    const runtime = runtimeFixture({ accountContext: controller });
-    seedMarket(runtime, "EURUSD:NORMAL");
-    runtime.selectAccount("REAL");
-    const state = runtime.armReal({ phrase: PHRASE, acknowledgeRisk: true, maxStake: 2 });
-    expect(state.state).toBe("REAL · ARMED");
-    expect(state.armed).toBe(true);
-    expect(state.realExecutionForbidden).toBe(false);
-    expect(state.realAccount.balance).toBe(500);
-    expect(runtime.__sent).toHaveLength(0);
-    const preflight = runtime.realPreflight();
-    expect(preflight.ok).toBe(true);
-    expect(preflight.state).toBe("PASS");
-    runtime.disarmReal("TEST_TEARDOWN");
-    expect(runtime.accountContextState().state).toBe("REAL · LOCKED");
-    expect(runtime.__sent).toHaveLength(0);
+    const previousRealTrading = process.env.REAL_TRADING_ENABLED;
+    process.env.REAL_TRADING_ENABLED = "true";
+    try {
+      const controller = new AccountContextController({ now: () => Date.now(), hardCap: 100, realTradingEnabled: true });
+      const runtime = runtimeFixture({ accountContext: controller });
+      seedMarket(runtime, "EURUSD:NORMAL");
+      runtime.realMode.requestConfirmation({ phrase: "OPERAR CONTA REAL", acknowledgeRisk: true, realBalance: 500, realBalanceId: 777, maxStake: 2 });
+      runtime.selectAccount("REAL");
+      const state = runtime.armReal({ phrase: PHRASE, acknowledgeRisk: true, maxStake: 2 });
+      expect(state.state).toBe("REAL · ARMED");
+      expect(state.armed).toBe(true);
+      expect(state.realExecutionForbidden).toBe(false);
+      expect(runtime.effectiveRealState()).toMatchObject({ armed: true, state: "ARMED", strategy: "PULLBACK_4060_300_AGENTIC_V2" });
+      expect(state.realAccount.balance).toBe(500);
+      expect(runtime.__sent).toHaveLength(0);
+      const preflight = runtime.realPreflight();
+      expect(preflight.ok).toBe(true);
+      expect(preflight.state).toBe("PASS");
+      runtime.disarmReal("TEST_TEARDOWN");
+      expect(runtime.accountContextState().state).toBe("REAL · LOCKED");
+      expect(runtime.__sent).toHaveLength(0);
+    } finally {
+      if (previousRealTrading === undefined) delete process.env.REAL_TRADING_ENABLED;
+      else process.env.REAL_TRADING_ENABLED = previousRealTrading;
+    }
   });
 
   it("ordem PRACTICE carrega accountContext=PRACTICE na posição (nunca atravessa)", async () => {
@@ -455,7 +471,7 @@ describe("RUNTIME — office isolado por accountContext", () => {
     runtime.realMode.requestConfirmation({ phrase: "OPERAR CONTA REAL", acknowledgeRisk: true, realBalance: 500, realBalanceId: 777, maxStake: 2 });
     runtime.setMode("REAL");
     runtime.arm(2, { confirmation: true });
-    await expect(runtime.requestOrder({ marketKey: "EURUSD:NORMAL", direction: "BUY", stake: 2, horizonSeconds: 60, idempotencyKey: "k-real-blocked" })).rejects.toThrowError(/REAL_GATE_BLOCKED/);
+    await expect(runtime.requestOrder({ marketKey: "EURUSD:NORMAL", direction: "BUY", stake: 2, horizonSeconds: 60, idempotencyKey: "k-real-blocked" })).rejects.toThrowError(/PORTFOLIO_GATE_MODE_VALID|REAL_GATE_BLOCKED|REAL_FAIL_CLOSED/);
     expect(runtime.__sent).toHaveLength(0);
   });
 });

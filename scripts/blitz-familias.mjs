@@ -34,8 +34,10 @@ for (const line of text.split("\n")) {
 }
 for (const list of byMarket.values()) list.sort((a, b) => a.bucketEnd - b.bucketEnd);
 
+const DB_URL = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || "";
+if (!DB_URL) { console.log("SKIP: SUPABASE_DB_URL ausente"); process.exit(0); }
 const pool = new pg.Pool({
-  connectionString: process.env.SUPABASE_DB_URL || "postgresql://postgres.cladmauwmuoeqongxzwb:Eqvpanp.050323@aws-0-us-west-2.pooler.supabase.com:5432/postgres?sslmode=no-verify",
+  connectionString: DB_URL,
   max: 1, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 30_000,
 });
 const trades = (await pool.query("SELECT strategy_trade_id, market_key, direction, entry_at FROM iq_lab_trades WHERE run_id='agentic-blitz-45s' AND entry_at IS NOT NULL ORDER BY entry_at")).rows;
