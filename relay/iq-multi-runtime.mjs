@@ -691,6 +691,11 @@ export class IqMultiRuntime extends EventEmitter {
     } catch (error) { this.#safe(() => this.log("V3_RECONCILE_DB_FAIL", String(error?.message).slice(0, 120))); return { error: true }; }
     let enabledApplied = 0; let disabledApplied = 0; let notAvailable = 0; let staleNormal = 0;
     for (const row of rows) {
+      // Normalizacao stale NORMAL independe do ctx existir em memoria (produto e Binary OTC only).
+      const isStaleNormalRow = row.market_type === "NORMAL" && (row.availability === "NOT_OFFERED" || row.active_id === null || row.active_id === undefined);
+      if (isStaleNormalRow && row.enabled === true) {
+        try { await rawQuery("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [row.market_key]); staleNormal += 1; } catch { /* noop */ }
+      }
       const ctx = this.markets.get(String(row.market_key));
       if (!ctx) continue;
       const desired = row.enabled === true;
