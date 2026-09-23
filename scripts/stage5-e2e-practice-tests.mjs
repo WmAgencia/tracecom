@@ -85,6 +85,9 @@ function mkRuntime() {
   const pipeline = intel.registry.get("EURUSD:OTC");
   ok("E2E: candle nativo 5s fechado alimenta RuntimeIntelligence (feed OK, contexto avanca)", intel.feedStatusFor("EURUSD:OTC") === "OK" && pipeline.ctx.lastCandle?.at === bucketStart + 5000 && recorded.length === 1 && recorded[0].candle.at === bucketStart + 5000);
   ok("E2E: candle em formacao NAO alimenta a inteligencia", await (async () => { const before = pipeline.ctx.candles.length; rt.ingestEvent("candle-generated", { msg: { active_id: 1, size: 5, at: Math.round((bucketStart + 5000) / 1000), open: 1.35, high: 1.351, low: 1.349, close: 1.3505 }, receivedAt: serverNow, connectionId: "c1" }); await new Promise((r) => setTimeout(r, 20)); return pipeline.ctx.candles.length === before && recorded.length === 1; })());
+  rt.ingestEvent("candle-generated", { msg: { active_id: 1, size: 5, at: Math.round((bucketStart + 10_000) / 1000), open: 1.35, high: 1.351, low: 1.349, close: 1.3505 }, receivedAt: serverNow, connectionId: "c1" });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  ok("E2E: transicao de bucket fecha o anterior (uma vez por candle)", recorded.length === 2 && recorded[1].candle.at === bucketStart + 10_000 && intel.feedStatusFor("EURUSD:OTC") === "OK");
   pipeline.evaluate(buyFeatures);
   const summary = await rt.pumpIntelligenceDecisions();
   ok("E2E: runtime.pump -> SinglePath -> requestOrder (fronteira unica)", summary?.submitted?.length === 1 && calls.length === 1 && calls[0].horizonSeconds === 300 && calls[0].source === "intelligence:PULLBACK_4060_300_AGENTIC_V2");

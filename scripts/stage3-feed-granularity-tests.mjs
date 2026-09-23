@@ -15,7 +15,7 @@ ok("WS NAO tem stream de tick/quote (sem agregador necessario)", !/subscribeQuot
 const rt = fs.readFileSync(new URL("../relay/iq-multi-runtime.mjs", import.meta.url), "utf8");
 ok("runtime filtra eventos por size === CANDLE_SIZE_SECONDS", /Number\(event\.msg\?\.size\) === CANDLE_SIZE_SECONDS/.test(rt));
 ok("runtime assina candles por ativo com CANDLE_SIZE_SECONDS", /subscribeCandles\(ctx\.activeId, CANDLE_SIZE_SECONDS\)/.test(rt));
-ok("feed chega ao AssetPipeline via #pipeClosedCandle no #ingestCandle (candle NORMALIZADO, somente fechado)", /#ingestCandle\(ctx, raw, \{ receivedAt, serverTimestamp, connectionId, batch = false \}\) \{/.test(rt.replace(/\r\n/g, "\n")) && /candle = normalizeCandle\(raw,/.test(rt) && /Number\(candle\.bucketEnd\) <= Number\(serverTimestamp\)\)\) this\.#pipeClosedCandle\(ctx, candle\);/.test(rt));
+ok("feed chega ao AssetPipeline via #pipeClosedCandle no #ingestCandle (candle NORMALIZADO, somente fechado)", /#ingestCandle\(ctx, raw, \{ receivedAt, serverTimestamp, connectionId, batch = false \}\) \{/.test(rt.replace(/\r\n/g, "\n")) && /candle = normalizeCandle\(raw,/.test(rt) && /this\.#pipeClosedCandle\(ctx, candle\)/.test(rt) && /this\.#pipeClosedCandle\(ctx, previous\)/.test(rt) && /CANDLE_CLOSE_TOLERANCE_MS/.test(rt));
 
 const NOW = 1_800_000_000_000;
 const mk5s = (n, startAt) => Array.from({ length: n }, (_, i) => {

@@ -76,6 +76,7 @@ import { RSI_V3_WATCH_POLICY, shouldEvaluate } from "./rsi-v3-watch.mjs";
 export const RUNTIME_VERSION = "iq-multi-runtime-v2";
 export const ACK_TIMEOUT_MS = 15_000;
 export const MARKET_TICK_AGE_MS = 15_000;
+export const CANDLE_CLOSE_TOLERANCE_MS = 2_000;
 export const MIN_CANDLES_FEATURE = 30;
 export const RECONNECT_BACKOFF_MS = [1_000, 2_000, 4_000, 8_000, 15_000, 30_000];
 export const MAX_CANDLE_BUFFER = 600;
@@ -861,8 +862,13 @@ export class IqMultiRuntime extends EventEmitter {
       this.#safe(() => this.log("IQ_MULTI_CANDLE_REJECTED", `${ctx.marketKey}:${String(error?.code ?? error?.message ?? error).slice(0, 80)}`));
       return;
     }
-    // Inteligencia consome SOMENTE candle fechado (bucketEnd <= serverTime) e o candle NORMALIZADO (fonte unica de mapeamento).
-    if (batch || (Number.isFinite(Number(serverTimestamp)) && Number(candle.bucketEnd) <= Number(serverTimestamp))) this.#pipeClosedCandle(ctx, candle);
+    // Inteligencia consome SOMENTE candle fechado, uma vez por bucket:
+    // (a) bucket ja venceu no serverTime (com tolerancia de relogio), ou
+    // (b) o bucket seguinte comecou -> o anterior esta completo (fonte: ctx.lastCandle).
+    const previous = ctx.lastCandle;
+    if (batch) this.#pipeClosedCandle(ctx, candle);
+    else if (Number.isFinite(Number(serverTimestamp)) && Number(candle.bucketEnd) <= Number(serverTimestamp) + CANDLE_CLOSE_TOLERANCE_MS) this.#pipeClosedCandle(ctx, candle);
+    else if (previous && candle.bucketStart > previous.bucketStart) this.#pipeClosedCandle(ctx, previous);
     candle.segmentId = segmentIdFor(ctx.marketKey, candle.bucketStart);
     candle.marketKey = ctx.marketKey;
     if (!ctx.candles.has(candle.bucketStart)) {
