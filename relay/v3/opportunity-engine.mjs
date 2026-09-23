@@ -43,6 +43,8 @@ export class ExpirationOpportunityEngine {
     try { derived = ExpirationTargetTiming.derive({ expirationAt, brokerNow: at, purchaseDeadlineAt: Number.isFinite(Number(deadtimeMs)) ? Number(expirationAt) - Number(deadtimeMs) : null }); }
     catch { return { opportunity: null, created: false, error: "INVALID_EXPIRATION" }; }
     if (derived.tteMs > discoveryMaxTteMs) return { opportunity: null, created: false, error: "TTE_ABOVE_DISCOVERY_WINDOW", derived };
+    // Janela perdida nao cria opportunity: adocao tardia (TTE <= 300s) e MISSED_5M_ENTRY_WINDOW, nao perseguicao.
+    if (derived.tteMs <= derived.targetHoldSeconds * 1000) return { opportunity: null, created: false, error: "MISSED_5M_ENTRY_WINDOW", derived };
     const opportunity = {
       version: V3_OPPORTUNITY_VERSION,
       opportunityId: id, marketKey, activeId,

@@ -41,6 +41,10 @@ describe("V3 expiration — descoberta real (protocolo IQ)", () => {
     const early = engine.discover({ marketKey: "GBPUSD:OTC", expirationAt: EXP + 300_000, brokerNow: TTE330, deadtimeMs: 30_000 });
     expect(early.created).toBe(false);
     expect(early.error).toBe("TTE_ABOVE_DISCOVERY_WINDOW");
+    // adocao tardia (TTE <= 300s) nao cria opportunity (MISSED, nunca perseguicao)
+    const late = engine.discover({ marketKey: "USDJPY:OTC", expirationAt: EXP, brokerNow: EXP - 169_000, deadtimeMs: 30_000 });
+    expect(late.created).toBe(false);
+    expect(late.error).toBe("MISSED_5M_ENTRY_WINDOW");
   });
 
   it("C: nova expiration no minuto seguinte cria NOVA opportunity (ids distintos)", () => {
