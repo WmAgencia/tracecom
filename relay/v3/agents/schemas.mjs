@@ -32,7 +32,7 @@ export const SPECIALIST_SCHEMA = {
   fields: ["assessment", "facts", "blockers", "invalidations", "changed", "watch", "playbooks", "sources"],
   validate(output) {
     if (!output || typeof output !== "object") return "not_object";
-    if (!isString(output.assessment, 220)) return "assessment";
+    if (!isString(output.assessment, 320)) return "assessment";
     if (!factsValid(output.facts)) return "facts";
     if (!isStringArray(output.blockers ?? [])) return "blockers";
     if (!isStringArray(output.invalidations ?? [])) return "invalidations";

@@ -335,7 +335,15 @@ export class V3Runtime {
     const opportunity = this.engine.get(opportunityId);
     const barrier = this.persistBarriers.get(opportunityId) ?? (opportunity ? this.#trackOpportunityPersist(opportunity) : null);
     if (barrier) await barrier;
-    return this.#persistCycle(opportunityId, cycle);
+    try {
+      const result = await this.#persistCycle(opportunityId, cycle);
+      if (result !== true) this.log("V3_PERSIST_CYCLE_NOT_WRITTEN", stableStringify({ opportunityId, cycleNumber: cycle?.cycleNumber ?? null }));
+      return result;
+    } catch (error) {
+      this.counters.persistErrors += 1;
+      this.log("V3_PERSIST_CYCLE_REJECTED", stableStringify({ opportunityId, error: String(error?.message ?? error).slice(0, 140) }));
+      return false;
+    }
   }
 
   async #persistOpportunity(opportunity) {
