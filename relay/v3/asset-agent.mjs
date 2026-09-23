@@ -1,40 +1,38 @@
 /**
- * V3 — ASSET AGENT: identifica o CENARIO e o estado operacional.
- *
- * Nao e gatilho de RSI. Recebe AssetContext/measurements + outputs dos especialistas,
- * classifica o cenario com a Scenario Library e produz um estado operacional
- * (NO_SETUP | WAIT | BUY_CANDIDATE | SELL_CANDIDATE), sempre com contra-argumentacao
- * explicita (bestCounterCase). A opiniao anterior nao tem autoridade: mudar de ideia
- * e permitido a cada ciclo.
+ * V3 — ASSET AGENT: identifica o CENARIO (tipo) e a DIRECAO separadamente, com contra-argumentacao.
+ * Cenarios sao simetricos (tipo != direcao); a confirmacao exigida e espelhada por direcao.
  */
 import { classifyScenarios, evaluateScenario } from "./scenarios.mjs";
 
-export const V3_ASSET_VERSION = "v3-asset-agent-v1";
+export const V3_ASSET_VERSION = "v3-asset-agent-v2";
 
-const CONFIRMATION_SCENARIOS = new Set(["TREND_CONTINUATION", "PULLBACK_CONTINUATION", "TREND_RESUMPTION", "BREAKOUT", "BREAKOUT_RETEST", "FAILED_BREAKDOWN"]);
-const DEFENSIVE_SCENARIOS = new Set(["STRUCTURAL_REVERSAL", "BREAKDOWN", "FAILED_BREAKOUT", "DEEP_PULLBACK_STRUCTURE_THREAT"]);
+const TREND_FOLLOWING = new Set(["TREND_CONTINUATION", "PULLBACK_CONTINUATION", "TREND_RESUMPTION", "BREAKOUT", "BREAKOUT_RETEST", "FAILED_BREAKDOWN"]);
+const REVERSAL = new Set(["STRUCTURAL_REVERSAL"]);
+const DEFENSIVE_THREAT = new Set(["DEEP_PULLBACK_STRUCTURE_THREAT", "BREAKDOWN", "FAILED_BREAKOUT"]);
 const WAIT_SCENARIOS = new Set(["COMPRESSION", "EXPANSION", "TRANSITION", "EXHAUSTION", "TREND_WEAKENING", "STRUCTURAL_ZONE_REJECTION", "RANGE"]);
-/** Confirmacao estrutural exigida para sair de WAIT rumo a candidato (por cenario). */
-const CONFIRMATION_EVIDENCE = Object.freeze({
-  TREND_CONTINUATION: ["BULLISH_BOS", "PLUS_DOMINANCE_STRONG"],
-  PULLBACK_CONTINUATION: ["BULLISH_BOS", "RSI_CROSSBACK_UP", "DECISIVE_UP"],
-  TREND_RESUMPTION: ["PLUS_RESUME", "RSI_CROSSBACK_UP", "BULLISH_BOS"],
-  BREAKOUT: ["BREAKOUT"],
-  BREAKOUT_RETEST: ["BREAKOUT_RETEST"],
-  FAILED_BREAKDOWN: ["FAILED_BREAKDOWN"],
-});
+
+const opposite = (direction) => (direction === "UP" ? "DOWN" : direction === "DOWN" ? "UP" : null);
+
+/** Confirmacao estrutural exigida (por cenario e direcao). */
+function confirmationCodes(scenarioId, direction) {
+  const up = direction === "UP"; const down = direction === "DOWN";
+  switch (scenarioId) {
+    case "TREND_CONTINUATION": return [up ? "BULLISH_BOS" : "BEARISH_BOS", up ? "PLUS_DOMINANCE_STRONG" : "MINUS_DOMINANCE_STRONG"];
+    case "PULLBACK_CONTINUATION": return [up ? "BULLISH_BOS" : "BEARISH_BOS", `RSI_CROSSBACK_${direction}`, `DECISIVE_${direction}`];
+    case "TREND_RESUMPTION": return [up ? "PLUS_RESUME" : "MINUS_RESUME", `RSI_CROSSBACK_${direction}`, up ? "BULLISH_BOS" : "BEARISH_BOS"];
+    case "BREAKOUT": return ["BREAKOUT"];
+    case "BREAKOUT_RETEST": return ["BREAKOUT_RETEST", "RETEST_DEFENDED"];
+    case "FAILED_BREAKDOWN": return ["FAILED_BREAKDOWN"];
+    default: return [];
+  }
+}
 
 function familySupport(specialists) {
   const families = new Map();
-  for (const role of ["rsi", "dmi", "bollinger", "atr", "priceAction"]) {
-    const agent = specialists?.[role];
-    if (!agent) continue;
-    for (const item of [...(agent.supportingEvidence ?? []), ...(agent.invalidations ?? []).map((entry) => ({ ...entry, family: agent.domain, type: "INVALIDATION" }))]) {
-      if (!families.has(item.family)) families.set(item.family, { support: 0, counter: 0, invalidation: 0 });
-      const bucket = families.get(item.family);
-      if (item.type === "INVALIDATION") bucket.invalidation += 1;
-      else if (item.family === "STRUCTURE" ? agent.role === "PRICE_ACTION" : true) bucket.support += 1;
-    }
+  const touch = (family) => { if (!families.has(family)) families.set(family, { facts: 0, invalidations: 0 }); return families.get(family); };
+  for (const agent of Object.values(specialists ?? {})) {
+    for (const item of agent?.facts ?? []) touch(item.family).facts += 1;
+    for (const _ of agent?.invalidations ?? []) touch(agent.domain).invalidations += 1;
   }
   return families;
 }
@@ -57,41 +55,44 @@ export function classifyAsset({ measurements, specialists, assetContext = null, 
   let state = "NO_SETUP";
   if (top) {
     if (WAIT_SCENARIOS.has(top.scenarioId)) state = "WAIT";
-    else if (CONFIRMATION_SCENARIOS.has(top.scenarioId)) {
-      // "Existe cenario interessante, mas ainda nao ha evidencia suficiente" => WAIT (missao 19).
-      const expected = CONFIRMATION_EVIDENCE[top.scenarioId] ?? [];
+    else if (TREND_FOLLOWING.has(top.scenarioId)) {
+      const expected = confirmationCodes(top.scenarioId, direction);
       const codes = new Set((scenarioEval?.evidence ?? []).filter((item) => item.type === "SUPPORT").map((item) => item.code));
-      state = expected.some((code) => codes.has(code)) ? "BUY_CANDIDATE" : "WAIT";
-    } else if (DEFENSIVE_SCENARIOS.has(top.scenarioId)) state = "SELL_CANDIDATE";
+      state = expected.some((code) => codes.has(code)) ? (direction === "UP" ? "BUY_CANDIDATE" : "SELL_CANDIDATE") : "WAIT";
+    } else if (REVERSAL.has(top.scenarioId)) {
+      state = direction === "UP" ? "BUY_CANDIDATE" : direction === "DOWN" ? "SELL_CANDIDATE" : "WAIT";
+    } else if (DEFENSIVE_THREAT.has(top.scenarioId)) {
+      // ameaca na direcao da tendencia implica postura defensiva na direcao oposta
+      state = direction === "UP" ? "SELL_CANDIDATE" : direction === "DOWN" ? "BUY_CANDIDATE" : "WAIT";
+    }
   }
-  const structuralThreat = invalidations.some((item) => /CHOCH|STRUCTURE_BREAK/.test(String(item.code ?? "")));
-  if (state === "BUY_CANDIDATE" && (blockers.some((item) => item.code === "DEEP_PULLBACK_STRUCTURE_THREAT") || structuralThreat)) state = "WAIT";
-  if (state === "SELL_CANDIDATE" && invalidations.some((item) => item.code === "FRESH_BULLISH_BOS")) state = "WAIT";
+  // Quebras direcionais: um BEARISH_CHOCH mata tese de alta; BULLISH_CHOCH mata tese de baixa.
+  const bearishBreak = invalidations.some((item) => item.code === "BEARISH_CHOCH");
+  const bullishBreak = invalidations.some((item) => item.code === "BULLISH_CHOCH");
+  if (state === "BUY_CANDIDATE" && bearishBreak) state = "WAIT";
+  if (state === "SELL_CANDIDATE" && bullishBreak) state = "WAIT";
   if (state === "NO_SETUP" && top) state = "WAIT";
 
   const priorScenario = previousAssessment?.scenario ?? null;
   const changed = [];
   if (priorScenario !== scenarioEval?.scenarioId) changed.push({ field: "scenario", from: priorScenario, to: scenarioEval?.scenarioId ?? null });
+  if ((previousAssessment?.direction ?? null) !== direction) changed.push({ field: "direction", from: previousAssessment?.direction ?? null, to: direction });
   if (previousAssessment?.state !== state) changed.push({ field: "state", from: previousAssessment?.state ?? null, to: state });
-
-  const bestCounterCase = buildBestCounterCase({ measurements, specialists, scenarioEval, state, candidates });
 
   return {
     version: V3_ASSET_VERSION,
     scenario: scenarioEval?.scenarioId ?? null,
     scenarioState: scenarioEval?.matched === true ? "MATCHED" : "UNMATCHED",
-    state,
-    direction,
+    state, direction,
     reasoningSummary: summarize({ scenarioEval, state, blockers, invalidations, candidates }),
     supportingEvidence: scenarioEval?.evidence?.filter((item) => item.type === "SUPPORT") ?? [],
     counterEvidence: scenarioEval?.evidence?.filter((item) => item.type === "COUNTER") ?? [],
-    blockers,
-    invalidations,
+    blockers, invalidations,
     changedSincePreviousCycle: changed,
-    nextEvidenceToWatch: nextEvidenceFor(scenarioEval?.scenarioId ?? null),
+    nextEvidenceToWatch: nextEvidenceFor(scenarioEval?.scenarioId ?? null, direction),
     familySupport: Object.fromEntries([...familySupport(specialists).entries()].map(([family, bucket]) => [family, bucket])),
-    scenarioCandidates: candidates.slice(0, 4).map((candidate) => ({ scenario: candidate.scenarioId, supports: candidate.supports, direction: candidate.direction })),
-    bestCounterCase,
+    scenarioCandidates: candidates.slice(0, 4).map((candidate) => ({ scenario: candidate.scenarioId, direction: candidate.direction, supports: candidate.supports })),
+    bestCounterCase: buildBestCounterCase({ measurements, specialists, scenarioEval, state, candidates }),
     timing,
     at: measurements.closedCandleAt ?? null,
   };
@@ -100,7 +101,9 @@ export function classifyAsset({ measurements, specialists, assetContext = null, 
 function buildBestCounterCase({ measurements, specialists, scenarioEval, state, candidates }) {
   const contrary = [];
   for (const agent of Object.values(specialists ?? {})) {
-    for (const item of agent?.counterEvidence ?? []) contrary.push({ role: agent.role, ...item });
+    for (const item of agent?.facts ?? []) {
+      if (item.direction && scenarioEval?.direction && item.direction !== scenarioEval.direction) contrary.push({ role: agent.role, ...item });
+    }
     for (const item of agent?.blockers ?? []) contrary.push({ role: agent.role, type: "BLOCKER", code: item.code, detail: item.detail });
   }
   const opposite = candidates.find((candidate) => candidate.direction && scenarioEval?.direction && candidate.direction !== scenarioEval.direction);
@@ -120,20 +123,21 @@ function buildBestCounterCase({ measurements, specialists, scenarioEval, state, 
 }
 
 function summarize({ scenarioEval, state, blockers, invalidations, candidates }) {
-  const parts = [`cenario=${scenarioEval?.scenarioId ?? "NONE"} estado=${state}`];
+  const parts = [`cenario=${scenarioEval?.scenarioId ?? "NONE"} direcao=${scenarioEval?.direction ?? "NONE"} estado=${state}`];
   if (scenarioEval?.supports) parts.push(`supports=${scenarioEval.supports}`);
   if (scenarioEval?.counters) parts.push(`counters=${scenarioEval.counters}`);
   if (blockers.length) parts.push(`blockers=${blockers.map((item) => item.code).join(",")}`);
   if (invalidations.length) parts.push(`invalidations=${invalidations.map((item) => item.code).join(",")}`);
-  if (candidates.length > 1) parts.push(`alternativas=${candidates.slice(1, 3).map((candidate) => candidate.scenarioId).join(",")}`);
+  if (candidates.length > 1) parts.push(`alternativas=${candidates.slice(1, 3).map((candidate) => `${candidate.scenarioId}:${candidate.direction ?? "-"}`).join(",")}`);
   return parts.join(" · ");
 }
 
-function nextEvidenceFor(scenarioId) {
+function nextEvidenceFor(scenarioId, direction) {
+  const dir = direction ?? "-";
   switch (scenarioId) {
-    case "PULLBACK_CONTINUATION": return ["BOS de retomada ou crossback do RSI", "defesa do swing de referencia", "micro decisivo a favor"];
-    case "TREND_CONTINUATION": return ["novo BOS", "persistencia da dominancia DI", "ausencia de CHoCH"];
-    case "STRUCTURAL_REVERSAL": return ["CHoCH mantido + takeover DI", "failed breakout no lado antigo"];
+    case "PULLBACK_CONTINUATION": return [`BOS de retomada (${dir}) ou crossback do RSI`, "defesa do swing de referencia", `micro decisivo ${dir}`];
+    case "TREND_CONTINUATION": return [`novo BOS ${dir}`, "persistencia da dominancia DI", "ausencia de CHoCH contrario"];
+    case "STRUCTURAL_REVERSAL": return [`CHoCH mantido ${dir} + takeover DI`, "failed breakout no lado antigo"];
     case "BREAKOUT": return ["reteste defensavel", "retencao da zona rompida"];
     case "RANGE": return ["rompimento com fechamento ou perda da zona oposta"];
     default: return ["novo candle fechado com mudanca estrutural"];

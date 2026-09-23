@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { pullbackRetomadaSeries, rangeSeries, candlesFromCloses, approvalSeries, ALIGNED_BASE } from "./fixtures";
+import { approveScript } from "./agent-script";
 // @ts-expect-error - relay ESM sem tipagem
 const runtimeModule = await import("../../relay/v3/runtime.mjs");
 // @ts-expect-error - relay ESM sem tipagem
@@ -13,17 +14,20 @@ const specialistsModule = await import("../../relay/v3/specialists.mjs");
 const assetModule = await import("../../relay/v3/asset-agent.mjs");
 // @ts-expect-error - relay ESM sem tipagem
 const consensusModule = await import("../../relay/v3/consensus.mjs");
+// @ts-expect-error - relay ESM sem tipagem
+const clientModule = await import("../../relay/v3/agents/llm-client.mjs");
 const { V3Runtime } = runtimeModule as any;
 const { measureAll } = measurementsModule as any;
 const { runSpecialists } = specialistsModule as any;
 const { classifyAsset } = assetModule as any;
 const { runConsensus } = consensusModule as any;
+const { createScriptedAgentClient } = clientModule as any;
 
 const exp = ALIGNED_BASE + 300_000;
 const activeFor = (expirationAt: number) => ({ id: 76, name: "EURUSD-OTC", enabled: true, is_suspended: false, deadtime: 30, option: { expiration_times: [Math.round(expirationAt / 1000)], profit: { commission: 18 } } });
 
 describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", () => {
-  it("cria opportunity em ~TTE330, roda ciclos por candle fechado e registra snapshot se aprovado", () => {
+  it("cria opportunity em ~TTE330, roda ciclos por candle fechado e registra snapshot se aprovado", async () => {
     const queries: string[] = [];
     const pool = { query: async (sql: string) => { queries.push(sql); return { rows: [], rowCount: 1 }; } };
     const strategy = { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: "sha256:v3-test", statsEpoch: "epoch-v3" };
@@ -39,7 +43,7 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
     for (const tte of [325_000, 320_000, 315_000, 310_000, 305_000]) {
       const brokerNow = exp - tte;
       const candles = candlesFromCloses(closes.map((close, index) => close * (1 + index * 0.0000001)), { startAt: brokerNow - closes.length * 5_000 });
-      const cycle = runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow });
+      const cycle = await runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow });
       if (cycle) cycles.push(cycle);
     }
     expect(cycles.length).toBeGreaterThanOrEqual(3);
@@ -56,21 +60,21 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
     expect(status.counters.candleCycles).toBe(cycles.length);
   });
 
-  it("TTE<=300 sem envio => MISSED_5M_ENTRY_WINDOW e nenhum ciclo novo", () => {
+  it("TTE<=300 sem envio => MISSED_5M_ENTRY_WINDOW e nenhum ciclo novo", async () => {
     const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false } , now: () => exp - 330_000 });
     runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
     const closes = pullbackRetomadaSeries({ candles: 90 }).map((candle) => candle.close);
     const candles = candlesFromCloses(closes, { startAt: exp - 299_000 - closes.length * 5_000 });
-    const cycle = runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow: exp - 299_000 });
+    const cycle = await runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow: exp - 299_000 });
     expect(cycle).toBeNull();
     expect(runtime.opportunities()[0].status).toBe("MISSED_5M_ENTRY_WINDOW");
   });
 
-  it("range/no-setup nao gera ordem nem snapshot executavel", () => {
+  it("range/no-setup nao gera ordem nem snapshot executavel", async () => {
     const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false }, now: () => exp - 330_000 });
     runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
     const candles = rangeSeries({ candles: 90 }).map((candle, index) => ({ ...candle, at: exp - 320_000 - (89 - index) * 5_000 }));
-    const cycle = runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow: exp - 320_000 });
+    const cycle = await runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow: exp - 320_000 });
     expect(cycle).toBeTruthy();
     expect(["NO_SETUP", "WAIT"]).toContain(cycle.assetState);
     const opportunity = runtime.opportunities()[0];
@@ -79,15 +83,18 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
     expect(runtime.status().executionEnabled).toBe(false);
   });
 
-  it("aprovacao real => snapshot imutavel com hash + executionBlocked (V3 observe-only, zero ordem)", () => {
-    const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: "sha256:v3-test", statsEpoch: "epoch-v3" }, now: () => exp - 320_000 });
+  it("aprovacao LLM real => snapshot imutavel + scheduler agenda ~TTE302 (observe-only, zero ordem)", async () => {
+    const agents = createScriptedAgentClient(approveScript());
+    let brokerClock = exp - 320_000;
+    const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: "sha256:v3-test", statsEpoch: "epoch-v3" }, agents, now: () => brokerClock, brokerNow: () => brokerClock });
+    expect(runtime.status().agentMode).toBe("LLM");
     runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
     const closes = approvalSeries({ candles: 120 }).map((candle) => candle.close);
     let approved = null;
-    for (const tte of [327_000, 322_000, 317_000, 312_000, 307_000, 303_000]) {
+    for (const tte of [327_000, 322_000, 317_000, 312_000, 307_000, 302_000]) {
       const brokerNow = exp - tte;
       const candles = candlesFromCloses(closes, { startAt: brokerNow - closes.length * 5_000 });
-      const cycle = runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow });
+      const cycle = await runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow });
       if (cycle?.consensus === "APPROVE_BUY" || cycle?.consensus === "APPROVE_SELL") approved = cycle;
     }
     expect(approved).toBeTruthy();
@@ -96,9 +103,55 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
     expect(opportunity.finalDecision?.snapshotHash).toMatch(/^sha256:/);
     expect(opportunity.finalDecision?.executionBlocked).toBe("V3_NOT_ACTIVE");
     expect(runtime.status().counters.snapshots).toBeGreaterThanOrEqual(1);
-    expect(runtime.status().counters.executionBlocked).toBeGreaterThanOrEqual(1);
+    expect(runtime.status().scheduler.pending).toBeGreaterThanOrEqual(1);
+    expect(runtime.status().agents.latency.CONSENSUS_FINAL.count).toBeGreaterThanOrEqual(1);
     expect(runtime.status().executionEnabled).toBe(false);
+    // disparo no alvo (delay 0): broker avanca para TTE~302 e o scheduler revalida observe-only
+    brokerClock = exp - 302_000;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(opportunity.executionRef?.fireAt).toBeTruthy();
+    expect(opportunity.executionRef?.submit).toBe(false);
+    expect(runtime.status().counters.schedulerFired).toBeGreaterThanOrEqual(1);
   });
+});
+
+describe("V3 benchmark — agentes LLM (latencia simulada; 30 ativos)", () => {
+  it("30 ativos em paralelo com 8 chamadas/ciclo: nenhum ciclo estoura o candle e p95 dentro do orcamento", async () => {
+    const base = approveScript();
+    const script: Record<string, any> = {};
+    for (const role of ["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION"]) script[role] = { ...base[role], sleepMs: 1, latencyMs: 1 };
+    script.ASSET = { ...base.ASSET, sleepMs: 2, latencyMs: 2 };
+    script.CONSENSUS_INDEPENDENT = { ...base.CONSENSUS_INDEPENDENT, sleepMs: 2, latencyMs: 2 };
+    script.CONSENSUS_FINAL = { ...base.CONSENSUS_FINAL, sleepMs: 2, latencyMs: 2 };
+    const agents = createScriptedAgentClient(script);
+    const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false }, agents });
+    const markets = Array.from({ length: 30 }, (_, index) => `M${index}:OTC`);
+    const actives: Record<string, any> = {};
+    const mapping = new Map<number, string>();
+    markets.forEach((marketKey, index) => { actives[String(100 + index)] = activeFor(exp); mapping.set(100 + index, marketKey); });
+    runtime.onInitializationData({ result: { binary: { actives } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: mapping });
+    const closes = approvalSeries({ candles: 120 }).map((candle) => candle.close);
+    const latencies: number[] = [];
+    let cycles = 0;
+    const waves = [327_000, 322_000, 317_000, 312_000];
+    for (const tte of waves) {
+      const brokerNow = exp - tte;
+      await Promise.all(markets.map((marketKey) => {
+        const candles = candlesFromCloses(closes, { startAt: brokerNow - closes.length * 5_000 });
+        return runtime.onClosedCandle({ marketKey, candles, brokerNow }).then((cycle: any) => { if (cycle) { cycles += 1; latencies.push(cycle.latencyMs); } });
+      }));
+    }
+    const sorted = [...latencies].sort((a, b) => a - b);
+    const p95 = sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * 0.95))] ?? 0;
+    const status = runtime.status();
+    console.log(`V3_AGENT_BENCHMARK cycles=${cycles} assets=30 waves=${waves.length} p95=${p95}ms maxDepth=${status.queue.maxDepth} agentCalls=${status.agents.calls} agentP95=${status.agents.latency.CONSENSUS_FINAL?.p95}ms`);
+    expect(cycles).toBe(30 * waves.length);
+    expect(p95).toBeLessThan(4_000);
+    expect(status.queue.maxDepth).toBeGreaterThanOrEqual(2);
+    expect(status.agents.calls).toBe(30 * waves.length * 8);
+    expect(status.counters.cyclesSkippedWindow).toBe(0);
+    expect(status.executionEnabled).toBe(false);
+  }, 120_000);
 });
 
 describe("V3 benchmark — 30 ativos, ciclos completos", () => {

@@ -34,6 +34,14 @@ export function independentClassification({ measurements, assetContext = null } 
 
 function sameDirection(a, b) { return a !== null && b !== null && a === b; }
 
+/** Invalidation bloqueia a tese conforme a direcao: BEARISH quebra alta; BULLISH quebra baixa. */
+function invalidationBlocks(code, direction) {
+  const text = String(code ?? "");
+  if (/BEARISH/.test(text)) return direction !== "DOWN";
+  if (/BULLISH/.test(text)) return direction !== "UP";
+  return true;
+}
+
 export function compareWithAsset({ independent, asset }) {
   if (!independent?.scenario || !asset?.scenario) return "INSUFFICIENT_EVIDENCE";
   if (independent.scenario === asset.scenario) return "AGREE";
@@ -68,7 +76,7 @@ export function finalChallenge({ measurements, asset, independent, timing = null
   const scenarioEval = evaluateScenario(asset?.scenario ?? "NO_SETUP", measurements);
   result.evidenceFamilies = evidenceFamilies(measurements, scenarioEval);
 
-  const invalidations = [...(asset?.invalidations ?? []), ...(scenarioEval?.invalidations ?? [])];
+  const invalidations = [...(asset?.invalidations ?? []), ...(scenarioEval?.invalidations ?? [])].filter((item) => invalidationBlocks(item.code, asset?.direction ?? null));
   step("NO_INVALIDATIONS", invalidations.length === 0, invalidations.map((item) => item.code));
   const blockers = [...(asset?.blockers ?? []), ...(scenarioEval?.blockers ?? [])].filter((item) => !["ADX_WEAK", "SQUEEZE_DIRECTION_UNKNOWN", "VOL_BULGE_CONTEXT"].includes(item.code));
   step("NO_BLOCKERS", blockers.length === 0, blockers.map((item) => item.code));

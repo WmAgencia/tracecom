@@ -10,7 +10,9 @@
  * (marketKey, expirationAt), deduplica e mede a cadencia. A "oportunidade" nasce quando a
  * expiration vira a FRENTE COMPRAVEL (TTE > deadtime) com TTE <= discoveryMaxTteMs.
  */
-export const V3_DISCOVERY_VERSION = "v3-expiration-discovery-v1";
+import { derivedExpirationAt, availableShortExpirations, DISCOVERY_MAX_TTE_MS, EXPIRY_GRID_MS } from "./expiration-grid.mjs";
+
+export const V3_DISCOVERY_VERSION = "v3-expiration-discovery-v2";
 
 const toMs = (value) => {
   const n = Number(value);
@@ -113,20 +115,22 @@ export class ExpirationDiscovery {
   }
 
   /**
-   * Frente compravel DERIVADA do relogio do broker: proxima fronteira operacional
-   * (multiplo de operativeDurationMs) que ainda pode ser comprada (TTE > deadtime).
-   * A IQ nao publica a lista de expirations absolutas (confirmado em producao:
-   * `option.expiration_times` = duracoes); a expiration-alvo e validada pelo ACK.
+   * Candidato V3 = fronteira de MINUTO que entrega hold ~300s (grade provada por ACK real).
+   * A lista completa de expirations curtas visiveis fica em `availableShort`.
    */
-  front(marketKey, brokerNow = null, { operativeDurationMs = 300_000 } = {}) {
+  front(marketKey, brokerNow = null, options = {}) {
     const at = Number.isFinite(Number(brokerNow)) ? Number(brokerNow) : this.now();
     const state = this.byMarket.get(String(marketKey));
     if (!state) return null;
     const deadtimeMs = Number.isFinite(Number(state.deadtimeMs)) ? Number(state.deadtimeMs) : 0;
-    let expirationAt = (Math.floor(at / operativeDurationMs) + 1) * operativeDurationMs;
-    let guard = 0;
-    while (expirationAt - at <= deadtimeMs && guard < 12) { expirationAt += operativeDurationMs; guard += 1; }
-    return { marketKey: String(marketKey), expirationAt, tteMs: expirationAt - at, deadtimeMs, operativeDurationMs, allowedDurationsMs: state.allowedDurationsMs, offer: this.offers.get(`${marketKey}|${expirationAt}`) ?? null };
+    const expirationAt = derivedExpirationAt(at, options);
+    return {
+      marketKey: String(marketKey), expirationAt, tteMs: expirationAt - at, deadtimeMs,
+      gridMs: options.gridMs ?? EXPIRY_GRID_MS,
+      allowedDurationsMs: state.allowedDurationsMs,
+      available: availableShortExpirations(at, { deadtimeMs, horizonMs: options.horizonMs ?? DISCOVERY_MAX_TTE_MS, gridMs: options.gridMs ?? EXPIRY_GRID_MS }),
+      offer: this.offers.get(`${marketKey}|${expirationAt}`) ?? null,
+    };
   }
 
   /** Oportunidades candidatas: frente compravel com TTE <= discoveryMaxTteMs. */

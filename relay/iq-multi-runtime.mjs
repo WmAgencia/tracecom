@@ -66,6 +66,9 @@ import { IntelligenceDispatch } from "./execution/intelligence-dispatch.mjs";
 import { loadOperationalStrategy } from "./execution/operational-strategy.mjs";
 import { matchPendingOrder, pendingCandidates, matchClosedOption } from "./execution/order-ack-matcher.mjs";
 import { V3Runtime } from "./v3/runtime.mjs";
+import { createLlmAgentClient } from "./v3/agents/llm-client.mjs";
+import { measureAll } from "./v3/measurements.mjs";
+import { derivedExpirationAt } from "./v3/expiration-grid.mjs";
 import { ExpirationTargetTiming } from "./v3/timing.mjs";
 import { SafetyShadow, parseSafetyLevels, SAFETY_SHADOW_RUN_ID } from "./agents/safety-shadow.mjs";
 import { CandlesArchive } from "./candles-archive.mjs";
@@ -157,7 +160,12 @@ export class IqMultiRuntime extends EventEmitter {
     // V3 (expiration-driven): observe-only, desligada por padrao; nunca ativa sozinha.
     this.v3Strategy = process.env.V3_ENABLED === "true" ? loadOperationalStrategy({ manifestPath: "estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V3.json" }) : null;
     this.v3 = this.v3Strategy
-      ? new V3Runtime({ now: this.now, pool, log: this.log, strategy: { version: this.v3Strategy.version, status: this.v3Strategy.status, executable: this.v3Strategy.executable, strategyHash: this.v3Strategy.strategyHash, statsEpoch: this.v3Strategy.manifest?.statsEpoch ?? null } })
+      ? new V3Runtime({
+          now: this.now, pool, log: this.log,
+          strategy: { version: this.v3Strategy.version, status: this.v3Strategy.status, executable: this.v3Strategy.executable, strategyHash: this.v3Strategy.strategyHash, statsEpoch: this.v3Strategy.manifest?.statsEpoch ?? null },
+          agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ pool, now: this.now }) : null,
+          brokerNow: () => { const value = this.client?.serverNow?.(); return Number.isFinite(Number(value)) ? Number(value) : this.now(); },
+        })
       : null;
     this.candleStore = new CandleStore({ pool, now: this.now, log: this.log });
     this.singlePath = new SinglePath({ now: this.now });
@@ -3104,6 +3112,18 @@ export class IqMultiRuntime extends EventEmitter {
   v3Status() { return this.v3?.status() ?? { version: "v3-runtime-v1", enabled: false, executionMode: "DISABLED", strategy: null, engine: null, discovery: null }; }
   v3Opportunities(options = {}) { return this.v3?.opportunities(options) ?? []; }
   v3Discovery() { return this.v3?.discoveryStatus() ?? null; }
+  /** Selftest READ-ONLY dos agentes LLM reais: um ciclo sobre dados atuais. Nunca envia ordem. */
+  async v3AgentSelftest({ marketKey = null } = {}) {
+    if (!this.v3) throw new IqWsError("V3_DISABLED");
+    const key = marketKey && this.markets.has(marketKey) ? String(marketKey) : [...this.markets.values()].find((ctx) => this.#candleList(ctx).length >= 60)?.marketKey ?? null;
+    if (!key) throw new IqWsError("NO_MARKET_DATA");
+    const candles = this.#candleList(this.markets.get(key));
+    const measurements = measureAll(candles, { marketKey: key, cycleNumber: 0 });
+    if (!measurements) throw new IqWsError("MEASUREMENTS_UNAVAILABLE");
+    const brokerNow = Number.isFinite(Number(this.client?.serverNow?.())) ? Number(this.client.serverNow()) : this.now();
+    const expirationAt = derivedExpirationAt(brokerNow);
+    return { marketKey: key, candles: candles.length, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow }, ...(await this.v3.agentSelftest({ measurements, expiration: { expirationAt, tteMs: expirationAt - brokerNow, brokerNow } })) };
+  }
 
   /** View operacional por ativo (GRID/LOG): productState do backend + AnalysisState (WAIT observavel). */
   intelligenceAssets() {
@@ -3759,7 +3779,7 @@ export class IqMultiRuntime extends EventEmitter {
       exactExpirationAt: Number.isFinite(Number(exactExpirationAt)) ? Number(exactExpirationAt) : null,
       correlationId: ctx.agents?.correlationId ?? `corr_exec_${record.executionId}`,
       infraProbe: infraProbe === true,
-      operational: operational ? { strategyVersion: operational.strategyVersion ?? null, strategyHash: operational.strategyHash ?? null, statsEpoch: operational.statsEpoch ?? null, snapshotHash: operational.snapshotHash ?? null, decisionSnapshot: operational.decisionSnapshot ?? null, v3OpportunityId: operational.v3OpportunityId ?? null, v3PurchaseDeadlineAt: Number.isFinite(Number(operational.v3PurchaseDeadlineAt)) ? Number(operational.v3PurchaseDeadlineAt) : null, testOnly: operational.testOnly === true, excludedFromStats: operational.excludedFromStats === true } : (entryTiming?.pathTest === true ? { strategyVersion: "PATH_TEST", strategyHash: null, statsEpoch: null, snapshotHash: null, decisionSnapshot: null, testOnly: true, excludedFromStats: true } : null),
+      operational: operational ? { strategyVersion: operational.strategyVersion ?? null, strategyHash: operational.strategyHash ?? null, statsEpoch: operational.statsEpoch ?? null, snapshotHash: operational.snapshotHash ?? null, decisionSnapshot: operational.decisionSnapshot ?? null, v3OpportunityId: operational.v3OpportunityId ?? null, v3PurchaseDeadlineAt: Number(operational.v3PurchaseDeadlineAt) > 0 ? Number(operational.v3PurchaseDeadlineAt) : null, testOnly: operational.testOnly === true, excludedFromStats: operational.excludedFromStats === true } : (entryTiming?.pathTest === true ? { strategyVersion: "PATH_TEST", strategyHash: null, statsEpoch: null, snapshotHash: null, decisionSnapshot: null, testOnly: true, excludedFromStats: true } : null),
       entryTiming: entryTiming ? { candidateId: entryTiming.candidateId, targetEntryAt: entryTiming.targetEntryAt, targetExpiryAt: entryTiming.targetExpiryAt, targetExpirySec: Number(entryTiming.targetExpirySec ?? Math.round(entryTiming.targetExpiryAt / 1000)), submitAt: entryTiming.submitAt, submitAtMs, entryLeadMs: entryTiming.entryLeadMs, revalidatedAt: entryTiming.revalidatedAt, candidateChangedBeforeEntry: entryTiming.candidateChangedBeforeEntry === true, shadowArms: entryTiming.shadowArms ?? null, t0Snapshot: entryTiming.t0Snapshot ?? entryTiming.initialSnapshot ?? null, shadowObservationId: entryTiming.shadowObservationId ?? null, directionChanges: (entryTiming.changedFields ?? []).filter((change) => change.field === "action").length } : null,
     };
     this.#auditRecord(pending.correlationId, key, "ORDER_SENT", { executionId: record.executionId, direction: directionWire, stake: finalStake, requestedStake: resolvedStake.requestedStake, stakeSource: resolvedStake.source, mode, source, expiration: expiration.expiration, optionKind: expiration.optionKind, candidateId: entryTiming?.candidateId ?? null, targetEntryAt: entryTiming?.targetEntryAt ?? null, submitAtMs, entryLeadMs: entryTiming?.entryLeadMs ?? null }, { persist: true });

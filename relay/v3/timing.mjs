@@ -1,73 +1,28 @@
 /**
- * V3 — EXPIRATION TARGET TIMING (autoridade de timing da V3).
+ * V3 — EXPIRATION TARGET TIMING (autoridade de timing da V3, v2 conceptual).
  *
- * Diferenca conceitual central vs V2: a V2 usava "proximo bucket de 5 min a partir do
- * momento do sinal". A V3 preserva a EXPIRATION REAL oferecida pela IQ que originou a
- * oportunidade (~TTE 330s) e envia para ELA MESMA (~TTE 302s).
+ * Separa explicitamente:
+ *  - ANALYSIS WINDOW : 300s < TTE <= 330s (investigar a opportunity com ciclos)
+ *  - TARGET SEND     : ~TTE 302s (expiracao - 302s)
+ *  - EXECUTION WINDOW: (300s, 302.5s] — quando o socket pode ser acionado
+ *  - HARD CUTOFF     : TTE <= 300s => MISSED_5M_ENTRY_WINDOW (nunca persegue)
  *
- * Tres relogios distintos (nunca confundir):
- *  A) TTE do contrato (expirationAt - brokerNow)
- *  B) alvo estrategico de envio (expirationAt - TARGET_HOLD - ENTRY_LEAD)
- *  C) purchase deadline do broker (deadtime) — NAO e o nosso momento de entrada.
- *
- * Regras:
- *  - targetSendAt   = expirationAt - 302_000 ms
- *  - hardCutoffAt   = expirationAt - 300_000 ms  (TTE <= 300 => MISSED_5M_ENTRY_WINDOW)
- *  - descoberta     = expirationAt com TTE <= DISCOVERY_MAX_TTE_MS (330_000) e > hardCutoff
- *  - autoridade de tempo = broker server time (nunca Date.now local quando disponivel)
+ * A grade e MINUTO A MINUTO (60s) para a familia turbo (provado por evidencia de ACK real);
+ * o HOLD desejado e ~300s — grade e hold NAO sao a mesma coisa.
+ * Autoridade de tempo: broker server time.
  */
-export const V3_TIMING_VERSION = "v3-expiration-target-timing-v1";
-export const TARGET_HOLD_SECONDS = 300;
-export const TARGET_HOLD_MS = TARGET_HOLD_SECONDS * 1000;
-export const ENTRY_LEAD_MS = 2_000;
-export const DISCOVERY_MAX_TTE_MS = 330_000;
-export const EXPIRY_ALIGNMENT_MS = 300_000;
+import { DISCOVERY_MAX_TTE_MS, HARD_CUTOFF_TTE_MS, TARGET_HOLD_MS, ENTRY_LEAD_MS, EXPIRY_GRID_MS, isGridAligned } from "./expiration-grid.mjs";
+
+export const V3_TIMING_VERSION = "v3-expiration-target-timing-v2";
+export const EXECUTION_TOLERANCE_MS = 500;
+export const TARGET_SEND_TTE_MS = TARGET_HOLD_MS + ENTRY_LEAD_MS;
 
 export class V3TimingError extends Error {
   constructor(code, detail = "") { super(detail ? `${code}: ${detail}` : code); this.code = code; }
 }
 
-export function isAlignedExpiration(expirationAtMs) {
-  const value = Number(expirationAtMs);
-  return Number.isFinite(value) && value > 0 && value % EXPIRY_ALIGNMENT_MS === 0;
-}
-
-const toMs = (value) => {
-  const n = Number(value);
-  if (!Number.isFinite(n) || n <= 0) return null;
-  return n > 1e12 ? n : n * 1000;
-};
-
-/**
- * Intencao de ordem V3: SEMPRE a expiration exata que originou a opportunity.
- * Nunca recalcula bucket, nunca arredonda, nunca troca a expiration.
- */
-export function buildV3OrderIntent({ opportunity = null, brokerNow, stake = null, direction = null, balanceId = null } = {}) {
-  if (!opportunity) return { ok: false, code: "OPPORTUNITY_REQUIRED" };
-  const check = ExpirationTargetTiming.canSubmit({ expirationAt: opportunity.expirationAt, brokerNow, purchaseDeadlineAt: opportunity.purchaseDeadlineAt });
-  if (check.ok !== true) return { ok: false, code: check.code, derived: check.derived };
-  if (direction !== "BUY" && direction !== "SELL") return { ok: false, code: "DIRECTION_REQUIRED" };
-  if (!isAlignedExpiration(opportunity.expirationAt)) return { ok: false, code: "EXPIRATION_NOT_ALIGNED" };
-  return {
-    ok: true, code: "EXACT_TARGET_READY",
-    intent: {
-      opportunityId: opportunity.opportunityId, marketKey: opportunity.marketKey, activeId: opportunity.activeId ?? null,
-      direction, stake, exactExpirationAt: Math.round(Number(opportunity.expirationAt) / 1000),
-      targetSendAt: opportunity.targetSendAt, hardStrategicCutoffAt: opportunity.hardStrategicCutoffAt,
-      tteMs: check.derived?.tteMs ?? null, balanceId,
-    },
-  };
-}
-
-/** Guard pre-submit: qualquer expiration diferente da opportunity e DENY (G/I/J). */
-export function assertExactExpirationTarget({ opportunity = null, requestedExpirationAt = null } = {}) {
-  if (!opportunity) return { ok: false, code: "OPPORTUNITY_REQUIRED" };
-  const requestedMs = toMs(requestedExpirationAt);
-  if (requestedMs === null) return { ok: false, code: "EXPIRATION_REQUIRED" };
-  if (requestedMs % EXPIRY_ALIGNMENT_MS !== 0) return { ok: false, code: "ENTRY_EXPIRATION_ALIGNMENT", requestedMs };
-  if (requestedMs !== Number(opportunity.expirationAt)) return { ok: false, code: "ENTRY_EXPIRATION_MISMATCH", expected: Number(opportunity.expirationAt), requested: requestedMs };
-  return { ok: true, code: "EXACT_TARGET" };
-}
+export { isGridAligned };
+export const isAlignedExpiration = (expirationAtMs) => isGridAligned(expirationAtMs, EXPIRY_GRID_MS);
 
 export class ExpirationTargetTiming {
   constructor({ now = () => Date.now(), targetHoldMs = TARGET_HOLD_MS, entryLeadMs = ENTRY_LEAD_MS, discoveryMaxTteMs = DISCOVERY_MAX_TTE_MS } = {}) {
@@ -107,13 +62,12 @@ export class ExpirationTargetTiming {
       tteSeconds: Math.round(tteMs / 1000),
       targetSendAt: expirationAtMs - targetHoldMs - entryLeadMs,
       hardStrategicCutoffAt: expirationAtMs - targetHoldMs,
-      purchaseDeadlineAt: Number.isFinite(Number(purchaseDeadlineAt)) ? Number(purchaseDeadlineAt) : null,
+      purchaseDeadlineAt: Number.isFinite(Number(purchaseDeadlineAt)) && Number(purchaseDeadlineAt) > 0 ? Number(purchaseDeadlineAt) : null,
       targetHoldSeconds: Math.round(targetHoldMs / 1000),
       entryLeadMs,
     };
   }
 
-  /** Fase da expiration no relogio do broker. */
   static phase({ tteMs, discoveryMaxTteMs = DISCOVERY_MAX_TTE_MS, targetHoldMs = TARGET_HOLD_MS } = {}) {
     const tte = Number(tteMs);
     if (!Number.isFinite(tte)) return "INVALID";
@@ -122,14 +76,67 @@ export class ExpirationTargetTiming {
     return "OPPORTUNITY_WINDOW";
   }
 
-  /** Avaliacao de envio: exige brokerNow dentro de [hardCutoff, targetSendAt] e expiration alinhada. */
-  static canSubmit({ expirationAt, brokerNow, purchaseDeadlineAt = null, discoveryMaxTteMs = DISCOVERY_MAX_TTE_MS } = {}) {
+  /** ANALYSIS: a opportunity pode ser investigada (primeiro ciclo FULL + ciclos subsequentes). */
+  static analysis({ expirationAt, brokerNow } = {}) {
     let derived;
-    try { derived = ExpirationTargetTiming.derive({ expirationAt, brokerNow, purchaseDeadlineAt, discoveryMaxTteMs }); }
+    try { derived = ExpirationTargetTiming.derive({ expirationAt, brokerNow }); }
     catch (error) { return { ok: false, code: error?.code ?? "TIMING_ERROR", derived: null }; }
-    if (derived.tteMs > discoveryMaxTteMs) return { ok: false, code: "TTE_ABOVE_DISCOVERY_WINDOW", derived };
-    if (derived.tteMs <= derived.targetHoldSeconds * 1000) return { ok: false, code: "MISSED_5M_ENTRY_WINDOW", derived };
-    if (derived.purchaseDeadlineAt !== null && derived.brokerNow >= derived.purchaseDeadlineAt) return { ok: false, code: "BROKER_PURCHASE_DEADLINE_PASSED", derived };
-    return { ok: true, code: "ENTRY_WINDOW_OPEN", derived };
+    if (derived.tteMs > DISCOVERY_MAX_TTE_MS) return { ok: false, code: "TTE_ABOVE_ANALYSIS_WINDOW", derived };
+    if (derived.tteMs <= HARD_CUTOFF_TTE_MS) return { ok: false, code: "MISSED_5M_ENTRY_WINDOW", derived };
+    return { ok: true, code: "ANALYSIS_WINDOW_OPEN", derived };
   }
+
+  /** EXECUTION: janela de socket (~302s), nunca antes do alvo e nunca depois do cutoff. */
+  static execution({ expirationAt, brokerNow, purchaseDeadlineAt = null } = {}) {
+    let derived;
+    try { derived = ExpirationTargetTiming.derive({ expirationAt, brokerNow, purchaseDeadlineAt }); }
+    catch (error) { return { ok: false, code: error?.code ?? "TIMING_ERROR", derived: null }; }
+    if (derived.tteMs <= HARD_CUTOFF_TTE_MS) return { ok: false, code: "MISSED_5M_ENTRY_WINDOW", derived };
+    if (derived.tteMs > TARGET_SEND_TTE_MS + EXECUTION_TOLERANCE_MS) return { ok: false, code: "BEFORE_TARGET_SEND", derived };
+    if (derived.purchaseDeadlineAt !== null && derived.brokerNow >= derived.purchaseDeadlineAt) return { ok: false, code: "BROKER_PURCHASE_DEADLINE_PASSED", derived };
+    return { ok: true, code: "EXECUTION_WINDOW_OPEN", derived };
+  }
+
+  static cutoffPassed({ expirationAt, brokerNow } = {}) {
+    const tte = Number(expirationAt) - Number(brokerNow);
+    return !Number.isFinite(tte) || tte <= HARD_CUTOFF_TTE_MS;
+  }
+
+  /** Compatibilidade: `canSubmit` agora significa EXECUTION WINDOW (nao analysis). */
+  static canSubmit(options = {}) { return ExpirationTargetTiming.execution(options); }
 }
+
+const toMs = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n > 1e12 ? n : n * 1000;
+};
+
+/** Intencao de ordem V3: SEMPRE a expiration exata da opportunity, nunca recalculada. */
+export function buildV3OrderIntent({ opportunity = null, brokerNow, stake = null, direction = null, balanceId = null, optionTypeId = 3 } = {}) {
+  if (!opportunity) return { ok: false, code: "OPPORTUNITY_REQUIRED" };
+  const window = ExpirationTargetTiming.execution({ expirationAt: opportunity.expirationAt, brokerNow, purchaseDeadlineAt: opportunity.purchaseDeadlineAt });
+  if (window.ok !== true) return { ok: false, code: window.code, derived: window.derived };
+  if (direction !== "BUY" && direction !== "SELL") return { ok: false, code: "DIRECTION_REQUIRED" };
+  if (!isAlignedExpiration(opportunity.expirationAt)) return { ok: false, code: "EXPIRATION_NOT_ALIGNED" };
+  return {
+    ok: true, code: "EXACT_TARGET_READY",
+    intent: {
+      opportunityId: opportunity.opportunityId, marketKey: opportunity.marketKey, activeId: opportunity.activeId ?? null,
+      direction, stake, exactExpirationAt: Math.round(Number(opportunity.expirationAt) / 1000), optionTypeId,
+      targetSendAt: opportunity.targetSendAt, hardStrategicCutoffAt: opportunity.hardStrategicCutoffAt,
+      tteMs: window.derived?.tteMs ?? null, balanceId,
+    },
+  };
+}
+
+/** Guard pre-submit: expiration diferente da opportunity ou fora da grade de 60s => DENY. */
+export function assertExactExpirationTarget({ opportunity = null, requestedExpirationAt = null, gridMs = EXPIRY_GRID_MS } = {}) {
+  if (!opportunity) return { ok: false, code: "OPPORTUNITY_REQUIRED" };
+  const requestedMs = toMs(requestedExpirationAt);
+  if (requestedMs === null) return { ok: false, code: "EXPIRATION_REQUIRED" };
+  if (!isGridAligned(requestedMs, gridMs)) return { ok: false, code: "ENTRY_EXPIRATION_ALIGNMENT", requestedMs, gridMs };
+  if (requestedMs !== Number(opportunity.expirationAt)) return { ok: false, code: "ENTRY_EXPIRATION_MISMATCH", expected: Number(opportunity.expirationAt), requested: requestedMs };
+  return { ok: true, code: "EXACT_TARGET" };
+}
+

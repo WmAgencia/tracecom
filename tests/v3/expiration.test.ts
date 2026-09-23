@@ -112,11 +112,11 @@ describe("V3 expiration — janela estrategica (302/300)", () => {
     const built = buildV3OrderIntent({ opportunity, brokerNow: TTE299, stake: 2, direction: "BUY" });
     expect(built.ok).toBe(false);
     expect(built.code).toBe("MISSED_5M_ENTRY_WINDOW");
-    // F: broker deixa de vender (purchase deadline) antes do cutoff estrategico => CANCELLED
+    // F: broker deixa de vender (purchase deadline) dentro da janela de execucao => bloqueio
     const engine2 = new ExpirationOpportunityEngine({ now: () => TTE330 });
     engine2.discover({ marketKey: "EURUSD:OTC", expirationAt: EXP, brokerNow: TTE330, deadtimeMs: 308_000 });
     const other = engine2.get(`EURUSD:OTC@${new Date(EXP).toISOString()}`);
-    const window = ExpirationTargetTiming.canSubmit({ expirationAt: EXP, brokerNow: EXP - 306_000, purchaseDeadlineAt: EXP - 308_000 });
+    const window = ExpirationTargetTiming.execution({ expirationAt: EXP, brokerNow: EXP - 302_000, purchaseDeadlineAt: EXP - 302_600 });
     expect(window.ok).toBe(false);
     expect(window.code).toBe("BROKER_PURCHASE_DEADLINE_PASSED");
     engine2.enforceWindow(other.opportunityId, EXP - 306_000);
@@ -126,7 +126,8 @@ describe("V3 expiration — janela estrategica (302/300)", () => {
 
   it("G/I/J: intent/guard negam expiration trocada, desalinhada (30s/60s) e bucket recalculado", () => {
     const opportunity = { opportunityId: "x", marketKey: "EURUSD:OTC", expirationAt: EXP, targetSendAt: EXP - 302_000, hardStrategicCutoffAt: EXP - 300_000, purchaseDeadlineAt: EXP - 30_000 };
-    expect(assertExactExpirationTarget({ opportunity, requestedExpirationAt: (EXP + 60_000) / 1000 }).code).toBe("ENTRY_EXPIRATION_ALIGNMENT");
+    // +60s e valido NA GRADE (minuto) mas nao e o alvo => MISMATCH; +30s viola a grade => ALIGNMENT
+    expect(assertExactExpirationTarget({ opportunity, requestedExpirationAt: (EXP + 60_000) / 1000 }).code).toBe("ENTRY_EXPIRATION_MISMATCH");
     expect(assertExactExpirationTarget({ opportunity, requestedExpirationAt: (EXP + 30_000) / 1000 }).code).toBe("ENTRY_EXPIRATION_ALIGNMENT");
     // bucket recalculado localmente em TTE=302 aponta para a expiration IMINENTE (TTE 2s), nao para o alvo:
     // e exatamente por isso que a V3 preserva a expiration exata e a V2 nunca deve ser reutilizada aqui.

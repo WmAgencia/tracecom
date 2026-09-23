@@ -18,23 +18,33 @@ import { runSpecialists } from "./specialists.mjs";
 import { classifyAsset } from "./asset-agent.mjs";
 import { runConsensus } from "./consensus.mjs";
 import { buildV3DecisionSnapshot } from "./decision-snapshot.mjs";
+import { runAgentCycle, agentLatencyStats } from "./agents/team.mjs";
+import { ExecutionScheduler } from "./scheduler.mjs";
 import { stableStringify } from "../intelligence/features.mjs";
 
-export const V3_RUNTIME_VERSION = "v3-runtime-v1";
+export const V3_RUNTIME_VERSION = "v3-runtime-v2";
 
 const defaultStrategy = Object.freeze({ version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: null, statsEpoch: null });
 
 export class V3Runtime {
-  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null } = {}) {
+  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null } = {}) {
     this.now = now;
     this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
     this.pool = pool;
     this.strategy = strategy ?? defaultStrategy;
     this.discovery = discovery ?? new ExpirationDiscovery({ now });
     this.engine = engine ?? new ExpirationOpportunityEngine({ now });
+    this.agents = agents;
+    this.agentMode = agentMode ?? (agents?.available ? "LLM" : "DETERMINISTIC_OBSERVE");
+    this.brokerNow = typeof brokerNow === "function" ? brokerNow : null;
+    this.scheduler = scheduler ?? new ExecutionScheduler({ now, onFire: (intent) => this.#onExecutionFire(intent), log: this.log });
     this.prevByMarket = new Map();
     this.lastClosedCandleId = new Map();
-    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, snapshots: 0, approvals: 0, executionBlocked: 0, persisted: 0, persistErrors: 0 };
+    this.queues = new Map();
+    this.queueDepth = 0;
+    this.maxQueueDepth = 0;
+    this.agentCalls = [];
+    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, snapshots: 0, approvals: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, agentCycles: 0, agentUnavailable: 0, scheduled: 0, schedulerFired: 0 };
     this.lastError = null;
     this.lastCycleAt = null;
     this.latencySamples = [];
@@ -85,15 +95,28 @@ export class V3Runtime {
     return discovered;
   }
 
+  /** Ciclos em fila POR MERCADO (mercados diferentes rodam em paralelo; o mesmo mercado, serial).
+   *  Nada lanca para o V2: erros ficam no lastError/log. */
+  onClosedCandle(args = {}) {
+    const marketKey = String(args.marketKey ?? "?");
+    const previous = this.queues.get(marketKey) ?? Promise.resolve();
+    this.queueDepth += 1;
+    this.maxQueueDepth = Math.max(this.maxQueueDepth, this.queueDepth);
+    const run = () => this.#runCycle(args).catch((error) => { this.lastError = String(error?.message ?? error).slice(0, 160); this.log("V3_CYCLE_FAIL", this.lastError); return null; });
+    const next = previous.then(run).finally(() => { this.queueDepth = Math.max(0, this.queueDepth - 1); });
+    this.queues.set(marketKey, next);
+    return next;
+  }
+
   /** Um ciclo por candle fechado; so dentro de (hardCutoff, discoveryWindow]. */
-  onClosedCandle({ marketKey, candles, brokerNow = null } = {}) {
+  async #runCycle({ marketKey, candles, brokerNow = null } = {}) {
     const at = Number.isFinite(Number(brokerNow)) ? Number(brokerNow) : this.now();
     // A frente compravel e derivada do relogio do broker: adota a cada candle fechado (5s),
     // dando resolucao de 5s a descoberta (~TTE 330) sem depender do poll de initialization (60s).
     if (this.discovery.byMarket.size) this.#adoptDueFronts(at);
     const opportunity = this.engine.activeFor(String(marketKey));
     if (!opportunity) { this.counters.cyclesSkippedNoOpportunity += 1; return null; }
-    const window = ExpirationTargetTiming.canSubmit({ expirationAt: opportunity.expirationAt, brokerNow: at, purchaseDeadlineAt: opportunity.purchaseDeadlineAt });
+    const window = ExpirationTargetTiming.analysis({ expirationAt: opportunity.expirationAt, brokerNow: at });
     if (window.ok !== true) { this.counters.cyclesSkippedWindow += 1; this.engine.enforceWindow(opportunity.opportunityId, at); return null; }
     if (!Array.isArray(candles) || candles.length < 40) return null;
     const startedAt = this.now();
@@ -105,32 +128,57 @@ export class V3Runtime {
     const featureSnapshotId = `v3feat:${crypto.createHash("sha256").update(stableStringify(measurements)).digest("hex").slice(0, 24)}`;
     const previous = this.prevByMarket.get(marketKey) ?? {};
     const previousByRole = { RSI: previous.rsi, DMI_ADX: previous.dmi, BOLLINGER: previous.bollinger, ATR: previous.atr, PRICE_ACTION: previous.priceAction };
-    const specialists = runSpecialists({ measurements, previousByRole });
-    const asset = classifyAsset({ measurements, specialists, previousAssessment: previous.asset ?? null, timing: { tteMs: window.derived?.tteMs ?? null } });
-    const consensus = runConsensus({ measurements, asset, timing: { ok: window.ok === true, code: window.code, tteMs: window.derived?.tteMs ?? null }, changedSincePreviousCycle: asset?.changedSincePreviousCycle ?? [] });
+    const cycleNumber = opportunity.cycles.length + 1;
+    const deterministicSpecialists = runSpecialists({ measurements, previousByRole });
+    const deterministicAsset = classifyAsset({ measurements, specialists: deterministicSpecialists, previousAssessment: previous.asset ?? null, timing: { tteMs: window.derived?.tteMs ?? null } });
+    const deterministicConsensus = runConsensus({ measurements, asset: deterministicAsset, timing: { ok: window.ok === true, code: window.code, tteMs: window.derived?.tteMs ?? null }, changedSincePreviousCycle: deterministicAsset?.changedSincePreviousCycle ?? [] });
+
+    let agentResult = null;
+    if (this.agents?.available) {
+      agentResult = await runAgentCycle({ client: this.agents, measurements, specialists: deterministicSpecialists, previousByRole, previousAssessment: previous.asset ?? null, expiration: { expirationAt: opportunity.expirationAt, tteMs: window.derived?.tteMs ?? null, brokerNow: at }, cycleNumber });
+      this.counters.agentCycles += 1;
+      this.agentCalls.push(...agentResult.agentCalls);
+      if (this.agentCalls.length > 2_000) this.agentCalls.splice(0, this.agentCalls.length - 2_000);
+      if (agentResult.available !== true) this.counters.agentUnavailable += 1;
+    }
+    // Fail-closed: sem agentes LLM validos NAO existe approval (determinismo continua coletando dados).
+    const approvalsAllowed = agentResult?.available === true;
+    const specialists = deterministicSpecialists;
+    const asset = approvalsAllowed
+      ? { scenario: agentResult.asset.scenario, direction: agentResult.asset.direction, state: agentResult.asset.state, blockers: (agentResult.asset.blockers ?? []).map((code) => ({ code })), invalidations: (agentResult.asset.invalidations ?? []).map((code) => ({ code })), bestCounterCase: agentResult.asset.bestCounterCase, changedSincePreviousCycle: (agentResult.asset.changedSincePreviousCycle ?? []).map((field) => ({ field, from: null, to: null })) }
+      : { ...deterministicAsset, state: "WAIT" };
+    const consensus = approvalsAllowed
+      ? { result: agentResult.result, agreement: agentResult.consensus.agreement, challenge: { reasons: agentResult.consensus.reasons ?? [], challengeSteps: (agentResult.consensus.challengeSteps ?? []).map((detail, index) => ({ id: `LLM_${agentResult.consensus.result}_${index}`, ok: null, detail })) }, independent: agentResult.independent, bestCounterCase: agentResult.consensus.bestCounterCase }
+      : { ...deterministicConsensus, result: "AGENT_UNAVAILABLE", agreement: "INSUFFICIENT_EVIDENCE" };
 
     const cycle = {
       at, tteMs: window.derived?.tteMs ?? null, closedCandleId, featureSnapshotId,
       price: measurements.closedCandle.close,
       specialistStates: { rsi: specialists.rsi?.assessment ?? null, dmi: specialists.dmi?.assessment ?? null, bollinger: specialists.bollinger?.assessment ?? null, atr: specialists.atr?.assessment ?? null, priceAction: specialists.priceAction?.assessment ?? null },
-      assetScenario: asset?.scenario ?? null, assetState: asset?.state ?? null,
+      agentSpecialistStates: approvalsAllowed ? Object.fromEntries(Object.entries(agentResult.specialists).map(([role, output]) => [role, output?.domainAssessment ?? null])) : null,
+      assetScenario: asset?.scenario ?? null, assetDirection: asset?.direction ?? null, assetState: asset?.state ?? null,
       consensusResult: consensus.result, agreement: consensus.agreement,
       changedSincePreviousCycle: asset?.changedSincePreviousCycle ?? [],
       status: asset?.state ?? "WAIT",
+      agentMode: this.agentMode,
+      agents: { available: approvalsAllowed, calls: agentResult?.agentCalls ?? [] },
+      deterministic: { asset: deterministicAsset?.scenario ?? null, direction: deterministicAsset?.direction ?? null, state: deterministicAsset?.state ?? null, consensus: deterministicConsensus.result },
       measurements, specialists, asset, consensus,
     };
     this.engine.recordCycle(opportunity.opportunityId, cycle);
     this.engine.enforceWindow(opportunity.opportunityId, at);
     this.engine.finalizeCycle(opportunity.opportunityId, { asset, consensus, brokerNow: at });
-    this.prevByMarket.set(marketKey, { ...specialists, asset });
+    if (approvalsAllowed) this.prevByMarket.set(marketKey, { ...specialists, asset });
 
     if ((consensus.result === "APPROVE_BUY" || consensus.result === "APPROVE_SELL") && !["MISSED_5M_ENTRY_WINDOW", "CANCELLED"].includes(opportunity.status)) {
-      const finalDecision = { result: consensus.result, at, tteMs: window.derived?.tteMs ?? null, scenario: asset?.scenario ?? null };
+      const finalDecision = { result: consensus.result, at, tteMs: window.derived?.tteMs ?? null, scenario: asset?.scenario ?? null, direction: asset?.direction ?? null, agentMode: this.agentMode, agreement: consensus.agreement };
       const snapshot = buildV3DecisionSnapshot({ strategy: this.strategy, opportunity, cycles: opportunity.cycles, asset, consensus, specialists, measurements, finalDecision, timing: window.derived });
       this.counters.snapshots += 1;
       this.counters.approvals += 1;
-      if (this.executionEnabled) this.log("V3_EXECUTION_READY_BUT_NOT_WIRED", stableStringify({ opportunityId: opportunity.opportunityId, result: consensus.result }));
+      const scheduled = this.scheduler.schedule({ opportunityId: opportunity.opportunityId, expirationAt: opportunity.expirationAt, targetSendAt: opportunity.targetSendAt, hardCutoffAt: opportunity.hardStrategicCutoffAt, brokerNow: at, context: { result: consensus.result, snapshotHash: snapshot.snapshotHash, direction: asset?.direction ?? null } });
+      if (scheduled.scheduled) this.counters.scheduled += 1;
       opportunity.finalDecision = { ...opportunity.finalDecision, snapshotHash: snapshot.snapshotHash, executionBlocked: this.executionEnabled ? "V3_EXECUTION_NOT_WIRED" : "V3_NOT_ACTIVE" };
+      opportunity.executionRef = { ...(opportunity.executionRef ?? {}), scheduledSendAt: opportunity.targetSendAt, scheduledAt: at, submit: false, blocked: opportunity.finalDecision.executionBlocked };
       this.counters.executionBlocked += 1;
       void this.#persistCycle(opportunity.opportunityId, cycle);
       void this.#persistOpportunity(opportunity);
@@ -143,18 +191,53 @@ export class V3Runtime {
     if (this.latencySamples.length > 500) this.latencySamples.shift();
     this.counters.candleCycles += 1;
     this.lastCycleAt = at;
-    this.log("V3_CYCLE", stableStringify({ opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, scenario: asset?.scenario, state: asset?.state, consensus: consensus.result, agreement: consensus.agreement, latencyMs }));
-    return { opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, assetState: asset?.state ?? null, scenario: asset?.scenario ?? null, consensus: consensus.result, agreement: consensus.agreement, latencyMs };
+    this.log("V3_CYCLE", stableStringify({ opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, scenario: asset?.scenario, direction: asset?.direction ?? null, state: asset?.state, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs }));
+    return { opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, assetState: asset?.state ?? null, scenario: asset?.scenario ?? null, direction: asset?.direction ?? null, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs };
+  }
+
+  /** Disparo no alvo (~TTE302): revalida tudo; observe-only nunca envia ordem. */
+  async #onExecutionFire(intent) {
+    const opportunity = this.engine.get(intent.opportunityId);
+    const at = Number.isFinite(Number(intent.firedAt)) ? Number(intent.firedAt) : this.now();
+    const brokerNow = this.brokerNow ? this.brokerNow() : at;
+    if (!opportunity) return { opportunityId: intent.opportunityId, fired: true, result: "OPPORTUNITY_GONE" };
+    const execution = ExpirationTargetTiming.execution({ expirationAt: opportunity.expirationAt, brokerNow, purchaseDeadlineAt: opportunity.purchaseDeadlineAt });
+    const lastCycle = opportunity.cycles[opportunity.cycles.length - 1] ?? null;
+    const direction = opportunity.finalDecision?.result === "APPROVE_SELL" ? "DOWN" : "UP";
+    const relevantInvalidations = (lastCycle?.asset?.invalidations ?? []).filter((item) => (String(item.code).includes("BEARISH") ? direction !== "DOWN" : String(item.code).includes("BULLISH") ? direction !== "UP" : true));
+    const checks = {
+      executionWindow: execution.ok === true, executionCode: execution.code, tteMs: execution.derived?.tteMs ?? null,
+      invalidations: relevantInvalidations.map((item) => item.code),
+      blockers: (lastCycle?.asset?.blockers ?? []).map((item) => item.code),
+      agentMode: this.agentMode,
+    };
+    if (checks.executionWindow !== true) {
+      opportunity.executionRef = { ...(opportunity.executionRef ?? {}), fireAt: brokerNow, checks, submit: false, blocked: execution.code };
+      this.engine.enforceWindow(opportunity.opportunityId, brokerNow);
+      await this.#persistOpportunity(opportunity);
+      return { opportunityId: opportunity.opportunityId, fired: true, ...checks, result: execution.code };
+    }
+    if (checks.invalidations.length > 0 || checks.blockers.length > 0) {
+      opportunity.executionRef = { ...(opportunity.executionRef ?? {}), fireAt: brokerNow, checks, submit: false, blocked: "REVALIDATION_BLOCKED" };
+      this.engine.cancel(opportunity.opportunityId, "REVALIDATION_BLOCKED");
+      await this.#persistOpportunity(opportunity);
+      return { opportunityId: opportunity.opportunityId, fired: true, ...checks, result: "REVALIDATION_BLOCKED" };
+    }
+    opportunity.executionRef = { ...(opportunity.executionRef ?? {}), fireAt: brokerNow, checks, submit: false, wouldSubmitAt: brokerNow, blocked: this.executionEnabled ? "V3_EXECUTION_NOT_WIRED" : "V3_NOT_ACTIVE" };
+    this.counters.schedulerFired += 1;
+    await this.#persistOpportunity(opportunity);
+    this.log("V3_SCHEDULER_FIRED_OBSERVE_ONLY", stableStringify({ opportunityId: opportunity.opportunityId, tteMs: checks.tteMs, result: opportunity.finalDecision?.result ?? null }));
+    return { opportunityId: opportunity.opportunityId, fired: true, ...checks, submit: false };
   }
 
   async #persistOpportunity(opportunity) {
     if (!this.pool?.query) return false;
     try {
       await this.pool.query(
-        `INSERT INTO iq_v3_opportunities(opportunity_id,strategy_version,strategy_hash,market_key,active_id,expiration_at,first_seen_at,first_seen_tte_ms,target_send_at,hard_cutoff_at,purchase_deadline_at,payout,buyability,status,final_decision,execution_ref,cycles_count,snapshot_hash,closed_at,closed_reason,updated_at)
-         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16::jsonb,$17,$18,$19,$20,now())
-         ON CONFLICT(opportunity_id) DO UPDATE SET status=EXCLUDED.status, final_decision=COALESCE(EXCLUDED.final_decision,iq_v3_opportunities.final_decision), execution_ref=COALESCE(EXCLUDED.execution_ref,iq_v3_opportunities.execution_ref), cycles_count=EXCLUDED.cycles_count, snapshot_hash=COALESCE(EXCLUDED.snapshot_hash,iq_v3_opportunities.snapshot_hash), closed_at=EXCLUDED.closed_at, closed_reason=EXCLUDED.closed_reason, updated_at=now()`,
-        [opportunity.opportunityId, this.strategy?.version ?? null, this.strategy?.strategyHash ?? null, opportunity.marketKey, opportunity.activeId ?? null, new Date(opportunity.expirationAt).toISOString(), new Date(opportunity.firstSeenAt).toISOString(), opportunity.firstSeenTteMs, new Date(opportunity.targetSendAt).toISOString(), new Date(opportunity.hardStrategicCutoffAt).toISOString(), opportunity.purchaseDeadlineAt ? new Date(opportunity.purchaseDeadlineAt).toISOString() : null, opportunity.payout ?? null, opportunity.buyability ?? null, opportunity.status, opportunity.finalDecision ? JSON.stringify(opportunity.finalDecision) : null, opportunity.executionRef ? JSON.stringify(opportunity.executionRef) : null, opportunity.cycles.length, opportunity.finalDecision?.snapshotHash ?? null, opportunity.closedAt ? new Date(opportunity.closedAt).toISOString() : null, opportunity.closedReason ?? null],
+        `INSERT INTO iq_v3_opportunities(opportunity_id,strategy_version,strategy_hash,market_key,active_id,expiration_at,first_seen_at,first_seen_tte_ms,target_send_at,hard_cutoff_at,purchase_deadline_at,payout,buyability,status,final_decision,execution_ref,cycles_count,snapshot_hash,agent_mode,scheduled_send_at,scheduled_fire_at,revalidation,closed_at,closed_reason,updated_at)
+         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16::jsonb,$17,$18,$19,$20,$21,$22::jsonb,$23,$24,now())
+         ON CONFLICT(opportunity_id) DO UPDATE SET status=EXCLUDED.status, final_decision=COALESCE(EXCLUDED.final_decision,iq_v3_opportunities.final_decision), execution_ref=COALESCE(EXCLUDED.execution_ref,iq_v3_opportunities.execution_ref), cycles_count=EXCLUDED.cycles_count, snapshot_hash=COALESCE(EXCLUDED.snapshot_hash,iq_v3_opportunities.snapshot_hash), agent_mode=COALESCE(EXCLUDED.agent_mode,iq_v3_opportunities.agent_mode), scheduled_send_at=COALESCE(EXCLUDED.scheduled_send_at,iq_v3_opportunities.scheduled_send_at), scheduled_fire_at=COALESCE(EXCLUDED.scheduled_fire_at,iq_v3_opportunities.scheduled_fire_at), revalidation=COALESCE(EXCLUDED.revalidation,iq_v3_opportunities.revalidation), closed_at=EXCLUDED.closed_at, closed_reason=EXCLUDED.closed_reason, updated_at=now()`,
+        [opportunity.opportunityId, this.strategy?.version ?? null, this.strategy?.strategyHash ?? null, opportunity.marketKey, opportunity.activeId ?? null, new Date(opportunity.expirationAt).toISOString(), new Date(opportunity.firstSeenAt).toISOString(), opportunity.firstSeenTteMs, new Date(opportunity.targetSendAt).toISOString(), new Date(opportunity.hardStrategicCutoffAt).toISOString(), opportunity.purchaseDeadlineAt ? new Date(opportunity.purchaseDeadlineAt).toISOString() : null, opportunity.payout ?? null, opportunity.buyability ?? null, opportunity.status, opportunity.finalDecision ? JSON.stringify(opportunity.finalDecision) : null, opportunity.executionRef ? JSON.stringify(opportunity.executionRef) : null, opportunity.cycles.length, opportunity.finalDecision?.snapshotHash ?? null, this.agentMode, opportunity.executionRef?.scheduledSendAt ? new Date(opportunity.executionRef.scheduledSendAt).toISOString() : null, opportunity.executionRef?.fireAt ? new Date(opportunity.executionRef.fireAt).toISOString() : null, opportunity.executionRef?.checks ? JSON.stringify(opportunity.executionRef.checks) : null, opportunity.closedAt ? new Date(opportunity.closedAt).toISOString() : null, opportunity.closedReason ?? null],
       );
       this.counters.persisted += 1;
       return true;
@@ -168,7 +251,7 @@ export class V3Runtime {
         `INSERT INTO iq_v3_cycles(opportunity_id,cycle_number,at,tte_ms,closed_candle_id,price,feature_snapshot_id,asset_scenario,asset_state,consensus_result,agreement,payload,created_at)
          VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,now())
          ON CONFLICT(opportunity_id,cycle_number) DO NOTHING`,
-        [opportunityId, cycle.cycleNumber, new Date(cycle.at).toISOString(), cycle.tteMs, cycle.closedCandleId, cycle.price, cycle.featureSnapshotId, cycle.assetScenario, cycle.assetState, cycle.consensusResult, cycle.agreement, JSON.stringify({ specialistStates: cycle.specialistStates, changedSincePreviousCycle: cycle.changedSincePreviousCycle, bestCounterCase: cycle.asset?.bestCounterCase ?? null, reasons: cycle.consensus?.challenge?.reasons ?? [] })],
+        [opportunityId, cycle.cycleNumber, new Date(cycle.at).toISOString(), cycle.tteMs, cycle.closedCandleId, cycle.price, cycle.featureSnapshotId, cycle.assetScenario, cycle.assetState, cycle.consensusResult, cycle.agreement, JSON.stringify({ specialistStates: cycle.specialistStates, agentSpecialistStates: cycle.agentSpecialistStates ?? null, changedSincePreviousCycle: cycle.changedSincePreviousCycle, bestCounterCase: cycle.asset?.bestCounterCase ?? null, reasons: cycle.consensus?.challenge?.reasons ?? [], agentMode: cycle.agentMode ?? null, agents: cycle.agents ?? null, deterministic: cycle.deterministic ?? null })],
       );
       return true;
     } catch (error) { this.counters.persistErrors += 1; this.log("V3_PERSIST_CYCLE_FAIL", String(error?.message ?? error).slice(0, 140)); return false; }
@@ -199,6 +282,10 @@ export class V3Runtime {
       strategy: { version: this.strategy?.version ?? null, status: this.strategy?.status ?? null, executable: this.strategy?.executable === true, strategyHash: this.strategy?.strategyHash ?? null, statsEpoch: this.strategy?.statsEpoch ?? null },
       executionEnabled: this.executionEnabled,
       executionMode: "OBSERVE_ONLY",
+      agentMode: this.agentMode,
+      agents: { available: this.agents?.available === true, calls: this.agentCalls.length, latency: agentLatencyStats(this.agentCalls) },
+      scheduler: this.scheduler.status(),
+      queue: { depth: this.queueDepth, maxDepth: this.maxQueueDepth, markets: this.queues.size },
       counters: { ...this.counters },
       latency: this.latencyStats(),
       engine: this.engine.stats(),
@@ -210,4 +297,16 @@ export class V3Runtime {
 
   opportunities(options = {}) { return this.engine.list(options); }
   discoveryStatus() { return this.discovery.status(); }
+
+  /** Selftest read-only dos agentes reais (sem ordem): um ciclo completo sobre measurements fornecidos. */
+  async agentSelftest({ measurements, specialists = null, expiration = null, cycleNumber = 0 } = {}) {
+    if (!this.agents?.available) return { available: false, reason: "AGENT_UNAVAILABLE", agentMode: this.agentMode };
+    const result = await runAgentCycle({ client: this.agents, measurements, specialists: specialists ?? runSpecialists({ measurements }), previousByRole: {}, previousAssessment: null, expiration, cycleNumber, requestIdPrefix: "selftest" });
+    this.agentCalls.push(...result.agentCalls);
+    return {
+      available: result.available, reason: result.reason, result: result.result, agentMode: this.agentMode,
+      agentCalls: result.agentCalls, asset: result.asset, independent: result.independent, consensus: result.consensus,
+      latency: agentLatencyStats(result.agentCalls),
+    };
+  }
 }

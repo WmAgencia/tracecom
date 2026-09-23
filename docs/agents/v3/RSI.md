@@ -17,3 +17,11 @@ Fonte: `WILDER_1978`; apoio `KIRKPATRICK_DAHLQUIST_2016`. Detalhes: `docs/resear
 2. Divergencias somente com pivots confirmados (k=2) — proibido repaint.
 3. Medicoes apenas com candles fechados.
 4. `assertNoDirectionalLanguage` deve permanecer verdadeiro para o output.
+
+
+## Simetria e agentes LLM (correcao conceitual 2026-09-23)
+
+- Este especialista emite FATOS DIRECIONAIS (direction UP/DOWN/null), nunca SUPPORT/COUNTER: a classificacao relativa a tese e do Asset/Consensus.
+- No runtime LLM (DeepSeek v4.1-flash), o papel e exercido por um agente real com schema validado e fail-closed (AGENT_UNAVAILABLE nunca vira ordem).
+- As medicoes deterministicas continuam sendo a autoridade matematica; o agente interpreta e cita playbooks/sources.
+

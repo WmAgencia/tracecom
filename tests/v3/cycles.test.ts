@@ -95,10 +95,7 @@ describe("V3 ciclos — sequencia com mudanca de opiniao e log completo", () => 
   it("PROVA ANTI-VOTACAO: multiplas familias SUPPORT + 1 INVALIDATION estrutural => CANCEL", () => {
     const measurements = measurementsFixture({ lastCHoCH: { type: "BEARISH_CHOCH", level: 1.348 }, lastBOS: null });
     const specialists = runSpecialists({ measurements });
-    const families = new Set([
-      ...Object.values(specialists).flatMap((agent: any) => (agent?.supportingEvidence ?? []).map((item: any) => item.family)),
-      ...(measurements.dmi?.dominance === "PLUS" ? ["DIRECTIONAL_PRESSURE"] : []),
-    ]);
+    const families = new Set(Object.values(specialists).flatMap((agent: any) => (agent?.facts ?? []).map((item: any) => item.family)));
     expect(families.size).toBeGreaterThanOrEqual(4);
     const asset = classifyAsset({ measurements, specialists });
     const consensus = runConsensus({ measurements, asset, timing: { ok: true } });

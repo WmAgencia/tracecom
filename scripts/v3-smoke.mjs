@@ -10,8 +10,14 @@ import { runConsensus } from "../relay/v3/consensus.mjs";
 import { validatePlaybooks } from "../relay/v3/playbooks.mjs";
 import { validateScenarioLibrary } from "../relay/v3/scenarios.mjs";
 import { V3Runtime } from "../relay/v3/runtime.mjs";
+import { derivedExpirationAt, TARGET_HOLD_MS } from "../relay/v3/expiration-grid.mjs";
+import { ExecutionScheduler } from "../relay/v3/scheduler.mjs";
+import { createScriptedAgentClient } from "../relay/v3/agents/llm-client.mjs";
+import { runAgentCycle } from "../relay/v3/agents/team.mjs";
 import { computeV3StrategyHash, V3_MANIFEST_PATH } from "./v3-strategy-hash.mjs";
 import fs from "node:fs";
+
+const specialistStub = (role) => ({ domainAssessment: `${role} ok`, observations: ["obs"], deterministicFacts: [{ family: role === "PRICE_ACTION" ? "STRUCTURE" : "MOMENTUM", code: `${role}_FACT`, direction: "UP", detail: null }], counterFacts: [], blockers: [], invalidations: [], changedSincePreviousCycle: [], nextEvidenceToWatch: ["next"], playbooksUsed: [], sourcesUsed: ["WILDER_1978"] });
 
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
@@ -49,6 +55,40 @@ ok("pipeline deterministico: measurements -> specialists -> Asset -> Consensus",
 
 const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false }, now: () => EXP - 330_000 });
 ok("runtime V3 nasce observe-only (sem execucao, sem caminho de ordem)", runtime.status().executionMode === "OBSERVE_ONLY" && runtime.status().executionEnabled === false && !/requestOrder\s*\(|placeOrder\s*\(/.test(fs.readFileSync(new URL("../relay/v3/runtime.mjs", import.meta.url), "utf8")));
+
+/* Grade real + janelas separadas (exemplos da UI reproduzidos) */
+const AT_112454 = Date.UTC(2026, 8, 23, 11, 24, 54);
+const candidate = derivedExpirationAt(AT_112454);
+ok("grade de minuto: 11:24:54 => candidato 11:30 (TTE 306s), hold alvo 300s", candidate === Date.UTC(2026, 8, 23, 11, 30) && candidate - AT_112454 === 306_000 && TARGET_HOLD_MS === 300_000);
+const analysis = ExpirationTargetTiming.analysis({ expirationAt: candidate, brokerNow: AT_112454 });
+const early = ExpirationTargetTiming.execution({ expirationAt: candidate, brokerNow: AT_112454 });
+const atTarget = ExpirationTargetTiming.execution({ expirationAt: candidate, brokerNow: AT_112454 + 4_000 });
+ok("ANALYSIS (330->300) e EXECUTION (~302) sao funcoes distintas", analysis.ok === true && early.ok === false && early.code === "BEFORE_TARGET_SEND" && atTarget.ok === true);
+
+/* Scheduler dispara no alvo em broker time */
+{
+  const timers = [];
+  let fired = 0;
+  const scheduler = new ExecutionScheduler({ now: () => AT_112454, setTimer: (fn, delay) => { timers.push({ fn, delay }); return { unref() {} }; }, clearTimer: () => {}, onFire: () => { fired += 1; } });
+  scheduler.schedule({ opportunityId: "x", expirationAt: candidate, targetSendAt: candidate - 302_000, hardCutoffAt: candidate - 300_000, brokerNow: AT_112454 });
+  await timers[0].fn();
+  ok("scheduler agenda ~TTE302 e dispara revalidacao no alvo", timers[0].delay === 4_000 && fired === 1);
+}
+
+/* Agentes LLM: scripted (mesma interface do provider real) — aprovacao e fail-closed */
+{
+  const script = {
+    RSI: specialistStub("RSI"), DMI_ADX: specialistStub("DMI_ADX"), BOLLINGER: specialistStub("BOLLINGER"), ATR: specialistStub("ATR"), PRICE_ACTION: specialistStub("PRICE_ACTION"),
+    ASSET: { scenario: "TREND_CONTINUATION", direction: "UP", state: "BUY_CANDIDATE", supportingEvidence: ["BOS"], counterEvidence: [], blockers: [], invalidations: [], bestCounterCase: "CHoCH bearish", changedSincePreviousCycle: [], nextEvidenceToWatch: [] },
+    CONSENSUS_INDEPENDENT: { scenario: "TREND_CONTINUATION", direction: "UP", evidence: ["BOS"], reasoningSummary: "alta" },
+    CONSENSUS_FINAL: { agreement: "AGREE", result: "APPROVE_BUY", bestCounterCase: "CHoCH bearish", challengeSteps: ["ok"], reasons: [] },
+  };
+  const okCycle = await runAgentCycle({ client: createScriptedAgentClient(script), measurements: { closedCandle: { at: 1 } }, cycleNumber: 1 });
+  const failScript = { ...script, ASSET: { status: "ERROR", reason: "TIMEOUT" } };
+  const failCycle = await runAgentCycle({ client: createScriptedAgentClient(failScript), measurements: { closedCandle: { at: 1 } }, cycleNumber: 2 });
+  ok("timeout de agente => AGENT_UNAVAILABLE/CANCEL (fail-closed)", failCycle.available === false && failCycle.reason === "AGENT_UNAVAILABLE" && failCycle.result === "CANCEL");
+  ok("agentes reais (interface provider) aprovam com agreement", okCycle.available === true && okCycle.result === "APPROVE_BUY" && okCycle.agentCalls.length === 8);
+}
 
 console.log(fail === 0 ? `V3_SMOKE ALL_PASS (${pass}/${pass})` : `V3_SMOKE FAIL (${fail})`);
 process.exit(fail === 0 ? 0 : 1);

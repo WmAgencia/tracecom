@@ -25,10 +25,11 @@
     "winRate": null,
     "pnl": 0
   },
-  "strategyHash": "sha256:b2910261e3e32f2e138e5178a656fa071f0b3f371f9cdfd91d856e324f660028",
-  "newStrategyHash": "sha256:b2910261e3e32f2e138e5178a656fa071f0b3f371f9cdfd91d856e324f660028",
+  "strategyHash": "sha256:c535428d1f200000768caa383095b74571f32f719cf9509488c388a8f92097df",
+  "newStrategyHash": "sha256:c535428d1f200000768caa383095b74571f32f719cf9509488c388a8f92097df",
   "decisionFiles": [
     "relay/v3/timing.mjs",
+    "relay/v3/expiration-grid.mjs",
     "relay/v3/expiration-discovery.mjs",
     "relay/v3/opportunity-engine.mjs",
     "relay/v3/measurements.mjs",
@@ -38,7 +39,12 @@
     "relay/v3/asset-agent.mjs",
     "relay/v3/consensus.mjs",
     "relay/v3/decision-snapshot.mjs",
+    "relay/v3/scheduler.mjs",
     "relay/v3/runtime.mjs",
+    "relay/v3/agents/schemas.mjs",
+    "relay/v3/agents/prompts.mjs",
+    "relay/v3/agents/llm-client.mjs",
+    "relay/v3/agents/team.mjs",
     "relay/intelligence/features.mjs",
     "relay/intelligence/asset-context.mjs",
     "relay/execution/binary300.mjs"
@@ -79,5 +85,5 @@
     "Nao reutiliza stats da V2; novo statsEpoch e novas tabelas iq_v3_*.",
     "REAL permanece DISARMED; PRACTICE auto-execution desligada durante construcao/observacao."
   ],
-  "updatedAt": "2026-09-23T15:40:54.020Z"
+  "updatedAt": "2026-09-23T16:22:40.861Z"
 }

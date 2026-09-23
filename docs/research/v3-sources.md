@@ -23,18 +23,24 @@ Observacao read-only do payload real (`initialization-data` v3, 54 mercados OTC)
 
 - `active.option.expiration_times` = **duracoes em ms** (ex.: `[60000, 900000]` = 60s e 15min),
   **nao** timestamps absolutos de expiracao. `option.exp_time` tambem nao traz agenda.
-- `active.deadtime` = segundos ate o broker parar de vender aquela expiration (30s tipico;
-  300s em parte dos ativos de 15min).
+- `active.deadtime` = segundos ate o broker parar de vender aquela expiration (30s no turbo-1m;
+  300s no binary-15m).
 - Conclusao honesta: a IQ **nao publica a lista de expirations absolutas** neste canal.
   A hipotese "expiration aparece em ~TTE330" nao e observavel como evento do broker; o que
-  existe e o **relogio do broker + deadtime**, que determinam qual fronteira ainda e compravel.
-- Implementacao V3 resultante: `ExpirationDiscovery.front()` deriva a frente compravel
-  (multiplo operacional de 300s com TTE > deadtime) a cada candle fechado (resolucao de 5s);
-  a expiration-alvo e **preservada exatamente** ate o envio e a aceitacao e verificada pelo ACK
-  (mismatch = `BROKER_EXPIRATION_MISMATCH`, alerta grave). `allowedDurationsMs` e
-  `deadtimeMs` ficam registrados como evidencia por ativo.
-- Codigo: `relay/v3/expiration-discovery.mjs::parseActiveExpirations/front`; testes:
-  `tests/v3/expiration.test.ts` (inclusive o caso de payload com timestamps, se um dia existir).
+  existe e o **relogio do broker + duracao/cadencia + deadtime**, que determinam qual fronteira
+  ainda e compravel.
+- **Prova historica da grade de minuto (nossa conta)**: 664 ordens turbo aceitas (brokerOrderId +
+  settlement reais), **526 com expiration fora de 5min mas multiplas de 60s** (ex.: 23:56:00,
+  23:57:00) e durations 31s..89s. A grade curta e MINUTO A MINUTO; `optionTypeId=3` (turbo) e o
+  tipo correto para holds de 1..5 min (a UI chama visualmente de "Binary", o protocolo nao).
+- Implementacao V3: `ExpirationDiscovery` deriva `ceilToMinute(brokerNow + 300s)` (hold alvo) e
+  lista as expirations visiveis em `(brokerNow+deadtime, brokerNow+330s]`; a expiration-alvo e
+  preservada exatamente e a aceitacao e verificada no ACK (`BROKER_EXPIRATION_MISMATCH`).
+  `firstSeenTte=329.984` e a **nossa deteccao** da janela (nao publicacao do broker).
+- Codigo: `relay/v3/expiration-grid.mjs` + `relay/v3/expiration-discovery.mjs`; testes:
+  `tests/v3/expiration-grid.test.ts`, `tests/v3/expiration.test.ts`.
+
+## Notas de honestidade intelectual
 
 ## Notas de honestidade intelectual
 

@@ -40,7 +40,7 @@ export class ExpirationOpportunityEngine {
     if (existing) { this.counters.duplicatesBlocked += 1; return { opportunity: existing, created: false }; }
     const at = Number.isFinite(Number(brokerNow)) ? Number(brokerNow) : this.now();
     let derived;
-    try { derived = ExpirationTargetTiming.derive({ expirationAt, brokerNow: at, purchaseDeadlineAt: Number.isFinite(Number(deadtimeMs)) ? Number(expirationAt) - Number(deadtimeMs) : null }); }
+    try { derived = ExpirationTargetTiming.derive({ expirationAt, brokerNow: at, purchaseDeadlineAt: Number(deadtimeMs) > 0 ? Number(expirationAt) - Number(deadtimeMs) : null }); }
     catch { return { opportunity: null, created: false, error: "INVALID_EXPIRATION" }; }
     if (derived.tteMs > discoveryMaxTteMs) return { opportunity: null, created: false, error: "TTE_ABOVE_DISCOVERY_WINDOW", derived };
     // Janela perdida nao cria opportunity: adocao tardia (TTE <= 300s) e MISSED_5M_ENTRY_WINDOW, nao perseguicao.
@@ -94,18 +94,17 @@ export class ExpirationOpportunityEngine {
     return opportunity;
   }
 
-  /** Aplica a regra temporal absoluta. Deve ser chamada a cada ciclo e no pre-submit. */
+  /** Aplica a regra temporal absoluta (cutoff TTE<=300s e purchase deadline do broker). */
   enforceWindow(opportunityId, brokerNow = null) {
     const opportunity = this.get(opportunityId);
     if (!opportunity || CLOSED_STATES.includes(opportunity.status)) return opportunity;
     const at = Number.isFinite(Number(brokerNow)) ? Number(brokerNow) : this.now();
-    const window = ExpirationTargetTiming.canSubmit({ expirationAt: opportunity.expirationAt, brokerNow: at, purchaseDeadlineAt: opportunity.purchaseDeadlineAt });
-    if (window.ok !== true && window.code === "MISSED_5M_ENTRY_WINDOW") {
+    if (ExpirationTargetTiming.cutoffPassed({ expirationAt: opportunity.expirationAt, brokerNow: at })) {
       this.#close(opportunity, "MISSED_5M_ENTRY_WINDOW", "TTE_AT_OR_BELOW_300S_WITHOUT_SUBMIT");
       this.counters.missedWindow += 1;
       return opportunity;
     }
-    if (window.ok !== true && window.code === "BROKER_PURCHASE_DEADLINE_PASSED") {
+    if (opportunity.purchaseDeadlineAt !== null && at >= opportunity.purchaseDeadlineAt) {
       this.#close(opportunity, "CANCELLED", "BROKER_PURCHASE_DEADLINE_PASSED");
       return opportunity;
     }
@@ -119,7 +118,8 @@ export class ExpirationOpportunityEngine {
     const at = Number.isFinite(Number(brokerNow)) ? Number(brokerNow) : this.now();
     const outcome = consensus?.result ?? "CANCEL";
     if (outcome === "APPROVE_BUY" || outcome === "APPROVE_SELL") {
-      const window = ExpirationTargetTiming.canSubmit({ expirationAt: opportunity.expirationAt, brokerNow: at, purchaseDeadlineAt: opportunity.purchaseDeadlineAt });
+      // Aprovacao acontece na ANALYSIS WINDOW; a EXECUTION WINDOW (~302s) e do scheduler.
+      const window = ExpirationTargetTiming.analysis({ expirationAt: opportunity.expirationAt, brokerNow: at });
       if (window.ok !== true) { this.enforceWindow(opportunityId, at); return opportunity; }
       const beforeTarget = at < opportunity.targetSendAt;
       opportunity.status = beforeTarget ? "FINAL_REVIEW" : outcome === "APPROVE_BUY" ? "APPROVED_BUY" : "APPROVED_SELL";
@@ -131,6 +131,15 @@ export class ExpirationOpportunityEngine {
     if (asset?.state === "WAIT") { opportunity.status = "WAIT"; return opportunity; }
     if (asset?.state === "BUY_CANDIDATE" || asset?.state === "SELL_CANDIDATE") { opportunity.status = asset.state; return opportunity; }
     this.#close(opportunity, "CANCELLED", "CONSENSUS_CANCEL");
+    this.counters.cancelled += 1;
+    return opportunity;
+  }
+
+  /** Cancela explicitamente (revalidacao bloqueou / consenso cancelou no alvo). */
+  cancel(opportunityId, reason = "CANCELLED") {
+    const opportunity = this.get(opportunityId);
+    if (!opportunity || CLOSED_STATES.includes(opportunity.status)) return opportunity;
+    this.#close(opportunity, "CANCELLED", String(reason).slice(0, 120));
     this.counters.cancelled += 1;
     return opportunity;
   }

@@ -23,6 +23,7 @@ export const V3_MANIFEST_PATH = path.join(ROOT, "estrategias", "strategy-version
 
 export const V3_DECISION_FILES = Object.freeze([
   "relay/v3/timing.mjs",
+  "relay/v3/expiration-grid.mjs",
   "relay/v3/expiration-discovery.mjs",
   "relay/v3/opportunity-engine.mjs",
   "relay/v3/measurements.mjs",
@@ -32,7 +33,12 @@ export const V3_DECISION_FILES = Object.freeze([
   "relay/v3/asset-agent.mjs",
   "relay/v3/consensus.mjs",
   "relay/v3/decision-snapshot.mjs",
+  "relay/v3/scheduler.mjs",
   "relay/v3/runtime.mjs",
+  "relay/v3/agents/schemas.mjs",
+  "relay/v3/agents/prompts.mjs",
+  "relay/v3/agents/llm-client.mjs",
+  "relay/v3/agents/team.mjs",
   "relay/intelligence/features.mjs",
   "relay/intelligence/asset-context.mjs",
   "relay/execution/binary300.mjs",

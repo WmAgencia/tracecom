@@ -535,12 +535,12 @@
       if (state.v3Filter && !String(op.marketKey).includes(state.v3Filter) && !String(op.status).includes(state.v3Filter)) continue;
       const div = document.createElement("div"); div.className = "logentry";
       const lines = [];
-      lines.push("<b>V3 " + esc(op.marketKey) + "@" + esc(String(op.expirationAt ?? "").slice(11, 19)) + "Z</b> <span class='dim'>" + esc(op.status) + " · TTE inicial " + Math.round(Number(op.firstSeenTteMs ?? 0) / 1000) + "s · payout " + esc(op.payout ?? "—") + "</span>");
+      lines.push("<b>V3 " + esc(op.marketKey) + "@" + esc(String(op.expirationAt ?? "").slice(11, 19)) + "Z</b> <span class='dim'>" + esc(op.status) + " · TTE inicial " + Math.round(Number(op.firstSeenTteMs ?? 0) / 1000) + "s · targetSend " + esc(String(op.targetSendAt ?? "").slice(11, 19)) + "Z · cutoff " + esc(String(op.hardCutoffAt ?? "").slice(11, 19)) + "Z · payout " + esc(op.payout ?? "—") + " · " + esc(op.executionRef?.scheduledSendAt ? "agendado " + op.executionRef.scheduledSendAt.slice(11, 19) + "Z" + (op.executionRef?.fireAt ? " · disparo " + op.executionRef.fireAt.slice(11, 19) + "Z(" + esc(op.executionRef.blocked ?? op.executionRef.checks?.executionCode ?? "?") + ")" : "") : "sem agendamento") + "</span>");
       for (const cycle of (op.cycles ?? [])) {
-        const states = cycle.specialistStates ?? {};
-        lines.push("<span class='dim'>CICLO " + esc(cycle.cycleNumber) + " · TTE " + Math.round(Number(cycle.tteMs ?? 0) / 1000) + "s · " + esc(String(cycle.closedCandleId ?? "").slice(-8)) + ":</span> " + esc(cycle.assetScenario ?? "—") + " → <b>" + esc(cycle.assetState ?? "—") + "</b> · consensus " + esc(cycle.consensusResult ?? "—") + " (" + esc(cycle.agreement ?? "—") + ") · " + esc(Object.entries(states).map(([key, value]) => key + "=" + value).join(" ")));
+        const states = cycle.agentSpecialistStates ?? cycle.specialistStates ?? {};
+        lines.push("<span class='dim'>CICLO " + esc(cycle.cycleNumber) + " · TTE " + Math.round(Number(cycle.tteMs ?? 0) / 1000) + "s · " + esc(String(cycle.closedCandleId ?? "").slice(-8)) + " · " + esc(cycle.agentMode ?? "—") + ":</span> " + esc(cycle.assetScenario ?? "—") + " " + esc(cycle.assetDirection ?? "") + " → <b>" + esc(cycle.assetState ?? "—") + "</b> · consensus " + esc(cycle.consensusResult ?? "—") + " (" + esc(cycle.agreement ?? "—") + ") · " + esc(Object.entries(states).map(([key, value]) => key + "=" + value).join(" ")));
       }
-      if (op.finalDecision) lines.push("<span class='dim'>FINAL CHALLENGE:</span> " + esc(op.finalDecision.result ?? op.status) + (op.finalDecision.snapshotHash ? " · snapshot " + esc(String(op.finalDecision.snapshotHash).slice(0, 18)) + "…" : "") + (op.finalDecision.executionBlocked ? " · execução " + esc(op.finalDecision.executionBlocked) : ""));
+      if (op.finalDecision) lines.push("<span class='dim'>FINAL CHALLENGE:</span> " + esc(op.finalDecision.result ?? op.status) + (op.finalDecision.direction ? " " + esc(op.finalDecision.direction) : "") + (op.finalDecision.snapshotHash ? " · snapshot " + esc(String(op.finalDecision.snapshotHash).slice(0, 18)) + "…" : "") + (op.finalDecision.executionBlocked ? " · execução " + esc(op.finalDecision.executionBlocked) : ""));
       div.innerHTML = lines.join("<br>");
       body.append(div);
     }
