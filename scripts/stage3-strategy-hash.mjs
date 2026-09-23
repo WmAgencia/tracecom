@@ -110,6 +110,9 @@ export function updateManifest({ sourceCommit = null } = {}) {
     ...(manifest.activatedAt ? { activatedAt: manifest.activatedAt } : {}),
     ...(manifest.activationGates ? { activationGates: manifest.activationGates } : {}),
     ...(manifest.frozen === true ? { frozen: true, frozenAt: manifest.frozenAt ?? null } : {}),
+    ...(manifest.freezeFile ? { freezeFile: manifest.freezeFile } : {}),
+    ...(manifest.v3Rule ? { v3Rule: manifest.v3Rule } : {}),
+    ...(manifest.decisionOutput ? { decisionOutput: manifest.decisionOutput } : {}),
     changeDescription: manifest.changeDescription,
   };
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(next, null, 2) + "\n");

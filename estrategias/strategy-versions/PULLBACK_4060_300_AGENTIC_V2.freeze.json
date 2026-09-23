@@ -1,6 +1,8 @@
 {
   "schema": "tracecom-strategy-freeze-v1",
   "strategyVersion": "PULLBACK_4060_300_AGENTIC_V2",
+  "status": "ACTIVE",
+  "frozen": true,
   "parent": "PULLBACK_4060_300_BASELINE",
   "parentStrategyHash": "sha256:26dceb743b3f0d88a6bea10bf8646deb836236e3a7de91702bd323289438b3dd",
   "strategyHash": "sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0",
@@ -16,6 +18,9 @@
     "relay/intelligence/asset-pipeline.mjs": "sha256:3576e969b57c81220c60cdd65786374b6266cafee07edb2906fcbf8b1988f36d",
     "relay/execution/binary300.mjs": "sha256:499f999076326cc0cd3563945627d89dd321c50e3c3b29a13e86639df9411c4a"
   },
+  "decisionOutput": "BUY|SELL|WAIT (sem confidence)",
+  "accountPolicy": "PRACTICE/REAL usam a MESMA inteligencia; a conta e escolhida somente no AccountRouter; REAL fail-closed e desarmado (realArmed=false apos todo deploy/restart).",
+  "contextWindow": "3h time-based (MAX_CONTEXT_AGE_MS=10800000; ~2160 candles de 5s)",
   "operationalExpirySeconds": 300,
   "operationalCandleIntervalMs": 5000,
   "maxContextAgeMs": 10800000,
@@ -42,6 +47,7 @@
   },
   "consensusVersion": "consensus-v1",
   "decisionSnapshotVersion": "decision-snapshot-v1",
+  "noConfidenceRule": "Consensus nao produz percentual de confianca; decisao e somente BUY/SELL/WAIT.",
   "noTuningRule": "Depois da ativacao/freeze: nenhum threshold, periodo, indicador, definicao de feature, regra de especialista, regra de consensus, semantica de AssetContext, policy de readiness/gap, intervalo (5s) ou horizonte (300s) pode mudar. Auto-tuning/self-modification/adaptive thresholds/martingale/loss recovery proibidos.",
   "v3Rule": "Qualquer mudanca estrategica = PULLBACK_4060_300_AGENTIC_V3 + novo strategyHash + novo statsEpoch + estatisticas separadas; nunca editar a V2 em silencio.",
   "operationalMutable": [

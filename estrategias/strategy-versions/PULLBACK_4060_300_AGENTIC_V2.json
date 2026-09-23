@@ -55,6 +55,11 @@
   "status": "ACTIVE",
   "executable": true,
   "activatedAt": "2026-09-23T11:15:00.000Z",
+  "frozen": true,
+  "frozenAt": "2026-09-23T11:38:37.835Z",
+  "freezeFile": "estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V2.freeze.json",
+  "v3Rule": "Qualquer mudanca estrategica = PULLBACK_4060_300_AGENTIC_V3 + novo strategyHash + novo statsEpoch + stats separadas; nunca editar a V2 em silencio.",
+  "decisionOutput": "BUY|SELL|WAIT (sem confidence)",
   "activationGates": {
     "hydrationCrossRestart": "PASS — loader recuperou historico persistido (30/30 OTC, failed=0), feed 5s observado=5000ms, 30/30 assets READY",
     "binary300PracticeAcceptance": "PASS — PATH_TEST PRACTICE 300s aceito pela IQ (brokerOrderId 14287316566, ACK 408ms, expirationAt 04:55:00.000Z bucket-aligned, SETTLED WIN, testOnly/excludedFromStats)",

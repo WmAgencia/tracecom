@@ -8,7 +8,7 @@ A operação do relay foi reconstruída para **UM único caminho**:
 - **Uma inteligência:** AssetContext → FeatureEngine (1x por atualização) → 5 especialistas (RSI, DMI/ADX, Bollinger, ATR, PriceAction) → Consensus **BUY/SELL/WAIT sem confidence** → DecisionSnapshot imutável.
 - **Um caminho de execução:** DecisionSnapshot → Revalidation → Binary300Timing → ExecutionGate → AccountRouter (PRACTICE/REAL) → `requestOrder` (fronteira única de broker).
 - **PRACTICE e REAL usam a mesma inteligência**; a conta é escolhida só no router. REAL é fail-closed e fica **desarmado após deploy**.
-- **Sem Blitz**, sem runners antigos, sem auto-tuning. `PULLBACK_4060_300_AGENTIC_V2` (`sha256:3e9364e2...`, manifesto em `estrategias/strategy-versions/`) é a única estratégia operacional — **ACTIVE e FROZEN** (freeze em `PULLBACK_4060_300_AGENTIC_V2.freeze.json`); qualquer mudança estratégica = V3 + novo hash + novo epoch. Baseline congelada em `archive/baseline/PULLBACK_4060_300_BASELINE/`.
+- **Sem Blitz**, sem runners antigos, sem auto-tuning. `PULLBACK_4060_300_AGENTIC_V2` (`sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0`, manifesto em `estrategias/strategy-versions/`) é a única estratégia operacional — **ACTIVE e FROZEN** (freeze em `PULLBACK_4060_300_AGENTIC_V2.freeze.json`); qualquer mudança estratégica = V3 + novo strategyHash + novo epoch. Baseline congelada em `archive/baseline/PULLBACK_4060_300_BASELINE/`.
 - Testes/invariantes: `node scripts/run-all-tests.mjs` (suítes + invariantes + smoke). CI em `.github/workflows/ci.yml`.
 
 Detalhes de estratégia/configuração: `docs/ESTRATEGIA-E-CONFIGURACAO.md`. Estado/handoff: `AGENTS.md`.

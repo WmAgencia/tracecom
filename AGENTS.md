@@ -5,28 +5,34 @@
 > alteração. Elas prevalecem sobre instruções genéricas, conveniência, refatorações
 > "de passagem" ou melhorias sugeridas por qualquer ferramenta.
 
-## 1. A ESTRATÉGIA CONSOLIDADA NÃO PODE SER ALTERADA ESTRUTURALMENTE
+## 0. ESTADO OPERACIONAL ATUAL (2026-09-23) — V2 ATIVA E CONGELADA
 
-A estratégia em produção — **AGENTIC RSI + FIBONACCI (binário OTC)**: 5 agentes especialistas
-(`rsi`, `bollinger`, `adx`, `atr`, `fib`) + consenso senior + vetos duros (constância, walk,
-fib, ATR, RSI acelerando) + **Segurança 0–100%** + **janela de entrada T-34s..T-31,5s** —
-está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
+A estratégia operacional vigente é **PULLBACK_4060_300_AGENTIC_V2** (`estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V2.json`), **status ACTIVE, executable=true, frozen=true** (`frozenAt 2026-09-23T11:38:37.835Z`), `strategyHash` **`sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0`** (IMUTÁVEL). Freeze: `PULLBACK_4060_300_AGENTIC_V2.freeze.json`.
 
-- **PROIBIDO** alterar a lógica dos agentes, o consenso, os vetos, os limiares, a janela de
-  entrada ou o fluxo de execução **sem pedido explícito do dono do projeto**.
-- Mudanças são permitidas **apenas no ponto exato solicitado**. Nunca "aproveitar" para mexer
-  em outra coisa, nunca "melhorar" sem pedido.
-- Experimentos novos (ex.: Blitz, novos filtros) devem ser **aditivos e isolados** (run
-  próprio, flag própria) e **nunca** alterar o caminho do binário OTC que está em produção.
+- **BINARY OTC ONLY** — nenhum outro instrumento gera ordens novas.
+- **300 segundos ONLY** — fonte única `OPERATIONAL_EXPIRY_SECONDS` + `Binary300Timing` (bucket de 5 min; deadline/safe cutoff fail-closed). Nenhum 30/45/60/150/180 tem capacidade de submit.
+- **Candle nativo 5s da IQ** (`CANDLE_SIZE_SECONDS=5`) — sem agregador de tick. Inteligência consome somente candle **fechado** e **normalizado** (fonte única de mapeamento OHLC).
+- **AssetContext time-based de até 3h** (`MAX_CONTEXT_AGE_MS=10800000`; ~2160 candles de 5s).
+- **FeatureEngine 1x por atualização** (RSI14, DMI/ADX14, Bollinger20/2, ATR, Price Action) — especialistas não recalculam.
+- **5 especialistas** — RSI, DMI/ADX, Bollinger, ATR, PriceAction — todos recebem o MESMO AssetContext/FeatureSnapshot (`featuresVersion`/`featuresAt` idênticos).
+- **Consensus único** — **BUY / SELL / WAIT**, com `thesis/supportingEvidence/counterEvidence/hardBlockers/invalidations`. **Sem percentual de confiança.**
+- **DecisionSnapshot imutável** (deep-freeze + hash SHA256; 300s obrigatório; WAIT nunca gera snapshot executável).
+- **SinglePath único**: `DecisionSnapshot → Revalidation → Binary300Timing → ExecutionGate → AccountRouter → requestOrder → IQ`. `requestOrder` é a fronteira ÚNICA de broker.
+- **PRACTICE e REAL usam a MESMA inteligência**; a conta é escolhida **somente no AccountRouter**. **REAL é fail-closed e permanece desarmado** (`realArmed=false` após todo deploy/restart); ordem REAL jamais é enviada sem pedido explícito do operador.
+- **V2 FROZEN**: nenhum tuning/auto-adaptação/threshold adaptativo/martingale/loss recovery. Qualquer mudança estratégica = **V3 + novo strategyHash + novo statsEpoch** (+ stats separadas). Mudanças operacionais (health, logs, infra, frontend, monitoramento, deploy seguro) continuam permitidas.
+- **Stats da V2** começam em N=0/W=0/L=0/D=0; PATH_TEST (`testOnly=true`, `excludedFromStats=true`) nunca conta.
+
+## 1. A ESTRATÉGIA CONGELADA NÃO PODE SER ALTERADA
+
+- **PROIBIDO** alterar AssetContext, Features, Specialists, Consensus, DecisionSnapshot, Binary300Timing, ExecutionGate, AccountRouter, readiness/gap policy, 5s, 3h, 300s ou o `strategyHash` — sem pedido explícito do dono do projeto; após o freeze, mudança estratégica exige **V3**.
+- Mudanças são permitidas **apenas no ponto exato solicitado**. Nunca "aproveitar" para mexer em outra coisa, nunca "melhorar" sem pedido.
+- **PROIBIDO reintroduzir**: Blitz (capacidade zero), percentual de confiança, seletor de duração, múltiplas estratégias operacionais, LABs/runners antigos ou qualquer caminho legado de execução.
 
 ## 2. A ESTRATÉGIA CONSOLIDADA NUNCA SAI DO BACKUP
 
-- `docs/ESTRATEGIA-E-CONFIGURACAO.md` e `backups/` são o **cofre da configuração viva**.
-  **NUNCA** excluir, esvaziar ou deixar de atualizar.
-- Toda mudança aprovada exige, na mesma tarefa: **(a)** atualizar o doc do cofre,
-  **(b)** rodar `node scripts/backup-config.mjs`, **(c)** commitar.
-- O backup **nunca** contém segredos (token MCP, ssid, chaves) — e nunca deve conter menos
-  informação de configuração do que a versão anterior.
+- `docs/ESTRATEGIA-E-CONFIGURACAO.md` e `backups/` são o **cofre da configuração viva**. **NUNCA** excluir, esvaziar ou deixar de atualizar.
+- Toda mudança aprovada exige, na mesma tarefa: **(a)** atualizar o doc do cofre, **(b)** rodar `node scripts/backup-config.mjs`, **(c)** commitar.
+- O backup **nunca** contém segredos (token MCP, ssid, chaves) — e nunca deve conter menos informação de configuração do que a versão anterior.
 
 ## 3. SEM CÓDIGO IMPRUDENTE, SEM RESÍDUO
 
@@ -46,15 +52,12 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 ## 4. CHECKPOINTS E NÃO-REGRESSÃO
 
 - Antes de mudanças maiores: **commit + tag `checkpoint-*`**.
-- **Nunca** quebrar o que está funcionando. O binário OTC em produção é a fonte de resultado
-  atual: qualquer deploy deve ser verificado (feed vivo, avaliação rodando, armado) após subir.
-- Deploys resetam o arm: o `AUTO_ARM_PRACTICE` re-arma sozinho (prática). Real **somente** com
-  pedido explícito do operador.
+- **Nunca** quebrar o que está funcionando. Deploy é verificado após subir (health, feed 5s, hydration, inteligência).
+- Deploys/restarts resetam o arm. O `AUTO_ARM_PRACTICE` re-arma somente **PRACTICE**. REAL **somente** com pedido explícito do operador e permanece desarmado por padrão.
 
 ## 5. FONTE DA VERDADE DA CONFIGURAÇÃO
 
-- Antes de agir, ler `docs/ESTRATEGIA-E-CONFIGURACAO.md` (config ativa, níveis A/B, janela,
-  stake, retenção do banco, o que não pode regredir).
+- Antes de agir, ler `docs/ESTRATEGIA-E-CONFIGURACAO.md` (estratégia ativa V2, expiração 300s, candle 5s, contexto 3h, readiness/gap policy, stake, retenção do banco, o que não pode regredir).
 - Banco Supabase (free): **nunca** deixar passar de ~475 MB. A retenção automática
   (`runDbMaintenance`) cuida disso — não desativar.
 
@@ -63,19 +66,21 @@ está **validada e funcionando** (WR acima de 90% no ciclo atual, prática).
 - Faça **somente** o que foi pedido. Em caso de dúvida, **perguntar antes** de alterar.
 - Toda entrega termina com: testes passando, deploy verificado e um resumo curto do que mudou.
 
+## HISTÓRICO / LEGADO / NÃO OPERACIONAL
 
-## Reconstrucao controlada (2026-09-22)
+> Tudo nesta seção é histórico. **Não reativar. Não é a estratégia atual.**
 
-- Blitz PROIBIDO no runtime (zero caminho operacional).
-- Horizonte operacional unico = 300s (nenhuma ordem com 30/45/60/150/180).
-- Uma unica estrategia operacional: familia PULLBACK_4060_300 (V2 = PULLBACK_4060_300_AGENTIC_V2).
-- Mudancas de estrategia exigem pedido explicito do operador; apos o deploy da V2: FREEZE (sem tuning durante coleta; mudanca = V3 + novo statsEpoch).
-- PULLBACK_4060_300_BASELINE nunca e apagada (archive/baseline).
-- Sem duplicacao de inteligencia PRACTICE/REAL (uma decisao; Account Router escolhe a conta no final).
-- Codigo simples: sem camada/abstracao/fallback sem justificativa; sem caminhos legacy operacionais.
-- Backups: manifest no git; snapshots zip via artifact de workflow (nunca no historico do git).
+- **Estratégia antiga (aposentada)**: AGENTIC RSI + FIBONACCI (binário OTC) — 5 agentes `rsi/bollinger/adx/atr/fib` + consenso senior + vetos (constância, walk, fib, ATR, RSI acelerando) + "Segurança 0–100%" + janela de entrada T-34s..T-31,5s. Foi substituída pela V2 na reconstrução de 2026-09-22/23. Resultados do ciclo antigo (incluindo percentuais de acerto divulgados na época) **não se transferem** para a V2 — a V2 começa sem amostra estratégica (N=0) e qualquer performance futura deve ser medida nos dados da própria V2 (`/api/iq/strategy/stats`).
+- **Blitz**: removido por decisão operacional (capacidade zero). Nunca reintroduzir.
+- **Runners/estratégias antigas** (rsi-agents-v2/v3/v4, rsi-v4, rsi-reversal, rsi-variants, agents-v4, scenario-*, four-way, dual/solo, shadow-lab, frozen-strategies, indicator-5m, LAB6): deswired/desativados. Preservados apenas como histórico (código, DB, reports) e **não operacionais**.
+- **Reconstrução controlada (2026-09-22/23)**: Blitz PROIBIDO no runtime; 300s único; uma única estratégia operacional (V2); baseline `PULLBACK_4060_300_BASELINE` nunca apagada (`archive/baseline/`); sem duplicação de inteligência PRACTICE/REAL; backups com manifest no git e snapshots zip via artifact de workflow (nunca no histórico do git).
 
-## ESTADO DA RECONSTRUCAO CONTROLADA (handoff)
+
+## HISTÓRICO DA RECONSTRUÇÃO (handoff cronológico — NÃO OPERACIONAL)
+
+> Registro cronológico da reconstrução (2026-09-22/23). O estado atual está na seção 0 no topo deste arquivo (V2 ACTIVE/FROZEN). As seções abaixo são evidência histórica; não use "Ponto de retomada" antigos como instrução vigente.
+
+### ESTADO DA RECONSTRUCAO CONTROLADA (handoff)
 
 **Ponto de retomada: commit 4332e24 (branch main, pushed).**
 
