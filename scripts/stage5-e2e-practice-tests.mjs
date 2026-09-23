@@ -33,7 +33,7 @@ async function mkReadyIntel(features) {
   const intel = new RuntimeIntelligence({ now: () => NOW, strategy: ACTIVE, loader: async () => series });
   await intel.start(["EURUSD:OTC"]);
   intel.onClosedCandle("EURUSD:OTC", mk5s(1, series[series.length - 1].at + 5000)[0]);
-  intel.registry.get("EURUSD:OTC").evaluate(features);
+  if (features) intel.registry.get("EURUSD:OTC").evaluate(features);
   return intel;
 }
 
@@ -67,17 +67,29 @@ function mkRuntime() {
   return { rt, calls, ctx };
 }
 
-/* 1) E2E plumbing pelo caminho canonico: IQ 5s -> #ingestCandle -> #pipeClosedCandle -> RuntimeIntelligence -> dispatch -> requestOrder */
+/* 1) E2E plumbing pelo caminho canonico: IQ 5s fechado -> #ingestCandle -> #pipeClosedCandle -> RuntimeIntelligence -> dispatch -> requestOrder */
 {
   const { rt, calls } = mkRuntime();
-  rt.intelligenceDispatch.intelligence = await mkReadyIntel(buyFeatures);
+  const recorded = [];
+  const intel = await mkReadyIntel(null);
+  rt.assetIntelligence = intel;
+  rt.intelligenceDispatch.intelligence = intel;
   rt.intelligenceDispatch.strategy = ACTIVE;
-  const candle = { active_id: 1, size: 5, at: Math.round((series[series.length - 1].at + 5000) / 1000), open: 1.35, high: 1.351, low: 1.349, close: 1.3505 };
-  rt.ingestEvent("candle-generated", { msg: candle, receivedAt: NOW, connectionId: "c1" });
+  rt.candleStore.record = (marketKey, candle) => { recorded.push({ marketKey, candle }); return true; };
+  const bucketStart = series[series.length - 1].at + 5000;
+  const serverNow = bucketStart + 5000;
+  rt.now = () => serverNow;
+  rt.client = { serverNow: () => serverNow };
+  rt.ingestEvent("candle-generated", { msg: { active_id: 1, size: 5, at: Math.round(bucketStart / 1000), open: 1.35, high: 1.351, low: 1.349, close: 1.3505 }, receivedAt: serverNow, connectionId: "c1" });
   await new Promise((resolve) => setTimeout(resolve, 20));
-  ok("E2E: candle nativo 5s percorre o caminho unico ate requestOrder", calls.length === 1 && calls[0].horizonSeconds === 300 && calls[0].source === "intelligence:PULLBACK_4060_300_AGENTIC_V2");
+  const pipeline = intel.registry.get("EURUSD:OTC");
+  ok("E2E: candle nativo 5s fechado alimenta RuntimeIntelligence (feed OK, contexto avanca)", intel.feedStatusFor("EURUSD:OTC") === "OK" && pipeline.ctx.lastCandle?.at === bucketStart + 5000 && recorded.length === 1 && recorded[0].candle.at === bucketStart + 5000);
+  ok("E2E: candle em formacao NAO alimenta a inteligencia", await (async () => { const before = pipeline.ctx.candles.length; rt.ingestEvent("candle-generated", { msg: { active_id: 1, size: 5, at: Math.round((bucketStart + 5000) / 1000), open: 1.35, high: 1.351, low: 1.349, close: 1.3505 }, receivedAt: serverNow, connectionId: "c1" }); await new Promise((r) => setTimeout(r, 20)); return pipeline.ctx.candles.length === before && recorded.length === 1; })());
+  pipeline.evaluate(buyFeatures);
+  const summary = await rt.pumpIntelligenceDecisions();
+  ok("E2E: runtime.pump -> SinglePath -> requestOrder (fronteira unica)", summary?.submitted?.length === 1 && calls.length === 1 && calls[0].horizonSeconds === 300 && calls[0].source === "intelligence:PULLBACK_4060_300_AGENTIC_V2");
   ok("E2E: operacional carrega strategyVersion/hash/statsEpoch/snapshotHash (nao PATH_TEST)", calls[0].operational?.strategyVersion === ACTIVE.version && calls[0].operational?.strategyHash === ACTIVE.strategyHash && calls[0].operational?.statsEpoch === ACTIVE.statsEpoch && typeof calls[0].operational?.snapshotHash === "string" && calls[0].operational?.testOnly === false && calls[0].operational?.excludedFromStats === false);
-  ok("E2E: ordem nao e duplicada no mesmo snapshot", await (async () => { rt.ingestEvent("candle-generated", { msg: candle, receivedAt: NOW, connectionId: "c1" }); await new Promise((r) => setTimeout(r, 20)); return calls.length === 1; })());
+  ok("E2E: ordem nao e duplicada no mesmo snapshot", await (async () => { const again = await rt.pumpIntelligenceDecisions(); return again.submitted.length === 0 && calls.length === 1; })());
   const history = await rt.recentExecutions(10, null, "PRACTICE");
   ok("E2E: historico le a execucao com strategyVersion/strategyHash", history.length === 1 && history[0].strategyVersion === ACTIVE.version && history[0].strategyHash === ACTIVE.strategyHash && history[0].excludedFromStats === false);
 }
@@ -85,12 +97,11 @@ function mkRuntime() {
 /* 2) WAIT nunca toca o broker pelo caminho canonico */
 {
   const { rt, calls } = mkRuntime();
-  rt.intelligenceDispatch.intelligence = await mkReadyIntel(waitFeatures);
+  const intel = await mkReadyIntel(waitFeatures);
+  rt.intelligenceDispatch.intelligence = intel;
   rt.intelligenceDispatch.strategy = ACTIVE;
-  const candle = { active_id: 1, size: 5, at: Math.round((series[series.length - 1].at + 5000) / 1000), open: 1.35, high: 1.351, low: 1.349, close: 1.3505 };
-  rt.ingestEvent("candle-generated", { msg: candle, receivedAt: NOW, connectionId: "c1" });
-  await new Promise((resolve) => setTimeout(resolve, 20));
-  ok("E2E: WAIT gera AnalysisState e zero ordem", calls.length === 0 && rt.assetIntelligence !== null);
+  const summary = await rt.pumpIntelligenceDecisions();
+  ok("E2E: WAIT gera AnalysisState e zero ordem", summary.considered === 0 && calls.length === 0 && intel.registry.get("EURUSD:OTC").analysisState() !== null);
 }
 
 /* 3) PATH_TEST: PRACTICE-only, 300s, testOnly/excludedFromStats; REAL -> DRY_RUN sem ordem */
@@ -115,10 +126,8 @@ function mkRuntime() {
   rt.intelligenceDispatch.strategy = ACTIVE;
   rt.intelligenceDispatch.accountMode = () => "REAL";
   rt.intelligenceDispatch.realArmed = () => false;
-  const candle = { active_id: 1, size: 5, at: Math.round((series[series.length - 1].at + 5000) / 1000), open: 1.35, high: 1.351, low: 1.349, close: 1.3505 };
-  rt.ingestEvent("candle-generated", { msg: candle, receivedAt: NOW, connectionId: "c1" });
-  await new Promise((resolve) => setTimeout(resolve, 20));
-  ok("REAL desarmado: decisao existe mas zero ordem REAL", calls.length === 0 && rt.intelligenceDispatch.status().counters.denied > 0);
+  const summary = await rt.pumpIntelligenceDecisions();
+  ok("REAL desarmado: decisao existe mas zero ordem REAL", calls.length === 0 && summary.denied.some((d) => d.code === "REAL_FAIL_CLOSED"));
 }
 
 /* 5) regressao: ingestao continua com modulos shadow desligados (timingShadow/scenarioShadow nulos) */

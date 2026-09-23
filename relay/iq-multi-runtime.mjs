@@ -853,7 +853,6 @@ export class IqMultiRuntime extends EventEmitter {
 
   #ingestCandle(ctx, raw, { receivedAt, serverTimestamp, connectionId, batch = false }) {
 
-    this.#pipeClosedCandle(ctx, raw);
     let candle;
     try {
       candle = normalizeCandle(raw, { symbol: ctx.display, activeId: ctx.activeId, serverTimestamp, receivedAt, connectionId, sizeSeconds: CANDLE_SIZE_SECONDS });
@@ -862,6 +861,8 @@ export class IqMultiRuntime extends EventEmitter {
       this.#safe(() => this.log("IQ_MULTI_CANDLE_REJECTED", `${ctx.marketKey}:${String(error?.code ?? error?.message ?? error).slice(0, 80)}`));
       return;
     }
+    // Inteligencia consome SOMENTE candle fechado (bucketEnd <= serverTime) e o candle NORMALIZADO (fonte unica de mapeamento).
+    if (batch || (Number.isFinite(Number(serverTimestamp)) && Number(candle.bucketEnd) <= Number(serverTimestamp))) this.#pipeClosedCandle(ctx, candle);
     candle.segmentId = segmentIdFor(ctx.marketKey, candle.bucketStart);
     candle.marketKey = ctx.marketKey;
     if (!ctx.candles.has(candle.bucketStart)) {
@@ -2974,17 +2975,17 @@ export class IqMultiRuntime extends EventEmitter {
 
   /* ------------------------------- intelligence / research / supervisor / knowledge ------------------------------- */
 
-  #pipeClosedCandle(ctx, raw) {
+  #pipeClosedCandle(ctx, candle) {
     try {
-      if (!this.assetIntelligence || !ctx?.marketKey || !raw || Array.isArray(raw)) return;
-      const at = Number(raw.at ?? raw.time ?? raw.ts ?? raw.timestamp ?? raw.t);
-      const open = Number(raw.open ?? raw.o); const high = Number(raw.high ?? raw.h);
-      const low = Number(raw.low ?? raw.l); const close = Number(raw.close ?? raw.c);
+      if (!this.assetIntelligence || !ctx?.marketKey || !candle || Array.isArray(candle)) return;
+      const at = Number(candle.bucketEnd ?? candle.bucketStart ?? candle.at);
+      const open = Number(candle.open); const high = Number(candle.high);
+      const low = Number(candle.low); const close = Number(candle.close);
       if (![at, open, high, low, close].every(Number.isFinite) || at <= 0) return;
-      const candle = { at: at < 1_000_000_000_000 ? at * 1000 : at, open, high, low, close };
-      const result = this.assetIntelligence.onClosedCandle(ctx.marketKey, candle);
+      const normalized = { at, open, high, low, close };
+      const result = this.assetIntelligence.onClosedCandle(ctx.marketKey, normalized);
       if (result?.processed === true) {
-        this.candleStore?.record(ctx.marketKey, candle);
+        this.candleStore?.record(ctx.marketKey, normalized);
         void this.pumpIntelligenceDecisions();
       }
     } catch (error) { this.#safe(() => this.log("PIPE_FEED_FAIL", String(error?.message ?? error).slice(0, 120))); }
