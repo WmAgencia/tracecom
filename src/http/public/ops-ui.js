@@ -8,6 +8,7 @@
   "use strict";
 
   const DEFAULT_RESULT_DISPLAY_MS = 15_000;
+  const SETTLEMENT_GRACE_MS = 90_000;
   const OPEN_STATES = ["REQUESTED", "ACKNOWLEDGED", "SUBMITTED", "PENDING_ACK", "PENDING", "UNKNOWN", "OPEN"];
 
   const upper = (value) => String(value ?? "").toUpperCase();
@@ -27,15 +28,33 @@
     return Number.isFinite(ms) ? ms : null;
   };
 
+  const expirationTimestamp = (row) => {
+    const raw = row?.expirationAt ?? null;
+    const ms = raw ? new Date(raw).getTime() : NaN;
+    if (Number.isFinite(ms)) return ms;
+    const requested = new Date(row?.requestedAt ?? 0).getTime();
+    return Number.isFinite(requested) ? requested + 300_000 : null;
+  };
+
   const formatSigned = (value) => (Number(value) >= 0 ? "+" : "-") + Math.abs(Number(value)).toFixed(2).replace(".", ",");
 
   /**
-   * Texto acima do card: vazio por padrao; "EM OPERACAO" aberta; PnL apenas por uma janela curta apos o settlement.
-   * Nunca mostra PATH_TEST, excludedFromStats, legado, outra strategyVersion ou resultado antigo.
+   * Texto acima do card:
+   * - aberta e dentro da janela de mercado -> "EM OPERACAO";
+   * - aberta apos o expiry, dentro da tolerancia curta de settlement -> "AGUARDANDO RESULTADO";
+   * - aberta apos o expiry + tolerancia -> vazio (nunca fingir posicao em mercado);
+   * - settled -> PnL apenas por uma janela curta;
+   * - PATH_TEST/excluded/legado/outra versao -> sempre vazio.
    */
-  const cardResultFor = (row, now, { strategyVersion, displayMs = DEFAULT_RESULT_DISPLAY_MS } = {}) => {
+  const cardResultFor = (row, now, { strategyVersion, displayMs = DEFAULT_RESULT_DISPLAY_MS, graceMs = SETTLEMENT_GRACE_MS } = {}) => {
     if (!isV2Operational(row, strategyVersion)) return { text: "", cls: "" };
-    if (isOpen(row)) return { text: "EM OPERAÇÃO", cls: "op" };
+    if (isOpen(row)) {
+      const expiration = expirationTimestamp(row);
+      if (expiration === null) return { text: "", cls: "" };
+      if (now < expiration) return { text: "EM OPERAÇÃO", cls: "op" };
+      if (now <= expiration + graceMs) return { text: "AGUARDANDO RESULTADO", cls: "pending" };
+      return { text: "", cls: "" };
+    }
     if (upper(row.state) !== "SETTLED") return { text: "", cls: "" };
     const at = settledTimestamp(row);
     if (at === null || now - at > displayMs || now < at) return { text: "", cls: "" };
@@ -60,6 +79,7 @@
 
   root.OpsUI = {
     DEFAULT_RESULT_DISPLAY_MS,
+    SETTLEMENT_GRACE_MS,
     OPEN_STATES,
     isV2Operational,
     isOpen,

@@ -64,6 +64,7 @@ import { CandleStore } from "./intelligence/candle-store.mjs";
 import { SinglePath } from "./execution/single-path.mjs";
 import { IntelligenceDispatch } from "./execution/intelligence-dispatch.mjs";
 import { loadOperationalStrategy } from "./execution/operational-strategy.mjs";
+import { matchPendingOrder, pendingCandidates, matchClosedOption } from "./execution/order-ack-matcher.mjs";
 import { SafetyShadow, parseSafetyLevels, SAFETY_SHADOW_RUN_ID } from "./agents/safety-shadow.mjs";
 import { CandlesArchive } from "./candles-archive.mjs";
 import { customStrategyById, evaluateCustomStrategies, CUSTOM_STRATEGIES } from "./agents/custom-strategies.mjs";
@@ -104,6 +105,7 @@ const sanitizeInstrumentRow = (row) => (row && typeof row === "object"
 export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
+  #dbProbePromise = null;
 
   constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = false, scenarioTimingIntersectionEnabled = false, agentsV4Enabled = false, dataHubEnabled = true, dualReasoningEnabled = false, soloReasoningEnabled = false, indicator5mEnabled = false, rsiAgentsV2BlitzEnabled = false, consensusEnabled = true, consensusExecute = process.env.CONSENSUS_EXECUTE === "true", agenticEnabled = process.env.AGENTIC_ENABLED === "true", agenticRunId = process.env.AGENTIC_RUN_ID ?? null, labStake = null, agenticSafetyPct = process.env.AGENTIC_SAFETY_PCT ?? null, agenticShadowLevels = process.env.AGENTIC_SHADOW_LEVELS ?? null, autoArmPractice = process.env.AUTO_ARM_PRACTICE === "true", executionAllowlist = null, executionPolicyName = null } = {}) {
     super();
@@ -1852,6 +1854,7 @@ export class IqMultiRuntime extends EventEmitter {
       });
     }
     if (now - (this.lastLabSettlePoll ?? 0) > 30_000) { this.lastLabSettlePoll = now; void this.lab?.pollSettlements(); void this.labS04?.pollSettlements(); void this.agentic?.pollSettlements(); void this.#sweepStaleExecutions(); }
+    if (now - (this.lastReconcilePoll ?? 0) > 60_000) { this.lastReconcilePoll = now; void this.reconcileOrphans(); }
     if (this.agentic?.enabled === true) {
       const cache = this.agenticSnapshotCache ?? (this.agenticSnapshotCache = new Map());
       for (const ctx of this.markets.values()) {
@@ -3699,18 +3702,14 @@ export class IqMultiRuntime extends EventEmitter {
 
   #onOrderEvent(event, kind) {
     const msg = event.msg ?? {};
-    const candidates = [...this.pendingOrders.values()].filter((pending) => pending.connectionId === event.connectionId);
-    let pending = null;
-    if (kind === "option") pending = candidates.find((row) => String(event.requestId) === String(row.requestId)) ?? null;
-    if (kind === "buyComplete") pending = (msg.isSuccessful === false || msg.result?.id === undefined || candidates.length !== 1) ? null : candidates[0];
-    if (kind === "socket-option-opened") {
-      pending = candidates.find((row) => (msg.active_id === undefined || Number(msg.active_id) === Number(row.activeId)) && (msg.expired === undefined || Number(msg.expired) === Number(row.expirationSec)) && (msg.price === undefined || Number(msg.price) === Number(row.stake))) ?? null;
-    }
+    const pending = matchPendingOrder({ kind, event, pendings: [...this.pendingOrders.values()], now: this.now() });
     if (kind === "result") {
+      const candidates = pendingCandidates([...this.pendingOrders.values()], { now: this.now() });
       if (msg.success !== true && candidates.length === 1) this.#failPending(candidates[0], "REJECTED", msg.message ?? "RESULT_SUCCESS_FALSE");
       return;
     }
     if (!pending) return;
+    if (pending.connectionId !== event.connectionId) this.#safe(() => this.log("IQ_MULTI_ACK_CROSS_CONNECTION", JSON.stringify({ marketKey: pending.marketKey, executionId: pending.executionId, pendingConnectionId: pending.connectionId, eventConnectionId: event.connectionId ?? null })));
     if (msg.message) { this.#failPending(pending, "REJECTED", msg.message); return; }
     const orderId = msg.id ?? msg.result?.id ?? null;
     if (orderId === null || orderId === undefined) return;
@@ -3910,7 +3909,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (!this.pool || !this.client || !this.session.connected) { mark({ checked: 0, settled: 0, unknown: 0, error: "NOT_CONNECTED" }); return { checked: 0, settled: 0, unknown: 0 }; }
     if (!await this.#ensureDb()) { mark({ checked: 0, settled: 0, unknown: 0, error: "DB_UNAVAILABLE" }); return { checked: 0, settled: 0, unknown: 0 }; }
     let rows = [];
-    try { rows = (await this.pool.query("SELECT execution_id, market_key, broker_order_id, direction, symbol, active_id, stake, expiration_at, entry_price, mode FROM iq_executions WHERE state IN ('REQUESTED','ACKNOWLEDGED') AND requested_at < now() - interval '2 minutes' ORDER BY requested_at DESC LIMIT 20")).rows; }
+    try { rows = (await this.pool.query("SELECT execution_id, market_key, broker_order_id, state, direction, symbol, active_id, stake, expiration_at, entry_price, mode FROM iq_executions WHERE broker_result IS NULL AND state IN ('REQUESTED','ACKNOWLEDGED','EXPIRED_UNSETTLED','UNKNOWN') AND requested_at < now() - interval '2 minutes' ORDER BY requested_at DESC LIMIT 20")).rows; }
     catch (error) { this.#safe(() => this.log("IQ_MULTI_RECONCILE_QUERY_FAILED", String(error?.message ?? error).slice(0, 120))); mark({ checked: 0, settled: 0, unknown: 0, error: "QUERY_FAILED" }); return { checked: 0, settled: 0, unknown: 0 }; }
     if (!rows.length) { mark({ checked: 0, settled: 0, unknown: 0, error: null }); return { checked: 0, settled: 0, unknown: 0 }; }
     const result = { checked: rows.length, settled: 0, unknown: 0 };
@@ -3918,15 +3917,21 @@ export class IqMultiRuntime extends EventEmitter {
     try { const { response } = await this.client.getOptions({ limit: 100, instrumentType: "binary,turbo", balanceId: this.account.practice.balanceId ?? this.account.real.balanceId }); closed = response.msg?.closed_options ?? response.msg?.closedOptions ?? []; }
     catch (error) { this.#safe(() => this.log("IQ_MULTI_RECONCILE_OPTIONS_FAILED", String(error?.code ?? error?.message ?? error).slice(0, 80))); }
     for (const row of rows) {
-      if (!row.broker_order_id) { await this.#persistExecution({ executionId: row.execution_id, state: "UNKNOWN", error: "ORPHANED_NO_ACK_RECONCILED" }); result.unknown += 1; continue; }
-      const match = closed.find((entry) => String(entry?.id?.[0] ?? entry?.id ?? "") === String(row.broker_order_id));
-      if (!match) continue;
-      const broker = parseSettlement(match);
+      const matched = matchClosedOption(row, closed);
+      if (!matched) {
+        if (!row.broker_order_id && !String(row.state ?? "").includes("EXPIRED_UNSETTLED")) {
+          await this.#persistExecution({ executionId: row.execution_id, state: "UNKNOWN", error: "ORPHANED_NO_ACK_RECONCILED" });
+          result.unknown += 1;
+        }
+        continue;
+      }
+      const broker = parseSettlement(matched.entry);
       if (broker.result === "UNKNOWN") continue;
+      const brokerOrderId = String(matched.entry?.id?.[0] ?? matched.entry?.id ?? row.broker_order_id ?? "");
       const comparison = compareSettlement(broker.result, "UNKNOWN");
-      await this.#persistExecution({ executionId: row.execution_id, state: "SETTLED", brokerOrderId: String(row.broker_order_id), settledAt: nowIso(this.now()), brokerResult: broker.result, causalResult: "UNKNOWN", mismatch: comparison.mismatch, profit: broker.profit, meta: { reconciled: true, reason: comparison.reason } });
+      await this.#persistExecution({ executionId: row.execution_id, state: "SETTLED", brokerOrderId: brokerOrderId || null, settledAt: nowIso(this.now()), brokerResult: broker.result, causalResult: "UNKNOWN", mismatch: comparison.mismatch, profit: broker.profit, meta: { reconciled: true, basis: matched.basis, reason: comparison.reason } });
       result.settled += 1;
-      this.#safe(() => this.log("IQ_MULTI_RECONCILED", JSON.stringify({ executionId: row.execution_id, marketKey: row.market_key ?? null, brokerOrderId: String(row.broker_order_id), brokerResult: broker.result })));
+      this.#safe(() => this.log("IQ_MULTI_RECONCILED", JSON.stringify({ executionId: row.execution_id, marketKey: row.market_key ?? null, brokerOrderId, deal: matched.entry?.id ?? null, brokerResult: broker.result, basis: matched.basis })));
     }
     mark({ checked: result.checked, settled: result.settled, unknown: result.unknown, error: null });
     return result;
@@ -3937,14 +3942,18 @@ export class IqMultiRuntime extends EventEmitter {
   async #ensureDb(table = "iq_executions") {
     if (!this.pool) { this.dbReady = false; return false; }
     if (this.dbReady === true) return true;
+    if (this.#dbProbePromise) return this.#dbProbePromise;
     if (this.#dbProbeAt !== null && this.now() - this.#dbProbeAt < 10_000) return this.dbReady === true;
     this.#dbProbeAt = this.now();
-    try {
-      const result = await this.pool.query("SELECT to_regclass($1) AS table_name, current_setting('transaction_read_only') AS read_only", [`public.${table}`]);
-      this.dbReady = Boolean(result.rows?.[0]?.table_name);
-      if (String(result.rows?.[0]?.read_only ?? "").toLowerCase() === "on") this.#markReadOnly();
-    } catch { this.dbReady = false; }
-    return this.dbReady;
+    this.#dbProbePromise = (async () => {
+      try {
+        const result = await this.pool.query("SELECT to_regclass($1) AS table_name, current_setting('transaction_read_only') AS read_only", [`public.${table}`]);
+        this.dbReady = Boolean(result.rows?.[0]?.table_name);
+        if (String(result.rows?.[0]?.read_only ?? "").toLowerCase() === "on") this.#markReadOnly();
+      } catch { this.dbReady = false; }
+      return this.dbReady;
+    })();
+    try { return await this.#dbProbePromise; } finally { this.#dbProbePromise = null; }
   }
 
   #markReadOnly() {

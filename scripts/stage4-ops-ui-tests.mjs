@@ -30,8 +30,12 @@ const row = (patch = {}) => ({
 
 /* 2) resultado acima do card */
 {
-  const open = OpsUI.cardResultFor(row({ state: "ACKNOWLEDGED", brokerResult: null, profit: null }), NOW, { strategyVersion: V2 });
+  const open = OpsUI.cardResultFor(row({ state: "ACKNOWLEDGED", brokerResult: null, profit: null, expirationAt: iso(NOW + 120_000) }), NOW, { strategyVersion: V2 });
   ok("operacao V2 aberta -> EM OPERACAO", open.text === "EM OPERAÇÃO" && open.cls === "op");
+  const stale = OpsUI.cardResultFor(row({ state: "ACKNOWLEDGED", brokerResult: null, profit: null, expirationAt: iso(NOW - 180_000), requestedAt: iso(NOW - 480_000) }), NOW, { strategyVersion: V2 });
+  const future = OpsUI.cardResultFor(row({ state: "ACKNOWLEDGED", brokerResult: null, profit: null, expirationAt: iso(NOW + 120_000) }), NOW, { strategyVersion: V2 });
+  const grace = OpsUI.cardResultFor(row({ state: "ACKNOWLEDGED", brokerResult: null, profit: null, expirationAt: iso(NOW - 30_000) }), NOW, { strategyVersion: V2 });
+  ok("stale execution (expirada ha 3min, estado aberto) NAO mostra EM OPERACAO", stale.text === "" && future.text === "EM OPERAÇÃO" && grace.text === "AGUARDANDO RESULTADO" && grace.cls === "pending");
   const win = OpsUI.cardResultFor(row(), NOW, { strategyVersion: V2 });
   const loss = OpsUI.cardResultFor(row({ brokerResult: "LOSS", profit: -2 }), NOW, { strategyVersion: V2 });
   const draw = OpsUI.cardResultFor(row({ brokerResult: "DRAW", profit: 0 }), NOW, { strategyVersion: V2 });
