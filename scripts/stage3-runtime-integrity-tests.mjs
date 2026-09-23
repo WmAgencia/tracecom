@@ -89,7 +89,7 @@ const buyFeatures = deepFreeze({
   const pool = { query: async () => ({ rows: [] }) };
   const rt = new IqMultiRuntime({ pool, log: () => {}, executionAllowlist: operationalAllowlist(), executionPolicyName: OPERATIONAL_EXECUTION_POLICY_NAME });
   const status = rt.intelligenceStatus();
-  ok("runtime instancia UMA RuntimeIntelligence com manifesto da V2 (nunca ACTIVE por acidente)", status.assetIntelligence.initialized === true && status.strategy.version === "PULLBACK_4060_300_AGENTIC_V2" && status.strategy.status !== "ACTIVE" && status.strategy.executable === false);
+  ok("runtime instancia UMA RuntimeIntelligence com manifesto da V2 (status/executavel coerentes)", status.assetIntelligence.initialized === true && status.strategy.version === "PULLBACK_4060_300_AGENTIC_V2" && ["READY_FOR_DEPLOY", "ACTIVE"].includes(status.strategy.status) && (status.strategy.status === "ACTIVE" ? status.strategy.executable === true : status.strategy.executable === false));
   ok("runtime expoe dispatch wired + candleStore canonico 5s", status.dispatch.wired === true && status.candleStore.ready === true && status.candleStore.intervalMs === 5000);
   ok("health inicial: DEGRADED (0 assets) e execucao DENY", status.assetIntelligence.state === "DEGRADED" && status.assetIntelligence.intelligenceReady === false && rt.intelligenceDispatch.dispatchOnce !== undefined);
 

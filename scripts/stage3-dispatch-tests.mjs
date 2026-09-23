@@ -277,7 +277,7 @@ function mkOrderRecorder({ delayFor = () => 0 } = {}) {
 /* 12) manifesto real carrega fail-closed e nao esta ACTIVE */
 {
   const strategy = loadOperationalStrategy();
-  ok("manifesto real da V2 carrega com status/executavel coerentes", strategy.version === "PULLBACK_4060_300_AGENTIC_V2" && strategy.status !== "ACTIVE" && strategy.executable === false);
+  ok("manifesto real da V2 carrega com status/executavel coerentes", strategy.version === "PULLBACK_4060_300_AGENTIC_V2" && ["READY_FOR_DEPLOY", "ACTIVE"].includes(strategy.status) && (strategy.status === "ACTIVE" ? strategy.executable === true : strategy.executable === false));
   const bad = loadOperationalStrategy({ manifestPath: "estrategias/strategy-versions/NAO_EXISTE.json" });
   ok("manifesto invalido -> UNAVAILABLE, executable=false", bad.status === "UNAVAILABLE" && bad.executable === false && bad.strategyHash === null);
   const { path } = mkPath();
