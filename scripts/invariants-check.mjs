@@ -78,7 +78,7 @@ ok("ACCOUNT_ONLY_AT_ROUTER", !/selectedAccount/.test(dispatch) && !/selectedAcco
   ok("WAIT_NEVER_CREATES_TRADE", pipeline.consensus.side === "WAIT" && pipeline.lastSnapshot === null && pipeline.isDuplicate(null) === true);
 }
 ok("TEST_PATH_PRACTICE_ONLY", /TEST_PATH_PRACTICE_ONLY/.test(runtime) && /submitPathTestOrder/.test(runtime) && !/submitLabPracticeOrder/.test(runtime));
-ok("TEST_PATH_EXCLUDED_FROM_STATS", /entryTiming\?\.pathTest === true \? \{ strategyVersion: "PATH_TEST"/.test(runtime) && /excluded_from_stats=false/.test(runtime) && /testOnly: true, excludedFromStats: true/.test(runtime));
+ok("TEST_PATH_EXCLUDED_FROM_STATS", /entryTiming\?\.pathTest === true \? \{ strategyVersion: "PATH_TEST"/.test(runtime) && /excluded_from_stats=false/.test(runtime) && /testOnly: true, excludedFromStats: true/.test(runtime) && /entryTiming: \{ pathTest: true \}/.test(server) && /account_context='PRACTICE' AND excluded_from_stats=false/.test(runtime));
 ok("PRODUCT_STATES_BACKEND", productState({ enabled: true, feedStatus: "OK", hydration: "HYDRATION_READY", consensusSide: "BUY" }) === "BUY" && productState({ enabled: true, feedStatus: "ABSENT", hydration: "HYDRATION_READY", consensusSide: "BUY" }) === "SEM FEED" && productState({ enabled: true, feedStatus: "OK", purchaseStatus: "UNAVAILABLE", hydration: "HYDRATION_READY", consensusSide: "BUY" }) === "SEM COMPRA");
 
 console.log(fail === 0 ? `INVARIANTS ALL_PASS (${pass}/${pass})` : `INVARIANTS FAIL (${fail})`);
