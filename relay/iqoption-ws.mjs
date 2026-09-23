@@ -215,7 +215,7 @@ export function normalizeCandle(raw, { symbol, activeId, serverTimestamp, receiv
   if (bucketEnd > bucketStart + size * 1000 + 1) throw new IqWsError("CANDLE_TOO_LONG");
   return {
     symbol, activeId: activeId ?? (rawActive === null ? null : Number(rawActive)),
-    bucketStart, bucketEnd, open, high, low, close,
+    bucketStart, bucketEnd, at: bucketEnd, open, high, low, close,
     source: CANDLE_SOURCE,
     serverTimestamp: rawAtMs ?? (Number.isFinite(serverTimestamp) ? serverTimestamp : null),
     receivedAt: receivedAt ?? Date.now(),

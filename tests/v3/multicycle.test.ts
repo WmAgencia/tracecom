@@ -186,6 +186,32 @@ describe("V3 multi-cycle — revisao pre-send (NO SUNK COST)", () => {
   });
 });
 
+  it("L. C2 encadeia IMEDIATAMENTE se candle novo ja fechou durante o C1 (sem esperar novo evento)", async () => {
+    const scheduled: any[] = [];
+    const scheduler = { schedule: (intent: any) => { scheduled.push(intent); return { scheduled: true, intent }; }, cancel: () => true, status: () => ({ pending: 0, counters: {} }) };
+    let brokerClock = exp - 330_000;
+    const slowScript: Record<string, any> = {};
+    for (const role of ["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION", "ASSET", "CONSENSUS_FINAL"]) slowScript[role] = { output: approveScript()[role], sleepMs: 30, latencyMs: 30 };
+    const inner = createScriptedAgentClient(slowScript, { now: () => brokerClock });
+    const prompts: Array<{ role: string; prompt: string }> = [];
+    const agents = { available: true, async call(input: any) { prompts.push({ role: input.role, prompt: input.prompt }); return inner.call(input); } };
+    const runtime = new V3Runtime({ strategy, agents, now: () => brokerClock, brokerNow: () => brokerClock, agentSafetyMarginMs: 2_000, estimatedFullCycleMs: 1_000, estimatedDeltaCycleMs: 1_000, scheduler });
+    runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
+    brokerClock = exp - 327_000;
+    const c1Candles = candlesFromCloses(closes, { startAt: brokerClock - closes.length * 5_000 });
+    const running = runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles: c1Candles, brokerNow: brokerClock });
+    await new Promise((resolve) => setTimeout(resolve, 20)); // C1 em voo
+    brokerClock = exp - 322_000; // novo candle fechou durante o C1
+    const overlapping = await runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles: candlesFromCloses(closes, { startAt: brokerClock - closes.length * 5_000 }), brokerNow: brokerClock });
+    expect(overlapping).toBeNull(); // evento concorrente e ignorado (in-flight)
+    await running;
+    const after = runtime.opportunities()[0];
+    expect(after.cycles.length).toBe(2); // C2 encadeado sem novo evento
+    expect(after.finalDecision).not.toBeNull();
+    const rsiC2 = prompts.find((entry) => entry.role === "RSI" && entry.prompt.includes("\"mode\":\"DELTA\""));
+    expect(rsiC2).toBeTruthy();
+  });
+
 describe("V3 congelamento de seguranca", () => {
   it("K. V2 permanece frozen/intocado", () => {
     const manifest = JSON.parse(fs.readFileSync("D:/tracecom/repo/estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V2.json", "utf8"));

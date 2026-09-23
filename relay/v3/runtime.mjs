@@ -47,6 +47,7 @@ export class V3Runtime {
     this.estimatedWaveMs = this.estimatedFullCycleMs;
     this.maxAgentCycles = Math.max(1, Number(maxAgentCycles) || 2);
     this.cycleInFlight = new Set();
+    this.latestCandles = new Map();
     this.agentArchitecture = V3_AGENT_ARCHITECTURE;
     this.brokerNow = typeof brokerNow === "function" ? brokerNow : null;
     this.scheduler = scheduler ?? new ExecutionScheduler({ now, onFire: (intent) => this.#onExecutionFire(intent), log: this.log });
@@ -113,6 +114,8 @@ export class V3Runtime {
    *  Nada lanca para o V2: erros ficam no lastError/log. */
   onClosedCandle(args = {}) {
     const marketKey = String(args.marketKey ?? "?");
+    // Cache do evento mais recente: permite encadear C2 imediatamente ao fim do C1 (candle ja fechado).
+    if (Array.isArray(args.candles)) this.latestCandles.set(marketKey, args.candles);
     const previous = this.queues.get(marketKey) ?? Promise.resolve();
     this.queueDepth += 1;
     this.maxQueueDepth = Math.max(this.maxQueueDepth, this.queueDepth);
@@ -122,8 +125,23 @@ export class V3Runtime {
     return next;
   }
 
-  /** Um ciclo por candle fechado; so dentro de (hardCutoff, discoveryWindow]. */
+  /** Um ciclo por candle fechado; so dentro de (hardCutoff, discoveryWindow].
+   *  Encadeia C2 imediatamente se um candle NOVO ja fechou durante o C1 (sem esperar o proximo evento). */
   async #runCycle({ marketKey, candles, brokerNow = null } = {}) {
+    this.latestCandles.set(String(marketKey), candles);
+    let result = await this.#runSingleCycle({ marketKey, candles, brokerNow });
+    for (let chain = 0; chain < this.maxAgentCycles - 1 && result; chain += 1) {
+      const opportunity = this.engine.get(result.opportunityId);
+      if (!opportunity || opportunity.finalizedAt !== null || !this.#canRunMoreCycles(opportunity, this.now())) break;
+      const latest = this.latestCandles.get(String(marketKey)) ?? [];
+      const lastAt = Number(latest[latest.length - 1]?.at);
+      if (!Number.isFinite(lastAt) || Number(result.closedCandleAt) === lastAt) break;
+      result = await this.#runSingleCycle({ marketKey, candles: latest, brokerNow: this.now() });
+    }
+    return result;
+  }
+
+  async #runSingleCycle({ marketKey, candles, brokerNow = null } = {}) {
     const at = Number.isFinite(Number(brokerNow)) ? Number(brokerNow) : this.now();
     // A frente compravel e derivada do relogio do broker: adota a cada candle fechado (5s),
     // dando resolucao de 5s a descoberta (~TTE 330) sem depender do poll de initialization (60s).
@@ -262,7 +280,7 @@ export class V3Runtime {
     this.counters.candleCycles += 1;
     this.lastCycleAt = at;
     this.log("V3_CYCLE", stableStringify({ opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, scenario: asset?.scenario, assetDirection: asset?.direction ?? null, consensusDirection: consensus?.direction ?? null, canonicalDirection, state: asset?.state, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs }));
-    return { opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, assetState: asset?.state ?? null, scenario: asset?.scenario ?? null, direction: canonicalDirection, assetDirection: asset?.direction ?? null, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs };
+    return { opportunityId: opportunity.opportunityId, cycle: cycle.cycleNumber, tteMs: cycle.tteMs, closedCandleAt: measurements.closedCandleAt, assetState: asset?.state ?? null, scenario: asset?.scenario ?? null, direction: canonicalDirection, assetDirection: asset?.direction ?? null, consensus: consensus.result, agreement: consensus.agreement, agentMode: this.agentMode, latencyMs };
   }
 
   /** Disparo no alvo (~TTE302): revalida tudo; observe-only nunca envia ordem. */
