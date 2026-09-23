@@ -51,3 +51,31 @@ simulados nos testes. Conclusão máxima permitida: `SECURITY HARDENING COMPLETE
 
 - Uso permitido agora: `SECURITY HARDENING COMPLETE FOR PRACTICE VALIDATION`.
 - REAL: permanece DISARMED; só liberar após validação PRACTICE estendida e nova decisão explícita do operador.
+
+## Deploy e validação de produção (Fase 12)
+
+Deploy: relay `tracecom-live-relay` (Railway) + edge Vercel (`https://tracecom.consecom.com.br`), commit `029dfce`.
+Pré-deploy (Fase 9): PRACTICE desarmado via admin, `auto_execute=false` persistido e `AUTO_ARM_PRACTICE=false`
+no Railway — a execução automática segue DESLIGADA e deve ser religada apenas por decisão explícita do operador.
+
+Validação read-only (sem ordens):
+
+- `/health` 200; relay com código novo: `connection.execution.readyPractice/readyReal/account` presentes.
+- Estratégia: `PULLBACK_4060_300_AGENTIC_V2` ACTIVE, executável, hash
+  `sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0` (inalterado).
+- Edge fail-closed: `GET /api/iq/status|strategy/stats|strategy/observability|intelligence|account/context` → 401 anônimo;
+  `POST /api/auth/panel` sem prova de chave → 401; `/health` → 200.
+- Observabilidade: `available=true`, `integrity.verified=true`, `counts` zerados, `archived.included=false`
+  (nada podado ainda); stats canônicos N=2 W=1 L=1 PnL=-0.36 (PRACTICE, V2).
+- Reconcile periódico ativo (`checked:20, settled:0, unknown:0, error:null`). O incidente USDTRY
+  (`exec_1790167033134_wkt4zu`, EXPIRED_UNSETTLED) permanece sinalizado: o broker não devolveu entrada
+  correspondente em `closed_options` (histórico) — nenhum settlement foi inventado. Reavaliar manualmente
+  quando o broker expuser a posição; a correção está validada por testes (settlement 14/14).
+- `SECRET_SCAN OK` no repositório versionado.
+
+## Estado operacional pós-deploy
+
+- Execução automática PRACTICE: **DESLIGADA** (`auto_execute=false`, `AUTO_ARM_PRACTICE=false`, desarmado).
+- REAL: DISARMED (fail-closed em todas as camadas).
+- Para religar PRACTICE: operador deve reativar `AUTO_ARM_PRACTICE`/auto-execute deliberadamente após validar.
+
