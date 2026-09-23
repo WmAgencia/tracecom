@@ -284,7 +284,7 @@ export class V3Runtime {
       }
     }
 
-    void this.#persistCycleAfterParent(opportunity.opportunityId, cycle);
+    void this.#persistCycleAfterParent(opportunity.opportunityId, { ...cycle, cycleNumber });
     if (CLOSED_STATES.includes(opportunity.status) || opportunity.finalizedAt !== null) void this.#persistOpportunity(opportunity);
     const latencyMs = Math.max(0, this.now() - startedAt);
     this.latencySamples.push(latencyMs);
