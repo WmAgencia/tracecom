@@ -11,6 +11,8 @@ import { runSpecialists } from "../relay/intelligence/specialists.mjs";
 import { consensus } from "../relay/intelligence/consensus.mjs";
 import { buildDecisionSnapshot } from "../relay/intelligence/decision-snapshot.mjs";
 import { computeFeatures, deepFreeze } from "../relay/intelligence/features.mjs";
+import { computeStrategyHash } from "./stage3-strategy-hash.mjs";
+import { FREEZE_PATH } from "./stage3-freeze-v2.mjs";
 
 let pass = 0; let fail = 0;
 const ok = (name, condition, detail = "") => { if (condition) { pass += 1; console.log(`PASS ${name}`); } else { fail += 1; console.log(`FAIL ${name}${detail ? " :: " + detail : ""}`); } };
@@ -28,7 +30,7 @@ ok("BINARY_ONLY_NEW_TRADES", /instrumentType: "BINARY"/.test(dispatch) && /EXPER
 ok("300_ONLY", OPERATIONAL_EXPIRY_SECONDS === 300 && assertOperationalExpiry(300) === 300 && nextOperationalExpiryAt(NOW) % 300_000 === 0 && /horizonSeconds = OPERATIONAL_EXPIRY_SECONDS/.test(runtime));
 const submitLines = (source) => source.split("\n").filter((line) => /(requestOrder|submitPathTestOrder|submitOperationalOrder)\(/.test(line));
 ok("NO_30_45_60_150_180 (submit-capable)", submitLines(runtime).every((line) => !/horizonSeconds:\s*(30|45|60|150|180)\b/.test(line)) && submitLines(server).every((line) => !/horizonSeconds:\s*(30|45|60|150|180)\b/.test(line)) && !/durationSeconds:\s*(30|45|60|150|180)\b/.test(grid));
-ok("ONE_OPERATIONAL_STRATEGY", fs.readdirSync(new URL("../estrategias/strategy-versions", import.meta.url)).filter((f) => f.endsWith(".json")).length === 1 && manifest.strategyVersion === "PULLBACK_4060_300_AGENTIC_V2");
+ok("ONE_OPERATIONAL_STRATEGY", fs.readdirSync(new URL("../estrategias/strategy-versions", import.meta.url)).filter((f) => f.endsWith(".json") && !f.endsWith(".freeze.json")).length === 1 && manifest.strategyVersion === "PULLBACK_4060_300_AGENTIC_V2");
 ok("ONE_OPERATIONAL_BROKER_PATH", (runtime.match(/client\.placeOrder\(/g) ?? []).length === 1 && operationalAllowlist().filter((s) => s.startsWith("intelligence:")).length === 1 && !operationalAllowlist().some((s) => s.startsWith("lab:")) && OPERATIONAL_EXECUTION_POLICY_NAME === "OPERATIONAL_V2_PLUS_TEST_PATHS");
 ok("RESEARCH_CANNOT_SUBMIT", !/requestOrder|placeOrder/.test(read("relay/research-lab/api.mjs")));
 ok("STATUS_NOT_ACTIVE_DENY", new ExecutionGate({ now: () => NOW }).decide({ strategy: { status: "READY_FOR_DEPLOY", executable: false, strategyHash: manifest.strategyHash }, expirySeconds: 300 }).code === "STRATEGY_NOT_ACTIVE");
@@ -82,6 +84,12 @@ ok("TEST_PATH_EXCLUDED_FROM_STATS", /entryTiming\?\.pathTest === true \? \{ stra
 ok("HYDRATION_CANNOT_BE_DROPPED", /iq_candles_5s/.test(read("relay/persist-scheduler.mjs")) && /CANDLE_STORE_LOAD_DROPPED/.test(read("relay/intelligence/candle-store.mjs")));
 ok("HYDRATION_BEFORE_FEED", /await this\.#ensureIntelligenceHydration\(\)/.test(runtime) && runtime.indexOf("await this.#ensureIntelligenceHydration()") < runtime.indexOf("for (const ctx of this.markets.values()) this.#subscribeCtx(client, ctx)"));
 ok("PRODUCT_STATES_BACKEND", productState({ enabled: true, feedStatus: "OK", hydration: "HYDRATION_READY", consensusSide: "BUY" }) === "BUY" && productState({ enabled: true, feedStatus: "ABSENT", hydration: "HYDRATION_READY", consensusSide: "BUY" }) === "SEM FEED" && productState({ enabled: true, feedStatus: "OK", purchaseStatus: "UNAVAILABLE", hydration: "HYDRATION_READY", consensusSide: "BUY" }) === "SEM COMPRA");
+
+{
+  const freeze = fs.existsSync(FREEZE_PATH) ? JSON.parse(fs.readFileSync(FREEZE_PATH, "utf8")) : null;
+  const computedFiles = computeStrategyHash({ manifest }).files;
+  ok("V2_FROZEN_IMMUTABLE", manifest.frozen === true && manifest.status === "ACTIVE" && manifest.executable === true && typeof manifest.frozenAt === "string" && freeze?.schema === "tracecom-strategy-freeze-v1" && freeze.strategyHash === manifest.strategyHash && JSON.stringify(freeze.decisionFiles) === JSON.stringify(computedFiles) && /V3/.test(freeze.v3Rule));
+}
 
 console.log(fail === 0 ? `INVARIANTS ALL_PASS (${pass}/${pass})` : `INVARIANTS FAIL (${fail})`);
 process.exit(fail === 0 ? 0 : 1);

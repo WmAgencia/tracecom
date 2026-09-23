@@ -67,6 +67,10 @@ export function computeStrategyHash({ overrides = {}, manifest = null } = {}) {
 export function updateManifest({ sourceCommit = null } = {}) {
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
   const { strategyHash, policy, files } = computeStrategyHash({ manifest });
+  if (manifest.strategyHash && manifest.strategyHash !== strategyHash) {
+    throw new Error(`STRATEGY_HASH_DRIFT: manifesto=${manifest.strategyHash} computado=${strategyHash} (nao sobrescreve; versione como V3)`);
+  }
+  const status = manifest.status === "ACTIVE" ? manifest.status : "READY_FOR_DEPLOY";
   const next = {
     strategyVersion: "PULLBACK_4060_300_AGENTIC_V2",
     parent: manifest.parent,
@@ -101,8 +105,11 @@ export function updateManifest({ sourceCommit = null } = {}) {
     decisionFiles: files,
     stats: manifest.stats,
     runId: manifest.runId,
-    status: "READY_FOR_DEPLOY",
-    executable: false,
+    status,
+    executable: status === "ACTIVE" && typeof strategyHash === "string" && strategyHash.length > 0,
+    ...(manifest.activatedAt ? { activatedAt: manifest.activatedAt } : {}),
+    ...(manifest.activationGates ? { activationGates: manifest.activationGates } : {}),
+    ...(manifest.frozen === true ? { frozen: true, frozenAt: manifest.frozenAt ?? null } : {}),
     changeDescription: manifest.changeDescription,
   };
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(next, null, 2) + "\n");

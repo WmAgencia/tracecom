@@ -28,6 +28,9 @@ ok("baseline congelada intacta (hash do arquivo == parentStrategyHash)", baselin
 ok("hash cobre somente semantica de decisao (sem frontend/CSS/deploy/logs)", DECISION_FILES.length === 7 && DECISION_FILES.every((f) => f.startsWith("relay/intelligence/") || f === "relay/execution/binary300.mjs") && !DECISION_FILES.some((f) => /public|http|dist|css|deploy|log/i.test(f)));
 ok("hash e sensivel a mudanca de policy (300s e gap policy)", computeStrategyHash({ overrides: { operationalExpirySeconds: 60 } }).strategyHash !== computed.strategyHash && computeStrategyHash({ overrides: { gapRatioMax: 0.5 } }).strategyHash !== computed.strategyHash);
 ok("policy do hash reflete as constantes reais (300/5000/3h)", strategyPolicy().operationalExpirySeconds === 300 && strategyPolicy().operationalCandleIntervalMs === 5000 && strategyPolicy().maxContextAgeMs === 10_800_000);
+if (manifest.frozen === true) {
+  ok("freeze coerente: frozenAt presente e decisionFiles == hash atual do codigo", typeof manifest.frozenAt === "string" && manifest.frozenAt.length > 0 && JSON.stringify(manifest.decisionFiles) === JSON.stringify(computed.files) && manifest.status === "ACTIVE");
+}
 
 const strategy = loadOperationalStrategy();
 ok("loader do runtime le o manifesto com hash definido e executavel coerente", ["READY_FOR_DEPLOY", "ACTIVE"].includes(strategy.status) && (strategy.status === "ACTIVE" ? strategy.executable === true : strategy.executable === false) && strategy.strategyHash === manifest.strategyHash && strategy.version === "PULLBACK_4060_300_AGENTIC_V2");

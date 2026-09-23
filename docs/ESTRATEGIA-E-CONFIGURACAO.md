@@ -33,7 +33,8 @@
 
 **Identidade da V2 (congelada por código):**
 - `strategyHash`: `sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0`
-- Manifesto: `estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V2.json` (status `READY_FOR_DEPLOY`; só vira `ACTIVE` na Etapa 6)
+- Manifesto: `estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V2.json` — **status ACTIVE, executable=true, FROZEN em 2026-09-23T11:38:37Z** (freeze em `PULLBACK_4060_300_AGENTIC_V2.freeze.json`)
+- Regra de freeze: nenhum threshold/feature/especialista/consensus/readiness/3h/5s/300s muda. Mudança estratégica = `PULLBACK_4060_300_AGENTIC_V3` + novo strategyHash + novo statsEpoch. Mudanças operacionais (health/logs/infra/frontend/monitoramento) continuam permitidas.
 - Parent (baseline congelada): `PULLBACK_4060_300_BASELINE` — `sha256:26dceb743b3f0d88a6bea10bf8646deb836236e3a7de91702bd323289438b3dd` (`archive/baseline/`)
 - statsEpoch da V2: `2026-09-22T21:53:19.302Z` (N=0/W=0/L=0/D=0 até a primeira operação estratégica)
 
