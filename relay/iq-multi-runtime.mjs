@@ -166,8 +166,10 @@ export class IqMultiRuntime extends EventEmitter {
           now: this.now, pool, log: this.log,
           strategy: { version: this.v3Strategy.version, status: this.v3Strategy.status, executable: this.v3Strategy.executable, strategyHash: this.v3Strategy.strategyHash, statsEpoch: this.v3Strategy.manifest?.statsEpoch ?? null },
           agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ pool, now: this.now, maxTokens: Number(process.env.V3_AGENT_MAX_TOKENS) || 512 }) : null,
-          agentSafetyMarginMs: Number(process.env.V3_AGENT_SAFETY_MARGIN_MS) || 8_000,
-          estimatedWaveMs: Number(process.env.V3_AGENT_ESTIMATED_MS) || 12_000,
+          agentSafetyMarginMs: Number(process.env.V3_AGENT_SAFETY_MARGIN_MS) || 2_000,
+          estimatedFullCycleMs: Number(process.env.V3_AGENT_ESTIMATED_FULL_MS) || 15_000,
+          estimatedDeltaCycleMs: Number(process.env.V3_AGENT_ESTIMATED_DELTA_MS) || 14_000,
+          maxAgentCycles: Number(process.env.V3_AGENT_MAX_CYCLES) || 2,
           brokerNow: () => { const value = this.client?.serverNow?.(); return Number.isFinite(Number(value)) ? Number(value) : this.now(); },
         })
       : null;
@@ -518,6 +520,7 @@ export class IqMultiRuntime extends EventEmitter {
           for (const row of this.resolver.status().markets) { if (row.activeId !== null && row.activeId !== undefined) marketKeyByActiveId.set(Number(row.activeId), row.marketKey); }
           this.v3.onInitializationData(response.msg, { brokerNow: this.client?.serverNow?.() ?? this.now(), marketKeyByActiveId });
         } catch (error) { this.#safe(() => this.log("V3_DISCOVERY_FAIL", String(error?.message ?? error).slice(0, 120))); }
+        this.#primeV3FirstCycles();
       }
       this.#applyResolver({ reason });
       const { response: options } = await client.getOptions({ limit: 30, instrumentType: "binary,turbo", balanceId: this.account.practice.balanceId ?? this.account.real.balanceId });
@@ -653,6 +656,21 @@ export class IqMultiRuntime extends EventEmitter {
     this.metrics.historyLoadedTotal += loaded;
     this.metrics.historyMarketsTotal = markets;
     return { targets: targets.length, markets, loaded, failed, empty, skipped };
+  }
+
+  /** Dispara o PRIMEIRO ciclo (FULL) de opportunities recem-descobertas com candles fechados ja disponiveis.
+   *  NUNCA usa candle em formacao (usa #candleList = somente fechados); dedupe por closedCandleId no runtime. */
+  #primeV3FirstCycles() {
+    if (!this.v3 || !this.session.connected) return;
+    const brokerNow = Number.isFinite(Number(this.client?.serverNow?.())) ? Number(this.client.serverNow()) : this.now();
+    for (const ctx of this.markets.values()) {
+      if (!ctx.enabled || ctx.marketType !== "OTC") continue;
+      const candles = this.#candleList(ctx);
+      if (candles.length < 40) continue;
+      const active = this.v3.opportunities({ marketKey: ctx.marketKey, limit: 5 }).find((opportunity) => (opportunity.cycles?.length ?? 0) === 0 && !["NO_SETUP", "CANCELLED", "MISSED_5M_ENTRY_WINDOW", "SETTLED", "EXPIRED_UNSETTLED"].includes(opportunity.status));
+      if (!active) continue;
+      void this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles, brokerNow }).catch(() => undefined);
+    }
   }
 
   /** Retry throttled (1x/60s por mercado) para contextos OTC ativados/criados apos o boot ou que falharam. */

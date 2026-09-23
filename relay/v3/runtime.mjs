@@ -11,7 +11,7 @@
  */
 import crypto from "node:crypto";
 import { ExpirationDiscovery } from "./expiration-discovery.mjs";
-import { ExpirationOpportunityEngine } from "./opportunity-engine.mjs";
+import { ExpirationOpportunityEngine, CLOSED_STATES } from "./opportunity-engine.mjs";
 import { ExpirationTargetTiming } from "./timing.mjs";
 import { measureAll } from "./measurements.mjs";
 import { runSpecialists } from "./specialists.mjs";
@@ -32,7 +32,7 @@ export const V3_RUNTIME_VERSION = "v3-runtime-v2";
 const defaultStrategy = Object.freeze({ version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: null, statsEpoch: null });
 
 export class V3Runtime {
-  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null, agentSafetyMarginMs = 8_000, estimatedWaveMs = 12_000 } = {}) {
+  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null, agentSafetyMarginMs = 2_000, estimatedWaveMs = null, estimatedFullCycleMs = null, estimatedDeltaCycleMs = null, maxAgentCycles = 2 } = {}) {
     this.now = now;
     this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
     this.pool = pool;
@@ -41,8 +41,12 @@ export class V3Runtime {
     this.engine = engine ?? new ExpirationOpportunityEngine({ now });
     this.agents = agents;
     this.agentMode = agentMode ?? (agents?.available ? "LLM" : "DETERMINISTIC_OBSERVE");
-    this.agentSafetyMarginMs = Math.max(0, Number(agentSafetyMarginMs) || 8_000);
-    this.estimatedWaveMs = Math.max(1_000, Number(estimatedWaveMs) || 12_000);
+    this.agentSafetyMarginMs = Math.max(0, Number(agentSafetyMarginMs) || 2_000);
+    this.estimatedFullCycleMs = Math.max(1_000, Number(estimatedFullCycleMs) || Number(estimatedWaveMs) || 15_000);
+    this.estimatedDeltaCycleMs = Math.max(1_000, Number(estimatedDeltaCycleMs) || this.estimatedFullCycleMs);
+    this.estimatedWaveMs = this.estimatedFullCycleMs;
+    this.maxAgentCycles = Math.max(1, Number(maxAgentCycles) || 2);
+    this.cycleInFlight = new Set();
     this.agentArchitecture = V3_AGENT_ARCHITECTURE;
     this.brokerNow = typeof brokerNow === "function" ? brokerNow : null;
     this.scheduler = scheduler ?? new ExecutionScheduler({ now, onFire: (intent) => this.#onExecutionFire(intent), log: this.log });
@@ -54,7 +58,7 @@ export class V3Runtime {
     this.queueDepth = 0;
     this.maxQueueDepth = 0;
     this.agentCalls = [];
-    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, snapshots: 0, approvals: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, agentCycles: 0, agentUnavailable: 0, deadlineAborts: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null };
+    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, cyclesSkippedMaxCycles: 0, cyclesSkippedOverlap: 0, snapshots: 0, approvals: 0, tentativeApprovals: 0, finalizations: 0, schedulerCancelled: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, agentCycles: 0, agentUnavailable: 0, deadlineAborts: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null };
     this.lastError = null;
     this.lastCycleAt = null;
     this.latencySamples = [];
@@ -128,6 +132,8 @@ export class V3Runtime {
     if (!opportunity) { this.counters.cyclesSkippedNoOpportunity += 1; return null; }
     const window = ExpirationTargetTiming.analysis({ expirationAt: opportunity.expirationAt, brokerNow: at });
     if (window.ok !== true) { this.counters.cyclesSkippedWindow += 1; this.engine.enforceWindow(opportunity.opportunityId, at); return null; }
+    if (opportunity.cycles.length >= this.maxAgentCycles) { this.counters.cyclesSkippedMaxCycles += 1; return null; }
+    if (this.cycleInFlight.has(String(marketKey))) { this.counters.cyclesSkippedOverlap += 1; return null; }
     const feedBlock = candleFeedBlockReason({ candles, brokerNow: at });
     if (feedBlock) { this.#noteFeedBlocked(feedBlock, marketKey, at); return null; }
     const startedAt = this.now();
@@ -146,21 +152,27 @@ export class V3Runtime {
     const deterministicAsset = classifyAsset({ measurements, specialists: deterministicSpecialists, previousAssessment: previous.asset ?? null, timing: { tteMs: window.derived?.tteMs ?? null } });
     const deterministicConsensus = runConsensus({ measurements, asset: deterministicAsset, timing: { ok: window.ok === true, code: window.code, tteMs: window.derived?.tteMs ?? null }, changedSincePreviousCycle: deterministicAsset?.changedSincePreviousCycle ?? [] });
 
+    // Deadline explicito por ciclo: analysisMustFinishBy = targetSendAt - margem (default 2000ms).
+    const estimatedCycleMs = opportunity.cycles.length === 0 ? this.estimatedFullCycleMs : this.estimatedDeltaCycleMs;
+    const analysisMustFinishBy = opportunity.targetSendAt - this.agentSafetyMarginMs;
+    const cycleBudgetMs = analysisMustFinishBy - at;
     let agentResult = null;
     if (this.agents?.available) {
-      // Orcamento de analise (duracao): termina ANTES do targetSendAt, com margem para scheduler/revalidacao/persistencia.
-      const budgetMs = (opportunity.targetSendAt - this.agentSafetyMarginMs) - at;
-      if (budgetMs < this.estimatedWaveMs) {
+      const budgetMs = cycleBudgetMs;
+      if (budgetMs < estimatedCycleMs) {
         this.counters.cyclesSkippedDeadline += 1;
-        this.log("V3_AGENT_CYCLE_SKIPPED_DEADLINE", stableStringify({ opportunityId: opportunity.opportunityId, budgetMs, estimatedWaveMs: this.estimatedWaveMs }));
+        this.log("V3_AGENT_CYCLE_SKIPPED_DEADLINE", stableStringify({ opportunityId: opportunity.opportunityId, budgetMs, estimatedCycleMs, cycleNumber: opportunity.cycles.length + 1 }));
       } else {
-        agentResult = await runAgentCycle({
-          client: this.agents, measurements, specialists: deterministicSpecialists,
-          previousPackets: this.prevAgentPackets.get(marketKey) ?? {}, previousOutputs: this.prevAgentOutputs.get(marketKey) ?? {},
-          expiration: { expirationAt: opportunity.expirationAt, tteMs: window.derived?.tteMs ?? null, brokerNow: at },
-          cycleNumber, opportunityId: opportunity.opportunityId, budgetMs,
-          now: this.now,
-        });
+        this.cycleInFlight.add(String(marketKey));
+        try {
+          agentResult = await runAgentCycle({
+            client: this.agents, measurements, specialists: deterministicSpecialists,
+            previousPackets: this.prevAgentPackets.get(marketKey) ?? {}, previousOutputs: this.prevAgentOutputs.get(marketKey) ?? {},
+            expiration: { expirationAt: opportunity.expirationAt, tteMs: window.derived?.tteMs ?? null, brokerNow: at },
+            cycleNumber, opportunityId: opportunity.opportunityId, budgetMs,
+            now: this.now,
+          });
+        } finally { this.cycleInFlight.delete(String(marketKey)); }
         this.counters.agentCycles += 1;
         if (agentResult.nextState) { this.prevAgentPackets.set(marketKey, agentResult.nextState.packets ?? {}); this.prevAgentOutputs.set(marketKey, agentResult.nextState.outputs ?? {}); }
         this.agentCalls.push(...agentResult.agentCalls);
@@ -194,6 +206,10 @@ export class V3Runtime {
       changedSincePreviousCycle: asset?.changedSincePreviousCycle ?? [],
       status: asset?.state ?? "WAIT",
       agentMode: this.agentMode,
+      remainingBudgetAtCycleStart: cycleBudgetMs,
+      estimatedCycleLatency: estimatedCycleMs,
+      actualCycleLatency: agentResult?.latency?.total ?? null,
+      deadlineAbort: agentResult?.reason === "ANALYSIS_DEADLINE",
       agents: { available: approvalsAllowed, calls: agentResult?.agentCalls ?? [] },
       deterministic: { asset: deterministicAsset?.scenario ?? null, direction: deterministicAsset?.direction ?? null, state: deterministicAsset?.state ?? null, consensus: deterministicConsensus.result },
       measurements, specialists, asset, consensus,
@@ -203,22 +219,43 @@ export class V3Runtime {
     this.engine.finalizeCycle(opportunity.opportunityId, { asset, consensus, brokerNow: at });
     if (approvalsAllowed) this.prevByMarket.set(marketKey, { ...specialists, asset });
 
-    if ((consensus.result === "APPROVE_BUY" || consensus.result === "APPROVE_SELL") && !["MISSED_5M_ENTRY_WINDOW", "CANCELLED"].includes(opportunity.status)) {
-      const finalDecision = { result: consensus.result, at, tteMs: window.derived?.tteMs ?? null, scenario: asset?.scenario ?? null, direction: canonicalDirection, agentMode: this.agentMode, agreement: consensus.agreement };
-      const snapshot = buildV3DecisionSnapshot({ strategy: this.strategy, opportunity, cycles: opportunity.cycles, asset, consensus, specialists, measurements, finalDecision, timing: window.derived });
-      this.counters.snapshots += 1;
-      this.counters.approvals += 1;
-      const scheduled = this.scheduler.schedule({ opportunityId: opportunity.opportunityId, expirationAt: opportunity.expirationAt, targetSendAt: opportunity.targetSendAt, hardCutoffAt: opportunity.hardStrategicCutoffAt, brokerNow: at, context: { result: consensus.result, snapshotHash: snapshot.snapshotHash, direction: canonicalDirection } });
-      if (scheduled.scheduled) this.counters.scheduled += 1;
-      opportunity.finalDecision = { ...opportunity.finalDecision, snapshotHash: snapshot.snapshotHash, executionBlocked: this.executionEnabled ? "V3_EXECUTION_NOT_WIRED" : "V3_NOT_ACTIVE" };
-      opportunity.executionRef = { ...(opportunity.executionRef ?? {}), scheduledSendAt: opportunity.targetSendAt, scheduledAt: at, submit: false, blocked: opportunity.finalDecision.executionBlocked };
-      this.counters.executionBlocked += 1;
-      void this.#persistCycle(opportunity.opportunityId, cycle);
-      void this.#persistOpportunity(opportunity);
-    } else {
-      void this.#persistCycle(opportunity.opportunityId, cycle);
-      if (["NO_SETUP", "CANCELLED", "MISSED_5M_ENTRY_WINDOW"].includes(opportunity.status)) void this.#persistOpportunity(opportunity);
+    // Tentativa registrada pelo engine (revisavel). Intent TENTATIVO reversivel: agenda/replace, nunca imutavel.
+    const tentative = opportunity.tentativeDecision;
+    const tentativeApproved = tentative && (tentative.result === "APPROVE_BUY" || tentative.result === "APPROVE_SELL");
+    if (tentativeApproved && opportunity.finalizedAt === null) {
+      const scheduled = this.scheduler.schedule({
+        opportunityId: opportunity.opportunityId, expirationAt: opportunity.expirationAt, targetSendAt: opportunity.targetSendAt, hardCutoffAt: opportunity.hardStrategicCutoffAt, brokerNow: at,
+        context: { result: tentative.result, direction: tentative.direction, cycleNumber: tentative.cycleNumber, tentative: true, snapshotHash: null },
+      });
+      if (scheduled?.scheduled) { this.counters.scheduled += 1; this.counters.tentativeApprovals += 1; }
     }
+
+    // FREEZE pre-send: se nao existe mais ciclo viavel, a ULTIMA tentativa valida vira final (NO SUNK COST).
+    if (opportunity.finalizedAt === null && !CLOSED_STATES.includes(opportunity.status) && !this.#canRunMoreCycles(opportunity, at)) {
+      const finalized = this.engine.finalizeOpportunity(opportunity.opportunityId, { brokerNow: at, reason: opportunity.cycles.length >= this.maxAgentCycles ? "MAX_CYCLES" : "NO_BUDGET" });
+      this.counters.finalizations += 1;
+      const final = finalized?.finalDecision ?? null;
+      if (final && (final.result === "APPROVE_BUY" || final.result === "APPROVE_SELL")) {
+        const finalDecision = { result: final.result, at, tteMs: window.derived?.tteMs ?? null, scenario: final.scenario, direction: final.direction, agentMode: this.agentMode, agreement: final.agreement, cycleNumber: final.cycleNumber };
+        const snapshot = buildV3DecisionSnapshot({ strategy: this.strategy, opportunity, cycles: opportunity.cycles, asset, consensus, specialists, measurements, finalDecision, timing: window.derived });
+        this.counters.snapshots += 1;
+        this.counters.approvals += 1;
+        const scheduled = this.scheduler.schedule({
+          opportunityId: opportunity.opportunityId, expirationAt: opportunity.expirationAt, targetSendAt: opportunity.targetSendAt, hardCutoffAt: opportunity.hardStrategicCutoffAt, brokerNow: at,
+          context: { result: finalDecision.result, direction: finalDecision.direction, cycleNumber: finalDecision.cycleNumber, final: true, snapshotHash: snapshot.snapshotHash },
+        });
+        if (scheduled?.scheduled) this.counters.scheduled += 1;
+        opportunity.finalDecision = { ...opportunity.finalDecision, snapshotHash: snapshot.snapshotHash, executionBlocked: this.executionEnabled ? "V3_EXECUTION_NOT_WIRED" : "V3_NOT_ACTIVE" };
+        opportunity.executionRef = { ...(opportunity.executionRef ?? {}), scheduledSendAt: opportunity.targetSendAt, scheduledAt: at, submit: false, blocked: opportunity.finalDecision.executionBlocked };
+        this.counters.executionBlocked += 1;
+      } else {
+        // Decisao final CANCEL: qualquer intent anterior e cancelado de forma idempotente.
+        if (this.scheduler.cancel(opportunity.opportunityId, "FINAL_CONSENSUS_CANCEL")) this.counters.schedulerCancelled += 1;
+      }
+    }
+
+    void this.#persistCycle(opportunity.opportunityId, cycle);
+    if (CLOSED_STATES.includes(opportunity.status) || opportunity.finalizedAt !== null) void this.#persistOpportunity(opportunity);
     const latencyMs = Math.max(0, this.now() - startedAt);
     this.latencySamples.push(latencyMs);
     if (this.latencySamples.length > 500) this.latencySamples.shift();
@@ -311,8 +348,16 @@ export class V3Runtime {
     return { count: values.length, p50: at(0.5), p95: at(0.95), p99: at(0.99), max: values.length ? values[values.length - 1] : null };
   }
 
-  #noteFeedBlocked(reason, marketKey = null, at = null) {
-    if (!reason) return;
+  /** Ha tempo para mais um ciclo LLM? Estimativa conservadora por tipo + deadline pre-send. */
+  #canRunMoreCycles(opportunity, at = this.now()) {
+    if (!opportunity || opportunity.finalizedAt !== null) return false;
+    if (CLOSED_STATES.includes(opportunity.status)) return false;
+    if (opportunity.cycles.length >= this.maxAgentCycles) return false;
+    const estimate = opportunity.cycles.length === 0 ? this.estimatedFullCycleMs : this.estimatedDeltaCycleMs;
+    return (opportunity.targetSendAt - this.agentSafetyMarginMs - at) >= estimate;
+  }
+
+  #noteFeedBlocked(reason, marketKey = null, at = null) {    if (!reason) return;
     this.counters.candleFeedBlocked += 1;
     this.counters.feedBlockedReasons[reason] = (this.counters.feedBlockedReasons[reason] ?? 0) + 1;
     this.counters.lastFeedBlockedReason = reason;
@@ -333,6 +378,7 @@ export class V3Runtime {
       agentArchitecture: this.agentArchitecture,
       agentSafetyMarginMs: this.agentSafetyMarginMs,
       estimatedWaveMs: this.estimatedWaveMs,
+      lifecycle: { maxAgentCycles: this.maxAgentCycles, analysisSafetyMarginMs: this.agentSafetyMarginMs, estimatedFullCycleMs: this.estimatedFullCycleMs, estimatedDeltaCycleMs: this.estimatedDeltaCycleMs },
       agents: { available: this.agents?.available === true, calls: this.agentCalls.length, latency: agentLatencyStats(this.agentCalls) },
       scheduler: this.scheduler.status(),
       queue: { depth: this.queueDepth, maxDepth: this.maxQueueDepth, markets: this.queues.size },

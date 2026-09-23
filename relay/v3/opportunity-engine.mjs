@@ -58,7 +58,10 @@ export class ExpirationOpportunityEngine {
       createdAt: derived.brokerNow,
       status: "DISCOVERED",
       cycles: [],
+      tentativeDecision: null,
+      decisionHistory: [],
       finalDecision: null,
+      finalizedAt: null,
       executionRef: null,
       closedAt: null,
       closedReason: null,
@@ -81,15 +84,14 @@ export class ExpirationOpportunityEngine {
   recordCycle(opportunityId, cycle) {
     const opportunity = this.get(opportunityId);
     if (!opportunity) return null;
-    if (CLOSED_STATES.includes(opportunity.status)) return opportunity;
+    if (CLOSED_STATES.includes(opportunity.status) || opportunity.finalizedAt !== null) return opportunity;
     const number = opportunity.cycles.length + 1;
     const entry = { cycleNumber: number, ...cycle };
     opportunity.cycles.push(entry);
     if (opportunity.cycles.length > this.maxCycles) opportunity.cycles.splice(0, opportunity.cycles.length - this.maxCycles);
     this.counters.cycles += 1;
-    // Nunca rebaixar decisao ja tomada (FINAL_REVIEW/APPROVED/EXECUTING) com ciclo posterior.
-    const PROTECTED = ["FINAL_REVIEW", "APPROVED_BUY", "APPROVED_SELL", "EXECUTING", "ACKNOWLEDGED"];
-    if (!PROTECTED.includes(opportunity.status)) opportunity.status = entry.status ?? opportunity.status;
+    // Revisao pre-freeze: NO SUNK COST — um ciclo posterior pode rebaixar/trocar a decisao tentativa.
+    opportunity.status = entry.status ?? opportunity.status;
     if (opportunity.status === "NO_SETUP") this.counters.noSetup += 1;
     else if (opportunity.status === "WAIT") this.counters.wait += 1;
     else if (CANDIDATE_STATES.includes(opportunity.status)) this.counters.candidates += 1;
@@ -113,29 +115,62 @@ export class ExpirationOpportunityEngine {
     return opportunity;
   }
 
-  /** Decide o estado final do ciclo; nunca persegue, nunca troca expiration. */
+  /** Decide o estado TENTATIVO do ciclo; revisavel ate o freeze (pre-send). Nunca persegue, nunca troca expiration. */
   finalizeCycle(opportunityId, { asset, consensus, brokerNow = null, timingOk = null } = {}) {
     const opportunity = this.get(opportunityId);
     if (!opportunity) return null;
+    if (opportunity.finalizedAt !== null || CLOSED_STATES.includes(opportunity.status)) return opportunity;
     const at = Number.isFinite(Number(brokerNow)) ? Number(brokerNow) : this.now();
     const outcome = consensus?.result ?? "CANCEL";
+    const direction = outcome === "APPROVE_BUY" ? "UP" : outcome === "APPROVE_SELL" ? "DOWN" : "NONE";
+    const tentative = {
+      at, cycleNumber: opportunity.cycles.length, result: outcome, direction,
+      consensusDirection: consensus?.direction ?? null,
+      scenario: asset?.scenario ?? null, assetState: asset?.state ?? null,
+      agreement: consensus?.agreement ?? null,
+    };
+    opportunity.tentativeDecision = tentative;
+    opportunity.decisionHistory.push(tentative);
+    if (opportunity.decisionHistory.length > 12) opportunity.decisionHistory.splice(0, opportunity.decisionHistory.length - 12);
     if (outcome === "APPROVE_BUY" || outcome === "APPROVE_SELL") {
-      // Aprovacao acontece na ANALYSIS WINDOW; a EXECUTION WINDOW (~302s) e do scheduler.
+      // Aprovacao TENTATIVA: acontece na ANALYSIS WINDOW; a EXECUTION WINDOW (~302s) e do scheduler.
       const window = ExpirationTargetTiming.analysis({ expirationAt: opportunity.expirationAt, brokerNow: at });
       if (window.ok !== true) { this.enforceWindow(opportunityId, at); return opportunity; }
       const beforeTarget = at < opportunity.targetSendAt;
       opportunity.status = beforeTarget ? "FINAL_REVIEW" : outcome === "APPROVE_BUY" ? "APPROVED_BUY" : "APPROVED_SELL";
-      opportunity.finalDecision = { at, result: outcome, direction: outcome === "APPROVE_BUY" ? "UP" : outcome === "APPROVE_SELL" ? "DOWN" : "NONE", scenario: asset?.scenario ?? null, agreement: consensus?.agreement ?? null, timing: window.derived };
       this.counters.approved += 1;
       return opportunity;
     }
     if (asset?.state === "NO_SETUP" && opportunity.cycles.length >= 1) { this.#close(opportunity, "NO_SETUP", "FIRST_FULL_CYCLE_NO_SETUP"); return opportunity; }
-    // NUNCA rebaixar uma decisao ja tomada (aprovacao/review) por um ciclo sem agentes (fallback determinístico).
-    if (["FINAL_REVIEW", "APPROVED_BUY", "APPROVED_SELL", "EXECUTING", "ACKNOWLEDGED"].includes(opportunity.status)) return opportunity;
+    // Cancelamento TENTATIVO: NAO fecha a opportunity (pode haver Cycle 2); nunca rebaixa para estado executavel antigo.
     if (asset?.state === "WAIT") { opportunity.status = "WAIT"; return opportunity; }
     if (asset?.state === "BUY_CANDIDATE" || asset?.state === "SELL_CANDIDATE") { opportunity.status = asset.state; return opportunity; }
-    this.#close(opportunity, "CANCELLED", "CONSENSUS_CANCEL");
-    this.counters.cancelled += 1;
+    opportunity.status = "ANALYZING";
+    return opportunity;
+  }
+
+  /** FREEZE pre-send: a ultima decisao TENTATIVA valida vira FINAL. Idempotente. */
+  finalizeOpportunity(opportunityId, { brokerNow = null, reason = "NO_MORE_CYCLES" } = {}) {
+    const opportunity = this.get(opportunityId);
+    if (!opportunity || opportunity.finalizedAt !== null) return opportunity;
+    if (CLOSED_STATES.includes(opportunity.status)) return opportunity;
+    const at = Number.isFinite(Number(brokerNow)) ? Number(brokerNow) : this.now();
+    const latest = opportunity.tentativeDecision;
+    const result = latest?.result ?? "CANCEL";
+    const direction = latest?.direction ?? "NONE";
+    const window = ExpirationTargetTiming.analysis({ expirationAt: opportunity.expirationAt, brokerNow: at });
+    opportunity.finalizedAt = at;
+    opportunity.finalDecision = {
+      at, result, direction,
+      scenario: latest?.scenario ?? null, agreement: latest?.agreement ?? null,
+      cycleNumber: latest?.cycleNumber ?? null, finalReason: String(reason).slice(0, 80),
+      timing: window.derived ?? null,
+    };
+    if (result === "APPROVE_BUY" || result === "APPROVE_SELL") {
+      opportunity.status = at < opportunity.targetSendAt ? "FINAL_REVIEW" : result === "APPROVE_BUY" ? "APPROVED_BUY" : "APPROVED_SELL";
+    } else {
+      this.#close(opportunity, "CANCELLED", `FINAL_CONSENSUS_${result}_${reason}`.slice(0, 120));
+    }
     return opportunity;
   }
 
@@ -171,6 +206,7 @@ export class ExpirationOpportunityEngine {
     opportunity.status = status;
     opportunity.closedAt = this.now();
     opportunity.closedReason = reason;
+    opportunity.finalizedAt = opportunity.finalizedAt ?? this.now();
     this.counters.closed += 1;
     this.counters.cancelled += status === "CANCELLED" ? 1 : 0;
   }

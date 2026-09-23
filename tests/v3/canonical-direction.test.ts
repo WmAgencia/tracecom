@@ -35,7 +35,8 @@ const runUntilApproval = async (script: Record<string, any>) => {
     brokerClock = exp - tte;
     const candles = candlesFromCloses(closes, { startAt: brokerClock - closes.length * 5_000 });
     const current = await runtime.onClosedCandle({ marketKey: "EURUSD:OTC", candles, brokerNow: brokerClock });
-    if (current?.consensus === "APPROVE_BUY" || current?.consensus === "APPROVE_SELL") { cycle = current; break; }
+    if (current?.consensus === "APPROVE_BUY" || current?.consensus === "APPROVE_SELL") { cycle = current; }
+    if (runtime.opportunities()[0]?.finalDecision) break;
   }
   return { cycle, opportunity: runtime.opportunities()[0], scheduled, runtime };
 };
