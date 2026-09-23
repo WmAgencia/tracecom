@@ -535,6 +535,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.availabilityTimer) return;
     const tick = async () => {
       if (this.stopRequested) return;
+      this.#maybeRehydrateCandles();
       const enabled = [...this.markets.values()].filter((ctx) => ctx.enabled);
       const needsFast = enabled.some((ctx) => ctx.availability !== "OPEN");
       const interval = needsFast ? 20_000 : 60_000;
@@ -616,9 +617,9 @@ export class IqMultiRuntime extends EventEmitter {
 
   /** BACKFILL REAL no boot/reconnect: historico do broker (get-candles v2) para os mercados habilitados.
    *  NUNCA fabrica candle; falha em um mercado nao impede os outros. Dedupe por bucketStart; so fechados. */
-  async #rehydrateCandleHistory(client, { count = HISTORY_BACKFILL_CANDLES, timeoutMs = 12_000, concurrency = 3 } = {}) {
+  async #rehydrateCandleHistory(client, { count = HISTORY_BACKFILL_CANDLES, timeoutMs = 12_000, concurrency = 3, only = null } = {}) {
     if (!client) return { targets: 0, markets: 0, loaded: 0, failed: 0, empty: 0, skipped: 0 };
-    const targets = [...this.markets.values()].filter((ctx) => ctx.enabled && ctx.marketType === "OTC" && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < count);
+    const targets = (Array.isArray(only) ? only : [...this.markets.values()]).filter((ctx) => ctx.enabled && ctx.marketType === "OTC" && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < count);
     if (!targets.length) return { targets: 0, markets: 0, loaded: 0, failed: 0, empty: 0, skipped: 0 };
     const serverNow = Number.isFinite(Number(client.serverNow?.())) ? Number(client.serverNow()) : this.now();
     const queue = [...targets];
@@ -626,6 +627,7 @@ export class IqMultiRuntime extends EventEmitter {
     const worker = async () => {
       while (queue.length) {
         const ctx = queue.shift();
+        ctx.historyTriedAt = this.now();
         try {
           const { response } = await client.getCandlesHistory({ activeId: ctx.activeId, size: CANDLE_SIZE_SECONDS, count, to: serverNow, timeoutMs });
           const rows = extractHistoryCandles(response?.msg ?? response, { sizeSeconds: CANDLE_SIZE_SECONDS });
@@ -650,6 +652,17 @@ export class IqMultiRuntime extends EventEmitter {
     this.metrics.historyLoadedTotal += loaded;
     this.metrics.historyMarketsTotal = markets;
     return { targets: targets.length, markets, loaded, failed, empty, skipped };
+  }
+
+  /** Retry throttled (1x/5min por mercado) para contextos OTC ativados/criados apos o boot. */
+  #maybeRehydrateCandles() {
+    if (!this.session.connected || !this.client) return;
+    const now = this.now();
+    const stale = [...this.markets.values()].filter((ctx) => ctx.enabled && ctx.marketType === "OTC" && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < 40 && now - (ctx.historyTriedAt ?? 0) > 300_000);
+    if (!stale.length) return;
+    void this.#rehydrateCandleHistory(this.client, { only: stale })
+      .then((history) => { if (history.loaded > 0) this.#safe(() => this.log("IQ_MULTI_CANDLE_HISTORY_RETRY", JSON.stringify(history))); })
+      .catch(() => undefined);
   }
 
   setMarket(key, patch = {}, { persist = true, actor = "system", requestId = null } = {}) {
