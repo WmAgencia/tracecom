@@ -121,5 +121,23 @@ function mkRuntime() {
   ok("REAL desarmado: decisao existe mas zero ordem REAL", calls.length === 0 && rt.intelligenceDispatch.status().counters.denied > 0);
 }
 
+/* 5) regressao: ingestao continua com modulos shadow desligados (timingShadow/scenarioShadow nulos) */
+{
+  const { rt, calls } = mkRuntime();
+  rt.requestOrder = async (input) => { calls.push(input); return { state: "ACKNOWLEDGED", brokerOrderId: "B9", executionId: "E9" }; };
+  let thrown = null;
+  for (let i = 0; i < 6; i += 1) {
+    const t = NOW + i * 5000;
+    rt.now = () => t;
+    rt.client = { serverNow: () => t };
+    const base = 1.35 + i * 0.0001;
+    try {
+      rt.ingestEvent("candle-generated", { msg: { active_id: 1, size: 5, at: Math.round(t / 1000), open: base, high: base + 0.0002, low: base - 0.0002, close: base + 0.00005 }, receivedAt: t, connectionId: "c1" });
+    } catch (error) { thrown = error; break; }
+  }
+  const ctx = rt.markets.get("EURUSD:OTC");
+  ok("regressao: 6 candles processados sem excecao com shadow modules nulos", thrown === null && ctx.candles.size >= 6 && ctx.featureState?.fresh === true);
+}
+
 console.log(fail === 0 ? `E2E_PRACTICE_TESTS ALL_PASS (${pass}/${pass})` : `E2E_PRACTICE_TESTS FAIL (${fail})`);
 process.exit(fail === 0 ? 0 : 1);

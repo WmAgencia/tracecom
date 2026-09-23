@@ -6,11 +6,14 @@ const BASE = process.argv[2] ?? "https://tracecom.consecom.com.br";
 const CHECKS = [
   "/health",
   "/api/iq/office",
-  "/api/iq/research/agents-v4",
-  "/api/iq/research/rsi-agents-v4",
-  "/api/iq/research/rsi-agents-v2-live",
+  "/api/iq/status",
+  "/api/iq/intelligence",
+  "/api/iq/intelligence/assets",
+  "/api/iq/strategy/stats",
+  "/api/iq/execution-routing",
   "/api/iq/mesas",
-  "/api/iq/instruments/blitz",
+  "/api/iq/account/context",
+  "/api/iq/real/preflight",
   "/api/iq/research/lab/overview",
   "/api/iq/research/lab/factors",
   "/api/iq/research/lab/alphas",
@@ -25,8 +28,6 @@ const CHECKS = [
   "/api/iq/research/lab/comparison",
   "/api/iq/research/scenario-shadow",
   "/api/iq/quality",
-  "/api/iq/account/context",
-  "/api/iq/real/preflight",
   "/research/index.html",
 ];
 

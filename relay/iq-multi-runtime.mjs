@@ -1175,7 +1175,7 @@ export class IqMultiRuntime extends EventEmitter {
   /** Reavalia TODAS as janelas LATE abertas do mercado (expiracao corrente e anterior). Nunca envia ordem. */
   #observeTimingShadow(ctx, { action, trader, critic, consensus, fresh, now, list }) {
     if (this.config.jitEnabled !== true) return null;
-    const actives = this.timingShadow?.activeObservationsForMarket(ctx.marketKey);
+    const actives = this.timingShadow?.activeObservationsForMarket(ctx.marketKey) ?? [];
     if (!actives.length) return null;
     const serverNow = this.client?.serverNow?.() ?? now;
     const finalDecision = { action, regime: ctx.decisionState?.regime ?? null, setup: trader?.setup ?? null, trigger: trader?.trigger ?? null, criticVerdict: critic?.traderAssessment ?? null, consensusStatus: consensus?.status ?? null };
@@ -1271,7 +1271,7 @@ export class IqMultiRuntime extends EventEmitter {
   #observeScenarioTimingIntersectionsForMarket(marketKey) {
     if (this.config.scenarioTimingIntersectionEnabled !== true) return 0;
     let count = 0;
-    for (const observation of this.timingShadow?.list()) {
+    for (const observation of this.timingShadow?.list() ?? []) {
       if (observation?.marketKey !== marketKey || !observation.candidateId) continue;
       if (observation.outcome === "OBSERVING") continue;
       if (this.#observeScenarioTimingIntersection(observation.candidateId)) count += 1;
@@ -2672,7 +2672,7 @@ export class IqMultiRuntime extends EventEmitter {
     const now = this.now();
     const serverNow = this.client?.serverNow?.() ?? now;
     const latency = this.#timingLatencySamples();
-    const markets = [...this.markets.values()].flatMap((ctx) => this.timingShadow?.activeObservationsForMarket(ctx.marketKey).map((observation) => ({
+    const markets = [...this.markets.values()].flatMap((ctx) => (this.timingShadow?.activeObservationsForMarket(ctx.marketKey) ?? []).map((observation) => ({
       marketKey: ctx.marketKey, marketType: ctx.marketType, candidateId: observation.candidateId, direction: observation.direction,
       targetEntryAt: observation.targetEntryAt, targetExpiryAt: observation.targetExpiryAt,
       cutoffExclusiveAt: observation.policy?.window?.cutoffExclusiveAt ?? null, lateDeadlineAt: observation.late?.deadlineAt ?? null,
@@ -2689,13 +2689,13 @@ export class IqMultiRuntime extends EventEmitter {
       scope: LATE_WINDOW_POLICY.scope, cutoffRule: LATE_WINDOW_POLICY.cutoffRule,
       margin: adaptiveLateMarginMs(latency),
       latencySamples: { ack: latency.ackSamples.length, persist: latency.persistSamples.length, decision: latency.decisionSamples.length },
-      markets, summary: this.timingShadow?.summary(), persist: this.timingShadow?.statusSnapshot().persist,
+      markets, summary: this.timingShadow?.summary() ?? null, persist: this.timingShadow?.statusSnapshot()?.persist ?? null,
     };
   }
 
   /** SCENARIO ENGINE V3 (SHADOW): status/observacoes + intersecao observacional com o timing (nunca executa). */
   scenarioShadowStatus() {
-    const status = buildScenarioShadowStatus({ observations: this.scenarioShadow?.list(), enabled: this.config.scenarioShadowEnabled === true });
+    const status = buildScenarioShadowStatus({ observations: this.scenarioShadow?.list() ?? [], enabled: this.config.scenarioShadowEnabled === true });
     return {
       ...status,
       enabled: this.config.scenarioShadowEnabled === true,
