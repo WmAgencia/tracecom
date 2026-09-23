@@ -1,10 +1,10 @@
 import fs from "node:fs";
-import { RuntimeIntelligence, FEED_STALE } from "file:///D:/tracecom/repo/relay/intelligence/runtime-adapter.mjs";
-import { deepFreeze } from "file:///D:/tracecom/repo/relay/intelligence/features.mjs";
-import { SinglePath } from "file:///D:/tracecom/repo/relay/execution/single-path.mjs";
-import { IntelligenceDispatch } from "file:///D:/tracecom/repo/relay/execution/intelligence-dispatch.mjs";
-import { loadOperationalStrategy } from "file:///D:/tracecom/repo/relay/execution/operational-strategy.mjs";
-import { nextOperationalExpiryAt } from "file:///D:/tracecom/repo/relay/execution/binary300.mjs";
+import { RuntimeIntelligence, FEED_STALE } from "../relay/intelligence/runtime-adapter.mjs";
+import { deepFreeze } from "../relay/intelligence/features.mjs";
+import { SinglePath } from "../relay/execution/single-path.mjs";
+import { IntelligenceDispatch } from "../relay/execution/intelligence-dispatch.mjs";
+import { loadOperationalStrategy } from "../relay/execution/operational-strategy.mjs";
+import { nextOperationalExpiryAt } from "../relay/execution/binary300.mjs";
 
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
@@ -287,11 +287,11 @@ function mkOrderRecorder({ delayFor = () => 0 } = {}) {
 
 /* 13) prova estatica: dispatch nao seleciona conta, nao recalcula especialistas, nao tem confidence */
 {
-  const src = fs.readFileSync("D:/tracecom/repo/relay/execution/intelligence-dispatch.mjs", "utf8");
-  const runtimeSrc = fs.readFileSync("D:/tracecom/repo/relay/iq-multi-runtime.mjs", "utf8");
+  const src = fs.readFileSync(new URL("../relay/execution/intelligence-dispatch.mjs", import.meta.url), "utf8");
+  const runtimeSrc = fs.readFileSync(new URL("../relay/iq-multi-runtime.mjs", import.meta.url), "utf8");
   ok("dispatch nao seleciona conta (AccountRouter decide)", !/selectedAccount|practiceStrategy|realStrategy|practiceConsensus|realConsensus/.test(src));
   ok("dispatch nao recalcula especialistas/consensus (consome decisao pronta)", !/runSpecialists|consensus\(|computeFeatures/.test(src));
-  ok("sem confidence percentual em nenhuma camada nova", !/confidence|certeza/i.test(src) && !/confidence|certeza/i.test(fs.readFileSync("D:/tracecom/repo/relay/execution/operational-strategy.mjs", "utf8")) && !/confidence|certeza/i.test(fs.readFileSync("D:/tracecom/repo/relay/intelligence/decision-snapshot.mjs", "utf8")));
+  ok("sem confidence percentual em nenhuma camada nova", !/confidence|certeza/i.test(src) && !/confidence|certeza/i.test(fs.readFileSync(new URL("../relay/execution/operational-strategy.mjs", import.meta.url), "utf8")) && !/confidence|certeza/i.test(fs.readFileSync(new URL("../relay/intelligence/decision-snapshot.mjs", import.meta.url), "utf8")));
   ok("agentExpirySeconds removido do runtime (autoridade unica = OPERATIONAL_EXPIRY_SECONDS)", !/agentExpirySeconds/.test(runtimeSrc) && /OPERATIONAL_EXPIRY_SECONDS/.test(runtimeSrc));
 }
 

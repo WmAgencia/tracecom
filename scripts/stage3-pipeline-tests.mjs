@@ -1,9 +1,9 @@
-import { AssetContext } from "file:///D:/tracecom/repo/relay/intelligence/asset-context.mjs";
-import { computeFeatures, deepFreeze, stableStringify } from "file:///D:/tracecom/repo/relay/intelligence/features.mjs";
-import { runSpecialists } from "file:///D:/tracecom/repo/relay/intelligence/specialists.mjs";
-import { consensus } from "file:///D:/tracecom/repo/relay/intelligence/consensus.mjs";
-import { buildDecisionSnapshot, decisionFromSnapshot } from "file:///D:/tracecom/repo/relay/intelligence/decision-snapshot.mjs";
-import { SinglePath } from "file:///D:/tracecom/repo/relay/execution/single-path.mjs";
+import { AssetContext } from "../relay/intelligence/asset-context.mjs";
+import { computeFeatures, deepFreeze, stableStringify } from "../relay/intelligence/features.mjs";
+import { runSpecialists } from "../relay/intelligence/specialists.mjs";
+import { consensus } from "../relay/intelligence/consensus.mjs";
+import { buildDecisionSnapshot, decisionFromSnapshot } from "../relay/intelligence/decision-snapshot.mjs";
+import { SinglePath } from "../relay/execution/single-path.mjs";
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
 

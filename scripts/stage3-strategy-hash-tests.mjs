@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
 import { computeStrategyHash, strategyPolicy, DECISION_FILES, MANIFEST_PATH, BASELINE_DIR } from "./stage3-strategy-hash.mjs";
-import { loadOperationalStrategy } from "file:///D:/tracecom/repo/relay/execution/operational-strategy.mjs";
+import { loadOperationalStrategy } from "../relay/execution/operational-strategy.mjs";
 
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };

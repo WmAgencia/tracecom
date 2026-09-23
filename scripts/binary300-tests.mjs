@@ -1,4 +1,4 @@
-import { Binary300Timing, OPERATIONAL_EXPIRY_SECONDS, OPERATIONAL_BUCKET_MS, assertOperationalExpiry, isOperationalExpiry } from "file:///D:/tracecom/repo/relay/execution/binary300.mjs";
+import { Binary300Timing, OPERATIONAL_EXPIRY_SECONDS, OPERATIONAL_BUCKET_MS, assertOperationalExpiry, isOperationalExpiry } from "../relay/execution/binary300.mjs";
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
 const throwsCode = (fn, code) => { try { fn(); return false; } catch (error) { return error?.code === code; } };

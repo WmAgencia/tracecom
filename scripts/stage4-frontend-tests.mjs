@@ -1,13 +1,13 @@
 import fs from "node:fs";
-import { productState, PRODUCT_OFF, PRODUCT_SEM_FEED, PRODUCT_SEM_COMPRA, PRODUCT_ASSISTINDO, PRODUCT_WAIT, PRODUCT_BUY, PRODUCT_SELL } from "file:///D:/tracecom/repo/relay/intelligence/asset-pipeline.mjs";
-import { IqMultiRuntime } from "file:///D:/tracecom/repo/relay/iq-multi-runtime.mjs";
-import { operationalAllowlist, OPERATIONAL_EXECUTION_POLICY_NAME } from "file:///D:/tracecom/repo/relay/execution/operational-policy.mjs";
+import { productState, PRODUCT_OFF, PRODUCT_SEM_FEED, PRODUCT_SEM_COMPRA, PRODUCT_ASSISTINDO, PRODUCT_WAIT, PRODUCT_BUY, PRODUCT_SELL } from "../relay/intelligence/asset-pipeline.mjs";
+import { IqMultiRuntime } from "../relay/iq-multi-runtime.mjs";
+import { operationalAllowlist, OPERATIONAL_EXECUTION_POLICY_NAME } from "../relay/execution/operational-policy.mjs";
 
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
 
-const grid = fs.readFileSync("D:/tracecom/repo/src/http/public/grid.html", "utf8");
-const server = fs.readFileSync("D:/tracecom/repo/relay/server.mjs", "utf8");
+const grid = fs.readFileSync(new URL("../src/http/public/grid.html", import.meta.url), "utf8");
+const server = fs.readFileSync(new URL("../relay/server.mjs", import.meta.url), "utf8");
 
 /* 1) navegacao final */
 {

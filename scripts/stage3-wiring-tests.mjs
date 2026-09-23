@@ -1,7 +1,7 @@
 import fs from "node:fs";
-import { AssetPipeline, PipelineRegistry, productState, HYDRATION_READY, HYDRATION_PARTIAL, HYDRATION_FAILED, HYDRATION_PENDING } from "file:///D:/tracecom/repo/relay/intelligence/asset-pipeline.mjs";
-import { MAX_CONTEXT_AGE_MS, OPERATIONAL_CANDLE_INTERVAL_MS } from "file:///D:/tracecom/repo/relay/intelligence/asset-context.mjs";
-import { deepFreeze, stableStringify } from "file:///D:/tracecom/repo/relay/intelligence/features.mjs";
+import { AssetPipeline, PipelineRegistry, productState, HYDRATION_READY, HYDRATION_PARTIAL, HYDRATION_FAILED, HYDRATION_PENDING } from "../relay/intelligence/asset-pipeline.mjs";
+import { MAX_CONTEXT_AGE_MS, OPERATIONAL_CANDLE_INTERVAL_MS } from "../relay/intelligence/asset-context.mjs";
+import { deepFreeze, stableStringify } from "../relay/intelligence/features.mjs";
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
 
@@ -49,7 +49,7 @@ const futurePipe = mkPipeline("FUTURE");
 const hf = futurePipe.hydrate(mk5s(2161, NOW + 60_000), { expectedIntervalMs: 5000 });
 ok("candles futuros -> FAILED/FUTURE_CANDLES", hf === HYDRATION_FAILED && futurePipe.hydrationDetail.reason === "FUTURE_CANDLES" && futurePipe.ready === false);
 
-const raw = JSON.parse(fs.readFileSync("D:/tracecom/repo/data/real/usdcad-1m-7d.json", "utf8"));
+const raw = JSON.parse(fs.readFileSync(new URL("../data/real/usdcad-1m-7d.json", import.meta.url), "utf8"));
 const rows = (Array.isArray(raw) ? raw : (raw.candles ?? raw.data ?? raw.rows ?? [])).map((c) => {
   if (Array.isArray(c)) return { at: Number(c[0]), open: Number(c[1]), high: Number(c[2]), low: Number(c[3]), close: Number(c[4]) };
   const v = (k) => Number(c[k]);
@@ -107,7 +107,7 @@ const report = await registry.hydrateAll(["A-OTC", "B-OTC", "C-OTC"]);
 ok("registry: READY/PARTIAL/FAILED por ativo com cobertura/intervalo no report", report.ready === 1 && report.partial === 1 && report.failed === 1 && report.assets[0].coverageMs + report.assets[0].intervalMs >= MAX_CONTEXT_AGE_MS && report.assets[0].intervalMs === OPERATIONAL_CANDLE_INTERVAL_MS);
 ok("registry actionable apenas READY", registry.actionable().every((a) => registry.get(a.marketKey).ready === true));
 
-const intelFiles = ["asset-context", "features", "specialists", "consensus", "decision-snapshot", "asset-pipeline"].map((n) => ({ n, s: fs.readFileSync(`D:/tracecom/repo/relay/intelligence/${n}.mjs`, "utf8") }));
+const intelFiles = ["asset-context", "features", "specialists", "consensus", "decision-snapshot", "asset-pipeline"].map((n) => ({ n, s: fs.readFileSync(new URL(`../relay/intelligence/${n}.mjs`, import.meta.url), "utf8") }));
 const forbidden = /requestOrder|placeTrade|broker|realArmed|ACCOUNT_PRACTICE|ACCOUNT_REAL|\bPRACTICE\b|\bREAL\b|iqoption|wsRuntime|submitOrder|accountRouter|executionGate/;
 const violations = intelFiles.flatMap(({ n, s }) => forbidden.test(s) ? [n] : []);
 ok("inteligencia sem acesso a broker/conta (prova estatica)", violations.length === 0);

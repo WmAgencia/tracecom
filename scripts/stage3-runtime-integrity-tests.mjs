@@ -1,11 +1,11 @@
 import fs from "node:fs";
-import { RuntimeIntelligence } from "file:///D:/tracecom/repo/relay/intelligence/runtime-adapter.mjs";
-import { AssetPipeline, HYDRATION_READY, HYDRATION_PARTIAL } from "file:///D:/tracecom/repo/relay/intelligence/asset-pipeline.mjs";
-import { deepFreeze, stableStringify } from "file:///D:/tracecom/repo/relay/intelligence/features.mjs";
-import { IntelligenceDispatch } from "file:///D:/tracecom/repo/relay/execution/intelligence-dispatch.mjs";
-import { SinglePath } from "file:///D:/tracecom/repo/relay/execution/single-path.mjs";
-import { IqMultiRuntime } from "file:///D:/tracecom/repo/relay/iq-multi-runtime.mjs";
-import { operationalAllowlist, OPERATIONAL_EXECUTION_POLICY_NAME } from "file:///D:/tracecom/repo/relay/execution/operational-policy.mjs";
+import { RuntimeIntelligence } from "../relay/intelligence/runtime-adapter.mjs";
+import { AssetPipeline, HYDRATION_READY, HYDRATION_PARTIAL } from "../relay/intelligence/asset-pipeline.mjs";
+import { deepFreeze, stableStringify } from "../relay/intelligence/features.mjs";
+import { IntelligenceDispatch } from "../relay/execution/intelligence-dispatch.mjs";
+import { SinglePath } from "../relay/execution/single-path.mjs";
+import { IqMultiRuntime } from "../relay/iq-multi-runtime.mjs";
+import { operationalAllowlist, OPERATIONAL_EXECUTION_POLICY_NAME } from "../relay/execution/operational-policy.mjs";
 
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
@@ -25,7 +25,7 @@ const buyFeatures = deepFreeze({
 
 /* 1) causalidade full-runtime com dataset real arquivado (CAUSALITY_AND_DETERMINISM_FIXTURE, 1m) */
 {
-  const raw = JSON.parse(fs.readFileSync("D:/tracecom/repo/data/real/usdcad-1m-7d.json", "utf8"));
+  const raw = JSON.parse(fs.readFileSync(new URL("../data/real/usdcad-1m-7d.json", import.meta.url), "utf8"));
   const rows = (raw.rows ?? []).map((c) => ({ at: Number(c.timestamp), open: Number(c.open), high: Number(c.high), low: Number(c.low), close: Number(c.close) })).filter((c) => Number.isFinite(c.at) && Number.isFinite(c.close));
   const key = "USDCAD:CAUSALITY";
   let T = -1;
@@ -110,13 +110,13 @@ const buyFeatures = deepFreeze({
   const legacyExperiment = routing.sources.find((s) => s.source.startsWith("experiment:"));
   ok("roteamento: fonte operacional permitida; experimentos legados bloqueados", operational?.canReachRequestOrder === true && legacyExperiment?.canReachRequestOrder === false);
   ok("roteamento: politica nova (OPERATIONAL_V2_PLUS_TEST_PATHS) e killSwitch default ligado", routing.policy === OPERATIONAL_EXECUTION_POLICY_NAME && routing.killSwitchExecutionEnabled === true && routing.realLocked === true);
-  const serverSrc = fs.readFileSync("D:/tracecom/repo/relay/server.mjs", "utf8");
+  const serverSrc = fs.readFileSync(new URL("../relay/server.mjs", import.meta.url), "utf8");
   ok("server usa a MESMA politica (fonte unica) sem entradas Blitz/lab legadas", serverSrc.includes("operationalAllowlist()") && serverSrc.includes("OPERATIONAL_EXECUTION_POLICY_NAME") && !/AGENTIC_BLITZ|lab:AGENTIC_RSI_FIB/.test(serverSrc));
 }
 
 /* 4) submit legado renomeado: PATH_TEST e PRACTICE-only/300s/testOnly; nenhuma semantica LAB */
 {
-  const rtSrc = fs.readFileSync("D:/tracecom/repo/relay/iq-multi-runtime.mjs", "utf8");
+  const rtSrc = fs.readFileSync(new URL("../relay/iq-multi-runtime.mjs", import.meta.url), "utf8");
   ok("submitLabPracticeOrder removido; submitPathTestOrder e o unico submit de teste", !/submitLabPracticeOrder/.test(rtSrc) && /submitPathTestOrder/.test(rtSrc));
   ok("PATH_TEST: PRACTICE-only + 300s + testOnly/excludedFromStats", /TEST_PATH_PRACTICE_ONLY/.test(rtSrc) && /testOnly: true, excludedFromStats: true/.test(rtSrc) && /OPERATIONAL_EXPIRY_SECONDS/.test(rtSrc));
 }

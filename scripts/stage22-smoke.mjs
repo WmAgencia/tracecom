@@ -1,4 +1,4 @@
-import { IqMultiRuntime } from "file:///D:/tracecom/repo/relay/iq-multi-runtime.mjs";
+import { IqMultiRuntime } from "../relay/iq-multi-runtime.mjs";
 const logs = [];
 const pool = { query: async () => ({ rows: [] }) };
 const rt = new IqMultiRuntime({ pool, log: (m) => logs.push(String(m)) });

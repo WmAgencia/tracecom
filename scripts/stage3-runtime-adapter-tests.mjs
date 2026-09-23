@@ -1,8 +1,8 @@
 import fs from "node:fs";
-import { RuntimeIntelligence, FEED_ABSENT, FEED_OK, FEED_STALE } from "file:///D:/tracecom/repo/relay/intelligence/runtime-adapter.mjs";
-import { HYDRATION_READY, HYDRATION_PARTIAL } from "file:///D:/tracecom/repo/relay/intelligence/asset-pipeline.mjs";
-import { deepFreeze, stableStringify } from "file:///D:/tracecom/repo/relay/intelligence/features.mjs";
-import { SinglePath } from "file:///D:/tracecom/repo/relay/execution/single-path.mjs";
+import { RuntimeIntelligence, FEED_ABSENT, FEED_OK, FEED_STALE } from "../relay/intelligence/runtime-adapter.mjs";
+import { HYDRATION_READY, HYDRATION_PARTIAL } from "../relay/intelligence/asset-pipeline.mjs";
+import { deepFreeze, stableStringify } from "../relay/intelligence/features.mjs";
+import { SinglePath } from "../relay/execution/single-path.mjs";
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
 
@@ -71,7 +71,7 @@ ok("single-path: V2 pendente DENY, ACTIVE+PRACTICE allow, REAL sem arm DENY", de
 
 const mods = ["asset-context", "features", "specialists", "consensus", "decision-snapshot", "asset-pipeline", "runtime-adapter"];
 const forbidden = /requestOrder|placeTrade|broker|realArmed|ACCOUNT_PRACTICE|ACCOUNT_REAL|\bPRACTICE\b|\bREAL\b|iqoption|wsRuntime|submitOrder|accountRouter|executionGate|selectedAccount/;
-const violations = mods.flatMap((n) => forbidden.test(fs.readFileSync(`D:/tracecom/repo/relay/intelligence/${n}.mjs`, "utf8")) ? [n] : []);
+const violations = mods.flatMap((n) => forbidden.test(fs.readFileSync(new URL(`../relay/intelligence/${n}.mjs`, import.meta.url), "utf8")) ? [n] : []);
 ok("inteligencia (incl. runtime-adapter) sem conta/broker (prova estatica)", violations.length === 0);
 
 const p = intel.registry.get("A-OTC");

@@ -1,7 +1,7 @@
-import { IqMultiRuntime } from "file:///D:/tracecom/repo/relay/iq-multi-runtime.mjs";
-import { RuntimeIntelligence } from "file:///D:/tracecom/repo/relay/intelligence/runtime-adapter.mjs";
-import { deepFreeze } from "file:///D:/tracecom/repo/relay/intelligence/features.mjs";
-import { operationalAllowlist, OPERATIONAL_EXECUTION_POLICY_NAME } from "file:///D:/tracecom/repo/relay/execution/operational-policy.mjs";
+import { IqMultiRuntime } from "../relay/iq-multi-runtime.mjs";
+import { RuntimeIntelligence } from "../relay/intelligence/runtime-adapter.mjs";
+import { deepFreeze } from "../relay/intelligence/features.mjs";
+import { operationalAllowlist, OPERATIONAL_EXECUTION_POLICY_NAME } from "../relay/execution/operational-policy.mjs";
 
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };

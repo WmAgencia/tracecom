@@ -1,5 +1,5 @@
-import { SinglePath } from "file:///D:/tracecom/repo/relay/execution/single-path.mjs";
-import { assertParity } from "file:///D:/tracecom/repo/relay/execution/account-router.mjs";
+import { SinglePath } from "../relay/execution/single-path.mjs";
+import { assertParity } from "../relay/execution/account-router.mjs";
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
 

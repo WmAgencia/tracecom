@@ -1,4 +1,4 @@
-import { ExecutionGate } from "file:///D:/tracecom/repo/relay/execution/execution-gate.mjs";
+import { ExecutionGate } from "../relay/execution/execution-gate.mjs";
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
 const gate = new ExecutionGate({ now: () => 1_700_000_000_000 });

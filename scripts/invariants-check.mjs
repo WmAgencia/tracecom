@@ -1,20 +1,20 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
-import { ExecutionGate } from "file:///D:/tracecom/repo/relay/execution/execution-gate.mjs";
-import { SinglePath } from "file:///D:/tracecom/repo/relay/execution/single-path.mjs";
-import { OPERATIONAL_EXPIRY_SECONDS, assertOperationalExpiry, nextOperationalExpiryAt } from "file:///D:/tracecom/repo/relay/execution/binary300.mjs";
-import { operationalAllowlist, OPERATIONAL_EXECUTION_POLICY_NAME } from "file:///D:/tracecom/repo/relay/execution/operational-policy.mjs";
-import { RuntimeIntelligence } from "file:///D:/tracecom/repo/relay/intelligence/runtime-adapter.mjs";
-import { AssetPipeline, HYDRATION_PARTIAL, productState } from "file:///D:/tracecom/repo/relay/intelligence/asset-pipeline.mjs";
-import { OPERATIONAL_CANDLE_INTERVAL_MS } from "file:///D:/tracecom/repo/relay/intelligence/asset-context.mjs";
-import { runSpecialists } from "file:///D:/tracecom/repo/relay/intelligence/specialists.mjs";
-import { consensus } from "file:///D:/tracecom/repo/relay/intelligence/consensus.mjs";
-import { buildDecisionSnapshot } from "file:///D:/tracecom/repo/relay/intelligence/decision-snapshot.mjs";
-import { computeFeatures, deepFreeze } from "file:///D:/tracecom/repo/relay/intelligence/features.mjs";
+import { ExecutionGate } from "../relay/execution/execution-gate.mjs";
+import { SinglePath } from "../relay/execution/single-path.mjs";
+import { OPERATIONAL_EXPIRY_SECONDS, assertOperationalExpiry, nextOperationalExpiryAt } from "../relay/execution/binary300.mjs";
+import { operationalAllowlist, OPERATIONAL_EXECUTION_POLICY_NAME } from "../relay/execution/operational-policy.mjs";
+import { RuntimeIntelligence } from "../relay/intelligence/runtime-adapter.mjs";
+import { AssetPipeline, HYDRATION_PARTIAL, productState } from "../relay/intelligence/asset-pipeline.mjs";
+import { OPERATIONAL_CANDLE_INTERVAL_MS } from "../relay/intelligence/asset-context.mjs";
+import { runSpecialists } from "../relay/intelligence/specialists.mjs";
+import { consensus } from "../relay/intelligence/consensus.mjs";
+import { buildDecisionSnapshot } from "../relay/intelligence/decision-snapshot.mjs";
+import { computeFeatures, deepFreeze } from "../relay/intelligence/features.mjs";
 
 let pass = 0; let fail = 0;
 const ok = (name, condition, detail = "") => { if (condition) { pass += 1; console.log(`PASS ${name}`); } else { fail += 1; console.log(`FAIL ${name}${detail ? " :: " + detail : ""}`); } };
-const read = (path) => fs.readFileSync(`D:/tracecom/repo/${path}`, "utf8");
+const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
 const NOW = 1_800_000_000_000;
 const runtime = read("relay/iq-multi-runtime.mjs");
@@ -28,11 +28,11 @@ ok("BINARY_ONLY_NEW_TRADES", /instrumentType: "BINARY"/.test(dispatch) && /EXPER
 ok("300_ONLY", OPERATIONAL_EXPIRY_SECONDS === 300 && assertOperationalExpiry(300) === 300 && nextOperationalExpiryAt(NOW) % 300_000 === 0 && /horizonSeconds = OPERATIONAL_EXPIRY_SECONDS/.test(runtime));
 const submitLines = (source) => source.split("\n").filter((line) => /(requestOrder|submitPathTestOrder|submitOperationalOrder)\(/.test(line));
 ok("NO_30_45_60_150_180 (submit-capable)", submitLines(runtime).every((line) => !/horizonSeconds:\s*(30|45|60|150|180)\b/.test(line)) && submitLines(server).every((line) => !/horizonSeconds:\s*(30|45|60|150|180)\b/.test(line)) && !/durationSeconds:\s*(30|45|60|150|180)\b/.test(grid));
-ok("ONE_OPERATIONAL_STRATEGY", fs.readdirSync("D:/tracecom/repo/estrategias/strategy-versions").filter((f) => f.endsWith(".json")).length === 1 && manifest.strategyVersion === "PULLBACK_4060_300_AGENTIC_V2");
+ok("ONE_OPERATIONAL_STRATEGY", fs.readdirSync(new URL("../estrategias/strategy-versions", import.meta.url)).filter((f) => f.endsWith(".json")).length === 1 && manifest.strategyVersion === "PULLBACK_4060_300_AGENTIC_V2");
 ok("ONE_OPERATIONAL_BROKER_PATH", (runtime.match(/client\.placeOrder\(/g) ?? []).length === 1 && operationalAllowlist().filter((s) => s.startsWith("intelligence:")).length === 1 && !operationalAllowlist().some((s) => s.startsWith("lab:")) && OPERATIONAL_EXECUTION_POLICY_NAME === "OPERATIONAL_V2_PLUS_TEST_PATHS");
 ok("RESEARCH_CANNOT_SUBMIT", !/requestOrder|placeOrder/.test(read("relay/research-lab/api.mjs")));
 ok("STATUS_NOT_ACTIVE_DENY", new ExecutionGate({ now: () => NOW }).decide({ strategy: { status: "READY_FOR_DEPLOY", executable: false, strategyHash: manifest.strategyHash }, expirySeconds: 300 }).code === "STRATEGY_NOT_ACTIVE");
-const intelligenceFiles = fs.readdirSync("D:/tracecom/repo/relay/intelligence").filter((f) => f.endsWith(".mjs"));
+const intelligenceFiles = fs.readdirSync(new URL("../relay/intelligence", import.meta.url)).filter((f) => f.endsWith(".mjs"));
 const intelligenceAccountFree = intelligenceFiles.every((f) => !/ACCOUNT_PRACTICE|ACCOUNT_REAL|\bselectedAccount\b|practiceStrategy|realStrategy|practiceConsensus|realConsensus/.test(read(`relay/intelligence/${f}`)));
 ok("PRACTICE_REAL_SAME_INTELLIGENCE", intelligenceAccountFree && !/practiceStrategy|realStrategy|practiceConsensus|realConsensus/.test(dispatch));
 ok("ACCOUNT_ONLY_AT_ROUTER", !/selectedAccount/.test(dispatch) && !/selectedAccount/.test(read("relay/intelligence/runtime-adapter.mjs")) && /ACCOUNT_REAL/.test(read("relay/execution/account-router.mjs")));
@@ -60,7 +60,7 @@ ok("ACCOUNT_ONLY_AT_ROUTER", !/selectedAccount/.test(dispatch) && !/selectedAcco
 }
 {
   const baselineFile = `sha256:${sha256(read("archive/baseline/PULLBACK_4060_300_BASELINE/custom-strategies.mjs"))}`;
-  ok("BASELINE_IMMUTABLE", baselineFile === manifest.parentStrategyHash && fs.existsSync("D:/tracecom/repo/archive/baseline/PULLBACK_4060_300_BASELINE/spec.json") && fs.existsSync("D:/tracecom/repo/archive/baseline/PULLBACK_4060_300_BASELINE/stats-snapshot.json"));
+  ok("BASELINE_IMMUTABLE", baselineFile === manifest.parentStrategyHash && fs.existsSync(new URL("../archive/baseline/PULLBACK_4060_300_BASELINE/spec.json", import.meta.url)) && fs.existsSync(new URL("../archive/baseline/PULLBACK_4060_300_BASELINE/stats-snapshot.json", import.meta.url)));
 }
 {
   const pipeline = new AssetPipeline({ marketKey: "X:OTC", now: () => NOW });

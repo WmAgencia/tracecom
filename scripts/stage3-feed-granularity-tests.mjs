@@ -1,18 +1,18 @@
 import fs from "node:fs";
-import { CANDLE_SIZE_SECONDS } from "file:///D:/tracecom/repo/relay/iqoption-ws.mjs";
-import { OPERATIONAL_CANDLE_INTERVAL_MS, MAX_CONTEXT_AGE_MS } from "file:///D:/tracecom/repo/relay/intelligence/asset-context.mjs";
-import { RuntimeIntelligence } from "file:///D:/tracecom/repo/relay/intelligence/runtime-adapter.mjs";
+import { CANDLE_SIZE_SECONDS } from "../relay/iqoption-ws.mjs";
+import { OPERATIONAL_CANDLE_INTERVAL_MS, MAX_CONTEXT_AGE_MS } from "../relay/intelligence/asset-context.mjs";
+import { RuntimeIntelligence } from "../relay/intelligence/runtime-adapter.mjs";
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
 
 ok("fonte nativa da IQ = 5s (CANDLE_SIZE_SECONDS === 5)", CANDLE_SIZE_SECONDS === 5);
 ok("5s nativo == granularidade operacional (5000ms)", CANDLE_SIZE_SECONDS * 1000 === OPERATIONAL_CANDLE_INTERVAL_MS);
 
-const ws = fs.readFileSync("D:/tracecom/repo/relay/iqoption-ws.mjs", "utf8");
+const ws = fs.readFileSync(new URL("../relay/iqoption-ws.mjs", import.meta.url), "utf8");
 ok("WS assina candle-generated com o size canonico", /subscribeCandles\(activeId, size = CANDLE_SIZE_SECONDS\)/.test(ws) && /name: "candle-generated"/.test(ws));
 ok("WS NAO tem stream de tick/quote (sem agregador necessario)", !/subscribeQuotes|"quote"|'quote'|price-stream/.test(ws));
 
-const rt = fs.readFileSync("D:/tracecom/repo/relay/iq-multi-runtime.mjs", "utf8");
+const rt = fs.readFileSync(new URL("../relay/iq-multi-runtime.mjs", import.meta.url), "utf8");
 ok("runtime filtra eventos por size === CANDLE_SIZE_SECONDS", /Number\(event\.msg\?\.size\) === CANDLE_SIZE_SECONDS/.test(rt));
 ok("runtime assina candles por ativo com CANDLE_SIZE_SECONDS", /subscribeCandles\(ctx\.activeId, CANDLE_SIZE_SECONDS\)/.test(rt));
 ok("feed chega ao AssetPipeline via #pipeClosedCandle no #ingestCandle", /#ingestCandle\(ctx, raw, \{ receivedAt, serverTimestamp, connectionId, batch = false \}\) \{\n\s+this\.#pipeClosedCandle\(ctx, raw\);/.test(rt.replace(/\r\n/g, "\n")));

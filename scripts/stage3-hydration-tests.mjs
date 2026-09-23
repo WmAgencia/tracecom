@@ -1,7 +1,7 @@
-import { CandleStore } from "file:///D:/tracecom/repo/relay/intelligence/candle-store.mjs";
-import { RuntimeIntelligence } from "file:///D:/tracecom/repo/relay/intelligence/runtime-adapter.mjs";
-import { AssetPipeline, HYDRATION_READY, HYDRATION_PARTIAL, HYDRATION_FAILED } from "file:///D:/tracecom/repo/relay/intelligence/asset-pipeline.mjs";
-import { stableStringify } from "file:///D:/tracecom/repo/relay/intelligence/features.mjs";
+import { CandleStore } from "../relay/intelligence/candle-store.mjs";
+import { RuntimeIntelligence } from "../relay/intelligence/runtime-adapter.mjs";
+import { AssetPipeline, HYDRATION_READY, HYDRATION_PARTIAL, HYDRATION_FAILED } from "../relay/intelligence/asset-pipeline.mjs";
+import { stableStringify } from "../relay/intelligence/features.mjs";
 
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };

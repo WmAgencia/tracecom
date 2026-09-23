@@ -1,5 +1,5 @@
-import { computeExpiration } from "file:///D:/tracecom/repo/relay/iqoption-ws.mjs";
-import { Binary300Timing, OPERATIONAL_EXPIRY_SECONDS, nextOperationalExpiryAt } from "file:///D:/tracecom/repo/relay/execution/binary300.mjs";
+import { computeExpiration } from "../relay/iqoption-ws.mjs";
+import { Binary300Timing, OPERATIONAL_EXPIRY_SECONDS, nextOperationalExpiryAt } from "../relay/execution/binary300.mjs";
 
 let pass = 0; let fail = 0;
 const ok = (label, condition) => { if (condition) { pass += 1; console.log(`PASS ${String(pass).padStart(2, "0")} ${label}`); } else { fail += 1; console.log(`FAIL ${label}`); } };
