@@ -1,8 +1,12 @@
 /**
  * RESEARCH SMOKE — valida endpoints de producao (lab + agentes + office + quality + REAL preflight).
  * Uso: node scripts/research-smoke.mjs [base]
+ *
+ * Pos-hardening (A02/A07): rotas /api/iq/* sao privadas. Sem TRACECOM_OPERATOR_KEY o smoke
+ * valida o contrato fail-closed (401 anonimo); com a chave, autentica e exige 200.
  */
 const BASE = process.argv[2] ?? "https://tracecom.consecom.com.br";
+const OPERATOR_KEY = (process.env.TRACECOM_OPERATOR_KEY ?? "").trim() || null;
 const CHECKS = [
   "/health",
   "/api/iq/office",
@@ -30,13 +34,22 @@ const CHECKS = [
   "/research/index.html",
 ];
 
+let cookie = null;
+if (OPERATOR_KEY) {
+  try {
+    const login = await fetch(`${BASE}/api/auth/operator`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ accessKey: OPERATOR_KEY }), signal: AbortSignal.timeout(20_000) });
+    if (login.status === 200) cookie = (login.headers.get("set-cookie") ?? "").split(";")[0];
+  } catch { /* sem sessao: valida fail-closed */ }
+}
+
 let failures = 0;
 for (const path of CHECKS) {
   try {
-    const response = await fetch(`${BASE}${path}`, { signal: AbortSignal.timeout(45_000) });
-    const ok = response.ok;
+    const isPrivate = path.startsWith("/api/iq/");
+    const response = await fetch(`${BASE}${path}`, { headers: cookie && isPrivate ? { cookie } : {}, signal: AbortSignal.timeout(45_000) });
+    const ok = isPrivate ? (cookie ? response.ok : response.status === 401) : response.ok;
     if (!ok) failures += 1;
-    console.log(`${ok ? "OK " : "FAIL"} ${response.status} ${path}`);
+    console.log(`${ok ? "OK " : "FAIL"} ${response.status} ${path}${isPrivate ? ` (auth ${cookie ? "operator" : "fail-closed"})` : ""}`);
   } catch (error) {
     failures += 1;
     console.log(`FAIL ERR ${path} :: ${String(error?.message ?? error).slice(0, 120)}`);
