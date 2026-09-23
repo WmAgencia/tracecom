@@ -58,8 +58,26 @@ Nada foi ativado; nenhuma ordem (PRACTICE ou REAL) foi enviada; Supabase segue `
   o Asset/Consensus classificam relativo a tese. Zonas extremas de RSI sao contexto (nao blocker).
 - `agentMode`: `LLM` (agentes reais) ou `DETERMINISTIC_OBSERVE` (coleta deterministica que **nunca aprova**;
   consensus fica `AGENT_UNAVAILABLE`). `V3_AGENTS_ENABLED=true` habilita o caminho LLM em producao.
-- Selftest read-only: `POST /api/iq/v3/agents/selftest` roda um ciclo real sobre os dados atuais e devolve
-  latencias por papel (nenhuma ordem).
+- Selftest read-only: `POST /api/iq/v3/agents/selftest` roda um ciclo real sobre os dados atuais (ou fixture
+  sintetica deterministica quando nao ha candles) e devolve latencias por papel (nenhuma ordem).
+
+### 4.1 Medicao REAL do provider em producao (2026-09-23, observe-only)
+
+- Chamadas reais confirmadas: `provider=openCodeGo`, `model=deepseek-v4.1-flash`, requestId por ciclo.
+- **Latencia por chamada de especialista: 3.4s a 17.7s** (amostras: 3.5/4.6/8.5/8.6/11.0/11.2/11.3/13.8/14.2/16.0/17.4/17.7/19.0s).
+  Fan-out dos 5 em paralelo ~= 11-19s. Estagios sequenciais (especialistas -> [Asset ∥ Independente] -> Final)
+  somam ~35-55s, **acima da janela de analise de 30s** (330->300). Com este provider/limites, o caminho
+  LLM nao consegue aprovar dentro da janela — **nao ha aprovacoes** (comportamento fail-closed).
+- **Qualidade de output**: as respostas sao semanticamente boas (fatos corretos em PT-BR) porem **falham
+  no JSON estrito/schema na maioria das amostras** (`INVALID_JSON` / `SCHEMA_domainAssessment`), mesmo com
+  prompt "somente JSON" + resgate multi-objeto + maxTokens 2600. Nenhuma ordem e jamais derivada disso
+  (fail-closed: `AGENT_UNAVAILABLE` => CANCEL/WAIT).
+- `V3_AGENTS_ENABLED` foi desligado apos a medicao (evitar consumo de tokens sem ganho operacional),
+  mantendo o caminho LLM implementado e testado com client scripted (mesma interface).
+- **Pendencia antes de qualquer PATH_TEST**: (a) habilitar JSON mode/structured output do provider ou
+  parser tolerante dedicado; (b) reduzir esquema/verbosidade; (c) escolher modelo/limites com latencia
+  compativel com 30s por janela; (d) re-medir com o selftest. Ate la, a V3 permanece OBSERVE_ONLY e
+  nenhuma aprovacao LLM existe em producao.
 
 ## 5. SCENARIOS — simetria tipo x direcao
 
@@ -83,14 +101,13 @@ executionBlocked), agendamento (`scheduledSendAt`, `fireAt`, checks de revalidac
 
 - Deterministico (medicoes+regras): 240 ciclos p50 0ms / p95 2ms / p99 3ms.
 - **Agentes (latencia simulada no adapter; 30 ativos × 4 ondas × 8 chamadas = 960 chamadas)**:
-  p95 do ciclo completo 103ms, fila maxima 30 (paralelo por mercado), **zero janelas perdidas**.
-- Latencia real do provider deve ser medida com o selftest em producao (execucao desta missao) e
-  registrada no relatorio operacional; o orcamento de 5s por candle acomoda p95 de ~1-2s com folga.
+  p95 do ciclo completo 103ms, fila maxima 30 (paralelo por mercado), **zero janelas perdidas** (capacidade
+  da orquestracao). A latencia REAL do provider (secao 4.1) e o gargalo atual: 3.4-17.7s/chamada.
 
 ## 8. HASH / ESTADO
 
 - V2: inalterada, `sha256:3e9364e2…5daeb0`, `V2_FROZEN_IMMUTABLE PASS`.
-- V3: novo hash `sha256:c535428d1f200000768caa383095b74571f32f719cf9509488c388a8f92097df` (grid+timing v2+scheduler+agentes+scenarios simetricos),
+- V3: novo hash `sha256:3f88f230fbfed5088ed658991fbef87dcca669b6781ad72e6e7756510def1458` (grid+timing v2+scheduler+agentes+scenarios simetricos),
   manifesto `PENDING_IMPLEMENTATION`, `executable=false`, stats zeradas em tabelas `iq_v3_*`.
 - Migracao 055 adiciona `agent_mode`, `scheduled_send_at`, `scheduled_fire_at`, `revalidation`.
 - PRACTICE auto-execution OFF (`AUTO_ARM_PRACTICE=false`, `auto_execute=false`), REAL DISARMED,
