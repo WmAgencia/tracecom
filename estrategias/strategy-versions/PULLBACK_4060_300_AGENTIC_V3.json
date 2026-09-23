@@ -25,8 +25,8 @@
     "winRate": null,
     "pnl": 0
   },
-  "strategyHash": "sha256:44a1aa14c7e2d4e9039058c2e7bc68d751a5f42496b67a97480c2abbd569aedb",
-  "newStrategyHash": "sha256:44a1aa14c7e2d4e9039058c2e7bc68d751a5f42496b67a97480c2abbd569aedb",
+  "strategyHash": "sha256:b83e9037a2af360df7e570bf7c6a8d09cd1e85a0f7925b40059a7e4f5c62d697",
+  "newStrategyHash": "sha256:b83e9037a2af360df7e570bf7c6a8d09cd1e85a0f7925b40059a7e4f5c62d697",
   "decisionFiles": [
     "relay/v3/timing.mjs",
     "relay/v3/expiration-grid.mjs",
@@ -41,10 +41,13 @@
     "relay/v3/decision-snapshot.mjs",
     "relay/v3/scheduler.mjs",
     "relay/v3/runtime.mjs",
+    "relay/v3/final-gate.mjs",
     "relay/v3/agents/schemas.mjs",
     "relay/v3/agents/prompts.mjs",
     "relay/v3/agents/llm-client.mjs",
     "relay/v3/agents/team.mjs",
+    "relay/v3/agents/fact-packets.mjs",
+    "relay/v3/agents/capabilities.mjs",
     "relay/intelligence/features.mjs",
     "relay/intelligence/asset-context.mjs",
     "relay/execution/binary300.mjs"
@@ -85,5 +88,5 @@
     "Nao reutiliza stats da V2; novo statsEpoch e novas tabelas iq_v3_*.",
     "REAL permanece DISARMED; PRACTICE auto-execution desligada durante construcao/observacao."
   ],
-  "updatedAt": "2026-09-23T18:11:53.520Z"
+  "updatedAt": "2026-09-23T18:34:57.584Z"
 }

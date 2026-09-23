@@ -18,8 +18,9 @@ import { runSpecialists } from "./specialists.mjs";
 import { classifyAsset } from "./asset-agent.mjs";
 import { runConsensus } from "./consensus.mjs";
 import { buildV3DecisionSnapshot } from "./decision-snapshot.mjs";
-import { runAgentCycle, agentLatencyStats, SPECIALIST_ROLES } from "./agents/team.mjs";
-import { specialistDelta } from "./agents/prompts.mjs";
+import { runAgentCycle, agentLatencyStats, SPECIALIST_ROLES, WAVE1_ROLES, V3_AGENT_ARCHITECTURE } from "./agents/team.mjs";
+import { factPrompt } from "./agents/prompts.mjs";
+import { buildPacketEnvelope } from "./agents/fact-packets.mjs";
 import { collectInputNumbers } from "./agents/schemas.mjs";
 import { ExecutionScheduler } from "./scheduler.mjs";
 import { stableStringify } from "../intelligence/features.mjs";
@@ -29,7 +30,7 @@ export const V3_RUNTIME_VERSION = "v3-runtime-v2";
 const defaultStrategy = Object.freeze({ version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: null, statsEpoch: null });
 
 export class V3Runtime {
-  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null, agentSafetyMarginMs = 8_000, estimatedWaveMs = 12_000, architecture = "TWO_WAVE" } = {}) {
+  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null, agentSafetyMarginMs = 8_000, estimatedWaveMs = 12_000 } = {}) {
     this.now = now;
     this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
     this.pool = pool;
@@ -40,10 +41,12 @@ export class V3Runtime {
     this.agentMode = agentMode ?? (agents?.available ? "LLM" : "DETERMINISTIC_OBSERVE");
     this.agentSafetyMarginMs = Math.max(0, Number(agentSafetyMarginMs) || 8_000);
     this.estimatedWaveMs = Math.max(1_000, Number(estimatedWaveMs) || 12_000);
-    this.agentArchitecture = architecture === "THREE_WAVE" ? "THREE_WAVE" : "TWO_WAVE";
+    this.agentArchitecture = V3_AGENT_ARCHITECTURE;
     this.brokerNow = typeof brokerNow === "function" ? brokerNow : null;
     this.scheduler = scheduler ?? new ExecutionScheduler({ now, onFire: (intent) => this.#onExecutionFire(intent), log: this.log });
     this.prevByMarket = new Map();
+    this.prevAgentPackets = new Map();
+    this.prevAgentOutputs = new Map();
     this.lastClosedCandleId = new Map();
     this.queues = new Map();
     this.queueDepth = 0;
@@ -147,12 +150,14 @@ export class V3Runtime {
         this.log("V3_AGENT_CYCLE_SKIPPED_DEADLINE", stableStringify({ opportunityId: opportunity.opportunityId, budgetMs, estimatedWaveMs: this.estimatedWaveMs }));
       } else {
         agentResult = await runAgentCycle({
-          client: this.agents, measurements, specialists: deterministicSpecialists, previousByRole, previousAssessment: previous.asset ?? null,
+          client: this.agents, measurements, specialists: deterministicSpecialists,
+          previousPackets: this.prevAgentPackets.get(marketKey) ?? {}, previousOutputs: this.prevAgentOutputs.get(marketKey) ?? {},
           expiration: { expirationAt: opportunity.expirationAt, tteMs: window.derived?.tteMs ?? null, brokerNow: at },
-          cycleNumber, opportunityId: opportunity.opportunityId, budgetMs, architecture: this.agentArchitecture,
+          cycleNumber, opportunityId: opportunity.opportunityId, budgetMs,
           now: this.now,
         });
         this.counters.agentCycles += 1;
+        if (agentResult.nextState) { this.prevAgentPackets.set(marketKey, agentResult.nextState.packets ?? {}); this.prevAgentOutputs.set(marketKey, agentResult.nextState.outputs ?? {}); }
         this.agentCalls.push(...agentResult.agentCalls);
         if (this.agentCalls.length > 2_000) this.agentCalls.splice(0, this.agentCalls.length - 2_000);
         if (agentResult.available !== true) {
@@ -165,17 +170,17 @@ export class V3Runtime {
     const approvalsAllowed = agentResult?.available === true;
     const specialists = deterministicSpecialists;
     const asset = approvalsAllowed
-      ? { scenario: agentResult.asset.scenario, direction: agentResult.asset.direction, state: agentResult.asset.state, blockers: (agentResult.asset.blockers ?? []).map((code) => ({ code })), invalidations: (agentResult.asset.invalidations ?? []).map((code) => ({ code })), bestCounterCase: agentResult.asset.bestCounterCase, changedSincePreviousCycle: (agentResult.asset.changedSincePreviousCycle ?? []).map((field) => ({ field, from: null, to: null })) }
+      ? { scenario: agentResult.asset.scenario, direction: agentResult.asset.direction, state: agentResult.asset.state, thesis: agentResult.asset.thesis ?? null, blockers: (agentResult.asset.blockers ?? []).map((code) => ({ code })), invalidations: (agentResult.asset.invalidations ?? []).map((code) => ({ code })), bestCounterCase: agentResult.asset.bestCounterCase, changedSincePreviousCycle: (agentResult.asset.changed ?? []).map((field) => ({ field, from: null, to: null })) }
       : { ...deterministicAsset, state: "WAIT" };
     const consensus = approvalsAllowed
-      ? { result: agentResult.result, agreement: agentResult.consensus.agreement, challenge: { reasons: agentResult.consensus.reasons ?? [], challengeSteps: (agentResult.consensus.challengeSteps ?? []).map((step) => ({ id: step.id, ok: step.ok, detail: step.detail })) }, independent: agentResult.independent, bilateral: agentResult.consensus.bilateral ?? null, bestCounterCase: agentResult.consensus.bestCounterCase }
+      ? { result: agentResult.result, agreement: agentResult.consensus.agreement, direction: agentResult.consensus.direction, independentAssessment: agentResult.consensus.independentAssessment ?? null, assetComparison: agentResult.consensus.assetComparison ?? null, challenge: { reasons: agentResult.consensus.reasons ?? [], challengeSteps: (agentResult.finalGate?.checks ?? []).map((check) => ({ id: check.id, ok: check.ok, detail: check.detail })) }, independent: agentResult.consensus, bilateral: null, bestCounterCase: null }
       : { ...deterministicConsensus, result: "AGENT_UNAVAILABLE", agreement: "INSUFFICIENT_EVIDENCE" };
 
     const cycle = {
       at, tteMs: window.derived?.tteMs ?? null, closedCandleId, featureSnapshotId,
       price: measurements.closedCandle.close,
       specialistStates: { rsi: specialists.rsi?.assessment ?? null, dmi: specialists.dmi?.assessment ?? null, bollinger: specialists.bollinger?.assessment ?? null, atr: specialists.atr?.assessment ?? null, priceAction: specialists.priceAction?.assessment ?? null },
-      agentSpecialistStates: approvalsAllowed ? Object.fromEntries(Object.entries(agentResult.specialists).map(([role, output]) => [role, output?.domainAssessment ?? null])) : null,
+      agentSpecialistStates: approvalsAllowed ? Object.fromEntries(Object.entries(agentResult.specialists).map(([role, output]) => [role, output?.assessment ?? null])) : null,
       assetScenario: asset?.scenario ?? null, assetDirection: asset?.direction ?? null, assetState: asset?.state ?? null,
       consensusResult: consensus.result, agreement: consensus.agreement,
       changedSincePreviousCycle: asset?.changedSincePreviousCycle ?? [],
@@ -329,25 +334,32 @@ export class V3Runtime {
     const timing = expiration ? { expirationAt: expiration.expirationAt, tteMs: expiration.tteMs ?? null, phase: expiration.phase ?? null } : null;
     const startedAt = this.now();
     if (mode === "SINGLE") {
-      const chosen = SPECIALIST_ROLES.includes(role) ? role : "RSI";
-      const call = await client.call({ role: chosen, requestId: `selftest:${cycleNumber}:${chosen}`, opportunityId: "selftest", budgetMs, inputNumbers, prompt: specialistDelta({ role: chosen, measurements, cycleNumber, timing }) });
+      const chosen = WAVE1_ROLES.includes(role) ? role : "RSI";
+      const envelope = buildPacketEnvelope({ role: chosen, measurements, timing, cycleNumber });
+      const call = await client.call({ role: chosen, requestId: `selftest:${cycleNumber}:${chosen}`, opportunityId: "selftest", budgetMs, inputNumbers, prompt: factPrompt(envelope) });
       return { available: call.status === "OK", reason: call.reason, result: call.status === "OK" ? "AGENT_OK" : "AGENT_UNAVAILABLE", agentMode: this.agentMode, agentCalls: [call], latency: agentLatencyStats([call]), asset: null, independent: null, consensus: null, finalGate: null, wallMs: Math.max(0, this.now() - startedAt) };
     }
     if (mode === "WAVE_A") {
-      const calls = await Promise.all(SPECIALIST_ROLES.map((roleName) => client.call({ role: roleName, requestId: `selftest:${cycleNumber}:${roleName}`, opportunityId: "selftest", budgetMs, inputNumbers, prompt: specialistDelta({ role: roleName, measurements, cycleNumber, timing }) })));
+      const calls = await Promise.all(WAVE1_ROLES.map((roleName) => {
+        const envelope = buildPacketEnvelope({ role: roleName, measurements, timing, cycleNumber });
+        return client.call({ role: roleName, requestId: `selftest:${cycleNumber}:${roleName}`, opportunityId: "selftest", budgetMs, inputNumbers, prompt: factPrompt(envelope) });
+      }));
       const available = calls.every((call) => call.status === "OK");
       return { available, reason: available ? null : "AGENT_UNAVAILABLE", result: available ? "AGENT_OK" : "AGENT_UNAVAILABLE", agentMode: this.agentMode, agentCalls: calls, latency: agentLatencyStats(calls), asset: null, independent: null, consensus: null, finalGate: null, wallMs: Math.max(0, this.now() - startedAt) };
     }
     if (mode === "CONCURRENCY") {
       const total = Math.max(1, Math.min(30, Number(concurrency) || 5));
-      const calls = await Promise.all(Array.from({ length: total }, (_, index) => client.call({ role: "RSI", requestId: `selftest:conc:${index}`, opportunityId: "selftest-conc", budgetMs, inputNumbers, prompt: specialistDelta({ role: "RSI", measurements, cycleNumber, timing }) })));
+      const calls = await Promise.all(Array.from({ length: total }, (_, index) => {
+        const envelope = buildPacketEnvelope({ role: "RSI", measurements, timing, cycleNumber });
+        return client.call({ role: "RSI", requestId: `selftest:conc:${index}`, opportunityId: "selftest-conc", budgetMs, inputNumbers, prompt: factPrompt(envelope) });
+      }));
       const available = calls.filter((call) => call.status === "OK").length;
       return { available: available > 0, reason: available === total ? null : "PARTIAL", result: `${available}/${total}`, agentMode: this.agentMode, agentCalls: calls, latency: agentLatencyStats(calls), wallMs: Math.max(0, this.now() - startedAt) };
     }
-    const result = await runAgentCycle({ client, measurements, specialists: specialists ?? runSpecialists({ measurements }), expiration, cycleNumber, opportunityId: "selftest", budgetMs, architecture: this.agentArchitecture, now: this.now });
+    const result = await runAgentCycle({ client, measurements, expiration, cycleNumber, opportunityId: "selftest", budgetMs, now: this.now });
     return {
       available: result.available, reason: result.reason, result: result.result, architecture: result.architecture, agentMode: this.agentMode,
-      agentCalls: result.agentCalls, latency: { ...agentLatencyStats(result.agentCalls), wall: result.latency },
+      agentCalls: result.agentCalls, factPackets: result.factPackets, latency: { ...agentLatencyStats(result.agentCalls), wall: result.latency },
       asset: result.asset, independent: result.independent, finalGate: result.finalGate ?? null, consensus: result.consensus,
       wallMs: Math.max(0, this.now() - startedAt),
     };

@@ -56,6 +56,7 @@ export const ASSET_SCHEMA = {
     if (!["NO_SETUP", "WAIT", "BUY_CANDIDATE", "SELL_CANDIDATE"].includes(output.state)) return "state";
     if (output.direction === "UP" && output.state === "SELL_CANDIDATE") return "state_direction_conflict";
     if (output.direction === "DOWN" && output.state === "BUY_CANDIDATE") return "state_direction_conflict";
+    if (!isString(output.thesis, 400)) return "thesis";
     if (!isString(output.bestCounterCase, 480)) return "bestCounterCase";
     if (!isStringArray(output.blockers ?? [])) return "blockers";
     if (!isStringArray(output.invalidations ?? [])) return "invalidations";
@@ -65,48 +66,37 @@ export const ASSET_SCHEMA = {
   },
 };
 
-/** Consensus independente: classifica o mercado E faz o red-team BILATERAL antes de ver o Asset. */
-export const CONSENSUS_BILATERAL_SCHEMA = {
-  role: "CONSENSUS_BILATERAL",
-  fields: ["scenario", "direction", "evidenceFamilies", "bestCaseForUp", "bestCaseAgainstUp", "bestCaseForDown", "bestCaseAgainstDown", "blockers", "invalidations", "marketAmbiguities"],
+/** Consensus FINAL: unica segunda onda LLM. Interpreta evidence ANTES de comparar com o Asset (anti-anchoring),
+ *  faz red-team bilateral e decide APPROVE_BUY | APPROVE_SELL | CANCEL. Sem confidence %, sem votacao. */
+export const CONSENSUS_FINAL_SCHEMA = {
+  role: "CONSENSUS_FINAL",
+  fields: ["independentAssessment", "assetComparison", "scenario", "direction", "agreement", "supportingEvidence", "counterEvidence", "bestCaseForUp", "bestCaseAgainstUp", "bestCaseForDown", "bestCaseAgainstDown", "blockers", "invalidations", "marketAmbiguities", "reasons", "result"],
   validate(output) {
     if (!output || typeof output !== "object") return "not_object";
+    if (!isString(output.independentAssessment, 320)) return "independentAssessment";
+    if (!isString(output.assetComparison, 320)) return "assetComparison";
     if (!scenarioValid(output.scenario)) return "scenario";
     if (!["UP", "DOWN", "NONE"].includes(output.direction)) return "direction";
-    if (!Array.isArray(output.evidenceFamilies) || output.evidenceFamilies.length === 0 || output.evidenceFamilies.length > 6) return "evidenceFamilies";
-    for (const item of output.evidenceFamilies) {
-      if (!item || typeof item !== "object" || !isString(item.family, 40) || !isString(item.supports, 200)) return "evidenceFamilies.item";
-    }
-    for (const key of ["bestCaseForUp", "bestCaseAgainstUp", "bestCaseForDown", "bestCaseAgainstDown", "marketAmbiguities"]) {
+    if (!["AGREE", "PARTIAL", "DISAGREE"].includes(output.agreement)) return "agreement";
+    if (!isStringArray(output.supportingEvidence ?? [], { max: 6, itemMax: 200 })) return "supportingEvidence";
+    if (!isStringArray(output.counterEvidence ?? [], { max: 6, itemMax: 200 })) return "counterEvidence";
+    for (const key of ["bestCaseForUp", "bestCaseAgainstUp", "bestCaseForDown", "bestCaseAgainstDown", "marketAmbiguities", "reasons"]) {
       if (!isStringArray(output[key] ?? [], { max: 6, itemMax: 200 })) return key;
     }
     if (!isStringArray(output.blockers ?? [])) return "blockers";
     if (!isStringArray(output.invalidations ?? [])) return "invalidations";
-    return null;
-  },
-};
-
-/** Chamada final do modo 3-wave (benchmark A): ve Asset + Consensus independente. */
-export const CONSENSUS_FINAL_SCHEMA = {
-  role: "CONSENSUS_FINAL",
-  fields: ["agreement", "result", "bestCounterCase", "reasons"],
-  validate(output) {
-    if (!output || typeof output !== "object") return "not_object";
-    if (!["AGREE", "DISAGREE", "INSUFFICIENT_EVIDENCE"].includes(output.agreement)) return "agreement";
     if (!["APPROVE_BUY", "APPROVE_SELL", "CANCEL"].includes(output.result)) return "result";
-    if (!isString(output.bestCounterCase, 320)) return "bestCounterCase";
-    if (!isStringArray(output.reasons ?? [], { max: 6 })) return "reasons";
-    if (output.result === "APPROVE_BUY" && output.agreement !== "AGREE") return "approve_requires_agreement";
-    if (output.result === "APPROVE_SELL" && output.agreement !== "AGREE") return "approve_requires_agreement";
+    if (output.result === "APPROVE_BUY" && output.direction !== "UP") return "result_direction_conflict";
+    if (output.result === "APPROVE_SELL" && output.direction !== "DOWN") return "result_direction_conflict";
     return null;
   },
 };
 
-export const AGENT_SCHEMAS = Object.freeze({ SPECIALIST: SPECIALIST_SCHEMA, ASSET: ASSET_SCHEMA, CONSENSUS_BILATERAL: CONSENSUS_BILATERAL_SCHEMA, CONSENSUS_FINAL: CONSENSUS_FINAL_SCHEMA });
+export const AGENT_SCHEMAS = Object.freeze({ SPECIALIST: SPECIALIST_SCHEMA, ASSET: ASSET_SCHEMA, CONSENSUS_FINAL: CONSENSUS_FINAL_SCHEMA });
 
 export const ROLE_SCHEMA = Object.freeze({
   RSI: "SPECIALIST", DMI_ADX: "SPECIALIST", BOLLINGER: "SPECIALIST", ATR: "SPECIALIST", PRICE_ACTION: "SPECIALIST",
-  ASSET: "ASSET", CONSENSUS_BILATERAL: "CONSENSUS_BILATERAL", CONSENSUS_FINAL: "CONSENSUS_FINAL",
+  ASSET: "ASSET", CONSENSUS_FINAL: "CONSENSUS_FINAL",
 });
 
 /** Ancoragem numerica: todo numero citado no output deve existir no input (ou ser pequeno/estrutural).

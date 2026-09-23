@@ -79,14 +79,14 @@ ok("ANALYSIS (330->300) e EXECUTION (~302) sao funcoes distintas", analysis.ok =
 {
   const script = {
     RSI: specialistStub("RSI"), DMI_ADX: specialistStub("DMI_ADX"), BOLLINGER: specialistStub("BOLLINGER"), ATR: specialistStub("ATR"), PRICE_ACTION: specialistStub("PRICE_ACTION"),
-    ASSET: { scenario: "TREND_CONTINUATION", direction: "UP", state: "BUY_CANDIDATE", bestCounterCase: "CHoCH bearish", blockers: [], invalidations: [], changed: [], watch: [] },
-    CONSENSUS_BILATERAL: { scenario: "TREND_CONTINUATION", direction: "UP", evidenceFamilies: [{ family: "STRUCTURE", supports: "BOS" }, { family: "MOMENTUM", supports: "crossback" }], bestCaseForUp: ["HH/HL"], bestCaseAgainstUp: ["CHoCH bearish"], bestCaseForDown: ["perda do swing"], bestCaseAgainstDown: ["BOS recente"], blockers: [], invalidations: [], marketAmbiguities: [] },
+    ASSET: { scenario: "TREND_CONTINUATION", direction: "UP", state: "BUY_CANDIDATE", thesis: "tendencia de alta com estrutura intacta", bestCounterCase: "CHoCH bearish", blockers: [], invalidations: [], changed: [], watch: [] },
+    CONSENSUS_FINAL: { independentAssessment: "estrutura e momentum alinhados", assetComparison: "asset concorda com a leitura independente", scenario: "TREND_CONTINUATION", direction: "UP", agreement: "AGREE", supportingEvidence: ["BOS bullish"], counterEvidence: [], bestCaseForUp: ["HH/HL"], bestCaseAgainstUp: ["CHoCH bearish"], bestCaseForDown: ["perda do swing"], bestCaseAgainstDown: ["BOS recente"], blockers: [], invalidations: [], marketAmbiguities: [], reasons: [], result: "APPROVE_BUY" },
   };
   const okCycle = await runAgentCycle({ client: createScriptedAgentClient(script), measurements: { closedCandle: { at: 1 } }, cycleNumber: 1 });
   const failScript = { ...script, ASSET: { status: "ERROR", reason: "TIMEOUT" } };
   const failCycle = await runAgentCycle({ client: createScriptedAgentClient(failScript), measurements: { closedCandle: { at: 1 } }, cycleNumber: 2 });
   ok("timeout de agente => AGENT_UNAVAILABLE/CANCEL (fail-closed)", failCycle.available === false && failCycle.reason === "AGENT_UNAVAILABLE" && failCycle.result === "CANCEL");
-  ok("agentes reais (interface provider) aprovam com Final Gate deterministico (7 chamadas, 2 ondas)", okCycle.available === true && okCycle.result === "APPROVE_BUY" && okCycle.agentCalls.length === 7 && okCycle.finalGate?.result === "APPROVE_BUY");
+  ok("7 chamadas (5 specialists + Asset na Wave 1; Consensus Final na Wave 2) decidem o mercado", okCycle.available === true && okCycle.result === "APPROVE_BUY" && okCycle.agentCalls.length === 7 && okCycle.finalGate?.result === "APPROVE_BUY" && okCycle.factPackets?.RSI?.fingerprint && okCycle.factPackets?.ASSET?.fingerprint);
 }
 
 console.log(fail === 0 ? `V3_SMOKE ALL_PASS (${pass}/${pass})` : `V3_SMOKE FAIL (${fail})`);

@@ -1,17 +1,19 @@
 /**
- * V3 — PROMPTS v2: STATIC PREFIX + ROLE PLAYBOOK + SCHEMA + DYNAMIC DELTA.
+ * V3 — PROMPTS v3: FACT PACKETS + STATIC PREFIX + ROLE PLAYBOOK + SCHEMA.
  *
- * O prefixo estatico e byte-identical entre chamadas (cache/routing do provider).
- * O playbook por papel e estavel (ids + regras-chave); nunca enviamos documentos inteiros.
- * O contexto dinamico e um DIGEST compacto (nao 2160 candles; nao measurements completos).
+ * CODE TURNS RAW MARKET DATA INTO FACTS. LLM TURNS FACTS INTO PROFESSIONAL INTERPRETATION.
+ * - O prompt dinamico e o FACT PACKET (FULL no 1o ciclo; DELTA nos seguintes) — nunca 2160 candles.
+ * - Wave 1: 5 specialists + Asset em PARALELO, cada um apenas com os fatos do seu papel (sem anchoring).
+ * - Wave 2: Consensus FINAL recebe deterministic facts + specialists e, por ULTIMO, o bloco
+ *   ASSET_THESIS_TO_CHALLENGE (anti-anchoring: interpreta antes de comparar).
  */
 import { PLAYBOOKS, SOURCES } from "../playbooks.mjs";
 
-export const V3_PROMPTS_VERSION = "v3-agent-prompts-v2";
+export const V3_PROMPTS_VERSION = "v3-agent-prompts-v3";
 
 export const STATIC_PREFIX = [
   "TraceCom V3 agent. Responda SOMENTE um unico objeto JSON valido (JSON mode). Sem markdown, sem prosa fora do JSON.",
-  "Os numeros determinísticos vem do backend e sao AUTORIDADE: use exatamente os valores do NORMALIZED STATE; nunca recalcule nem invente numeros.",
+  "Os fatos numericos vem do FACT COMPILER deterministico do backend e sao AUTORIDADE: interprete-os; nunca recalcule nem invente numeros.",
   "ENUMS ESTRITOS: direction ∈ {UP, DOWN, NONE}; strength ∈ {WEAK, MODERATE, STRONG} (intensidade da evidencia — NUNCA use NORMAL/SHALLOW/DEEP aqui; profundidade de pullback vai em detail).",
   "NUNCA use informacao futura. Seja conciso: assessment <= 1 frase; no maximo 6 fatos; listas curtas.",
   "Sem percentual de confianca. Sem votacao. Nao use as palavras BUY/SELL/CALL/PUT.",
@@ -31,20 +33,20 @@ const ROLE_SECTION = Object.freeze({
   PRICE_ACTION: "PAPEL: PRICE ACTION SPECIALIST — estrutura causal (pivots confirmados). Fatos: TREND, BOS, CHOCH (invalida a estrutura anterior; direction = nova direcao), PULLBACK, BREAKOUT, BREAKDOWN, RETEST, FAILED_BREAKOUT/BREAKDOWN, DECISIVE_CANDLE. Playbooks: " + playbookLine("PRICE_ACTION"),
 });
 
+const SCENARIO_ID_LIST = "TREND_CONTINUATION, PULLBACK_CONTINUATION, DEEP_PULLBACK_STRUCTURE_THREAT, STRUCTURAL_REVERSAL, BREAKOUT, FAILED_BREAKOUT, BREAKDOWN, FAILED_BREAKDOWN, BREAKOUT_RETEST, COMPRESSION, EXPANSION, RANGE, TRANSITION, EXHAUSTION, STRUCTURAL_ZONE_REJECTION, TREND_WEAKENING, TREND_RESUMPTION, NO_SETUP";
+
+const ASSET_SECTION = "PAPEL: ASSET AGENT — interprete o SNAPSHOT CROSS-DOMAIN de fatos deterministicos e forme sua propria leitura global do mercado (voce NAO recebe especialistas nem consensus). Classifique o CENARIO (tipo) e a DIRECAO separadamente, escreva a thesis e o estado operacional. Seja conservador: sem confirmacao estrutural => WAIT; sem cenario relevante => NO_SETUP. Explique o melhor contra-caso da sua propria tese (bestCounterCase <= 2 frases). scenario DEVE ser EXATAMENTE um id da Scenario Library: " + SCENARIO_ID_LIST + ". direction ∈ {UP, DOWN, NONE}; state ∈ {NO_SETUP, WAIT, BUY_CANDIDATE, SELL_CANDIDATE}.";
+const CONSENSUS_SECTION = "PAPEL: CONSENSUS FINAL — voce e o DECISOR DE MERCADO do ciclo. Ordem logica OBRIGATORIA: (A) interprete deterministicFacts + specialistEvidence e escreva independentAssessment SEM considerar o bloco ASSET_THESIS_TO_CHALLENGE; (B) SO DEPOIS compare com o bloco ASSET_THESIS_TO_CHALLENGE e escreva assetComparison; (C) construa o RED TEAM dos DOIS lados (bestCaseForUp/AgainstUp/ForDown/AgainstDown); (D) registre supportingEvidence, counterEvidence, blockers, invalidations, marketAmbiguities, reasons; (E) conclua result ∈ {APPROVE_BUY, APPROVE_SELL, CANCEL}. Nao valide o Asset automaticamente: procure ativamente a melhor contra-tese. Sem confidence %. scenario DEVE ser EXATAMENTE um id da Scenario Library: " + SCENARIO_ID_LIST + ". APPROVE_BUY exige direction UP; APPROVE_SELL exige direction DOWN.";
+
 const SCHEMA_SECTION = Object.freeze({
   RSI: '{"assessment":"...","facts":[{"code":"RSI_SLOPE","direction":"UP|DOWN|NONE","strength":"WEAK|MODERATE|STRONG","detail":"curto"}],"blockers":[],"invalidations":[],"changed":[],"watch":[],"playbooks":["RSI_TRAJECTORY"],"sources":["WILDER_1978"]}',
   DMI_ADX: '{"assessment":"...","facts":[{"code":"DI_DOMINANCE","direction":"UP|DOWN|NONE","strength":"WEAK|MODERATE|STRONG","detail":"curto"}],"blockers":[],"invalidations":[],"changed":[],"watch":[],"playbooks":["DMI_STRENGTH_VS_DIRECTION"],"sources":["WILDER_1978"]}',
   BOLLINGER: '{"assessment":"...","facts":[{"code":"BAND_WALK","direction":"UP|DOWN|NONE","strength":"WEAK|MODERATE|STRONG","detail":"curto"}],"blockers":[],"invalidations":[],"changed":[],"watch":[],"playbooks":["BOLLINGER_WALK"],"sources":["BOLLINGER_OFFICIAL_RULES"]}',
   ATR: '{"assessment":"...","facts":[{"code":"VOL_REGIME","direction":"NONE","strength":"WEAK|MODERATE|STRONG","detail":"curto"}],"blockers":[],"invalidations":[],"changed":[],"watch":[],"playbooks":["ATR_NORMALIZATION"],"sources":["WILDER_1978"]}',
   PRICE_ACTION: '{"assessment":"...","facts":[{"code":"TREND","direction":"UP|DOWN|NONE","strength":"WEAK|MODERATE|STRONG","detail":"curto"}],"blockers":[],"invalidations":[],"changed":[],"watch":[],"playbooks":["PA_TREND_STRUCTURE"],"sources":["EDWARDS_MAGEE_2018"]}',
-  ASSET: '{"scenario":"PULLBACK_CONTINUATION","direction":"UP|DOWN|NONE","state":"NO_SETUP|WAIT|BUY_CANDIDATE|SELL_CANDIDATE","bestCounterCase":"...","blockers":[],"invalidations":[],"changed":[],"watch":[]}',
-  CONSENSUS_BILATERAL: '{"scenario":"PULLBACK_CONTINUATION","direction":"UP|DOWN|NONE","evidenceFamilies":[{"family":"STRUCTURE","supports":"resumo"}],"bestCaseForUp":[],"bestCaseAgainstUp":[],"bestCaseForDown":[],"bestCaseAgainstDown":[],"blockers":[],"invalidations":[],"marketAmbiguities":[]}',
+  ASSET: '{"scenario":"PULLBACK_CONTINUATION","direction":"UP|DOWN|NONE","state":"NO_SETUP|WAIT|BUY_CANDIDATE|SELL_CANDIDATE","thesis":"1-2 frases","bestCounterCase":"...","blockers":[],"invalidations":[],"changed":[],"watch":[]}',
+  CONSENSUS_FINAL: '{"independentAssessment":"...","assetComparison":"...","scenario":"PULLBACK_CONTINUATION","direction":"UP|DOWN|NONE","agreement":"AGREE|PARTIAL|DISAGREE","supportingEvidence":[],"counterEvidence":[],"bestCaseForUp":[],"bestCaseAgainstUp":[],"bestCaseForDown":[],"bestCaseAgainstDown":[],"blockers":[],"invalidations":[],"marketAmbiguities":[],"reasons":[],"result":"APPROVE_BUY|APPROVE_SELL|CANCEL"}',
 });
-
-const SCENARIO_ID_LIST = "TREND_CONTINUATION, PULLBACK_CONTINUATION, DEEP_PULLBACK_STRUCTURE_THREAT, STRUCTURAL_REVERSAL, BREAKOUT, FAILED_BREAKOUT, BREAKDOWN, FAILED_BREAKDOWN, BREAKOUT_RETEST, COMPRESSION, EXPANSION, RANGE, TRANSITION, EXHAUSTION, STRUCTURAL_ZONE_REJECTION, TREND_WEAKENING, TREND_RESUMPTION, NO_SETUP";
-
-const ASSET_SECTION = "PAPEL: ASSET AGENT — classifique o CENARIO (tipo, semantica da Scenario Library) e a DIRECAO separadamente, e o estado operacional. Seja conservador: sem confirmacao estrutural => WAIT; sem cenario relevante => NO_SETUP. Explique o melhor contra-caso da sua propria tese (bestCounterCase <= 2 frases). scenario DEVE ser EXATAMENTE um id da Scenario Library: " + SCENARIO_ID_LIST + ". direction ∈ {UP, DOWN, NONE}; state ∈ {NO_SETUP, WAIT, BUY_CANDIDATE, SELL_CANDIDATE}.";
-const CONSENSUS_SECTION = "PAPEL: CONSENSUS INDEPENDENTE — classifique o mercado SEM conhecer a tese do Asset e faca o RED TEAM DOS DOIS LADOS: bestCaseForUp, bestCaseAgainstUp, bestCaseForDown, bestCaseAgainstDown, ambiguidades e blockers/invalidations. Sem votacao. scenario DEVE ser EXATAMENTE um id da Scenario Library: " + SCENARIO_ID_LIST + ".";
 
 export function systemPromptFor(role) {
   return [STATIC_PREFIX, ROLE_SECTION[role] ?? (role === "ASSET" ? ASSET_SECTION : CONSENSUS_SECTION), "SCHEMA:", SCHEMA_SECTION[role] ?? SCHEMA_SECTION.ASSET].join("\n");
@@ -65,34 +67,30 @@ export function digestMeasurements(m) {
   };
 }
 
-export function specialistDelta({ role, measurements, previous = null, cycleNumber = null, timing = null }) {
-  return JSON.stringify({
-    cycle: cycleNumber,
-    timing: timing ? { expirationAt: timing.expirationAt, tteMs: timing.tteMs, phase: timing.phase ?? null } : null,
-    state: digestMeasurements(measurements),
-    previous: previous ? { assessment: previous.assessment ?? null, facts: previous.facts ?? null } : null,
-  });
-}
-
 const compactFacts = (facts) => (Array.isArray(facts) ? facts.slice(0, 6).map((fact) => ({ code: fact.code, direction: fact.direction, strength: fact.strength, detail: fact.detail ?? null })) : facts);
-const compactSpecialist = (agent) => (agent ? { role: agent.role, assessment: agent.assessment, facts: compactFacts(agent.facts), blockers: agent.blockers ?? [], invalidations: agent.invalidations ?? [] } : null);
+const compactSpecialist = (role, agent) => (agent ? { role, assessment: agent.assessment, facts: compactFacts(agent.facts), blockers: agent.blockers ?? [], invalidations: agent.invalidations ?? [] } : null);
+const compactChange = (envelope) => {
+  if (!envelope || envelope.mode === "FULL") return null;
+  const detail = { role: envelope.role, changed: envelope.delta.changed.slice(0, 8), eventsNew: envelope.delta.eventsNew, eventsRemoved: envelope.delta.eventsRemoved };
+  if (detail.changed.length === 0 && detail.eventsNew.length === 0 && detail.eventsRemoved.length === 0) return null;
+  return detail;
+};
 
-export function assetDelta({ measurements, specialists, previousAssessment = null, cycleNumber = null, timing = null }) {
-  return JSON.stringify({
-    cycle: cycleNumber,
-    timing: timing ? { expirationAt: timing.expirationAt, tteMs: timing.tteMs } : null,
-    state: digestMeasurements(measurements),
-    specialists: Object.values(specialists ?? {}).map(compactSpecialist),
-    previous: previousAssessment ? { scenario: previousAssessment.scenario, direction: previousAssessment.direction, state: previousAssessment.state } : null,
-  });
+/** Prompt da Wave 1: o proprio fact packet (FULL/DELTA). Nenhum output de outro agente. */
+export function factPrompt(envelope) {
+  return envelope?.json ?? "{}";
 }
 
-export function consensusDelta({ measurements, specialists, cycleNumber = null, timing = null }) {
+/** Prompt da Wave 2 (Consensus FINAL): deterministic facts -> specialists -> changes -> ASSET (por ultimo). */
+export function consensusFinalPrompt({ measurements, timing = null, cycleNumber = null, envelopes = {}, specialistOutputs = {}, asset = null, previousConsensus = null, specialistRoles = [] } = {}) {
   return JSON.stringify({
     cycle: cycleNumber,
-    timing: timing ? { expirationAt: timing.expirationAt, tteMs: timing.tteMs } : null,
-    state: digestMeasurements(measurements),
-    specialists: Object.values(specialists ?? {}).map(compactSpecialist),
+    timing: timing ? { expirationAt: timing.expirationAt ?? null, tteMs: timing.tteMs ?? null, phase: timing.phase ?? null } : null,
+    deterministicFacts: digestMeasurements(measurements),
+    specialistEvidence: specialistRoles.map((role) => compactSpecialist(role, specialistOutputs?.[role])).filter(Boolean),
+    factChanges: Object.values(envelopes).map(compactChange).filter(Boolean),
+    ASSET_THESIS_TO_CHALLENGE: asset ? { scenario: asset.scenario, direction: asset.direction, state: asset.state, thesis: asset.thesis ?? null, bestCounterCase: asset.bestCounterCase ?? null } : null,
+    previousConsensus: previousConsensus ? { result: previousConsensus.result ?? null, direction: previousConsensus.direction ?? null, independentAssessment: previousConsensus.independentAssessment ?? null } : null,
   });
 }
 

@@ -1,30 +1,45 @@
 /**
- * V3 — AGENT TEAM v2: arquitetura de DUAS ONDAS + Final Gate deterministico (default).
+ * V3 — AGENT TEAM v3: arquitetura hibrida final (2 ondas LLM, 7 calls).
  *
- * WAVE A (paralelo): 5 specialists — fatos do dominio.
- * WAVE B (paralelo): Asset Agent + Consensus independente com red-team BILATERAL
- *                    (bestCaseForUp/AgainstUp/ForDown/AgainstDown), sem ver a tese do Asset.
- * FINAL GATE (deterministico): compara Asset x Consensus e usa o counter-case pre-computado
- *                    da direcao — SEM terceira chamada LLM (preserva o Final Challenge, sem anchoring).
+ * WAVE 1 (paralelo, 6): 5 specialists (fatos do proprio dominio) + Asset Agent (leitura global independente).
+ *   - Independencia: ninguem recebe output de ninguem; cada um recebe apenas o seu FACT PACKET.
+ * WAVE 2 (1): CONSENSUS FINAL — decisor de mercado; recebe deterministic facts + 5 specialists e,
+ *   por ULTIMO, o bloco ASSET_THESIS_TO_CHALLENGE (anti-anchoring).
+ * GATE (deterministico): APENAS contratos operacionais/seguranca; a direcao vem do Consensus LLM.
  *
- * THREE_WAVE fica disponivel apenas para benchmark (A/B da missao 17).
- * Deadline: qualquer onda que passe do ORCAMENTO (budgetMs, duracao no mesmo dominio do relogio)
- * => AGENT_UNAVAILABLE/ANALYSIS_DEADLINE (fail-closed).
+ * Total normal: 7 chamadas LLM por ciclo. Sem terceira onda. Fail-closed em qualquer falha.
  */
-import { specialistDelta, assetDelta, consensusDelta } from "./prompts.mjs";
+import { factPrompt, consensusFinalPrompt } from "./prompts.mjs";
 import { collectInputNumbers } from "./schemas.mjs";
-import { finalGate } from "../final-gate.mjs";
+import { buildPacketEnvelope } from "./fact-packets.mjs";
+import { executionGate } from "../final-gate.mjs";
 
-export const V3_AGENT_TEAM_VERSION = "v3-agent-team-v2";
+export const V3_AGENT_TEAM_VERSION = "v3-agent-team-v3";
+export const V3_AGENT_ARCHITECTURE = "HYBRID_2_WAVE";
 
 export const SPECIALIST_ROLES = Object.freeze(["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION"]);
+export const WAVE1_ROLES = Object.freeze([...SPECIALIST_ROLES, "ASSET"]);
+export const CONSENSUS_ROLE = "CONSENSUS_FINAL";
+export const EXPECTED_CALLS = WAVE1_ROLES.length + 1;
+
 const TIMEOUT = Symbol("deadline");
 
+const tokenField = (usage, key) => Number.isFinite(Number(usage?.[key])) ? Number(usage[key]) : null;
+
 const summary = (call) => ({
-  role: call.role, status: call.status, reason: call.reason ?? null, latencyMs: call.latencyMs ?? null, model: call.model ?? null,
-  schemaValid: call.schemaValid === true, semanticValid: call.semanticValid === true,
+  role: call.role, status: call.status, reason: call.reason ?? null,
+  latencyMs: call.latencyMs ?? null, model: call.model ?? null, provider: call.provider ?? null,
+  requestId: call.requestId ?? null, opportunityId: call.opportunityId ?? null,
+  sessionHash: call.sessionHash ?? null,
+  startedAt: call.startedAt ?? null, finishedAt: call.finishedAt ?? null,
   httpStatus: call.httpStatus ?? null, finishReason: call.finishReason ?? null,
-  inputTokens: call.usage?.prompt_tokens ?? null, outputTokens: call.usage?.completion_tokens ?? null, cachedTokens: call.usage?.prompt_tokens_details?.cached_tokens ?? null,
+  schemaValid: call.schemaValid === true, semanticValid: call.semanticValid === true,
+  promptTokens: call.promptTokens ?? tokenField(call.usage, "prompt_tokens"),
+  cachedTokens: call.cachedTokens ?? tokenField(call.usage?.prompt_tokens_details, "cached_tokens"),
+  completionTokens: call.completionTokens ?? tokenField(call.usage, "completion_tokens"),
+  reasoningTokens: call.reasoningTokens ?? tokenField(call.usage?.completion_tokens_details, "reasoning_tokens"),
+  totalTokens: call.totalTokens ?? tokenField(call.usage, "total_tokens"),
+  payloadChars: call.payloadChars ?? null, payloadBytes: call.payloadBytes ?? null,
   rawExcerpt: call.rawExcerpt ?? null,
 });
 
@@ -42,73 +57,88 @@ async function withBudget(promise, { budgetMs = null } = {}) {
 }
 
 export async function runAgentCycle({
-  client, measurements, specialists = null, previousByRole = {}, previousAssessment = null,
+  client, measurements, specialists = null, previousPackets = {}, previousOutputs = {},
   expiration = null, cycleNumber = null, opportunityId = null, budgetMs = null,
-  architecture = "TWO_WAVE", now = () => Date.now(),
+  now = () => Date.now(),
 } = {}) {
   const startedAt = now();
   const result = {
-    version: V3_AGENT_TEAM_VERSION, architecture, cycleNumber, available: false, reason: null,
+    version: V3_AGENT_TEAM_VERSION, architecture: V3_AGENT_ARCHITECTURE, cycleNumber, available: false, reason: null,
     specialists: null, asset: null, independent: null, consensus: null, finalGate: null, result: "CANCEL",
-    agentCalls: [], latency: { waveA: null, waveB: null, total: null },
+    agentCalls: [], factPackets: {}, nextState: null, latency: { wave1: null, wave2: null, total: null },
   };
   if (!client?.available) { result.reason = "AGENT_UNAVAILABLE"; return result; }
 
-  const timing = expiration ? { expirationAt: expiration.expirationAt, tteMs: expiration.tteMs ?? null, phase: expiration.phase ?? null } : null;
+  const timing = expiration ? { expirationAt: expiration.expirationAt, tteMs: expiration.tteMs ?? null, phase: expiration.phase ?? null, brokerNow: expiration.brokerNow ?? null } : null;
   const inputNumbers = collectInputNumbers(measurements, timing);
   const waveBudget = () => (budgetMs === null || budgetMs === undefined ? null : Math.max(0, Number(budgetMs) - (now() - startedAt)));
   const requestId = (role) => `${opportunityId ?? "v3"}:${cycleNumber ?? "?"}:${role}`;
   const callCommon = () => ({ opportunityId, budgetMs: waveBudget(), inputNumbers });
 
-  // WAVE A — 5 specialists em paralelo
-  const waveAStart = now();
-  const waveA = await withBudget(Promise.all(SPECIALIST_ROLES.map((role) => client.call({
+  // FACT COMPILER: 6 envelopes (FULL no 1o ciclo; DELTA nos seguintes) com fingerprint deterministico.
+  const envelopes = Object.fromEntries(WAVE1_ROLES.map((role) => [role, buildPacketEnvelope({
+    role, measurements, timing, cycleNumber,
+    previousPacket: previousPackets?.[role] ?? null,
+    previousAssessment: previousOutputs?.[role] ?? null,
+  })]));
+  result.factPackets = Object.fromEntries(Object.entries(envelopes).map(([role, envelope]) => [role, {
+    mode: envelope.mode, fingerprint: envelope.fingerprint, previousFingerprint: envelope.previousFingerprint, chars: envelope.chars, bytes: envelope.bytes,
+  }]));
+
+  // WAVE 1 — 6 LLMs EM PARALELO (5 specialists + Asset), sem dependencia entre si.
+  const wave1Start = now();
+  const wave1 = await withBudget(Promise.all(WAVE1_ROLES.map((role) => client.call({
     role, requestId: requestId(role), ...callCommon(),
-    prompt: specialistDelta({ role, measurements, previous: previousByRole?.[role] ?? null, cycleNumber, timing }),
+    prompt: factPrompt(envelopes[role]),
   }))), { budgetMs: waveBudget() });
-  result.latency.waveA = Math.max(0, now() - waveAStart);
-  if (waveA.timedOut) { result.reason = "ANALYSIS_DEADLINE"; return result; }
-  const specialistCalls = waveA.value ?? [];
-  result.agentCalls.push(...specialistCalls.map(summary));
-  if (specialistCalls.some((call) => call.status !== "OK")) { result.reason = specialistCalls.some((call) => call.reason === "ANALYSIS_DEADLINE") ? "ANALYSIS_DEADLINE" : "AGENT_UNAVAILABLE"; return result; }
-  const agentSpecialists = Object.fromEntries(SPECIALIST_ROLES.map((role) => [role, specialistCalls.find((call) => call.role === role)?.output]));
-
-  // WAVE B — Asset + Consensus independente (bilateral) em paralelo
-  const waveBStart = now();
-  const waveB = await withBudget(Promise.all([
-    client.call({ role: "ASSET", requestId: requestId("ASSET"), ...callCommon(), prompt: assetDelta({ measurements, specialists: agentSpecialists, previousAssessment, cycleNumber, timing }) }),
-    client.call({ role: "CONSENSUS_BILATERAL", requestId: requestId("CONSENSUS_BILATERAL"), ...callCommon(), prompt: consensusDelta({ measurements, specialists: agentSpecialists, cycleNumber, timing }) }),
-  ]), { budgetMs: waveBudget() });
-  result.latency.waveB = Math.max(0, now() - waveBStart);
-  if (waveB.timedOut) { result.reason = "ANALYSIS_DEADLINE"; return result; }
-  const [assetCall, consensusCall] = waveB.value ?? [];
-  result.agentCalls.push(summary(assetCall), summary(consensusCall));
-  if (assetCall?.status !== "OK" || consensusCall?.status !== "OK") { result.reason = [assetCall, consensusCall].some((call) => call?.reason === "ANALYSIS_DEADLINE") ? "ANALYSIS_DEADLINE" : "AGENT_UNAVAILABLE"; return result; }
-
-  if (architecture === "THREE_WAVE") {
-    const finalPrompt = JSON.stringify({ assetThesis: { scenario: assetCall.output.scenario, direction: assetCall.output.direction, state: assetCall.output.state }, independent: consensusCall.output }).slice(0, 4_000);
-    const finalCall = await withBudget(client.call({ role: "CONSENSUS_FINAL", requestId: requestId("CONSENSUS_FINAL"), ...callCommon(), prompt: finalPrompt }), { budgetMs: waveBudget() });
-    if (finalCall.timedOut || finalCall.value?.status !== "OK") { result.reason = finalCall.timedOut ? "ANALYSIS_DEADLINE" : "AGENT_UNAVAILABLE"; return result; }
-    result.agentCalls.push(summary(finalCall.value));
-    result.available = true;
-    result.specialists = agentSpecialists;
-    result.asset = assetCall.output;
-    result.independent = consensusCall.output;
-    result.consensus = { agreement: finalCall.value.output.agreement, result: finalCall.value.output.result, reasons: finalCall.value.output.reasons ?? [], bestCounterCase: finalCall.value.output.bestCounterCase ?? null, bilateral: consensusCall.output };
-    result.result = finalCall.value.output.result;
-    result.latency.total = Math.max(0, now() - startedAt);
+  result.latency.wave1 = Math.max(0, now() - wave1Start);
+  if (wave1.timedOut) { result.reason = "ANALYSIS_DEADLINE"; return result; }
+  const wave1Calls = wave1.value ?? [];
+  result.agentCalls.push(...wave1Calls.map(summary));
+  if (wave1Calls.length !== WAVE1_ROLES.length || wave1Calls.some((call) => call.status !== "OK")) {
+    result.reason = wave1Calls.some((call) => call.reason === "ANALYSIS_DEADLINE") ? "ANALYSIS_DEADLINE" : "AGENT_UNAVAILABLE";
     return result;
   }
+  const outputs = Object.fromEntries(WAVE1_ROLES.map((role) => [role, wave1Calls.find((call) => call.role === role)?.output]));
+  const specialistOutputs = Object.fromEntries(SPECIALIST_ROLES.map((role) => [role, outputs[role]]));
+  const asset = outputs.ASSET;
 
-  // FINAL GATE deterministico (sem terceira chamada): usa o red-team bilateral do Consensus
-  const gate = finalGate({ asset: assetCall.output, consensus: consensusCall.output, timing: timing ? { tteMs: timing.tteMs } : null, now: now() });
+  // WAVE 2 — SO com 6/6 validos: CONSENSUS FINAL (decisor de mercado).
+  const wave2Start = now();
+  const consensusCall = await withBudget(client.call({
+    role: CONSENSUS_ROLE, requestId: requestId(CONSENSUS_ROLE), ...callCommon(),
+    prompt: consensusFinalPrompt({ measurements, timing, cycleNumber, envelopes, specialistOutputs, asset, specialistRoles: SPECIALIST_ROLES }),
+  }), { budgetMs: waveBudget() });
+  result.latency.wave2 = Math.max(0, now() - wave2Start);
+  if (consensusCall.timedOut || consensusCall.value?.status !== "OK") {
+    if (consensusCall.value) result.agentCalls.push(summary(consensusCall.value));
+    result.reason = consensusCall.timedOut || consensusCall.value?.reason === "ANALYSIS_DEADLINE" ? "ANALYSIS_DEADLINE" : "AGENT_UNAVAILABLE";
+    return result;
+  }
+  const consensusOutput = consensusCall.value.output;
+  result.agentCalls.push(summary(consensusCall.value));
+
+  // GATE deterministico: valida contratos operacionais e SEGURANCA. Nao decide mercado.
+  const gate = executionGate({
+    consensus: consensusOutput,
+    calls: result.agentCalls,
+    timing: timing ? { expirationAt: timing.expirationAt, tteMs: timing.tteMs } : null,
+    opportunityId,
+    latencyTotalMs: Math.max(0, now() - startedAt),
+    deadlineMs: budgetMs,
+    now: now(),
+  });
+
   result.available = true;
-  result.specialists = agentSpecialists;
-  result.asset = assetCall.output;
-  result.independent = consensusCall.output;
-  result.consensus = { agreement: gate.agreement, result: gate.result, reasons: gate.reasons, challengeSteps: gate.steps, bestCounterCase: gate.counterCase, bilateral: consensusCall.output };
+  result.specialists = specialistOutputs;
+  result.asset = asset;
+  result.consensus = consensusOutput;
   result.finalGate = gate;
   result.result = gate.result;
+  result.nextState = {
+    packets: Object.fromEntries(Object.entries(envelopes).map(([role, envelope]) => [role, envelope.packet])),
+    outputs: { ...outputs, [CONSENSUS_ROLE]: consensusOutput },
+  };
   result.latency.total = Math.max(0, now() - startedAt);
   return result;
 }

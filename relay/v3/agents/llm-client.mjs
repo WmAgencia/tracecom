@@ -3,12 +3,16 @@
  * Fail-closed: JSON estrito invalido/truncado/schema/semantica => AGENT_UNAVAILABLE.
  * O resgate de JSON (fences/balanced) fica apenas como DIAGNOSTICO (rawExcerpt), nunca como sucesso no modo structured.
  */
+import crypto from "node:crypto";
 import { runTextProvider } from "../../opencode-go.mjs";
 import { validateAgentOutput } from "./schemas.mjs";
 import { systemPromptFor } from "./prompts.mjs";
 import { agentRequestOptions, CAPABILITIES } from "./capabilities.mjs";
 
-export const V3_AGENT_CLIENT_VERSION = "v3-agent-client-v2";
+export const V3_AGENT_CLIENT_VERSION = "v3-agent-client-v3";
+export const V3_AGENT_PROVIDER = "openCodeGo";
+
+const sessionHashOf = (sessionKey) => crypto.createHash("sha256").update(String(sessionKey ?? "")).digest("hex").slice(0, 12);
 
 /** Resgate apenas diagnostico (nao promove a sucesso). */
 export function rescueJsonExcerpt(text) {
@@ -27,7 +31,7 @@ export function rescueJsonExcerpt(text) {
   return candidate.slice(start, start + 200);
 }
 
-const DEFAULT_MAX_TOKENS_BY_ROLE = Object.freeze({ PRICE_ACTION: 768, ASSET: 768, CONSENSUS_BILATERAL: 900 });
+const DEFAULT_MAX_TOKENS_BY_ROLE = Object.freeze({ PRICE_ACTION: 768, ASSET: 768, CONSENSUS_FINAL: 1100 });
 
 export function createLlmAgentClient({ pool = null, runner = null, now = () => Date.now(), maxTokens = 512, maxTokensByRole = null } = {}) {
   const run = typeof runner === "function" ? runner : pool ? (options) => runTextProvider(pool, options) : null;
@@ -41,33 +45,50 @@ export function createLlmAgentClient({ pool = null, runner = null, now = () => D
     available: typeof run === "function",
     capabilities: CAPABILITIES,
     async call({ role, prompt, requestId, opportunityId = null, budgetMs = null, timeoutMs = null, inputNumbers = null, sessionContext = {} }) {
-      const startedAt = now();
-      const base = { role, requestId, model: null, output: null, schemaValid: false, semanticValid: false, usage: null, finishReason: null, httpStatus: null };
-      if (typeof run !== "function") return { ...base, status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", latencyMs: null };
+      const startedAtMs = now();
+      const base = {
+        role, requestId, opportunityId, provider: V3_AGENT_PROVIDER, model: null, output: null, schemaValid: false, semanticValid: false,
+        usage: null, finishReason: null, httpStatus: null,
+        startedAt: new Date(startedAtMs).toISOString(), finishedAt: null, startedAtMs, finishedAtMs: null,
+        payloadChars: typeof prompt === "string" ? prompt.length : null, payloadBytes: typeof prompt === "string" ? Buffer.byteLength(prompt, "utf8") : null,
+        sessionHash: null,
+      };
+      const finish = (call) => { const finishedAtMs = now(); return { ...call, finishedAt: new Date(finishedAtMs).toISOString(), finishedAtMs }; };
+      if (typeof run !== "function") return finish({ ...base, status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", latencyMs: null });
       const hasBudget = Number.isFinite(Number(budgetMs)) && Number(budgetMs) > 0;
-      if (hasBudget && Number(budgetMs) <= 500) return { ...base, status: "ERROR", reason: "ANALYSIS_DEADLINE", latencyMs: Math.max(0, now() - startedAt) };
+      if (hasBudget && Number(budgetMs) <= 500) return finish({ ...base, status: "ERROR", reason: "ANALYSIS_DEADLINE", latencyMs: Math.max(0, now() - startedAtMs) });
       const effectiveTimeout = hasBudget ? Math.min(Number(timeoutMs) > 0 ? Number(timeoutMs) : Number(budgetMs), Number(budgetMs)) : (Number(timeoutMs) > 0 ? Number(timeoutMs) : null);
+      const sessionKey = opportunityId ? `v3:${opportunityId}:${role}` : (sessionContext.sessionKey ?? requestId);
+      const withSession = { ...base, sessionHash: sessionHashOf(sessionKey) };
       try {
         const result = await run({
           system: systemPromptFor(role), prompt, maxTokens: tokensFor(role), requestId,
-          sessionContext: { ...sessionContext, sessionKey: opportunityId ? `v3:${opportunityId}:${role}` : (sessionContext.sessionKey ?? requestId) },
+          sessionContext: { ...sessionContext, sessionKey },
           temperature: baseOptions.temperature, responseFormat: baseOptions.responseFormat, reasoningEffort: baseOptions.reasoningEffort,
           timeoutMs: effectiveTimeout,
         });
-        const latencyMs = Number.isFinite(Number(result?.latencyMs)) ? Number(result.latencyMs) : Math.max(0, now() - startedAt);
-        const common = { ...base, latencyMs, model: result?.model ?? null, usage: result?.usage ?? null, finishReason: result?.finishReason ?? null, httpStatus: result?.httpStatus ?? null };
-        if (result?.reason === "TIMEOUT" && hasBudget) return { ...common, status: "ERROR", reason: "ANALYSIS_DEADLINE" };
-        if (result?.status !== "OK") return { ...common, status: "ERROR", reason: result?.reason ?? "PROVIDER_ERROR", rawExcerpt: rescueJsonExcerpt(result?.text) };
-        if (result?.finishReason === "length" && CAPABILITIES.truncationIsFailure) return { ...common, status: "ERROR", reason: "TRUNCATED", rawExcerpt: rescueJsonExcerpt(result?.text) };
+        const latencyMs = Number.isFinite(Number(result?.latencyMs)) ? Number(result.latencyMs) : Math.max(0, now() - startedAtMs);
+        const usage = result?.usage ?? null;
+        const common = {
+          ...withSession, latencyMs, model: result?.model ?? null, usage, finishReason: result?.finishReason ?? null, httpStatus: result?.httpStatus ?? null,
+          promptTokens: Number.isFinite(Number(usage?.prompt_tokens)) ? Number(usage.prompt_tokens) : null,
+          cachedTokens: Number.isFinite(Number(usage?.prompt_tokens_details?.cached_tokens)) ? Number(usage.prompt_tokens_details.cached_tokens) : null,
+          completionTokens: Number.isFinite(Number(usage?.completion_tokens)) ? Number(usage.completion_tokens) : null,
+          reasoningTokens: Number.isFinite(Number(usage?.completion_tokens_details?.reasoning_tokens)) ? Number(usage.completion_tokens_details.reasoning_tokens) : null,
+          totalTokens: Number.isFinite(Number(usage?.total_tokens)) ? Number(usage.total_tokens) : null,
+        };
+        if (result?.reason === "TIMEOUT" && hasBudget) return finish({ ...common, status: "ERROR", reason: "ANALYSIS_DEADLINE" });
+        if (result?.status !== "OK") return finish({ ...common, status: "ERROR", reason: result?.reason ?? "PROVIDER_ERROR", rawExcerpt: rescueJsonExcerpt(result?.text) });
+        if (result?.finishReason === "length" && CAPABILITIES.truncationIsFailure) return finish({ ...common, status: "ERROR", reason: "TRUNCATED", rawExcerpt: rescueJsonExcerpt(result?.text) });
         // Structured mode: EXIGE JSON estrito (parse do provider ou do proprio texto).
         let parsed = result?.parsed ?? null;
         if (!parsed && typeof result?.text === "string") { try { parsed = JSON.parse(result.text); } catch { parsed = null; } }
-        if (!parsed) return { ...common, status: "ERROR", reason: "INVALID_JSON", rawExcerpt: rescueJsonExcerpt(result?.text) };
+        if (!parsed) return finish({ ...common, status: "ERROR", reason: "INVALID_JSON", rawExcerpt: rescueJsonExcerpt(result?.text) });
         const validation = validateAgentOutput(role, parsed, { inputNumbers });
-        if (validation.ok !== true) return { ...common, status: "ERROR", reason: `SCHEMA_${validation.error}${validation.token ? `(${validation.token})` : ""}`, output: null, rawExcerpt: JSON.stringify(parsed).slice(0, 400) };
-        return { ...common, status: "OK", reason: null, output: parsed, schemaValid: true, semanticValid: true };
+        if (validation.ok !== true) return finish({ ...common, status: "ERROR", reason: `SCHEMA_${validation.error}${validation.token ? `(${validation.token})` : ""}`, output: null, rawExcerpt: JSON.stringify(parsed).slice(0, 400) });
+        return finish({ ...common, status: "OK", reason: null, output: parsed, schemaValid: true, semanticValid: true });
       } catch (error) {
-        return { ...base, status: "ERROR", reason: error?.name === "AbortError" ? "TIMEOUT" : "AGENT_ERROR", latencyMs: Math.max(0, now() - startedAt) };
+        return finish({ ...withSession, status: "ERROR", reason: error?.name === "AbortError" ? "TIMEOUT" : "AGENT_ERROR", latencyMs: Math.max(0, now() - startedAtMs) });
       }
     },
   };

@@ -166,7 +166,6 @@ export class IqMultiRuntime extends EventEmitter {
           agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ pool, now: this.now, maxTokens: Number(process.env.V3_AGENT_MAX_TOKENS) || 512 }) : null,
           agentSafetyMarginMs: Number(process.env.V3_AGENT_SAFETY_MARGIN_MS) || 8_000,
           estimatedWaveMs: Number(process.env.V3_AGENT_ESTIMATED_MS) || 12_000,
-          architecture: process.env.V3_AGENT_ARCHITECTURE === "THREE_WAVE" ? "THREE_WAVE" : "TWO_WAVE",
           brokerNow: () => { const value = this.client?.serverNow?.(); return Number.isFinite(Number(value)) ? Number(value) : this.now(); },
         })
       : null;

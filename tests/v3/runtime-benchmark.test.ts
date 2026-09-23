@@ -104,7 +104,7 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
     expect(opportunity.finalDecision?.executionBlocked).toBe("V3_NOT_ACTIVE");
     expect(runtime.status().counters.snapshots).toBeGreaterThanOrEqual(1);
     expect(runtime.status().scheduler.counters.scheduled).toBeGreaterThanOrEqual(1);
-    expect(runtime.status().agents.latency.CONSENSUS_BILATERAL.count).toBeGreaterThanOrEqual(1);
+    expect(runtime.status().agents.latency.CONSENSUS_FINAL.count).toBeGreaterThanOrEqual(1);
     expect(runtime.status().executionEnabled).toBe(false);
     // disparo no alvo (agendado para TTE 302 ~= 5s apos o ultimo ciclo LLM): broker avanca e o scheduler revalida observe-only
     brokerClock = exp - 302_000;
@@ -116,12 +116,12 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
 });
 
 describe("V3 benchmark — agentes LLM (latencia simulada; 30 ativos)", () => {
-  it("30 ativos em paralelo com 8 chamadas/ciclo: nenhum ciclo estoura o candle e p95 dentro do orcamento", async () => {
+  it("30 ativos em paralelo com 7 chamadas/ciclo: nenhum ciclo estoura o candle e p95 dentro do orcamento", async () => {
     const base = approveScript();
     const script: Record<string, any> = {};
     for (const role of ["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION"]) script[role] = { ...base[role], sleepMs: 1, latencyMs: 1 };
     script.ASSET = { ...base.ASSET, sleepMs: 2, latencyMs: 2 };
-    script.CONSENSUS_BILATERAL = { ...base.CONSENSUS_BILATERAL, sleepMs: 2, latencyMs: 2 };
+    script.CONSENSUS_FINAL = { ...base.CONSENSUS_FINAL, sleepMs: 2, latencyMs: 2 };
     
     const agents = createScriptedAgentClient(script, { now: () => Date.now() });
     const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false }, agents });
@@ -144,7 +144,7 @@ describe("V3 benchmark — agentes LLM (latencia simulada; 30 ativos)", () => {
     const sorted = [...latencies].sort((a, b) => a - b);
     const p95 = sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * 0.95))] ?? 0;
     const status = runtime.status();
-    console.log(`V3_AGENT_BENCHMARK cycles=${cycles} assets=30 waves=${waves.length} p95=${p95}ms maxDepth=${status.queue.maxDepth} agentCalls=${status.agents.calls} agentP95=${status.agents.latency.CONSENSUS_BILATERAL?.p95}ms`);
+    console.log(`V3_AGENT_BENCHMARK cycles=${cycles} assets=30 waves=${waves.length} p95=${p95}ms maxDepth=${status.queue.maxDepth} agentCalls=${status.agents.calls} agentP95=${status.agents.latency.CONSENSUS_FINAL?.p95}ms`);
     expect(cycles).toBe(30 * waves.length);
     expect(p95).toBeLessThan(4_000);
     expect(status.queue.maxDepth).toBeGreaterThanOrEqual(2);

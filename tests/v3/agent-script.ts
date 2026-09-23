@@ -1,4 +1,4 @@
-/** Scripts de agentes (contratos compactos v2) para testes. */
+/** Scripts de agentes (arquitetura hibrida final: Wave 1 = 5 specialists + Asset; Wave 2 = Consensus Final). */
 
 export const specialistOutput = (role: string, extra: Record<string, unknown> = {}) => ({
   assessment: `${role} estado do dominio`,
@@ -12,17 +12,36 @@ export const specialistOutput = (role: string, extra: Record<string, unknown> = 
   ...extra,
 });
 
-export const bilateralOutput = (extra: Record<string, unknown> = {}) => ({
+export const assetOutput = (extra: Record<string, unknown> = {}) => ({
   scenario: "TREND_CONTINUATION",
   direction: "UP",
-  evidenceFamilies: [{ family: "STRUCTURE", supports: "BOS de alta" }, { family: "MOMENTUM", supports: "crossback" }],
-  bestCaseForUp: ["estrutura HH/HL"],
+  state: "BUY_CANDIDATE",
+  thesis: "estrutura de alta intacta com pullback normal",
+  bestCounterCase: "CHoCH bearish invalidaria a continuacao",
+  blockers: [],
+  invalidations: [],
+  changed: [],
+  watch: ["novo BOS"],
+  ...extra,
+});
+
+export const consensusFinalOutput = (extra: Record<string, unknown> = {}) => ({
+  independentAssessment: "estrutura HH/HL com BOS recente e momentum alinhado",
+  assetComparison: "asset concorda com a leitura independente (mesma direcao)",
+  scenario: "TREND_CONTINUATION",
+  direction: "UP",
+  agreement: "AGREE",
+  supportingEvidence: ["BOS bullish recente", "DI dominance positiva"],
+  counterEvidence: ["squeeze de bandas"],
+  bestCaseForUp: ["estrutura HH/HL", "BOS recente"],
   bestCaseAgainstUp: ["CHoCH bearish invalidaria"],
   bestCaseForDown: ["perda do swing"],
   bestCaseAgainstDown: ["BOS bullish recente"],
   blockers: [],
   invalidations: [],
   marketAmbiguities: [],
+  reasons: ["estrutura e momentum alinhados"],
+  result: "APPROVE_BUY",
   ...extra,
 });
 
@@ -32,15 +51,12 @@ export const approveScript = (): Record<string, any> => ({
   BOLLINGER: specialistOutput("BOLLINGER"),
   ATR: specialistOutput("ATR", { facts: [{ code: "VOL_REGIME", direction: "NONE", strength: "MODERATE", detail: "compativel" }] }),
   PRICE_ACTION: specialistOutput("PRICE_ACTION"),
-  ASSET: {
-    scenario: "TREND_CONTINUATION", direction: "UP", state: "BUY_CANDIDATE",
-    bestCounterCase: "CHoCH bearish invalidaria a continuacao", blockers: [], invalidations: [], changed: [], watch: ["novo BOS"],
-  },
-  CONSENSUS_BILATERAL: bilateralOutput(),
+  ASSET: assetOutput(),
+  CONSENSUS_FINAL: consensusFinalOutput(),
 });
 
 export const cancelScript = (): Record<string, any> => ({
   ...approveScript(),
-  ASSET: { scenario: "TRANSITION", direction: "NONE", state: "WAIT", bestCounterCase: "sem tese", blockers: [], invalidations: [], changed: [], watch: [] },
-  CONSENSUS_BILATERAL: bilateralOutput({ direction: "NONE", evidenceFamilies: [{ family: "STRUCTURE", supports: "mista" }] }),
+  ASSET: assetOutput({ scenario: "TRANSITION", direction: "NONE", state: "WAIT", thesis: "sem tese direcional", bestCounterCase: "sem tese" }),
+  CONSENSUS_FINAL: consensusFinalOutput({ independentAssessment: "evidencia mista", assetComparison: "asset sem direcao", scenario: "TRANSITION", direction: "NONE", agreement: "PARTIAL", result: "CANCEL", reasons: ["sem confirmacao estrutural"] }),
 });
