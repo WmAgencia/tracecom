@@ -681,10 +681,11 @@ export class IqMultiRuntime extends EventEmitter {
    *  aplica apenas diferencas reais; habilita so quando o broker oferece (OPEN + activeId);
    *  normaliza NORMAL stale (NOT_OFFERED/sem activeId) para disabled. Nunca remove do grid. */
   async reconcileMarketUniverse({ persist = false } = {}) {
-    if (!this.pool?.query) return { skipped: "NO_POOL" };
+    if (!this.pool) return { skipped: "NO_POOL" };
+    const rawQuery = typeof this.pool.__rawQuery === "function" ? (sql, params) => this.pool.__rawQuery(sql, params) : (sql, params) => this.pool.query(sql, params);
     let rows = [];
     try {
-      const result = await this.pool.query("SELECT market_key, enabled, market_type, availability, active_id FROM iq_markets");
+      const result = await rawQuery("SELECT market_key, enabled, market_type, availability, active_id FROM iq_markets");
       if (result?.dropped === true) return { skipped: "DB_DROPPED" };
       rows = result?.rows ?? [];
     } catch (error) { this.#safe(() => this.log("V3_RECONCILE_DB_FAIL", String(error?.message).slice(0, 120))); return { error: true }; }
@@ -698,7 +699,7 @@ export class IqMultiRuntime extends EventEmitter {
       if (ctx.enabled === effective) {
         // Normalizacao stale precisa persistir mesmo que o runtime ja esteja disabled (UPDATE direto, sem depender de DB-ready do scheduler).
         if (isStaleNormal && desired === true) {
-          try { await this.pool.query("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]); staleNormal += 1; } catch { /* noop */ }
+          try { await rawQuery("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]); staleNormal += 1; } catch { /* noop */ }
         }
         continue;
       }
