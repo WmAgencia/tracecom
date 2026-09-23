@@ -26,8 +26,12 @@ const server = fs.readFileSync(new URL("../relay/server.mjs", import.meta.url), 
   ok("botao unico usa estado do backend + labels ATIVAR/DESATIVAR", grid.includes("executionButtonState") && grid.includes("state.practiceArmed") && grid.includes("state.realArmed") && !/armed\s*\?\s*"ARMADO"/.test(grid));
   const selectFn = grid.slice(grid.indexOf("const selectAccount ="), grid.indexOf("const selectAccount =") + 1400);
   ok("troca de conta usa switchDisarmPlan (nunca auto-arma)", grid.includes("switchDisarmPlan") && /\/api\/iq\/real\/disarm/.test(selectFn) && !/armPracticeNow|armRealNow|"\/api\/iq\/arm"/.test(selectFn));
-  ok("cards usam cardResultFor (V2-only, janela curta) e nunca PATH_TEST/legado", grid.includes("cardResultFor") && grid.includes("isV2Operational") && !/exec\.open\s*\?\s*\["ABERTA"/.test(grid));
-  ok("painel OBSERVAÇÃO V2 presente com buildV2Report + ops-ui.js", grid.includes("Observação V2") && grid.includes("obsBody") && grid.includes("buildV2Report") && grid.includes('src="/ops-ui.js"'));
+  ok("cards usam cardResultFor (V2-only, janela curta) e nunca PATH_TEST/legado", grid.includes("cardResultFor") && grid.includes("isV2Operational") && grid.includes('src="/ops-ui.js"') && !/exec\.open\s*\?\s*\["ABERTA"/.test(grid));
+  ok("OBSERVATION_PANEL_REMOVED_FROM_MAIN_GRID: sem Observação V2/obsBody/tabelas", !/Observação V2/.test(grid) && !/obsBody|obsSample|obsIntegrity|obsTable|refreshV2Observation/.test(grid));
+  ok("NO_OBSERVATION_POLLING_ON_MAIN_GRID: sem polling da observação", !/setInterval\(\s*refreshV2Observation/.test(grid) && !/executions\?accountContext=" \+ ctx \+ "&limit=200[\s\S]{0,400}buildV2Report/.test(grid));
+  ok("NO_ORPHAN_OBSERVATION_DOM: ids/classes da observacao inexistentes", !/id="obs/.test(grid) && !/class="obs/.test(grid));
+  ok("three summary cards remain (V2/Lucro/Inteligencia) e grid logo em seguida", (grid.match(/<section class="pcard/g) ?? []).length === 3 && grid.indexOf('<main id="grid">') < grid.indexOf('class="foot"') && !/Observação/.test(grid.slice(grid.indexOf("sumgrid"), grid.indexOf('<main id="grid">'))));
+  ok("broker status com fonte explicita (connection.execution.ready), sem 'connected' ambiguo", grid.includes("connection?.execution") && grid.includes("execConn?.ready") && !/st\?\.connected|st\.connected/.test(grid));
 }
 
 /* 3) grid consome productState do backend (nao recalcula estrategia) */

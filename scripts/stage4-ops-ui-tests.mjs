@@ -9,12 +9,12 @@ const HASH = "sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645
 const NOW = 1_800_000_000_000;
 const iso = (ms) => new Date(ms).toISOString();
 
-ok("ops-ui expoe as funcoes puras esperadas", OpsUI && typeof OpsUI.cardResultFor === "function" && typeof OpsUI.executionButtonState === "function" && typeof OpsUI.switchDisarmPlan === "function" && typeof OpsUI.buildV2Report === "function");
+ok("ops-ui expoe as funcoes puras de UI (cards/botao/troca)", OpsUI && typeof OpsUI.cardResultFor === "function" && typeof OpsUI.executionButtonState === "function" && typeof OpsUI.switchDisarmPlan === "function" && typeof OpsUI.isV2Operational === "function");
 
 const row = (patch = {}) => ({
   executionId: "e1", marketKey: "EURUSD:OTC", direction: "CALL", state: "SETTLED", brokerResult: "WIN", profit: 1.64,
   stake: 2, payout: 82, strategyVersion: V2, strategyHash: HASH, testOnly: false, excludedFromStats: false,
-  decisionId: "d1", snapshotHash: "s1", decisionSnapshot: { id: "s1", features: { regime: "UPTREND", structure: "UPTREND", priceAction: { pullback: { depth: "NORMAL" } } } },
+  decisionId: "d1", snapshotHash: "s1", decisionSnapshot: { id: "s1" },
   requestedAt: iso(NOW - 60_000), expirationAt: iso(NOW), settledAt: iso(NOW - 5_000), accountContext: "PRACTICE", accountType: "PRACTICE", mode: "PRACTICE",
   ...patch,
 });
@@ -62,51 +62,11 @@ const row = (patch = {}) => ({
   ok("troca sem conta ativa nao dispara disarm", idle.disarm.length === 0);
 }
 
-/* 5) relatorio observacional */
-{
-  const rows = [
-    row({ executionId: "a", decisionId: "d1", requestedAt: iso(NOW - 10_000), settledAt: iso(NOW - 5_000) }),
-    row({ executionId: "b", decisionId: "d2", brokerResult: "LOSS", profit: -2, requestedAt: iso(NOW - 20_000), settledAt: iso(NOW - 15_000) }),
-    row({ executionId: "c", decisionId: "d3", brokerResult: "DRAW", profit: 0, requestedAt: iso(NOW - 30_000), settledAt: iso(NOW - 25_000) }),
-    row({ executionId: "d", decisionId: "d4", direction: "PUT", state: "ACKNOWLEDGED", brokerResult: null, profit: null, requestedAt: iso(NOW - 3_000), settledAt: null, expirationAt: iso(NOW + 297_000) }),
-    row({ executionId: "p", strategyVersion: "PATH_TEST", testOnly: true, excludedFromStats: true, decisionId: "dp", direction: "PUT" }),
-    row({ executionId: "l", strategyVersion: null, decisionId: "dl" }),
-    row({ executionId: "x", excludedFromStats: true, decisionId: "dx" }),
-  ];
-  const report = OpsUI.buildV2Report(rows, { strategyVersion: V2, strategyHash: HASH, now: NOW });
-  ok("sample considera somente settled V2 (W/L/D separados, DRAW fora do WR)", report.sample.n === 3 && report.sample.w === 1 && report.sample.l === 1 && report.sample.d === 1 && report.sample.wr === 50 && report.sample.settled === 3);
-  ok("aberta contabilizada separada; PATH_TEST/legado/excluded fora da amostra", report.sample.open === 1 && report.sample.excluded === 3);
-  ok("PnL medio/trade e stake/payout medios", report.sample.pnl === -0.36 && report.sample.avgPnl === -0.12 && report.sample.avgStake === 2 && report.sample.avgPayout === 82);
-  ok("BUY vs SELL separados com N/W/L/WR", report.buy.n === 3 && report.buy.w === 1 && report.buy.l === 1 && report.buy.wr === 50 && report.sell.n === 0 && report.sell.wr === null);
-  ok("rolling 20/50/100 (por recencia) com N junto do WR", report.rolling.r20.n === 3 && report.rolling.r50.n === 3 && report.rolling.r100.n === 3 && report.rolling.r20.wr === 50);
-  ok("por ativo sem esconder (asset + N/W/L/D/WR/PnL/payout)", report.byAsset.length === 1 && report.byAsset[0].key === "EURUSD:OTC" && report.byAsset[0].n === 3 && report.byAsset[0].avgPayout === 82);
-  ok("por hora do dia agrupa com N", report.byHour.length >= 1 && report.byHour.every((h) => Number.isInteger(h.key) && h.n >= 1));
-  ok("por estado de mercado via DecisionSnapshot (regime/structure/pullback)", report.byRegime[0].key === "UPTREND" && report.byStructure[0].key === "UPTREND" && report.byPullback[0].key === "NORMAL");
-  ok("rotulo de amostra (N<30 = muito pequena)", report.sample.label === "amostra muito pequena" && OpsUI.sampleLabel(30) === "ainda limitada" && OpsUI.sampleLabel(100) === "maior, mas ainda observacional" && OpsUI.sampleLabel(300) === "mais informativa");
-  ok("sem amostra: WR nulo e nenhum juizo de edge", OpsUI.buildV2Report([], { strategyVersion: V2, now: NOW }).sample.wr === null && !/edge|aprovada|score|confidence/i.test(JSON.stringify(report)));
-}
-
-/* 6) alertas de integridade */
-{
-  const bad = [
-    row({ executionId: "1", decisionId: "same", requestedAt: iso(NOW - 30_000), expirationAt: iso(NOW - 299_000) }),
-    row({ executionId: "2", decisionId: "same", strategyHash: "sha256:outro", requestedAt: iso(NOW - 20_000) }),
-    row({ executionId: "3", decisionId: "d3", expirationAt: new Date(1_800_000_123_000).toISOString(), requestedAt: iso(NOW - 10_000) }),
-    row({ executionId: "4", decisionId: null, decisionSnapshot: null }),
-    row({ executionId: "5", decisionId: "d5", marketKey: "EURUSD:NORMAL" }),
-    row({ executionId: "6", decisionId: "d6", accountContext: "REAL", accountType: "REAL" }),
-  ];
-  const report = OpsUI.buildV2Report(bad, { strategyVersion: V2, strategyHash: HASH, now: NOW });
-  const codes = new Set(report.integrity.issues.map((i) => i.code));
-  ok("integridade: decisionId duplicado, hash divergente, expiry fora do bucket, snapshot ausente, instrumento nao-OTC e REAL detectado", report.integrity.ok === false && codes.has("DUPLICATE_DECISION_ID") && codes.has("STRATEGY_HASH_MISMATCH") && codes.has("EXPIRY_NOT_300_BUCKET") && codes.has("SNAPSHOT_MISSING") && codes.has("INSTRUMENT_NOT_BINARY_OTC") && codes.has("REAL_TRADE_DETECTED"));
-  const clean = OpsUI.buildV2Report([row()], { strategyVersion: V2, strategyHash: HASH, now: NOW });
-  ok("integridade limpa quando os dados estao coerentes", clean.integrity.ok === true && clean.integrity.count === 0);
-}
-
-/* 7) nenhuma chamada de rede/logica estrategica no helper */
+/* 5) helper NAO carrega agregacao cumulativa (fonte unica e o backend) */
 {
   const src = fs.readFileSync(new URL("../src/http/public/ops-ui.js", import.meta.url), "utf8");
-  ok("ops-ui sem fetch/estrategia (somente apresentacao/agregacao)", !/fetch\(|computeFeatures|runSpecialists|consensus\(/.test(src));
+  ok("ops-ui sem agregador cumulativo (buildV2Report/rolling/byAsset)", !/buildV2Report|byAsset|rolling|byHour|byRegime/.test(src));
+  ok("ops-ui sem fetch/estrategia (somente apresentacao)", !/fetch\(|computeFeatures|runSpecialists|consensus\(/.test(src));
 }
 
 console.log(fail === 0 ? `OPS_UI_TESTS ALL_PASS (${pass}/${pass})` : `OPS_UI_TESTS FAIL (${fail})`);

@@ -3110,6 +3110,100 @@ export class IqMultiRuntime extends EventEmitter {
     return out;
   }
 
+  /** Observabilidade CUMULATIVA da V2 (SQL no DB; N ilimitado; sem carregar snapshots no cliente).
+   *  Filtro canonico: strategy_version + strategy_hash + test_only=false + excluded_from_stats=false + account_context=PRACTICE + SETTLED WIN/LOSS/DRAW. */
+  async strategyObservability(strategyVersion, { days = 30, strategyHash = null } = {}) {
+    const boundedDays = Math.max(1, Math.min(365, Number(days) || 30));
+    const hash = typeof strategyHash === "string" && strategyHash.length > 0 ? strategyHash : "";
+    const base = {
+      strategy: { version: strategyVersion ?? null, hash: hash || null, statsEpoch: this.operationalStrategy?.manifest?.statsEpoch ?? null, operationalExpirySeconds: OPERATIONAL_EXPIRY_SECONDS, candleIntervalMs: 5000 },
+      windowDays: boundedDays,
+      sample: { n: 0, w: 0, l: 0, d: 0, wr: null, pnl: 0, avgPnl: null, avgStake: null, avgPayout: null, label: "amostra muito pequena" },
+      buy: { n: 0, w: 0, l: 0, d: 0, wr: null, pnl: 0 },
+      sell: { n: 0, w: 0, l: 0, d: 0, wr: null, pnl: 0 },
+      rolling: { r20: { n: 0, w: 0, l: 0, d: 0, wr: null, pnl: 0 }, r50: { n: 0, w: 0, l: 0, d: 0, wr: null, pnl: 0 }, r100: { n: 0, w: 0, l: 0, d: 0, wr: null, pnl: 0 } },
+      byAsset: [], byHour: [], byRegime: [], byStructure: [], byPullback: [],
+      integrity: { ok: true, counts: { hashMismatch: 0, snapshotMissing: 0, duplicateDecisionId: 0, testOnlyRows: 0, excludedRows: 0, realRows: 0, expiryNot300: 0, nonOtc: 0 }, alerts: [] },
+      at: this.now(),
+    };
+    if (!this.pool?.query || !strategyVersion) return base;
+    const params = [String(strategyVersion), boundedDays, hash];
+    const where = "strategy_version=$1 AND test_only=false AND excluded_from_stats=false AND account_context='PRACTICE' AND state='SETTLED' AND broker_result IN ('WIN','LOSS','DRAW') AND requested_at >= now() - make_interval(days => $2::int)";
+    const scope = "strategy_version=$1 AND requested_at >= now() - make_interval(days => $2::int)";
+    const q = async (sql) => (await this.pool.query(sql, params).catch(() => ({ rows: [] }))).rows ?? [];
+    const round1 = (v) => (v === null || v === undefined ? null : Math.round(Number(v) * 10) / 10);
+    const round2 = (v) => (v === null || v === undefined ? null : Math.round(Number(v) * 100) / 100);
+    const toAgg = (row, { payout = false, stake = false } = {}) => {
+      const w = Number(row?.w ?? 0); const l = Number(row?.l ?? 0); const d = Number(row?.d ?? 0);
+      return {
+        n: Number(row?.n ?? 0), w, l, d,
+        wr: (w + l) > 0 ? round1((100 * w) / (w + l)) : null,
+        pnl: round2(row?.pnl ?? 0),
+        ...(payout ? { avgPayout: round1(row?.avg_payout) } : {}),
+        ...(stake ? { avgStake: round2(row?.avg_stake) } : {}),
+      };
+    };
+    const label = (n) => (n < 30 ? "amostra muito pequena" : n < 100 ? "ainda limitada" : n < 300 ? "maior, mas ainda observacional" : "mais informativa");
+    const exec = "count(*)::int AS n, count(*) FILTER (WHERE broker_result='WIN')::int AS w, count(*) FILTER (WHERE broker_result='LOSS')::int AS l, count(*) FILTER (WHERE broker_result='DRAW')::int AS d, coalesce(sum(profit),0)::numeric AS pnl";
+    const execAvg = exec + ", avg(stake)::numeric AS avg_stake, avg(payout)::numeric AS avg_payout";
+    try {
+      const sideRows = await q(`/* obs:sample-direction */ SELECT direction, ${execAvg} FROM iq_executions WHERE ${where} GROUP BY direction`);
+      const side = (dir) => toAgg(sideRows.find((row) => String(row.direction ?? "").toUpperCase() === dir) ?? {}, { payout: true, stake: true });
+      const buy = side("CALL"); const buyAlt = side("BUY");
+      const sell = side("PUT"); const sellAlt = side("SELL");
+      const pick = (a, b) => (a.n > 0 ? a : b);
+      base.buy = pick(buy, buyAlt); base.sell = pick(sell, sellAlt);
+      const total = { n: base.buy.n + base.sell.n, w: base.buy.w + base.sell.w, l: base.buy.l + base.sell.l, d: base.buy.d + base.sell.d, pnl: round2(Number(base.buy.pnl ?? 0) + Number(base.sell.pnl ?? 0)) };
+      const weighted = (key) => {
+        const rows = [[base.buy, base.buy.n], [base.sell, base.sell.n]].filter(([a]) => a[key] !== null);
+        const n = rows.reduce((acc, [, count]) => acc + count, 0);
+        return n > 0 ? round2(rows.reduce((acc, [a, count]) => acc + Number(a[key]) * count, 0) / n) : null;
+      };
+      base.sample = { ...toAgg({ n: total.n, w: total.w, l: total.l, d: total.d, pnl: total.pnl }), avgPnl: total.n > 0 ? round2(total.pnl / total.n) : null, avgStake: weighted("avgStake"), avgPayout: round1(weighted("avgPayout")), label: label(total.n) };
+
+      const groupQuery = async (marker, keyExpr, orderBy = "n DESC") => (await q(`/* ${marker} */ SELECT ${keyExpr} AS k, ${exec} FROM iq_executions WHERE ${where} GROUP BY 1 ORDER BY ${orderBy}`)).filter((row) => row.k !== null).map((row) => ({ key: row.k, ...toAgg(row) }));
+      base.byAsset = await groupQuery("obs:by-asset", "market_key");
+      base.byHour = await groupQuery("obs:by-hour", "extract(hour from requested_at at time zone 'UTC')::int", "k ASC");
+      base.byRegime = await groupQuery("obs:by-regime", "coalesce(decision_snapshot #>> '{features,regime}', 'UNKNOWN')");
+      base.byStructure = await groupQuery("obs:by-structure", "coalesce(decision_snapshot #>> '{features,structure}', 'UNKNOWN')");
+      base.byPullback = await groupQuery("obs:by-pullback", "coalesce(decision_snapshot #>> '{features,priceAction,pullback,depth}', 'UNKNOWN')");
+
+      const recent = await q(`/* obs:rolling */ SELECT broker_result, profit FROM iq_executions WHERE ${where} ORDER BY requested_at DESC LIMIT 100`);
+      const roll = (take) => {
+        const slice = recent.slice(0, take);
+        const w = slice.filter((row) => row.broker_result === "WIN").length;
+        const l = slice.filter((row) => row.broker_result === "LOSS").length;
+        const d = slice.filter((row) => row.broker_result === "DRAW").length;
+        return { n: slice.length, w, l, d, wr: (w + l) > 0 ? round1((100 * w) / (w + l)) : null, pnl: round2(slice.reduce((acc, row) => acc + Number(row.profit ?? 0), 0)) };
+      };
+      base.rolling = { r20: roll(20), r50: roll(50), r100: roll(100) };
+
+      const integrity = (await q(`/* obs:integrity */ SELECT
+        count(*) FILTER (WHERE strategy_hash IS NOT NULL AND strategy_hash <> $3)::int AS hash_mismatch,
+        count(*) FILTER (WHERE decision_snapshot IS NULL)::int AS snapshot_missing,
+        count(*)::int - count(DISTINCT decision_id)::int AS duplicate_decision_id,
+        count(*) FILTER (WHERE test_only=true)::int AS test_only_rows,
+        count(*) FILTER (WHERE excluded_from_stats=true)::int AS excluded_rows,
+        count(*) FILTER (WHERE account_context='REAL' OR account_type='REAL')::int AS real_rows,
+        count(*) FILTER (WHERE expiration_at IS NOT NULL AND (extract(epoch from expiration_at)::bigint % 300) <> 0)::int AS expiry_not_300,
+        count(*) FILTER (WHERE market_key NOT LIKE '%:OTC')::int AS non_otc
+        FROM iq_executions WHERE ${scope}`))[0] ?? {};
+      const counts = {
+        hashMismatch: Number(integrity.hash_mismatch ?? 0), snapshotMissing: Number(integrity.snapshot_missing ?? 0),
+        duplicateDecisionId: Number(integrity.duplicate_decision_id ?? 0), testOnlyRows: Number(integrity.test_only_rows ?? 0),
+        excludedRows: Number(integrity.excluded_rows ?? 0), realRows: Number(integrity.real_rows ?? 0),
+        expiryNot300: Number(integrity.expiry_not_300 ?? 0), nonOtc: Number(integrity.non_otc ?? 0),
+      };
+      const alerts = Object.entries(counts).filter(([, value]) => value > 0).map(([code, count]) => ({ code, count }));
+      base.integrity = { ok: alerts.length === 0, counts, alerts };
+      base.at = this.now();
+      return base;
+    } catch (error) {
+      this.#safe(() => this.log("STRATEGY_OBSERVABILITY_FAIL", String(error?.message ?? error).slice(0, 140)));
+      return base;
+    }
+  }
+
   /** Publica itens externos reais (nunca inventados; item sem publishedAt nao entra). */
   #applyExternalItems(kind, items) {
     let applied = 0;
@@ -4290,6 +4384,15 @@ export class IqMultiRuntime extends EventEmitter {
         features: primary.featureState ? { builtAt: primary.featureState.builtAt, fresh: primary.featureState.fresh, freshnessReason: primary.featureState.freshnessReason, rsi14: primary.featureState.context?.deterministicIndicators?.rsi14?.value ?? null, atr14: primary.featureState.context?.deterministicIndicators?.atr14?.value ?? null, adx14: primary.featureState.context?.deterministicIndicators?.adx14?.value ?? null, donchianPosition: primary.featureState.context?.deterministicIndicators?.donchianPosition?.value ?? null, microstructureStreak: primary.featureState.context?.microstructure?.streak ?? null } : null,
       } : { connected: this.session.connected, host: this.session.host, hostExpectedFromRepo: "iqoption.com", connectionId: this.session.connectionId, serverTime: Number.isFinite(this.client?.serverNow()) ? nowIso(this.client.serverNow()) : null, serverTimeMs: this.session.serverTimeMs, clockSkewMs: this.session.clockSkewMs, timeValid: this.session.timeValid, candles5s: 0, healthy: false, healthReasons: ["NO_MARKET_DATA_WITH_CANDLES"], recentCandles: [], features: null, latencyMs: { serverToReceived: latencySummary([]), receivedToNormalized: latencySummary([]), normalizedToFeature: latencySummary([]), orderAck: latencySummary([]), visionP95ReferenceMs: 27_500 } },
       account: { verified: this.account.practice.verified, type: this.account.type, currency: this.account.practice.currency, balance: this.account.practice.balance, hasReal: this.account.hasReal, checkedAt: this.account.checkedAt, balanceFailure: null, practiceOnly: true, realExecutionForbidden: true },
+      // Conexao explicita por fonte real (nao ambiguo): feed != execucao.
+      connection: {
+        marketData: { connected: this.session.connected, timeValid: this.session.timeValid, host: this.session.host, connectionId: this.session.connectionId },
+        execution: {
+          connected: this.session.connected,
+          ready: this.session.connected && this.session.timeValid === true && this.account.practice.verified === true && this.account.practice.balanceId !== null && this.account.practice.balanceId !== undefined,
+          reasons: [...this.connectionHealth().reasons, ...(this.session.connected && this.session.timeValid === true && this.account.practice.verified === true ? [] : ["EXECUTION_NOT_READY"])],
+        },
+      },
       execution: { ...this.armState.snapshot(), killSwitch: this.killSwitch.status(), userLimitBrl: this.userLimitBrl ?? null, pendingOrder: this.pendingOrders.size ? { count: this.pendingOrders.size, keys: [...this.pendingOrders.keys()] } : null, lastExecution: [...this.markets.values()].map((ctx) => ctx.lastTrade).filter(Boolean).sort((a, b) => b.at - a.at)[0] ?? null },
       brokerAutomation: "WS_ONLY_PRACTICE",
     };
