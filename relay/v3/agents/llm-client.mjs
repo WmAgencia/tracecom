@@ -70,7 +70,7 @@ export function createLlmAgentClient({ pool = null, runner = null, now = () => D
         const latencyMs = Number.isFinite(Number(result?.latencyMs)) ? Number(result.latencyMs) : Math.max(0, now() - startedAtMs);
         const usage = result?.usage ?? null;
         const common = {
-          ...withSession, latencyMs, model: result?.model ?? null, usage, finishReason: result?.finishReason ?? null, httpStatus: result?.httpStatus ?? null,
+          ...withSession, latencyMs, model: result?.model ?? null, provider: result?.provider ?? V3_AGENT_PROVIDER, usage, finishReason: result?.finishReason ?? null, httpStatus: result?.httpStatus ?? null,
           promptTokens: Number.isFinite(Number(usage?.prompt_tokens)) ? Number(usage.prompt_tokens) : null,
           cachedTokens: Number.isFinite(Number(usage?.prompt_tokens_details?.cached_tokens)) ? Number(usage.prompt_tokens_details.cached_tokens) : null,
           completionTokens: Number.isFinite(Number(usage?.completion_tokens)) ? Number(usage.completion_tokens) : null,

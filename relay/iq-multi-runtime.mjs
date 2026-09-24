@@ -69,6 +69,9 @@ import { loadOperationalStrategy } from "./execution/operational-strategy.mjs";
 import { matchPendingOrder, pendingCandidates, matchClosedOption } from "./execution/order-ack-matcher.mjs";
 import { V3Runtime } from "./v3/runtime.mjs";
 import { createLlmAgentClient } from "./v3/agents/llm-client.mjs";
+import { createLlmRateLimiter } from "./llm-rate-limiter.mjs";
+import { runTextProvider, effectiveProviderConfig } from "./opencode-go.mjs";
+import { computeV3Health } from "./intelligence/v3-health.mjs";
 import { measureAll } from "./v3/measurements.mjs";
 import { derivedExpirationAt } from "./v3/expiration-grid.mjs";
 import { ExpirationTargetTiming } from "./v3/timing.mjs";
@@ -160,21 +163,25 @@ export class IqMultiRuntime extends EventEmitter {
     this.intelligenceDispatch = null;
     this.operationalStrategy = loadOperationalStrategy();
     // V3 (expiration-driven): observe-only, desligada por padrao; nunca ativa sozinha.
-    this.v3Strategy = process.env.V3_ENABLED === "true" ? loadOperationalStrategy({ manifestPath: "estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V3.json" }) : null;    this.v3 = this.v3Strategy
+    this.v3Strategy = process.env.V3_ENABLED === "true" ? loadOperationalStrategy({ manifestPath: "estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V3.json" }) : null;
+    this.llmLimiter = createLlmRateLimiter({ maxConcurrent: Number(process.env.LLM_MAX_CONCURRENCY) || 8, now: this.now, log: this.log });
+    this.providerConfigCache = { at: 0, value: null };
+    this.v3 = this.v3Strategy
       ? new V3Runtime({
           now: this.now, pool, log: this.log,
           strategy: { version: this.v3Strategy.version, status: this.v3Strategy.status, executable: this.v3Strategy.executable, strategyHash: this.v3Strategy.strategyHash, statsEpoch: this.v3Strategy.manifest?.statsEpoch ?? null },
-          agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ pool, now: this.now, maxTokens: Number(process.env.V3_AGENT_MAX_TOKENS) || 512 }) : null,
+          agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ runner: (options) => this.#v3ScheduledRun(options), now: this.now, maxTokens: Number(process.env.V3_AGENT_MAX_TOKENS) || 512 }) : null,
           agentSafetyMarginMs: Number(process.env.V3_AGENT_SAFETY_MARGIN_MS) || 2_000,
           estimatedFullCycleMs: Number(process.env.V3_AGENT_ESTIMATED_FULL_MS) || 15_000,
           estimatedDeltaCycleMs: Number(process.env.V3_AGENT_ESTIMATED_DELTA_MS) || 14_000,
           maxAgentCycles: Number(process.env.V3_AGENT_MAX_CYCLES) || 1,
-          // ECONOMIA: V3 LLM so pensa quando o sistema esta ATIVO (PRACTICE armado ou REAL armado).
-          agentsGate: () => this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true),
+          // ECONOMIA: V3 LLM so pensa quando o sistema esta ATIVO (armado OU analise-liberada via env).
+          agentsGate: () => this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true",
           brokerNow: () => { const value = this.client?.serverNow?.(); return Number.isFinite(Number(value)) ? Number(value) : this.now(); },
         })
       : null;
-    if (this.v3 && process.env.V3_TEST_ALLOWLIST) this.v3.setOpportunityScope(String(process.env.V3_TEST_ALLOWLIST).split(",").map((key) => key.trim()).filter(Boolean));    this.candleStore = new CandleStore({ pool, now: this.now, log: this.log });
+    if (this.v3 && process.env.V3_TEST_ALLOWLIST) this.v3.setOpportunityScope(String(process.env.V3_TEST_ALLOWLIST).split(",").map((key) => key.trim()).filter(Boolean));
+    if (this.v3 && pool) void this.#refreshProviderConfigCache();    this.candleStore = new CandleStore({ pool, now: this.now, log: this.log });
     this.singlePath = new SinglePath({ now: this.now });
     try {
       this.assetIntelligence = new RuntimeIntelligence({ now: this.now, strategy: this.operationalStrategy, loader: (marketKey) => this.candleStore.loadRecent(marketKey) });
@@ -3266,7 +3273,69 @@ export class IqMultiRuntime extends EventEmitter {
   intelligenceStatus() { return { assetIntelligence: (this.assetIntelligence?.health?.() ?? { intelligenceReady: false, degraded: true, initError: this.assetIntelligenceError ?? "NOT_INSTANTIATED", assetsTotal: 0, assetsReady: 0, assetsPartial: 0, assetsFailed: 0, lastPipelineUpdateAt: null }), strategy: { version: this.operationalStrategy?.version ?? null, status: this.operationalStrategy?.status ?? "UNAVAILABLE", executable: this.operationalStrategy?.executable === true, strategyHash: this.operationalStrategy?.strategyHash ?? null }, dispatch: (this.intelligenceDispatch?.status?.() ?? { wired: false, counters: null }), candleStore: (this.candleStore?.status?.() ?? { ready: false }), version: this.intelligence.status(), domains: [...INTELLIGENCE_DOMAINS], feeds: this.feeds.status(), knowledge: this.knowledge.status(), secondBrain: this.secondBrain.status(), brainGeneration: BRAIN_GENERATION, brainVersion: BRAIN_VERSION }; }
 
   /* --------------------------------- V3 (observe-only) --------------------------------- */
-  v3Status() { return this.v3?.status() ?? { version: "v3-runtime-v1", enabled: false, executionMode: "DISABLED", strategy: null, engine: null, discovery: null }; }
+  v3Status() {
+    const base = this.v3?.status() ?? { version: "v3-runtime-v1", enabled: false, executionMode: "DISABLED", strategy: null, engine: null, discovery: null };
+    const limiter = this.llmLimiter?.stats?.() ?? { inflight: 0, queueDepth: 0, maxConcurrent: 0, total: 0, skipped: 0, retries: 0, rateLimited: 0, recent429: 0, last429At: null, lastProviderError: null, lastErrorAt: null };
+    const markets = [...this.markets.values()];
+    const configuredMarkets = markets.filter((ctx) => ctx.enabled).length;
+    const feedReadyMarkets = markets.filter((ctx) => (ctx.candles?.size ?? 0) >= 40).length;
+    const reasons = base.counters?.agentUnavailableReasons ?? {};
+    const schemaErrors = Object.entries(reasons).reduce((acc, [key, value]) => acc + (/SCHEMA|invented/.test(key) ? Number(value) : 0), 0);
+    const cfg = this.providerConfigCache?.value ?? null;
+    const health = computeV3Health({
+      v3Enabled: Boolean(this.v3),
+      agentsAvailable: base.agents?.available === true,
+      systemActive: base.systemActive === true,
+      providerUnavailable: Boolean(this.v3) && base.agents?.available !== true,
+      recent429: limiter.recent429 ?? 0,
+      lastProviderError: limiter.lastProviderError ?? null,
+      feedReady: feedReadyMarkets >= 1,
+      feedAgeMs: null,
+      feedMaxAgeMs: Number(process.env.V3_FEED_MAX_AGE_MS) || 15_000,
+      configuredMarkets,
+      recentSchemaErrors: schemaErrors,
+      recentDeadlineAborts: base.counters?.deadlineAborts ?? 0,
+      recentCandleFeedBlocked: base.counters?.candleFeedBlocked ?? 0,
+      persistCriticalError: (base.counters?.persistErrors ?? 0) > 5,
+    });
+    return {
+      ...base,
+      health,
+      provider: cfg?.provider ?? null,
+      model: cfg?.model ?? null,
+      agentsAvailable: base.agents?.available === true,
+      systemActive: base.systemActive === true,
+      queueDepth: limiter.queueDepth ?? 0,
+      providerInflight: limiter.inflight ?? 0,
+      providerConcurrencyLimit: limiter.maxConcurrent ?? 0,
+      recent429: limiter.recent429 ?? 0,
+      lastProviderError: limiter.lastProviderError ?? null,
+      lastSuccessfulCycleAt: base.lastSuccessfulCycle?.at ?? null,
+      lastSuccessfulCycleLatencyMs: base.lastSuccessfulCycle?.latencyMs ?? null,
+      lastSuccessfulMarket: base.lastSuccessfulCycle?.marketKey ?? null,
+      pipelines7of7: base.pipelines7of7 ?? 0,
+      deadlineAborts: base.counters?.deadlineAborts ?? 0,
+      feedReadyMarkets,
+      configuredMarkets,
+    };
+  }
+
+  /** Runner agendado GLOBAL das chamadas LLM do V3 (concurrency + prioridade + deadline + retry 429). */
+  async #v3ScheduledRun(options) {
+    if (!this.pool) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
+    const timeoutMs = Number.isFinite(Number(options.timeoutMs)) && Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 20_000;
+    const deadlineAt = this.now() + timeoutMs;
+    const role = String(options.requestId ?? "").split(":").pop();
+    const priority = role === "CONSENSUS_FINAL" ? 2 : 1;
+    return this.llmLimiter.run({ priority, deadlineAt, execute: () => runTextProvider(this.pool, options) });
+  }
+
+  async #refreshProviderConfigCache() {
+    try {
+      const cfg = await effectiveProviderConfig(this.pool);
+      this.providerConfigCache = { at: this.now(), value: cfg ? { provider: cfg.provider, model: cfg.model } : null };
+    } catch { this.providerConfigCache = { at: this.now(), value: null }; }
+  }
   v3Opportunities(options = {}) { return this.v3?.opportunities(options) ?? []; }
   v3Discovery() { return this.v3?.discoveryStatus() ?? null; }
   /** Selftest READ-ONLY dos agentes LLM reais: um ciclo sobre dados atuais. Nunca envia ordem. */

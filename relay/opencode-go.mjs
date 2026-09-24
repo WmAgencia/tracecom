@@ -154,7 +154,12 @@ async function callProvider(request, apiKey, timeoutMs) {
     const response = await fetch(request.url, { method: "POST", headers: { ...request.headers, Authorization: `Bearer ${apiKey}` }, body: JSON.stringify(request.body), signal: controller.signal });
     const latencyMs = Date.now() - started;
     const text = await response.text();
-    return { status: response.status, latencyMs, text };
+    const headers = {};
+    for (const name of ["retry-after", "x-ratelimit-limit-requests", "x-ratelimit-remaining-requests", "x-ratelimit-limit-tokens", "x-ratelimit-remaining-tokens", "x-ratelimit-reset-requests"]) {
+      const value = response.headers.get(name);
+      if (value !== null && value !== undefined) headers[name] = value;
+    }
+    return { status: response.status, latencyMs, text, headers };
   } finally { clearTimeout(timer); }
 }
 
@@ -208,13 +213,28 @@ export async function runTextProvider(pool, { system = "You are a cautious quant
     const text = typeof answer === "string" ? answer : Array.isArray(answer) ? answer.map((part) => part?.text ?? "").join("") : null;
     const parsed = parseStructured(text ?? "");
     const status = result.status === 200 && text ? "OK" : "ERROR";
-    console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ model, requestId, status, latencyMs: result.latencyMs, sessionId, parsed: Boolean(parsed), finishReason: body?.choices?.[0]?.finish_reason ?? null, httpStatus: result.status }));
-    return { status, reason: status === "OK" ? null : result.status === 200 ? "INVALID_JSON" : `HTTP_${result.status}`, requestId, sessionId, model, text, parsed, latencyMs: result.latencyMs, usage: body?.usage ?? null, finishReason: body?.choices?.[0]?.finish_reason ?? null, httpStatus: result.status };
+    console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ provider: config.provider, model, requestId, status, latencyMs: result.latencyMs, sessionId, parsed: Boolean(parsed), finishReason: body?.choices?.[0]?.finish_reason ?? null, httpStatus: result.status }));
+    return { status, reason: status === "OK" ? null : result.status === 200 ? "INVALID_JSON" : `HTTP_${result.status}`, requestId, sessionId, model, provider: config.provider, limits: result.headers ?? {}, text, parsed, latencyMs: result.latencyMs, usage: body?.usage ?? null, finishReason: body?.choices?.[0]?.finish_reason ?? null, httpStatus: result.status };
   } catch (error) {
     const reason = error?.name === "AbortError" ? "TIMEOUT" : "ERROR";
-    console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ model, requestId, status: "ERROR", reason, sessionId }));
-    return { status: "ERROR", reason, requestId, sessionId, model, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
+    console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ provider: config.provider, model, requestId, status: "ERROR", reason, sessionId }));
+    return { status: "ERROR", reason, requestId, sessionId, model, provider: config.provider, limits: {}, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
   }
+}
+
+/** Config efetiva do provider (DB > env), sem expor a key. */
+export async function effectiveProviderConfig(pool) {
+  try { return await loadProviderConfig(pool); } catch { return resolveProviderConfig({ env: process.env }); }
+}
+
+/** Retry-After em ms a partir dos headers sanitizados do provider. */
+export function retryAfterMs(headers = {}) {
+  const raw = headers?.["retry-after"];
+  if (raw === null || raw === undefined) return null;
+  const value = Number(String(raw).trim());
+  if (Number.isFinite(value)) return Math.max(0, value * 1000);
+  const parsed = new Date(String(raw)).getTime();
+  return Number.isFinite(parsed) ? Math.max(0, parsed - Date.now()) : null;
 }
 
 /** DECISION AGENT (text-only) — recebe numeros JA CALCULADOS; nunca pede ao LLM para calcular. */

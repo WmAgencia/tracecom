@@ -61,8 +61,9 @@ export class V3Runtime {
     this.queueDepth = 0;
     this.maxQueueDepth = 0;
     this.agentCalls = [];
-    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, cyclesSkippedMaxCycles: 0, cyclesSkippedOverlap: 0, cyclesSkippedScope: 0, cyclesSkippedInactive: 0, snapshots: 0, approvals: 0, tentativeApprovals: 0, finalizations: 0, schedulerCancelled: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, persistDropped: 0, persistDroppedFinal: 0, agentCycles: 0, agentUnavailable: 0, agentUnavailableReasons: {}, deadlineAborts: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null };
+    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, cyclesSkippedMaxCycles: 0, cyclesSkippedOverlap: 0, cyclesSkippedScope: 0, cyclesSkippedInactive: 0, snapshots: 0, approvals: 0, tentativeApprovals: 0, finalizations: 0, schedulerCancelled: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, persistDropped: 0, persistDroppedFinal: 0, agentCycles: 0, agentUnavailable: 0, agentUnavailableReasons: {}, deadlineAborts: 0, pipelines7of7: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null };
     this.opportunityScope = null;
+    this.lastSuccessfulCycle = { at: null, latencyMs: null, marketKey: null, result: null };
     this.lastError = null;
     this.lastCycleAt = null;
     this.latencySamples = [];
@@ -214,6 +215,12 @@ export class V3Runtime {
           if (agentResult.reason === "ANALYSIS_DEADLINE") this.counters.deadlineAborts += 1;
         } else {
           agentsReason = null;
+          const totalCalls = agentResult.agentCalls?.length ?? 0;
+          const allOk = totalCalls === 7 && agentResult.agentCalls.every((call) => call.status === "OK");
+          if (allOk) {
+            this.counters.pipelines7of7 += 1;
+            this.lastSuccessfulCycle = { at: this.now(), latencyMs: agentResult.latency?.total ?? null, marketKey, result: agentResult.result };
+          }
         }
       }
     } else {
@@ -461,6 +468,9 @@ export class V3Runtime {
       estimatedWaveMs: this.estimatedWaveMs,
       lifecycle: { maxAgentCycles: this.maxAgentCycles, analysisSafetyMarginMs: this.agentSafetyMarginMs, estimatedFullCycleMs: this.estimatedFullCycleMs, estimatedDeltaCycleMs: this.estimatedDeltaCycleMs },
       opportunityScope: this.opportunityScope,
+      systemActive: this.agentsGate ? this.agentsGate() === true : true,
+      lastSuccessfulCycle: { ...this.lastSuccessfulCycle },
+      pipelines7of7: this.counters.pipelines7of7,
       agents: { available: this.agents?.available === true, calls: this.agentCalls.length, latency: agentLatencyStats(this.agentCalls) },
       scheduler: this.scheduler.status(),
       queue: { depth: this.queueDepth, maxDepth: this.maxQueueDepth, markets: this.queues.size },

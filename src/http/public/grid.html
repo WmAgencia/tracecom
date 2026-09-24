@@ -306,6 +306,7 @@
   };
   const refreshIntelligence = async () => {
     const data = await api("/api/iq/intelligence/assets");
+    const v3 = await api("/api/iq/v3/status");
     if (!data) return;
     state.intelligence = data;
     state.strategy = data.strategy ?? null;
@@ -314,11 +315,22 @@
     state.assets = next;
     if (changed) { buildGrid(); state.lastDraw.clear(); state.lastResultText.clear(); state.lastChip.clear(); await refreshCandles(); }
     renderText();
-    const health = data.health ?? {};
-    setText($("intelState"), String(health.state ?? "—"));
-    setText($("intelReady"), String(health.assetsReady ?? 0));
-    setText($("intelFeed"), health.observedIntervalMs ? (health.observedIntervalMs / 1000) + "s" : "—");
-    setText($("intelNote"), "assets " + (health.assetsTotal ?? 0) + " · ready " + (health.assetsReady ?? 0) + " · partial " + (health.assetsPartial ?? 0) + " · failed " + (health.assetsFailed ?? 0) + " · candles " + (data.candleStore?.stats?.written ?? 0) + " gravados");
+    // Card "Inteligencia" reflete o runtime V3 real (nao o health legado de AssetIntelligence).
+    const vh = v3?.health ?? {};
+    const vState = String(vh.state ?? "OFFLINE");
+    setText($("intelState"), vState);
+    setText($("intelReady"), String(v3?.configuredMarkets ?? next.length ?? 0));
+    setText($("intelFeed"), "5s");
+    const providerLabel = v3?.provider ? String(v3.provider) : "LLM";
+    const lastLatency = Number(v3?.lastSuccessfulCycleLatencyMs ?? 0);
+    let note;
+    if (vState === "READY") note = (v3?.pipelines7of7 ?? 0) + " pipelines 7/7 · LLM " + providerLabel + " · última análise " + (lastLatency ? (lastLatency / 1000).toFixed(1) + "s" : "—");
+    else if (vState === "STANDBY") note = "LLM em STANDBY · aguardando ATIVAR";
+    else if (vState === "DEGRADED") { const r = String(vh.reason ?? "PROVIDER_ERROR"); note = { PROVIDER_RATE_LIMIT: "Groq rate limit", FEED_STALE: "Feed stale", PROVIDER_UNAVAILABLE: "Provider unavailable", PROVIDER_ERROR: "Provider error", SCHEMA_FAILURES: "Schema failures", DEADLINE_FAILURES: "Deadline failures", FEED_BLOCKED: "Feed blocked", DB_CRITICAL: "DB critical", NO_MARKETS: "Sem mercados" }[r] ?? r; }
+    else note = "offline";
+    setText($("intelNote"), note);
+    const legacy = data.health ?? {};
+    if (state.logOpen) { $("intelNote").title = "legado: assets " + (legacy.assetsTotal ?? 0) + " ready " + (legacy.assetsReady ?? 0) + " partial " + (legacy.assetsPartial ?? 0) + " failed " + (legacy.assetsFailed ?? 0); }
     setText($("strategyStatus"), (state.strategy?.status ?? "—") + (state.strategy?.executable === true ? " (executável)" : " (não executa)"));
     setText($("strategyTitle"), state.strategy?.version ?? "—");
     setText($("footTotal"), String(state.assets.length));
