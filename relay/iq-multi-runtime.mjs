@@ -3358,8 +3358,11 @@ export class IqMultiRuntime extends EventEmitter {
   /** Orcamento real de tokens do Groq (lido dos headers x-ratelimit-remaining-tokens). Sem dado => nao usa Groq. */
   #groqBudgetOk() {
     const budget = this.groqBudget;
-    if (!budget || !Number.isFinite(Number(budget.remaining))) return false;
-    if (this.now() - Number(budget.at) > 60_000) return false;
+    const age = budget ? this.now() - Number(budget.at) : Infinity;
+    if (!budget || !Number.isFinite(Number(budget.remaining)) || age > 60_000) {
+      if (this.now() - Number(this.groqPrimeAt ?? 0) > 45_000) { this.groqPrimeAt = this.now(); void this.#primeGroqBudget(); }
+      return false;
+    }
     return Number(budget.remaining) >= (Number(process.env.V3_GROQ_MIN_TOKENS) || 3_200);
   }
 
