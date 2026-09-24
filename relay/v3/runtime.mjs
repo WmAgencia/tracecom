@@ -456,6 +456,39 @@ export class V3Runtime {
   /** Diagnostico externo (relay): registra bloqueio de feed SEM chamar agentes. */
   noteFeedBlocked(reason, marketKey = null) { this.#noteFeedBlocked(reason, marketKey); }
 
+  /** Ultimos pipelines agrupados por oportunidade (prova 7/7 + latencias por etapa). */
+  #recentPipelines(limit = 5) {
+    const groups = new Map();
+    for (const call of this.agentCalls) {
+      const id = call.opportunityId ?? null;
+      if (!id) continue;
+      if (!groups.has(id)) groups.set(id, { opportunityId: id, calls: {} });
+      groups.get(id).calls[call.role] = { status: call.status, reason: call.reason ?? null, model: call.model ?? null, provider: call.provider ?? null, latencyMs: Number.isFinite(Number(call.latencyMs)) ? Number(call.latencyMs) : null, queueWaitMs: Number.isFinite(Number(call.queueWaitMs)) ? Number(call.queueWaitMs) : null };
+    }
+    const rows = [];
+    for (const group of groups.values()) {
+      const roles = [...WAVE1_ROLES, "CONSENSUS_FINAL"];
+      if (roles.some((role) => !group.calls[role])) continue;
+      const wave1Latencies = WAVE1_ROLES.map((role) => group.calls[role]?.latencyMs).filter((value) => Number.isFinite(Number(value)));
+      const consensus = group.calls.CONSENSUS_FINAL;
+      const wave1LatencyMs = wave1Latencies.length ? Math.max(...wave1Latencies) : null;
+      const consensusLatencyMs = Number.isFinite(Number(consensus?.latencyMs)) ? Number(consensus.latencyMs) : null;
+      rows.push({
+        opportunityId: group.opportunityId,
+        marketKey: group.opportunityId.split(":").slice(0, 2).join(":"),
+        calls: group.calls,
+        wave1Statuses: Object.fromEntries(WAVE1_ROLES.map((role) => [role, group.calls[role]?.status ?? null])),
+        consensusStatus: consensus?.status ?? null,
+        allOk: roles.every((role) => group.calls[role]?.status === "OK"),
+        queueWaitMs: roles.reduce((sum, role) => sum + (Number(group.calls[role]?.queueWaitMs) || 0), 0),
+        wave1LatencyMs,
+        consensusLatencyMs,
+        totalLatencyMs: (wave1LatencyMs ?? 0) + (consensusLatencyMs ?? 0),
+      });
+    }
+    return rows.slice(-limit).reverse();
+  }
+
   status() {
     return {
       version: V3_RUNTIME_VERSION,
@@ -471,6 +504,7 @@ export class V3Runtime {
       systemActive: this.agentsGate ? this.agentsGate() === true : true,
       lastSuccessfulCycle: { ...this.lastSuccessfulCycle },
       pipelines7of7: this.counters.pipelines7of7,
+      recentPipelines: this.#recentPipelines(5),
       agents: { available: this.agents?.available === true, calls: this.agentCalls.length, latency: agentLatencyStats(this.agentCalls) },
       scheduler: this.scheduler.status(),
       queue: { depth: this.queueDepth, maxDepth: this.maxQueueDepth, markets: this.queues.size },

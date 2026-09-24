@@ -41,12 +41,13 @@ export function createLlmRateLimiter({ maxConcurrent = 8, now = () => Date.now()
       const remaining = job.deadlineAt - now();
       if (remaining <= 0) {
         state.skipped += 1;
-        job.resolve({ status: "ERROR", reason: "SKIPPED_PROVIDER_CAPACITY", model: null, provider: null, limits: {}, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null, skipped: true });
+        job.resolve({ status: "ERROR", reason: "SKIPPED_PROVIDER_CAPACITY", model: null, provider: null, limits: {}, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null, skipped: true, queueWaitMs: now() - job.queuedAt });
         continue;
       }
       state.inflight += 1;
+      const queueWaitMs = now() - job.queuedAt;
       Promise.resolve()
-        .then(() => job.run())
+        .then(() => job.run(queueWaitMs))
         .finally(() => { state.inflight -= 1; pump(); });
     }
   }
@@ -67,8 +68,8 @@ export function createLlmRateLimiter({ maxConcurrent = 8, now = () => Date.now()
     state.total += 1;
     return new Promise((resolve) => {
       push({
-        seq, priority, resolve, deadlineAt: Number.isFinite(Number(deadlineAt)) && Number(deadlineAt) > 0 ? Number(deadlineAt) : now() + 20_000,
-        run: async () => {
+        seq, priority, resolve, queuedAt: now(), deadlineAt: Number.isFinite(Number(deadlineAt)) && Number(deadlineAt) > 0 ? Number(deadlineAt) : now() + 20_000,
+        run: async (queueWaitMs = 0) => {
           let result;
           try { result = await execute(); } catch (error) { result = { status: "ERROR", reason: error?.name === "AbortError" ? "TIMEOUT" : "ERROR", model: null, provider: null, limits: {}, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null }; }
           if (Number(result?.httpStatus) === 429) {
@@ -84,7 +85,7 @@ export function createLlmRateLimiter({ maxConcurrent = 8, now = () => Date.now()
             }
           }
           if (Number(result?.httpStatus) >= 400) { state.lastProviderError = safeError(result?.text ?? result?.reason); state.lastErrorAt = now(); }
-          resolve(result);
+          resolve({ ...result, queueWaitMs });
         },
       });
     });
