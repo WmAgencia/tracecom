@@ -3398,7 +3398,10 @@ export class IqMultiRuntime extends EventEmitter {
     if (!chosen) return { status: "ERROR", reason: "NO_ROUTE", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
     if (chosen.provider === "groq") { this.groqLastDispatchAt = this.now(); this.groqBudget = { ...this.groqBudget, remaining: Number(this.groqBudget.remaining) - estTokens, at: this.now() }; }
     const runOnce = (target) => {
-      const cappedTimeout = target.provider === "nvidia" ? Math.min(Number(options.timeoutMs) || 20_000, /deepseek/i.test(target.model ?? "") ? 12_000 : 10_000) : options.timeoutMs;
+      const modelId = String(target.model ?? "");
+      const cappedTimeout = target.provider === "nvidia"
+        ? Math.min(Number(options.timeoutMs) || 20_000, /deepseek/i.test(modelId) ? 12_000 : /nemotron/i.test(modelId) ? 20_000 : 10_000)
+        : options.timeoutMs;
       return this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: isConsensus ? 4_000 : 8_000, suppressProviderError: isConsensus && ["groq", "alibaba", "nvidia"].includes(target.provider), execute: () => runTextProvider(this.pool, { ...options, provider: target.provider, model: target.model, timeoutMs: cappedTimeout }) });
     };
     let result = await runOnce(chosen);
