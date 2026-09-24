@@ -31,7 +31,7 @@ export function shouldUseOpenCodeGo(config) {
 
 export function resolveModel(config) {
   const model = config && typeof config.model === "string" ? config.model.trim() : "";
-  return /^[a-z0-9.\-]{2,64}$/i.test(model) ? model : DEFAULT_MODEL;
+  return /^[a-z0-9./\-]{2,96}$/i.test(model) ? model : (config?.provider === "groq" ? GROQ_DEFAULT_MODEL : DEFAULT_MODEL);
 }
 
 /** Mascara a key para qualquer serializacao publica (GET /api/ai/provider, logs). Nunca expoe o valor. */
