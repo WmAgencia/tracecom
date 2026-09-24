@@ -72,7 +72,7 @@ import { createLlmAgentClient } from "./v3/agents/llm-client.mjs";
 import { createLlmRateLimiter } from "./llm-rate-limiter.mjs";
 import { runTextProvider, effectiveProviderConfig } from "./opencode-go.mjs";
 import { computeV3Health } from "./intelligence/v3-health.mjs";
-import { createLlmRouter, providerLabel } from "./llm-router.mjs";
+import { createLlmRouter, providerLabel, FREE_ROLES_CONFIG } from "./llm-router.mjs";
 import { measureAll } from "./v3/measurements.mjs";
 import { derivedExpirationAt } from "./v3/expiration-grid.mjs";
 import { ExpirationTargetTiming } from "./v3/timing.mjs";
@@ -166,7 +166,7 @@ export class IqMultiRuntime extends EventEmitter {
     // V3 (expiration-driven): observe-only, desligada por padrao; nunca ativa sozinha.
     this.v3Strategy = process.env.V3_ENABLED === "true" ? loadOperationalStrategy({ manifestPath: "estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V3.json" }) : null;
     this.llmLimiter = createLlmRateLimiter({ maxConcurrent: Number(process.env.LLM_MAX_CONCURRENCY) || 8, now: this.now, log: this.log });
-    this.llmRouter = createLlmRouter({ now: this.now });
+    this.llmRouter = createLlmRouter({ roles: v3RouterRoles(process.env), now: this.now });
     this.providerConfigCache = { at: 0, value: null };
     this.groqBudget = { remaining: null, at: 0 };
     this.v3GateCounters = { suppressedInactive: 0 };
@@ -3375,7 +3375,20 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
-  /** Estado ativo canonico da IA: ARM PRACTICE ou REAL armado, ou ANALISE explicitamente liberada por env. */
+  /** Override temporario da rota do Consensus via env (ex.: teste 5min com um unico modelo). Formato: "provider:model,provider:model". */
+function v3RouterRoles(env) {
+  const raw = String(env?.V3_CONSENSUS_ROUTE ?? "").trim();
+  if (!raw) return undefined;
+  const parsed = raw.split(",").map((entry) => entry.trim()).filter(Boolean).map((entry) => {
+    const [provider, ...modelParts] = entry.split(":");
+    const model = modelParts.join(":");
+    return { provider: String(provider ?? "").trim(), model: model || null };
+  }).filter((item) => item.provider);
+  if (!parsed.length) return undefined;
+  return { ...FREE_ROLES_CONFIG, CONSENSUS_FINAL: parsed };
+}
+
+/** Estado ativo canonico da IA: ARM PRACTICE ou REAL armado, ou ANALISE explicitamente liberada por env. */
   #v3SystemActive() {
     return this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true";
   }
