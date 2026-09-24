@@ -91,6 +91,7 @@ export async function runAgentCycle({
   // WAVE 1 — DETERMINISTICA (codigo): 6 assessments, zero LLM.
   const wave1Start = now();
   const wave1Calls = deterministicWave1Calls(measurements);
+  for (const call of wave1Calls) { call.opportunityId = opportunityId ?? null; call.cycleNumber = cycleNumber ?? null; call.requestId = requestId(call.role); call.latencyMs = 0; call.queueWaitMs = 0; }
   result.latency.wave1 = Math.max(0, now() - wave1Start);
   result.agentCalls.push(...wave1Calls);
   const outputs = Object.fromEntries(wave1Calls.map((call) => [call.role, call.output]));
