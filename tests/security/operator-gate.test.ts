@@ -3,14 +3,11 @@ import { operatorGateDecision, operatorGateRequired, panelSessionDecision, isPri
 
 describe("operator gate (fail-closed)", () => {
   const privateGets = [
-    "/api/iq/status",
-    "/api/iq/account/context",
-    "/api/iq/strategy/stats",
     "/api/iq/strategy/observability",
-    "/api/iq/executions?accountContext=PRACTICE&limit=100",
     "/api/iq/intelligence",
-    "/api/iq/intelligence/assets",
-    "/api/iq/mesas",
+    "/api/iq/agents/log",
+    "/api/iq/real/preflight",
+    "/api/iq/lab/status",
     "/api/iq/config/global-stake",
     "/api/iq/signals?limit=10",
     "/api/ai/provider",
@@ -41,15 +38,26 @@ describe("operator gate (fail-closed)", () => {
     expect(operatorGateDecision({ method: "POST", pathname: "/api/iq/arm", operatorCookieValid: true }).mode).toBe("operator");
   });
 
+  it("GETs do painel sao publicos (sem sessao); mutations nos mesmos paths continuam privadas", () => {
+    for (const pathname of ["/api/iq/status", "/api/iq/intelligence/assets", "/api/iq/strategy/stats", "/api/iq/performance", "/api/iq/candles", "/api/iq/executions", "/api/iq/v3/status", "/api/iq/v3/opportunities", "/api/iq/mesas", "/api/iq/account/context"]) {
+      const decision = operatorGateDecision({ method: "GET", pathname, operatorCookieValid: false });
+      expect(decision.mode, pathname).toBe("public");
+    }
+    expect(operatorGateDecision({ method: "PUT", pathname: "/api/iq/mesas", operatorCookieValid: false }).mode).toBe("deny");
+    expect(operatorGateDecision({ method: "PUT", pathname: "/api/iq/mcp/config", operatorCookieValid: false }).mode).toBe("deny");
+  });
+
   it("cookie de operador autoriza GET privado; chave de pesquisa so vale em research/shadow", () => {
-    expect(operatorGateDecision({ method: "GET", pathname: "/api/iq/status", operatorCookieValid: true }).mode).toBe("operator");
+    expect(operatorGateDecision({ method: "GET", pathname: "/api/iq/strategy/observability", operatorCookieValid: true }).mode).toBe("operator");
     expect(operatorGateDecision({ method: "GET", pathname: "/api/research/lab/overview", operatorCookieValid: false }).mode).toBe("public");
     expect(operatorGateDecision({ method: "POST", pathname: "/api/research/shadow/run", operatorCookieValid: false, researchKeyValid: true }).mode).toBe("research");
     expect(operatorGateDecision({ method: "POST", pathname: "/api/iq/arm", operatorCookieValid: false, researchKeyValid: true }).mode).toBe("deny");
   });
 
-  it("isPrivateGetPath cobre os prefixos privados e nao cobre publicos", () => {
-    expect(isPrivateGetPath("/api/iq/status")).toBe(true);
+  it("isPrivateGetPath cobre os prefixos privados e nao cobre publicos do painel", () => {
+    expect(isPrivateGetPath("/api/iq/strategy/observability")).toBe(true);
+    expect(isPrivateGetPath("/api/iq/status")).toBe(false);
+    expect(isPrivateGetPath("/api/iq/intelligence/assets")).toBe(false);
     expect(isPrivateGetPath("/api/ai/provider")).toBe(true);
     expect(isPrivateGetPath("/api/live/session")).toBe(false);
     expect(isPrivateGetPath("/health")).toBe(false);

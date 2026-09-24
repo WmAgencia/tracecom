@@ -71,12 +71,20 @@ afterEach(() => {
 });
 
 describe("edge HTTP — rotas privadas anonimas", () => {
-  const privateGets = ["/api/iq/status", "/api/iq/account/context", "/api/iq/strategy/stats", "/api/iq/strategy/observability", "/api/iq/executions?accountContext=PRACTICE&limit=10", "/api/iq/intelligence"];
+  const privateGets = ["/api/iq/strategy/observability", "/api/iq/intelligence", "/api/iq/real/preflight", "/api/iq/agents/log", "/api/iq/lab/status", "/api/iq/research/scoreboard"];
 
   it.each(privateGets)("GET %s anonimo -> 401", async (url) => {
     const result = await call(new MockRequest({ method: "GET", url }));
     expect(result.status).toBe(401);
     expect(result.body?.error).toBe("operator_auth_required");
+  });
+
+  const panelPublicGets = ["/api/iq/status", "/api/iq/intelligence/assets", "/api/iq/strategy/stats", "/api/iq/performance", "/api/iq/candles?keys=EURUSD:OTC&limit=10", "/api/iq/executions?accountContext=PRACTICE&limit=10", "/api/iq/v3/status", "/api/iq/v3/opportunities?limit=10", "/api/iq/mesas", "/api/iq/account/context"];
+
+  it.each(panelPublicGets)("GET painel %s anonimo NAO exige operador", async (url) => {
+    const result = await call(new MockRequest({ method: "GET", url }));
+    expect(result.status).not.toBe(401);
+    expect(result.body?.error).not.toBe("operator_auth_required");
   });
 
   const privateMutations: Array<[string, string]> = [
@@ -93,13 +101,13 @@ describe("edge HTTP — rotas privadas anonimas", () => {
     expect(result.body?.error).toBe("operator_auth_required");
   });
 
-  it("mesma origem (Origin + Sec-Fetch-Site) NAO cria sessao nem autoriza", async () => {
+  it("mesma origem (Origin + Sec-Fetch-Site) NAO cria sessao nem autoriza rota privada", async () => {
     const headers = { origin: "https://tracecom.consecom.com.br", host: "tracecom.consecom.com.br", "sec-fetch-site": "same-origin" };
     const panel = await call(new MockRequest({ method: "POST", url: "/api/auth/panel", headers, body: "{}" }));
     expect(panel.status).toBe(401);
     expect(panel.body?.error).toBe("operator_key_required");
     expect(panel.setCookie).toBeNull();
-    const status = await call(new MockRequest({ method: "GET", url: "/api/iq/status", headers }));
+    const status = await call(new MockRequest({ method: "GET", url: "/api/iq/strategy/observability", headers }));
     expect(status.status).toBe(401);
   });
 });
@@ -133,7 +141,7 @@ describe("edge HTTP — panel/operator com chave", () => {
     const panel = await call(new MockRequest({ method: "POST", url: "/api/auth/panel", headers: { "x-operator-key": "qualquer" }, body: "{}" }));
     expect(panel.status).toBe(503);
     expect(panel.body?.error).toBe("operator_auth_not_configured");
-    const status = await call(new MockRequest({ method: "GET", url: "/api/iq/status" }));
+    const status = await call(new MockRequest({ method: "GET", url: "/api/iq/strategy/observability" }));
     expect(status.status).toBe(503);
   });
 });

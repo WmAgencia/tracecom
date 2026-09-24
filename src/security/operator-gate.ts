@@ -24,9 +24,27 @@ export const PUBLIC_API_PATHS: ReadonlySet<string> = new Set([
   "/api/auth/session",
 ]);
 
+/** GETs read-only do painel (grid.html): liberados SEM sessao de operador.
+ *  O edge injeta o segredo do relay server-side; nenhum segredo vai ao browser.
+ *  Mutations e demais GETs de /api/iq/* continuam privados. */
+export const PANEL_PUBLIC_GET_PATHS: ReadonlySet<string> = new Set([
+  "/api/iq/status",
+  "/api/iq/intelligence/assets",
+  "/api/iq/strategy/stats",
+  "/api/iq/performance",
+  "/api/iq/candles",
+  "/api/iq/executions",
+  "/api/iq/v3/status",
+  "/api/iq/v3/opportunities",
+  "/api/iq/mesas",
+  "/api/iq/account/context",
+  "/api/iq/mcp/config",
+]);
+
 const MUTATION_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export function isPrivateGetPath(pathname: string): boolean {
+  if (PANEL_PUBLIC_GET_PATHS.has(pathname)) return false;
   return PRIVATE_GET_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 

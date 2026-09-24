@@ -116,8 +116,8 @@ describe("SEGURANCA — mutacoes /api/iq/*", () => {
     expect(relayCalls.length).toBe(0);
   });
 
-  it("GETs privados anonimos => 401 (status/account/context/stats/observability) sem relay", async () => {
-    const urls = ["/api/iq/status", "/api/iq/account/context", "/api/iq/strategy/stats", "/api/iq/strategy/observability"];
+  it("GETs privados anonimos => 401 (observability/agents/lab/preflight) sem relay", async () => {
+    const urls = ["/api/iq/strategy/observability", "/api/iq/agents/log", "/api/iq/lab/status", "/api/iq/real/preflight"];
     for (const url of urls) {
       const response = await fetch(`${appBase}${url}`);
       expect(response.status, url).toBe(401);
@@ -147,7 +147,7 @@ describe("SEGURANCA — mutacoes /api/iq/*", () => {
     const panel = await fetch(`${appBase}/api/auth/panel`, { method: "POST", headers: { origin: appBase, "sec-fetch-site": "same-origin" } });
     expect(panel.status).toBe(401);
     expect((panel.headers.get("set-cookie") ?? "").startsWith("tc_op=")).toBe(false);
-    const status = await fetch(`${appBase}/api/iq/status`, { headers: { origin: appBase, "sec-fetch-site": "same-origin" } });
+    const status = await fetch(`${appBase}/api/iq/strategy/observability`, { headers: { origin: appBase, "sec-fetch-site": "same-origin" } });
     expect(status.status).toBe(401);
     expect(relayCalls.length).toBe(0);
   });
