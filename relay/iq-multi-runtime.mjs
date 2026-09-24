@@ -3346,10 +3346,12 @@ export class IqMultiRuntime extends EventEmitter {
       if (!this.#groqBudgetOk()) { provider = fallbackProvider; model = fallbackModel; }
       else { this.groqBudget = { ...this.groqBudget, remaining: Number(this.groqBudget.remaining) - estTokens, at: this.now() }; }
     }
-    const result = await this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: isConsensus ? 4_000 : 1_500, execute: () => runTextProvider(this.pool, { ...options, provider, model }) });
+    const result = await this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: isConsensus ? 4_000 : 1_500, suppressProviderError: isConsensus && provider === "groq", execute: () => runTextProvider(this.pool, { ...options, provider, model }) });
     if (provider === "groq" && result?.limits) this.#updateGroqBudget(result.limits);
-    if (isConsensus && provider === "groq" && (result?.httpStatus === 429 || result?.reason === "PROVIDER_RATE_LIMIT")) {
+    if (isConsensus && provider === "groq" && result?.status !== "OK") {
+      // Groq indisponivel (429/402/erro): backoff e failover para openCodeGo (sem degradar o health).
       this.groqBudget = { remaining: 0, at: this.now() };
+      this.groqDisabledUntil = this.now() + 300_000;
       return this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: 4_000, execute: () => runTextProvider(this.pool, { ...options, provider: fallbackProvider, model: fallbackModel }) });
     }
     return result;
@@ -3357,6 +3359,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   /** Orcamento real de tokens do Groq (lido dos headers x-ratelimit-remaining-tokens). Sem dado => nao usa Groq. */
   #groqBudgetOk() {
+    if (this.now() < Number(this.groqDisabledUntil ?? 0)) return false;
     const budget = this.groqBudget;
     const age = budget ? this.now() - Number(budget.at) : Infinity;
     if (!budget || !Number.isFinite(Number(budget.remaining)) || age > 60_000) {
@@ -3376,8 +3379,8 @@ export class IqMultiRuntime extends EventEmitter {
     if (!this.pool) return;
     try {
       const probe = await runTextProvider(this.pool, { provider: "groq", model: process.env.V3_CONSENSUS_MODEL || "openai/gpt-oss-120b", system: "Responda apenas {}.", prompt: "{}", maxTokens: 16, timeoutMs: 10_000 });
-      if (probe?.limits && Object.keys(probe.limits).length > 0) this.#updateGroqBudget(probe.limits);
-      else if (probe?.httpStatus === 429) this.groqBudget = { remaining: 0, at: this.now() };
+      if (probe?.status === "OK" && probe?.limits && Object.keys(probe.limits).length > 0) this.#updateGroqBudget(probe.limits);
+      else { this.groqBudget = { remaining: 0, at: this.now() }; this.groqDisabledUntil = this.now() + 300_000; }
     } catch { /* silencioso: sem orcamento conhecido, consensus usa fallback */ }
   }
 

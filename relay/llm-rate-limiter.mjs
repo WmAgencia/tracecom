@@ -63,7 +63,7 @@ export function createLlmRateLimiter({ maxConcurrent = 8, now = () => Date.now()
   }
 
   /** `run` retorna o resultado do provider (runTextProvider). Re-tenta 429 no maximo 1x. */
-  function run({ priority = 1, deadlineAt = null, execute, estimatedLatencyMs = 1500 } = {}) {
+  function run({ priority = 1, deadlineAt = null, execute, estimatedLatencyMs = 1500, suppressProviderError = false } = {}) {
     const seq = state.seq; state.seq += 1;
     state.total += 1;
     return new Promise((resolve) => {
@@ -84,7 +84,7 @@ export function createLlmRateLimiter({ maxConcurrent = 8, now = () => Date.now()
               result = { ...result, status: "ERROR", reason: "PROVIDER_RATE_LIMIT" };
             }
           }
-          if (Number(result?.httpStatus) >= 400) { state.lastProviderError = safeError(result?.text ?? result?.reason); state.lastErrorAt = now(); }
+          if (Number(result?.httpStatus) >= 400 && !suppressProviderError) { state.lastProviderError = safeError(result?.text ?? result?.reason); state.lastErrorAt = now(); }
           resolve({ ...result, queueWaitMs });
         },
       });
