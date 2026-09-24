@@ -1,5 +1,6 @@
+﻿process.env.V3_PREFILTER_MIN_ALIGN = "1";
 /**
- * V3 — SINGLE-CYCLE OBRIGATORIO: maxAgentCycles=1. Multiciclo NAO roda (mission "nao implemente multiciclo").
+ * V3 â€” SINGLE-CYCLE OBRIGATORIO: maxAgentCycles=1. Multiciclo NAO roda (mission "nao implemente multiciclo").
  */
 import { describe, expect, it } from "vitest";
 import { ALIGNED_BASE, approvalSeries, candlesFromCloses } from "./fixtures";

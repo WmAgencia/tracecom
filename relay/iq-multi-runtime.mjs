@@ -384,6 +384,8 @@ export class IqMultiRuntime extends EventEmitter {
         this.session = { ...this.session, connected: false };
         for (const ctx of this.markets.values()) ctx.connectionHealth = { ...ctx.connectionHealth, connected: false };
         try { this.armState.disarm("WS_DISCONNECTED"); } catch { /* noop */ }
+        // REGRA WS: queda do socket => AUTO OFF tambem (alem de DISARM). Nova ativacao sempre explicita.
+        if (this.config.autoExecute === true) { try { this.setAutoExecute(false, { actor: "system" }); } catch { /* noop */ } }
         this.realMode.revoke("WS_DISCONNECTED");
         // FAIL CLOSED: qualquer queda de WS rebaixa REAL para LOCKED imediatamente.
         this.accountContext.lock("WS_DISCONNECTED");
@@ -3333,11 +3335,13 @@ export class IqMultiRuntime extends EventEmitter {
         for (const roleName of ["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION", "ASSET"]) {
           out[roleName] = { provider: "deterministic", model: "code", label: "Determinístico" };
         }
-        out.CONSENSUS_FINAL = { provider: "nvidia", model: "deepseek-ai/deepseek-v4.1-flash", label: "NVIDIA", fallback: [{ provider: "nvidia", model: "z-ai/glm-5.3", label: "NVIDIA" }, { provider: "groq", model: "openai/gpt-oss-120b", label: "Groq" }, { provider: "alibaba", model: process.env.ALIBABA_MODEL || "qwen3.5-flash", label: "Alibaba" }] };
+        out.CONSENSUS_FINAL = { provider: "groq", model: "openai/gpt-oss-120b", label: "Groq", fallback: [{ provider: "nvidia", model: "deepseek-ai/deepseek-v4.1-flash", label: "NVIDIA" }, { provider: "nvidia", model: "z-ai/glm-5.3-flash", label: "NVIDIA" }, { provider: "alibaba", model: "qwen3.7-flash", label: "Alibaba" }] };
         return out;
       })(),
       groqBudgetRemainingTokens: Number.isFinite(Number(this.groqBudget?.remaining)) ? Number(this.groqBudget.remaining) : null,
       llmGate: { active: this.#v3SystemActive(), suppressedInactive: this.v3GateCounters.suppressedInactive ?? 0 },
+      pipeline: { prefilterPass: base.counters?.prefilterPass ?? 0, prefilterReject: base.counters?.prefilterReject ?? 0, prefilterRejectReasons: base.counters?.prefilterRejectReasons ?? {}, consensusCalls: base.counters?.consensusCalls ?? 0, consensusProvider: base.counters?.consensusProvider ?? null },
+      iqExec: { orders: this.signalLog?.filter((row) => row.disposition === "EXECUTED").length ?? 0, settlements: [...this.markets.values()].filter((ctx) => ctx.lastTrade?.settledAt !== undefined && ctx.lastTrade?.settledAt !== null).length ?? 0, lastExecution: [...this.markets.values()].map((ctx) => ctx.lastTrade).filter(Boolean).sort((a, b) => b.at - a.at)[0] ?? null },
       feedByMarket: (() => {
         const out = {};
         const now = this.now();

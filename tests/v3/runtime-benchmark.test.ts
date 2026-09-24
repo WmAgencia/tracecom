@@ -1,5 +1,6 @@
+﻿process.env.V3_PREFILTER_MIN_ALIGN = "1";
 /**
- * V3 — integração do runtime (discovery -> ciclos -> snapshot/persistência) e benchmark 30 ativos.
+ * V3 â€” integraÃ§Ã£o do runtime (discovery -> ciclos -> snapshot/persistÃªncia) e benchmark 30 ativos.
  */
 import { describe, expect, it } from "vitest";
 import { pullbackRetomadaSeries, rangeSeries, candlesFromCloses, approvalSeries, ALIGNED_BASE } from "./fixtures";
@@ -26,7 +27,7 @@ const { createScriptedAgentClient } = clientModule as any;
 const exp = ALIGNED_BASE + 300_000;
 const activeFor = (expirationAt: number) => ({ id: 76, name: "EURUSD-OTC", enabled: true, is_suspended: false, deadtime: 30, option: { expiration_times: [Math.round(expirationAt / 1000)], profit: { commission: 18 } } });
 
-describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", () => {
+describe("V3 runtime â€” discovery -> multi-ciclos -> snapshot (observe-only)", () => {
   it("cria opportunity em ~TTE330, roda ciclos por candle fechado e registra snapshot se aprovado", async () => {
     const queries: string[] = [];
     const pool = { query: async (sql: string) => { queries.push(sql); return { rows: [], rowCount: 1 }; } };
@@ -115,7 +116,7 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
   }, 30_000);
 });
 
-describe("V3 benchmark — agentes (1 LLM/ciclo; deterministica; 30 ativos)", () => {
+describe("V3 benchmark â€” agentes (1 LLM/ciclo; deterministica; 30 ativos)", () => {
   it("30 ativos em paralelo com 1 chamada LLM/ciclo (consensus) + 6 deterministicos: p95 dentro do orcamento", async () => {
     const base = approveScript();
     const script: Record<string, any> = {};
@@ -154,7 +155,7 @@ describe("V3 benchmark — agentes (1 LLM/ciclo; deterministica; 30 ativos)", ()
   }, 120_000);
 });
 
-describe("V3 benchmark — 30 ativos, ciclos completos", () => {
+describe("V3 benchmark â€” 30 ativos, ciclos completos", () => {
   it("p95 do ciclo completo permanece bem abaixo do orcamento de 5s e zero janelas perdidas", () => {
     const markets = Array.from({ length: 30 }, (_, index) => `M${index}:OTC`);
     const series = markets.map((_, index) => pullbackRetomadaSeries({ candles: 90 + index }));
@@ -191,3 +192,4 @@ describe("V3 benchmark — 30 ativos, ciclos completos", () => {
     expect(approvals + noSetup + wait).toBe(latencies.length);
   }, 60_000);
 });
+

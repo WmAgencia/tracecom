@@ -61,7 +61,7 @@ export class V3Runtime {
     this.queueDepth = 0;
     this.maxQueueDepth = 0;
     this.agentCalls = [];
-    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, cyclesSkippedMaxCycles: 0, cyclesSkippedOverlap: 0, cyclesSkippedScope: 0, cyclesSkippedInactive: 0, snapshots: 0, approvals: 0, tentativeApprovals: 0, finalizations: 0, schedulerCancelled: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, persistDropped: 0, persistDroppedFinal: 0, agentCycles: 0, agentUnavailable: 0, agentUnavailableReasons: {}, deadlineAborts: 0, pipelines7of7: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null };
+    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, cyclesSkippedMaxCycles: 0, cyclesSkippedOverlap: 0, cyclesSkippedScope: 0, cyclesSkippedInactive: 0, snapshots: 0, approvals: 0, tentativeApprovals: 0, finalizations: 0, schedulerCancelled: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, persistDropped: 0, persistDroppedFinal: 0, agentCycles: 0, agentUnavailable: 0, agentUnavailableReasons: {}, deadlineAborts: 0, pipelines7of7: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null, prefilterPass: 0, prefilterReject: 0, prefilterRejectReasons: {}, consensusCalls: 0, consensusProvider: null };
     this.opportunityScope = null;
     this.lastSuccessfulCycle = { at: null, latencyMs: null, marketKey: null, result: null };
     this.recentFailures = [];
@@ -217,6 +217,9 @@ export class V3Runtime {
           if (typeof agentResult.reason === "string" && /SCHEMA|invented/i.test(agentResult.reason)) this.#noteFailure("SCHEMA");
         } else {
           agentsReason = null;
+          const prefilter = agentResult.prefilter ?? null;
+          if (prefilter?.pass === true) { this.counters.prefilterPass += 1; this.counters.consensusCalls += 1; const consensusCall = agentResult.agentCalls?.find((call) => call.role === "CONSENSUS_FINAL"); if (consensusCall?.provider) this.counters.consensusProvider = consensusCall.provider; }
+          else if (prefilter) { this.counters.prefilterReject += 1; this.counters.prefilterRejectReasons[prefilter.reason ?? "UNKNOWN"] = (this.counters.prefilterRejectReasons[prefilter.reason ?? "UNKNOWN"] ?? 0) + 1; }
           const totalCalls = agentResult.agentCalls?.length ?? 0;
           const allOk = totalCalls === 7 && agentResult.agentCalls.every((call) => call.status === "OK");
           if (allOk) {
@@ -258,6 +261,15 @@ export class V3Runtime {
       deadlineAbort: agentResult?.reason === "ANALYSIS_DEADLINE",
       agents: { available: approvalsAllowed, calls: agentResult?.agentCalls ?? [], reason: agentsReason },
       deterministic: { asset: deterministicAsset?.scenario ?? null, direction: deterministicAsset?.direction ?? null, state: deterministicAsset?.state ?? null, consensus: deterministicConsensus.result },
+      trace: [
+        { step: "EXPIRATION_VALID", at },
+        { step: "FEED_READY", at },
+        { step: "MEASUREMENTS_READY", at },
+        { step: "DETERMINISTIC_WAVE1_DONE", at },
+        ...(agentResult?.prefilter ? [{ step: agentResult.prefilter.pass === true ? "PREFILTER_PASS" : `PREFILTER_REJECT:${agentResult.prefilter.reason}`, at }] : []),
+        ...(agentResult?.consensus ? [{ step: `CONSENSUS_RESULT:${agentResult.consensus.result}`, at }] : []),
+        ...(agentResult?.finalGate ? [{ step: agentResult.finalGate.allowed === true ? "FINAL_GATE_PASS" : `FINAL_GATE_FAIL:${agentResult.finalGate.code}`, at }] : []),
+      ].filter(Boolean),
       measurements, specialists, asset, consensus,
     };
     this.engine.recordCycle(opportunity.opportunityId, cycle);

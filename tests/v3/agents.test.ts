@@ -16,7 +16,7 @@ const { prefilterWave1 } = prefilterModule as any;
 const strong = {
   rsi: { value: 42, zone: "NEUTRAL", momentum: "FLAT", divergence: null, failureSwing: null },
   dmi: { adx: 28, plusDi: 24, minusDi: 12, spread: 12, adxSlope: 1.5 },
-  bollinger: { zone: "MIDDLE", squeeze: false },
+  bollinger: { squeeze: "NORMAL", bandWalk: "BELOW_LOWER", rejection: true, reentry: false },
   atr: { regime: "VOLATILITY_COMPATIBLE" },
   structure: { trend: "UPTREND", lastBOS: { type: "BULLISH_BOS" }, lastCHoCH: null },
   pullback: { active: true, depth: "NORMAL", distanceAtr: 0.6 },
@@ -26,7 +26,7 @@ const strong = {
 const weak = {
   rsi: { value: 50, zone: "NEUTRAL", momentum: "FLAT" },
   dmi: { adx: 10, plusDi: 15, minusDi: 16, spread: -1 },
-  bollinger: { zone: "MIDDLE", squeeze: true },
+  bollinger: { squeeze: "NORMAL", bandWalk: "MID", rejection: false, reentry: false },
   atr: { regime: "LOW_INFORMATION_VOLATILITY" },
   structure: { trend: "RANGE", lastBOS: null, lastCHoCH: null },
   pullback: { active: false },

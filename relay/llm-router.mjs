@@ -23,10 +23,10 @@ export const FREE_ROLES_CONFIG = Object.freeze({
   PRICE_ACTION: [{ provider: "deterministic", model: "code" }],
   ASSET: [{ provider: "deterministic", model: "code" }],
   CONSENSUS_FINAL: [
-    { provider: "nvidia", model: "deepseek-ai/deepseek-v4.1-flash" },
-    { provider: "nvidia", model: "z-ai/glm-5.3" },
     { provider: "groq", model: "openai/gpt-oss-120b" },
-    { provider: "alibaba", model: null },
+    { provider: "nvidia", model: "deepseek-ai/deepseek-v4.1-flash" },
+    { provider: "nvidia", model: "z-ai/glm-5.3-flash" },
+    { provider: "alibaba", model: "qwen3.7-flash" },
   ],
 });
 

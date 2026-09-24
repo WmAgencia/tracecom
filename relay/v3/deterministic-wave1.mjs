@@ -71,15 +71,16 @@ export function deterministicWave1Calls(m) {
 function rsiCall(rsi) {
   const facts = []; const blockers = []; const watch = []; const playbooks = ["RSI_ZONE_CONTEXT"];
   const zone = rsi.zone ?? "NEUTRAL";
+  // Zona e CONTEXTO (nunca direcao isolada). Direcao vem de: failure swing / divergencia / crossback / momentum+persistencia.
   if (rsi.failureSwing?.type === "BULLISH_FAILURE_SWING") { facts.push(fact("RSI_BULLISH_FAILURE_SWING", "UP", "MODERATE")); playbooks.push("RSI_FAILURE_SWING"); }
   else if (rsi.failureSwing?.type === "BEARISH_FAILURE_SWING") { facts.push(fact("RSI_BEARISH_FAILURE_SWING", "DOWN", "MODERATE")); playbooks.push("RSI_FAILURE_SWING"); }
-  else if (zone === "OVERBOUGHT") { facts.push(fact("RSI_OVERBOUGHT", "DOWN", "WEAK")); watch.push("crossback de RSI para neutro"); }
-  else if (zone === "OVERSOLD") { facts.push(fact("RSI_OVERSOLD", "UP", "WEAK")); watch.push("crossback de RSI para neutro"); }
-  else facts.push(fact("RSI_NEUTRAL", "NONE", "WEAK"));
-  if (rsi.divergence?.type === "BULLISH") { facts.push(fact("RSI_BULLISH_DIVERGENCE", "UP", "MODERATE")); playbooks.push("RSI_DIVERGENCE"); }
+  else if (rsi.divergence?.type === "BULLISH") { facts.push(fact("RSI_BULLISH_DIVERGENCE", "UP", "MODERATE")); playbooks.push("RSI_DIVERGENCE"); }
   else if (rsi.divergence?.type === "BEARISH") { facts.push(fact("RSI_BEARISH_DIVERGENCE", "DOWN", "MODERATE")); playbooks.push("RSI_DIVERGENCE"); }
-  if (rsi.momentum === "DETERIORATING" && zone === "OVERBOUGHT") blockers.push("Momentum de RSI deteriorando em zona sobrecomprada.");
-  if (rsi.momentum === "RECOVERING" && zone === "OVERSOLD") blockers.push("Momentum de RSI recuperando a partir de sobrevenda.");
+  else if (rsi.crossback === true && zone === "OVERSOLD") { facts.push(fact("RSI_CROSSBACK_OVERSOLD", "UP", "WEAK")); watch.push("confirmar com estrutura"); playbooks.push("RSI_CROSSBACK"); }
+  else if (rsi.crossback === true && zone === "OVERBOUGHT") { facts.push(fact("RSI_CROSSBACK_OVERBOUGHT", "DOWN", "WEAK")); watch.push("confirmar com estrutura"); playbooks.push("RSI_CROSSBACK"); }
+  else if (rsi.momentum === "RECOVERING" && zone === "OVERSOLD") { facts.push(fact("RSI_RECOVERING", "UP", "WEAK")); }
+  else if (rsi.momentum === "DETERIORATING" && zone === "OVERBOUGHT") { facts.push(fact("RSI_DETERIORATING", "DOWN", "WEAK")); }
+  else facts.push(fact("RSI_NEUTRAL", "NONE", "WEAK"));
   return specialistCall("RSI", { assessment: `RSI em zona ${prose(String(zone), "neutra")} com momentum ${prose(String(rsi.momentum ?? "desconhecido"), "desconhecido")}.`, facts, blockers, watch, playbooks });
 }
 
@@ -100,21 +101,28 @@ const direction = !hasPressure || adx < 15 ? "NONE" : Number(dmi.plusDi) > Numbe
 
 function bollingerCall(bollinger) {
   const facts = []; const blockers = [];
-  const zone = bollinger.zone ?? "MIDDLE";
-  if (bollinger.squeeze) { blockers.push("Squeeze de volatilidade: amplitude comprimida, sem direcao definida."); facts.push(fact("BOLLINGER_SQUEEZE", "NONE", "WEAK")); }
-  else if (zone === "UPPER") facts.push(fact("BOLLINGER_UPPER", "DOWN", "WEAK"));
-  else if (zone === "LOWER") facts.push(fact("BOLLINGER_LOWER", "UP", "WEAK"));
-  else facts.push(fact("BOLLINGER_MIDDLE", "NONE", "WEAK"));
-return specialistCall("BOLLINGER", { assessment: `Preco na zona ${prose(String(zone), "media")}${bollinger.squeeze ? " com squeeze ativo" : ""}.`, facts, blockers, playbooks: [bollinger.squeeze ? "BOLLINGER_SQUEEZE_EXPANSION" : "BOLLINGER_RELATIVE_DEFINITION"] });
+  // squeeze e STRING: "SQUEEZE" | "NORMAL" | "EXPANDED" (bug corrigido: somente === "SQUEEZE" e squeeze ativo).
+  const squeeze = bollinger.squeeze === "SQUEEZE";
+  if (squeeze) { blockers.push("Squeeze de volatilidade: amplitude comprimida, sem direcao definida."); facts.push(fact("BOLLINGER_SQUEEZE", "NONE", "WEAK")); }
+  else {
+    // UPPER/LOWER isolados NAO sao direcao. Direcao so com contexto: rejeicao/reentrada na banda.
+    if (bollinger.rejection === true && bollinger.bandWalk === "ABOVE_UPPER") facts.push(fact("BOLLINGER_UPPER_REJECTION", "DOWN", "WEAK"));
+    else if (bollinger.rejection === true && bollinger.bandWalk === "BELOW_LOWER") facts.push(fact("BOLLINGER_LOWER_REJECTION", "UP", "WEAK"));
+    else if (bollinger.reentry === true && bollinger.bandWalk === "ABOVE_UPPER") facts.push(fact("BOLLINGER_UPPER_REENTRY", "DOWN", "WEAK"));
+    else if (bollinger.reentry === true && bollinger.bandWalk === "BELOW_LOWER") facts.push(fact("BOLLINGER_LOWER_REENTRY", "UP", "WEAK"));
+    else facts.push(fact("BOLLINGER_MIDDLE", "NONE", "WEAK"));
+  }
+  return specialistCall("BOLLINGER", { assessment: `Preco na banda ${prose(String(bollinger.bandWalk ?? "MID"), "MID")}${squeeze ? " com squeeze ativo" : ""}.`, facts, blockers, playbooks: [squeeze ? "BOLLINGER_SQUEEZE_EXPANSION" : "BOLLINGER_RELATIVE_DEFINITION"] });
 }
 
 function atrCall(atr) {
   const facts = []; const blockers = [];
   const regime = atr.regime ?? "UNKNOWN";
-  if (regime === "ABNORMAL_EXPANSION") { blockers.push("Volatilidade em expansao anormal: risco de stop excessivo."); facts.push(fact("ATR_ABNORMAL_EXPANSION", "NONE", "WEAK")); }
-  else if (regime === "LOW_INFORMATION_VOLATILITY") { blockers.push("Volatilidade baixa: pouco conteudo informativo."); facts.push(fact("ATR_LOW_INFORMATION", "NONE", "WEAK")); }
+  // ATR NAO vota direcao. Retorna COMPATIBLE | CAUTION | BLOCK (LOW_INFORMATION e ABNORMAL_EXPANSION podem bloquear).
+  if (regime === "ABNORMAL_EXPANSION") { blockers.push("Volatilidade em expansao anormal: risco de stop excessivo (BLOCK)."); facts.push(fact("ATR_ABNORMAL_EXPANSION", "NONE", "WEAK")); }
+  else if (regime === "LOW_INFORMATION_VOLATILITY") { blockers.push("Volatilidade baixa: pouco conteudo informativo (BLOCK)."); facts.push(fact("ATR_LOW_INFORMATION", "NONE", "WEAK")); }
   else facts.push(fact("ATR_VOLATILITY_COMPATIBLE", "NONE", "WEAK"));
-return specialistCall("ATR", { assessment: `Regime de volatilidade ${prose(String(regime), "desconhecido")}.`, facts, blockers, playbooks: ["ATR_VOLATILITY_REGIME"] });
+  return specialistCall("ATR", { assessment: `Regime de volatilidade ${prose(String(regime), "desconhecido")}.`, facts, blockers, playbooks: ["ATR_VOLATILITY_REGIME"] });
 }
 
 function priceActionCall(structure, micro, pullback) {

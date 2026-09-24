@@ -1,5 +1,6 @@
+﻿process.env.V3_PREFILTER_MIN_ALIGN = "1";
 /**
- * CANONICAL DECISION DIRECTION — a autoridade direcional final e SEMPRE o Consensus Final (LLM).
+ * CANONICAL DECISION DIRECTION â€” a autoridade direcional final e SEMPRE o Consensus Final (LLM).
  * O Asset e hipotese independente: nao pode sobrescrever a decisao nem contaminar snapshot/scheduler.
  */
 import { describe, expect, it } from "vitest";
@@ -41,7 +42,7 @@ const runUntilApproval = async (script: Record<string, any>) => {
   return { cycle, opportunity: runtime.opportunities()[0], scheduled, runtime };
 };
 
-describe("canonical direction — Consensus manda, Asset nao sobrescreve", () => {
+describe("canonical direction â€” Consensus manda, Asset nao sobrescreve", () => {
   it("mapa: APPROVE_BUY=>UP, APPROVE_SELL=>DOWN, CANCEL=>NONE", () => {
     expect(canonicalDecisionDirection({ result: "APPROVE_BUY", direction: "UP" })).toBe("UP");
     expect(canonicalDecisionDirection({ result: "APPROVE_SELL", direction: "DOWN" })).toBe("DOWN");
@@ -89,3 +90,4 @@ describe("canonical direction — Consensus manda, Asset nao sobrescreve", () =>
     expect(snapshot.asset.direction).toBe("DOWN"); // hipotese preservada, nunca autoridade
   });
 });
+

@@ -1,3 +1,4 @@
+﻿process.env.V3_PREFILTER_MIN_ALIGN = "1";
 /**
  * V3 SINGLE-CYCLE (operacional): 1 opportunity = 1 analise completa (6 Wave1 + Consensus).
  * Grounding: prosa sanitizada (warning) x estrutura fail-closed; persistencia com barrier FK; sem C2.
@@ -154,3 +155,4 @@ describe("V3 single-cycle operacional", () => {
     expect(runtime.status().counters.agentCycles).toBe(1);
   });
 });
+

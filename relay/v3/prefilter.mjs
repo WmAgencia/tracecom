@@ -1,27 +1,31 @@
 /**
- * V3 — PREFILTER (deterministico): so candidatos fortes seguem para o CONSENSUS (Groq).
+ * V3 — PREFILTER (deterministico): so candidatos FORTES seguem para o CONSENSUS (Groq).
  *
- * Regras (configuraveis por env):
- * - V3_PREFILTER_MIN_ALIGN (default 2): minimo de especialistas direcionais alinhados com o Asset.
- * - V3_PREFILTER_REQUIRE_ASSET (default true): Asset precisa estar em BUY_CANDIDATE/SELL_CANDIDATE.
- * - V3_PREFILTER_BLOCK_CRITICAL (default true): qualquer blocker de ATR/volatilidade ou PA range reprova.
- * Reprovar NAO chama LLM: result = CANCEL com reason PREFILTER_REJECTED (fail-closed, custo zero).
+ * PASS somente se TODAS:
+ * 1. ASSET = BUY_CANDIDATE | SELL_CANDIDATE;
+ * 2. PRICE_ACTION (estrutura) suporta a direcao do Asset;
+ * 3. >= V3_PREFILTER_MIN_ALIGN (default 2) de {RSI, DMI_ADX, BOLLINGER} realmente alinhados;
+ * 4. ATR nao esta BLOCK (LOW_INFORMATION_VOLATILITY / ABNORMAL_EXPANSION);
+ * 5. nenhum blocker critico (range/transicao/indisponivel).
+ * WAIT / NO_SETUP / REJECT: ZERO chamadas LLM. Nao forcamos setups.
  */
-export const V3_PREFILTER_VERSION = "v3-prefilter-v1";
+export const V3_PREFILTER_VERSION = "v3-prefilter-v2";
 
-const DIRECTIONAL_ROLES = Object.freeze(["RSI", "DMI_ADX", "BOLLINGER", "PRICE_ACTION"]);
+const ALIGNMENT_ROLES = Object.freeze(["RSI", "DMI_ADX", "BOLLINGER"]);
 
-function directionOf(call) {
+/** Direcao de um role com tratamento de CONFLITO interno: se houver UP e DOWN juntos => nao vota (NONE). */
+export function directionOf(call) {
   const facts = call?.output?.facts ?? [];
-  const directional = facts.find((item) => item && (item.direction === "UP" || item.direction === "DOWN"));
-  return directional?.direction ?? "NONE";
+  const directions = facts.map((item) => item?.direction).filter((value) => value === "UP" || value === "DOWN");
+  if (directions.includes("UP") && directions.includes("DOWN")) return "CONFLICT";
+  return directions[directions.length - 1] ?? "NONE";
 }
 
 function criticalBlockers(calls) {
   const out = [];
   for (const call of calls) {
     for (const blocker of call?.output?.blockers ?? []) {
-      if (/range|transicao|indisponivel/i.test(String(blocker))) out.push({ role: call.role, blocker: String(blocker).slice(0, 160) });
+      if (/range|transicao|indisponivel|expansao anormal|volatilidade baixa/i.test(String(blocker))) out.push({ role: call.role, blocker: String(blocker).slice(0, 160) });
     }
   }
   return out;
@@ -33,10 +37,23 @@ export function prefilterWave1({ calls = [], asset = null, env = process.env } =
   const blockCritical = env.V3_PREFILTER_BLOCK_CRITICAL !== "false";
   const assetDirection = asset?.output?.direction ?? "NONE";
   const assetState = asset?.output?.state ?? "NO_SETUP";
-  const aligned = DIRECTIONAL_ROLES.filter((role) => { const call = calls.find((item) => item.role === role); return call && directionOf(call) !== "NONE" && directionOf(call) === assetDirection; });
-  const critical = criticalBlockers(calls);
-  if (requireAsset && (assetState !== "BUY_CANDIDATE" && assetState !== "SELL_CANDIDATE")) return { pass: false, reason: "PREFILTER_NO_ASSET_CANDIDATE", alignment: aligned.length, direction: assetDirection, criticalBlockers: critical };
-  if (aligned.length < minAlign) return { pass: false, reason: "PREFILTER_WEAK_ALIGNMENT", alignment: aligned.length, direction: assetDirection, criticalBlockers: critical };
-  if (blockCritical && critical.length > 0) return { pass: false, reason: "PREFILTER_CRITICAL_BLOCKER", alignment: aligned.length, direction: assetDirection, criticalBlockers: critical };
-  return { pass: true, reason: null, alignment: aligned.length, direction: assetDirection, criticalBlockers: critical };
+  const find = (role) => calls.find((item) => item.role === role);
+  // 1. Asset candidato
+  if (requireAsset && assetState !== "BUY_CANDIDATE" && assetState !== "SELL_CANDIDATE") return { pass: false, reason: "PREFILTER_NO_ASSET_CANDIDATE", alignment: 0, direction: assetDirection, criticalBlockers: [] };
+  // 2. Estrutura (Price Action) e requisito estrutural: precisa suportar a direcao do Asset
+  const paDirection = directionOf(find("PRICE_ACTION"));
+  if (paDirection !== assetDirection) return { pass: false, reason: "PREFILTER_PA_MISALIGNED", alignment: 0, direction: assetDirection, paDirection, criticalBlockers: [] };
+  // 3. Alinhamento real de RSI/DMI/BOLLINGER (conflito interno nao conta)
+  const aligned = ALIGNMENT_ROLES.filter((role) => { const call = find(role); return call && directionOf(call) === assetDirection; });
+  if (aligned.length < minAlign) return { pass: false, reason: "PREFILTER_WEAK_ALIGNMENT", alignment: aligned.length, direction: assetDirection, criticalBlockers: [] };
+  // 4. ATR BLOCK
+  const atrCall = find("ATR");
+  const atrBlocked = (atrCall?.output?.blockers ?? []).some((blocker) => /expansao anormal|volatilidade baixa/i.test(String(blocker)));
+  if (atrBlocked) return { pass: false, reason: "PREFILTER_ATR_BLOCK", alignment: aligned.length, direction: assetDirection, criticalBlockers: [] };
+  // 5. Blocker critico estrutural
+  if (blockCritical) {
+    const critical = criticalBlockers(calls);
+    if (critical.length > 0) return { pass: false, reason: "PREFILTER_CRITICAL_BLOCKER", alignment: aligned.length, direction: assetDirection, criticalBlockers: critical };
+  }
+  return { pass: true, reason: null, alignment: aligned.length, direction: assetDirection, criticalBlockers: [] };
 }
