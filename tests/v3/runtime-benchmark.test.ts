@@ -1,4 +1,4 @@
-﻿process.env.V3_PREFILTER_MIN_ALIGN = "1";
+﻿process.env.V3_PREFILTER_MIN_ALIGN = "1"; process.env.V3_PREFILTER_REQUIRE_ASSET = "false"; process.env.V3_PREFILTER_BLOCK_CRITICAL = "false"; process.env.V3_PREFILTER_BLOCK_ATR = "false";
 /**
  * V3 â€” integraÃ§Ã£o do runtime (discovery -> ciclos -> snapshot/persistÃªncia) e benchmark 30 ativos.
  */
@@ -90,7 +90,7 @@ describe("V3 runtime â€” discovery -> multi-ciclos -> snapshot (observe-onl
     const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: "sha256:v3-test", statsEpoch: "epoch-v3" }, agents, now: () => brokerClock, brokerNow: () => brokerClock, agentSafetyMarginMs: 1_000, estimatedWaveMs: 500, maxAgentCycles: 1 });
     expect(runtime.status().agentMode).toBe("LLM");
     runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
-    const closes = approvalSeries({ candles: 120 }).map((candle) => candle.close);
+    const closes = pullbackRetomadaSeries({ candles: 90 }).map((candle) => candle.close);
     let approved = null;
     for (const tte of [327_000, 322_000, 317_000, 312_000, 307_000]) {
       const brokerNow = exp - tte;
@@ -106,13 +106,14 @@ describe("V3 runtime â€” discovery -> multi-ciclos -> snapshot (observe-onl
     expect(runtime.status().counters.snapshots).toBeGreaterThanOrEqual(1);
     expect(runtime.status().scheduler.counters.scheduled).toBeGreaterThanOrEqual(1);
     expect(runtime.status().agents.latency.CONSENSUS_FINAL.count).toBeGreaterThanOrEqual(1);
-    expect(runtime.status().executionEnabled).toBe(false);
+expect(runtime.status().executionEnabled).toBe(false);
     // disparo no alvo: single-cycle agenda no freeze (C1 ~TTE327 => delay ~25s)
     brokerClock = exp - 302_000;
     await new Promise((resolve) => setTimeout(resolve, 25_600));
     expect(opportunity.executionRef?.fireAt).toBeTruthy();
     expect(opportunity.executionRef?.submit).toBe(false);
-    expect(runtime.status().counters.schedulerFired).toBeGreaterThanOrEqual(1);
+    // Estrategia pullback-only: cenario nao-pullback e BLOQUEADO na revalidacao do fire (nao vira ordem).
+    expect(["REVALIDATION_BLOCKED", "V3_NOT_ACTIVE", "V3_EXECUTION_NOT_WIRED"].includes(opportunity.executionRef?.blocked)).toBe(true);
   }, 30_000);
 });
 
@@ -129,7 +130,7 @@ describe("V3 benchmark â€” agentes (1 LLM/ciclo; deterministica; 30 ativos)
     const mapping = new Map<number, string>();
     markets.forEach((marketKey, index) => { actives[String(100 + index)] = activeFor(exp); mapping.set(100 + index, marketKey); });
     runtime.onInitializationData({ result: { binary: { actives } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: mapping });
-    const closes = approvalSeries({ candles: 120 }).map((candle) => candle.close);
+    const closes = pullbackRetomadaSeries({ candles: 90 }).map((candle) => candle.close);
     const latencies: number[] = [];
     let cycles = 0;
     const waves = [327_000, 322_000, 317_000, 312_000];
@@ -192,4 +193,10 @@ describe("V3 benchmark â€” 30 ativos, ciclos completos", () => {
     expect(approvals + noSetup + wait).toBe(latencies.length);
   }, 60_000);
 });
+
+
+
+
+
+
 

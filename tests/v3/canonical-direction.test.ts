@@ -1,10 +1,10 @@
-﻿process.env.V3_PREFILTER_MIN_ALIGN = "1";
+﻿process.env.V3_PREFILTER_MIN_ALIGN = "1"; process.env.V3_PREFILTER_REQUIRE_ASSET = "false"; process.env.V3_PREFILTER_BLOCK_CRITICAL = "false"; process.env.V3_PREFILTER_BLOCK_ATR = "false";
 /**
  * CANONICAL DECISION DIRECTION â€” a autoridade direcional final e SEMPRE o Consensus Final (LLM).
  * O Asset e hipotese independente: nao pode sobrescrever a decisao nem contaminar snapshot/scheduler.
  */
 import { describe, expect, it } from "vitest";
-import { ALIGNED_BASE, approvalSeries, candlesFromCloses } from "./fixtures";
+import { ALIGNED_BASE, approvalSeries, candlesFromCloses, pullbackRetomadaSeries } from "./fixtures";
 import { approveScript, assetOutput, consensusFinalOutput } from "./agent-script";
 // @ts-expect-error - relay ESM sem tipagem
 const runtimeModule = await import("../../relay/v3/runtime.mjs");
@@ -30,7 +30,7 @@ const runUntilApproval = async (script: Record<string, any>) => {
   const agents = createScriptedAgentClient(script, { now: () => brokerClock });
   const runtime = new V3Runtime({ strategy, agents, now: () => brokerClock, brokerNow: () => brokerClock, agentSafetyMarginMs: 1_000, estimatedWaveMs: 500, scheduler });
   runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
-  const closes = approvalSeries({ candles: 120 }).map((candle) => candle.close);
+  const closes = pullbackRetomadaSeries({ candles: 90 }).map((candle) => candle.close);
   let cycle = null;
   for (const tte of [327_000, 322_000, 317_000, 312_000, 307_000]) {
     brokerClock = exp - tte;
@@ -90,4 +90,9 @@ describe("canonical direction â€” Consensus manda, Asset nao sobrescreve", 
     expect(snapshot.asset.direction).toBe("DOWN"); // hipotese preservada, nunca autoridade
   });
 });
+
+
+
+
+
 

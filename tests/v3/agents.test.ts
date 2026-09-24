@@ -1,5 +1,5 @@
-/**
- * V3 AGENT TEAM v4 — DETERMINISTIC_CONSENSUS_ONLY:
+﻿/**
+ * V3 AGENT TEAM v4 â€” DETERMINISTIC_CONSENSUS_ONLY:
  * Wave1 = 6 assessments deterministicos (codigo); prefilter; 1 unico LLM (Consensus/Groq).
  */
 import { describe, expect, it } from "vitest";
@@ -21,7 +21,7 @@ const strong = {
   structure: { trend: "UPTREND", lastBOS: { type: "BULLISH_BOS" }, lastCHoCH: null },
   pullback: { active: true, depth: "NORMAL", distanceAtr: 0.6 },
   micro: { candle: "BULLISH" },
-  breakoutRetest: { breakout: true, breakdown: false, failed: false },
+  breakoutRetest: {},
 };
 const weak = {
   rsi: { value: 50, zone: "NEUTRAL", momentum: "FLAT" },
@@ -38,7 +38,7 @@ const consensusOK = (result = "CANCEL") => ({
   output: { independentAssessment: "evidencias alinhadas", assetComparison: "concordo", scenario: "BREAKOUT", direction: result === "APPROVE_BUY" ? "UP" : result === "APPROVE_SELL" ? "DOWN" : "NONE", agreement: "AGREE", supportingEvidence: [], counterEvidence: [], bestCaseForUp: [], bestCaseAgainstUp: [], bestCaseForDown: [], bestCaseAgainstDown: [], blockers: [], invalidations: [], marketAmbiguities: [], reasons: ["alinhamento"], result },
 });
 
-describe("V3 team — Wave1 deterministica + 1 LLM (Consensus)", () => {
+describe("V3 team â€” Wave1 deterministica + 1 LLM (Consensus)", () => {
   it("ciclo valido: 6 assessments deterministicos (provider=code) + 1 Consensus (groq) = 7 agentCalls", async () => {
     const client = { available: true, call: async () => consensusOK("APPROVE_BUY") };
     const result = await runAgentCycle({ client, measurements: strong, opportunityId: "X:1", cycleNumber: 1, now: () => 1_000_000 });

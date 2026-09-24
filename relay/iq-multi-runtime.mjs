@@ -3322,7 +3322,7 @@ export class IqMultiRuntime extends EventEmitter {
     const feedReadyMarkets = markets.filter((ctx) => (ctx.candles?.size ?? 0) >= 40).length;
     const cfg = this.providerConfigCache?.value ?? null;
     const providerErrorFresh = limiter.lastErrorAt && this.now() - Number(limiter.lastErrorAt) < 60_000;
-    const health = computeV3Health({
+const health = computeV3Health({
       v3Enabled: Boolean(this.v3),
       agentsAvailable: base.agents?.available === true,
       systemActive: base.systemActive === true,
@@ -3335,6 +3335,7 @@ export class IqMultiRuntime extends EventEmitter {
       configuredMarkets,
       recentSchemaErrors: Number(base.recentSchemaErrors) || 0,
       recentDeadlineAborts: Number(base.recentDeadlineAborts) || 0,
+      recentConsensusErrors: Number(base.recentConsensusErrors) || 0,
       recentCandleFeedBlocked: 0,
       persistCriticalError: (base.counters?.persistErrors ?? 0) > 5,
     });
@@ -3413,7 +3414,7 @@ export class IqMultiRuntime extends EventEmitter {
     const runOnce = (target) => {
       const modelId = String(target.model ?? "");
       const cappedTimeout = target.provider === "nvidia"
-        ? Math.min(Number(options.timeoutMs) || 20_000, /deepseek/i.test(modelId) ? 12_000 : /nemotron/i.test(modelId) ? 20_000 : 10_000)
+        ? Math.min(Number(options.timeoutMs) || 20_000, /deepseek/i.test(modelId) ? 5_000 : /nemotron/i.test(modelId) ? 20_000 : 8_000)
         : options.timeoutMs;
       return this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: isConsensus ? 4_000 : 8_000, suppressProviderError: isConsensus && ["groq", "alibaba", "nvidia"].includes(target.provider), execute: () => runTextProvider(this.pool, { ...options, provider: target.provider, model: target.model, timeoutMs: cappedTimeout }) });
     };

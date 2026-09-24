@@ -143,18 +143,19 @@ if (micro?.candle === "DOJI") watch.push("DOJI: indecisao no candle fechado.");
 }
 
 function assetCallFor(scenario, structure, dmi, pullback) {
-  const state = scenario.id === "NO_SETUP" ? "NO_SETUP" : ["RANGE", "TRANSITION", "FAILED_BREAKOUT"].includes(scenario.id) ? "WAIT" : scenario.direction === "UP" ? "BUY_CANDIDATE" : scenario.direction === "DOWN" ? "SELL_CANDIDATE" : "WAIT";
+  // ESTRATEGIA AUTORIZADA: operar SOMENTE pullback dentro de tendencia. Reversoes/rompimentos/transicoes
+  // sao reconhecidos como INVALIDACAO (nunca como trade). Qualquer outro cenario => WAIT/NO_SETUP.
+  const isPullback = scenario.id === "PULLBACK_CONTINUATION";
+  const state = scenario.id === "NO_SETUP" ? "NO_SETUP" : isPullback ? (scenario.direction === "UP" ? "BUY_CANDIDATE" : scenario.direction === "DOWN" ? "SELL_CANDIDATE" : "WAIT") : "WAIT";
   const direction = state === "BUY_CANDIDATE" ? "UP" : state === "SELL_CANDIDATE" ? "DOWN" : "NONE";
   const thesis = (() => {
     if (scenario.id === "PULLBACK_CONTINUATION") return `Pullback ${prose(String(pullback?.depth ?? ""), "ativo")} dentro de tendencia ${prose(String(structure?.trend ?? ""), "definida")}: aguardando retomada na direcao ${direction === "UP" ? "compradora" : "vendedora"}.`;
-    if (scenario.id === "TREND_CONTINUATION") return `Tendencia ${prose(String(structure?.trend ?? ""), "definida")} intacta com estrutura favoravel a continuacao ${direction === "UP" ? "compradora" : "vendedora"}.`;
-    if (scenario.id === "STRUCTURAL_REVERSAL") return `CHoCH confirmado: reversao estrutural na direcao ${direction === "UP" ? "compradora" : "vendedora"}.`;
-    if (scenario.id === "BREAKOUT") return "Rompimento de resistencia com fechamento sustentado.";
-    if (scenario.id === "BREAKDOWN") return "Perda de suporte com fechamento sustentado.";
-    if (scenario.id === "DEEP_PULLBACK_STRUCTURE_THREAT") return "Correcao profunda ameacando o swing que define a tendencia.";
+    if (scenario.id === "DEEP_PULLBACK_STRUCTURE_THREAT") return "Correcao profunda ameacando o swing que define a tendencia: NAO operar; apenas invalidar.";
+    if (scenario.id === "STRUCTURAL_REVERSAL") return "Reversao estrutural detectada: invalida pullback, NAO e trade.";
+    if (scenario.id === "BREAKOUT" || scenario.id === "BREAKDOWN") return "Rompimento detectado: fora da estrategia de pullback; NAO operar.";
     return "Sem configuracao operacional relevante neste momento.";
   })();
-  const blockers = ["NO_SETUP", "RANGE"].includes(scenario.id) ? ["Ausencia de setup estrutural relevante."] : [];
+  const blockers = ["NO_SETUP", "RANGE"].includes(scenario.id) ? ["Ausencia de setup estrutural relevante."] : isPullback ? [] : ["Cenario fora da estrategia autorizada (somente pullback dentro de tendencia)."];
   const invalidations = structure.lastCHoCH ? ["CHoCH pode invalidar continuacao de tendencia."] : [];
   const bestCounterCase = direction === "UP" ? "Caso contrario: perda do swing de alta com CHoCH bearish." : direction === "DOWN" ? "Caso contrario: recuperacao do swing de baixa com CHoCH bullish." : "Sem tese direcional para contestar.";
   return assetCall({ scenario: scenario.id, direction, state, thesis, bestCounterCase, blockers, invalidations, changed: [], watch: [] });

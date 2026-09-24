@@ -218,7 +218,7 @@ export class V3Runtime {
         } else {
           agentsReason = null;
           const prefilter = agentResult.prefilter ?? null;
-          if (prefilter?.pass === true) { this.counters.prefilterPass += 1; this.counters.consensusCalls += 1; const consensusCall = agentResult.agentCalls?.find((call) => call.role === "CONSENSUS_FINAL"); if (consensusCall?.provider) this.counters.consensusProvider = consensusCall.provider; }
+          if (prefilter?.pass === true) { this.counters.prefilterPass += 1; this.counters.consensusCalls += 1; const consensusCall = agentResult.agentCalls?.find((call) => call.role === "CONSENSUS_FINAL"); if (consensusCall?.provider) this.counters.consensusProvider = consensusCall.provider; if (consensusCall?.status !== "OK") this.#noteFailure("CONSENSUS"); }
           else if (prefilter) { this.counters.prefilterReject += 1; this.counters.prefilterRejectReasons[prefilter.reason ?? "UNKNOWN"] = (this.counters.prefilterRejectReasons[prefilter.reason ?? "UNKNOWN"] ?? 0) + 1; }
           const totalCalls = agentResult.agentCalls?.length ?? 0;
           const allOk = totalCalls === 7 && agentResult.agentCalls.every((call) => call.status === "OK");
@@ -531,6 +531,7 @@ export class V3Runtime {
       recentPipelines: this.#recentPipelines(5),
       recentDeadlineAborts: this.#recentFailureCount("DEADLINE"),
       recentSchemaErrors: this.#recentFailureCount("SCHEMA"),
+      recentConsensusErrors: this.#recentFailureCount("CONSENSUS"),
       agents: { available: this.agents?.available === true, calls: this.agentCalls.length, latency: agentLatencyStats(this.agentCalls) },
       scheduler: this.scheduler.status(),
       queue: { depth: this.queueDepth, maxDepth: this.maxQueueDepth, markets: this.queues.size },

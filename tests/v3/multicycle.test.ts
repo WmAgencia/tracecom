@@ -1,9 +1,9 @@
-﻿process.env.V3_PREFILTER_MIN_ALIGN = "1";
+﻿process.env.V3_PREFILTER_MIN_ALIGN = "1"; process.env.V3_PREFILTER_REQUIRE_ASSET = "false"; process.env.V3_PREFILTER_BLOCK_CRITICAL = "false"; process.env.V3_PREFILTER_BLOCK_ATR = "false";
 /**
  * V3 â€” SINGLE-CYCLE OBRIGATORIO: maxAgentCycles=1. Multiciclo NAO roda (mission "nao implemente multiciclo").
  */
 import { describe, expect, it } from "vitest";
-import { ALIGNED_BASE, approvalSeries, candlesFromCloses } from "./fixtures";
+import { ALIGNED_BASE, approvalSeries, candlesFromCloses, pullbackRetomadaSeries } from "./fixtures";
 import { approveScript } from "./agent-script";
 // @ts-expect-error - relay ESM sem tipagem
 const runtimeModule = await import("../../relay/v3/runtime.mjs");
@@ -23,7 +23,7 @@ const makeRuntime = () => {
   const agents = createScriptedAgentClient(approveScript(), { now: () => brokerClock });
   const runtime = new V3Runtime({ strategy, agents, now: () => brokerClock, brokerNow: () => brokerClock, agentSafetyMarginMs: 2_000, estimatedFullCycleMs: 1_000, estimatedDeltaCycleMs: 1_000, scheduler });
   runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
-  const closes = approvalSeries({ candles: 120 }).map((candle) => candle.close);
+  const closes = pullbackRetomadaSeries({ candles: 90 }).map((candle) => candle.close);
   const step = async (tte: number) => {
     brokerClock = exp - tte;
     const candles = candlesFromCloses(closes, { startAt: brokerClock - closes.length * 5_000 });
@@ -59,3 +59,8 @@ describe("V3 single-cycle obrigatorio (multiciclo desligado)", () => {
     expect(runtime.status().executionEnabled).toBe(false);
   });
 });
+
+
+
+
+

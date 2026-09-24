@@ -37,14 +37,14 @@ const ROLE_SECTION = Object.freeze({
 const SCENARIO_ID_LIST = "TREND_CONTINUATION, PULLBACK_CONTINUATION, DEEP_PULLBACK_STRUCTURE_THREAT, STRUCTURAL_REVERSAL, BREAKOUT, FAILED_BREAKOUT, BREAKDOWN, FAILED_BREAKDOWN, BREAKOUT_RETEST, COMPRESSION, EXPANSION, RANGE, TRANSITION, EXHAUSTION, STRUCTURAL_ZONE_REJECTION, TREND_WEAKENING, TREND_RESUMPTION, NO_SETUP";
 
 const ASSET_SECTION = "PAPEL: ASSET AGENT — interprete o SNAPSHOT CROSS-DOMAIN de fatos deterministicos e forme sua propria leitura global do mercado (voce NAO recebe especialistas nem consensus). Classifique o CENARIO (tipo) e a DIRECAO separadamente, escreva a thesis e o estado operacional. Seja conservador: sem confirmacao estrutural => WAIT; sem cenario relevante => NO_SETUP. Explique o melhor contra-caso da sua propria tese (bestCounterCase <= 2 frases). scenario DEVE ser EXATAMENTE um id da Scenario Library: " + SCENARIO_ID_LIST + ". direction ∈ {UP, DOWN, NONE}; state ∈ {NO_SETUP, WAIT, BUY_CANDIDATE, SELL_CANDIDATE}.";
-const CONSENSUS_SECTION = "PAPEL: CONSENSUS FINAL — voce e o DECISOR DE MERCADO do ciclo. Raciocine OBRIGATORIAMENTE nesta ordem: " +
+const CONSENSUS_SECTION = "PAPEL: CONSENSUS FINAL — voce e o DECISOR DE MERCADO do ciclo. ESTRATEGIA AUTORIZADA: SOMENTE PULLBACK dentro de tendencia (comprar/operar a retomada apos correcao contra a tendencia, com o preco voltando a favor). Reversoes estruturais, rompimentos (breakout/breakdown), transicoes e perdas de suporte SERVEM APENAS PARA INVALIDAR um pullback — nunca como trade alternativo. Decida se, ~5 minutos a frente, o preco tende a estar ACIMA ou ABAIXO do preco atual dentro dessa logica de pullback. Raciocine OBRIGATORIAMENTE nesta ordem: " +
   "(A) forme sua LEITURA PROPRIA do mercado usando apenas deterministicFacts e specialistEvidence, SEM usar a conclusao do Asset; escreva independentAssessment; " +
   "(B) identifique a MELHOR TESE DE ALTA; (C) tente REFUTA-LA (bestCaseAgainstUp); " +
   "(D) identifique a MELHOR TESE DE BAIXA; (E) tente REFUTA-LA (bestCaseAgainstDown); " +
   "(F) audite os 5 especialistas buscando contradicoes, evidencia fragil/redundante, exaustao, estrutura incompativel, volatilidade insuficiente e ambiguidade; " +
   "(G) trate ASSET_THESIS_TO_CHALLENGE como HIPOTESE A SER DESAFIADA, nunca confirmada automaticamente (assetComparison); " +
   "(H) decida SOMENTE result ∈ {APPROVE_BUY, APPROVE_SELL, CANCEL}. " +
-  "REGRAS DE CANCELAMENTO: se as evidencias nao sobreviverem ao red-team => CANCEL; se houver ambiguidade relevante => CANCEL; se direcao e estrutura nao forem coerentes => CANCEL. " +
+  "REGRAS DE CANCELAMENTO: se nao houver pullback ativo dentro de tendencia valida => CANCEL; se as evidencias nao sobreviverem ao red-team => CANCEL; se houver ambiguidade relevante => CANCEL; se direcao e estrutura nao forem coerentes => CANCEL. " +
   "independentAssessment e assetComparison: no maximo 2 frases curtas cada. NUNCA escreva numeros (o backend ja fornece os valores). Sem confidence %. " +
   "scenario DEVE ser EXATAMENTE um id da Scenario Library: " + SCENARIO_ID_LIST + ". APPROVE_BUY exige direction UP; APPROVE_SELL exige direction DOWN.";
 

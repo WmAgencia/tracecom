@@ -25,6 +25,7 @@ export function computeV3Health({
   configuredMarkets = 0,
   recentSchemaErrors = 0,
   recentDeadlineAborts = 0,
+  recentConsensusErrors = 0,
   recentCandleFeedBlocked = 0,
   persistCriticalError = false,
 } = {}) {
@@ -33,6 +34,7 @@ export function computeV3Health({
   if (!agentsAvailable) return { state: "DEGRADED", reason: "PROVIDER_UNAVAILABLE" };
   if (recent429 > 0) return { state: "DEGRADED", reason: "PROVIDER_RATE_LIMIT" };
   if (lastProviderError) return { state: "DEGRADED", reason: "PROVIDER_ERROR" };
+  if (recentConsensusErrors > 0) return { state: "DEGRADED", reason: "CONSENSUS_FAILING" };
   if (feedReady !== true || (Number.isFinite(Number(feedAgeMs)) && Number(feedAgeMs) > Number(feedMaxAgeMs))) return { state: "DEGRADED", reason: "FEED_STALE" };
   if (configuredMarkets > 0 && configuredMarkets === 0) return { state: "DEGRADED", reason: "NO_MARKETS" };
   if (recentSchemaErrors > 0) return { state: "DEGRADED", reason: "SCHEMA_FAILURES" };

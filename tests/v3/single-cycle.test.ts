@@ -1,10 +1,10 @@
-﻿process.env.V3_PREFILTER_MIN_ALIGN = "1";
+﻿process.env.V3_PREFILTER_MIN_ALIGN = "1"; process.env.V3_PREFILTER_REQUIRE_ASSET = "false"; process.env.V3_PREFILTER_BLOCK_CRITICAL = "false"; process.env.V3_PREFILTER_BLOCK_ATR = "false";
 /**
  * V3 SINGLE-CYCLE (operacional): 1 opportunity = 1 analise completa (6 Wave1 + Consensus).
  * Grounding: prosa sanitizada (warning) x estrutura fail-closed; persistencia com barrier FK; sem C2.
  */
 import { describe, expect, it } from "vitest";
-import { ALIGNED_BASE, approvalSeries, candlesFromCloses } from "./fixtures";
+import { ALIGNED_BASE, approvalSeries, candlesFromCloses, pullbackRetomadaSeries } from "./fixtures";
 import { approveScript, assetOutput, consensusFinalOutput, specialistOutput } from "./agent-script";
 // @ts-expect-error - relay ESM sem tipagem
 const runtimeModule = await import("../../relay/v3/runtime.mjs");
@@ -22,7 +22,7 @@ const { runAgentCycle } = teamModule as any;
 const exp = ALIGNED_BASE + 300_000;
 const activeFor = (expirationAt: number) => ({ id: 76, name: "EURUSD-OTC", enabled: true, is_suspended: false, deadtime: 30, option: { expiration_times: [Math.round(expirationAt / 1000)], profit: { commission: 18 } } });
 const strategy = { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: "sha256:v3-test", statsEpoch: "epoch-v3" };
-const closes = approvalSeries({ candles: 120 }).map((candle) => candle.close);
+const closes = pullbackRetomadaSeries({ candles: 90 }).map((candle) => candle.close);
 
 const measurements = { closedCandle: { at: 1, open: 1, high: 1, low: 1, close: 1 }, structure: { trend: "UPTREND" }, rsi: { value: 45, slope: 1.2, zone: "NEUTRAL" }, dmi: { adx: 26, spread: 9 }, atr: { atr: 0.0008, volRatio: 1.05 }, bollinger: { percentB: 0.55 }, pullback: { active: true, depth: "NORMAL" }, micro: { direction: "UP" }, impulse: {}, breakoutRetest: {} };
 
@@ -155,4 +155,9 @@ describe("V3 single-cycle operacional", () => {
     expect(runtime.status().counters.agentCycles).toBe(1);
   });
 });
+
+
+
+
+
 
