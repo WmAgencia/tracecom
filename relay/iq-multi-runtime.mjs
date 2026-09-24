@@ -2039,7 +2039,15 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.armState.armed === true) return null;
     if (this.killSwitch.status().executionEnabled !== true) return null;
     if (this.account?.practice?.verified !== true) return null;
-    try { const out = this.arm(2, { confirmation: true, actor: "auto" }); this.#safe(() => this.log("AUTO_ARM_PRACTICE", JSON.stringify({ at: this.now(), armed: out?.armed === true }))); return out; } catch { return null; }
+    try {
+      const out = this.arm(2, { confirmation: true, actor: "auto" });
+      if (out?.armed === true) {
+        // UNATTENDED: apos reconexao + rearm, restaura AUTO ON (operador autorizou permanencia ativa).
+        if (this.config.autoExecute !== true) { try { this.setAutoExecute(true, { actor: "auto" }); } catch { /* noop */ } }
+      }
+      this.#safe(() => this.log("AUTO_ARM_PRACTICE", JSON.stringify({ at: this.now(), armed: out?.armed === true })));
+      return out;
+    } catch { return null; }
   }
 
   agentConfigState() { return { safetyPct: this.agentSafetyPct, variant: this.agentVariant || String(this.agentSafetyPct), filters: this.agentFilters ?? null, binaryExec: this.agentExecBinary === true, shadowLevels: this.safetyShadow ? this.safetyShadow.levels.map((spec) => spec.label) : [], shadowRunId: SAFETY_SHADOW_RUN_ID, fromEnv: this.agentSafetyFromEnv === true, autoArmPractice: this.autoArmPractice === true }; }
