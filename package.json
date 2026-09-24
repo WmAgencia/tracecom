@@ -8,7 +8,8 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/postbuild.mjs",
+    "check:relay": "node scripts/check-relay-syntax.mjs",
+    "build": "npm run check:relay && tsc -p tsconfig.json && node scripts/postbuild.mjs",
     "build:extension": "node scripts/build-extension.mjs",
     "test:extension": "node scripts/test-extension.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",

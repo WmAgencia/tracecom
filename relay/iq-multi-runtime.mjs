@@ -113,6 +113,19 @@ const sanitizeInstrumentRow = (row) => (row && typeof row === "object"
   ? Object.fromEntries(Object.entries(row).filter(([key]) => !/ssid|token|bearer|authorization|cookie|password|secret|email|user|balance/i.test(key)).slice(0, 32))
   : null);
 
+/** Override temporario da rota do Consensus via env (ex.: teste 5min com um unico modelo). Formato: "provider:model,provider:model". */
+function v3RouterRoles(env) {
+  const raw = String(env?.V3_CONSENSUS_ROUTE ?? "").trim();
+  if (!raw) return undefined;
+  const parsed = raw.split(",").map((entry) => entry.trim()).filter(Boolean).map((entry) => {
+    const [provider, ...modelParts] = entry.split(":");
+    const model = modelParts.join(":");
+    return { provider: String(provider ?? "").trim(), model: model || null };
+  }).filter((item) => item.provider);
+  if (!parsed.length) return undefined;
+  return { ...FREE_ROLES_CONFIG, CONSENSUS_FINAL: parsed };
+}
+
 export class IqMultiRuntime extends EventEmitter {
   #disconnectedWaiter = null;
   #dbProbeAt = null;
@@ -3375,20 +3388,7 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
-  /** Override temporario da rota do Consensus via env (ex.: teste 5min com um unico modelo). Formato: "provider:model,provider:model". */
-function v3RouterRoles(env) {
-  const raw = String(env?.V3_CONSENSUS_ROUTE ?? "").trim();
-  if (!raw) return undefined;
-  const parsed = raw.split(",").map((entry) => entry.trim()).filter(Boolean).map((entry) => {
-    const [provider, ...modelParts] = entry.split(":");
-    const model = modelParts.join(":");
-    return { provider: String(provider ?? "").trim(), model: model || null };
-  }).filter((item) => item.provider);
-  if (!parsed.length) return undefined;
-  return { ...FREE_ROLES_CONFIG, CONSENSUS_FINAL: parsed };
-}
-
-/** Estado ativo canonico da IA: ARM PRACTICE ou REAL armado, ou ANALISE explicitamente liberada por env. */
+  /** Estado ativo canonico da IA: ARM PRACTICE ou REAL armado, ou ANALISE explicitamente liberada por env. */
   #v3SystemActive() {
     return this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true";
   }

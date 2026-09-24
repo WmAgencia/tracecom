@@ -54,3 +54,12 @@
 - Estatísticas da V2 separadas: `GET /api/iq/strategy/stats?version=PULLBACK_4060_300_AGENTIC_V2` (exclui `excluded_from_stats=true`)
 - PATH_TEST (`testOnly=true`, `excludedFromStats=true`) nunca entra em estatística
 - Baseline mantém histórico próprio em `archive/baseline/PULLBACK_4060_300_BASELINE/stats-snapshot.json`
+
+
+## Hotfix operacional — boot do relay (2026-09-24)
+
+- Corrigido o escopo de `v3RouterRoles`: helper no topo do módulo, fora de `IqMultiRuntime`; parsing e rotas preservados.
+- `npm run build` agora verifica sintaxe de todos os módulos `.mjs` do relay, inclusive subdiretórios, antes do TypeScript. O deploy oficial executa esse build mesmo com `--skip-tests`.
+- Sem alteração de stake, filtros, TTE 330→300, estratégia congelada ou gates de execução/REAL.
+- Backup solicitado por AGENTS.md tentado: bloqueado por ausência de DATABASE_URL/SUPABASE_DB_URL neste ambiente. Backups anteriores preservados; executar backup no ambiente autenticado.
+- Publicação e ciclo PRACTICE dependem de confirmação operacional pós-deploy; testes locais não comprovam ordem ou settlement.
