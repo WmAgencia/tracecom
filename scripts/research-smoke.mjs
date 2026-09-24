@@ -2,11 +2,13 @@
  * RESEARCH SMOKE — valida endpoints de producao (lab + agentes + office + quality + REAL preflight).
  * Uso: node scripts/research-smoke.mjs [base]
  *
- * Pos-hardening (A02/A07): rotas /api/iq/* sao privadas. Sem TRACECOM_OPERATOR_KEY o smoke
- * valida o contrato fail-closed (401 anonimo); com a chave, autentica e exige 200.
+ * Pos-reconciliacao do painel: GETs read-only do grid (/api/iq/status, intelligence/assets,
+ * strategy/stats, mesas, account/context) sao PUBLICOS; as demais /api/iq/* seguem privadas:
+ * sem TRACECOM_OPERATOR_KEY valida 401 anonimo; com a chave, autentica e exige 200.
  */
-const BASE = process.argv[2] ?? "https://tracecom.consecom.com.br";
+const BASE = process.argv[2] ?? "https://tracecon.consecom.com.br";
 const OPERATOR_KEY = (process.env.TRACECOM_OPERATOR_KEY ?? "").trim() || null;
+const PANEL_PUBLIC_GETS = new Set(["/api/iq/status", "/api/iq/intelligence/assets", "/api/iq/strategy/stats", "/api/iq/mesas", "/api/iq/account/context"]);
 const CHECKS = [
   "/health",
   "/api/iq/office",
@@ -45,11 +47,12 @@ if (OPERATOR_KEY) {
 let failures = 0;
 for (const path of CHECKS) {
   try {
-    const isPrivate = path.startsWith("/api/iq/");
+    const isPanelPublic = PANEL_PUBLIC_GETS.has(path);
+    const isPrivate = path.startsWith("/api/iq/") && !isPanelPublic;
     const response = await fetch(`${BASE}${path}`, { headers: cookie && isPrivate ? { cookie } : {}, signal: AbortSignal.timeout(45_000) });
-    const ok = isPrivate ? (cookie ? response.ok : response.status === 401) : response.ok;
+    const ok = isPanelPublic ? response.ok : isPrivate ? (cookie ? response.ok : response.status === 401) : response.ok;
     if (!ok) failures += 1;
-    console.log(`${ok ? "OK " : "FAIL"} ${response.status} ${path}${isPrivate ? ` (auth ${cookie ? "operator" : "fail-closed"})` : ""}`);
+    console.log(`${ok ? "OK " : "FAIL"} ${response.status} ${path}${isPrivate ? ` (auth ${cookie ? "operator" : "fail-closed"})` : isPanelPublic ? " (painel publico)" : ""}`);
   } catch (error) {
     failures += 1;
     console.log(`FAIL ERR ${path} :: ${String(error?.message ?? error).slice(0, 120)}`);
