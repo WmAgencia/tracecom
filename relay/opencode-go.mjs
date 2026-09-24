@@ -199,7 +199,7 @@ export async function runTextProvider(pool, { system = "You are a cautious quant
   if (!config || (config.provider !== "openCodeGo" && config.provider !== "groq")) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", requestId, sessionId, model: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null };
   const model = resolveModel(config);
   const request = config.provider === "groq"
-    ? { url: `${GROQ_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model, max_tokens: maxTokens, messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
+    ? { url: `${GROQ_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model, max_tokens: Math.max(Number(maxTokens) || 512, 4096), messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
     : buildTextRequest({ model, system, prompt, sessionId, maxTokens, temperature, responseFormat, reasoningEffort });
   try {
     const result = await callProvider(request, config.apiKey, Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0 ? Number(timeoutMs) : TEXT_TIMEOUT_MS);
