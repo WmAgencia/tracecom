@@ -3282,13 +3282,14 @@ export class IqMultiRuntime extends EventEmitter {
     const configuredMarkets = markets.filter((ctx) => ctx.enabled).length;
     const feedReadyMarkets = markets.filter((ctx) => (ctx.candles?.size ?? 0) >= 40).length;
     const cfg = this.providerConfigCache?.value ?? null;
+    const providerErrorFresh = limiter.lastErrorAt && this.now() - Number(limiter.lastErrorAt) < 60_000;
     const health = computeV3Health({
       v3Enabled: Boolean(this.v3),
       agentsAvailable: base.agents?.available === true,
       systemActive: base.systemActive === true,
       providerUnavailable: Boolean(this.v3) && base.agents?.available !== true,
       recent429: limiter.recent429 ?? 0,
-      lastProviderError: limiter.lastProviderError ?? null,
+      lastProviderError: providerErrorFresh ? (limiter.lastProviderError ?? null) : null,
       feedReady: feedReadyMarkets >= 1,
       feedAgeMs: null,
       feedMaxAgeMs: Number(process.env.V3_FEED_MAX_AGE_MS) || 15_000,

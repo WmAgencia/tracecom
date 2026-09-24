@@ -85,6 +85,7 @@ export function createLlmRateLimiter({ maxConcurrent = 8, now = () => Date.now()
             }
           }
           if (Number(result?.httpStatus) >= 400 && !suppressProviderError) { state.lastProviderError = safeError(result?.text ?? result?.reason); state.lastErrorAt = now(); }
+          else if (Number(result?.httpStatus) === 200 && !suppressProviderError) { state.lastProviderError = null; state.lastErrorAt = null; }
           resolve({ ...result, queueWaitMs });
         },
       });
