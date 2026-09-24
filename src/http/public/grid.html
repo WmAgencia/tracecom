@@ -321,7 +321,12 @@
     setText($("intelState"), vState);
     setText($("intelReady"), String(v3?.configuredMarkets ?? next.length ?? 0));
     setText($("intelFeed"), "5s");
-    const providerLabel = v3?.providers ? (String(v3.providers.specialist?.model ?? "") + " + " + String(v3.providers.consensus?.model ?? "")).replace(/ \+ $/, "") : (v3?.provider ? String(v3.provider) : "LLM");
+    const routing = v3?.routing ?? {};
+    const specialistLabel = routing.RSI?.label ? String(routing.RSI.label) : "LLM";
+    const specialistModel = routing.RSI?.model ?? "";
+    const consensusLabel = routing.CONSENSUS_FINAL?.label ? String(routing.CONSENSUS_FINAL.label) : "LLM";
+    const consensusModel = routing.CONSENSUS_FINAL?.model ?? "";
+    const providerLabel = specialistLabel + " " + specialistModel + " + " + consensusLabel + " " + consensusModel;
     const lastLatency = Number(v3?.lastSuccessfulCycleLatencyMs ?? 0);
     let note;
     if (vState === "READY") note = (v3?.pipelines7of7 ?? 0) + " pipelines 7/7 · " + providerLabel + " · última análise " + (lastLatency ? (lastLatency / 1000).toFixed(1) + "s" : "—");

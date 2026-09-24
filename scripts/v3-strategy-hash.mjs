@@ -44,6 +44,7 @@ export const V3_DECISION_FILES = Object.freeze([
   "relay/v3/agents/fact-packets.mjs",
   "relay/v3/agents/capabilities.mjs",
   "relay/llm-rate-limiter.mjs",
+  "relay/llm-router.mjs",
   "relay/intelligence/features.mjs",
   "relay/intelligence/asset-context.mjs",
   "relay/execution/binary300.mjs",

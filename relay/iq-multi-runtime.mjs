@@ -72,6 +72,7 @@ import { createLlmAgentClient } from "./v3/agents/llm-client.mjs";
 import { createLlmRateLimiter } from "./llm-rate-limiter.mjs";
 import { runTextProvider, effectiveProviderConfig } from "./opencode-go.mjs";
 import { computeV3Health } from "./intelligence/v3-health.mjs";
+import { createLlmRouter, providerLabel } from "./llm-router.mjs";
 import { measureAll } from "./v3/measurements.mjs";
 import { derivedExpirationAt } from "./v3/expiration-grid.mjs";
 import { ExpirationTargetTiming } from "./v3/timing.mjs";
@@ -165,6 +166,7 @@ export class IqMultiRuntime extends EventEmitter {
     // V3 (expiration-driven): observe-only, desligada por padrao; nunca ativa sozinha.
     this.v3Strategy = process.env.V3_ENABLED === "true" ? loadOperationalStrategy({ manifestPath: "estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V3.json" }) : null;
     this.llmLimiter = createLlmRateLimiter({ maxConcurrent: Number(process.env.LLM_MAX_CONCURRENCY) || 8, now: this.now, log: this.log });
+    this.llmRouter = createLlmRouter({ now: this.now });
     this.providerConfigCache = { at: 0, value: null };
     this.groqBudget = { remaining: null, at: 0 };
     this.v3 = this.v3Strategy
@@ -3305,9 +3307,20 @@ export class IqMultiRuntime extends EventEmitter {
       provider: cfg?.provider ?? null,
       model: cfg?.model ?? null,
       providers: {
-        specialist: { provider: process.env.V3_SPECIALIST_PROVIDER || "openCodeGo", model: process.env.V3_SPECIALIST_MODEL || "deepseek-v4-flash" },
-        consensus: { provider: process.env.V3_CONSENSUS_PROVIDER || "groq", model: process.env.V3_CONSENSUS_MODEL || "openai/gpt-oss-120b" },
+        specialist: { provider: "zen", model: "space-bunny-free" },
+        consensus: { provider: "groq", model: "openai/gpt-oss-120b" },
       },
+      routing: (() => {
+        const out = {};
+        for (const roleName of ["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION", "ASSET", "CONSENSUS_FINAL"]) {
+          const chosen = this.llmRouter?.choose?.(roleName);
+          const stats = this.llmRouter?.stats?.() ?? {};
+          const entry = chosen ? stats[`${chosen.provider}:${chosen.model}`] ?? {} : {};
+          out[roleName] = { provider: chosen?.provider ?? null, model: chosen?.model ?? null, label: providerLabel(chosen?.provider) };
+          if (entry) out[roleName].health = { recent429: entry.recent429, recent5xx: entry.recent5xx, schemaOk: entry.schemaOk, ok: entry.ok, fail: entry.fail, latencyMs: entry.latencyMs, cooldownUntil: entry.cooldownUntil };
+        }
+        return out;
+      })(),
       groqBudgetRemainingTokens: Number.isFinite(Number(this.groqBudget?.remaining)) ? Number(this.groqBudget.remaining) : null,
       agentsAvailable: base.agents?.available === true,
       systemActive: base.systemActive === true,
@@ -3326,36 +3339,37 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
-  /** Runner agendado GLOBAL das chamadas LLM do V3 (concurrency + prioridade + deadline + retry 429 + roteamento por etapa). */
+  /** Runner agendado GLOBAL das chamadas LLM do V3 (router por role + concurrency + prioridade + deadline + retry 429). */
   async #v3ScheduledRun(options) {
     if (!this.pool) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
     const timeoutMs = Number.isFinite(Number(options.timeoutMs)) && Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 20_000;
     const deadlineAt = this.now() + timeoutMs;
     const role = String(options.requestId ?? "").split(":").pop();
     const isConsensus = role === "CONSENSUS_FINAL";
-    const specialistProvider = process.env.V3_SPECIALIST_PROVIDER || "openCodeGo";
-    const specialistModel = process.env.V3_SPECIALIST_MODEL || "deepseek-v4-flash";
-    const consensusProvider = process.env.V3_CONSENSUS_PROVIDER || "groq";
-    const consensusModel = process.env.V3_CONSENSUS_MODEL || "openai/gpt-oss-120b";
-    const fallbackProvider = process.env.V3_CONSENSUS_FALLBACK_PROVIDER || "openCodeGo";
-    const fallbackModel = process.env.V3_CONSENSUS_FALLBACK_MODEL || "qwen3.8-max";
     const priority = isConsensus ? 2 : 1;
-    let provider = isConsensus ? consensusProvider : specialistProvider;
-    let model = isConsensus ? consensusModel : specialistModel;
     const estTokens = Number(process.env.V3_GROQ_EST_TOKENS) || 2_600;
-    if (isConsensus && provider === "groq") {
-      if (!this.#groqBudgetOk()) { provider = fallbackProvider; model = fallbackModel; }
-      else { this.groqBudget = { ...this.groqBudget, remaining: Number(this.groqBudget.remaining) - estTokens, at: this.now() }; }
+    let chosen = this.llmRouter.choose(role);
+    if (!chosen) return { status: "ERROR", reason: "NO_ROUTE", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
+    if (isConsensus && chosen.provider === "groq" && !this.#groqBudgetOk()) chosen = this.llmRouter.choose(role, { skipKey: "groq:" + chosen.model });
+    if (!chosen) chosen = { provider: "zen", model: "space-bunny-free" };
+    if (chosen.provider === "groq") this.groqBudget = { ...this.groqBudget, remaining: Number(this.groqBudget.remaining) - estTokens, at: this.now() };
+    const runOnce = (target) => this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: isConsensus ? 4_000 : 8_000, suppressProviderError: isConsensus && target.provider === "groq", execute: () => runTextProvider(this.pool, { ...options, provider: target.provider, model: target.model }) });
+    let result = await runOnce(chosen);
+    if (chosen.provider === "groq" && result?.limits) this.#updateGroqBudget(result.limits);
+    this.llmRouter.report({ ...chosen, httpStatus: result?.httpStatus, status: result?.status, schemaValid: result?.status === "OK", latencyMs: result?.latencyMs });
+    const used = { ...chosen };
+    if (result?.status !== "OK") {
+      const fallback = this.llmRouter.choose(role, { skipKey: `${chosen.provider}:${chosen.model}` });
+      if (fallback && this.now() + 4_000 <= deadlineAt) {
+        if (chosen.provider === "groq") this.groqBudget = { remaining: 0, at: this.now() };
+        result = await runOnce(fallback);
+        if (fallback.provider === "groq" && result?.limits) this.#updateGroqBudget(result.limits);
+        this.llmRouter.report({ ...fallback, httpStatus: result?.httpStatus, status: result?.status, schemaValid: result?.status === "OK", latencyMs: result?.latencyMs });
+        return { ...result, fallbackUsed: true, primary: used };
+      }
+      return { ...result, fallbackUsed: false, primary: used };
     }
-    const result = await this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: isConsensus ? 4_000 : 1_500, suppressProviderError: isConsensus && provider === "groq", execute: () => runTextProvider(this.pool, { ...options, provider, model }) });
-    if (provider === "groq" && result?.limits) this.#updateGroqBudget(result.limits);
-    if (isConsensus && provider === "groq" && result?.status !== "OK") {
-      // Groq indisponivel (429/402/erro): backoff e failover para openCodeGo (sem degradar o health).
-      this.groqBudget = { remaining: 0, at: this.now() };
-      this.groqDisabledUntil = this.now() + 300_000;
-      return this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: 4_000, execute: () => runTextProvider(this.pool, { ...options, provider: fallbackProvider, model: fallbackModel }) });
-    }
-    return result;
+    return { ...result, fallbackUsed: false, primary: used };
   }
 
   /** Orcamento real de tokens do Groq (lido dos headers x-ratelimit-remaining-tokens). Sem dado => nao usa Groq. */
