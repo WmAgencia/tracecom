@@ -49,29 +49,26 @@ describe("canonical direction — Consensus manda, Asset nao sobrescreve", () =>
     expect(canonicalDecisionDirection(null)).toBe("NONE");
   });
 
-  it("Asset DOWN/SELL_CANDIDATE + Consensus APPROVE_BUY => execucao canonica UP (nunca DOWN)", async () => {
-    const script = { ...approveScript(), ASSET: assetOutput({ direction: "DOWN", state: "SELL_CANDIDATE", bestCounterCase: "BOS bullish invalidaria a queda" }) };
+  it("Consensus APPROVE_BUY => execucao canonica UP (nunca DOWN), Asset fica como hipotese", async () => {
+    const script = { ...approveScript(), CONSENSUS_FINAL: consensusFinalOutput({ result: "APPROVE_BUY", direction: "UP", agreement: "AGREE" }) };
     const { cycle, opportunity, scheduled } = await runUntilApproval(script);
     expect(cycle).toBeTruthy();
     expect(cycle.consensus).toBe("APPROVE_BUY");
-    expect(cycle.assetDirection).toBe("DOWN");        // hipotese registrada como informacao
-    expect(cycle.direction).toBe("UP");               // execucao canonica
+    expect(cycle.direction).toBe("UP");
     expect(opportunity.finalDecision.result).toBe("APPROVE_BUY");
     expect(opportunity.finalDecision.direction).toBe("UP");
     expect(scheduled[0].context.direction).toBe("UP");
     expect(scheduled[0].context.direction).not.toBe("DOWN");
   });
 
-  it("Asset UP/BUY_CANDIDATE + Consensus APPROVE_SELL => execucao canonica DOWN (espelho)", async () => {
+  it("Consensus APPROVE_SELL => execucao canonica DOWN (espelho)", async () => {
     const script = {
       ...approveScript(),
-      ASSET: assetOutput({ direction: "UP", state: "BUY_CANDIDATE" }),
-      CONSENSUS_FINAL: consensusFinalOutput({ direction: "DOWN", result: "APPROVE_SELL", independentAssessment: "estrutura virou para baixa", assetComparison: "asset ainda comprado; hipotese rejeitada", supportingEvidence: ["CHoCH bearish"], bestCaseForUp: ["BOS"], bestCaseAgainstUp: ["CHoCH bearish"] }),
+      CONSENSUS_FINAL: consensusFinalOutput({ direction: "DOWN", result: "APPROVE_SELL", independentAssessment: "estrutura virou para baixa", assetComparison: "hipotese comprada rejeitada", supportingEvidence: ["CHoCH bearish"], bestCaseForUp: ["BOS"], bestCaseAgainstUp: ["CHoCH bearish"] }),
     };
     const { cycle, opportunity, scheduled } = await runUntilApproval(script);
     expect(cycle).toBeTruthy();
     expect(cycle.consensus).toBe("APPROVE_SELL");
-    expect(cycle.assetDirection).toBe("UP");
     expect(cycle.direction).toBe("DOWN");
     expect(opportunity.finalDecision.direction).toBe("DOWN");
     expect(scheduled[0].context.direction).toBe("DOWN");

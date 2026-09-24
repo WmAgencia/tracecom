@@ -3313,11 +3313,9 @@ export class IqMultiRuntime extends EventEmitter {
       routing: (() => {
         const out = {};
         for (const roleName of ["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION", "ASSET", "CONSENSUS_FINAL"]) {
-          const chosen = this.llmRouter?.choose?.(roleName);
-          const stats = this.llmRouter?.stats?.() ?? {};
-          const entry = chosen ? stats[`${chosen.provider}:${chosen.model}`] ?? {} : {};
-          out[roleName] = { provider: chosen?.provider ?? null, model: chosen?.model ?? null, label: providerLabel(chosen?.provider) };
-          if (entry) out[roleName].health = { recent429: entry.recent429, recent5xx: entry.recent5xx, schemaOk: entry.schemaOk, ok: entry.ok, fail: entry.fail, latencyMs: entry.latencyMs, cooldownUntil: entry.cooldownUntil };
+          out[roleName] = roleName === "CONSENSUS_FINAL"
+            ? { provider: "groq", model: "openai/gpt-oss-120b", label: "Groq" }
+            : { provider: "deterministic", model: "code", label: "Determinístico" };
         }
         return out;
       })(),

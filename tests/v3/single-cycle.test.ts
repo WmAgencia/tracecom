@@ -42,33 +42,28 @@ const makeRuntime = (script: Record<string, any>, { pool = null as any, margin =
 };
 
 describe("V3 single-cycle operacional", () => {
-  it("A. numero inventado apenas em prosa opcional => warning + sanitizado, agente valido e nao chega ao Consensus", async () => {
-    const script = { ...approveScript(), RSI: specialistOutput("RSI", { facts: [{ code: "RSI_SLOPE", direction: "UP", strength: "MODERATE", detail: "ADX caiu 9876.54 pontos" }] }) };
-    const { runtime, calls, step } = makeRuntime(script);
+  it("A. Wave1 deterministica nao invoca LLM; Consensus executa 1x quando prefilter passa", async () => {
+    const { runtime, calls, step } = makeRuntime(approveScript());
     await step(325_000);
     const cycle = runtime.status().engine;
     expect(cycle).toBeTruthy();
-    const consensusPrompt = calls.find((entry) => entry.role === "CONSENSUS_FINAL")?.prompt ?? "";
-    expect(consensusPrompt).not.toContain("9876.54");
-    expect(runtime.status().agents.calls).toBeGreaterThanOrEqual(7);
+    expect(calls.length).toBe(1);
+    expect(calls[0]!.role).toBe("CONSENSUS_FINAL");
+    const cycleCalls = runtime.opportunities()[0].cycles[0].agents.calls ?? [];
+    expect(cycleCalls.filter((call: any) => call.provider === "code")).toHaveLength(6);
+    expect(runtime.status().agents.calls).toBe(7);
   });
 
-  it("B. erro estrutural real (blocker com numero inventado) => fail-closed e Consensus nao executa", async () => {
-    const { runtime, calls, step } = makeRuntime({ ...approveScript(), RSI: { ...approveScript().RSI, blockers: ["ADX caiu 9876.54"] } });
+  it("D. Consensus indisponivel (provider) => CANCEL fail-closed (available)", async () => {
+    const { runtime, step, opportunity } = makeRuntime({ ...approveScript(), CONSENSUS_FINAL: { status: "ERROR", reason: "HTTP_402", role: "CONSENSUS_FINAL", model: null, provider: "groq", latencyMs: 5, output: null } });
     await step(325_000);
-    expect(calls.some((entry) => entry.role === "CONSENSUS_FINAL")).toBe(false);
-    expect(runtime.status().counters.agentUnavailable).toBeGreaterThanOrEqual(1);
+    const cycle = runtime.opportunities()[0].cycles[0];
+    expect(cycle.agents.available).toBe(true);
+    expect(cycle.consensusResult).toBe("CANCEL");
+    expect(opportunity().finalDecision?.result ?? "CANCEL").toBe("CANCEL");
   });
 
-  it("B2. validate: prosa sanitiza, estrutura falha", () => {
-    const inputs = collectInputNumbers(measurements);
-    const prose = validateAgentOutput("RSI", specialistOutput("RSI", { facts: [{ code: "RSI_SLOPE", direction: "UP", strength: "MODERATE", detail: "ADX caiu 9876.54" }] }), { inputNumbers: inputs });
-    expect(prose.ok).toBe(true);
-    expect(prose.groundingWarnings.length).toBeGreaterThanOrEqual(1);
-    expect(validateAgentOutput("RSI", specialistOutput("RSI", { blockers: ["ADX 9876.54"] }), { inputNumbers: inputs }).error).toBe("invented_number");
-  });
-
-  it("C. 6 Wave1 validos => Consensus executa (7 calls) e E/F/G: result define direcao canonica", async () => {
+  it("C. 6 Wave1 deterministicos validos => Consensus executa (1 LLM) e E/F/G: result define direcao canonica", async () => {
     const { runtime, calls, step, opportunity } = makeRuntime(approveScript());
     await step(325_000);
     expect(calls.filter((entry) => entry.role === "CONSENSUS_FINAL")).toHaveLength(1);
@@ -80,17 +75,10 @@ describe("V3 single-cycle operacional", () => {
     const cancel = makeRuntime({ ...approveScript(), CONSENSUS_FINAL: consensusFinalOutput({ result: "CANCEL", direction: "NONE", agreement: "DISAGREE" }) });
     await cancel.step(325_000);
     expect(cancel.opportunity().finalDecision?.result).toBe("CANCEL");
-    const sell = makeRuntime({ ...approveScript(), ASSET: assetOutput({ direction: "DOWN", state: "WAIT" }), CONSENSUS_FINAL: consensusFinalOutput({ result: "APPROVE_SELL", direction: "DOWN", agreement: "PARTIAL" }) });
+    const sell = makeRuntime({ ...approveScript(), CONSENSUS_FINAL: consensusFinalOutput({ result: "APPROVE_SELL", direction: "DOWN", agreement: "PARTIAL" }) });
     await sell.step(325_000);
     expect(sell.opportunity().finalDecision?.result).toBe("APPROVE_SELL");
     expect(sell.opportunity().finalDecision?.direction).toBe("DOWN");
-  });
-
-  it("D. Wave1 5/6 => Consensus NAO executa", async () => {
-    const { runtime, calls, step } = makeRuntime({ ...approveScript(), BOLLINGER: { status: "ERROR", reason: "TIMEOUT" } });
-    await step(325_000);
-    expect(calls.some((entry) => entry.role === "CONSENSUS_FINAL")).toBe(false);
-    expect(runtime.status().counters.agentUnavailable).toBeGreaterThanOrEqual(1);
   });
 
   it("H. somente 1 ciclo por opportunity (segundo candle bloqueado)", async () => {
@@ -112,7 +100,7 @@ describe("V3 single-cycle operacional", () => {
     runtime.setOpportunityScope(null);
     const cycle = await step(320_000);
     expect(cycle?.cycle).toBe(1);
-    expect(calls.length).toBeGreaterThanOrEqual(6);
+    expect(calls.length).toBeGreaterThanOrEqual(1);
   });
 
   it("H4. ECONOMIA: sistema desarmado => LLM NAO pensa (zero calls, SYSTEM_INACTIVE); armado => pensa", async () => {
@@ -125,7 +113,7 @@ describe("V3 single-cycle operacional", () => {
     expect(inactive.runtime.status().counters.agentUnavailableReasons.SYSTEM_INACTIVE).toBeGreaterThanOrEqual(1);
     const active = makeRuntime(approveScript(), { agentsGate: () => true });
     await active.step(325_000);
-    expect(active.calls.length).toBeGreaterThanOrEqual(6);
+    expect(active.calls.length).toBeGreaterThanOrEqual(1);
     expect(active.runtime.status().counters.agentCycles).toBeGreaterThanOrEqual(1);
   });
 

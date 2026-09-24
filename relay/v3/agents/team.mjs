@@ -1,21 +1,24 @@
 /**
- * V3 — AGENT TEAM v3: arquitetura hibrida final (2 ondas LLM, 7 calls).
+ * V3 — AGENT TEAM v3 (DETERMINISTIC_CONSENSUS_ONLY): arquitetura final (1 chamada LLM).
  *
- * WAVE 1 (paralelo, 6): 5 specialists (fatos do proprio dominio) + Asset Agent (leitura global independente).
- *   - Independencia: ninguem recebe output de ninguem; cada um recebe apenas o seu FACT PACKET.
- * WAVE 2 (1): CONSENSUS FINAL — decisor de mercado; recebe deterministic facts + 5 specialists e,
- *   por ULTIMO, o bloco ASSET_THESIS_TO_CHALLENGE (anti-anchoring).
+ * WAVE 1 (codigo, 6): RSI, DMI/ADX, Bollinger, ATR, Price Action/Estrutura e Scenario/Asset —
+ *   assessments deterministicos (zero LLM) no formato exato dos schemas.
+ * PREFILTER (deterministico): so candidatos fortes seguem para o LLM.
+ * WAVE 2 (1 LLM): CONSENSUS FINAL (Groq) — decisor de mercado; recebe deterministic facts + 5
+ *   specialists e, por ULTIMO, o bloco ASSET_THESIS_TO_CHALLENGE (anti-anchoring).
  * GATE (deterministico): APENAS contratos operacionais/seguranca; a direcao vem do Consensus LLM.
  *
- * Total normal: 7 chamadas LLM por ciclo. Sem terceira onda. Fail-closed em qualquer falha.
+ * Total: 1 chamada LLM por ciclo (vs 7 antes). Fail-closed em qualquer falha.
  */
-import { factPrompt, consensusFinalPrompt } from "./prompts.mjs";
+import { consensusFinalPrompt } from "./prompts.mjs";
 import { collectInputNumbers } from "./schemas.mjs";
 import { buildPacketEnvelope } from "./fact-packets.mjs";
 import { executionGate } from "../final-gate.mjs";
+import { deterministicWave1Calls } from "../deterministic-wave1.mjs";
+import { prefilterWave1 } from "../prefilter.mjs";
 
-export const V3_AGENT_TEAM_VERSION = "v3-agent-team-v3";
-export const V3_AGENT_ARCHITECTURE = "HYBRID_2_WAVE";
+export const V3_AGENT_TEAM_VERSION = "v3-agent-team-v4";
+export const V3_AGENT_ARCHITECTURE = "DETERMINISTIC_CONSENSUS_ONLY";
 
 export const SPECIALIST_ROLES = Object.freeze(["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION"]);
 export const WAVE1_ROLES = Object.freeze([...SPECIALIST_ROLES, "ASSET"]);
@@ -66,9 +69,8 @@ export async function runAgentCycle({
   const result = {
     version: V3_AGENT_TEAM_VERSION, architecture: V3_AGENT_ARCHITECTURE, cycleNumber, available: false, reason: null,
     specialists: null, asset: null, independent: null, consensus: null, finalGate: null, result: "CANCEL",
-    agentCalls: [], factPackets: {}, nextState: null, latency: { wave1: null, wave2: null, total: null },
+    agentCalls: [], factPackets: {}, nextState: null, latency: { wave1: null, wave2: null, total: null }, prefilter: null,
   };
-  if (!client?.available) { result.reason = "AGENT_UNAVAILABLE"; return result; }
 
   const timing = expiration ? { expirationAt: expiration.expirationAt, tteMs: expiration.tteMs ?? null, phase: expiration.phase ?? null, brokerNow: expiration.brokerNow ?? null } : null;
   const inputNumbers = collectInputNumbers(measurements, timing);
@@ -86,25 +88,32 @@ export async function runAgentCycle({
     mode: envelope.mode, fingerprint: envelope.fingerprint, previousFingerprint: envelope.previousFingerprint, chars: envelope.chars, bytes: envelope.bytes,
   }]));
 
-  // WAVE 1 — 6 LLMs EM PARALELO (5 specialists + Asset), sem dependencia entre si.
+  // WAVE 1 — DETERMINISTICA (codigo): 6 assessments, zero LLM.
   const wave1Start = now();
-  const wave1 = await withBudget(Promise.all(WAVE1_ROLES.map((role) => client.call({
-    role, requestId: requestId(role), ...callCommon(),
-    prompt: factPrompt(envelopes[role]),
-  }))), { budgetMs: waveBudget() });
+  const wave1Calls = deterministicWave1Calls(measurements);
   result.latency.wave1 = Math.max(0, now() - wave1Start);
-  if (wave1.timedOut) { result.reason = "ANALYSIS_DEADLINE"; return result; }
-  const wave1Calls = wave1.value ?? [];
-  result.agentCalls.push(...wave1Calls.map(summary));
-  if (wave1Calls.length !== WAVE1_ROLES.length || wave1Calls.some((call) => call.status !== "OK")) {
-    result.reason = wave1Calls.some((call) => call.reason === "ANALYSIS_DEADLINE") ? "ANALYSIS_DEADLINE" : "AGENT_UNAVAILABLE";
-    return result;
-  }
-  const outputs = Object.fromEntries(WAVE1_ROLES.map((role) => [role, wave1Calls.find((call) => call.role === role)?.output]));
+  result.agentCalls.push(...wave1Calls);
+  const outputs = Object.fromEntries(wave1Calls.map((call) => [call.role, call.output]));
   const specialistOutputs = Object.fromEntries(SPECIALIST_ROLES.map((role) => [role, outputs[role]]));
   const asset = outputs.ASSET;
 
-  // WAVE 2 — SO com 6/6 validos: CONSENSUS FINAL (decisor de mercado).
+  // PREFILTER — somente candidatos fortes seguem para o CONSENSUS (LLM). Reprovar nao chama provider.
+  const prefilter = prefilterWave1({ calls: wave1Calls, asset: wave1Calls.find((call) => call.role === "ASSET") ?? null });
+  result.prefilter = prefilter;
+  if (prefilter.pass !== true) {
+    result.available = true;
+    result.specialists = specialistOutputs;
+    result.asset = asset;
+    result.consensus = { result: "CANCEL", agreement: "INSUFFICIENT_EVIDENCE", direction: "NONE", reasons: [prefilter.reason], independentAssessment: null, assetComparison: null, blockers: [], invalidations: [], marketAmbiguities: [], supportingEvidence: [], counterEvidence: [], bestCaseForUp: [], bestCaseAgainstUp: [], bestCaseForDown: [], bestCaseAgainstDown: [] };
+    result.result = "CANCEL";
+    result.reason = prefilter.reason;
+    result.nextState = { packets: Object.fromEntries(Object.entries(envelopes).map(([role, envelope]) => [role, envelope.packet])), outputs: { ...outputs } };
+    result.latency.total = Math.max(0, now() - startedAt);
+    return result;
+  }
+  if (!client?.available) { result.reason = "AGENT_UNAVAILABLE"; return result; }
+
+  // WAVE 2 — UNICA chamada LLM: CONSENSUS FINAL (Groq, decisor de mercado/red-team).
   const wave2Start = now();
   const consensusCall = await withBudget(client.call({
     role: CONSENSUS_ROLE, requestId: requestId(CONSENSUS_ROLE), ...callCommon(),
@@ -113,7 +122,14 @@ export async function runAgentCycle({
   result.latency.wave2 = Math.max(0, now() - wave2Start);
   if (consensusCall.timedOut || consensusCall.value?.status !== "OK") {
     if (consensusCall.value) result.agentCalls.push(summary(consensusCall.value));
-    result.reason = consensusCall.timedOut || consensusCall.value?.reason === "ANALYSIS_DEADLINE" ? "ANALYSIS_DEADLINE" : "AGENT_UNAVAILABLE";
+    result.available = true;
+    result.specialists = specialistOutputs;
+    result.asset = asset;
+    result.consensus = { result: "CANCEL", agreement: "INSUFFICIENT_EVIDENCE", direction: "NONE", reasons: [consensusCall.timedOut || consensusCall.value?.reason === "ANALYSIS_DEADLINE" ? "ANALYSIS_DEADLINE" : "CONSENSUS_UNAVAILABLE"], independentAssessment: null, assetComparison: null, blockers: [], invalidations: [], marketAmbiguities: [], supportingEvidence: [], counterEvidence: [], bestCaseForUp: [], bestCaseAgainstUp: [], bestCaseForDown: [], bestCaseAgainstDown: [] };
+    result.result = "CANCEL";
+    result.reason = consensusCall.timedOut || consensusCall.value?.reason === "ANALYSIS_DEADLINE" ? "ANALYSIS_DEADLINE" : "CONSENSUS_UNAVAILABLE";
+    result.nextState = { packets: Object.fromEntries(Object.entries(envelopes).map(([role, envelope]) => [role, envelope.packet])), outputs: { ...outputs } };
+    result.latency.total = Math.max(0, now() - startedAt);
     return result;
   }
   const consensusOutput = consensusCall.value.output;

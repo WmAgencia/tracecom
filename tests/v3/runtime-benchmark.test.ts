@@ -115,14 +115,12 @@ describe("V3 runtime — discovery -> multi-ciclos -> snapshot (observe-only)", 
   }, 30_000);
 });
 
-describe("V3 benchmark — agentes LLM (latencia simulada; 30 ativos)", () => {
-  it("30 ativos em paralelo com 7 chamadas/ciclo: nenhum ciclo estoura o candle e p95 dentro do orcamento", async () => {
+describe("V3 benchmark — agentes (1 LLM/ciclo; deterministica; 30 ativos)", () => {
+  it("30 ativos em paralelo com 1 chamada LLM/ciclo (consensus) + 6 deterministicos: p95 dentro do orcamento", async () => {
     const base = approveScript();
     const script: Record<string, any> = {};
-    for (const role of ["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION"]) script[role] = { ...base[role], sleepMs: 1, latencyMs: 1 };
-    script.ASSET = { ...base.ASSET, sleepMs: 2, latencyMs: 2 };
     script.CONSENSUS_FINAL = { ...base.CONSENSUS_FINAL, sleepMs: 2, latencyMs: 2 };
-    
+
     const agents = createScriptedAgentClient(script, { now: () => Date.now() });
     const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false }, agents });
     const markets = Array.from({ length: 30 }, (_, index) => `M${index}:OTC`);
@@ -144,12 +142,12 @@ describe("V3 benchmark — agentes LLM (latencia simulada; 30 ativos)", () => {
     const sorted = [...latencies].sort((a, b) => a - b);
     const p95 = sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * 0.95))] ?? 0;
     const status = runtime.status();
-    console.log(`V3_AGENT_BENCHMARK cycles=${cycles} assets=30 waves=${waves.length} p95=${p95}ms maxDepth=${status.queue.maxDepth} agentCalls=${status.agents.calls} agentP95=${status.agents.latency.CONSENSUS_FINAL?.p95}ms`);
+    // eslint-disable-next-line no-console
+    console.log(`V3_AGENT_BENCHMARK cycles=${cycles} assets=30 waves=${waves.length} p95=${p95}ms agentCalls=${status.agents.calls} maxCycles=${status.lifecycle?.maxAgentCycles} skippedMax=${status.counters.cyclesSkippedMaxCycles} skippedNoOpp=${status.counters.cyclesSkippedNoOpportunity}`);
     expect(cycles).toBe(30 * 1); // single-cycle operacional
     expect(p95).toBeLessThan(4_000);
-    expect(status.queue.maxDepth).toBeGreaterThanOrEqual(2);
-    // single-cycle: apenas a primeira onda por oportunidade; demais candles bloqueados por maxCycles
-    expect(status.agents.calls).toBe(30 * 7 * 1);
+    // single-cycle: 1 chamada LLM (Consensus) por oportunidade + 6 deterministicos por ciclo = 7 agentCalls
+    expect(status.agents.calls).toBe(30 * 7);
     expect(status.counters.cyclesSkippedMaxCycles).toBeGreaterThanOrEqual(30 * 3);
     expect(status.counters.cyclesSkippedWindow).toBe(0);
     expect(status.executionEnabled).toBe(false);

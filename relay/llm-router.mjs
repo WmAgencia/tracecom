@@ -16,15 +16,14 @@ export function providerLabel(provider) {
 }
 
 export const FREE_ROLES_CONFIG = Object.freeze({
-  RSI: [{ provider: "zen", model: "space-bunny-free" }],
-  DMI_ADX: [{ provider: "zen", model: "space-bunny-free" }],
-  BOLLINGER: [{ provider: "zen", model: "space-bunny-free" }],
-  ATR: [{ provider: "zen", model: "space-bunny-free" }],
-  PRICE_ACTION: [{ provider: "zen", model: "space-bunny-free" }],
-  ASSET: [{ provider: "zen", model: "space-bunny-free" }],
+  RSI: [{ provider: "deterministic", model: "code" }],
+  DMI_ADX: [{ provider: "deterministic", model: "code" }],
+  BOLLINGER: [{ provider: "deterministic", model: "code" }],
+  ATR: [{ provider: "deterministic", model: "code" }],
+  PRICE_ACTION: [{ provider: "deterministic", model: "code" }],
+  ASSET: [{ provider: "deterministic", model: "code" }],
   CONSENSUS_FINAL: [
     { provider: "groq", model: "openai/gpt-oss-120b" },
-    { provider: "zen", model: "space-bunny-free" },
   ],
 });
 

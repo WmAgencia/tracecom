@@ -45,7 +45,7 @@ export class V3Runtime {
     this.estimatedFullCycleMs = Math.max(1_000, Number(estimatedFullCycleMs) || Number(estimatedWaveMs) || 15_000);
     this.estimatedDeltaCycleMs = Math.max(1_000, Number(estimatedDeltaCycleMs) || this.estimatedFullCycleMs);
     this.estimatedWaveMs = this.estimatedFullCycleMs;
-    this.maxAgentCycles = Math.max(1, Number(maxAgentCycles) || 2);
+    this.maxAgentCycles = Math.max(1, Number(maxAgentCycles) || 1);
     this.agentsGate = typeof agentsGate === "function" ? agentsGate : null;
     this.cycleInFlight = new Set();
     this.latestCandles = new Map();
