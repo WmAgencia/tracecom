@@ -147,7 +147,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.reconnects = 0; this.connectionStartedAt = null;
     this.session = { connected: false, host: null, connectionId: null, serverTimeMs: null, clockSkewMs: null, timeValid: false, connectedAt: null };
     this.account = { practice: { verified: false, balanceId: null, balance: null, currency: null }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: null, type: "UNKNOWN" };
-    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: 1, calculatedBankrollStake: 1, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true, agentsV4ShadowEnabled: agentsV4Enabled === true, dualReasoningShadowEnabled: dualReasoningEnabled === true, soloReasoningShadowEnabled: soloReasoningEnabled === true, indicator5mShadowEnabled: indicator5mEnabled === true };
+    this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: null, calculatedBankrollStake: null, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true, agentsV4ShadowEnabled: agentsV4Enabled === true, dualReasoningShadowEnabled: dualReasoningEnabled === true, soloReasoningShadowEnabled: soloReasoningEnabled === true, indicator5mShadowEnabled: indicator5mEnabled === true };
     this.markets = new Map();
     for (const entry of UNIVERSE) {
       const key = marketKey(entry.canonical, entry.marketType);
@@ -169,11 +169,12 @@ export class IqMultiRuntime extends EventEmitter {
     this.llmRouter = createLlmRouter({ now: this.now });
     this.providerConfigCache = { at: 0, value: null };
     this.groqBudget = { remaining: null, at: 0 };
+    this.v3GateCounters = { suppressedInactive: 0 };
     this.v3 = this.v3Strategy
       ? new V3Runtime({
           now: this.now, pool, log: this.log,
           strategy: { version: this.v3Strategy.version, status: this.v3Strategy.status, executable: this.v3Strategy.executable, strategyHash: this.v3Strategy.strategyHash, statsEpoch: this.v3Strategy.manifest?.statsEpoch ?? null },
-          agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ runner: (options) => this.#v3ScheduledRun(options), now: this.now, maxTokens: Number(process.env.V3_AGENT_MAX_TOKENS) || 512 }) : null,
+          agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ runner: (options) => this.#v3ScheduledRun(options), now: this.now, maxTokens: Number(process.env.V3_AGENT_MAX_TOKENS) || 512, activityCheck: () => this.#v3SystemActive() }) : null,
           agentSafetyMarginMs: Number(process.env.V3_AGENT_SAFETY_MARGIN_MS) || 2_000,
           estimatedFullCycleMs: Number(process.env.V3_AGENT_ESTIMATED_FULL_MS) || 15_000,
           estimatedDeltaCycleMs: Number(process.env.V3_AGENT_ESTIMATED_DELTA_MS) || 14_000,
@@ -368,6 +369,7 @@ export class IqMultiRuntime extends EventEmitter {
         this.metrics.reconnects = this.reconnects;
         this.connectionStartedAt = this.now();
         this.session = { connected: true, host: ready.host, connectionId: ready.connectionId, serverTimeMs: ready.serverTimeMs, clockSkewMs: ready.clockSkewMs, timeValid: ready.timeValid, connectedAt: this.now() };
+        if (this.lastDisconnect) { this.lastDisconnect = { ...this.lastDisconnect, offlineMs: Math.max(0, this.now() - Number(this.lastDisconnect.at ?? this.now())), reconnectResult: "OK", newConnectionId: ready.connectionId }; this.#emitEvent("ws.reconnected", { ...this.lastDisconnect }); }
         // FAIL CLOSED: reconnect/token refresh/sessao nova => REAL LOCKED (nunca restaura ARMED).
         this.accountContext.beginSession(ready.connectionId);
         this.#emitEvent("connection.ready", { host: ready.host, timeValid: ready.timeValid, clockSkewMs: ready.clockSkewMs });
@@ -399,7 +401,13 @@ export class IqMultiRuntime extends EventEmitter {
   #safe(fn) { try { fn(); } catch (error) { this.log("IQ_MULTI_LOG_ERROR", String(error?.message ?? error)); } }
 
   #wire(client) {
-    client.on("closed", () => { const waiter = this.#disconnectedWaiter; if (waiter) { this.#disconnectedWaiter = null; waiter(); } });
+    client.on("closed", (event = {}) => {
+      const waiter = this.#disconnectedWaiter; if (waiter) { this.#disconnectedWaiter = null; waiter(); }
+      // Telemetria estruturada, sem segredos. close code/reason nao disponiveis no RawWebSocket (null por design).
+      this.lastDisconnect = { at: event.at ?? this.now(), previousConnectionId: this.session?.connectionId ?? null, host: event.host ?? null, lastMessageAgeMs: event.lastMessageAgeMs ?? null, closeCode: event.closeCode ?? null, closeReason: event.closeReason ?? null, offlineMs: null, reconnectResult: null };
+      this.#safe(() => this.log("WS_DISCONNECTED", JSON.stringify(this.lastDisconnect)));
+      this.#emitEvent("ws.disconnected", { ...this.lastDisconnect });
+    });
     client.on("candle-generated", (event) => this.ingestEvent("candle-generated", event));
     client.on("candles-generated", (event) => this.ingestEvent("candles-generated", event));
     client.on("balances", (event) => this.ingestEvent("balances", event));
@@ -785,29 +793,34 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   /** Valor por operacao (configuredStake). APPLY TO ALL sobrescreve os valores individuais dos mercados alvo. */
-  applyGlobalMaxStake(value, keys = null, meta = null) {
+  async applyGlobalMaxStake(value, keys = null, meta = null) {
     const limit = Number(value);
     const previousStake = Number(this.config.defaultStake) || null;
     if (!Number.isFinite(limit) || limit <= 0 || limit > this.config.hardCap) throw new IqWsError("INVALID_GLOBAL_STAKE", String(value));
     this.config.defaultStake = limit;
     this.config.globalMaxStake = Math.max(Number(this.config.globalMaxStake) || 0, limit);
     this.config.revision = Number(this.config.revision || 0) + 1;
+    this.config.lastStakeAppliedAt = this.now();
     const targets = Array.isArray(keys) && keys.length ? keys : [...this.markets.keys()];
+    const errors = [];
     let applied = 0;
     for (const key of targets) {
       const ctx = this.markets.get(key);
-      if (!ctx) throw new IqWsError("UNKNOWN_MARKET", String(key));
-      if (!ctx) continue;
+      if (!ctx) { errors.push(`UNKNOWN_MARKET:${key}`); continue; }
       ctx.configuredStake = limit;
       if (Number(ctx.maxStake) < limit) ctx.maxStake = Math.min(this.config.hardCap, limit);
       ctx.revision = Number(ctx.revision || 0) + 1;
       applied += 1;
-      void this.#persistMarket(ctx);
+      try { await this.#persistMarket(ctx); } catch (error) { errors.push(`PERSIST_MARKET:${key}:${String(error?.message ?? error).slice(0, 60)}`); }
     }
-    void this.#persistConfig();
-    this.#emitEvent("config.global_stake", { defaultStake: limit, globalMaxStake: this.config.globalMaxStake, appliedTo: applied });
-    this.#auditRecord(`stake_${this.now()}`, null, "STAKE_CHANGE", { oldValue: previousStake, newValue: limit, appliedTo: applied, keys: Array.isArray(keys) ? keys.slice(0, 54) : null, actor: meta?.actor ?? "system", requestId: meta?.requestId ?? null }, { persist: true });
-    return { defaultStake: limit, globalMaxStake: this.config.globalMaxStake, appliedTo: applied };
+    try { await this.#persistConfig(); } catch (error) { errors.push(`PERSIST_CONFIG:${String(error?.message ?? error).slice(0, 60)}`); }
+    if (errors.length) throw new IqWsError("STAKE_PERSIST_INCOMPLETE", errors.join(";"));
+    // READ-BACK: verifica valor gravado em todos os alvos antes de reportar sucesso.
+    const readBackFailures = targets.filter((key) => { const ctx = this.markets.get(key); return !ctx || Number(ctx.configuredStake) !== limit; });
+    if (readBackFailures.length) throw new IqWsError("STAKE_READBACK_MISMATCH", readBackFailures.slice(0, 20).join(";"));
+    this.#emitEvent("config.global_stake", { defaultStake: limit, globalMaxStake: this.config.globalMaxStake, appliedTo: applied, revision: this.config.revision, lastStakeAppliedAt: this.config.lastStakeAppliedAt });
+    this.#auditRecord(`stake_${this.now()}`, null, "STAKE_CHANGE", { oldValue: previousStake, newValue: limit, appliedTo: applied, revision: this.config.revision, keys: Array.isArray(keys) ? keys.slice(0, 54) : null, actor: meta?.actor ?? "system", requestId: meta?.requestId ?? null }, { persist: true });
+    return { defaultStake: limit, globalMaxStake: this.config.globalMaxStake, appliedTo: applied, revision: this.config.revision, lastStakeAppliedAt: this.config.lastStakeAppliedAt };
   }
 
   setAutoExecute(enabled, meta = null) { const previous = this.config.autoExecute === true; this.config.autoExecute = enabled === true; void this.#persistConfig(); this.#auditRecord(`auto_${this.now()}`, null, this.config.autoExecute ? "AUTO_ON" : "AUTO_OFF", { oldValue: previous, newValue: this.config.autoExecute, actor: meta?.actor ?? "system", requestId: meta?.requestId ?? null }, { persist: true }); return { autoExecute: this.config.autoExecute }; }
@@ -1006,6 +1019,10 @@ export class IqMultiRuntime extends EventEmitter {
     if (!health.healthy) throw new IqWsError("CONNECTION_UNHEALTHY", health.reasons.join(","));
     const enabled = [...this.markets.values()].filter((ctx) => ctx.enabled);
     if (!enabled.length) throw new IqWsError("NO_ACTIVE_MARKET", "nenhum mercado habilitado pelo operador");
+    // Stake global obrigatorio: valor escolhido no front-end, persistido e verificado. Sem fallback R$1/calculado.
+    if (!(Number(this.config.defaultStake) > 0)) throw new IqWsError("NO_STAKE_CONFIGURED", "stake global invalido/ausente; defina o valor na interface antes de armar");
+    const staleTargets = enabled.filter((ctx) => Number(ctx.configuredStake) !== Number(this.config.defaultStake));
+    if (staleTargets.length) throw new IqWsError("STAKE_READBACK_MISMATCH", staleTargets.slice(0, 20).map((ctx) => ctx.marketKey).join(";"));
     // Fase 6.5: ARM nao depende de mercado OPEN agora (o broker pode estar em manutencao).
     // A execucao continua bloqueada pelo PortfolioExecutionGate ate existir mercado realmente OPEN.
     if (!this.armState.connectedAccountType) this.armState.onConnected("PRACTICE");
@@ -3149,7 +3166,8 @@ export class IqMultiRuntime extends EventEmitter {
       killSwitch: this.killSwitch.status(), idempotencyKey, horizonSeconds,
     });
     let disposition = "EXECUTED"; let reason = "AUTORIZADO";
-    if (this.killSwitch.status().executionEnabled !== true) { disposition = "BLOCKED"; reason = "PARADA_DE_EMERGENCIA"; }
+    if (resolved.finalStake === null) { disposition = "BLOCKED"; reason = "NO_STAKE_CONFIGURED"; }
+    else if (this.killSwitch.status().executionEnabled !== true) { disposition = "BLOCKED"; reason = "PARADA_DE_EMERGENCIA"; }
     else if (this.config.autoExecute !== true && options?.probe !== true) { disposition = "BLOCKED"; reason = "AUTO_DESLIGADO"; }
     else if (this.armState.armed !== true) { disposition = "BLOCKED"; reason = "SISTEMA_DESARMADO"; }
     else if (ctx.paused === true) { disposition = "BLOCKED"; reason = "AGENTE_PAUSADO"; }
@@ -3161,7 +3179,7 @@ export class IqMultiRuntime extends EventEmitter {
       id: ++this.signalSeq, marketKey: ctx.marketKey, marketType: ctx.marketType, canonical: ctx.canonical, display: ctx.display, activeId: ctx.activeId,
       accountContext: this.config.mode === "REAL" ? ACCOUNT_REAL : ACCOUNT_PRACTICE,
       action, setup: brain?.setup ?? null, regime: brain?.regime ?? null, strategyVariantId: null, strategySource: `PROFESSIONAL_BRAIN_G${BRAIN_GENERATION}`, at: now, bucketStart: bucket, horizonSeconds,
-      stakeConfigured: resolved.requestedStake, stakeRequested: resolved.requestedStake, stakeCalculated: Number(this.config.calculatedBankrollStake), stakeFinal: resolved.finalStake, cappedBy: resolved.cappedBy, stakeSource: resolved.source, stakeAdjustment: resolved.adjustment,
+      stakeConfigured: resolved.requestedStake, stakeRequested: resolved.requestedStake, stakeCalculated: Number(this.config.calculatedBankrollStake), stakeFinal: resolved.finalStake, cappedBy: resolved.cappedBy, stakeSource: resolved.source, stakeAdjustment: resolved.adjustment, stakeRevision: this.config.revision ?? null,
       payout: ctx.payout, auto: this.config.autoExecute === true, armed: this.armState.armed === true, mode: this.config.mode,
       entryTiming: entryTiming ? { candidateId: entryTiming.candidateId, targetEntryAt: entryTiming.targetEntryAt, targetExpiryAt: entryTiming.targetExpiryAt, submitAt: entryTiming.submitAt, entryLeadMs: entryTiming.entryLeadMs, revalidatedAt: entryTiming.revalidatedAt, candidateChangedBeforeEntry: entryTiming.candidateChangedBeforeEntry, changedFields: entryTiming.changedFields ?? [] } : null,
       disposition, reason, idempotencyKey, infraProbe: options?.infra === true, excludedFromStats: options?.infra === true, gate: { allowed: gate.allowed, code: gate.code, reasons: gate.reasons, failed: gate.checks.filter((check) => !check.ok).map((check) => check.name) },
@@ -3319,6 +3337,19 @@ export class IqMultiRuntime extends EventEmitter {
         return out;
       })(),
       groqBudgetRemainingTokens: Number.isFinite(Number(this.groqBudget?.remaining)) ? Number(this.groqBudget.remaining) : null,
+      llmGate: { active: this.#v3SystemActive(), suppressedInactive: this.v3GateCounters.suppressedInactive ?? 0 },
+      feedByMarket: (() => {
+        const out = {};
+        const now = this.now();
+        for (const ctx of markets.filter((item) => item.enabled)) {
+          const candleCount = ctx.candles?.size ?? 0;
+          const newestAt = ctx.lastCandle?.bucketEnd ?? ctx.lastTickAt ?? null;
+          const newestAgeMs = Number.isFinite(Number(newestAt)) ? Math.max(0, now - Number(newestAt)) : null;
+          const state = !this.session?.connected ? "FEED_DISCONNECTED" : candleCount === 0 ? "WS_CONNECTED" : candleCount < 40 ? (newestAgeMs !== null && newestAgeMs < 15_000 ? "HISTORY_HYDRATING" : "INSUFFICIENT_HISTORY") : newestAgeMs !== null && newestAgeMs > 15_000 ? "FEED_STALE" : "FEED_READY";
+          out[ctx.marketKey] = { activeId: ctx.activeId ?? null, candles: candleCount, newestAgeMs, state };
+        }
+        return out;
+      })(),
       agentsAvailable: base.agents?.available === true,
       systemActive: base.systemActive === true,
       queueDepth: limiter.queueDepth ?? 0,
@@ -3336,8 +3367,15 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
+  /** Estado ativo canonico da IA: ARM PRACTICE ou REAL armado, ou ANALISE explicitamente liberada por env. */
+  #v3SystemActive() {
+    return this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true";
+  }
+
   /** Runner agendado GLOBAL das chamadas LLM do V3 (router por role + concurrency + prioridade + deadline + retry 429). */
   async #v3ScheduledRun(options) {
+    // ECONOMIA: bloqueio ANTES de enfileirar (gate canônico; o llm-client re-checa na fronteira do provider).
+    if (!this.#v3SystemActive()) { this.v3GateCounters.suppressedInactive += 1; return { status: "ERROR", reason: "SYSTEM_INACTIVE", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null }; }
     if (!this.pool) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
     const timeoutMs = Number.isFinite(Number(options.timeoutMs)) && Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 20_000;
     const deadlineAt = this.now() + timeoutMs;
@@ -4945,6 +4983,7 @@ export class IqMultiRuntime extends EventEmitter {
         };
       })(),
       execution: { ...this.armState.snapshot(), killSwitch: this.killSwitch.status(), userLimitBrl: this.userLimitBrl ?? null, pendingOrder: this.pendingOrders.size ? { count: this.pendingOrders.size, keys: [...this.pendingOrders.keys()] } : null, lastExecution: [...this.markets.values()].map((ctx) => ctx.lastTrade).filter(Boolean).sort((a, b) => b.at - a.at)[0] ?? null },
+      wsTelemetry: { lastDisconnect: this.lastDisconnect ?? null, reconnects: this.reconnects, reconnectRequired: this.armState.armed !== true && this.lastDisconnect !== null },
       brokerAutomation: "WS_ONLY_PRACTICE",
     };
   }

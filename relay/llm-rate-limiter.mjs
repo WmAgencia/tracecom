@@ -78,7 +78,8 @@ export function createLlmRateLimiter({ maxConcurrent = 8, now = () => Date.now()
             const remaining = (Number.isFinite(Number(deadlineAt)) ? Number(deadlineAt) : now() + 20_000) - now();
             if (Number.isFinite(retryAfter) && retryAfter >= 0 && retryAfter + Number(estimatedLatencyMs) <= remaining) {
               state.retries += 1;
-              await sleep(retryAfter);
+              const jitter = retryAfter * 0.2; // backoff com jitter (+-20%), sem retry infinito
+              await sleep(Math.max(0, retryAfter + (Math.random() * 2 - 1) * jitter));
               try { result = await execute(); } catch (error) { result = { status: "ERROR", reason: error?.name === "AbortError" ? "TIMEOUT" : "ERROR", model: null, provider: null, limits: {}, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null }; }
             } else {
               result = { ...result, status: "ERROR", reason: "PROVIDER_RATE_LIMIT" };

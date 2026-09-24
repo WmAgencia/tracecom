@@ -1,5 +1,5 @@
-/**
- * V3 — ALVO EXATO DE EXPIRATION pela fronteira unica (requestOrder) com broker simulado.
+﻿/**
+ * V3 â€” ALVO EXATO DE EXPIRATION pela fronteira unica (requestOrder) com broker simulado.
  * Prova D/J/I: envia para a MESMA expiration da opportunity em TTE~302, nega desalinhadas,
  * nega TTE<=300 e nunca deixa o "proximo bucket" escolher outra expiration.
  */
@@ -23,7 +23,7 @@ function fixture() {
   runtime.session = { connected: true, host: "ws.iqoption.com", connectionId: CONNECTION_ID, serverTimeMs: clockMs, clockSkewMs: 0, timeValid: true, connectedAt: clockMs };
   runtime.connection = { connectionId: CONNECTION_ID, host: "ws.iqoption.com", serverTimeMs: clockMs, clockSkewMs: 0, timeValid: true };
   runtime.account = { practice: { verified: true, balanceId: 555, balance: 10_000, currency: "BRL" }, real: { available: true, balanceId: 777, balance: 500, currency: "BRL" }, hasReal: true, checkedAt: clockMs, type: "PRACTICE" };
-  runtime.config.autoExecute = false; runtime.config.globalMaxStake = 2; runtime.config.calculatedBankrollStake = 1;
+  runtime.config.autoExecute = false; runtime.config.globalMaxStake = 2; runtime.config.calculatedBankrollStake = null; runtime.config.defaultStake = 2;
   const sent: Array<Record<string, unknown>> = [];
   runtime.client = {
     serverNow: () => clockMs,
@@ -35,7 +35,7 @@ function fixture() {
     getOptions: async () => ({ response: { msg: { closed_options: [] } } }),
   };
   const ctx = runtime.markets.get("EURUSD:OTC");
-  ctx.availability = "OPEN"; ctx.activeId = 76; ctx.payout = 85; ctx.payoutSource = "test"; ctx.enabled = true; ctx.maxStake = 2;
+  ctx.availability = "OPEN"; ctx.activeId = 76; ctx.payout = 85; ctx.payoutSource = "test"; ctx.enabled = true; ctx.maxStake = 2; ctx.configuredStake = 2;
   for (let index = 1; index <= 5; index += 1) {
     const fromSec = Math.floor((BASE - (5 - index) * 5_000) / 1000);
     runtime.ingestEvent("candle-generated", { connectionId: CONNECTION_ID, receivedAt: TTE302, msg: { active_id: 76, size: 5, from: fromSec, to: fromSec + 5, open: 1.1, high: 1.1001, low: 1.0999, close: 1.1 } });
@@ -60,7 +60,7 @@ const v3Order = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-describe("V3 exact expiration — requestOrder com broker simulado", () => {
+describe("V3 exact expiration â€” requestOrder com broker simulado", () => {
   it("envia EXATAMENTE para a expiration da opportunity em TTE=302", async () => {
     const { runtime, sent } = fixture();
     const result = await runtime.requestOrder(v3Order());
@@ -95,10 +95,10 @@ describe("V3 exact expiration — requestOrder com broker simulado", () => {
     runtime.session = { connected: true, host: "h", connectionId: CONNECTION_ID, serverTimeMs: TTE302, clockSkewMs: 0, timeValid: true, connectedAt: TTE302 };
     runtime.connection = { connectionId: CONNECTION_ID };
     runtime.account = { practice: { verified: true, balanceId: 555, balance: 10_000, currency: "BRL" }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: TTE302, type: "PRACTICE" };
-    runtime.config.autoExecute = false; runtime.config.globalMaxStake = 2; runtime.config.calculatedBankrollStake = 1;
+    runtime.config.autoExecute = false; runtime.config.globalMaxStake = 2; runtime.config.calculatedBankrollStake = null; runtime.config.defaultStake = 2;
     runtime.client = { serverNow: () => TTE302, placeOrder: (options: Record<string, unknown>) => { queueMicrotask(() => runtime.ingestEvent("socket-option-opened", { connectionId: CONNECTION_ID, receivedAt: TTE302, msg: { id: "ORD-X", active_id: options.activeId, price: options.price, expired: options.expiration } })); return options.requestId; }, getOptions: async () => ({ response: { msg: {} } }) };
     const ctx = runtime.markets.get("EURUSD:OTC");
-    ctx.availability = "OPEN"; ctx.activeId = 76; ctx.payout = 85; ctx.enabled = true; ctx.maxStake = 2;
+    ctx.availability = "OPEN"; ctx.activeId = 76; ctx.payout = 85; ctx.enabled = true; ctx.maxStake = 2; ctx.configuredStake = 2;
     for (let index = 1; index <= 5; index += 1) {
       const fromSec = Math.floor((BASE - (5 - index) * 5_000) / 1000);
       runtime.ingestEvent("candle-generated", { connectionId: CONNECTION_ID, receivedAt: TTE302, msg: { active_id: 76, size: 5, from: fromSec, to: fromSec + 5, open: 1.1, high: 1.1001, low: 1.0999, close: 1.1 } });
@@ -110,3 +110,5 @@ describe("V3 exact expiration — requestOrder com broker simulado", () => {
     expect(String(update!.params[15])).toBe(new Date(EXP).toISOString());
   });
 });
+
+

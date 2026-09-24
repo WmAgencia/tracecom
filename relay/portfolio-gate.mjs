@@ -13,13 +13,12 @@ export const GATE_VERSION = "portfolio-execution-gate-v1";
  * O valor final passa por: teto do mercado, teto global e hard cap (nunca silencioso: devolve motivo).
  */
 export function resolveFinalStake({ configuredStake, calculatedBankrollStake, marketConfiguredStake, marketMaxStake, globalMaxStake, hardCap = HARD_CAP_STAKE, requestedStake } = {}) {
-  const requested = [requestedStake, marketConfiguredStake, configuredStake, calculatedBankrollStake]
-    .map(Number).find((value) => Number.isFinite(value) && value > 0) ?? null;
-  if (requested === null) return { finalStake: null, requestedStake: null, reason: "NO_STAKE_CONFIGURED", adjustment: null, source: "NONE" };
-  const source = Number.isFinite(Number(requestedStake)) && Number(requestedStake) > 0 ? "MANUAL_OVERRIDE"
-    : Number.isFinite(Number(marketConfiguredStake)) && Number(marketConfiguredStake) > 0 ? "MARKET_CONFIGURED"
-    : Number.isFinite(Number(configuredStake)) && Number(configuredStake) > 0 ? "GLOBAL_CONFIGURED"
-    : "FALLBACK_CALCULATED";
+const requested = [requestedStake, marketConfiguredStake, configuredStake]
+.map(Number).find((value) => Number.isFinite(value) && value > 0) ?? null;
+if (requested === null) return { finalStake: null, requestedStake: null, reason: "NO_STAKE_CONFIGURED", adjustment: null, source: "NONE" };
+const source = Number.isFinite(Number(requestedStake)) && Number(requestedStake) > 0 ? "MANUAL_OVERRIDE"
+: Number.isFinite(Number(marketConfiguredStake)) && Number(marketConfiguredStake) > 0 ? "MARKET_CONFIGURED"
+: "GLOBAL_CONFIGURED";
   const caps = [
     { name: "MARKET_MAX", value: Number(marketMaxStake) },
     { name: "GLOBAL_MAX", value: Number(globalMaxStake) },

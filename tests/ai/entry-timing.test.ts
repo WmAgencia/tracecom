@@ -1,5 +1,5 @@
-/** FASE 6.2 — Just-in-Time entry: candido -> janela -> revalidacao final -> commit.
- * Cobre o modulo puro (regras A-G) e a fiação no runtime com relogio deterministico. */
+﻿/** FASE 6.2 â€” Just-in-Time entry: candido -> janela -> revalidacao final -> commit.
+ * Cobre o modulo puro (regras A-G) e a fiaÃ§Ã£o no runtime com relogio deterministico. */
 import { describe, expect, it } from "vitest";
 // @ts-expect-error - relay ESM sem tipagem (validado em runtime)
 const timing = await import("../../relay/entry-timing.mjs");
@@ -36,7 +36,7 @@ function fixture({ markets = ["EURUSD:OTC"], serverOffsetMs = 0 }: { markets?: s
   runtime.session = { connected: true, host: "ws.iqoption.com", connectionId: "conn-jit", serverTimeMs: clock.nowMs, clockSkewMs: 0, timeValid: true, connectedAt: clock.nowMs };
   runtime.connection = { connectionId: "conn-jit", host: "ws.iqoption.com", serverTimeMs: clock.nowMs, clockSkewMs: 0, timeValid: true };
   runtime.account = { practice: { verified: true, balanceId: 555, balance: 10_000, currency: "USD" }, real: { available: true, balanceId: 777, balance: 500, currency: "USD" }, hasReal: true, checkedAt: clock.nowMs, type: "PRACTICE" };
-  runtime.config.autoExecute = true; runtime.config.globalMaxStake = 100; runtime.config.calculatedBankrollStake = 1;
+  runtime.config.autoExecute = true; runtime.config.globalMaxStake = 100; runtime.config.calculatedBankrollStake = null; runtime.config.defaultStake = 25;
   runtime.config.qualityGateEnabled = false; // testes de fiacao JIT usam brains sinteticos; o gate tem testes proprios
   runtime.__sent = [];
   runtime.client = {
@@ -48,7 +48,7 @@ function fixture({ markets = ["EURUSD:OTC"], serverOffsetMs = 0 }: { markets?: s
   const buckets: Record<string, number> = {};
   const seed = (key: string) => {
     const ctx = runtime.markets.get(key);
-    ctx.availability = "OPEN"; ctx.activeId = activeIds[key] ?? 76; ctx.payout = 85; ctx.payoutSource = "test"; ctx.enabled = true; ctx.maxStake = 100;
+    ctx.availability = "OPEN"; ctx.activeId = activeIds[key] ?? 76; ctx.payout = 85; ctx.payoutSource = "test"; ctx.enabled = true; ctx.maxStake = 100; ctx.configuredStake = 25;
     ctx.instrumentTypes = ["binary", "turbo"];
     const start = Math.floor((clock.nowMs - 40 * 5_000) / 5_000) * 5_000;
     buckets[key] = start;
@@ -79,7 +79,7 @@ function fixture({ markets = ["EURUSD:OTC"], serverOffsetMs = 0 }: { markets?: s
   return { runtime, clock, overrides, seed, ready, step, ack, markets };
 }
 
-describe("ENTRY TIMING — janela alvo (server time)", () => {
+describe("ENTRY TIMING â€” janela alvo (server time)", () => {
   it("targetEntryAt e a proxima fronteira de 60s com folga de revalidacao", () => {
     const window = nextEntryWindow({ serverNowMs: Date.UTC(2026, 8, 17, 12, 0, 20), leadMs: 1500 });
     expect(window.targetEntryAt).toBe(Date.UTC(2026, 8, 17, 12, 1, 0));
@@ -141,7 +141,7 @@ describe("ENTRY TIMING — janela alvo (server time)", () => {
   });
 });
 
-describe("JIT no runtime — candidato, revalidacao e commit", () => {
+describe("JIT no runtime â€” candidato, revalidacao e commit", () => {
   it("nao envia ordem antes da janela; revalida em T-1.5s e registra drift", async () => {
     const { runtime, clock, overrides, ready, step, ack } = fixture();
     ready("EURUSD:OTC");
@@ -343,3 +343,4 @@ describe("JIT no runtime — candidato, revalidacao e commit", () => {
     expect(() => runtime.setMode("REAL")).toThrowError(/REAL_MODE_NOT_CONFIRMED/);
   });
 });
+

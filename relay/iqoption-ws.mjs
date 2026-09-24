@@ -331,8 +331,8 @@ export class IqWsClient extends EventEmitter {
       try {
         const socket = this.socketFactory({ host, path: IQ_WS_PATH, timeoutMs: Math.min(timeoutMs, 15_000) });
         this.socket = socket;
-        socket.on("data", (chunk) => this.#onData(chunk));
-        socket.on("close", () => { const connectionId = this.connectionId; this.state = "CLOSED"; this.#clearHeartbeat(); this.emit("closed", { connectionId, host: this.host, at: this.now() }); });
+        socket.on("data", (chunk) => { this.lastMessageAt = this.now(); this.#onData(chunk); });
+        socket.on("close", () => { const connectionId = this.connectionId; this.state = "CLOSED"; this.#clearHeartbeat(); this.emit("closed", { connectionId, host: this.host, at: this.now(), lastMessageAgeMs: Number.isFinite(Number(this.lastMessageAt)) ? Math.max(0, this.now() - Number(this.lastMessageAt)) : null, closeCode: null, closeReason: null }); });
         socket.on("error", (error) => { this.log("IQ_WS_SOCKET_ERROR", String(error?.message ?? error)); });
         await socket.connect();
         this.host = host;

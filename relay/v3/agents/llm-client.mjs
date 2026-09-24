@@ -33,8 +33,10 @@ export function rescueJsonExcerpt(text) {
 
 const DEFAULT_MAX_TOKENS_BY_ROLE = Object.freeze({ PRICE_ACTION: 768, ASSET: 768, CONSENSUS_FINAL: 1600 });
 
-export function createLlmAgentClient({ pool = null, runner = null, now = () => Date.now(), maxTokens = 512, maxTokensByRole = null } = {}) {
+export function createLlmAgentClient({ pool = null, runner = null, now = () => Date.now(), maxTokens = 512, maxTokensByRole = null, activityCheck = null } = {}) {
   const run = typeof runner === "function" ? runner : pool ? (options) => runTextProvider(pool, options) : null;
+  const gate = typeof activityCheck === "function" ? activityCheck : null;
+  const gateActive = () => gate === null || gate() === true;
   const baseOptions = agentRequestOptions({ maxTokens });
   const tokensFor = (role) => {
     const configured = maxTokensByRole?.[role] ?? DEFAULT_MAX_TOKENS_BY_ROLE[role];
@@ -60,6 +62,8 @@ export function createLlmAgentClient({ pool = null, runner = null, now = () => D
       const effectiveTimeout = hasBudget ? Math.min(Number(timeoutMs) > 0 ? Number(timeoutMs) : Number(budgetMs), Number(budgetMs)) : (Number(timeoutMs) > 0 ? Number(timeoutMs) : null);
       const sessionKey = opportunityId ? `v3:${opportunityId}:${role}` : (sessionContext.sessionKey ?? requestId);
       const withSession = { ...base, sessionHash: sessionHashOf(sessionKey) };
+      // ECONOMIA: gate imediatamente antes de cada request ao provider. Sistema inativo => ZERO chamadas.
+      if (gateActive() !== true) return finish({ ...withSession, status: "ERROR", reason: "SYSTEM_INACTIVE", latencyMs: Math.max(0, now() - startedAtMs) });
       try {
         const result = await run({
           system: systemPromptFor(role), prompt, maxTokens: tokensFor(role), requestId,
@@ -69,6 +73,8 @@ export function createLlmAgentClient({ pool = null, runner = null, now = () => D
         });
         const latencyMs = Number.isFinite(Number(result?.latencyMs)) ? Number(result.latencyMs) : Math.max(0, now() - startedAtMs);
         const usage = result?.usage ?? null;
+        // ECONOMIA: resposta in-flight apos sistema ficar inativo => DESCARTADA (nunca alimenta consenso/aprovacao).
+        if (gateActive() !== true) return finish({ ...withSession, status: "ERROR", reason: "INACTIVE_INVALIDATED", latencyMs: Math.max(0, now() - startedAtMs) });
         const common = {
           ...withSession, latencyMs, queueWaitMs: Number.isFinite(Number(result?.queueWaitMs)) ? Number(result.queueWaitMs) : null, model: result?.model ?? null, provider: result?.provider ?? V3_AGENT_PROVIDER, usage, finishReason: result?.finishReason ?? null, httpStatus: result?.httpStatus ?? null,
           promptTokens: Number.isFinite(Number(usage?.prompt_tokens)) ? Number(usage.prompt_tokens) : null,

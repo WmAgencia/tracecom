@@ -48,7 +48,7 @@ function createPool() {
 
 function seedMarket(runtime: any, { activeId = 101, close = 1.1, payout = 85, candles = 5 } = {}) {
   const ctx = runtime.markets.get(KEY);
-  ctx.availability = "OPEN"; ctx.activeId = activeId; ctx.payout = payout; ctx.payoutSource = "test"; ctx.enabled = true; ctx.maxStake = 2;
+  ctx.availability = "OPEN"; ctx.activeId = activeId; ctx.payout = payout; ctx.payoutSource = "test"; ctx.enabled = true; ctx.maxStake = 2; ctx.configuredStake = 2;
   const base = Math.floor(BASE / 5_000) * 5_000;
   for (let index = 1; index <= candles; index += 1) {
     const fromSec = Math.floor((base - (candles - index) * 5_000) / 1000);
@@ -63,7 +63,7 @@ function atomicFixture({ pool = createPool() }: { pool?: Record<string, any> | n
   runtime.session = { connected: true, host: "ws.iqoption.com", connectionId: CONNECTION_ID, serverTimeMs: clockMs, clockSkewMs: 0, timeValid: true, connectedAt: clockMs };
   runtime.connection = { connectionId: CONNECTION_ID, host: "ws.iqoption.com", serverTimeMs: clockMs, clockSkewMs: 0, timeValid: true };
   runtime.account = { practice: { verified: true, balanceId: 555, balance: 10_000, currency: "USD" }, real: { available: true, balanceId: 777, balance: 500, currency: "USD" }, hasReal: true, checkedAt: clockMs, type: "PRACTICE" };
-  runtime.config.autoExecute = false; runtime.config.globalMaxStake = 2; runtime.config.calculatedBankrollStake = 1;
+  runtime.config.autoExecute = false; runtime.config.globalMaxStake = 2; runtime.config.calculatedBankrollStake = null; runtime.config.defaultStake = 2;
   const sent: Array<Record<string, unknown>> = [];
   runtime.client = {
     serverNow: () => clockMs,

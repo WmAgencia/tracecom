@@ -25,8 +25,8 @@
     "winRate": null,
     "pnl": 0
   },
-  "strategyHash": "sha256:33a10e10150892d85f602a6775b63e7d1177faa891b76dbd8c05d6fedeb891d9",
-  "newStrategyHash": "sha256:33a10e10150892d85f602a6775b63e7d1177faa891b76dbd8c05d6fedeb891d9",
+  "strategyHash": "sha256:8cea543b8e61edf9efcc950028034d15824616acc9562fb5825516664a806bed",
+  "newStrategyHash": "sha256:8cea543b8e61edf9efcc950028034d15824616acc9562fb5825516664a806bed",
   "decisionFiles": [
     "relay/v3/timing.mjs",
     "relay/v3/expiration-grid.mjs",
@@ -91,5 +91,5 @@
     "Nao reutiliza stats da V2; novo statsEpoch e novas tabelas iq_v3_*.",
     "REAL permanece DISARMED; PRACTICE auto-execution desligada durante construcao/observacao."
   ],
-  "updatedAt": "2026-09-24T15:58:04.995Z"
+  "updatedAt": "2026-09-24T16:49:17.370Z"
 }
