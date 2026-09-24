@@ -25,13 +25,13 @@ const closes = approvalSeries({ candles: 120 }).map((candle) => candle.close);
 
 const measurements = { closedCandle: { at: 1, open: 1, high: 1, low: 1, close: 1 }, structure: { trend: "UPTREND" }, rsi: { value: 45, slope: 1.2, zone: "NEUTRAL" }, dmi: { adx: 26, spread: 9 }, atr: { atr: 0.0008, volRatio: 1.05 }, bollinger: { percentB: 0.55 }, pullback: { active: true, depth: "NORMAL" }, micro: { direction: "UP" }, impulse: {}, breakoutRetest: {} };
 
-const makeRuntime = (script: Record<string, any>, { pool = null as any, margin = 2_000, full = 1_000, delta = 1_000, nowRef = { value: exp - 330_000 } } = {}) => {
+const makeRuntime = (script: Record<string, any>, { pool = null as any, margin = 2_000, full = 1_000, delta = 1_000, agentsGate = null as any, nowRef = { value: exp - 330_000 } } = {}) => {
   const scheduled: any[] = [];
   const scheduler = { schedule: (intent: any) => { scheduled.push(intent); return { scheduled: true, intent }; }, cancel: () => true, status: () => ({ pending: 0, counters: {} }) };
   const calls: Array<{ role: string; prompt: string }> = [];
   const inner = createScriptedAgentClient(script, { now: () => nowRef.value });
   const agents = { available: true, async call(input: any) { calls.push({ role: input.role, prompt: input.prompt }); return inner.call(input); } };
-  const runtime = new V3Runtime({ strategy, agents, pool, now: () => nowRef.value, brokerNow: () => nowRef.value, agentSafetyMarginMs: margin, estimatedFullCycleMs: full, estimatedDeltaCycleMs: delta, scheduler });
+  const runtime = new V3Runtime({ strategy, agents, pool, agentsGate, now: () => nowRef.value, brokerNow: () => nowRef.value, agentSafetyMarginMs: margin, estimatedFullCycleMs: full, estimatedDeltaCycleMs: delta, scheduler });
   runtime.onInitializationData({ result: { binary: { actives: { 76: activeFor(exp) } } } }, { brokerNow: exp - 330_000, marketKeyByActiveId: new Map([[76, "EURUSD:OTC"]]) });
   const step = async (tte: number) => {
     nowRef.value = exp - tte;
@@ -113,6 +113,20 @@ describe("V3 single-cycle operacional", () => {
     const cycle = await step(320_000);
     expect(cycle?.cycle).toBe(1);
     expect(calls.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it("H4. ECONOMIA: sistema desarmado => LLM NAO pensa (zero calls, SYSTEM_INACTIVE); armado => pensa", async () => {
+    const inactive = makeRuntime(approveScript(), { agentsGate: () => false });
+    await inactive.step(325_000);
+    expect(inactive.calls.length).toBe(0);
+    expect(inactive.runtime.status().counters.cyclesSkippedInactive).toBe(1);
+    expect(inactive.runtime.status().counters.agentCycles).toBe(0);
+    expect(inactive.opportunity().cycles[0].agents.reason).toBe("SYSTEM_INACTIVE");
+    expect(inactive.runtime.status().counters.agentUnavailableReasons.SYSTEM_INACTIVE).toBeGreaterThanOrEqual(1);
+    const active = makeRuntime(approveScript(), { agentsGate: () => true });
+    await active.step(325_000);
+    expect(active.calls.length).toBeGreaterThanOrEqual(6);
+    expect(active.runtime.status().counters.agentCycles).toBeGreaterThanOrEqual(1);
   });
 
   it("H3. agents indisponivel registra motivo exato (V3_AGENTS_DISABLED)", async () => {

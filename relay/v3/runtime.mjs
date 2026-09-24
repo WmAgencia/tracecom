@@ -32,7 +32,7 @@ export const V3_RUNTIME_VERSION = "v3-runtime-v2";
 const defaultStrategy = Object.freeze({ version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: null, statsEpoch: null });
 
 export class V3Runtime {
-  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null, agentSafetyMarginMs = 2_000, estimatedWaveMs = null, estimatedFullCycleMs = null, estimatedDeltaCycleMs = null, maxAgentCycles = 1 } = {}) {
+  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null, agentSafetyMarginMs = 2_000, estimatedWaveMs = null, estimatedFullCycleMs = null, estimatedDeltaCycleMs = null, maxAgentCycles = 1, agentsGate = null } = {}) {
     this.now = now;
     this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
     this.pool = pool;
@@ -46,6 +46,7 @@ export class V3Runtime {
     this.estimatedDeltaCycleMs = Math.max(1_000, Number(estimatedDeltaCycleMs) || this.estimatedFullCycleMs);
     this.estimatedWaveMs = this.estimatedFullCycleMs;
     this.maxAgentCycles = Math.max(1, Number(maxAgentCycles) || 2);
+    this.agentsGate = typeof agentsGate === "function" ? agentsGate : null;
     this.cycleInFlight = new Set();
     this.latestCandles = new Map();
     this.persistBarriers = new Map();
@@ -60,7 +61,7 @@ export class V3Runtime {
     this.queueDepth = 0;
     this.maxQueueDepth = 0;
     this.agentCalls = [];
-    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, cyclesSkippedMaxCycles: 0, cyclesSkippedOverlap: 0, cyclesSkippedScope: 0, snapshots: 0, approvals: 0, tentativeApprovals: 0, finalizations: 0, schedulerCancelled: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, persistDropped: 0, persistDroppedFinal: 0, agentCycles: 0, agentUnavailable: 0, agentUnavailableReasons: {}, deadlineAborts: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null };
+    this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, cyclesSkippedMaxCycles: 0, cyclesSkippedOverlap: 0, cyclesSkippedScope: 0, cyclesSkippedInactive: 0, snapshots: 0, approvals: 0, tentativeApprovals: 0, finalizations: 0, schedulerCancelled: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, persistDropped: 0, persistDroppedFinal: 0, agentCycles: 0, agentUnavailable: 0, agentUnavailableReasons: {}, deadlineAborts: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null };
     this.opportunityScope = null;
     this.lastError = null;
     this.lastCycleAt = null;
@@ -180,7 +181,13 @@ export class V3Runtime {
     const cycleBudgetMs = analysisMustFinishBy - at;
     let agentResult = null;
     let agentsReason = null;
-    if (this.agents?.available) {
+    const agentsConfigured = this.agents?.available === true;
+    // ECONOMIA: LLM so pensa quando o sistema esta ATIVO (armado). Desarmado => ciclo deterministico, ZERO calls.
+    const systemActive = agentsConfigured && (this.agentsGate === null || this.agentsGate() === true);
+    if (agentsConfigured && !systemActive) {
+      agentsReason = "SYSTEM_INACTIVE";
+      this.counters.cyclesSkippedInactive += 1;
+    } else if (agentsConfigured) {
       const budgetMs = cycleBudgetMs;
       if (budgetMs < estimatedCycleMs) {
         agentsReason = "DEADLINE";

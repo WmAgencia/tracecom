@@ -169,6 +169,8 @@ export class IqMultiRuntime extends EventEmitter {
           estimatedFullCycleMs: Number(process.env.V3_AGENT_ESTIMATED_FULL_MS) || 15_000,
           estimatedDeltaCycleMs: Number(process.env.V3_AGENT_ESTIMATED_DELTA_MS) || 14_000,
           maxAgentCycles: Number(process.env.V3_AGENT_MAX_CYCLES) || 1,
+          // ECONOMIA: V3 LLM so pensa quando o sistema esta ATIVO (PRACTICE armado ou REAL armado).
+          agentsGate: () => this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true),
           brokerNow: () => { const value = this.client?.serverNow?.(); return Number.isFinite(Number(value)) ? Number(value) : this.now(); },
         })
       : null;
