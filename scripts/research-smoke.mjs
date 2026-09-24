@@ -6,7 +6,7 @@
  * strategy/stats, mesas, account/context) sao PUBLICOS; as demais /api/iq/* seguem privadas:
  * sem TRACECOM_OPERATOR_KEY valida 401 anonimo; com a chave, autentica e exige 200.
  */
-const BASE = process.argv[2] ?? "https://tracecon.consecom.com.br";
+const BASE = process.argv[2] ?? "https://tracecom.consecom.com.br";
 const OPERATOR_KEY = (process.env.TRACECOM_OPERATOR_KEY ?? "").trim() || null;
 const PANEL_PUBLIC_GETS = new Set(["/api/iq/status", "/api/iq/intelligence/assets", "/api/iq/strategy/stats", "/api/iq/mesas", "/api/iq/account/context"]);
 const CHECKS = [
@@ -55,7 +55,7 @@ for (const path of CHECKS) {
     console.log(`${ok ? "OK " : "FAIL"} ${response.status} ${path}${isPrivate ? ` (auth ${cookie ? "operator" : "fail-closed"})` : isPanelPublic ? " (painel publico)" : ""}`);
   } catch (error) {
     failures += 1;
-    console.log(`FAIL ERR ${path} :: ${String(error?.message ?? error).slice(0, 120)}`);
+    console.log(`FAIL ERR ${path} :: ${String(error?.cause?.message ?? error?.message ?? error).slice(0, 160)}`);
   }
 }
 console.log(failures === 0 ? "RESEARCH_SMOKE_ALL_OK" : `RESEARCH_SMOKE_FAILURES=${failures}`);
