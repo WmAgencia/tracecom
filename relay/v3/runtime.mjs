@@ -64,6 +64,7 @@ export class V3Runtime {
     this.counters = { candleCycles: 0, cyclesSkippedNoOpportunity: 0, cyclesSkippedWindow: 0, cyclesSkippedDuplicateCandle: 0, cyclesSkippedDeadline: 0, cyclesSkippedMaxCycles: 0, cyclesSkippedOverlap: 0, cyclesSkippedScope: 0, cyclesSkippedInactive: 0, snapshots: 0, approvals: 0, tentativeApprovals: 0, finalizations: 0, schedulerCancelled: 0, executionBlocked: 0, persisted: 0, persistErrors: 0, persistDropped: 0, persistDroppedFinal: 0, agentCycles: 0, agentUnavailable: 0, agentUnavailableReasons: {}, deadlineAborts: 0, pipelines7of7: 0, scheduled: 0, schedulerFired: 0, candleFeedBlocked: 0, feedBlockedReasons: {}, lastFeedBlockedReason: null, lastFeedBlockedMarket: null, lastFeedBlockedAt: null };
     this.opportunityScope = null;
     this.lastSuccessfulCycle = { at: null, latencyMs: null, marketKey: null, result: null };
+    this.recentFailures = [];
     this.lastError = null;
     this.lastCycleAt = null;
     this.latencySamples = [];
@@ -212,7 +213,8 @@ export class V3Runtime {
         if (agentResult.available !== true) {
           this.counters.agentUnavailable += 1;
           agentsReason = agentResult.reason ?? "PROVIDER_ERROR";
-          if (agentResult.reason === "ANALYSIS_DEADLINE") this.counters.deadlineAborts += 1;
+          if (agentResult.reason === "ANALYSIS_DEADLINE" || agentResult.reason === "DEADLINE") { this.counters.deadlineAborts += 1; this.#noteFailure("DEADLINE"); }
+          if (typeof agentResult.reason === "string" && /SCHEMA|invented/i.test(agentResult.reason)) this.#noteFailure("SCHEMA");
         } else {
           agentsReason = null;
           const totalCalls = agentResult.agentCalls?.length ?? 0;
@@ -456,6 +458,16 @@ export class V3Runtime {
   /** Diagnostico externo (relay): registra bloqueio de feed SEM chamar agentes. */
   noteFeedBlocked(reason, marketKey = null) { this.#noteFeedBlocked(reason, marketKey); }
 
+  #noteFailure(type) {
+    this.recentFailures.push({ at: this.now(), type });
+    if (this.recentFailures.length > 400) this.recentFailures.splice(0, this.recentFailures.length - 400);
+  }
+
+  #recentFailureCount(type, windowMs = 60_000) {
+    const cutoff = this.now() - windowMs;
+    return this.recentFailures.filter((entry) => entry.type === type && entry.at >= cutoff).length;
+  }
+
   /** Ultimos pipelines agrupados por oportunidade (prova 7/7 + latencias por etapa). */
   #recentPipelines(limit = 5) {
     const groups = new Map();
@@ -505,6 +517,8 @@ export class V3Runtime {
       lastSuccessfulCycle: { ...this.lastSuccessfulCycle },
       pipelines7of7: this.counters.pipelines7of7,
       recentPipelines: this.#recentPipelines(5),
+      recentDeadlineAborts: this.#recentFailureCount("DEADLINE"),
+      recentSchemaErrors: this.#recentFailureCount("SCHEMA"),
       agents: { available: this.agents?.available === true, calls: this.agentCalls.length, latency: agentLatencyStats(this.agentCalls) },
       scheduler: this.scheduler.status(),
       queue: { depth: this.queueDepth, maxDepth: this.maxQueueDepth, markets: this.queues.size },

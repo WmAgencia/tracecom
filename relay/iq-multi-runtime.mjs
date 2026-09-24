@@ -3281,8 +3281,6 @@ export class IqMultiRuntime extends EventEmitter {
     const markets = [...this.markets.values()];
     const configuredMarkets = markets.filter((ctx) => ctx.enabled).length;
     const feedReadyMarkets = markets.filter((ctx) => (ctx.candles?.size ?? 0) >= 40).length;
-    const reasons = base.counters?.agentUnavailableReasons ?? {};
-    const schemaErrors = Object.entries(reasons).reduce((acc, [key, value]) => acc + (/SCHEMA|invented/.test(key) ? Number(value) : 0), 0);
     const cfg = this.providerConfigCache?.value ?? null;
     const health = computeV3Health({
       v3Enabled: Boolean(this.v3),
@@ -3295,8 +3293,8 @@ export class IqMultiRuntime extends EventEmitter {
       feedAgeMs: null,
       feedMaxAgeMs: Number(process.env.V3_FEED_MAX_AGE_MS) || 15_000,
       configuredMarkets,
-      recentSchemaErrors: schemaErrors,
-      recentDeadlineAborts: base.counters?.deadlineAborts ?? 0,
+      recentSchemaErrors: Number(base.recentSchemaErrors) || 0,
+      recentDeadlineAborts: Number(base.recentDeadlineAborts) || 0,
       recentCandleFeedBlocked: base.counters?.candleFeedBlocked ?? 0,
       persistCriticalError: (base.counters?.persistErrors ?? 0) > 5,
     });
