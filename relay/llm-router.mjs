@@ -23,6 +23,7 @@ export const FREE_ROLES_CONFIG = Object.freeze({
   PRICE_ACTION: [{ provider: "deterministic", model: "code" }],
   ASSET: [{ provider: "deterministic", model: "code" }],
   CONSENSUS_FINAL: [
+    { provider: "alibaba", model: null },
     { provider: "groq", model: "openai/gpt-oss-120b" },
   ],
 });

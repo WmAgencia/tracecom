@@ -9,11 +9,13 @@ import crypto from "node:crypto";
 export const OPENCODE_GO_BASE = "https://opencode.ai/zen/go/v1";
 export const OPENCODE_ZEN_BASE = "https://opencode.ai/zen/v1";
 export const GROQ_BASE = "https://api.groq.com/openai/v1";
+export const ALIBABA_BASE = "https://ws-yiugoy42gol8tmj8.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1";
 export const VISION_TIMEOUT_MS = 40_000; // evidencia: crop real 250KB + JSON completo >30s; rota deep_background tolera 40s (limite, nunca infinito)
 export const TEXT_TIMEOUT_MS = 20_000;
 export const DEFAULT_MODEL = "deepseek-v4.1-flash";
 export const ZEN_DEFAULT_MODEL = "space-bunny-free";
 export const GROQ_DEFAULT_MODEL = "openai/gpt-oss-120b";
+export const ALIBABA_DEFAULT_MODEL = "qwen3.5-flash";
 export const DEFAULT_PROVIDER = "openCodeGo";
 
 /** session id derivado da sessao/contexto (sem segredos, sem valor global eterno).
@@ -33,7 +35,7 @@ export function shouldUseOpenCodeGo(config) {
 
 export function resolveModel(config) {
   const model = config && typeof config.model === "string" ? config.model.trim() : "";
-  return /^[a-z0-9./\-]{2,96}$/i.test(model) ? model : (config?.provider === "groq" ? GROQ_DEFAULT_MODEL : config?.provider === "zen" ? ZEN_DEFAULT_MODEL : DEFAULT_MODEL);
+  return /^[a-z0-9./\-]{2,96}$/i.test(model) ? model : (config?.provider === "groq" ? GROQ_DEFAULT_MODEL : config?.provider === "zen" ? ZEN_DEFAULT_MODEL : config?.provider === "alibaba" ? (process.env.ALIBABA_MODEL || ALIBABA_DEFAULT_MODEL) : DEFAULT_MODEL);
 }
 
 /** Mascara a key para qualquer serializacao publica (GET /api/ai/provider, logs). Nunca expoe o valor. */
@@ -205,16 +207,20 @@ export async function runTextProvider(pool, { system = "You are a cautious quant
   const requestedProvider = typeof provider === "string" && provider.trim() ? provider.trim() : (dbConfig?.provider ?? DEFAULT_PROVIDER);
   const apiKey = requestedProvider === "groq"
     ? (process.env.GROQ_API_KEY || (dbConfig?.provider === "groq" ? dbConfig.apiKey : null))
-    : (process.env.OPENCODE_GO_API_KEY || (dbConfig?.provider === "openCodeGo" || dbConfig?.provider === "zen" ? dbConfig.apiKey : null));
+    : requestedProvider === "alibaba"
+      ? (process.env.ALIBABA_API_KEY || (dbConfig?.provider === "alibaba" ? dbConfig.apiKey : null))
+      : (process.env.OPENCODE_GO_API_KEY || (dbConfig?.provider === "openCodeGo" || dbConfig?.provider === "zen" ? dbConfig.apiKey : null));
   const config = { provider: requestedProvider, model: typeof model === "string" && model.trim() ? model.trim() : (requestedProvider === (dbConfig?.provider ?? DEFAULT_PROVIDER) ? dbConfig?.model ?? null : null), apiKey };
   const sessionId = sessionFor({ ...sessionContext, requestId });
-  if (!apiKey || (config.provider !== "openCodeGo" && config.provider !== "groq" && config.provider !== "zen")) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", requestId, sessionId, model: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null };
+  if (!apiKey || (config.provider !== "openCodeGo" && config.provider !== "groq" && config.provider !== "zen" && config.provider !== "alibaba")) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", requestId, sessionId, model: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null };
   const model_ = resolveModel(config);
   const request = config.provider === "groq"
     ? { url: `${GROQ_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model: model_, max_tokens: Math.max(Number(maxTokens) || 512, 4096), messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
-    : config.provider === "zen"
-      ? { url: `${OPENCODE_ZEN_BASE}/chat/completions`, headers: { "content-type": "application/json", "x-opencode-session": sessionId }, body: { model: model_, max_tokens: Number(maxTokens) || 1500, messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
-      : buildTextRequest({ model: model_, system, prompt, sessionId, maxTokens, temperature, responseFormat, reasoningEffort });
+    : config.provider === "alibaba"
+      ? { url: `${process.env.ALIBABA_BASE || ALIBABA_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model: model_, max_tokens: Math.max(Number(maxTokens) || 512, 2048), messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
+      : config.provider === "zen"
+        ? { url: `${OPENCODE_ZEN_BASE}/chat/completions`, headers: { "content-type": "application/json", "x-opencode-session": sessionId }, body: { model: model_, max_tokens: Number(maxTokens) || 1500, messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
+        : buildTextRequest({ model: model_, system, prompt, sessionId, maxTokens, temperature, responseFormat, reasoningEffort });
   try {
     const result = await callProvider(request, config.apiKey, Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0 ? Number(timeoutMs) : TEXT_TIMEOUT_MS);
     const body = (() => { try { return JSON.parse(result.text); } catch { return null; } })();

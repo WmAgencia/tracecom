@@ -3312,11 +3312,10 @@ export class IqMultiRuntime extends EventEmitter {
       },
       routing: (() => {
         const out = {};
-        for (const roleName of ["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION", "ASSET", "CONSENSUS_FINAL"]) {
-          out[roleName] = roleName === "CONSENSUS_FINAL"
-            ? { provider: "groq", model: "openai/gpt-oss-120b", label: "Groq" }
-            : { provider: "deterministic", model: "code", label: "Determinístico" };
+        for (const roleName of ["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION", "ASSET"]) {
+          out[roleName] = { provider: "deterministic", model: "code", label: "Determinístico" };
         }
+        out.CONSENSUS_FINAL = { provider: "alibaba", model: process.env.ALIBABA_MODEL || "qwen3.5-flash", label: "Alibaba", fallback: { provider: "groq", model: "openai/gpt-oss-120b", label: "Groq" } };
         return out;
       })(),
       groqBudgetRemainingTokens: Number.isFinite(Number(this.groqBudget?.remaining)) ? Number(this.groqBudget.remaining) : null,
@@ -3352,7 +3351,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (isConsensus && chosen.provider === "groq" && (!this.#groqBudgetOk() || this.now() - Number(this.groqLastDispatchAt ?? 0) < intervalMs)) chosen = this.llmRouter.choose(role, { skipKey: "groq:" + chosen.model });
     if (!chosen) return { status: "ERROR", reason: "NO_ROUTE", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
     if (chosen.provider === "groq") { this.groqLastDispatchAt = this.now(); this.groqBudget = { ...this.groqBudget, remaining: Number(this.groqBudget.remaining) - estTokens, at: this.now() }; }
-    const runOnce = (target) => this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: isConsensus ? 4_000 : 8_000, suppressProviderError: isConsensus && target.provider === "groq", execute: () => runTextProvider(this.pool, { ...options, provider: target.provider, model: target.model }) });
+    const runOnce = (target) => this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: isConsensus ? 4_000 : 8_000, suppressProviderError: isConsensus && (target.provider === "groq" || target.provider === "alibaba"), execute: () => runTextProvider(this.pool, { ...options, provider: target.provider, model: target.model }) });
     let result = await runOnce(chosen);
     if (chosen.provider === "groq" && result?.limits) this.#updateGroqBudget(result.limits);
     this.llmRouter.report({ ...chosen, httpStatus: result?.httpStatus, status: result?.status, schemaValid: result?.status === "OK", latencyMs: result?.latencyMs });
