@@ -3345,12 +3345,13 @@ export class IqMultiRuntime extends EventEmitter {
     const role = String(options.requestId ?? "").split(":").pop();
     const isConsensus = role === "CONSENSUS_FINAL";
     const priority = isConsensus ? 2 : 1;
-    const estTokens = Number(process.env.V3_GROQ_EST_TOKENS) || 2_600;
+    const estTokens = Number(process.env.V3_GROQ_EST_TOKENS) || 1_200;
+    const intervalMs = Number(process.env.V3_GROQ_MIN_INTERVAL_MS) || 10_000;
     let chosen = this.llmRouter.choose(role);
     if (!chosen) return { status: "ERROR", reason: "NO_ROUTE", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
-    if (isConsensus && chosen.provider === "groq" && !this.#groqBudgetOk()) chosen = this.llmRouter.choose(role, { skipKey: "groq:" + chosen.model });
+    if (isConsensus && chosen.provider === "groq" && (!this.#groqBudgetOk() || this.now() - Number(this.groqLastDispatchAt ?? 0) < intervalMs)) chosen = this.llmRouter.choose(role, { skipKey: "groq:" + chosen.model });
     if (!chosen) return { status: "ERROR", reason: "NO_ROUTE", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
-    if (chosen.provider === "groq") this.groqBudget = { ...this.groqBudget, remaining: Number(this.groqBudget.remaining) - estTokens, at: this.now() };
+    if (chosen.provider === "groq") { this.groqLastDispatchAt = this.now(); this.groqBudget = { ...this.groqBudget, remaining: Number(this.groqBudget.remaining) - estTokens, at: this.now() }; }
     const runOnce = (target) => this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: isConsensus ? 4_000 : 8_000, suppressProviderError: isConsensus && target.provider === "groq", execute: () => runTextProvider(this.pool, { ...options, provider: target.provider, model: target.model }) });
     let result = await runOnce(chosen);
     if (chosen.provider === "groq" && result?.limits) this.#updateGroqBudget(result.limits);
