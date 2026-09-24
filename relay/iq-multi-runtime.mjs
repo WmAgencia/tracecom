@@ -403,6 +403,7 @@ export class IqMultiRuntime extends EventEmitter {
   #safe(fn) { try { fn(); } catch (error) { this.log("IQ_MULTI_LOG_ERROR", String(error?.message ?? error)); } }
 
   #wire(client) {
+    client.on("message", () => { this.session = { ...this.session, lastMessageAt: this.now() }; });
     client.on("closed", (event = {}) => {
       const waiter = this.#disconnectedWaiter; if (waiter) { this.#disconnectedWaiter = null; waiter(); }
       // Telemetria estruturada, sem segredos. close code/reason nao disponiveis no RawWebSocket (null por design).
@@ -2006,7 +2007,10 @@ export class IqMultiRuntime extends EventEmitter {
   async #evaluationWatchdog() {
     const feedLive = Boolean(this.client) && this.session?.connected === true;
     const sinceConnect = this.now() - Number(this.connectionStartedAt ?? 0);
-    const stalledMs = this.now() - Number(this.lastEvaluationAt ?? 0);
+    // VIVACIDADE REAL do feed: heartbeat do servidor (ultimo dado recebido). lastEvaluationAt era um sinal MORTO
+    // (nunca atualizado) e forcava WS_RECONNECT a cada ~3min, desarmando o sistema com conexao saudavel.
+    const lastMsgAt = Number(this.client?.lastHeartbeatAt ?? this.session?.lastMessageAt ?? this.connectionStartedAt ?? 0);
+    const stalledMs = this.now() - lastMsgAt;
     if (!feedLive || sinceConnect < 180_000 || stalledMs < 120_000) { this.evalWatchdogAttempts = 0; return null; }
     this.evalWatchdogAttempts = (this.evalWatchdogAttempts ?? 0) + 1;
     const action = this.evalWatchdogAttempts === 1 ? "RESCHEDULE_TICKS" : "WS_RECONNECT";
