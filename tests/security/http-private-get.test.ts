@@ -88,11 +88,14 @@ describe("edge HTTP — rotas privadas anonimas", () => {
   });
 
   const privateMutations: Array<[string, string]> = [
-    ["/api/iq/arm", JSON.stringify({ confirmation: "ARM_PRACTICE", limitBrl: 10 })],
-    ["/api/iq/disarm", "{}"],
-    ["/api/iq/config/global-stake", JSON.stringify({ value: 2 })],
-    ["/api/iq/account/select", JSON.stringify({ context: "REAL" })],
-    ["/api/iq/mode", JSON.stringify({ mode: "REAL" })],
+    ["/api/iq/connect", JSON.stringify({ email: "x@y.z", password: "senha" })],
+    ["/api/iq/disconnect", "{}"],
+    ["/api/iq/test-order", JSON.stringify({ marketKey: "EURUSD:OTC", direction: "BUY", stake: 2 })],
+    ["/api/iq/verify-2fa", JSON.stringify({ code: "123456" })],
+    ["/api/iq/mesas/bulk", JSON.stringify({ filter: { instrumentType: "BINARY" }, enabled: false })],
+    ["/api/ai/provider", JSON.stringify({ provider: "groq", apiKey: "chave-bem-longa", model: "x" })],
+    ["/api/strategies/selection", JSON.stringify({ family: "V3" })],
+    ["/api/iq/mcp/config", JSON.stringify({ token: "abc" })],
   ];
 
   it.each(privateMutations)("POST %s anonimo -> 401", async (url, body) => {

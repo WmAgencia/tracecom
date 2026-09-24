@@ -7,9 +7,11 @@
 import crypto from "node:crypto";
 
 export const OPENCODE_GO_BASE = "https://opencode.ai/zen/go/v1";
+export const GROQ_BASE = "https://api.groq.com/openai/v1";
 export const VISION_TIMEOUT_MS = 40_000; // evidencia: crop real 250KB + JSON completo >30s; rota deep_background tolera 40s (limite, nunca infinito)
 export const TEXT_TIMEOUT_MS = 20_000;
 export const DEFAULT_MODEL = "deepseek-v4.1-flash";
+export const GROQ_DEFAULT_MODEL = "openai/gpt-oss-120b";
 export const DEFAULT_PROVIDER = "openCodeGo";
 
 /** session id derivado da sessao/contexto (sem segredos, sem valor global eterno).
@@ -45,11 +47,11 @@ export function maskProviderKey(key) {
 export function resolveProviderConfig({ dbConfig = null, env = process.env } = {}) {
   const dbKey = dbConfig && typeof dbConfig.apiKey === "string" && dbConfig.apiKey.trim().length >= 8 ? dbConfig.apiKey.trim() : "";
   if (dbKey) return { provider: (typeof dbConfig.provider === "string" && dbConfig.provider.trim()) || DEFAULT_PROVIDER, model: dbConfig.model ?? null, apiKey: dbKey };
-  const envKey = typeof env.OPENCODE_GO_API_KEY === "string" ? env.OPENCODE_GO_API_KEY.trim() : "";
-  if (envKey.length < 8) return null;
+  const envKeySource = (typeof env.GROQ_API_KEY === "string" ? env.GROQ_API_KEY.trim() : "") || (typeof env.OPENCODE_GO_API_KEY === "string" ? env.OPENCODE_GO_API_KEY.trim() : "");
+  if (envKeySource.length < 8) return null;
   const provider = typeof env.AI_PROVIDER === "string" && env.AI_PROVIDER.trim() ? env.AI_PROVIDER.trim() : DEFAULT_PROVIDER;
-  const model = typeof env.AI_MODEL === "string" && env.AI_MODEL.trim() ? env.AI_MODEL.trim() : null;
-  return { provider, model, apiKey: envKey };
+  const model = typeof env.AI_MODEL === "string" && env.AI_MODEL.trim() ? env.AI_MODEL.trim() : (provider === "groq" ? GROQ_DEFAULT_MODEL : null);
+  return { provider, model, apiKey: envKeySource };
 }
 
 export function buildVisionRequest({ model, imageDataUrl, prompt, sessionId }) {
@@ -194,9 +196,11 @@ export async function runVisionProvider(pool, { imageDataUrl, frameId = null, re
 export async function runTextProvider(pool, { system = "You are a cautious quantitative analyst. Do not provide execution instructions.", prompt, maxTokens = 1500, requestId = null, sessionContext = {}, temperature = null, responseFormat = null, reasoningEffort = null, timeoutMs = null } = {}) {
   const config = await loadProviderConfig(pool);
   const sessionId = sessionFor({ ...sessionContext, requestId });
-  if (!config || config.provider !== "openCodeGo") return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", requestId, sessionId, model: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null };
+  if (!config || (config.provider !== "openCodeGo" && config.provider !== "groq")) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", requestId, sessionId, model: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null };
   const model = resolveModel(config);
-  const request = buildTextRequest({ model, system, prompt, sessionId, maxTokens, temperature, responseFormat, reasoningEffort });
+  const request = config.provider === "groq"
+    ? { url: `${GROQ_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model, max_tokens: maxTokens, messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}), ...(responseFormat !== null ? { response_format: responseFormat } : {}) } }
+    : buildTextRequest({ model, system, prompt, sessionId, maxTokens, temperature, responseFormat, reasoningEffort });
   try {
     const result = await callProvider(request, config.apiKey, Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0 ? Number(timeoutMs) : TEXT_TIMEOUT_MS);
     const body = (() => { try { return JSON.parse(result.text); } catch { return null; } })();

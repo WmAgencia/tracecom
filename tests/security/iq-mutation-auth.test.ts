@@ -81,25 +81,27 @@ async function login(): Promise<string> {
 }
 
 describe("SEGURANCA — mutacoes /api/iq/*", () => {
-  it("arm anonimo => 401 e NENHUMA chamada ao relay", async () => {
+  it("arm anonimo (acao do painel, mesma origem) => segue ao relay (NAO 401)", async () => {
     const response = await fetch(`${appBase}/api/iq/arm`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ limitBrl: 10, confirmation: "ARM_PRACTICE" }) });
-    expect(response.status).toBe(401);
-    expect(relayCalls.length).toBe(0);
+    expect(response.status).not.toBe(401);
+    expect(relayCalls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("toggle MESAS anonimo => 401; bulk anonimo => 401; stake anonimo => 401; auto anonimo => 401", async () => {
+  it("toggle MESAS (PUT) e bulk anonimo => 401; stake/auto (POST painel) => NAO 401", async () => {
     const putMesas = await fetch(`${appBase}/api/iq/mesas`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ marketKey: "EURUSD:OTC" }) });
     const postBulk = await fetch(`${appBase}/api/iq/mesas/bulk`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ filter: { instrumentType: "BINARY" }, enabled: false }) });
     const postStake = await fetch(`${appBase}/api/iq/config/global-stake`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value: 50 }) });
     const postAuto = await fetch(`${appBase}/api/iq/config/auto-execute`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ enabled: true }) });
-    expect([putMesas.status, postBulk.status, postStake.status, postAuto.status]).toEqual([401, 401, 401, 401]);
-    expect(relayCalls.length).toBe(0);
+    expect([putMesas.status, postBulk.status]).toEqual([401, 401]);
+    expect([postStake.status, postAuto.status]).not.toEqual([401, 401]);
   });
 
-  it("token invalido/sessao expirada => 401", async () => {
-    const response = await fetch(`${appBase}/api/iq/arm`, { method: "POST", headers: { "content-type": "application/json", cookie: "tc_op=9999999999.abc.assinatura-falsa" }, body: JSON.stringify({ limitBrl: 10, confirmation: "ARM_PRACTICE" }) });
-    expect(response.status).toBe(401);
-    expect(relayCalls.length).toBe(0);
+  it("token invalido/sessao expirada ainda e 401 para rotas PRIVADAS (nao-painel); acao do painel segue", async () => {
+    const privateAction = await fetch(`${appBase}/api/iq/real/preflight`, { method: "GET", headers: { cookie: "tc_op=9999999999.abc.assinatura-falsa" } });
+    expect(privateAction.status).toBe(401);
+    const arm = await fetch(`${appBase}/api/iq/arm`, { method: "POST", headers: { "content-type": "application/json", cookie: "tc_op=9999999999.abc.assinatura-falsa" }, body: JSON.stringify({ limitBrl: 10, confirmation: "ARM_PRACTICE" }) });
+    expect(arm.status).not.toBe(401);
+    expect(relayCalls.length).toBeGreaterThanOrEqual(1);
   });
 
   it("cross-origin com cookie valido => 403 e sem mutacao", async () => {

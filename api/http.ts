@@ -29,7 +29,7 @@ import { quantShadowDecision } from "../src/quant-v2/quant-fusion.js";
 import { analyzeTechnicalState } from "../src/vision/technical-analyst.js";
 import { OperationalController } from "../src/vision/operational-controller.js";
 import { decideOperationalGate, horizonCompatibility, makeSelection, type LatestOperationalSignal, type StrategySelection } from "../src/strategies/selection.js";
-import { operatorGateDecision, panelSessionDecision } from "../src/security/operator-gate.js";
+import { operatorGateDecision, panelSessionDecision, isPanelActionPost } from "../src/security/operator-gate.js";
 
 type FableImage = { label: string; dataUrl: string; frameId?: string; mimeType?: string; byteLength?: number; width?: number; height?: number; imageHash?: string };
 const ephemeralImages = new Map<string, { bytes: Buffer; contentType: string; expires: number }>();
@@ -808,6 +808,12 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   let gateAuth: { ok: boolean; reason: string; actor: string } = { ok: true, reason: "read_only", actor: "read_only" };
   if (gateDecision.mode === "operator") { gateActor = "operator"; gateAuth = auth; }
   else if (gateDecision.mode === "research") { gateActor = "research"; }
+  else if (gateDecision.mode === "deny" && isPanelActionPost(methodUpper, url.pathname) && sameOriginOk(req)) {
+    // Acoes dos controles do grid: origem/host validos => edge injeta o segredo do relay server-side.
+    // JSON/tamanho/schema sao validados em readBody + payload + relay. NAO autentica pessoa.
+    gateActor = "panel_action";
+    gateAuth = { ok: true, reason: "panel_action", actor: "panel_action" };
+  }
   else if (gateDecision.mode === "deny") {
     const status = auth.reason === "cross_origin_blocked" ? 403 : auth.reason === "operator_auth_not_configured" ? 503 : (gateDecision.status ?? 401);
     json(status, { error: auth.reason === "ok" ? gateDecision.error : auth.reason, practiceOnly: true });
@@ -825,7 +831,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
   try {
     const path = url.pathname;
-    const body = req.method === "POST" || req.method === "PUT" || req.method === "PATCH" ? await readBody(req) : null;
+    let body: unknown = null;
+    if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
+      try { body = await readBody(req); }
+      catch (error) { json(400, { error: error instanceof Error ? error.message : "invalid_body" }); return; }
+    }
     if (await handleLiveApi(req, res, path, body, q)) return;
     const operationalInput = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
     const operationalSessionId = typeof operationalInput.sessionId === "string" ? operationalInput.sessionId.trim().slice(0, 128) : "";

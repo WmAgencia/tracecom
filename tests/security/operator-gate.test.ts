@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { operatorGateDecision, operatorGateRequired, panelSessionDecision, isPrivateGetPath } from "../../src/security/operator-gate.js";
+import { operatorGateDecision, operatorGateRequired, panelSessionDecision, isPrivateGetPath, isPanelActionPost } from "../../src/security/operator-gate.js";
 
 describe("operator gate (fail-closed)", () => {
   const privateGets = [
@@ -52,6 +52,19 @@ describe("operator gate (fail-closed)", () => {
     expect(operatorGateDecision({ method: "GET", pathname: "/api/research/lab/overview", operatorCookieValid: false }).mode).toBe("public");
     expect(operatorGateDecision({ method: "POST", pathname: "/api/research/shadow/run", operatorCookieValid: false, researchKeyValid: true }).mode).toBe("research");
     expect(operatorGateDecision({ method: "POST", pathname: "/api/iq/arm", operatorCookieValid: false, researchKeyValid: true }).mode).toBe("deny");
+  });
+
+  it("isPanelActionPost libera SOMENTE as nove acoes do grid; resto permanece privado", () => {
+    for (const pathname of ["/api/iq/config/global-stake", "/api/iq/kill-switch", "/api/iq/config/auto-execute", "/api/iq/arm", "/api/iq/disarm", "/api/iq/account/select", "/api/iq/mode", "/api/iq/real/arm", "/api/iq/real/disarm"]) {
+      expect(isPanelActionPost("POST", pathname), pathname).toBe(true);
+    }
+    expect(isPanelActionPost("GET", "/api/iq/arm")).toBe(false);
+    expect(isPanelActionPost("PUT", "/api/iq/arm")).toBe(false);
+    expect(isPanelActionPost("POST", "/api/iq/connect")).toBe(false);
+    expect(isPanelActionPost("POST", "/api/iq/test-order")).toBe(false);
+    expect(isPanelActionPost("POST", "/api/iq/disconnect")).toBe(false);
+    expect(isPanelActionPost("PUT", "/api/iq/mcp/config")).toBe(false);
+    expect(isPanelActionPost("POST", "/api/iq/mesas/bulk")).toBe(false);
   });
 
   it("isPrivateGetPath cobre os prefixos privados e nao cobre publicos do painel", () => {

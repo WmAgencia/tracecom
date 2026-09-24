@@ -41,6 +41,26 @@ export const PANEL_PUBLIC_GET_PATHS: ReadonlySet<string> = new Set([
   "/api/iq/mcp/config",
 ]);
 
+/** Mutations POST dos CONTROLES do grid, liberadas SEM cookie de operador (o edge injeta
+ *  o segredo do relay server-side; nenhum segredo vai ao browser). Requerem origem/host validos
+ *  (same-origin); JSON/tamanho/schema sao validados no fluxo edge+relay. Ainda NÃO autenticam
+ *  pessoa (CSRF reduzido; nao e identidade). As demais rotas administrativas seguem privadas. */
+export const PANEL_ACTION_POSTS: ReadonlySet<string> = new Set([
+  "/api/iq/config/global-stake",
+  "/api/iq/kill-switch",
+  "/api/iq/config/auto-execute",
+  "/api/iq/arm",
+  "/api/iq/disarm",
+  "/api/iq/account/select",
+  "/api/iq/mode",
+  "/api/iq/real/arm",
+  "/api/iq/real/disarm",
+]);
+
+export function isPanelActionPost(method: string, pathname: string): boolean {
+  return method === "POST" && PANEL_ACTION_POSTS.has(pathname);
+}
+
 const MUTATION_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export function isPrivateGetPath(pathname: string): boolean {
