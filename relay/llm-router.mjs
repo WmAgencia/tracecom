@@ -67,7 +67,7 @@ export function createLlmRouter({ roles = FREE_ROLES_CONFIG, now = () => Date.no
     e.inflight = Math.max(0, e.inflight - 1);
     const t = now();
     if (Number(httpStatus) === 429) { e.recent429 += 1; e.last429At = t; e.cooldownUntil = t + 60_000; }
-    if (Number(httpStatus) >= 500 || Number(httpStatus) === 402 || Number(httpStatus) === 401) { e.recent5xx += 1; e.last5xxAt = t; e.cooldownUntil = t + 60_000; }
+    if (Number(httpStatus) >= 500 || [401, 402, 403].includes(Number(httpStatus))) { e.recent5xx += 1; e.last5xxAt = t; e.cooldownUntil = t + 60_000; }
     if (status === "OK") { e.ok += 1; if (schemaValid) e.schemaOk += 1; if (Number.isFinite(Number(latencyMs))) e.latencyMs = e.latencyMs === null ? Number(latencyMs) : e.latencyMs * 0.7 + Number(latencyMs) * 0.3; }
     else if (status) e.fail += 1;
   }
