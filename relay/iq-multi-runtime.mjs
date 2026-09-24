@@ -3296,7 +3296,7 @@ export class IqMultiRuntime extends EventEmitter {
       configuredMarkets,
       recentSchemaErrors: Number(base.recentSchemaErrors) || 0,
       recentDeadlineAborts: Number(base.recentDeadlineAborts) || 0,
-      recentCandleFeedBlocked: (base.candleFeed?.lastAt && this.now() - Number(base.candleFeed.lastAt) < 60_000) ? 1 : 0,
+      recentCandleFeedBlocked: 0,
       persistCriticalError: (base.counters?.persistErrors ?? 0) > 5,
     });
     return {
