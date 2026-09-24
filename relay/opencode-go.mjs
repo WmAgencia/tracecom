@@ -198,14 +198,19 @@ export async function runVisionProvider(pool, { imageDataUrl, frameId = null, re
   }
 }
 
-export async function runTextProvider(pool, { system = "You are a cautious quantitative analyst. Do not provide execution instructions.", prompt, maxTokens = 1500, requestId = null, sessionContext = {}, temperature = null, responseFormat = null, reasoningEffort = null, timeoutMs = null } = {}) {
-  const config = await loadProviderConfig(pool);
+export async function runTextProvider(pool, { system = "You are a cautious quantitative analyst. Do not provide execution instructions.", prompt, maxTokens = 1500, requestId = null, sessionContext = {}, temperature = null, responseFormat = null, reasoningEffort = null, timeoutMs = null, provider = null, model = null } = {}) {
+  const dbConfig = await loadProviderConfig(pool);
+  const requestedProvider = typeof provider === "string" && provider.trim() ? provider.trim() : (dbConfig?.provider ?? DEFAULT_PROVIDER);
+  const apiKey = requestedProvider === "groq"
+    ? (process.env.GROQ_API_KEY || (dbConfig?.provider === "groq" ? dbConfig.apiKey : null))
+    : (process.env.OPENCODE_GO_API_KEY || (dbConfig?.provider === "openCodeGo" ? dbConfig.apiKey : null));
+  const config = { provider: requestedProvider, model: typeof model === "string" && model.trim() ? model.trim() : (requestedProvider === (dbConfig?.provider ?? DEFAULT_PROVIDER) ? dbConfig?.model ?? null : null), apiKey };
   const sessionId = sessionFor({ ...sessionContext, requestId });
-  if (!config || (config.provider !== "openCodeGo" && config.provider !== "groq")) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", requestId, sessionId, model: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null };
-  const model = resolveModel(config);
+  if (!apiKey || (config.provider !== "openCodeGo" && config.provider !== "groq")) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", requestId, sessionId, model: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null };
+  const model_ = resolveModel(config);
   const request = config.provider === "groq"
-    ? { url: `${GROQ_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model, max_tokens: Math.max(Number(maxTokens) || 512, 4096), messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
-    : buildTextRequest({ model, system, prompt, sessionId, maxTokens, temperature, responseFormat, reasoningEffort });
+    ? { url: `${GROQ_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model: model_, max_tokens: Math.max(Number(maxTokens) || 512, 4096), messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
+    : buildTextRequest({ model: model_, system, prompt, sessionId, maxTokens, temperature, responseFormat, reasoningEffort });
   try {
     const result = await callProvider(request, config.apiKey, Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0 ? Number(timeoutMs) : TEXT_TIMEOUT_MS);
     const body = (() => { try { return JSON.parse(result.text); } catch { return null; } })();
@@ -213,12 +218,12 @@ export async function runTextProvider(pool, { system = "You are a cautious quant
     const text = typeof answer === "string" ? answer : Array.isArray(answer) ? answer.map((part) => part?.text ?? "").join("") : null;
     const parsed = parseStructured(text ?? "");
     const status = result.status === 200 && text ? "OK" : "ERROR";
-    console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ provider: config.provider, model, requestId, status, latencyMs: result.latencyMs, sessionId, parsed: Boolean(parsed), finishReason: body?.choices?.[0]?.finish_reason ?? null, httpStatus: result.status }));
-    return { status, reason: status === "OK" ? null : result.status === 200 ? "INVALID_JSON" : `HTTP_${result.status}`, requestId, sessionId, model, provider: config.provider, limits: result.headers ?? {}, text, parsed, latencyMs: result.latencyMs, usage: body?.usage ?? null, finishReason: body?.choices?.[0]?.finish_reason ?? null, httpStatus: result.status };
+    console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ provider: config.provider, model: model_, requestId, status, latencyMs: result.latencyMs, sessionId, parsed: Boolean(parsed), finishReason: body?.choices?.[0]?.finish_reason ?? null, httpStatus: result.status }));
+    return { status, reason: status === "OK" ? null : result.status === 200 ? "INVALID_JSON" : `HTTP_${result.status}`, requestId, sessionId, model: model_, provider: config.provider, limits: result.headers ?? {}, text, parsed, latencyMs: result.latencyMs, usage: body?.usage ?? null, finishReason: body?.choices?.[0]?.finish_reason ?? null, httpStatus: result.status };
   } catch (error) {
     const reason = error?.name === "AbortError" ? "TIMEOUT" : "ERROR";
-    console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ provider: config.provider, model, requestId, status: "ERROR", reason, sessionId }));
-    return { status: "ERROR", reason, requestId, sessionId, model, provider: config.provider, limits: {}, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
+    console.info("OPENCODE_GO_TEXT_RESULT", JSON.stringify({ provider: config.provider, model: model_, requestId, status: "ERROR", reason, sessionId }));
+    return { status: "ERROR", reason, requestId, sessionId, model: model_, provider: config.provider, limits: {}, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
   }
 }
 

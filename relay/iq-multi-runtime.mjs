@@ -166,6 +166,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.v3Strategy = process.env.V3_ENABLED === "true" ? loadOperationalStrategy({ manifestPath: "estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V3.json" }) : null;
     this.llmLimiter = createLlmRateLimiter({ maxConcurrent: Number(process.env.LLM_MAX_CONCURRENCY) || 8, now: this.now, log: this.log });
     this.providerConfigCache = { at: 0, value: null };
+    this.groqBudget = { remaining: null, at: 0 };
     this.v3 = this.v3Strategy
       ? new V3Runtime({
           now: this.now, pool, log: this.log,
@@ -181,7 +182,8 @@ export class IqMultiRuntime extends EventEmitter {
         })
       : null;
     if (this.v3 && process.env.V3_TEST_ALLOWLIST) this.v3.setOpportunityScope(String(process.env.V3_TEST_ALLOWLIST).split(",").map((key) => key.trim()).filter(Boolean));
-    if (this.v3 && pool) void this.#refreshProviderConfigCache();    this.candleStore = new CandleStore({ pool, now: this.now, log: this.log });
+    if (this.v3 && pool) void this.#refreshProviderConfigCache();
+    if (this.v3 && pool) void this.#primeGroqBudget();    this.candleStore = new CandleStore({ pool, now: this.now, log: this.log });
     this.singlePath = new SinglePath({ now: this.now });
     try {
       this.assetIntelligence = new RuntimeIntelligence({ now: this.now, strategy: this.operationalStrategy, loader: (marketKey) => this.candleStore.loadRecent(marketKey) });
@@ -3303,6 +3305,11 @@ export class IqMultiRuntime extends EventEmitter {
       health,
       provider: cfg?.provider ?? null,
       model: cfg?.model ?? null,
+      providers: {
+        specialist: { provider: process.env.V3_SPECIALIST_PROVIDER || "openCodeGo", model: process.env.V3_SPECIALIST_MODEL || "deepseek-v4-flash" },
+        consensus: { provider: process.env.V3_CONSENSUS_PROVIDER || "groq", model: process.env.V3_CONSENSUS_MODEL || "openai/gpt-oss-120b" },
+      },
+      groqBudgetRemainingTokens: Number.isFinite(Number(this.groqBudget?.remaining)) ? Number(this.groqBudget.remaining) : null,
       agentsAvailable: base.agents?.available === true,
       systemActive: base.systemActive === true,
       queueDepth: limiter.queueDepth ?? 0,
@@ -3320,14 +3327,57 @@ export class IqMultiRuntime extends EventEmitter {
     };
   }
 
-  /** Runner agendado GLOBAL das chamadas LLM do V3 (concurrency + prioridade + deadline + retry 429). */
+  /** Runner agendado GLOBAL das chamadas LLM do V3 (concurrency + prioridade + deadline + retry 429 + roteamento por etapa). */
   async #v3ScheduledRun(options) {
     if (!this.pool) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
     const timeoutMs = Number.isFinite(Number(options.timeoutMs)) && Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 20_000;
     const deadlineAt = this.now() + timeoutMs;
     const role = String(options.requestId ?? "").split(":").pop();
-    const priority = role === "CONSENSUS_FINAL" ? 2 : 1;
-    return this.llmLimiter.run({ priority, deadlineAt, execute: () => runTextProvider(this.pool, options) });
+    const isConsensus = role === "CONSENSUS_FINAL";
+    const specialistProvider = process.env.V3_SPECIALIST_PROVIDER || "openCodeGo";
+    const specialistModel = process.env.V3_SPECIALIST_MODEL || "deepseek-v4-flash";
+    const consensusProvider = process.env.V3_CONSENSUS_PROVIDER || "groq";
+    const consensusModel = process.env.V3_CONSENSUS_MODEL || "openai/gpt-oss-120b";
+    const fallbackProvider = process.env.V3_CONSENSUS_FALLBACK_PROVIDER || "openCodeGo";
+    const fallbackModel = process.env.V3_CONSENSUS_FALLBACK_MODEL || "qwen3.8-max";
+    const priority = isConsensus ? 2 : 1;
+    let provider = isConsensus ? consensusProvider : specialistProvider;
+    let model = isConsensus ? consensusModel : specialistModel;
+    const estTokens = Number(process.env.V3_GROQ_EST_TOKENS) || 2_600;
+    if (isConsensus && provider === "groq") {
+      if (!this.#groqBudgetOk()) { provider = fallbackProvider; model = fallbackModel; }
+      else { this.groqBudget = { ...this.groqBudget, remaining: Number(this.groqBudget.remaining) - estTokens, at: this.now() }; }
+    }
+    const result = await this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: isConsensus ? 4_000 : 1_500, execute: () => runTextProvider(this.pool, { ...options, provider, model }) });
+    if (provider === "groq" && result?.limits) this.#updateGroqBudget(result.limits);
+    if (isConsensus && provider === "groq" && (result?.httpStatus === 429 || result?.reason === "PROVIDER_RATE_LIMIT")) {
+      this.groqBudget = { remaining: 0, at: this.now() };
+      return this.llmLimiter.run({ priority, deadlineAt, estimatedLatencyMs: 4_000, execute: () => runTextProvider(this.pool, { ...options, provider: fallbackProvider, model: fallbackModel }) });
+    }
+    return result;
+  }
+
+  /** Orcamento real de tokens do Groq (lido dos headers x-ratelimit-remaining-tokens). Sem dado => nao usa Groq. */
+  #groqBudgetOk() {
+    const budget = this.groqBudget;
+    if (!budget || !Number.isFinite(Number(budget.remaining))) return false;
+    if (this.now() - Number(budget.at) > 60_000) return false;
+    return Number(budget.remaining) >= (Number(process.env.V3_GROQ_MIN_TOKENS) || 3_200);
+  }
+
+  #updateGroqBudget(limits) {
+    const remaining = Number(limits?.["x-ratelimit-remaining-tokens"]);
+    if (Number.isFinite(remaining)) this.groqBudget = { remaining, at: this.now() };
+  }
+
+  /** Sonda leve para aprender o orcamento real do Groq no boot (sem travar o event loop). */
+  async #primeGroqBudget() {
+    if (!this.pool) return;
+    try {
+      const probe = await runTextProvider(this.pool, { provider: "groq", model: process.env.V3_CONSENSUS_MODEL || "openai/gpt-oss-120b", system: "Responda apenas {}.", prompt: "{}", maxTokens: 16, timeoutMs: 10_000 });
+      if (probe?.limits && Object.keys(probe.limits).length > 0) this.#updateGroqBudget(probe.limits);
+      else if (probe?.httpStatus === 429) this.groqBudget = { remaining: 0, at: this.now() };
+    } catch { /* silencioso: sem orcamento conhecido, consensus usa fallback */ }
   }
 
   async #refreshProviderConfigCache() {

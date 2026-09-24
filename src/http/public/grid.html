@@ -321,10 +321,10 @@
     setText($("intelState"), vState);
     setText($("intelReady"), String(v3?.configuredMarkets ?? next.length ?? 0));
     setText($("intelFeed"), "5s");
-    const providerLabel = v3?.provider ? String(v3.provider) : "LLM";
+    const providerLabel = v3?.providers ? (String(v3.providers.specialist?.model ?? "") + " + " + String(v3.providers.consensus?.model ?? "")).replace(/ \+ $/, "") : (v3?.provider ? String(v3.provider) : "LLM");
     const lastLatency = Number(v3?.lastSuccessfulCycleLatencyMs ?? 0);
     let note;
-    if (vState === "READY") note = (v3?.pipelines7of7 ?? 0) + " pipelines 7/7 · LLM " + providerLabel + " · última análise " + (lastLatency ? (lastLatency / 1000).toFixed(1) + "s" : "—");
+    if (vState === "READY") note = (v3?.pipelines7of7 ?? 0) + " pipelines 7/7 · " + providerLabel + " · última análise " + (lastLatency ? (lastLatency / 1000).toFixed(1) + "s" : "—");
     else if (vState === "STANDBY") note = "LLM em STANDBY · aguardando ATIVAR";
     else if (vState === "DEGRADED") { const r = String(vh.reason ?? "PROVIDER_ERROR"); note = { PROVIDER_RATE_LIMIT: "Groq rate limit", FEED_STALE: "Feed stale", PROVIDER_UNAVAILABLE: "Provider unavailable", PROVIDER_ERROR: "Provider error", SCHEMA_FAILURES: "Schema failures", DEADLINE_FAILURES: "Deadline failures", FEED_BLOCKED: "Feed blocked", DB_CRITICAL: "DB critical", NO_MARKETS: "Sem mercados" }[r] ?? r; }
     else note = "offline";
