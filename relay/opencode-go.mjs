@@ -221,9 +221,9 @@ export async function runTextProvider(pool, { system = "You are a cautious quant
   const request = config.provider === "groq"
     ? { url: `${GROQ_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model: model_, max_tokens: Math.max(Number(maxTokens) || 512, 4096), messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
     : config.provider === "nvidia"
-      ? { url: `${NVIDIA_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model: model_, max_tokens: Math.max(Number(maxTokens) || 512, 2048), messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
+      ? { url: `${NVIDIA_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model: model_, max_tokens: Math.max(Number(maxTokens) || 512, 2048), messages: [{ role: "system", content: consensusSchemaSystemFor(config.provider, String(requestId ?? "").split(":").pop(), system) }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
       : config.provider === "alibaba"
-        ? { url: `${process.env.ALIBABA_BASE || ALIBABA_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model: model_, max_tokens: Math.max(Number(maxTokens) || 512, 2048), messages: [{ role: "system", content: alibabaSystemFor(String(requestId ?? "").split(":").pop(), system) }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
+        ? { url: `${process.env.ALIBABA_BASE || ALIBABA_BASE}/chat/completions`, headers: { "content-type": "application/json" }, body: { model: model_, max_tokens: Math.max(Number(maxTokens) || 512, 2048), messages: [{ role: "system", content: consensusSchemaSystemFor(config.provider, String(requestId ?? "").split(":").pop(), system) }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
       : config.provider === "zen"
         ? { url: `${OPENCODE_ZEN_BASE}/chat/completions`, headers: { "content-type": "application/json", "x-opencode-session": sessionId }, body: { model: model_, max_tokens: Number(maxTokens) || 1500, messages: [{ role: "system", content: system }, { role: "user", content: prompt }], ...(temperature !== null ? { temperature } : {}) } }
         : buildTextRequest({ model: model_, system, prompt, sessionId, maxTokens, temperature, responseFormat, reasoningEffort });
@@ -248,11 +248,11 @@ export async function effectiveProviderConfig(pool) {
   try { return await loadProviderConfig(pool); } catch { return resolveProviderConfig({ env: process.env }); }
 }
 
-/** Alibaba (qwen-character) precisa do schema exato explicito no system para nao impor formato proprio. */
+/** Modelos nao-Groq (alibaba/nvidia) impoem formato proprio; schema exato do Consensus no system evita isso. */
 const ALIBABA_CONSENSUS_SCHEMA = "RETORNE EXATAMENTE um unico objeto JSON com EXATAMENTE estas chaves (nada mais, sem texto fora): {\"independentAssessment\":\"string\",\"assetComparison\":\"string\",\"scenario\":\"PULLBACK_CONTINUATION|TREND_CONTINUATION|BREAKOUT|BREAKDOWN|STRUCTURAL_REVERSAL|RANGE|NO_SETUP\",\"direction\":\"UP|DOWN|NONE\",\"agreement\":\"AGREE|PARTIAL|DISAGREE\",\"supportingEvidence\":[\"string\"],\"counterEvidence\":[\"string\"],\"bestCaseForUp\":[\"string\"],\"bestCaseAgainstUp\":[\"string\"],\"bestCaseForDown\":[\"string\"],\"bestCaseAgainstDown\":[\"string\"],\"blockers\":[],\"invalidations\":[],\"marketAmbiguities\":[],\"reasons\":[\"string\"],\"result\":\"APPROVE_BUY|APPROVE_SELL|CANCEL\"}.";
 
-function alibabaSystemFor(role, system) {
-  if (role === "CONSENSUS_FINAL") return `${system}\n${ALIBABA_CONSENSUS_SCHEMA}`;
+function consensusSchemaSystemFor(provider, role, system) {
+  if (role === "CONSENSUS_FINAL" && (provider === "alibaba" || provider === "nvidia")) return `${system}\n${ALIBABA_CONSENSUS_SCHEMA}`;
   return system;
 }
 
