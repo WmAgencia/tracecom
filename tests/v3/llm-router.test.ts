@@ -21,7 +21,7 @@ describe("V3 llm router — free pool", () => {
     const router = createLlmRouter({ now: () => 1_000_000 });
     expect(router.choose("RSI")).toMatchObject({ provider: "deterministic", model: "code" });
     expect(router.choose("CONSENSUS_FINAL")).toMatchObject({ provider: "alibaba" });
-    router.report({ provider: "alibaba", model: "qwen3.5-flash", httpStatus: 403, status: "ERROR" });
+    router.report({ provider: "alibaba", model: null, httpStatus: 403, status: "ERROR" });
     expect(router.choose("CONSENSUS_FINAL")).toMatchObject({ provider: "groq", model: "openai/gpt-oss-120b" });
     router.report({ provider: "groq", model: "openai/gpt-oss-120b", httpStatus: 429, status: "ERROR" });
     expect(router.choose("CONSENSUS_FINAL")).toBeNull();
