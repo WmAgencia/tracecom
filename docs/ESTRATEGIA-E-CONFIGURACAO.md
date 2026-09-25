@@ -63,3 +63,9 @@
 - Sem alteração de stake, filtros, TTE 330→300, estratégia congelada ou gates de execução/REAL.
 - Backup solicitado por AGENTS.md tentado: bloqueado por ausência de DATABASE_URL/SUPABASE_DB_URL neste ambiente. Backups anteriores preservados; executar backup no ambiente autenticado.
 - Publicação e ciclo PRACTICE dependem de confirmação operacional pós-deploy; testes locais não comprovam ordem ou settlement.
+
+## Hotfix operacional — multiplexação do WebSocket (2026-09-25)
+
+- O cliente IQ correlaciona cada resposta pelo `request_id`; leituras paralelas de candles, opções, saldos e inicialização não substituem mais a espera umas das outras.
+- Ao fechar o socket, todas as leituras pendentes falham imediatamente com `WS_CLOSED`, em vez de gerarem timeouts atrasados e rejeições não tratadas.
+- Mudança exclusivamente operacional de transporte/observabilidade: não altera a estratégia congelada, stake, mercados, expiração de 300s ou os gates PRACTICE/REAL.

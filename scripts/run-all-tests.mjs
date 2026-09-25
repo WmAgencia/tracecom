@@ -10,6 +10,7 @@ export const SUITES = Object.freeze([
   "stage3-wiring-tests.mjs",
   "stage3-runtime-adapter-tests.mjs",
   "stage3-feed-granularity-tests.mjs",
+  "iqoption-ws-multiplex-tests.mjs",
   "stage3-dispatch-tests.mjs",
   "stage3-hydration-tests.mjs",
   "stage3-runtime-integrity-tests.mjs",

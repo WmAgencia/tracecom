@@ -332,7 +332,7 @@ export class IqWsClient extends EventEmitter {
         const socket = this.socketFactory({ host, path: IQ_WS_PATH, timeoutMs: Math.min(timeoutMs, 15_000) });
         this.socket = socket;
         socket.on("data", (chunk) => { this.lastMessageAt = this.now(); this.#onData(chunk); });
-        socket.on("close", () => { const connectionId = this.connectionId; this.state = "CLOSED"; this.#clearHeartbeat(); this.emit("closed", { connectionId, host: this.host, at: this.now(), lastMessageAgeMs: Number.isFinite(Number(this.lastMessageAt)) ? Math.max(0, this.now() - Number(this.lastMessageAt)) : null, closeCode: null, closeReason: null }); });
+        socket.on("close", () => { const connectionId = this.connectionId; this.state = "CLOSED"; this.#clearHeartbeat(); this.#rejectPending("WS_CLOSED"); this.emit("closed", { connectionId, host: this.host, at: this.now(), lastMessageAgeMs: Number.isFinite(Number(this.lastMessageAt)) ? Math.max(0, this.now() - Number(this.lastMessageAt)) : null, closeCode: null, closeReason: null }); });
         socket.on("error", (error) => { this.log("IQ_WS_SOCKET_ERROR", String(error?.message ?? error)); });
         await socket.connect();
         this.host = host;
@@ -380,8 +380,7 @@ export class IqWsClient extends EventEmitter {
       const heartbeatTime = Number(message.msg?.heartbeatTime ?? message.msg ?? this.now());
       this.send("heartbeat", { heartbeatTime: Number.isFinite(heartbeatTime) ? Math.round(heartbeatTime) : this.now(), userTime: Math.round(this.serverNow() ?? this.now()) });
     }
-    const resolver = this.pending.get("any");
-    if (resolver) resolver(message);
+    for (const pending of [...this.pending.values()]) pending.resolveIfMatches(message);
     this.emit("message", event);
     this.emit(event.name ?? "unknown", event);
   }
@@ -414,17 +413,33 @@ export class IqWsClient extends EventEmitter {
 
   #clearHeartbeat() { if (this.heartbeatTimer) clearInterval(this.heartbeatTimer); this.heartbeatTimer = null; }
 
-  #waitFor(predicate, timeoutMs, timeoutCode) {
+  #waitFor(predicate, timeoutMs, timeoutCode, requestId = null) {
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => { this.pending.delete("any"); reject(new IqWsError(timeoutCode)); }, timeoutMs);
-      const resolver = (message) => {
-        if (!predicate(message)) return;
-        this.pending.delete("any");
-        clearTimeout(timer);
-        resolve(message);
+      const key = requestId ?? `event:${this.uuid()}`;
+      const finish = (callback, value) => {
+        const pending = this.pending.get(key);
+        if (!pending) return;
+        this.pending.delete(key);
+        clearTimeout(pending.timer);
+        callback(value);
       };
-      this.pending.set("any", resolver);
+      const timer = setTimeout(() => finish(reject, new IqWsError(timeoutCode)), timeoutMs);
+      const resolveIfMatches = (message) => {
+        const responseId = message?.request_id ?? message?.requestId ?? null;
+        if (requestId !== null && responseId !== requestId) return;
+        if (!predicate(message)) return;
+        finish(resolve, message);
+      };
+      this.pending.set(key, { timer, resolveIfMatches, reject });
     });
+  }
+
+  #rejectPending(code) {
+    for (const [key, pending] of this.pending) {
+      this.pending.delete(key);
+      clearTimeout(pending.timer);
+      pending.reject(new IqWsError(code));
+    }
   }
 
   send(name, msg, requestId = "") {
@@ -434,8 +449,8 @@ export class IqWsClient extends EventEmitter {
 
   async request(name, msg, { predicate, timeoutMs = 15_000, timeoutCode = "REQUEST_TIMEOUT", requestId = null } = {}) {
     const id = requestId ?? this.uuid().replace(/-/g, "").slice(0, 12);
-    const wait = this.#waitFor(predicate ?? ((message) => message.request_id === id || message.requestId === id), timeoutMs, timeoutCode);
-    this.send(name, msg, id);
+    const wait = this.#waitFor(predicate ?? ((message) => message.request_id === id || message.requestId === id), timeoutMs, timeoutCode, id);
+    try { this.send(name, msg, id); } catch (error) { this.#rejectPending("WS_NOT_CONNECTED"); throw error; }
     const response = await wait;
     return { requestId: id, response };
   }
