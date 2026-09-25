@@ -208,11 +208,11 @@ export class IqMultiRuntime extends EventEmitter {
           strategy: { version: this.v3Strategy.version, status: this.v3Strategy.status, executable: this.v3Strategy.executable, strategyHash: this.v3Strategy.strategyHash, statsEpoch: this.v3Strategy.manifest?.statsEpoch ?? null },
           agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ runner: (options) => this.#v3ScheduledRun(options), now: this.now, maxTokens: Number(process.env.V3_AGENT_MAX_TOKENS) || 512, activityCheck: () => this.#v3SystemActive() }) : null,
           agentSafetyMarginMs: Number(process.env.V3_AGENT_SAFETY_MARGIN_MS) || 2_000,
-          // A V3 tem uma unica chamada LLM, apos os especialistas deterministicos.
-          // Dez segundos deixam margem para o envio exato em TTE=302s sem descartar
-          // o ciclo somente porque o candle MCP chegou no meio da janela de analise.
-          estimatedFullCycleMs: Number(process.env.V3_AGENT_ESTIMATED_FULL_MS) || 10_000,
-          estimatedDeltaCycleMs: Number(process.env.V3_AGENT_ESTIMATED_DELTA_MS) || 9_000,
+// A V3 tem uma unica chamada LLM (consensus), apos os especialistas deterministicos.
+          // A estimativa reflete o custo real do consensus (2-5s) + margem; exigir 10s+ de orcamento
+          // descartava os ciclos MCP que chegam na segunda metade da janela (330-302s).
+          estimatedFullCycleMs: Number(process.env.V3_AGENT_ESTIMATED_FULL_MS) || 6_000,
+          estimatedDeltaCycleMs: Number(process.env.V3_AGENT_ESTIMATED_DELTA_MS) || 5_000,
           maxAgentCycles: Number(process.env.V3_AGENT_MAX_CYCLES) || 1,
           // ECONOMIA: V3 LLM so pensa quando o sistema esta ATIVO (armado OU analise-liberada via env).
           agentsGate: () => this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true",
@@ -3569,8 +3569,9 @@ const health = computeV3Health({
     // analise comeca em TTE=330s e termina em TTE=302s; repartir 37 mercados
     // em lotes tardios fazia parte deles chegar apos a reserva do Consensus.
     // O lock evita que um tick lento crie requests sobrepostos.
-    const batchSize = Math.max(1, Math.min(64, Number(process.env.MCP_CANDLE_BATCH_SIZE) || 64));
-    const concurrency = Math.max(1, Math.min(batchSize, Number(process.env.MCP_CANDLE_CONCURRENCY) || 12));
+const batchSize = Math.max(1, Math.min(64, Number(process.env.MCP_CANDLE_BATCH_SIZE) || 64));
+    const concurrency = Math.max(1, Math.min(batchSize, Number(process.env.MCP_CANDLE_CONCURRENCY) || 24));
+    const passStartedAt = this.now();
     const take = Math.min(batchSize, candidates.length);
     const start = this.mcpPollIndex % candidates.length;
     const batch = Array.from({ length: take }, (_, offset) => candidates[(start + offset) % candidates.length]);
@@ -3612,10 +3613,13 @@ const health = computeV3Health({
             ctx.mcpPipedCandleAt = closed[closed.length - 1].at;
             if (this.mcpStatus) this.mcpStatus.intelligenceCandleEvents = (this.mcpStatus.intelligenceCandleEvents ?? 0) + closed.length;
           }
-          if (this.v3) {
+if (this.v3) {
             if (this.mcpStatus) this.mcpStatus.v3DispatchAttempts = (this.mcpStatus.v3DispatchAttempts ?? 0) + 1;
             try {
-              await this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow: this.client?.serverNow?.() ?? this.now() });
+              // RELOGIO LOCAL no caminho MCP: o WS do broker esta rejeitado e o serverNow
+              // do cliente pode ficar preso/stale no ciclo reconnect; o broker clock ja
+              // vem nos candles (row.to) e a janela da V3 tolera o relogio local.
+              await this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow: this.now() });
               if (this.mcpStatus) this.mcpStatus.v3CandleEvents = (this.mcpStatus.v3CandleEvents ?? 0) + 1;
             } catch (error) {
               const message = String(error?.message ?? error).slice(0, 160);
@@ -3638,6 +3642,13 @@ const health = computeV3Health({
       }
     };
     await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, worker));
+    if (this.mcpStatus) {
+      this.mcpStatus.passWallMs = this.now() - passStartedAt;
+      const p = this.mcpStatus.lastPassTimes ?? (this.mcpStatus.lastPassTimes = []);
+      p.push(this.mcpStatus.passWallMs);
+      if (p.length > 10) p.shift();
+      this.mcpStatus.passP50Ms = p.slice().sort((a, b) => a - b)[Math.floor(p.length / 2)];
+    }
     } finally {
       this.mcpPollInFlight = false;
     }
