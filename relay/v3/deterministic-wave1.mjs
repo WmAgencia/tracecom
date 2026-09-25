@@ -105,11 +105,11 @@ function bollingerCall(bollinger) {
   const squeeze = bollinger.squeeze === "SQUEEZE";
   if (squeeze) { blockers.push("Squeeze de volatilidade: amplitude comprimida, sem direcao definida."); facts.push(fact("BOLLINGER_SQUEEZE", "NONE", "WEAK")); }
   else {
-    // UPPER/LOWER isolados NAO sao direcao. Direcao so com contexto: rejeicao/reentrada na banda.
-    if (bollinger.rejection === true && bollinger.bandWalk === "ABOVE_UPPER") facts.push(fact("BOLLINGER_UPPER_REJECTION", "DOWN", "WEAK"));
-    else if (bollinger.rejection === true && bollinger.bandWalk === "BELOW_LOWER") facts.push(fact("BOLLINGER_LOWER_REJECTION", "UP", "WEAK"));
-    else if (bollinger.reentry === true && bollinger.bandWalk === "ABOVE_UPPER") facts.push(fact("BOLLINGER_UPPER_REENTRY", "DOWN", "WEAK"));
-    else if (bollinger.reentry === true && bollinger.bandWalk === "BELOW_LOWER") facts.push(fact("BOLLINGER_LOWER_REENTRY", "UP", "WEAK"));
+    // UPPER/LOWER isolados NAO sao direcao. Direcao so com contexto: rejeicao/reentrada com o LADO explicito.
+    if (bollinger.rejectionFromAbove === true) facts.push(fact("BOLLINGER_UPPER_REJECTION", "DOWN", "WEAK"));
+    else if (bollinger.rejectionFromBelow === true) facts.push(fact("BOLLINGER_LOWER_REJECTION", "UP", "WEAK"));
+    else if (bollinger.reentryFromAbove === true) facts.push(fact("BOLLINGER_UPPER_REENTRY", "DOWN", "WEAK"));
+    else if (bollinger.reentryFromBelow === true) facts.push(fact("BOLLINGER_LOWER_REENTRY", "UP", "WEAK"));
     else facts.push(fact("BOLLINGER_MIDDLE", "NONE", "WEAK"));
   }
   return specialistCall("BOLLINGER", { assessment: `Preco na banda ${prose(String(bollinger.bandWalk ?? "MID"), "MID")}${squeeze ? " com squeeze ativo" : ""}.`, facts, blockers, playbooks: [squeeze ? "BOLLINGER_SQUEEZE_EXPANSION" : "BOLLINGER_RELATIVE_DEFINITION"] });

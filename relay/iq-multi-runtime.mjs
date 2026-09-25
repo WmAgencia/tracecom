@@ -194,12 +194,14 @@ export class IqMultiRuntime extends EventEmitter {
           maxAgentCycles: Number(process.env.V3_AGENT_MAX_CYCLES) || 1,
           // ECONOMIA: V3 LLM so pensa quando o sistema esta ATIVO (armado OU analise-liberada via env).
           agentsGate: () => this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true",
+          onApproved: (decision) => this.#v3ExecutePractice(decision),
           brokerNow: () => { const value = this.client?.serverNow?.(); return Number.isFinite(Number(value)) ? Number(value) : this.now(); },
         })
       : null;
     if (this.v3 && process.env.V3_TEST_ALLOWLIST) this.v3.setOpportunityScope(String(process.env.V3_TEST_ALLOWLIST).split(",").map((key) => key.trim()).filter(Boolean));
     if (this.v3 && pool) void this.#refreshProviderConfigCache();
-    if (this.v3 && pool) void this.#primeGroqBudget();    this.candleStore = new CandleStore({ pool, now: this.now, log: this.log });
+    if (this.v3 && pool) void this.#primeGroqBudget();
+    this.v3FlowActive = this.v3 !== null;    this.candleStore = new CandleStore({ pool, now: this.now, log: this.log });
     this.singlePath = new SinglePath({ now: this.now });
     try {
       this.assetIntelligence = new RuntimeIntelligence({ now: this.now, strategy: this.operationalStrategy, loader: (marketKey) => this.candleStore.loadRecent(marketKey) });
@@ -554,7 +556,13 @@ export class IqMultiRuntime extends EventEmitter {
       if (this.v3) {
         try {
           const marketKeyByActiveId = new Map();
-          for (const row of this.resolver.status().markets) { if (row.activeId !== null && row.activeId !== undefined) marketKeyByActiveId.set(Number(row.activeId), row.marketKey); }
+          // UNIVERSO V3 = SOMENTE OTC habilitado. Mercados NORMAL e OTC desabilitados NAO geram opportunity V3.
+          for (const row of this.resolver.status().markets) {
+            if (row.activeId === null || row.activeId === undefined) continue;
+            const ctx = this.markets.get(String(row.marketKey ?? ""));
+            if (!ctx || ctx.marketType !== "OTC" || ctx.enabled !== true || ctx.availability === "SUSPENDED") continue;
+            marketKeyByActiveId.set(Number(row.activeId), row.marketKey);
+          }
           this.v3.onInitializationData(response.msg, { brokerNow: this.client?.serverNow?.() ?? this.now(), marketKeyByActiveId });
         } catch (error) { this.#safe(() => this.log("V3_DISCOVERY_FAIL", String(error?.message ?? error).slice(0, 120))); }
         this.#primeV3FirstCycles();
@@ -3195,6 +3203,9 @@ export class IqMultiRuntime extends EventEmitter {
     let disposition = "EXECUTED"; let reason = "AUTORIZADO";
     if (resolved.finalStake === null) { disposition = "BLOCKED"; reason = "NO_STAKE_CONFIGURED"; }
     else if (this.killSwitch.status().executionEnabled !== true) { disposition = "BLOCKED"; reason = "PARADA_DE_EMERGENCIA"; }
+    // SEPARACAO V3/V2: com o fluxo V3 ativo, o brain V2 NAO executa por conta propria — toda ordem
+    // exige aprovacao do Consensus V3 (v3Approved=true) vinculada ao vencimento exato.
+    else if (this.v3FlowActive === true && options?.v3Approved !== true) { disposition = "BLOCKED"; reason = "V3_FLOW_REQUIRES_APPROVAL"; }
     else if (this.config.autoExecute !== true && options?.probe !== true) { disposition = "BLOCKED"; reason = "AUTO_DESLIGADO"; }
     else if (this.armState.armed !== true) { disposition = "BLOCKED"; reason = "SISTEMA_DESARMADO"; }
     else if (ctx.paused === true) { disposition = "BLOCKED"; reason = "AGENTE_PAUSADO"; }
@@ -3400,6 +3411,31 @@ const health = computeV3Health({
   /** Estado ativo canonico da IA: ARM PRACTICE ou REAL armado, ou ANALISE explicitamente liberada por env. */
   #v3SystemActive() {
     return this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true";
+  }
+
+  /** Execucao V3 (PRACTICE-only): aprovacao do Consensus vira ordem com o VENCIMENTO EXATO da opportunity. */
+  async #v3ExecutePractice({ opportunityId, direction, expirationAt } = {}) {
+    const marketKey = String(opportunityId ?? "").split("@")[0] ?? null;
+    if (!marketKey || (direction !== "UP" && direction !== "DOWN")) return { submitted: false, reason: "NO_DIRECTION" };
+    if (this.config.mode !== "PRACTICE") return { submitted: false, reason: "NOT_PRACTICE" };
+    if (this.armState?.armed !== true) return { submitted: false, reason: "NOT_ARMED" };
+    if (this.config.autoExecute !== true) return { submitted: false, reason: "AUTO_OFF" };
+    if (this.killSwitch.status().executionEnabled !== true) return { submitted: false, reason: "KILL_SWITCH" };
+    if (this.agentExecBinary !== true) return { submitted: false, reason: "BINARY_EXEC_DISABLED" };
+    const stake = Number(this.config.defaultStake);
+    if (!(stake > 0)) return { submitted: false, reason: "NO_STAKE_CONFIGURED" };
+    const ctx = this.markets.get(marketKey);
+    if (!ctx || ctx.enabled !== true || ctx.marketType !== "OTC") return { submitted: false, reason: "MARKET_NOT_OTC" };
+    const exactExpirationAt = Number(expirationAt);
+    if (!Number.isFinite(exactExpirationAt)) return { submitted: false, reason: "EXPIRATION_INVALID" };
+    try {
+      const result = await this.requestOrder({ marketKey, direction: direction === "UP" ? "BUY" : "SELL", stake, decisionId: opportunityId, exactExpirationAt, source: "V3_CONSENSUS", v3Approved: true, autoDisarmAfterAck: false });
+      this.#safe(() => this.log("V3_EXECUTE_PRACTICE", JSON.stringify({ marketKey, direction, stake, expirationAt: exactExpirationAt, submitted: result?.submitted === true, orderId: result?.brokerOrderId ?? null })));
+      return result;
+    } catch (error) {
+      this.#safe(() => this.log("V3_EXECUTE_PRACTICE_FAIL", String(error?.message ?? error).slice(0, 160)));
+      return { submitted: false, reason: String(error?.message ?? error).slice(0, 120) };
+    }
   }
 
   /** Runner agendado GLOBAL das chamadas LLM do V3 (router por role + concurrency + prioridade + deadline + retry 429). */

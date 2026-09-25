@@ -92,19 +92,28 @@ export function measureRsiTrajectory(candles, { period = 14, lookback = 6, pivot
     return facts;
   })();
   const failureSwing = (() => {
-    const seriesTail = series.slice(-40);
-    let extreme = null;
-    for (let index = 0; index < seriesTail.length - 1; index += 1) {
-      const current = seriesTail[index];
-      if (current >= 70 && (extreme === null || current > extreme)) extreme = current;
-      if (extreme !== null && current < extreme - 5 && seriesTail[index + 1] < current) return { type: "BEARISH_FAILURE_SWING", extreme: round(extreme, 2), retraceTo: round(current, 2) };
-    }
-    extreme = null;
-    for (let index = 0; index < seriesTail.length - 1; index += 1) {
-      const current = seriesTail[index];
-      if (current <= 30 && (extreme === null || current < extreme)) extreme = current;
-      if (extreme !== null && current > extreme + 5 && seriesTail[index + 1] > current) return { type: "BULLISH_FAILURE_SWING", extreme: round(extreme, 2), retraceTo: round(current, 2) };
-    }
+    // PADRAO COMPLETO (estrito): extremo -> rally -> retrace ALEM do extremo -> recuperacao alem do rally.
+    // Recuperacao simples NAO e failure swing (isso e crossback/momentum, tratado separadamente).
+    const tail = series.slice(-60);
+    const scan = (extremeTest, rallyTest, retraceTest, recoverTest) => {
+      for (let e = 0; e < tail.length - 3; e += 1) {
+        if (!extremeTest(tail[e])) continue;
+        let bounce = -1;
+        for (let i = e + 1; i < tail.length - 2; i += 1) { if (rallyTest(tail[i], tail[e])) { bounce = i; break; } }
+        if (bounce === -1) continue;
+        let retrace = -1;
+        for (let i = bounce + 1; i < tail.length - 1; i += 1) { if (retraceTest(tail[i], tail[e])) { retrace = i; break; } }
+        if (retrace === -1) continue;
+        for (let i = retrace + 1; i < tail.length; i += 1) {
+          if (recoverTest(tail[i], tail[e])) return { extreme: round(tail[e], 2), retraceTo: round(Math.min(...tail.slice(e, retrace + 1)), 2), recoverAt: round(tail[i], 2) };
+        }
+      }
+      return null;
+    };
+    const bear = scan((v) => v >= 70, (v, x) => v < x - 5, (v, x) => v > x + 5, (v, x) => v < x - 5);
+    if (bear) return { ...bear, type: "BEARISH_FAILURE_SWING" };
+    const bull = scan((v) => v <= 30, (v, x) => v > x + 5, (v, x) => v < x - 5, (v, x) => v > x + 5);
+    if (bull) return { ...bull, type: "BULLISH_FAILURE_SWING" };
     return null;
   })();
   return {
@@ -151,9 +160,14 @@ export function measureBollingerContext(candles, { period = 20, mult = 2, lookba
   const reentry = previousPercentB !== null && current ? (previousPercentB > 1 && current.percentB <= 1) || (previousPercentB < 0 && current.percentB >= 0) : false;
   const rejection = current ? (last.high > current.upper && last.close < current.upper) || (last.low < current.lower && last.close > current.lower) : false;
   const expanding = current && previous ? current.bandwidth > previous.bandwidth : null;
+  // CONTRATO DE LEITURA: expoe o LADO de cada evento (reentrada/rejeicao) para o interpretador.
+  const reentryFromAbove = previousPercentB !== null && current ? previousPercentB > 1 && current.percentB <= 1 : false;
+  const reentryFromBelow = previousPercentB !== null && current ? previousPercentB < 0 && current.percentB >= 0 : false;
+  const rejectionFromAbove = current ? last.high > current.upper && last.close < current.upper : false;
+  const rejectionFromBelow = current ? last.low < current.lower && last.close > current.lower : false;
   return {
     percentB: round(current?.percentB, 3), bandwidth: round(current?.bandwidth, 5), midline: round(current?.mid, 5), midlineSlope,
-    bandWalk, reentry, rejection,
+    bandWalk, reentry, rejection, reentryFromAbove, reentryFromBelow, rejectionFromAbove, rejectionFromBelow,
     expansion: expanding === null ? "UNKNOWN" : expanding ? "EXPANDING" : "CONTRACTING",
     squeeze: bandwidthPercentile !== null && bandwidthPercentile <= 0.2 ? "SQUEEZE" : bandwidthPercentile !== null && bandwidthPercentile >= 0.8 ? "EXPANDED" : "NORMAL",
     measurements: { period, mult, lookback, bandwidthPercentile: round(bandwidthPercentile, 3), previousPercentB: round(previousPercentB, 3) },

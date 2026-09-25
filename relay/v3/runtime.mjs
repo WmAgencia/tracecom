@@ -32,8 +32,9 @@ export const V3_RUNTIME_VERSION = "v3-runtime-v2";
 const defaultStrategy = Object.freeze({ version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false, strategyHash: null, statsEpoch: null });
 
 export class V3Runtime {
-  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null, agentSafetyMarginMs = 2_000, estimatedWaveMs = null, estimatedFullCycleMs = null, estimatedDeltaCycleMs = null, maxAgentCycles = 1, agentsGate = null } = {}) {
+  constructor({ now = () => Date.now(), log = () => {}, pool = null, strategy = null, discovery = null, engine = null, agents = null, agentMode = null, scheduler = null, brokerNow = null, agentSafetyMarginMs = 2_000, estimatedWaveMs = null, estimatedFullCycleMs = null, estimatedDeltaCycleMs = null, maxAgentCycles = 1, agentsGate = null, onApproved = null } = {}) {
     this.now = now;
+    this.onApproved = typeof onApproved === "function" ? onApproved : null;
     this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
     this.pool = pool;
     this.strategy = strategy ?? defaultStrategy;
@@ -70,7 +71,7 @@ export class V3Runtime {
     this.latencySamples = [];
   }
 
-  get executionEnabled() { return this.strategy?.executable === true && process.env.V3_EXECUTE === "true"; }
+  get executionEnabled() { return (this.strategy?.executable === true || process.env.V3_EXECUTE === "true") && process.env.REAL_TRADING_ENABLED !== "true"; }
 
   /** Ativos binarios do initialization-data (ids resolvidos pelo chamador). */
   onInitializationData(msg, { brokerNow = null, marketKeyByActiveId = null, activeByMarketKey = null } = {}) {
@@ -357,6 +358,11 @@ export class V3Runtime {
     this.counters.schedulerFired += 1;
     await this.#persistOpportunity(opportunity);
     this.log("V3_SCHEDULER_FIRED_OBSERVE_ONLY", stableStringify({ opportunityId: opportunity.opportunityId, tteMs: checks.tteMs, result: opportunity.finalDecision?.result ?? null }));
+    // EXECUCAO V3 SEPARADA DA V2: aprovacao V3 com vencimento EXATO e delegada ao runtime operacional
+    // (callback onApproved), que valida PRACTICE/ARMED/AUTO/stake/feed e envia via requestOrder.
+    if (this.onApproved && this.executionEnabled && (opportunity.finalDecision?.direction === "UP" || opportunity.finalDecision?.direction === "DOWN")) {
+      try { void this.onApproved({ opportunityId: opportunity.opportunityId, direction: opportunity.finalDecision.direction, expirationAt: opportunity.expirationAt }).catch(() => undefined); } catch { /* noop */ }
+    }
     return { opportunityId: opportunity.opportunityId, fired: true, ...checks, submit: false };
   }
 
