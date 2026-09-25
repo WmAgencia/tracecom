@@ -1,8 +1,8 @@
-/**
- * IQ MULTI-MARKET RUNTIME (Fase 4) — uma conexao WS, N mercados independentes (ate 10 ativos).
+﻿/**
+ * IQ MULTI-MARKET RUNTIME (Fase 4) â€” uma conexao WS, N mercados independentes (ate 10 ativos).
  *
  * Invariantes:
- *  - NORMAL ≠ OTC: `markets` e chaveado por marketKey (EURUSD:NORMAL / EURUSD:OTC); nenhum
+ *  - NORMAL â‰  OTC: `markets` e chaveado por marketKey (EURUSD:NORMAL / EURUSD:OTC); nenhum
  *    buffer/feature/decision/trade e compartilhado. Nenhum fallback silencioso para OTC.
  *  - Ativos resolvidos em RUNTIME (RuntimeAssetResolver); activeId estatico nunca e verdade.
  *  - PortfolioExecutionGate ANTES de qualquer ordem; gate PRACTICE congelado continua sendo a
@@ -40,7 +40,7 @@ import {  TIMING_POLICY_CURRENT, TIMING_POLICY_LATE, LATE_WINDOW_POLICY, LATE_WI
 // SCENARIO ENGINE V3 (SHADOW): observacao independente. NUNCA toca Brain/Trader/Critic/Consensus/Quality Gate/JIT/Execution Gate.
 import {  analyzeScenarioSnapshot, scenarioShadowStatus as buildScenarioShadowStatus, setScenarioEngineLogSink  } from "./scenario-shadow.mjs";
 // INTERSECAO OBSERVACIONAL: unico ponto que compara scenario x timing (somente leitura dos dois estados).
-import { UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
+import { UNIVERSE, OPERATIONAL_UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
 // DATAHUB + PROFESSIONAL_AGENT_SYSTEM_V4 (SHADOW): observabilidade/benchmark. NUNCA decide nem executa.
 import { EventBus } from "./datahub/event-bus.mjs";
 import { buildT0Enriched } from "./datahub/t0-enriched.mjs";
@@ -52,8 +52,8 @@ import {  EXPERIMENT_ID as FOUR_WAY_EXPERIMENT_ID  } from "./four-way-experiment
 // INDICATOR_5M_V1: control group simples (RSI + DMI/ADX + Bollinger) com entrada tardia.
 // RSI_REVERSAL_CONFLUENCE_V1: experimento separado (RSI extremo + Bollinger + DMI/ADX, janela T-5s).
 // RSI_STRICT_PULLBACK_2X2_V1: comparativo separado (STRICT vs PULLBACK) sobre 10 OTCs, caps no banco.
-// RSI AGENTS 5x5: 10 agentes da rodada anterior (V1) � PAUSADOS durante a migracao (nenhuma ordem).
-// RSI AGENTS V2: 50/50 STRICT/PULLBACK da rodada anterior � CONGELADOS (nao executam; decisao V2 apenas em shadow).
+// RSI AGENTS 5x5: 10 agentes da rodada anterior (V1) ï¿½ PAUSADOS durante a migracao (nenhuma ordem).
+// RSI AGENTS V2: 50/50 STRICT/PULLBACK da rodada anterior ï¿½ CONGELADOS (nao executam; decisao V2 apenas em shadow).
 // RSI AGENTS V3: estrategia UNICA RSI_REVERSAL_PULLBACK_V3 em todo o universo elegivel (executa via submitAgentV3Order).
 import { ConsensusRunner } from "./consensus/runner.mjs";
 import { LabRunner } from "./lab/runner.mjs";
@@ -107,7 +107,7 @@ const nowIso = (ms) => new Date(ms).toISOString();
 
 function emptyDailyStats() { return { wins: 0, losses: 0, draws: 0, settledPnl: 0, trades: 0 }; }
 
-/** Helpers do registry de instrumentos (MESAS) � nunca expor dados sensiveis. */
+/** Helpers do registry de instrumentos (MESAS) ï¿½ nunca expor dados sensiveis. */
 const toNum = (value) => (value === null || value === undefined || value === "" ? null : (Number.isFinite(Number(value)) ? Number(value) : null));
 const sanitizeInstrumentRow = (row) => (row && typeof row === "object"
   ? Object.fromEntries(Object.entries(row).filter(([key]) => !/ssid|token|bearer|authorization|cookie|password|secret|email|user|balance/i.test(key)).slice(0, 32))
@@ -162,7 +162,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.account = { practice: { verified: false, balanceId: null, balance: null, currency: null }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: null, type: "UNKNOWN" };
     this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: null, calculatedBankrollStake: null, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true, agentsV4ShadowEnabled: agentsV4Enabled === true, dualReasoningShadowEnabled: dualReasoningEnabled === true, soloReasoningShadowEnabled: soloReasoningEnabled === true, indicator5mShadowEnabled: indicator5mEnabled === true };
     this.markets = new Map();
-    for (const entry of UNIVERSE) {
+    for (const entry of OPERATIONAL_UNIVERSE) {
       const key = marketKey(entry.canonical, entry.marketType);
       this.markets.set(key, this.#emptyMarket(entry, key));
     }
@@ -218,7 +218,7 @@ export class IqMultiRuntime extends EventEmitter {
         marketStateFor: (marketKey) => {
           const ctx = this.markets.get(marketKey);
           if (!ctx) return { tradable: false, purchaseStatus: "UNAVAILABLE" };
-          const tradable = ctx.marketType === "OTC" && ctx.enabled === true && ctx.paused !== true && ctx.availability === "OPEN" && ctx.activeId !== null;
+          const tradable = ctx.marketType !== "OTC" && ctx.enabled === true && ctx.paused !== true && ctx.availability === "OPEN" && ctx.activeId !== null;
           const payoutKnown = ctx.payout !== null && ctx.payout !== undefined;
           const purchaseStatus = ctx.availability === "OPEN" && (!payoutKnown || Number(ctx.payout) > 0) ? "AVAILABLE" : "UNAVAILABLE";
           return { tradable, purchaseStatus };
@@ -510,13 +510,13 @@ export class IqMultiRuntime extends EventEmitter {
   /** Default do produto BINARY OTC ONLY: ativa somente mercados OTC disponiveis (NORMAL nao opera).
    *  OTC continua explicito via config persistida/setMarket; nunca ha fallback silencioso NORMAL->OTC. */
   #applyDefaultSelection() {
-    const otc = [...this.markets.values()].filter((ctx) => ctx.marketType === "OTC" && ctx.availability === "OPEN" && ctx.activeId !== null);
-    const selected = otc.slice(0, this.config.maxActiveMarkets);
+    const normal = [...this.markets.values()].filter((ctx) => ctx.marketType !== "OTC" && ctx.availability === "OPEN" && ctx.activeId !== null);
+    const selected = normal.slice(0, this.config.maxActiveMarkets);
     for (const ctx of selected) {
-      try { ctx.enabled = true; ctx.selectionReason = "AUTO_DEFAULT_OTC_AVAILABLE"; } catch { /* noop */ }
+      try { ctx.enabled = true; ctx.selectionReason = "AUTO_DEFAULT_REAL_MARKET_AVAILABLE"; } catch { /* noop */ }
     }
-    this.#safe(() => this.log("IQ_MULTI_DEFAULT_SELECTION", JSON.stringify({ selected: selected.map((ctx) => ctx.marketKey), otcAvailable: otc.length, normalAvailable: [...this.markets.values()].filter((ctx) => ctx.marketType === "NORMAL" && ctx.availability === "OPEN").length })));
-    this.#emitEvent("markets.default_selection", { selected: selected.map((ctx) => ctx.marketKey), otcAvailable: otc.length });
+    this.#safe(() => this.log("IQ_MULTI_DEFAULT_SELECTION", JSON.stringify({ selected: selected.map((ctx) => ctx.marketKey), normalAvailable: normal.length })));
+    this.#emitEvent("markets.default_selection", { selected: selected.map((ctx) => ctx.marketKey), normalAvailable: normal.length });
     void this.#persistConfig();
     for (const ctx of selected) void this.#persistMarket(ctx);
   }
@@ -560,7 +560,7 @@ export class IqMultiRuntime extends EventEmitter {
       if (this.v3) {
         try {
           const marketKeyByActiveId = new Map();
-          // UNIVERSO V3 = SOMENTE OTC habilitado. Mercados NORMAL e OTC desabilitados NAO geram opportunity V3.
+          // UNIVERSO V3 = SOMENTE MERCADOS REAIS/NORMAIS habilitados (OTC PROIBIDO).
           for (const row of this.resolver.status().markets) {
             if (row.activeId === null || row.activeId === undefined) continue;
             const ctx = this.markets.get(String(row.marketKey ?? ""));
@@ -672,7 +672,7 @@ export class IqMultiRuntime extends EventEmitter {
    *  NUNCA fabrica candle; falha em um mercado nao impede os outros. Dedupe por bucketStart; so fechados. */
   async #rehydrateCandleHistory(client, { count = HISTORY_BACKFILL_CANDLES, timeoutMs = 12_000, concurrency = 3, only = null } = {}) {
     if (!client) return { targets: 0, markets: 0, loaded: 0, failed: 0, empty: 0, skipped: 0 };
-    const targets = (Array.isArray(only) ? only : [...this.markets.values()]).filter((ctx) => ctx.enabled && ctx.marketType === "OTC" && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < count);
+    const targets = (Array.isArray(only) ? only : [...this.markets.values()]).filter((ctx) => ctx.enabled && ctx.marketType !== "OTC" && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < count);
     if (!targets.length) return { targets: 0, markets: 0, loaded: 0, failed: 0, empty: 0, skipped: 0 };
     const serverNow = Number.isFinite(Number(client.serverNow?.())) ? Number(client.serverNow()) : this.now();
     const queue = [...targets];
@@ -713,7 +713,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (!this.v3 || !this.session.connected) return;
     const brokerNow = Number.isFinite(Number(this.client?.serverNow?.())) ? Number(this.client.serverNow()) : this.now();
     for (const ctx of this.markets.values()) {
-      if (!ctx.enabled || ctx.marketType !== "OTC") continue;
+      if (!ctx.enabled || ctx.marketType === "OTC") continue;
       const candles = this.#candleList(ctx);
       if (candles.length < 40) continue;
       const active = this.v3.opportunities({ marketKey: ctx.marketKey, limit: 5 }).find((opportunity) => (opportunity.cycles?.length ?? 0) === 0 && !["NO_SETUP", "CANCELLED", "MISSED_5M_ENTRY_WINDOW", "SETTLED", "EXPIRED_UNSETTLED"].includes(opportunity.status));
@@ -740,7 +740,11 @@ export class IqMultiRuntime extends EventEmitter {
     } catch (error) { this.#safe(() => this.log("V3_RECONCILE_DB_FAIL", String(error?.message).slice(0, 120))); return { error: true }; }
     let enabledApplied = 0; let disabledApplied = 0; let notAvailable = 0; let staleNormal = 0;
     for (const row of rows) {
-      // Normalizacao stale NORMAL independe do ctx existir em memoria (produto e Binary OTC only).
+      // OTC e PROIBIDO na operacao: qualquer linha OTC habilitada e forcosamente desativada (historico imutavel).
+      if (String(row.market_type ?? "").toUpperCase() === "OTC" && row.enabled === true) {
+        try { await rawQuery("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='OTC'", [String(row.market_key)]); } catch { /* noop */ }
+      }
+      // Normalizacao stale NORMAL independe do ctx existir em memoria.
       const isStaleNormalRow = row.market_type === "NORMAL" && (row.availability === "NOT_OFFERED" || row.active_id === null || row.active_id === undefined);
       if (isStaleNormalRow && row.enabled === true) {
         try { await rawQuery("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [row.market_key]); staleNormal += 1; } catch { /* noop */ }
@@ -770,11 +774,11 @@ export class IqMultiRuntime extends EventEmitter {
     return { enabledApplied, disabledApplied, notAvailable, staleNormal, enabled: this.activeMarketKeys().length };
   }
 
-  /** Retry throttled (1x/60s por mercado) para contextos OTC ativados/criados apos o boot ou que falharam. */
+  /** Retry throttled (1x/60s por mercado) para contextos REAIS ativados/criados apos o boot ou que falharam. */
   #maybeRehydrateCandles() {
     if (!this.session.connected || !this.client) return;
     const now = this.now();
-    const stale = [...this.markets.values()].filter((ctx) => ctx.enabled && ctx.marketType === "OTC" && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < 40 && now - (ctx.historyTriedAt ?? 0) > 60_000);
+    const stale = [...this.markets.values()].filter((ctx) => ctx.enabled && ctx.marketType !== "OTC" && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < 40 && now - (ctx.historyTriedAt ?? 0) > 60_000);
     if (!stale.length) return;
     void this.#rehydrateCandleHistory(this.client, { only: stale })
       .then((history) => { if (history.loaded > 0) this.#safe(() => this.log("IQ_MULTI_CANDLE_HISTORY_RETRY", JSON.stringify(history))); })
@@ -904,7 +908,7 @@ export class IqMultiRuntime extends EventEmitter {
     return health.healthy && this.session.timeValid === true ? "HEALTHY" : "DEGRADED";
   }
 
-  /** A08 � AUTORIDADE UNICA do estado REAL efetivo. Todo status/gate REAL deriva daqui:
+  /** A08 ï¿½ AUTORIDADE UNICA do estado REAL efetivo. Todo status/gate REAL deriva daqui:
    *  conta REAL selecionada + armada, REAL_MODE autorizado, REAL_TRADING_ENABLED, kill switch OFF,
    *  broker conectado com tempo valido e estrategia operacional ACTIVE/executavel. */
   effectiveRealState() {
@@ -1191,7 +1195,7 @@ export class IqMultiRuntime extends EventEmitter {
   #marketTradable(ctx, now = this.now()) {
     if (ctx?.enabled !== true) return false;
     if (ctx.availability === "OPEN") return true;
-    if (ctx.marketType === "OTC" && Number.isFinite(Number(ctx.lastTickAt)) && now - Number(ctx.lastTickAt) < 30_000) return true;
+    if (ctx.marketType !== "OTC" && Number.isFinite(Number(ctx.lastTickAt)) && now - Number(ctx.lastTickAt) < 30_000) return true;
     return false;
   }
 
@@ -1264,7 +1268,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   #agentId(ctx) { return `trader:${ctx.marketKey}`; }
 
-  /** Features causais para o brain (momentum normalizado, r24, vol12) — derivadas do Feature Engine, sem variantes antigas. */
+  /** Features causais para o brain (momentum normalizado, r24, vol12) â€” derivadas do Feature Engine, sem variantes antigas. */
   #brainFeatures(list, context) {
     const closes = list.map((candle) => candle.close);
     const rsi = context?.deterministicIndicators?.rsi14?.value ?? null;
@@ -1766,7 +1770,7 @@ export class IqMultiRuntime extends EventEmitter {
     const consensusOn = this.consensus?.enabled === true;
     const labOn = this.lab?.enabled === true;
     if (!consensusOn && !labOn && this.agentic?.enabled !== true) return null;
-    if (ctx.marketType !== "OTC") return null;
+    if (ctx.marketType === "OTC") return null;
     const serverNow = this.client?.serverNow?.() ?? now;
     const targetExpiryAt = nextOperationalExpiryAt(serverNow);
     const snapshot = buildMarketSnapshot({ marketKey: ctx.marketKey, marketType: ctx.marketType, candles: list, now, payout: ctx.payout, targetExpiryAt });
@@ -1779,7 +1783,7 @@ export class IqMultiRuntime extends EventEmitter {
   }
 
   /** Candles em lote para o GRID (uma chamada para todos os cards; sem 30 conexoes).
-   *  Shape EXPLICITO: { rows: { [marketKey]: candle[] | null }, at, requested, found, unknown } — nunca misturar metadados com marketKeys. */
+   *  Shape EXPLICITO: { rows: { [marketKey]: candle[] | null }, at, requested, found, unknown } â€” nunca misturar metadados com marketKeys. */
   candlesBatch(keys = [], limit = 40) {
     const bounded = Math.max(10, Math.min(120, Number(limit) || 40));
     const requested = (Array.isArray(keys) ? keys : []).slice(0, 40).map((key) => String(key));
@@ -1926,7 +1930,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   mcpConfigStatus() {
     const token = this.iqMcpBinary?.token ?? this.iqMcp?.token ?? null;
-    return { configured: Boolean(token), masked: token ? "����" + String(token).slice(-4) : null, endpoint: IQ_MCP_ENDPOINTS.turbo, enabled: this.iqMcpBinary?.enabled === true };
+    return { configured: Boolean(token), masked: token ? "ï¿½ï¿½ï¿½ï¿½" + String(token).slice(-4) : null, endpoint: IQ_MCP_ENDPOINTS.turbo, enabled: this.iqMcpBinary?.enabled === true };
   }
 
   /** Retencao automatica + reclaim: evita lotar o banco (limite 500MB no Free). */
@@ -2826,7 +2830,7 @@ export class IqMultiRuntime extends EventEmitter {
     return view;
   }
 
-  /** Observacao V4 no candidato G2 (benchmark G2 x V3 x V4) — puro SHADOW, zero ordem. */
+  /** Observacao V4 no candidato G2 (benchmark G2 x V3 x V4) â€” puro SHADOW, zero ordem. */
   #observeAgentsV4Candidate(ctx, { candidate, action, trader, critic, consensus, now, list }) {
     if (!this.agentsV4?.enabled) return null;
     const t0 = this.#buildT0ForV4(ctx, list, { now, candidate });
@@ -3207,7 +3211,7 @@ export class IqMultiRuntime extends EventEmitter {
     let disposition = "EXECUTED"; let reason = "AUTORIZADO";
     if (resolved.finalStake === null) { disposition = "BLOCKED"; reason = "NO_STAKE_CONFIGURED"; }
     else if (this.killSwitch.status().executionEnabled !== true) { disposition = "BLOCKED"; reason = "PARADA_DE_EMERGENCIA"; }
-    // SEPARACAO V3/V2: com o fluxo V3 ativo, o brain V2 NAO executa por conta propria — toda ordem
+    // SEPARACAO V3/V2: com o fluxo V3 ativo, o brain V2 NAO executa por conta propria â€” toda ordem
     // exige aprovacao do Consensus V3 (v3Approved=true) vinculada ao vencimento exato.
     else if (this.v3FlowActive === true && options?.v3Approved !== true) { disposition = "BLOCKED"; reason = "V3_FLOW_REQUIRES_APPROVAL"; }
     else if (this.config.autoExecute !== true && options?.probe !== true) { disposition = "BLOCKED"; reason = "AUTO_DESLIGADO"; }
@@ -3287,7 +3291,7 @@ export class IqMultiRuntime extends EventEmitter {
   #pipeClosedCandle(ctx, candle) {
     try {
       if (!this.assetIntelligence || !ctx?.marketKey || !candle || Array.isArray(candle)) return;
-      if (ctx.marketType !== "OTC") return; // BINARY OTC ONLY: NORMAL nunca alimenta a inteligencia (nem cria pipeline)
+      if (ctx.marketType === "OTC") return; // SOMENTE MERCADO REAL/NORMAL alimenta a inteligencia
       const at = Number(candle.bucketEnd ?? candle.bucketStart ?? candle.at);
       const open = Number(candle.open); const high = Number(candle.high);
       const low = Number(candle.low); const close = Number(candle.close);
@@ -3320,7 +3324,7 @@ export class IqMultiRuntime extends EventEmitter {
   #ensureIntelligenceHydration() {
     if (!this.assetIntelligence) return null;
     const pending = [...this.markets.values()]
-      .filter((ctx) => ctx.marketType === "OTC" && ctx.enabled === true)
+      .filter((ctx) => ctx.marketType !== "OTC" && ctx.enabled === true)
       .map((ctx) => ctx.marketKey)
       .filter((marketKey) => { const pipeline = this.assetIntelligence.registry.get(marketKey); return !pipeline || pipeline.hydration === HYDRATION_PENDING; });
     if (!pending.length) return null;
@@ -3374,7 +3378,7 @@ const health = computeV3Health({
       routing: (() => {
         const out = {};
         for (const roleName of ["RSI", "DMI_ADX", "BOLLINGER", "ATR", "PRICE_ACTION", "ASSET"]) {
-          out[roleName] = { provider: "deterministic", model: "code", label: "Determinístico" };
+          out[roleName] = { provider: "deterministic", model: "code", label: "DeterminÃ­stico" };
         }
         out.CONSENSUS_FINAL = { provider: "nvidia", model: "deepseek-ai/deepseek-v4.1-flash", label: "NVIDIA", fallback: [{ provider: "nvidia", model: "nvidia/nemotron-3-ultra-550b-a55b", label: "NVIDIA" }, { provider: "nvidia", model: "z-ai/glm-5.3-flash", label: "NVIDIA" }, { provider: "groq", model: "openai/gpt-oss-120b", label: "Groq" }, { provider: "alibaba", model: "qwen3.7-flash", label: "Alibaba" }, { provider: "openCodeGo", model: "deepseek-v4-flash", label: "OpenCode Go" }] };
         return out;
@@ -3429,7 +3433,7 @@ const health = computeV3Health({
     const stake = Number(this.config.defaultStake);
     if (!(stake > 0)) return { submitted: false, reason: "NO_STAKE_CONFIGURED" };
     const ctx = this.markets.get(marketKey);
-    if (!ctx || ctx.enabled !== true || ctx.marketType !== "OTC") return { submitted: false, reason: "MARKET_NOT_OTC" };
+    if (!ctx || ctx.enabled !== true || ctx.marketType === "OTC") return { submitted: false, reason: "MARKET_NOT_OTC" };
     const exactExpirationAt = Number(expirationAt);
     if (!Number.isFinite(exactExpirationAt)) return { submitted: false, reason: "EXPIRATION_INVALID" };
     try {
@@ -3444,7 +3448,7 @@ const health = computeV3Health({
 
   /** Runner agendado GLOBAL das chamadas LLM do V3 (router por role + concurrency + prioridade + deadline + retry 429). */
   async #v3ScheduledRun(options) {
-    // ECONOMIA: bloqueio ANTES de enfileirar (gate canônico; o llm-client re-checa na fronteira do provider).
+    // ECONOMIA: bloqueio ANTES de enfileirar (gate canÃ´nico; o llm-client re-checa na fronteira do provider).
     if (!this.#v3SystemActive()) { this.v3GateCounters.suppressedInactive += 1; return { status: "ERROR", reason: "SYSTEM_INACTIVE", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null }; }
     if (!this.pool) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
     const timeoutMs = Number.isFinite(Number(options.timeoutMs)) && Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 20_000;
@@ -3576,7 +3580,7 @@ const health = computeV3Health({
       });
     }
     for (const ctx of this.markets.values()) {
-      if (ctx.marketType !== "OTC" || ctx.enabled !== true || seen.has(ctx.marketKey)) continue;
+      if (ctx.marketType === "OTC" || ctx.enabled !== true || seen.has(ctx.marketKey)) continue;
       const payoutKnown = ctx.payout !== null && ctx.payout !== undefined;
       rows.push({ marketKey: ctx.marketKey, enabled: true, marketType: "OTC", availability: ctx.availability ?? null, payout: ctx.payout ?? null, productState: this.assetIntelligence.productStateFor(ctx.marketKey, { enabled: true, purchaseStatus: ctx.availability === "OPEN" && (!payoutKnown || Number(ctx.payout) > 0) ? "AVAILABLE" : "UNAVAILABLE" }), hydration: "HYDRATION_PENDING", hydrationReason: "PENDING_HYDRATION", feedStatus: this.assetIntelligence.feedStatusFor(ctx.marketKey), consensusSide: null, candles: 0, coverageMs: 0, intervalMs: null, gapRatio: 0, featuresVersion: null, featuresAt: null, lastSnapshotId: null, analysis: null });
     }
@@ -3585,7 +3589,7 @@ const health = computeV3Health({
 
   /** Filtro canonico UNICO da V2: stats e observability leem exatamente o mesmo universo
    *  (PRACTICE, SETTLED WIN/LOSS/DRAW, test_only=false, excluded_from_stats=false, janela em dias;
-   *  strategy_hash entra quando informado � mesma identidade congelada). */
+   *  strategy_hash entra quando informado ï¿½ mesma identidade congelada). */
   #canonicalExecutionFilter({ strategyVersion, days = 30, strategyHash = null } = {}) {
     const boundedDays = Math.max(1, Math.min(365, Number(days) || 30));
     const params = [String(strategyVersion), boundedDays];
@@ -3595,7 +3599,7 @@ const health = computeV3Health({
   }
 
   /** Estatisticas por strategyVersion (V2 separada da baseline; PATH_TEST/REPLAY excluidos).
-   *  Inclui o agregado duravel das linhas podadas (A10) — a serie cumulativa nunca encolhe. */
+   *  Inclui o agregado duravel das linhas podadas (A10) â€” a serie cumulativa nunca encolhe. */
   async strategyStats(strategyVersion, { days = 30, strategyHash = null } = {}) {
     const empty = { strategyVersion: strategyVersion ?? null, operations: 0, wins: 0, losses: 0, draws: 0, pnl: 0, winRate: null, days: Math.max(1, Math.min(365, Number(days) || 30)), available: false, archived: { n: 0, pnl: 0 } };
     if (!this.pool?.query || !strategyVersion) return { ...empty, error: this.pool?.query ? "STRATEGY_VERSION_REQUIRED" : "DB_UNAVAILABLE" };
@@ -4006,7 +4010,7 @@ const health = computeV3Health({
   /**
    * ROTEAMENTO DE EXECUCAO (fail-closed): com `executionAllowlist` definida, SOMENTE fontes
    * da allowlist podem chegar ao broker. Qualquer outra origem (brain G2/AUTO_DECISION,
-   * diagnostico, experimentos, manual) e bloqueada e auditada � nenhuma delas executa.
+   * diagnostico, experimentos, manual) e bloqueada e auditada ï¿½ nenhuma delas executa.
    */
   #decisionSourceFor(source) {
     const raw = String(source ?? "");
@@ -4163,7 +4167,7 @@ const health = computeV3Health({
     }
     const serverSec = (this.client.serverNow() ?? this.now()) / 1000;
     // V3: quando a expiration EXATA e informada (offer da IQ que originou a opportunity), ela e
-    // preservada integralmente — nunca recalcular bucket/arredondar/trocar. Alinhamento 300s e obrigatorio.
+    // preservada integralmente â€” nunca recalcular bucket/arredondar/trocar. Alinhamento 300s e obrigatorio.
     const exactSec = Number(exactExpirationAt);
     const hasExactExpiration = Number.isFinite(exactSec) && exactSec > 0;
     const expiration = hasExactExpiration
@@ -4661,11 +4665,11 @@ const health = computeV3Health({
   }
 
   /**
-   * REVALIDACAO FINAL PRE-SOCKET (A03/A09) � a ultima checagem acontece DEPOIS do
+   * REVALIDACAO FINAL PRE-SOCKET (A03/A09) ï¿½ a ultima checagem acontece DEPOIS do
    * ultimo await (persistencia) e IMEDIATAMENTE antes de client.placeOrder.
    * Fecha a janela TOCTOU entre o gate inicial e o envio: qualquer mudanca de
    * estado (disarm, kill switch, troca de conta, deadline, lock, broker, strategy)
-   * nega o envio � nunca "envia mesmo assim".
+   * nega o envio ï¿½ nunca "envia mesmo assim".
    */
   #revalidateBeforeSubmit({ key, pending, mode }) {
     const deny = (code, detail = null) => ({ ok: false, code, detail });
@@ -4689,7 +4693,7 @@ const health = computeV3Health({
     // Janela congelada Binary300 (expiry exatamente 300s e lead minimo) so vale para o
     // caminho operacional V2; ordens legadas/manuais mantem a politica do proprio horizonte.
     // V3: quando a ordem carrega a expiration EXATA da opportunity, a autoridade e a
-    // ExpirationTargetTiming (TTE em (300s,330s] + purchase deadline) — nunca o "proximo bucket",
+    // ExpirationTargetTiming (TTE em (300s,330s] + purchase deadline) â€” nunca o "proximo bucket",
     // que em TTE~302 aponta para a expiration iminente e estaria errado.
     const v3Exact = Number(pending.exactExpirationAt);
     const operationalWindow = Boolean(pending.operational) || Number.isFinite(Number(pending.entryTiming?.targetExpirySec));
@@ -5036,7 +5040,7 @@ const health = computeV3Health({
       } : { connected: this.session.connected, host: this.session.host, hostExpectedFromRepo: "iqoption.com", connectionId: this.session.connectionId, serverTime: Number.isFinite(this.client?.serverNow()) ? nowIso(this.client.serverNow()) : null, serverTimeMs: this.session.serverTimeMs, clockSkewMs: this.session.clockSkewMs, timeValid: this.session.timeValid, candles5s: 0, healthy: false, healthReasons: ["NO_MARKET_DATA_WITH_CANDLES"], recentCandles: [], features: null, latencyMs: { serverToReceived: latencySummary([]), receivedToNormalized: latencySummary([]), normalizedToFeature: latencySummary([]), orderAck: latencySummary([]), visionP95ReferenceMs: 27_500 } },
       account: { verified: this.account.practice.verified, type: this.account.type, currency: this.account.practice.currency, balance: this.account.practice.balance, hasReal: this.account.hasReal, checkedAt: this.account.checkedAt, balanceFailure: null, practiceOnly: true, realExecutionForbidden: true },
       // Conexao explicita por fonte real (nao ambiguo): feed != execucao.
-      // Fase 7: prontidao de execucao POR CONTA — PRACTICE nunca serve de prova para REAL.
+      // Fase 7: prontidao de execucao POR CONTA â€” PRACTICE nunca serve de prova para REAL.
       connection: (() => {
         const sessionReady = this.session.connected && this.session.timeValid === true;
         const practiceReady = sessionReady && this.account.practice.verified === true && this.account.practice.balanceId !== null && this.account.practice.balanceId !== undefined;
@@ -5121,5 +5125,8 @@ const health = computeV3Health({
 
   stressReport() { return { running: this.stress.running, startedAt: this.stress.startedAt ?? null, stages: this.stress.stages ?? null, secondsPerStage: this.stress.secondsPerStage ?? null, cancelRequested: this.stress.cancelRequested === true, report: this.stress.report ?? null }; }
 }
+
+
+
 
 

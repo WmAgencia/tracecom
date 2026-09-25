@@ -1,5 +1,5 @@
-/**
- * OPERATOR GATE — decisao de autenticacao do edge (api/http.ts), pura e testavel.
+﻿/**
+ * OPERATOR GATE â€” decisao de autenticacao do edge (api/http.ts), pura e testavel.
  *
  * Modelo fail-closed:
  * - Rotas privadas (mutations /api/* e GETs de prefixos privados) exigem sessao de operador
@@ -43,7 +43,7 @@ export const PANEL_PUBLIC_GET_PATHS: ReadonlySet<string> = new Set([
 
 /** Mutations POST dos CONTROLES do grid, liberadas SEM cookie de operador (o edge injeta
  *  o segredo do relay server-side; nenhum segredo vai ao browser). Requerem origem/host validos
- *  (same-origin); JSON/tamanho/schema sao validados no fluxo edge+relay. Ainda NÃO autenticam
+ *  (same-origin); JSON/tamanho/schema sao validados no fluxo edge+relay. Ainda NÃƒO autenticam
  *  pessoa (CSRF reduzido; nao e identidade). As demais rotas administrativas seguem privadas. */
 export const PANEL_ACTION_POSTS: ReadonlySet<string> = new Set([
   "/api/iq/config/global-stake",
@@ -54,8 +54,7 @@ export const PANEL_ACTION_POSTS: ReadonlySet<string> = new Set([
   "/api/iq/account/select",
   "/api/iq/mode",
   "/api/iq/real/arm",
-  "/api/iq/connect",
-  "/api/iq/real/disarm",
+    "/api/iq/real/disarm",
 ]);
 
 export function isPanelActionPost(method: string, pathname: string): boolean {
@@ -93,3 +92,4 @@ export function panelSessionDecision({ keyConfigured, keyValid, sameOrigin }: { 
   if (!keyValid) return { allow: false, status: 401, error: "operator_key_required" };
   return { allow: true, status: 200, error: null };
 }
+

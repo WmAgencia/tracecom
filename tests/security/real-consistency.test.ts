@@ -1,5 +1,5 @@
-/**
- * A08 — CONSISTENCIA REAL: autoridade unica do estado efetivo + caminho REAL completo ate o
+﻿/**
+ * A08 â€” CONSISTENCIA REAL: autoridade unica do estado efetivo + caminho REAL completo ate o
  * broker SIMULADO (nunca broker real). Prova:
  *  - identidade REAL = versao operacional congelada (nunca PROFESSIONAL_BRAIN_G2);
  *  - REAL_ORDER_SENT nao lanca ReferenceError (directionAction vs decisionAction);
@@ -43,7 +43,7 @@ const durablePool = () => {
 };
 
 function seedMarket(runtime: any) {
-  const ctx = runtime.markets.get("EURUSD:OTC");
+  const ctx = runtime.markets.get("EURUSD:NORMAL");
   ctx.availability = "OPEN"; ctx.activeId = 76; ctx.payout = 85; ctx.payoutSource = "test"; ctx.enabled = true; ctx.maxStake = 2;
   for (let index = 1; index <= 5; index += 1) {
     const fromSec = Math.floor((BASE - (5 - index) * 5_000) / 1000);
@@ -79,7 +79,7 @@ function realFixture() {
 }
 
 const realOrder = () => ({
-  marketKey: "EURUSD:OTC",
+  marketKey: "EURUSD:NORMAL",
   direction: "BUY",
   stake: 1,
   horizonSeconds: 300,
@@ -92,7 +92,7 @@ const realOrder = () => ({
 beforeEach(() => { process.env.REAL_TRADING_ENABLED = "true"; });
 afterEach(() => { if (savedRealTrading === undefined) delete process.env.REAL_TRADING_ENABLED; else process.env.REAL_TRADING_ENABLED = savedRealTrading; });
 
-describe("A08 — caminho REAL completo (broker simulado)", () => {
+describe("A08 â€” caminho REAL completo (broker simulado)", () => {
   it("effectiveRealState ARMED e status surfaces concordam (autoridade unica)", () => {
     const { runtime } = realFixture();
     const real = runtime.effectiveRealState();
@@ -141,3 +141,4 @@ describe("A08 — caminho REAL completo (broker simulado)", () => {
     expect(sent).toHaveLength(0);
   });
 });
+

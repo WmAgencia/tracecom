@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 const runtimeModule = await import("../../relay/iq-multi-runtime.mjs");
 const { IqMultiRuntime } = runtimeModule as any;
 
-const KEY = "EURUSD:OTC";
+const KEY = "EURUSD:NORMAL";
 import { ALIGNED_BASE } from "./fixtures";
 const BASE = ALIGNED_BASE;
 const EXACT = ALIGNED_BASE + 300_000;
@@ -35,7 +35,7 @@ function harness() {
     getOptions: async () => ({ response: { msg: { closed_options: [] } } }),
   };
   const ctx = runtime.markets.get(KEY);
-  ctx.availability = "OPEN"; ctx.activeId = 101; ctx.payout = 85; ctx.payoutSource = "test"; ctx.enabled = true; ctx.marketType = "OTC"; ctx.maxStake = 100; ctx.configuredStake = 2;
+  ctx.availability = "OPEN"; ctx.activeId = 101; ctx.payout = 85; ctx.payoutSource = "test"; ctx.enabled = true; ctx.marketType = "NORMAL"; ctx.maxStake = 100; ctx.configuredStake = 2;
   const base = Math.floor(BASE / 5_000) * 5_000;
   for (let index = 1; index <= 6; index += 1) {
     const fromSec = Math.floor((base - (6 - index) * 5_000) / 1000);
@@ -61,6 +61,8 @@ describe("V3 â†’ ordem (separacao V3/V2)", () => {
     expect(sent[0]!.price).not.toBe(1);
   });
 });
+
+
 
 
 

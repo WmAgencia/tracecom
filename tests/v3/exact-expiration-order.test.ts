@@ -34,7 +34,7 @@ function fixture() {
     },
     getOptions: async () => ({ response: { msg: { closed_options: [] } } }),
   };
-  const ctx = runtime.markets.get("EURUSD:OTC");
+  const ctx = runtime.markets.get("EURUSD:NORMAL");
   ctx.availability = "OPEN"; ctx.activeId = 76; ctx.payout = 85; ctx.payoutSource = "test"; ctx.enabled = true; ctx.maxStake = 2; ctx.configuredStake = 2;
   for (let index = 1; index <= 5; index += 1) {
     const fromSec = Math.floor((BASE - (5 - index) * 5_000) / 1000);
@@ -45,7 +45,7 @@ function fixture() {
 }
 
 const v3Order = (overrides: Record<string, unknown> = {}) => ({
-  marketKey: "EURUSD:OTC",
+  marketKey: "EURUSD:NORMAL",
   direction: "BUY",
   stake: 1,
   horizonSeconds: 300,
@@ -55,7 +55,7 @@ const v3Order = (overrides: Record<string, unknown> = {}) => ({
   entryTiming: { candidateId: "cand-v3-1", targetEntryAt: EXP - 330_000, targetExpiryAt: EXP, targetExpirySec: Math.round(EXP / 1000), submitAt: TTE302, revalidatedAt: TTE302 },
   operational: {
     strategyVersion: "PULLBACK_4060_300_AGENTIC_V3", strategyHash: "sha256:v3-test", statsEpoch: "epoch-v3", snapshotHash: "snap-v3", decisionSnapshot: { id: "snap-v3" },
-    v3OpportunityId: `EURUSD:OTC@${new Date(EXP).toISOString()}`, v3PurchaseDeadlineAt: EXP - 30_000, testOnly: false, excludedFromStats: false,
+    v3OpportunityId: `EURUSD:NORMAL@${new Date(EXP).toISOString()}`, v3PurchaseDeadlineAt: EXP - 30_000, testOnly: false, excludedFromStats: false,
   },
   ...overrides,
 });
@@ -97,7 +97,7 @@ describe("V3 exact expiration â€” requestOrder com broker simulado", () => 
     runtime.account = { practice: { verified: true, balanceId: 555, balance: 10_000, currency: "BRL" }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: TTE302, type: "PRACTICE" };
     runtime.config.autoExecute = false; runtime.config.globalMaxStake = 2; runtime.config.calculatedBankrollStake = null; runtime.config.defaultStake = 2;
     runtime.client = { serverNow: () => TTE302, placeOrder: (options: Record<string, unknown>) => { queueMicrotask(() => runtime.ingestEvent("socket-option-opened", { connectionId: CONNECTION_ID, receivedAt: TTE302, msg: { id: "ORD-X", active_id: options.activeId, price: options.price, expired: options.expiration } })); return options.requestId; }, getOptions: async () => ({ response: { msg: {} } }) };
-    const ctx = runtime.markets.get("EURUSD:OTC");
+    const ctx = runtime.markets.get("EURUSD:NORMAL");
     ctx.availability = "OPEN"; ctx.activeId = 76; ctx.payout = 85; ctx.enabled = true; ctx.maxStake = 2; ctx.configuredStake = 2;
     for (let index = 1; index <= 5; index += 1) {
       const fromSec = Math.floor((BASE - (5 - index) * 5_000) / 1000);
@@ -110,5 +110,7 @@ describe("V3 exact expiration â€” requestOrder com broker simulado", () => 
     expect(String(update!.params[15])).toBe(new Date(EXP).toISOString());
   });
 });
+
+
 
 

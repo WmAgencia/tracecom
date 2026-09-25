@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>TraceCon — Binary OTC 300s</title>
+<title>TraceCon — Mercados Reais 300s</title>
 <style>
   :root { --bg:#070d1a; --panel:#0d1526; --panel2:#111b30; --card:#0f1a2e; --line:#1c2942; --txt:#e8edf7; --dim:#8b97ad; --up:#22c55e; --down:#ef4444; --blue:#3b82f6; --wait:#94a3b8; --watch:#38bdf8; }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -154,7 +154,7 @@
   </div>
 
   <div class="sechead">
-    <h2><span style="color:#60a5fa">◈</span> Ativos Binary OTC 300s <span class="sub">Monitoramento em tempo real de <b id="subN">0</b> ativos</span></h2>
+    <h2><span style="color:#60a5fa">◈</span> Mercados Reais 300s <span class="sub">Monitoramento em tempo real de <b id="subN">0</b> ativos</span></h2>
     <span class="spacer"></span>
     <span class="chipctl" style="color:#4ade80;border-color:#14532d">● 300s único</span>
     <span class="clock" id="clock">--:--:--</span>
@@ -199,7 +199,7 @@
   <div class="kv"><div class="k">Selecionada</div><div id="cfgAccount">PRACTICE</div><div class="k">REAL</div><div id="cfgReal">DESARMADO (fail-closed)</div></div>
 </div></div>
 
-<div class="modal" id="mesasModal"><div class="box"><h2>MESAS — Binary OTC 300s</h2><div id="mesasList"></div></div></div>
+<div class="modal" id="mesasModal"><div class="box"><h2>MESAS — Mercados Reais 300s</h2><div id="mesasList"></div></div></div>
 <div class="modal" id="histModal"><div class="box"><h2>HISTÓRICO — operações</h2><div id="histList"></div></div></div>
 <div class="modal" id="detailModal"><div class="box"><h2>Detalhe da operação</h2><div id="detailBody"></div></div></div>
 <aside class="panel" id="logPanel"><div class="head"><h2>LOG — Asset Agent · RSI · DMI/ADX · Bollinger · ATR · Price Action · Consensus · Execução</h2><button class="btn" id="btnLogClose">fechar</button></div><div class="body" id="logBody"></div></aside>
@@ -463,9 +463,9 @@
   };
   const openMesas = async () => {
     const data = await api("/api/iq/mesas");
-    const rows = (data?.rows ?? []).filter((r) => r.instrumentType === "BINARY" && r.marketType === "OTC");
+    const rows = (data?.rows ?? []).filter((r) => r.instrumentType === "BINARY" && r.marketType !== "OTC");
     const list = $("mesasList"); list.innerHTML = "";
-    if (!rows.length) { list.textContent = "Nenhum instrumento Binary OTC no registry."; }
+    if (!rows.length) { list.textContent = "Nenhum instrumento real no registry."; }
     for (const row of rows) {
       const line = document.createElement("div"); line.className = "mesa-row";
       const k = document.createElement("span"); k.className = "k"; k.textContent = flagFor(row.marketKey) + " " + row.marketKey;

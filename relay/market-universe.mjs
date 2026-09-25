@@ -84,6 +84,14 @@ export const UNIVERSE = [
   { canonical: "BTCUSD", symbol: "BTC/USD", display: "BTC/USD OTC", marketType: "OTC", currencies: [] },
 ];
 
+/**
+ * UNIVERSO OPERACIONAL = SOMENTE MERCADOS REAIS/NORMAIS (zero OTC).
+ * OTC esta PROIBIDO na operacao: discovery, opportunities, execution, feed, universo.
+ * UNIVERSE (com OTC) permanece apenas como referencia/historico imutavel.
+ */
+export const OPERATIONAL_UNIVERSE = Object.freeze(UNIVERSE.filter((entry) => entry.marketType !== "OTC"));
+export const OPERATIONAL_MAX_ACTIVE_MARKETS = OPERATIONAL_UNIVERSE.length;
+
 export function marketKey(canonical, marketType) { return `${String(canonical).toUpperCase()}:${String(marketType).toUpperCase() === "OTC" ? "OTC" : "NORMAL"}`; }
 export function universeEntry(canonical, marketType) { return UNIVERSE.find((entry) => entry.canonical === String(canonical).toUpperCase() && entry.marketType === marketType) ?? null; }
 export function entryForKey(key) {
