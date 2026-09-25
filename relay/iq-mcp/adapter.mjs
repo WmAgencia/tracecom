@@ -559,6 +559,15 @@ export class IQOfficialMCPAdapter {
     return this._callToolRpc("place_trade", args);
   }
 
+  /** BREAK OPTION: encerra a posicao antes do vencimento (venda antecipada no gateway oficial). */
+  async sellPosition({ positionId = null, balanceId = null } = {}) {
+    if (this.writeEnabled !== true) return { ok: false, code: "MCP_WRITE_BLOCKED", message: "IQ_MCP_WRITE_ENABLED=false", health: this.healthState };
+    if (!Number.isFinite(Number(positionId))) return { ok: false, code: "MCP_INVALID_ARGS", message: "sell_position requires positionId" };
+    const args = { position_id: Number(positionId) };
+    if (Number.isFinite(Number(balanceId))) args.balance_id = Number(balanceId);
+    return this._callToolRpc("sell_position", args);
+  }
+
   _cacheGet(key) {
     const entry = this.cache.get(key);
     if (!entry) return undefined;

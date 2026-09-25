@@ -91,5 +91,5 @@
     "Nao reutiliza stats da V2; novo statsEpoch e novas tabelas iq_v3_*.",
     "REAL permanece DISARMED apos deploy; PRACTICE e REAL exigem ARM e AUTO explicitos."
   ],
-  "updatedAt": "2026-09-25T18:41:06.100Z"
+  "updatedAt": "2026-09-25T19:17:26.099Z"
 }

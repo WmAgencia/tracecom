@@ -42,7 +42,7 @@ import {  TIMING_POLICY_CURRENT, TIMING_POLICY_LATE, LATE_WINDOW_POLICY, LATE_WI
 // SCENARIO ENGINE V3 (SHADOW): observacao independente. NUNCA toca Brain/Trader/Critic/Consensus/Quality Gate/JIT/Execution Gate.
 import {  analyzeScenarioSnapshot, scenarioShadowStatus as buildScenarioShadowStatus, setScenarioEngineLogSink  } from "./scenario-shadow.mjs";
 // INTERSECAO OBSERVACIONAL: unico ponto que compara scenario x timing (somente leitura dos dois estados).
-import { UNIVERSE, OPERATIONAL_UNIVERSE, marketKey, entryForKey, segmentIdFor, isSupportedNormalBinaryMarket, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
+import { UNIVERSE, OPERATIONAL_UNIVERSE, OPERATIONAL_MARKET_KEYS, mcpCanonical as universeMcpCanonical, isOperationalMarketKey, marketKey, entryForKey, segmentIdFor, isSupportedNormalBinaryMarket, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
 // DATAHUB + PROFESSIONAL_AGENT_SYSTEM_V4 (SHADOW): observabilidade/benchmark. NUNCA decide nem executa.
 import { EventBus } from "./datahub/event-bus.mjs";
 import { buildT0Enriched } from "./datahub/t0-enriched.mjs";
@@ -163,6 +163,11 @@ this.mcpWriteEnabled = process.env.IQ_MCP_WRITE_ENABLED === "true";
     // Relogio do broker via MCP (ultimo candle `to`): a V3 so acerta janela/discovery
     // se o brokerNow usar o clock do gateway (o clock local pode divergir ~6min).
     this.mcpBrokerNow = null;
+    // BREAK OPTION: posicoes V3 abertas via MCP monitoradas para encerramento
+    // antecipado no alvo de lucro (env V3_BREAK_TARGET_PCT, default 60% do stake).
+    this.breakMonitor = new Map();
+    this.breakTargetPct = Number.isFinite(Number(process.env.V3_BREAK_TARGET_PCT)) ? Math.max(1, Math.min(500, Number(process.env.V3_BREAK_TARGET_PCT))) : 60;
+    this.breakTickTimer = null;
     if (this.mcp) setTimeout(() => { if (this.running) void this.mcpEnableAndSync().catch(() => undefined); }, 5_000).unref?.();
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentExecBinary = true;
@@ -797,6 +802,11 @@ this.mcpWriteEnabled = process.env.IQ_MCP_WRITE_ENABLED === "true";
       // OTC e PROIBIDO na operacao: qualquer linha OTC habilitada e forcosamente desativada (historico imutavel).
       if (String(row.market_type ?? "").toUpperCase() === "OTC" && row.enabled === true) {
         try { await rawQuery("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='OTC'", [String(row.market_key)]); } catch { /* noop */ }
+      }
+      // ALLOWLIST: qualquer NORMAL fora dos 24 operacionais e forcosamente desativado
+      // (AMAZON, NVIDIA, RIPPLE, SPACEX, GOLD, SILVER, AU200, ...). MCP nunca define universo.
+      if (row.market_type === "NORMAL" && row.enabled === true && !isOperationalMarketKey(String(row.market_key))) {
+        try { await rawQuery("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [row.market_key]); disabledApplied += 1; } catch { /* noop */ }
       }
       // Normalizacao stale NORMAL independe do ctx existir em memoria.
       const isStaleNormalRow = row.market_type === "NORMAL" && (row.availability === "NOT_OFFERED" || row.active_id === null || row.active_id === undefined);
@@ -3497,26 +3507,23 @@ const health = computeV3Health({
     return this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true";
   }
 
-  /** Canonical a partir do nome exibido pela IQ (ex.: "EUR/USD" -> EURUSD; "US 500" -> US500). */
-  mcpCanonical(name) {
-    const clean = String(name ?? "").replace(/\(OTC\)/gi, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-    if (clean.length < 3) return null;
-    if (/^(US|JP|GER|UK|FR|AU|EU|HK|SP|ASX)\d+$/.test(clean) || /^(XAU|XAG|GOLD|SILVER)$/.test(clean)) return clean;
-    if (/^[A-Z]{6}$/.test(clean)) return clean; // par FX de 6 letras
-    return /^[A-Z]{3}[A-Z]{3}$/.test(clean) ? clean : null;
-  }
+  /** Canonical a partir do nome exibido pela IQ: SOMENTE alias explicitos + allowlist dos 24.
+   *  Heuristica generica (ex.: /^[A-Z]{6}$/ classificou SPACEX como FX) e PROIBIDA. */
+  mcpCanonical(name) { return universeMcpCanonical(name); }
 
   /** Sincroniza o catalogo NORMAL do MCP no universo (64 ativos reais; OTC nunca entra). */
   async #mcpSyncCatalog() {
     if (!this.mcp) return { added: 0 };
     const assets = await this.mcp.listAssets();
     const list = Array.isArray(assets?.data) ? assets.data : [];
-    let added = 0;
+let added = 0;
+    const activeCap = Math.min(Number(process.env.V3_MAX_ACTIVE_MARKETS || 64), OPERATIONAL_MARKET_KEYS.size);
     for (const asset of list) {
       if (/\(OTC\)/i.test(String(asset.name ?? ""))) continue;
       const canonical = this.mcpCanonical(asset.name);
       if (!canonical) continue;
       const key = `${canonical}:NORMAL`;
+      if (!isOperationalMarketKey(key)) continue; // ALLOWLIST: nunca criar/habilitar fora dos 24
       let ctx = this.markets.get(key);
       if (!ctx) {
         ctx = this.#emptyMarket({ canonical, symbol: asset.name, display: asset.name, marketType: "NORMAL" }, key);
@@ -3527,12 +3534,12 @@ const health = computeV3Health({
       ctx.availability = asset.is_open === true ? "OPEN" : (ctx.availability ?? "CLOSED");
       // Mercado desativado por falha transitoria MCP (EMPTY_CANDLES etc.) volta no boot:
       // o catalogo confirma que ele existe e esta OPEN; o poller valida os candles.
-      if (asset.is_open === true && ctx.enabled !== true && /^MCP_/.test(String(ctx.selectionReason ?? "")) && this.activeMarketKeys().length < Number(process.env.V3_MAX_ACTIVE_MARKETS || 64)) {
+      if (asset.is_open === true && ctx.enabled !== true && /^MCP_/.test(String(ctx.selectionReason ?? "")) && this.activeMarketKeys().length < activeCap) {
         ctx.enabled = true; ctx.selectionReason = "MCP_SELF_HEALED"; ctx.mcpNoFeedPolls = 0;
         if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=true, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
         this.#safe(() => this.log("MCP_MARKET_REENABLED", JSON.stringify({ marketKey: ctx.marketKey, at: "boot-sync" })));
       }
-      if (asset.is_open === true && ctx.enabled !== true && this.activeMarketKeys().length < Number(process.env.V3_MAX_ACTIVE_MARKETS || 64)) {
+      if (asset.is_open === true && ctx.enabled !== true && this.activeMarketKeys().length < activeCap) {
         ctx.enabled = true; ctx.activeId = ctx.activeId ?? asset.asset_id; ctx.selectionReason = "MCP_CATALOG_OPEN"; added += 1;
         if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL','OPEN',$2,now()) ON CONFLICT(market_key) DO UPDATE SET enabled=true, availability='OPEN', active_id=$2, updated_at=now()", [key, asset.asset_id]).catch(() => undefined);
       }
@@ -3541,15 +3548,25 @@ const health = computeV3Health({
     // sessao. Reutiliza a mesma discovery V3, sem inferir nem inventar ofertas.
     this.mcpCatalogAssets = list;
     this.#mcpIngestDiscovery();
-    // Um ativo habilitado sem id canonico no catalogo MCP nao pode receber
-    // candles pelo unico feed funcional. Mantê-lo na grade seria um falso
-    // "ativo assistido"; desativa e persiste a exclusao imediatamente.
+// DESCONTAMINACAO: nenhum ativo fora dos 24 pode ficar habilitado. O MCP nao
+    // define o universo — GOLD/SILVER/AU200/AMAZON/NVIDIA/RIPPLE/SPACEX e quaisquer
+    // outros sao desativados (historico preservado, enabled=false).
     for (const ctx of this.markets.values()) {
-      if (ctx.enabled !== true || ctx.marketType !== "NORMAL" || Number.isFinite(Number(ctx.mcpAssetId))) continue;
+      if (ctx.marketType !== "NORMAL") continue;
+      if (isOperationalMarketKey(ctx.marketKey)) {
+        if (ctx.enabled === true && !Number.isFinite(Number(ctx.mcpAssetId))) {
+          ctx.enabled = false;
+          ctx.selectionReason = "MCP_ASSET_UNMAPPED";
+          if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
+          this.#safe(() => this.log("MCP_MARKET_DISABLED_UNMAPPED", JSON.stringify({ marketKey: ctx.marketKey })));
+        }
+        continue;
+      }
+      if (ctx.enabled !== true) continue;
       ctx.enabled = false;
-      ctx.selectionReason = "MCP_ASSET_UNMAPPED";
+      ctx.selectionReason = "OUTSIDE_OPERATIONAL_UNIVERSE";
       if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
-      this.#safe(() => this.log("MCP_MARKET_DISABLED_UNMAPPED", JSON.stringify({ marketKey: ctx.marketKey })));
+      this.#safe(() => this.log("MCP_MARKET_DISABLED_OUTSIDE_UNIVERSE", JSON.stringify({ marketKey: ctx.marketKey })));
     }
     return { added, total: list.length };
   }
@@ -3575,7 +3592,7 @@ const health = computeV3Health({
     if (!this.mcp || this.mcpPollInFlight) return;
     this.mcpPollInFlight = true;
     try {
-    const candidates = [...this.markets.values()].filter((ctx) => (ctx.enabled === true || /^MCP_/.test(String(ctx.selectionReason ?? ""))) && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId)));
+    const candidates = [...this.markets.values()].filter((ctx) => isOperationalMarketKey(ctx.marketKey) && (ctx.enabled === true || /^MCP_/.test(String(ctx.selectionReason ?? ""))) && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId)));
     if (!candidates.length) return;
     // Todos os mercados ativos sao atualizados no mesmo ciclo.  A janela de
     // analise comeca em TTE=330s e termina em TTE=302s; repartir 37 mercados
@@ -3710,6 +3727,7 @@ if (this.v3) {
       const activeId = Number(asset.asset_id);
       if (!canonical || !Number.isFinite(activeId)) continue;
       const key = `${canonical}:NORMAL`;
+      if (!isOperationalMarketKey(key)) continue; // ALLOWLIST fail-closed: discovery so nos 24
       marketKeyByActiveId.set(activeId, key);
       turboActives[activeId] = { id: activeId, enabled: true, deadtime: 30, option: { expiration_times: Array.isArray(asset.expirations) ? asset.expirations : [] } };
     }
@@ -3755,11 +3773,16 @@ if (this.v3) {
     try {
       const verified = await this.#mcpVerifyAccount();
       const catalog = await this.#mcpSyncCatalog();
-      if (!this.mcpPollTimer) {
+if (!this.mcpPollTimer) {
         const pollMs = Math.max(2_000, Number(process.env.MCP_CANDLE_POLL_MS) || 12_000);
         this.mcpPollTimer = setInterval(() => { if (this.running) void this.#mcpCandleTick().catch(() => undefined); }, pollMs);
         this.mcpPollTimer.unref?.();
         void this.#mcpCandleTick().catch(() => undefined);
+      }
+      // BREAK OPTION: monitor de posicoes V3 (5s) para encerramento antecipado.
+      if (!this.breakTickTimer) {
+        this.breakTickTimer = setInterval(() => { if (this.running) void this.#mcpBreakTick().catch(() => undefined); }, 5_000);
+        this.breakTickTimer.unref?.();
       }
 this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0, lastError: null, feedDriver: this.mcpStatus?.feedDriver ?? "MCP_V3_CANDLE_DISPATCH_V2", syncAttempts: (this.mcpStatus?.syncAttempts ?? 0) + 1, lastSyncAt: this.now() };
       if (verified !== true || (catalog?.total ?? 0) === 0) {
@@ -3785,6 +3808,47 @@ this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAd
     this.mcpRetryTimer.unref?.();
   }
 
+  /** BREAK OPTION: registra posicao aberta via MCP para encerramento antecipado. */
+  #trackBreakPosition({ marketKey, positionId, balanceId, stake }) {
+    if (!this.mcp || this.mcpWriteEnabled !== true || !positionId) return;
+    this.breakMonitor.set(String(positionId), {
+      marketKey, balanceId: Number(balanceId), stake: Number(stake) || 0, entryAt: this.now(),
+      targetAmount: (Number(stake) || 0) * (1 + this.breakTargetPct / 100), brokenAt: null, checks: 0,
+    });
+    this.#safe(() => this.log("V3_MCP_BREAK_TRACKED", JSON.stringify({ marketKey, positionId, stake: Number(stake), target: this.breakTargetPct })));
+  }
+
+  /** BREAK OPTION: monitora posicoes V3 e rompe (sell_position) quando o alvo e atingido. */
+  async #mcpBreakTick() {
+    if (!this.mcp || this.mcpWriteEnabled !== true || !this.breakMonitor.size) return;
+    const practiceOnly = String(this.config.mode).toUpperCase() !== "REAL";
+    for (const [positionId, tracked] of this.breakMonitor) {
+      try {
+        tracked.checks += 1;
+        if (tracked.brokenAt !== null) { this.breakMonitor.delete(positionId); continue; }
+        const res = await this.mcp.getPositions(tracked.balanceId);
+        const rows = Array.isArray(res?.data) ? res.data : [];
+        const position = rows.find((row) => String(row.id ?? row.position_id ?? "") === String(positionId));
+        if (!position) {
+          // Posicao nao encontrada: ja liquidada/vencida. Encerra o monitor apos 12 checagens.
+          if (tracked.checks > 12) this.breakMonitor.delete(positionId);
+          continue;
+        }
+        const current = Number(position.current_amount ?? position.amount ?? position.profit ?? 0);
+        const direction = String(position.direction ?? tracked.direction ?? "");
+        if (Number.isFinite(current) && current > 0 && current >= tracked.targetAmount) {
+          const sell = await this.mcp.sellPosition({ positionId: Number(positionId), balanceId: tracked.balanceId });
+          tracked.brokenAt = sell?.ok === true ? this.now() : null;
+          this.#safe(() => this.log("V3_MCP_BREAK", JSON.stringify({ marketKey: tracked.marketKey, positionId, current, target: tracked.targetAmount, stake: tracked.stake, ok: sell?.ok === true, error: sell?.message ?? null, direction })));
+          if (sell?.ok === true) this.breakMonitor.delete(positionId);
+        }
+      } catch (error) {
+        this.#safe(() => this.log("V3_MCP_BREAK_TICK_FAIL", String(error?.message ?? error).slice(0, 120)));
+      }
+    }
+    void practiceOnly;
+  }
+
   /** Execucao V3 (PRACTICE-only): aprovacao do Consensus vira ordem com o VENCIMENTO EXATO da opportunity. */
   async #v3ExecutePractice({ opportunityId, direction, expirationAt } = {}) {
     const marketKey = String(opportunityId ?? "").split("@")[0] ?? null;
@@ -3803,13 +3867,18 @@ this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAd
     if (!(stake > 0)) return { submitted: false, reason: "NO_STAKE_CONFIGURED" };
     const ctx = this.markets.get(marketKey);
     if (!isSupportedNormalBinaryMarket(ctx)) return { submitted: false, reason: "MARKET_NOT_SUPPORTED" };
+    if (!isOperationalMarketKey(marketKey)) return { submitted: false, reason: "OUTSIDE_OPERATIONAL_UNIVERSE" };
     const exactExpirationAt = Number(expirationAt);
     if (!Number.isFinite(exactExpirationAt)) return { submitted: false, reason: "EXPIRATION_INVALID" };
     try {
       // EXECUCAO via MCP oficial quando habilitado (caminho que funciona mesmo com WS rejeitado).
       if (this.mcp && this.mcpWriteEnabled === true) {
-        const mcpResult = await this.#mcpPlaceOrder({ marketKey, direction: direction === "UP" ? "BUY" : "SELL", stake, expirationAt: exactExpirationAt });
-        this.#safe(() => this.log("V3_EXECUTE_MCP", JSON.stringify({ marketKey, direction, stake, expirationAt: exactExpirationAt, submitted: mcpResult?.submitted === true, orderId: mcpResult?.brokerOrderId ?? null })));
+const mcpResult = await this.#mcpPlaceOrder({ marketKey, direction: direction === "UP" ? "BUY" : "SELL", stake, expirationAt: exactExpirationAt });
+        this.#safe(() => this.log("V3_EXECUTE_MCP", JSON.stringify({ marketKey, direction, stake, expirationAt: exactExpirationAt, submitted: mcpResult?.submitted === true, orderId: mcpResult?.brokerOrderId ?? null, error: mcpResult?.error ?? null })));
+        // BREAK OPTION: registra a posicao para encerramento antecipado no alvo.
+        if (mcpResult?.submitted === true && mcpResult?.brokerOrderId) {
+          this.#trackBreakPosition({ marketKey, positionId: String(mcpResult.brokerOrderId), balanceId: this.config.mode === "REAL" ? this.account.real?.balanceId : this.account.practice?.balanceId, stake });
+        }
         return { ...mcpResult, path: "MCP" };
       }
       const result = await this.requestOrder({ marketKey, direction: direction === "UP" ? "BUY" : "SELL", stake, decisionId: opportunityId, exactExpirationAt, source: "V3_CONSENSUS", v3Approved: true, autoDisarmAfterAck: false });
