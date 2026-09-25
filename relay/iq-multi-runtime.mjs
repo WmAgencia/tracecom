@@ -159,6 +159,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.mcpWriteEnabled = process.env.IQ_MCP_WRITE_ENABLED === "true";
     this.mcpPollIndex = 0;
     this.mcpPollTimer = null;
+    this.mcpPollInFlight = false;
     if (this.mcp) setTimeout(() => { if (this.running) void this.mcpEnableAndSync().catch(() => undefined); }, 5_000).unref?.();
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentExecBinary = true;
@@ -207,8 +208,11 @@ export class IqMultiRuntime extends EventEmitter {
           strategy: { version: this.v3Strategy.version, status: this.v3Strategy.status, executable: this.v3Strategy.executable, strategyHash: this.v3Strategy.strategyHash, statsEpoch: this.v3Strategy.manifest?.statsEpoch ?? null },
           agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ runner: (options) => this.#v3ScheduledRun(options), now: this.now, maxTokens: Number(process.env.V3_AGENT_MAX_TOKENS) || 512, activityCheck: () => this.#v3SystemActive() }) : null,
           agentSafetyMarginMs: Number(process.env.V3_AGENT_SAFETY_MARGIN_MS) || 2_000,
-          estimatedFullCycleMs: Number(process.env.V3_AGENT_ESTIMATED_FULL_MS) || 15_000,
-          estimatedDeltaCycleMs: Number(process.env.V3_AGENT_ESTIMATED_DELTA_MS) || 14_000,
+          // A V3 tem uma unica chamada LLM, apos os especialistas deterministicos.
+          // Dez segundos deixam margem para o envio exato em TTE=302s sem descartar
+          // o ciclo somente porque o candle MCP chegou no meio da janela de analise.
+          estimatedFullCycleMs: Number(process.env.V3_AGENT_ESTIMATED_FULL_MS) || 10_000,
+          estimatedDeltaCycleMs: Number(process.env.V3_AGENT_ESTIMATED_DELTA_MS) || 9_000,
           maxAgentCycles: Number(process.env.V3_AGENT_MAX_CYCLES) || 1,
           // ECONOMIA: V3 LLM so pensa quando o sistema esta ATIVO (armado OU analise-liberada via env).
           agentsGate: () => this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true",
@@ -3556,14 +3560,17 @@ const health = computeV3Health({
 
   /** Poller de candles via MCP (roda o pipeline V3 sem depender do WS rejeitado). */
   async #mcpCandleTick() {
-    if (!this.mcp) return;
+    if (!this.mcp || this.mcpPollInFlight) return;
+    this.mcpPollInFlight = true;
+    try {
     const candidates = [...this.markets.values()].filter((ctx) => ctx.enabled === true && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId)));
     if (!candidates.length) return;
-    // Dois lotes circulares (24 + restante) cobrem os 37 ativos em 8s. A
-    // versao anterior usava slice sem wrap e criava um terceiro lote tardio,
-    // que chegava sem os 15s minimos para o Consensus.
-    const batchSize = Math.max(1, Math.min(64, Number(process.env.MCP_CANDLE_BATCH_SIZE) || 24));
-    const concurrency = Math.max(1, Math.min(batchSize, Number(process.env.MCP_CANDLE_CONCURRENCY) || 6));
+    // Todos os mercados ativos sao atualizados no mesmo ciclo.  A janela de
+    // analise comeca em TTE=330s e termina em TTE=302s; repartir 37 mercados
+    // em lotes tardios fazia parte deles chegar apos a reserva do Consensus.
+    // O lock evita que um tick lento crie requests sobrepostos.
+    const batchSize = Math.max(1, Math.min(64, Number(process.env.MCP_CANDLE_BATCH_SIZE) || 64));
+    const concurrency = Math.max(1, Math.min(batchSize, Number(process.env.MCP_CANDLE_CONCURRENCY) || 12));
     const take = Math.min(batchSize, candidates.length);
     const start = this.mcpPollIndex % candidates.length;
     const batch = Array.from({ length: take }, (_, offset) => candidates[(start + offset) % candidates.length]);
@@ -3631,6 +3638,9 @@ const health = computeV3Health({
       }
     };
     await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, worker));
+    } finally {
+      this.mcpPollInFlight = false;
+    }
   }
 
   /** Remove do universo somente ativo que o MCP confirmou sem historico repetidamente.
@@ -3668,7 +3678,12 @@ const health = computeV3Health({
     try {
       const verified = await this.#mcpVerifyAccount();
       const catalog = await this.#mcpSyncCatalog();
-      if (!this.mcpPollTimer) { this.mcpPollTimer = setInterval(() => { if (this.running) void this.#mcpCandleTick().catch(() => undefined); }, 8_000); this.mcpPollTimer.unref?.(); }
+      if (!this.mcpPollTimer) {
+        const pollMs = Math.max(2_000, Number(process.env.MCP_CANDLE_POLL_MS) || 5_000);
+        this.mcpPollTimer = setInterval(() => { if (this.running) void this.#mcpCandleTick().catch(() => undefined); }, pollMs);
+        this.mcpPollTimer.unref?.();
+        void this.#mcpCandleTick().catch(() => undefined);
+      }
       this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0, lastError: null, feedDriver: this.mcpStatus?.feedDriver ?? "MCP_V3_CANDLE_DISPATCH_V2" };
     } catch (error) {
       this.mcpStatus = { enabled: true, verified: false, catalogAdded: 0, lastError: String(error?.message ?? error).slice(0, 160) };
