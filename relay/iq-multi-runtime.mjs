@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import { EventEmitter } from "node:events";
 import { nextOperationalExpiryAt, OPERATIONAL_EXPIRY_SECONDS } from "./execution/binary300.mjs";
 import { evaluateIqSessionStaleness } from "./iq-session-stale.mjs";
+import { IQOfficialMCPAdapter } from "./iq-mcp/adapter.mjs";
 import { IqWsClient, IqWsError, IQ_WS_CANDIDATE_HOSTS, CANDLE_SIZE_SECONDS, classifyBalances, computeExpiration, normalizeCandle, parseSettlement, toEpochMs, EXPECTED_EURUSD_ACTIVE_ID_FROM_REPO, EXPECTED_EURUSD_OTC_ACTIVE_ID_FROM_REPO } from "./iqoption-ws.mjs";
 import { buildFeatureContext, freshnessGate } from "./feature-engine.mjs";
 import { executionGate, applyBrokerAcknowledgement, compareSettlement, ExecutionArmState, IdempotencyStore, KillSwitch, MAX_PRACTICE_STAKE_BRL } from "./iqoption-connector.mjs";
@@ -150,6 +151,13 @@ export class IqMultiRuntime extends EventEmitter {
     this.sessionStale = false;
     this.staleSessionStrikes = 0;
     this.onSessionExpired = typeof onSessionExpired === "function" ? onSessionExpired : null;
+    // MCP OFICIAL IQ: caminho alternativo de conta/catalogo/candles/execucao (gateway HTTPS).
+    try {
+      this.mcp = process.env.IQ_MCP_ENABLED === "true" ? new IQOfficialMCPAdapter({ env: process.env, product: "binary", timeoutMs: 20_000 }) : null;
+    } catch { this.mcp = null; }
+    this.mcpWriteEnabled = process.env.IQ_MCP_WRITE_ENABLED === "true";
+    this.mcpPollIndex = 0;
+    this.mcpPollTimer = null;
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentExecBinary = true;
     this.agentVariant = "";
@@ -321,6 +329,8 @@ export class IqMultiRuntime extends EventEmitter {
           // Depois de hidratar: se a config persistida nao tem mercados ativos, aplica o default (com persistencia).
           if (this.configHydrated && !this.activeMarketKeys().length) this.#applyDefaultSelection();
           this.#ensureIntelligenceHydration();
+          // MCP: conta + catalogo NORMAL + poller de candles (caminho alternativo ao WS).
+          if (this.mcp) void this.mcpEnableAndSync().catch(() => undefined);
         }).catch(() => undefined);
       }, 20_000);
       if (typeof this.configHydrationRetry.unref === "function") this.configHydrationRetry.unref();
@@ -3449,11 +3459,114 @@ const health = computeV3Health({
     return this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true";
   }
 
+  /** Canonical a partir do nome exibido pela IQ (ex.: "EUR/USD" -> EURUSD; "US 500" -> US500). */
+  mcpCanonical(name) {
+    const clean = String(name ?? "").replace(/\(OTC\)/gi, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (clean.length < 3) return null;
+    if (/^(US|JP|GER|UK|FR|AU|EU|HK|SP|ASX)\d+$/.test(clean) || /^(XAU|XAG|GOLD|SILVER)$/.test(clean)) return clean;
+    if (/^[A-Z]{6}$/.test(clean)) return clean; // par FX de 6 letras
+    return /^[A-Z]{3}[A-Z]{3}$/.test(clean) ? clean : null;
+  }
+
+  /** Sincroniza o catalogo NORMAL do MCP no universo (64 ativos reais; OTC nunca entra). */
+  async #mcpSyncCatalog() {
+    if (!this.mcp) return { added: 0 };
+    const assets = await this.mcp.listAssets();
+    const list = Array.isArray(assets?.data) ? assets.data : [];
+    let added = 0;
+    for (const asset of list) {
+      if (/\(OTC\)/i.test(String(asset.name ?? ""))) continue;
+      const canonical = this.mcpCanonical(asset.name);
+      if (!canonical) continue;
+      const key = `${canonical}:NORMAL`;
+      let ctx = this.markets.get(key);
+      if (!ctx) {
+        ctx = this.#emptyMarket({ canonical, symbol: asset.name, display: asset.name, marketType: "NORMAL" }, key);
+        this.markets.set(key, ctx);
+      }
+      ctx.mcpAssetId = asset.asset_id ?? null;
+      ctx.mcpExpirations = Array.isArray(asset.expirations) ? asset.expirations.map((t) => Number(t) * 1000) : [];
+      ctx.availability = asset.is_open === true ? "OPEN" : (ctx.availability ?? "CLOSED");
+      if (asset.is_open === true && ctx.enabled !== true && this.activeMarketKeys().length < Number(process.env.V3_MAX_ACTIVE_MARKETS || 64)) {
+        ctx.enabled = true; ctx.activeId = ctx.activeId ?? asset.asset_id; ctx.selectionReason = "MCP_CATALOG_OPEN"; added += 1;
+        if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL','OPEN',$2,now()) ON CONFLICT(market_key) DO UPDATE SET enabled=true, availability='OPEN', active_id=$2, updated_at=now()", [key, asset.asset_id]).catch(() => undefined);
+      }
+    }
+    return { added, total: list.length };
+  }
+
+  /** Verifica a conta via MCP (balances) e hidrata o accountContext quando o WS nao verifica. */
+  async #mcpVerifyAccount() {
+    if (!this.mcp) return false;
+    const state = await this.mcp.getAccountState();
+    const balances = state?.data?.balances ?? [];
+    if (!balances.length) return false;
+    const training = balances.find((b) => b.type === "training");
+    const regular = balances.find((b) => b.type === "regular");
+    if (training) { this.account.practice = { verified: true, balanceId: training.balance_id, balance: Number(training.amount) || 0, currency: training.currency ?? "USD" }; }
+    if (regular) { this.account.real = { available: true, balanceId: regular.balance_id, balance: Number(regular.amount) || 0, currency: regular.currency ?? "USD" }; }
+    this.account.checkedAt = this.now();
+    this.account.type = "PRACTICE";
+    this.#syncAccountContext();
+    return true;
+  }
+
+  /** Poller de candles via MCP (roda o pipeline V3 sem depender do WS rejeitado). */
+  async #mcpCandleTick() {
+    if (!this.mcp) return;
+    const candidates = [...this.markets.values()].filter((ctx) => ctx.enabled === true && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId)));
+    if (!candidates.length) return;
+    const batch = candidates.slice(this.mcpPollIndex, this.mcpPollIndex + 8);
+    this.mcpPollIndex = (this.mcpPollIndex + 8) % candidates.length;
+    for (const ctx of batch) {
+      try {
+        const candles = await this.mcp.getCandles(Number(ctx.mcpAssetId), 5, 80);
+        const rows = candles?.data ?? [];
+        if (!rows.length) continue;
+        const normalized = rows.map((row) => ({ at: Number(row.open_time ?? row.time ?? row.at ?? 0) * 1000, open: Number(row.open ?? 0), high: Number(row.high ?? 0), low: Number(row.low ?? 0), close: Number(row.close ?? 0) })).filter((c) => Number.isFinite(c.at) && c.at > 0);
+        if (normalized.length >= 40) {
+          this.latestCandles.set(ctx.marketKey, normalized);
+          ctx.lastTickAt = this.now();
+          if (this.v3) void this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow: this.client?.serverNow?.() ?? this.now() }).catch(() => undefined);
+        }
+      } catch { /* mercado individual falha nao derruba os demais */ }
+    }
+  }
+
+  /** Execucao via MCP oficial (place_trade) com balance do contexto (PRACTICE=training, REAL=regular). */
+  async #mcpPlaceOrder({ marketKey, direction, stake, expirationAt }) {
+    if (!this.mcp || this.mcpWriteEnabled !== true) return { submitted: false, reason: "MCP_WRITE_DISABLED" };
+    const ctx = this.markets.get(marketKey);
+    const assetId = Number(ctx?.mcpAssetId);
+    if (!Number.isFinite(assetId)) return { submitted: false, reason: "NO_MCP_ASSET" };
+    const balance = this.config.mode === "REAL" ? this.account.real?.balanceId : this.account.practice?.balanceId;
+    if (balance === null || balance === undefined) return { submitted: false, reason: "NO_BALANCE" };
+    const expirationSec = Math.round(Number(expirationAt) / 1000);
+    const exp = Number.isFinite(expirationSec) ? expirationSec : Math.round((this.now() + 300_000) / 1000);
+    const result = await this.mcp.placeTrade({ asset_id: assetId, balance_id: Number(balance), expiration: exp, direction: direction === "BUY" ? "call" : "put", stake: Number(stake) });
+    this.#safe(() => this.log("V3_MCP_ORDER", JSON.stringify({ marketKey, direction, stake, expiration: exp, ok: result?.ok === true, error: result?.message ?? null })));
+    return { submitted: result?.ok === true, brokerOrderId: result?.payload?.id ?? result?.payload?.position_id ?? null, error: result?.ok ? null : String(result?.message ?? result?.code ?? "MCP_ORDER_FAILED").slice(0, 140) };
+  }
+
+  /** Sobe o MCP (conta + catalogo + poller). Chamado no boot e no refresh periodico. */
+  async mcpEnableAndSync() {
+    if (!this.mcp) return { enabled: false };
+    const verified = await this.#mcpVerifyAccount();
+    const catalog = await this.#mcpSyncCatalog();
+    if (!this.mcpPollTimer) { this.mcpPollTimer = setInterval(() => { if (this.running) void this.#mcpCandleTick().catch(() => undefined); }, 8_000); this.mcpPollTimer.unref?.(); }
+    return { enabled: true, verified, catalog };
+  }
+
   /** Execucao V3 (PRACTICE-only): aprovacao do Consensus vira ordem com o VENCIMENTO EXATO da opportunity. */
   async #v3ExecutePractice({ opportunityId, direction, expirationAt } = {}) {
     const marketKey = String(opportunityId ?? "").split("@")[0] ?? null;
     if (!marketKey || (direction !== "UP" && direction !== "DOWN")) return { submitted: false, reason: "NO_DIRECTION" };
-    if (this.config.mode !== "PRACTICE") return { submitted: false, reason: "NOT_PRACTICE" };
+    // CONTA: PRACTICE sempre; REAL somente com arm REAL explicito + REAL_TRADING_ENABLED (fail-closed).
+    if (this.config.mode === "REAL") {
+      if (process.env.REAL_TRADING_ENABLED !== "true" || this.accountContext?.armed !== true) return { submitted: false, reason: "REAL_NOT_AUTHORIZED" };
+    } else if (this.config.mode !== "PRACTICE") {
+      return { submitted: false, reason: "NOT_AUTHORIZED" };
+    }
     if (this.armState?.armed !== true) return { submitted: false, reason: "NOT_ARMED" };
     if (this.config.autoExecute !== true) return { submitted: false, reason: "AUTO_OFF" };
     if (this.killSwitch.status().executionEnabled !== true) return { submitted: false, reason: "KILL_SWITCH" };
@@ -3465,9 +3578,15 @@ const health = computeV3Health({
     const exactExpirationAt = Number(expirationAt);
     if (!Number.isFinite(exactExpirationAt)) return { submitted: false, reason: "EXPIRATION_INVALID" };
     try {
+      // EXECUCAO via MCP oficial quando habilitado (caminho que funciona mesmo com WS rejeitado).
+      if (this.mcp && this.mcpWriteEnabled === true) {
+        const mcpResult = await this.#mcpPlaceOrder({ marketKey, direction: direction === "UP" ? "BUY" : "SELL", stake, expirationAt: exactExpirationAt });
+        this.#safe(() => this.log("V3_EXECUTE_MCP", JSON.stringify({ marketKey, direction, stake, expirationAt: exactExpirationAt, submitted: mcpResult?.submitted === true, orderId: mcpResult?.brokerOrderId ?? null })));
+        return { ...mcpResult, path: "MCP" };
+      }
       const result = await this.requestOrder({ marketKey, direction: direction === "UP" ? "BUY" : "SELL", stake, decisionId: opportunityId, exactExpirationAt, source: "V3_CONSENSUS", v3Approved: true, autoDisarmAfterAck: false });
       this.#safe(() => this.log("V3_EXECUTE_PRACTICE", JSON.stringify({ marketKey, direction, stake, expirationAt: exactExpirationAt, submitted: result?.submitted === true, orderId: result?.brokerOrderId ?? null })));
-      return result;
+      return { ...result, path: "WS" };
     } catch (error) {
       this.#safe(() => this.log("V3_EXECUTE_PRACTICE_FAIL", String(error?.message ?? error).slice(0, 160)));
       return { submitted: false, reason: String(error?.message ?? error).slice(0, 120) };

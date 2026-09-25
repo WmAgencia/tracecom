@@ -530,6 +530,20 @@ export class IQOfficialMCPAdapter {
     return { ok: true, payload: extractToolPayload(rpc.result) };
   }
 
+  /** Schema do tool (inputSchema) via tools/list — usado para montar args corretos. */
+  async toolSchema(toolName) {
+    const rpc = await this._rpc("tools/list", {}, { kind: "control" });
+    if (!rpc.ok) return null;
+    const tools = Array.isArray(rpc.result?.tools) ? rpc.result.tools : [];
+    return tools.find((tool) => tool.name === toolName)?.inputSchema ?? null;
+  }
+
+  /** EXECUCAO via MCP oficial (place_trade). So quando writeEnabled=true (fail-closed). */
+  async placeTrade(args = {}) {
+    if (this.writeEnabled !== true) return { ok: false, code: "MCP_WRITE_BLOCKED", message: "IQ_MCP_WRITE_ENABLED=false", health: this.healthState };
+    return this._callToolRpc("place_trade", args);
+  }
+
   _cacheGet(key) {
     const entry = this.cache.get(key);
     if (!entry) return undefined;
