@@ -81,3 +81,8 @@
 - A guia **Configurações** permite informar e-mail e senha da IQ Option para renovar a sessão do relay. O painel não recebe código de confirmação em duas etapas: quando a IQ exigir essa etapa, conclua o acesso pelo app ou site oficial e tente novamente.
 - A senha segue somente no POST HTTPS de login, é limpa do formulário após o envio e não é gravada em armazenamento do navegador, logs, documentação ou backup. O relay persiste somente o `ssid` cifrado.
 - Uma sessão aceita solicita a reconexão do WebSocket. Isso não arma PRACTICE, não arma REAL e não modifica estratégia, stake, mercados, expiração de 300s ou gates fail-closed.
+## Hotfix operacional — feed NORMAL pelo MCP oficial (2026-09-25)
+
+- Quando o WebSocket direto da IQ não sustenta uma sessão, o runtime usa somente o gateway MCP oficial para conta, catálogo NORMAL e candles. OTC permanece filtrado nesse caminho.
+- O poller normaliza candles reais `from/to/open/max/min/close` e hidrata o buffer canônico de cada mercado; o feed só fica pronto com pelo menos 40 candles reais no buffer.
+- A correção não modifica stake, expiração, estratégia congelada ou os gates PRACTICE/REAL. Qualquer ordem continua dependente de aprovação V3 e da configuração server-side do MCP.
