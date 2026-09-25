@@ -3532,7 +3532,11 @@ const health = computeV3Health({
           for (const candle of normalized) map.set(candle.at, candle);
           ctx.candles = map;
           ctx.lastCandle = normalized[normalized.length - 1];
-          ctx.lastTickAt = this.now();
+          const receivedAt = this.now();
+          ctx.lastTickAt = receivedAt;
+          ctx.subscriptionState = "SUBSCRIBED";
+          ctx.connectionHealth = { ...ctx.connectionHealth, connected: true, lastMessageAt: receivedAt };
+          this.lastSubscriptionAt = receivedAt;
           if (this.mcpStatus) { this.mcpStatus.polls = (this.mcpStatus.polls ?? 0) + 1; this.mcpStatus.candlesLoaded = (this.mcpStatus.candlesLoaded ?? 0) + normalized.length; }
           this.latestCandles.set(ctx.marketKey, normalized);
           if (this.v3) void this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow: this.client?.serverNow?.() ?? this.now() }).catch(() => undefined);
