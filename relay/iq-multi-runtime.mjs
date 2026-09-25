@@ -154,7 +154,8 @@ export class IqMultiRuntime extends EventEmitter {
     // MCP OFICIAL IQ: caminho alternativo de conta/catalogo/candles/execucao (gateway HTTPS).
     try {
       this.mcp = process.env.IQ_MCP_ENABLED === "true" ? new IQOfficialMCPAdapter({ env: process.env, product: "binary", timeoutMs: 20_000 }) : null;
-    } catch { this.mcp = null; }
+      if (process.env.IQ_MCP_ENABLED === "true") this.#safe(() => this.log("V3_MCP_INIT", JSON.stringify({ created: this.mcp !== null, tokenPresent: Boolean(String(process.env.IQ_MCP_TOKEN ?? "").trim()) })));
+    } catch (error) { this.mcp = null; this.#safe(() => this.log("V3_MCP_INIT_FAIL", String(error?.message ?? error).slice(0, 160))); }
     this.mcpWriteEnabled = process.env.IQ_MCP_WRITE_ENABLED === "true";
     this.mcpPollIndex = 0;
     this.mcpPollTimer = null;
