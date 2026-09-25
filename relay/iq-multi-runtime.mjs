@@ -442,9 +442,12 @@ export class IqMultiRuntime extends EventEmitter {
         this.client = null; this.#disconnectedWaiter = null;
         this.session = { ...this.session, connected: false };
         for (const ctx of this.markets.values()) ctx.connectionHealth = { ...ctx.connectionHealth, connected: false };
-        try { this.armState.disarm("WS_DISCONNECTED"); } catch { /* noop */ }
+        // PRACTICE via MCP: a queda do WS nao desarma nem desliga o AUTO (o gateway
+        // oficial verificado segue operando). REAL permanece 100% fail-closed.
+        const mcpPracticeDriver = this.#mcpDriverHealthy();
+        if (!mcpPracticeDriver) { try { this.armState.disarm("WS_DISCONNECTED"); } catch { /* noop */ } }
         // REGRA WS: queda do socket => AUTO OFF tambem (alem de DISARM). Nova ativacao sempre explicita.
-        if (this.config.autoExecute === true) { try { this.setAutoExecute(false, { actor: "system" }); } catch { /* noop */ } }
+        if (this.config.autoExecute === true && !mcpPracticeDriver) { try { this.setAutoExecute(false, { actor: "system" }); } catch { /* noop */ } }
         this.realMode.revoke("WS_DISCONNECTED");
         // FAIL CLOSED: qualquer queda de WS rebaixa REAL para LOCKED imediatamente.
         this.accountContext.lock("WS_DISCONNECTED");
@@ -1096,7 +1099,9 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.config.mode === "REAL" && process.env.REAL_TRADING_ENABLED === "true" !== true) throw new IqWsError("REAL_MODE_REQUIRES_ENV");
     if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("KILL_SWITCH_ACTIVE");
     const health = this.connectionHealth();
-    if (!health.healthy) throw new IqWsError("CONNECTION_UNHEALTHY", health.reasons.join(","));
+    // DRIVER MCP: em PRACTICE com o gateway oficial verificando a conta, o arm nao
+    // depende do WS (rejeitado pelo broker). REAL continua exigindo WS saudavel.
+    if (!health.healthy && !this.#mcpDriverHealthy()) throw new IqWsError("CONNECTION_UNHEALTHY", health.reasons.join(","));
     const enabled = [...this.markets.values()].filter((ctx) => ctx.enabled);
     if (!enabled.length) throw new IqWsError("NO_ACTIVE_MARKET", "nenhum mercado habilitado pelo operador");
     // Stake global obrigatorio: valor escolhido no front-end, persistido e verificado. Sem fallback R$1/calculado.
@@ -1124,6 +1129,15 @@ export class IqMultiRuntime extends EventEmitter {
     if (!this.session.connected) reasons.push("WS_DISCONNECTED");
     if (!this.session.timeValid) reasons.push("TIME_SYNC_INVALID");
     return { healthy: reasons.length === 0, reasons, skewMs: this.session.clockSkewMs, host: this.session.host };
+  }
+
+  /** O gateway MCP oficial substitui o WS como driver operacional em PRACTICE
+   *  (conta verificada + write habilitado). Nunca aplica a contas REAL. */
+  #mcpDriverHealthy() {
+    return String(this.config.mode).toUpperCase() === "PRACTICE"
+      && this.mcpWriteEnabled === true
+      && this.mcpStatus?.verified === true
+      && this.account?.practice?.verified === true;
   }
 
   /* ------------------------------- candles/features/decisions ------------------------------- */
