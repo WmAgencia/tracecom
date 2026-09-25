@@ -3563,7 +3563,10 @@ const health = computeV3Health({
           this.lastSubscriptionAt = receivedAt;
           if (this.mcpStatus) { this.mcpStatus.polls = (this.mcpStatus.polls ?? 0) + 1; this.mcpStatus.candlesLoaded = (this.mcpStatus.candlesLoaded ?? 0) + normalized.length; }
           this.latestCandles.set(ctx.marketKey, normalized);
-          if (this.v3) void this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow: this.client?.serverNow?.() ?? this.now() }).catch(() => undefined);
+          if (this.v3) {
+            await this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow: this.client?.serverNow?.() ?? this.now() });
+            if (this.mcpStatus) this.mcpStatus.v3CandleEvents = (this.mcpStatus.v3CandleEvents ?? 0) + 1;
+          }
         }
       } catch { /* mercado individual falha nao derruba os demais */ }
     }

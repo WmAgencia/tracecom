@@ -60,6 +60,8 @@ ok("runtime V3 delega execucao apenas ao callback gated", runtime.status().execu
 const AT_112454 = Date.UTC(2026, 8, 23, 11, 24, 54);
 const candidate = derivedExpirationAt(AT_112454);
 ok("grade de minuto: 11:24:54 => candidato 11:30 (TTE 306s), hold alvo 300s", candidate === Date.UTC(2026, 8, 23, 11, 30) && candidate - AT_112454 === 306_000 && TARGET_HOLD_MS === 300_000);
+const AT_120931 = Date.UTC(2026, 8, 25, 12, 9, 31);
+ok("grade IQ: 12:09:31 => 12:15:00 (5m29s), nova frente a cada minuto", derivedExpirationAt(AT_120931) === Date.UTC(2026, 8, 25, 12, 15) && derivedExpirationAt(AT_120931) - AT_120931 === 329_000);
 const analysis = ExpirationTargetTiming.analysis({ expirationAt: candidate, brokerNow: AT_112454 });
 const early = ExpirationTargetTiming.execution({ expirationAt: candidate, brokerNow: AT_112454 });
 const atTarget = ExpirationTargetTiming.execution({ expirationAt: candidate, brokerNow: AT_112454 + 4_000 });
