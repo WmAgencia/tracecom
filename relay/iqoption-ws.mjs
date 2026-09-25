@@ -402,6 +402,12 @@ export class IqWsClient extends EventEmitter {
       const elapsed = this.lastHeartbeatAt === null ? Infinity : this.now() - this.lastHeartbeatAt;
       if (elapsed < HEARTBEAT_FALLBACK_MS) return;
       try { this.send("heartbeat", { heartbeatTime: this.now(), userTime: Math.round(this.serverNow() ?? this.now()) }); } catch { /* desconectando */ }
+      // ZUMBI: conexao upgradeada mas broker sem heartbeats por >60s => fecha para o loop de reconexao
+      // (recuperacao rapida; antes o runtime demorava ~5min para detectar).
+      if (elapsed > 60_000) {
+        try { this.socket?.close(1000, "NO_HEARTBEAT"); } catch { /* noop */ }
+        return;
+      }
     }, 10_000);
     this.heartbeatTimer.unref?.();
   }
