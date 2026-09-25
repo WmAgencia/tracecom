@@ -3561,14 +3561,35 @@ const health = computeV3Health({
           ctx.subscriptionState = "SUBSCRIBED";
           ctx.connectionHealth = { ...ctx.connectionHealth, connected: true, lastMessageAt: receivedAt };
           this.lastSubscriptionAt = receivedAt;
-          if (this.mcpStatus) { this.mcpStatus.polls = (this.mcpStatus.polls ?? 0) + 1; this.mcpStatus.candlesLoaded = (this.mcpStatus.candlesLoaded ?? 0) + normalized.length; }
+          if (this.mcpStatus) {
+            this.mcpStatus.polls = (this.mcpStatus.polls ?? 0) + 1;
+            this.mcpStatus.candlesLoaded = (this.mcpStatus.candlesLoaded ?? 0) + normalized.length;
+            this.mcpStatus.feedDriver = "MCP_V3_CANDLE_DISPATCH_V2";
+          }
           this.latestCandles.set(ctx.marketKey, normalized);
           if (this.v3) {
-            await this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow: this.client?.serverNow?.() ?? this.now() });
-            if (this.mcpStatus) this.mcpStatus.v3CandleEvents = (this.mcpStatus.v3CandleEvents ?? 0) + 1;
+            if (this.mcpStatus) this.mcpStatus.v3DispatchAttempts = (this.mcpStatus.v3DispatchAttempts ?? 0) + 1;
+            try {
+              await this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow: this.client?.serverNow?.() ?? this.now() });
+              if (this.mcpStatus) this.mcpStatus.v3CandleEvents = (this.mcpStatus.v3CandleEvents ?? 0) + 1;
+            } catch (error) {
+              const message = String(error?.message ?? error).slice(0, 160);
+              if (this.mcpStatus) {
+                this.mcpStatus.v3DispatchFailures = (this.mcpStatus.v3DispatchFailures ?? 0) + 1;
+                this.mcpStatus.v3LastDispatchError = message;
+              }
+              this.#safe(() => this.log("V3_MCP_CANDLE_DISPATCH_FAIL", JSON.stringify({ marketKey: ctx.marketKey, message })));
+            }
           }
         }
-      } catch { /* mercado individual falha nao derruba os demais */ }
+      } catch (error) {
+        const message = String(error?.message ?? error).slice(0, 160);
+        if (this.mcpStatus) {
+          this.mcpStatus.pollFailures = (this.mcpStatus.pollFailures ?? 0) + 1;
+          this.mcpStatus.lastPollError = message;
+        }
+        this.#safe(() => this.log("V3_MCP_CANDLE_POLL_FAIL", JSON.stringify({ marketKey: ctx.marketKey, message })));
+      }
     }
   }
 
@@ -3594,7 +3615,7 @@ const health = computeV3Health({
       const verified = await this.#mcpVerifyAccount();
       const catalog = await this.#mcpSyncCatalog();
       if (!this.mcpPollTimer) { this.mcpPollTimer = setInterval(() => { if (this.running) void this.#mcpCandleTick().catch(() => undefined); }, 8_000); this.mcpPollTimer.unref?.(); }
-      this.mcpStatus = { enabled: true, verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0, lastError: null };
+      this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0, lastError: null, feedDriver: this.mcpStatus?.feedDriver ?? "MCP_V3_CANDLE_DISPATCH_V2" };
     } catch (error) {
       this.mcpStatus = { enabled: true, verified: false, catalogAdded: 0, lastError: String(error?.message ?? error).slice(0, 160) };
       this.#safe(() => this.log("V3_MCP_SYNC_FAIL", this.mcpStatus.lastError));
