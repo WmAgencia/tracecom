@@ -1,113 +1,88 @@
-# TRACECON
+# TraceCom
 
-## Operação reconstruída (2026-09-22) — Binary OTC 300s
+TraceCom é um sistema de monitoramento, análise e execução controlada de operações binárias da IQ Option. Ele não é uma corretora e não custodia recursos: mantém a conta conectada, recebe dados de mercado, documenta cada decisão e só pode enviar uma ordem quando todos os bloqueios de segurança estiverem satisfeitos.
 
-A operação do relay foi reconstruída para **UM único caminho**:
+O ambiente de produção trabalha com mercados **NORMAL** (OTC é filtrado), candles de 5 segundos e vencimento-alvo de 300 segundos. A conta padrão é **PRACTICE**; a conta REAL começa e permanece desarmada até uma ação explícita do operador.
 
-- **BINARY OTC only** · **300 segundos only** (bucket de 5 min) · **candle nativo 5s da IQ** · **contexto de até 3h por ativo**.
-- **Uma inteligência:** AssetContext → FeatureEngine (1x por atualização) → 5 especialistas (RSI, DMI/ADX, Bollinger, ATR, PriceAction) → Consensus **BUY/SELL/WAIT sem confidence** → DecisionSnapshot imutável.
-- **Um caminho de execução:** DecisionSnapshot → Revalidation → Binary300Timing → ExecutionGate → AccountRouter (PRACTICE/REAL) → `requestOrder` (fronteira única de broker).
-- **PRACTICE e REAL usam a mesma inteligência**; a conta é escolhida só no router. REAL é fail-closed e fica **desarmado após deploy**.
-- **Sem Blitz**, sem runners antigos, sem auto-tuning. `PULLBACK_4060_300_AGENTIC_V2` (`sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0`, manifesto em `estrategias/strategy-versions/`) é a única estratégia operacional — **ACTIVE e FROZEN** (freeze em `PULLBACK_4060_300_AGENTIC_V2.freeze.json`); qualquer mudança estratégica = V3 + novo strategyHash + novo epoch. Baseline congelada em `archive/baseline/PULLBACK_4060_300_BASELINE/`.
-- Testes/invariantes: `node scripts/run-all-tests.mjs` (suítes + invariantes + smoke). CI em `.github/workflows/ci.yml`.
+## Como o sistema funciona
 
-Detalhes de estratégia/configuração: `docs/ESTRATEGIA-E-CONFIGURACAO.md`. Estado/handoff: `AGENTS.md`.
+```text
+IQ Option MCP oficial
+        |
+        +-- conta e catálogo NORMAL
+        +-- candles de 5 segundos
+        |
+        v
+Buffers por mercado (mínimo: 40 candles)
+        |
+        v
+V3: oportunidade -> medições -> especialistas -> consenso -> desafio final
+        |
+        v
+janela exata de envio -> revalidação -> gates PRACTICE -> ordem MCP
+        |
+        v
+registro da execução e liquidação
+```
 
-Sistema de **inteligência e análise de mercado** — não é corretora. Não executa
-ordens, não custodia dinheiro, não fabrica dados. Investiga um cenário antes de
-concluir e pode responder **WAIT** quando não há evidências suficientes.
+O relay usa o MCP oficial da IQ como fonte primária para conta, catálogo e candles quando o WebSocket direto não sustenta uma sessão. O WebSocket pode continuar existindo para compatibilidade e relógio, mas não é usado como fonte concorrente de candles para mercados NORMAL. Isso evita que uma queda do socket antigo transforme um feed MCP saudável em um falso estado de “sem feed”.
 
-- **Dados reais** de mercado (Forex auto via OANDA/Yahoo ou Binance para cripto) — nunca inventados.
-- **Motor quantitativo** determinístico (SMA/EMA/RSI/MACD/ATR/Bollinger/ADX/VWAP,
-  volatilidade, suporte/resistência, market structure, regime detection).
-- **Backtest + probabilidade empírica** (favoráveis/amostra, CI, out-of-sample,
-  sem look-ahead — com testes de integridade).
-- **Fusão de evidências + contraponto** → decisão analítica **BUY / SELL / WAIT**
-  com fatores favoráveis, contrários e invalidadores.
-- **Notícias reais** verificadas (com fonte, timestamp e credibilidade) + viés léxico.
-- **Extensão de navegador** (Side Panel, MV3) ao lado da corretora real.
-- **API HTTP** + **UI web** + **aprendizado estatístico** (registro → validação → calibração).
+## Estratégia V3
 
-## Regras invariantes
+A V3 é orientada pela expiração da operação. Para cada mercado e cada vencimento elegível, ela cria uma oportunidade somente dentro da janela de análise, entre aproximadamente 330 e 300 segundos antes do vencimento. Cada candle fechado pode gerar um ciclo de análise.
 
-1. Nunca inventar dados (preço, candle, volume, notícia, probabilidade, fonte).
-2. "Aguardar" (WAIT) é decisão válida.
-3. A IA é orquestradora de ferramentas; a matemática é do motor quantitativo.
-4. Sem look-ahead: decisão histórica só usa dados da época.
-5. Auditoria: cada análise é reconstruível (input → dados → indicadores → fontes →
-   evidências → contraprovas → fusão → decisão).
-6. Secrets só no servidor; nunca em browser/bundle/log.
+1. **Medições:** preço, volatilidade, estrutura e indicadores são calculados a partir de candles fechados.
+2. **Especialistas:** RSI, DMI/ADX, Bollinger, ATR e Price Action analisam o mesmo conjunto de dados.
+3. **Cenário:** a camada de ativo classifica o contexto e registra tese, riscos e invalidações.
+4. **Pré-filtro e consenso:** os agentes avaliam evidências e contrapontos; o consenso final pode aprovar compra, aprovar venda ou cancelar.
+5. **Desafio final:** bloqueios, invalidações, tempo restante e direção são checados novamente.
+6. **Execução:** somente uma aprovação final, com vencimento exato, chega ao callback operacional. Em PRACTICE ele ainda exige sistema armado, AUTO ligado, stake válido, mercado NORMAL suportado, conta pronta e kill switch liberado. Em REAL exige as confirmações adicionais e permanece fail-closed.
 
-## Requisitos
+Uma decisão `WAIT` ou `CANCEL` é um resultado correto: não existe ordem quando as evidências são insuficientes, quando o feed está atrasado ou quando a janela expirou.
 
-Node ≥ 22 (usa `node:sqlite`, `fetch` e `WebSocket` nativos — sem builds nativos).
+## Segurança operacional
 
-## Rodar
+- Segredos e credenciais ficam somente no servidor; nunca no bundle do navegador, logs ou repositório.
+- A senha informada no painel é usada somente para renovar a sessão e é limpa do formulário.
+- PRACTICE e REAL usam a mesma análise; a diferença é decidida apenas no roteamento da conta.
+- REAL inicia desarmado após reinício ou deploy e não pode ser ativado por automação silenciosa.
+- Uma operação usa a expiração da própria oportunidade. O sistema não persegue uma janela já perdida.
+- Cada ciclo, consenso, bloqueio e execução pode ser consultado pelos endpoints V3 e pelo Log do painel.
+
+## Estados úteis do painel
+
+| Indicador | Significado |
+|---|---|
+| `READY` | Há feed recente e número suficiente de candles para a V3 analisar. |
+| `Ativos READY` | Mercados com pelo menos 40 candles no buffer. |
+| `PRACTICE` | Conta de simulação selecionada. |
+| `REAL desarmado` | Proteção esperada; nenhuma ordem real pode ser enviada. |
+| `OBSERVE_ONLY` | A V3 está apenas registrando análises; não envia ordem. |
+| `PRACTICE_GATED` | A V3 pode encaminhar uma aprovação, mas os gates de PRACTICE ainda decidem se a ordem é permitida. |
+
+## Operação e validação
+
+O estado do runtime pode ser acompanhado sem expor segredos:
+
+- `GET /api/iq/v3/status` — saúde V3, mercados prontos, ciclos, agentes, scheduler e MCP.
+- `GET /api/iq/v3/opportunities` — oportunidades, ciclos, consenso e referência de execução.
+- `GET /api/iq/status` — sessão, conta e readiness do broker.
+
+Antes de habilitar qualquer execução, valide: `health=READY`, `feedReadyMarkets > 0`, `mcp.candlesLoaded > 0`, conta PRACTICE pronta e nenhuma razão no readiness de execução. Para validar uma ordem, use apenas PRACTICE, com stake mínimo, e confira depois o registro de execução e a liquidação.
+
+## Desenvolvimento
+
+Requer Node.js 22 ou superior.
 
 ```bash
 npm install
-
-# 1) Dados reais (Forex auto ou Binance cripto, sem chave) + IA (Anthropic ou gateway
-#    compatível, ex.: nexxus-pro) + API + web app:
-copy .env.example .env
-
-# Defina ANTHROPIC_API_KEY + ANTHROPIC_BASE_URL + ANTHROPIC_MODEL
-# (modelo default: claude-opus-5). Alternativas no gateway nexxus-pro:
-#   claude-fable-5, claude-sonnet-5, claude-opus-4-8, claude-opus-4-7,
-#   claude-sonnet-4-6, claude-haiku-4-5.
-# Defina MARKET_DATA_MODE=auto para Forex real (OANDA se configurado, Yahoo Forex público como fallback) ou binance para cripto; opcionalmente TRACECON_API_TOKEN.
 npm run build
-npm run serve        # http://localhost:8788
+npm run check:relay
+npx vitest run tests/v3 tests/ai/iq-mcp-adapter.test.ts
 ```
 
-### Sem chave de IA?
+Configure segredos exclusivamente nas variáveis do serviço: `IQ_MCP_ENABLED`, `IQ_MCP_TOKEN`, `IQ_MCP_WRITE_ENABLED`, `IQ_OPTION_EMAIL`, `IQ_OPTION_PASSWORD` e as configurações V3. Nunca inclua valores reais em arquivos, commits ou documentação.
 
-Sem `ANTHROPIC_API_KEY` o agente roda em modo estático (dry-run): exercita
-o pipeline com ferramentas reais mas **não inventa dados** — em modo noop
-as leituras voltam `DATA_UNAVAILABLE` e a conclusão tende a **WAIT**, que é
-o comportamento correto quando não há fonte confiável.
+## Histórico
 
-### Gateways compatíveis
-
-O cliente usa o protocolo Anthropic Messages API (`POST /v1/messages`),
-via `fetch` nativo. Qualquer gateway que exponha esse contrato funciona —
-basta apontar `ANTHROPIC_BASE_URL`. Os modelos do seu gateway podem ser
-descobertos em `GET {ANTHROPIC_BASE_URL}/v1/models`.
-
-## CLI
-
-```
-npm run market:ui      UI técnica do pipeline de dados
-npm run quant          features quantitativas (indicadores/regime/estrutura)
-npm run backtest       backtest + prob. empírica (split OOS)
-npm run shadow-validation  validação shadow causal com dados reais (500–1.000 sinais)
-npm run decide         fusão de evidências → decisão (registra + valida)
-npm run news           notícias reais + viés léxico
-npm run serve          API HTTP + web app (http://localhost:8788)
-```
-
-## Estrutura
-
-```
-src/market/     Real Market Data Engine (provenance, qualidade, agregador, integridade)
-src/quant/      Quantitative Engine (determinístico, testável, sem look-ahead)
-src/backtest/   Similaridade + probabilidade empírica + OOS
-src/fusion/     Fusão de evidências + risco + contraponto → BUY/SELL/WAIT
-src/context/    Notícias reais (cache, viés léxico)
-src/analytics/  Registro → validação posterior → calibração estatística
-src/http/       API HTTP + web app
-src/tools/      Tool registry + tools Groq (orquestradas pela IA)
-extension/      Extensão de navegador (Side Panel, MV3)
-docs/           Roadmap e documentação de provedores
-```
-
-## Deploy
-
-- **Railway** (recomendado para backend + WebSocket): processo long-running
-  `npm run serve` (ver `railway.json`, `healthcheck /health`).
-- **Vercel**: serverless API (`api/http.ts`) — sem WebSocket contínuo; use
-  Railway para stream real-time.
-- **Supabase**: Postgres gerenciado (adapter futuro; repo preparado p/ multi-tenancy).
-
-> Defina no serviço as variáveis do `.env` (ex.: `MARKET_DATA_MODE`, `GROQ_API_KEY`,
-> `TRACECON_API_TOKEN`, `HTTP_PORT`). Nunca suba o `.env` real.
+`PULLBACK_4060_300_AGENTIC_V2` continua preservada como referência histórica congelada e mantém estatísticas próprias. A tela e o fluxo operacional devem refletir o estado efetivo da V3; a transição para execução V3 exige ativação explícita e validação em PRACTICE.

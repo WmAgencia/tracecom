@@ -126,7 +126,7 @@
 <div class="wrap">
   <div class="sumgrid">
     <section class="pcard">
-      <h3><span class="ico">◉</span> V2 — <span id="strategyTitle">PULLBACK_4060_300_AGENTIC_V2</span> <span class="spacer" style="flex:1"></span> <span class="chipctl" id="strategyStatus">—</span></h3>
+      <h3><span class="ico">◉</span> V3 — <span id="strategyTitle">carregando</span> <span class="spacer" style="flex:1"></span> <span class="chipctl" id="strategyStatus">—</span></h3>
       <div class="kpis">
         <div class="kpi"><div class="l">WR (W/L)</div><div class="v" id="kpiWr">—</div></div>
         <div class="kpi"><div class="l">Operações</div><div class="v" id="kpiOps">0</div></div>
@@ -134,7 +134,7 @@
         <div class="kpi"><div class="l">Losses</div><div class="v down" id="kpiLosses">0</div></div>
       </div>
       <div class="bar" id="kpiBar"><div class="w" style="width:0%"></div><div class="l" style="width:0%"></div></div>
-      <div class="note" id="strategyHashNote">statsEpoch — · PnL V2: <b id="kpiPnl">R$ 0,00</b></div>
+      <div class="note" id="strategyHashNote">statsEpoch — · PnL da estratégia: <b id="kpiPnl">R$ 0,00</b></div>
     </section>
     <section class="pcard profit">
       <div class="pill" id="dayPill"><span class="dot"></span>Dia neutro</div>
@@ -317,7 +317,7 @@
     const v3 = await api("/api/iq/v3/status");
     if (!data) return;
     state.intelligence = data;
-    state.strategy = data.strategy ?? null;
+    state.strategy = v3?.strategy ?? data.strategy ?? null;
     const next = data.assets ?? [];
     const changed = next.length !== state.assets.length || next.some((a, i) => state.assets[i]?.marketKey !== a.marketKey);
     state.assets = next;
@@ -377,6 +377,7 @@
   };
   const refreshHeader = async () => {
     const st = await api("/api/iq/status");
+    const v3 = await api("/api/iq/v3/status");
     if (!st) return;
     const mode = String(st.mode ?? "PRACTICE").toUpperCase();
     state.mode = mode;
@@ -415,7 +416,6 @@
     setText($("cfgHash"), state.strategy?.strategyHash ?? "—");
     const cs = state.intelligence?.candleStore;
     setText($("cfgCandle"), cs ? (cs.intervalMs / 1000) + "s nativo (gravados " + (cs.stats?.written ?? 0) + ")" : "—");
-    const v3 = await api("/api/iq/v3/status");
     setText($("cfgV3"), !v3 ? "indisponível" : (v3.strategy?.version ?? "V3") + " · " + (v3.strategy?.status ?? "—") + " · executável=" + (v3.strategy?.executable === true) + " · " + (v3.executionMode ?? "—") + " · opportunities=" + (v3.engine?.opportunities ?? 0));
   };
   const armPracticeNow = async () => {

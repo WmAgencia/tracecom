@@ -674,6 +674,14 @@ export class IqMultiRuntime extends EventEmitter {
   #subscribeCtx(client, ctx) {
     if (!client || !this.session.connected) return;
     if (!ctx.enabled || ctx.activeId === null || ctx.activeId === undefined) { ctx.connectionHealth = { ...ctx.connectionHealth, connected: false }; return; }
+    // NORMAL via MCP oficial ja possui feed canonico. Nao tente tambem o WS
+    // legado, que pode fechar depois do upgrade e registrar falso bloqueio V3.
+    if (this.mcp && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId))) {
+      ctx.subscriptionState = "SUBSCRIBED";
+      ctx.connectionHealth = { ...ctx.connectionHealth, connected: true };
+      this.lastSubscriptionAt = this.now();
+      return;
+    }
     try {
       client.subscribeCandles(ctx.activeId, CANDLE_SIZE_SECONDS);
       ctx.subscriptionState = "SUBSCRIBED";
@@ -3526,7 +3534,7 @@ const health = computeV3Health({
         const candles = await this.mcp.getCandles(Number(ctx.mcpAssetId), 5, 80);
         const rows = candles?.data?.candles ?? [];
         if (!rows.length) continue;
-        const normalized = rows.map((row) => ({ at: new Date(String(row.to ?? row.from ?? 0)).getTime(), open: Number(row.open ?? 0), high: Number(row.max ?? 0), low: Number(row.min ?? 0), close: Number(row.close ?? 0) })).filter((c) => Number.isFinite(c.at) && c.at > 0 && Number.isFinite(c.close) && c.close > 0);
+        const normalized = rows.map((row) => ({ at: new Date(String(row.to ?? row.from ?? 0)).getTime(), open: Number(row.open ?? 0), high: Number(row.max ?? 0), low: Number(row.min ?? 0), close: Number(row.close ?? 0) })).filter((c) => Number.isFinite(c.at) && c.at > 0 && Number.isFinite(c.close) && c.close > 0).sort((a, b) => a.at - b.at);
         if (normalized.length >= 40) {
           const map = new Map();
           for (const candle of normalized) map.set(candle.at, candle);
