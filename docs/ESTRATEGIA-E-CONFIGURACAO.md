@@ -58,6 +58,12 @@
 
 ## Hotfix operacional — boot do relay (2026-09-24)
 
+
+### Confirmação de autenticação e WS
+
+- A tela só informa conexão confirmada quando o relay recebe `timeSync` válido do WebSocket; login HTTP aceito isoladamente não é sucesso operacional.
+- Credenciais recusadas são exibidas como “E-mail ou senha não aceitos”; 2FA só é solicitado quando a IQ indicar verificação.
+- A renovação da sessão encerra o socket anterior e inicia o handshake com o novo `ssid`, sem armar PRACTICE ou REAL.
 - Corrigido o escopo de `v3RouterRoles`: helper no topo do módulo, fora de `IqMultiRuntime`; parsing e rotas preservados.
 - `npm run build` agora verifica sintaxe de todos os módulos `.mjs` do relay, inclusive subdiretórios, antes do TypeScript. O deploy oficial executa esse build mesmo com `--skip-tests`.
 - Sem alteração de stake, filtros, TTE 330→300, estratégia congelada ou gates de execução/REAL.

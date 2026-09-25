@@ -43,6 +43,7 @@ export class IqAuthSession {
     this.twoFactorToken = null;
     this.connectedAt = null;
     this.lastError = null;
+    this.lastErrorCode = null;
   }
 
   static _maskEmail(email) {
@@ -59,12 +60,14 @@ export class IqAuthSession {
       twoFactorRequired: this.state === "TWO_FACTOR_REQUIRED",
       connectedAt: this.connectedAt,
       lastError: this.lastError,
+      authErrorCode: this.lastErrorCode,
       hasSession: this.ssid !== null,
     };
   }
 
   _fail(code, error, secrets = []) {
     this.state = "ERROR";
+    this.lastErrorCode = String(code ?? "AUTH_FAILED").slice(0, 64);
     this.lastError = sanitizeError(error, [this.ssid, ...secrets].filter(Boolean));
     this.ssid = null;
     throw new IqAuthError(code, this.lastError);
@@ -89,7 +92,7 @@ export class IqAuthSession {
     const setCookie = response.headers?.get?.("set-cookie") ?? "";
     const ssid = extractCookie(setCookie, "ssid");
     const bodyText = await response.text().catch(() => "");
-    if (response.status === 403 || /2fa|two.?factor|verification/i.test(bodyText)) {
+    if (/2fa|two.?factor|verification/i.test(bodyText)) {
       let parsed = null; try { parsed = JSON.parse(bodyText); } catch { /* non-json */ }
       this.twoFactorToken = parsed?.token ?? null;
       this.state = "TWO_FACTOR_REQUIRED";
@@ -133,6 +136,7 @@ export class IqAuthSession {
     this.state = "CONNECTED_READ_ONLY";
     this.connectedAt = this.now();
     this.lastError = null;
+    this.lastErrorCode = null;
   }
 
   /** Uso interno do relay (ws handshake). Nunca expor ao frontend/logs. */
@@ -149,6 +153,7 @@ export class IqAuthSession {
     this.twoFactorToken = null;
     this.state = "CONNECTED_READ_ONLY";
     this.lastError = null;
+    this.lastErrorCode = null;
     return true;
   }
 
@@ -156,6 +161,8 @@ export class IqAuthSession {
     this.ssid = null;
     this.twoFactorToken = null;
     this.connectedAt = null;
+    this.lastError = null;
+    this.lastErrorCode = null;
     this.state = "DISCONNECTED";
     return this.snapshot();
   }

@@ -20,4 +20,8 @@ assert.match(edge, /"\/api\/iq\/connect"/);
 assert.match(edge, /"\/api\/iq\/verify-2fa"/);
 assert.match(edge, /path === "\/api\/iq\/connect" \? \{ email:/);
 
+assert.match(grid, /E-mail ou senha não aceitos pela IQ Option/);
+assert.match(grid, /result\?\.ws\?\.confirmed === true/);
+assert.match(edge, /authErrorCode: result\.body\.authErrorCode/);
+assert.match(edge, /ws: result\.body\.ws/);
 console.log("IQ_LOGIN_SETTINGS_TESTS_OK");

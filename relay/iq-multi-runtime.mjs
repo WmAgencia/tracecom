@@ -361,7 +361,11 @@ export class IqMultiRuntime extends EventEmitter {
     return { stopped: true, reason };
   }
 
-  onSessionAvailable() { this.start(); }
+  /** Sessao renovada: encerra qualquer socket anterior para que o novo ssid seja validado agora. */
+  onSessionAvailable() {
+    if (this.running) this.stop("SESSION_REFRESHED");
+    return this.start();
+  }
   onSessionRemoved() { this.stop("SESSION_DISCONNECTED"); }
 
   /** Recarrega configuracao persistida (diagnostico/teste; restart real usa o mesmo caminho no boot). */

@@ -574,18 +574,22 @@
 const saveMcp = async () => { const token = $("mcpTokenInput").value.trim(); if (!token) return; const r = await apiStrict("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token }) }); if (r) { $("mcpTokenInput").value = ""; await refreshMcp(); } };
 const clearMcp = async () => { const r = await apiStrict("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: "" }) }); if (r === null) return; await refreshMcp(); };
   const setIqLoginStatus = (text, ok = false) => { const el = $("iqLoginStatus"); el.textContent = text; el.style.color = ok ? "#4ade80" : "#f87171"; };
+  const iqAuthMessage = (result) => ({ INVALID_CREDENTIALS_INPUT: "Informe um e-mail válido e a senha.", AUTH_REJECTED: "E-mail ou senha não aceitos pela IQ Option.", AUTH_NETWORK_ERROR: "A IQ Option não respondeu ao pedido de login.", TWO_FACTOR_REJECTED: "O código de verificação não foi aceito.", INVALID_2FA_CODE_FORMAT: "O código deve ter de 4 a 8 dígitos." }[result?.authErrorCode] || result?.lastError || "Não foi possível concluir o login. Confira os dados e tente novamente.");
+  const iqWsMessage = (reason) => ({ WS_DISCONNECTED: "o broker fechou a conexão", TIME_SYNC_INVALID: "o broker não confirmou o horário", WS_HANDSHAKE_TIMEOUT: "o broker não confirmou o WebSocket a tempo" }[String(reason || "").split(",")[0]] || "o WebSocket não foi confirmado pelo broker");
   const updateIqLoginResult = async (result) => {
     const twoFactor = result?.state === "TWO_FACTOR_REQUIRED" || result?.twoFactorRequired === true;
     $("iqTwoFactor").hidden = !twoFactor;
     if (twoFactor) setIqLoginStatus("A IQ Option pediu um código de verificação. Informe-o abaixo.");
-    else if (result?.state === "CONNECTED_READ_ONLY" || result?.hasSession === true) setIqLoginStatus("Login concluído. Reconectando o feed da IQ Option…", true);
-    else setIqLoginStatus(result?.lastError || "Não foi possível concluir o login. Confira os dados e tente novamente.");
+    else if (result?.ws?.confirmed === true) setIqLoginStatus("Login e WebSocket confirmados pela IQ Option.", true);
+    else if (result?.hasSession === true) setIqLoginStatus("Login aceito, mas " + iqWsMessage(result?.ws?.reason) + ". O sistema seguirá tentando reconectar.");
+    else setIqLoginStatus(iqAuthMessage(result));
     await refreshHeader();
     await refreshIntelligence();
   };
   const loginIq = async () => {
     const email = $("iqEmailInput").value.trim(); const password = $("iqPasswordInput").value;
-    if (!email || !password) { setIqLoginStatus("Informe o e-mail e a senha da conta IQ Option."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setIqLoginStatus("Informe um e-mail válido da IQ Option."); return; }
+    if (!password) { setIqLoginStatus("Informe a senha da conta IQ Option."); return; }
     const button = $("iqLogin"); button.disabled = true;
     try { const result = await apiStrict("/api/iq/connect", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password }) }); if (result) await updateIqLoginResult(result); }
     catch { setIqLoginStatus("Não foi possível falar com o relay. Tente novamente em instantes."); }
