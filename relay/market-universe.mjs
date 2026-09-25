@@ -135,6 +135,22 @@ export function isOperationalMarketKey(key) {
 }
 
 /**
+ * ASSET_IDS CONFIRMADOS do catalogo MCP (observados em producao via list_assets/get_candles).
+ * Fallback de MAPEAMENTO apenas: quando o gateway nao lista a variante NORMAL na sessao
+ * atual (ex.: FX/metais so como OTC), o runtime ainda configura o mercado dos 24 com o
+ * id confirmado e consome candles (o gateway os serve). Nunca cria mercado fora dos 24.
+ * USDCHF fica pendente de confirmacao (catalogo nao o expoe NORMAL ate hoje).
+ */
+export const MCP_CONFIRMED_ASSET_IDS = Object.freeze({
+  EURUSD: 1861, USDJPY: 1865, GBPUSD: 1867, AUDUSD: 1870, USDCAD: 1878,
+  EURJPY: 1864, EURGBP: 1862, AUDJPY: 1869, GBPJPY: 1866,
+  XAUUSD: 1912, XAGUSD: 1913,
+  US30: 1472, US100: 1471, US500: 1470, US2000: 1473,
+  GER30: 1478, UK100: 1475, JP225: 1476, AUS200: 1481,
+  EU50: 1480, HK33: 1477, FR40: 1479, SP35: 1474,
+});
+
+/**
  * ALLOWLIST POSITIVA (fail-closed) de mercado operacional:
  * somente NORMAL + instrumento Binary suportado + enabled + tradable + OPEN + ativo.
  * UNKNOWN / undefined / OTC / Blitz / Digital nao suportado / qualquer outro => REJECT.

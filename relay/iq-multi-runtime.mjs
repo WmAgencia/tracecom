@@ -42,7 +42,7 @@ import {  TIMING_POLICY_CURRENT, TIMING_POLICY_LATE, LATE_WINDOW_POLICY, LATE_WI
 // SCENARIO ENGINE V3 (SHADOW): observacao independente. NUNCA toca Brain/Trader/Critic/Consensus/Quality Gate/JIT/Execution Gate.
 import {  analyzeScenarioSnapshot, scenarioShadowStatus as buildScenarioShadowStatus, setScenarioEngineLogSink  } from "./scenario-shadow.mjs";
 // INTERSECAO OBSERVACIONAL: unico ponto que compara scenario x timing (somente leitura dos dois estados).
-import { UNIVERSE, OPERATIONAL_UNIVERSE, OPERATIONAL_MARKET_KEYS, mcpCanonical as universeMcpCanonical, isOperationalMarketKey, marketKey, entryForKey, segmentIdFor, isSupportedNormalBinaryMarket, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
+import { UNIVERSE, OPERATIONAL_UNIVERSE, OPERATIONAL_MARKET_KEYS, MCP_CONFIRMED_ASSET_IDS, mcpCanonical as universeMcpCanonical, isOperationalMarketKey, marketKey, entryForKey, segmentIdFor, isSupportedNormalBinaryMarket, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
 // DATAHUB + PROFESSIONAL_AGENT_SYSTEM_V4 (SHADOW): observabilidade/benchmark. NUNCA decide nem executa.
 import { EventBus } from "./datahub/event-bus.mjs";
 import { buildT0Enriched } from "./datahub/t0-enriched.mjs";
@@ -3549,7 +3549,32 @@ let added = 0;
     // sessao. Reutiliza a mesma discovery V3, sem inferir nem inventar ofertas.
     this.mcpCatalogAssets = list;
     this.#mcpIngestDiscovery();
-// DESCONTAMINACAO: nenhum ativo fora dos 24 pode ficar habilitado. O MCP nao
+// FALLBACK DE MAPEAMENTO (nunca cria mercado fora dos 24): variantes NORMAL que o
+    // gateway nao lista nesta sessao (FX/metais so como OTC) usam o asset_id confirmado
+    // para continuar configuradas com candles; a discovery so opera quando o catalogo
+    // voltar a lista-las OPEN.
+    for (const key of OPERATIONAL_MARKET_KEYS) {
+      const canonical = String(key).split(":")[0];
+      const ctx = this.markets.get(key);
+      if (ctx?.mcpAssetId !== undefined && ctx?.mcpAssetId !== null) continue;
+      const confirmed = MCP_CONFIRMED_ASSET_IDS[canonical];
+      if (!Number.isFinite(Number(confirmed))) continue;
+      if (!ctx) {
+        const fresh = this.#emptyMarket({ canonical, symbol: canonical, display: canonical, marketType: "NORMAL" }, key);
+        this.markets.set(key, fresh);
+      }
+      const target = this.markets.get(key);
+      if (target.enabled !== true && this.activeMarketKeys().length >= activeCap) continue;
+      target.mcpAssetId = Number(confirmed);
+      target.activeId = target.activeId ?? Number(confirmed);
+      target.availability = target.availability === "OPEN" ? "OPEN" : "CLOSED";
+      if (target.enabled !== true) {
+        target.enabled = true;
+        target.selectionReason = "MCP_CONFIRMED_ID";
+        if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL','CLOSED',$2,now()) ON CONFLICT(market_key,market_type) DO UPDATE SET enabled=true, active_id=EXCLUDED.active_id, updated_at=now()", [key, Number(confirmed)]).catch(() => undefined);
+      }
+    }
+    // DESCONTAMINACAO: nenhum ativo fora dos 24 pode ficar habilitado. O MCP nao
     // define o universo — GOLD/SILVER/AU200/AMAZON/NVIDIA/RIPPLE/SPACEX e quaisquer
     // outros sao desativados (historico preservado, enabled=false).
     for (const ctx of this.markets.values()) {
