@@ -3559,14 +3559,15 @@ const health = computeV3Health({
     if (!this.mcp) return;
     const candidates = [...this.markets.values()].filter((ctx) => ctx.enabled === true && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId)));
     if (!candidates.length) return;
-    // 37 ativos em lotes sequenciais de 8 levavam ~40s por volta e faziam a
-    // ultima parte perder a janela V3 de 28s. Lotes de 16, com no maximo 4
-    // leituras simultaneas, mantem a taxa moderada e todos os ativos chegam
-    // ao motor antes do cutoff de 5m02.
-    const batchSize = Math.max(1, Math.min(64, Number(process.env.MCP_CANDLE_BATCH_SIZE) || 16));
-    const concurrency = Math.max(1, Math.min(batchSize, Number(process.env.MCP_CANDLE_CONCURRENCY) || 4));
-    const batch = candidates.slice(this.mcpPollIndex, this.mcpPollIndex + batchSize);
-    this.mcpPollIndex = (this.mcpPollIndex + batchSize) % candidates.length;
+    // Dois lotes circulares (24 + restante) cobrem os 37 ativos em 8s. A
+    // versao anterior usava slice sem wrap e criava um terceiro lote tardio,
+    // que chegava sem os 15s minimos para o Consensus.
+    const batchSize = Math.max(1, Math.min(64, Number(process.env.MCP_CANDLE_BATCH_SIZE) || 24));
+    const concurrency = Math.max(1, Math.min(batchSize, Number(process.env.MCP_CANDLE_CONCURRENCY) || 6));
+    const take = Math.min(batchSize, candidates.length);
+    const start = this.mcpPollIndex % candidates.length;
+    const batch = Array.from({ length: take }, (_, offset) => candidates[(start + offset) % candidates.length]);
+    this.mcpPollIndex = (start + take) % candidates.length;
     const queue = [...batch];
     const worker = async () => {
       while (queue.length) {
