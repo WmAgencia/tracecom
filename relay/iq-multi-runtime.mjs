@@ -3741,12 +3741,28 @@ if (this.v3) {
         this.mcpPollTimer.unref?.();
         void this.#mcpCandleTick().catch(() => undefined);
       }
-      this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0, lastError: null, feedDriver: this.mcpStatus?.feedDriver ?? "MCP_V3_CANDLE_DISPATCH_V2" };
+this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0, lastError: null, feedDriver: this.mcpStatus?.feedDriver ?? "MCP_V3_CANDLE_DISPATCH_V2", syncAttempts: (this.mcpStatus?.syncAttempts ?? 0) + 1, lastSyncAt: this.now() };
+      if (verified !== true || (catalog?.total ?? 0) === 0) {
+        // Gateway lento/vazio no boot: tenta de novo em 60s (nunca deixa o sync morto).
+        this.#safe(() => this.log("V3_MCP_SYNC_PARTIAL", JSON.stringify({ verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0 })));
+        this.#scheduleMcpRetry();
+      }
     } catch (error) {
-      this.mcpStatus = { enabled: true, verified: false, catalogAdded: 0, lastError: String(error?.message ?? error).slice(0, 160) };
+      this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified: false, catalogAdded: 0, lastError: String(error?.message ?? error).slice(0, 160), syncAttempts: (this.mcpStatus?.syncAttempts ?? 0) + 1, lastSyncAt: this.now() };
       this.#safe(() => this.log("V3_MCP_SYNC_FAIL", this.mcpStatus.lastError));
+      this.#scheduleMcpRetry();
     }
     return this.mcpStatus;
+  }
+
+  /** Re-sync periodico enquanto a conta/catalogo nao subirem (gateway transiente). */
+  #scheduleMcpRetry() {
+    if (this.mcpRetryTimer || !this.running) return;
+    this.mcpRetryTimer = setTimeout(() => {
+      this.mcpRetryTimer = null;
+      if (this.running && this.mcp) void this.mcpEnableAndSync().catch(() => undefined);
+    }, 60_000);
+    this.mcpRetryTimer.unref?.();
   }
 
   /** Execucao V3 (PRACTICE-only): aprovacao do Consensus vira ordem com o VENCIMENTO EXATO da opportunity. */
