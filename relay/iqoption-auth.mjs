@@ -92,14 +92,14 @@ export class IqAuthSession {
     const setCookie = response.headers?.get?.("set-cookie") ?? "";
     const ssid = extractCookie(setCookie, "ssid");
     const bodyText = await response.text().catch(() => "");
-    if (/2fa|two.?factor|verification/i.test(bodyText)) {
-      let parsed = null; try { parsed = JSON.parse(bodyText); } catch { /* non-json */ }
-      this.twoFactorToken = parsed?.token ?? null;
+    let parsedBody = null; try { parsedBody = JSON.parse(bodyText); } catch { /* non-json */ }
+    if (/2fa|two.?factor|verification/i.test(bodyText) || (response.status === 403 && typeof parsedBody?.token === "string")) {
+      this.twoFactorToken = parsedBody?.token ?? null;
       this.state = "TWO_FACTOR_REQUIRED";
       return { state: this.state, twoFactorRequired: true };
     }
     if (!response.ok || !ssid) {
-      const parsed = (() => { try { return JSON.parse(bodyText); } catch { return null; } })();
+      const parsed = parsedBody;
       this._fail("AUTH_REJECTED", parsed?.message || bodyText || `HTTP ${response.status}`, [password]);
     }
     this._establish(ssid);
