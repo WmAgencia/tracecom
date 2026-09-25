@@ -50,7 +50,7 @@ const admin = adminSecretEnv.length >= 16 ? adminSecretEnv : `UNCONFIGURED-${cry
 const armState = new ExecutionArmState();
 const killSwitch = new KillSwitch();
 const executionIdempotency = new IdempotencyStore();
-const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: operationalAllowlist(), executionPolicyName: OPERATIONAL_EXECUTION_POLICY_NAME, rsiAgentsV2LiveEnabled: false, rsiAgentsV2BlitzEnabled: false, rsiAgentsV4Enabled: false, rsiAgentsV3Enabled: false, scenarioShadowEnabled: false, scenarioTimingIntersectionEnabled: false, agentsV4Enabled: false, dualReasoningEnabled: false, soloReasoningEnabled: false, indicator5mEnabled: false, rsiReversalEnabled: false, rsiVariantsEnabled: false, dataHubEnabled: true, consensusEnabled: true });
+const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, log: (...args) => console.info(...args), executionAllowlist: operationalAllowlist(), executionPolicyName: OPERATIONAL_EXECUTION_POLICY_NAME, rsiAgentsV2LiveEnabled: false, rsiAgentsV2BlitzEnabled: false, rsiAgentsV4Enabled: false, rsiAgentsV3Enabled: false, scenarioShadowEnabled: false, scenarioTimingIntersectionEnabled: false, agentsV4Enabled: false, dualReasoningEnabled: false, soloReasoningEnabled: false, indicator5mEnabled: false, rsiReversalEnabled: false, rsiVariantsEnabled: false, dataHubEnabled: true, consensusEnabled: true, onSessionExpired: async () => { const ok = await autoIqLogin("STALE"); if (ok) wsRuntime.sessionStale = false; } });
 // BLITZ: desativado por decisao operacional (somente binarias). Nenhum registry fetch e feito.
 // QUANT / RESEARCH PLATFORM (fora do hot path; nao executa nada).
 const { ResearchLab } = await import('./research-lab/api.mjs');
@@ -108,8 +108,29 @@ async function tryRestoreSession() {
     }
     const diag = await pool.query("SELECT (ssid_enc IS NOT NULL) AS has_enc, length(ssid_enc) AS enc_len, (iv IS NOT NULL) AS has_iv, (tag IS NOT NULL) AS has_tag, updated_at FROM iq_auth_session WHERE id=1").catch(() => null);
     console.info("IQ_SESSION_NOT_RESTORED", JSON.stringify({ secretPresent: Boolean(process.env.TOKEN_SIGNING_SECRET), row: diag?.rows?.[0] ?? null }));
+    // AUTO-LOGIN com credenciais do env (fluxo oficial IqAuthSession.login -> novo SSID -> sessao nova).
+    if (await autoIqLogin("BOOT")) { wsRuntime.start(); return true; }
   } catch { console.info("IQ_SESSION_RESTORE_UNAVAILABLE"); }
   return false;
+}
+/** Login oficial IQ com credenciais do ambiente (nunca loga email/senha). Marca a sessao como nova. */
+async function autoIqLogin(context = "SYSTEM") {
+  const email = String(process.env.IQ_OPTION_EMAIL ?? "").trim();
+  const password = String(process.env.IQ_OPTION_PASSWORD ?? "");
+  if (!email || !password) return false;
+  try {
+    const ok = await iqAuth.login({ email, password });
+    if (ok !== true) { console.info("IQ_AUTO_LOGIN_REJECTED", JSON.stringify({ context })); return false; }
+    await saveSession(pool, process.env.TOKEN_SIGNING_SECRET || "", { ssid: iqAuth.getSsidForHandshake(), emailMasked: iqAuth.snapshot().emailMasked ?? null, connectedAt: Date.now() });
+    wsRuntime.sessionStale = false;
+    wsRuntime.staleSessionStrikes = 0;
+    console.info("IQ_AUTO_LOGIN_OK", JSON.stringify({ context }));
+    try { wsRuntime.onSessionAvailable(); } catch { /* noop */ }
+    return true;
+  } catch (error) {
+    console.info("IQ_AUTO_LOGIN_FAIL", JSON.stringify({ context, code: String(error?.code ?? error?.message ?? error).slice(0, 120) }));
+    return false;
+  }
 }
 // Boot com DB lento nao pode deixar a producao desconectada para sempre: retry ate restaurar.
 const sessionRestored = await tryRestoreSession();

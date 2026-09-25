@@ -132,7 +132,7 @@ export class IqMultiRuntime extends EventEmitter {
   #dbProbeAt = null;
   #dbProbePromise = null;
 
-  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = false, scenarioTimingIntersectionEnabled = false, agentsV4Enabled = false, dataHubEnabled = true, dualReasoningEnabled = false, soloReasoningEnabled = false, indicator5mEnabled = false, rsiAgentsV2BlitzEnabled = false, consensusEnabled = true, consensusExecute = process.env.CONSENSUS_EXECUTE === "true", agenticEnabled = process.env.AGENTIC_ENABLED === "true", agenticRunId = process.env.AGENTIC_RUN_ID ?? null, labStake = null, agenticSafetyPct = process.env.AGENTIC_SAFETY_PCT ?? null, agenticShadowLevels = process.env.AGENTIC_SHADOW_LEVELS ?? null, autoArmPractice = process.env.AUTO_ARM_PRACTICE === "true", executionAllowlist = null, executionPolicyName = null } = {}) {
+  constructor({ pool = null, getSsid = () => null, armState = new ExecutionArmState(), killSwitch = new KillSwitch(), idempotency = new IdempotencyStore(), hosts = IQ_WS_CANDIDATE_HOSTS, now = () => Date.now(), log = () => {}, maxLatencySamples = 300, ackTimeoutMs = ACK_TIMEOUT_MS, realMode = new RealModeController({ now }), accountContext = new AccountContextController({ now, hardCap: HARD_CAP_STAKE, realTradingEnabled: process.env.REAL_TRADING_ENABLED === "true" }), gate = new PortfolioExecutionGate(), resolver = new RuntimeAssetResolver({ now }), autoExecute = false, decisionOverride = null, scenarioShadowEnabled = false, scenarioTimingIntersectionEnabled = false, agentsV4Enabled = false, dataHubEnabled = true, dualReasoningEnabled = false, soloReasoningEnabled = false, indicator5mEnabled = false, rsiAgentsV2BlitzEnabled = false, consensusEnabled = true, consensusExecute = process.env.CONSENSUS_EXECUTE === "true", agenticEnabled = process.env.AGENTIC_ENABLED === "true", agenticRunId = process.env.AGENTIC_RUN_ID ?? null, labStake = null, agenticSafetyPct = process.env.AGENTIC_SAFETY_PCT ?? null, agenticShadowLevels = process.env.AGENTIC_SHADOW_LEVELS ?? null, autoArmPractice = process.env.AUTO_ARM_PRACTICE === "true", executionAllowlist = null, executionPolicyName = null, onSessionExpired = null } = {}) {
     super();
     this.pool = pool; this.getSsid = getSsid; this.armState = armState; this.killSwitch = killSwitch; this.idempotency = idempotency;
     this.hosts = hosts; this.now = now; this.log = (...args) => { try { log(...args); } catch { /* noop */ } };
@@ -149,6 +149,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.autoArmSuppressed = false;
     this.sessionStale = false;
     this.staleSessionStrikes = 0;
+    this.onSessionExpired = typeof onSessionExpired === "function" ? onSessionExpired : null;
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentExecBinary = true;
     this.agentVariant = "";
@@ -380,6 +381,7 @@ export class IqMultiRuntime extends EventEmitter {
       // SESSAO EXPIrada: para de reutilizar o mesmo SSID obsoleto (evita loop infinito silencioso).
       if (this.sessionStale === true) {
         this.#safe(() => this.log("IQ_SESSION_EXPIRED", JSON.stringify({ reason: "IQ_LOGIN_REQUIRED", at: this.now() })));
+        if (this.onSessionExpired) { try { void this.onSessionExpired().catch(() => undefined); } catch { /* noop */ } }
         await sleep(30_000);
         continue;
       }
