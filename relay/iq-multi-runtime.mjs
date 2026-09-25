@@ -3654,11 +3654,12 @@ if (normalized.length >= 40) {
 if (this.v3) {
             if (this.mcpStatus) this.mcpStatus.v3DispatchAttempts = (this.mcpStatus.v3DispatchAttempts ?? 0) + 1;
             try {
-              // RELOGIO LOCAL no caminho MCP: o WS do broker esta rejeitado e o serverNow
-              // do cliente pode ficar preso/stale no ciclo reconnect; o broker clock ja
-              // vem nos candles (row.to) e a janela da V3 tolera o relogio local.
+              // RELOGIO DO BROKER no caminho MCP: a janela da V3 (TTE 330-300) e
+              // calculada sobre o relogio do broker. O serverNow do WS e aritmetica
+              // pura (nao bloqueia); fallback: o timestamp `to` do ultimo candle MCP.
+              const brokerNow = this.client?.serverNow?.() ?? normalized[normalized.length - 1].at;
               const dispatchT0 = this.now();
-              await this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow: this.now() });
+              await this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow });
               passDispatchMs += this.now() - dispatchT0;
               if (this.mcpStatus) this.mcpStatus.v3CandleEvents = (this.mcpStatus.v3CandleEvents ?? 0) + 1;
             } catch (error) {
