@@ -159,6 +159,7 @@ export class IqMultiRuntime extends EventEmitter {
     this.mcpWriteEnabled = process.env.IQ_MCP_WRITE_ENABLED === "true";
     this.mcpPollIndex = 0;
     this.mcpPollTimer = null;
+    if (this.mcp) setTimeout(() => { if (this.running) void this.mcpEnableAndSync().catch(() => undefined); }, 5_000).unref?.();
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentExecBinary = true;
     this.agentVariant = "";
