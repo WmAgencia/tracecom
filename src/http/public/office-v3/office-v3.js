@@ -472,9 +472,9 @@ async function fetchOfficeJson() {
 function demoMarkets() {
   const symbols = [
     "EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD", "USD/CHF", "NZD/USD", "EUR/GBP", "EUR/JPY", "GBP/JPY", "AUD/JPY",
-    "AUD/CAD", "AUD/CHF", "CAD/JPY", "CHF/JPY", "EUR/CAD", "EUR/CHF", "EUR/AUD", "GBP/AUD", "GBP/CHF", "EUR/USD OTC",
-    "GBP/USD OTC", "USD/JPY OTC", "EUR/GBP OTC", "GBP/JPY OTC", "AUD/USD OTC", "USD/CAD OTC", "USD/CHF OTC", "EUR/JPY OTC",
-    "AUD/JPY OTC", "BTC/USD OTC", "ETH/USD OTC", "LTC/USD OTC", "XRP/USD OTC", "ADA/USD OTC", "US30", "US100", "US500",
+    "AUD/CAD", "AUD/CHF", "CAD/JPY", "CHF/JPY", "EUR/CAD", "EUR/CHF", "EUR/AUD", "GBP/AUD", "GBP/CHF", "EUR/USD",
+    "GBP/USD", "USD/JPY", "EUR/GBP", "GBP/JPY", "AUD/USD OTC", "USD/CAD OTC", "USD/CHF", "EUR/JPY OTC",
+    "AUD/JPY OTC", "BTC/USD", "ETH/USD OTC", "LTC/USD OTC", "XRP/USD OTC", "ADA/USD OTC", "US30", "US100", "US500",
     "US2000", "GER30", "UK100", "JP225", "AUS200", "EU50", "HK33", "GOLD", "SILVER", "WTI", "BRENT", "NATGAS", "APPLE",
     "TESLA", "AMAZON", "GOOGLE", "META",
   ];

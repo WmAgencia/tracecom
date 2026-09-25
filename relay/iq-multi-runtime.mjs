@@ -40,7 +40,7 @@ import {  TIMING_POLICY_CURRENT, TIMING_POLICY_LATE, LATE_WINDOW_POLICY, LATE_WI
 // SCENARIO ENGINE V3 (SHADOW): observacao independente. NUNCA toca Brain/Trader/Critic/Consensus/Quality Gate/JIT/Execution Gate.
 import {  analyzeScenarioSnapshot, scenarioShadowStatus as buildScenarioShadowStatus, setScenarioEngineLogSink  } from "./scenario-shadow.mjs";
 // INTERSECAO OBSERVACIONAL: unico ponto que compara scenario x timing (somente leitura dos dois estados).
-import { UNIVERSE, OPERATIONAL_UNIVERSE, marketKey, entryForKey, segmentIdFor, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
+import { UNIVERSE, OPERATIONAL_UNIVERSE, marketKey, entryForKey, segmentIdFor, isSupportedNormalBinaryMarket, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
 // DATAHUB + PROFESSIONAL_AGENT_SYSTEM_V4 (SHADOW): observabilidade/benchmark. NUNCA decide nem executa.
 import { EventBus } from "./datahub/event-bus.mjs";
 import { buildT0Enriched } from "./datahub/t0-enriched.mjs";
@@ -218,7 +218,7 @@ export class IqMultiRuntime extends EventEmitter {
         marketStateFor: (marketKey) => {
           const ctx = this.markets.get(marketKey);
           if (!ctx) return { tradable: false, purchaseStatus: "UNAVAILABLE" };
-          const tradable = ctx.marketType !== "OTC" && ctx.enabled === true && ctx.paused !== true && ctx.availability === "OPEN" && ctx.activeId !== null;
+          const tradable = isSupportedNormalBinaryMarket(ctx);
           const payoutKnown = ctx.payout !== null && ctx.payout !== undefined;
           const purchaseStatus = ctx.availability === "OPEN" && (!payoutKnown || Number(ctx.payout) > 0) ? "AVAILABLE" : "UNAVAILABLE";
           return { tradable, purchaseStatus };
@@ -564,7 +564,7 @@ export class IqMultiRuntime extends EventEmitter {
           for (const row of this.resolver.status().markets) {
             if (row.activeId === null || row.activeId === undefined) continue;
             const ctx = this.markets.get(String(row.marketKey ?? ""));
-            if (!ctx || ctx.marketType !== "OTC" || ctx.enabled !== true || ctx.availability === "SUSPENDED") continue;
+            if (!isSupportedNormalBinaryMarket(ctx)) continue;
             marketKeyByActiveId.set(Number(row.activeId), row.marketKey);
           }
           this.v3.onInitializationData(response.msg, { brokerNow: this.client?.serverNow?.() ?? this.now(), marketKeyByActiveId });
@@ -778,7 +778,7 @@ export class IqMultiRuntime extends EventEmitter {
   #maybeRehydrateCandles() {
     if (!this.session.connected || !this.client) return;
     const now = this.now();
-    const stale = [...this.markets.values()].filter((ctx) => ctx.enabled && ctx.marketType !== "OTC" && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < 40 && now - (ctx.historyTriedAt ?? 0) > 60_000);
+    const stale = [...this.markets.values()].filter((ctx) => isSupportedNormalBinaryMarket(ctx) && ctx.activeId !== null && ctx.activeId !== undefined && ctx.candles.size < 40 && now - (ctx.historyTriedAt ?? 0) > 60_000);
     if (!stale.length) return;
     void this.#rehydrateCandleHistory(this.client, { only: stale })
       .then((history) => { if (history.loaded > 0) this.#safe(() => this.log("IQ_MULTI_CANDLE_HISTORY_RETRY", JSON.stringify(history))); })
@@ -3433,7 +3433,7 @@ const health = computeV3Health({
     const stake = Number(this.config.defaultStake);
     if (!(stake > 0)) return { submitted: false, reason: "NO_STAKE_CONFIGURED" };
     const ctx = this.markets.get(marketKey);
-    if (!ctx || ctx.enabled !== true || ctx.marketType === "OTC") return { submitted: false, reason: "MARKET_NOT_OTC" };
+    if (!isSupportedNormalBinaryMarket(ctx)) return { submitted: false, reason: "MARKET_NOT_SUPPORTED" };
     const exactExpirationAt = Number(expirationAt);
     if (!Number.isFinite(exactExpirationAt)) return { submitted: false, reason: "EXPIRATION_INVALID" };
     try {
@@ -5125,6 +5125,7 @@ const health = computeV3Health({
 
   stressReport() { return { running: this.stress.running, startedAt: this.stress.startedAt ?? null, stages: this.stress.stages ?? null, secondsPerStage: this.stress.secondsPerStage ?? null, cancelRequested: this.stress.cancelRequested === true, report: this.stress.report ?? null }; }
 }
+
 
 
 

@@ -33,6 +33,7 @@ export const UNIVERSE = [
   { canonical: "EURGBP", symbol: "EUR/GBP", display: "EUR/GBP", marketType: "NORMAL", currencies: ["EUR", "GBP"] },
   { canonical: "AUDJPY", symbol: "AUD/JPY", display: "AUD/JPY", marketType: "NORMAL", currencies: ["AUD", "JPY"] },
   { canonical: "GBPJPY", symbol: "GBP/JPY", display: "GBP/JPY", marketType: "NORMAL", currencies: ["GBP", "JPY"] },
+  { canonical: "USDCHF", symbol: "USD/CHF", display: "USD/CHF", marketType: "NORMAL", currencies: ["USD", "CHF"] },
   // GRUPO B — 5 OTC existentes
   { canonical: "EURUSD", symbol: "EUR/USD", display: "EUR/USD OTC", marketType: "OTC", currencies: ["EUR", "USD"] },
   { canonical: "GBPUSD", symbol: "GBP/USD", display: "GBP/USD OTC", marketType: "OTC", currencies: ["GBP", "USD"] },
@@ -91,6 +92,21 @@ export const UNIVERSE = [
  */
 export const OPERATIONAL_UNIVERSE = Object.freeze(UNIVERSE.filter((entry) => entry.marketType !== "OTC"));
 export const OPERATIONAL_MAX_ACTIVE_MARKETS = OPERATIONAL_UNIVERSE.length;
+
+/**
+ * ALLOWLIST POSITIVA (fail-closed) de mercado operacional:
+ * somente NORMAL + instrumento Binary suportado + enabled + tradable + OPEN + ativo.
+ * UNKNOWN / undefined / OTC / Blitz / Digital nao suportado / qualquer outro => REJECT.
+ */
+export function isSupportedNormalBinaryMarket(ctx, { requireEnabled = true, requireTradable = true } = {}) {
+  if (!ctx || typeof ctx !== "object") return false;
+  if (String(ctx.marketType ?? "").toUpperCase() !== "NORMAL") return false;
+  if (requireEnabled !== false && ctx.enabled !== true) return false;
+  if (requireTradable !== false && ctx.paused === true) return false;
+  if (ctx.availability !== "OPEN" && ctx.availability !== undefined) return false;
+  if (ctx.activeId === null || ctx.activeId === undefined) return false;
+  return true;
+}
 
 export function marketKey(canonical, marketType) { return `${String(canonical).toUpperCase()}:${String(marketType).toUpperCase() === "OTC" ? "OTC" : "NORMAL"}`; }
 export function universeEntry(canonical, marketType) { return UNIVERSE.find((entry) => entry.canonical === String(canonical).toUpperCase() && entry.marketType === marketType) ?? null; }

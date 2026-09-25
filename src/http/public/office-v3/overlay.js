@@ -23,7 +23,7 @@
  * headless scan (`docs/office-v3/blueprint-base.md` has the raw numbers). The
  * painted desks do NOT follow the old blueprint estimate (124px pitch ending at
  * x≈1378): the real 10-column bands use x0≈261 / pitch≈113, and the split bands
- * (OTC|CRIPTO, ÍNDICES|COMMODITIES) are two 5-desk sectors with their own
+ * (REAIS|CRIPTO, ÍNDICES|COMMODITIES) are two 5-desk sectors with their own
  * origins. Anchors land on the reference's OWN desks, independent of world.js's
  * CONTENT_X layout. No resize/crop/blur of the reference is involved.
  *
@@ -48,13 +48,13 @@ export const ANCHOR_BANDS = Object.freeze([
     sectors: Object.freeze([{ x0: 261, pitch: 113, count: 10 }]) },
   { band: "FOREX CRUZADOS", y: 502, h: 52, accent: "blue", expanded: false,
     sectors: Object.freeze([{ x0: 261, pitch: 113, count: 10 }]) },
-  { band: "OTC + CRIPTO", y: 616, h: 52, accent: "split", expanded: false,
+  { band: "REAIS + CRIPTO", y: 616, h: 52, accent: "split", expanded: false,
     sectors: Object.freeze([{ x0: 258, pitch: 114, count: 5 }, { x0: 847, pitch: 110, count: 5 }]) },
   { band: "ÍNDICES + COMMODITIES", y: 731, h: 52, accent: "split", expanded: false,
     sectors: Object.freeze([{ x0: 249, pitch: 114, count: 5 }, { x0: 846, pitch: 113, count: 5 }]) },
   { band: "OUTROS ATIVOS", y: 839, h: 52, accent: "blue", expanded: false,
     sectors: Object.freeze([{ x0: 254, pitch: 114, count: 10 }]) },
-  { band: "OTC EXTRA", y: 1072, h: 52, accent: "blue", expanded: true,
+  { band: "REAIS EXTRA", y: 1072, h: 52, accent: "blue", expanded: true,
     sectors: Object.freeze([{ x0: 261, pitch: 113, count: 5 }]) },
 ]);
 
@@ -77,22 +77,22 @@ const AGENT_SPLIT = 20;
  * docs/office-v3/blueprint-base.md). Position = index → row/column on the
  * grid; every market of the reconciled relay universe is placed on the desk
  * whose painted label matches its instrument whenever one exists:
- *   band 1 majors, band 2 crosses, band 3 OTC-24H + BTC, band 4 indices +
+ *   band 1 majors, band 2 crosses, band 3 REAIS-24H + BTC, band 4 indices +
  *   commodities, band 5 leftovers, band 6 expanded (off-artboard).
  * `USDCHF:NORMAL` (removed from the live universe) keeps the last expanded
  * slot as a reserve; unknown keys are assigned by `createAnchorResolver`.
  */
 export const ANCHOR_MARKETS = Object.freeze([
   ["EURUSD:NORMAL", "EUR/USD"], ["GBPUSD:NORMAL", "GBP/USD"], ["USDJPY:NORMAL", "USD/JPY"],
-  ["AUDUSD:NORMAL", "AUD/USD"], ["USDCAD:NORMAL", "USD/CAD"], ["USDCHF:OTC", "USD/CHF OTC"],
+  ["AUDUSD:NORMAL", "AUD/USD"], ["USDCAD:NORMAL", "USD/CAD"], ["USDCHF:OTC", "USD/CHF"],
   ["NZDCAD:OTC", "NZD/CAD OTC"], ["EURGBP:NORMAL", "EUR/GBP"], ["EURJPY:NORMAL", "EUR/JPY"],
   ["GBPJPY:NORMAL", "GBP/JPY"],
   ["AUDJPY:NORMAL", "AUD/JPY"], ["AUDCAD:OTC", "AUD/CAD OTC"], ["AUDCHF:OTC", "AUD/CHF OTC"],
   ["CADJPY:OTC", "CAD/JPY OTC"], ["CADCHF:OTC", "CAD/CHF OTC"], ["EURCAD:OTC", "EUR/CAD OTC"],
   ["EURCHF:OTC", "EUR/CHF OTC"], ["EURAUD:OTC", "EUR/AUD OTC"], ["GBPAUD:OTC", "GBP/AUD OTC"],
   ["GBPCHF:OTC", "GBP/CHF OTC"],
-  ["EURUSD:OTC", "EUR/USD OTC"], ["GBPUSD:OTC", "GBP/USD OTC"], ["USDJPY:OTC", "USD/JPY OTC"],
-  ["EURGBP:OTC", "EUR/GBP OTC"], ["GBPJPY:OTC", "GBP/JPY OTC"], ["BTCUSD:OTC", "BTC/USD OTC"],
+  ["EURUSD:OTC", "EUR/USD"], ["GBPUSD:OTC", "GBP/USD"], ["USDJPY:OTC", "USD/JPY"],
+  ["EURGBP:OTC", "EUR/GBP"], ["GBPJPY:OTC", "GBP/JPY"], ["BTCUSD:OTC", "BTC/USD"],
   ["AUDUSD:OTC", "AUD/USD OTC"], ["USDCAD:OTC", "USD/CAD OTC"], ["EURJPY:OTC", "EUR/JPY OTC"],
   ["AUDJPY:OTC", "AUD/JPY OTC"],
   ["US500:NORMAL", "US500"], ["US100:NORMAL", "US100"], ["US30:NORMAL", "US30"],
