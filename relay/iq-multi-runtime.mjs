@@ -163,11 +163,6 @@ this.mcpWriteEnabled = process.env.IQ_MCP_WRITE_ENABLED === "true";
     // Relogio do broker via MCP (ultimo candle `to`): a V3 so acerta janela/discovery
     // se o brokerNow usar o clock do gateway (o clock local pode divergir ~6min).
     this.mcpBrokerNow = null;
-    // BREAK OPTION: posicoes V3 abertas via MCP monitoradas para encerramento
-    // antecipado no alvo de lucro (env V3_BREAK_TARGET_PCT, default 60% do stake).
-    this.breakMonitor = new Map();
-    this.breakTargetPct = Number.isFinite(Number(process.env.V3_BREAK_TARGET_PCT)) ? Math.max(1, Math.min(500, Number(process.env.V3_BREAK_TARGET_PCT))) : 60;
-    this.breakTickTimer = null;
     if (this.mcp) setTimeout(() => { if (this.running) void this.mcpEnableAndSync().catch(() => undefined); }, 5_000).unref?.();
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentExecBinary = true;
@@ -3542,7 +3537,7 @@ let added = 0;
       // CONFIGURED=24: todo mercado dos 24 pertence ao universo (OPEN ou CLOSED na sessao).
       if (ctx.enabled !== true && this.activeMarketKeys().length < activeCap) {
         ctx.enabled = true; ctx.activeId = ctx.activeId ?? asset.asset_id; ctx.selectionReason = "MCP_CATALOG_OPEN"; added += 1;
-        if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL','OPEN',$2,now()) ON CONFLICT(market_key) DO UPDATE SET enabled=true, availability='OPEN', active_id=$2, updated_at=now()", [key, asset.asset_id]).catch(() => undefined);
+        if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL',$3,$2,now()) ON CONFLICT(market_key) DO UPDATE SET enabled=true, availability=$3, active_id=$2, updated_at=now()", [key, asset.asset_id, ctx.availability]).catch(() => undefined);
       }
     }
 // O catalogo MCP tambem e a fonte de expiracoes quando o WS nao mantem a
@@ -3605,7 +3600,7 @@ let added = 0;
     if (!balances.length) return false;
     const training = balances.find((b) => b.type === "training");
     const regular = balances.find((b) => b.type === "regular");
-    if (training) { this.account.practice = { verified: true, balanceId: training.balance_id, balance: Number(training.amount) || 0, currency: training.currency ?? "USD" }; }
+    if (training) { this.account.practice = { verified: true, balanceId: training.balance_id, balance: Number(training.amount) || 0, currency: training.currency ?? "USD", balanceType: String(training.type ?? "training") }; }
     if (regular) { this.account.real = { available: true, balanceId: regular.balance_id, balance: Number(regular.amount) || 0, currency: regular.currency ?? "USD" }; }
     this.account.checkedAt = this.now();
     this.account.type = "PRACTICE";
@@ -3778,19 +3773,24 @@ if (this.v3) {
     this.#emitEvent("market.disabled_no_feed", { marketKey: ctx.marketKey, reason, polls: ctx.mcpNoFeedPolls });
   }
 
-  /** Execucao via MCP oficial (place_trade) com balance do contexto (PRACTICE=training, REAL=regular). */
+/** Execucao via MCP oficial (place_trade) com balance EXCLUSIVO de PRACTICE (training).
+   *  Nunca usa account.real.balanceId — mesmo com REAL_TRADING_ENABLED=true. */
   async #mcpPlaceOrder({ marketKey, direction, stake, expirationAt }) {
     if (!this.mcp || this.mcpWriteEnabled !== true) return { submitted: false, reason: "MCP_WRITE_DISABLED" };
     const ctx = this.markets.get(marketKey);
     const assetId = Number(ctx?.mcpAssetId);
     if (!Number.isFinite(assetId)) return { submitted: false, reason: "NO_MCP_ASSET" };
-    const balance = this.config.mode === "REAL" ? this.account.real?.balanceId : this.account.practice?.balanceId;
-    if (balance === null || balance === undefined) return { submitted: false, reason: "NO_BALANCE" };
+    // PRACTICE ONLY: balance de treino verificado (type === "training"), nunca real.
+    const practice = this.account.practice ?? {};
+    if (practice.verified !== true || practice.balanceId === null || practice.balanceId === undefined) return { submitted: false, reason: "NO_PRACTICE_BALANCE" };
+    if (practice.balanceType !== undefined && String(practice.balanceType).toUpperCase() !== "TRAINING") return { submitted: false, reason: "MCP_BALANCE_NOT_TRAINING" };
+    const balance = Number(practice.balanceId);
+    if (!Number.isFinite(balance)) return { submitted: false, reason: "NO_PRACTICE_BALANCE" };
     const expirationSec = Math.round(Number(expirationAt) / 1000);
     const exp = Number.isFinite(expirationSec) ? expirationSec : Math.round((this.now() + 300_000) / 1000);
-    const result = await this.mcp.placeTrade({ asset_id: assetId, balance_id: Number(balance), expiration: exp, direction: direction === "BUY" ? "call" : "put", stake: Number(stake) });
+    const result = await this.mcp.placeTrade({ asset_id: assetId, balance_id: balance, expiration: exp, direction: direction === "BUY" ? "call" : "put", stake: Number(stake) });
     this.#safe(() => this.log("V3_MCP_ORDER", JSON.stringify({ marketKey, direction, stake, expiration: exp, ok: result?.ok === true, error: result?.message ?? null })));
-    return { submitted: result?.ok === true, brokerOrderId: result?.payload?.id ?? result?.payload?.position_id ?? null, error: result?.ok ? null : String(result?.message ?? result?.code ?? "MCP_ORDER_FAILED").slice(0, 140) };
+    return { submitted: result?.ok === true, brokerOrderId: result?.payload?.id ?? result?.payload?.position_id ?? null, error: result?.ok ? null : String(result?.message ?? result?.code ?? "MCP_ORDER_FAILED").slice(0, 160) };
   }
 
   /** Sobe o MCP (conta + catalogo + poller). Chamado no boot e no refresh periodico. */
@@ -3805,11 +3805,9 @@ if (!this.mcpPollTimer) {
         this.mcpPollTimer.unref?.();
         void this.#mcpCandleTick().catch(() => undefined);
       }
-      // BREAK OPTION: monitor de posicoes V3 (5s) para encerramento antecipado.
-      if (!this.breakTickTimer) {
-        this.breakTickTimer = setInterval(() => { if (this.running) void this.#mcpBreakTick().catch(() => undefined); }, 5_000);
-        this.breakTickTimer.unref?.();
-      }
+      // BREAK OPTION NAO faz parte da estrategia: a V3 opera entrada -> vencimento
+      // EXATO -> WIN/LOSS/DRAW. Nenhum encerramento antecipado. (sell_position do
+      // adapter permanece generico, nao chamado pela V3.)
 this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0, lastError: null, feedDriver: this.mcpStatus?.feedDriver ?? "MCP_V3_CANDLE_DISPATCH_V2", syncAttempts: (this.mcpStatus?.syncAttempts ?? 0) + 1, lastSyncAt: this.now() };
       if (verified !== true || (catalog?.total ?? 0) === 0) {
         // Gateway lento/vazio no boot: tenta de novo em 60s (nunca deixa o sync morto).
@@ -3834,56 +3832,14 @@ this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAd
     this.mcpRetryTimer.unref?.();
   }
 
-  /** BREAK OPTION: registra posicao aberta via MCP para encerramento antecipado. */
-  #trackBreakPosition({ marketKey, positionId, balanceId, stake }) {
-    if (!this.mcp || this.mcpWriteEnabled !== true || !positionId) return;
-    this.breakMonitor.set(String(positionId), {
-      marketKey, balanceId: Number(balanceId), stake: Number(stake) || 0, entryAt: this.now(),
-      targetAmount: (Number(stake) || 0) * (1 + this.breakTargetPct / 100), brokenAt: null, checks: 0,
-    });
-    this.#safe(() => this.log("V3_MCP_BREAK_TRACKED", JSON.stringify({ marketKey, positionId, stake: Number(stake), target: this.breakTargetPct })));
-  }
-
-  /** BREAK OPTION: monitora posicoes V3 e rompe (sell_position) quando o alvo e atingido. */
-  async #mcpBreakTick() {
-    if (!this.mcp || this.mcpWriteEnabled !== true || !this.breakMonitor.size) return;
-    const practiceOnly = String(this.config.mode).toUpperCase() !== "REAL";
-    for (const [positionId, tracked] of this.breakMonitor) {
-      try {
-        tracked.checks += 1;
-        if (tracked.brokenAt !== null) { this.breakMonitor.delete(positionId); continue; }
-        const res = await this.mcp.getPositions(tracked.balanceId);
-        const rows = Array.isArray(res?.data) ? res.data : [];
-        const position = rows.find((row) => String(row.id ?? row.position_id ?? "") === String(positionId));
-        if (!position) {
-          // Posicao nao encontrada: ja liquidada/vencida. Encerra o monitor apos 12 checagens.
-          if (tracked.checks > 12) this.breakMonitor.delete(positionId);
-          continue;
-        }
-        const current = Number(position.current_amount ?? position.amount ?? position.profit ?? 0);
-        const direction = String(position.direction ?? tracked.direction ?? "");
-        if (Number.isFinite(current) && current > 0 && current >= tracked.targetAmount) {
-          const sell = await this.mcp.sellPosition({ positionId: Number(positionId), balanceId: tracked.balanceId });
-          tracked.brokenAt = sell?.ok === true ? this.now() : null;
-          this.#safe(() => this.log("V3_MCP_BREAK", JSON.stringify({ marketKey: tracked.marketKey, positionId, current, target: tracked.targetAmount, stake: tracked.stake, ok: sell?.ok === true, error: sell?.message ?? null, direction })));
-          if (sell?.ok === true) this.breakMonitor.delete(positionId);
-        }
-      } catch (error) {
-        this.#safe(() => this.log("V3_MCP_BREAK_TICK_FAIL", String(error?.message ?? error).slice(0, 120)));
-      }
-    }
-    void practiceOnly;
-  }
-
   /** Execucao V3 (PRACTICE-only): aprovacao do Consensus vira ordem com o VENCIMENTO EXATO da opportunity. */
   async #v3ExecutePractice({ opportunityId, direction, expirationAt } = {}) {
     const marketKey = String(opportunityId ?? "").split("@")[0] ?? null;
     if (!marketKey || (direction !== "UP" && direction !== "DOWN")) return { submitted: false, reason: "NO_DIRECTION" };
-    // CONTA: PRACTICE sempre; REAL somente com arm REAL explicito + REAL_TRADING_ENABLED (fail-closed).
-    if (this.config.mode === "REAL") {
-      if (process.env.REAL_TRADING_ENABLED !== "true" || this.accountContext?.armed !== true) return { submitted: false, reason: "REAL_NOT_AUTHORIZED" };
-    } else if (this.config.mode !== "PRACTICE") {
-      return { submitted: false, reason: "NOT_AUTHORIZED" };
+    // CONTA: PRATICA EXCLUSIVAMENTE pelo caminho V3/MCP. REAL e impossivel mesmo
+    // com REAL_TRADING_ENABLED=true — o balance practice/training e o unico aceito.
+    if (this.config.mode !== "PRACTICE") {
+      return { submitted: false, reason: "MCP_REAL_EXECUTION_FORBIDDEN" };
     }
     if (this.armState?.armed !== true) return { submitted: false, reason: "NOT_ARMED" };
     if (this.config.autoExecute !== true) return { submitted: false, reason: "AUTO_OFF" };
@@ -3901,10 +3857,6 @@ this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAd
       if (this.mcp && this.mcpWriteEnabled === true) {
 const mcpResult = await this.#mcpPlaceOrder({ marketKey, direction: direction === "UP" ? "BUY" : "SELL", stake, expirationAt: exactExpirationAt });
         this.#safe(() => this.log("V3_EXECUTE_MCP", JSON.stringify({ marketKey, direction, stake, expirationAt: exactExpirationAt, submitted: mcpResult?.submitted === true, orderId: mcpResult?.brokerOrderId ?? null, error: mcpResult?.error ?? null })));
-        // BREAK OPTION: registra a posicao para encerramento antecipado no alvo.
-        if (mcpResult?.submitted === true && mcpResult?.brokerOrderId) {
-          this.#trackBreakPosition({ marketKey, positionId: String(mcpResult.brokerOrderId), balanceId: this.config.mode === "REAL" ? this.account.real?.balanceId : this.account.practice?.balanceId, stake });
-        }
         return { ...mcpResult, path: "MCP" };
       }
       const result = await this.requestOrder({ marketKey, direction: direction === "UP" ? "BUY" : "SELL", stake, decisionId: opportunityId, exactExpirationAt, source: "V3_CONSENSUS", v3Approved: true, autoDisarmAfterAck: false });
@@ -3922,13 +3874,13 @@ const mcpResult = await this.#mcpPlaceOrder({ marketKey, direction: direction ==
     if (!this.#v3SystemActive()) { this.v3GateCounters.suppressedInactive += 1; return { status: "ERROR", reason: "SYSTEM_INACTIVE", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null }; }
     if (!this.pool) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
     const timeoutMs = Number.isFinite(Number(options.timeoutMs)) && Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 20_000;
-    // CONSENSO dentro da janela (28s): um modelo lento (550b) nao pode consumir o
-    // orcamento inteiro; 10s de teto faz o cooldown girar para glm/groq (1-3s) na
-    // proxima janela sem perder a oportunidade.
-    const effectiveTimeoutMs = isConsensus ? Math.min(10_000, timeoutMs) : timeoutMs;
-    const deadlineAt = this.now() + effectiveTimeoutMs;
     const role = String(options.requestId ?? "").split(":").pop();
     const isConsensus = role === "CONSENSUS_FINAL";
+    // CONSENSO dentro da janela (28s): um modelo lento (550b) nao pode consumir o
+    // orcamento inteiro; 10s de teto faz o cooldown girar para glm/groq (1-3s) na
+    // proxima janela sem perder a oportunidade. isConsensus e declarado ANTES.
+    const effectiveTimeoutMs = isConsensus ? Math.min(10_000, timeoutMs) : timeoutMs;
+    const deadlineAt = this.now() + effectiveTimeoutMs;
     const priority = isConsensus ? 2 : 1;
     const estTokens = Number(process.env.V3_GROQ_EST_TOKENS) || 1_200;
     const intervalMs = Number(process.env.V3_GROQ_MIN_INTERVAL_MS) || 10_000;
