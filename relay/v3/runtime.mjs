@@ -94,9 +94,12 @@ export class V3Runtime {
     } catch (error) { this.lastError = String(error?.message ?? error).slice(0, 160); return { actives: 0, discovered: 0, error: this.lastError }; }
   }
 
-  #adoptDueFronts(brokerNow = null) {
+#adoptDueFronts(brokerNow = null) {
     let discovered = 0;
+    let due = 0;
+    let rejected = 0;
     for (const front of this.discovery.due(brokerNow)) {
+      due += 1;
       // Fronteira ja registrada (mesmo expirada/MISSED) nunca e re-adotada: o proximo boundary
       // entra sozinho quando o relogio avanca. Evita contadores inflados e CPU por candle.
       const opportunityId = ExpirationOpportunityEngine.opportunityId(front.marketKey, front.expirationAt);
@@ -108,10 +111,20 @@ export class V3Runtime {
       });
       if (result.created) {
         discovered += 1;
-        this.log("V3_OPPORTUNITY_DISCOVERED", stableStringify({ opportunityId: result.opportunity.opportunityId, firstSeenTteMs: result.opportunity.firstSeenTteMs, deadtimeMs: front.deadtimeMs, allowedDurationsMs: front.allowedDurationsMs ?? null }));
+        this.log("V3_OPPORTUNITY_DISCOVERED", stableStringify({ opportunityId: result.opportunity.opportunityId, firstSeenTteMs: result.opportunity.firstSeenTteMs, deadtimeMs: front.deadtimeMs ?? null }));
         this.#trackOpportunityPersist(result.opportunity);
-        void this.persistOffer({ marketKey: front.marketKey, expirationAt: front.expirationAt, activeId: offer.activeId ?? null, firstSeenAt: result.opportunity.firstSeenAt, firstSeenTteMs: result.opportunity.firstSeenTteMs, deadtimeMs: front.deadtimeMs ?? null, payout: offer.payout ?? null, buyable: offer.buyable ?? null, source: offer.source ?? "broker-clock-derived" });
-      }
+        void this.persistOffer({ marketKey: front.marketKey, expirationAt: front.expirationAt, activeId: offer.activeId ?? null, firstSeenAt: result.opportunity.firstSeenAt, firstSeenTteMs: result.opportunity.firstSeenTteMs, brokerNow: result.derived?.brokerNow ?? null, deadtimeMs: front.deadtimeMs ?? null });
+      } else if (result?.error) { rejected += 1; this.#noteDiscoveryReject(front, result.error, result.derived ?? null); }
+    }
+    if (due > 0 && (rejected > 0 || discovered > 0)) this.log("V3_DISCOVERY_ATTEMPT", stableStringify({ brokerNow, due, rejected, discovered, sample: discovered > 0 ? null : [...this.discovery.due(brokerNow)].slice(0, 2).map((f) => ({ k: f.marketKey, tteMs: f.tteMs })) }));
+    return discovered;
+  }
+
+  #noteDiscoveryReject(front, error, derived) {
+    if (!this.lastDiscoveryReject) this.lastDiscoveryReject = [];
+    this.lastDiscoveryReject.push({ marketKey: front.marketKey, tteMs: front.tteMs, expirationAt: front.expirationAt, brokerNow: derived?.brokerNow ?? null, error });
+    if (this.lastDiscoveryReject.length > 10) this.lastDiscoveryReject.shift();
+  }
     }
     return discovered;
   }
