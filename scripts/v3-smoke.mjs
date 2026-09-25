@@ -26,10 +26,10 @@ const BASE = Math.floor(Date.now() / 300_000) * 300_000;
 const EXP = BASE + 300_000;
 
 ok("playbooks e scenario library validos", validatePlaybooks().ok && validateScenarioLibrary().ok && validatePlaybooks().count >= 25);
-ok("manifesto V3 PENDING_IMPLEMENTATION/executable=false e hash deterministico", (() => {
+ok("manifesto V3 ACTIVE/executable e hash deterministico", (() => {
   const manifest = JSON.parse(fs.readFileSync(V3_MANIFEST_PATH, "utf8"));
   const computed = computeV3StrategyHash();
-  return manifest.status === "PENDING_IMPLEMENTATION" && manifest.executable === false && manifest.strategyHash === computed.strategyHash && computed.strategyHash === computeV3StrategyHash().strategyHash;
+  return manifest.status === "ACTIVE" && manifest.executable === true && manifest.strategyHash === computed.strategyHash && computed.strategyHash === computeV3StrategyHash().strategyHash;
 })());
 
 const discovery = new ExpirationDiscovery({ now: () => EXP - 330_000 });
@@ -53,8 +53,8 @@ const asset = classifyAsset({ measurements, specialists });
 const consensus = runConsensus({ measurements, asset, timing: { ok: true, code: "ENTRY_WINDOW_OPEN", tteMs: 305_000 } });
 ok("pipeline deterministico: measurements -> specialists -> Asset -> Consensus", measurements.rsi.value !== null && specialists.rsi && ["BUY_CANDIDATE", "SELL_CANDIDATE", "WAIT", "NO_SETUP"].includes(asset.state) && ["APPROVE_BUY", "APPROVE_SELL", "CANCEL"].includes(consensus.result));
 
-const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "PENDING_IMPLEMENTATION", executable: false }, now: () => EXP - 330_000 });
-ok("runtime V3 nasce observe-only (sem execucao, sem caminho de ordem)", runtime.status().executionMode === "OBSERVE_ONLY" && runtime.status().executionEnabled === false && !/requestOrder\s*\(|placeOrder\s*\(/.test(fs.readFileSync(new URL("../relay/v3/runtime.mjs", import.meta.url), "utf8")));
+const runtime = new V3Runtime({ strategy: { version: "PULLBACK_4060_300_AGENTIC_V3", status: "ACTIVE", executable: true }, now: () => EXP - 330_000 });
+ok("runtime V3 delega execucao apenas ao callback gated", runtime.status().executionMode === "PRACTICE_GATED" && runtime.status().executionEnabled === true && !/requestOrder\s*\(|placeOrder\s*\(/.test(fs.readFileSync(new URL("../relay/v3/runtime.mjs", import.meta.url), "utf8")));
 
 /* Grade real + janelas separadas (exemplos da UI reproduzidos) */
 const AT_112454 = Date.UTC(2026, 8, 23, 11, 24, 54);

@@ -5,9 +5,9 @@
  *        -> ciclos a cada candle fechado -> specialists -> Asset -> Consensus/Final Challenge
  *        -> snapshot imutavel + log/persistencia.
  *
- * EXECUCAO: desligada por padrao. Mesmo com APPROVE_*, somente executa quando a estrategia
- * estiver ACTIVE/executable E V3_EXECUTE=true (futuro, com aprovacao explicita do operador).
- * Nesta fase nada e enviado ao broker: executionRef registra o bloqueio com motivo.
+ * EXECUCAO: uma aprovacao so chega ao callback operacional quando a estrategia estiver
+ * ACTIVE/executable (ou V3_EXECUTE=true). O callback revalida conta, ARM, AUTO, stake,
+ * mercado e vencimento; REAL continua fail-closed e requer armamento explicito.
  */
 import crypto from "node:crypto";
 import { ExpirationDiscovery } from "./expiration-discovery.mjs";
@@ -71,7 +71,7 @@ export class V3Runtime {
     this.latencySamples = [];
   }
 
-  get executionEnabled() { return (this.strategy?.executable === true || process.env.V3_EXECUTE === "true") && process.env.REAL_TRADING_ENABLED !== "true"; }
+  get executionEnabled() { return this.strategy?.executable === true || process.env.V3_EXECUTE === "true"; }
 
   /** Ativos binarios do initialization-data (ids resolvidos pelo chamador). */
   onInitializationData(msg, { brokerNow = null, marketKeyByActiveId = null, activeByMarketKey = null } = {}) {
@@ -304,7 +304,7 @@ export class V3Runtime {
           context: { result: finalDecision.result, direction: finalDecision.direction, cycleNumber: finalDecision.cycleNumber, final: true, snapshotHash: snapshot.snapshotHash },
         });
         if (scheduled?.scheduled) this.counters.scheduled += 1;
-        opportunity.finalDecision = { ...opportunity.finalDecision, snapshotHash: snapshot.snapshotHash, executionBlocked: this.executionEnabled ? "V3_EXECUTION_NOT_WIRED" : "V3_NOT_ACTIVE" };
+        opportunity.finalDecision = { ...opportunity.finalDecision, snapshotHash: snapshot.snapshotHash, executionBlocked: this.executionEnabled ? "AWAITING_EXECUTION_WINDOW" : "V3_NOT_ACTIVE" };
         opportunity.executionRef = { ...(opportunity.executionRef ?? {}), scheduledSendAt: opportunity.targetSendAt, scheduledAt: at, submit: false, blocked: opportunity.finalDecision.executionBlocked };
         this.counters.executionBlocked += 1;
       } else {
@@ -354,7 +354,7 @@ export class V3Runtime {
       await this.#persistOpportunity(opportunity);
       return { opportunityId: opportunity.opportunityId, fired: true, ...checks, result: "REVALIDATION_BLOCKED" };
     }
-    opportunity.executionRef = { ...(opportunity.executionRef ?? {}), fireAt: brokerNow, checks, submit: false, wouldSubmitAt: brokerNow, blocked: this.executionEnabled ? "V3_EXECUTION_NOT_WIRED" : "V3_NOT_ACTIVE" };
+    opportunity.executionRef = { ...(opportunity.executionRef ?? {}), fireAt: brokerNow, checks, submit: false, wouldSubmitAt: brokerNow, blocked: this.executionEnabled ? "PRACTICE_GATES_PENDING" : "V3_NOT_ACTIVE" };
     this.counters.schedulerFired += 1;
     await this.#persistOpportunity(opportunity);
     this.log("V3_SCHEDULER_FIRED_OBSERVE_ONLY", stableStringify({ opportunityId: opportunity.opportunityId, tteMs: checks.tteMs, result: opportunity.finalDecision?.result ?? null }));
@@ -524,7 +524,7 @@ export class V3Runtime {
       version: V3_RUNTIME_VERSION,
       strategy: { version: this.strategy?.version ?? null, status: this.strategy?.status ?? null, executable: this.strategy?.executable === true, strategyHash: this.strategy?.strategyHash ?? null, statsEpoch: this.strategy?.statsEpoch ?? null },
       executionEnabled: this.executionEnabled,
-      executionMode: "OBSERVE_ONLY",
+      executionMode: this.executionEnabled ? "PRACTICE_GATED" : "OBSERVE_ONLY",
       agentMode: this.agentMode,
       agentArchitecture: this.agentArchitecture,
       agentSafetyMarginMs: this.agentSafetyMarginMs,

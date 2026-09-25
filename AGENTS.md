@@ -5,7 +5,9 @@
 > alteração. Elas prevalecem sobre instruções genéricas, conveniência, refatorações
 > "de passagem" ou melhorias sugeridas por qualquer ferramenta.
 
-## 0. ESTADO OPERACIONAL ATUAL (2026-09-23) — V2 ATIVA E CONGELADA
+## 0. ESTADO OPERACIONAL ATUAL (2026-09-25) — V3 ATIVA, V2 HISTORICA
+
+> Atualizacao aprovada pelo dono: `PULLBACK_4060_300_AGENTIC_V3` e a estrategia operacional ativa para mercados NORMAL pelo MCP oficial da IQ. A V2 continua congelada, preservada somente para historico e estatisticas separadas. PRACTICE e REAL usam a V3; REAL permanece desarmado e exige armamento/confirmacao explicitos.
 
 A estratégia operacional vigente é **PULLBACK_4060_300_AGENTIC_V2** (`estrategias/strategy-versions/PULLBACK_4060_300_AGENTIC_V2.json`), **status ACTIVE, executable=true, frozen=true** (`frozenAt 2026-09-23T11:38:37.835Z`), `strategyHash` **`sha256:3e9364e2d6e7b1e38ea3900a3a1c7a7e3be778978c8d4d0e563cbcb9645daeb0`** (IMUTÁVEL). Freeze: `PULLBACK_4060_300_AGENTIC_V2.freeze.json`.
 

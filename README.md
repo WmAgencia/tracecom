@@ -85,4 +85,4 @@ Configure segredos exclusivamente nas variáveis do serviço: `IQ_MCP_ENABLED`, 
 
 ## Histórico
 
-`PULLBACK_4060_300_AGENTIC_V2` continua preservada como referência histórica congelada e mantém estatísticas próprias. A tela e o fluxo operacional devem refletir o estado efetivo da V3; a transição para execução V3 exige ativação explícita e validação em PRACTICE.
+`PULLBACK_4060_300_AGENTIC_V2` continua preservada como referência histórica congelada e mantém estatísticas próprias. A V3 é a estratégia operacional ativa; qualquer execução real ainda exige o armamento e a confirmação explícita do operador.

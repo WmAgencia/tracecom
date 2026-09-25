@@ -1,5 +1,7 @@
 # TraceCom — Estratégia ativa e configuração (checkpoint vivo)
 
+> **Estado operacional atual (2026-09-25):** `PULLBACK_4060_300_AGENTIC_V3` está ACTIVE/executable para mercados NORMAL pelo MCP oficial da IQ. A V2 abaixo é o registro congelado e mantém apenas histórico/estatísticas separadas. PRACTICE e REAL percorrem o mesmo fluxo V3; REAL continua desarmado até confirmação explícita.
+
 > **Este documento é o "cofre" da configuração que está valendo.** Sempre que algo for alterado
 > no sistema, atualizar aqui primeiro e gerar um novo backup (`scripts/backup-config.mjs`).
 > Última atualização: **2026-09-22** — reconstrução controlada (binário OTC 300s, V2 agentic).
