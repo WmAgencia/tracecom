@@ -3698,7 +3698,7 @@ if (this.v3) {
       const verified = await this.#mcpVerifyAccount();
       const catalog = await this.#mcpSyncCatalog();
       if (!this.mcpPollTimer) {
-        const pollMs = Math.max(2_000, Number(process.env.MCP_CANDLE_POLL_MS) || 5_000);
+        const pollMs = Math.max(2_000, Number(process.env.MCP_CANDLE_POLL_MS) || 12_000);
         this.mcpPollTimer = setInterval(() => { if (this.running) void this.#mcpCandleTick().catch(() => undefined); }, pollMs);
         this.mcpPollTimer.unref?.();
         void this.#mcpCandleTick().catch(() => undefined);

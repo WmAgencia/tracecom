@@ -331,7 +331,7 @@ export class IQOfficialMCPAdapter {
       enumerable: false,
       configurable: true,
     });
-    this.limiter = new RateLimiter({ limits: options.rateLimits, now: this.now });
+    this.limiter = new RateLimiter({ limits: this.#envRateLimits(options.rateLimits, env), now: this.now });
     this.ttl = { ...DEFAULT_TTL_MS, ...(options.ttlMs ?? {}) };
 
     const maxCacheEntries = Number(options.maxCacheEntries);
@@ -343,6 +343,21 @@ export class IQOfficialMCPAdapter {
     this._rpcId = 0;
     this.healthState = HEALTH.UNAVAILABLE;
     this.stats = { requests: 0, calls: 0, cacheHits: 0, retries: 0, rateLimited: 0 };
+  }
+
+  /** Limites via env (IQ_MCP_READ_LIMIT etc.) com defaults conservadores.
+   *  O default de leitura (60/min) e bom para backfill, mas o V3 precisa de burst
+   *  maior para cobrir 34+ mercados dentro da janela de analise (28s). */
+  #envRateLimits(overrides = null, env = process.env) {
+    const pick = (name) => ({
+      limit: positiveNumber(overrides?.[name]?.limit, DEFAULT_LIMITS[name].limit),
+      windowMs: positiveNumber(overrides?.[name]?.windowMs, DEFAULT_LIMITS[name].windowMs),
+    });
+    return {
+      gateway: { limit: positiveNumber(env.IQ_MCP_GATEWAY_LIMIT, pick("gateway").limit), windowMs: pick("gateway").windowMs },
+      read: { limit: positiveNumber(env.IQ_MCP_READ_LIMIT, pick("read").limit), windowMs: pick("read").windowMs },
+      write: { limit: positiveNumber(env.IQ_MCP_WRITE_LIMIT, pick("write").limit), windowMs: pick("write").windowMs },
+    };
   }
 
   _resolveToken(options, env) {
