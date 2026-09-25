@@ -125,9 +125,6 @@ export class V3Runtime {
     this.lastDiscoveryReject.push({ marketKey: front.marketKey, tteMs: front.tteMs, expirationAt: front.expirationAt, brokerNow: derived?.brokerNow ?? null, error });
     if (this.lastDiscoveryReject.length > 10) this.lastDiscoveryReject.shift();
   }
-    }
-    return discovered;
-  }
 
   /** Ciclos em fila POR MERCADO (mercados diferentes rodam em paralelo; o mesmo mercado, serial).
    *  Nada lanca para o V2: erros ficam no lastError/log. */
