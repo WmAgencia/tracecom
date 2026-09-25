@@ -3524,9 +3524,9 @@ const health = computeV3Health({
     for (const ctx of batch) {
       try {
         const candles = await this.mcp.getCandles(Number(ctx.mcpAssetId), 5, 80);
-        const rows = candles?.data ?? [];
+        const rows = candles?.data?.candles ?? [];
         if (!rows.length) continue;
-        const normalized = rows.map((row) => ({ at: Number(row.open_time ?? row.time ?? row.at ?? 0) * 1000, open: Number(row.open ?? 0), high: Number(row.high ?? 0), low: Number(row.low ?? 0), close: Number(row.close ?? 0) })).filter((c) => Number.isFinite(c.at) && c.at > 0);
+        const normalized = rows.map((row) => ({ at: new Date(String(row.to ?? row.from ?? 0)).getTime(), open: Number(row.open ?? 0), high: Number(row.max ?? 0), low: Number(row.min ?? 0), close: Number(row.close ?? 0) })).filter((c) => Number.isFinite(c.at) && c.at > 0 && Number.isFinite(c.close) && c.close > 0);
         if (normalized.length >= 40) {
           this.latestCandles.set(ctx.marketKey, normalized);
           ctx.lastTickAt = this.now();
