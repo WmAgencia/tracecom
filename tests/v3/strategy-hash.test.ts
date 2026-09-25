@@ -25,8 +25,10 @@ describe("V3 estrategia — hash e manifesto", () => {
     const manifest = JSON.parse(fs.readFileSync(V3_MANIFEST_PATH, "utf8"));
     const computed = computeV3StrategyHash();
     expect(manifest.strategyVersion).toBe("PULLBACK_4060_300_AGENTIC_V3");
-    expect(manifest.status).toBe("PENDING_IMPLEMENTATION");
-    expect(manifest.executable).toBe(false);
+    // V3 foi promovida para a estratégia operacional; o manifesto é a
+    // autoridade para o runtime e o teste deve proteger esse estado ativo.
+    expect(manifest.status).toBe("ACTIVE");
+    expect(manifest.executable).toBe(true);
     expect(manifest.strategyHash).toBe(computed.strategyHash);
     expect(manifest.newStrategyHash).toBe(computed.strategyHash);
     expect(manifest.stats.opportunities).toBe(0);
