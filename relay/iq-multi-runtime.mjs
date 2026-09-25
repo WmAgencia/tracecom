@@ -3572,6 +3572,8 @@ const health = computeV3Health({
 const batchSize = Math.max(1, Math.min(64, Number(process.env.MCP_CANDLE_BATCH_SIZE) || 64));
     const concurrency = Math.max(1, Math.min(batchSize, Number(process.env.MCP_CANDLE_CONCURRENCY) || 24));
     const passStartedAt = this.now();
+    let passFetchMs = 0;
+    let passDispatchMs = 0;
     const take = Math.min(batchSize, candidates.length);
     const start = this.mcpPollIndex % candidates.length;
     const batch = Array.from({ length: take }, (_, offset) => candidates[(start + offset) % candidates.length]);
@@ -3581,8 +3583,10 @@ const batchSize = Math.max(1, Math.min(64, Number(process.env.MCP_CANDLE_BATCH_S
       while (queue.length) {
         const ctx = queue.shift();
         if (!ctx) return;
-      try {
+try {
+        const fetchT0 = this.now();
         const candles = await this.mcp.getCandles(Number(ctx.mcpAssetId), 5, 80);
+        passFetchMs += this.now() - fetchT0;
         const rows = candles?.data?.candles ?? [];
         if (!rows.length) { this.#mcpMarkNoFeed(ctx, "EMPTY_CANDLES"); continue; }
         const normalized = rows.map((row) => ({ at: new Date(String(row.to ?? row.from ?? 0)).getTime(), open: Number(row.open ?? 0), high: Number(row.max ?? 0), low: Number(row.min ?? 0), close: Number(row.close ?? 0) })).filter((c) => Number.isFinite(c.at) && c.at > 0 && Number.isFinite(c.close) && c.close > 0).sort((a, b) => a.at - b.at);
@@ -3619,7 +3623,9 @@ if (this.v3) {
               // RELOGIO LOCAL no caminho MCP: o WS do broker esta rejeitado e o serverNow
               // do cliente pode ficar preso/stale no ciclo reconnect; o broker clock ja
               // vem nos candles (row.to) e a janela da V3 tolera o relogio local.
+              const dispatchT0 = this.now();
               await this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow: this.now() });
+              passDispatchMs += this.now() - dispatchT0;
               if (this.mcpStatus) this.mcpStatus.v3CandleEvents = (this.mcpStatus.v3CandleEvents ?? 0) + 1;
             } catch (error) {
               const message = String(error?.message ?? error).slice(0, 160);
@@ -3644,6 +3650,8 @@ if (this.v3) {
     await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, worker));
     if (this.mcpStatus) {
       this.mcpStatus.passWallMs = this.now() - passStartedAt;
+      this.mcpStatus.passFetchMs = passFetchMs;
+      this.mcpStatus.passDispatchMs = passDispatchMs;
       const p = this.mcpStatus.lastPassTimes ?? (this.mcpStatus.lastPassTimes = []);
       p.push(this.mcpStatus.passWallMs);
       if (p.length > 10) p.shift();
