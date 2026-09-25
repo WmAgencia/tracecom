@@ -3559,9 +3559,19 @@ const health = computeV3Health({
     if (!this.mcp) return;
     const candidates = [...this.markets.values()].filter((ctx) => ctx.enabled === true && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId)));
     if (!candidates.length) return;
-    const batch = candidates.slice(this.mcpPollIndex, this.mcpPollIndex + 8);
-    this.mcpPollIndex = (this.mcpPollIndex + 8) % candidates.length;
-    for (const ctx of batch) {
+    // 37 ativos em lotes sequenciais de 8 levavam ~40s por volta e faziam a
+    // ultima parte perder a janela V3 de 28s. Lotes de 16, com no maximo 4
+    // leituras simultaneas, mantem a taxa moderada e todos os ativos chegam
+    // ao motor antes do cutoff de 5m02.
+    const batchSize = Math.max(1, Math.min(64, Number(process.env.MCP_CANDLE_BATCH_SIZE) || 16));
+    const concurrency = Math.max(1, Math.min(batchSize, Number(process.env.MCP_CANDLE_CONCURRENCY) || 4));
+    const batch = candidates.slice(this.mcpPollIndex, this.mcpPollIndex + batchSize);
+    this.mcpPollIndex = (this.mcpPollIndex + batchSize) % candidates.length;
+    const queue = [...batch];
+    const worker = async () => {
+      while (queue.length) {
+        const ctx = queue.shift();
+        if (!ctx) return;
       try {
         const candles = await this.mcp.getCandles(Number(ctx.mcpAssetId), 5, 80);
         const rows = candles?.data?.candles ?? [];
@@ -3617,7 +3627,9 @@ const health = computeV3Health({
         }
         this.#safe(() => this.log("V3_MCP_CANDLE_POLL_FAIL", JSON.stringify({ marketKey: ctx.marketKey, message })));
       }
-    }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, worker));
   }
 
   /** Remove do universo somente ativo que o MCP confirmou sem historico repetidamente.
