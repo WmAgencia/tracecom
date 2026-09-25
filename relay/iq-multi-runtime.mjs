@@ -676,7 +676,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (!ctx.enabled || ctx.activeId === null || ctx.activeId === undefined) { ctx.connectionHealth = { ...ctx.connectionHealth, connected: false }; return; }
     // NORMAL via MCP oficial ja possui feed canonico. Nao tente tambem o WS
     // legado, que pode fechar depois do upgrade e registrar falso bloqueio V3.
-    if (this.mcp && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId))) {
+    if (this.mcp && ctx.marketType === "NORMAL") {
       ctx.subscriptionState = "SUBSCRIBED";
       ctx.connectionHealth = { ...ctx.connectionHealth, connected: true };
       this.lastSubscriptionAt = this.now();
@@ -3502,6 +3502,22 @@ const health = computeV3Health({
         ctx.enabled = true; ctx.activeId = ctx.activeId ?? asset.asset_id; ctx.selectionReason = "MCP_CATALOG_OPEN"; added += 1;
         if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL','OPEN',$2,now()) ON CONFLICT(market_key) DO UPDATE SET enabled=true, availability='OPEN', active_id=$2, updated_at=now()", [key, asset.asset_id]).catch(() => undefined);
       }
+    }
+    // O catalogo MCP tambem e a fonte de expiracoes quando o WS nao mantem a
+    // sessao. Reutiliza a mesma discovery V3, sem inferir nem inventar ofertas.
+    if (this.v3) {
+      const marketKeyByActiveId = new Map();
+      const turboActives = {};
+      for (const asset of list) {
+        if (asset?.is_open !== true || /\(OTC\)/i.test(String(asset?.name ?? ""))) continue;
+        const canonical = this.mcpCanonical(asset.name);
+        const activeId = Number(asset.asset_id);
+        if (!canonical || !Number.isFinite(activeId)) continue;
+        const key = `${canonical}:NORMAL`;
+        marketKeyByActiveId.set(activeId, key);
+        turboActives[activeId] = { id: activeId, enabled: true, deadtime: 30, option: { expiration_times: Array.isArray(asset.expirations) ? asset.expirations : [] } };
+      }
+      this.v3.onInitializationData({ result: { turbo: { actives: turboActives } } }, { brokerNow: this.client?.serverNow?.() ?? this.now(), marketKeyByActiveId });
     }
     return { added, total: list.length };
   }
