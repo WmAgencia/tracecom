@@ -185,6 +185,15 @@
   <div class="sect">API MCP oficial (token)</div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mcpTokenInput" placeholder="token do MCP oficial" style="flex:1;min-width:260px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="mcpSave">SALVAR</button><button class="btn" id="mcpClear">LIMPAR</button></div>
   <div id="mcpStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">—</div>
+  <div class="sect">Login IQ Option</div>
+  <div style="display:grid;gap:8px">
+    <label style="font-size:11.5px;color:#8b97ad" for="iqEmailInput">E-mail da conta IQ Option</label>
+    <input id="iqEmailInput" type="email" inputmode="email" autocomplete="username" placeholder="seuemail@exemplo.com" style="background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" />
+    <label style="font-size:11.5px;color:#8b97ad" for="iqPasswordInput">Senha</label>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="iqPasswordInput" type="password" autocomplete="current-password" placeholder="senha da IQ Option" style="flex:1;min-width:260px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="iqLogin">ENTRAR NA IQ</button></div>
+    <div id="iqTwoFactor" hidden style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="iqTwoFactorInput" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="código de verificação" style="flex:1;min-width:180px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="iqVerifyTwoFactor">CONFIRMAR CÓDIGO</button></div>
+  </div>
+  <div id="iqLoginStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">A senha é usada somente neste login seguro e não é salva no navegador.</div>
   <div class="sect">Conexão</div>
   <div class="kv"><div class="k">Auth (IQ)</div><div id="cfgAuth">—</div><div class="k">Feed 5s</div><div id="cfgFeed">—</div><div class="k">Execução (broker)</div><div id="cfgExec">—</div></div>
   <div class="sect">Conta</div>
@@ -564,6 +573,31 @@
   const refreshMcp = async () => { const data = await api("/api/iq/mcp/config"); const el = $("mcpStatus"); if (!data) { el.textContent = "API MCP: indisponível"; return; } el.innerHTML = "API MCP: " + (data.configured ? "<b style='color:#4ade80'>configurada</b> (" + esc(data.masked) + ")" : "<b style='color:#f87171'>não configurada</b>"); };
 const saveMcp = async () => { const token = $("mcpTokenInput").value.trim(); if (!token) return; const r = await apiStrict("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token }) }); if (r) { $("mcpTokenInput").value = ""; await refreshMcp(); } };
 const clearMcp = async () => { const r = await apiStrict("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: "" }) }); if (r === null) return; await refreshMcp(); };
+  const setIqLoginStatus = (text, ok = false) => { const el = $("iqLoginStatus"); el.textContent = text; el.style.color = ok ? "#4ade80" : "#f87171"; };
+  const updateIqLoginResult = async (result) => {
+    const twoFactor = result?.state === "TWO_FACTOR_REQUIRED" || result?.twoFactorRequired === true;
+    $("iqTwoFactor").hidden = !twoFactor;
+    if (twoFactor) setIqLoginStatus("A IQ Option pediu um código de verificação. Informe-o abaixo.");
+    else if (result?.state === "CONNECTED_READ_ONLY" || result?.hasSession === true) setIqLoginStatus("Login concluído. Reconectando o feed da IQ Option…", true);
+    else setIqLoginStatus(result?.lastError || "Não foi possível concluir o login. Confira os dados e tente novamente.");
+    await refreshHeader();
+    await refreshIntelligence();
+  };
+  const loginIq = async () => {
+    const email = $("iqEmailInput").value.trim(); const password = $("iqPasswordInput").value;
+    if (!email || !password) { setIqLoginStatus("Informe o e-mail e a senha da conta IQ Option."); return; }
+    const button = $("iqLogin"); button.disabled = true;
+    try { const result = await apiStrict("/api/iq/connect", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password }) }); if (result) await updateIqLoginResult(result); }
+    catch { setIqLoginStatus("Não foi possível falar com o relay. Tente novamente em instantes."); }
+    finally { $("iqPasswordInput").value = ""; button.disabled = false; }
+  };
+  const verifyIqTwoFactor = async () => {
+    const code = $("iqTwoFactorInput").value.trim(); if (!code) { setIqLoginStatus("Informe o código de verificação enviado pela IQ Option."); return; }
+    const button = $("iqVerifyTwoFactor"); button.disabled = true;
+    try { const result = await apiStrict("/api/iq/verify-2fa", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) }); if (result) { $("iqTwoFactorInput").value = ""; await updateIqLoginResult(result); } }
+    catch { setIqLoginStatus("Não foi possível validar o código. Tente novamente."); }
+    finally { button.disabled = false; }
+  };
 
   $("navMesas").onclick = openMesas;
   $("mesasModal").onclick = (e) => { if (e.target === $("mesasModal")) $("mesasModal").classList.remove("on"); };
@@ -576,6 +610,10 @@ const clearMcp = async () => { const r = await apiStrict("/api/iq/mcp/config", {
   $("configModal").onclick = (e) => { if (e.target === $("configModal")) $("configModal").classList.remove("on"); };
   $("mcpSave").onclick = saveMcp;
   $("mcpClear").onclick = clearMcp;
+  $("iqLogin").onclick = loginIq;
+  $("iqVerifyTwoFactor").onclick = verifyIqTwoFactor;
+  $("iqPasswordInput").onkeydown = (event) => { if (event.key === "Enter") { event.preventDefault(); void loginIq(); } };
+  $("iqTwoFactorInput").onkeydown = (event) => { if (event.key === "Enter") { event.preventDefault(); void verifyIqTwoFactor(); } };
   $("acctPractice").onclick = () => selectAccount("PRACTICE");
   $("acctReal").onclick = () => selectAccount("REAL");
   $("btnExecutionToggle").onclick = toggleExecution;

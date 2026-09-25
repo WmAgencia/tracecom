@@ -69,3 +69,9 @@
 - O cliente IQ correlaciona cada resposta pelo `request_id`; leituras paralelas de candles, opções, saldos e inicialização não substituem mais a espera umas das outras.
 - Ao fechar o socket, todas as leituras pendentes falham imediatamente com `WS_CLOSED`, em vez de gerarem timeouts atrasados e rejeições não tratadas.
 - Mudança exclusivamente operacional de transporte/observabilidade: não altera a estratégia congelada, stake, mercados, expiração de 300s ou os gates PRACTICE/REAL.
+
+## Hotfix operacional — login IQ Option no painel (2026-09-25)
+
+- A guia **Configurações** permite informar e-mail e senha da IQ Option para renovar a sessão do relay, inclusive com campo para código de verificação em duas etapas quando solicitado.
+- A senha segue somente no POST HTTPS de login, é limpa do formulário após o envio e não é gravada em armazenamento do navegador, logs, documentação ou backup. O relay persiste somente o `ssid` cifrado.
+- Uma sessão aceita solicita a reconexão do WebSocket. Isso não arma PRACTICE, não arma REAL e não modifica estratégia, stake, mercados, expiração de 300s ou gates fail-closed.
