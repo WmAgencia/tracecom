@@ -176,6 +176,10 @@ export class IqMultiRuntime extends EventEmitter {
     this.account = { practice: { verified: false, balanceId: null, balance: null, currency: null }, real: { available: false, balanceId: null, balance: null, currency: null }, hasReal: false, checkedAt: null, type: "UNKNOWN" };
     this.config = { mode: "PRACTICE", globalMaxStake: HARD_CAP_STAKE, defaultStake: null, calculatedBankrollStake: null, hardCap: HARD_CAP_STAKE, maxActiveMarkets: MAX_ACTIVE_MARKETS, autoExecute: autoExecute === true, revision: 0, brainGeneration: BRAIN_GENERATION, jitEnabled: true, entryLeadMs: DEFAULT_ENTRY_LEAD_MS, entryWindowMaxDriftMs: DEFAULT_MAX_DRIFT_MS, qualityGateEnabled: true, minTradeQualityScore: DEFAULT_MIN_TRADE_QUALITY_SCORE, scenarioShadowEnabled: scenarioShadowEnabled === true, scenarioTimingIntersectionEnabled: scenarioTimingIntersectionEnabled === true, agentsV4ShadowEnabled: agentsV4Enabled === true, dualReasoningShadowEnabled: dualReasoningEnabled === true, soloReasoningShadowEnabled: soloReasoningEnabled === true, indicator5mShadowEnabled: indicator5mEnabled === true };
     this.markets = new Map();
+    // Cache do feed alternativo MCP. O runtime V3 possui seu proprio cache para
+    // serializar ciclos; este espelho pertence ao relay para observabilidade e
+    // nao pode impedir o despacho do candle quando o WS estiver indisponivel.
+    this.latestCandles = new Map();
     for (const entry of OPERATIONAL_UNIVERSE) {
       const key = marketKey(entry.canonical, entry.marketType);
       this.markets.set(key, this.#emptyMarket(entry, key));
