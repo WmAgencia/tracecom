@@ -28,6 +28,12 @@ socket.emit("data", Buffer.from(envelope("candles", { candles: [] }, firstReques
 const [firstResult, secondResult] = await Promise.all([first, second]);
 ok("duas requisicoes simultaneas recebem suas proprias respostas", firstResult.response.name === "candles" && secondResult.response.name === "balances");
 
+const originalSend = socket.sendText.bind(socket);
+socket.sendText = () => { throw new Error("socket closed"); };
+const sendFailure = await client.request("sendMessage", { name: "get-options" }, { predicate: () => false, timeoutMs: 10_000 }).catch((reason) => reason);
+socket.sendText = originalSend;
+ok("falha de envio rejeita somente a propria espera", sendFailure?.code === "WS_NOT_CONNECTED");
+
 const closed = client.request("sendMessage", { name: "get-options" }, { predicate: (message) => message?.name === "options", timeoutMs: 10_000 });
 await new Promise((resolve) => setImmediate(resolve));
 socket.emit("close");

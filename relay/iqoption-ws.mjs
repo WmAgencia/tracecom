@@ -434,8 +434,9 @@ export class IqWsClient extends EventEmitter {
     });
   }
 
-  #rejectPending(code) {
+  #rejectPending(code, requestId = null) {
     for (const [key, pending] of this.pending) {
+      if (requestId !== null && key !== requestId) continue;
       this.pending.delete(key);
       clearTimeout(pending.timer);
       pending.reject(new IqWsError(code));
@@ -450,7 +451,7 @@ export class IqWsClient extends EventEmitter {
   async request(name, msg, { predicate, timeoutMs = 15_000, timeoutCode = "REQUEST_TIMEOUT", requestId = null } = {}) {
     const id = requestId ?? this.uuid().replace(/-/g, "").slice(0, 12);
     const wait = this.#waitFor(predicate ?? ((message) => message.request_id === id || message.requestId === id), timeoutMs, timeoutCode, id);
-    try { this.send(name, msg, id); } catch (error) { this.#rejectPending("WS_NOT_CONNECTED"); throw error; }
+    try { this.send(name, msg, id); } catch { this.#rejectPending("WS_NOT_CONNECTED", id); return await wait; }
     const response = await wait;
     return { requestId: id, response };
   }
