@@ -3531,15 +3531,16 @@ let added = 0;
       }
       ctx.mcpAssetId = asset.asset_id ?? null;
       ctx.mcpExpirations = Array.isArray(asset.expirations) ? asset.expirations.map((t) => Number(t) * 1000) : [];
-      ctx.availability = asset.is_open === true ? "OPEN" : (ctx.availability ?? "CLOSED");
+      ctx.availability = asset.is_open === true ? "OPEN" : "CLOSED"; // gateway e a fonte de verdade
       // Mercado desativado por falha transitoria MCP (EMPTY_CANDLES etc.) volta no boot:
-      // o catalogo confirma que ele existe e esta OPEN; o poller valida os candles.
-      if (asset.is_open === true && ctx.enabled !== true && /^MCP_/.test(String(ctx.selectionReason ?? "")) && this.activeMarketKeys().length < activeCap) {
+      // o catalogo confirma que ele existe; o poller valida os candles.
+      if (ctx.enabled !== true && /^MCP_/.test(String(ctx.selectionReason ?? "")) && this.activeMarketKeys().length < activeCap) {
         ctx.enabled = true; ctx.selectionReason = "MCP_SELF_HEALED"; ctx.mcpNoFeedPolls = 0;
         if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=true, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
         this.#safe(() => this.log("MCP_MARKET_REENABLED", JSON.stringify({ marketKey: ctx.marketKey, at: "boot-sync" })));
       }
-      if (asset.is_open === true && ctx.enabled !== true && this.activeMarketKeys().length < activeCap) {
+      // CONFIGURED=24: todo mercado dos 24 pertence ao universo (OPEN ou CLOSED na sessao).
+      if (ctx.enabled !== true && this.activeMarketKeys().length < activeCap) {
         ctx.enabled = true; ctx.activeId = ctx.activeId ?? asset.asset_id; ctx.selectionReason = "MCP_CATALOG_OPEN"; added += 1;
         if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL','OPEN',$2,now()) ON CONFLICT(market_key) DO UPDATE SET enabled=true, availability='OPEN', active_id=$2, updated_at=now()", [key, asset.asset_id]).catch(() => undefined);
       }
