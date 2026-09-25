@@ -3332,7 +3332,7 @@ export class IqMultiRuntime extends EventEmitter {
 
   /* ------------------------------- intelligence / research / supervisor / knowledge ------------------------------- */
 
-  #pipeClosedCandle(ctx, candle) {
+  #pipeClosedCandle(ctx, candle, { dispatch = true } = {}) {
     try {
       if (!this.assetIntelligence || !ctx?.marketKey || !candle || Array.isArray(candle)) return;
       if (ctx.marketType === "OTC") return; // SOMENTE MERCADO REAL/NORMAL alimenta a inteligencia
@@ -3344,7 +3344,9 @@ export class IqMultiRuntime extends EventEmitter {
       const result = this.assetIntelligence.onClosedCandle(ctx.marketKey, normalized);
       if (result?.processed === true) {
         this.candleStore?.record(ctx.marketKey, normalized);
-        void this.pumpIntelligenceDecisions();
+        // O feed MCP tambem alimenta a telemetria/Log, mas a execucao operacional
+        // permanece exclusivamente no fluxo V3 de expiracao (consensus -> scheduler).
+        if (dispatch) void this.pumpIntelligenceDecisions();
       }
     } catch (error) { this.#safe(() => this.log("PIPE_FEED_FAIL", String(error?.message ?? error).slice(0, 120))); }
   }
@@ -3553,9 +3555,10 @@ const health = computeV3Health({
       try {
         const candles = await this.mcp.getCandles(Number(ctx.mcpAssetId), 5, 80);
         const rows = candles?.data?.candles ?? [];
-        if (!rows.length) continue;
+        if (!rows.length) { this.#mcpMarkNoFeed(ctx, "EMPTY_CANDLES"); continue; }
         const normalized = rows.map((row) => ({ at: new Date(String(row.to ?? row.from ?? 0)).getTime(), open: Number(row.open ?? 0), high: Number(row.max ?? 0), low: Number(row.min ?? 0), close: Number(row.close ?? 0) })).filter((c) => Number.isFinite(c.at) && c.at > 0 && Number.isFinite(c.close) && c.close > 0).sort((a, b) => a.at - b.at);
         if (normalized.length >= 40) {
+          ctx.mcpNoFeedPolls = 0;
           const map = new Map();
           for (const candle of normalized) map.set(candle.at, candle);
           ctx.candles = map;
@@ -3571,6 +3574,16 @@ const health = computeV3Health({
             this.mcpStatus.feedDriver = "MCP_V3_CANDLE_DISPATCH_V2";
           }
           this.latestCandles.set(ctx.marketKey, normalized);
+          // O mesmo candle fechado que desenha o grafico deve alimentar o Log e
+          // seus indicadores. Repassamos o historico ainda nao visto para que um
+          // ativo que iniciou sem WS possa se recuperar sozinho da hydration falha.
+          const lastPipedAt = Number(ctx.mcpPipedCandleAt) || 0;
+          const closed = normalized.filter((candle) => candle.at <= receivedAt && candle.at > lastPipedAt);
+          for (const candle of closed) this.#pipeClosedCandle(ctx, candle, { dispatch: false });
+          if (closed.length) {
+            ctx.mcpPipedCandleAt = closed[closed.length - 1].at;
+            if (this.mcpStatus) this.mcpStatus.intelligenceCandleEvents = (this.mcpStatus.intelligenceCandleEvents ?? 0) + closed.length;
+          }
           if (this.v3) {
             if (this.mcpStatus) this.mcpStatus.v3DispatchAttempts = (this.mcpStatus.v3DispatchAttempts ?? 0) + 1;
             try {
@@ -3585,7 +3598,7 @@ const health = computeV3Health({
               this.#safe(() => this.log("V3_MCP_CANDLE_DISPATCH_FAIL", JSON.stringify({ marketKey: ctx.marketKey, message })));
             }
           }
-        }
+        } else this.#mcpMarkNoFeed(ctx, "INSUFFICIENT_CANDLES");
       } catch (error) {
         const message = String(error?.message ?? error).slice(0, 160);
         if (this.mcpStatus) {
@@ -3595,6 +3608,20 @@ const health = computeV3Health({
         this.#safe(() => this.log("V3_MCP_CANDLE_POLL_FAIL", JSON.stringify({ marketKey: ctx.marketKey, message })));
       }
     }
+  }
+
+  /** Remove do universo somente ativo que o MCP confirmou sem historico repetidamente.
+   *  Evita cards vazios e nao desativa por uma falha transitoria isolada. */
+  #mcpMarkNoFeed(ctx, reason) {
+    ctx.mcpNoFeedPolls = (Number(ctx.mcpNoFeedPolls) || 0) + 1;
+    if (this.mcpStatus) this.mcpStatus.noFeedPolls = (this.mcpStatus.noFeedPolls ?? 0) + 1;
+    if (ctx.mcpNoFeedPolls < 3 || ctx.enabled !== true) return;
+    ctx.enabled = false;
+    ctx.selectionReason = `MCP_${reason}`;
+    if (this.mcpStatus) this.mcpStatus.disabledNoFeedMarkets = (this.mcpStatus.disabledNoFeedMarkets ?? 0) + 1;
+    if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
+    this.#safe(() => this.log("MCP_MARKET_DISABLED_NO_FEED", JSON.stringify({ marketKey: ctx.marketKey, reason, polls: ctx.mcpNoFeedPolls })));
+    this.#emitEvent("market.disabled_no_feed", { marketKey: ctx.marketKey, reason, polls: ctx.mcpNoFeedPolls });
   }
 
   /** Execucao via MCP oficial (place_trade) com balance do contexto (PRACTICE=training, REAL=regular). */
