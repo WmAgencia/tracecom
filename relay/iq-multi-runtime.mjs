@@ -3827,7 +3827,11 @@ this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAd
     if (!this.#v3SystemActive()) { this.v3GateCounters.suppressedInactive += 1; return { status: "ERROR", reason: "SYSTEM_INACTIVE", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null }; }
     if (!this.pool) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
     const timeoutMs = Number.isFinite(Number(options.timeoutMs)) && Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 20_000;
-    const deadlineAt = this.now() + timeoutMs;
+    // CONSENSO dentro da janela (28s): um modelo lento (550b) nao pode consumir o
+    // orcamento inteiro; 10s de teto faz o cooldown girar para glm/groq (1-3s) na
+    // proxima janela sem perder a oportunidade.
+    const effectiveTimeoutMs = isConsensus ? Math.min(10_000, timeoutMs) : timeoutMs;
+    const deadlineAt = this.now() + effectiveTimeoutMs;
     const role = String(options.requestId ?? "").split(":").pop();
     const isConsensus = role === "CONSENSUS_FINAL";
     const priority = isConsensus ? 2 : 1;
