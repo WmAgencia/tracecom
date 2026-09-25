@@ -17,6 +17,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { EventEmitter } from "node:events";
 import { nextOperationalExpiryAt, OPERATIONAL_EXPIRY_SECONDS } from "./execution/binary300.mjs";
+import { evaluateIqSessionStaleness } from "./iq-session-stale.mjs";
 import { IqWsClient, IqWsError, IQ_WS_CANDIDATE_HOSTS, CANDLE_SIZE_SECONDS, classifyBalances, computeExpiration, normalizeCandle, parseSettlement, toEpochMs, EXPECTED_EURUSD_ACTIVE_ID_FROM_REPO, EXPECTED_EURUSD_OTC_ACTIVE_ID_FROM_REPO } from "./iqoption-ws.mjs";
 import { buildFeatureContext, freshnessGate } from "./feature-engine.mjs";
 import { executionGate, applyBrokerAcknowledgement, compareSettlement, ExecutionArmState, IdempotencyStore, KillSwitch, MAX_PRACTICE_STAKE_BRL } from "./iqoption-connector.mjs";
@@ -146,6 +147,8 @@ export class IqMultiRuntime extends EventEmitter {
     this.agentSafetyPct = this.agentSafetyFromEnv ? Math.max(0, Math.min(100, Math.round(Number(agenticSafetyPct)))) : 100;
     this.autoArmPractice = autoArmPractice === true;
     this.autoArmSuppressed = false;
+    this.sessionStale = false;
+    this.staleSessionStrikes = 0;
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentExecBinary = true;
     this.agentVariant = "";
@@ -374,6 +377,12 @@ export class IqMultiRuntime extends EventEmitter {
   async #runLoop() {
     let attempt = 0;
     while (this.running && !this.stopRequested) {
+      // SESSAO EXPIrada: para de reutilizar o mesmo SSID obsoleto (evita loop infinito silencioso).
+      if (this.sessionStale === true) {
+        this.#safe(() => this.log("IQ_SESSION_EXPIRED", JSON.stringify({ reason: "IQ_LOGIN_REQUIRED", at: this.now() })));
+        await sleep(30_000);
+        continue;
+      }
       const ssid = this.getSsid();
       if (!ssid) { await sleep(5_000); continue; }
       let client = null;
@@ -393,6 +402,15 @@ export class IqMultiRuntime extends EventEmitter {
         this.accountContext.beginSession(ready.connectionId);
         this.#emitEvent("connection.ready", { host: ready.host, timeValid: ready.timeValid, clockSkewMs: ready.clockSkewMs });
         await this.#bootstrap(client);
+        // DETECCAO DE SESSAO STALE: WS vivo + timeValido + PRACTICE nao verificado por N conexoes => IQ_SESSION_EXPIRED.
+        if (this.sessionStale !== true) {
+          const evalResult = evaluateIqSessionStaleness({ wsConnected: this.session?.connected === true, timeValid: this.session?.timeValid === true, practiceVerified: this.account?.practice?.verified === true, strikes: this.staleSessionStrikes ?? 0, priorStale: false, minStrikes: 3 });
+          this.staleSessionStrikes = evalResult.strikes;
+          if (evalResult.stale) {
+            this.sessionStale = true;
+            this.#safe(() => this.log("IQ_SESSION_STALE", JSON.stringify({ state: evalResult.state, reason: evalResult.reason, strikes: evalResult.strikes })));
+          }
+        }
         attempt = 0;
         await new Promise((resolve) => { this.#disconnectedWaiter = resolve; if (!this.running) resolve(); });
       } catch (error) {
@@ -3387,6 +3405,14 @@ const health = computeV3Health({
       llmGate: { active: this.#v3SystemActive(), suppressedInactive: this.v3GateCounters.suppressedInactive ?? 0 },
       pipeline: { prefilterPass: base.counters?.prefilterPass ?? 0, prefilterReject: base.counters?.prefilterReject ?? 0, prefilterRejectReasons: base.counters?.prefilterRejectReasons ?? {}, consensusCalls: base.counters?.consensusCalls ?? 0, consensusProvider: base.counters?.consensusProvider ?? null },
       iqExec: { orders: this.signalLog?.filter((row) => row.disposition === "EXECUTED").length ?? 0, settlements: [...this.markets.values()].filter((ctx) => ctx.lastTrade?.settledAt !== undefined && ctx.lastTrade?.settledAt !== null).length ?? 0, lastExecution: [...this.markets.values()].map((ctx) => ctx.lastTrade).filter(Boolean).sort((a, b) => b.at - a.at)[0] ?? null },
+      brokerStatus: (() => {
+        if (this.sessionStale === true) return { state: "SESSION_EXPIRED", detail: "IQ_LOGIN_REQUIRED" };
+        if (this.session?.connected !== true) return { state: this.reconnects > 0 ? "RECONNECTING" : "DISCONNECTED", detail: null };
+        if (this.session?.timeValid !== true) return { state: "TIME_SYNC_FAILED", detail: "clock skew" };
+        if (this.account?.practice?.verified !== true) return { state: "LOGIN_REQUIRED", detail: "PRACTICE_ACCOUNT_NOT_READY" };
+        if (feedReadyMarkets === 0) return { state: "FEED_NO_CANDLES", detail: "sem candles" };
+        return { state: "CONNECTED", detail: null };
+      })(),
       feedByMarket: (() => {
         const out = {};
         const now = this.now();

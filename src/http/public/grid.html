@@ -327,7 +327,7 @@
     const vh = v3?.health ?? {};
     const vState = String(vh.state ?? "OFFLINE");
     setText($("intelState"), vState);
-    setText($("intelReady"), String(v3?.configuredMarkets ?? next.length ?? 0));
+    setText($("intelReady"), String(v3?.feedReadyMarkets ?? 0));
     setText($("intelFeed"), "5s");
     const routing = v3?.routing ?? {};
     const specialistLabel = routing.RSI?.label ? String(routing.RSI.label) : "LLM";
@@ -400,8 +400,10 @@
     setText($("cfgReal"), realArmed ? "ARMADO" : "DESARMADO (fail-closed)");
     const execConn = st?.connection?.execution ?? null;
     const brokerReady = execConn?.ready === true;
+    const v3Broker = v3?.brokerStatus?.state ?? null;
     setText($("connTxt"), brokerReady ? "Online" : "Offline");
-    setText($("footConn"), brokerReady ? "broker conectado" : "broker desconectado");
+    const brokerLabel = { CONNECTED: "BROKER: CONECTADO", RECONNECTING: "BROKER: RECONECTANDO", SESSION_EXPIRED: "BROKER: SESSÃO IQ EXPIRADA", LOGIN_REQUIRED: "BROKER: LOGIN IQ NECESSÁRIO", TIME_SYNC_FAILED: "BROKER: TIME SYNC FALHOU", FEED_NO_CANDLES: "BROKER: FEED SEM CANDLES", DISCONNECTED: "BROKER: DESCONECTADO" }[v3Broker] ?? (brokerReady ? "broker conectado" : "broker desconectado");
+    setText($("footConn"), brokerLabel);
     $("footConn").style.color = brokerReady ? "#4ade80" : "#f87171";
     $("footConn").parentElement.title = brokerReady ? "" : (execConn?.reasons ?? []).join(", ");
     setText($("cfgAuth"), (st?.auth?.state ?? st?.state ?? "—") + (st?.auth?.hasSession === true ? " · sessão OK" : " · sem sessão"));
