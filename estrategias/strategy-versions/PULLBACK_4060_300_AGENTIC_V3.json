@@ -25,8 +25,8 @@
     "winRate": null,
     "pnl": 0
   },
-  "strategyHash": "sha256:fd0cbbd47e3ad264f6861b2afada328faa2c4208b7ba89b2adba7d638bbaf765",
-  "newStrategyHash": "sha256:fd0cbbd47e3ad264f6861b2afada328faa2c4208b7ba89b2adba7d638bbaf765",
+  "strategyHash": "sha256:f17755bf815ce4d932b3571844ba35202b1b1827b75e4b62b456e0ae2f0cb1d5",
+  "newStrategyHash": "sha256:f17755bf815ce4d932b3571844ba35202b1b1827b75e4b62b456e0ae2f0cb1d5",
   "decisionFiles": [
     "relay/v3/timing.mjs",
     "relay/v3/expiration-grid.mjs",
