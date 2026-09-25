@@ -3417,6 +3417,7 @@ const health = computeV3Health({
       llmGate: { active: this.#v3SystemActive(), suppressedInactive: this.v3GateCounters.suppressedInactive ?? 0 },
       pipeline: { prefilterPass: base.counters?.prefilterPass ?? 0, prefilterReject: base.counters?.prefilterReject ?? 0, prefilterRejectReasons: base.counters?.prefilterRejectReasons ?? {}, consensusCalls: base.counters?.consensusCalls ?? 0, consensusProvider: base.counters?.consensusProvider ?? null },
       iqExec: { orders: this.signalLog?.filter((row) => row.disposition === "EXECUTED").length ?? 0, settlements: [...this.markets.values()].filter((ctx) => ctx.lastTrade?.settledAt !== undefined && ctx.lastTrade?.settledAt !== null).length ?? 0, lastExecution: [...this.markets.values()].map((ctx) => ctx.lastTrade).filter(Boolean).sort((a, b) => b.at - a.at)[0] ?? null },
+      mcp: { ...(this.mcpStatus ?? { enabled: false, reason: "NOT_CONFIGURED" }), writeEnabled: this.mcpWriteEnabled === true },
       brokerStatus: (() => {
         if (this.sessionStale === true) return { state: "SESSION_EXPIRED", detail: "IQ_LOGIN_REQUIRED" };
         if (this.session?.connected !== true) return { state: this.reconnects > 0 ? "RECONNECTING" : "DISCONNECTED", detail: null };
@@ -3550,11 +3551,17 @@ const health = computeV3Health({
 
   /** Sobe o MCP (conta + catalogo + poller). Chamado no boot e no refresh periodico. */
   async mcpEnableAndSync() {
-    if (!this.mcp) return { enabled: false };
-    const verified = await this.#mcpVerifyAccount();
-    const catalog = await this.#mcpSyncCatalog();
-    if (!this.mcpPollTimer) { this.mcpPollTimer = setInterval(() => { if (this.running) void this.#mcpCandleTick().catch(() => undefined); }, 8_000); this.mcpPollTimer.unref?.(); }
-    return { enabled: true, verified, catalog };
+    if (!this.mcp) { this.mcpStatus = { enabled: false, reason: "NOT_CONFIGURED" }; return this.mcpStatus; }
+    try {
+      const verified = await this.#mcpVerifyAccount();
+      const catalog = await this.#mcpSyncCatalog();
+      if (!this.mcpPollTimer) { this.mcpPollTimer = setInterval(() => { if (this.running) void this.#mcpCandleTick().catch(() => undefined); }, 8_000); this.mcpPollTimer.unref?.(); }
+      this.mcpStatus = { enabled: true, verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0, lastError: null };
+    } catch (error) {
+      this.mcpStatus = { enabled: true, verified: false, catalogAdded: 0, lastError: String(error?.message ?? error).slice(0, 160) };
+      this.#safe(() => this.log("V3_MCP_SYNC_FAIL", this.mcpStatus.lastError));
+    }
+    return this.mcpStatus;
   }
 
   /** Execucao V3 (PRACTICE-only): aprovacao do Consensus vira ordem com o VENCIMENTO EXATO da opportunity. */
