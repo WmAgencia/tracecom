@@ -520,6 +520,26 @@ export class V3Runtime {
   }
 
   status() {
+    const recentCycles = this.engine.list({ limit: 80 }).map((opportunity) => {
+      const cycle = opportunity.cycles?.[opportunity.cycles.length - 1] ?? null;
+      const prefilter = cycle?.trace?.find?.((step) => String(step?.step ?? "").startsWith("PREFILTER"))?.step ?? null;
+      return {
+        marketKey: opportunity.marketKey,
+        expirationAt: opportunity.expirationAt,
+        status: opportunity.status,
+        cycles: opportunity.cycles?.length ?? 0,
+        tteMs: cycle?.tteMs ?? null,
+        trend: cycle?.measurements?.structure?.trend ?? null,
+        pullbackActive: cycle?.measurements?.pullback?.active ?? null,
+        rsi: cycle?.measurements?.rsi?.value ?? null,
+        adx: cycle?.measurements?.dmi?.adx ?? null,
+        atrRegime: cycle?.measurements?.atr?.regime ?? null,
+        assetState: cycle?.assetState ?? null,
+        assetDirection: cycle?.assetDirection ?? null,
+        prefilter,
+        consensus: cycle?.consensusResult ?? null,
+      };
+    }).filter((row) => row.cycles > 0).slice(0, 20);
     return {
       version: V3_RUNTIME_VERSION,
       strategy: { version: this.strategy?.version ?? null, status: this.strategy?.status ?? null, executable: this.strategy?.executable === true, strategyHash: this.strategy?.strategyHash ?? null, statsEpoch: this.strategy?.statsEpoch ?? null },
@@ -542,6 +562,7 @@ export class V3Runtime {
       scheduler: this.scheduler.status(),
       queue: { depth: this.queueDepth, maxDepth: this.maxQueueDepth, markets: this.queues.size },
       counters: { ...this.counters },
+      recentCycles,
       candleFeed: {
         blocked: this.counters.candleFeedBlocked,
         reasons: { ...this.counters.feedBlockedReasons },
