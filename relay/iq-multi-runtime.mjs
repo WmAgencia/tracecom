@@ -3522,6 +3522,13 @@ const health = computeV3Health({
       ctx.mcpAssetId = asset.asset_id ?? null;
       ctx.mcpExpirations = Array.isArray(asset.expirations) ? asset.expirations.map((t) => Number(t) * 1000) : [];
       ctx.availability = asset.is_open === true ? "OPEN" : (ctx.availability ?? "CLOSED");
+      // Mercado desativado por falha transitoria MCP (EMPTY_CANDLES etc.) volta no boot:
+      // o catalogo confirma que ele existe e esta OPEN; o poller valida os candles.
+      if (asset.is_open === true && ctx.enabled !== true && /^MCP_/.test(String(ctx.selectionReason ?? "")) && this.activeMarketKeys().length < Number(process.env.V3_MAX_ACTIVE_MARKETS || 64)) {
+        ctx.enabled = true; ctx.selectionReason = "MCP_SELF_HEALED"; ctx.mcpNoFeedPolls = 0;
+        if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=true, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
+        this.#safe(() => this.log("MCP_MARKET_REENABLED", JSON.stringify({ marketKey: ctx.marketKey, at: "boot-sync" })));
+      }
       if (asset.is_open === true && ctx.enabled !== true && this.activeMarketKeys().length < Number(process.env.V3_MAX_ACTIVE_MARKETS || 64)) {
         ctx.enabled = true; ctx.activeId = ctx.activeId ?? asset.asset_id; ctx.selectionReason = "MCP_CATALOG_OPEN"; added += 1;
         if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL','OPEN',$2,now()) ON CONFLICT(market_key) DO UPDATE SET enabled=true, availability='OPEN', active_id=$2, updated_at=now()", [key, asset.asset_id]).catch(() => undefined);
@@ -3577,7 +3584,7 @@ const health = computeV3Health({
     if (!this.mcp || this.mcpPollInFlight) return;
     this.mcpPollInFlight = true;
     try {
-    const candidates = [...this.markets.values()].filter((ctx) => ctx.enabled === true && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId)));
+    const candidates = [...this.markets.values()].filter((ctx) => (ctx.enabled === true || /^MCP_/.test(String(ctx.selectionReason ?? ""))) && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId)));
     if (!candidates.length) return;
     // Todos os mercados ativos sao atualizados no mesmo ciclo.  A janela de
     // analise comeca em TTE=330s e termina em TTE=302s; repartir 37 mercados
@@ -3604,7 +3611,20 @@ try {
         const rows = candles?.data?.candles ?? [];
         if (!rows.length) { this.#mcpMarkNoFeed(ctx, "EMPTY_CANDLES"); continue; }
         const normalized = rows.map((row) => ({ at: new Date(String(row.to ?? row.from ?? 0)).getTime(), open: Number(row.open ?? 0), high: Number(row.max ?? 0), low: Number(row.min ?? 0), close: Number(row.close ?? 0) })).filter((c) => Number.isFinite(c.at) && c.at > 0 && Number.isFinite(c.close) && c.close > 0).sort((a, b) => a.at - b.at);
-        if (normalized.length >= 40) {
+if (normalized.length >= 40) {
+          // AUTO-RECUPERACAO: mercado desativado por falha transitoria do gateway
+          // (MCP_EMPTY_CANDLES/INSUFFICIENT_CANDLES) volta ao universo assim que
+          // os candles retornam; nesta mesma passada nao despacha para a V3 (evita
+          // ciclo com estado meio-termo; o proximo tick cuida do dispatch).
+          const reenabled = ctx.enabled !== true && /^MCP_/.test(String(ctx.selectionReason ?? ""));
+          if (reenabled) {
+            ctx.enabled = true;
+            ctx.selectionReason = "MCP_SELF_HEALED";
+            ctx.mcpNoFeedPolls = 0;
+            if (this.mcpStatus) this.mcpStatus.selfHealedMarkets = (this.mcpStatus.selfHealedMarkets ?? 0) + 1;
+            if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=true, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
+            this.#safe(() => this.log("MCP_MARKET_REENABLED", JSON.stringify({ marketKey: ctx.marketKey })));
+          }
           ctx.mcpNoFeedPolls = 0;
           const map = new Map();
           for (const candle of normalized) map.set(candle.at, candle);
@@ -3676,12 +3696,15 @@ if (this.v3) {
     }
   }
 
-  /** Remove do universo somente ativo que o MCP confirmou sem historico repetidamente.
-   *  Evita cards vazios e nao desativa por uma falha transitoria isolada. */
+/** Remove do universo somente ativo que o MCP confirmou sem historico repetidamente.
+   *  Regra conservadora: NUNCA remove um mercado que ja entregou candles nesta sessao
+   *  (vazios transitorios do gateway nao desativam ativos saudaveis); apenas ativos
+   *  sem NENHUM candle ate o momento podem sair apos N vazios consecutivos. */
   #mcpMarkNoFeed(ctx, reason) {
     ctx.mcpNoFeedPolls = (Number(ctx.mcpNoFeedPolls) || 0) + 1;
     if (this.mcpStatus) this.mcpStatus.noFeedPolls = (this.mcpStatus.noFeedPolls ?? 0) + 1;
-    if (ctx.mcpNoFeedPolls < 3 || ctx.enabled !== true) return;
+    const neverHadCandles = !ctx.lastCandle && (ctx.candles?.size ?? 0) === 0;
+    if (!neverHadCandles || ctx.mcpNoFeedPolls < 3 || ctx.enabled !== true) return;
     ctx.enabled = false;
     ctx.selectionReason = `MCP_${reason}`;
     if (this.mcpStatus) this.mcpStatus.disabledNoFeedMarkets = (this.mcpStatus.disabledNoFeedMarkets ?? 0) + 1;
