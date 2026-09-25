@@ -2081,7 +2081,7 @@ export class IqMultiRuntime extends EventEmitter {
     if (cached && this.now() - cached.at < 60_000) return cached.data;
     const epochRow = (await this.pool.query("SELECT perf_since FROM iq_perf_epoch WHERE id=1").catch(() => ({ rows: [] }))).rows?.[0] ?? null;
     const epoch = epochRow?.perf_since ?? null;
-    const scope = "account_context='PRACTICE' AND excluded_from_stats=false" + (epoch ? " AND requested_at >= '" + new Date(epoch).toISOString() + "'" : "");
+    const scope = "account_context='PRACTICE' AND excluded_from_stats=false AND market_key NOT LIKE '%:OTC'" + (epoch ? " AND requested_at >= '" + new Date(epoch).toISOString() + "'" : "");
     const q = async (interval) => (await this.pool.query("SELECT count(*) FILTER (WHERE broker_result IN ('WIN','LOSS','DRAW'))::int AS trades, count(*) FILTER (WHERE broker_result='WIN')::int AS wins, count(*) FILTER (WHERE broker_result='LOSS')::int AS losses, count(*) FILTER (WHERE broker_result='DRAW')::int AS draws, coalesce(sum(profit) FILTER (WHERE broker_result IS NOT NULL),0)::numeric AS pnl FROM iq_executions WHERE " + scope + " AND requested_at >= " + interval)).rows[0];
     const today = await q("date_trunc('day', now())").catch(() => null);
     const week = await q("date_trunc('week', now())").catch(() => null);
