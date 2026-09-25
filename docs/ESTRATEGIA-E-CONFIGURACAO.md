@@ -78,6 +78,6 @@
 
 ## Hotfix operacional — login IQ Option no painel (2026-09-25)
 
-- A guia **Configurações** permite informar e-mail e senha da IQ Option para renovar a sessão do relay, inclusive com campo para código de verificação em duas etapas quando solicitado.
+- A guia **Configurações** permite informar e-mail e senha da IQ Option para renovar a sessão do relay. O painel não recebe código de confirmação em duas etapas: quando a IQ exigir essa etapa, conclua o acesso pelo app ou site oficial e tente novamente.
 - A senha segue somente no POST HTTPS de login, é limpa do formulário após o envio e não é gravada em armazenamento do navegador, logs, documentação ou backup. O relay persiste somente o `ssid` cifrado.
 - Uma sessão aceita solicita a reconexão do WebSocket. Isso não arma PRACTICE, não arma REAL e não modifica estratégia, stake, mercados, expiração de 300s ou gates fail-closed.

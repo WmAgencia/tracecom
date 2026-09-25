@@ -54,6 +54,7 @@ export const PANEL_ACTION_POSTS: ReadonlySet<string> = new Set([
   "/api/iq/account/select",
   "/api/iq/mode",
   "/api/iq/real/arm",
+  "/api/iq/connect",
   "/api/iq/real/disarm",
 ]);
 

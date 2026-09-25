@@ -191,7 +191,6 @@
     <input id="iqEmailInput" type="email" inputmode="email" autocomplete="username" placeholder="seuemail@exemplo.com" style="background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" />
     <label style="font-size:11.5px;color:#8b97ad" for="iqPasswordInput">Senha</label>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="iqPasswordInput" type="password" autocomplete="current-password" placeholder="senha da IQ Option" style="flex:1;min-width:260px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="iqLogin">ENTRAR NA IQ</button></div>
-    <div id="iqTwoFactor" hidden style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="iqTwoFactorInput" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="código de verificação" style="flex:1;min-width:180px;background:#0b1220;color:#e8edf7;border:1px solid #1c2942;border-radius:8px;padding:9px 10px;font-size:12px" /><button class="btn arm" id="iqVerifyTwoFactor">CONFIRMAR CÓDIGO</button></div>
   </div>
   <div id="iqLoginStatus" style="font-size:11.5px;color:#8b97ad;margin-top:10px">A senha é usada somente neste login seguro e não é salva no navegador.</div>
   <div class="sect">Conexão</div>
@@ -574,12 +573,10 @@
 const saveMcp = async () => { const token = $("mcpTokenInput").value.trim(); if (!token) return; const r = await apiStrict("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token }) }); if (r) { $("mcpTokenInput").value = ""; await refreshMcp(); } };
 const clearMcp = async () => { const r = await apiStrict("/api/iq/mcp/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: "" }) }); if (r === null) return; await refreshMcp(); };
   const setIqLoginStatus = (text, ok = false) => { const el = $("iqLoginStatus"); el.textContent = text; el.style.color = ok ? "#4ade80" : "#f87171"; };
-  const iqAuthMessage = (result) => ({ INVALID_CREDENTIALS_INPUT: "Informe um e-mail válido e a senha.", AUTH_REJECTED: "E-mail ou senha não aceitos pela IQ Option.", AUTH_NETWORK_ERROR: "A IQ Option não respondeu ao pedido de login.", TWO_FACTOR_REJECTED: "O código de verificação não foi aceito.", INVALID_2FA_CODE_FORMAT: "O código deve ter de 4 a 8 dígitos." }[result?.authErrorCode] || result?.lastError || "Não foi possível concluir o login. Confira os dados e tente novamente.");
+  const iqAuthMessage = (result) => ({ INVALID_CREDENTIALS_INPUT: "Informe um e-mail válido e a senha.", AUTH_REJECTED: "E-mail ou senha não aceitos pela IQ Option.", AUTH_NETWORK_ERROR: "A IQ Option não respondeu ao pedido de login." }[result?.authErrorCode] || result?.lastError || "Não foi possível concluir o login. Confira os dados e tente novamente.");
   const iqWsMessage = (reason) => ({ WS_DISCONNECTED: "o broker fechou a conexão", TIME_SYNC_INVALID: "o broker não confirmou o horário", WS_HANDSHAKE_TIMEOUT: "o broker não confirmou o WebSocket a tempo" }[String(reason || "").split(",")[0]] || "o WebSocket não foi confirmado pelo broker");
   const updateIqLoginResult = async (result) => {
-    const twoFactor = result?.state === "TWO_FACTOR_REQUIRED" || result?.twoFactorRequired === true;
-    $("iqTwoFactor").hidden = !twoFactor;
-    if (twoFactor) setIqLoginStatus("A IQ Option pediu um código de verificação. Informe-o abaixo.");
+    if (result?.state === "TWO_FACTOR_REQUIRED" || result?.twoFactorRequired === true) setIqLoginStatus("Esta conta exige confirmação em duas etapas na IQ Option. Conclua o acesso pelo app ou site da IQ e tente novamente.");
     else if (result?.ws?.confirmed === true) setIqLoginStatus("Login e WebSocket confirmados pela IQ Option.", true);
     else if (result?.hasSession === true) setIqLoginStatus("Login aceito, mas " + iqWsMessage(result?.ws?.reason) + ". O sistema seguirá tentando reconectar.");
     else setIqLoginStatus(iqAuthMessage(result));
@@ -595,13 +592,6 @@ const clearMcp = async () => { const r = await apiStrict("/api/iq/mcp/config", {
     catch { setIqLoginStatus("Não foi possível falar com o relay. Tente novamente em instantes."); }
     finally { $("iqPasswordInput").value = ""; button.disabled = false; }
   };
-  const verifyIqTwoFactor = async () => {
-    const code = $("iqTwoFactorInput").value.trim(); if (!code) { setIqLoginStatus("Informe o código de verificação enviado pela IQ Option."); return; }
-    const button = $("iqVerifyTwoFactor"); button.disabled = true;
-    try { const result = await apiStrict("/api/iq/verify-2fa", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) }); if (result) { $("iqTwoFactorInput").value = ""; await updateIqLoginResult(result); } }
-    catch { setIqLoginStatus("Não foi possível validar o código. Tente novamente."); }
-    finally { button.disabled = false; }
-  };
 
   $("navMesas").onclick = openMesas;
   $("mesasModal").onclick = (e) => { if (e.target === $("mesasModal")) $("mesasModal").classList.remove("on"); };
@@ -615,9 +605,7 @@ const clearMcp = async () => { const r = await apiStrict("/api/iq/mcp/config", {
   $("mcpSave").onclick = saveMcp;
   $("mcpClear").onclick = clearMcp;
   $("iqLogin").onclick = loginIq;
-  $("iqVerifyTwoFactor").onclick = verifyIqTwoFactor;
   $("iqPasswordInput").onkeydown = (event) => { if (event.key === "Enter") { event.preventDefault(); void loginIq(); } };
-  $("iqTwoFactorInput").onkeydown = (event) => { if (event.key === "Enter") { event.preventDefault(); void verifyIqTwoFactor(); } };
   $("acctPractice").onclick = () => selectAccount("PRACTICE");
   $("acctReal").onclick = () => selectAccount("REAL");
   $("btnExecutionToggle").onclick = toggleExecution;
