@@ -156,10 +156,13 @@ export class IqMultiRuntime extends EventEmitter {
       this.mcp = process.env.IQ_MCP_ENABLED === "true" ? new IQOfficialMCPAdapter({ env: process.env, product: "binary", timeoutMs: 20_000 }) : null;
       if (process.env.IQ_MCP_ENABLED === "true") this.#safe(() => this.log("V3_MCP_INIT", JSON.stringify({ created: this.mcp !== null, tokenPresent: Boolean(String(process.env.IQ_MCP_TOKEN ?? "").trim()) })));
     } catch (error) { this.mcp = null; this.#safe(() => this.log("V3_MCP_INIT_FAIL", String(error?.message ?? error).slice(0, 160))); }
-    this.mcpWriteEnabled = process.env.IQ_MCP_WRITE_ENABLED === "true";
+this.mcpWriteEnabled = process.env.IQ_MCP_WRITE_ENABLED === "true";
     this.mcpPollIndex = 0;
     this.mcpPollTimer = null;
     this.mcpPollInFlight = false;
+    // Relogio do broker via MCP (ultimo candle `to`): a V3 so acerta janela/discovery
+    // se o brokerNow usar o clock do gateway (o clock local pode divergir ~6min).
+    this.mcpBrokerNow = null;
     if (this.mcp) setTimeout(() => { if (this.running) void this.mcpEnableAndSync().catch(() => undefined); }, 5_000).unref?.();
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentExecBinary = true;
@@ -3534,22 +3537,10 @@ const health = computeV3Health({
         if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL','OPEN',$2,now()) ON CONFLICT(market_key) DO UPDATE SET enabled=true, availability='OPEN', active_id=$2, updated_at=now()", [key, asset.asset_id]).catch(() => undefined);
       }
     }
-    // O catalogo MCP tambem e a fonte de expiracoes quando o WS nao mantem a
+// O catalogo MCP tambem e a fonte de expiracoes quando o WS nao mantem a
     // sessao. Reutiliza a mesma discovery V3, sem inferir nem inventar ofertas.
-    if (this.v3) {
-      const marketKeyByActiveId = new Map();
-      const turboActives = {};
-      for (const asset of list) {
-        if (asset?.is_open !== true || /\(OTC\)/i.test(String(asset?.name ?? ""))) continue;
-        const canonical = this.mcpCanonical(asset.name);
-        const activeId = Number(asset.asset_id);
-        if (!canonical || !Number.isFinite(activeId)) continue;
-        const key = `${canonical}:NORMAL`;
-        marketKeyByActiveId.set(activeId, key);
-        turboActives[activeId] = { id: activeId, enabled: true, deadtime: 30, option: { expiration_times: Array.isArray(asset.expirations) ? asset.expirations : [] } };
-      }
-      this.v3.onInitializationData({ result: { turbo: { actives: turboActives } } }, { brokerNow: this.client?.serverNow?.() ?? this.now(), marketKeyByActiveId });
-    }
+    this.mcpCatalogAssets = list;
+    this.#mcpIngestDiscovery();
     // Um ativo habilitado sem id canonico no catalogo MCP nao pode receber
     // candles pelo unico feed funcional. Mantê-lo na grade seria um falso
     // "ativo assistido"; desativa e persiste a exclusao imediatamente.
@@ -3630,8 +3621,15 @@ if (normalized.length >= 40) {
           for (const candle of normalized) map.set(candle.at, candle);
           ctx.candles = map;
           ctx.lastCandle = normalized[normalized.length - 1];
-          const receivedAt = this.now();
+const receivedAt = this.now();
           ctx.lastTickAt = receivedAt;
+          this.mcpBrokerNow = normalized[normalized.length - 1].at;
+          // A discovery precisa da expiracao absoluta no relogio do broker: apos o
+          // primeiro poll (ancora do clock MCP), re-ingere as ofertas se a ingestao
+          // do boot rodou sem o relogio (ou se o relogio derivou > 60s).
+          if (this.mcpCatalogAssets?.length && (this.mcpIngestBrokerNow === null || Math.abs(this.mcpBrokerNow - Number(this.mcpIngestBrokerNow ?? 0)) > 60_000)) {
+            this.#mcpIngestDiscovery();
+          }
           ctx.subscriptionState = "SUBSCRIBED";
           ctx.connectionHealth = { ...ctx.connectionHealth, connected: true, lastMessageAt: receivedAt };
           this.lastSubscriptionAt = receivedAt;
@@ -3655,9 +3653,9 @@ if (this.v3) {
             if (this.mcpStatus) this.mcpStatus.v3DispatchAttempts = (this.mcpStatus.v3DispatchAttempts ?? 0) + 1;
             try {
               // RELOGIO DO BROKER no caminho MCP: a janela da V3 (TTE 330-300) e
-              // calculada sobre o relogio do broker. O serverNow do WS e aritmetica
-              // pura (nao bloqueia); fallback: o timestamp `to` do ultimo candle MCP.
-              const brokerNow = this.client?.serverNow?.() ?? normalized[normalized.length - 1].at;
+              // calculada sobre o relogio do broker. O clock MCP (candle `to`) e a
+              // fonte primaria; serverNow do WS e aritmetica pura; local so como ultimo recurso.
+              const brokerNow = this.mcpBrokerNow ?? this.client?.serverNow?.() ?? this.now();
               const dispatchT0 = this.now();
               await this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow });
               passDispatchMs += this.now() - dispatchT0;
@@ -3697,7 +3695,29 @@ if (this.v3) {
     }
   }
 
-/** Remove do universo somente ativo que o MCP confirmou sem historico repetidamente.
+/** Alimenta a discovery V3 com as expiracoes do catalogo MCP. Re-ingestao e
+   *  idempotente (substitui as ofertas por mercado) e deve rodar com o RELOGIO DO
+   *  BROKER ja ancorado (mcpBrokerNow) — com relogio local as expiracoes absolutas
+   *  ficam ~6min deslocadas e as ofertas nascem "ja expiradas" (nunca re-adotadas). */
+  #mcpIngestDiscovery() {
+    if (!this.v3 || !Array.isArray(this.mcpCatalogAssets) || !this.mcpCatalogAssets.length) return;
+    const list = this.mcpCatalogAssets;
+    const marketKeyByActiveId = new Map();
+    const turboActives = {};
+    for (const asset of list) {
+      if (asset?.is_open !== true || /\(OTC\)/i.test(String(asset?.name ?? ""))) continue;
+      const canonical = this.mcpCanonical(asset.name);
+      const activeId = Number(asset.asset_id);
+      if (!canonical || !Number.isFinite(activeId)) continue;
+      const key = `${canonical}:NORMAL`;
+      marketKeyByActiveId.set(activeId, key);
+      turboActives[activeId] = { id: activeId, enabled: true, deadtime: 30, option: { expiration_times: Array.isArray(asset.expirations) ? asset.expirations : [] } };
+    }
+    this.v3.onInitializationData({ result: { turbo: { actives: turboActives } } }, { brokerNow: this.mcpBrokerNow ?? this.client?.serverNow?.() ?? this.now(), marketKeyByActiveId });
+    this.mcpIngestBrokerNow = this.mcpBrokerNow;
+  }
+
+  /** Remove do universo somente ativo que o MCP confirmou sem historico repetidamente.
    *  Regra conservadora: NUNCA remove um mercado que ja entregou candles nesta sessao
    *  (vazios transitorios do gateway nao desativam ativos saudaveis); apenas ativos
    *  sem NENHUM candle ate o momento podem sair apos N vazios consecutivos. */
