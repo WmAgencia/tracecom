@@ -3525,6 +3525,16 @@ const health = computeV3Health({
       }
       this.v3.onInitializationData({ result: { turbo: { actives: turboActives } } }, { brokerNow: this.client?.serverNow?.() ?? this.now(), marketKeyByActiveId });
     }
+    // Um ativo habilitado sem id canonico no catalogo MCP nao pode receber
+    // candles pelo unico feed funcional. Mantê-lo na grade seria um falso
+    // "ativo assistido"; desativa e persiste a exclusao imediatamente.
+    for (const ctx of this.markets.values()) {
+      if (ctx.enabled !== true || ctx.marketType !== "NORMAL" || Number.isFinite(Number(ctx.mcpAssetId))) continue;
+      ctx.enabled = false;
+      ctx.selectionReason = "MCP_ASSET_UNMAPPED";
+      if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
+      this.#safe(() => this.log("MCP_MARKET_DISABLED_UNMAPPED", JSON.stringify({ marketKey: ctx.marketKey })));
+    }
     return { added, total: list.length };
   }
 
