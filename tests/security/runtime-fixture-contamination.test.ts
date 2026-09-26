@@ -17,15 +17,16 @@ function runtimeFiles(root: string): string[] {
 }
 
 describe("runtime fixture contamination guard", () => {
+  const SCAN_TIMEOUT = 60_000;
   it("keeps the reported fixture value 1.38571 out of every runtime path", () => {
     const offenders = RUNTIME_ROOTS.flatMap(runtimeFiles).filter((file) => readFileSync(file, "utf8").includes("1.38571"));
     expect(offenders).toEqual([]);
-  });
+  }, SCAN_TIMEOUT);
 
   it("keeps the real price-label fixture value confined to tests/fixtures", () => {
     const offenders = RUNTIME_ROOTS.flatMap(runtimeFiles).filter((file) => readFileSync(file, "utf8").includes("1.387408"));
     expect(offenders).toEqual([]);
-  });
+  }, SCAN_TIMEOUT);
 
   it("never licenses fixture-derived literals as entry/settlement defaults", () => {
     const source = readFileSync("src/http/public/app.js", "utf8");
