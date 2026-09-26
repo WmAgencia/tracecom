@@ -38,3 +38,9 @@ Os runs longos (máximo 102) são consequência provável da sobreposição dos 
 ### Correção metodológica da primeira análise
 
 O baseline de direção anterior calculado nos 940 labels sobrepostos chegou a cerca de 91%, mas esse número é um artefato: labels separados por 5s compartilham quase todo o mesmo horizonte futuro. Ao reamostrar a cada 300s, restam apenas 16 observações aproximadamente não sobrepostas; o baseline sempre-UP foi 50,0% no Binary e 56,25% no Blitz, e o trecho final ficou em 50,0% em ambos. A análise correta, portanto, não mostra edge nesta amostra curta.
+
+### Técnicas adicionais
+
+Markov de ordens 1–5 foi ajustado somente no primeiro trecho e avaliado no último trecho temporal. O resultado in-sample chegou a ~56% no Markov-5, mas no teste temporal caiu para 51% (Binary) e 53% (Blitz), sem evidência robusta acima do acaso. Os maiores picos espectrais ocorreram em períodos de aproximadamente 3–6 amostras de 5s, mas não foram estáveis nem suficientes para declarar periodicidade. Regimes simples de volatilidade também oscilaram perto de 50%.
+
+Conclusão atual: aumentar a complexidade encontra padrões descritivos e overfitting, não um algoritmo confiável. A próxima evidência necessária é coleta prospectiva mais longa, com parâmetros congelados antes do teste cego.
