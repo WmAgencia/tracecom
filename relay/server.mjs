@@ -16,6 +16,10 @@ import { buildCandles } from './experiment.mjs';
 import { buildFeatureContext, freshnessGate } from './feature-engine.mjs';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
+import { CryptoEngine } from './crypto/engine.mjs';
+import { createLlmRouter } from './llm-router.mjs';
+import { createLlmRateLimiter } from './llm-rate-limiter.mjs';
+import { runTextProvider as runCryptoTextProvider } from './opencode-go.mjs';
 
 const port = Number(process.env.PORT || 3000);
 const pool = new Pool({
@@ -51,6 +55,20 @@ const armState = new ExecutionArmState();
 const killSwitch = new KillSwitch();
 const executionIdempotency = new IdempotencyStore();
 const wsRuntime = new IqMultiRuntime({ pool, getSsid: () => { try { return iqAuth.getSsidForHandshake(); } catch { return null; } }, armState, killSwitch, idempotency: executionIdempotency, autoArmPractice: process.env.AUTO_ARM_PRACTICE === "true", log: (...args) => console.info(...args), executionAllowlist: operationalAllowlist(), executionPolicyName: OPERATIONAL_EXECUTION_POLICY_NAME, rsiAgentsV2LiveEnabled: false, rsiAgentsV2BlitzEnabled: false, rsiAgentsV4Enabled: false, rsiAgentsV3Enabled: false, scenarioShadowEnabled: false, scenarioTimingIntersectionEnabled: false, agentsV4Enabled: false, dualReasoningEnabled: false, soloReasoningEnabled: false, indicator5mEnabled: false, rsiReversalEnabled: false, rsiVariantsEnabled: false, dataHubEnabled: true, consensusEnabled: true, onSessionExpired: async () => { const ok = await autoIqLogin("STALE"); if (ok) wsRuntime.sessionStale = false; } });
+// CRYPTO 24/7 (CRYPTO_REGIME_TREND_V1) — motor SEPARADO da Binary V3; PAPER only.
+// Nunca envia dinheiro real (CRYPTO_REAL_EXECUTION=false). Dados de exchange real.
+const cryptoEngine = process.env.CRYPTO_ENABLED === "false"
+  ? null
+  : new CryptoEngine({
+      pool,
+      log: (...args) => console.info(...args),
+      router: createLlmRouter({ now: () => Date.now() }),
+      limiter: createLlmRateLimiter({ maxConcurrent: Number(process.env.CRYPTO_LLM_CONCURRENCY) || 2, now: () => Date.now() }),
+      runProvider: runCryptoTextProvider,
+    });
+if (cryptoEngine) void cryptoEngine.start().catch((error) => console.info("CRYPTO_ENGINE_START_FAIL", String(error?.message ?? error).slice(0, 160)));
+const cryptoStatus = () => (cryptoEngine ? cryptoEngine.status() : { enabled: false, reason: "CRYPTO_ENABLED=false" });
+
 // BLITZ: desativado por decisao operacional (somente binarias). Nenhum registry fetch e feito.
 // QUANT / RESEARCH PLATFORM (fora do hot path; nao executa nada).
 const { ResearchLab } = await import('./research-lab/api.mjs');
@@ -477,6 +495,14 @@ const server = http.createServer(async (req, res) => {
     if(url.pathname === '/api/iq/strategy/stats' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const version = url.searchParams.get('version') || wsRuntime.operationalStrategy?.version || null; const hash = url.searchParams.get('strategyHash') || wsRuntime.operationalStrategy?.strategyHash || null; return reply(res,200,{ ...(await wsRuntime.strategyStats(version, { days: Number(url.searchParams.get('days')) || 30, strategyHash: hash })), practiceOnly:true }); }
     if(url.pathname === '/api/iq/strategy/observability' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const version = url.searchParams.get('version') || wsRuntime.operationalStrategy?.version || null; const hash = url.searchParams.get('strategyHash') || wsRuntime.operationalStrategy?.strategyHash || null; return reply(res,200,{ ...(await wsRuntime.strategyObservability(version, { days: Number(url.searchParams.get('days')) || 30, strategyHash: hash })), practiceOnly:true }); }
     if(url.pathname === '/api/iq/v3/status' && req.method === 'GET') { return reply(res,200,{ ...wsRuntime.v3Status(), practiceOnly:true }); }
+// CRYPTO 24/7 (namespace proprio; nunca mistura com /api/iq).
+if(url.pathname === '/api/crypto/status' && req.method === 'GET') { return reply(res,200,cryptoStatus()); }
+if(url.pathname === '/api/crypto/markets' && req.method === 'GET') { return reply(res,200,{ symbols: cryptoStatus().symbols ?? [], markets: cryptoStatus().markets ?? [] }); }
+if(url.pathname === '/api/crypto/positions' && req.method === 'GET') { return reply(res,200,{ positions: cryptoStatus().positions ?? { open: [], stats: {} } }); }
+if(url.pathname === '/api/crypto/trades' && req.method === 'GET') { return reply(res,200,{ trades: cryptoEngine ? cryptoEngine.positions.closed.slice(-100) : [], epoch: 'CRYPTO_V1_EPOCH' }); }
+if(url.pathname === '/api/crypto/performance' && req.method === 'GET') { return reply(res,200,{ performance: cryptoStatus().positions?.stats ?? {}, epoch: 'CRYPTO_V1_EPOCH' }); }
+if(url.pathname === '/api/crypto/agents' && req.method === 'GET') { return reply(res,200,{ agents: (cryptoStatus().markets ?? []).map((m) => ({ symbol: m.symbol, state: m.agents?.state ?? null, label: m.agents?.label ?? null })) }); }
+if(url.pathname === '/api/crypto/consensus' && req.method === 'GET') { return reply(res,200,{ history: cryptoStatus().consensusHistory ?? [] }); }
     if(url.pathname === '/api/iq/v3/opportunities' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const limit = Math.max(1, Math.min(500, Number(url.searchParams.get('limit')) || 50)); return reply(res,200,{ opportunities: wsRuntime.v3Opportunities({ marketKey: url.searchParams.get('marketKey') || null, status: url.searchParams.get('status') || null, limit }), practiceOnly:true }); }
     if(url.pathname === '/api/iq/v3/expirations' && req.method === 'GET') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); return reply(res,200,{ ...(wsRuntime.v3Discovery() ?? { enabled: false }), practiceOnly:true }); }
     if(url.pathname === '/api/iq/v3/agents/selftest' && req.method === 'POST') { if(req.headers['x-relay-admin'] !== admin) return reply(res,401,{error:'unauthorized'}); const input = await body(req, 1000); try { const result = await wsRuntime.v3AgentSelftest({ marketKey: typeof input.marketKey === 'string' ? input.marketKey : null, mode: ['SINGLE','WAVE_A','WAVE_B','FULL','CONCURRENCY'].includes(input.mode) ? input.mode : 'FULL', role: typeof input.role === 'string' ? input.role.slice(0, 24) : 'RSI', concurrency: Number(input.concurrency) || 5 }); return reply(res,200,{ ...result, observeOnly:true, practiceOnly:true }); } catch(error) { return reply(res,400,{ ...sanitizedError(error), observeOnly:true }); } }
