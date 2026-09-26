@@ -22,7 +22,7 @@ export class CryptoEngine {
     this.router = router;
     this.limiter = limiter;
     this.runProvider = runProvider;
-    this.provider = provider ?? new CryptoMarketDataProvider({ provider: String(env.CRYPTO_MARKET_PROVIDER ?? "binance"), now });
+    this.provider = provider ?? new CryptoMarketDataProvider({ provider: String(env.CRYPTO_MARKET_PROVIDER ?? "bybit"), now });
     this.symbols = Array.isArray(env.CRYPTO_SYMBOLS) ? env.CRYPTO_SYMBOLS : CRYPTO_SYMBOLS;
     this.paperExecution = String(env.CRYPTO_PAPER_EXECUTION ?? "true") === "true";
     this.realExecutionAllowed = String(env.CRYPTO_REAL_EXECUTION ?? "false") === "true";

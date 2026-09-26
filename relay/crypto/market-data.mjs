@@ -14,6 +14,8 @@ export const CRYPTO_TIMEFRAMES = Object.freeze({
 });
 
 const BINANCE_REST = "https://api.binance.com/api/v3";
+const BYBIT_REST = "https://api.bybit.com/v5/market";
+const BYBIT_INTERVALS = Object.freeze({ "1m": "1", "5m": "5", "15m": "15" });
 
 const toEpochMs = (raw) => {
   const value = Number(raw);
@@ -35,13 +37,13 @@ function normalizeKlines(rows) {
   return out;
 }
 
-async function binanceFetch(path, timeoutMs) {
+async function httpGet(url, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), Number.isFinite(timeoutMs) ? timeoutMs : 10_000);
   try {
-    const res = await fetch(`${BINANCE_REST}${path}`, { signal: controller.signal, headers: { "User-Agent": "tracecom/1.0" } });
+    const res = await fetch(url, { signal: controller.signal, headers: { "User-Agent": "tracecom/1.0" } });
     if (!res.ok) return { ok: false, status: res.status, message: `HTTP ${res.status}` };
-    return { ok: true, data: await res.json() };
+    return { ok: true, status: res.status, data: await res.json() };
   } catch (error) {
     return { ok: false, status: 0, message: String(error?.message ?? error).slice(0, 120) };
   } finally {
@@ -51,8 +53,8 @@ async function binanceFetch(path, timeoutMs) {
 
 /** Interface de dados de mercado cripto (exchange real). Implementacoes: binance. */
 export class CryptoMarketDataProvider {
-  constructor({ provider = "binance", timeoutMs = 10_000, now = Date.now } = {}) {
-    this.provider = String(provider ?? "binance").toLowerCase();
+  constructor({ provider = "bybit", timeoutMs = 10_000, now = Date.now } = {}) {
+    this.provider = String(provider ?? "bybit").toLowerCase();
     this.timeoutMs = Number.isFinite(timeoutMs) ? timeoutMs : 10_000;
     this.now = now;
     this.healthy = false;
@@ -66,8 +68,19 @@ export class CryptoMarketDataProvider {
     const symbolOk = String(symbol).toUpperCase();
     const intervalOk = String(interval).toLowerCase();
     if (!CRYPTO_INTERVALS.includes(intervalOk)) return { ok: false, message: `unsupported interval ${intervalOk}` };
+    if (this.provider === "bybit") {
+      const res = await httpGet(`${BYBIT_REST}/kline?category=spot&symbol=${encodeURIComponent(symbolOk)}&interval=${BYBIT_INTERVALS[intervalOk]}&limit=${Math.min(500, Math.max(50, Number(limit) || 200))}`, this.timeoutMs);
+      this.#note(res);
+      if (res.ok !== true) return { ok: false, message: res.message, status: res.status };
+      if (res.data?.retCode !== 0) return { ok: false, message: `bybit retCode ${res.data?.retCode}` };
+      // Bybit retorna list em ordem DESCENDENTE (mais recente primeiro) -> reverter.
+      const rows = [...(res.data?.result?.list ?? [])].reverse();
+      const candles = normalizeKlines(rows);
+      if (candles.length < 50) return { ok: false, message: `insufficient candles ${candles.length}` };
+      return { ok: true, symbol: symbolOk, interval: intervalOk, candles };
+    }
     if (this.provider !== "binance") return { ok: false, message: `unsupported provider ${this.provider}` };
-    const res = await binanceFetch(`/klines?symbol=${encodeURIComponent(symbolOk)}&interval=${intervalOk}&limit=${Math.min(500, Math.max(50, Number(limit) || 200))}`, this.timeoutMs);
+    const res = await httpGet(`${BINANCE_REST}/klines?symbol=${encodeURIComponent(symbolOk)}&interval=${intervalOk}&limit=${Math.min(500, Math.max(50, Number(limit) || 200))}`, this.timeoutMs);
     this.#note(res);
     if (res.ok !== true) return { ok: false, message: res.message, status: res.status };
     const candles = normalizeKlines(res.data);
@@ -78,8 +91,17 @@ export class CryptoMarketDataProvider {
   /** Ticker 24h (preco atual + variacao) da exchange real. */
   async getTicker(symbol) {
     const symbolOk = String(symbol).toUpperCase();
+    if (this.provider === "bybit") {
+      const res = await httpGet(`${BYBIT_REST}/tickers?category=spot&symbol=${encodeURIComponent(symbolOk)}`, this.timeoutMs);
+      this.#note(res);
+      if (res.ok !== true) return { ok: false, message: res.message, status: res.status };
+      const ticker = res.data?.result?.list?.[0] ?? {};
+      const lastPrice = Number(ticker.lastPrice);
+      if (!Number.isFinite(lastPrice) || lastPrice <= 0) return { ok: false, message: "invalid ticker" };
+      return { ok: true, symbol: symbolOk, lastPrice, change24hPct: Number.isFinite(Number(ticker.price24hPct)) ? Number(ticker.price24hPct) : null, high24h: Number(ticker.highPrice24h) || null, low24h: Number(ticker.lowPrice24h) || null, volume24h: Number(ticker.turnover24h) || null };
+    }
     if (this.provider !== "binance") return { ok: false, message: `unsupported provider ${this.provider}` };
-    const res = await binanceFetch(`/ticker/24hr?symbol=${encodeURIComponent(symbolOk)}`, this.timeoutMs);
+    const res = await httpGet(`${BINANCE_REST}/ticker/24hr?symbol=${encodeURIComponent(symbolOk)}`, this.timeoutMs);
     this.#note(res);
     if (res.ok !== true) return { ok: false, message: res.message, status: res.status };
     const lastPrice = Number(res.data?.lastPrice);
