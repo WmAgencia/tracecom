@@ -78,3 +78,11 @@ Não vou converter essa assimetria em ordens ou prometer winrate alto: é necess
 O coletor read-only contínuo acumulou aproximadamente 25 horas em cada gateway: Binary com 1.539 candles de 1 minuto e Blitz com 1.537. Há cerca de 1.500 labels de 300s por produto. Nos blocos mais recentes, a proporção UP caiu para aproximadamente 20%, enquanto o conjunto completo permaneceu perto de 46,7% UP; isso caracteriza drift/regime, não uma regra fixa.
 
 Os labels alinhados entre Binary e Blitz tiveram 100% de concordância nesta janela. Portanto, os produtos não devem ser tratados como duas confirmações independentes; provavelmente expõem a mesma série OTC subjacente. O laboratório continua sem execução.
+
+## Hipótese congelada: OTC_VOL_EXPANSION_V1
+
+A hipótese que atingiu 70,37% na exploração foi congelada em `research/otc-hypotheses/OTC_VOL_EXPANSION_V1.json`. Ela é uma condição estatística observada na série OTC, não uma descoberta do algoritmo da IQ Option: largura de Bollinger acima de 0,003, direção pelo retorno dos últimos cinco candles e vencimento de 300s.
+
+O resultado original foi 19 wins em 27 sinais. Por isso o estado permanece `DISCOVERY_ONLY`. A promoção exige pelo menos 200 sinais futuros, payout, empates, blocos temporais e avaliação sem sobreposição.
+
+Como OTC pode ser uma série gerada por um processo próprio, as próximas hipóteses devem priorizar dependência temporal, alternância, runs, quantização, periodicidade, regimes e sincronização entre ativos, sem assumir causalidade de indicadores financeiros.

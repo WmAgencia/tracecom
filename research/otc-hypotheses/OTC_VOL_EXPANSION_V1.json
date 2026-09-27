@@ -1,0 +1,13 @@
+{
+  "id": "OTC_VOL_EXPANSION_V1",
+  "status": "DISCOVERY_ONLY",
+  "scope": "Blitz EUR/USD OTC 1m",
+  "observation": "26h prospectivas, 27 sinais, 19 wins, 8 losses",
+  "observedWinRate": 0.7037037037,
+  "horizonSeconds": 300,
+  "entryRule": { "window": 20, "volatilityMeasure": "bollinger_width_20_2", "threshold": 0.003, "direction": "sign(return_5m)", "waitOtherwise": true },
+  "dataRules": { "causal": true, "entryPrice": "close_at_signal", "exitPrice": "first_close_at_or_after_entry_plus_300s", "payoutIncluded": false, "execution": "NONE" },
+  "promotionCriteria": { "mustBeFrozenBeforeHoldout": true, "minimumFutureSignals": 200, "minimumHoldoutWinRate": 0.7, "mustBeatAlwaysDirectionBaseline": true, "mustIncludePayoutAndTies": true, "mustRemainPositiveAcrossBlocks": 3 },
+  "invalidation": ["holdout win rate below 70%", "edge disappears after removing overlapping labels", "edge depends on one asset or one time block", "payout-adjusted expectancy is non-positive"],
+  "warning": "Small-sample statistical hypothesis; not evidence of the broker algorithm or a trading recommendation."
+}
