@@ -18,6 +18,12 @@ const predictors = {
   candleImpulse: x => x.body > 0.00015 ? "UP" : x.body < -0.00015 ? "DOWN" : "WAIT",
   wickReversal: x => x.upperWick > Math.abs(x.body) * 2 ? "DOWN" : x.lowerWick > Math.abs(x.body) * 2 ? "UP" : "WAIT",
   hourBias: x => [0, 1, 2, 12, 13, 14].includes(x.hour) ? "DOWN" : [6, 7, 8, 18, 19, 20].includes(x.hour) ? "UP" : "WAIT"
+  ,twoStepMomentum: x => x.ret > 0.0001 && x.slope > 0.0002 ? "UP" : x.ret < -0.0001 && x.slope < -0.0002 ? "DOWN" : "WAIT"
+  ,volatilityExpansion: x => x.width > 0.003 ? (x.ret > 0 ? "UP" : "DOWN") : "WAIT"
+  ,volatilityCompression: x => x.width < 0.0008 ? (x.ret > 0 ? "UP" : "DOWN") : "WAIT"
+  ,deepMeanReversion: x => x.z > 2 ? "DOWN" : x.z < -2 ? "UP" : "WAIT"
+  ,rsiBollinger: x => x.rsi > 65 && x.z > 1 ? "DOWN" : x.rsi < 35 && x.z < -1 ? "UP" : "WAIT"
+  ,directionalAgreement: x => x.rsi > 55 && x.ret > 0 && x.slope > 0 ? "UP" : x.rsi < 45 && x.ret < 0 && x.slope < 0 ? "DOWN" : "WAIT"
 };
 function evaluate(series, horizonMs, name, fn, proxy = false) { const out = { file: series.file, hypothesis: name, horizonSeconds: horizonMs / 1000, evaluation: proxy ? "proxy_first_close_at_or_after_horizon" : "exact_first_close_at_or_after_horizon", candleSpacingSeconds: series.spacing / 1000, n: 0, wins: 0, losses: 0, waits: 0, accuracy: null }; const byAt = series.rows; for (let i = 40; i < byAt.length; i++) { const signal = fn(indicators(byAt, i)); if (signal === "WAIT") { out.waits++; continue; } const target = byAt.find((r, j) => j > i && r.at >= byAt[i].at + horizonMs); if (!target) continue; const win = signal === "UP" ? target.close > byAt[i].close : target.close < byAt[i].close; out.n++; win ? out.wins++ : out.losses++; } out.accuracy = out.n ? out.wins / out.n : null; return out; }
 const results = [];
