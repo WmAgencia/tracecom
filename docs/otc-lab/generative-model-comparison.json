@@ -1,0 +1,106 @@
+{
+  "observed": {
+    "mean": -0.000015603946425055987,
+    "sd": 0.0003985731736164197,
+    "acf1": -0.023894048856233373,
+    "absAcf1": 0.049698184005752884,
+    "upPct": 0.48722741433021804
+  },
+  "candidateFamilies": [
+    {
+      "id": "G1",
+      "family": "random-walk with empirical iid increments",
+      "status": "REFERENCE_NULL",
+      "params": "empirical 1m return resampling"
+    },
+    {
+      "id": "G2",
+      "family": "Gaussian random walk",
+      "status": "REFERENCE_NULL",
+      "params": "sample mean and standard deviation"
+    },
+    {
+      "id": "G3",
+      "family": "AR(1) Gaussian",
+      "status": "CANDIDATE",
+      "params": "phi=-0.02389"
+    },
+    {
+      "id": "G4",
+      "family": "two-state Markov volatility bootstrap",
+      "status": "CANDIDATE",
+      "params": "low/high absolute-return states split at median"
+    }
+  ],
+  "comparison": "30 deterministic-seed Monte Carlo replications per simple candidate; scoring compares mean, SD, ACF(1), absolute-return ACF(1), and up fraction. Summary fit is descriptive, not model identification.",
+  "syntheticDataGenerated": true,
+  "warning": "Synthetic controls are not broker data and do not identify the proprietary implementation.",
+  "simulations": {
+    "empirical_iid_bootstrap": {
+      "synthetic": true,
+      "replicates": 30,
+      "meanStatistics": {
+        "mean": -0.000014075472737639533,
+        "sd": 0.0003986585247324857,
+        "acf1": -0.0017464236168309192,
+        "absAcf1": -0.00138026814143566,
+        "upPct": 0.4893665628245067
+      },
+      "relativeSummaryRMSE": 0.6204987165331604
+    },
+    "gaussian_random_walk": {
+      "synthetic": true,
+      "replicates": 30,
+      "meanStatistics": {
+        "mean": -0.000014561563373040044,
+        "sd": 0.000397306487334392,
+        "acf1": 0.003996962466591927,
+        "absAcf1": 0.006920636308059015,
+        "upPct": 0.4863551401869159
+      },
+      "relativeSummaryRMSE": 0.6492919269343358
+    },
+    "ar1_gaussian": {
+      "synthetic": true,
+      "replicates": 30,
+      "meanStatistics": {
+        "mean": -0.000015615778630467474,
+        "sd": 0.0003989459150471956,
+        "acf1": -0.013904659601794999,
+        "absAcf1": -0.004673546153735961,
+        "upPct": 0.48311526479750794
+      },
+      "relativeSummaryRMSE": 0.5237892224182322
+    },
+    "two_state_markov_volatility": {
+      "synthetic": true,
+      "replicates": 30,
+      "meanStatistics": {
+        "mean": -0.00001582870324203305,
+        "sd": 0.00039891301127909146,
+        "acf1": 0.0023341608684940337,
+        "absAcf1": 0.002302743708174064,
+        "upPct": 0.48876427829698865
+      },
+      "relativeSummaryRMSE": 0.6503252672385568
+    }
+  },
+  "ranking": [
+    {
+      "family": "ar1_gaussian",
+      "relativeSummaryRMSE": 0.5237892224182322
+    },
+    {
+      "family": "empirical_iid_bootstrap",
+      "relativeSummaryRMSE": 0.6204987165331604
+    },
+    {
+      "family": "gaussian_random_walk",
+      "relativeSummaryRMSE": 0.6492919269343358
+    },
+    {
+      "family": "two_state_markov_volatility",
+      "relativeSummaryRMSE": 0.6503252672385568
+    }
+  ]
+}

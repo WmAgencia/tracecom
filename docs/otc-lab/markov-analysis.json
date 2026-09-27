@@ -1,0 +1,118 @@
+{
+  "split": "first60_train_middle20_validation_last20_test; exploratory only, period previously inspected",
+  "trainN": 190,
+  "testN": 64,
+  "marginalTestEntropyBits": 0.9823166080205501,
+  "rows": [
+    {
+      "order": 0,
+      "contexts": 1,
+      "testPredictions": 64,
+      "correct": 37,
+      "accuracy": 0.578125,
+      "testConditionalEntropyBits": 0.9823166080205501,
+      "estimatedInformationGainBits": 0,
+      "minimumContextCount": 10
+    },
+    {
+      "order": 1,
+      "contexts": 2,
+      "testPredictions": 63,
+      "correct": 37,
+      "accuracy": 0.5873015873015873,
+      "testConditionalEntropyBits": 0.9619834630972888,
+      "estimatedInformationGainBits": 0.020333144923261326,
+      "minimumContextCount": 10
+    },
+    {
+      "order": 2,
+      "contexts": 4,
+      "testPredictions": 62,
+      "correct": 39,
+      "accuracy": 0.6290322580645161,
+      "testConditionalEntropyBits": 0.9482205938696185,
+      "estimatedInformationGainBits": 0.03409601415093155,
+      "minimumContextCount": 10
+    },
+    {
+      "order": 3,
+      "contexts": 8,
+      "testPredictions": 61,
+      "correct": 35,
+      "accuracy": 0.5737704918032787,
+      "testConditionalEntropyBits": 0.8912694593185653,
+      "estimatedInformationGainBits": 0.09104714870198483,
+      "minimumContextCount": 10
+    },
+    {
+      "order": 4,
+      "contexts": 16,
+      "testPredictions": 40,
+      "correct": 26,
+      "accuracy": 0.65,
+      "testConditionalEntropyBits": 0.6972048986964546,
+      "estimatedInformationGainBits": 0.28511170932409546,
+      "minimumContextCount": 10
+    },
+    {
+      "order": 5,
+      "contexts": 30,
+      "testPredictions": 19,
+      "correct": 8,
+      "accuracy": 0.42105263157894735,
+      "testConditionalEntropyBits": 0.5440655164425403,
+      "estimatedInformationGainBits": 0.4382510915780098,
+      "minimumContextCount": 10
+    },
+    {
+      "order": 6,
+      "contexts": 57,
+      "testPredictions": 0,
+      "correct": 0,
+      "accuracy": null,
+      "testConditionalEntropyBits": 0.3194711209134623,
+      "estimatedInformationGainBits": 0.6628454871070878,
+      "minimumContextCount": 10
+    },
+    {
+      "order": 7,
+      "contexts": 88,
+      "testPredictions": 0,
+      "correct": 0,
+      "accuracy": null,
+      "testConditionalEntropyBits": 0.18868223688006083,
+      "estimatedInformationGainBits": 0.7936343711404893,
+      "minimumContextCount": 10
+    },
+    {
+      "order": 8,
+      "contexts": 117,
+      "testPredictions": 0,
+      "correct": 0,
+      "accuracy": null,
+      "testConditionalEntropyBits": 0.12062299111006193,
+      "estimatedInformationGainBits": 0.8616936169104882,
+      "minimumContextCount": 10
+    },
+    {
+      "order": 9,
+      "contexts": 144,
+      "testPredictions": 0,
+      "correct": 0,
+      "accuracy": null,
+      "testConditionalEntropyBits": 0.07272727272727272,
+      "estimatedInformationGainBits": 0.9095893352932773,
+      "minimumContextCount": 10
+    },
+    {
+      "order": 10,
+      "contexts": 162,
+      "testPredictions": 0,
+      "correct": 0,
+      "accuracy": null,
+      "testConditionalEntropyBits": 0.037037037037037035,
+      "estimatedInformationGainBits": 0.9452795709835131,
+      "minimumContextCount": 10
+    }
+  ]
+}

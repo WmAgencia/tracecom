@@ -1,0 +1,133 @@
+{
+  "300sDirection": 0.9885564356652691,
+  "maxBinaryEntropy": 1,
+  "permutationEntropy1mOrder3": {
+    "order": 3,
+    "delay": 1,
+    "n": 1603,
+    "patterns": 6,
+    "maxPatterns": 6,
+    "entropyBits": 2.583918502617258,
+    "normalizedEntropy": 0.9995961264027595
+  },
+  "permutationEntropy1mOrder5": {
+    "order": 5,
+    "delay": 1,
+    "n": 1601,
+    "patterns": 120,
+    "maxPatterns": 120,
+    "entropyBits": 6.842826145165198,
+    "normalizedEntropy": 0.9907245598353542
+  },
+  "sequence": {
+    "n": 318,
+    "counts": {
+      "UP": 139,
+      "DOWN": 179
+    },
+    "transitions": {
+      "UP_UP": 61,
+      "UP_DOWN": 77,
+      "DOWN_UP": 78,
+      "DOWN_DOWN": 101
+    },
+    "continuationPct": 0.5110410094637224,
+    "runCount": 156,
+    "meanRun": 2.0384615384615383,
+    "maxRun": 10,
+    "runsTestZ": -0.16942048373432947,
+    "approximateTwoSidedP": 0.8654659124146624,
+    "entropyBits": 0.9885564356652691
+  },
+  "conditionalEntropyExploration": [
+    {
+      "order": 0,
+      "testAccuracy": 0.578125,
+      "support": 64,
+      "contexts": 1,
+      "conditionalEntropyBits": 0.9823166080205501,
+      "estimatedInformationGainBits": 0
+    },
+    {
+      "order": 1,
+      "testAccuracy": 0.5873015873015873,
+      "support": 63,
+      "contexts": 2,
+      "conditionalEntropyBits": 0.9619834630972888,
+      "estimatedInformationGainBits": 0.020333144923261326
+    },
+    {
+      "order": 2,
+      "testAccuracy": 0.6290322580645161,
+      "support": 62,
+      "contexts": 4,
+      "conditionalEntropyBits": 0.9482205938696185,
+      "estimatedInformationGainBits": 0.03409601415093155
+    },
+    {
+      "order": 3,
+      "testAccuracy": 0.5737704918032787,
+      "support": 61,
+      "contexts": 8,
+      "conditionalEntropyBits": 0.8912694593185653,
+      "estimatedInformationGainBits": 0.09104714870198483
+    },
+    {
+      "order": 4,
+      "testAccuracy": 0.65,
+      "support": 40,
+      "contexts": 16,
+      "conditionalEntropyBits": 0.6972048986964546,
+      "estimatedInformationGainBits": 0.28511170932409546
+    },
+    {
+      "order": 5,
+      "testAccuracy": 0.42105263157894735,
+      "support": 19,
+      "contexts": 30,
+      "conditionalEntropyBits": 0.5440655164425403,
+      "estimatedInformationGainBits": 0.4382510915780098
+    },
+    {
+      "order": 6,
+      "testAccuracy": null,
+      "support": 0,
+      "contexts": 57,
+      "conditionalEntropyBits": 0.3194711209134623,
+      "estimatedInformationGainBits": 0.6628454871070878
+    },
+    {
+      "order": 7,
+      "testAccuracy": null,
+      "support": 0,
+      "contexts": 88,
+      "conditionalEntropyBits": 0.18868223688006083,
+      "estimatedInformationGainBits": 0.7936343711404893
+    },
+    {
+      "order": 8,
+      "testAccuracy": null,
+      "support": 0,
+      "contexts": 117,
+      "conditionalEntropyBits": 0.12062299111006193,
+      "estimatedInformationGainBits": 0.8616936169104882
+    },
+    {
+      "order": 9,
+      "testAccuracy": null,
+      "support": 0,
+      "contexts": 144,
+      "conditionalEntropyBits": 0.07272727272727272,
+      "estimatedInformationGainBits": 0.9095893352932773
+    },
+    {
+      "order": 10,
+      "testAccuracy": null,
+      "support": 0,
+      "contexts": 162,
+      "conditionalEntropyBits": 0.037037037037037035,
+      "estimatedInformationGainBits": 0.9452795709835131
+    }
+  ],
+  "note": "Conditional entropy estimates at orders 4+ are noisy due sparse contexts and multiple comparisons."
+}

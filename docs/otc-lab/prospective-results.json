@@ -1,0 +1,5 @@
+{
+  "status": "NOT_STARTED",
+  "execution": "NONE",
+  "nextStep": "append immutable predictions after new data collection; resolve each after 300s"
+}

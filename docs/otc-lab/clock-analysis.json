@@ -1,0 +1,98 @@
+{
+  "timezone": "UTC timestamps from broker candles",
+  "oneMinuteReturnByMinuteOfHour": [
+    {
+      "minuteModulo5": 0,
+      "n": 321,
+      "meanReturn": -0.00003005751405494788,
+      "upPct": 0.4454828660436137
+    },
+    {
+      "minuteModulo5": 1,
+      "n": 320,
+      "meanReturn": -0.000031911301392771946,
+      "upPct": 0.46875
+    },
+    {
+      "minuteModulo5": 2,
+      "n": 322,
+      "meanReturn": -0.0000057226488099691035,
+      "upPct": 0.5186335403726708
+    },
+    {
+      "minuteModulo5": 3,
+      "n": 321,
+      "meanReturn": 0.000004359398493129276,
+      "upPct": 0.5015576323987538
+    },
+    {
+      "minuteModulo5": 4,
+      "n": 321,
+      "meanReturn": -0.000014371497280387385,
+      "upPct": 0.5015576323987538
+    }
+  ],
+  "oneMinuteReturnByMinuteModulo10": [
+    {
+      "minuteModulo10": 0,
+      "n": 160,
+      "meanReturn": -0.0000010661751231599848,
+      "upPct": 0.48125
+    },
+    {
+      "minuteModulo10": 1,
+      "n": 160,
+      "meanReturn": -0.00006655135751239619,
+      "upPct": 0.4375
+    },
+    {
+      "minuteModulo10": 2,
+      "n": 161,
+      "meanReturn": -0.000009611493443987656,
+      "upPct": 0.5093167701863354
+    },
+    {
+      "minuteModulo10": 3,
+      "n": 161,
+      "meanReturn": -0.00001304355832773155,
+      "upPct": 0.453416149068323
+    },
+    {
+      "minuteModulo10": 4,
+      "n": 161,
+      "meanReturn": -0.000022173605342152597,
+      "upPct": 0.5031055900621118
+    },
+    {
+      "minuteModulo10": 5,
+      "n": 161,
+      "meanReturn": -0.00005886878255858803,
+      "upPct": 0.40993788819875776
+    },
+    {
+      "minuteModulo10": 6,
+      "n": 160,
+      "meanReturn": 0.0000027287547268523006,
+      "upPct": 0.5
+    },
+    {
+      "minuteModulo10": 7,
+      "n": 161,
+      "meanReturn": -0.0000018338041759505522,
+      "upPct": 0.5279503105590062
+    },
+    {
+      "minuteModulo10": 8,
+      "n": 160,
+      "meanReturn": 0.000021871123794120484,
+      "upPct": 0.55
+    },
+    {
+      "minuteModulo10": 9,
+      "n": 160,
+      "meanReturn": -0.000006520626043236139,
+      "upPct": 0.5
+    }
+  ],
+  "note": "Exploratory grouping; overlapping horizons and multiple comparisons make apparent phase effects non-confirmatory."
+}
