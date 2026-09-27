@@ -50,3 +50,9 @@ Conclusão atual: aumentar a complexidade encontra padrões descritivos e overfi
 Foi coletada uma janela adicional de 1.000 candles de 1 minuto do Binary (`2026-09-26T09:06Z`–`2026-09-27T01:46Z`), permitindo 961 labels de 300s. A proporção UP foi 46,6% no treino, 40,9% na validação e 43,0% no teste. Um baseline sempre-DOWN teria 57,0% no teste, mas essa regra não foi definida antes da amostra e pode refletir apenas drift/regime. Retorno de 5 minutos e rótulo tiveram correlação praticamente nula. Isso é uma hipótese de regime baixista, não um modelo validado.
 
 Não vou converter essa assimetria em ordens ou prometer winrate alto: é necessário repetir a coleta prospectivamente, congelar a regra antes do próximo bloco cego, medir intervalo de confiança em blocos e incluir payout/breakeven real.
+
+## Coleta prospectiva contínua
+
+O coletor read-only contínuo acumulou aproximadamente 25 horas em cada gateway: Binary com 1.539 candles de 1 minuto e Blitz com 1.537. Há cerca de 1.500 labels de 300s por produto. Nos blocos mais recentes, a proporção UP caiu para aproximadamente 20%, enquanto o conjunto completo permaneceu perto de 46,7% UP; isso caracteriza drift/regime, não uma regra fixa.
+
+Os labels alinhados entre Binary e Blitz tiveram 100% de concordância nesta janela. Portanto, os produtos não devem ser tratados como duas confirmações independentes; provavelmente expõem a mesma série OTC subjacente. O laboratório continua sem execução.
