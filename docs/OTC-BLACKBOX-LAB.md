@@ -44,3 +44,9 @@ O baseline de direção anterior calculado nos 940 labels sobrepostos chegou a c
 Markov de ordens 1–5 foi ajustado somente no primeiro trecho e avaliado no último trecho temporal. O resultado in-sample chegou a ~56% no Markov-5, mas no teste temporal caiu para 51% (Binary) e 53% (Blitz), sem evidência robusta acima do acaso. Os maiores picos espectrais ocorreram em períodos de aproximadamente 3–6 amostras de 5s, mas não foram estáveis nem suficientes para declarar periodicidade. Regimes simples de volatilidade também oscilaram perto de 50%.
 
 Conclusão atual: aumentar a complexidade encontra padrões descritivos e overfitting, não um algoritmo confiável. A próxima evidência necessária é coleta prospectiva mais longa, com parâmetros congelados antes do teste cego.
+
+## Ampliação com candle de 1 minuto
+
+Foi coletada uma janela adicional de 1.000 candles de 1 minuto do Binary (`2026-09-26T09:06Z`–`2026-09-27T01:46Z`), permitindo 961 labels de 300s. A proporção UP foi 46,6% no treino, 40,9% na validação e 43,0% no teste. Um baseline sempre-DOWN teria 57,0% no teste, mas essa regra não foi definida antes da amostra e pode refletir apenas drift/regime. Retorno de 5 minutos e rótulo tiveram correlação praticamente nula. Isso é uma hipótese de regime baixista, não um modelo validado.
+
+Não vou converter essa assimetria em ordens ou prometer winrate alto: é necessário repetir a coleta prospectivamente, congelar a regra antes do próximo bloco cego, medir intervalo de confiança em blocos e incluir payout/breakeven real.
