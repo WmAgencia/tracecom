@@ -59,6 +59,14 @@ O gateway limita a consulta individual a 1.000 candles. O coletor contínuo faz 
 
 Uma hipótese só pode ser marcada `OOS_EDGE` se vencer os baselines em múltiplos blocos futuros, permanecer calibrada após payout e não depender de um único gateway/ativo. Até lá o estado correto é `NO_EVIDENCE` ou `WEAK_STRUCTURE`; nenhum resultado deste laboratório autoriza ordens reais.
 
+## Backtest de hipóteses — entrada, +45s e +300s
+
+O script `scripts/otc-lab-backtest-hypotheses.mjs` executa previsões causais usando somente o fechamento disponível no instante de entrada. Foram avaliadas as hipóteses `alwaysUp`, `alwaysDown`, momentum, reversão Bollinger, RSI e regime de volatilidade.
+
+Na amostra Blitz de 5 segundos, a reversão teve 62,3% em +45s e 58,7% em +300s, mas os eventos são sobrepostos e a regra foi escolhida para esta análise; isso é resultado exploratório, não edge comprovado. Momentum ficou abaixo de 50% nos dois horizontes. Na série prospectiva de 1 minuto, +45s é **indisponível na resolução observada**; interpolar esse valor seria incorreto. Em +300s, o melhor baseline foi `alwaysDown` com 53,35%, enquanto momentum ficou em 50,69%, sem demonstração de vantagem robusta.
+
+Esses números não devem ser usados para criar ordens: há dependência temporal, amostra curta e ausência de payout/empates no cálculo. O próximo passo é manter a coleta de 5s por vários dias e repetir o teste em blocos futuros congelados.
+
 ## Ampliação com candle de 1 minuto
 
 Foi coletada uma janela adicional de 1.000 candles de 1 minuto do Binary (`2026-09-26T09:06Z`–`2026-09-27T01:46Z`), permitindo 961 labels de 300s. A proporção UP foi 46,6% no treino, 40,9% na validação e 43,0% no teste. Um baseline sempre-DOWN teria 57,0% no teste, mas essa regra não foi definida antes da amostra e pode refletir apenas drift/regime. Retorno de 5 minutos e rótulo tiveram correlação praticamente nula. Isso é uma hipótese de regime baixista, não um modelo validado.
