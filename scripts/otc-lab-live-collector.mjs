@@ -36,5 +36,5 @@ async function collect(target) {
 await fs.mkdir(dir, { recursive: true });
 const once = async () => { for (const target of targets) { try { console.log(JSON.stringify(await collect(target))); } catch (error) { console.log(JSON.stringify({ product: target.product, error: String(error?.message ?? error).slice(0, 160) })); } await sleep(1500); } };
 await once();
-setInterval(() => { void once(); }, 60_000).unref?.();
+setInterval(() => { void once(); }, 60_000);
 await new Promise(() => {});
