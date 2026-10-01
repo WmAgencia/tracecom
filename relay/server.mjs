@@ -52,6 +52,74 @@ async function persistIqSession() { try { const snap = iqAuth.snapshot(); if (sn
 const adminSecretEnv = (process.env.TOKEN_SIGNING_SECRET || '').trim();
 if (adminSecretEnv.length < 16) console.info('RELAY_ADMIN_SECRET_MISSING admin routes fail-closed');
 const admin = adminSecretEnv.length >= 16 ? adminSecretEnv : `UNCONFIGURED-${crypto.randomUUID()}`;
+// Session start time — usado no relatório final ao encerrar.
+const SESSION_START_MS = Date.now();
+
+/** Retorna relatório final da sessão atual (operacional — sem segredos). */
+async function buildSessionReport() {
+  const runtimeMs = Date.now() - SESSION_START_MS;
+  const runtimeSec = Math.round(runtimeMs / 1000);
+  const runtimeStr = runtimeSec >= 3600
+    ? `${Math.floor(runtimeSec / 3600)}h ${Math.floor((runtimeSec % 3600) / 60)}m`
+    : runtimeSec >= 60 ? `${Math.floor(runtimeSec / 60)}m ${runtimeSec % 60}s` : `${runtimeSec}s`;
+
+  const accountCtx = wsRuntime.accountContextState();
+  const activeCtx = accountCtx.context || "PRACTICE";
+  const accountLabel = activeCtx === "REAL" ? "REAL" : "PRACTICE";
+
+  // Saldo da conta ativa
+  const balance = activeCtx === "REAL"
+    ? accountCtx.realAccount?.balance
+    : accountCtx.practiceAccount?.balance;
+  const balanceStr = balance != null ? `R$ ${Number(balance).toFixed(2)}` : "n/d";
+
+  // Estatísticas da sessão: operações desde que o relay iniciou (exclui test-only)
+  let sessionOps = { operations: 0, wins: 0, losses: 0, pnl: 0 };
+  if (wsRuntime.pool?.query) {
+    const since = new Date(SESSION_START_MS).toISOString();
+    const ctxFilter = activeCtx === "REAL" ? `account_context='REAL'` : `account_context='PRACTICE'`;
+    try {
+      const r = (await wsRuntime.pool.query(
+        `SELECT ` +
+        `  count(*) FILTER (WHERE broker_result IN ('WIN','LOSS'))::int AS operations, ` +
+        `  count(*) FILTER (WHERE broker_result='WIN')::int AS wins, ` +
+        `  count(*) FILTER (WHERE broker_result='LOSS')::int AS losses, ` +
+        `  coalesce(sum(profit) FILTER (WHERE broker_result IS NOT NULL),0)::numeric AS pnl ` +
+        `FROM iq_executions WHERE ${ctxFilter} AND requested_at >= $1 AND excluded_from_stats=false`,
+        [since]
+      )).rows[0];
+      sessionOps = {
+        operations: Number(r?.operations ?? 0),
+        wins: Number(r?.wins ?? 0),
+        losses: Number(r?.losses ?? 0),
+        pnl: Math.round(Number(r?.pnl ?? 0) * 100) / 100,
+      };
+    } catch { /* DB indisponível — sessão sem ops */ }
+  }
+
+  const wr = sessionOps.operations > 0
+    ? `${((100 * sessionOps.wins) / sessionOps.operations).toFixed(1)}%`
+    : "—";
+
+  const lines = [
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    "          RELATÓRIO FINAL DA SESSÃO",
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    `  Iniciado em : ${new Date(SESSION_START_MS).toLocaleString("pt-BR")}`,
+    `  Duração     : ${runtimeStr}`,
+    `  Conta       : ${accountLabel}`,
+    `  Saldo       : ${balanceStr}`,
+    "",
+    `  Operações   : ${sessionOps.operations}`,
+    `  Wins        : ${sessionOps.wins}`,
+    `  Losses      : ${sessionOps.losses}`,
+    `  W/Rate      : ${wr}`,
+    `  Lucro líquido: R$ ${sessionOps.pnl >= 0 ? "+" : ""}${sessionOps.pnl.toFixed(2)}`,
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+  ];
+  return lines.join("\n");
+}
+
 const armState = new ExecutionArmState();
 const killSwitch = new KillSwitch();
 const executionIdempotency = new IdempotencyStore();
@@ -590,5 +658,43 @@ function startFrozenLoop(pool){
 }
 process.on("unhandledRejection", (reason) => { try { console.error("RELAY_UNHANDLED_REJECTION", String(reason?.stack ?? reason).slice(0, 600)); } catch { /* noop */ } });
 process.on("uncaughtException", (error) => { try { console.error("RELAY_UNCAUGHT_EXCEPTION", String(error?.stack ?? error).slice(0, 900)); } catch { /* noop */ } });
+
+/** Encerramento graceful: kill switch + relatório final + exit. */
+function gracefulShutdown(reason) {
+  console.log(`\n[KILL SWITCH - ${reason}] Encerrando...`);
+  wsRuntime.setKillSwitch(true, reason, null);
+  buildSessionReport().then((report) => {
+    console.log(report);
+    console.log("\nEncerrando servidor...");
+    server.close(() => {
+      console.log("Servidor fechado. Adeus.");
+      process.exit(0);
+    });
+    // Safety: forçar exit após 5s
+    setTimeout(() => { console.log("Forçando saída."); process.exit(1); }, 5000);
+  }).catch((err) => {
+    console.error("Erro ao gerar relatório:", String(err?.message ?? err).slice(0, 100));
+    process.exit(1);
+  });
+}
+
+// Tecla K — funciona em CMD, PowerShell, Windows Terminal (stdin raw mode)
+if (process.stdin.isTTY) {
+  process.stdin.setRawMode(true);
+  process.stdin.resume();
+  process.stdin.setEncoding("utf8");
+  process.stdin.on("data", (chunk) => {
+    const key = chunk.toString("utf8");
+    if (key === "K" || key === "k") {
+      console.log("\n[K] Kill switch acionado pelo operador.");
+      gracefulShutdown("STDIN_K");
+    }
+  });
+}
+
+// Safety net: SIGINT (Ctrl+C) e SIGTERM (Docker stop, task kill)
+process.on("SIGINT",  () => { console.log("\nSIGINT recebido.");  gracefulShutdown("SIGINT"); });
+process.on("SIGTERM", () => { console.log("\nSIGTERM recebido."); gracefulShutdown("SIGTERM"); });
+
 server.listen(port,()=>{console.log(`tracecom-live-relay listening on ${port}`); if(process.env.SHADOW_EXPERIMENT_DISABLED !== 'true') startExperimentLoop(pool); if(process.env.FROZEN_STRATEGIES_DISABLED !== 'true') startFrozenLoop(pool);});
 

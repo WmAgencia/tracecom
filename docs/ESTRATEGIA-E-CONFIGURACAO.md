@@ -88,3 +88,11 @@
 - Quando o WebSocket direto da IQ não sustenta uma sessão, o runtime usa somente o gateway MCP oficial para conta, catálogo NORMAL e candles. OTC permanece filtrado nesse caminho.
 - O poller normaliza candles reais `from/to/open/max/min/close` e hidrata o buffer canônico de cada mercado; o feed só fica pronto com pelo menos 40 candles reais no buffer.
 - A correção não modifica stake, expiração, estratégia congelada ou os gates PRACTICE/REAL. Qualquer ordem continua dependente de aprovação V3 e da configuração server-side do MCP.
+
+## Hotfix operacional — shutdown com relatório final (2026-10-01)
+
+- **Tecla K**: pressionar `K` no terminal que roda `node relay/server.mjs` encerra o processo com relatório final (funciona em CMD, PowerShell e Windows Terminal via `stdin.setRawMode`).
+- **Ctrl+C / SIGTERM**: também funcionam como safety net (Docker stop, taskkill, etc.) — chamam o mesmo fluxo.
+- **Relatório final**: operações, wins, losses, winrate, lucro líquido, saldo da conta ativa (PRACTICE ou REAL), duração da sessão, horário de início.
+- **Fluxo**: `gracefulShutdown` → `wsRuntime.setKillSwitch(true)` → consulta DB por operações desde início da sessão → imprime relatório ASCII → `server.close()` → `process.exit(0)` (com timeout de 5s como safety).
+- **Sem alteração** de estratégia, stake, expiração, gates fail-closed ou comportamento de ordens em produção.
