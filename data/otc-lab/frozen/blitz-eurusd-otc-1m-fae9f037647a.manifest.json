@@ -1,0 +1,17 @@
+{
+  "manifestVersion": 1,
+  "datasetFile": "blitz-eurusd-otc-1m-fae9f037647a.json",
+  "datasetSha256": "fae9f037647a0bf4d38619d6a1ae7e6322e381ace1c81e07ccf363ab449f7896",
+  "bytes": 291082,
+  "sourceFile": "data\\otc-lab\\raw\\blitz-eurusd-otc-1m-live.json",
+  "product": "blitz",
+  "assetName": "EUR/USD (OTC)",
+  "assetId": 76,
+  "candleIntervalSeconds": 60,
+  "candleCount": 1607,
+  "firstTimestamp": "2026-09-26T09:16:00.000Z",
+  "lastTimestamp": "2026-09-27T12:07:00.000Z",
+  "collectionStartedAtUnavailable": true,
+  "synthetic": false,
+  "payoutFieldPresent": false
+}

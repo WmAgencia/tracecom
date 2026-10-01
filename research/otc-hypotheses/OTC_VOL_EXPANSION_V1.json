@@ -1,0 +1,14 @@
+{
+  "id": "OTC_VOL_EXPANSION_V1",
+  "status": "INVALIDATED_AFTER_CONTINUITY_AUDIT",
+  "scope": "Blitz EUR/USD OTC 1m",
+  "observation": "26h prospectivas, 27 sinais, 19 wins, 8 losses",
+  "observedWinRate": 0.7037037037,
+  "auditCorrection": { "legacySignalsReproduced": 27, "legacyWins": 19, "legacyLosses": 8, "legacyWinRate": 0.7037037037, "legacyWindowsCrossingSixMinuteGap": 19, "legacyExpiryOvershoots": 0, "continuousExact300sSignals": 8, "continuousWins": 3, "continuousLosses": 5, "continuousWinRate": 0.375, "nonOverlappingSignals": 2, "cause": "All 19 winning legacy signals came from 20-candle volatility windows crossing the six-minute data gap. Enforcing complete input continuity leaves eight signals, three wins, and only two non-overlapping outcomes." },
+  "horizonSeconds": 300,
+  "entryRule": { "window": 20, "volatilityMeasure": "2 * population_sd(close_20) / mean(close_20)", "threshold": 0.003, "direction": "sign(close_t / close_t_minus_5m - 1)", "waitOtherwise": true },
+  "dataRules": { "causal": true, "entryPrice": "close_at_signal", "exitPrice": "first_close_at_or_after_entry_plus_300s", "payoutIncluded": false, "execution": "NONE" },
+  "promotionCriteria": { "mustBeFrozenBeforeHoldout": true, "minimumFutureSignals": 200, "minimumHoldoutWinRate": 0.7, "mustBeatAlwaysDirectionBaseline": true, "mustIncludePayoutAndTies": true, "mustRemainPositiveAcrossBlocks": 3 },
+  "invalidation": ["holdout win rate below 70%", "edge disappears after removing overlapping labels", "edge depends on one asset or one time block", "payout-adjusted expectancy is non-positive"],
+  "warning": "Small-sample statistical hypothesis; not evidence of the broker algorithm or a trading recommendation."
+}

@@ -1,0 +1,141 @@
+{
+  "sourceResolutionSeconds": 60,
+  "testedCandidatePeriods": [
+    {
+      "seconds": 15,
+      "resolvable": false,
+      "note": "below source resolution"
+    },
+    {
+      "seconds": 30,
+      "resolvable": false,
+      "note": "below source resolution"
+    },
+    {
+      "seconds": 60,
+      "resolvable": true,
+      "note": "periodogram scanned; candidate requires prospective replication"
+    },
+    {
+      "seconds": 120,
+      "resolvable": true,
+      "note": "periodogram scanned; candidate requires prospective replication"
+    },
+    {
+      "seconds": 180,
+      "resolvable": true,
+      "note": "periodogram scanned; candidate requires prospective replication"
+    },
+    {
+      "seconds": 300,
+      "resolvable": true,
+      "note": "periodogram scanned; candidate requires prospective replication"
+    },
+    {
+      "seconds": 600,
+      "resolvable": true,
+      "note": "periodogram scanned; candidate requires prospective replication"
+    }
+  ],
+  "periodogramTop20": [
+    {
+      "periodSeconds": 480,
+      "power": 3.520235530634965e-7
+    },
+    {
+      "periodSeconds": 1380,
+      "power": 3.45364887235407e-7
+    },
+    {
+      "periodSeconds": 1320,
+      "power": 3.3239070666808707e-7
+    },
+    {
+      "periodSeconds": 1140,
+      "power": 3.0857779830367066e-7
+    },
+    {
+      "periodSeconds": 120,
+      "power": 3.070957362376702e-7
+    },
+    {
+      "periodSeconds": 1560,
+      "power": 2.5289167292602736e-7
+    },
+    {
+      "periodSeconds": 300,
+      "power": 2.401688100350004e-7
+    },
+    {
+      "periodSeconds": 360,
+      "power": 2.3164772715461859e-7
+    },
+    {
+      "periodSeconds": 1680,
+      "power": 2.1896240865962495e-7
+    },
+    {
+      "periodSeconds": 1440,
+      "power": 2.068951287891492e-7
+    },
+    {
+      "periodSeconds": 240,
+      "power": 1.684154347032296e-7
+    },
+    {
+      "periodSeconds": 1260,
+      "power": 1.5652223115133818e-7
+    },
+    {
+      "periodSeconds": 1740,
+      "power": 1.4736424043652499e-7
+    },
+    {
+      "periodSeconds": 420,
+      "power": 1.4639307692482518e-7
+    },
+    {
+      "periodSeconds": 720,
+      "power": 1.0801762371736268e-7
+    },
+    {
+      "periodSeconds": 1620,
+      "power": 9.231268777942748e-8
+    },
+    {
+      "periodSeconds": 900,
+      "power": 8.284264695459431e-8
+    },
+    {
+      "periodSeconds": 780,
+      "power": 7.601478148818656e-8
+    },
+    {
+      "periodSeconds": 840,
+      "power": 7.388780848888314e-8
+    },
+    {
+      "periodSeconds": 600,
+      "power": 5.5936233581792855e-8
+    }
+  ],
+  "strongestACFAbsoluteReturnLags": [
+    {
+      "lag": 8,
+      "value": 0.05003066737740736,
+      "approximate95Upper": 0.04892361647733315,
+      "bonferroni30Upper": 0.07862724076714256,
+      "significantUncorrected": true,
+      "significantBonferroniApprox": false
+    },
+    {
+      "lag": 1,
+      "value": 0.049698184005752884,
+      "approximate95Upper": 0.04892361647733315,
+      "bonferroni30Upper": 0.07862724076714256,
+      "significantUncorrected": true,
+      "significantBonferroniApprox": false
+    }
+  ],
+  "conclusion": "Periodogram peaks are descriptive; broad scanning inflates false positives. No cycle is asserted without future stability and multiplicity correction."
+}

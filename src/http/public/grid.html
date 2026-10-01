@@ -98,7 +98,31 @@
   .kv { display:grid; grid-template-columns:160px 1fr; gap:4px 10px; font-size:11.5px; }
   .kv .k { color:var(--dim); }
   .sect { margin:12px 0 6px; font-size:12.5px; font-weight:800; color:#c7d2e5; border-top:1px solid var(--line); padding-top:10px; }
-  pre.json { font:11px/1.5 ui-monospace,Consolas,monospace; color:#c9d4ea; white-space:pre-wrap; background:#0b1220; border:1px solid var(--line); border-radius:8px; padding:8px; }
+pre.json { font:11px/1.5 ui-monospace,Consolas,monospace; color:#c9d4ea; white-space:pre-wrap; background:#0b1220; border:1px solid var(--line); border-radius:8px; padding:8px; }
+  /* SPLIT BINARY | CRYPTO 24/7 */
+  .split { display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
+  .half { min-width:0; }
+  .halfhead { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; margin-bottom:8px; border:1px solid var(--line); border-radius:10px; background:linear-gradient(180deg,#0e1830,#0b1324); }
+  .htitle { font-size:11.5px; font-weight:800; letter-spacing:.3px; color:#c7d2e5; }
+  .hstat { font-size:10.5px; color:#4ade80; white-space:nowrap; }
+  .cryhalf .hstat { color:#60a5fa; }
+  .ccard { position:relative; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px; }
+  .ccard.inpos { border-color:#f59e0b; }
+  .ccard .crow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .ccard .csym { font-size:12px; font-weight:800; }
+  .ccard .cprice { font-size:13px; font-weight:800; color:#e8edf7; }
+  .ccard .cchg.up { color:var(--up); } .ccard .cchg.down { color:var(--down); }
+  .ccard .regime { font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; border:1px solid var(--line); }
+  .ccard .regime.TREND_UP { color:#4ade80; border-color:#14532d; }
+  .ccard .regime.TREND_DOWN { color:#f87171; border-color:#7f1d1d; }
+  .ccard .regime.RANGE { color:#facc15; border-color:#713f12; }
+  .ccard .regime.NO_TRADE, .ccard .regime.TRANSITION { color:#8b97ad; }
+  .ccard .regime.HIGH_VOLATILITY { color:#fb923c; border-color:#7c2d12; }
+  .ccard .cline { font-size:10.5px; color:var(--dim); margin-top:4px; }
+  .ccard .cpos { font-size:10.5px; color:#facc15; margin-top:4px; }
+  .ccard .dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:5px; }
+  .dot.ok { background:#22c55e; } .dot.bad { background:#ef4444; } .dot.wait { background:#facc15; }
+  @media (max-width: 900px) { .split { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -153,12 +177,30 @@
     </section>
   </div>
 
-  <div class="sechead">
-    <h2><span style="color:#60a5fa">◈</span> Mercados Reais 300s <span class="sub">Monitoramento em tempo real de <b id="subN">0</b> ativos</span></h2>
+<div class="sechead">
+    <h2><span style="color:#60a5fa">�-^</span> Mercados Reais 300s <span class="sub">Monitoramento em tempo real de <b id="subN">0</b> ativos</span></h2>
     <span class="spacer"></span>
-    <span class="chipctl" style="color:#4ade80;border-color:#14532d">● 300s único</span>
+    <span class="chipctl" style="color:#4ade80;border-color:#14532d">�-? 300s ǧnico</span>
     <span class="clock" id="clock">--:--:--</span>
   </div>
+
+  <div class="split">
+    <section class="half binhalf">
+      <div class="halfhead">
+        <span class="htitle">BIN�"RIOS — MERCADO NORMAL</span>
+        <span class="hstat" id="binStat">READY · OPEN 0/24</span>
+      </div>
+      <main id="grid"></main>
+    </section>
+    <section class="half cryhalf">
+      <div class="halfhead">
+        <span class="htitle">CRIPTO — MERCADO 24/7</span>
+        <span class="hstat" id="cryStat">READY · 0/3 · 24/7</span>
+      </div>
+      <main id="cryptoGrid"></main>
+    </section>
+  </div>
+</div>
   <main id="grid"></main>
 </div>
 
@@ -208,6 +250,52 @@
 <script>
 (() => {
   "use strict";
+  // ===== CRYPTO 24/7 (painel direito, pipeline separado da Binary) =====
+  const cryptoState = { cards: new Map() };
+  const cryStat = document.getElementById("cryStat");
+  const cryptoGrid = document.getElementById("cryptoGrid");
+  const fmtPrice = (p) => (p === null || p === undefined ? "-" : Number(p) < 1000 ? Number(p).toFixed(2) : Number(p).toLocaleString("en-US", { maximumFractionDigits: 2 }));
+  const buildCryptoCard = (m) => {
+    const card = document.createElement("div");
+    card.className = "ccard" + (m.position ? " inpos" : "");
+    card.dataset.symbol = m.symbol;
+    const feedDot = m.feed?.healthy ? '<span class="dot ok"></span>' : '<span class="dot bad"></span>';
+    const chg = m.change24hPct === null || m.change24hPct === undefined ? "" : `<span class="cchg ${m.change24hPct >= 0 ? "up" : "down"}">${m.change24hPct >= 0 ? "+" : ""}${Number(m.change24hPct).toFixed(2)}%</span>`;
+    const regime = m.regime ? `<span class="regime ${m.regime}">${m.regime}</span>` : '<span class="regime">NO_DATA</span>';
+    const setup = m.setup?.candidate ? ` <b style="color:#facc15">${m.setup.candidate.side}</b> entry ${fmtPrice(m.setup.candidate.entry)} · stop ${fmtPrice(m.setup.candidate.stop)} · TP ${fmtPrice(m.setup.candidate.target)} · R:R ${m.setup.candidate.rr}` : ` <span style="color:#8b97ad">${m.setup?.reason ?? "no setup"}</span>`;
+    const consensus = m.consensus ? `<span style="color:${m.consensus.result === "NO_TRADE" ? "#8b97ad" : m.consensus.result === "LONG" ? "#4ade80" : "#f87171"}">${m.consensus.result}</span>` : "-";
+    const position = m.position ? `<div class="cpos">${m.position.side} @ ${fmtPrice(m.position.entry)} · stop ${fmtPrice(m.position.stop)} · TP ${fmtPrice(m.position.target)} · PnL ${Number(m.position.unrealizedPnL ?? 0).toFixed(4)}</div>` : "";
+    const agent = m.agents?.label ? `<div class="cline">Trader · ${m.agents.label}</div>` : "";
+    card.innerHTML = `
+      <div class="crow">${feedDot}<span class="csym">${m.symbol}</span><span class="cprice">${fmtPrice(m.price)}</span>${chg}${regime}</div>
+      <div class="cline">Trend: ${m.trendDirection ?? "NONE"} · Setup:${setup}</div>
+      <div class="cline">Consensus: ${consensus}${m.consensus?.provider ? ` (${m.consensus.provider}/${m.consensus.model})` : ""}${m.consensus?.thesis ? " · " + m.consensus.thesis : ""}</div>${agent}${position}`;
+    return card;
+  };
+  const renderCrypto = () => {
+    if (!cryptoGrid) return;
+    api("/api/crypto/status").then((data) => {
+      if (!data || !Array.isArray(data.markets)) return;
+      const healthy = data.markets.filter((m) => m.feed?.healthy === true).length;
+      if (cryStat) cryStat.textContent = `${data.marketData?.healthy === true ? "READY" : "DEGRADED"} · ${healthy}/${data.symbols?.length ?? 0} · 24/7 · PAPER`;
+      for (const m of data.markets) {
+        const existing = cryptoState.cards.get(m.symbol);
+        if (existing) {
+          const card = buildCryptoCard(m);
+          existing.replaceWith(card);
+          cryptoState.cards.set(m.symbol, card);
+        } else {
+          const card = buildCryptoCard(m);
+          cryptoGrid.append(card);
+          cryptoState.cards.set(m.symbol, card);
+        }
+      }
+      for (const [symbol, card] of cryptoState.cards) {
+        if (!data.markets.some((m) => m.symbol === symbol)) card.remove();
+      }
+    });
+  };
+  if (cryptoGrid) { setTimeout(renderCrypto, 300); setInterval(renderCrypto, 10_000); }
   const state = { assets: [], cards: new Map(), results: new Map(), candles: new Map(), lastDraw: new Map(), lastResultText: new Map(), lastChip: new Map(), mode: "PRACTICE", practiceArmed: false, realArmed: false, strategy: null, intelligence: null, history: [], logOpen: false, histOpen: false };
   const Ops = window.OpsUI;
   const $ = (id) => document.getElementById(id);

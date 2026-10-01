@@ -1,0 +1,624 @@
+{
+  "target": "non-overlapping 300s close direction",
+  "samples": 308,
+  "split": "chronological 60/20/20 with labels spaced 300s; last 20% contaminated because full history was previously inspected",
+  "testN": 62,
+  "models": {
+    "random": {
+      "probability": 0.5,
+      "metrics": {
+        "n": 62,
+        "accuracy": 0.3709677419354839,
+        "balancedAccuracy": 0.5,
+        "auc": 0.5,
+        "brier": 0.25,
+        "logLoss": 0.6931471805599451,
+        "coverage": [
+          {
+            "coverage": 1,
+            "n": 62,
+            "accuracy": 0.3709677419354839,
+            "meanConfidence": 0.5
+          },
+          {
+            "coverage": 0.5,
+            "n": 31,
+            "accuracy": 0.3225806451612903,
+            "meanConfidence": 0.5
+          },
+          {
+            "coverage": 0.25,
+            "n": 16,
+            "accuracy": 0.1875,
+            "meanConfidence": 0.5
+          },
+          {
+            "coverage": 0.1,
+            "n": 7,
+            "accuracy": 0.2857142857142857,
+            "meanConfidence": 0.5
+          },
+          {
+            "coverage": 0.05,
+            "n": 4,
+            "accuracy": 0.5,
+            "meanConfidence": 0.5
+          },
+          {
+            "coverage": 0.01,
+            "n": 1,
+            "accuracy": 0,
+            "meanConfidence": 0.5
+          }
+        ],
+        "calibration": [
+          {
+            "bin": "0-0.2",
+            "n": 0,
+            "meanP": null,
+            "observedUp": null
+          },
+          {
+            "bin": "0.2-0.4",
+            "n": 0,
+            "meanP": null,
+            "observedUp": null
+          },
+          {
+            "bin": "0.4-0.6",
+            "n": 62,
+            "meanP": 0.5,
+            "observedUp": 0.3709677419354839
+          },
+          {
+            "bin": "0.6-0.8",
+            "n": 0,
+            "meanP": null,
+            "observedUp": null
+          },
+          {
+            "bin": "0.8-1",
+            "n": 0,
+            "meanP": null,
+            "observedUp": null
+          }
+        ],
+        "baseRates": {
+          "up": 0.3709677419354839,
+          "down": 0.6290322580645161
+        },
+        "expectedAccuracy": 0.5,
+        "thresholdDirectionAccuracy": 0.3709677419354839
+      }
+    },
+    "trainingMajority": {
+      "n": 62,
+      "accuracy": 0.6290322580645161,
+      "balancedAccuracy": 0.5,
+      "auc": 0.5,
+      "brier": 0.23560792578815773,
+      "logLoss": 0.6641639955662596,
+      "coverage": [
+        {
+          "coverage": 1,
+          "n": 62,
+          "accuracy": 0.6290322580645161,
+          "meanConfidence": 0.5815217391304347
+        },
+        {
+          "coverage": 0.5,
+          "n": 31,
+          "accuracy": 0.6774193548387096,
+          "meanConfidence": 0.5815217391304349
+        },
+        {
+          "coverage": 0.25,
+          "n": 16,
+          "accuracy": 0.8125,
+          "meanConfidence": 0.5815217391304348
+        },
+        {
+          "coverage": 0.1,
+          "n": 7,
+          "accuracy": 0.7142857142857143,
+          "meanConfidence": 0.5815217391304347
+        },
+        {
+          "coverage": 0.05,
+          "n": 4,
+          "accuracy": 0.5,
+          "meanConfidence": 0.5815217391304348
+        },
+        {
+          "coverage": 0.01,
+          "n": 1,
+          "accuracy": 1,
+          "meanConfidence": 0.5815217391304348
+        }
+      ],
+      "calibration": [
+        {
+          "bin": "0-0.2",
+          "n": 0,
+          "meanP": null,
+          "observedUp": null
+        },
+        {
+          "bin": "0.2-0.4",
+          "n": 0,
+          "meanP": null,
+          "observedUp": null
+        },
+        {
+          "bin": "0.4-0.6",
+          "n": 62,
+          "meanP": 0.41847826086956547,
+          "observedUp": 0.3709677419354839
+        },
+        {
+          "bin": "0.6-0.8",
+          "n": 0,
+          "meanP": null,
+          "observedUp": null
+        },
+        {
+          "bin": "0.8-1",
+          "n": 0,
+          "meanP": null,
+          "observedUp": null
+        }
+      ],
+      "baseRates": {
+        "up": 0.3709677419354839,
+        "down": 0.6290322580645161
+      }
+    },
+    "previousDirectionHeuristic": {
+      "n": 62,
+      "accuracy": 0.5967741935483871,
+      "balancedAccuracy": 0.5813823857302118,
+      "auc": 0.5735785953177257,
+      "brier": 0.2420967741935484,
+      "logLoss": 0.6772602892417663,
+      "coverage": [
+        {
+          "coverage": 1,
+          "n": 62,
+          "accuracy": 0.5967741935483871,
+          "meanConfidence": 0.5983870967741942
+        },
+        {
+          "coverage": 0.5,
+          "n": 31,
+          "accuracy": 0.5806451612903226,
+          "meanConfidence": 0.6000000000000001
+        },
+        {
+          "coverage": 0.25,
+          "n": 16,
+          "accuracy": 0.625,
+          "meanConfidence": 0.5999999999999999
+        },
+        {
+          "coverage": 0.1,
+          "n": 7,
+          "accuracy": 0.7142857142857143,
+          "meanConfidence": 0.6
+        },
+        {
+          "coverage": 0.05,
+          "n": 4,
+          "accuracy": 0.75,
+          "meanConfidence": 0.6
+        },
+        {
+          "coverage": 0.01,
+          "n": 1,
+          "accuracy": 1,
+          "meanConfidence": 0.6
+        }
+      ],
+      "calibration": [
+        {
+          "bin": "0-0.2",
+          "n": 0,
+          "meanP": null,
+          "observedUp": null
+        },
+        {
+          "bin": "0.2-0.4",
+          "n": 0,
+          "meanP": null,
+          "observedUp": null
+        },
+        {
+          "bin": "0.4-0.6",
+          "n": 37,
+          "meanP": 0.402702702702703,
+          "observedUp": 0.32432432432432434
+        },
+        {
+          "bin": "0.6-0.8",
+          "n": 25,
+          "meanP": 0.5999999999999998,
+          "observedUp": 0.44
+        },
+        {
+          "bin": "0.8-1",
+          "n": 0,
+          "meanP": null,
+          "observedUp": null
+        }
+      ],
+      "baseRates": {
+        "up": 0.3709677419354839,
+        "down": 0.6290322580645161
+      }
+    },
+    "logisticRegression": {
+      "metrics": {
+        "n": 62,
+        "accuracy": 0.6290322580645161,
+        "balancedAccuracy": 0.5356744704570792,
+        "auc": 0.653288740245262,
+        "brier": 0.22122709555159858,
+        "logLoss": 0.6321601490281685,
+        "coverage": [
+          {
+            "coverage": 1,
+            "n": 62,
+            "accuracy": 0.6290322580645161,
+            "meanConfidence": 0.5903222215073384
+          },
+          {
+            "coverage": 0.5,
+            "n": 31,
+            "accuracy": 0.6774193548387096,
+            "meanConfidence": 0.6454676962089366
+          },
+          {
+            "coverage": 0.25,
+            "n": 16,
+            "accuracy": 0.8125,
+            "meanConfidence": 0.6831835701155095
+          },
+          {
+            "coverage": 0.1,
+            "n": 7,
+            "accuracy": 1,
+            "meanConfidence": 0.7320339873070297
+          },
+          {
+            "coverage": 0.05,
+            "n": 4,
+            "accuracy": 1,
+            "meanConfidence": 0.7680376627420374
+          },
+          {
+            "coverage": 0.01,
+            "n": 1,
+            "accuracy": 1,
+            "meanConfidence": 0.8404380006781134
+          }
+        ],
+        "calibration": [
+          {
+            "bin": "0-0.2",
+            "n": 1,
+            "meanP": 0.15956199932188658,
+            "observedUp": 0
+          },
+          {
+            "bin": "0.2-0.4",
+            "n": 25,
+            "meanP": 0.3511222525512205,
+            "observedUp": 0.24
+          },
+          {
+            "bin": "0.4-0.6",
+            "n": 36,
+            "meanP": 0.4713494065201306,
+            "observedUp": 0.4722222222222222
+          },
+          {
+            "bin": "0.6-0.8",
+            "n": 0,
+            "meanP": null,
+            "observedUp": null
+          },
+          {
+            "bin": "0.8-1",
+            "n": 0,
+            "meanP": null,
+            "observedUp": null
+          }
+        ],
+        "baseRates": {
+          "up": 0.3709677419354839,
+          "down": 0.6290322580645161
+        }
+      },
+      "standardizedCoefficients": [
+        0.07949435161525438,
+        0.003842901256133372,
+        0.25974154307971115,
+        -0.35829864254800364,
+        0.19970756951317728,
+        -0.1871334018617117,
+        0.0015088397089159942,
+        0.0758557143573393,
+        0.1063123610158901
+      ]
+    },
+    "gaussianHMM": {
+      "fitOnFirst60PercentReturns": [
+        {
+          "states": 2,
+          "means": [
+            -0.000031459590507452565,
+            -0.000013597247911354972
+          ],
+          "standardDeviations": [
+            0.0003997246579813078,
+            0.0003596422841422996
+          ],
+          "transition": [
+            [
+              0.8493294140005888,
+              0.15067058599941122
+            ],
+            [
+              0.1595712456978685,
+              0.8404287543021315
+            ]
+          ],
+          "initial": [
+            0.9999068074827608,
+            0.00009319251723919575
+          ],
+          "occupancy": [
+            0.5159392768905559,
+            0.4840607231094441
+          ],
+          "meanDurationSteps": [
+            6.636995491634366,
+            6.266793215949417
+          ],
+          "logLikelihood": 6215.16914178383,
+          "bic": -12382.247909685073,
+          "iterations": 40
+        },
+        {
+          "states": 3,
+          "means": [
+            -0.00012825464279384193,
+            -0.0000217235614520241,
+            0.00007975664104730911
+          ],
+          "standardDeviations": [
+            0.00038203763518800593,
+            0.00037334964550414897,
+            0.0005487214786632902
+          ],
+          "transition": [
+            [
+              0.5569012678462373,
+              0.3525063878456918,
+              0.09059234430807088
+            ],
+            [
+              0.01218462268801074,
+              0.9761585737852609,
+              0.011656803526728226
+            ],
+            [
+              0.1556861860355432,
+              0.3311893352556539,
+              0.513124478708803
+            ]
+          ],
+          "initial": [
+            0.9985180274251888,
+            0.0014819708529804846,
+            1.7218307725275655e-9
+          ],
+          "occupancy": [
+            0.038211201181035756,
+            0.9324125271341271,
+            0.029376271684836384
+          ],
+          "meanDurationSteps": [
+            2.256833358875383,
+            41.94379946036064,
+            2.0539130768948777
+          ],
+          "logLikelihood": 6215.656327009213,
+          "bic": -12335.131906253251,
+          "iterations": 40
+        }
+      ],
+      "selectedByTrainingBIC": 2,
+      "testMetrics": {
+        "n": 62,
+        "accuracy": 0.5161290322580645,
+        "balancedAccuracy": 0.5707915273132664,
+        "auc": 0.6053511705685619,
+        "brier": 0.24294695255231183,
+        "logLoss": 0.6789876348052214,
+        "coverage": [
+          {
+            "coverage": 1,
+            "n": 62,
+            "accuracy": 0.5161290322580645,
+            "meanConfidence": 0.516457216873501
+          },
+          {
+            "coverage": 0.5,
+            "n": 31,
+            "accuracy": 0.6129032258064516,
+            "meanConfidence": 0.532914433747002
+          },
+          {
+            "coverage": 0.25,
+            "n": 16,
+            "accuracy": 0.8125,
+            "meanConfidence": 0.5539258770133804
+          },
+          {
+            "coverage": 0.1,
+            "n": 7,
+            "accuracy": 1,
+            "meanConfidence": 0.5545692552776363
+          },
+          {
+            "coverage": 0.05,
+            "n": 4,
+            "accuracy": 1,
+            "meanConfidence": 0.5550906120272736
+          },
+          {
+            "coverage": 0.01,
+            "n": 1,
+            "accuracy": 1,
+            "meanConfidence": 0.5570681630637544
+          }
+        ],
+        "calibration": [
+          {
+            "bin": "0-0.2",
+            "n": 0,
+            "meanP": null,
+            "observedUp": null
+          },
+          {
+            "bin": "0.2-0.4",
+            "n": 0,
+            "meanP": null,
+            "observedUp": null
+          },
+          {
+            "bin": "0.4-0.6",
+            "n": 62,
+            "meanP": 0.483542783126499,
+            "observedUp": 0.3709677419354839
+          },
+          {
+            "bin": "0.6-0.8",
+            "n": 0,
+            "meanP": null,
+            "observedUp": null
+          },
+          {
+            "bin": "0.8-1",
+            "n": 0,
+            "meanP": null,
+            "observedUp": null
+          }
+        ],
+        "baseRates": {
+          "up": 0.3709677419354839,
+          "down": 0.6290322580645161
+        }
+      },
+      "predictionAssumption": "5-step Gaussian return sum uses filtered state probabilities and additive conditional variances"
+    }
+  },
+  "coverageTargetMetricsFromLogistic": [
+    {
+      "coverage": 1,
+      "n": 62,
+      "accuracy": 0.6290322580645161,
+      "meanConfidence": 0.5903222215073384
+    },
+    {
+      "coverage": 0.5,
+      "n": 31,
+      "accuracy": 0.6774193548387096,
+      "meanConfidence": 0.6454676962089366
+    },
+    {
+      "coverage": 0.25,
+      "n": 16,
+      "accuracy": 0.8125,
+      "meanConfidence": 0.6831835701155095
+    },
+    {
+      "coverage": 0.1,
+      "n": 7,
+      "accuracy": 1,
+      "meanConfidence": 0.7320339873070297
+    },
+    {
+      "coverage": 0.05,
+      "n": 4,
+      "accuracy": 1,
+      "meanConfidence": 0.7680376627420374
+    },
+    {
+      "coverage": 0.01,
+      "n": 1,
+      "accuracy": 1,
+      "meanConfidence": 0.8404380006781134
+    }
+  ],
+  "bootstrapCI": {
+    "method": "circular moving-block bootstrap",
+    "blockLength300sObservations": 12,
+    "blockLengthMinutes": 60,
+    "replicates": 2000,
+    "nominalTestN": 62,
+    "approxIndependentBlocks": 5,
+    "accuracy95": {
+      "lower": 0.532258064516129,
+      "upper": 0.7258064516129032
+    },
+    "brier95": {
+      "lower": 0.20146054545474432,
+      "upper": 0.23912398264510037
+    },
+    "warning": "Only about five blocks in the test set; interval is unstable and not a substitute for untouched prospective data."
+  },
+  "profitAtHypotheticalPayout": [
+    {
+      "payout": 0.7,
+      "breakevenWinRate": 0.5882352941176471,
+      "logisticTheoreticalEV": 0.0693548387096774,
+      "warning": "hypothetical payout; actual payout absent"
+    },
+    {
+      "payout": 0.8,
+      "breakevenWinRate": 0.5555555555555556,
+      "logisticTheoreticalEV": 0.1322580645161291,
+      "warning": "hypothetical payout; actual payout absent"
+    },
+    {
+      "payout": 0.9,
+      "breakevenWinRate": 0.5263157894736842,
+      "logisticTheoreticalEV": 0.19516129032258067,
+      "warning": "hypothetical payout; actual payout absent"
+    }
+  ],
+  "v1": {
+    "id": "OTC_VOL_EXPANSION_V1",
+    "signalCountOverlapping": 8,
+    "effectiveNonoverlapCount": 2,
+    "wins": 3,
+    "losses": 5,
+    "winRate": 0.375,
+    "payoutIncluded": false,
+    "warning": "Exploratory parameter was selected after examining this history; not an unbiased test.",
+    "legacyPriorMethod": {
+      "signals": 27,
+      "wins": 19,
+      "losses": 8,
+      "winRate": 0.7037037037037037,
+      "windowsCrossingGap": 19,
+      "expiryOvershoots": 0,
+      "description": "reproduction of prior logic accepting gaps and first available close at or after +300s"
+    }
+  },
+  "lookahead": {
+    "passed": true,
+    "checked": 1585
+  }
+}

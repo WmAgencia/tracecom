@@ -42,7 +42,7 @@ import {  TIMING_POLICY_CURRENT, TIMING_POLICY_LATE, LATE_WINDOW_POLICY, LATE_WI
 // SCENARIO ENGINE V3 (SHADOW): observacao independente. NUNCA toca Brain/Trader/Critic/Consensus/Quality Gate/JIT/Execution Gate.
 import {  analyzeScenarioSnapshot, scenarioShadowStatus as buildScenarioShadowStatus, setScenarioEngineLogSink  } from "./scenario-shadow.mjs";
 // INTERSECAO OBSERVACIONAL: unico ponto que compara scenario x timing (somente leitura dos dois estados).
-import { UNIVERSE, OPERATIONAL_UNIVERSE, marketKey, entryForKey, segmentIdFor, isSupportedNormalBinaryMarket, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
+import { UNIVERSE, OPERATIONAL_UNIVERSE, OPERATIONAL_MARKET_KEYS, MCP_CONFIRMED_ASSET_IDS, mcpCanonical as universeMcpCanonical, isOperationalMarketKey, marketKey, entryForKey, segmentIdFor, isSupportedNormalBinaryMarket, MAX_ACTIVE_MARKETS, MAX_OPEN_POSITIONS_PER_MARKET, HARD_CAP_STAKE, concentrationExposure } from "./market-universe.mjs";
 // DATAHUB + PROFESSIONAL_AGENT_SYSTEM_V4 (SHADOW): observabilidade/benchmark. NUNCA decide nem executa.
 import { EventBus } from "./datahub/event-bus.mjs";
 import { buildT0Enriched } from "./datahub/t0-enriched.mjs";
@@ -156,9 +156,13 @@ export class IqMultiRuntime extends EventEmitter {
       this.mcp = process.env.IQ_MCP_ENABLED === "true" ? new IQOfficialMCPAdapter({ env: process.env, product: "binary", timeoutMs: 20_000 }) : null;
       if (process.env.IQ_MCP_ENABLED === "true") this.#safe(() => this.log("V3_MCP_INIT", JSON.stringify({ created: this.mcp !== null, tokenPresent: Boolean(String(process.env.IQ_MCP_TOKEN ?? "").trim()) })));
     } catch (error) { this.mcp = null; this.#safe(() => this.log("V3_MCP_INIT_FAIL", String(error?.message ?? error).slice(0, 160))); }
-    this.mcpWriteEnabled = process.env.IQ_MCP_WRITE_ENABLED === "true";
+this.mcpWriteEnabled = process.env.IQ_MCP_WRITE_ENABLED === "true";
     this.mcpPollIndex = 0;
     this.mcpPollTimer = null;
+    this.mcpPollInFlight = false;
+    // Relogio do broker via MCP (ultimo candle `to`): a V3 so acerta janela/discovery
+    // se o brokerNow usar o clock do gateway (o clock local pode divergir ~6min).
+    this.mcpBrokerNow = null;
     if (this.mcp) setTimeout(() => { if (this.running) void this.mcpEnableAndSync().catch(() => undefined); }, 5_000).unref?.();
     try { this.candlesArchive = new CandlesArchive({ log: this.log, now: this.now }); } catch (error) { this.candlesArchive = null; this.#safe(() => this.log("CANDLES_ARCHIVE_INIT_FAIL", String(error?.message ?? error).slice(0, 120))); }
     this.agentExecBinary = true;
@@ -207,8 +211,11 @@ export class IqMultiRuntime extends EventEmitter {
           strategy: { version: this.v3Strategy.version, status: this.v3Strategy.status, executable: this.v3Strategy.executable, strategyHash: this.v3Strategy.strategyHash, statsEpoch: this.v3Strategy.manifest?.statsEpoch ?? null },
           agents: process.env.V3_AGENTS_ENABLED === "true" && pool ? createLlmAgentClient({ runner: (options) => this.#v3ScheduledRun(options), now: this.now, maxTokens: Number(process.env.V3_AGENT_MAX_TOKENS) || 512, activityCheck: () => this.#v3SystemActive() }) : null,
           agentSafetyMarginMs: Number(process.env.V3_AGENT_SAFETY_MARGIN_MS) || 2_000,
-          estimatedFullCycleMs: Number(process.env.V3_AGENT_ESTIMATED_FULL_MS) || 15_000,
-          estimatedDeltaCycleMs: Number(process.env.V3_AGENT_ESTIMATED_DELTA_MS) || 14_000,
+// A V3 tem uma unica chamada LLM (consensus), apos os especialistas deterministicos.
+          // A estimativa reflete o custo real do consensus (2-5s) + margem; exigir 10s+ de orcamento
+          // descartava os ciclos MCP que chegam na segunda metade da janela (330-302s).
+          estimatedFullCycleMs: Number(process.env.V3_AGENT_ESTIMATED_FULL_MS) || 6_000,
+          estimatedDeltaCycleMs: Number(process.env.V3_AGENT_ESTIMATED_DELTA_MS) || 5_000,
           maxAgentCycles: Number(process.env.V3_AGENT_MAX_CYCLES) || 1,
           // ECONOMIA: V3 LLM so pensa quando o sistema esta ATIVO (armado OU analise-liberada via env).
           agentsGate: () => this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true",
@@ -438,9 +445,12 @@ export class IqMultiRuntime extends EventEmitter {
         this.client = null; this.#disconnectedWaiter = null;
         this.session = { ...this.session, connected: false };
         for (const ctx of this.markets.values()) ctx.connectionHealth = { ...ctx.connectionHealth, connected: false };
-        try { this.armState.disarm("WS_DISCONNECTED"); } catch { /* noop */ }
+        // PRACTICE via MCP: a queda do WS nao desarma nem desliga o AUTO (o gateway
+        // oficial verificado segue operando). REAL permanece 100% fail-closed.
+        const mcpPracticeDriver = this.#mcpDriverHealthy();
+        if (!mcpPracticeDriver) { try { this.armState.disarm("WS_DISCONNECTED"); } catch { /* noop */ } }
         // REGRA WS: queda do socket => AUTO OFF tambem (alem de DISARM). Nova ativacao sempre explicita.
-        if (this.config.autoExecute === true) { try { this.setAutoExecute(false, { actor: "system" }); } catch { /* noop */ } }
+        if (this.config.autoExecute === true && !mcpPracticeDriver) { try { this.setAutoExecute(false, { actor: "system" }); } catch { /* noop */ } }
         this.realMode.revoke("WS_DISCONNECTED");
         // FAIL CLOSED: qualquer queda de WS rebaixa REAL para LOCKED imediatamente.
         this.accountContext.lock("WS_DISCONNECTED");
@@ -788,6 +798,11 @@ export class IqMultiRuntime extends EventEmitter {
       if (String(row.market_type ?? "").toUpperCase() === "OTC" && row.enabled === true) {
         try { await rawQuery("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='OTC'", [String(row.market_key)]); } catch { /* noop */ }
       }
+      // ALLOWLIST: qualquer NORMAL fora dos 24 operacionais e forcosamente desativado
+      // (AMAZON, NVIDIA, RIPPLE, SPACEX, GOLD, SILVER, AU200, ...). MCP nunca define universo.
+      if (row.market_type === "NORMAL" && row.enabled === true && !isOperationalMarketKey(String(row.market_key))) {
+        try { await rawQuery("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [row.market_key]); disabledApplied += 1; } catch { /* noop */ }
+      }
       // Normalizacao stale NORMAL independe do ctx existir em memoria.
       const isStaleNormalRow = row.market_type === "NORMAL" && (row.availability === "NOT_OFFERED" || row.active_id === null || row.active_id === undefined);
       if (isStaleNormalRow && row.enabled === true) {
@@ -1092,7 +1107,9 @@ export class IqMultiRuntime extends EventEmitter {
     if (this.config.mode === "REAL" && process.env.REAL_TRADING_ENABLED === "true" !== true) throw new IqWsError("REAL_MODE_REQUIRES_ENV");
     if (this.killSwitch.status().executionEnabled !== true) throw new IqWsError("KILL_SWITCH_ACTIVE");
     const health = this.connectionHealth();
-    if (!health.healthy) throw new IqWsError("CONNECTION_UNHEALTHY", health.reasons.join(","));
+    // DRIVER MCP: em PRACTICE com o gateway oficial verificando a conta, o arm nao
+    // depende do WS (rejeitado pelo broker). REAL continua exigindo WS saudavel.
+    if (!health.healthy && !this.#mcpDriverHealthy()) throw new IqWsError("CONNECTION_UNHEALTHY", health.reasons.join(","));
     const enabled = [...this.markets.values()].filter((ctx) => ctx.enabled);
     if (!enabled.length) throw new IqWsError("NO_ACTIVE_MARKET", "nenhum mercado habilitado pelo operador");
     // Stake global obrigatorio: valor escolhido no front-end, persistido e verificado. Sem fallback R$1/calculado.
@@ -1120,6 +1137,15 @@ export class IqMultiRuntime extends EventEmitter {
     if (!this.session.connected) reasons.push("WS_DISCONNECTED");
     if (!this.session.timeValid) reasons.push("TIME_SYNC_INVALID");
     return { healthy: reasons.length === 0, reasons, skewMs: this.session.clockSkewMs, host: this.session.host };
+  }
+
+  /** O gateway MCP oficial substitui o WS como driver operacional em PRACTICE
+   *  (conta verificada + write habilitado). Nunca aplica a contas REAL. */
+  #mcpDriverHealthy() {
+    return String(this.config.mode).toUpperCase() === "PRACTICE"
+      && this.mcpWriteEnabled === true
+      && this.mcpStatus?.verified === true
+      && this.account?.practice?.verified === true;
   }
 
   /* ------------------------------- candles/features/decisions ------------------------------- */
@@ -3476,26 +3502,23 @@ const health = computeV3Health({
     return this.armState?.armed === true || (this.accountContext?.context === "REAL" && this.accountContext?.armed === true) || process.env.V3_ANALYSIS_ACTIVE === "true";
   }
 
-  /** Canonical a partir do nome exibido pela IQ (ex.: "EUR/USD" -> EURUSD; "US 500" -> US500). */
-  mcpCanonical(name) {
-    const clean = String(name ?? "").replace(/\(OTC\)/gi, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-    if (clean.length < 3) return null;
-    if (/^(US|JP|GER|UK|FR|AU|EU|HK|SP|ASX)\d+$/.test(clean) || /^(XAU|XAG|GOLD|SILVER)$/.test(clean)) return clean;
-    if (/^[A-Z]{6}$/.test(clean)) return clean; // par FX de 6 letras
-    return /^[A-Z]{3}[A-Z]{3}$/.test(clean) ? clean : null;
-  }
+  /** Canonical a partir do nome exibido pela IQ: SOMENTE alias explicitos + allowlist dos 24.
+   *  Heuristica generica (ex.: /^[A-Z]{6}$/ classificou SPACEX como FX) e PROIBIDA. */
+  mcpCanonical(name) { return universeMcpCanonical(name); }
 
   /** Sincroniza o catalogo NORMAL do MCP no universo (64 ativos reais; OTC nunca entra). */
   async #mcpSyncCatalog() {
     if (!this.mcp) return { added: 0 };
     const assets = await this.mcp.listAssets();
     const list = Array.isArray(assets?.data) ? assets.data : [];
-    let added = 0;
+let added = 0;
+    const activeCap = Math.min(Number(process.env.V3_MAX_ACTIVE_MARKETS || 64), OPERATIONAL_MARKET_KEYS.size);
     for (const asset of list) {
       if (/\(OTC\)/i.test(String(asset.name ?? ""))) continue;
       const canonical = this.mcpCanonical(asset.name);
       if (!canonical) continue;
       const key = `${canonical}:NORMAL`;
+      if (!isOperationalMarketKey(key)) continue; // ALLOWLIST: nunca criar/habilitar fora dos 24
       let ctx = this.markets.get(key);
       if (!ctx) {
         ctx = this.#emptyMarket({ canonical, symbol: asset.name, display: asset.name, marketType: "NORMAL" }, key);
@@ -3503,27 +3526,68 @@ const health = computeV3Health({
       }
       ctx.mcpAssetId = asset.asset_id ?? null;
       ctx.mcpExpirations = Array.isArray(asset.expirations) ? asset.expirations.map((t) => Number(t) * 1000) : [];
-      ctx.availability = asset.is_open === true ? "OPEN" : (ctx.availability ?? "CLOSED");
-      if (asset.is_open === true && ctx.enabled !== true && this.activeMarketKeys().length < Number(process.env.V3_MAX_ACTIVE_MARKETS || 64)) {
+      ctx.availability = asset.is_open === true ? "OPEN" : "CLOSED"; // gateway e a fonte de verdade
+      // Mercado desativado por falha transitoria MCP (EMPTY_CANDLES etc.) volta no boot:
+      // o catalogo confirma que ele existe; o poller valida os candles.
+      if (ctx.enabled !== true && /^MCP_/.test(String(ctx.selectionReason ?? "")) && this.activeMarketKeys().length < activeCap) {
+        ctx.enabled = true; ctx.selectionReason = "MCP_SELF_HEALED"; ctx.mcpNoFeedPolls = 0;
+        if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=true, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
+        this.#safe(() => this.log("MCP_MARKET_REENABLED", JSON.stringify({ marketKey: ctx.marketKey, at: "boot-sync" })));
+      }
+      // CONFIGURED=24: todo mercado dos 24 pertence ao universo (OPEN ou CLOSED na sessao).
+      if (ctx.enabled !== true && this.activeMarketKeys().length < activeCap) {
         ctx.enabled = true; ctx.activeId = ctx.activeId ?? asset.asset_id; ctx.selectionReason = "MCP_CATALOG_OPEN"; added += 1;
-        if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL','OPEN',$2,now()) ON CONFLICT(market_key) DO UPDATE SET enabled=true, availability='OPEN', active_id=$2, updated_at=now()", [key, asset.asset_id]).catch(() => undefined);
+        if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL',$3,$2,now()) ON CONFLICT(market_key) DO UPDATE SET enabled=true, availability=$3, active_id=$2, updated_at=now()", [key, asset.asset_id, ctx.availability]).catch(() => undefined);
       }
     }
-    // O catalogo MCP tambem e a fonte de expiracoes quando o WS nao mantem a
+// O catalogo MCP tambem e a fonte de expiracoes quando o WS nao mantem a
     // sessao. Reutiliza a mesma discovery V3, sem inferir nem inventar ofertas.
-    if (this.v3) {
-      const marketKeyByActiveId = new Map();
-      const turboActives = {};
-      for (const asset of list) {
-        if (asset?.is_open !== true || /\(OTC\)/i.test(String(asset?.name ?? ""))) continue;
-        const canonical = this.mcpCanonical(asset.name);
-        const activeId = Number(asset.asset_id);
-        if (!canonical || !Number.isFinite(activeId)) continue;
-        const key = `${canonical}:NORMAL`;
-        marketKeyByActiveId.set(activeId, key);
-        turboActives[activeId] = { id: activeId, enabled: true, deadtime: 30, option: { expiration_times: Array.isArray(asset.expirations) ? asset.expirations : [] } };
+    this.mcpCatalogAssets = list;
+    this.#mcpIngestDiscovery();
+// FALLBACK DE MAPEAMENTO (nunca cria mercado fora dos 24): variantes NORMAL que o
+    // gateway nao lista nesta sessao (FX/metais so como OTC) usam o asset_id confirmado
+    // para continuar configuradas com candles; a discovery so opera quando o catalogo
+    // voltar a lista-las OPEN.
+    for (const key of OPERATIONAL_MARKET_KEYS) {
+      const canonical = String(key).split(":")[0];
+      const ctx = this.markets.get(key);
+      if (ctx?.mcpAssetId !== undefined && ctx?.mcpAssetId !== null) continue;
+      const confirmed = MCP_CONFIRMED_ASSET_IDS[canonical];
+      if (!Number.isFinite(Number(confirmed))) continue;
+      if (!ctx) {
+        const fresh = this.#emptyMarket({ canonical, symbol: canonical, display: canonical, marketType: "NORMAL" }, key);
+        this.markets.set(key, fresh);
       }
-      this.v3.onInitializationData({ result: { turbo: { actives: turboActives } } }, { brokerNow: this.client?.serverNow?.() ?? this.now(), marketKeyByActiveId });
+      const target = this.markets.get(key);
+      if (target.enabled !== true && this.activeMarketKeys().length >= activeCap) continue;
+      target.mcpAssetId = Number(confirmed);
+      target.activeId = target.activeId ?? Number(confirmed);
+      target.availability = target.availability === "OPEN" ? "OPEN" : "CLOSED";
+      if (target.enabled !== true) {
+        target.enabled = true;
+        target.selectionReason = "MCP_CONFIRMED_ID";
+        if (this.pool?.query) void this.pool.query("INSERT INTO iq_markets(market_key, enabled, market_type, availability, active_id, updated_at) VALUES($1,true,'NORMAL','CLOSED',$2,now()) ON CONFLICT(market_key,market_type) DO UPDATE SET enabled=true, active_id=EXCLUDED.active_id, updated_at=now()", [key, Number(confirmed)]).catch(() => undefined);
+      }
+    }
+    // DESCONTAMINACAO: nenhum ativo fora dos 24 pode ficar habilitado. O MCP nao
+    // define o universo — GOLD/SILVER/AU200/AMAZON/NVIDIA/RIPPLE/SPACEX e quaisquer
+    // outros sao desativados (historico preservado, enabled=false).
+    for (const ctx of this.markets.values()) {
+      if (ctx.marketType !== "NORMAL") continue;
+      if (isOperationalMarketKey(ctx.marketKey)) {
+        if (ctx.enabled === true && !Number.isFinite(Number(ctx.mcpAssetId))) {
+          ctx.enabled = false;
+          ctx.selectionReason = "MCP_ASSET_UNMAPPED";
+          if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
+          this.#safe(() => this.log("MCP_MARKET_DISABLED_UNMAPPED", JSON.stringify({ marketKey: ctx.marketKey })));
+        }
+        continue;
+      }
+      if (ctx.enabled !== true) continue;
+      ctx.enabled = false;
+      ctx.selectionReason = "OUTSIDE_OPERATIONAL_UNIVERSE";
+      if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=false, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
+      this.#safe(() => this.log("MCP_MARKET_DISABLED_OUTSIDE_UNIVERSE", JSON.stringify({ marketKey: ctx.marketKey })));
     }
     return { added, total: list.length };
   }
@@ -3536,7 +3600,7 @@ const health = computeV3Health({
     if (!balances.length) return false;
     const training = balances.find((b) => b.type === "training");
     const regular = balances.find((b) => b.type === "regular");
-    if (training) { this.account.practice = { verified: true, balanceId: training.balance_id, balance: Number(training.amount) || 0, currency: training.currency ?? "USD" }; }
+    if (training) { this.account.practice = { verified: true, balanceId: training.balance_id, balance: Number(training.amount) || 0, currency: training.currency ?? "USD", balanceType: String(training.type ?? "training") }; }
     if (regular) { this.account.real = { available: true, balanceId: regular.balance_id, balance: Number(regular.amount) || 0, currency: regular.currency ?? "USD" }; }
     this.account.checkedAt = this.now();
     this.account.type = "PRACTICE";
@@ -3546,25 +3610,64 @@ const health = computeV3Health({
 
   /** Poller de candles via MCP (roda o pipeline V3 sem depender do WS rejeitado). */
   async #mcpCandleTick() {
-    if (!this.mcp) return;
-    const candidates = [...this.markets.values()].filter((ctx) => ctx.enabled === true && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId)));
+    if (!this.mcp || this.mcpPollInFlight) return;
+    this.mcpPollInFlight = true;
+    try {
+    const candidates = [...this.markets.values()].filter((ctx) => isOperationalMarketKey(ctx.marketKey) && (ctx.enabled === true || /^MCP_/.test(String(ctx.selectionReason ?? ""))) && ctx.marketType === "NORMAL" && Number.isFinite(Number(ctx.mcpAssetId)));
     if (!candidates.length) return;
-    const batch = candidates.slice(this.mcpPollIndex, this.mcpPollIndex + 8);
-    this.mcpPollIndex = (this.mcpPollIndex + 8) % candidates.length;
-    for (const ctx of batch) {
-      try {
+    // Todos os mercados ativos sao atualizados no mesmo ciclo.  A janela de
+    // analise comeca em TTE=330s e termina em TTE=302s; repartir 37 mercados
+    // em lotes tardios fazia parte deles chegar apos a reserva do Consensus.
+    // O lock evita que um tick lento crie requests sobrepostos.
+const batchSize = Math.max(1, Math.min(64, Number(process.env.MCP_CANDLE_BATCH_SIZE) || 64));
+    const concurrency = Math.max(1, Math.min(batchSize, Number(process.env.MCP_CANDLE_CONCURRENCY) || 24));
+    const passStartedAt = this.now();
+    let passFetchMs = 0;
+    let passDispatchMs = 0;
+    const take = Math.min(batchSize, candidates.length);
+    const start = this.mcpPollIndex % candidates.length;
+    const batch = Array.from({ length: take }, (_, offset) => candidates[(start + offset) % candidates.length]);
+    this.mcpPollIndex = (start + take) % candidates.length;
+    const queue = [...batch];
+    const worker = async () => {
+      while (queue.length) {
+        const ctx = queue.shift();
+        if (!ctx) return;
+try {
+        const fetchT0 = this.now();
         const candles = await this.mcp.getCandles(Number(ctx.mcpAssetId), 5, 80);
+        passFetchMs += this.now() - fetchT0;
         const rows = candles?.data?.candles ?? [];
         if (!rows.length) { this.#mcpMarkNoFeed(ctx, "EMPTY_CANDLES"); continue; }
         const normalized = rows.map((row) => ({ at: new Date(String(row.to ?? row.from ?? 0)).getTime(), open: Number(row.open ?? 0), high: Number(row.max ?? 0), low: Number(row.min ?? 0), close: Number(row.close ?? 0) })).filter((c) => Number.isFinite(c.at) && c.at > 0 && Number.isFinite(c.close) && c.close > 0).sort((a, b) => a.at - b.at);
-        if (normalized.length >= 40) {
+if (normalized.length >= 40) {
+          // AUTO-RECUPERACAO: mercado desativado por falha transitoria do gateway
+          // (MCP_EMPTY_CANDLES/INSUFFICIENT_CANDLES) volta ao universo assim que
+          // os candles retornam; nesta mesma passada nao despacha para a V3 (evita
+          // ciclo com estado meio-termo; o proximo tick cuida do dispatch).
+          const reenabled = ctx.enabled !== true && /^MCP_/.test(String(ctx.selectionReason ?? ""));
+          if (reenabled) {
+            ctx.enabled = true;
+            ctx.selectionReason = "MCP_SELF_HEALED";
+            ctx.mcpNoFeedPolls = 0;
+            if (this.mcpStatus) this.mcpStatus.selfHealedMarkets = (this.mcpStatus.selfHealedMarkets ?? 0) + 1;
+            if (this.pool?.query) void this.pool.query("UPDATE iq_markets SET enabled=true, updated_at=now() WHERE market_key=$1 AND market_type='NORMAL'", [ctx.marketKey]).catch(() => undefined);
+            this.#safe(() => this.log("MCP_MARKET_REENABLED", JSON.stringify({ marketKey: ctx.marketKey })));
+          }
           ctx.mcpNoFeedPolls = 0;
           const map = new Map();
           for (const candle of normalized) map.set(candle.at, candle);
           ctx.candles = map;
           ctx.lastCandle = normalized[normalized.length - 1];
-          const receivedAt = this.now();
+const receivedAt = this.now();
           ctx.lastTickAt = receivedAt;
+          this.mcpBrokerNow = normalized[normalized.length - 1].at;
+          // A discovery precisa da expiracao absoluta no relogio do broker: apos o
+          // primeiro poll (ancora do clock MCP), re-ingere as ofertas se a ingestao
+          // do boot rodou sem o relogio (ou se o relogio derivou > 60s).
+          if (this.mcpCatalogAssets?.length && (this.mcpIngestBrokerNow === null || Math.abs(this.mcpBrokerNow - Number(this.mcpIngestBrokerNow ?? 0)) > 60_000)) {
+            this.#mcpIngestDiscovery();
+          }
           ctx.subscriptionState = "SUBSCRIBED";
           ctx.connectionHealth = { ...ctx.connectionHealth, connected: true, lastMessageAt: receivedAt };
           this.lastSubscriptionAt = receivedAt;
@@ -3584,10 +3687,16 @@ const health = computeV3Health({
             ctx.mcpPipedCandleAt = closed[closed.length - 1].at;
             if (this.mcpStatus) this.mcpStatus.intelligenceCandleEvents = (this.mcpStatus.intelligenceCandleEvents ?? 0) + closed.length;
           }
-          if (this.v3) {
+if (this.v3) {
             if (this.mcpStatus) this.mcpStatus.v3DispatchAttempts = (this.mcpStatus.v3DispatchAttempts ?? 0) + 1;
             try {
-              await this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow: this.client?.serverNow?.() ?? this.now() });
+              // RELOGIO DO BROKER no caminho MCP: a janela da V3 (TTE 330-300) e
+              // calculada sobre o relogio do broker. O clock MCP (candle `to`) e a
+              // fonte primaria; serverNow do WS e aritmetica pura; local so como ultimo recurso.
+              const brokerNow = this.mcpBrokerNow ?? this.client?.serverNow?.() ?? this.now();
+              const dispatchT0 = this.now();
+              await this.v3.onClosedCandle({ marketKey: ctx.marketKey, candles: normalized, brokerNow });
+              passDispatchMs += this.now() - dispatchT0;
               if (this.mcpStatus) this.mcpStatus.v3CandleEvents = (this.mcpStatus.v3CandleEvents ?? 0) + 1;
             } catch (error) {
               const message = String(error?.message ?? error).slice(0, 160);
@@ -3607,15 +3716,55 @@ const health = computeV3Health({
         }
         this.#safe(() => this.log("V3_MCP_CANDLE_POLL_FAIL", JSON.stringify({ marketKey: ctx.marketKey, message })));
       }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, worker));
+    if (this.mcpStatus) {
+      this.mcpStatus.passWallMs = this.now() - passStartedAt;
+      this.mcpStatus.passFetchMs = passFetchMs;
+      this.mcpStatus.passDispatchMs = passDispatchMs;
+      const p = this.mcpStatus.lastPassTimes ?? (this.mcpStatus.lastPassTimes = []);
+      p.push(this.mcpStatus.passWallMs);
+      if (p.length > 10) p.shift();
+      this.mcpStatus.passP50Ms = p.slice().sort((a, b) => a - b)[Math.floor(p.length / 2)];
+    }
+    } finally {
+      this.mcpPollInFlight = false;
     }
   }
 
+/** Alimenta a discovery V3 com as expiracoes do catalogo MCP. Re-ingestao e
+   *  idempotente (substitui as ofertas por mercado) e deve rodar com o RELOGIO DO
+   *  BROKER ja ancorado (mcpBrokerNow) — com relogio local as expiracoes absolutas
+   *  ficam ~6min deslocadas e as ofertas nascem "ja expiradas" (nunca re-adotadas). */
+  #mcpIngestDiscovery() {
+    if (!this.v3 || !Array.isArray(this.mcpCatalogAssets) || !this.mcpCatalogAssets.length) return;
+    const list = this.mcpCatalogAssets;
+    const marketKeyByActiveId = new Map();
+    const turboActives = {};
+    for (const asset of list) {
+      if (asset?.is_open !== true || /\(OTC\)/i.test(String(asset?.name ?? ""))) continue;
+      const canonical = this.mcpCanonical(asset.name);
+      const activeId = Number(asset.asset_id);
+      if (!canonical || !Number.isFinite(activeId)) continue;
+      const key = `${canonical}:NORMAL`;
+      if (!isOperationalMarketKey(key)) continue; // ALLOWLIST fail-closed: discovery so nos 24
+      marketKeyByActiveId.set(activeId, key);
+      turboActives[activeId] = { id: activeId, enabled: true, deadtime: 30, option: { expiration_times: Array.isArray(asset.expirations) ? asset.expirations : [] } };
+    }
+    this.v3.onInitializationData({ result: { turbo: { actives: turboActives } } }, { brokerNow: this.mcpBrokerNow ?? this.client?.serverNow?.() ?? this.now(), marketKeyByActiveId });
+    this.mcpIngestBrokerNow = this.mcpBrokerNow;
+  }
+
   /** Remove do universo somente ativo que o MCP confirmou sem historico repetidamente.
-   *  Evita cards vazios e nao desativa por uma falha transitoria isolada. */
+   *  Regra conservadora: NUNCA remove um mercado que ja entregou candles nesta sessao
+   *  (vazios transitorios do gateway nao desativam ativos saudaveis); apenas ativos
+   *  sem NENHUM candle ate o momento podem sair apos N vazios consecutivos. */
   #mcpMarkNoFeed(ctx, reason) {
     ctx.mcpNoFeedPolls = (Number(ctx.mcpNoFeedPolls) || 0) + 1;
     if (this.mcpStatus) this.mcpStatus.noFeedPolls = (this.mcpStatus.noFeedPolls ?? 0) + 1;
-    if (ctx.mcpNoFeedPolls < 3 || ctx.enabled !== true) return;
+    const neverHadCandles = !ctx.lastCandle && (ctx.candles?.size ?? 0) === 0;
+    if (!neverHadCandles || ctx.mcpNoFeedPolls < 3 || ctx.enabled !== true) return;
     ctx.enabled = false;
     ctx.selectionReason = `MCP_${reason}`;
     if (this.mcpStatus) this.mcpStatus.disabledNoFeedMarkets = (this.mcpStatus.disabledNoFeedMarkets ?? 0) + 1;
@@ -3624,19 +3773,24 @@ const health = computeV3Health({
     this.#emitEvent("market.disabled_no_feed", { marketKey: ctx.marketKey, reason, polls: ctx.mcpNoFeedPolls });
   }
 
-  /** Execucao via MCP oficial (place_trade) com balance do contexto (PRACTICE=training, REAL=regular). */
+/** Execucao via MCP oficial (place_trade) com balance EXCLUSIVO de PRACTICE (training).
+   *  Nunca usa account.real.balanceId — mesmo com REAL_TRADING_ENABLED=true. */
   async #mcpPlaceOrder({ marketKey, direction, stake, expirationAt }) {
     if (!this.mcp || this.mcpWriteEnabled !== true) return { submitted: false, reason: "MCP_WRITE_DISABLED" };
     const ctx = this.markets.get(marketKey);
     const assetId = Number(ctx?.mcpAssetId);
     if (!Number.isFinite(assetId)) return { submitted: false, reason: "NO_MCP_ASSET" };
-    const balance = this.config.mode === "REAL" ? this.account.real?.balanceId : this.account.practice?.balanceId;
-    if (balance === null || balance === undefined) return { submitted: false, reason: "NO_BALANCE" };
+    // PRACTICE ONLY: balance de treino verificado (type === "training"), nunca real.
+    const practice = this.account.practice ?? {};
+    if (practice.verified !== true || practice.balanceId === null || practice.balanceId === undefined) return { submitted: false, reason: "NO_PRACTICE_BALANCE" };
+    if (practice.balanceType !== undefined && String(practice.balanceType).toUpperCase() !== "TRAINING") return { submitted: false, reason: "MCP_BALANCE_NOT_TRAINING" };
+    const balance = Number(practice.balanceId);
+    if (!Number.isFinite(balance)) return { submitted: false, reason: "NO_PRACTICE_BALANCE" };
     const expirationSec = Math.round(Number(expirationAt) / 1000);
     const exp = Number.isFinite(expirationSec) ? expirationSec : Math.round((this.now() + 300_000) / 1000);
-    const result = await this.mcp.placeTrade({ asset_id: assetId, balance_id: Number(balance), expiration: exp, direction: direction === "BUY" ? "call" : "put", stake: Number(stake) });
+    const result = await this.mcp.placeTrade({ asset_id: assetId, balance_id: balance, expiration: exp, direction: direction === "BUY" ? "call" : "put", stake: Number(stake) });
     this.#safe(() => this.log("V3_MCP_ORDER", JSON.stringify({ marketKey, direction, stake, expiration: exp, ok: result?.ok === true, error: result?.message ?? null })));
-    return { submitted: result?.ok === true, brokerOrderId: result?.payload?.id ?? result?.payload?.position_id ?? null, error: result?.ok ? null : String(result?.message ?? result?.code ?? "MCP_ORDER_FAILED").slice(0, 140) };
+    return { submitted: result?.ok === true, brokerOrderId: result?.payload?.id ?? result?.payload?.position_id ?? null, error: result?.ok ? null : String(result?.message ?? result?.code ?? "MCP_ORDER_FAILED").slice(0, 160) };
   }
 
   /** Sobe o MCP (conta + catalogo + poller). Chamado no boot e no refresh periodico. */
@@ -3645,24 +3799,47 @@ const health = computeV3Health({
     try {
       const verified = await this.#mcpVerifyAccount();
       const catalog = await this.#mcpSyncCatalog();
-      if (!this.mcpPollTimer) { this.mcpPollTimer = setInterval(() => { if (this.running) void this.#mcpCandleTick().catch(() => undefined); }, 8_000); this.mcpPollTimer.unref?.(); }
-      this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0, lastError: null, feedDriver: this.mcpStatus?.feedDriver ?? "MCP_V3_CANDLE_DISPATCH_V2" };
+if (!this.mcpPollTimer) {
+        const pollMs = Math.max(2_000, Number(process.env.MCP_CANDLE_POLL_MS) || 12_000);
+        this.mcpPollTimer = setInterval(() => { if (this.running) void this.#mcpCandleTick().catch(() => undefined); }, pollMs);
+        this.mcpPollTimer.unref?.();
+        void this.#mcpCandleTick().catch(() => undefined);
+      }
+      // BREAK OPTION NAO faz parte da estrategia: a V3 opera entrada -> vencimento
+      // EXATO -> WIN/LOSS/DRAW. Nenhum encerramento antecipado. (sell_position do
+      // adapter permanece generico, nao chamado pela V3.)
+this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0, lastError: null, feedDriver: this.mcpStatus?.feedDriver ?? "MCP_V3_CANDLE_DISPATCH_V2", syncAttempts: (this.mcpStatus?.syncAttempts ?? 0) + 1, lastSyncAt: this.now() };
+      if (verified !== true || (catalog?.total ?? 0) === 0) {
+        // Gateway lento/vazio no boot: tenta de novo em 60s (nunca deixa o sync morto).
+        this.#safe(() => this.log("V3_MCP_SYNC_PARTIAL", JSON.stringify({ verified, catalogAdded: catalog?.added ?? 0, catalogTotal: catalog?.total ?? 0 })));
+        this.#scheduleMcpRetry();
+      }
     } catch (error) {
-      this.mcpStatus = { enabled: true, verified: false, catalogAdded: 0, lastError: String(error?.message ?? error).slice(0, 160) };
+      this.mcpStatus = { ...(this.mcpStatus ?? {}), enabled: true, verified: false, catalogAdded: 0, lastError: String(error?.message ?? error).slice(0, 160), syncAttempts: (this.mcpStatus?.syncAttempts ?? 0) + 1, lastSyncAt: this.now() };
       this.#safe(() => this.log("V3_MCP_SYNC_FAIL", this.mcpStatus.lastError));
+      this.#scheduleMcpRetry();
     }
     return this.mcpStatus;
+  }
+
+  /** Re-sync periodico enquanto a conta/catalogo nao subirem (gateway transiente). */
+  #scheduleMcpRetry() {
+    if (this.mcpRetryTimer || !this.running) return;
+    this.mcpRetryTimer = setTimeout(() => {
+      this.mcpRetryTimer = null;
+      if (this.running && this.mcp) void this.mcpEnableAndSync().catch(() => undefined);
+    }, 60_000);
+    this.mcpRetryTimer.unref?.();
   }
 
   /** Execucao V3 (PRACTICE-only): aprovacao do Consensus vira ordem com o VENCIMENTO EXATO da opportunity. */
   async #v3ExecutePractice({ opportunityId, direction, expirationAt } = {}) {
     const marketKey = String(opportunityId ?? "").split("@")[0] ?? null;
     if (!marketKey || (direction !== "UP" && direction !== "DOWN")) return { submitted: false, reason: "NO_DIRECTION" };
-    // CONTA: PRACTICE sempre; REAL somente com arm REAL explicito + REAL_TRADING_ENABLED (fail-closed).
-    if (this.config.mode === "REAL") {
-      if (process.env.REAL_TRADING_ENABLED !== "true" || this.accountContext?.armed !== true) return { submitted: false, reason: "REAL_NOT_AUTHORIZED" };
-    } else if (this.config.mode !== "PRACTICE") {
-      return { submitted: false, reason: "NOT_AUTHORIZED" };
+    // CONTA: PRATICA EXCLUSIVAMENTE pelo caminho V3/MCP. REAL e impossivel mesmo
+    // com REAL_TRADING_ENABLED=true — o balance practice/training e o unico aceito.
+    if (this.config.mode !== "PRACTICE") {
+      return { submitted: false, reason: "MCP_REAL_EXECUTION_FORBIDDEN" };
     }
     if (this.armState?.armed !== true) return { submitted: false, reason: "NOT_ARMED" };
     if (this.config.autoExecute !== true) return { submitted: false, reason: "AUTO_OFF" };
@@ -3672,13 +3849,14 @@ const health = computeV3Health({
     if (!(stake > 0)) return { submitted: false, reason: "NO_STAKE_CONFIGURED" };
     const ctx = this.markets.get(marketKey);
     if (!isSupportedNormalBinaryMarket(ctx)) return { submitted: false, reason: "MARKET_NOT_SUPPORTED" };
+    if (!isOperationalMarketKey(marketKey)) return { submitted: false, reason: "OUTSIDE_OPERATIONAL_UNIVERSE" };
     const exactExpirationAt = Number(expirationAt);
     if (!Number.isFinite(exactExpirationAt)) return { submitted: false, reason: "EXPIRATION_INVALID" };
     try {
       // EXECUCAO via MCP oficial quando habilitado (caminho que funciona mesmo com WS rejeitado).
       if (this.mcp && this.mcpWriteEnabled === true) {
-        const mcpResult = await this.#mcpPlaceOrder({ marketKey, direction: direction === "UP" ? "BUY" : "SELL", stake, expirationAt: exactExpirationAt });
-        this.#safe(() => this.log("V3_EXECUTE_MCP", JSON.stringify({ marketKey, direction, stake, expirationAt: exactExpirationAt, submitted: mcpResult?.submitted === true, orderId: mcpResult?.brokerOrderId ?? null })));
+const mcpResult = await this.#mcpPlaceOrder({ marketKey, direction: direction === "UP" ? "BUY" : "SELL", stake, expirationAt: exactExpirationAt });
+        this.#safe(() => this.log("V3_EXECUTE_MCP", JSON.stringify({ marketKey, direction, stake, expirationAt: exactExpirationAt, submitted: mcpResult?.submitted === true, orderId: mcpResult?.brokerOrderId ?? null, error: mcpResult?.error ?? null })));
         return { ...mcpResult, path: "MCP" };
       }
       const result = await this.requestOrder({ marketKey, direction: direction === "UP" ? "BUY" : "SELL", stake, decisionId: opportunityId, exactExpirationAt, source: "V3_CONSENSUS", v3Approved: true, autoDisarmAfterAck: false });
@@ -3696,9 +3874,13 @@ const health = computeV3Health({
     if (!this.#v3SystemActive()) { this.v3GateCounters.suppressedInactive += 1; return { status: "ERROR", reason: "SYSTEM_INACTIVE", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null }; }
     if (!this.pool) return { status: "ERROR", reason: "PROVIDER_NOT_CONFIGURED", model: null, provider: null, text: null, parsed: null, latencyMs: null, usage: null, finishReason: null, httpStatus: null };
     const timeoutMs = Number.isFinite(Number(options.timeoutMs)) && Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 20_000;
-    const deadlineAt = this.now() + timeoutMs;
     const role = String(options.requestId ?? "").split(":").pop();
     const isConsensus = role === "CONSENSUS_FINAL";
+    // CONSENSO dentro da janela (28s): um modelo lento (550b) nao pode consumir o
+    // orcamento inteiro; 10s de teto faz o cooldown girar para glm/groq (1-3s) na
+    // proxima janela sem perder a oportunidade. isConsensus e declarado ANTES.
+    const effectiveTimeoutMs = isConsensus ? Math.min(10_000, timeoutMs) : timeoutMs;
+    const deadlineAt = this.now() + effectiveTimeoutMs;
     const priority = isConsensus ? 2 : 1;
     const estTokens = Number(process.env.V3_GROQ_EST_TOKENS) || 1_200;
     const intervalMs = Number(process.env.V3_GROQ_MIN_INTERVAL_MS) || 10_000;

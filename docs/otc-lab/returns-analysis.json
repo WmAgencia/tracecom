@@ -1,0 +1,120 @@
+{
+  "cadence": "1m closes; derived 300s changes use exact timestamps",
+  "horizons": {
+    "5": {
+      "horizonSeconds": 5,
+      "available": false,
+      "reason": "1m candles cannot resolve this horizon"
+    },
+    "10": {
+      "horizonSeconds": 10,
+      "available": false,
+      "reason": "1m candles cannot resolve this horizon"
+    },
+    "15": {
+      "horizonSeconds": 15,
+      "available": false,
+      "reason": "1m candles cannot resolve this horizon"
+    },
+    "30": {
+      "horizonSeconds": 30,
+      "available": false,
+      "reason": "1m candles cannot resolve this horizon"
+    },
+    "60": {
+      "horizonSeconds": 60,
+      "available": true,
+      "nOverlapping": 1605,
+      "mean": -0.000015524395691492334,
+      "sd": 0.000398566560280905,
+      "skewness": -0.0044122707883790845,
+      "excessKurtosis": -0.13361968669387014,
+      "quantiles": {
+        "0.01": -0.00093865824506012,
+        "0.05": -0.0006627754384259665,
+        "0.25": -0.00029412944369422434,
+        "0.5": -0.000008829983090596905,
+        "0.75": 0.0002564431337352957,
+        "0.95": 0.000642992056369085,
+        "0.99": 0.0008752967388563349
+      },
+      "upPct": 0.48722741433021804,
+      "independentStrideN": 1605
+    },
+    "120": {
+      "horizonSeconds": 120,
+      "available": true,
+      "nOverlapping": 1603,
+      "mean": -0.000030342103056603804,
+      "sd": 0.0005569682032400101,
+      "skewness": -0.0004147814014279147,
+      "excessKurtosis": 0.08896906860774267,
+      "quantiles": {
+        "0.01": -0.0013471137418984425,
+        "0.05": -0.0009417066011874198,
+        "0.25": -0.0004125727047279426,
+        "0.5": -0.00002678200784711482,
+        "0.75": 0.00034625270232480077,
+        "0.95": 0.0008672834999314816,
+        "0.99": 0.0012382687399501435
+      },
+      "upPct": 0.47535870243293826,
+      "independentStrideN": 801
+    },
+    "300": {
+      "horizonSeconds": 300,
+      "available": true,
+      "nOverlapping": 1597,
+      "mean": -0.00007872925959635588,
+      "sd": 0.0008310188627527015,
+      "skewness": 0.05308386429819555,
+      "excessKurtosis": -0.1295964470246007,
+      "quantiles": {
+        "0.01": -0.0019941333309594356,
+        "0.05": -0.0014197593463817215,
+        "0.25": -0.0006763039986474872,
+        "0.5": -0.00007144739016062829,
+        "0.75": 0.0005038785387523337,
+        "0.95": 0.001257610981955093,
+        "0.99": 0.0018236454042790395
+      },
+      "upPct": 0.46211646837820913,
+      "independentStrideN": 319
+    }
+  },
+  "rawReturns": {
+    "mean": -0.000015603946425055987,
+    "sd": 0.0003985731736164197,
+    "q01": -0.0009390990605823008,
+    "q50": -0.000008830022075127083,
+    "q99": 0.0008819206843056833
+  },
+  "candidateDistributionFits": [
+    {
+      "distribution": "normal_mle",
+      "mean": -0.000015603946425055987,
+      "sd": 0.0003985731736164197,
+      "logLikelihood": 10285.932877820002,
+      "aic": -20567.865755640003
+    },
+    {
+      "distribution": "student_t_df_50",
+      "nu": 50,
+      "scale": 0.00039052036020878353,
+      "logLikelihood": 10284.48564085141,
+      "aic": -20564.97128170282
+    },
+    {
+      "distribution": "laplace_mle",
+      "location": -0.000008830022075127083,
+      "scale": 0.0003211567560064218,
+      "logLikelihood": 10192.446629389988,
+      "aic": -20380.893258779975
+    },
+    {
+      "distribution": "empirical_reference",
+      "note": "empirical quantiles/histogram; no parametric likelihood or model-selection score"
+    }
+  ],
+  "fitCaution": "AIC rankings are in-sample descriptive and do not establish the generating family."
+}

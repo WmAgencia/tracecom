@@ -1,0 +1,45 @@
+[
+  {
+    "id": "G1",
+    "hypothesis": "random walk with changing volatility",
+    "status": "NOT_REJECTED",
+    "evidence": "near-zero one-step return dependence is compatible; volatility clustering is separately measured",
+    "next": "compare standardized residuals and volatility persistence prospectively"
+  },
+  {
+    "id": "G2",
+    "hypothesis": "linear autoregression",
+    "status": "WEAK_OR_NO_EVIDENCE",
+    "evidence": "one-step return ACF diagnostics; no significant forecast advantage established"
+  },
+  {
+    "id": "G3",
+    "hypothesis": "mean reversion",
+    "status": "NO_ROBUST_EVIDENCE",
+    "evidence": "single-asset continuous-window test provides no robust prospective confirmation"
+  },
+  {
+    "id": "G4",
+    "hypothesis": "momentum / persistent direction",
+    "status": "NO_ROBUST_EVIDENCE",
+    "evidence": "non-overlapping 300s transition test and order-1 Markov benchmark"
+  },
+  {
+    "id": "G5",
+    "hypothesis": "periodic component",
+    "status": "UNRESOLVED",
+    "evidence": "1m resolution cannot test 15s/30s; candidate cycles are multiple-tested"
+  },
+  {
+    "id": "G6",
+    "hypothesis": "hidden regimes",
+    "status": "EXPLORATORY_HMM_FIT_NO_CONFIRMATION",
+    "evidence": "Gaussian HMM with 2 and 3 states fitted to first 60%; BIC and test proper scores reported, all future period previously inspected"
+  },
+  {
+    "id": "G7",
+    "hypothesis": "motif reuse",
+    "status": "NO_ROBUST_STRUCTURE",
+    "evidence": "non-overlapping nearest normalized return patterns have near-chance T+300 accuracy; descriptive only"
+  }
+]

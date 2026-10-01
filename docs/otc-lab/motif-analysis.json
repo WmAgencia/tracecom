@@ -1,0 +1,46 @@
+{
+  "sourceResolutionSeconds": 60,
+  "windows": [
+    {
+      "durationMinutes": 0.5,
+      "status": "BELOW_RESOLUTION"
+    },
+    {
+      "durationMinutes": 1,
+      "status": "TOO_SHORT_TO_NORMALIZE"
+    },
+    {
+      "durationMinutes": 2,
+      "status": "TOO_SHORT_TO_NORMALIZE"
+    },
+    {
+      "durationMinutes": 5,
+      "status": "EXPLORATORY_NONOVERLAPPING_NEAREST",
+      "queryCount": 1582,
+      "medianNormalizedDistance": 0.1691797690236299,
+      "next300sAccuracy": 0.47850821744627053,
+      "independentUpperBound": 316,
+      "caution": "Nearest neighbor search reuses history across queries; accuracy is descriptive and requires untouched future validation."
+    },
+    {
+      "durationMinutes": 10,
+      "status": "EXPLORATORY_NONOVERLAPPING_NEAREST",
+      "queryCount": 1567,
+      "medianNormalizedDistance": 0.5555807067268291,
+      "next300sAccuracy": 0.49457562220804085,
+      "independentUpperBound": 313,
+      "caution": "Nearest neighbor search reuses history across queries; accuracy is descriptive and requires untouched future validation."
+    },
+    {
+      "durationMinutes": 15,
+      "status": "EXPLORATORY_NONOVERLAPPING_NEAREST",
+      "queryCount": 1552,
+      "medianNormalizedDistance": 0.740603605954551,
+      "next300sAccuracy": 0.4800257731958763,
+      "independentUpperBound": 310,
+      "caution": "Nearest neighbor search reuses history across queries; accuracy is descriptive and requires untouched future validation."
+    }
+  ],
+  "method": "z-normalized log-return nearest subsequence; reference and query plus 300s outcomes are kept non-overlapping",
+  "limitation": "Motifs are searched retrospectively over one previously inspected series; no confirmatory inference."
+}
