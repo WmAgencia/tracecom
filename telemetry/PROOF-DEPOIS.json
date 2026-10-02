@@ -1,0 +1,624 @@
+{
+  "schema": "tracecom-engine-proof-v1",
+  "capturedAt": "2026-10-02T16:03:02.767Z",
+  "gitHead": "ref: refs/heads/main",
+  "engine": {
+    "file": "ws-otc-v15.mjs",
+    "fullFileSha256": "7ba59bd0e0284c032cb056f9d94ced3fb005bb3b5ecab50f96e2b310efb03b2c",
+    "engineSha256": "bf1d085f79f77dc4d31307ad0f13c79e30640460892bb37e8db742845d8dc940",
+    "engineBytes": 77026,
+    "constants": {
+      "CONFIG": "const CONFIG = JSON.parse(fs.readFileSync(new URL('./bot-config-v15.json', import.meta.url), 'utf8'));",
+      "C": "const C  = CONFIG.trading ?? {};",
+      "S": "const S  = CONFIG.strategy ?? {};",
+      "M": "const M  = CONFIG.martingale ?? {};",
+      "R": "const R  = CONFIG.risk ?? {};",
+      "SE": "const SE = CONFIG.sell ?? {};",
+      "UN": "const UN = CONFIG.universe ?? {};",
+      "P": "const P  = CONFIG.paths ?? {};",
+      "BASE_STAKE": "const BASE_STAKE        = num(C.baseStake, 2);",
+      "EXPIRATION_MIN": "const EXPIRATION_MIN    = num(C.expirationMinutes, 2);",
+      "MAX_OPS_PER_ASSET": "const MAX_OPS_PER_ASSET = Math.max(1, Math.round(num(C.maxOpsPerAsset, 3)));",
+      "GALE_WINDOW_MS": "const GALE_WINDOW_MS    = num(C.galeWindowMs, 120_000);",
+      "MAX_LEVELS": "const MAX_LEVELS        = Math.max(0, Math.round(num(M.levels, 2)));",
+      "PAYOUT": "const PAYOUT            = num(M.payoutRate, 0.86);",
+      "MARTINGALE_MULT": "const MARTINGALE_MULT   = num(M.martingaleMultiplier, 2.75);",
+      "MAX_STAKE": "const MAX_STAKE         = num(R.maxStake, 20);",
+      "PYRAMID_MAX": "const PYRAMID_MAX           = Math.max(0, Math.round(num(S.pyramidMax, 1)));",
+      "PYRAMID_ADX_MIN": "const PYRAMID_ADX_MIN       = num(S.pyramidAdxMin, 25);",
+      "PYRAMID_RSI_CALL_MAX": "const PYRAMID_RSI_CALL_MAX  = num(S.pyramidRsiCallMax, 35);",
+      "PYRAMID_RSI_PUT_MIN": "const PYRAMID_RSI_PUT_MIN   = num(S.pyramidRsiPutMin, 65);",
+      "MAX_EXPOSURE_PCT": "const MAX_EXPOSURE_PCT  = num(R.maxExposurePct, 50);",
+      "SESSION_LOSS_PCT": "const SESSION_LOSS_PCT  = num(R.maxSessionLossPct, 20);",
+      "PAUSE_AFTER_MS": "const PAUSE_AFTER_MS    = num(M.pauseAfterLadderMs, 600_000);",
+      "COOLDOWN_WIN_MS": "const COOLDOWN_WIN_MS    = 0;   // re-entrada na próxima candle (sem esperar)",
+      "COOLDOWN_LOSS_MS": "const COOLDOWN_LOSS_MS   = 5000;",
+      "TREND_LOOKBACK": "const TREND_LOOKBACK    = Math.max(21, Math.round(num(S.trendLookback, 40)));",
+      "TREND_MIN_SPREAD": "const TREND_MIN_SPREAD  = num(S.trendMinEmaSpreadPct, 0.05);",
+      "CLOSE_BEFORE_MS": "const CLOSE_BEFORE_MS  = num(SE.closeBeforeMs, 20_000);",
+      "VOL_LOOKBACK": "const VOL_LOOKBACK     = Math.max(5, Math.round(num(SE.volLookbackCandles, 12)));",
+      "REV": "const REV              = SE.reversal ?? {};",
+      "REV_CANDLES": "const REV_CANDLES      = Math.max(2, Math.round(num(REV.candles, 3)));",
+      "REV_CANDLES_MIN": "const REV_CANDLES_MIN  = Math.min(REV_CANDLES, Math.max(1, Math.round(num(REV.candlesAgainstMin, 2))));",
+      "REV_RSI_CALL_MAX": "const REV_RSI_CALL_MAX = num(REV.rsiCallMax, 45);",
+      "REV_RSI_PUT_MIN": "const REV_RSI_PUT_MIN  = num(REV.rsiPutMin, 55);",
+      "REV_ADV_FACTOR": "const REV_ADV_FACTOR   = num(REV.minAdverseFactor, 1);",
+      "REV_ADV_MIN_PCT": "const REV_ADV_MIN_PCT  = num(REV.minAdversePct, 0.02);",
+      "SELL_RETRY_MS": "const SELL_RETRY_MS    = num(SE.retryAfterMs, 8_000);",
+      "SELL_MAX_ATTEMPTS": "const SELL_MAX_ATTEMPTS = Math.max(1, Math.round(num(SE.maxAttempts, 4)));",
+      "EG": "const EG = SE.earlyGale ?? {};",
+      "EARLY_GALE_ENABLED": "const EARLY_GALE_ENABLED     = EG.enabled !== false;           // default true",
+      "EARLY_GALE_MIN_MS": "const EARLY_GALE_MIN_MS     = Math.max(5_000, EG.minMs ?? 15_000);   // não avalia antes de 15s",
+      "EARLY_GALE_MAX_MS": "const EARLY_GALE_MAX_MS     = Math.max(EG.minMs ?? 15_000, EG.maxMs ?? 90_000); // janela máxima",
+      "EARLY_GALE_LOSS_THRESHOLD": "const EARLY_GALE_LOSS_THRESHOLD = Math.round((EG.lossThreshold ?? 0.80) * 100) / 100; // sell_profit <= -R$0.80",
+      "MIN_ACTIVE": "const MIN_ACTIVE        = Math.max(1, Math.round(num(UN.minActive, 50)));",
+      "MAX_ACTIVE": "const MAX_ACTIVE        = Math.max(MIN_ACTIVE, Math.round(num(UN.maxActive, 50)));",
+      "REPLACE_STALE_MS": "const REPLACE_STALE_MS  = num(UN.replaceStaleMs, 180_000);",
+      "UNIVERSE_CHECK_MS": "const UNIVERSE_CHECK_MS = num(UN.checkEveryMs, 60_000);  // 1 min (era 5 min)",
+      "ARG": "const ARG = process.argv[2]?.toLowerCase();",
+      "WANT_DEMO": "const WANT_DEMO =",
+      "LIST_ASSETS": "const LIST_ASSETS = process.argv.includes('--ativos');",
+      "CODE_REV": "const CODE_REV = 'V16';",
+      "CODE_HASH": "const CODE_HASH = (() => {",
+      "WHITELIST": "const WHITELIST = Object.entries(CONFIG.whitelist ?? {}).filter(([key]) => key !== '_nota');",
+      "RESERVE": "const RESERVE   = Object.entries(CONFIG.reserve ?? {}).filter(([key]) => key !== '_nota');",
+      "CHUNK": "const CHUNK = 10;",
+      "PROFIT_TARGET": "const PROFIT_TARGET    = num(CONFIG.stop?.profitTarget, 1000);"
+    },
+    "exports": [
+      "calcADX",
+      "calcRSI",
+      "detectRegime",
+      "evaluateEntry",
+      "evaluateGuards",
+      "fade4Signal",
+      "ladderStake",
+      "martingaleStake",
+      "nextTradeState",
+      "normName",
+      "parsePositionChanged",
+      "parseSettlement",
+      "pickCloseReturn",
+      "reversalAgainst",
+      "saleNet",
+      "selectUniverse",
+      "sellDecision",
+      "tickVolPct",
+      "trendDirection"
+    ],
+    "markers": {
+      "binary-options.open-option": 1,
+      "sellOption(": 1,
+      "parseSettlement": 2,
+      "finalizeEarly": 5,
+      "computeExpiration": 2,
+      "process.on('SIGINT'": 1,
+      "process.on('SIGTERM'": 1,
+      "shutdown(": 7,
+      "sendMessage": 1,
+      "subscribeCandles": 4,
+      "getCandlesHistory": 2,
+      "refreshBalance": 4,
+      "evaluateGuards": 3,
+      "planTrade": 2,
+      "maybeTrade": 3,
+      "monitorOperations": 2,
+      "v2/login": 1,
+      "type === 4": 4,
+      "type === 1": 3,
+      "maxOpsPerAsset": 5,
+      "martingaleMultiplier": 1,
+      "pyramidAdxMin": 1,
+      "reversalGale": 23,
+      "applyUniverse": 3,
+      "rebalanceUniverse": 2
+    },
+    "codeRev": "V16"
+  },
+  "config": {
+    "_version": "16",
+    "_desc": "Bot V16 - OTC 24/7 (regras do dono 2026-10-02): CICLO DE 3 ORDENS POR ATIVO = entrada + no maximo 1 piramide + MARTINGALE 2,75x (a unica ordem que passa do stake fixo, uma por ciclo) | expiracao 2 MINUTOS | piramide SO na chance quase perfeita: ADX >= 25 e RSI extremo A FAVOR (CALL <= 35 / PUT >= 65) e reversao nao se formando | direcao pela tendencia (EMA8x21) + pullback 4+1 + RSI guarda-corpo + regime + ADX minima 20 | stake FIXO 2 | VENDA: so com CONFIRMACAO DE REVERSAO contra a posicao (venda A MERCADO: a IQ nao manda cotacao de meio de vida, o valor sai no fechamento) - tendencia virou + RSI contrario + velas 5s contra + preco adverso >= 1x candle tipico; fora dos ultimos 20s | teto de exposicao 50%% do saldo | CIRCUIT BREAKER REMOVIDO | sem cooldown apos win | trava de perda da sessao 20%% | warmup 5s | painel odometro",
+    "accounts": {
+      "_nota": "contas identificadas em 2026-10-01 via get-balances (somente leitura). O bot escolhe pelo type: 4 = DEMO (PRACTICE), 1 = REAL. Em 2026-10-01 a REAL estava sem saldo disponivel (o valor de 1,31 e bonus).",
+      "demo": {
+        "type": 4,
+        "balanceName": "PRACTICE",
+        "id": 1250741747,
+        "currency": "USD",
+        "amount": 60
+      },
+      "real": {
+        "type": 1,
+        "balanceName": "REAL",
+        "id": 1250741746,
+        "currency": "BRL",
+        "amount": 0,
+        "bonusAmount": 1.31
+      }
+    },
+    "trading": {
+      "baseStake": 2,
+      "expirationMinutes": 2,
+      "maxOpsPerAsset": 3,
+      "galeWindowMs": 120000,
+      "_nota": "NAO EXISTE limite de ativos operando ao mesmo tempo: o universo garante no minimo universe.minActive ativos vivos. O limite e POR ATIVO e e o CICLO: maxOpsPerAsset = 3 ordens = 1 entrada + no maximo 1 piramide + 1 MARTINGALE (uma ordem por vez; o martingale so entra depois que as anteriores fecharam — nunca CALL e PUT juntos, trava dura ladoOposto). galeWindowMs = prazo para o martingale entrar depois da venda por reversao; passou disso sem ordem, o gatilho morre e o ciclo fecha. A entrada de martingale NAO exige pullback novo (o flip e o gatilho). expirationMinutes = 2 (decisao do dono 2026-10-02: ciclo mais rapido, como no run que subiu a conta demo de 60 para 145)."
+    },
+    "martingale": {
+      "_nota": "MARTINGALE (regra do dono, 2026-10-02): e a TERCEIRA ordem do ciclo e a UNICA que pode operar acima do stake fixo. Valor = martingaleMultiplier x o que esta sendo recuperado (a soma das posicoes vendidas por reversao): 1 posicao de 2,00 -> 5,50; 2 posicoes de 2,00 -> 11,00. Entra no sentido NOVO (o da reversao), depois de vender a perdedora. UM POR CICLO: perdeu o martingale, a proxima ordem volta ao stake base (nunca compoe, nunca emenda). Isso e o que separa o lucro do V13 (60 -> 145 em 30/09) do travamento de 10-01, quando a escada 2 x 2,75^n chegou a US$1,4 trilhao por ordem e zerou a conta. levels = 0 => stake FIXO na base fora do martingale.",
+      "levels": 0,
+      "payoutRate": 0.86,
+      "martingaleMultiplier": 2.75,
+      "pauseAfterLadderMs": 600000
+    },
+    "risk": {
+      "maxStake": 30,
+      "maxExposurePct": 50,
+      "maxSessionLossPct": 20,
+      "_nota": "maxStake = teto por ordem. Precisa CABER o martingale: com 2 posicoes abertas ele vale 5,5 x baseStake (base 2 -> 11,00; base 4 -> 22,00) — se maxStake for menor, o bot bloqueia e pausa o ativo (fail-closed). maxExposurePct = teto da SOMA de todas as ordens abertas como PERCENTUAL DO SALDO ATUAL. maxSessionLossPct = trava de perda da sessao."
+    },
+    "sell": {
+      "_nota": "VENDA = SO com CONFIRMACAO DE REVERSAO contra a posicao (regra do dono, 2026-10-02): vende antes SOMENTE quando o mercado confirmar reversao contra a operacao (grande chance de dar loss). VENDA A MERCADO: a IQ manda sell_profit (DEVOLUCAO da recompra) SO no abrir/fechar da posicao — nao existe cotacao de meio de vida (medido em 2026-10-02: push so na abertura e get-options estatico) — o valor real da recompra e lido no fechamento. CONFIRMACAO (bloco reversal, tudo junto): tendencia virou contra (EMA8x21), RSI do lado oposto (CALL <= rsiCallMax / PUT >= rsiPutMin), candlesAgainstMin de `candles` velas 5s fechando contra e preco adverso a entrada >= minAdverseFactor x candle tipico de 5s (piso minAdversePct) — o preco adverso garante que nao vende operacao ganhando. Fora dos ultimos closeBeforeMs (a IQ nao aceita venda em cima do vencimento). MARTINGALE (reversalGale): depois da venda por reversao o bot entra no sentido NOVO sem exigir pullback (o flip e o gatilho), dentro da janela do gale (trading.galeWindowMs), valendo martingaleMultiplier x a soma das posicoes vendidas — um por ciclo; reversalGale=false desliga. Piramide (2a posicao no mesmo sentido): so com ADX >= pyramidAdxMin + RSI extremo A FAVOR e sem reversao se formando contra a posicao (ver bloco strategy).",
+      "closeBeforeMs": 20000,
+      "volLookbackCandles": 12,
+      "reversalGale": true,
+      "reversal": {
+        "_nota": "Confirmacao de reversao contra a posicao (todos os fatores precisam concordar). Ajuste fino: candles/candlesAgainstMin = quantas velas 5s precisam fechar contra; rsiCallMax/rsiPutMin = RSI do lado oposto; minAdverseFactor/minAdversePct = movimento adverso minimo a entrada em multiplos do candle tipico de 5s (piso em %).",
+        "candles": 3,
+        "candlesAgainstMin": 2,
+        "rsiCallMax": 45,
+        "rsiPutMin": 55,
+        "minAdverseFactor": 1,
+        "minAdversePct": 0.02
+      },
+      "retryAfterMs": 8000,
+      "maxAttempts": 4,
+      "earlyGale": {
+        "_nota": "EARLY GALE MONITOR: avalia cada operacao aberta a cada 1 segundo. Se a posicao esta perdendo alem do limiar (lossThreshold) dentro da janela (minMs..maxMs), abre o gale ANTES da operacao original fechar em loss — martingale mais eficiente. enabled=false desativa completamente o monitor.",
+        "enabled": true,
+        "minMs": 15000,
+        "maxMs": 90000,
+        "lossThreshold": 0.8
+      }
+    },
+    "universe": {
+      "_nota": "SEMPRE no minimo minActive ativos OPERANDO. Top 10 primeiro; algum fechado/suspenso/sem feed => entra a reserva (na ordem da lista); se faltar, o bot completa com qualquer OTC turbo disponivel (source auto). replaceStaleMs = ativo sem candle 5s por esse tempo e substituido. checkEveryMs = revisao do universo.",
+      "minActive": 170,
+      "maxActive": 200,
+      "replaceStaleMs": 180000,
+      "checkEveryMs": 30000
+    },
+    "strategy": {
+      "_nota": "direcao = tendencia (EMA8 contra EMA21 nos ultimos trendLookback candles): spread >= trendMinEmaSpreadPct = alta (CALL), <= -limiar = baixa (PUT), entre os dois = lateral (nao entra). RSI e GUARDA-CORPO, nao seletor: nao compra se o RSI ja esta esticado acima de rsiCallMax, nao vende se ja esta esticado abaixo de rsiPutMin. ADX e OBRIGATORIO: adx < adxMin = sem forca suficiente, nao entra. Medido em 9360 janelas de 5s reais (mesma regra de entrada): rsiCallMax 55 / rsiPutMin 45 + adxMin 20 => 1 sinal em 9360 (morto); 60/40 + 15 => 35 sinais; sem gate => 221 sinais. V16: RSI mais apertado (55/45) + ADX 20 minima para evitar entradas contra tendencia forte.",
+      "candleSizeSeconds": 5,
+      "lookbackRegime": 20,
+      "regimeStreakThreshold": 12,
+      "trendLookback": 50,
+      "trendMinEmaSpreadPct": 0.06,
+      "adxMin": 20,
+      "rsiPeriod": 14,
+      "rsiCallMax": 55,
+      "rsiPutMin": 45,
+      "pyramidMax": 1,
+      "pyramidAdxMin": 25,
+      "pyramidRsiCallMax": 35,
+      "pyramidRsiPutMin": 65,
+      "pyramid_nota": "PIRAMIDE (2a posicao no mesmo sentido) so sai na chance QUASE PERFEITA de nao reverter: ADX >= pyramidAdxMin (forca de verdade, nao 'sem estar fraca') + RSI no EXTREMO A FAVOR (CALL <= pyramidRsiCallMax / PUT >= pyramidRsiPutMin) + a reversao nao pode estar se formando contra a posicao. pyramidMax = quantas piramides cabem no ciclo (1 => no maximo 2 posicoes simultaneas; a 3a ordem e o martingale). Fora desse quadro o bot faz UMA compra so.",
+      "warmupMs": 5000,
+      "min1mCandles": 1,
+      "staleCandleMs": 30000
+    },
+    "whitelist": {
+      "_nota": "TOP 50 (prioridade). direction aqui e apenas REFERENCIA (baseDirection no log/registro). A direcao de entrada vem da tendencia do mercado. Auto-fill completa ate minActive=170 com qualquer OTC turbo disponivel.",
+      "RENDERUSD": {
+        "name": "front.RENDERUSD-OTC",
+        "direction": "CALL",
+        "wr": 100
+      },
+      "WIFUSD": {
+        "name": "front.WIFUSD-OTC",
+        "direction": "PUT",
+        "wr": 100
+      },
+      "DOTUSD": {
+        "name": "front.DOTUSD-OTC",
+        "direction": "PUT",
+        "wr": 100
+      },
+      "SUIUSD": {
+        "name": "front.SUIUSD-OTC",
+        "direction": "PUT",
+        "wr": 100
+      },
+      "XPTUSD": {
+        "name": "front.XPTUSD-OTC",
+        "direction": "PUT",
+        "wr": 100
+      },
+      "ORDIUSD": {
+        "name": "front.ORDIUSD-OTC",
+        "direction": "CALL",
+        "wr": 75
+      },
+      "HYPE": {
+        "name": "front.HYPE-OTC",
+        "direction": "CALL",
+        "wr": 75
+      },
+      "TRON": {
+        "name": "front.TRON-OTC",
+        "direction": "CALL",
+        "wr": 66.7
+      },
+      "SHIBUSD": {
+        "name": "front.SHIBUSD-OTC",
+        "direction": "PUT",
+        "wr": 66.7
+      },
+      "RAYDIUMUSD": {
+        "name": "front.RAYDIUMUSD-OTC",
+        "direction": "CALL",
+        "wr": 66.7
+      },
+      "BTCUSD": {
+        "name": "front.BTCUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "ETHUSD": {
+        "name": "front.ETHUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "BNBUSD": {
+        "name": "front.BNBUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "SOLUSD": {
+        "name": "front.SOLUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "XRPUSD": {
+        "name": "front.XRPUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "DOGEUSD": {
+        "name": "front.DOGEUSD-OTC",
+        "direction": "PUT",
+        "wr": null
+      },
+      "ADAUSD": {
+        "name": "front.ADAUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "AVAXUSD": {
+        "name": "front.AVAXUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "FILUSD": {
+        "name": "front.FILUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "NEARUSD": {
+        "name": "front.NEARUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "AAVEUSD": {
+        "name": "front.AAVEUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "UNIUSD": {
+        "name": "front.UNIUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "LTCUSD": {
+        "name": "front.LTCUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "ATOMUSD": {
+        "name": "front.ATOMUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "MATICUSD": {
+        "name": "front.MATICUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "LINKUSD": {
+        "name": "front.LINKUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "DYDXUSD": {
+        "name": "front.DYDXUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "FARTCOINUSD": {
+        "name": "front.FARTCOINUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "EOSUSD": {
+        "name": "front.EOSUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "HBARUSD": {
+        "name": "front.HBARUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "SEIUSD": {
+        "name": "front.SEIUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "IMXUSD": {
+        "name": "front.IMXUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "PENUSD": {
+        "name": "front.PENUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "TIAUSD": {
+        "name": "front.TIAUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "INJUSD": {
+        "name": "front.INJUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "OPUSD": {
+        "name": "front.OPUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "ARBUSD": {
+        "name": "front.ARBUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "SANDUSD": {
+        "name": "front.SANDUSD-OTC",
+        "direction": "PUT",
+        "wr": null
+      },
+      "MANAUSD": {
+        "name": "front.MANAUSD-OTC",
+        "direction": "PUT",
+        "wr": null
+      },
+      "AXSUSD": {
+        "name": "front.AXSUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "FTMUSDD": {
+        "name": "front.FTMUSDD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "ALGOUSD": {
+        "name": "front.ALGOUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "XLMUSD": {
+        "name": "front.XLMUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "VETUSD": {
+        "name": "front.VETUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "THETAUSD": {
+        "name": "front.THETAUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "XTZUSD": {
+        "name": "front.XTZUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "MKRUSD": {
+        "name": "front.MKRUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "SNXUSD": {
+        "name": "front.SNXUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "CRVUSD": {
+        "name": "front.CRVUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "LDOUSD": {
+        "name": "front.LDOUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "RUNEUSD": {
+        "name": "front.RUNEUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "APTUSD": {
+        "name": "front.APTUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "SAGAUSD": {
+        "name": "front.SAGAUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "WLDUSD": {
+        "name": "front.WLDUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "PENDLEUSD": {
+        "name": "front.PENDLEUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "JUPUSD": {
+        "name": "front.JUPUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "NOTUSD": {
+        "name": "front.NOTUSD-OTC",
+        "direction": "PUT",
+        "wr": null
+      },
+      "GOATUSD": {
+        "name": "front.GOATUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "POPCATUSD": {
+        "name": "front.POPCATUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "CHILLGUYUSD": {
+        "name": "front.CHILLGUYUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      },
+      "PNUTUSD": {
+        "name": "front.PNUTUSD-OTC",
+        "direction": "CALL",
+        "wr": null
+      }
+    },
+    "reserve": {
+      "_nota": "Reserva expandida. Auto-fill completa ate minActive=170 com qualquer OTC turbo disponivel.",
+      "FARTCOINUSD": {
+        "name": "front.FARTCOINUSD-OTC"
+      },
+      "LINKUSD": {
+        "name": "front.LINKUSD-OTC"
+      },
+      "EOSUSD": {
+        "name": "front.EOSUSD-OTC"
+      },
+      "HBARUSD": {
+        "name": "front.HBARUSD-OTC"
+      },
+      "SEIUSD": {
+        "name": "front.SEIUSD-OTC"
+      },
+      "IMXUSD": {
+        "name": "front.IMXUSD-OTC"
+      },
+      "PENUSD": {
+        "name": "front.PENUSD-OTC"
+      },
+      "TIAUSD": {
+        "name": "front.TIAUSD-OTC"
+      },
+      "INJUSD": {
+        "name": "front.INJUSD-OTC"
+      },
+      "OPUSD": {
+        "name": "front.OPUSD-OTC"
+      },
+      "ARBUSD": {
+        "name": "front.ARBUSD-OTC"
+      },
+      "XLMUSD": {
+        "name": "front.XLMUSD-OTC"
+      },
+      "ALGOUSD": {
+        "name": "front.ALGOUSD-OTC"
+      },
+      "VETUSD": {
+        "name": "front.VETUSD-OTC"
+      },
+      "THETAUSD": {
+        "name": "front.THETAUSD-OTC"
+      },
+      "XTZUSD": {
+        "name": "front.XTZUSD-OTC"
+      },
+      "MKRUSD": {
+        "name": "front.MKRUSD-OTC"
+      },
+      "RUNEUSD": {
+        "name": "front.RUNEUSD-OTC"
+      },
+      "APTUSD": {
+        "name": "front.APTUSD-OTC"
+      },
+      "SAGAUSD": {
+        "name": "front.SAGAUSD-OTC"
+      },
+      "WLDUSD": {
+        "name": "front.WLDUSD-OTC"
+      },
+      "JUPUSD": {
+        "name": "front.JUPUSD-OTC"
+      },
+      "GOATUSD": {
+        "name": "front.GOATUSD-OTC"
+      },
+      "POPCATUSD": {
+        "name": "front.POPCATUSD-OTC"
+      },
+      "CHILLGUYUSD": {
+        "name": "front.CHILLGUYUSD-OTC"
+      },
+      "PNUTUSD": {
+        "name": "front.PNUTUSD-OTC"
+      }
+    },
+    "paths": {
+      "state": "D:/Tracecom project/bot-state-v15.json",
+      "results": "D:/Tracecom project/resultados-v15.json"
+    },
+    "stop": {
+      "profitTarget": 1000
+    }
+  },
+  "wsClient": {
+    "file": "iqoption-ws.mjs",
+    "sha256": "3dfa59b7cce987859bc0026a2cb47f88df3a005533d1935429bbff6c52110596",
+    "exports": [
+      "buildDigitalOrderRequest",
+      "buildOrderRequest",
+      "classifyBalances",
+      "computeExpiration",
+      "encodeFrame",
+      "envelope",
+      "normalizeCandle",
+      "parseSettlement",
+      "resolveEurUsdActive",
+      "toEpochMs",
+      "validateServerTime"
+    ]
+  }
+}

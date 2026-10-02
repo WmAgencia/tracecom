@@ -1,0 +1,3213 @@
+{
+  "schema": "tracecom-panel-audit-v1",
+  "at": "2026-10-02T16:05:35.989Z",
+  "mode": "fixture",
+  "base": "http://127.0.0.1:55593",
+  "audits": [
+    {
+      "shot": "desktop-parado",
+      "theme": "dark",
+      "profitText": "-US$ 6,56",
+      "powerText": "ATIVAR",
+      "timerText": "00:00:00",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 128,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 8.58,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 6.21,
+          "need": 3,
+          "ok": true,
+          "fontSize": 38,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 14.66,
+          "need": 3,
+          "ok": true,
+          "fontSize": 44,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(23,28,37)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 15.56,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 6.66,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 15,
+          "color": "rgb(8, 16, 29)",
+          "bg": "rgb(134,170,248) | rgb(111,151,238)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 7.7,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 7.7,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 6.2,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 6.42,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "missing": true
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "missing": true
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 6.2,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "desktop-parado-light",
+      "theme": "light",
+      "profitText": "-US$ 6,56",
+      "powerText": "ATIVAR",
+      "timerText": "00:00:00",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 128,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 7.31,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6.37,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 5.62,
+          "need": 3,
+          "ok": true,
+          "fontSize": 38,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 17.75,
+          "need": 3,
+          "ok": true,
+          "fontSize": 44,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 17.75,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 5.09,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 15,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(53,99,234) | rgb(44,83,210)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 5.16,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 5.16,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 5.11,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(202,218,230) | rgb(220,232,231)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 15.67,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 5.49,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 4.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "missing": true
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "missing": true
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 5.49,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "desktop-ativo",
+      "theme": "dark",
+      "profitText": "-US$ 6,56",
+      "powerText": "DESATIVAR",
+      "timerText": "02:22:46",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 128,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 8.58,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 6.21,
+          "need": 3,
+          "ok": true,
+          "fontSize": 38,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 14.66,
+          "need": 3,
+          "ok": true,
+          "fontSize": 44,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(23,28,37)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 15.56,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 5.41,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 15,
+          "color": "rgb(24, 8, 7)",
+          "bg": "rgb(240,122,114) | rgb(225,91,82)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 7.7,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 6.42,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "missing": true
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "missing": true
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 6.2,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "desktop-ativo-light",
+      "theme": "light",
+      "profitText": "-US$ 6,56",
+      "powerText": "DESATIVAR",
+      "timerText": "02:22:50",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 128,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 7.31,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6.37,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 21,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 5.62,
+          "need": 3,
+          "ok": true,
+          "fontSize": 38,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 17.75,
+          "need": 3,
+          "ok": true,
+          "fontSize": 44,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 17.75,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 4.93,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 15,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(194,71,61) | rgb(171,50,41)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 5.16,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 5.11,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(202,218,230) | rgb(220,232,231)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 5.11,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(202,218,230) | rgb(220,232,231)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 15.67,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 15.67,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 4.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "missing": true
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "missing": true
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 5.49,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "tablet-ativo",
+      "theme": "dark",
+      "profitText": "-US$ 6,56",
+      "powerText": "DESATIVAR",
+      "timerText": "02:22:53",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 87.57,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 8.58,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 6.21,
+          "need": 3,
+          "ok": true,
+          "fontSize": 26,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 14.66,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(23,28,37)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 5.41,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 15,
+          "color": "rgb(24, 8, 7)",
+          "bg": "rgb(240,122,114) | rgb(225,91,82)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 7.7,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 6.42,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "missing": true
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "missing": true
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 6.2,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "tablet-ativo-light",
+      "theme": "light",
+      "profitText": "-US$ 6,56",
+      "powerText": "DESATIVAR",
+      "timerText": "02:22:57",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 87.57,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 7.31,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6.37,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 5.62,
+          "need": 3,
+          "ok": true,
+          "fontSize": 26,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 17.75,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6.37,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6.37,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 4.93,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 15,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(194,71,61) | rgb(171,50,41)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 5.16,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 5.11,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(202,218,230) | rgb(220,232,231)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 5.11,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(202,218,230) | rgb(220,232,231)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 15.67,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 15.67,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 4.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "missing": true
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "missing": true
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 5.49,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "mobile-ativo",
+      "theme": "dark",
+      "profitText": "-US$ 6,56",
+      "powerText": "DESATIVAR",
+      "timerText": "02:23:00",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 62.1,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 8.58,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 6.21,
+          "need": 3,
+          "ok": true,
+          "fontSize": 26,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 14.66,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(23,28,37)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 5.41,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(24, 8, 7)",
+          "bg": "rgb(240,122,114) | rgb(225,91,82)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 7.7,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 6.42,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "missing": true
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "missing": true
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 6.2,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "mobile-ativo-light",
+      "theme": "light",
+      "profitText": "-US$ 6,56",
+      "powerText": "DESATIVAR",
+      "timerText": "02:23:03",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 62.1,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 7.31,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6.37,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 5.62,
+          "need": 3,
+          "ok": true,
+          "fontSize": 26,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 17.75,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6.37,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6.37,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 4.93,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(194,71,61) | rgb(171,50,41)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 5.16,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 5.11,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(202,218,230) | rgb(220,232,231)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 5.11,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(202,218,230) | rgb(220,232,231)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 15.67,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 15.67,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 4.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "missing": true
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "missing": true
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 5.49,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "mobile-parado",
+      "theme": "dark",
+      "profitText": "-US$ 6,56",
+      "powerText": "ATIVAR",
+      "timerText": "00:00:00",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 62.1,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 8.58,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 17,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 6.21,
+          "need": 3,
+          "ok": true,
+          "fontSize": 26,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 14.66,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(23,28,37)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 22,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 6.66,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(8, 16, 29)",
+          "bg": "rgb(134,170,248) | rgb(111,151,238)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 7.7,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 7.7,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 6.2,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 6.42,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "missing": true
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "missing": true
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 6.2,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "configuracoes",
+      "theme": "dark",
+      "profitText": "-US$ 6,56",
+      "powerText": "DESATIVAR",
+      "timerText": "02:23:09",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 128,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 8.58,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 6.21,
+          "need": 3,
+          "ok": true,
+          "fontSize": 38,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 14.66,
+          "need": 3,
+          "ok": true,
+          "fontSize": 43.52,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(23,28,37)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 15.56,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 5.41,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 15,
+          "color": "rgb(24, 8, 7)",
+          "bg": "rgb(240,122,114) | rgb(225,91,82)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 7.7,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 6.42,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "missing": true
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "missing": true
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 6.2,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "configuracoes-light",
+      "theme": "light",
+      "profitText": "-US$ 6,56",
+      "powerText": "DESATIVAR",
+      "timerText": "02:23:13",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 128,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 7.31,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6.37,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 5.62,
+          "need": 3,
+          "ok": true,
+          "fontSize": 38,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 17.75,
+          "need": 3,
+          "ok": true,
+          "fontSize": 43.52,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 17.75,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 4.93,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 15,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(194,71,61) | rgb(171,50,41)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 5.16,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 5.11,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(202,218,230) | rgb(220,232,231)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 5.11,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(202,218,230) | rgb(220,232,231)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 15.67,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 15.67,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 4.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "missing": true
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "missing": true
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 5.49,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "historico",
+      "theme": "dark",
+      "profitText": "-US$ 6,56",
+      "powerText": "DESATIVAR",
+      "timerText": "02:23:17",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 128,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 8.58,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 6.21,
+          "need": 3,
+          "ok": true,
+          "fontSize": 38,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 14.66,
+          "need": 3,
+          "ok": true,
+          "fontSize": 43.52,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(23,28,37)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(239, 107, 98)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 15.56,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 5.41,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 15,
+          "color": "rgb(24, 8, 7)",
+          "bg": "rgb(240,122,114) | rgb(225,91,82)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 7.7,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 6.28,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(63, 201, 138)",
+          "bg": "rgb(26,51,59) | rgb(17,36,33)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 16.12,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 6.42,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(14,18,24)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "ratio": 5.84,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(23,28,37)"
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 7.43,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(154, 167, 186)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 6.2,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(139, 152, 172)",
+          "bg": "rgb(18,22,29)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 15.56,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(233, 238, 246)",
+          "bg": "rgb(18,22,29)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    },
+    {
+      "shot": "historico-light",
+      "theme": "light",
+      "profitText": "-US$ 6,56",
+      "powerText": "DESATIVAR",
+      "timerText": "02:23:21",
+      "docOverflowX": false,
+      "wide": [],
+      "contrast": [
+        {
+          "sel": "#profit-day",
+          "label": "lucro hoje (números gigantes)",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 128,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-ops",
+          "label": "métrica operações",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wins",
+          "label": "métrica wins",
+          "ratio": 7.31,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-loss",
+          "label": "métrica loss",
+          "ratio": 6.37,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#m-wr",
+          "label": "métrica WR",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 19.2,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#session-profit",
+          "label": "resultado da sessão",
+          "ratio": 5.62,
+          "need": 3,
+          "ok": true,
+          "fontSize": 38,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#session-timer",
+          "label": "cronômetro",
+          "ratio": 17.75,
+          "need": 3,
+          "ok": true,
+          "fontSize": 43.52,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-week",
+          "label": "lucro semana",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#profit-month",
+          "label": "lucro mês",
+          "ratio": 6.37,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(176, 48, 39)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#exposure",
+          "label": "exposição",
+          "ratio": 17.75,
+          "need": 3,
+          "ok": true,
+          "fontSize": 30,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#stake-note",
+          "label": "aviso do valor fixo",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#power-label",
+          "label": "rótulo ATIVAR/DESATIVAR",
+          "ratio": 4.93,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 15,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(194,71,61) | rgb(171,50,41)"
+        },
+        {
+          "sel": "#chip-account",
+          "label": "chip da conta",
+          "ratio": 5.16,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#chip-feed",
+          "label": "chip IQ/feed",
+          "ratio": 5.11,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(202,218,230) | rgb(220,232,231)"
+        },
+        {
+          "sel": "#chip-engine",
+          "label": "chip da prova do motor",
+          "ratio": 5.11,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(10, 99, 64)",
+          "bg": "rgb(202,218,230) | rgb(220,232,231)"
+        },
+        {
+          "sel": "#events li .txt",
+          "label": "atividade ao vivo",
+          "ratio": 15.67,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#positions li",
+          "label": "posições abertas",
+          "ratio": 15.67,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": ".box-label",
+          "label": "rótulos das caixas",
+          "ratio": 4.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(238,241,246)"
+        },
+        {
+          "sel": "#history-summary",
+          "label": "resumo do histórico",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".table th",
+          "label": "cabeçalho da tabela",
+          "ratio": 5.49,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 11,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".table td",
+          "label": "célula da tabela",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": "#confirm-text",
+          "label": "texto do modal",
+          "ratio": 5.85,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 14,
+          "color": "rgb(90, 102, 117)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".hint",
+          "label": "texto de apoio",
+          "ratio": 5.49,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 12,
+          "color": "rgb(95, 106, 121)",
+          "bg": "rgb(255,255,255)"
+        },
+        {
+          "sel": ".seg[aria-checked=\"true\"]",
+          "label": "aba selecionada",
+          "ratio": 17.75,
+          "need": 4.5,
+          "ok": true,
+          "fontSize": 13,
+          "color": "rgb(16, 24, 40)",
+          "bg": "rgb(255,255,255)"
+        }
+      ],
+      "overflow": [],
+      "invisible": [],
+      "squared": [],
+      "errors": []
+    }
+  ]
+}

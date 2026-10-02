@@ -1,0 +1,7 @@
+{
+  "schema": "tracecom-panel-config-v1",
+  "host": "127.0.0.1",
+  "port": 8787,
+  "account": "demo",
+  "_nota": "host 127.0.0.1 = só esta máquina. account é READ-ONLY no painel: para trocar de conta edite este arquivo (o painel nunca troca conta sozinho)."
+}

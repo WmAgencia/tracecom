@@ -1,0 +1,58 @@
+{
+  "schema": "tracecom-session-ledger-v1",
+  "updatedAt": "2026-10-02T15:53:03.995Z",
+  "sessions": [
+    {
+      "id": "s-20261002-124949-2c64",
+      "requestedAt": "2026-10-02T15:49:49.349Z",
+      "startedAt": "2026-10-02T15:50:02.894Z",
+      "endedAt": "2026-10-02T15:53:03.993Z",
+      "endReason": "PAINEL",
+      "exitCode": 0,
+      "state": "STOPPED",
+      "source": "panel",
+      "pid": 21256,
+      "logFile": "D:\\Tracecom project\\telemetry\\logs\\bot-s-20261002-124949-2c64.log",
+      "account": {
+        "type": "DEMO",
+        "currency": "USD"
+      },
+      "stakeApplied": 2,
+      "engine": {
+        "rev": "V16",
+        "fileHash": null,
+        "engineFingerprint": "bf1d085f79f77dc4d31307ad0f13c79e30640460892bb37e8db742845d8dc940"
+      },
+      "startBalance": 61.31,
+      "endBalance": 64.69,
+      "stats": {
+        "ops": 2,
+        "wins": 2,
+        "losses": 0,
+        "draws": 0,
+        "earlySells": 0,
+        "profit": 3.38,
+        "stake": 4,
+        "wr": 100,
+        "firstAt": "2026-10-02T15:52:01.449Z",
+        "lastAt": "2026-10-02T15:53:01.486Z"
+      },
+      "botStats": {
+        "settled": 2,
+        "wins": 2,
+        "losses": 0,
+        "draws": 0,
+        "early": 0,
+        "earlyPos": 0,
+        "earlyNeg": 0,
+        "profit": 3.38,
+        "wr": 100
+      },
+      "tradeIds": [
+        "order:14316642411",
+        "order:14316645021"
+      ],
+      "error": null
+    }
+  ]
+}

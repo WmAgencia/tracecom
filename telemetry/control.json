@@ -1,0 +1,9 @@
+{
+  "schema": "tracecom-control-v1",
+  "stop": {
+    "id": "7b5df450-b37f-41b9-bda2-634e288f0ace",
+    "requestedAt": "2026-10-02T15:53:03.640Z",
+    "reason": "PAINEL"
+  },
+  "updatedAt": "2026-10-02T15:53:03.640Z"
+}

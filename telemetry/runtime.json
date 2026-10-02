@@ -1,0 +1,13 @@
+{
+  "schema": "tracecom-runtime-v1",
+  "sessionId": null,
+  "pid": null,
+  "account": "demo",
+  "requestedAt": "2026-10-02T15:49:49.349Z",
+  "logFile": "D:\\Tracecom project\\telemetry\\logs\\bot-s-20261002-124949-2c64.log",
+  "stop": {
+    "id": "7b5df450-b37f-41b9-bda2-634e288f0ace",
+    "requestedAt": "2026-10-02T15:53:03.640Z"
+  },
+  "stoppedAt": "2026-10-02T15:53:03.996Z"
+}

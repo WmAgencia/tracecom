@@ -1,0 +1,52 @@
+{
+  "schema": "tracecom-bot-telemetry-v1",
+  "pid": 8908,
+  "updatedAt": "2026-10-02T16:23:59.509Z",
+  "phase": "stopped",
+  "accountType": "DEMO",
+  "currencySymbol": "R$",
+  "balanceId": null,
+  "initialBalance": 0,
+  "balance": 0,
+  "sessionStartBalance": 0,
+  "startedAt": 0,
+  "warmupDone": false,
+  "closedCandles": 0,
+  "sessionLossLimit": null,
+  "exposureLimit": 0,
+  "openStake": 0,
+  "openPositions": [],
+  "paused": [],
+  "stats": {
+    "settled": 0,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "early": 0,
+    "earlyPos": 0,
+    "earlyNeg": 0,
+    "profit": 0,
+    "wr": 0
+  },
+  "universe": {
+    "size": 0,
+    "min": 170,
+    "max": 200
+  },
+  "config": {
+    "baseStake": 2,
+    "expiryMinutes": 2,
+    "maxOpsPerAsset": 3,
+    "maxStake": 30,
+    "payout": 0.86,
+    "maxExposurePct": 50,
+    "sessionLossPct": 20
+  },
+  "resultsCount": 0,
+  "rev": "V16",
+  "codeHash": "7ba59bd0",
+  "trigger": "exit",
+  "lastError": null,
+  "stopped": true,
+  "stopReason": "exit"
+}
