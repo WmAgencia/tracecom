@@ -1,0 +1,2567 @@
+{
+  "kind": "FREEZE-SHA256",
+  "generatedAtUtc": "2026-09-29T12:12:35.166Z",
+  "read_only": true,
+  "orders_placed": false,
+  "frozen_under": "diagnostic-results/data/iq-real/binary-options (append-only no disco; nenhum histórico reescrito)",
+  "integrity_summary": {
+    "series": 36,
+    "rows_raw": 186000,
+    "rows_unique": 37270,
+    "duplicate_rows": 148730,
+    "duplicate_ratio": 0.8,
+    "missing_bars_within_span": 132819,
+    "asset_id_resolved": 12,
+    "asset_id_unresolved": 24,
+    "note": "O coletor original fez append de janelas MCP sobrepostas sem deduplicar. Toda a análise rigorosa DEVE usar rowsUnique (dedupe por 'from' + ordenação). Os WRs in-sample anteriores usaram rows_raw e por isso sofreram pseudo-replicação (mesma vela contada até ~5x), invalidando os intervalos de Wilson reportados."
+  },
+  "datasets": [
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\20--Year-Treasury-Bond-ETF_300s.csv",
+      "assetLabel": "20  Year Treasury Bond ETF",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "96b761503fa96bf6d810c52b4c54143f907febbd934015d9c54ddc1dd194b0f2",
+      "bytes": 349255,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1010,
+      "duplicateRows": 3990,
+      "duplicateRatio": 0.798,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 455.67,
+      "expectedBars": 5468,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\20--Year-Treasury-Bond-ETF_60s.csv",
+      "assetLabel": "20  Year Treasury Bond ETF",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "f5044b7f73abc59001ac49a8c187e27a56be690a626ab520f652db628e3d078a",
+      "bytes": 349514,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1052,
+      "duplicateRows": 3948,
+      "duplicateRatio": 0.79,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 5,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:41:00Z",
+      "lastTo": "2026-09-28T15:43:00Z",
+      "spanHours": 118.03,
+      "expectedBars": 7082,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Consumer-Discretionary-SPDR_300s.csv",
+      "assetLabel": "Consumer Discretionary SPDR",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "fff11f77618d000f30dc1d9691f49b17d8a57f2bfa934b8a24a4aab589645529",
+      "bytes": 366340,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1010,
+      "duplicateRows": 3990,
+      "duplicateRatio": 0.798,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 7,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 455.67,
+      "expectedBars": 5468,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Consumer-Discretionary-SPDR_60s.csv",
+      "assetLabel": "Consumer Discretionary SPDR",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "54525c531f9d014dba180e288ed69b29cfc9e39e06c35e13064563e0144e4b7d",
+      "bytes": 440033,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 6000,
+      "rowsUnique": 1078,
+      "duplicateRows": 4922,
+      "duplicateRatio": 0.82,
+      "nonMonotonicOrder": 5,
+      "conflictingDuplicates": 11,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:41:00Z",
+      "lastTo": "2026-09-28T16:09:00Z",
+      "spanHours": 118.47,
+      "expectedBars": 7108,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Dow-Jones-Industrial-Average-ETF_300s.csv",
+      "assetLabel": "Dow Jones Industrial Average ETF",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "29602d9d0fbcbcb7ade63e70bea69febf53037226579de39d9ccb99f06dcff99",
+      "bytes": 359706,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1010,
+      "duplicateRows": 3990,
+      "duplicateRatio": 0.798,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 455.67,
+      "expectedBars": 5468,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Dow-Jones-Industrial-Average-ETF_60s.csv",
+      "assetLabel": "Dow Jones Industrial Average ETF",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "f40f7145560c46f9af08733d8d2411c2ceded8e3320cdf2f1d0ceeb3f1292d8f",
+      "bytes": 359787,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1052,
+      "duplicateRows": 3948,
+      "duplicateRatio": 0.79,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:41:00Z",
+      "lastTo": "2026-09-28T15:43:00Z",
+      "spanHours": 118.03,
+      "expectedBars": 7082,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Energy-SPDR_300s.csv",
+      "assetLabel": "Energy SPDR",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "85131715ce27ab5e7a14281ee063d66b5770f76e6c7d1e5bb6b92209a4ef223d",
+      "bytes": 417855,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 6000,
+      "rowsUnique": 1015,
+      "duplicateRows": 4985,
+      "duplicateRatio": 0.831,
+      "nonMonotonicOrder": 5,
+      "conflictingDuplicates": 14,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T16:10:00Z",
+      "spanHours": 456.08,
+      "expectedBars": 5473,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Energy-SPDR_60s.csv",
+      "assetLabel": "Energy SPDR",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "c312a17633235ab24378cf69eaebaf5be62aed8009fce8e2a879f12e52357612",
+      "bytes": 418106,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 6000,
+      "rowsUnique": 1077,
+      "duplicateRows": 4923,
+      "duplicateRatio": 0.821,
+      "nonMonotonicOrder": 5,
+      "conflictingDuplicates": 15,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:41:00Z",
+      "lastTo": "2026-09-28T16:08:00Z",
+      "spanHours": 118.45,
+      "expectedBars": 7107,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Gold-Miners-ETF_300s.csv",
+      "assetLabel": "Gold Miners ETF",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "a00caff2a5519f7f7b312c775e681ed86cd487b61b1aed454fca7557bb884337",
+      "bytes": 405781,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 6000,
+      "rowsUnique": 1015,
+      "duplicateRows": 4985,
+      "duplicateRatio": 0.831,
+      "nonMonotonicOrder": 5,
+      "conflictingDuplicates": 15,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T16:10:00Z",
+      "spanHours": 456.08,
+      "expectedBars": 5473,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Gold-Miners-ETF_60s.csv",
+      "assetLabel": "Gold Miners ETF",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "d245172a2d4aa393de3f221621cd1f4a214f35a6b957d783af7e3eb3e5618cc0",
+      "bytes": 407022,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 6000,
+      "rowsUnique": 1077,
+      "duplicateRows": 4923,
+      "duplicateRatio": 0.821,
+      "nonMonotonicOrder": 5,
+      "conflictingDuplicates": 15,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:41:00Z",
+      "lastTo": "2026-09-28T16:08:00Z",
+      "spanHours": 118.45,
+      "expectedBars": 7107,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\JP-225_300s.csv",
+      "assetLabel": "JP 225",
+      "size_s": 300,
+      "asset_id": 1476,
+      "catalog_name": "JP 225",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 91
+      },
+      "catalog_match": "encontrado",
+      "sha256": "f48c08895c011f35224f59d600a6d768cd4a69cd353b4a2ca42271c64aece74d",
+      "bytes": 162298,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 2000,
+      "rowsUnique": 1002,
+      "duplicateRows": 998,
+      "duplicateRatio": 0.499,
+      "nonMonotonicOrder": 1,
+      "conflictingDuplicates": 1,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-23T01:00:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 134.75,
+      "expectedBars": 1617,
+      "missingBars": 615,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T21:00:00Z",
+          "before": "2026-09-23T22:00:00Z",
+          "missingBars": 12,
+          "seconds": 3600
+        },
+        {
+          "after": "2026-09-24T21:00:00Z",
+          "before": "2026-09-24T22:00:00Z",
+          "missingBars": 12,
+          "seconds": 3600
+        },
+        {
+          "after": "2026-09-25T20:45:00Z",
+          "before": "2026-09-27T22:00:00Z",
+          "missingBars": 591,
+          "seconds": 177300
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\JP-225_60s.csv",
+      "assetLabel": "JP 225",
+      "size_s": 60,
+      "asset_id": 1476,
+      "catalog_name": "JP 225",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 91
+      },
+      "catalog_match": "encontrado",
+      "sha256": "7079122b34f1554b72854bba7b647f41a414eaf35d8ae2b4b8b7e9dc2cac48e9",
+      "bytes": 163170,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 2000,
+      "rowsUnique": 1009,
+      "duplicateRows": 991,
+      "duplicateRatio": 0.496,
+      "nonMonotonicOrder": 1,
+      "conflictingDuplicates": 1,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-27T22:55:00Z",
+      "lastTo": "2026-09-28T15:44:00Z",
+      "spanHours": 16.82,
+      "expectedBars": 1009,
+      "missingBars": 0,
+      "gapCount": 0,
+      "gaps": []
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\S-P-500-ETF_300s.csv",
+      "assetLabel": "S P 500 ETF",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "d991c614bd673eab8a867ee65b6109d142ac0d48a16ee432cfc07a0992b11704",
+      "bytes": 503071,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 7000,
+      "rowsUnique": 1015,
+      "duplicateRows": 5985,
+      "duplicateRatio": 0.855,
+      "nonMonotonicOrder": 6,
+      "conflictingDuplicates": 21,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T16:10:00Z",
+      "spanHours": 456.08,
+      "expectedBars": 5473,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\S-P-500-ETF_60s.csv",
+      "assetLabel": "S P 500 ETF",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "8ef2e52ebcd4b068f97ea45376964140d287f36e9cfcda11ac1942034a8d0a55",
+      "bytes": 503562,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 7000,
+      "rowsUnique": 1078,
+      "duplicateRows": 5922,
+      "duplicateRatio": 0.846,
+      "nonMonotonicOrder": 6,
+      "conflictingDuplicates": 16,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:40:00Z",
+      "lastTo": "2026-09-28T16:08:00Z",
+      "spanHours": 118.47,
+      "expectedBars": 7108,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Semiconductor-ETF_300s.csv",
+      "assetLabel": "Semiconductor ETF",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "7f4a8a22c16b26afea1098c2eff148b46e9248a0a8b624ae9a0d01be6de1266a",
+      "bytes": 358440,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1010,
+      "duplicateRows": 3990,
+      "duplicateRatio": 0.798,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 455.67,
+      "expectedBars": 5468,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Semiconductor-ETF_60s.csv",
+      "assetLabel": "Semiconductor ETF",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "0cb5026c4fecbe57860e1f7f0d14b1c5679da216b3375a93e57fe3d498f50981",
+      "bytes": 358687,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1052,
+      "duplicateRows": 3948,
+      "duplicateRatio": 0.79,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:41:00Z",
+      "lastTo": "2026-09-28T15:43:00Z",
+      "spanHours": 118.03,
+      "expectedBars": 7082,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Technology-SPDR_300s.csv",
+      "assetLabel": "Technology SPDR",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "012219558b8177ef5de433990925878580fba9effb584f6c9243d088816c70d2",
+      "bytes": 429323,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 6000,
+      "rowsUnique": 1015,
+      "duplicateRows": 4985,
+      "duplicateRatio": 0.831,
+      "nonMonotonicOrder": 5,
+      "conflictingDuplicates": 15,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T16:10:00Z",
+      "spanHours": 456.08,
+      "expectedBars": 5473,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Technology-SPDR_60s.csv",
+      "assetLabel": "Technology SPDR",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "fbec707e91a6a0b9f726e2b8291f89eec90bf5f182e852d6930aa326c9310f9e",
+      "bytes": 429356,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 6000,
+      "rowsUnique": 1077,
+      "duplicateRows": 4923,
+      "duplicateRatio": 0.821,
+      "nonMonotonicOrder": 5,
+      "conflictingDuplicates": 15,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:41:00Z",
+      "lastTo": "2026-09-28T16:08:00Z",
+      "spanHours": 118.45,
+      "expectedBars": 7107,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\UK-100_300s.csv",
+      "assetLabel": "UK 100",
+      "size_s": 300,
+      "asset_id": 1475,
+      "catalog_name": "UK 100",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 90
+      },
+      "catalog_match": "encontrado",
+      "sha256": "7796a293536b3037d92e5d2a3992327e0706087e8c0bdce16906bd30c410aa00",
+      "bytes": 232705,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 3000,
+      "rowsUnique": 1010,
+      "duplicateRows": 1990,
+      "duplicateRatio": 0.663,
+      "nonMonotonicOrder": 2,
+      "conflictingDuplicates": 3,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-22T11:35:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 148.17,
+      "expectedBars": 1778,
+      "missingBars": 768,
+      "gapCount": 4,
+      "gaps": [
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T00:00:00Z",
+          "missingBars": 48,
+          "seconds": 14400
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T00:00:00Z",
+          "missingBars": 48,
+          "seconds": 14400
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T00:00:00Z",
+          "missingBars": 48,
+          "seconds": 14400
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T00:00:00Z",
+          "missingBars": 624,
+          "seconds": 187200
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\UK-100_60s.csv",
+      "assetLabel": "UK 100",
+      "size_s": 60,
+      "asset_id": 1475,
+      "catalog_name": "UK 100",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 90
+      },
+      "catalog_match": "encontrado",
+      "sha256": "757b005cab45aa11994984a5e3ccdb0f202b807f3a94e970474c0390007ee9e7",
+      "bytes": 310032,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 4000,
+      "rowsUnique": 1052,
+      "duplicateRows": 2948,
+      "duplicateRatio": 0.737,
+      "nonMonotonicOrder": 3,
+      "conflictingDuplicates": 6,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-25T18:12:00Z",
+      "lastTo": "2026-09-28T15:44:00Z",
+      "spanHours": 69.53,
+      "expectedBars": 4172,
+      "missingBars": 3120,
+      "gapCount": 1,
+      "gaps": [
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T00:00:00Z",
+          "missingBars": 3120,
+          "seconds": 187200
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\US-100_300s.csv",
+      "assetLabel": "US 100",
+      "size_s": 300,
+      "asset_id": 1471,
+      "catalog_name": "US 100",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 91
+      },
+      "catalog_match": "encontrado",
+      "sha256": "4034948cbec4811f60edb75676814b169a0686dd0d36a7b97e98db46feb6e4b1",
+      "bytes": 385111,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1010,
+      "duplicateRows": 3990,
+      "duplicateRatio": 0.798,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-23T00:20:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 135.42,
+      "expectedBars": 1625,
+      "missingBars": 615,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T21:00:00Z",
+          "before": "2026-09-23T22:00:00Z",
+          "missingBars": 12,
+          "seconds": 3600
+        },
+        {
+          "after": "2026-09-24T21:00:00Z",
+          "before": "2026-09-24T22:00:00Z",
+          "missingBars": 12,
+          "seconds": 3600
+        },
+        {
+          "after": "2026-09-25T20:45:00Z",
+          "before": "2026-09-27T22:00:00Z",
+          "missingBars": 591,
+          "seconds": 177300
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\US-100_60s.csv",
+      "assetLabel": "US 100",
+      "size_s": 60,
+      "asset_id": 1471,
+      "catalog_name": "US 100",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 91
+      },
+      "catalog_match": "encontrado",
+      "sha256": "4bb446f8046daacb623aa36732f0e65f2dff639b249fdc45d449651fc297c4cf",
+      "bytes": 384587,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1051,
+      "duplicateRows": 3949,
+      "duplicateRatio": 0.79,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-27T22:12:00Z",
+      "lastTo": "2026-09-28T15:43:00Z",
+      "spanHours": 17.52,
+      "expectedBars": 1051,
+      "missingBars": 0,
+      "gapCount": 0,
+      "gaps": []
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\US-2000_300s.csv",
+      "assetLabel": "US 2000",
+      "size_s": 300,
+      "asset_id": 1473,
+      "catalog_name": "US 2000",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 89
+      },
+      "catalog_match": "encontrado",
+      "sha256": "316b21e89c8dbaa8902781b34a9410d1312737030eb4f50593bc4833a58d60cc",
+      "bytes": 367209,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1010,
+      "duplicateRows": 3990,
+      "duplicateRatio": 0.798,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-23T00:20:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 135.42,
+      "expectedBars": 1625,
+      "missingBars": 615,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T21:00:00Z",
+          "before": "2026-09-23T22:00:00Z",
+          "missingBars": 12,
+          "seconds": 3600
+        },
+        {
+          "after": "2026-09-24T21:00:00Z",
+          "before": "2026-09-24T22:00:00Z",
+          "missingBars": 12,
+          "seconds": 3600
+        },
+        {
+          "after": "2026-09-25T20:45:00Z",
+          "before": "2026-09-27T22:00:00Z",
+          "missingBars": 591,
+          "seconds": 177300
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\US-2000_60s.csv",
+      "assetLabel": "US 2000",
+      "size_s": 60,
+      "asset_id": 1473,
+      "catalog_name": "US 2000",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 89
+      },
+      "catalog_match": "encontrado",
+      "sha256": "7708d5dbcd0f8a4596214520508d2dbb8564187ada112475ddcb3bde8bd30562",
+      "bytes": 366211,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1052,
+      "duplicateRows": 3948,
+      "duplicateRatio": 0.79,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-27T22:12:00Z",
+      "lastTo": "2026-09-28T15:44:00Z",
+      "spanHours": 17.53,
+      "expectedBars": 1052,
+      "missingBars": 0,
+      "gapCount": 0,
+      "gaps": []
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\US-30_300s.csv",
+      "assetLabel": "US 30",
+      "size_s": 300,
+      "asset_id": 1472,
+      "catalog_name": "US 30",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 90
+      },
+      "catalog_match": "encontrado",
+      "sha256": "45a5bc4697df8133cd7833ddc562af8b5006d0f1dcca476fc83b1173ec283857",
+      "bytes": 390028,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1010,
+      "duplicateRows": 3990,
+      "duplicateRatio": 0.798,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-23T00:20:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 135.42,
+      "expectedBars": 1625,
+      "missingBars": 615,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T21:00:00Z",
+          "before": "2026-09-23T22:00:00Z",
+          "missingBars": 12,
+          "seconds": 3600
+        },
+        {
+          "after": "2026-09-24T21:00:00Z",
+          "before": "2026-09-24T22:00:00Z",
+          "missingBars": 12,
+          "seconds": 3600
+        },
+        {
+          "after": "2026-09-25T20:45:00Z",
+          "before": "2026-09-27T22:00:00Z",
+          "missingBars": 591,
+          "seconds": 177300
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\US-30_60s.csv",
+      "assetLabel": "US 30",
+      "size_s": 60,
+      "asset_id": 1472,
+      "catalog_name": "US 30",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 90
+      },
+      "catalog_match": "encontrado",
+      "sha256": "79724af170432d53f06fa5ddcf2cf8aae56993f5cce785f44d1b2bc25d062551",
+      "bytes": 390028,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1052,
+      "duplicateRows": 3948,
+      "duplicateRatio": 0.79,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-27T22:12:00Z",
+      "lastTo": "2026-09-28T15:44:00Z",
+      "spanHours": 17.53,
+      "expectedBars": 1052,
+      "missingBars": 0,
+      "gapCount": 0,
+      "gaps": []
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\US-500_300s.csv",
+      "assetLabel": "US 500",
+      "size_s": 300,
+      "asset_id": 1470,
+      "catalog_name": "US 500",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 91
+      },
+      "catalog_match": "encontrado",
+      "sha256": "b263c1f104c1056d1c63e41b22f8cbc1d1255e120f3725491bbda5a57da341f0",
+      "bytes": 365963,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1010,
+      "duplicateRows": 3990,
+      "duplicateRatio": 0.798,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-23T00:20:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 135.42,
+      "expectedBars": 1625,
+      "missingBars": 615,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T21:00:00Z",
+          "before": "2026-09-23T22:00:00Z",
+          "missingBars": 12,
+          "seconds": 3600
+        },
+        {
+          "after": "2026-09-24T21:00:00Z",
+          "before": "2026-09-24T22:00:00Z",
+          "missingBars": 12,
+          "seconds": 3600
+        },
+        {
+          "after": "2026-09-25T20:45:00Z",
+          "before": "2026-09-27T22:00:00Z",
+          "missingBars": 591,
+          "seconds": 177300
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\US-500_60s.csv",
+      "assetLabel": "US 500",
+      "size_s": 60,
+      "asset_id": 1470,
+      "catalog_name": "US 500",
+      "catalog_products": [
+        "binary-options",
+        "blitz-options",
+        "turbo-options"
+      ],
+      "payout_by_product": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 91
+      },
+      "catalog_match": "encontrado",
+      "sha256": "62bf8b5a7c85ab71586708ac0e328c67901861d6d62470debd5850e4dc555b51",
+      "bytes": 365880,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1051,
+      "duplicateRows": 3949,
+      "duplicateRatio": 0.79,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-27T22:12:00Z",
+      "lastTo": "2026-09-28T15:43:00Z",
+      "spanHours": 17.52,
+      "expectedBars": 1051,
+      "missingBars": 0,
+      "gapCount": 0,
+      "gaps": []
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\UltraPro-Short-QQQ_300s.csv",
+      "assetLabel": "UltraPro Short QQQ",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "ae3ef6212f1834d4a3974cebc8a5b056467584b57e5bb7a6cbeb5b9e2f255a50",
+      "bytes": 348378,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1010,
+      "duplicateRows": 3990,
+      "duplicateRatio": 0.798,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 455.67,
+      "expectedBars": 5468,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\UltraPro-Short-QQQ_60s.csv",
+      "assetLabel": "UltraPro Short QQQ",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "8f3a982f964ae9a6123f538cb25bbd7f8fb243f19c72e8a48dad5369386efae6",
+      "bytes": 349235,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1052,
+      "duplicateRows": 3948,
+      "duplicateRatio": 0.79,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:41:00Z",
+      "lastTo": "2026-09-28T15:43:00Z",
+      "spanHours": 118.03,
+      "expectedBars": 7082,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\UltraShort-S-P-500_300s.csv",
+      "assetLabel": "UltraShort S P 500",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "ab5631e429abfa703894b47bf445e7072d7ca4a57d643e4696586c6862fcf7a3",
+      "bytes": 348629,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1010,
+      "duplicateRows": 3990,
+      "duplicateRatio": 0.798,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 10,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T15:45:00Z",
+      "spanHours": 455.67,
+      "expectedBars": 5468,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\UltraShort-S-P-500_60s.csv",
+      "assetLabel": "UltraShort S P 500",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "e779f11ed24b9cdff0db0c2cb54745c45cdc3cdcfeba424bbe6358b4543a18d4",
+      "bytes": 349292,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 5000,
+      "rowsUnique": 1052,
+      "duplicateRows": 3948,
+      "duplicateRatio": 0.79,
+      "nonMonotonicOrder": 4,
+      "conflictingDuplicates": 8,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:41:00Z",
+      "lastTo": "2026-09-28T15:43:00Z",
+      "spanHours": 118.03,
+      "expectedBars": 7082,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Utilities-SPDR_300s.csv",
+      "assetLabel": "Utilities SPDR",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "2daf7d357ee24bba71cf2f8ef1f92b8e966463d46c877f2bddbd1e1708434a6c",
+      "bytes": 418794,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 6000,
+      "rowsUnique": 1015,
+      "duplicateRows": 4985,
+      "duplicateRatio": 0.831,
+      "nonMonotonicOrder": 5,
+      "conflictingDuplicates": 14,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T16:10:00Z",
+      "spanHours": 456.08,
+      "expectedBars": 5473,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\Utilities-SPDR_60s.csv",
+      "assetLabel": "Utilities SPDR",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "a4aa84b877cb0983e6ec41d614c91f20cd2268822f296e1561aef31527a3879b",
+      "bytes": 419022,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 6000,
+      "rowsUnique": 1077,
+      "duplicateRows": 4923,
+      "duplicateRatio": 0.821,
+      "nonMonotonicOrder": 5,
+      "conflictingDuplicates": 13,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:41:00Z",
+      "lastTo": "2026-09-28T16:08:00Z",
+      "spanHours": 118.45,
+      "expectedBars": 7107,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\iShares-Russell-2000-ETF_300s.csv",
+      "assetLabel": "iShares Russell 2000 ETF",
+      "size_s": 300,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "804acb8afecf0620df303f07ce1541840d821e44b7c6074846464917c0c6f587",
+      "bytes": 433590,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 6000,
+      "rowsUnique": 1015,
+      "duplicateRows": 4985,
+      "duplicateRatio": 0.831,
+      "nonMonotonicOrder": 5,
+      "conflictingDuplicates": 15,
+      "resolutionSeconds": 300,
+      "firstFrom": "2026-09-09T16:05:00Z",
+      "lastTo": "2026-09-28T16:10:00Z",
+      "spanHours": 456.08,
+      "expectedBars": 5473,
+      "missingBars": 4458,
+      "gapCount": 13,
+      "gaps": [
+        {
+          "after": "2026-09-09T20:00:00Z",
+          "before": "2026-09-10T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-10T20:00:00Z",
+          "before": "2026-09-11T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-11T20:00:00Z",
+          "before": "2026-09-14T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-14T20:00:00Z",
+          "before": "2026-09-15T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-15T20:00:00Z",
+          "before": "2026-09-16T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-16T20:00:00Z",
+          "before": "2026-09-17T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-17T20:00:00Z",
+          "before": "2026-09-18T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-18T20:00:00Z",
+          "before": "2026-09-21T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        },
+        {
+          "after": "2026-09-21T20:00:00Z",
+          "before": "2026-09-22T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-22T20:00:00Z",
+          "before": "2026-09-23T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 210,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 786,
+          "seconds": 235800
+        }
+      ]
+    },
+    {
+      "server": "binary-options",
+      "product": "binary-options",
+      "file": "binary-options\\iShares-Russell-2000-ETF_60s.csv",
+      "assetLabel": "iShares Russell 2000 ETF",
+      "size_s": 60,
+      "asset_id": null,
+      "catalog_name": null,
+      "catalog_products": null,
+      "payout_by_product": null,
+      "catalog_match": "NAO_ENCONTRADO (instrumento não ofertado no momento da coleta do catálogo)",
+      "sha256": "6d0b9b38d89f899601626f3c76c3d01c37680365ace12444d16a8be1c157f324",
+      "bytes": 432856,
+      "header": "from,to,open,high,low,close",
+      "rowsRaw": 6000,
+      "rowsUnique": 1077,
+      "duplicateRows": 4923,
+      "duplicateRatio": 0.821,
+      "nonMonotonicOrder": 5,
+      "conflictingDuplicates": 15,
+      "resolutionSeconds": 60,
+      "firstFrom": "2026-09-23T17:41:00Z",
+      "lastTo": "2026-09-28T16:08:00Z",
+      "spanHours": 118.45,
+      "expectedBars": 7107,
+      "missingBars": 6030,
+      "gapCount": 3,
+      "gaps": [
+        {
+          "after": "2026-09-23T20:00:00Z",
+          "before": "2026-09-24T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-24T20:00:00Z",
+          "before": "2026-09-25T13:30:00Z",
+          "missingBars": 1050,
+          "seconds": 63000
+        },
+        {
+          "after": "2026-09-25T20:00:00Z",
+          "before": "2026-09-28T13:30:00Z",
+          "missingBars": 3930,
+          "seconds": 235800
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "diagnostic-results/iq_otc_collect.mjs",
+      "sha256": "c089abf8ee932d9528621fd9383979caf787172ee9e0927683f8c1427a974072",
+      "bytes": 7667
+    },
+    {
+      "path": "diagnostic-results/iq_otc_analyze.mts",
+      "sha256": "171ca6b8fd0db2b02df7d28c5ac16b44c63bf7d32225a9c50a6f86ff28958397",
+      "bytes": 7191
+    },
+    {
+      "path": "diagnostic-results/iq-real-analysis.json",
+      "sha256": "8777187f71caac70f4844ce3e6f85b93e2b89b31c79ca7fdd22056b59d4eab98",
+      "bytes": 77877
+    },
+    {
+      "path": "diagnostic-results/iq-otc-analysis.json",
+      "sha256": "6840601d16b7b7dc1f116e2bdde3811c53888f54eb1c372e39db042e96149cb3",
+      "bytes": 212239
+    },
+    {
+      "path": "diagnostic-results/walk_forward_real.mts",
+      "sha256": "95ae42577f7e721b5050cd887ed91ef92483871830a79733b48b26b213bb20c2",
+      "bytes": 13406
+    },
+    {
+      "path": "diagnostic-results/walk-forward-real-results.json",
+      "sha256": "9db9bbfc8b11688f108072f0e6735055b4771961cdeed805f8fa401c55b06894",
+      "bytes": 32709
+    },
+    {
+      "path": "diagnostic-results/data/iq-otc/MANIFEST-OTC.json",
+      "sha256": "23b17990a5a2c41e49e3a24228fa1a3573119798a7fc8283f6616287fc7f5329",
+      "bytes": 3294
+    },
+    {
+      "path": "diagnostic-results/data/MANIFEST.json",
+      "sha256": "03ce5927129cf8978c4a055431dbd780f2d9ff08452263bc0ad76d43354a7174",
+      "bytes": 8544
+    },
+    {
+      "path": "diagnostic-results/freeze_real_datasets.mjs",
+      "sha256": "a321842ed182d529a839963742fbd11d51a13e34c66a9f26a324c291b485c1c1",
+      "bytes": 11747
+    },
+    {
+      "path": "diagnostic-results/oos_validation.mts",
+      "sha256": "900274cabcebfb797db9c048fb3aac6b12b33c9434de4c792478a8afd87026b1",
+      "bytes": 39937
+    },
+    {
+      "path": "diagnostic-results/oos_report_md.mjs",
+      "sha256": "cc33baa38a2fd87a4f614e513cb538bcb059222f60a0d1225c79d22be09e860b",
+      "bytes": 17640
+    },
+    {
+      "path": "diagnostic-results/iq_mcp_scheduler.mjs",
+      "sha256": "b538edef78e63111b634ab33ab9b61b3910e7e4d2040bebe2e40e244703ab54e",
+      "bytes": 17136
+    },
+    {
+      "path": "diagnostic-results/iq_mcp_catalog.mjs",
+      "sha256": "6e1f1bbd81bd6316b0adf7256ddba58b88f973800ceba3c2677163ba79b63b78",
+      "bytes": 6630
+    },
+    {
+      "path": "diagnostic-results/iq_mcp_ratelimit_probe.mjs",
+      "sha256": "589f40d357f5553d482bd4c7b41de47e37b2ba09f331662d644790d726c95489",
+      "bytes": 930
+    },
+    {
+      "path": "forward-paper/iq-shadow/shadow_logger.mjs",
+      "sha256": "d79ab621c15138e849d92b5d7b74b057896d9e92c6304ba2db37ddb360f22832",
+      "bytes": 15042
+    },
+    {
+      "path": "forward-paper/iq-shadow/README.md",
+      "sha256": "067b7a227e6999cc4e976748a132c1d732e078edf2b8880224772f87734afa4f",
+      "bytes": 4270
+    },
+    {
+      "path": "forward-paper/iq-shadow/model-freeze.json",
+      "sha256": "b60253f592ebc58f525cfda59c6eb097395cfe0a0fb3cc944d8d6edd02df17aa",
+      "bytes": 4526
+    },
+    {
+      "path": "diagnostic-results/oos/oos-report.json",
+      "sha256": "27ea222ce5d5459aed8b816fcae0ada7a273e422437e9ad48c4ccfc87c3fe166",
+      "bytes": 27295
+    },
+    {
+      "path": "docs/analytics/validacao-oos-binarios-reais.md",
+      "sha256": "3f76166b7031e1e653168f633d170cdf2be933b1bc9c8c22c79d4c27900ccec4",
+      "bytes": 16526
+    }
+  ],
+  "drift_vs_previous": {
+    "comparedAgainst": "diagnostic-results\\data\\iq-real\\freeze-history\\FREEZE-MANIFEST-2026-09-29T11-59-13-059Z.json",
+    "changed": [],
+    "added": [],
+    "removed": [],
+    "clean": true
+  }
+}

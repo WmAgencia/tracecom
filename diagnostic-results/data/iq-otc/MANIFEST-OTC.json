@@ -1,0 +1,142 @@
+{
+  "collectedAtUtc": "2026-09-28T13:14:27.950Z",
+  "read_only": true,
+  "orders_placed": false,
+  "rate_limit": "global 60 req/min por token; respeita reset_at",
+  "servers": [
+    {
+      "server": "binary-options",
+      "mode": "?",
+      "tools": [
+        "get_candles",
+        "get_capabilities",
+        "get_limits",
+        "get_trade_history",
+        "list_assets",
+        "list_balances",
+        "list_positions",
+        "place_trade",
+        "rollover_position",
+        "sell_position"
+      ]
+    },
+    {
+      "server": "turbo-options",
+      "mode": "?",
+      "tools": [
+        "get_candles",
+        "get_capabilities",
+        "get_limits",
+        "get_trade_history",
+        "list_assets",
+        "list_balances",
+        "list_positions",
+        "place_trade",
+        "rollover_position",
+        "sell_position"
+      ]
+    },
+    {
+      "server": "blitz-options",
+      "mode": "?",
+      "tools": [
+        "get_candles",
+        "get_capabilities",
+        "get_limits",
+        "get_trade_history",
+        "list_assets",
+        "list_balances",
+        "list_positions",
+        "place_trade",
+        "rollover_position",
+        "sell_position"
+      ]
+    },
+    {
+      "server": "digital-options",
+      "mode": "?",
+      "tools": [
+        "get_candles",
+        "get_capabilities",
+        "get_instruments",
+        "get_limits",
+        "get_prices",
+        "get_trade_history",
+        "list_assets",
+        "list_balances",
+        "list_positions",
+        "place_trade",
+        "sell_position"
+      ]
+    },
+    {
+      "server": "marginal-forex",
+      "mode": "?",
+      "tools": [
+        "calculate_order_size",
+        "cancel_pending_order",
+        "change_position_stop_loss",
+        "change_position_take_profit",
+        "close_position",
+        "get_candles",
+        "get_capabilities",
+        "get_instruments",
+        "get_limits",
+        "get_orders",
+        "get_trade_history",
+        "list_assets",
+        "list_balances",
+        "list_positions",
+        "place_limit_order",
+        "place_market_order",
+        "place_stop_order"
+      ]
+    },
+    {
+      "server": "marginal-crypto",
+      "mode": "read-write",
+      "tools": [
+        "calculate_order_size",
+        "cancel_pending_order",
+        "change_position_stop_loss",
+        "change_position_take_profit",
+        "close_position",
+        "get_candles",
+        "get_capabilities",
+        "get_instruments",
+        "get_limits",
+        "get_orders",
+        "get_trade_history",
+        "list_assets",
+        "list_balances",
+        "list_positions",
+        "place_limit_order",
+        "place_market_order",
+        "place_stop_order"
+      ]
+    },
+    {
+      "server": "marginal-cfd",
+      "mode": "read-write",
+      "tools": [
+        "calculate_order_size",
+        "cancel_pending_order",
+        "change_position_stop_loss",
+        "change_position_take_profit",
+        "close_position",
+        "get_candles",
+        "get_capabilities",
+        "get_instruments",
+        "get_limits",
+        "get_orders",
+        "get_trade_history",
+        "list_assets",
+        "list_balances",
+        "list_positions",
+        "place_limit_order",
+        "place_market_order",
+        "place_stop_order"
+      ]
+    }
+  ]
+}

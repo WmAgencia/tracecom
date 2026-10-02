@@ -1,0 +1,247 @@
+[
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:46:40.134Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:46:40.136Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:46:40.141Z"
+  },
+  {
+    "active": "front.Magnificent7-op",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:46:40.320Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:46:40.322Z"
+  },
+  {
+    "active": "front.USNDAQ100:N",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:46:41.124Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "PUT",
+    "timestamp": "2026-09-29T20:47:40.276Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:47:40.289Z"
+  },
+  {
+    "active": "front.XAU/XAG",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:48:40.085Z"
+  },
+  {
+    "active": "front.Magnificent7-op",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 186,
+    "timestamp": "2026-09-29T20:49:39.097Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:49:39.108Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 184,
+    "timestamp": "2026-09-29T20:49:39.135Z"
+  },
+  {
+    "active": "front.XAU/XAG",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 185,
+    "timestamp": "2026-09-29T20:49:39.146Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "timestamp": "2026-09-29T20:49:39.148Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:49:39.181Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "timestamp": "2026-09-29T20:49:39.201Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:49:39.231Z"
+  },
+  {
+    "active": "front.USNDAQ100:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:49:39.295Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:49:40.060Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:49:40.060Z"
+  },
+  {
+    "active": "front.XAGUSD-op",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:49:40.064Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:49:40.073Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "timestamp": "2026-09-29T20:49:40.092Z"
+  },
+  {
+    "active": "front.Magnificent7-op",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:49:40.105Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "PUT",
+    "timestamp": "2026-09-29T20:50:41.087Z"
+  },
+  {
+    "active": "front.UKOUSD-op",
+    "direction": "PUT",
+    "timestamp": "2026-09-29T20:51:06.102Z"
+  },
+  {
+    "active": "front.USNDAQ100:N",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:51:40.074Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:51:40.085Z"
+  },
+  {
+    "active": "front.XAU/XAG",
+    "direction": "CALL",
+    "timestamp": "2026-09-29T20:52:40.072Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "PUT",
+    "timestamp": "2026-09-29T20:52:43.021Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:54:39.163Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:54:39.226Z"
+  },
+  {
+    "active": "front.XAU/XAG",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:54:39.259Z"
+  },
+  {
+    "active": "front.USNDAQ100:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "timestamp": "2026-09-29T20:54:39.266Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:54:39.281Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:54:39.311Z"
+  },
+  {
+    "active": "front.XAGUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:54:39.331Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:54:39.356Z"
+  },
+  {
+    "active": "front.UKOUSD-op",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "timestamp": "2026-09-29T20:54:39.370Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 186,
+    "timestamp": "2026-09-29T20:54:39.409Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 187,
+    "timestamp": "2026-09-29T20:54:39.506Z"
+  }
+]

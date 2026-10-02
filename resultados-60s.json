@@ -1,0 +1,893 @@
+[
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 184,
+    "rsi": 82.75510204082521,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:22:39.392Z"
+  },
+  {
+    "active": "front.XAGUSD-op",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 67.4502712477371,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:22:39.395Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 90,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:22:39.396Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 48.74371859295873,
+    "confidence": 0.8,
+    "timestamp": "2026-09-29T20:22:39.397Z"
+  },
+  {
+    "active": "front.XAU/XAG",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 83.49900596423606,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:22:39.398Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 187,
+    "rsi": 21.999999999999773,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:22:39.401Z"
+  },
+  {
+    "active": "front.USNDAQ100:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 88.04664723032596,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:22:39.703Z"
+  },
+  {
+    "active": "front.USNDAQ100:N",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 187,
+    "rsi": 58.77358490566433,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:23:39.252Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 85.31073446326812,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:23:39.253Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 98.15950920244184,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:23:39.254Z"
+  },
+  {
+    "active": "front.XAU/XAG",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 54.59459459457799,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:23:39.374Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 63.48547717842357,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:23:39.418Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 30.327868852457513,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:23:39.565Z"
+  },
+  {
+    "active": "front.XAGUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 67.74716369529729,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:23:39.572Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 59.76095617529361,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:24:39.483Z"
+  },
+  {
+    "active": "front.XAGUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 63.69565217391221,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:24:39.485Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 35.94470046082954,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:24:39.486Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 54.37262357414367,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:24:39.486Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 69.41272430669471,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:24:39.498Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 70.58823529411765,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:24:39.499Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 49.83202687570641,
+    "confidence": 1.05,
+    "timestamp": "2026-09-29T20:25:39.147Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 57.225433526013376,
+    "confidence": 0.8,
+    "timestamp": "2026-09-29T20:25:39.151Z"
+  },
+  {
+    "active": "front.XAGUSD-op",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 45.972644376901165,
+    "confidence": 1.2,
+    "timestamp": "2026-09-29T20:25:39.155Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 50.48076923076702,
+    "confidence": 1.05,
+    "timestamp": "2026-09-29T20:25:39.295Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 186,
+    "rsi": 52.38095238095237,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:25:39.296Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 77.71859742568564,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:25:39.296Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 185,
+    "rsi": 54.618473895581644,
+    "confidence": 0.8,
+    "timestamp": "2026-09-29T20:25:39.297Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 185,
+    "rsi": 98.46153846153953,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:25:39.542Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 58.704453441291584,
+    "confidence": 0.8,
+    "timestamp": "2026-09-29T20:26:39.172Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 186,
+    "rsi": 66.66666666666666,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:26:39.173Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 60.63348416290151,
+    "confidence": 0.6,
+    "timestamp": "2026-09-29T20:26:39.240Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 81.77196804650202,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:26:39.254Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 42.07650273223705,
+    "confidence": 0.7,
+    "timestamp": "2026-09-29T20:26:39.255Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 62.50000000000001,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:26:39.312Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 185,
+    "rsi": 95.77464788729598,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:26:39.575Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 45.161290322585266,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:27:39.172Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 95.52238805967211,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:27:39.264Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 64.35406698563963,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:27:39.273Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 100,
+    "rsi": 78.125,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:27:39.313Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 75.3333333333406,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:27:39.406Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 38.79310344827744,
+    "confidence": 1.2,
+    "timestamp": "2026-09-29T20:27:39.466Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 85.66942620613253,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:27:39.591Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 77.57009345794489,
+    "confidence": 0.9,
+    "timestamp": "2026-09-29T20:28:39.073Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 66.88963210702829,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:28:39.168Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 31.80778032037537,
+    "confidence": 0.85,
+    "timestamp": "2026-09-29T20:28:39.205Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 56.60377358491072,
+    "confidence": 0.55,
+    "timestamp": "2026-09-29T20:28:39.249Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 186,
+    "rsi": 67.85714285714286,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:28:39.250Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 185,
+    "rsi": 66.19718309858163,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:28:39.310Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 72.49999999999005,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:29:39.088Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 20.253164556961465,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:29:39.206Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 100,
+    "rsi": 79.89276139409952,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:29:39.551Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 184,
+    "rsi": 45.11970534071407,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:29:39.570Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 186,
+    "rsi": 83.33333333333333,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:29:39.692Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 68.03278688524247,
+    "confidence": 0.85,
+    "timestamp": "2026-09-29T20:29:40.251Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 47.058823529414326,
+    "confidence": 1.2,
+    "timestamp": "2026-09-29T20:30:39.102Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 83.26530612242898,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:30:39.281Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 185,
+    "rsi": 66.66666666664923,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:30:39.365Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 100,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:30:39.393Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 92.3076923076923,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:30:39.394Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 185,
+    "rsi": 36.72839506172461,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:30:39.407Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 51.96078431372699,
+    "confidence": 0.8,
+    "timestamp": "2026-09-29T20:31:39.543Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 100,
+    "rsi": 18.684210526310792,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:31:39.618Z"
+  },
+  {
+    "active": "front.US2000:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 69.23076923077308,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:31:39.621Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 63.97058823530149,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:32:39.094Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 49.980007996797205,
+    "confidence": 1.2,
+    "timestamp": "2026-09-29T20:32:39.096Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 184,
+    "rsi": 69.19504643961689,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:32:39.416Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 187,
+    "rsi": 38.36477987421427,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:32:39.418Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 57.142857142857146,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:32:39.700Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 185,
+    "rsi": 12.05073995771454,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:33:39.294Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 44.43704197200817,
+    "confidence": 1.05,
+    "timestamp": "2026-09-29T20:33:39.295Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 187,
+    "rsi": 21.088435374150677,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:33:39.296Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 186,
+    "rsi": 62.85714285714286,
+    "confidence": 0.6,
+    "timestamp": "2026-09-29T20:33:39.417Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 63.703703703705195,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:33:39.427Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 184,
+    "rsi": 81.2332439678311,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:33:39.745Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 186,
+    "rsi": 69.76744186046511,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:34:39.192Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 184,
+    "rsi": 69.28147659854719,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:34:39.648Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 54.54380225372679,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:34:39.649Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 187,
+    "rsi": 32.575757575758274,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:34:39.651Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 32.312925170066265,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:34:39.678Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 81.47208121827903,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:34:39.723Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 184,
+    "rsi": 69.96996996996931,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:35:39.640Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 68.93939393939812,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:35:39.641Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 187,
+    "rsi": 32.0312500000002,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:35:39.730Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 49.97999999999592,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:35:39.732Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 68.29268292682927,
+    "confidence": 0.8,
+    "timestamp": "2026-09-29T20:35:39.733Z"
+  },
+  {
+    "active": "front.XAUUSD-op",
+    "direction": "CALL",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 73.2198142414892,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:36:39.242Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 30.036630036632715,
+    "confidence": 0.8,
+    "timestamp": "2026-09-29T20:36:39.292Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 40.54054054054053,
+    "confidence": 1.2,
+    "timestamp": "2026-09-29T20:36:39.293Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 187,
+    "rsi": 52.95502707793214,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:36:39.294Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 187,
+    "rsi": 53.08056872038221,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:36:39.374Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 50.22421524664171,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:37:39.298Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 10.817307692305505,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:37:39.300Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "win",
+    "profit": 187,
+    "rsi": 20.73170731707438,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:37:39.300Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 42.857142857142854,
+    "confidence": 1.2,
+    "timestamp": "2026-09-29T20:37:39.301Z"
+  },
+  {
+    "active": "front.US30:N",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 45.945945945945944,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:37:39.434Z"
+  },
+  {
+    "active": "front.USSPX500:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 68.49894291754927,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:38:39.171Z"
+  },
+  {
+    "active": "front.JAPAN225:N",
+    "direction": "CALL",
+    "result": "win",
+    "profit": 187,
+    "rsi": 75,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:38:39.280Z"
+  },
+  {
+    "active": "front.SPX/Gold",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 32.65306122449145,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:38:39.526Z"
+  },
+  {
+    "active": "front.USOUSD-op",
+    "direction": "PUT",
+    "result": "loss",
+    "profit": 0,
+    "rsi": 22.751322751323556,
+    "confidence": 0.65,
+    "timestamp": "2026-09-29T20:38:39.556Z"
+  }
+]

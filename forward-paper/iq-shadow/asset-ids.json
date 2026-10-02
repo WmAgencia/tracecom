@@ -1,0 +1,23 @@
+{
+  "resolvedAtUtc": "2026-09-29T11:37:46.967Z",
+  "byName": {
+    "H1-UK100-1m-rsi14-h5": {
+      "asset_id": 1475,
+      "name": "UK 100",
+      "product": "binary-options",
+      "payout": 90
+    },
+    "H2-US2000-1m-rsi14-h5": {
+      "asset_id": 1473,
+      "name": "US 2000",
+      "product": "binary-options",
+      "payout": 89
+    },
+    "H3b-US500-1m-fade3-h5": {
+      "asset_id": 1470,
+      "name": "US 500",
+      "product": "binary-options",
+      "payout": 91
+    }
+  }
+}

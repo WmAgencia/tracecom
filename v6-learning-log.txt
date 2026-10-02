@@ -1,0 +1,11 @@
+file:///D:/Tracecom%20project/ws-otc-v6-learning.mjs:62
+      historicalWR: wr,
+                    ^
+
+ReferenceError: wr is not defined
+    at file:///D:/Tracecom%20project/ws-otc-v6-learning.mjs:62:21
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.19.0

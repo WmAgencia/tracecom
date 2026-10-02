@@ -1,0 +1,74 @@
+{
+  "_version": "14",
+  "_desc": "Bot v14 - top 10 ativos por WR | fade4 + regime (10 candles iguais bloqueia) + RSI CALL<=35/PUT>=65 | auto-flip apos 2 losses | early sell por reversao | stake base 2 + martingale (base + 2 = 3 entradas)",
+  "login": {
+    "email": "Anaalaura2008@gmail.com",
+    "password": "Eqvpanp.32"
+  },
+  "accounts": {
+    "_nota": "contas identificadas em 2026-10-01 via get-balances (somente leitura). O bot escolhe pelo type: 4 = DEMO (PRACTICE), 1 = REAL. Em 2026-10-01 a REAL estava sem saldo disponivel (o valor de 1,31 e bonus).",
+    "demo": { "type": 4, "balanceName": "PRACTICE", "id": 1250741747, "currency": "USD", "amount": 60 },
+    "real": { "type": 1, "balanceName": "REAL", "id": 1250741746, "currency": "BRL", "amount": 0, "bonusAmount": 1.31 }
+  },
+  "trading": {
+    "baseStake": 2,
+    "expirationMinutes": 2,
+    "maxConcurrentOps": 10
+  },
+  "martingale": {
+    "_nota": "stake(n) = (perdido ate agora + lucro da base) / payoutRate: recupera o prejuizo e ainda fecha o lucro da base. levels = 2 => 3 entradas por sequencia (base + 2 martingales).",
+    "levels": 2,
+    "payoutRate": 0.86,
+    "pauseAfterLadderMs": 600000
+  },
+  "risk": {
+    "maxStake": 20
+  },
+  "cooldown": {
+    "afterWinMs": 15000,
+    "afterLossMs": 5000
+  },
+  "autoFlip": {
+    "_nota": "inverte a direcao do ativo depois de N losses seguidos; ao acertar, volta para a direcao da whitelist",
+    "enabled": true,
+    "afterLosses": 2,
+    "revertOnWin": true
+  },
+  "earlySell": {
+    "_nota": "vende a posicao antes do vencimento SOMENTE quando o preco esta revertendo contra ela (candles seguidos contra + movimento contra >= adverseMoves x o movimento medio recente). Se a trajetoria continua a favor, NAO vende: deixa dar o win. O valor devolvido e definido pela IQ; o P/L real sai do evento de venda.",
+    "enabled": true,
+    "minRemainingMs": 20000,
+    "maxRemainingMs": 100000,
+    "reversalCandles": 3,
+    "adverseMoves": 1.5,
+    "retryAfterMs": 15000,
+    "maxAttempts": 3
+  },
+  "strategy": {
+    "candleSizeSeconds": 5,
+    "lookbackRegime": 20,
+    "regimeStreakThreshold": 10,
+    "rsiPeriod": 14,
+    "rsiCallMax": 35,
+    "rsiPutMin": 65,
+    "warmupMs": 30000,
+    "min1mCandles": 1,
+    "staleCandleMs": 30000
+  },
+  "whitelist": {
+    "RENDERUSD": { "name": "front.RENDERUSD-OTC", "direction": "CALL", "wr": 100.0 },
+    "WIFUSD":   { "name": "front.WIFUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "DOTUSD":   { "name": "front.DOTUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "SUIUSD":   { "name": "front.SUIUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "XPTUSD":   { "name": "front.XPTUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "ORDIUSD":  { "name": "front.ORDIUSD-OTC",  "direction": "CALL", "wr": 75.0 },
+    "HYPE":     { "name": "front.HYPE-OTC",      "direction": "CALL", "wr": 75.0 },
+    "TRON":     { "name": "front.TRON-OTC",      "direction": "CALL", "wr": 66.7 },
+    "SHIBUSD":  { "name": "front.SHIBUSD-OTC",  "direction": "PUT",  "wr": 66.7 },
+    "RAYDIUMUSD": { "name": "front.RAYDIUMUSD-OTC", "direction": "CALL", "wr": 66.7 }
+  },
+  "paths": {
+    "state": "D:/Tracecom project/bot-state-v14.json",
+    "results": "D:/Tracecom project/resultados-v14.json"
+  }
+}

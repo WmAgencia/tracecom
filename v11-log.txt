@@ -1,0 +1,1496 @@
+[LOGIN] OK!
+[WS] Ready!
+[💼 CONTA] DEMO | Saldo: R$60.00
+
+[📋] 181 ativos OTC encontrados
+────────────────────────────────────────────────────────────
+   EURUSD
+   EURGBP
+   USDCHF
+   EURJPY
+   NZDUSD
+   GBPUSD
+   GBPJPY
+   AUDCAD
+   USDZAR
+   USDSGD
+   USDHKD
+   USDINR
+   XAUUSD
+   XAGUSD
+   USOUSD
+   XNGUSD
+   UKOUSD
+   GOOGLE
+   AMAZON
+   TESLA
+   FB
+   APPLE
+   ETHUSD
+   SP500
+   USNDAQ100
+   US30
+   CARDANO
+   SHIBUSD
+   TRON
+   SOLUSD
+   SP35
+   FR40
+   GER30
+   UK100
+   AUS200
+   HK33
+   EU50
+   JP225
+   US30/JP225
+   US100/JP225
+   US500/JP225
+   AMZN/ALIBABA
+   AMZN/EBAY
+   NVDA/AMD
+   GOOGLE/MSFT
+   XAU/XAG
+   TESLA/FORD
+   MSFT/AAPL
+   INTEL/IBM
+   NFLX/AMZN
+   GER30/UK100
+   META/GOOGLE
+   BIDU
+   INTEL
+   MSFT
+   CITI
+   COKE
+   JPM
+   MCDON
+   MORSTAN
+   NIKE
+   ALIBABA
+   XRPUSD
+   US2000
+   AIG
+   GS
+   AUDUSD
+   USDCAD
+   AUDJPY
+   GBPCAD
+   GBPCHF
+   GBPAUD
+   EURCAD
+   CHFJPY
+   CADCHF
+   EURAUD
+   USDNOK
+   EURNZD
+   USDSEK
+   USDTRY
+   SNAP
+   LTCUSD
+   EOSUSD
+   USDPLN
+   AUDCHF
+   AUDNZD
+   EURCHF
+   GBPNZD
+   CADJPY
+   NZDCAD
+   NZDJPY
+   ICPUSD
+   IMXUSD
+   JUPUSD
+   BONKUSD
+   LINKUSD
+   WIFUSD
+   PEPEUSD
+   FLOKIUSD
+   BCHUSD
+   DOTUSD
+   ATOMUSD
+   INJUSD
+   SEIUSD
+   IOTAUSD
+   DASHUSD
+   ARBUSD
+   WLDUSD
+   ORDIUSD
+   SATSUSD
+   PYTHUSD
+   RONINUSD
+   TIAUSD
+   MANAUSD
+   SANDUSD
+   GRTUSD
+   STXUSD
+   MATICUSD
+   NEARUSD
+   EURTHB
+   USDTHB
+   JPYTHB
+   USDARS
+   USDDOP
+   CHFNOK
+   NOKJPY
+   NZDCHF
+   TRUMPUSD
+   MELANIAUSD
+   BTCUSD-op
+   ONDOUSD
+   DYDXUSD
+   ONYXCOINUSD
+   FARTCOINUSD
+   PENGUUSD
+   RAYDIUMUSD
+   SUIUSD
+   HBARUSD
+   FETUSD
+   RENDERUSD
+   TAOUSD
+   USDBRL
+   USDCOP
+   USDMXN
+   PENUSD
+   LABUBUUSD
+   KLARNA
+   FWONA
+   PLTR
+   MAGNIFICENT7
+   AIRLINES
+   CASINOS
+   CANNABIS
+   URANIUM
+   XPTUSD
+   XPDUSD
+   MU
+   NVDA
+   GEV
+   SNDK
+   WDC
+   USDIDR
+   COCOA
+   COFFEE
+   COTTON
+   SUGAR
+   ETHBTC
+   LUNA
+   USDSAR
+   USDMYR
+   USDAED
+   USDVND
+   USDNGN
+   USDPHP
+   USDBOB
+   USDCLP
+   USDBDT
+   SpaceX
+   HYPE
+   Anthropic
+   OpenAI
+────────────────────────────────────────────────────────────
+
+======================================================================
+🧠 BOT v11 - TODOS OTCs + EARLY SELL + 2MIN + LEARNING
+======================================================================
+
+[⏳] Warmup 120s...
+[✅] INICIADO! Exp:2min | Stake:R$2 | EarlySell:ON
+
+[📊 XNGUSD] PUT RSI:23 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:23 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:62 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:23 IC:0.0%-100.0%
+[📊 RONINUSD] PUT RSI:64 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:65 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:65 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:65 IC:0.0%-100.0%
+[📊 NEARUSD] PUT RSI:36 IC:0.0%-100.0%
+[📊 AMZN/ALIBABA] CALL RSI:63 IC:0.0%-100.0%
+[📊 NEARUSD] PUT RSI:36 IC:0.0%-100.0%
+[📊 DYDXUSD] PUT RSI:42 IC:0.0%-100.0%
+[📊 DYDXUSD] PUT RSI:42 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:34 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:34 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:45 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:45 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:45 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:43 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:43 IC:0.0%-100.0%
+[📊 FETUSD] PUT RSI:35 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:43 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:46 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:43 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:57 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:57 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:43 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:77 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:43 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:77 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:34 IC:0.0%-100.0%
+[📊 JUPUSD] PUT RSI:38 IC:0.0%-100.0%
+[📊 GRTUSD] PUT RSI:53 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:34 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:34 IC:0.0%-100.0%
+[📊 META/GOOGLE] CALL RSI:30 IC:0.0%-100.0%
+[📊 META/GOOGLE] CALL RSI:30 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:37 IC:0.0%-100.0%
+[📊 PENGUUSD] PUT RSI:64 IC:0.0%-100.0%
+[📊 JUPUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:41 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:41 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:51 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:51 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:55 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:55 IC:0.0%-100.0%
+[📊 AMZN/EBAY] CALL RSI:49 IC:0.0%-100.0%
+[📊 AMZN/EBAY] CALL RSI:49 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:65 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:65 IC:0.0%-100.0%
+[📊 FARTCOINUSD] PUT RSI:64 IC:0.0%-100.0%
+[📊 FARTCOINUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 FARTCOINUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 WIFUSD] PUT RSI:36 IC:0.0%-100.0%
+[📊 WIFUSD] PUT RSI:36 IC:0.0%-100.0%
+[📊 MATICUSD] PUT RSI:55 IC:0.0%-100.0%
+[📊 MATICUSD] PUT RSI:55 IC:0.0%-100.0%
+[📊 SUGAR] CALL RSI:34 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:61 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:50 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:61 IC:0.0%-100.0%
+[📊 AUDNZD] CALL RSI:55 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 KLARNA] CALL RSI:41 IC:0.0%-100.0%
+[📊 TRUMPUSD] PUT RSI:33 IC:0.0%-100.0%
+[📊 TRUMPUSD] PUT RSI:33 IC:0.0%-100.0%
+[📊 ICPUSD] PUT RSI:42 IC:0.0%-100.0%
+[📊 SEIUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 HYPE] CALL RSI:30 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:33 IC:0.0%-100.0%
+[📊 BIDU] CALL RSI:51 IC:0.0%-100.0%
+[📊 BIDU] CALL RSI:51 IC:0.0%-100.0%
+[📊 BIDU] CALL RSI:51 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:54 IC:0.0%-100.0%
+[📊 SEIUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:54 IC:0.0%-100.0%
+[📊 SEIUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:47 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:47 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:47 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:47 IC:0.0%-100.0%
+[📊 PENGUUSD] PUT RSI:40 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:58 IC:0.0%-100.0%
+[📊 DYDXUSD] PUT RSI:26 IC:0.0%-100.0%
+[📊 DYDXUSD] PUT RSI:26 IC:0.0%-100.0%
+[📊 SUGAR] CALL RSI:39 IC:0.0%-100.0%
+[📊 AMZN/EBAY] CALL RSI:59 IC:0.0%-100.0%
+[📊 AMZN/EBAY] CALL RSI:59 IC:0.0%-100.0%
+[📊 SNDK] CALL RSI:27 IC:0.0%-100.0%
+[📊 CITI] CALL RSI:56 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:60 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:60 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:60 IC:0.0%-100.0%
+[📊 JUPUSD] PUT RSI:66 IC:0.0%-100.0%
+[📊 NIKE] CALL RSI:41 IC:0.0%-100.0%
+[📊 SHIBUSD] PUT RSI:53 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:26 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:47 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:68 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:68 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:68 IC:0.0%-100.0%
+[📊 DYDXUSD] PUT RSI:38 IC:0.0%-100.0%
+[📊 DYDXUSD] PUT RSI:38 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:49 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:40 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:49 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:40 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:49 IC:0.0%-100.0%
+[📊 CITI] CALL RSI:44 IC:0.0%-100.0%
+[📊 TRUMPUSD] PUT RSI:43 IC:0.0%-100.0%
+[📊 TRUMPUSD] PUT RSI:43 IC:0.0%-100.0%
+[📊 TRUMPUSD] PUT RSI:43 IC:0.0%-100.0%
+[📊 TIAUSD] PUT RSI:31 IC:0.0%-100.0%
+[📊 TIAUSD] PUT RSI:31 IC:0.0%-100.0%
+[📊 TIAUSD] PUT RSI:31 IC:0.0%-100.0%
+[📊 FARTCOINUSD] PUT RSI:54 IC:0.0%-100.0%
+[📊 FARTCOINUSD] PUT RSI:54 IC:0.0%-100.0%
+[📊 FARTCOINUSD] PUT RSI:54 IC:0.0%-100.0%
+[📊 FARTCOINUSD] PUT RSI:54 IC:0.0%-100.0%
+[📊 BIDU] CALL RSI:45 IC:0.0%-100.0%
+[📊 BIDU] CALL RSI:45 IC:0.0%-100.0%
+[📊 BIDU] CALL RSI:45 IC:0.0%-100.0%
+[📊 TIAUSD] PUT RSI:34 IC:0.0%-100.0%
+[📊 TIAUSD] PUT RSI:34 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:43 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:43 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:60 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:43 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:60 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:38 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:38 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:38 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:68 IC:0.0%-100.0%
+[📊 JUPUSD] PUT RSI:34 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:68 IC:0.0%-100.0%
+[📊 LTCUSD] PUT RSI:33 IC:0.0%-100.0%
+[✅] PEPEUSD | PUT | R$2 | RSI:47 | +R$1.64
+[📈] Total: 1 | WR: 100.0% | Lucro: R$1.64 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 100.0%WR(1) | 1min: 0.0%WR(1) | 2min: ?%WR(0) | 3min: ?%WR(0) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[❌] WLDUSD | PUT | R$2 | RSI:59 | R$-2.00
+[📈] Total: 2 | WR: 50.0% | Lucro: R$-0.36 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 50.0%WR(2) | 1min: 0.0%WR(2) | 2min: 0.0%WR(1) | 3min: ?%WR(0) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.WLDUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+
+[❌] SEIUSD | PUT | R$2 | RSI:69 | R$-2.00
+[📈] Total: 3 | WR: 33.3% | Lucro: R$-2.36 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 66.7%WR(3) | 1min: 0.0%WR(3) | 2min: 50.0%WR(2) | 3min: ?%WR(0) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.WLDUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.SEIUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+
+[MISSED CLOSE] aid= 2145
+[📊 STXUSD] PUT RSI:64 IC:0.0%-100.0%
+[✅] TRUMPUSD | PUT | R$2 | RSI:43 | +R$1.64
+[📈] Total: 4 | WR: 50.0% | Lucro: R$-0.72 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 50.0%WR(4) | 1min: 0.0%WR(4) | 2min: 50.0%WR(2) | 3min: ?%WR(0) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.WLDUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.SEIUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.TRUMPUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[✅] FARTCOINUSD | PUT | R$2 | RSI:54 | +R$1.64
+[📈] Total: 5 | WR: 60.0% | Lucro: R$0.92 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 60.0%WR(5) | 1min: 20.0%WR(5) | 2min: 50.0%WR(2) | 3min: ?%WR(0) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.WLDUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.SEIUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.TRUMPUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FARTCOINUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[MISSED CLOSE] aid= 2265
+[❌] EOSUSD | PUT | R$2 | RSI:38 | R$-2.00
+[📈] Total: 6 | WR: 50.0% | Lucro: R$-1.08 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 50.0%WR(6) | 1min: 33.3%WR(6) | 2min: 50.0%WR(2) | 3min: ?%WR(0) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.WLDUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.SEIUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.TRUMPUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FARTCOINUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.EOSUSD-OTC PUT ❌ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[MISSED CLOSE] aid= 2157
+[✅] DYDXUSD | PUT | R$2 | RSI:38 | +R$1.64
+[📈] Total: 7 | WR: 57.1% | Lucro: R$0.56 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 42.9%WR(7) | 1min: 28.6%WR(7) | 2min: 50.0%WR(2) | 3min: ?%WR(0) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.SEIUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.TRUMPUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FARTCOINUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.EOSUSD-OTC PUT ❌ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.DYDXUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[MISSED CLOSE] aid= 2277
+[MISSED CLOSE] aid= 2127
+[❌] FETUSD | PUT | R$2 | RSI:35 | R$-2.00
+[📈] Total: 8 | WR: 50.0% | Lucro: R$-1.44 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 37.5%WR(8) | 1min: 25.0%WR(8) | 2min: 33.3%WR(3) | 3min: 0.0%WR(1) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.TRUMPUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FARTCOINUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.EOSUSD-OTC PUT ❌ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.DYDXUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FETUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+
+[MISSED CLOSE] aid= 2145
+[MISSED CLOSE] aid= 2145
+[✅] PENGUUSD | PUT | R$2 | RSI:40 | +R$1.64
+[📈] Total: 9 | WR: 55.6% | Lucro: R$0.20 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 33.3%WR(9) | 1min: 33.3%WR(9) | 2min: 50.0%WR(4) | 3min: 0.0%WR(1) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.FARTCOINUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.EOSUSD-OTC PUT ❌ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.DYDXUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FETUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.PENGUUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+
+[MISSED CLOSE] aid= 2157
+[MISSED CLOSE] aid= 2157
+[✅] JUPUSD | PUT | R$2 | RSI:34 | +R$1.64
+[📈] Total: 10 | WR: 60.0% | Lucro: R$1.84 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 40.0%WR(10) | 1min: 40.0%WR(10) | 2min: 50.0%WR(4) | 3min: 0.0%WR(1) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.EOSUSD-OTC PUT ❌ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.DYDXUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FETUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.PENGUUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.JUPUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[MISSED CLOSE] aid= 2141
+[MISSED CLOSE] aid= 2157
+[MISSED CLOSE] aid= 2157
+[MISSED CLOSE] aid= 2157
+[✅] FWONA | CALL | R$2 | RSI:68 | +R$1.64
+[📈] Total: 11 | WR: 63.6% | Lucro: R$3.48 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 45.5%WR(11) | 1min: 45.5%WR(11) | 2min: 50.0%WR(4) | 3min: 0.0%WR(1) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FETUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.PENGUUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.JUPUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[MISSED CLOSE] aid= 2312
+[❌] SUGAR | CALL | R$2 | RSI:39 | R$-2.00
+[📈] Total: 12 | WR: 58.3% | Lucro: R$1.48 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 50.0%WR(12) | 1min: 41.7%WR(12) | 2min: 40.0%WR(5) | 3min: 0.0%WR(1) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.FETUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.PENGUUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.JUPUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+
+[✅] WIFUSD | PUT | R$2 | RSI:36 | +R$1.64
+[📈] Total: 13 | WR: 61.5% | Lucro: R$3.12 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 53.8%WR(13) | 1min: 46.2%WR(13) | 2min: 50.0%WR(6) | 3min: 0.0%WR(1) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.PENGUUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.JUPUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.WIFUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+
+[MISSED CLOSE] aid= 2144
+[MISSED CLOSE] aid= 2279
+[MISSED CLOSE] aid= 2279
+[⏱ 11:19:29] Ops:13 WR:62% Lucro:R$3.12 EarlySell:0   [📊 HBARUSD] PUT RSI:52 IC:0.0%-100.0%
+[📊 FR40] CALL RSI:32 IC:0.0%-100.0%
+[📊 FB] CALL RSI:38 IC:0.0%-100.0%
+[📊 FR40] CALL RSI:32 IC:0.0%-100.0%
+[📊 FB] CALL RSI:38 IC:0.0%-100.0%
+[📊 FR40] CALL RSI:32 IC:0.0%-100.0%
+[📊 FB] CALL RSI:38 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 RAYDIUMUSD] PUT RSI:74 IC:0.0%-100.0%
+[📊 URANIUM] CALL RSI:32 IC:0.0%-100.0%
+[📊 URANIUM] CALL RSI:32 IC:0.0%-100.0%
+[📊 FB] CALL RSI:42 IC:0.0%-100.0%
+[📊 FB] CALL RSI:42 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:53 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:53 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:52 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:58 IC:0.0%-100.0%
+[📊 FB] CALL RSI:55 IC:0.0%-100.0%
+[📊 FB] CALL RSI:55 IC:0.0%-100.0%
+[📊 FB] CALL RSI:55 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:49 IC:0.0%-100.0%
+[📊 URANIUM] CALL RSI:28 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:42 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:42 IC:0.0%-100.0%
+[📊 URANIUM] CALL RSI:28 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:60 IC:20.7%-100.0%
+[📊 PEPEUSD] PUT RSI:60 IC:20.7%-100.0%
+[⏱ 11:19:59] Ops:13 WR:62% Lucro:R$3.12 EarlySell:0   [📊 SEIUSD] PUT RSI:54 IC:0.0%-79.3%
+[📊 PENGUUSD] PUT RSI:41 IC:20.7%-100.0%
+[📊 FWONA] CALL RSI:52 IC:20.7%-100.0%
+[📊 JUPUSD] PUT RSI:48 IC:20.7%-100.0%
+[📊 JUPUSD] PUT RSI:48 IC:20.7%-100.0%
+[📊 IOTAUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:51 IC:20.7%-100.0%
+[📊 XNGUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 DOTUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 SEIUSD] PUT RSI:43 IC:0.0%-79.3%
+[📊 FETUSD] PUT RSI:50 IC:0.0%-79.3%
+[📊 FETUSD] PUT RSI:50 IC:0.0%-79.3%
+[📊 FETUSD] PUT RSI:50 IC:0.0%-79.3%
+[📊 XPTUSD] PUT RSI:19 IC:0.0%-100.0%
+[📊 XPTUSD] PUT RSI:19 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:54 IC:20.7%-100.0%
+[📊 PEPEUSD] PUT RSI:42 IC:20.7%-100.0%
+[📊 SNDK] CALL RSI:47 IC:0.0%-100.0%
+[📊 SNDK] CALL RSI:47 IC:0.0%-100.0%
+[📊 DASHUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 NFLX/AMZN] CALL RSI:37 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:42 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 PENGUUSD] PUT RSI:61 IC:20.7%-100.0%
+[📊 PENGUUSD] PUT RSI:61 IC:20.7%-100.0%
+
+📊 RELATÓRIO | Ops: 13 | WR: 61.5% | Lucro: R$3.12 | EarlySell: 0
+   ✅ ativo WLDUSD         dir:PUT   WR:0.0%(1) R$-2.00
+   ✅ ativo DYDXUSD        dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo FETUSD         dir:PUT   WR:0.0%(1) R$-2.00
+   ✅ ativo EOSUSD         dir:PUT   WR:0.0%(1) R$-2.00
+   ✅ ativo JUPUSD         dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo PENGUUSD       dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo FARTCOINUSD    dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo WIFUSD         dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo SUGAR          dir:CALL  WR:0.0%(1) R$-2.00
+   ✅ ativo FWONA          dir:CALL  WR:100.0%(1) +R$1.64
+   ✅ ativo PEPEUSD        dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo TRUMPUSD       dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo SEIUSD         dir:PUT   WR:0.0%(1) R$-2.00
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 53.8%WR(13) | 1min: 46.2%WR(13) | 2min: 50.0%WR(6) | 3min: 0.0%WR(1) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.PENGUUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.JUPUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.WIFUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+[⏱ 11:20:29] Ops:13 WR:62% Lucro:R$3.12 EarlySell:0   [📊 CITI] CALL RSI:28 IC:0.0%-100.0%
+[📊 MATICUSD] PUT RSI:51 IC:0.0%-100.0%
+[📊 MATICUSD] PUT RSI:51 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 META/GOOGLE] CALL RSI:78 IC:0.0%-100.0%
+[📊 META/GOOGLE] CALL RSI:78 IC:0.0%-100.0%
+[📊 PENGUUSD] PUT RSI:20 IC:20.7%-100.0%
+[📊 PENGUUSD] PUT RSI:20 IC:20.7%-100.0%
+[📊 PENGUUSD] PUT RSI:20 IC:20.7%-100.0%
+[📊 SUIUSD] PUT RSI:24 IC:0.0%-100.0%
+[📊 PENGUUSD] PUT RSI:20 IC:20.7%-100.0%
+[📊 NIKE] CALL RSI:28 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:53 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:53 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:37 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:41 IC:0.0%-100.0%
+[📊 AMZN/ALIBABA] CALL RSI:36 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:41 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:36 IC:0.0%-100.0%
+[📊 DYDXUSD] PUT RSI:63 IC:20.7%-100.0%
+[📊 SHIBUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:29 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:29 IC:0.0%-100.0%
+[📊 SHIBUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 DYDXUSD] PUT RSI:63 IC:20.7%-100.0%
+[📊 SpaceX] CALL RSI:33 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:33 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:33 IC:0.0%-100.0%
+[📊 TESLA/FORD] CALL RSI:40 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:39 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:39 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:45 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:39 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:46 IC:0.0%-79.3%
+[📊 WLDUSD] PUT RSI:46 IC:0.0%-79.3%
+[📊 XNGUSD] PUT RSI:43 IC:0.0%-100.0%
+[📊 SNDK] CALL RSI:45 IC:0.0%-100.0%
+[📊 SNDK] CALL RSI:45 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:43 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:35 IC:0.0%-79.3%
+[📊 EOSUSD] PUT RSI:35 IC:0.0%-79.3%
+[⏱ 11:20:59] Ops:13 WR:62% Lucro:R$3.12 EarlySell:0   [📊 EOSUSD] PUT RSI:35 IC:0.0%-79.3%
+[📊 IOTAUSD] PUT RSI:46 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:45 IC:0.0%-100.0%
+[📊 TRUMPUSD] PUT RSI:29 IC:20.7%-100.0%
+[📊 BIDU] CALL RSI:36 IC:0.0%-100.0%
+[📊 BIDU] CALL RSI:36 IC:0.0%-100.0%
+[📊 FETUSD] PUT RSI:55 IC:0.0%-79.3%
+[📊 FETUSD] PUT RSI:55 IC:0.0%-79.3%
+[📊 IMXUSD] PUT RSI:53 IC:0.0%-100.0%
+[📊 TRUMPUSD] PUT RSI:37 IC:20.7%-100.0%
+[📊 TRUMPUSD] PUT RSI:37 IC:20.7%-100.0%
+[📊 TRUMPUSD] PUT RSI:37 IC:20.7%-100.0%
+[📊 WIFUSD] PUT RSI:44 IC:20.7%-100.0%
+[📊 PYTHUSD] PUT RSI:37 IC:0.0%-100.0%
+[📊 PYTHUSD] PUT RSI:37 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:42 IC:0.0%-79.3%
+[📊 FETUSD] PUT RSI:57 IC:0.0%-79.3%
+[📊 ALIBABA] CALL RSI:70 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:70 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:70 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:50 IC:20.7%-100.0%
+[📊 PEPEUSD] PUT RSI:50 IC:20.7%-100.0%
+[📊 NIKE] CALL RSI:66 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:53 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:57 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:57 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:57 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:52 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:52 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:52 IC:0.0%-100.0%
+[📊 RAYDIUMUSD] PUT RSI:72 IC:0.0%-100.0%
+[📊 ORDIUSD] PUT RSI:26 IC:0.0%-100.0%
+[📊 ORDIUSD] PUT RSI:47 IC:0.0%-100.0%
+[📊 ORDIUSD] PUT RSI:47 IC:0.0%-100.0%
+[📊 AMZN/EBAY] CALL RSI:39 IC:0.0%-100.0%
+[⏱ 11:21:29] Ops:13 WR:62% Lucro:R$3.12 EarlySell:0   [📊 TAOUSD] PUT RSI:63 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:40 IC:0.0%-100.0%
+[📊 TAOUSD] PUT RSI:63 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:47 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:47 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:37 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:37 IC:0.0%-100.0%
+[📊 HYPE] CALL RSI:45 IC:0.0%-100.0%
+[📊 META/GOOGLE] CALL RSI:33 IC:0.0%-100.0%
+[📊 META/GOOGLE] CALL RSI:33 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:47 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:47 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:63 IC:0.0%-79.3%
+[📊 SEIUSD] PUT RSI:55 IC:0.0%-79.3%
+[📊 SEIUSD] PUT RSI:55 IC:0.0%-79.3%
+[📊 EOSUSD] PUT RSI:63 IC:0.0%-79.3%
+[📊 EOSUSD] PUT RSI:63 IC:0.0%-79.3%
+[📊 INTEL/IBM] CALL RSI:49 IC:0.0%-100.0%
+[📊 ORDIUSD] PUT RSI:65 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:30 IC:0.0%-100.0%
+[📊 HYPE] CALL RSI:59 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:50 IC:0.0%-100.0%
+[📊 KLARNA] CALL RSI:74 IC:0.0%-100.0%
+[📊 KLARNA] CALL RSI:74 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:52 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:52 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:37 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:37 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:37 IC:0.0%-100.0%
+[📊 WIFUSD] PUT RSI:32 IC:20.7%-100.0%
+[📊 WIFUSD] PUT RSI:32 IC:20.7%-100.0%
+[📊 PENGUUSD] PUT RSI:44 IC:20.7%-100.0%
+[📊 SEIUSD] PUT RSI:46 IC:0.0%-79.3%
+[📊 SNAP] CALL RSI:32 IC:0.0%-100.0%
+[📊 XPTUSD] PUT RSI:7 IC:0.0%-100.0%
+[⏱ 11:21:59] Ops:13 WR:62% Lucro:R$3.12 EarlySell:0   [📊 IMXUSD] PUT RSI:50 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:50 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:50 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:39 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:39 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:39 IC:0.0%-100.0%
+[📊 ICPUSD] PUT RSI:61 IC:0.0%-100.0%
+[📊 ICPUSD] PUT RSI:61 IC:0.0%-100.0%
+[📊 ICPUSD] PUT RSI:61 IC:0.0%-100.0%
+[📊 RENDERUSD] PUT RSI:43 IC:0.0%-100.0%
+[📊 IOTAUSD] PUT RSI:55 IC:0.0%-100.0%
+[📊 IOTAUSD] PUT RSI:55 IC:0.0%-100.0%
+[📊 UKOUSD] PUT RSI:41 IC:0.0%-100.0%
+[📊 UKOUSD] PUT RSI:41 IC:0.0%-100.0%
+[📊 NEARUSD] PUT RSI:55 IC:0.0%-100.0%
+[📊 ETHUSD] PUT RSI:47 IC:0.0%-100.0%
+[📊 EU50] CALL RSI:36 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:44 IC:0.0%-79.3%
+[📊 DYDXUSD] PUT RSI:54 IC:20.7%-100.0%
+[📊 DYDXUSD] PUT RSI:54 IC:20.7%-100.0%
+[📊 EU50] CALL RSI:49 IC:0.0%-100.0%
+[📊 NEARUSD] PUT RSI:29 IC:0.0%-100.0%
+[📊 NEARUSD] PUT RSI:29 IC:0.0%-100.0%
+[📊 NEARUSD] PUT RSI:29 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:35 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:44 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:44 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:40 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:64 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:38 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:38 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:38 IC:0.0%-100.0%
+[📊 ATOMUSD] PUT RSI:38 IC:0.0%-100.0%
+[📊 ATOMUSD] PUT RSI:38 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:59 IC:0.0%-100.0%
+[⏱ 11:22:29] Ops:13 WR:62% Lucro:R$3.12 EarlySell:0   [📊 PENUSD] PUT RSI:66 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:66 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:61 IC:0.0%-79.3%
+[📊 EOSUSD] PUT RSI:61 IC:0.0%-79.3%
+[📊 EOSUSD] PUT RSI:61 IC:0.0%-79.3%
+[📊 ALIBABA] CALL RSI:34 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:44 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:44 IC:20.7%-100.0%
+[📊 FWONA] CALL RSI:44 IC:20.7%-100.0%
+[📊 ALIBABA] CALL RSI:34 IC:0.0%-100.0%
+[📊 FETUSD] PUT RSI:48 IC:0.0%-79.3%
+[📊 TRUMPUSD] PUT RSI:70 IC:20.7%-100.0%
+[📊 TRUMPUSD] PUT RSI:70 IC:20.7%-100.0%
+[📊 TRUMPUSD] PUT RSI:70 IC:20.7%-100.0%
+[📊 ONDOUSD] PUT RSI:68 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:68 IC:0.0%-100.0%
+[📊 SANDUSD] PUT RSI:58 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:74 IC:0.0%-100.0%
+[📊 SANDUSD] PUT RSI:58 IC:0.0%-100.0%
+[📊 RAYDIUMUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:70 IC:0.0%-79.3%
+[📊 RAYDIUMUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:34 IC:20.7%-100.0%
+[📊 ARBUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 ARBUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:27 IC:20.7%-100.0%
+[📊 FWONA] CALL RSI:27 IC:20.7%-100.0%
+[📊 FWONA] CALL RSI:27 IC:20.7%-100.0%
+[📊 FWONA] CALL RSI:27 IC:20.7%-100.0%
+[📊 AMZN/ALIBABA] CALL RSI:38 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:71 IC:0.0%-100.0%
+[📊 GEV] CALL RSI:33 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:60 IC:0.0%-79.3%
+[📊 WLDUSD] PUT RSI:60 IC:0.0%-79.3%
+[📊 GEV] CALL RSI:33 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:60 IC:0.0%-79.3%
+[📊 GEV] CALL RSI:33 IC:0.0%-100.0%
+[⏱ 11:22:59] Ops:13 WR:62% Lucro:R$3.12 EarlySell:0   [📊 FB] CALL RSI:25 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:81 IC:0.0%-100.0%
+[📊 FB] CALL RSI:25 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:81 IC:0.0%-100.0%
+[📊 FB] CALL RSI:25 IC:0.0%-100.0%
+[📊 JUPUSD] PUT RSI:44 IC:20.7%-100.0%
+[📊 JUPUSD] PUT RSI:44 IC:20.7%-100.0%
+[📊 JUPUSD] PUT RSI:44 IC:20.7%-100.0%
+[📊 ONDOUSD] PUT RSI:63 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:63 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:54 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:59 IC:0.0%-79.3%
+[📊 TAOUSD] PUT RSI:64 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:54 IC:0.0%-100.0%
+[📊 MANAUSD] PUT RSI:74 IC:0.0%-100.0%
+[📊 TESLA/FORD] CALL RSI:39 IC:0.0%-100.0%
+[📊 NIKE] CALL RSI:39 IC:0.0%-100.0%
+[📊 NIKE] CALL RSI:39 IC:0.0%-100.0%
+[📊 NIKE] CALL RSI:39 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:25 IC:20.7%-100.0%
+[📊 SUGAR] CALL RSI:55 IC:0.0%-79.3%
+[📊 SUGAR] CALL RSI:55 IC:0.0%-79.3%
+[📊 SUGAR] CALL RSI:55 IC:0.0%-79.3%
+[📊 INJUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 INJUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 JUPUSD] PUT RSI:52 IC:20.7%-100.0%
+[📊 CARDANO] CALL RSI:42 IC:0.0%-100.0%
+[📊 RENDERUSD] PUT RSI:44 IC:0.0%-100.0%
+[📊 RENDERUSD] PUT RSI:44 IC:0.0%-100.0%
+[📊 SEIUSD] PUT RSI:45 IC:0.0%-79.3%
+[📊 CARDANO] CALL RSI:50 IC:0.0%-100.0%
+[📊 SATSUSD] PUT RSI:57 IC:0.0%-100.0%
+[📊 NIKE] CALL RSI:26 IC:0.0%-100.0%
+[📊 NIKE] CALL RSI:26 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:70 IC:0.0%-100.0%
+[📊 INTEL/IBM] CALL RSI:27 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:37 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:37 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:37 IC:0.0%-100.0%
+[📊 JUPUSD] PUT RSI:61 IC:20.7%-100.0%
+[⏱ 11:23:29] Ops:13 WR:62% Lucro:R$3.12 EarlySell:0   [📊 HYPE] CALL RSI:55 IC:0.0%-100.0%
+[📊 HYPE] CALL RSI:55 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:31 IC:0.0%-100.0%
+[📊 NIKE] CALL RSI:36 IC:0.0%-100.0%
+[📊 TRON] CALL RSI:39 IC:0.0%-100.0%
+[📊 TRON] CALL RSI:39 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:63 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:63 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:49 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:49 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:49 IC:0.0%-100.0%
+[📊 CITI] CALL RSI:37 IC:0.0%-100.0%
+[📊 CITI] CALL RSI:37 IC:0.0%-100.0%
+[📊 SANDUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 WIFUSD] PUT RSI:52 IC:20.7%-100.0%
+[📊 ALIBABA] CALL RSI:57 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:57 IC:0.0%-100.0%
+[📊 TRON] CALL RSI:30 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 GRTUSD] PUT RSI:50 IC:0.0%-100.0%
+[📊 GRTUSD] PUT RSI:50 IC:0.0%-100.0%
+[📊 GRTUSD] PUT RSI:50 IC:0.0%-100.0%
+[⏱ 11:23:59] Ops:13 WR:62% Lucro:R$3.12 EarlySell:0   [📊 LINKUSD] PUT RSI:58 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:58 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:51 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:51 IC:0.0%-100.0%
+[📊 BIDU] CALL RSI:40 IC:0.0%-100.0%
+[📊 TIAUSD] PUT RSI:57 IC:0.0%-100.0%
+[📊 TIAUSD] PUT RSI:57 IC:0.0%-100.0%
+[📊 ORDIUSD] PUT RSI:31 IC:0.0%-100.0%
+[📊 ORDIUSD] PUT RSI:31 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:38 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:38 IC:0.0%-100.0%
+[📊 IOTAUSD] PUT RSI:45 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:46 IC:0.0%-100.0%
+[📊 IOTAUSD] PUT RSI:45 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:46 IC:0.0%-100.0%
+[📊 KLARNA] CALL RSI:39 IC:0.0%-100.0%
+[📊 CITI] CALL RSI:53 IC:0.0%-100.0%
+[📊 CITI] CALL RSI:53 IC:0.0%-100.0%
+[📊 CITI] CALL RSI:53 IC:0.0%-100.0%
+[📊 ORDIUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 ORDIUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 WDC] CALL RSI:28 IC:0.0%-100.0%
+[📊 WDC] CALL RSI:28 IC:0.0%-100.0%
+[📊 WDC] CALL RSI:28 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:49 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:48 IC:20.7%-100.0%
+[📊 FETUSD] PUT RSI:60 IC:0.0%-79.3%
+[📊 WIFUSD] PUT RSI:37 IC:20.7%-100.0%
+[📊 COCOA] CALL RSI:79 IC:0.0%-100.0%
+[📊 WIFUSD] PUT RSI:37 IC:20.7%-100.0%
+[📊 COCOA] CALL RSI:79 IC:0.0%-100.0%
+[📊 WIFUSD] PUT RSI:37 IC:20.7%-100.0%
+[📊 COCOA] CALL RSI:79 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:58 IC:0.0%-100.0%
+[📊 COFFEE] CALL RSI:31 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:61 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:61 IC:0.0%-100.0%
+[✅] URANIUM | CALL | R$2 | RSI:28 | +R$1.64
+[📈] Total: 14 | WR: 64.3% | Lucro: R$4.76 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 57.1%WR(14) | 1min: 42.9%WR(14) | 2min: 57.1%WR(7) | 3min: 50.0%WR(2) | 5min: 100.0%WR(1)
+
+   Detalhado (últimas 5):
+   front.JUPUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.WIFUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.URANIUM-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+
+[❌] FWONA | CALL | R$2 | RSI:48 | R$-2.00
+[📈] Total: 15 | WR: 60.0% | Lucro: R$2.76 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 53.3%WR(15) | 1min: 46.7%WR(15) | 2min: 57.1%WR(7) | 3min: 50.0%WR(2) | 5min: 100.0%WR(1)
+
+   Detalhado (últimas 5):
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.WIFUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.URANIUM-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[✅] PENUSD | PUT | R$2 | RSI:67 | +R$1.64
+[📈] Total: 16 | WR: 62.5% | Lucro: R$4.40 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 56.3%WR(16) | 1min: 43.8%WR(16) | 2min: 57.1%WR(7) | 3min: 50.0%WR(2) | 5min: 100.0%WR(1)
+
+   Detalhado (últimas 5):
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.WIFUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.URANIUM-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.PENUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[✅] SUIUSD | PUT | R$2 | RSI:67 | +R$1.64
+[📈] Total: 17 | WR: 64.7% | Lucro: R$6.04 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 52.9%WR(17) | 1min: 47.1%WR(17) | 2min: 57.1%WR(7) | 3min: 50.0%WR(2) | 5min: 100.0%WR(1)
+
+   Detalhado (últimas 5):
+   front.WIFUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.URANIUM-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.PENUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SUIUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[❌] SEIUSD | PUT | R$2 | RSI:45 | R$-2.00
+[📈] Total: 18 | WR: 61.1% | Lucro: R$4.04 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 55.6%WR(18) | 1min: 50.0%WR(18) | 2min: 62.5%WR(8) | 3min: 50.0%WR(2) | 5min: 100.0%WR(1)
+
+   Detalhado (últimas 5):
+   front.URANIUM-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.PENUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SUIUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SEIUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+
+[✅] FETUSD | PUT | R$2 | RSI:60 | +R$1.64
+[📈] Total: 19 | WR: 63.2% | Lucro: R$5.68 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 57.9%WR(19) | 1min: 52.6%WR(19) | 2min: 62.5%WR(8) | 3min: 50.0%WR(2) | 5min: 100.0%WR(1)
+
+   Detalhado (últimas 5):
+   front.FWONA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.PENUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SUIUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SEIUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.FETUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[❌] HBARUSD | PUT | R$2 | RSI:52 | R$-2.00
+[📈] Total: 20 | WR: 60.0% | Lucro: R$3.68 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 60.0%WR(20) | 1min: 55.0%WR(20) | 2min: 66.7%WR(9) | 3min: 33.3%WR(3) | 5min: 50.0%WR(2)
+
+   Detalhado (últimas 5):
+   front.PENUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SUIUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SEIUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.FETUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.HBARUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+
+[❌] PENGUUSD | PUT | R$2 | RSI:44 | R$-2.00
+[📈] Total: 21 | WR: 57.1% | Lucro: R$1.68 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 61.9%WR(21) | 1min: 52.4%WR(21) | 2min: 60.0%WR(10) | 3min: 25.0%WR(4) | 5min: 50.0%WR(2)
+
+   Detalhado (últimas 5):
+   front.SUIUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.SEIUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.FETUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.HBARUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+
+[MISSED CLOSE] aid= 2301
+[❌] PEPEUSD | PUT | R$2 | RSI:50 | R$-2.00
+[📈] Total: 22 | WR: 54.5% | Lucro: R$-0.32 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 63.6%WR(22) | 1min: 54.5%WR(22) | 2min: 63.6%WR(11) | 3min: 40.0%WR(5) | 5min: 50.0%WR(2)
+
+   Detalhado (últimas 5):
+   front.SEIUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.FETUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.HBARUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.PEPEUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+
+[MISSED CLOSE] aid= 2301
+[❌] RAYDIUMUSD | PUT | R$2 | RSI:59 | R$-2.00
+[📈] Total: 23 | WR: 52.2% | Lucro: R$-2.32 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 65.2%WR(23) | 1min: 52.2%WR(23) | 2min: 58.3%WR(12) | 3min: 33.3%WR(6) | 5min: 50.0%WR(2)
+
+   Detalhado (últimas 5):
+   front.FETUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.HBARUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.PEPEUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.RAYDIUMUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+
+[MISSED CLOSE] aid= 2289
+[❌] DASHUSD | PUT | R$2 | RSI:67 | R$-2.00
+[📈] Total: 24 | WR: 50.0% | Lucro: R$-4.32 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 62.5%WR(24) | 1min: 54.2%WR(24) | 2min: 53.8%WR(13) | 3min: 28.6%WR(7) | 5min: 33.3%WR(3)
+
+   Detalhado (últimas 5):
+   front.HBARUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.PEPEUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.RAYDIUMUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.DASHUSD-OTC PUT ❌ | 30s=❌ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED CLOSE] aid= 2301
+[MISSED CLOSE] aid= 2280
+[MISSED CLOSE] aid= 2280
+[MISSED CLOSE] aid= 2301
+[MISSED CLOSE] aid= 2145
+[MISSED CLOSE] aid= 2323
+[MISSED CLOSE] aid= 2323
+[MISSED CLOSE] aid= 2323
+[MISSED CLOSE] aid= 2289
+[MISSED CLOSE] aid= 2312
+[✅] XPTUSD | PUT | R$2 | RSI:7 | +R$1.64
+[📈] Total: 25 | WR: 52.0% | Lucro: R$-2.68 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 60.0%WR(25) | 1min: 52.0%WR(25) | 2min: 50.0%WR(14) | 3min: 37.5%WR(8) | 5min: 33.3%WR(3)
+
+   Detalhado (últimas 5):
+   front.PENGUUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.PEPEUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.RAYDIUMUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.DASHUSD-OTC PUT ❌ | 30s=❌ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.XPTUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=✅ | 5min=⚪
+
+[MISSED CLOSE] aid= 2327
+[MISSED CLOSE] aid= 2280
+[❌] JUPUSD | PUT | R$2 | RSI:61 | R$-2.00
+[📈] Total: 26 | WR: 50.0% | Lucro: R$-4.68 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 61.5%WR(26) | 1min: 50.0%WR(26) | 2min: 46.7%WR(15) | 3min: 37.5%WR(8) | 5min: 33.3%WR(3)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC PUT ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.RAYDIUMUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.DASHUSD-OTC PUT ❌ | 30s=❌ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.XPTUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=✅ | 5min=⚪
+   front.JUPUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+
+[MISSED CLOSE] aid= 2312
+[MISSED CLOSE] aid= 2141
+[MISSED CLOSE] aid= 2145
+[✅] DOTUSD | PUT | R$2 | RSI:56 | +R$1.64
+[📈] Total: 27 | WR: 51.9% | Lucro: R$-3.04 | EarlySell: 0
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 63.0%WR(27) | 1min: 48.1%WR(27) | 2min: 50.0%WR(16) | 3min: 44.4%WR(9) | 5min: 50.0%WR(4)
+
+   Detalhado (últimas 5):
+   front.RAYDIUMUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.DASHUSD-OTC PUT ❌ | 30s=❌ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.XPTUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=✅ | 5min=⚪
+   front.JUPUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.DOTUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED CLOSE] aid= 2152
+[⏱ 11:24:29] Ops:27 WR:52% Lucro:R$-3.04 EarlySell:0   [📊 NEARUSD] PUT RSI:37 IC:0.0%-100.0%
+[📊 NEARUSD] PUT RSI:37 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:59 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:59 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:30 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:30 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:30 IC:0.0%-100.0%
+[📊 ORDIUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 ATOMUSD] PUT RSI:20 IC:0.0%-100.0%
+[📊 TIAUSD] PUT RSI:63 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:55 IC:0.0%-79.3%
+[📊 WLDUSD] PUT RSI:55 IC:0.0%-79.3%
+[📊 JUPUSD] PUT RSI:48 IC:9.5%-90.5%
+[📊 JUPUSD] PUT RSI:48 IC:9.5%-90.5%
+[📊 JUPUSD] PUT RSI:48 IC:9.5%-90.5%
+[📊 INTEL] CALL RSI:46 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:67 IC:0.0%-100.0%
+[📊 ETHUSD] PUT RSI:64 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:51 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:51 IC:0.0%-100.0%
+[📊 TESLA/FORD] CALL RSI:40 IC:0.0%-100.0%
+[📊 INJUSD] PUT RSI:57 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:55 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:59 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:55 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:40 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:53 IC:0.0%-100.0%
+[📊 ATOMUSD] PUT RSI:35 IC:0.0%-100.0%
+[📊 PLTR] CALL RSI:58 IC:0.0%-100.0%
+[📊 PLTR] CALL RSI:58 IC:0.0%-100.0%
+[📊 DASHUSD] PUT RSI:44 IC:0.0%-79.3%
+[📊 DASHUSD] PUT RSI:44 IC:0.0%-79.3%
+[📊 DASHUSD] PUT RSI:44 IC:0.0%-79.3%
+[📊 COKE] CALL RSI:70 IC:0.0%-100.0%
+[📊 SEIUSD] PUT RSI:66 IC:0.0%-65.8%
+[📊 SEIUSD] PUT RSI:66 IC:0.0%-65.8%
+[📊 ARBUSD] PUT RSI:62 IC:0.0%-100.0%
+[📊 DYDXUSD] PUT RSI:68 IC:20.7%-100.0%
+[📊 ARBUSD] PUT RSI:62 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:52 IC:0.0%-100.0%
+[📊 ARBUSD] PUT RSI:62 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:52 IC:0.0%-100.0%
+[📊 ARBUSD] PUT RSI:62 IC:0.0%-100.0%
+[⏱ 11:24:59] Ops:27 WR:52% Lucro:R$-3.04 EarlySell:0   [📊 PLTR] CALL RSI:45 IC:0.0%-100.0%
+[📊 PLTR] CALL RSI:45 IC:0.0%-100.0%
+[📊 PLTR] CALL RSI:45 IC:0.0%-100.0%
+[📊 JUPUSD] PUT RSI:61 IC:9.5%-90.5%
+[📊 JUPUSD] PUT RSI:61 IC:9.5%-90.5%
+[📊 HYPE] CALL RSI:42 IC:0.0%-100.0%
+[📊 INTEL/IBM] CALL RSI:40 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 SEIUSD] PUT RSI:42 IC:0.0%-65.8%
+[📊 SEIUSD] PUT RSI:42 IC:0.0%-65.8%
+[📊 SEIUSD] PUT RSI:42 IC:0.0%-65.8%
+[📊 PENUSD] PUT RSI:51 IC:20.7%-100.0%
+[📊 KLARNA] CALL RSI:59 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:51 IC:20.7%-100.0%
+[📊 ARBUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:38 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:66 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:38 IC:0.0%-100.0%
+[📊 NFLX/AMZN] CALL RSI:76 IC:0.0%-100.0%
+[📊 ARBUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:38 IC:0.0%-100.0%
+[📊 HBARUSD] PUT RSI:41 IC:0.0%-79.3%
+[📊 HBARUSD] PUT RSI:41 IC:0.0%-79.3%
+[📊 STXUSD] PUT RSI:54 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:54 IC:0.0%-100.0%
+[📊 TRON] CALL RSI:36 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:71 IC:9.5%-90.5%
+[📊 TRUMPUSD] PUT RSI:69 IC:20.7%-100.0%
+[📊 PEPEUSD] PUT RSI:71 IC:9.5%-90.5%
+[📊 BCHUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:70 IC:0.0%-79.3%
+[📊 BCHUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 BCHUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:59 IC:9.5%-90.5%
+[📊 CARDANO] CALL RSI:46 IC:0.0%-100.0%
+[📊 RAYDIUMUSD] PUT RSI:44 IC:0.0%-79.3%
+[📊 TRUMPUSD] PUT RSI:66 IC:20.7%-100.0%
+[📊 TRUMPUSD] PUT RSI:66 IC:20.7%-100.0%
+[📊 TRUMPUSD] PUT RSI:66 IC:20.7%-100.0%
+[📊 PENUSD] PUT RSI:65 IC:20.7%-100.0%
+[📊 XNGUSD] PUT RSI:29 IC:0.0%-100.0%
+[📊 NEARUSD] PUT RSI:58 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:52 IC:0.0%-79.3%
+[📊 CARDANO] CALL RSI:38 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:62 IC:20.7%-100.0%
+[📊 TAOUSD] PUT RSI:44 IC:0.0%-100.0%
+[📊 TAOUSD] PUT RSI:44 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:62 IC:20.7%-100.0%
+[📊 NIKE] CALL RSI:38 IC:0.0%-100.0%
+
+📊 RELATÓRIO | Ops: 27 | WR: 51.9% | Lucro: R$-3.04 | EarlySell: 0
+   ✅ ativo WLDUSD         dir:PUT   WR:0.0%(1) R$-2.00
+   ✅ ativo DYDXUSD        dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo FETUSD         dir:PUT   WR:50.0%(2) R$-0.36
+   ✅ ativo EOSUSD         dir:PUT   WR:0.0%(1) R$-2.00
+   ✅ ativo JUPUSD         dir:PUT   WR:50.0%(2) R$-0.36
+   ✅ ativo PENGUUSD       dir:PUT   WR:50.0%(2) R$-0.36
+   ✅ ativo FARTCOINUSD    dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo WIFUSD         dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo SUGAR          dir:CALL  WR:0.0%(1) R$-2.00
+   ✅ ativo FWONA          dir:CALL  WR:50.0%(2) R$-0.36
+   ✅ ativo PEPEUSD        dir:PUT   WR:50.0%(2) R$-0.36
+   ✅ ativo TRUMPUSD       dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo SEIUSD         dir:PUT   WR:0.0%(2) R$-4.00
+   ✅ ativo SUIUSD         dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo HBARUSD        dir:PUT   WR:0.0%(1) R$-2.00
+   ✅ ativo RAYDIUMUSD     dir:PUT   WR:0.0%(1) R$-2.00
+   ✅ ativo URANIUM        dir:CALL  WR:100.0%(1) +R$1.64
+   ✅ ativo PENUSD         dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo DOTUSD         dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo XPTUSD         dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo DASHUSD        dir:PUT   WR:0.0%(1) R$-2.00
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 63.0%WR(27) | 1min: 48.1%WR(27) | 2min: 50.0%WR(16) | 3min: 44.4%WR(9) | 5min: 50.0%WR(4)
+
+   Detalhado (últimas 5):
+   front.RAYDIUMUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.DASHUSD-OTC PUT ❌ | 30s=❌ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.XPTUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=✅ | 5min=⚪
+   front.JUPUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.DOTUSD-OTC PUT ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+[⏱ 11:25:29] Ops:27 WR:52% Lucro:R$-3.04 EarlySell:0   [📊 WIFUSD] PUT RSI:60 IC:20.7%-100.0%
+[📊 WIFUSD] PUT RSI:60 IC:20.7%-100.0%
+[📊 MSFT/AAPL] CALL RSI:34 IC:0.0%-100.0%
+[📊 MSFT/AAPL] CALL RSI:34 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:43 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:48 IC:0.0%-100.0%
+[📊 PENGUUSD] PUT RSI:65 IC:9.5%-90.5%
+[📊 LTCUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 LTCUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 LTCUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 LTCUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 GRTUSD] PUT RSI:63 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:59 IC:0.0%-100.0%
+[📊 KLARNA] CALL RSI:42 IC:0.0%-100.0%
+[📊 PENUSD] PUT RSI:65 IC:20.7%-100.0%
+[📊 EOSUSD] PUT RSI:50 IC:0.0%-79.3%
+[📊 DASHUSD] PUT RSI:29 IC:0.0%-79.3%
+[📊 DASHUSD] PUT RSI:29 IC:0.0%-79.3%
+[📊 TAOUSD] PUT RSI:20 IC:0.0%-100.0%
+[📊 TAOUSD] PUT RSI:20 IC:0.0%-100.0%
+[📊 TAOUSD] PUT RSI:20 IC:0.0%-100.0%
+[📊 COCOA] CALL RSI:50 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:62 IC:0.0%-100.0%
+[📊 COCOA] CALL RSI:50 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:62 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:62 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:62 IC:0.0%-100.0%
+[📊 DASHUSD] PUT RSI:58 IC:0.0%-79.3%
+[📊 DASHUSD] PUT RSI:58 IC:0.0%-79.3%
+[📊 DASHUSD] PUT RSI:58 IC:0.0%-79.3%
+[📊 SUGAR] CALL RSI:48 IC:0.0%-79.3%
+[📊 PENUSD] PUT RSI:56 IC:20.7%-100.0%
+[📊 PENUSD] PUT RSI:56 IC:20.7%-100.0%
+[📊 FARTCOINUSD] PUT RSI:72 IC:20.7%-100.0%
+[📊 FARTCOINUSD] PUT RSI:72 IC:20.7%-100.0%
+[📊 AMZN/ALIBABA] CALL RSI:36 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:48 IC:0.0%-79.3%
+[📊 WLDUSD] PUT RSI:48 IC:0.0%-79.3%
+[📊 WLDUSD] PUT RSI:48 IC:0.0%-79.3%
+[⏱ 11:25:59] Ops:27 WR:52% Lucro:R$-3.04 EarlySell:0   [📊 DOTUSD] PUT RSI:59 IC:20.7%-100.0%
+[📊 MCDON] CALL RSI:39 IC:0.0%-100.0%
+[📊 BIDU] CALL RSI:57 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:39 IC:0.0%-100.0%
+[📊 BIDU] CALL RSI:57 IC:0.0%-100.0%
+[📊 ATOMUSD] PUT RSI:58 IC:0.0%-100.0%
+[📊 FETUSD] PUT RSI:60 IC:9.5%-90.5%
+[📊 TRON] CALL RSI:73 IC:0.0%-100.0%
+[📊 FETUSD] PUT RSI:60 IC:9.5%-90.5%
+[📊 FLOKIUSD] PUT RSI:65 IC:0.0%-100.0%
+[📊 FB] CALL RSI:47 IC:0.0%-100.0%
+[📊 FB] CALL RSI:47 IC:0.0%-100.0%
+[📊 FLOKIUSD] PUT RSI:65 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:47 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:47 IC:0.0%-100.0%
+[📊 NEARUSD] PUT RSI:65 IC:0.0%-100.0%
+[📊 EU50] CALL RSI:41 IC:0.0%-100.0%
+[📊 NEARUSD] PUT RSI:65 IC:0.0%-100.0%
+[📊 ORDIUSD] PUT RSI:42 IC:0.0%-100.0%
+[📊 FARTCOINUSD] PUT RSI:50 IC:20.7%-100.0%
+[📊 GEV] CALL RSI:57 IC:0.0%-100.0%
+[📊 PENGUUSD] PUT RSI:47 IC:9.5%-90.5%
+[📊 GEV] CALL RSI:57 IC:0.0%-100.0%
+[📊 META/GOOGLE] CALL RSI:36 IC:0.0%-100.0%
+[📊 CITI] CALL RSI:48 IC:0.0%-100.0%
+[📊 META/GOOGLE] CALL RSI:36 IC:0.0%-100.0%
+[📊 RAYDIUMUSD] PUT RSI:64 IC:0.0%-79.3%
+[📊 AMZN/EBAY] CALL RSI:57 IC:0.0%-100.0%
+[📊 RAYDIUMUSD] PUT RSI:64 IC:0.0%-79.3%
+[📊 RAYDIUMUSD] PUT RSI:64 IC:0.0%-79.3%
+[📊 AMZN/EBAY] CALL RSI:57 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:28 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:28 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:80 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:37 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:37 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:77 IC:0.0%-100.0%
+[📊 DASHUSD] PUT RSI:73 IC:0.0%-79.3%
+[📊 SpaceX] CALL RSI:77 IC:0.0%-100.0%
+[📊 DASHUSD] PUT RSI:73 IC:0.0%-79.3%
+[📊 SATSUSD] PUT RSI:68 IC:0.0%-100.0%
+[📊 AMZN/ALIBABA] CALL RSI:38 IC:0.0%-100.0%
+[📊 AMZN/ALIBABA] CALL RSI:38 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:45 IC:0.0%-100.0%
+[📊 HBARUSD] PUT RSI:64 IC:0.0%-79.3%
+[📊 MCDON] CALL RSI:41 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:32 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:32 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:33 IC:0.0%-100.0%
+[📊 MCDON] CALL RSI:41 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:27 IC:0.0%-100.0%
+[📊 ARBUSD] PUT RSI:45 IC:0.0%-100.0%
+[📊 ARBUSD] PUT RSI:45 IC:0.0%-100.0%
+[📊 ICPUSD] PUT RSI:64 IC:0.0%-100.0%
+[⏱ 11:26:29] Ops:27 WR:52% Lucro:R$-3.04 EarlySell:0   [📊 AIRLINES] CALL RSI:40 IC:0.0%-100.0%
+[📊 AIRLINES] CALL RSI:40 IC:0.0%-100.0%
+[📊 AIRLINES] CALL RSI:40 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 ARBUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 ARBUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 INTEL/IBM] CALL RSI:79 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:66 IC:20.7%-100.0%
+[📊 SUIUSD] PUT RSI:66 IC:20.7%-100.0%
+[📊 SNDK] CALL RSI:55 IC:0.0%-100.0%
+[📊 PLTR] CALL RSI:53 IC:0.0%-100.0%
+[📊 PLTR] CALL RSI:53 IC:0.0%-100.0%
+[📊 PLTR] CALL RSI:53 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:46 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:46 IC:0.0%-100.0%
+[📊 NIKE] CALL RSI:60 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:54 IC:9.5%-90.5%
+[📊 NIKE] CALL RSI:60 IC:0.0%-100.0%
+[📊 NIKE] CALL RSI:60 IC:0.0%-100.0%
+[📊 FWONA] CALL RSI:54 IC:9.5%-90.5%
+[📊 FWONA] CALL RSI:54 IC:9.5%-90.5%
+[📊 STXUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 DOTUSD] PUT RSI:70 IC:20.7%-100.0%
+[📊 DOTUSD] PUT RSI:70 IC:20.7%-100.0%
+[📊 DOTUSD] PUT RSI:70 IC:20.7%-100.0%
+[📊 INTEL/IBM] CALL RSI:26 IC:0.0%-100.0%
+[📊 RAYDIUMUSD] PUT RSI:68 IC:0.0%-79.3%
+[📊 INTEL/IBM] CALL RSI:26 IC:0.0%-100.0%
+[📊 PYTHUSD] PUT RSI:54 IC:0.0%-100.0%
+[📊 PYTHUSD] PUT RSI:54 IC:0.0%-100.0%
+[📊 CARDANO] CALL RSI:61 IC:0.0%-100.0%
+[📊 SATSUSD] PUT RSI:53 IC:0.0%-100.0%
+[📊 SATSUSD] PUT RSI:53 IC:0.0%-100.0%
+[📊 PENGUUSD] PUT RSI:56 IC:9.5%-90.5%
+[📊 FWONA] CALL RSI:45 IC:9.5%-90.5%
+[📊 FB] CALL RSI:39 IC:0.0%-100.0%
+[📊 FB] CALL RSI:39 IC:0.0%-100.0%
+[📊 FB] CALL RSI:39 IC:0.0%-100.0%
+[⏱ 11:26:59] Ops:27 WR:52% Lucro:R$-3.04 EarlySell:0   [📊 JUPUSD] PUT RSI:30 IC:9.5%-90.5%
+[📊 JUPUSD] PUT RSI:30 IC:9.5%-90.5%
+[📊 PLTR] CALL RSI:47 IC:0.0%-100.0%
+[📊 JUPUSD] PUT RSI:30 IC:9.5%-90.5%
+[📊 JUPUSD] PUT RSI:30 IC:9.5%-90.5%
+[📊 PLTR] CALL RSI:47 IC:0.0%-100.0%
+[📊 WDC] CALL RSI:63 IC:0.0%-100.0%
+[📊 STXUSD] PUT RSI:56 IC:0.0%-100.0%
+[📊 IMXUSD] PUT RSI:70 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:68 IC:0.0%-100.0%
+[📊 MATICUSD] PUT RSI:58 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:40 IC:0.0%-100.0%
+[📊 SNAP] CALL RSI:40 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:37 IC:9.5%-90.5%
+[📊 PEPEUSD] PUT RSI:37 IC:9.5%-90.5%
+[📊 PEPEUSD] PUT RSI:37 IC:9.5%-90.5%
+[📊 PEPEUSD] PUT RSI:37 IC:9.5%-90.5%
+[📊 COKE] CALL RSI:38 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:38 IC:0.0%-100.0%
+[📊 COKE] CALL RSI:38 IC:0.0%-100.0%
+[📊 GEV] CALL RSI:36 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:69 IC:0.0%-79.3%
+[📊 GEV] CALL RSI:36 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:48 IC:0.0%-100.0%
+[📊 GEV] CALL RSI:36 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:48 IC:0.0%-100.0%
+[📊 AMZN/EBAY] CALL RSI:63 IC:0.0%-100.0%
+[📊 AMZN/EBAY] CALL RSI:63 IC:0.0%-100.0%
+[📊 SEIUSD] PUT RSI:59 IC:0.0%-65.8%
+[📊 SEIUSD] PUT RSI:59 IC:0.0%-65.8%
+[📊 RAYDIUMUSD] PUT RSI:58 IC:0.0%-79.3%
+[📊 PEPEUSD] PUT RSI:49 IC:9.5%-90.5%
+[📊 PEPEUSD] PUT RSI:49 IC:9.5%-90.5%
+[⏱ 11:27:29] Ops:27 WR:52% Lucro:R$-3.04 EarlySell:0   [📊 TAOUSD] PUT RSI:37 IC:0.0%-100.0%
+[📊 TAOUSD] PUT RSI:37 IC:0.0%-100.0%
+[📊 SHIBUSD] PUT RSI:58 IC:0.0%-100.0%
+[📊 IOTAUSD] PUT RSI:45 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:39 IC:9.5%-90.5%
+[📊 IOTAUSD] PUT RSI:45 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:39 IC:9.5%-90.5%
+[📊 TRON] CALL RSI:52 IC:0.0%-100.0%
+[📊 TRON] CALL RSI:52 IC:0.0%-100.0%
+[📊 WIFUSD] PUT RSI:62 IC:20.7%-100.0%
+[📊 INTEL] CALL RSI:52 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:55 IC:0.0%-100.0%
+[📊 ONDOUSD] PUT RSI:55 IC:0.0%-100.0%
+[📊 EOSUSD] PUT RSI:37 IC:0.0%-79.3%
+[📊 FWONA] CALL RSI:52 IC:9.5%-90.5%
+[📊 SATSUSD] PUT RSI:60 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:67 IC:0.0%-79.3%
+[📊 WLDUSD] PUT RSI:67 IC:0.0%-79.3%
+[📊 INTEL/IBM] CALL RSI:45 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:34 IC:20.7%-100.0%
+[📊 INTEL/IBM] CALL RSI:45 IC:0.0%-100.0%
+[📊 INTEL/IBM] CALL RSI:45 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:34 IC:20.7%-100.0%
+[📊 MCDON] CALL RSI:40 IC:0.0%-100.0%
+[📊 SUIUSD] PUT RSI:69 IC:20.7%-100.0%
+[📊 SUIUSD] PUT RSI:69 IC:20.7%-100.0%
+[📊 SUIUSD] PUT RSI:69 IC:20.7%-100.0%
+[📊 INTEL] CALL RSI:51 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:51 IC:0.0%-100.0%
+[📊 HBARUSD] PUT RSI:64 IC:0.0%-79.3%
+[📊 COCOA] CALL RSI:51 IC:0.0%-100.0%
+[📊 COCOA] CALL RSI:51 IC:0.0%-100.0%
+[📊 LINKUSD] PUT RSI:49 IC:0.0%-100.0%
+[📊 CITI] CALL RSI:46 IC:0.0%-100.0%
+[📊 HBARUSD] PUT RSI:62 IC:0.0%-79.3%
+[⏱ 11:27:59] Ops:27 WR:52% Lucro:R$-3.04 EarlySell:0   [📊 RONINUSD] PUT RSI:69 IC:0.0%-100.0%
+[📊 TAOUSD] PUT RSI:34 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:45 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:45 IC:0.0%-100.0%
+[📊 ALIBABA] CALL RSI:45 IC:0.0%-100.0%
+[📊 WIFUSD] PUT RSI:56 IC:20.7%-100.0%
+[📊 ARBUSD] PUT RSI:50 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:42 IC:9.5%-90.5%
+[📊 ARBUSD] PUT RSI:50 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:36 IC:0.0%-100.0%
+[📊 SpaceX] CALL RSI:36 IC:0.0%-100.0%
+[📊 SUGAR] CALL RSI:30 IC:0.0%-79.3%
+[📊 SUGAR] CALL RSI:30 IC:0.0%-79.3%
+[📊 SUGAR] CALL RSI:30 IC:0.0%-79.3%
+[📊 ORDIUSD] PUT RSI:54 IC:0.0%-100.0%
+[📊 ORDIUSD] PUT RSI:54 IC:0.0%-100.0%
+[📊 TRUMPUSD] PUT RSI:68 IC:20.7%-100.0%
+[📊 TRUMPUSD] PUT RSI:68 IC:20.7%-100.0%
+[📊 INTEL] CALL RSI:54 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:36 IC:0.0%-100.0%
+[📊 WLDUSD] PUT RSI:42 IC:0.0%-79.3%
+[📊 ARBUSD] PUT RSI:51 IC:0.0%-100.0%
+[📊 META/GOOGLE] CALL RSI:44 IC:0.0%-100.0%
+[📊 META/GOOGLE] CALL RSI:44 IC:0.0%-100.0%
+[📊 META/GOOGLE] CALL RSI:44 IC:0.0%-100.0%
+[📊 DYDXUSD] PUT RSI:57 IC:20.7%-100.0%
+[📊 XNGUSD] PUT RSI:59 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:59 IC:0.0%-100.0%
+[⏱ 11:28:29] Ops:27 WR:52% Lucro:R$-3.04 EarlySell:0   [📊 EOSUSD] PUT RSI:53 IC:0.0%-79.3%
+[📊 WLDUSD] PUT RSI:61 IC:0.0%-79.3%
+[📊 WLDUSD] PUT RSI:61 IC:0.0%-79.3%
+[📊 XNGUSD] PUT RSI:63 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:63 IC:0.0%-100.0%
+[📊 XNGUSD] PUT RSI:63 IC:0.0%-100.0%
+[📊 PEPEUSD] PUT RSI:67 IC:9.5%-90.5%
+[📊 PENGUUSD] PUT RSI:57 IC:9.5%-90.5%
+[📊 PEPEUSD] PUT RSI:67 IC:9.5%-90.5%
+[📊 PEPEUSD] PUT RSI:67 IC:9.5%-90.5%
+[📊 PENGUUSD] PUT RSI:57 IC:9.5%-90.5%
+[📊 KLARNA] CALL RSI:71 IC:0.0%-100.0%
+[📊 GEV] CALL RSI:42 IC:0.0%-100.0%
+[📊 GEV] CALL RSI:42 IC:0.0%-100.0%
+[📊 TAOUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 CITI] CALL RSI:71 IC:0.0%-100.0%
+[📊 CITI] CALL RSI:71 IC:0.0%-100.0%
+[📊 TAOUSD] PUT RSI:73 IC:0.0%-100.0%
+[📊 XPTUSD] PUT RSI:61 IC:20.7%-100.0%
+[📊 XPTUSD] PUT RSI:61 IC:20.7%-100.0%
+[📊 DOTUSD] PUT RSI:54 IC:20.7%-100.0%
+[📊 DOTUSD] PUT RSI:54 IC:20.7%-100.0%
+[📊 DOTUSD] PUT RSI:54 IC:20.7%-100.0%
+[📊 JUPUSD] PUT RSI:71 IC:9.5%-90.5%
+[📊 JUPUSD] PUT RSI:71 IC:9.5%-90.5%
+[📊 JUPUSD] PUT RSI:71 IC:9.5%-90.5%
+[📊 TRON] CALL RSI:58 IC:0.0%-100.0%
+[📊 TRON] CALL RSI:58 IC:0.0%-100.0%
+[📊 SUGAR] CALL RSI:79 IC:0.0%-79.3%
+[📊 JUPUSD] PUT RSI:41 IC:9.5%-90.5%
+[📊 SUGAR] CALL RSI:40 IC:0.0%-79.3%
+[📊 SUGAR] CALL RSI:40 IC:0.0%-79.3%
+[📊 INTEL] CALL RSI:33 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:33 IC:0.0%-100.0%
+[📊 INTEL] CALL RSI:33 IC:0.0%-100.0%
+[📊 NEARUSD] PUT RSI:49 IC:0.0%-100.0%
+[📊 HBARUSD] PUT RSI:44 IC:0.0%-79.3%
+[📊 HBARUSD] PUT RSI:44 IC:0.0%-79.3%
+[📊 HBARUSD] PUT RSI:44 IC:0.0%-79.3%

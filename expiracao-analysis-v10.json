@@ -1,0 +1,272 @@
+[
+  {
+    "assetId": 2277,
+    "assetName": "front.DYDXUSD-OTC",
+    "direction": "CALL",
+    "entryPrice": 0.170965,
+    "entryTime": 1790776491831,
+    "expirationSecs": 120,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "loss",
+      "60": "loss",
+      "120": "win",
+      "180": "win",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T13:56:27.612Z"
+  },
+  {
+    "assetId": 1976,
+    "assetName": "front.TRON-OTC",
+    "direction": "CALL",
+    "entryPrice": 0.769025,
+    "entryTime": 1790776541591,
+    "expirationSecs": 120,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "loss",
+      "60": "win",
+      "120": "win",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T13:56:27.741Z"
+  },
+  {
+    "assetId": 2448,
+    "assetName": "front.HYPE-OTC",
+    "direction": "CALL",
+    "entryPrice": 85.4565,
+    "entryTime": 1790776455959,
+    "expirationSecs": 120,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "loss",
+      "60": "win",
+      "120": "win",
+      "180": "win",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T13:56:27.916Z"
+  },
+  {
+    "assetId": 2286,
+    "assetName": "front.RAYDIUMUSD-OTC",
+    "direction": "CALL",
+    "entryPrice": 1.647015,
+    "entryTime": 1790776633574,
+    "expirationSecs": 120,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "loss",
+      "60": "loss",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T13:57:28.027Z"
+  },
+  {
+    "assetId": 2290,
+    "assetName": "front.RENDERUSD-OTC",
+    "direction": "CALL",
+    "entryPrice": 1.974915,
+    "entryTime": 1790776593727,
+    "expirationSecs": 120,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "loss",
+      "60": "loss",
+      "120": "loss",
+      "180": "loss",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T13:58:27.654Z"
+  },
+  {
+    "assetId": 2279,
+    "assetName": "front.FARTCOINUSD-OTC",
+    "direction": "CALL",
+    "entryPrice": 0.192805,
+    "entryTime": 1790776564134,
+    "expirationSecs": 120,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "win",
+      "180": "loss",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T13:58:27.895Z"
+  },
+  {
+    "assetId": 1975,
+    "assetName": "front.SHIBUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.005525,
+    "entryTime": 1790776635027,
+    "expirationSecs": 120,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "loss",
+      "60": "loss",
+      "120": "win",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T13:58:28.021Z"
+  },
+  {
+    "assetId": 2277,
+    "assetName": "front.DYDXUSD-OTC",
+    "direction": "CALL",
+    "entryPrice": 0.174775,
+    "entryTime": 1790776736735,
+    "expirationSecs": 120,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T13:59:07.190Z"
+  },
+  {
+    "assetId": 1976,
+    "assetName": "front.TRON-OTC",
+    "direction": "CALL",
+    "entryPrice": 0.773275,
+    "entryTime": 1790776655580,
+    "expirationSecs": 120,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "loss",
+      "60": "win",
+      "120": "win",
+      "180": "win",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T13:59:27.707Z"
+  },
+  {
+    "assetId": 2448,
+    "assetName": "front.HYPE-OTC",
+    "direction": "CALL",
+    "entryPrice": 85.9935,
+    "entryTime": 1790776664634,
+    "expirationSecs": 120,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "win",
+      "180": "loss",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T13:59:28.331Z"
+  },
+  {
+    "assetId": 2279,
+    "assetName": "front.FARTCOINUSD-OTC",
+    "direction": "CALL",
+    "entryPrice": 0.190595,
+    "entryTime": 1790776817578,
+    "expirationSecs": 120,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "win",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:00:28.217Z"
+  },
+  {
+    "assetId": 1976,
+    "assetName": "front.TRON-OTC",
+    "direction": "CALL",
+    "entryPrice": 0.804095,
+    "entryTime": 1790776855933,
+    "expirationSecs": 120,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "win",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:01:27.744Z"
+  },
+  {
+    "assetId": 1975,
+    "assetName": "front.SHIBUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.005445,
+    "entryTime": 1790776794551,
+    "expirationSecs": 120,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "loss",
+      "60": "win",
+      "120": "win",
+      "180": "loss",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:01:27.806Z"
+  },
+  {
+    "assetId": 2279,
+    "assetName": "front.FARTCOINUSD-OTC",
+    "direction": "CALL",
+    "entryPrice": 0.190735,
+    "entryTime": 1790776835559,
+    "expirationSecs": 120,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "loss",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:01:28.154Z"
+  },
+  {
+    "assetId": 2286,
+    "assetName": "front.RAYDIUMUSD-OTC",
+    "direction": "CALL",
+    "entryPrice": 1.621085,
+    "entryTime": 1790776989857,
+    "expirationSecs": 120,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "win",
+      "120": "loss",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:04:28.024Z"
+  }
+]

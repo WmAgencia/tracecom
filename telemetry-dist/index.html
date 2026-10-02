@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b0e13" />
+  <title>Tracecom · Painel do Bot</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="taskbar">
+    <div class="taskbar-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-text">
+          <strong>TRACECOM</strong>
+          <span class="brand-sub">painel do bot</span>
+        </span>
+      </div>
+
+      <div class="taskbar-actions">
+        <button id="power" class="btn btn-power" type="button" data-state="STOPPED">
+          <span class="btn-ico" aria-hidden="true"></span>
+          <span id="power-label">ATIVAR</span>
+        </button>
+
+        <div class="stake-box" role="group" aria-label="Valor fixo por operação">
+          <label class="stake-label" for="stake-input">Valor por operação</label>
+          <div class="stake-field">
+            <span class="stake-sym" id="stake-sym">R$</span>
+            <input id="stake-input" class="stake-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="stake-note" />
+            <button id="stake-save" class="btn btn-save" type="button">SALVAR</button>
+          </div>
+          <span id="stake-note" class="stake-note" role="status"></span>
+        </div>
+
+        <button id="open-settings" class="btn btn-ghost" type="button">
+          <span class="btn-ico ico-gear" aria-hidden="true"></span>CONFIGURAÇÕES
+        </button>
+        <button id="open-history" class="btn btn-ghost" type="button">
+          <span class="btn-ico ico-clock" aria-hidden="true"></span>HISTÓRICO
+        </button>
+      </div>
+
+      <div class="taskbar-status">
+        <span id="chip-account" class="chip">--</span>
+        <span id="chip-feed" class="chip">--</span>
+        <span id="chip-engine" class="chip chip-ok" title="prova de não-regressão do motor">--</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="offline" class="offline-banner" hidden>painel sem resposta do servidor local — verifique se <code>node telemetry/server.mjs</code> está rodando</div>
+  <div id="banner" class="alert" hidden></div>
+
+  <main class="panel">
+    <section class="card hero" aria-live="polite">
+      <div class="metrics-line" id="metrics-line">
+        <span class="metric"><b id="m-ops">0</b><i>operações</i></span>
+        <span class="metric pos"><b id="m-wins">0</b><i>wins</i></span>
+        <span class="metric neg"><b id="m-loss">0</b><i>loss</i></span>
+        <span class="metric" id="m-draw-wrap" hidden><b id="m-draw">0</b><i>draw</i></span>
+        <span class="metric"><b id="m-wr">0,00%</b><i>WR</i></span>
+      </div>
+
+      <div class="profit-wrap">
+        <div id="profit-day" class="profit neutral">R$ 0,00</div>
+        <div class="profit-label">LUCRO HOJE</div>
+      </div>
+
+      <div class="session-row">
+        <div class="session-box">
+          <span class="box-label" id="session-label">SESSÃO ATUAL</span>
+          <span id="session-profit" class="session-value neutral">R$ 0,00</span>
+          <span id="session-meta" class="box-meta">sem sessão ativa</span>
+        </div>
+        <div class="timer-box">
+          <span class="box-label">TEMPO DA SESSÃO</span>
+          <span id="session-timer" class="timer">00:00:00</span>
+          <span id="session-state" class="box-meta">parado</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid-3">
+      <div class="card stat">
+        <span class="box-label">LUCRO DA SEMANA</span>
+        <span id="profit-week" class="stat-value neutral">R$ 0,00</span>
+        <span id="week-meta" class="box-meta">0 operações</span>
+      </div>
+      <div class="card stat">
+        <span class="box-label">LUCRO DO MÊS</span>
+        <span id="profit-month" class="stat-value neutral">R$ 0,00</span>
+        <span id="month-meta" class="box-meta">0 operações</span>
+      </div>
+      <div class="card stat">
+        <span class="box-label">EXPOSIÇÃO SIMULTÂNEA</span>
+        <span id="exposure" class="stat-value">R$ 0,00</span>
+        <div class="gauge"><span id="exposure-bar"></span></div>
+        <span id="exposure-meta" class="box-meta">teto 0% do saldo</span>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <span class="box-label">POSIÇÕES ABERTAS</span>
+          <span id="open-count" class="badge">0</span>
+        </div>
+        <ul id="positions" class="list"><li class="empty">nenhuma posição aberta</li></ul>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="box-label">ATIVIDADE AO VIVO</span>
+          <span id="feed-count" class="badge">0</span>
+        </div>
+        <ul id="events" class="list feed"><li class="empty">sem eventos ainda</li></ul>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span>motor <b>V16</b> · <span id="foot-hash">--</span></span>
+      <span id="foot-proof">prova: --</span>
+      <span id="foot-updated">--</span>
+    </footer>
+  </main>
+
+  <dialog id="settings" class="modal">
+    <form method="dialog" class="modal-card">
+      <header class="modal-head">
+        <h2>Configurações</h2>
+        <button class="btn btn-icon" value="close" aria-label="fechar">✕</button>
+      </header>
+      <div class="modal-body">
+        <section class="field-group">
+          <h3>Tema</h3>
+          <div class="segmented" role="radiogroup" aria-label="Tema">
+            <button type="button" class="seg" data-theme-set="dark" role="radio" aria-checked="true">Escuro</button>
+            <button type="button" class="seg" data-theme-set="light" role="radio" aria-checked="false">Claro</button>
+          </div>
+          <p class="hint">A preferência fica salva neste navegador.</p>
+        </section>
+
+        <section class="field-group">
+          <h3>Valor fixo por operação</h3>
+          <div class="row">
+            <input id="settings-stake" class="input" type="text" inputmode="decimal" />
+            <button id="settings-stake-save" class="btn btn-primary" type="button">SALVAR</button>
+          </div>
+          <p class="hint" id="settings-stake-hint">--</p>
+        </section>
+
+        <section class="field-group">
+          <h3>Conta</h3>
+          <p class="kv"><span>Modo</span><b id="set-account">--</b></p>
+          <p class="hint">A conta NÃO é trocável pelo painel (proteção: o painel nunca troca de conta sozinho).</p>
+        </section>
+
+        <section class="field-group">
+          <h3>Motor (somente leitura)</h3>
+          <p class="kv"><span>Expiração</span><b id="set-expiry">--</b></p>
+          <p class="kv"><span>Ciclo por ativo</span><b id="set-cycle">--</b></p>
+          <p class="kv"><span>Stake base aplicado</span><b id="set-stake-applied">--</b></p>
+          <p class="kv"><span>Teto por ordem</span><b id="set-maxstake">--</b></p>
+          <p class="kv"><span>Exposição máxima</span><b id="set-exposure">--</b></p>
+          <p class="kv"><span>Trava de perda da sessão</span><b id="set-sessionloss">--</b></p>
+          <p class="kv"><span>Prova do motor</span><b id="set-proof">--</b></p>
+          <p class="hint">O painel não envia ordens e não decide nada: quem opera é o <code>ws-otc-v15.mjs</code>, exatamente como antes.</p>
+        </section>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="history" class="modal">
+    <form method="dialog" class="modal-card">
+      <header class="modal-head">
+        <h2>Histórico</h2>
+        <button class="btn btn-icon" value="close" aria-label="fechar">✕</button>
+      </header>
+      <div class="modal-body">
+        <div class="row between">
+          <div class="segmented small" role="radiogroup" aria-label="Período">
+            <button type="button" class="seg" data-range="day" role="radio" aria-checked="true">Dia</button>
+            <button type="button" class="seg" data-range="week" role="radio" aria-checked="false">Semana</button>
+            <button type="button" class="seg" data-range="month" role="radio" aria-checked="false">Mês</button>
+            <button type="button" class="seg" data-range="all" role="radio" aria-checked="false">Tudo</button>
+          </div>
+          <div class="segmented small" role="radiogroup" aria-label="Visão">
+            <button type="button" class="seg" data-tab="trades" role="radio" aria-checked="true">Operações</button>
+            <button type="button" class="seg" data-tab="sessions" role="radio" aria-checked="false">Sessões</button>
+          </div>
+        </div>
+        <div id="history-summary" class="history-summary">--</div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead id="history-head"></thead>
+            <tbody id="history-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirm" class="modal">
+    <form method="dialog" class="modal-card small">
+      <header class="modal-head">
+        <h2 id="confirm-title">Confirmar</h2>
+        <button class="btn btn-icon" value="close" aria-label="fechar">✕</button>
+      </header>
+      <div class="modal-body">
+        <p id="confirm-text" class="confirm-text">--</p>
+        <div class="row end">
+          <button class="btn btn-ghost" type="submit" value="cancel" id="confirm-cancel">Cancelar</button>
+          <button class="btn btn-danger" type="submit" value="ok" id="confirm-ok">Confirmar</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

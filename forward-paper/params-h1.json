@@ -1,0 +1,33 @@
+{
+  "strategy_id": "TRACECON-WF-ETHUSDT-5M-BB20-H1",
+  "status": "FROZEN — experimento DISTINTO do H5; mesma regra de entrada, horizonte diferente",
+  "frozenAtUtc": "2026-09-28",
+  "source_artifact": {
+    "file": "diagnostic-results/walk_forward_real.mts",
+    "sha256_prefix": "95ae42577f7e721b"
+  },
+  "symbol": "ETHUSDT",
+  "timeframe_candle": "5m",
+  "indicators": {
+    "window": 20,
+    "mean": "arithmetic mean of last 20 CLOSED candle closes",
+    "std": "POPULATION standard deviation (divide by 20) of the same 20 closes",
+    "band_multiplier": 2.0
+  },
+  "entry_rule": {
+    "signal_at": "close of each 5m candle (bucket boundary, Binance kline closed=true)",
+    "up_entry": "close < mean - 2.0*std -> direction UP",
+    "down_entry": "close > mean + 2.0*std -> direction DOWN",
+    "otherwise": "no trade",
+    "filters": "none (filter 'all')"
+  },
+  "horizon": {
+    "duration_minutes": 5,
+    "definition": "1 candle of 5m",
+    "settlement": "close of the candle 1 bucket after the signal candle"
+  },
+  "overlaps": "minimal by construction (h1 < candle size), still tracked",
+  "relationship_to_h5": "same frozen entry rule; SEPARATE ledger and SEPARATE conclusions; criteria frozen independently",
+  "evaluation_protocol": "identical to params-h5.json evaluation_protocol",
+  "prohibition": "NO real orders, NO PRACTICE orders. Read-only market data only."
+}

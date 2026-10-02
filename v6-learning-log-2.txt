@@ -1,0 +1,31 @@
+[LOGIN] OK!
+
+[WS] Ready!
+[💼 CONTA] DEMO | Saldo: R$10025.12
+
+======================================================================
+🧠 BOT v6 - AUTO-LEARNING (Fade3 + Adaptive WR)
+======================================================================
+
+📋 Ativos + estado aprendido:
+   ✅ ON SEIUSD          | hist:62.7% obs:62.7% (0/0) | est:62.7%
+   ✅ ON USDHKD          | hist:57.4% obs:57.4% (0/0) | est:57.4%
+   ✅ ON LTCUSD          | hist:56.6% obs:56.6% (0/0) | est:56.6%
+   ✅ ON DOTUSD          | hist:55.5% obs:55.5% (0/0) | est:55.5%
+   ✅ ON USDZAR          | hist:55.1% obs:55.1% (0/0) | est:55.1%
+[✅] front.USDZAR-OTC → PUT (size=5s)
+[✅] front.USDHKD-OTC → CALL (size=5s)
+[✅] front.LTCUSD-OTC → PUT (size=5s)
+[✅] front.DOTUSD-OTC → PUT (size=5s)
+[✅] front.SEIUSD-OTC → PUT (size=5s)
+
+[📋] 5/5 ativos ativos
+[⏳] Warmup 20s...
+
+[✅] INICIADO! Auto-learning ON.
+
+[📊 front.LTCUSD-OTC] PUT | WR-ajustado:56.6% (hist:56.6% obs:56.6%)
+[📊 front.SEIUSD-OTC] PUT | WR-ajustado:62.7% (hist:62.7% obs:62.7%)
+[📊 front.USDHKD-OTC] CALL | WR-ajustado:57.4% (hist:57.4% obs:57.4%)
+[📊 front.DOTUSD-OTC] PUT | WR-ajustado:55.5% (hist:55.5% obs:55.5%)
+[📊 front.USDZAR-OTC] PUT | WR-ajustado:55.1% (hist:55.1% obs:55.1%)

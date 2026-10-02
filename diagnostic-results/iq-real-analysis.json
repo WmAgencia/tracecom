@@ -1,0 +1,3980 @@
+{
+  "label": "BINARIOS REAIS (MCP IQ Option) — mercado real aberto hoje; leitura apenas",
+  "generatedAt": "2026-09-28T16:26:21.434Z",
+  "series": [
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_300s",
+      "size": 300,
+      "rows": 5000,
+      "spanH": 455.7,
+      "lag1": 0.0065,
+      "lag5": 0.0192,
+      "vr5": 1.03,
+      "session": {
+        "london": {
+          "n": 1853,
+          "annPct": 31.52
+        },
+        "ny": {
+          "n": 3146,
+          "annPct": 41.67
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_60s",
+      "size": 60,
+      "rows": 5000,
+      "spanH": 118,
+      "lag1": 0.0133,
+      "lag5": -0.0069,
+      "vr5": 1.027,
+      "session": {
+        "london": {
+          "n": 2040,
+          "annPct": 32.92
+        },
+        "ny": {
+          "n": 2959,
+          "annPct": 56.76
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_300s",
+      "size": 300,
+      "rows": 5000,
+      "spanH": 455.7,
+      "lag1": -0.0244,
+      "lag5": 0.0375,
+      "vr5": 0.921,
+      "session": {
+        "london": {
+          "n": 1852,
+          "annPct": 47.26
+        },
+        "ny": {
+          "n": 3147,
+          "annPct": 34.71
+        }
+      },
+      "interpretation": "mean-reversion"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_60s",
+      "size": 60,
+      "rows": 6000,
+      "spanH": 118.5,
+      "lag1": 0.044,
+      "lag5": 0.0048,
+      "vr5": 1.048,
+      "session": {
+        "london": {
+          "n": 2486,
+          "annPct": 44.7
+        },
+        "ny": {
+          "n": 3513,
+          "annPct": 43.42
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_300s",
+      "size": 300,
+      "rows": 5000,
+      "spanH": 455.7,
+      "lag1": 0.0299,
+      "lag5": 0.0251,
+      "vr5": 1.025,
+      "session": {
+        "london": {
+          "n": 1852,
+          "annPct": 31.56
+        },
+        "ny": {
+          "n": 3147,
+          "annPct": 24.45
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_60s",
+      "size": 60,
+      "rows": 5000,
+      "spanH": 118,
+      "lag1": 0.0293,
+      "lag5": 0.0317,
+      "vr5": 1.01,
+      "session": {
+        "london": {
+          "n": 2039,
+          "annPct": 33.52
+        },
+        "ny": {
+          "n": 2960,
+          "annPct": 17.89
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_300s",
+      "size": 300,
+      "rows": 6000,
+      "spanH": 456.1,
+      "lag1": 0.0263,
+      "lag5": 0.0155,
+      "vr5": 1.033,
+      "session": {
+        "london": {
+          "n": 2229,
+          "annPct": 66.33
+        },
+        "ny": {
+          "n": 3770,
+          "annPct": 51.68
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_60s",
+      "size": 60,
+      "rows": 6000,
+      "spanH": 118.5,
+      "lag1": -0.0195,
+      "lag5": -0.0556,
+      "vr5": 0.887,
+      "session": {
+        "london": {
+          "n": 2486,
+          "annPct": 59.14
+        },
+        "ny": {
+          "n": 3513,
+          "annPct": 37.06
+        }
+      },
+      "interpretation": "mean-reversion"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_300s",
+      "size": 300,
+      "rows": 6000,
+      "spanH": 456.1,
+      "lag1": -0.0239,
+      "lag5": -0.0153,
+      "vr5": 0.929,
+      "session": {
+        "london": {
+          "n": 2229,
+          "annPct": 148.91
+        },
+        "ny": {
+          "n": 3770,
+          "annPct": 131.01
+        }
+      },
+      "interpretation": "mean-reversion"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_60s",
+      "size": 60,
+      "rows": 6000,
+      "spanH": 118.5,
+      "lag1": -0.0201,
+      "lag5": 0.0154,
+      "vr5": 0.969,
+      "session": {
+        "london": {
+          "n": 2486,
+          "annPct": 183.94
+        },
+        "ny": {
+          "n": 3513,
+          "annPct": 154.8
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_300s",
+      "size": 300,
+      "rows": 6000,
+      "spanH": 456.1,
+      "lag1": 0.0025,
+      "lag5": 0.0084,
+      "vr5": 1.033,
+      "session": {
+        "london": {
+          "n": 2229,
+          "annPct": 42.27
+        },
+        "ny": {
+          "n": 3770,
+          "annPct": 45.8
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_60s",
+      "size": 60,
+      "rows": 6000,
+      "spanH": 118.5,
+      "lag1": 0.0452,
+      "lag5": 0.0185,
+      "vr5": 1.079,
+      "session": {
+        "london": {
+          "n": 2486,
+          "annPct": 38.34
+        },
+        "ny": {
+          "n": 3513,
+          "annPct": 37.77
+        }
+      },
+      "interpretation": "trending"
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_300s",
+      "size": 300,
+      "rows": 2000,
+      "spanH": 134.8,
+      "lag1": -0.0093,
+      "lag5": -0.0238,
+      "vr5": 1.015,
+      "session": {
+        "asia": {
+          "n": 643,
+          "annPct": 33.08
+        },
+        "london": {
+          "n": 858,
+          "annPct": 21.88
+        },
+        "ny": {
+          "n": 498,
+          "annPct": 21.59
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_60s",
+      "size": 60,
+      "rows": 2000,
+      "spanH": 16.8,
+      "lag1": -0.034,
+      "lag5": 0.0227,
+      "vr5": 0.963,
+      "session": {
+        "asia": {
+          "n": 840,
+          "annPct": 29.15
+        },
+        "london": {
+          "n": 1041,
+          "annPct": 25.92
+        },
+        "ny": {
+          "n": 118,
+          "annPct": 74.83
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_300s",
+      "size": 300,
+      "rows": 7000,
+      "spanH": 456.1,
+      "lag1": -0.0098,
+      "lag5": 0.0464,
+      "vr5": 1.048,
+      "session": {
+        "london": {
+          "n": 2595,
+          "annPct": 32.15
+        },
+        "ny": {
+          "n": 4404,
+          "annPct": 14.1
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_60s",
+      "size": 60,
+      "rows": 7000,
+      "spanH": 118.5,
+      "lag1": 0.0584,
+      "lag5": 0.0068,
+      "vr5": 1.024,
+      "session": {
+        "london": {
+          "n": 2870,
+          "annPct": 27.98
+        },
+        "ny": {
+          "n": 4129,
+          "annPct": 20.43
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_300s",
+      "size": 300,
+      "rows": 5000,
+      "spanH": 455.7,
+      "lag1": -0.0226,
+      "lag5": 0.0155,
+      "vr5": 0.983,
+      "session": {
+        "london": {
+          "n": 1852,
+          "annPct": 115.08
+        },
+        "ny": {
+          "n": 3147,
+          "annPct": 44.18
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_60s",
+      "size": 60,
+      "rows": 5000,
+      "spanH": 118,
+      "lag1": 0.05,
+      "lag5": -0.0741,
+      "vr5": 1.148,
+      "session": {
+        "london": {
+          "n": 2039,
+          "annPct": 76.87
+        },
+        "ny": {
+          "n": 2960,
+          "annPct": 39.5
+        }
+      },
+      "interpretation": "trending"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_300s",
+      "size": 300,
+      "rows": 6000,
+      "spanH": 456.1,
+      "lag1": -0.007,
+      "lag5": 0.008,
+      "vr5": 1.019,
+      "session": {
+        "london": {
+          "n": 2229,
+          "annPct": 69.49
+        },
+        "ny": {
+          "n": 3770,
+          "annPct": 35.87
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_60s",
+      "size": 60,
+      "rows": 6000,
+      "spanH": 118.5,
+      "lag1": 0.0469,
+      "lag5": -0.0365,
+      "vr5": 1.094,
+      "session": {
+        "london": {
+          "n": 2486,
+          "annPct": 55.8
+        },
+        "ny": {
+          "n": 3513,
+          "annPct": 31.39
+        }
+      },
+      "interpretation": "trending"
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_300s",
+      "size": 300,
+      "rows": 3000,
+      "spanH": 148.2,
+      "lag1": -0.0733,
+      "lag5": -0.0071,
+      "vr5": 0.83,
+      "session": {
+        "asia": {
+          "n": 996,
+          "annPct": 8.14
+        },
+        "london": {
+          "n": 1415,
+          "annPct": 16.58
+        },
+        "ny": {
+          "n": 588,
+          "annPct": 12.89
+        }
+      },
+      "interpretation": "mean-reversion"
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_60s",
+      "size": 60,
+      "rows": 4000,
+      "spanH": 69.5,
+      "lag1": -0.0388,
+      "lag5": -0.0746,
+      "vr5": 0.88,
+      "session": {
+        "asia": {
+          "n": 1676,
+          "annPct": 11.47
+        },
+        "london": {
+          "n": 2006,
+          "annPct": 18.92
+        },
+        "ny": {
+          "n": 317,
+          "annPct": 18.45
+        }
+      },
+      "interpretation": "mean-reversion"
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_300s",
+      "size": 300,
+      "rows": 5000,
+      "spanH": 455.7,
+      "lag1": -0.0111,
+      "lag5": 0.0235,
+      "vr5": 1.051,
+      "session": {
+        "london": {
+          "n": 1852,
+          "annPct": 149.32
+        },
+        "ny": {
+          "n": 3147,
+          "annPct": 106.39
+        }
+      },
+      "interpretation": "trending"
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_60s",
+      "size": 60,
+      "rows": 5000,
+      "spanH": 118,
+      "lag1": 0.056,
+      "lag5": -0.0074,
+      "vr5": 1.105,
+      "session": {
+        "london": {
+          "n": 2039,
+          "annPct": 121.47
+        },
+        "ny": {
+          "n": 2960,
+          "annPct": 91.22
+        }
+      },
+      "interpretation": "trending"
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_300s",
+      "size": 300,
+      "rows": 5000,
+      "spanH": 455.7,
+      "lag1": -0.0259,
+      "lag5": 0.0404,
+      "vr5": 0.982,
+      "session": {
+        "london": {
+          "n": 1853,
+          "annPct": 65.04
+        },
+        "ny": {
+          "n": 3146,
+          "annPct": 34.12
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_60s",
+      "size": 60,
+      "rows": 5000,
+      "spanH": 118,
+      "lag1": 0.0527,
+      "lag5": 0.0142,
+      "vr5": 1.058,
+      "session": {
+        "london": {
+          "n": 2041,
+          "annPct": 55.86
+        },
+        "ny": {
+          "n": 2958,
+          "annPct": 41.07
+        }
+      },
+      "interpretation": "trending"
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_300s",
+      "size": 300,
+      "rows": 5000,
+      "spanH": 135.4,
+      "lag1": -0.0061,
+      "lag5": 0.023,
+      "vr5": 0.983,
+      "session": {
+        "asia": {
+          "n": 1626,
+          "annPct": 27.24
+        },
+        "london": {
+          "n": 2128,
+          "annPct": 18.36
+        },
+        "ny": {
+          "n": 1245,
+          "annPct": 18.99
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_60s",
+      "size": 60,
+      "rows": 5000,
+      "spanH": 17.5,
+      "lag1": 0.0075,
+      "lag5": 0.0005,
+      "vr5": 0.993,
+      "session": {
+        "asia": {
+          "n": 2100,
+          "annPct": 14.51
+        },
+        "london": {
+          "n": 2508,
+          "annPct": 21.15
+        },
+        "ny": {
+          "n": 391,
+          "annPct": 70.4
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_300s",
+      "size": 300,
+      "rows": 5000,
+      "spanH": 135.4,
+      "lag1": -0.0146,
+      "lag5": -0.0158,
+      "vr5": 0.956,
+      "session": {
+        "asia": {
+          "n": 1626,
+          "annPct": 38.14
+        },
+        "london": {
+          "n": 2128,
+          "annPct": 17.86
+        },
+        "ny": {
+          "n": 1245,
+          "annPct": 20.93
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_60s",
+      "size": 60,
+      "rows": 5000,
+      "spanH": 17.5,
+      "lag1": -0.0596,
+      "lag5": 0.0292,
+      "vr5": 0.815,
+      "session": {
+        "asia": {
+          "n": 2100,
+          "annPct": 11.11
+        },
+        "london": {
+          "n": 2509,
+          "annPct": 22.67
+        },
+        "ny": {
+          "n": 390,
+          "annPct": 31.99
+        }
+      },
+      "interpretation": "mean-reversion"
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_300s",
+      "size": 300,
+      "rows": 5000,
+      "spanH": 135.4,
+      "lag1": -0.0477,
+      "lag5": -0.071,
+      "vr5": 0.897,
+      "session": {
+        "asia": {
+          "n": 1626,
+          "annPct": 12.7
+        },
+        "london": {
+          "n": 2128,
+          "annPct": 13.92
+        },
+        "ny": {
+          "n": 1245,
+          "annPct": 13.95
+        }
+      },
+      "interpretation": "mean-reversion"
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_60s",
+      "size": 60,
+      "rows": 5000,
+      "spanH": 17.5,
+      "lag1": -0.0456,
+      "lag5": 0.0148,
+      "vr5": 0.884,
+      "session": {
+        "asia": {
+          "n": 2100,
+          "annPct": 7.57
+        },
+        "london": {
+          "n": 2509,
+          "annPct": 15.58
+        },
+        "ny": {
+          "n": 390,
+          "annPct": 25.5
+        }
+      },
+      "interpretation": "mean-reversion"
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_300s",
+      "size": 300,
+      "rows": 5000,
+      "spanH": 135.4,
+      "lag1": -0.0373,
+      "lag5": -0.0042,
+      "vr5": 0.914,
+      "session": {
+        "asia": {
+          "n": 1626,
+          "annPct": 16.66
+        },
+        "london": {
+          "n": 2128,
+          "annPct": 11.79
+        },
+        "ny": {
+          "n": 1245,
+          "annPct": 14.24
+        }
+      },
+      "interpretation": "mean-reversion"
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_60s",
+      "size": 60,
+      "rows": 5000,
+      "spanH": 17.5,
+      "lag1": -0.02,
+      "lag5": 0.0195,
+      "vr5": 0.932,
+      "session": {
+        "asia": {
+          "n": 2100,
+          "annPct": 8.08
+        },
+        "london": {
+          "n": 2507,
+          "annPct": 13.44
+        },
+        "ny": {
+          "n": 392,
+          "annPct": 34.59
+        }
+      },
+      "interpretation": "mean-reversion"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_300s",
+      "size": 300,
+      "rows": 6000,
+      "spanH": 456.1,
+      "lag1": -0.0013,
+      "lag5": 0.0074,
+      "vr5": 0.982,
+      "session": {
+        "london": {
+          "n": 2229,
+          "annPct": 41.69
+        },
+        "ny": {
+          "n": 3770,
+          "annPct": 92.22
+        }
+      },
+      "interpretation": "random-walk"
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_60s",
+      "size": 60,
+      "rows": 6000,
+      "spanH": 118.5,
+      "lag1": 0.0008,
+      "lag5": 0.004,
+      "vr5": 1.024,
+      "session": {
+        "london": {
+          "n": 2486,
+          "annPct": 33.42
+        },
+        "ny": {
+          "n": 3513,
+          "annPct": 46.75
+        }
+      },
+      "interpretation": "random-walk"
+    }
+  ],
+  "winRates": [
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4389,
+      "wr": 0.471,
+      "lo": 0.456,
+      "hi": 0.486
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4385,
+      "wr": 0.474,
+      "lo": 0.459,
+      "hi": 0.489
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 794,
+      "wr": 0.466,
+      "lo": 0.432,
+      "hi": 0.501
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 792,
+      "wr": 0.486,
+      "lo": 0.452,
+      "hi": 0.521
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 1216,
+      "wr": 0.434,
+      "lo": 0.407,
+      "hi": 0.462
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 1215,
+      "wr": 0.417,
+      "lo": 0.39,
+      "hi": 0.445
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 700,
+      "wr": 0.373,
+      "lo": 0.338,
+      "hi": 0.409
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 700,
+      "wr": 0.409,
+      "lo": 0.373,
+      "hi": 0.445
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4016,
+      "wr": 0.403,
+      "lo": 0.388,
+      "hi": 0.418
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4012,
+      "wr": 0.466,
+      "lo": 0.45,
+      "hi": 0.481
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 683,
+      "wr": 0.346,
+      "lo": 0.311,
+      "hi": 0.382
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 681,
+      "wr": 0.465,
+      "lo": 0.429,
+      "hi": 0.503
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 1051,
+      "wr": 0.378,
+      "lo": 0.349,
+      "hi": 0.407
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 1050,
+      "wr": 0.369,
+      "lo": 0.34,
+      "hi": 0.398
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 639,
+      "wr": 0.326,
+      "lo": 0.291,
+      "hi": 0.363
+    },
+    {
+      "server": "binary-options",
+      "asset": "20--Year-Treasury-Bond-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 636,
+      "wr": 0.478,
+      "lo": 0.44,
+      "hi": 0.517
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4724,
+      "wr": 0.495,
+      "lo": 0.481,
+      "hi": 0.509
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4720,
+      "wr": 0.51,
+      "lo": 0.496,
+      "hi": 0.525
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1009,
+      "wr": 0.531,
+      "lo": 0.5,
+      "hi": 0.562
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1009,
+      "wr": 0.546,
+      "lo": 0.515,
+      "hi": 0.576
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 647,
+      "wr": 0.485,
+      "lo": 0.447,
+      "hi": 0.524
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 646,
+      "wr": 0.536,
+      "lo": 0.497,
+      "hi": 0.574
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 604,
+      "wr": 0.497,
+      "lo": 0.457,
+      "hi": 0.536
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 604,
+      "wr": 0.48,
+      "lo": 0.441,
+      "hi": 0.52
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 5434,
+      "wr": 0.436,
+      "lo": 0.423,
+      "hi": 0.449
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 5430,
+      "wr": 0.497,
+      "lo": 0.484,
+      "hi": 0.511
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1216,
+      "wr": 0.437,
+      "lo": 0.409,
+      "hi": 0.465
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1215,
+      "wr": 0.515,
+      "lo": 0.487,
+      "hi": 0.543
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 539,
+      "wr": 0.505,
+      "lo": 0.463,
+      "hi": 0.546
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 539,
+      "wr": 0.57,
+      "lo": 0.528,
+      "hi": 0.61
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 752,
+      "wr": 0.479,
+      "lo": 0.443,
+      "hi": 0.514
+    },
+    {
+      "server": "binary-options",
+      "asset": "Consumer-Discretionary-SPDR_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 750,
+      "wr": 0.551,
+      "lo": 0.515,
+      "hi": 0.586
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4949,
+      "wr": 0.557,
+      "lo": 0.544,
+      "hi": 0.571
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4945,
+      "wr": 0.49,
+      "lo": 0.476,
+      "hi": 0.504
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 901,
+      "wr": 0.556,
+      "lo": 0.524,
+      "hi": 0.588
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 901,
+      "wr": 0.491,
+      "lo": 0.458,
+      "hi": 0.523
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 674,
+      "wr": 0.561,
+      "lo": 0.523,
+      "hi": 0.598
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 674,
+      "wr": 0.582,
+      "lo": 0.544,
+      "hi": 0.618
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 600,
+      "wr": 0.493,
+      "lo": 0.454,
+      "hi": 0.533
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 600,
+      "wr": 0.443,
+      "lo": 0.404,
+      "hi": 0.483
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4898,
+      "wr": 0.447,
+      "lo": 0.433,
+      "hi": 0.461
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4894,
+      "wr": 0.515,
+      "lo": 0.501,
+      "hi": 0.528
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1450,
+      "wr": 0.451,
+      "lo": 0.426,
+      "hi": 0.477
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1450,
+      "wr": 0.581,
+      "lo": 0.556,
+      "hi": 0.606
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 414,
+      "wr": 0.517,
+      "lo": 0.469,
+      "hi": 0.564
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 414,
+      "wr": 0.592,
+      "lo": 0.544,
+      "hi": 0.638
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 509,
+      "wr": 0.454,
+      "lo": 0.411,
+      "hi": 0.497
+    },
+    {
+      "server": "binary-options",
+      "asset": "Dow-Jones-Industrial-Average-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 507,
+      "wr": 0.631,
+      "lo": 0.589,
+      "hi": 0.672
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 5592,
+      "wr": 0.483,
+      "lo": 0.47,
+      "hi": 0.496
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 5588,
+      "wr": 0.503,
+      "lo": 0.489,
+      "hi": 0.516
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1027,
+      "wr": 0.553,
+      "lo": 0.523,
+      "hi": 0.583
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1026,
+      "wr": 0.516,
+      "lo": 0.485,
+      "hi": 0.546
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 934,
+      "wr": 0.491,
+      "lo": 0.46,
+      "hi": 0.523
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 934,
+      "wr": 0.449,
+      "lo": 0.417,
+      "hi": 0.481
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 732,
+      "wr": 0.474,
+      "lo": 0.438,
+      "hi": 0.51
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 732,
+      "wr": 0.432,
+      "lo": 0.396,
+      "hi": 0.468
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 5095,
+      "wr": 0.448,
+      "lo": 0.434,
+      "hi": 0.462
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 5092,
+      "wr": 0.499,
+      "lo": 0.485,
+      "hi": 0.512
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 838,
+      "wr": 0.484,
+      "lo": 0.451,
+      "hi": 0.518
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 836,
+      "wr": 0.556,
+      "lo": 0.523,
+      "hi": 0.589
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 473,
+      "wr": 0.442,
+      "lo": 0.398,
+      "hi": 0.487
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 472,
+      "wr": 0.508,
+      "lo": 0.464,
+      "hi": 0.553
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 623,
+      "wr": 0.446,
+      "lo": 0.408,
+      "hi": 0.485
+    },
+    {
+      "server": "binary-options",
+      "asset": "Energy-SPDR_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 621,
+      "wr": 0.536,
+      "lo": 0.497,
+      "hi": 0.575
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 5885,
+      "wr": 0.496,
+      "lo": 0.484,
+      "hi": 0.509
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 5881,
+      "wr": 0.502,
+      "lo": 0.489,
+      "hi": 0.515
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1377,
+      "wr": 0.492,
+      "lo": 0.466,
+      "hi": 0.519
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1377,
+      "wr": 0.536,
+      "lo": 0.51,
+      "hi": 0.562
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 844,
+      "wr": 0.521,
+      "lo": 0.488,
+      "hi": 0.555
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 843,
+      "wr": 0.537,
+      "lo": 0.504,
+      "hi": 0.571
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 820,
+      "wr": 0.502,
+      "lo": 0.468,
+      "hi": 0.536
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 820,
+      "wr": 0.467,
+      "lo": 0.433,
+      "hi": 0.501
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 5707,
+      "wr": 0.474,
+      "lo": 0.461,
+      "hi": 0.487
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 5703,
+      "wr": 0.501,
+      "lo": 0.488,
+      "hi": 0.514
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1330,
+      "wr": 0.505,
+      "lo": 0.478,
+      "hi": 0.531
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1329,
+      "wr": 0.519,
+      "lo": 0.492,
+      "hi": 0.546
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 666,
+      "wr": 0.491,
+      "lo": 0.453,
+      "hi": 0.529
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 666,
+      "wr": 0.583,
+      "lo": 0.545,
+      "hi": 0.619
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 576,
+      "wr": 0.434,
+      "lo": 0.394,
+      "hi": 0.475
+    },
+    {
+      "server": "binary-options",
+      "asset": "Gold-Miners-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 576,
+      "wr": 0.514,
+      "lo": 0.473,
+      "hi": 0.554
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 5838,
+      "wr": 0.512,
+      "lo": 0.499,
+      "hi": 0.525
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 5834,
+      "wr": 0.495,
+      "lo": 0.483,
+      "hi": 0.508
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1256,
+      "wr": 0.543,
+      "lo": 0.515,
+      "hi": 0.57
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1256,
+      "wr": 0.51,
+      "lo": 0.483,
+      "hi": 0.538
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 1132,
+      "wr": 0.503,
+      "lo": 0.474,
+      "hi": 0.532
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 1132,
+      "wr": 0.473,
+      "lo": 0.445,
+      "hi": 0.503
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 855,
+      "wr": 0.484,
+      "lo": 0.451,
+      "hi": 0.518
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 855,
+      "wr": 0.416,
+      "lo": 0.384,
+      "hi": 0.45
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 5811,
+      "wr": 0.454,
+      "lo": 0.441,
+      "hi": 0.467
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 5807,
+      "wr": 0.543,
+      "lo": 0.53,
+      "hi": 0.556
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1543,
+      "wr": 0.467,
+      "lo": 0.442,
+      "hi": 0.492
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1542,
+      "wr": 0.603,
+      "lo": 0.579,
+      "hi": 0.627
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 597,
+      "wr": 0.568,
+      "lo": 0.528,
+      "hi": 0.607
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 597,
+      "wr": 0.67,
+      "lo": 0.632,
+      "hi": 0.706
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 704,
+      "wr": 0.459,
+      "lo": 0.423,
+      "hi": 0.496
+    },
+    {
+      "server": "binary-options",
+      "asset": "iShares-Russell-2000-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 704,
+      "wr": 0.622,
+      "lo": 0.586,
+      "hi": 0.657
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 1952,
+      "wr": 0.506,
+      "lo": 0.484,
+      "hi": 0.528
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 1948,
+      "wr": 0.511,
+      "lo": 0.489,
+      "hi": 0.533
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 469,
+      "wr": 0.512,
+      "lo": 0.467,
+      "hi": 0.556
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 468,
+      "wr": 0.504,
+      "lo": 0.459,
+      "hi": 0.549
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 194,
+      "wr": 0.521,
+      "lo": 0.452,
+      "hi": 0.588
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 194,
+      "wr": 0.639,
+      "lo": 0.571,
+      "hi": 0.702
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 259,
+      "wr": 0.483,
+      "lo": 0.423,
+      "hi": 0.542
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 259,
+      "wr": 0.506,
+      "lo": 0.446,
+      "hi": 0.565
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 1945,
+      "wr": 0.492,
+      "lo": 0.469,
+      "hi": 0.514
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 1941,
+      "wr": 0.479,
+      "lo": 0.457,
+      "hi": 0.501
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 462,
+      "wr": 0.5,
+      "lo": 0.455,
+      "hi": 0.545
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 460,
+      "wr": 0.515,
+      "lo": 0.47,
+      "hi": 0.56
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 161,
+      "wr": 0.416,
+      "lo": 0.345,
+      "hi": 0.492
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 161,
+      "wr": 0.435,
+      "lo": 0.362,
+      "hi": 0.51
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 245,
+      "wr": 0.424,
+      "lo": 0.365,
+      "hi": 0.486
+    },
+    {
+      "server": "binary-options",
+      "asset": "JP-225_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 245,
+      "wr": 0.535,
+      "lo": 0.473,
+      "hi": 0.595
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 6953,
+      "wr": 0.529,
+      "lo": 0.517,
+      "hi": 0.541
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 6949,
+      "wr": 0.495,
+      "lo": 0.484,
+      "hi": 0.507
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1529,
+      "wr": 0.552,
+      "lo": 0.527,
+      "hi": 0.577
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1529,
+      "wr": 0.485,
+      "lo": 0.46,
+      "hi": 0.51
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 1284,
+      "wr": 0.442,
+      "lo": 0.415,
+      "hi": 0.47
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 1284,
+      "wr": 0.417,
+      "lo": 0.39,
+      "hi": 0.444
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 806,
+      "wr": 0.509,
+      "lo": 0.474,
+      "hi": 0.543
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 806,
+      "wr": 0.488,
+      "lo": 0.453,
+      "hi": 0.522
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 6851,
+      "wr": 0.477,
+      "lo": 0.465,
+      "hi": 0.489
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 6847,
+      "wr": 0.522,
+      "lo": 0.51,
+      "hi": 0.533
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1767,
+      "wr": 0.54,
+      "lo": 0.517,
+      "hi": 0.563
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1767,
+      "wr": 0.621,
+      "lo": 0.599,
+      "hi": 0.644
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 743,
+      "wr": 0.483,
+      "lo": 0.448,
+      "hi": 0.519
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 743,
+      "wr": 0.563,
+      "lo": 0.527,
+      "hi": 0.598
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 832,
+      "wr": 0.445,
+      "lo": 0.411,
+      "hi": 0.479
+    },
+    {
+      "server": "binary-options",
+      "asset": "S-P-500-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 832,
+      "wr": 0.572,
+      "lo": 0.538,
+      "hi": 0.605
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4950,
+      "wr": 0.517,
+      "lo": 0.503,
+      "hi": 0.531
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4946,
+      "wr": 0.521,
+      "lo": 0.507,
+      "hi": 0.535
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1113,
+      "wr": 0.557,
+      "lo": 0.528,
+      "hi": 0.586
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1111,
+      "wr": 0.541,
+      "lo": 0.512,
+      "hi": 0.57
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 1080,
+      "wr": 0.485,
+      "lo": 0.456,
+      "hi": 0.515
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 1080,
+      "wr": 0.424,
+      "lo": 0.395,
+      "hi": 0.454
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 707,
+      "wr": 0.521,
+      "lo": 0.484,
+      "hi": 0.557
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 707,
+      "wr": 0.482,
+      "lo": 0.446,
+      "hi": 0.519
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4934,
+      "wr": 0.489,
+      "lo": 0.475,
+      "hi": 0.503
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4930,
+      "wr": 0.487,
+      "lo": 0.473,
+      "hi": 0.501
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1283,
+      "wr": 0.498,
+      "lo": 0.471,
+      "hi": 0.525
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1281,
+      "wr": 0.518,
+      "lo": 0.49,
+      "hi": 0.545
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 512,
+      "wr": 0.523,
+      "lo": 0.48,
+      "hi": 0.566
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 512,
+      "wr": 0.627,
+      "lo": 0.585,
+      "hi": 0.667
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 640,
+      "wr": 0.467,
+      "lo": 0.429,
+      "hi": 0.506
+    },
+    {
+      "server": "binary-options",
+      "asset": "Semiconductor-ETF_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 640,
+      "wr": 0.483,
+      "lo": 0.445,
+      "hi": 0.521
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 5896,
+      "wr": 0.522,
+      "lo": 0.509,
+      "hi": 0.535
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 5892,
+      "wr": 0.499,
+      "lo": 0.486,
+      "hi": 0.512
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1298,
+      "wr": 0.518,
+      "lo": 0.491,
+      "hi": 0.545
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1297,
+      "wr": 0.504,
+      "lo": 0.477,
+      "hi": 0.531
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 1079,
+      "wr": 0.474,
+      "lo": 0.444,
+      "hi": 0.503
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 1079,
+      "wr": 0.424,
+      "lo": 0.395,
+      "hi": 0.454
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 836,
+      "wr": 0.498,
+      "lo": 0.464,
+      "hi": 0.531
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 836,
+      "wr": 0.478,
+      "lo": 0.445,
+      "hi": 0.512
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 5793,
+      "wr": 0.466,
+      "lo": 0.454,
+      "hi": 0.479
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 5789,
+      "wr": 0.499,
+      "lo": 0.486,
+      "hi": 0.511
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1524,
+      "wr": 0.474,
+      "lo": 0.449,
+      "hi": 0.499
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1524,
+      "wr": 0.59,
+      "lo": 0.565,
+      "hi": 0.614
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 680,
+      "wr": 0.519,
+      "lo": 0.482,
+      "hi": 0.556
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 680,
+      "wr": 0.562,
+      "lo": 0.524,
+      "hi": 0.598
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 725,
+      "wr": 0.469,
+      "lo": 0.433,
+      "hi": 0.505
+    },
+    {
+      "server": "binary-options",
+      "asset": "Technology-SPDR_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 725,
+      "wr": 0.521,
+      "lo": 0.485,
+      "hi": 0.557
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 2962,
+      "wr": 0.515,
+      "lo": 0.497,
+      "hi": 0.533
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 2958,
+      "wr": 0.53,
+      "lo": 0.512,
+      "hi": 0.548
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 655,
+      "wr": 0.562,
+      "lo": 0.524,
+      "hi": 0.599
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 654,
+      "wr": 0.576,
+      "lo": 0.538,
+      "hi": 0.614
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 170,
+      "wr": 0.7,
+      "lo": 0.629,
+      "hi": 0.762
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 169,
+      "wr": 0.734,
+      "lo": 0.664,
+      "hi": 0.793
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 380,
+      "wr": 0.582,
+      "lo": 0.532,
+      "hi": 0.63
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 379,
+      "wr": 0.586,
+      "lo": 0.536,
+      "hi": 0.634
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 3951,
+      "wr": 0.523,
+      "lo": 0.507,
+      "hi": 0.538
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 3947,
+      "wr": 0.512,
+      "lo": 0.497,
+      "hi": 0.528
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 858,
+      "wr": 0.55,
+      "lo": 0.517,
+      "hi": 0.583
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 858,
+      "wr": 0.492,
+      "lo": 0.459,
+      "hi": 0.525
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 244,
+      "wr": 0.693,
+      "lo": 0.633,
+      "hi": 0.746
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 241,
+      "wr": 0.701,
+      "lo": 0.642,
+      "hi": 0.755
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 446,
+      "wr": 0.54,
+      "lo": 0.494,
+      "hi": 0.586
+    },
+    {
+      "server": "binary-options",
+      "asset": "UK-100_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 446,
+      "wr": 0.536,
+      "lo": 0.49,
+      "hi": 0.581
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4681,
+      "wr": 0.5,
+      "lo": 0.486,
+      "hi": 0.515
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4678,
+      "wr": 0.492,
+      "lo": 0.478,
+      "hi": 0.506
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 945,
+      "wr": 0.492,
+      "lo": 0.46,
+      "hi": 0.524
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 945,
+      "wr": 0.437,
+      "lo": 0.406,
+      "hi": 0.469
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 1138,
+      "wr": 0.42,
+      "lo": 0.392,
+      "hi": 0.449
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 1138,
+      "wr": 0.331,
+      "lo": 0.305,
+      "hi": 0.359
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 617,
+      "wr": 0.481,
+      "lo": 0.442,
+      "hi": 0.521
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 617,
+      "wr": 0.47,
+      "lo": 0.431,
+      "hi": 0.509
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4271,
+      "wr": 0.401,
+      "lo": 0.386,
+      "hi": 0.416
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4267,
+      "wr": 0.49,
+      "lo": 0.475,
+      "hi": 0.505
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 894,
+      "wr": 0.473,
+      "lo": 0.441,
+      "hi": 0.506
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 894,
+      "wr": 0.564,
+      "lo": 0.531,
+      "hi": 0.596
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 646,
+      "wr": 0.477,
+      "lo": 0.439,
+      "hi": 0.515
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 646,
+      "wr": 0.523,
+      "lo": 0.485,
+      "hi": 0.561
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 609,
+      "wr": 0.46,
+      "lo": 0.421,
+      "hi": 0.499
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraPro-Short-QQQ_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 609,
+      "wr": 0.557,
+      "lo": 0.517,
+      "hi": 0.595
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4565,
+      "wr": 0.496,
+      "lo": 0.481,
+      "hi": 0.51
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4562,
+      "wr": 0.498,
+      "lo": 0.484,
+      "hi": 0.513
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 838,
+      "wr": 0.504,
+      "lo": 0.47,
+      "hi": 0.537
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 838,
+      "wr": 0.512,
+      "lo": 0.478,
+      "hi": 0.545
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 856,
+      "wr": 0.453,
+      "lo": 0.42,
+      "hi": 0.487
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 856,
+      "wr": 0.419,
+      "lo": 0.387,
+      "hi": 0.453
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 527,
+      "wr": 0.546,
+      "lo": 0.504,
+      "hi": 0.588
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 527,
+      "wr": 0.535,
+      "lo": 0.493,
+      "hi": 0.577
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4177,
+      "wr": 0.403,
+      "lo": 0.389,
+      "hi": 0.418
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4173,
+      "wr": 0.486,
+      "lo": 0.471,
+      "hi": 0.501
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 853,
+      "wr": 0.482,
+      "lo": 0.449,
+      "hi": 0.515
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 853,
+      "wr": 0.571,
+      "lo": 0.538,
+      "hi": 0.604
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 548,
+      "wr": 0.453,
+      "lo": 0.412,
+      "hi": 0.494
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 548,
+      "wr": 0.533,
+      "lo": 0.491,
+      "hi": 0.574
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 604,
+      "wr": 0.417,
+      "lo": 0.379,
+      "hi": 0.457
+    },
+    {
+      "server": "binary-options",
+      "asset": "UltraShort-S-P-500_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 602,
+      "wr": 0.51,
+      "lo": 0.47,
+      "hi": 0.549
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4969,
+      "wr": 0.508,
+      "lo": 0.494,
+      "hi": 0.522
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4965,
+      "wr": 0.506,
+      "lo": 0.492,
+      "hi": 0.519
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1233,
+      "wr": 0.537,
+      "lo": 0.509,
+      "hi": 0.564
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1233,
+      "wr": 0.522,
+      "lo": 0.494,
+      "hi": 0.55
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 537,
+      "wr": 0.547,
+      "lo": 0.505,
+      "hi": 0.589
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 537,
+      "wr": 0.574,
+      "lo": 0.532,
+      "hi": 0.614
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 692,
+      "wr": 0.484,
+      "lo": 0.447,
+      "hi": 0.521
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 692,
+      "wr": 0.464,
+      "lo": 0.427,
+      "hi": 0.501
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4964,
+      "wr": 0.5,
+      "lo": 0.487,
+      "hi": 0.514
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4960,
+      "wr": 0.515,
+      "lo": 0.501,
+      "hi": 0.529
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1155,
+      "wr": 0.542,
+      "lo": 0.513,
+      "hi": 0.57
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1153,
+      "wr": 0.526,
+      "lo": 0.497,
+      "hi": 0.554
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 433,
+      "wr": 0.522,
+      "lo": 0.475,
+      "hi": 0.568
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 433,
+      "wr": 0.55,
+      "lo": 0.503,
+      "hi": 0.595
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 605,
+      "wr": 0.532,
+      "lo": 0.493,
+      "hi": 0.571
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-100_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 605,
+      "wr": 0.579,
+      "lo": 0.539,
+      "hi": 0.617
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4944,
+      "wr": 0.535,
+      "lo": 0.521,
+      "hi": 0.548
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4940,
+      "wr": 0.536,
+      "lo": 0.522,
+      "hi": 0.55
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1008,
+      "wr": 0.589,
+      "lo": 0.559,
+      "hi": 0.619
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1007,
+      "wr": 0.583,
+      "lo": 0.552,
+      "hi": 0.613
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 461,
+      "wr": 0.484,
+      "lo": 0.439,
+      "hi": 0.529
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 461,
+      "wr": 0.395,
+      "lo": 0.352,
+      "hi": 0.44
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 636,
+      "wr": 0.568,
+      "lo": 0.529,
+      "hi": 0.605
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 636,
+      "wr": 0.566,
+      "lo": 0.527,
+      "hi": 0.604
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4907,
+      "wr": 0.503,
+      "lo": 0.489,
+      "hi": 0.517
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4903,
+      "wr": 0.522,
+      "lo": 0.508,
+      "hi": 0.536
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1121,
+      "wr": 0.524,
+      "lo": 0.494,
+      "hi": 0.553
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1121,
+      "wr": 0.525,
+      "lo": 0.496,
+      "hi": 0.554
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 277,
+      "wr": 0.477,
+      "lo": 0.419,
+      "hi": 0.534
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 277,
+      "wr": 0.574,
+      "lo": 0.516,
+      "hi": 0.63
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 561,
+      "wr": 0.585,
+      "lo": 0.544,
+      "hi": 0.624
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-2000_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 561,
+      "wr": 0.667,
+      "lo": 0.627,
+      "hi": 0.704
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4909,
+      "wr": 0.516,
+      "lo": 0.502,
+      "hi": 0.53
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4905,
+      "wr": 0.503,
+      "lo": 0.489,
+      "hi": 0.517
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1084,
+      "wr": 0.524,
+      "lo": 0.494,
+      "hi": 0.553
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1084,
+      "wr": 0.537,
+      "lo": 0.507,
+      "hi": 0.566
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 395,
+      "wr": 0.527,
+      "lo": 0.478,
+      "hi": 0.575
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 395,
+      "wr": 0.509,
+      "lo": 0.46,
+      "hi": 0.557
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 626,
+      "wr": 0.564,
+      "lo": 0.525,
+      "hi": 0.602
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 626,
+      "wr": 0.583,
+      "lo": 0.544,
+      "hi": 0.621
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4804,
+      "wr": 0.509,
+      "lo": 0.495,
+      "hi": 0.523
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4800,
+      "wr": 0.508,
+      "lo": 0.494,
+      "hi": 0.522
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 994,
+      "wr": 0.506,
+      "lo": 0.475,
+      "hi": 0.537
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 994,
+      "wr": 0.519,
+      "lo": 0.488,
+      "hi": 0.55
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 259,
+      "wr": 0.606,
+      "lo": 0.546,
+      "hi": 0.663
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 259,
+      "wr": 0.664,
+      "lo": 0.605,
+      "hi": 0.718
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 627,
+      "wr": 0.561,
+      "lo": 0.523,
+      "hi": 0.6
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-30_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 626,
+      "wr": 0.526,
+      "lo": 0.487,
+      "hi": 0.564
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4909,
+      "wr": 0.513,
+      "lo": 0.499,
+      "hi": 0.526
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4905,
+      "wr": 0.529,
+      "lo": 0.515,
+      "hi": 0.543
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 1111,
+      "wr": 0.509,
+      "lo": 0.48,
+      "hi": 0.539
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 1110,
+      "wr": 0.575,
+      "lo": 0.546,
+      "hi": 0.603
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 452,
+      "wr": 0.482,
+      "lo": 0.437,
+      "hi": 0.528
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 452,
+      "wr": 0.571,
+      "lo": 0.525,
+      "hi": 0.615
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 626,
+      "wr": 0.5,
+      "lo": 0.461,
+      "hi": 0.539
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 626,
+      "wr": 0.564,
+      "lo": 0.525,
+      "hi": 0.602
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4840,
+      "wr": 0.504,
+      "lo": 0.49,
+      "hi": 0.518
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4836,
+      "wr": 0.529,
+      "lo": 0.515,
+      "hi": 0.543
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 986,
+      "wr": 0.556,
+      "lo": 0.525,
+      "hi": 0.586
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 986,
+      "wr": 0.539,
+      "lo": 0.507,
+      "hi": 0.569
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 286,
+      "wr": 0.493,
+      "lo": 0.436,
+      "hi": 0.55
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 286,
+      "wr": 0.528,
+      "lo": 0.471,
+      "hi": 0.584
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 612,
+      "wr": 0.565,
+      "lo": 0.526,
+      "hi": 0.604
+    },
+    {
+      "server": "binary-options",
+      "asset": "US-500_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 610,
+      "wr": 0.59,
+      "lo": 0.551,
+      "hi": 0.628
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 1,
+      "n": 5300,
+      "wr": 0.482,
+      "lo": 0.468,
+      "hi": 0.495
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_300s",
+      "size": 300,
+      "setup": "fade1",
+      "h": 5,
+      "n": 5297,
+      "wr": 0.482,
+      "lo": 0.469,
+      "hi": 0.496
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 1,
+      "n": 870,
+      "wr": 0.453,
+      "lo": 0.42,
+      "hi": 0.486
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_300s",
+      "size": 300,
+      "setup": "fade3",
+      "h": 5,
+      "n": 870,
+      "wr": 0.43,
+      "lo": 0.398,
+      "hi": 0.463
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 695,
+      "wr": 0.414,
+      "lo": 0.379,
+      "hi": 0.451
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_300s",
+      "size": 300,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 695,
+      "wr": 0.564,
+      "lo": 0.527,
+      "hi": 0.6
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 1,
+      "n": 808,
+      "wr": 0.463,
+      "lo": 0.429,
+      "hi": 0.497
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_300s",
+      "size": 300,
+      "setup": "bb2",
+      "h": 5,
+      "n": 808,
+      "wr": 0.484,
+      "lo": 0.45,
+      "hi": 0.518
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 1,
+      "n": 4086,
+      "wr": 0.336,
+      "lo": 0.321,
+      "hi": 0.35
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_60s",
+      "size": 60,
+      "setup": "fade1",
+      "h": 5,
+      "n": 4083,
+      "wr": 0.45,
+      "lo": 0.434,
+      "hi": 0.465
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 1,
+      "n": 570,
+      "wr": 0.298,
+      "lo": 0.262,
+      "hi": 0.337
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_60s",
+      "size": 60,
+      "setup": "fade3",
+      "h": 5,
+      "n": 570,
+      "wr": 0.44,
+      "lo": 0.4,
+      "hi": 0.481
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 1,
+      "n": 825,
+      "wr": 0.388,
+      "lo": 0.355,
+      "hi": 0.421
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_60s",
+      "size": 60,
+      "setup": "rsi14",
+      "h": 5,
+      "n": 825,
+      "wr": 0.456,
+      "lo": 0.422,
+      "hi": 0.49
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 1,
+      "n": 649,
+      "wr": 0.316,
+      "lo": 0.281,
+      "hi": 0.352
+    },
+    {
+      "server": "binary-options",
+      "asset": "Utilities-SPDR_60s",
+      "size": 60,
+      "setup": "bb2",
+      "h": 5,
+      "n": 649,
+      "wr": 0.394,
+      "lo": 0.358,
+      "hi": 0.432
+    }
+  ]
+}

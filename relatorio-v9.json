@@ -1,0 +1,239 @@
+{
+  "timestamp": "2026-09-30T14:25:29.183Z",
+  "summary": {
+    "totalOps": 27,
+    "wins": 14,
+    "losses": 13,
+    "earlySells": 0,
+    "wr": "51.9",
+    "profit": "-3.04"
+  },
+  "byAsset": [
+    {
+      "key": "WLDUSD",
+      "direction": "PUT",
+      "wr": "0.0",
+      "sampleSize": 1,
+      "wins": 0,
+      "profit": "-2.00",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "DYDXUSD",
+      "direction": "PUT",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "wins": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "FETUSD",
+      "direction": "PUT",
+      "wr": "50.0",
+      "sampleSize": 2,
+      "wins": 1,
+      "profit": "-0.36",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "EOSUSD",
+      "direction": "PUT",
+      "wr": "0.0",
+      "sampleSize": 1,
+      "wins": 0,
+      "profit": "-2.00",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "JUPUSD",
+      "direction": "PUT",
+      "wr": "50.0",
+      "sampleSize": 2,
+      "wins": 1,
+      "profit": "-0.36",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "PENGUUSD",
+      "direction": "PUT",
+      "wr": "50.0",
+      "sampleSize": 2,
+      "wins": 1,
+      "profit": "-0.36",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "FARTCOINUSD",
+      "direction": "PUT",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "wins": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "WIFUSD",
+      "direction": "PUT",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "wins": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "SUGAR",
+      "direction": "CALL",
+      "wr": "0.0",
+      "sampleSize": 1,
+      "wins": 0,
+      "profit": "-2.00",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "FWONA",
+      "direction": "CALL",
+      "wr": "50.0",
+      "sampleSize": 2,
+      "wins": 1,
+      "profit": "-0.36",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "PEPEUSD",
+      "direction": "PUT",
+      "wr": "50.0",
+      "sampleSize": 2,
+      "wins": 1,
+      "profit": "-0.36",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "TRUMPUSD",
+      "direction": "PUT",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "wins": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "SEIUSD",
+      "direction": "PUT",
+      "wr": "0.0",
+      "sampleSize": 2,
+      "wins": 0,
+      "profit": "-4.00",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "SUIUSD",
+      "direction": "PUT",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "wins": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "HBARUSD",
+      "direction": "PUT",
+      "wr": "0.0",
+      "sampleSize": 1,
+      "wins": 0,
+      "profit": "-2.00",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "RAYDIUMUSD",
+      "direction": "PUT",
+      "wr": "0.0",
+      "sampleSize": 1,
+      "wins": 0,
+      "profit": "-2.00",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "URANIUM",
+      "direction": "CALL",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "wins": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "PENUSD",
+      "direction": "PUT",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "wins": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "DOTUSD",
+      "direction": "PUT",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "wins": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "XPTUSD",
+      "direction": "PUT",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "wins": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "DASHUSD",
+      "direction": "PUT",
+      "wr": "0.0",
+      "sampleSize": 1,
+      "wins": 0,
+      "profit": "-2.00",
+      "verdict": "✅ ativo"
+    }
+  ],
+  "expirationSim": [
+    {
+      "expirationSecs": 30,
+      "expirationLabel": "30s",
+      "total": 27,
+      "wins": 17,
+      "wr": "63.0"
+    },
+    {
+      "expirationSecs": 60,
+      "expirationLabel": "1min",
+      "total": 27,
+      "wins": 13,
+      "wr": "48.1"
+    },
+    {
+      "expirationSecs": 120,
+      "expirationLabel": "2min",
+      "total": 16,
+      "wins": 8,
+      "wr": "50.0"
+    },
+    {
+      "expirationSecs": 180,
+      "expirationLabel": "3min",
+      "total": 9,
+      "wins": 4,
+      "wr": "44.4"
+    },
+    {
+      "expirationSecs": 300,
+      "expirationLabel": "5min",
+      "total": 4,
+      "wins": 2,
+      "wr": "50.0"
+    }
+  ]
+}

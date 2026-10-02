@@ -1,0 +1,12 @@
+{
+  "name": "tracecom-painel",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "production-server.mjs",
+  "scripts": {
+    "start": "node production-server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

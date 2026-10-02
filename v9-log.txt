@@ -1,0 +1,3257 @@
+[LOGIN] OK!
+[WS] Ready!
+[💼 CONTA] DEMO | Saldo: R$66.32
+
+[📋] Encontrados 181 ativos OTC
+────────────────────────────────────────────────────────────
+   front.EURUSD-OTC
+   front.EURGBP-OTC
+   front.USDCHF-OTC
+   front.EURJPY-OTC
+   front.NZDUSD-OTC
+   front.GBPUSD-OTC
+   front.GBPJPY-OTC
+   front.AUDCAD-OTC
+   front.USDZAR-OTC
+   front.USDSGD-OTC
+   front.USDHKD-OTC
+   front.USDINR-OTC
+   front.XAUUSD-OTC
+   front.XAGUSD-OTC
+   front.USOUSD-OTC
+   front.XNGUSD-OTC
+   front.UKOUSD-OTC
+   front.GOOGLE-OTC
+   front.AMAZON-OTC
+   front.TESLA-OTC
+   front.FB-OTC
+   front.APPLE-OTC
+   front.ETHUSD-OTC
+   front.SP500-OTC
+   front.USNDAQ100-OTC
+   front.US30-OTC
+   front.CARDANO-OTC
+   front.SHIBUSD-OTC
+   front.TRON-OTC
+   front.SOLUSD-OTC
+   front.SP35-OTC
+   front.FR40-OTC
+   front.GER30-OTC
+   front.UK100-OTC
+   front.AUS200-OTC
+   front.HK33-OTC
+   front.EU50-OTC
+   front.JP225-OTC
+   front.US30/JP225-OTC
+   front.US100/JP225-OTC
+   front.US500/JP225-OTC
+   front.AMZN/ALIBABA-OTC
+   front.AMZN/EBAY-OTC
+   front.NVDA/AMD-OTC
+   front.GOOGLE/MSFT-OTC
+   front.XAU/XAG-OTC
+   front.TESLA/FORD-OTC
+   front.MSFT/AAPL-OTC
+   front.INTEL/IBM-OTC
+   front.NFLX/AMZN-OTC
+   front.GER30/UK100-OTC
+   front.META/GOOGLE-OTC
+   front.BIDU-OTC
+   front.INTEL-OTC
+   front.MSFT-OTC
+   front.CITI-OTC
+   front.COKE-OTC
+   front.JPM-OTC
+   front.MCDON-OTC
+   front.MORSTAN-OTC
+   front.NIKE-OTC
+   front.ALIBABA-OTC
+   front.XRPUSD-OTC
+   front.US2000-OTC
+   front.AIG-OTC
+   front.GS-OTC
+   front.AUDUSD-OTC
+   front.USDCAD-OTC
+   front.AUDJPY-OTC
+   front.GBPCAD-OTC
+   front.GBPCHF-OTC
+   front.GBPAUD-OTC
+   front.EURCAD-OTC
+   front.CHFJPY-OTC
+   front.CADCHF-OTC
+   front.EURAUD-OTC
+   front.USDNOK-OTC
+   front.EURNZD-OTC
+   front.USDSEK-OTC
+   front.USDTRY-OTC
+   front.SNAP-OTC
+   front.LTCUSD-OTC
+   front.EOSUSD-OTC
+   front.USDPLN-OTC
+   front.AUDCHF-OTC
+   front.AUDNZD-OTC
+   front.EURCHF-OTC
+   front.GBPNZD-OTC
+   front.CADJPY-OTC
+   front.NZDCAD-OTC
+   front.NZDJPY-OTC
+   front.ICPUSD-OTC
+   front.IMXUSD-OTC
+   front.JUPUSD-OTC
+   front.BONKUSD-OTC
+   front.LINKUSD-OTC
+   front.WIFUSD-OTC
+   front.PEPEUSD-OTC
+   front.FLOKIUSD-OTC
+   front.BCHUSD-OTC
+   front.DOTUSD-OTC
+   front.ATOMUSD-OTC
+   front.INJUSD-OTC
+   front.SEIUSD-OTC
+   front.IOTAUSD-OTC
+   front.DASHUSD-OTC
+   front.ARBUSD-OTC
+   front.WLDUSD-OTC
+   front.ORDIUSD-OTC
+   front.SATSUSD-OTC
+   front.PYTHUSD-OTC
+   front.RONINUSD-OTC
+   front.TIAUSD-OTC
+   front.MANAUSD-OTC
+   front.SANDUSD-OTC
+   front.GRTUSD-OTC
+   front.STXUSD-OTC
+   front.MATICUSD-OTC
+   front.NEARUSD-OTC
+   front.EURTHB-OTC
+   front.USDTHB-OTC
+   front.JPYTHB-OTC
+   front.USDARS-OTC
+   front.USDDOP-OTC
+   front.CHFNOK-OTC
+   front.NOKJPY-OTC
+   front.NZDCHF-OTC
+   front.TRUMPUSD-OTC
+   front.MELANIAUSD-OTC
+   front.BTCUSD-OTC-op
+   front.ONDOUSD-OTC
+   front.DYDXUSD-OTC
+   front.ONYXCOINUSD-OTC
+   front.FARTCOINUSD-OTC
+   front.PENGUUSD-OTC
+   front.RAYDIUMUSD-OTC
+   front.SUIUSD-OTC
+   front.HBARUSD-OTC
+   front.FETUSD-OTC
+   front.RENDERUSD-OTC
+   front.TAOUSD-OTC
+   front.USDBRL-OTC
+   front.USDCOP-OTC
+   front.USDMXN-OTC
+   front.PENUSD-OTC
+   front.LABUBUUSD-OTC
+   front.KLARNA-OTC
+   front.FWONA-OTC
+   front.PLTR-OTC
+   front.MAGNIFICENT7-OTC
+   front.AIRLINES-OTC
+   front.CASINOS-OTC
+   front.CANNABIS-OTC
+   front.URANIUM-OTC
+   front.XPTUSD-OTC
+   front.XPDUSD-OTC
+   front.MU-OTC
+   front.NVDA-OTC
+   front.GEV-OTC
+   front.SNDK-OTC
+   front.WDC-OTC
+   front.USDIDR-OTC
+   front.COCOA-OTC
+   front.COFFEE-OTC
+   front.COTTON-OTC
+   front.SUGAR-OTC
+   front.ETHBTC-OTC
+   front.LUNA-OTC
+   front.USDSAR-OTC
+   front.USDMYR-OTC
+   front.USDAED-OTC
+   front.USDVND-OTC
+   front.USDNGN-OTC
+   front.USDPHP-OTC
+   front.USDBOB-OTC
+   front.USDCLP-OTC
+   front.USDBDT-OTC
+   front.SpaceX-OTC
+   front.HYPE-OTC
+   front.Anthropic-OTC
+   front.OpenAI-OTC
+────────────────────────────────────────────────────────────
+
+======================================================================
+🧠 BOT v9 - TODOS OTCs + EXPIRAÇÃO + LEARNING
+======================================================================
+[⏳] Warmup 120s...
+[✅] INICIADO!
+
+[📊 front.LINKUSD-OTC] PUT RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.PENUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.PENUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.PENUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.NEARUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WLDUSD-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.HBARUSD-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AIG-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.XPDUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.XPDUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.XPDUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.PENGUUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.TRON-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.PENGUUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LTCUSD-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.ALIBABA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FETUSD-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SEIUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.DOTUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.FETUSD-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SNAP-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.XAU/XAG-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.XNGUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.MCDON-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.SUIUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.FWONA-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.SUIUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.ALIBABA-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WIFUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.WIFUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.PENUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.PENUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SEIUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SEIUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.STXUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.AMZN/ALIBABA-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FR40-OTC] CALL RSI:77 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.URANIUM-OTC] CALL RSI:81 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.URANIUM-OTC] CALL RSI:81 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SEIUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SEIUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.CARDANO-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SEIUSD-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.ONDOUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EOSUSD-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SUIUSD-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.ORDIUSD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/ALIBABA-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.URANIUM-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.XPDUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.XPDUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.XPDUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.ORDIUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NFLX/AMZN-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:74 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:74 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.BIDU-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.BIDU-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IMXUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.PEPEUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.INTEL-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WLDUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.EU50-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SEIUSD-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SUIUSD-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SUIUSD-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SUIUSD-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.PENGUUSD-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LTCUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.FWONA-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.FWONA-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.FWONA-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.EOSUSD-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.CITI-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EOSUSD-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.XNGUSD-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.XNGUSD-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.NEARUSD-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IMXUSD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.IMXUSD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.IMXUSD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SNAP-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.SpaceX-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WLDUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.ATOMUSD-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.META/GOOGLE-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[❌] front.SUGAR-OTC | CALL | R$2 | RSI:37 | R$-2.00
+[📈] Total: 1 | WR: 0.0% | Lucro: R$-2.00
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 100.0%WR(1) | 1min: 0.0%WR(1) | 2min: 0.0%WR(1) | 3min: 0.0%WR(1) | 5min: 0.0%WR(1)
+
+   Detalhado (últimas 5):
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[❌] front.XPDUSD-OTC | CALL | R$2 | RSI:41 | R$-2.00
+[📈] Total: 2 | WR: 0.0% | Lucro: R$-4.00
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 50.0%WR(2) | 1min: 0.0%WR(2) | 2min: 0.0%WR(2) | 3min: 0.0%WR(2) | 5min: 0.0%WR(2)
+
+   Detalhado (últimas 5):
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.XPDUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2328
+[MISSED] aid= 2328
+[✅] front.PENGUUSD-OTC | CALL | R$2 | RSI:66 | +R$1.64
+[📈] Total: 3 | WR: 33.3% | Lucro: R$-2.36
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 66.7%WR(3) | 1min: 33.3%WR(3) | 2min: 33.3%WR(3) | 3min: 33.3%WR(3) | 5min: 33.3%WR(3)
+
+   Detalhado (últimas 5):
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.XPDUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[✅] front.PENUSD-OTC | CALL | R$2 | RSI:50 | +R$1.64
+[📈] Total: 4 | WR: 50.0% | Lucro: R$-0.72
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 50.0%WR(4) | 1min: 25.0%WR(4) | 2min: 25.0%WR(4) | 3min: 50.0%WR(4) | 5min: 50.0%WR(4)
+
+   Detalhado (últimas 5):
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.XPDUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=✅ | 5min=✅
+
+[✅] front.TRON-OTC | CALL | R$2 | RSI:65 | +R$1.64
+[📈] Total: 5 | WR: 60.0% | Lucro: R$0.92
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 60.0%WR(5) | 1min: 40.0%WR(5) | 2min: 40.0%WR(5) | 3min: 60.0%WR(5) | 5min: 60.0%WR(5)
+
+   Detalhado (últimas 5):
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.XPDUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=✅ | 5min=✅
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2280
+[MISSED] aid= 1976
+[MISSED] aid= 2301
+[❌] front.SEIUSD-OTC | CALL | R$2 | RSI:45 | R$-2.00
+[📈] Total: 6 | WR: 50.0% | Lucro: R$-1.08
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 66.7%WR(6) | 1min: 50.0%WR(6) | 2min: 50.0%WR(6) | 3min: 66.7%WR(6) | 5min: 66.7%WR(6)
+
+   Detalhado (últimas 5):
+   front.XPDUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=✅ | 5min=✅
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SEIUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[❌] front.FETUSD-OTC | CALL | R$2 | RSI:32 | R$-2.00
+[📈] Total: 7 | WR: 42.9% | Lucro: R$-3.08
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 57.1%WR(7) | 1min: 42.9%WR(7) | 2min: 42.9%WR(7) | 3min: 57.1%WR(7) | 5min: 57.1%WR(7)
+
+   Detalhado (últimas 5):
+   front.PENGUUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=✅ | 5min=✅
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SEIUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FETUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[❌] front.DOTUSD-OTC | CALL | R$2 | RSI:42 | R$-2.00
+[⏸ PAUSE] FRONT.: 3 losses → 5min cooldown
+[📈] Total: 8 | WR: 37.5% | Lucro: R$-5.08
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 62.5%WR(8) | 1min: 37.5%WR(8) | 2min: 37.5%WR(8) | 3min: 50.0%WR(8) | 5min: 50.0%WR(8)
+
+   Detalhado (últimas 5):
+   front.PENUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=✅ | 5min=✅
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SEIUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FETUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DOTUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2289
+[❌] front.HBARUSD-OTC | CALL | R$2 | RSI:44 | R$-2.00
+[📈] Total: 9 | WR: 33.3% | Lucro: R$-7.08
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 66.7%WR(9) | 1min: 44.4%WR(9) | 2min: 33.3%WR(9) | 3min: 44.4%WR(9) | 5min: 44.4%WR(9)
+
+   Detalhado (últimas 5):
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SEIUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FETUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DOTUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HBARUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+
+[✅] front.HYPE-OTC | CALL | R$2 | RSI:50 | +R$1.64
+[📈] Total: 10 | WR: 40.0% | Lucro: R$-5.44
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 70.0%WR(10) | 1min: 50.0%WR(10) | 2min: 40.0%WR(10) | 3min: 50.0%WR(10) | 5min: 50.0%WR(10)
+
+   Detalhado (últimas 5):
+   front.SEIUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FETUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DOTUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HBARUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HYPE-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2448
+[❌] front.LTCUSD-OTC | CALL | R$2 | RSI:48 | R$-2.00
+[💀 KILL] FRONT.: WR 40.0% < 45%
+[📈] Total: 11 | WR: 36.4% | Lucro: R$-7.44
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 72.7%WR(11) | 1min: 45.5%WR(11) | 2min: 36.4%WR(11) | 3min: 45.5%WR(11) | 5min: 45.5%WR(11)
+
+   Detalhado (últimas 5):
+   front.FETUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DOTUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HBARUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HYPE-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.LTCUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[❌] front.WLDUSD-OTC | CALL | R$2 | RSI:49 | R$-2.00
+[📈] Total: 12 | WR: 33.3% | Lucro: R$-9.44
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 75.0%WR(12) | 1min: 41.7%WR(12) | 2min: 33.3%WR(12) | 3min: 41.7%WR(12) | 5min: 41.7%WR(12)
+
+   Detalhado (últimas 5):
+   front.DOTUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HBARUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HYPE-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.LTCUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.WLDUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2301
+[MISSED] aid= 2301
+[MISSED] aid= 2301
+[MISSED] aid= 2301
+[❌] front.FWONA-OTC | CALL | R$2 | RSI:54 | R$-2.00
+[📈] Total: 13 | WR: 30.8% | Lucro: R$-11.44
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 69.2%WR(13) | 1min: 46.2%WR(13) | 2min: 38.5%WR(13) | 3min: 46.2%WR(13) | 5min: 46.2%WR(13)
+
+   Detalhado (últimas 5):
+   front.HBARUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HYPE-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.LTCUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.WLDUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FWONA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[📊 front.KLARNA-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[✅] front.SUIUSD-OTC | CALL | R$2 | RSI:59 | +R$1.64
+[📈] Total: 14 | WR: 35.7% | Lucro: R$-9.80
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 64.3%WR(14) | 1min: 50.0%WR(14) | 2min: 42.9%WR(14) | 3min: 50.0%WR(14) | 5min: 50.0%WR(14)
+
+   Detalhado (últimas 5):
+   front.HYPE-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.LTCUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.WLDUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FWONA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUIUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2312
+[MISSED] aid= 2287
+[✅] front.WIFUSD-OTC | CALL | R$2 | RSI:35 | +R$1.64
+[📈] Total: 15 | WR: 40.0% | Lucro: R$-8.16
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 66.7%WR(15) | 1min: 53.3%WR(15) | 2min: 46.7%WR(15) | 3min: 53.3%WR(15) | 5min: 53.3%WR(15)
+
+   Detalhado (últimas 5):
+   front.LTCUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.WLDUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FWONA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUIUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.WIFUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2144
+[MISSED] aid= 2152
+[MISSED] aid= 2417
+[MISSED] aid= 2417
+[MISSED] aid= 2152
+[📊 front.MATICUSD-OTC] PUT RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:14:34] Ops:15 WR:40% Lucro:R$-8.16   [📊 front.FARTCOINUSD-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.NEARUSD-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FB-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.ALIBABA-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+
+📊 RELATÓRIO | Ops: 15 | WR: 40.0% | Lucro: R$-8.16
+   ❌ OFF FRONT.     dir:CALL  WR:33.3%(9) R$-7.08
+   ✅ ativo FRONT.H    dir:CALL  WR:0.0%(1) R$-2.00
+   ✅ ativo FRONT.SU   dir:CALL  WR:0.0%(1) R$-2.00
+   ✅ ativo FRONT.PE   dir:CALL  WR:100.0%(1) +R$1.64
+   ✅ ativo FRONT.TR   dir:CALL  WR:100.0%(1) +R$1.64
+   ✅ ativo FRONT.HY   dir:CALL  WR:100.0%(1) +R$1.64
+   ✅ ativo FRONT.FW   dir:CALL  WR:0.0%(1) R$-2.00
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 66.7%WR(15) | 1min: 53.3%WR(15) | 2min: 46.7%WR(15) | 3min: 53.3%WR(15) | 5min: 53.3%WR(15)
+
+   Detalhado (últimas 5):
+   front.LTCUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.WLDUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FWONA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUIUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.WIFUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+[⏱ 10:15:04] Ops:15 WR:40% Lucro:R$-8.16   [📊 front.FWONA-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.FWONA-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.FWONA-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.INTEL-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.PENGUUSD-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.GEV-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GEV-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GEV-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GEV-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SANDUSD-OTC] PUT RSI:66 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:15:34] Ops:15 WR:40% Lucro:R$-8.16   [📊 front.MU-OTC] CALL RSI:83 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MU-OTC] CALL RSI:83 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.TRUMPUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.TRUMPUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.TRUMPUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.INTEL/IBM-OTC] CALL RSI:82 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:82 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.FWONA-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.FWONA-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.MCDON-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:16:04] Ops:15 WR:40% Lucro:R$-8.16   [📊 front.NIKE-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.FWONA-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.KLARNA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:68 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:68 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.TRUMPUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.ATOMUSD-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:16:34] Ops:15 WR:40% Lucro:R$-8.16   [📊 front.ORDIUSD-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:77 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.SUGAR-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.SUGAR-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.ONDOUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:9.5%-90.5%
+[⏱ 10:17:04] Ops:15 WR:40% Lucro:R$-8.16   [📊 front.ALIBABA-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RONINUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:71 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:71 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.TRON-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:17:34] Ops:15 WR:40% Lucro:R$-8.16   [📊 front.META/GOOGLE-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.LINKUSD-OTC] PUT RSI:66 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.FWONA-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.SNAP-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.HYPE-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:18:04] Ops:15 WR:40% Lucro:R$-8.16   [📊 front.INTEL-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.TRON-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.ALIBABA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:72 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:72 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.TRUMPUSD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.LINKUSD-OTC] PUT RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RONINUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.KLARNA-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:18:34] Ops:15 WR:40% Lucro:R$-8.16   [📊 front.NIKE-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/ALIBABA-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:71 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.NEARUSD-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.WDC-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WDC-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WDC-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MELANIAUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MELANIAUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:20.7%-100.0%
+[⏱ 10:19:04] Ops:15 WR:40% Lucro:R$-8.16   [📊 front.SpaceX-OTC] CALL RSI:72 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NFLX/AMZN-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[❌] front.HBARUSD-OTC | CALL | R$2 | RSI:38 | R$-2.00
+[📈] Total: 16 | WR: 37.5% | Lucro: R$-10.16
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 68.8%WR(16) | 1min: 56.3%WR(16) | 2min: 50.0%WR(16) | 3min: 56.3%WR(16) | 5min: 56.3%WR(16)
+
+   Detalhado (últimas 5):
+   front.WLDUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FWONA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUIUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.WIFUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HBARUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[✅] front.FARTCOINUSD-OTC | CALL | R$2 | RSI:71 | +R$1.64
+[📈] Total: 17 | WR: 41.2% | Lucro: R$-8.52
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 64.7%WR(17) | 1min: 58.8%WR(17) | 2min: 52.9%WR(17) | 3min: 58.8%WR(17) | 5min: 58.8%WR(17)
+
+   Detalhado (últimas 5):
+   front.FWONA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUIUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.WIFUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HBARUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[✅] front.PEPEUSD-OTC | CALL | R$2 | RSI:34 | +R$1.64
+[📈] Total: 18 | WR: 44.4% | Lucro: R$-6.88
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 61.1%WR(18) | 1min: 61.1%WR(18) | 2min: 55.6%WR(18) | 3min: 61.1%WR(18) | 5min: 61.1%WR(18)
+
+   Detalhado (últimas 5):
+   front.SUIUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.WIFUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HBARUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[✅] front.TRUMPUSD-OTC | CALL | R$2 | RSI:69 | +R$1.64
+[📈] Total: 19 | WR: 47.4% | Lucro: R$-5.24
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 57.9%WR(19) | 1min: 63.2%WR(19) | 2min: 57.9%WR(19) | 3min: 63.2%WR(19) | 5min: 63.2%WR(19)
+
+   Detalhado (últimas 5):
+   front.WIFUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HBARUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.TRUMPUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2145
+[MISSED] aid= 2265
+[✅] front.FWONA-OTC | CALL | R$2 | RSI:46 | +R$1.64
+[📈] Total: 20 | WR: 50.0% | Lucro: R$-3.60
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 60.0%WR(20) | 1min: 65.0%WR(20) | 2min: 60.0%WR(20) | 3min: 65.0%WR(20) | 5min: 65.0%WR(20)
+
+   Detalhado (últimas 5):
+   front.HBARUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.TRUMPUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2265
+[❌] front.DYDXUSD-OTC | CALL | R$2 | RSI:48 | R$-2.00
+[📈] Total: 21 | WR: 47.6% | Lucro: R$-5.60
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 61.9%WR(21) | 1min: 66.7%WR(21) | 2min: 61.9%WR(21) | 3min: 61.9%WR(21) | 5min: 61.9%WR(21)
+
+   Detalhado (últimas 5):
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.TRUMPUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2265
+[MISSED] aid= 2277
+[MISSED] aid= 2265
+[MISSED] aid= 2312
+[MISSED] aid= 2279
+[MISSED] aid= 2312
+[✅] front.SATSUSD-OTC | PUT | R$2 | RSI:42 | +R$1.64
+[📈] Total: 22 | WR: 50.0% | Lucro: R$-3.96
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 59.1%WR(22) | 1min: 63.6%WR(22) | 2min: 59.1%WR(22) | 3min: 59.1%WR(22) | 5min: 59.1%WR(22)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.TRUMPUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.SATSUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2265
+[MISSED] aid= 2312
+[MISSED] aid= 2159
+[❌] front.SUGAR-OTC | CALL | R$2 | RSI:39 | R$-2.00
+[📈] Total: 23 | WR: 47.8% | Lucro: R$-5.96
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 60.9%WR(23) | 1min: 60.9%WR(23) | 2min: 56.5%WR(23) | 3min: 56.5%WR(23) | 5min: 56.5%WR(23)
+
+   Detalhado (últimas 5):
+   front.TRUMPUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.SATSUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[✅] front.COCOA-OTC | CALL | R$2 | RSI:40 | +R$1.64
+[📈] Total: 24 | WR: 50.0% | Lucro: R$-4.32
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 62.5%WR(24) | 1min: 58.3%WR(24) | 2min: 58.3%WR(24) | 3min: 58.3%WR(24) | 5min: 58.3%WR(24)
+
+   Detalhado (últimas 5):
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.SATSUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.COCOA-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2414
+[✅] front.PENGUUSD-OTC | CALL | R$2 | RSI:48 | +R$1.64
+[📈] Total: 25 | WR: 52.0% | Lucro: R$-2.68
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 60.0%WR(25) | 1min: 60.0%WR(25) | 2min: 60.0%WR(25) | 3min: 60.0%WR(25) | 5min: 60.0%WR(25)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.SATSUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.COCOA-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2280
+[MISSED] aid= 2312
+[MISSED] aid= 2277
+[MISSED] aid= 2312
+[MISSED] aid= 2312
+[MISSED] aid= 2288
+[📊 front.FWONA-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.FWONA-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.MU-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MU-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.TRUMPUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.ONDOUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:19:35] Ops:25 WR:52% Lucro:R$-2.68   [📊 front.BIDU-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:73 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:73 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:79 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.FWONA-OTC] CALL RSI:79 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.SANDUSD-OTC] PUT RSI:58 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:79 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.FWONA-OTC] CALL RSI:79 regime:ranging stake:R$2 IC:6.1%-79.2%
+
+📊 RELATÓRIO | Ops: 25 | WR: 52.0% | Lucro: R$-2.68
+   ❌ OFF FRONT.     dir:CALL  WR:33.3%(9) R$-7.08
+   ✅ ativo FRONT.H    dir:CALL  WR:0.0%(2) R$-4.00
+   ✅ ativo FRONT.SU   dir:CALL  WR:0.0%(2) R$-4.00
+   ✅ ativo FRONT.PE   dir:CALL  WR:100.0%(2) +R$3.28
+   ✅ ativo FRONT.TR   dir:CALL  WR:100.0%(2) +R$3.28
+   ✅ ativo FRONT.HY   dir:CALL  WR:100.0%(1) +R$1.64
+   ✅ ativo FRONT.FW   dir:CALL  WR:50.0%(2) R$-0.36
+   ✅ ativo FRONT.D    dir:CALL  WR:0.0%(1) R$-2.00
+   ✅ ativo FRONT.P    dir:CALL  WR:100.0%(1) +R$1.64
+   ✅ ativo FRONT.FA   dir:CALL  WR:100.0%(1) +R$1.64
+   ✅ ativo FRONT.CO   dir:CALL  WR:100.0%(1) +R$1.64
+   ✅ ativo FRONT.S    dir:PUT   WR:100.0%(1) +R$1.64
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 60.0%WR(25) | 1min: 60.0%WR(25) | 2min: 60.0%WR(25) | 3min: 60.0%WR(25) | 5min: 60.0%WR(25)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.SATSUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.COCOA-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+[⏱ 10:20:04] Ops:25 WR:52% Lucro:R$-2.68   [📊 front.BIDU-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.BIDU-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.NIKE-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.PEPEUSD-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PYTHUSD-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.PYTHUSD-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.PYTHUSD-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.TRON-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.INTEL-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.PLTR-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.PLTR-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.TRUMPUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:20.7%-100.0%
+[⏱ 10:20:35] Ops:25 WR:52% Lucro:R$-2.68   [📊 front.SpaceX-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.TRON-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.CARDANO-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.TRON-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.LINKUSD-OTC] PUT RSI:74 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:74 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:67 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.FWONA-OTC] CALL RSI:67 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.AIRLINES-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.TRON-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SNAP-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:21:05] Ops:25 WR:52% Lucro:R$-2.68   [📊 front.NIKE-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RONINUSD-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.TRUMPUSD-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.TRUMPUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.URANIUM-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.HBARUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.HBARUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-65.8%
+[⏱ 10:21:35] Ops:25 WR:52% Lucro:R$-2.68   [📊 front.CARDANO-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.LINKUSD-OTC] PUT RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FB-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/ALIBABA-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PYTHUSD-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.PYTHUSD-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:75 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.SUGAR-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.SUGAR-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.SUGAR-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.PENGUUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:34.2%-100.0%
+[⏱ 10:22:05] Ops:25 WR:52% Lucro:R$-2.68   [📊 front.SNAP-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.PEPEUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:75 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.CITI-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:22:35] Ops:25 WR:52% Lucro:R$-2.68   [📊 front.KLARNA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RONINUSD-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:76 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.PLTR-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.ORDIUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:20.7%-100.0%
+[⏱ 10:23:05] Ops:25 WR:52% Lucro:R$-2.68   [📊 front.DASHUSD-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.SATSUSD-OTC] PUT RSI:46 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:46 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.PEPEUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.FB-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.COKE-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.MSFT-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MSFT-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:45 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.BIDU-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.BIDU-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.BIDU-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:23:35] Ops:25 WR:52% Lucro:R$-2.68   [📊 front.LINKUSD-OTC] PUT RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SANDUSD-OTC] PUT RSI:70 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.SANDUSD-OTC] PUT RSI:70 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:75 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:75 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:24:05] Ops:25 WR:52% Lucro:R$-2.68   [📊 front.ORDIUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:82 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.ORDIUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:82 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.ORDIUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:82 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.URANIUM-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.URANIUM-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.TRON-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SNDK-OTC] CALL RSI:71 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:71 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.INTEL-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.INTEL-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[❌] front.TRUMPUSD-OTC | CALL | R$2 | RSI:49 | R$-2.00
+[📈] Total: 26 | WR: 50.0% | Lucro: R$-4.68
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 61.5%WR(26) | 1min: 61.5%WR(26) | 2min: 61.5%WR(26) | 3min: 61.5%WR(26) | 5min: 61.5%WR(26)
+
+   Detalhado (últimas 5):
+   front.SATSUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.COCOA-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.TRUMPUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[✅] front.ONDOUSD-OTC | CALL | R$2 | RSI:64 | +R$1.64
+[📈] Total: 27 | WR: 51.9% | Lucro: R$-3.04
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 59.3%WR(27) | 1min: 63.0%WR(27) | 2min: 63.0%WR(27) | 3min: 59.3%WR(27) | 5min: 63.0%WR(27)
+
+   Detalhado (últimas 5):
+   front.SUGAR-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.COCOA-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.TRUMPUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+
+[✅] front.FWONA-OTC | CALL | R$2 | RSI:76 | +R$1.64
+[📈] Total: 28 | WR: 53.6% | Lucro: R$-1.40
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 57.1%WR(28) | 1min: 60.7%WR(28) | 2min: 64.3%WR(28) | 3min: 57.1%WR(28) | 5min: 60.7%WR(28)
+
+   Detalhado (últimas 5):
+   front.COCOA-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.TRUMPUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=❌
+
+[✅] front.TRON-OTC | CALL | R$2 | RSI:46 | +R$1.64
+[📈] Total: 29 | WR: 55.2% | Lucro: R$0.24
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 58.6%WR(29) | 1min: 62.1%WR(29) | 2min: 65.5%WR(29) | 3min: 58.6%WR(29) | 5min: 62.1%WR(29)
+
+   Detalhado (últimas 5):
+   front.PENGUUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.TRUMPUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=❌
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2312
+[MISSED] aid= 2312
+[MISSED] aid= 1976
+[MISSED] aid= 1976
+[MISSED] aid= 2276
+[❌] front.PENGUUSD-OTC | CALL | R$2 | RSI:28 | R$-2.00
+[📈] Total: 30 | WR: 53.3% | Lucro: R$-1.76
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 56.7%WR(30) | 1min: 60.0%WR(30) | 2min: 63.3%WR(30) | 3min: 56.7%WR(30) | 5min: 60.0%WR(30)
+
+   Detalhado (últimas 5):
+   front.TRUMPUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=❌
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2312
+[MISSED] aid= 2265
+[✅] front.SHIBUSD-OTC | PUT | R$2 | RSI:45 | +R$1.64
+[📈] Total: 31 | WR: 54.8% | Lucro: R$-0.12
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 54.8%WR(31) | 1min: 58.1%WR(31) | 2min: 64.5%WR(31) | 3min: 58.1%WR(31) | 5min: 61.3%WR(31)
+
+   Detalhado (últimas 5):
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=❌
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2276
+[MISSED] aid= 2265
+[MISSED] aid= 1975
+[MISSED] aid= 2265
+[✅] front.PEPEUSD-OTC | CALL | R$2 | RSI:37 | +R$1.64
+[📈] Total: 32 | WR: 56.3% | Lucro: R$1.52
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.1%WR(32) | 1min: 59.4%WR(32) | 2min: 65.6%WR(32) | 3min: 59.4%WR(32) | 5min: 62.5%WR(32)
+
+   Detalhado (últimas 5):
+   front.FWONA-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=❌
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 1976
+[✅] front.FARTCOINUSD-OTC | CALL | R$2 | RSI:45 | +R$1.64
+[📈] Total: 33 | WR: 57.6% | Lucro: R$3.16
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 54.5%WR(33) | 1min: 60.6%WR(33) | 2min: 66.7%WR(33) | 3min: 60.6%WR(33) | 5min: 63.6%WR(33)
+
+   Detalhado (últimas 5):
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2312
+[❌] front.HYPE-OTC | CALL | R$2 | RSI:27 | R$-2.00
+[📈] Total: 34 | WR: 55.9% | Lucro: R$1.16
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 55.9%WR(34) | 1min: 58.8%WR(34) | 2min: 64.7%WR(34) | 3min: 58.8%WR(34) | 5min: 61.8%WR(34)
+
+   Detalhado (últimas 5):
+   front.PENGUUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2448
+[MISSED] aid= 1976
+[MISSED] aid= 2312
+[MISSED] aid= 2312
+[MISSED] aid= 2265
+[MISSED] aid= 2145
+[MISSED] aid= 2145
+[MISSED] aid= 2265
+[❌] front.COCOA-OTC | CALL | R$2 | RSI:59 | R$-2.00
+[📈] Total: 35 | WR: 54.3% | Lucro: R$-0.84
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 54.3%WR(35) | 1min: 60.0%WR(35) | 2min: 62.9%WR(35) | 3min: 57.1%WR(35) | 5min: 60.0%WR(35)
+
+   Detalhado (últimas 5):
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2414
+[MISSED] aid= 2279
+[✅] front.DYDXUSD-OTC | CALL | R$2 | RSI:32 | +R$1.64
+[📈] Total: 36 | WR: 55.6% | Lucro: R$0.80
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 55.6%WR(36) | 1min: 61.1%WR(36) | 2min: 63.9%WR(36) | 3min: 58.3%WR(36) | 5min: 61.1%WR(36)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DYDXUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2448
+[MISSED] aid= 2414
+[MISSED] aid= 2265
+[MISSED] aid= 2265
+[MISSED] aid= 2312
+[MISSED] aid= 2145
+[MISSED] aid= 1976
+[MISSED] aid= 2145
+[📊 front.PLTR-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:24:35] Ops:36 WR:56% Lucro:R$0.80   [📊 front.ONDOUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.FWONA-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.FWONA-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.SATSUSD-OTC] PUT RSI:57 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.RONINUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.HBARUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.SNDK-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+
+📊 RELATÓRIO | Ops: 36 | WR: 55.6% | Lucro: R$0.80
+   ❌ OFF FRONT.     dir:CALL  WR:33.3%(9) R$-7.08
+   ✅ ativo FRONT.H    dir:CALL  WR:0.0%(2) R$-4.00
+   ✅ ativo FRONT.SU   dir:CALL  WR:0.0%(2) R$-4.00
+   ✅ ativo FRONT.PE   dir:CALL  WR:66.7%(3) +R$1.28
+   ✅ ativo FRONT.TR   dir:CALL  WR:75.0%(4) +R$2.92
+   ✅ ativo FRONT.HY   dir:CALL  WR:50.0%(2) R$-0.36
+   ✅ ativo FRONT.FW   dir:CALL  WR:66.7%(3) +R$1.28
+   ✅ ativo FRONT.D    dir:CALL  WR:50.0%(2) R$-0.36
+   ✅ ativo FRONT.O    dir:CALL  WR:100.0%(1) +R$1.64
+   ✅ ativo FRONT.P    dir:CALL  WR:100.0%(2) +R$3.28
+   ✅ ativo FRONT.S    dir:PUT   WR:100.0%(2) +R$3.28
+   ✅ ativo FRONT.FA   dir:CALL  WR:100.0%(2) +R$3.28
+   ✅ ativo FRONT.CO   dir:CALL  WR:50.0%(2) R$-0.36
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 55.6%WR(36) | 1min: 61.1%WR(36) | 2min: 63.9%WR(36) | 3min: 58.3%WR(36) | 5min: 61.1%WR(36)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DYDXUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+[⏱ 10:25:05] Ops:36 WR:56% Lucro:R$0.80   [📊 front.RAYDIUMUSD-OTC] CALL RSI:77 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.CITI-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NVDA-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NVDA-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PYTHUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FB-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.MATICUSD-OTC] PUT RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.LINKUSD-OTC] PUT RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.SUGAR-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-65.8%
+[⏱ 10:25:35] Ops:36 WR:56% Lucro:R$0.80   [📊 front.AMZN/EBAY-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:74 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:74 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:74 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:74 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NVDA-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NVDA-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NVDA-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:57 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:57 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:75 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:75 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:72 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:72 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:72 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:74 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.CITI-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:26:05] Ops:36 WR:56% Lucro:R$0.80   [📊 front.INTEL/IBM-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.HBARUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.SNDK-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:74 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.PENGUUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.LINKUSD-OTC] PUT RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.PEPEUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.SUGAR-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.SUGAR-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.PENGUUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.WDC-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WDC-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WDC-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:43.8%-100.0%
+[⏱ 10:26:35] Ops:36 WR:56% Lucro:R$0.80   [📊 front.PEPEUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.CITI-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.COKE-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.ATOMUSD-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ATOMUSD-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ATOMUSD-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.CITI-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MSFT-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MSFT-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.NIKE-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.PENGUUSD-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.MCDON-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MSFT/AAPL-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:27:05] Ops:36 WR:56% Lucro:R$0.80   [📊 front.FWONA-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.FWONA-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.LINKUSD-OTC] PUT RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:53 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.HBARUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.INTEL/IBM-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.LINKUSD-OTC] PUT RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FB-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FB-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:74 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:74 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:9.5%-90.5%
+[⏱ 10:27:35] Ops:36 WR:56% Lucro:R$0.80   [📊 front.AIG-OTC] CALL RSI:79 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AIG-OTC] CALL RSI:79 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.HYPE-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.HYPE-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.ATOMUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ATOMUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-65.8%
+[📊 front.LINKUSD-OTC] PUT RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MANAUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.SNAP-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:81 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:81 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.TRON-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-79.3%
+[⏱ 10:28:05] Ops:36 WR:56% Lucro:R$0.80   [📊 front.DYDXUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.DYDXUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.DASHUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.DASHUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.COCOA-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.COCOA-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.MSFT-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.COKE-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.TESLA-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:57 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:57 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.COKE-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:9.5%-90.5%
+[⏱ 10:28:35] Ops:36 WR:56% Lucro:R$0.80   [📊 front.NEARUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:61 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:61 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.SNAP-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:20.7%-100.0%
+[📊 front.COKE-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.SpaceX-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MSFT-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.COCOA-OTC] CALL RSI:82 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.FWONA-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:15.0%-85.0%
+[⏱ 10:29:05] Ops:36 WR:56% Lucro:R$0.80   [📊 front.SATSUSD-OTC] PUT RSI:65 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.SpaceX-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.INTEL-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[✅] front.PEPEUSD-OTC | CALL | R$2 | RSI:39 | +R$1.64
+[📈] Total: 37 | WR: 56.8% | Lucro: R$2.44
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 56.8%WR(37) | 1min: 62.2%WR(37) | 2min: 64.9%WR(37) | 3min: 59.5%WR(37) | 5min: 62.2%WR(37)
+
+   Detalhado (últimas 5):
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DYDXUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2145
+[❌] front.HBARUSD-OTC | CALL | R$2 | RSI:55 | R$-2.00
+[⏸ PAUSE] FRONT.H: 3 losses → 5min cooldown
+[📈] Total: 38 | WR: 55.3% | Lucro: R$0.44
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 55.3%WR(38) | 1min: 60.5%WR(38) | 2min: 63.2%WR(38) | 3min: 57.9%WR(38) | 5min: 60.5%WR(38)
+
+   Detalhado (últimas 5):
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DYDXUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HBARUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[✅] front.RAYDIUMUSD-OTC | CALL | R$2 | RSI:57 | +R$1.64
+[📈] Total: 39 | WR: 56.4% | Lucro: R$2.08
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 56.4%WR(39) | 1min: 61.5%WR(39) | 2min: 64.1%WR(39) | 3min: 59.0%WR(39) | 5min: 61.5%WR(39)
+
+   Detalhado (últimas 5):
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DYDXUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HBARUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.RAYDIUMUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[✅] front.ONDOUSD-OTC | CALL | R$2 | RSI:61 | +R$1.64
+[📈] Total: 40 | WR: 57.5% | Lucro: R$3.72
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 55.0%WR(40) | 1min: 60.0%WR(40) | 2min: 65.0%WR(40) | 3min: 60.0%WR(40) | 5min: 62.5%WR(40)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HBARUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.RAYDIUMUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+
+[✅] front.SUGAR-OTC | CALL | R$2 | RSI:45 | +R$1.64
+[📈] Total: 41 | WR: 58.5% | Lucro: R$5.36
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 56.1%WR(41) | 1min: 61.0%WR(41) | 2min: 65.9%WR(41) | 3min: 61.0%WR(41) | 5min: 63.4%WR(41)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.HBARUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.RAYDIUMUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUGAR-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2276
+[MISSED] aid= 2145
+[MISSED] aid= 2145
+[MISSED] aid= 2417
+[MISSED] aid= 2145
+[MISSED] aid= 2288
+[❌] front.COCOA-OTC | CALL | R$2 | RSI:82 | R$-2.00
+[📈] Total: 42 | WR: 57.1% | Lucro: R$3.36
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 54.8%WR(42) | 1min: 61.9%WR(42) | 2min: 66.7%WR(42) | 3min: 61.9%WR(42) | 5min: 64.3%WR(42)
+
+   Detalhado (últimas 5):
+   front.HBARUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.RAYDIUMUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUGAR-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2145
+[❌] front.SATSUSD-OTC | PUT | R$2 | RSI:65 | R$-2.00
+[📈] Total: 43 | WR: 55.8% | Lucro: R$1.36
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.5%WR(43) | 1min: 60.5%WR(43) | 2min: 65.1%WR(43) | 3min: 60.5%WR(43) | 5min: 62.8%WR(43)
+
+   Detalhado (últimas 5):
+   front.RAYDIUMUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUGAR-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SATSUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2286
+[MISSED] aid= 2159
+[MISSED] aid= 2159
+[MISSED] aid= 2145
+[MISSED] aid= 2417
+[❌] front.FARTCOINUSD-OTC | CALL | R$2 | RSI:45 | R$-2.00
+[📈] Total: 44 | WR: 54.5% | Lucro: R$-0.64
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 54.5%WR(44) | 1min: 59.1%WR(44) | 2min: 63.6%WR(44) | 3min: 59.1%WR(44) | 5min: 61.4%WR(44)
+
+   Detalhado (últimas 5):
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUGAR-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SATSUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[✅] front.FWONA-OTC | CALL | R$2 | RSI:61 | +R$1.64
+[📈] Total: 45 | WR: 55.6% | Lucro: R$1.00
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.3%WR(45) | 1min: 60.0%WR(45) | 2min: 64.4%WR(45) | 3min: 60.0%WR(45) | 5min: 62.2%WR(45)
+
+   Detalhado (últimas 5):
+   front.SUGAR-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SATSUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FWONA-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2279
+[❌] front.PENGUUSD-OTC | CALL | R$2 | RSI:36 | R$-2.00
+[📈] Total: 46 | WR: 54.3% | Lucro: R$-1.00
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 54.3%WR(46) | 1min: 58.7%WR(46) | 2min: 63.0%WR(46) | 3min: 58.7%WR(46) | 5min: 60.9%WR(46)
+
+   Detalhado (últimas 5):
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SATSUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FWONA-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2312
+[MISSED] aid= 2279
+[MISSED] aid= 2312
+[MISSED] aid= 2279
+[MISSED] aid= 2417
+[MISSED] aid= 2288
+[MISSED] aid= 2286
+[MISSED] aid= 2288
+[MISSED] aid= 2280
+[MISSED] aid= 2417
+[MISSED] aid= 2288
+[MISSED] aid= 2288
+[MISSED] aid= 2159
+[MISSED] aid= 2159
+[MISSED] aid= 2279
+[MISSED] aid= 2279
+[MISSED] aid= 2279
+[📊 front.TRUMPUSD-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.AIRLINES-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:29:35] Ops:46 WR:54% Lucro:R$-1.00   [📊 front.ONDOUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AIRLINES-OTC] CALL RSI:72 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MU-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.EU50-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COFFEE-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.PYTHUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.TRON-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.TRON-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.NEARUSD-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+
+📊 RELATÓRIO | Ops: 46 | WR: 54.3% | Lucro: R$-1.00
+   ❌ OFF FRONT.     dir:CALL  WR:33.3%(9) R$-7.08
+   ⏸ pausa FRONT.H    dir:CALL  WR:0.0%(3) R$-6.00
+   ✅ ativo FRONT.SU   dir:CALL  WR:33.3%(3) R$-2.36
+   ✅ ativo FRONT.PE   dir:CALL  WR:50.0%(4) R$-0.72
+   ✅ ativo FRONT.TR   dir:CALL  WR:75.0%(4) +R$2.92
+   ✅ ativo FRONT.HY   dir:CALL  WR:50.0%(2) R$-0.36
+   ✅ ativo FRONT.FW   dir:CALL  WR:75.0%(4) +R$2.92
+   ✅ ativo FRONT.D    dir:CALL  WR:50.0%(2) R$-0.36
+   ✅ ativo FRONT.O    dir:CALL  WR:100.0%(2) +R$3.28
+   ✅ ativo FRONT.P    dir:CALL  WR:100.0%(3) +R$4.92
+   ✅ ativo FRONT.S    dir:PUT   WR:66.7%(3) +R$1.28
+   ✅ ativo FRONT.FA   dir:CALL  WR:66.7%(3) +R$1.28
+   ✅ ativo FRONT.CO   dir:CALL  WR:33.3%(3) R$-2.36
+   ✅ ativo FRONT.RA   dir:CALL  WR:100.0%(1) +R$1.64
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 54.3%WR(46) | 1min: 58.7%WR(46) | 2min: 63.0%WR(46) | 3min: 58.7%WR(46) | 5min: 60.9%WR(46)
+
+   Detalhado (últimas 5):
+   front.COCOA-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SATSUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FWONA-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+[⏱ 10:30:05] Ops:46 WR:54% Lucro:R$-1.00   [📊 front.INTEL/IBM-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NVDA-OTC] CALL RSI:79 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.FWONA-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.FWONA-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.LINKUSD-OTC] PUT RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.WDC-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.TRUMPUSD-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.COKE-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:6.1%-79.2%
+[⏱ 10:30:35] Ops:46 WR:54% Lucro:R$-1.00   [📊 front.MSFT/AAPL-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MSFT/AAPL-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FB-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.TRON-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.ONDOUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:31:05] Ops:46 WR:54% Lucro:R$-1.00   [📊 front.ONDOUSD-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.URANIUM-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.INTEL-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:23.1%-88.2%
+[⏱ 10:31:35] Ops:46 WR:54% Lucro:R$-1.00   [📊 front.MCDON-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.FWONA-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.KLARNA-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.TRON-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.SUGAR-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.FB-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FB-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:32:05] Ops:46 WR:54% Lucro:R$-1.00   [📊 front.COKE-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.TRUMPUSD-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.TRUMPUSD-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.INTEL-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.COKE-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.COKE-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.CARDANO-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.TRUMPUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.SUGAR-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.SUGAR-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.PEPEUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:9.5%-90.5%
+[⏱ 10:32:35] Ops:46 WR:54% Lucro:R$-1.00   [📊 front.SNAP-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.ALIBABA-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.MCDON-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.SUGAR-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.DYDXUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.TRON-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.TRON-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.SpaceX-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FB-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:33:05] Ops:46 WR:54% Lucro:R$-1.00   [📊 front.SNAP-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.TRUMPUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.TRUMPUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.KLARNA-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LUNA-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LUNA-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.URANIUM-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.URANIUM-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.URANIUM-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.URANIUM-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.NEARUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.COKE-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.DYDXUSD-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.SpaceX-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:33:35] Ops:46 WR:54% Lucro:R$-1.00   [📊 front.ATOMUSD-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.DYDXUSD-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.EU50-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.EU50-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.FWONA-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.TRON-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.TRON-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.PEPEUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:51.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.TRON-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.CITI-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COKE-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.TRON-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.ALIBABA-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.SUGAR-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.META/GOOGLE-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:39 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SHIBUSD-OTC] PUT RSI:39 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SHIBUSD-OTC] PUT RSI:39 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.NVDA-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NVDA-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NVDA-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LUNA-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:34:05] Ops:46 WR:54% Lucro:R$-1.00   [📊 front.INTEL-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.ONDOUSD-OTC] CALL RSI:76 regime:ranging stake:R$2 IC:34.2%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.CASINOS-OTC] CALL RSI:79 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.CASINOS-OTC] CALL RSI:79 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.CASINOS-OTC] CALL RSI:79 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GOOGLE/MSFT-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:40 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SpaceX-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SNAP-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[✅] front.TRUMPUSD-OTC | CALL | R$2 | RSI:40 | +R$1.64
+[📈] Total: 47 | WR: 55.3% | Lucro: R$0.64
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.2%WR(47) | 1min: 57.4%WR(47) | 2min: 63.8%WR(47) | 3min: 59.6%WR(47) | 5min: 61.7%WR(47)
+
+   Detalhado (últimas 5):
+   front.SATSUSD-OTC PUT ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FWONA-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+
+[📊 front.TRUMPUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:30.0%-90.3%
+[✅] front.RAYDIUMUSD-OTC | CALL | R$2 | RSI:52 | +R$1.64
+[📈] Total: 48 | WR: 56.3% | Lucro: R$2.28
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.1%WR(48) | 1min: 58.3%WR(48) | 2min: 64.6%WR(48) | 3min: 60.4%WR(48) | 5min: 62.5%WR(48)
+
+   Detalhado (últimas 5):
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.FWONA-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.RAYDIUMUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[✅] front.DYDXUSD-OTC | CALL | R$2 | RSI:27 | +R$1.64
+[📈] Total: 49 | WR: 57.1% | Lucro: R$3.92
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.1%WR(49) | 1min: 57.1%WR(49) | 2min: 63.3%WR(49) | 3min: 59.2%WR(49) | 5min: 61.2%WR(49)
+
+   Detalhado (últimas 5):
+   front.FWONA-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.RAYDIUMUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DYDXUSD-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[✅] front.ONDOUSD-OTC | CALL | R$2 | RSI:76 | +R$1.64
+[📈] Total: 50 | WR: 58.0% | Lucro: R$5.56
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.0%WR(50) | 1min: 56.0%WR(50) | 2min: 62.0%WR(50) | 3min: 58.0%WR(50) | 5min: 60.0%WR(50)
+
+   Detalhado (últimas 5):
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.RAYDIUMUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DYDXUSD-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[❌] front.PEPEUSD-OTC | CALL | R$2 | RSI:51 | R$-2.00
+[📈] Total: 51 | WR: 56.9% | Lucro: R$3.56
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 51.0%WR(51) | 1min: 54.9%WR(51) | 2min: 60.8%WR(51) | 3min: 56.9%WR(51) | 5min: 58.8%WR(51)
+
+   Detalhado (últimas 5):
+   front.TRUMPUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.RAYDIUMUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DYDXUSD-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PEPEUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2276
+[❌] front.TRON-OTC | CALL | R$2 | RSI:33 | R$-2.00
+[📈] Total: 52 | WR: 55.8% | Lucro: R$1.56
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 51.9%WR(52) | 1min: 55.8%WR(52) | 2min: 61.5%WR(52) | 3min: 57.7%WR(52) | 5min: 59.6%WR(52)
+
+   Detalhado (últimas 5):
+   front.RAYDIUMUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DYDXUSD-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PEPEUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRON-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 1976
+[MISSED] aid= 2145
+[MISSED] aid= 2276
+[❌] front.FWONA-OTC | CALL | R$2 | RSI:58 | R$-2.00
+[📈] Total: 53 | WR: 54.7% | Lucro: R$-0.44
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.8%WR(53) | 1min: 56.6%WR(53) | 2min: 62.3%WR(53) | 3min: 58.5%WR(53) | 5min: 60.4%WR(53)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PEPEUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRON-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2276
+[MISSED] aid= 1976
+[MISSED] aid= 1976
+[MISSED] aid= 2145
+[❌] front.URANIUM-OTC | CALL | R$2 | RSI:45 | R$-2.00
+[📈] Total: 54 | WR: 53.7% | Lucro: R$-2.44
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.7%WR(54) | 1min: 55.6%WR(54) | 2min: 61.1%WR(54) | 3min: 57.4%WR(54) | 5min: 59.3%WR(54)
+
+   Detalhado (últimas 5):
+   front.ONDOUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PEPEUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRON-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.URANIUM-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2145
+[MISSED] aid= 2286
+[MISSED] aid= 1976
+[✅] front.TRUMPUSD-OTC | CALL | R$2 | RSI:58 | +R$1.64
+[📈] Total: 55 | WR: 54.5% | Lucro: R$-0.80
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 54.5%WR(55) | 1min: 56.4%WR(55) | 2min: 61.8%WR(55) | 3min: 58.2%WR(55) | 5min: 60.0%WR(55)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRON-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.URANIUM-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2145
+[❌] front.COFFEE-OTC | CALL | R$2 | RSI:52 | R$-2.00
+[⏸ PAUSE] FRONT.CO: 3 losses → 5min cooldown
+[📈] Total: 56 | WR: 53.6% | Lucro: R$-2.80
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.6%WR(56) | 1min: 57.1%WR(56) | 2min: 62.5%WR(56) | 3min: 57.1%WR(56) | 5min: 58.9%WR(56)
+
+   Detalhado (últimas 5):
+   front.TRON-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.URANIUM-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.COFFEE-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 1976
+[MISSED] aid= 2145
+[MISSED] aid= 2312
+[❌] front.FARTCOINUSD-OTC | CALL | R$2 | RSI:35 | R$-2.00
+[📈] Total: 57 | WR: 52.6% | Lucro: R$-4.80
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.6%WR(57) | 1min: 56.1%WR(57) | 2min: 61.4%WR(57) | 3min: 56.1%WR(57) | 5min: 57.9%WR(57)
+
+   Detalhado (últimas 5):
+   front.FWONA-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.URANIUM-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.COFFEE-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2312
+[MISSED] aid= 2279
+[❌] front.PENGUUSD-OTC | CALL | R$2 | RSI:39 | R$-2.00
+[⏸ PAUSE] FRONT.PE: 3 losses → 5min cooldown
+[📈] Total: 58 | WR: 51.7% | Lucro: R$-6.80
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.4%WR(58) | 1min: 56.9%WR(58) | 2min: 62.1%WR(58) | 3min: 55.2%WR(58) | 5min: 56.9%WR(58)
+
+   Detalhado (últimas 5):
+   front.URANIUM-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.COFFEE-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2280
+[MISSED] aid= 2277
+[📊 front.EU50-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:73 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.HYPE-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:9.5%-90.5%
+[⏱ 10:34:35] Ops:58 WR:52% Lucro:R$-6.80   [📊 front.NEARUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MANAUSD-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:18.8%-81.2%
+[📊 front.FWONA-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:18.8%-81.2%
+[📊 front.ALIBABA-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MANAUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.SHIBUSD-OTC] PUT RSI:44 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.CARDANO-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:44 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.MCDON-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRUMPUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRUMPUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.SNDK-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRON-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.KLARNA-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+
+📊 RELATÓRIO | Ops: 58 | WR: 51.7% | Lucro: R$-6.80
+   ❌ OFF FRONT.     dir:CALL  WR:33.3%(9) R$-7.08
+   ✅ ativo FRONT.H    dir:CALL  WR:0.0%(3) R$-6.00
+   ✅ ativo FRONT.SU   dir:CALL  WR:33.3%(3) R$-2.36
+   ⏸ pausa FRONT.PE   dir:CALL  WR:40.0%(5) R$-2.72
+   ✅ ativo FRONT.TR   dir:CALL  WR:71.4%(7) +R$4.20
+   ✅ ativo FRONT.HY   dir:CALL  WR:50.0%(2) R$-0.36
+   ✅ ativo FRONT.FW   dir:CALL  WR:60.0%(5) +R$0.92
+   ✅ ativo FRONT.D    dir:CALL  WR:66.7%(3) +R$1.28
+   ✅ ativo FRONT.UR   dir:CALL  WR:0.0%(1) R$-2.00
+   ✅ ativo FRONT.O    dir:CALL  WR:100.0%(3) +R$4.92
+   ✅ ativo FRONT.P    dir:CALL  WR:75.0%(4) +R$2.92
+   ✅ ativo FRONT.S    dir:PUT   WR:66.7%(3) +R$1.28
+   ✅ ativo FRONT.FA   dir:CALL  WR:50.0%(4) R$-0.72
+   ⏸ pausa FRONT.CO   dir:CALL  WR:25.0%(4) R$-4.36
+   ✅ ativo FRONT.RA   dir:CALL  WR:100.0%(2) +R$3.28
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.4%WR(58) | 1min: 56.9%WR(58) | 2min: 62.1%WR(58) | 3min: 55.2%WR(58) | 5min: 56.9%WR(58)
+
+   Detalhado (últimas 5):
+   front.URANIUM-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.COFFEE-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+[⏱ 10:35:05] Ops:58 WR:52% Lucro:R$-6.80   [📊 front.SpaceX-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ATOMUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ATOMUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ATOMUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DASHUSD-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.TRON-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRON-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.MCDON-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:88 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:88 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.CARDANO-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:67 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRUMPUSD-OTC] CALL RSI:67 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRUMPUSD-OTC] CALL RSI:67 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.IOTAUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:37.6%-96.4%
+[⏱ 10:35:35] Ops:58 WR:52% Lucro:R$-6.80   [📊 front.TRUMPUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRUMPUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.SATSUSD-OTC] PUT RSI:68 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SNAP-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:9.5%-90.5%
+[📊 front.ONDOUSD-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FB-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:52 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.FB-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-56.2%
+[📊 front.PEPEUSD-OTC] CALL RSI:67 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.FWONA-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:18.8%-81.2%
+[📊 front.KLARNA-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.DYDXUSD-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SHIBUSD-OTC] PUT RSI:57 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SHIBUSD-OTC] PUT RSI:57 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.ORDIUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:43.8%-100.0%
+[⏱ 10:36:05] Ops:58 WR:52% Lucro:R$-6.80   [📊 front.RONINUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-56.2%
+[📊 front.LINKUSD-OTC] PUT RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WDC-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WDC-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WDC-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ATOMUSD-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ATOMUSD-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ATOMUSD-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.SNDK-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.TRON-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRON-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.FR40-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FR40-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.HBARUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-56.2%
+[⏱ 10:36:35] Ops:58 WR:52% Lucro:R$-6.80   [📊 front.TRUMPUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRUMPUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.INTEL-OTC] CALL RSI:73 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRUMPUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRON-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRON-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRON-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.SNAP-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.URANIUM-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.HBARUSD-OTC] CALL RSI:73 regime:ranging stake:R$2 IC:0.0%-56.2%
+[📊 front.URANIUM-OTC] CALL RSI:26 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.GEV-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GEV-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:33 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/ALIBABA-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NVDA/AMD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NVDA/AMD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/ALIBABA-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WDC-OTC] CALL RSI:76 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WDC-OTC] CALL RSI:76 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.PEPEUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.PEPEUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.CARDANO-OTC] CALL RSI:72 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:37:05] Ops:58 WR:52% Lucro:R$-6.80   [📊 front.TRON-OTC] CALL RSI:76 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.HBARUSD-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-56.2%
+[📊 front.NIKE-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.PLTR-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:72 regime:ranging stake:R$2 IC:18.8%-81.2%
+[📊 front.INTEL-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.SUGAR-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:6.1%-79.2%
+[⏱ 10:37:35] Ops:58 WR:52% Lucro:R$-6.80   [📊 front.DYDXUSD-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.INTEL-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:30 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MSFT-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GEV-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:72 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:72 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL/IBM-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.NIKE-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:71 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:71 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MANAUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MATICUSD-OTC] PUT RSI:68 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MATICUSD-OTC] PUT RSI:68 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MATICUSD-OTC] PUT RSI:68 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRUMPUSD-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:30.6%-86.3%
+[⏱ 10:38:05] Ops:58 WR:52% Lucro:R$-6.80   [📊 front.MANAUSD-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:77 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:77 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.HBARUSD-OTC] CALL RSI:77 regime:ranging stake:R$2 IC:0.0%-56.2%
+[📊 front.SNAP-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SpaceX-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:67 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.LINKUSD-OTC] PUT RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:74 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:74 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:43.8%-100.0%
+[⏱ 10:38:35] Ops:58 WR:52% Lucro:R$-6.80   [📊 front.PEPEUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.META/GOOGLE-OTC] CALL RSI:68 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CANNABIS-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:68 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.MCDON-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TRUMPUSD-OTC] CALL RSI:68 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.MCDON-OTC] CALL RSI:58 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GEV-OTC] CALL RSI:85 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GEV-OTC] CALL RSI:85 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GEV-OTC] CALL RSI:85 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.DYDXUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.FWONA-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:18.8%-81.2%
+[📊 front.FWONA-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:18.8%-81.2%
+[📊 front.FWONA-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:18.8%-81.2%
+[📊 front.TRON-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.TRON-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:30.6%-86.3%
+[📊 front.SUGAR-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.GEV-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GEV-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GEV-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:15.0%-85.0%
+[⏱ 10:39:05] Ops:58 WR:52% Lucro:R$-6.80   [📊 front.SUGAR-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.SUGAR-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.SUGAR-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.SUGAR-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.DYDXUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.MCDON-OTC] CALL RSI:64 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.CASINOS-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:43.8%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SUGAR-OTC] CALL RSI:82 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.SUGAR-OTC] CALL RSI:82 regime:ranging stake:R$2 IC:6.1%-79.2%
+[❌] front.TRUMPUSD-OTC | CALL | R$2 | RSI:68 | R$-2.00
+[📈] Total: 59 | WR: 50.8% | Lucro: R$-8.80
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.5%WR(59) | 1min: 55.9%WR(59) | 2min: 61.0%WR(59) | 3min: 54.2%WR(59) | 5min: 55.9%WR(59)
+
+   Detalhado (últimas 5):
+   front.TRUMPUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.COFFEE-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[✅] front.HYPE-OTC | CALL | R$2 | RSI:57 | +R$1.64
+[📈] Total: 60 | WR: 51.7% | Lucro: R$-7.16
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 51.7%WR(60) | 1min: 56.7%WR(60) | 2min: 61.7%WR(60) | 3min: 55.0%WR(60) | 5min: 56.7%WR(60)
+
+   Detalhado (últimas 5):
+   front.COFFEE-OTC CALL ❌ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HYPE-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[📊 front.PEPEUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:37.6%-96.4%
+[MISSED] aid= 2448
+[📊 front.LINKUSD-OTC] PUT RSI:68 regime:ranging stake:R$2 IC:0.0%-100.0%
+[❌] front.FWONA-OTC | CALL | R$2 | RSI:65 | R$-2.00
+[📈] Total: 61 | WR: 50.8% | Lucro: R$-9.16
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.5%WR(61) | 1min: 55.7%WR(61) | 2min: 60.7%WR(61) | 3min: 54.1%WR(61) | 5min: 55.7%WR(61)
+
+   Detalhado (últimas 5):
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HYPE-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[✅] front.PEPEUSD-OTC | CALL | R$2 | RSI:65 | +R$1.64
+[📈] Total: 62 | WR: 51.6% | Lucro: R$-7.52
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 51.6%WR(62) | 1min: 54.8%WR(62) | 2min: 59.7%WR(62) | 3min: 53.2%WR(62) | 5min: 54.8%WR(62)
+
+   Detalhado (últimas 5):
+   front.PENGUUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.TRUMPUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HYPE-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2265
+[❌] front.ATOMUSD-OTC | CALL | R$2 | RSI:38 | R$-2.00
+[📈] Total: 63 | WR: 50.8% | Lucro: R$-9.52
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.4%WR(63) | 1min: 55.6%WR(63) | 2min: 58.7%WR(63) | 3min: 54.0%WR(63) | 5min: 55.6%WR(63)
+
+   Detalhado (últimas 5):
+   front.TRUMPUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HYPE-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ATOMUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=✅ | 5min=✅
+
+[✅] front.SATSUSD-OTC | PUT | R$2 | RSI:52 | +R$1.64
+[📈] Total: 64 | WR: 51.6% | Lucro: R$-7.88
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.1%WR(64) | 1min: 56.3%WR(64) | 2min: 57.8%WR(64) | 3min: 53.1%WR(64) | 5min: 56.3%WR(64)
+
+   Detalhado (últimas 5):
+   front.HYPE-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ATOMUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=✅ | 5min=✅
+   front.SATSUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=✅
+
+[❌] front.ONDOUSD-OTC | CALL | R$2 | RSI:54 | R$-2.00
+[📈] Total: 65 | WR: 50.8% | Lucro: R$-9.88
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.8%WR(65) | 1min: 55.4%WR(65) | 2min: 56.9%WR(65) | 3min: 52.3%WR(65) | 5min: 55.4%WR(65)
+
+   Detalhado (últimas 5):
+   front.FWONA-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ATOMUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=✅ | 5min=✅
+   front.SATSUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=✅
+   front.ONDOUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2150
+[MISSED] aid= 2265
+[✅] front.SHIBUSD-OTC | PUT | R$2 | RSI:57 | +R$1.64
+[📈] Total: 66 | WR: 51.5% | Lucro: R$-8.24
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.0%WR(66) | 1min: 56.1%WR(66) | 2min: 57.6%WR(66) | 3min: 51.5%WR(66) | 5min: 56.1%WR(66)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ATOMUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=✅ | 5min=✅
+   front.SATSUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=✅
+   front.ONDOUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+
+[MISSED] aid= 2265
+[MISSED] aid= 2312
+[MISSED] aid= 2276
+[✅] front.TRON-OTC | CALL | R$2 | RSI:48 | +R$1.64
+[📈] Total: 67 | WR: 52.2% | Lucro: R$-6.60
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.2%WR(67) | 1min: 56.7%WR(67) | 2min: 58.2%WR(67) | 3min: 52.2%WR(67) | 5min: 56.7%WR(67)
+
+   Detalhado (últimas 5):
+   front.ATOMUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=✅ | 5min=✅
+   front.SATSUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=✅
+   front.ONDOUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2159
+[MISSED] aid= 1976
+[MISSED] aid= 2145
+[MISSED] aid= 1976
+[MISSED] aid= 2150
+[MISSED] aid= 2265
+[MISSED] aid= 2265
+[✅] front.FARTCOINUSD-OTC | CALL | R$2 | RSI:41 | +R$1.64
+[📈] Total: 68 | WR: 52.9% | Lucro: R$-4.96
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.9%WR(68) | 1min: 57.4%WR(68) | 2min: 58.8%WR(68) | 3min: 52.9%WR(68) | 5min: 57.4%WR(68)
+
+   Detalhado (últimas 5):
+   front.SATSUSD-OTC PUT ✅ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=❌ | 5min=✅
+   front.ONDOUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2265
+[MISSED] aid= 2265
+[MISSED] aid= 2279
+[❌] front.DASHUSD-OTC | CALL | R$2 | RSI:52 | R$-2.00
+[📈] Total: 69 | WR: 52.2% | Lucro: R$-6.96
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.2%WR(69) | 1min: 56.5%WR(69) | 2min: 58.0%WR(69) | 3min: 52.2%WR(69) | 5min: 56.5%WR(69)
+
+   Detalhado (últimas 5):
+   front.ONDOUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DASHUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 1976
+[MISSED] aid= 1976
+[📊 front.COKE-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:4.6%-69.9%
+[📊 front.COKE-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:4.6%-69.9%
+[MISSED] aid= 2265
+[📊 front.PLTR-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:15.8%-75.0%
+[📊 front.EU50-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:43.6%-97.0%
+[📊 front.CITI-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:39:35] Ops:69 WR:52% Lucro:R$-6.96   [📊 front.CITI-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:43.6%-97.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:43.6%-97.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:31 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SANDUSD-OTC] PUT RSI:52 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.PLTR-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SANDUSD-OTC] PUT RSI:52 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.SNDK-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNDK-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.XAU/XAG-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:75 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:75 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.WDC-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.GOOGLE-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+
+📊 RELATÓRIO | Ops: 69 | WR: 52.2% | Lucro: R$-6.96
+   ❌ OFF FRONT.     dir:CALL  WR:33.3%(9) R$-7.08
+   ✅ ativo FRONT.H    dir:CALL  WR:0.0%(3) R$-6.00
+   ✅ ativo FRONT.SU   dir:CALL  WR:33.3%(3) R$-2.36
+   ✅ ativo FRONT.PE   dir:CALL  WR:40.0%(5) R$-2.72
+   ✅ ativo FRONT.TR   dir:CALL  WR:66.7%(9) +R$3.84
+   ✅ ativo FRONT.HY   dir:CALL  WR:66.7%(3) +R$1.28
+   ✅ ativo FRONT.FW   dir:CALL  WR:50.0%(6) R$-1.08
+   ✅ ativo FRONT.D    dir:CALL  WR:50.0%(4) R$-0.72
+   ✅ ativo FRONT.UR   dir:CALL  WR:0.0%(1) R$-2.00
+   ✅ ativo FRONT.O    dir:CALL  WR:75.0%(4) +R$2.92
+   ✅ ativo FRONT.P    dir:CALL  WR:80.0%(5) +R$4.56
+   ✅ ativo FRONT.S    dir:PUT   WR:80.0%(5) +R$4.56
+   ✅ ativo FRONT.FA   dir:CALL  WR:60.0%(5) +R$0.92
+   ✅ ativo FRONT.CO   dir:CALL  WR:25.0%(4) R$-4.36
+   ✅ ativo FRONT.A    dir:CALL  WR:0.0%(1) R$-2.00
+   ✅ ativo FRONT.RA   dir:CALL  WR:100.0%(2) +R$3.28
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.2%WR(69) | 1min: 56.5%WR(69) | 2min: 58.0%WR(69) | 3min: 52.2%WR(69) | 5min: 56.5%WR(69)
+
+   Detalhado (últimas 5):
+   front.ONDOUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DASHUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+[⏱ 10:40:05] Ops:69 WR:52% Lucro:R$-6.96   [📊 front.INTEL-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:41 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.SHIBUSD-OTC] PUT RSI:41 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.PEPEUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:43.6%-97.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:43.6%-97.0%
+[📊 front.SNDK-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:0.0%-56.2%
+[📊 front.MCDON-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SANDUSD-OTC] PUT RSI:48 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.NFLX/AMZN-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.NIKE-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:34 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.BIDU-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.BIDU-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:40:35] Ops:69 WR:52% Lucro:R$-6.96   [📊 front.LINKUSD-OTC] PUT RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.DYDXUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.MANAUSD-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MANAUSD-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:53 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA/FORD-OTC] CALL RSI:61 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MANAUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MANAUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MANAUSD-OTC] CALL RSI:65 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:47 regime:ranging stake:R$2 IC:37.6%-96.4%
+[⏱ 10:41:05] Ops:69 WR:52% Lucro:R$-6.96   [📊 front.SpaceX-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:45 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ATOMUSD-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.COTTON-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:4.6%-69.9%
+[📊 front.CARDANO-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CARDANO-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:78 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.SUGAR-OTC] CALL RSI:78 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.MCDON-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:25 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.RENDERUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RENDERUSD-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:25 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.LINKUSD-OTC] PUT RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.US2000-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.US2000-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:20.8%-93.9%
+[⏱ 10:41:35] Ops:69 WR:52% Lucro:R$-6.96   [📊 front.SNDK-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ATOMUSD-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.ATOMUSD-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.NEARUSD-OTC] CALL RSI:77 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:77 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NEARUSD-OTC] CALL RSI:77 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.SATSUSD-OTC] PUT RSI:53 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.HYPE-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.ALIBABA-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:32 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:4.6%-69.9%
+[📊 front.ONDOUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:30.1%-95.4%
+[⏱ 10:42:05] Ops:69 WR:52% Lucro:R$-6.96   [📊 front.INTEL-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.LINKUSD-OTC] PUT RSI:70 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:67 regime:ranging stake:R$2 IC:4.6%-69.9%
+[📊 front.COCOA-OTC] CALL RSI:67 regime:ranging stake:R$2 IC:4.6%-69.9%
+[📊 front.COCOA-OTC] CALL RSI:67 regime:ranging stake:R$2 IC:4.6%-69.9%
+[📊 front.INTEL-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.ORDIUSD-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.BIDU-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:40 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:41 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.NEARUSD-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:37 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:36 regime:ranging stake:R$2 IC:43.6%-97.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:30.1%-95.4%
+[⏱ 10:42:35] Ops:69 WR:52% Lucro:R$-6.96   [📊 front.RAYDIUMUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:20.8%-93.9%
+[📊 front.IOTAUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.IOTAUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FR40-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FR40-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FR40-OTC] CALL RSI:47 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MELANIAUSD-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SpaceX-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SATSUSD-OTC] PUT RSI:68 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.BIDU-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.BIDU-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:75 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:75 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MSFT/AAPL-OTC] CALL RSI:73 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MSFT/AAPL-OTC] CALL RSI:73 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:43:05] Ops:69 WR:52% Lucro:R$-6.96   [📊 front.ALIBABA-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-56.2%
+[📊 front.HBARUSD-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-56.2%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.AMZN/EBAY-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ONDOUSD-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SATSUSD-OTC] PUT RSI:43 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.MSFT-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MSFT-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MSFT-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:43:35] Ops:69 WR:52% Lucro:R$-6.96   [📊 front.EU50-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.EU50-OTC] CALL RSI:55 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.US30/JP225-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.US30/JP225-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.US30/JP225-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SUGAR-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:6.1%-79.2%
+[📊 front.GEV-OTC] CALL RSI:35 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:71 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.MCDON-OTC] CALL RSI:54 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:43.6%-97.0%
+[📊 front.CITI-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.CITI-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:43.6%-97.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:43.6%-97.0%
+[📊 front.CITI-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SNAP-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:38 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.URANIUM-OTC] CALL RSI:52 regime:ranging stake:R$2 IC:0.0%-79.3%
+[📊 front.TESLA-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.TESLA-OTC] CALL RSI:27 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:50 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.SHIBUSD-OTC] PUT RSI:50 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.SHIBUSD-OTC] PUT RSI:50 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.DYDXUSD-OTC] CALL RSI:62 regime:ranging stake:R$2 IC:15.0%-85.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.SNAP-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[⏱ 10:44:05] Ops:69 WR:52% Lucro:R$-6.96   [📊 front.ONDOUSD-OTC] CALL RSI:46 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.SHIBUSD-OTC] PUT RSI:58 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.SHIBUSD-OTC] PUT RSI:65 regime:ranging stake:R$2 IC:37.6%-96.4%
+[📊 front.HBARUSD-OTC] CALL RSI:76 regime:ranging stake:R$2 IC:0.0%-56.2%
+[📊 front.HBARUSD-OTC] CALL RSI:76 regime:ranging stake:R$2 IC:0.0%-56.2%
+[📊 front.ORDIUSD-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.ORDIUSD-OTC] CALL RSI:66 regime:ranging stake:R$2 IC:30.1%-95.4%
+[📊 front.INTEL-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.INTEL-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PENGUUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:11.8%-76.9%
+[📊 front.PENGUUSD-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:11.8%-76.9%
+[📊 front.FWONA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:15.8%-75.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.GOOGLE/MSFT-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.FWONA-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:15.8%-75.0%
+[📊 front.FWONA-OTC] CALL RSI:50 regime:ranging stake:R$2 IC:15.8%-75.0%
+[📊 front.SANDUSD-OTC] PUT RSI:59 regime:ranging stake:R$2 IC:37.6%-96.4%
+[✅] front.DYDXUSD-OTC | CALL | R$2 | RSI:62 | +R$1.64
+[📈] Total: 70 | WR: 52.9% | Lucro: R$-5.32
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 51.4%WR(70) | 1min: 57.1%WR(70) | 2min: 58.6%WR(70) | 3min: 52.9%WR(70) | 5min: 57.1%WR(70)
+
+   Detalhado (últimas 5):
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DASHUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DYDXUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[✅] front.RENDERUSD-OTC | CALL | R$2 | RSI:37 | +R$1.64
+[📈] Total: 71 | WR: 53.5% | Lucro: R$-3.68
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.1%WR(71) | 1min: 57.7%WR(71) | 2min: 59.2%WR(71) | 3min: 53.5%WR(71) | 5min: 57.7%WR(71)
+
+   Detalhado (últimas 5):
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DASHUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DYDXUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.RENDERUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[❌] front.SUGAR-OTC | CALL | R$2 | RSI:57 | R$-2.00
+[📈] Total: 72 | WR: 52.8% | Lucro: R$-5.68
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 51.4%WR(72) | 1min: 56.9%WR(72) | 2min: 59.7%WR(72) | 3min: 54.2%WR(72) | 5min: 58.3%WR(72)
+
+   Detalhado (últimas 5):
+   front.FARTCOINUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.DASHUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DYDXUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.RENDERUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUGAR-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+
+[✅] front.FWONA-OTC | CALL | R$2 | RSI:50 | +R$1.64
+[📈] Total: 73 | WR: 53.4% | Lucro: R$-4.04
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.1%WR(73) | 1min: 56.2%WR(73) | 2min: 58.9%WR(73) | 3min: 53.4%WR(73) | 5min: 57.5%WR(73)
+
+   Detalhado (últimas 5):
+   front.DASHUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.DYDXUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.RENDERUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUGAR-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[✅] front.HBARUSD-OTC | CALL | R$2 | RSI:76 | +R$1.64
+[📈] Total: 74 | WR: 54.1% | Lucro: R$-2.40
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 52.7%WR(74) | 1min: 56.8%WR(74) | 2min: 59.5%WR(74) | 3min: 54.1%WR(74) | 5min: 58.1%WR(74)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.RENDERUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUGAR-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HBARUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2417
+[❌] front.PEPEUSD-OTC | CALL | R$2 | RSI:56 | R$-2.00
+[📈] Total: 75 | WR: 53.3% | Lucro: R$-4.40
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.3%WR(75) | 1min: 56.0%WR(75) | 2min: 58.7%WR(75) | 3min: 53.3%WR(75) | 5min: 57.3%WR(75)
+
+   Detalhado (últimas 5):
+   front.RENDERUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SUGAR-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HBARUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2145
+[MISSED] aid= 2277
+[MISSED] aid= 2145
+[MISSED] aid= 2277
+[❌] front.RAYDIUMUSD-OTC | CALL | R$2 | RSI:49 | R$-2.00
+[📈] Total: 76 | WR: 52.6% | Lucro: R$-6.40
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.9%WR(76) | 1min: 55.3%WR(76) | 2min: 59.2%WR(76) | 3min: 53.9%WR(76) | 5min: 57.9%WR(76)
+
+   Detalhado (últimas 5):
+   front.SUGAR-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HBARUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.RAYDIUMUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+
+[MISSED] aid= 2277
+[MISSED] aid= 2290
+[❌] front.SHIBUSD-OTC | PUT | R$2 | RSI:65 | R$-2.00
+[📈] Total: 77 | WR: 51.9% | Lucro: R$-8.40
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 54.5%WR(77) | 1min: 54.5%WR(77) | 2min: 58.4%WR(77) | 3min: 53.2%WR(77) | 5min: 57.1%WR(77)
+
+   Detalhado (últimas 5):
+   front.FWONA-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HBARUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.RAYDIUMUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SHIBUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[✅] front.ATOMUSD-OTC | CALL | R$2 | RSI:59 | +R$1.64
+[📈] Total: 78 | WR: 52.6% | Lucro: R$-6.76
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 53.8%WR(78) | 1min: 55.1%WR(78) | 2min: 59.0%WR(78) | 3min: 52.6%WR(78) | 5min: 57.7%WR(78)
+
+   Detalhado (últimas 5):
+   front.HBARUSD-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=✅
+   front.PEPEUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.RAYDIUMUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SHIBUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ATOMUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+
+[❌] front.COTTON-OTC | CALL | R$2 | RSI:47 | R$-2.00
+[📈] Total: 79 | WR: 51.9% | Lucro: R$-8.76
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 54.4%WR(79) | 1min: 54.4%WR(79) | 2min: 58.2%WR(79) | 3min: 51.9%WR(79) | 5min: 57.0%WR(79)
+
+   Detalhado (últimas 5):
+   front.PEPEUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.RAYDIUMUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SHIBUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ATOMUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.COTTON-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[📊 front.KLARNA-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[MISSED] aid= 2286
+[📊 front.KLARNA-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PEPEUSD-OTC] CALL RSI:42 regime:ranging stake:R$2 IC:35.9%-91.8%
+[✅] front.HYPE-OTC | CALL | R$2 | RSI:49 | +R$1.64
+[📈] Total: 80 | WR: 52.5% | Lucro: R$-7.12
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 55.0%WR(80) | 1min: 55.0%WR(80) | 2min: 58.8%WR(80) | 3min: 51.2%WR(80) | 5min: 56.3%WR(80)
+
+   Detalhado (últimas 5):
+   front.RAYDIUMUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=✅
+   front.SHIBUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ATOMUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.COTTON-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HYPE-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+
+[📊 front.KLARNA-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:0.0%-100.0%
+[❌] front.PEPEUSD-OTC | CALL | R$2 | RSI:42 | R$-2.00
+[📈] Total: 81 | WR: 51.9% | Lucro: R$-9.12
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 55.6%WR(81) | 1min: 54.3%WR(81) | 2min: 58.0%WR(81) | 3min: 50.6%WR(81) | 5min: 55.6%WR(81)
+
+   Detalhado (últimas 5):
+   front.SHIBUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ATOMUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.COTTON-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HYPE-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.PEPEUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+
+[MISSED] aid= 2145
+[MISSED] aid= 2277
+[MISSED] aid= 2286
+[MISSED] aid= 1975
+[MISSED] aid= 1975
+[MISSED] aid= 2145
+[📊 front.DYDXUSD-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.DYDXUSD-OTC] CALL RSI:57 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.IOTAUSD-OTC] CALL RSI:44 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:59 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.HBARUSD-OTC] CALL RSI:63 regime:ranging stake:R$2 IC:4.6%-69.9%
+[⏱ 10:44:35] Ops:81 WR:52% Lucro:R$-9.12   [📊 front.CITI-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.SANDUSD-OTC] PUT RSI:50 regime:ranging stake:R$2 IC:30.0%-90.3%
+[📊 front.SANDUSD-OTC] PUT RSI:50 regime:ranging stake:R$2 IC:30.0%-90.3%
+[📊 front.DYDXUSD-OTC] CALL RSI:69 regime:ranging stake:R$2 IC:23.1%-88.2%
+[📊 front.COCOA-OTC] CALL RSI:48 regime:ranging stake:R$2 IC:3.6%-62.4%
+[📊 front.ALIBABA-OTC] CALL RSI:29 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.KLARNA-OTC] CALL RSI:60 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.COCOA-OTC] CALL RSI:70 regime:ranging stake:R$2 IC:3.6%-62.4%
+[📊 front.META/GOOGLE-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:39 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:71 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.PLTR-OTC] CALL RSI:71 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.NIKE-OTC] CALL RSI:49 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.ALIBABA-OTC] CALL RSI:28 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+[📊 front.META/GOOGLE-OTC] CALL RSI:51 regime:ranging stake:R$2 IC:0.0%-100.0%
+
+📊 RELATÓRIO | Ops: 81 | WR: 51.9% | Lucro: R$-9.12
+   ❌ OFF FRONT.     dir:CALL  WR:33.3%(9) R$-7.08
+   ✅ ativo FRONT.H    dir:CALL  WR:25.0%(4) R$-4.36
+   ✅ ativo FRONT.SU   dir:CALL  WR:25.0%(4) R$-4.36
+   ✅ ativo FRONT.PE   dir:CALL  WR:40.0%(5) R$-2.72
+   ✅ ativo FRONT.TR   dir:CALL  WR:66.7%(9) +R$3.84
+   ✅ ativo FRONT.HY   dir:CALL  WR:75.0%(4) +R$2.92
+   ✅ ativo FRONT.FW   dir:CALL  WR:57.1%(7) +R$0.56
+   ✅ ativo FRONT.D    dir:CALL  WR:60.0%(5) +R$0.92
+   ✅ ativo FRONT.UR   dir:CALL  WR:0.0%(1) R$-2.00
+   ✅ ativo FRONT.O    dir:CALL  WR:75.0%(4) +R$2.92
+   ✅ ativo FRONT.P    dir:CALL  WR:57.1%(7) +R$0.56
+   ✅ ativo FRONT.S    dir:PUT   WR:66.7%(6) +R$2.56
+   ✅ ativo FRONT.FA   dir:CALL  WR:60.0%(5) +R$0.92
+   ✅ ativo FRONT.CO   dir:CALL  WR:20.0%(5) R$-6.36
+   ✅ ativo FRONT.A    dir:CALL  WR:50.0%(2) R$-0.36
+   ✅ ativo FRONT.RA   dir:CALL  WR:66.7%(3) +R$1.28
+   ✅ ativo FRONT.RE   dir:CALL  WR:100.0%(1) +R$1.64
+
+📊 ANÁLISE DE EXPIRAÇÃO (vs 5min real):
+   30s: 55.6%WR(81) | 1min: 54.3%WR(81) | 2min: 58.0%WR(81) | 3min: 50.6%WR(81) | 5min: 55.6%WR(81)
+
+   Detalhado (últimas 5):
+   front.SHIBUSD-OTC PUT ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.ATOMUSD-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=✅
+   front.COTTON-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+   front.HYPE-OTC CALL ✅ | 30s=✅ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=❌
+   front.PEPEUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=❌
+[⏱ 10:45:05] Ops:81 WR:52% Lucro:R$-9.12   [📊 front.COKE-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:3.6%-62.4%
+[📊 front.COKE-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:3.6%-62.4%
+[📊 front.COKE-OTC] CALL RSI:56 regime:ranging stake:R$2 IC:3.6%-62.4%
+[📊 front.SATSUSD-OTC] PUT RSI:54 regime:ranging stake:R$2 IC:30.0%-90.3%
+[📊 front.SNAP-OTC] CALL RSI:43 regime:ranging stake:R$2 IC:0.0%-100.0%

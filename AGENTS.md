@@ -24,6 +24,20 @@ A estratégia operacional vigente é **PULLBACK_4060_300_AGENTIC_V2** (`estrateg
 - **V2 FROZEN**: nenhum tuning/auto-adaptação/threshold adaptativo/martingale/loss recovery. Qualquer mudança estratégica = **V3 + novo strategyHash + novo statsEpoch** (+ stats separadas). Mudanças operacionais (health, logs, infra, frontend, monitoramento, deploy seguro) continuam permitidas.
 - **Stats da V2** começam em N=0/W=0/L=0/D=0; PATH_TEST (`testOnly=true`, `excludedFromStats=true`) nunca conta.
 
+## 0.1 BOT STANDALONE DO DONO (`ws-otc-v15.mjs`) — memória obrigatória
+
+> Existe um bot **separado** deste motor, na raiz do repositório: `ws-otc-v15.mjs`
+> (+ `bot-config-v15.json`, `iqoption-ws.mjs`), que opera pela conta do dono via WebSocket (a V14 fica como histórico).
+> **Antes de tocar nele, ler `BOT-V15-MEMORIA.md`** (na raiz e em `oTrace.com/backup/`):
+> lá estão as decisões do dono que **não podem ser desfeitas** — no mínimo 10 ativos operando,
+> sem limite, até 3 ordens por ativo no mesmo sentido (ciclo do gale, uma por vez), stake
+> fixo 2, venda SÓ por cotação real (`sell_profit` líquido: realiza op positiva em 50% do win;
+> corte no fim só se estiver longe da linha e devolver ≥ 0,50; nunca por reversão), teto de
+> exposição como fração do saldo, circuit breaker 3 losses → 5 min — e as armadilhas já pagas
+> (`close-position` ignorada pela IQ; CALL e PUT no mesmo ativo proibido; `sell_profit` É LÍQUIDO).
+> As regras do motor oficial (V3 congelada, martingale proibido, 300s único) valem para `relay/`:
+> **este script é independente** e nada dele pode ser levado para o motor, nem vice-versa.
+
 ## 1. A ESTRATÉGIA CONGELADA NÃO PODE SER ALTERADA
 
 - **PROIBIDO** alterar AssetContext, Features, Specialists, Consensus, DecisionSnapshot, Binary300Timing, ExecutionGate, AccountRouter, readiness/gap policy, 5s, 3h, 300s ou o `strategyHash` — sem pedido explícito do dono do projeto; após o freeze, mudança estratégica exige **V3**.

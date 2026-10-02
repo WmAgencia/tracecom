@@ -1,0 +1,156 @@
+{
+  "kind": "MODEL-FREEZE",
+  "frozenAtUtc": "2026-09-29T11:48:18.534Z",
+  "read_only": true,
+  "orders_placed": false,
+  "rule": "Congelado antes da coleta prospectiva. Nenhum parâmetro é reajustado com dados futuros.",
+  "approval_rule": {
+    "min_independent_events": 100,
+    "requirement": "IC bootstrap (limite inferior) acima do breakeven WR e EV > 0 com o payout observado no instante do sinal",
+    "forbid": "declarar 70% validado sem amostra prospectiva suficiente"
+  },
+  "models": [
+    {
+      "hypothesisId": "H1-UK100-1m-rsi14-h5",
+      "label": "UK 100 · 1m · RSI14 · h5",
+      "MODEL_VERSION": "db7f45fccadbe144ac5fc157ed0941aad9d1f0dcf91a6d95a5e48142c2b2f6db",
+      "MODEL_SPEC": {
+        "hypothesis": "H1-UK100-1m-rsi14-h5",
+        "setup": "rsi14",
+        "horizon": 5,
+        "sizeS": 60,
+        "warmup": 25,
+        "split": {
+          "train": 0.5,
+          "validation": 0.25,
+          "test": 0.25
+        },
+        "embargo": 1,
+        "thresholds": {
+          "period": 14,
+          "low": 30,
+          "high": 70
+        },
+        "seed": 20260929
+      },
+      "candle_source_product": "binary-options",
+      "execution_product": "blitz-options",
+      "payout_execution": 91,
+      "asset_id": 1475,
+      "asset_name_candidates": [
+        "UK 100"
+      ],
+      "resolution_s": 60,
+      "horizon_bars": 5,
+      "operational_horizon_s": 300,
+      "v3_300s_compatible": true,
+      "market_availability": true,
+      "substituted_for": null
+    },
+    {
+      "hypothesisId": "H2-US2000-1m-rsi14-h5",
+      "label": "US 2000 · 1m · RSI14 · h5",
+      "MODEL_VERSION": "082d6c42727c828d1b333d187228b18c6a2366b5e990164c08ef46fc4f41243d",
+      "MODEL_SPEC": {
+        "hypothesis": "H2-US2000-1m-rsi14-h5",
+        "setup": "rsi14",
+        "horizon": 5,
+        "sizeS": 60,
+        "warmup": 25,
+        "split": {
+          "train": 0.5,
+          "validation": 0.25,
+          "test": 0.25
+        },
+        "embargo": 1,
+        "thresholds": {
+          "period": 14,
+          "low": 30,
+          "high": 70
+        },
+        "seed": 20260929
+      },
+      "candle_source_product": "binary-options",
+      "execution_product": "blitz-options",
+      "payout_execution": 91,
+      "asset_id": 1473,
+      "asset_name_candidates": [
+        "US 2000"
+      ],
+      "resolution_s": 60,
+      "horizon_bars": 5,
+      "operational_horizon_s": 300,
+      "v3_300s_compatible": true,
+      "market_availability": true,
+      "substituted_for": null
+    },
+    {
+      "hypothesisId": "H3-SP500ETF-1m-fade3-h5",
+      "label": "S&P 500 ETF (SPY) · 1m · fade3 · h5 [INSTRUMENTO INDISPONÍVEL]",
+      "MODEL_VERSION": "8d9c9f6f1b7c898a5b75d44816b065416a80c781bea45547ba5643923dadca88",
+      "MODEL_SPEC": {
+        "hypothesis": "H3-SP500ETF-1m-fade3-h5",
+        "setup": "fade3",
+        "horizon": 5,
+        "sizeS": 60,
+        "warmup": 25,
+        "split": {
+          "train": 0.5,
+          "validation": 0.25,
+          "test": 0.25
+        },
+        "embargo": 1,
+        "thresholds": {},
+        "seed": 20260929
+      },
+      "candle_source_product": "binary-options",
+      "execution_product": null,
+      "payout_execution": null,
+      "asset_id": null,
+      "asset_name_candidates": [
+        "S&P 500 ETF",
+        "SPY",
+        "S&P500 ETF"
+      ],
+      "resolution_s": 60,
+      "horizon_bars": 5,
+      "operational_horizon_s": 300,
+      "v3_300s_compatible": true,
+      "market_availability": false,
+      "substituted_for": null
+    },
+    {
+      "hypothesisId": "H3b-US500-1m-fade3-h5",
+      "label": "US 500 · 1m · fade3 · h5 [SUBSTITUTO DECLARADO]",
+      "MODEL_VERSION": "4349fb03c90ac672ce1ed6f5482e950bc12036e00374a3c3365852226ed913f3",
+      "MODEL_SPEC": {
+        "hypothesis": "H3b-US500-1m-fade3-h5",
+        "setup": "fade3",
+        "horizon": 5,
+        "sizeS": 60,
+        "warmup": 25,
+        "split": {
+          "train": 0.5,
+          "validation": 0.25,
+          "test": 0.25
+        },
+        "embargo": 1,
+        "thresholds": {},
+        "seed": 20260929
+      },
+      "candle_source_product": "binary-options",
+      "execution_product": "blitz-options",
+      "payout_execution": 91,
+      "asset_id": 1470,
+      "asset_name_candidates": [
+        "US 500"
+      ],
+      "resolution_s": 60,
+      "horizon_bars": 5,
+      "operational_horizon_s": 300,
+      "v3_300s_compatible": true,
+      "market_availability": true,
+      "substituted_for": "H3-SP500ETF-1m-fade3-h5"
+    }
+  ]
+}

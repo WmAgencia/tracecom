@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server-painel.mjs",
+      "use": "@vercel/node",
+      "config": { "includeFiles": ["index.html", "styles.css", "app.js", "nixpacks.json"] }
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/server-painel.mjs" },
+    { "src": "/(.*)", "dest": "/server-painel.mjs" }
+  ]
+}

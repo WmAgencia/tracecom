@@ -1,0 +1,1708 @@
+{
+  "product": "binary-options",
+  "fetchedAtUtc": "2026-09-29T11:34:50.558Z",
+  "count": 121,
+  "capabilities": {
+    "skipped": true
+  },
+  "limits": {
+    "skipped": true
+  },
+  "assets": [
+    {
+      "asset_id": 1380,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/ZAR (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1381,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/SGD (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1382,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/HKD (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1383,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/INR (OTC)",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1470,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "US 500",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1471,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "US 100",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1472,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "US 30",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1473,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "US 2000",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1475,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "UK 100",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1476,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "JP 225",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1478,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "GER 30",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1479,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "FR 40",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1481,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "AU 200",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1615,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "ASML Holding NV",
+      "precision": 4,
+      "profit_percent": 92
+    },
+    {
+      "asset_id": 1861,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "EUR/USD",
+      "precision": 6,
+      "profit_percent": 94
+    },
+    {
+      "asset_id": 1862,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "EUR/GBP",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1864,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "EUR/JPY",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1865,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/JPY",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1866,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "GBP/JPY",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1867,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "GBP/USD",
+      "precision": 6,
+      "profit_percent": 94
+    },
+    {
+      "asset_id": 1868,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "AUD/CAD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1869,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "AUD/JPY",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1870,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "AUD/USD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1871,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "CAD/CHF",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1872,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "CAD/JPY",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1873,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "CHF/JPY",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1874,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "EUR/AUD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1875,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "EUR/CAD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1876,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "EUR/CHF",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1877,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "GBP/AUD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1878,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/CAD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1880,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "GBP/NZD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1881,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "NZD/CAD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1882,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "NZD/JPY",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1884,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "AUD/CHF",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1891,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/THB",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1896,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "NZD/USD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1897,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "GBP/CAD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1898,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "GBP/CHF",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1900,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "AUD/NZD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1901,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "EUR/NZD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1905,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Tesla",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1909,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Amazon",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1910,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Apple Inc.",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1912,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Gold",
+      "precision": 5,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1913,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Silver",
+      "precision": 5,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1914,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Crude Oil WTI",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1915,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Crude Oil Brent",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1916,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Bitcoin",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1918,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Ethereum",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1923,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Microsoft Corporation",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1925,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Meta",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1926,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Alphabet Inc.",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1975,
+      "buyback_deadtime_seconds": 10,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "SHIB/USD (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2071,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Gold/Silver",
+      "precision": 6,
+      "profit_percent": 92
+    },
+    {
+      "asset_id": 2107,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Ripple (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2124,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/TRY (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2126,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Litecoin (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2127,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Vaulta (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2128,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/PLN (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2141,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Jupiter (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2144,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Dogwifhat (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2145,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Pepe (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2149,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Polkadot (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2150,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Cosmos (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2152,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Sei (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2155,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Dash (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2156,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Arbitrum (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2157,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Worldcoin (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2159,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "1000Sats (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2183,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "JPY/THB (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2186,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/ARS (OTC)",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2188,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/DOP (OTC)",
+      "precision": 5,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2265,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "TRUMP Coin (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2276,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Ondo (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2277,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "DYDX (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2279,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Fartcoin (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2280,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Pudgy Penguins (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2286,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Raydium (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2287,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Sui (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2288,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "HBAR (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2289,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "FET (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2290,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Render (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2291,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "TAO (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2299,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/COP (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2300,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/MXN (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2301,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "PEN/USD (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2312,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Formula One Group (OTC)",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2325,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Dollar Index",
+      "precision": 6,
+      "profit_percent": 92
+    },
+    {
+      "asset_id": 2327,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Platinum (OTC)",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2328,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Palladium (OTC)",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2331,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Yen Index",
+      "precision": 6,
+      "profit_percent": 92
+    },
+    {
+      "asset_id": 2332,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Euro Index",
+      "precision": 6,
+      "profit_percent": 92
+    },
+    {
+      "asset_id": 2333,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Pound Index",
+      "precision": 6,
+      "profit_percent": 92
+    },
+    {
+      "asset_id": 2334,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Canadian Dollar Index",
+      "precision": 6,
+      "profit_percent": 92
+    },
+    {
+      "asset_id": 2335,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Australian Dollar Index",
+      "precision": 6,
+      "profit_percent": 92
+    },
+    {
+      "asset_id": 2409,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/IDR (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2414,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Cocoa (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2415,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Coffee (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2416,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Cotton (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2417,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Sugar (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2430,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Terra Classic (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2431,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/SAR (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2432,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/MYR (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2434,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/VND (OTC)",
+      "precision": 5,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2435,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/NGN (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2436,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/PHP (OTC)",
+      "precision": 5,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2437,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/BOB (OTC)",
+      "precision": 7,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2438,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/CLP (OTC)",
+      "precision": 5,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2439,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "USD/BDT (OTC)",
+      "precision": 5,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2444,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "SpaceX",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 2448,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Hyperliquid (OTC)",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2451,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Anthropic (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2452,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "OpenAI (OTC)",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2455,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Nvidia",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 2456,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Magnificent 7",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 2457,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Bitcoin/Gold",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 2458,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "EUR/THB",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2461,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "S&P500/Gold",
+      "precision": 6,
+      "profit_percent": 92
+    },
+    {
+      "asset_id": 2507,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "AI Europe",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2508,
+      "expirations": [
+        1790682300,
+        1790683200,
+        1790684100,
+        1790685000,
+        1790685900
+      ],
+      "is_open": true,
+      "name": "Luxury",
+      "precision": 6,
+      "profit_percent": 90
+    }
+  ]
+}

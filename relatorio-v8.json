@@ -1,0 +1,88 @@
+{
+  "timestamp": "2026-09-30T12:48:30.532Z",
+  "summary": {
+    "totalOps": 0,
+    "wins": 0,
+    "losses": 0,
+    "wr": "0",
+    "totalProfit": "0.00",
+    "invested": "0.00"
+  },
+  "assets": [
+    {
+      "key": "USDHKD",
+      "direction": "CALL",
+      "histWR": 78,
+      "obsWR": 78,
+      "estimatedWR": 78,
+      "ci_lower": 0,
+      "ci_wr": 0,
+      "ci_upper": 1,
+      "sampleSize": 0,
+      "wins": 0,
+      "losses": 0,
+      "profit": 0,
+      "verdict": "⚠️观望"
+    },
+    {
+      "key": "EURUSD",
+      "direction": "CALL",
+      "histWR": 74,
+      "obsWR": 74,
+      "estimatedWR": 74,
+      "ci_lower": 0,
+      "ci_wr": 0,
+      "ci_upper": 1,
+      "sampleSize": 0,
+      "wins": 0,
+      "losses": 0,
+      "profit": 0,
+      "verdict": "⚠️观望"
+    },
+    {
+      "key": "USDZAR",
+      "direction": "PUT",
+      "histWR": 70,
+      "obsWR": 70,
+      "estimatedWR": 70,
+      "ci_lower": 0,
+      "ci_wr": 0,
+      "ci_upper": 1,
+      "sampleSize": 0,
+      "wins": 0,
+      "losses": 0,
+      "profit": 0,
+      "verdict": "⚠️观望"
+    },
+    {
+      "key": "LTCUSD",
+      "direction": "PUT",
+      "histWR": 67,
+      "obsWR": 40,
+      "estimatedWR": 48.099999999999994,
+      "ci_lower": 0.16817758120350967,
+      "ci_wr": 0.4,
+      "ci_upper": 0.6873304525498135,
+      "sampleSize": 10,
+      "wins": 4,
+      "losses": 6,
+      "profit": -5.440000000000001,
+      "verdict": "❌ OFF"
+    },
+    {
+      "key": "DOTUSD",
+      "direction": "PUT",
+      "histWR": 62,
+      "obsWR": 50,
+      "estimatedWR": 53.599999999999994,
+      "ci_lower": 0.2365895936154873,
+      "ci_wr": 0.5,
+      "ci_upper": 0.7634104063845127,
+      "sampleSize": 10,
+      "wins": 5,
+      "losses": 5,
+      "profit": -1.8000000000000005,
+      "verdict": "⚠️观望"
+    }
+  ]
+}

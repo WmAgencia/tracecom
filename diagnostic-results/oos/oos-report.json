@@ -1,0 +1,976 @@
+{
+  "kind": "OOS-VALIDATION",
+  "generatedAtUtc": "2026-09-29T11:48:18.535Z",
+  "read_only": true,
+  "orders_placed": false,
+  "method": {
+    "dedupe": "por timestamp de abertura (`from`); a barra mais recente vence",
+    "splits": {
+      "train": 0.5,
+      "validation": 0.25,
+      "test": 0.25
+    },
+    "purge": "nenhum sinal cuja janela de settlement cruze a fronteira",
+    "embargo_bars": "1× horizonte após cada fronteira",
+    "gap_barrier": "sinais com features (i-25..i) ou settlement (i..i+h) não contíguos são eliminados",
+    "independent_events": "seleção greedy de janelas de settlement que não se sobrepõem",
+    "bootstrap": "stationary block bootstrap + block bootstrap por dias",
+    "multiple_testing": {
+      "hypotheses": 4,
+      "bonferroni_alpha": 0.0125
+    }
+  },
+  "limitations": [
+    "Histórico disponível por série ≈ 1000 barras únicas (~17h em 1m) por causa do teto de 1000 candles/chamada do MCP.",
+    "O payout histórico não é recuperável: a IQ não expõe série histórica de profit_percent. EV histórico usa o payout observado hoje, com faixa de sensibilidade.",
+    "O teste cego é pequeno; nenhuma conclusão de 70% é declarada sem amostra prospectiva."
+  ],
+  "hypotheses": [
+    {
+      "hypothesisId": "H1-UK100-1m-rsi14-h5",
+      "label": "UK 100 · 1m · RSI14 · h5",
+      "product": "binary-options",
+      "setup": "rsi14",
+      "horizon_bars": 5,
+      "resolution_s": 60,
+      "operational_horizon_s": 300,
+      "v3_300s_compatible": true,
+      "TRAIN_WR": 0.75,
+      "VALIDATION_WR": 0.5,
+      "BLIND_OOS_WR": 0.5,
+      "PROSPECTIVE_WR": null,
+      "RAW_SIGNALS": 64,
+      "INDEPENDENT_EVENTS": 10,
+      "CONFIDENCE_INTERVAL": {
+        "wilson_test": {
+          "lower": 0.33163455005521436,
+          "upper": 0.6683654499447856
+        },
+        "block_bootstrap_test": {
+          "lower": 0.2,
+          "upper": 0.7,
+          "method": "stationary-block-bootstrap n=5000 p=0.167"
+        },
+        "block_bootstrap_independent": {
+          "lower": 0.3,
+          "upper": 0.8
+        },
+        "day_block_bootstrap_test": {
+          "lower": null,
+          "upper": null,
+          "days": 1
+        },
+        "multiple_testing": {
+          "hypotheses_tested": 4,
+          "alpha": 0.05,
+          "bonferroni_alpha": 0.0125
+        }
+      },
+      "PAYOUT_OBSERVED": 91,
+      "PAYOUT_OBSERVED_PRODUCT": "blitz-options",
+      "PAYOUT_USED": 0.91,
+      "PAYOUT_BY_PRODUCT": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 90
+      },
+      "BREAKEVEN_WR": 0.524,
+      "EV": {
+        "per_unit_stake_test": -0.045,
+        "per_100_stakes": -4.5,
+        "sensitivity_by_payout": {
+          "80": {
+            "ev_per_100": -10,
+            "breakeven_wr": 0.556,
+            "edge_pp": -5.56
+          },
+          "85": {
+            "ev_per_100": -7.5,
+            "breakeven_wr": 0.541,
+            "edge_pp": -4.05
+          },
+          "89": {
+            "ev_per_100": -5.5,
+            "breakeven_wr": 0.529,
+            "edge_pp": -2.91
+          },
+          "91": {
+            "ev_per_100": -4.5,
+            "breakeven_wr": 0.524,
+            "edge_pp": -2.36
+          }
+        }
+      },
+      "DRAWDOWN_PAPER": {
+        "test": {
+          "stake": 1,
+          "maxDrawdown": 6.36,
+          "finalPnl": -0.9,
+          "trades": 20,
+          "peak": 5.46
+        },
+        "independent": {
+          "stake": 1,
+          "maxDrawdown": 2.18,
+          "finalPnl": 1.46,
+          "trades": 10,
+          "peak": 3.64
+        }
+      },
+      "DATA_GAPS": {
+        "bars_unique": 1052,
+        "bars_raw": 4000,
+        "duplicates_dropped": 2948,
+        "duplicate_ratio": 0.737,
+        "conflicting_duplicates": 6,
+        "span_hours": 69.52,
+        "missing_bars_in_span": 3120,
+        "gap_count": 1,
+        "gap_hours": 52,
+        "intraday_gaps_sample": [],
+        "signals_dropped_gap_features": 25,
+        "signals_dropped_gap_settlement": 5
+      },
+      "MARKET_AVAILABILITY": {
+        "in_catalog": true,
+        "catalog_generated_at_utc": "2026-09-29T11:47:54.586Z",
+        "resolved_asset_name": "UK 100",
+        "asset_id": 1475,
+        "is_open_now": true,
+        "offered_products": [
+          "binary-options",
+          "blitz-options",
+          "turbo-options"
+        ],
+        "products_offering_300s": [
+          "blitz-options",
+          "turbo-options"
+        ],
+        "payout_by_product": {
+          "binary-options": 91,
+          "blitz-options": 91,
+          "turbo-options": 90
+        },
+        "supports_300s_by_product": {
+          "binary-options": false,
+          "blitz-options": true,
+          "turbo-options": true
+        },
+        "tradable_now_for_300s": true,
+        "session_window_utc": [
+          "2026-09-25T18:12:00Z",
+          "2026-09-28T15:43:00Z"
+        ],
+        "substituted_for": null,
+        "note": "ativo presente no catálogo MCP (leitura apenas). A execução de 300s depende de o PRODUTO ofertar esse vencimento."
+      },
+      "DATA_CATALOG_COUNTS": {
+        "binary-options": 121,
+        "blitz-options": 121,
+        "turbo-options": 106
+      },
+      "MODEL_VERSION": "db7f45fccadbe144ac5fc157ed0941aad9d1f0dcf91a6d95a5e48142c2b2f6db",
+      "MODEL_SPEC": {
+        "hypothesis": "H1-UK100-1m-rsi14-h5",
+        "setup": "rsi14",
+        "horizon": 5,
+        "sizeS": 60,
+        "warmup": 25,
+        "split": {
+          "train": 0.5,
+          "validation": 0.25,
+          "test": 0.25
+        },
+        "embargo": 1,
+        "thresholds": {
+          "period": 14,
+          "low": 30,
+          "high": 70
+        },
+        "seed": 20260929
+      },
+      "DATA_SHA256": "757b005cab45aa11994984a5e3ccdb0f202b807f3a94e970474c0390007ee9e7",
+      "VERDICT": {
+        "code": "AMOSTRA_INSUFICIENTE",
+        "reason": "apenas 20 sinais no teste cego"
+      },
+      "EFFECTIVE_INDEPENDENT_DAYS_TEST": 1,
+      "BEST_BASELINE": {
+        "name": "always_down",
+        "wr": 0.5201612903225806
+      },
+      "splits": {
+        "train": {
+          "n": 36,
+          "hits": 27,
+          "wr": 0.75,
+          "wilson": {
+            "lower": 0.6024637591884853,
+            "upper": 0.8493253255872265
+          },
+          "barRange": [
+            0,
+            526
+          ]
+        },
+        "validation": {
+          "n": 8,
+          "hits": 4,
+          "wr": 0.5,
+          "wilson": {
+            "lower": 0.3076020313636278,
+            "upper": 0.6923979686363723
+          }
+        },
+        "test": {
+          "n": 20,
+          "hits": 10,
+          "wr": 0.5,
+          "wilson": {
+            "lower": 0.33163455005521436,
+            "upper": 0.6683654499447856
+          }
+        },
+        "test_independent": {
+          "n": 10,
+          "hits": 6,
+          "wr": 0.6,
+          "wilson": {
+            "lower": 0.3847124352147497,
+            "upper": 0.7597795310319267
+          }
+        }
+      },
+      "baselines_test": {
+        "always_up": {
+          "n": 992,
+          "wr": 0.4798387096774194
+        },
+        "always_down": {
+          "n": 992,
+          "wr": 0.5201612903225806
+        },
+        "prev_direction": {
+          "n": 986,
+          "wr": 0.48580121703853957
+        },
+        "simple_reversion": {
+          "n": 986,
+          "wr": 0.5141987829614605
+        },
+        "train_majority": {
+          "n": 992,
+          "wr": 0.5201612903225806
+        },
+        "no_indicator_model": {
+          "n": 986,
+          "wr": 0.48580121703853957
+        }
+      },
+      "baselines_note": "baselines avaliados nas MESMAS entradas elegíveis (mesma barreira de gap) do teste cego"
+    },
+    {
+      "hypothesisId": "H2-US2000-1m-rsi14-h5",
+      "label": "US 2000 · 1m · RSI14 · h5",
+      "product": "binary-options",
+      "setup": "rsi14",
+      "horizon_bars": 5,
+      "resolution_s": 60,
+      "operational_horizon_s": 300,
+      "v3_300s_compatible": true,
+      "TRAIN_WR": 0.6756756756756757,
+      "VALIDATION_WR": 1,
+      "BLIND_OOS_WR": 0.7,
+      "PROSPECTIVE_WR": null,
+      "RAW_SIGNALS": 49,
+      "INDEPENDENT_EVENTS": 4,
+      "CONFIDENCE_INTERVAL": {
+        "wilson_test": {
+          "lower": 0.465525122625194,
+          "upper": 0.8234588098681593
+        },
+        "block_bootstrap_test": {
+          "lower": 0.4,
+          "upper": 0.9,
+          "method": "stationary-block-bootstrap n=5000 p=0.167"
+        },
+        "block_bootstrap_independent": {
+          "lower": null,
+          "upper": null
+        },
+        "day_block_bootstrap_test": {
+          "lower": null,
+          "upper": null,
+          "days": 1
+        },
+        "multiple_testing": {
+          "hypotheses_tested": 4,
+          "alpha": 0.05,
+          "bonferroni_alpha": 0.0125
+        }
+      },
+      "PAYOUT_OBSERVED": 91,
+      "PAYOUT_OBSERVED_PRODUCT": "blitz-options",
+      "PAYOUT_USED": 0.91,
+      "PAYOUT_BY_PRODUCT": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 89
+      },
+      "BREAKEVEN_WR": 0.524,
+      "EV": {
+        "per_unit_stake_test": 0.337,
+        "per_100_stakes": 33.7,
+        "sensitivity_by_payout": {
+          "80": {
+            "ev_per_100": 26,
+            "breakeven_wr": 0.556,
+            "edge_pp": 14.44
+          },
+          "85": {
+            "ev_per_100": 29.5,
+            "breakeven_wr": 0.541,
+            "edge_pp": 15.95
+          },
+          "89": {
+            "ev_per_100": 32.3,
+            "breakeven_wr": 0.529,
+            "edge_pp": 17.09
+          },
+          "91": {
+            "ev_per_100": 33.7,
+            "breakeven_wr": 0.524,
+            "edge_pp": 17.64
+          }
+        }
+      },
+      "DRAWDOWN_PAPER": {
+        "test": {
+          "stake": 1,
+          "maxDrawdown": 3,
+          "finalPnl": 3.37,
+          "trades": 10,
+          "peak": 3.64
+        },
+        "independent": {
+          "stake": 1,
+          "maxDrawdown": 0,
+          "finalPnl": 3.64,
+          "trades": 4,
+          "peak": 3.64
+        }
+      },
+      "DATA_GAPS": {
+        "bars_unique": 1052,
+        "bars_raw": 5000,
+        "duplicates_dropped": 3948,
+        "duplicate_ratio": 0.79,
+        "conflicting_duplicates": 10,
+        "span_hours": 17.52,
+        "missing_bars_in_span": 0,
+        "gap_count": 0,
+        "gap_hours": 0,
+        "intraday_gaps_sample": [],
+        "signals_dropped_gap_features": 0,
+        "signals_dropped_gap_settlement": 0
+      },
+      "MARKET_AVAILABILITY": {
+        "in_catalog": true,
+        "catalog_generated_at_utc": "2026-09-29T11:47:54.586Z",
+        "resolved_asset_name": "US 2000",
+        "asset_id": 1473,
+        "is_open_now": true,
+        "offered_products": [
+          "binary-options",
+          "blitz-options",
+          "turbo-options"
+        ],
+        "products_offering_300s": [
+          "blitz-options",
+          "turbo-options"
+        ],
+        "payout_by_product": {
+          "binary-options": 91,
+          "blitz-options": 91,
+          "turbo-options": 89
+        },
+        "supports_300s_by_product": {
+          "binary-options": false,
+          "blitz-options": true,
+          "turbo-options": true
+        },
+        "tradable_now_for_300s": true,
+        "session_window_utc": [
+          "2026-09-27T22:12:00Z",
+          "2026-09-28T15:43:00Z"
+        ],
+        "substituted_for": null,
+        "note": "ativo presente no catálogo MCP (leitura apenas). A execução de 300s depende de o PRODUTO ofertar esse vencimento."
+      },
+      "DATA_CATALOG_COUNTS": {
+        "binary-options": 121,
+        "blitz-options": 121,
+        "turbo-options": 106
+      },
+      "MODEL_VERSION": "082d6c42727c828d1b333d187228b18c6a2366b5e990164c08ef46fc4f41243d",
+      "MODEL_SPEC": {
+        "hypothesis": "H2-US2000-1m-rsi14-h5",
+        "setup": "rsi14",
+        "horizon": 5,
+        "sizeS": 60,
+        "warmup": 25,
+        "split": {
+          "train": 0.5,
+          "validation": 0.25,
+          "test": 0.25
+        },
+        "embargo": 1,
+        "thresholds": {
+          "period": 14,
+          "low": 30,
+          "high": 70
+        },
+        "seed": 20260929
+      },
+      "DATA_SHA256": "7708d5dbcd0f8a4596214520508d2dbb8564187ada112475ddcb3bde8bd30562",
+      "VERDICT": {
+        "code": "AMOSTRA_INSUFICIENTE",
+        "reason": "apenas 10 sinais no teste cego"
+      },
+      "EFFECTIVE_INDEPENDENT_DAYS_TEST": 1,
+      "BEST_BASELINE": {
+        "name": "always_down",
+        "wr": 0.5283757338551859
+      },
+      "splits": {
+        "train": {
+          "n": 37,
+          "hits": 25,
+          "wr": 0.6756756756756757,
+          "wilson": {
+            "lower": 0.5282271647105719,
+            "upper": 0.7900757421295128
+          },
+          "barRange": [
+            0,
+            526
+          ]
+        },
+        "validation": {
+          "n": 2,
+          "hits": 2,
+          "wr": 1,
+          "wilson": {
+            "lower": 0.5586092770627258,
+            "upper": 0.7837626758268934
+          }
+        },
+        "test": {
+          "n": 10,
+          "hits": 7,
+          "wr": 0.7,
+          "wilson": {
+            "lower": 0.465525122625194,
+            "upper": 0.8234588098681593
+          }
+        },
+        "test_independent": {
+          "n": 4,
+          "hits": 4,
+          "wr": 1,
+          "wilson": {
+            "lower": 0.6301009945919203,
+            "upper": 0.8799989850040806
+          }
+        }
+      },
+      "baselines_test": {
+        "always_up": {
+          "n": 1022,
+          "wr": 0.47162426614481406
+        },
+        "always_down": {
+          "n": 1022,
+          "wr": 0.5283757338551859
+        },
+        "prev_direction": {
+          "n": 1008,
+          "wr": 0.4722222222222222
+        },
+        "simple_reversion": {
+          "n": 1008,
+          "wr": 0.5277777777777778
+        },
+        "train_majority": {
+          "n": 1022,
+          "wr": 0.5283757338551859
+        },
+        "no_indicator_model": {
+          "n": 1008,
+          "wr": 0.5277777777777778
+        }
+      },
+      "baselines_note": "baselines avaliados nas MESMAS entradas elegíveis (mesma barreira de gap) do teste cego"
+    },
+    {
+      "hypothesisId": "H3-SP500ETF-1m-fade3-h5",
+      "label": "S&P 500 ETF (SPY) · 1m · fade3 · h5 [INSTRUMENTO INDISPONÍVEL]",
+      "product": "binary-options",
+      "setup": "fade3",
+      "horizon_bars": 5,
+      "resolution_s": 60,
+      "operational_horizon_s": 300,
+      "v3_300s_compatible": true,
+      "TRAIN_WR": 0.6532258064516129,
+      "VALIDATION_WR": 0.6133333333333333,
+      "BLIND_OOS_WR": 0.6181818181818182,
+      "PROSPECTIVE_WR": null,
+      "RAW_SIGNALS": 254,
+      "INDEPENDENT_EVENTS": 29,
+      "CONFIDENCE_INTERVAL": {
+        "wilson_test": {
+          "lower": 0.49420996437804365,
+          "upper": 0.7267221652717278
+        },
+        "block_bootstrap_test": {
+          "lower": 0.41818181818181815,
+          "upper": 0.7818181818181819,
+          "method": "stationary-block-bootstrap n=5000 p=0.167"
+        },
+        "block_bootstrap_independent": {
+          "lower": 0.4827586206896552,
+          "upper": 0.8275862068965517
+        },
+        "day_block_bootstrap_test": {
+          "lower": null,
+          "upper": null,
+          "days": 2
+        },
+        "multiple_testing": {
+          "hypotheses_tested": 4,
+          "alpha": 0.05,
+          "bonferroni_alpha": 0.0125
+        }
+      },
+      "PAYOUT_OBSERVED": null,
+      "PAYOUT_OBSERVED_PRODUCT": null,
+      "PAYOUT_USED": "0.8 (limite inferior da faixa; payout histórico desconhecido)",
+      "PAYOUT_BY_PRODUCT": {},
+      "BREAKEVEN_WR": 0.556,
+      "EV": {
+        "per_unit_stake_test": 0.113,
+        "per_100_stakes": 11.3,
+        "sensitivity_by_payout": {
+          "80": {
+            "ev_per_100": 11.3,
+            "breakeven_wr": 0.556,
+            "edge_pp": 6.26
+          },
+          "85": {
+            "ev_per_100": 14.4,
+            "breakeven_wr": 0.541,
+            "edge_pp": 7.76
+          },
+          "89": {
+            "ev_per_100": 16.8,
+            "breakeven_wr": 0.529,
+            "edge_pp": 8.91
+          },
+          "91": {
+            "ev_per_100": 18.1,
+            "breakeven_wr": 0.524,
+            "edge_pp": 9.46
+          }
+        }
+      },
+      "DRAWDOWN_PAPER": {
+        "test": {
+          "stake": 1,
+          "maxDrawdown": 10.6,
+          "finalPnl": 6.2,
+          "trades": 55,
+          "peak": 11.2
+        },
+        "independent": {
+          "stake": 1,
+          "maxDrawdown": 5.2,
+          "finalPnl": 5.2,
+          "trades": 29,
+          "peak": 6.4
+        }
+      },
+      "DATA_GAPS": {
+        "bars_unique": 1078,
+        "bars_raw": 7000,
+        "duplicates_dropped": 5922,
+        "duplicate_ratio": 0.846,
+        "conflicting_duplicates": 16,
+        "span_hours": 118.45,
+        "missing_bars_in_span": 6030,
+        "gap_count": 3,
+        "gap_hours": 100.5,
+        "intraday_gaps_sample": [],
+        "signals_dropped_gap_features": 75,
+        "signals_dropped_gap_settlement": 15
+      },
+      "MARKET_AVAILABILITY": {
+        "in_catalog": false,
+        "catalog_generated_at_utc": "2026-09-29T11:47:54.586Z",
+        "resolved_asset_name": null,
+        "asset_id": null,
+        "is_open_now": null,
+        "offered_products": [],
+        "products_offering_300s": [],
+        "payout_by_product": {},
+        "supports_300s_by_product": {},
+        "tradable_now_for_300s": false,
+        "session_window_utc": [
+          "2026-09-23T17:40:00Z",
+          "2026-09-28T16:07:00Z"
+        ],
+        "substituted_for": null,
+        "note": "NÃO localizado no catálogo por nome: o instrumento não está sendo ofertado hoje — acurácia direcional ≠ possibilidade de executar"
+      },
+      "DATA_CATALOG_COUNTS": {
+        "binary-options": 121,
+        "blitz-options": 121,
+        "turbo-options": 106
+      },
+      "MODEL_VERSION": "8d9c9f6f1b7c898a5b75d44816b065416a80c781bea45547ba5643923dadca88",
+      "MODEL_SPEC": {
+        "hypothesis": "H3-SP500ETF-1m-fade3-h5",
+        "setup": "fade3",
+        "horizon": 5,
+        "sizeS": 60,
+        "warmup": 25,
+        "split": {
+          "train": 0.5,
+          "validation": 0.25,
+          "test": 0.25
+        },
+        "embargo": 1,
+        "thresholds": {},
+        "seed": 20260929
+      },
+      "DATA_SHA256": "8ef2e52ebcd4b068f97ea45376964140d287f36e9cfcda11ac1942034a8d0a55",
+      "VERDICT": {
+        "code": "POUCOS_DIAS_INDEPENDENTES",
+        "reason": "o teste cego abrange 2 dia(s) — operações no mesmo dia são correlacionadas"
+      },
+      "EFFECTIVE_INDEPENDENT_DAYS_TEST": 2,
+      "BEST_BASELINE": {
+        "name": "simple_reversion",
+        "wr": 0.5260361317747078
+      },
+      "splits": {
+        "train": {
+          "n": 124,
+          "hits": 81,
+          "wr": 0.6532258064516129,
+          "wilson": {
+            "lower": 0.5684721114147848,
+            "upper": 0.7287707265972551
+          },
+          "barRange": [
+            0,
+            539
+          ]
+        },
+        "validation": {
+          "n": 75,
+          "hits": 46,
+          "wr": 0.6133333333333333,
+          "wilson": {
+            "lower": 0.5054174279731198,
+            "upper": 0.7102047816218148
+          }
+        },
+        "test": {
+          "n": 55,
+          "hits": 34,
+          "wr": 0.6181818181818182,
+          "wilson": {
+            "lower": 0.49420996437804365,
+            "upper": 0.7267221652717278
+          }
+        },
+        "test_independent": {
+          "n": 29,
+          "hits": 19,
+          "wr": 0.6551724137931034,
+          "wilson": {
+            "lower": 0.49258155394896225,
+            "upper": 0.7814611236306929
+          }
+        }
+      },
+      "baselines_test": {
+        "always_up": {
+          "n": 958,
+          "wr": 0.5010438413361169
+        },
+        "always_down": {
+          "n": 958,
+          "wr": 0.4989561586638831
+        },
+        "prev_direction": {
+          "n": 941,
+          "wr": 0.47396386822529224
+        },
+        "simple_reversion": {
+          "n": 941,
+          "wr": 0.5260361317747078
+        },
+        "train_majority": {
+          "n": 958,
+          "wr": 0.4989561586638831
+        },
+        "no_indicator_model": {
+          "n": 941,
+          "wr": 0.5260361317747078
+        }
+      },
+      "baselines_note": "baselines avaliados nas MESMAS entradas elegíveis (mesma barreira de gap) do teste cego"
+    },
+    {
+      "hypothesisId": "H3b-US500-1m-fade3-h5",
+      "label": "US 500 · 1m · fade3 · h5 [SUBSTITUTO DECLARADO]",
+      "product": "binary-options",
+      "setup": "fade3",
+      "horizon_bars": 5,
+      "resolution_s": 60,
+      "operational_horizon_s": 300,
+      "v3_300s_compatible": true,
+      "TRAIN_WR": 0.5849056603773585,
+      "VALIDATION_WR": 0.5254237288135594,
+      "BLIND_OOS_WR": 0.5370370370370371,
+      "PROSPECTIVE_WR": null,
+      "RAW_SIGNALS": 219,
+      "INDEPENDENT_EVENTS": 23,
+      "CONFIDENCE_INTERVAL": {
+        "wilson_test": {
+          "lower": 0.4145874305402977,
+          "upper": 0.6545669496981468
+        },
+        "block_bootstrap_test": {
+          "lower": 0.37037037037037035,
+          "upper": 0.6666666666666666,
+          "method": "stationary-block-bootstrap n=5000 p=0.167"
+        },
+        "block_bootstrap_independent": {
+          "lower": 0.2608695652173913,
+          "upper": 0.7391304347826086
+        },
+        "day_block_bootstrap_test": {
+          "lower": null,
+          "upper": null,
+          "days": 1
+        },
+        "multiple_testing": {
+          "hypotheses_tested": 4,
+          "alpha": 0.05,
+          "bonferroni_alpha": 0.0125
+        }
+      },
+      "PAYOUT_OBSERVED": 91,
+      "PAYOUT_OBSERVED_PRODUCT": "blitz-options",
+      "PAYOUT_USED": 0.91,
+      "PAYOUT_BY_PRODUCT": {
+        "binary-options": 91,
+        "blitz-options": 91,
+        "turbo-options": 91
+      },
+      "BREAKEVEN_WR": 0.524,
+      "EV": {
+        "per_unit_stake_test": 0.026000000000000002,
+        "per_100_stakes": 2.6,
+        "sensitivity_by_payout": {
+          "80": {
+            "ev_per_100": -3.3,
+            "breakeven_wr": 0.556,
+            "edge_pp": -1.85
+          },
+          "85": {
+            "ev_per_100": -0.6,
+            "breakeven_wr": 0.541,
+            "edge_pp": -0.35
+          },
+          "89": {
+            "ev_per_100": 1.5,
+            "breakeven_wr": 0.529,
+            "edge_pp": 0.79
+          },
+          "91": {
+            "ev_per_100": 2.6,
+            "breakeven_wr": 0.524,
+            "edge_pp": 1.35
+          }
+        }
+      },
+      "DRAWDOWN_PAPER": {
+        "test": {
+          "stake": 1,
+          "maxDrawdown": 9.36,
+          "finalPnl": 1.39,
+          "trades": 54,
+          "peak": 9.29
+        },
+        "independent": {
+          "stake": 1,
+          "maxDrawdown": 7,
+          "finalPnl": -0.08,
+          "trades": 23,
+          "peak": 6.01
+        }
+      },
+      "DATA_GAPS": {
+        "bars_unique": 1051,
+        "bars_raw": 5000,
+        "duplicates_dropped": 3949,
+        "duplicate_ratio": 0.79,
+        "conflicting_duplicates": 10,
+        "span_hours": 17.5,
+        "missing_bars_in_span": 0,
+        "gap_count": 0,
+        "gap_hours": 0,
+        "intraday_gaps_sample": [],
+        "signals_dropped_gap_features": 0,
+        "signals_dropped_gap_settlement": 0
+      },
+      "MARKET_AVAILABILITY": {
+        "in_catalog": true,
+        "catalog_generated_at_utc": "2026-09-29T11:47:54.586Z",
+        "resolved_asset_name": "US 500",
+        "asset_id": 1470,
+        "is_open_now": true,
+        "offered_products": [
+          "binary-options",
+          "blitz-options",
+          "turbo-options"
+        ],
+        "products_offering_300s": [
+          "blitz-options",
+          "turbo-options"
+        ],
+        "payout_by_product": {
+          "binary-options": 91,
+          "blitz-options": 91,
+          "turbo-options": 91
+        },
+        "supports_300s_by_product": {
+          "binary-options": false,
+          "blitz-options": true,
+          "turbo-options": true
+        },
+        "tradable_now_for_300s": true,
+        "session_window_utc": [
+          "2026-09-27T22:12:00Z",
+          "2026-09-28T15:42:00Z"
+        ],
+        "substituted_for": "H3-SP500ETF-1m-fade3-h5",
+        "note": "ativo presente no catálogo MCP (leitura apenas). A execução de 300s depende de o PRODUTO ofertar esse vencimento."
+      },
+      "DATA_CATALOG_COUNTS": {
+        "binary-options": 121,
+        "blitz-options": 121,
+        "turbo-options": 106
+      },
+      "MODEL_VERSION": "4349fb03c90ac672ce1ed6f5482e950bc12036e00374a3c3365852226ed913f3",
+      "MODEL_SPEC": {
+        "hypothesis": "H3b-US500-1m-fade3-h5",
+        "setup": "fade3",
+        "horizon": 5,
+        "sizeS": 60,
+        "warmup": 25,
+        "split": {
+          "train": 0.5,
+          "validation": 0.25,
+          "test": 0.25
+        },
+        "embargo": 1,
+        "thresholds": {},
+        "seed": 20260929
+      },
+      "DATA_SHA256": "62bf8b5a7c85ab71586708ac0e328c67901861d6d62470debd5850e4dc555b51",
+      "VERDICT": {
+        "code": "POUCOS_DIAS_INDEPENDENTES",
+        "reason": "o teste cego abrange 1 dia(s) — operações no mesmo dia são correlacionadas"
+      },
+      "EFFECTIVE_INDEPENDENT_DAYS_TEST": 1,
+      "BEST_BASELINE": {
+        "name": "no_indicator_model",
+        "wr": 0.5462776659959758
+      },
+      "splits": {
+        "train": {
+          "n": 106,
+          "hits": 62,
+          "wr": 0.5849056603773585,
+          "wilson": {
+            "lower": 0.4929641688141741,
+            "upper": 0.6709081709915097
+          },
+          "barRange": [
+            0,
+            525
+          ]
+        },
+        "validation": {
+          "n": 59,
+          "hits": 31,
+          "wr": 0.5254237288135594,
+          "wilson": {
+            "lower": 0.4079439019135515,
+            "upper": 0.6397951753855625
+          }
+        },
+        "test": {
+          "n": 54,
+          "hits": 29,
+          "wr": 0.5370370370370371,
+          "wilson": {
+            "lower": 0.4145874305402977,
+            "upper": 0.6545669496981468
+          }
+        },
+        "test_independent": {
+          "n": 23,
+          "hits": 12,
+          "wr": 0.5217391304347826,
+          "wilson": {
+            "lower": 0.35667469269637,
+            "upper": 0.6805809105463577
+          }
+        }
+      },
+      "baselines_test": {
+        "always_up": {
+          "n": 1021,
+          "wr": 0.4544564152791381
+        },
+        "always_down": {
+          "n": 1021,
+          "wr": 0.545543584720862
+        },
+        "prev_direction": {
+          "n": 994,
+          "wr": 0.4647887323943662
+        },
+        "simple_reversion": {
+          "n": 994,
+          "wr": 0.5352112676056338
+        },
+        "train_majority": {
+          "n": 1021,
+          "wr": 0.545543584720862
+        },
+        "no_indicator_model": {
+          "n": 994,
+          "wr": 0.5462776659959758
+        }
+      },
+      "baselines_note": "baselines avaliados nas MESMAS entradas elegíveis (mesma barreira de gap) do teste cego"
+    }
+  ],
+  "shadow": null
+}

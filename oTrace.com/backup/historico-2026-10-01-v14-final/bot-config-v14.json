@@ -1,0 +1,82 @@
+{
+  "_version": "14",
+  "_desc": "Bot v14 R8 - top 10 ativos OTC | TODOS OS ATIVOS OPERAM AO MESMO TEMPO (sem limite de ativos) | CICLO DO GALE por ativo: 1 entrada + no máximo 2 gales (3 ordens), sempre no mesmo sentido, uma por vez, nunca CALL e PUT juntos | o gale entra depois do loss (venda na reversão conta como loss) sem exigir pullback novo | DIREÇÃO PELA TENDÊNCIA (EMA8x21): alta compra CALL no pullback, baixa vende PUT no repique, lateral não entra | venda imediata na reversão (sell-options) | pullback 4+1 + RSI | regime bloqueia 10+ candles iguais | stake FIXO 2 (sem escalada) | teto de exposição 50% DO SALDO | circuit breaker 3 losses seguidos | trava de perda da sessão 20% | warmup 5s",
+  "login": {
+    "email": "Anaalaura2008@gmail.com",
+    "password": "Eqvpanp.32"
+  },
+  "accounts": {
+    "_nota": "contas identificadas em 2026-10-01 via get-balances (somente leitura). O bot escolhe pelo type: 4 = DEMO (PRACTICE), 1 = REAL. Em 2026-10-01 a REAL estava sem saldo disponivel (o valor de 1,31 e bonus).",
+    "demo": { "type": 4, "balanceName": "PRACTICE", "id": 1250741747, "currency": "USD", "amount": 60 },
+    "real": { "type": 1, "balanceName": "REAL", "id": 1250741746, "currency": "BRL", "amount": 0, "bonusAmount": 1.31 }
+  },
+  "trading": {
+    "baseStake": 2,
+    "expirationMinutes": 2,
+    "maxOpsPerAsset": 3,
+    "galeWindowMs": 120000,
+    "_nota": "NAO EXISTE limite de ativos simultaneos: todos os 10 ativos operam ao mesmo tempo, cada um achando a sua oportunidade. O limite e POR ATIVO e e o CICLO DO GALE: maxOpsPerAsset = 3 = 1 entrada + no maximo 2 gales, sempre no mesmo sentido e uma ordem por vez (o gale so entra depois que a anterior fechou). galeWindowMs = prazo para o gale entrar; passou disso sem ordem, o ciclo fecha. O gale NAO precisa de pullback novo (o mercado acabou de andar contra). O que NUNCA acontece: CALL e PUT no mesmo ativo (trava dura ladoOposto)."
+  },
+  "martingale": {
+    "_nota": "LEVELS = 0 => STAKE FIXO na base: TODA operacao vale baseStake, INCLUSIVE os gales. O ciclo do gale existe (1 entrada + ate 2 gales), mas a ESCALADA DE VALOR nao: nenhum gale vale mais que a base. (Se um dia quiser a escada 2 -> 4,33 -> 9,36 de volta, levels = 2 religa o calculo stake(n) = (perdido + lucro da base) / payoutRate.)",
+    "levels": 0,
+    "payoutRate": 0.86,
+    "pauseAfterLadderMs": 600000
+  },
+  "risk": {
+    "maxStake": 20,
+    "maxExposurePct": 50,
+    "maxSessionLossPct": 20,
+    "stopAfterConsecutiveLosses": 3,
+    "pauseAfterLossStreakMs": 1200000,
+    "_nota": "maxStake = teto por ordem. maxExposurePct = teto da SOMA de todas as ordens abertas como PERCENTUAL DO SALDO ATUAL (50% de 60 = 30 = 15 ordens de 2): e a ULTIMA linha de defesa, nao um freio do dia a dia — com todos os ativos operando o bot nunca chega perto disso. Nao existe numero absoluto, entao o teto encolhe quando a conta encolhe. maxSessionLossPct = trava de perda da sessao (perdeu isso do saldo inicial, para de abrir ate reiniciar). stopAfterConsecutiveLosses = circuit breaker: N losses SEGUIDOS (win zera a contagem, empate nao conta) param o bot por pauseAfterLossStreakMs."
+  },
+  "cooldown": {
+    "afterWinMs": 15000,
+    "afterLossMs": 5000,
+    "_nota": "vale entre ciclos (quando o ativo esta sem operacao aberta). Os adicionais do mesmo ciclo usam addOnSpacingMs."
+  },
+  "autoFlip": {
+    "_nota": "REVERSAO: com op aberta, se o preco anda reversalCandles candles fechados CONTRA ela, o bot manda VENDER o que esta perdendo e espera o ativo limpar. Ele NUNCA abre o lado oposto enquanto houver op aberta no mesmo ativo (segurar CALL e PUT juntos = um dos dois sempre perde, e com payout 86% existe faixa em que os DOIS perdem). Depois de limpar, o ciclo novo entra no sentido que a tendencia apontar. Nao existe 'virar depois de N losses'. Trava dura correspondente: evaluateGuards motivo 'ladoOposto' (1a checagem, antes de tudo).",
+    "enabled": true,
+    "reversalCandles": 2
+  },
+  "sell": {
+    "_nota": "VENDA ANTECIPADA = so a REVERSAO. Gatilho: autoFlip.reversalCandles candles fechados CONTRA a ordem aberta (mesma regra que dispara a revisao). Quando dispara, o bot manda 'sell-options' na hora. NAO vende: ordem no lucro (deixa vencer) e faltando menos de minRemainingMs. A mensagem usada antes (close-position) era IGNORADA em silencio pela IQ — a opcao seguia ate o vencimento e fechava como loss.",
+    "minRemainingMs": 20000,
+    "retryAfterMs": 8000,
+    "maxAttempts": 4,
+    "_nota2": "retryAfterMs/maxAttempts = se a IQ nao confirmar a venda, repete o pedido. Depois de pedir, o bot imprime CRU por 10s cada mensagem que a IQ manda ([RESPOSTA IQ]), para ver a confirmacao real."
+  },
+  "strategy": {
+    "_nota": "direcao = tendencia (EMA8 contra EMA21 nos ultimos trendLookback candles): spread >= trendMinEmaSpreadPct = alta (CALL), <= -limiar = baixa (PUT), entre os dois = lateral (nao entra). RSI e GUARDA-CORPO, nao seletor: nao compra se o RSI ja esta esticado acima de rsiCallMax, nao vende se ja esta esticado abaixo de rsiPutMin. Medido em 9360 janelas de 5s reais (mesma regra de entrada): rsiCallMax 35 / rsiPutMin 65 => 1 sinal em 9360 (morto); 50/50 => 35 sinais; 60/40 => 105 sinais; sem gate => 221 sinais. O 35/65 exigia RSI<=35 dentro de uma ALTA, o que e contraditorio.",
+    "candleSizeSeconds": 5,
+    "lookbackRegime": 20,
+    "regimeStreakThreshold": 10,
+    "trendLookback": 40,
+    "trendMinEmaSpreadPct": 0.05,
+    "rsiPeriod": 14,
+    "rsiCallMax": 60,
+    "rsiPutMin": 40,
+    "warmupMs": 5000,
+    "min1mCandles": 1,
+    "staleCandleMs": 30000
+  },
+  "whitelist": {
+    "_nota": "direction aqui e apenas REFERENCIA (baseDirection no log/registro). A direcao de entrada agora vem da tendencia do mercado.",
+    "RENDERUSD": { "name": "front.RENDERUSD-OTC", "direction": "CALL", "wr": 100.0 },
+    "WIFUSD":   { "name": "front.WIFUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "DOTUSD":   { "name": "front.DOTUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "SUIUSD":   { "name": "front.SUIUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "XPTUSD":   { "name": "front.XPTUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "ORDIUSD":  { "name": "front.ORDIUSD-OTC",  "direction": "CALL", "wr": 75.0 },
+    "HYPE":     { "name": "front.HYPE-OTC",      "direction": "CALL", "wr": 75.0 },
+    "TRON":     { "name": "front.TRON-OTC",      "direction": "CALL", "wr": 66.7 },
+    "SHIBUSD":  { "name": "front.SHIBUSD-OTC",  "direction": "PUT",  "wr": 66.7 },
+    "RAYDIUMUSD": { "name": "front.RAYDIUMUSD-OTC", "direction": "CALL", "wr": 66.7 }
+  },
+  "paths": {
+    "state": "D:/Tracecom project/bot-state-v14.json",
+    "results": "D:/Tracecom project/resultados-v14.json"
+  }
+}

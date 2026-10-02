@@ -1,0 +1,26 @@
+[
+  {
+    "active": "front.USDINR-OTC",
+    "direction": "PUT",
+    "expected": 57.6,
+    "timestamp": "2026-09-29T22:09:42.769Z",
+    "result": "win",
+    "profit": 186
+  },
+  {
+    "active": "front.USDSGD-OTC",
+    "direction": "CALL",
+    "expected": 59.7,
+    "timestamp": "2026-09-29T22:10:12.920Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.USDINR-OTC",
+    "direction": "PUT",
+    "expected": 57.6,
+    "timestamp": "2026-09-29T22:16:47.313Z",
+    "result": "loss",
+    "profit": 0
+  }
+]

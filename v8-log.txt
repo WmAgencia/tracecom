@@ -1,0 +1,82 @@
+[LOGIN] OK!
+
+[WS] Ready!
+[💼 CONTA] DEMO | Saldo: R$44.08
+
+======================================================================
+🧠 BOT v8 - MULTI-TIMEFRAME | Regime | RSI | Martingale
+======================================================================
+
+📋 Estado:
+   ✅ USDHKD     dir:CALL  hist:78% obs:78.0% IC:0.0%-100.0% (0/0)
+   ✅ EURUSD     dir:CALL  hist:74% obs:74.0% IC:0.0%-100.0% (0/0)
+   ✅ USDZAR     dir:PUT   hist:70% obs:70.0% IC:0.0%-100.0% (0/0)
+   ✅ LTCUSD     dir:PUT   hist:67% obs:67.0% IC:0.0%-100.0% (0/0)
+   ✅ DOTUSD     dir:PUT   hist:62% obs:62.0% IC:0.0%-100.0% (0/0)
+
+[📋] 5/5 ativos
+[⏳] Warmup 120s (precisa 15 candles 5s + 2 candles 1min)...
+
+[✅] INICIADO!
+
+[📊 front.LTCUSD-OTC] PUT RSI:62 regime:ranging stake:R$2 IC:0.0%-100.0%
+
+📊 RELATÓRIO v8:
+   Total: 0 ops | WR: 0% | Lucro: R$0.00
+   ⚠️观望 USDHKD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 EURUSD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 USDZAR     dir:PUT   IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 LTCUSD     dir:PUT   IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 DOTUSD     dir:PUT   IC:0.0%–100.0% (0/0) +R$0.00
+[📊 front.DOTUSD-OTC] PUT RSI:90 regime:ranging stake:R$2 IC:0.0%-100.0%
+[✅] front.LTCUSD-OTC | PUT | R$2 | RSI:62 | ranging | +R$1.64
+[📈] Total: 1 | Wins: 1 | WR: 100.0% | Lucro: R$1.64
+
+[📊 front.LTCUSD-OTC] PUT RSI:42 regime:ranging stake:R$2 IC:20.7%-100.0%
+[⏱️ 01:33:56] Ops: 1 | WR: 100% | Lucro: R$1.64   [⏱️ 01:34:26] Ops: 1 | WR: 100% | Lucro: R$1.64   [❌] front.LTCUSD-OTC | PUT | R$2 | RSI:42 | ranging | R$-2.00
+[📈] Total: 2 | Wins: 1 | WR: 50.0% | Lucro: R$-0.36
+
+[❌] front.DOTUSD-OTC | PUT | R$2 | RSI:90 | ranging | R$-2.00
+[📈] Total: 3 | Wins: 1 | WR: 33.3% | Lucro: R$-2.36
+
+[⏱️ 01:34:56] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:35:26] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:35:56] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:36:26] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:36:56] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:37:26] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:37:56] Ops: 3 | WR: 33% | Lucro: R$-2.36   
+📊 RELATÓRIO v8:
+   Total: 3 ops | WR: 33.3% | Lucro: R$-2.36
+   ⚠️观望 USDHKD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 EURUSD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 USDZAR     dir:PUT   IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 LTCUSD     dir:PUT   IC:9.5%–90.5% (1/2) R$-0.36
+   ⚠️观望 DOTUSD     dir:PUT   IC:0.0%–79.3% (0/1) R$-2.00
+[⏱️ 01:38:26] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:38:56] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:39:26] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:39:56] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:40:26] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:40:56] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:41:26] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:41:57] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:42:27] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:42:57] Ops: 3 | WR: 33% | Lucro: R$-2.36   
+📊 RELATÓRIO v8:
+   Total: 3 ops | WR: 33.3% | Lucro: R$-2.36
+   ⚠️观望 USDHKD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 EURUSD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 USDZAR     dir:PUT   IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 LTCUSD     dir:PUT   IC:9.5%–90.5% (1/2) R$-0.36
+   ⚠️观望 DOTUSD     dir:PUT   IC:0.0%–79.3% (0/1) R$-2.00
+[⏱️ 01:43:27] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:43:57] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:44:27] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:44:57] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:45:27] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:45:57] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:46:27] Ops: 3 | WR: 33% | Lucro: R$-2.36   [⏱️ 01:46:57] Ops: 3 | WR: 33% | Lucro: R$-2.36   [📊 front.LTCUSD-OTC] PUT RSI:51 regime:ranging stake:R$3 IC:9.5%-90.5%
+[⏱️ 01:47:27] Ops: 3 | WR: 33% | Lucro: R$-2.36   [📊 front.DOTUSD-OTC] PUT RSI:40 regime:ranging stake:R$3 IC:0.0%-79.3%
+[⏱️ 01:47:57] Ops: 3 | WR: 33% | Lucro: R$-2.36   
+📊 RELATÓRIO v8:
+   Total: 3 ops | WR: 33.3% | Lucro: R$-2.36
+   ⚠️观望 USDHKD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 EURUSD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 USDZAR     dir:PUT   IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 LTCUSD     dir:PUT   IC:9.5%–90.5% (1/2) R$-0.36
+   ⚠️观望 DOTUSD     dir:PUT   IC:0.0%–79.3% (0/1) R$-2.00
+[⏱️ 01:48:27] Ops: 3 | WR: 33% | Lucro: R$-2.36   [❌] front.LTCUSD-OTC | PUT | R$3 | RSI:51 | ranging | R$-3.00
+[📈] Total: 4 | Wins: 1 | WR: 25.0% | Lucro: R$-5.36
+
+[❌] front.DOTUSD-OTC | PUT | R$3 | RSI:40 | ranging | R$-3.00
+[📈] Total: 5 | Wins: 1 | WR: 20.0% | Lucro: R$-8.36
+
+[⏱️ 01:48:57] Ops: 5 | WR: 20% | Lucro: R$-8.36   [⏱️ 01:49:27] Ops: 5 | WR: 20% | Lucro: R$-8.36   [⏱️ 01:49:57] Ops: 5 | WR: 20% | Lucro: R$-8.36   [⏱️ 01:50:27] Ops: 5 | WR: 20% | Lucro: R$-8.36   [⏱️ 01:50:57] Ops: 5 | WR: 20% | Lucro: R$-8.36   [⏱️ 01:51:27] Ops: 5 | WR: 20% | Lucro: R$-8.36   [⏱️ 01:51:57] Ops: 5 | WR: 20% | Lucro: R$-8.36   [⏱️ 01:52:27] Ops: 5 | WR: 20% | Lucro: R$-8.36   [⏱️ 01:52:57] Ops: 5 | WR: 20% | Lucro: R$-8.36   
+📊 RELATÓRIO v8:
+   Total: 5 ops | WR: 20.0% | Lucro: R$-8.36
+   ⚠️观望 USDHKD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 EURUSD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 USDZAR     dir:PUT   IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 LTCUSD     dir:PUT   IC:6.1%–79.2% (1/3) R$-3.36
+   ⚠️观望 DOTUSD     dir:PUT   IC:0.0%–65.8% (0/2) R$-5.00
+[⏱️ 01:53:27] Ops: 5 | WR: 20% | Lucro: R$-8.36   [⏱️ 01:53:57] Ops: 5 | WR: 20% | Lucro: R$-8.36   [⏱️ 01:54:27] Ops: 5 | WR: 20% | Lucro: R$-8.36   [⏱️ 01:54:57] Ops: 5 | WR: 20% | Lucro: R$-8.36   

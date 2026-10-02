@@ -1,0 +1,112 @@
+{
+  "timestamp": "2026-09-30T14:01:04.301Z",
+  "summary": {
+    "totalOps": 11,
+    "wins": 5,
+    "losses": 6,
+    "wr": "45.5",
+    "profit": "-3.80"
+  },
+  "byAsset": [
+    {
+      "key": "HYPE",
+      "direction": "CALL",
+      "wr": "50.0",
+      "sampleSize": 2,
+      "wins": 1,
+      "profit": "-0.36",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "TRON",
+      "direction": "CALL",
+      "wr": "100.0",
+      "sampleSize": 2,
+      "wins": 2,
+      "profit": "3.28",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "DYDXUSD",
+      "direction": "CALL",
+      "wr": "50.0",
+      "sampleSize": 2,
+      "wins": 1,
+      "profit": "-0.36",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "RAYDIUMUSD",
+      "direction": "CALL",
+      "wr": "0.0",
+      "sampleSize": 1,
+      "wins": 0,
+      "profit": "-2.00",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "FARTCOINUSD",
+      "direction": "CALL",
+      "wr": "0.0",
+      "sampleSize": 2,
+      "wins": 0,
+      "profit": "-4.00",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "SHIBUSD",
+      "direction": "PUT",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "wins": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "RENDERUSD",
+      "direction": "CALL",
+      "wr": "0.0",
+      "sampleSize": 1,
+      "wins": 0,
+      "profit": "-2.00",
+      "verdict": "✅ ativo"
+    }
+  ],
+  "expirationSim": [
+    {
+      "expirationSecs": 30,
+      "expirationLabel": "30s",
+      "total": 11,
+      "wins": 4,
+      "wr": "36.4"
+    },
+    {
+      "expirationSecs": 60,
+      "expirationLabel": "1min",
+      "total": 11,
+      "wins": 4,
+      "wr": "36.4"
+    },
+    {
+      "expirationSecs": 120,
+      "expirationLabel": "2min",
+      "total": 8,
+      "wins": 7,
+      "wr": "87.5"
+    },
+    {
+      "expirationSecs": 180,
+      "expirationLabel": "3min",
+      "total": 6,
+      "wins": 3,
+      "wr": "50.0"
+    },
+    {
+      "expirationSecs": 300,
+      "expirationLabel": "5min",
+      "total": 0,
+      "wins": 0,
+      "wr": "?"
+    }
+  ]
+}

@@ -25,8 +25,8 @@
       "destination": "/research/index.html"
     },
     {
-      "source": "/dashboard",
-      "destination": "/classic.html"
+      "source": "/dashboard/(.*)",
+      "destination": "/dashboard-dist/$1"
     },
     {
       "source": "/classic",

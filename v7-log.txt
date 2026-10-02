@@ -1,0 +1,89 @@
+[LOGIN] OK!
+
+[WS] Ready!
+[💼 CONTA] DEMO | Saldo: R$49.88
+
+======================================================================
+🧠 BOT v7 - QUANTITATIVO | Fade4 | IC-WR Gate | 5 Ativos
+======================================================================
+
+📋 Estado aprendido:
+   ✅ ON USDHKD     dir:CALL  hist:78% obs:78.0% IC:0.0%–100.0% (0/0)
+   ✅ ON EURUSD     dir:CALL  hist:74% obs:74.0% IC:0.0%–100.0% (0/0)
+   ✅ ON USDZAR     dir:PUT   hist:70% obs:70.0% IC:0.0%–100.0% (0/0)
+   ✅ ON LTCUSD     dir:PUT   hist:67% obs:67.0% IC:0.0%–100.0% (0/0)
+   ✅ ON DOTUSD     dir:PUT   hist:62% obs:62.0% IC:0.0%–100.0% (0/0)
+[✅] front.EURUSD-OTC → CALL (size=5s)
+[✅] front.USDZAR-OTC → PUT (size=5s)
+[✅] front.USDHKD-OTC → CALL (size=5s)
+[✅] front.LTCUSD-OTC → PUT (size=5s)
+[✅] front.DOTUSD-OTC → PUT (size=5s)
+
+[📋] 5/5 ativos
+[⏳] Warmup 20s...
+
+[✅] INICIADO!
+
+[📊 front.DOTUSD-OTC] PUT | IC-WR:0.0%–100.0% (est:62.0%)
+[📊 front.LTCUSD-OTC] PUT | IC-WR:0.0%–100.0% (est:67.0%)
+[❌] front.DOTUSD-OTC | PUT | IC:0.0% | R$-2.00
+[📈] Total: 1 | Wins: 0 | WR: 0.0% | Lucro: R$-2.00
+
+[⏱️ 01:11:49] Ops: 1 | WR: 0% | Lucro: R$-2.00   [📊 front.DOTUSD-OTC] PUT | IC-WR:0.0%–79.3% (est:24.8%)
+[⏱️ 01:12:19] Ops: 1 | WR: 0% | Lucro: R$-2.00   [✅] front.LTCUSD-OTC | PUT | IC:0.0% | +R$1.64
+[📈] Total: 2 | Wins: 1 | WR: 50.0% | Lucro: R$-0.36
+
+[⏱️ 01:12:49] Ops: 2 | WR: 50% | Lucro: R$-0.36   [📊 front.LTCUSD-OTC] PUT | IC-WR:20.7%–100.0% (est:86.8%)
+[⏱️ 01:13:19] Ops: 2 | WR: 50% | Lucro: R$-0.36   [✅] front.DOTUSD-OTC | PUT | IC:0.0% | +R$1.64
+[📈] Total: 3 | Wins: 2 | WR: 66.7% | Lucro: R$1.28
+
+[✅] front.LTCUSD-OTC | PUT | IC:20.7% | +R$1.64
+[📈] Total: 4 | Wins: 3 | WR: 75.0% | Lucro: R$2.92
+
+[⏱️ 01:13:49] Ops: 4 | WR: 75% | Lucro: R$2.92   [⏱️ 01:14:19] Ops: 4 | WR: 75% | Lucro: R$2.92   
+📊 RELATÓRIO v7:
+   Total: 4 ops | WR: 75.0% | Lucro: R$2.92
+   ⚠️观望 USDHKD     dir:CALL IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 EURUSD     dir:CALL IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 USDZAR     dir:PUT IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 LTCUSD     dir:PUT IC:34.2%–100.0% (2/2) +R$3.28
+   ⚠️观望 DOTUSD     dir:PUT IC:9.5%–90.5% (1/2) R$-0.36
+[⏱️ 01:14:49] Ops: 4 | WR: 75% | Lucro: R$2.92   [📊 front.DOTUSD-OTC] PUT | IC-WR:9.5%–90.5% (est:54.8%)
+[⏱️ 01:15:19] Ops: 4 | WR: 75% | Lucro: R$2.92   [❌] front.DOTUSD-OTC | PUT | IC:9.5% | R$-2.00
+[📈] Total: 5 | Wins: 3 | WR: 60.0% | Lucro: R$0.92
+
+[⏱️ 01:15:49] Ops: 5 | WR: 60% | Lucro: R$0.92   [📊 front.LTCUSD-OTC] PUT | IC-WR:34.2%–100.0% (est:86.8%)
+[📊 front.DOTUSD-OTC] PUT | IC-WR:6.1%–79.2% (est:44.8%)
+[⏱️ 01:16:19] Ops: 5 | WR: 60% | Lucro: R$0.92   [❌] front.LTCUSD-OTC | PUT | IC:34.2% | R$-2.00
+[📈] Total: 6 | Wins: 3 | WR: 50.0% | Lucro: R$-1.08
+
+[⏱️ 01:16:49] Ops: 6 | WR: 50% | Lucro: R$-1.08   [📊 front.LTCUSD-OTC] PUT | IC-WR:20.8%–93.9% (est:66.8%)
+[⏱️ 01:17:19] Ops: 6 | WR: 50% | Lucro: R$-1.08   [✅] front.DOTUSD-OTC | PUT | IC:6.1% | +R$1.64
+[📈] Total: 7 | Wins: 4 | WR: 57.1% | Lucro: R$0.56
+
+[❌] front.LTCUSD-OTC | PUT | IC:20.8% | R$-2.00
+[📈] Total: 8 | Wins: 4 | WR: 50.0% | Lucro: R$-1.44
+
+[⏱️ 01:17:49] Ops: 8 | WR: 50% | Lucro: R$-1.44   [📊 front.LTCUSD-OTC] PUT | IC-WR:15.0%–85.0% (est:56.8%)
+[📊 front.DOTUSD-OTC] PUT | IC-WR:15.0%–85.0% (est:54.8%)
+[⏱️ 01:18:19] Ops: 8 | WR: 50% | Lucro: R$-1.44   [❌] front.LTCUSD-OTC | PUT | IC:15.0% | R$-2.00
+[🧠 PAUSE] LTCUSD: 3 losses → pausa 5min
+[📈] Total: 9 | Wins: 4 | WR: 44.4% | Lucro: R$-3.44
+
+[⏱️ 01:18:49] Ops: 9 | WR: 44% | Lucro: R$-3.44   [⏱️ 01:19:19] Ops: 9 | WR: 44% | Lucro: R$-3.44   [❌] front.DOTUSD-OTC | PUT | IC:15.0% | R$-2.00
+[📈] Total: 10 | Wins: 4 | WR: 40.0% | Lucro: R$-5.44
+
+
+📊 RELATÓRIO v7:
+   Total: 10 ops | WR: 40.0% | Lucro: R$-5.44
+   ⚠️观望 USDHKD     dir:CALL IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 EURUSD     dir:CALL IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 USDZAR     dir:PUT IC:0.0%–100.0% (0/0) +R$0.00
+   ⏸ pausa LTCUSD     dir:PUT IC:11.8%–76.9% (2/5) R$-2.72
+   ⚠️观望 DOTUSD     dir:PUT IC:11.8%–76.9% (2/5) R$-2.72
+[⏱️ 01:19:49] Ops: 10 | WR: 40% | Lucro: R$-5.44   [📊 front.DOTUSD-OTC] PUT | IC-WR:11.8%–76.9% (est:48.8%)
+[⏱️ 01:20:19] Ops: 10 | WR: 40% | Lucro: R$-5.44   [⏱️ 01:20:49] Ops: 10 | WR: 40% | Lucro: R$-5.44   [⏱️ 01:21:19] Ops: 10 | WR: 40% | Lucro: R$-5.44   [❌] front.DOTUSD-OTC | PUT | IC:11.8% | R$-2.00
+[📈] Total: 11 | Wins: 4 | WR: 36.4% | Lucro: R$-7.44
+
+[📊 front.DOTUSD-OTC] PUT | IC-WR:9.7%–70.0% (est:44.8%)
+[⏱️ 01:21:49] Ops: 11 | WR: 36% | Lucro: R$-7.44   [⏱️ 01:22:19] Ops: 11 | WR: 36% | Lucro: R$-7.44   

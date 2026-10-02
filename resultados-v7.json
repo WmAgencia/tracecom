@@ -1,0 +1,120 @@
+[
+  {
+    "active": "front.DOTUSD-OTC",
+    "key": "DOTUSD",
+    "direction": "PUT",
+    "expected": 62,
+    "price": 2,
+    "timestamp": "2026-09-30T04:10:17.418Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "key": "LTCUSD",
+    "direction": "PUT",
+    "expected": 67,
+    "price": 2,
+    "timestamp": "2026-09-30T04:11:30.331Z",
+    "result": "win",
+    "profit": 1.64
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "key": "DOTUSD",
+    "direction": "PUT",
+    "expected": 24.8,
+    "price": 2,
+    "timestamp": "2026-09-30T04:12:13.902Z",
+    "result": "win",
+    "profit": 1.64
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "key": "LTCUSD",
+    "direction": "PUT",
+    "expected": 86.8,
+    "price": 2,
+    "timestamp": "2026-09-30T04:12:51.800Z",
+    "result": "win",
+    "profit": 1.64
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "key": "DOTUSD",
+    "direction": "PUT",
+    "expected": 54.8,
+    "price": 2,
+    "timestamp": "2026-09-30T04:15:01.690Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "key": "LTCUSD",
+    "direction": "PUT",
+    "expected": 86.8,
+    "price": 2,
+    "timestamp": "2026-09-30T04:15:52.991Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "key": "DOTUSD",
+    "direction": "PUT",
+    "expected": 44.8,
+    "price": 2,
+    "timestamp": "2026-09-30T04:16:09.868Z",
+    "result": "win",
+    "profit": 1.64
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "key": "LTCUSD",
+    "direction": "PUT",
+    "expected": 66.8,
+    "price": 2,
+    "timestamp": "2026-09-30T04:17:08.600Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "key": "LTCUSD",
+    "direction": "PUT",
+    "expected": 56.8,
+    "price": 2,
+    "timestamp": "2026-09-30T04:18:03.893Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "key": "DOTUSD",
+    "direction": "PUT",
+    "expected": 54.8,
+    "price": 2,
+    "timestamp": "2026-09-30T04:18:18.499Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "key": "DOTUSD",
+    "direction": "PUT",
+    "expected": 48.8,
+    "price": 2,
+    "timestamp": "2026-09-30T04:20:14.252Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "key": "DOTUSD",
+    "direction": "PUT",
+    "expected": 44.8,
+    "price": 2,
+    "timestamp": "2026-09-30T04:21:42.452Z"
+  }
+]

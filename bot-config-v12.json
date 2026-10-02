@@ -1,0 +1,71 @@
+{
+  "_version": "12",
+  "_desc": "Bot v12 - Whitelist + Early Sell via HTTP + 2min. Fresh start.",
+  "login": {
+    "email": "Anaalaura2008@gmail.com",
+    "password": "Eqvpanp.32"
+  },
+  "trading": {
+    "baseStake": 2,
+    "expirationMinutes": 2,
+    "cooldownMs": 90000,
+    "operationTtlMs": 180000,
+    "reportIntervalMs": 300000,
+    "maxConcurrentOps": 5
+  },
+  "strategy": {
+    "candleSizeSeconds": 5,
+    "lookbackRegime": 15,
+    "regimeStreakThreshold": 5,
+    "rsiPeriod": 14,
+    "rsiOversold": 25,
+    "rsiOverbought": 75,
+    "volatilityMin": 0.0002,
+    "icLowerGate": 0.55,
+    "warmupMs": 120000,
+    "min1mCandles": 2,
+    "staleCandleMs": 30000
+  },
+  "learning": {
+    "minSampleSize": 10,
+    "killWR": 0.45,
+    "weightHistorical": 0.3,
+    "weightObserved": 0.7,
+    "lossStreakLimit": 3,
+    "lossStreakCooldownMs": 300000,
+    "recalibrateAfter": 15,
+    "autoFlipThreshold": 50
+  },
+  "earlySell": {
+    "enabled": true,
+    "checkIntervalMs": 10000,
+    "minProfitToSell": 0.20,
+    "profitPercentToSell": 0.50,
+    "minSecondsBeforeSell": 30,
+    "maxSecondsBeforeSell": 100
+  },
+  "whitelist": {
+    "TRON": { "name": "front.TRON-OTC", "direction": "CALL", "wr": 66.7 },
+    "HYPE": { "name": "front.HYPE-OTC", "direction": "CALL", "wr": 75.0 },
+    "DYDXUSD": { "name": "front.DYDXUSD-OTC", "direction": "PUT", "wr": 60.0 },
+    "ORDIUSD": { "name": "front.ORDIUSD-OTC", "direction": "CALL", "wr": 75.0 },
+    "SHIBUSD": { "name": "front.SHIBUSD-OTC", "direction": "PUT", "wr": 66.7 },
+    "FARTCOINUSD": { "name": "front.FARTCOINUSD-OTC", "direction": "PUT", "wr": 60.0 },
+    "RAYDIUMUSD": { "name": "front.RAYDIUMUSD-OTC", "direction": "CALL", "wr": 66.7 },
+    "RENDERUSD": { "name": "front.RENDERUSD-OTC", "direction": "CALL", "wr": 100.0 },
+    "WIFUSD": { "name": "front.WIFUSD-OTC", "direction": "PUT", "wr": 100.0 },
+    "DOTUSD": { "name": "front.DOTUSD-OTC", "direction": "PUT", "wr": 100.0 },
+    "SUIUSD": { "name": "front.SUIUSD-OTC", "direction": "PUT", "wr": 100.0 },
+    "XPTUSD": { "name": "front.XPTUSD-OTC", "direction": "PUT", "wr": 100.0 }
+  },
+  "paths": {
+    "state": "D:/Tracecom project/bot-state-v12.json",
+    "results": "D:/Tracecom project/resultados-v12.json",
+    "report": "D:/Tracecom project/relatorio-v12.json",
+    "expirationAnalysis": "D:/Tracecom project/expiracao-analysis-v12.json"
+  },
+  "expirationAnalysis": {
+    "enabled": true,
+    "simulate": [30, 60, 120, 180, 300]
+  }
+}

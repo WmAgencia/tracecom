@@ -1,0 +1,42 @@
+{
+  "strategy_id": "TRACECON-WF-ETHUSDT-5M-BB20-H5",
+  "status": "FROZEN — pré-registro prospectivo; qualquer alteração invalida esta versão",
+  "frozenAtUtc": "2026-09-28",
+  "source_artifact": {
+    "file": "diagnostic-results/walk_forward_real.mts",
+    "sha256_prefix": "95ae42577f7e721b",
+    "historical_result_oos": { "wr": 0.696, "ci95": [0.641, 0.745], "n": 289, "wins": 201, "losses": 88, "note": "resultado HISTÓRICO; não aprova a estratégia" }
+  },
+  "symbol": "ETHUSDT",
+  "timeframe_candle": "5m",
+  "indicators": {
+    "window": 20,
+    "mean": "arithmetic mean of last 20 CLOSED candle closes",
+    "std": "POPULATION standard deviation (divide by 20) of the same 20 closes",
+    "band_multiplier": 2.0
+  },
+  "entry_rule": {
+    "signal_at": "close of each 5m candle (bucket boundary, Binance kline closed=true)",
+    "up_entry": "close < mean - 2.0*std -> direction UP",
+    "down_entry": "close > mean + 2.0*std -> direction DOWN",
+    "otherwise": "no trade",
+    "filters": "none (filter 'all')"
+  },
+  "horizon": {
+    "duration_minutes": 25,
+    "definition": "5 candles of 5m; exposure is 25 MINUTES, not 5",
+    "settlement": "close of the candle 5 buckets after the signal candle"
+  },
+  "overlaps": "allowed but tracked (see eval: effective sample size via block bootstrap)",
+  "not_to_confuse_with": "Binary V3 300-second expiry — distinct experiment, untouched",
+  "evaluation_protocol": {
+    "entry_price": "first executable price AFTER the signal (ask for UP, bid for DOWN) from bookTicker",
+    "costs": "taker fee 0.1% per leg (Binance spot), slippage documented per trade",
+    "settlement_price": "close of the 25th minute candle",
+    "ev_net": "payout 0.85 binary proxy on direction hit minus full costs, AND spot EV after fees",
+    "baseline": "random direction with same cost model",
+    "inference": "block bootstrap (block length 12 candles = 1h) for CI of WR and EV; effective sample size from overlap count",
+    "immutability": "signals ledger is hash-chained (each record includes sha256 of previous)"
+  },
+  "prohibition": "NO real orders, NO PRACTICE orders. Read-only market data only."
+}

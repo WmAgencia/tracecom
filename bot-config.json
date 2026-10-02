@@ -1,0 +1,49 @@
+{
+  "_version": "9",
+  "_desc": "Config base do bot. Mude só estes valores.",
+  "login": {
+    "email": "Anaalaura2008@gmail.com",
+    "password": "Eqvpanp.32"
+  },
+  "trading": {
+    "baseStake": 2,
+    "expirationMinutes": 5,
+    "cooldownMs": 60000,
+    "operationTtlMs": 360000,
+    "reportIntervalMs": 300000
+  },
+  "strategy": {
+    "candleSizeSeconds": 5,
+    "lookbackRegime": 15,
+    "regimeStreakThreshold": 5,
+    "rsiPeriod": 14,
+    "rsiOversold": 25,
+    "rsiOverbought": 75,
+    "volatilityMin": 0.0002,
+    "icLowerGate": 0.55,
+    "warmupMs": 120000,
+    "min1mCandles": 2,
+    "staleCandleMs": 30000
+  },
+  "learning": {
+    "minSampleSize": 10,
+    "killWR": 0.45,
+    "weightHistorical": 0.3,
+    "weightObserved": 0.7,
+    "lossStreakLimit": 3,
+    "lossStreakCooldownMs": 300000,
+    "recalibrateAfter": 15,
+    "autoFlipThreshold": 50
+  },
+  "paths": {
+    "state": "D:/Tracecom project/bot-state.json",
+    "results": "D:/Tracecom project/resultados-v9.json",
+    "report": "D:/Tracecom project/relatorio-v9.json",
+    "expirationAnalysis": "D:/Tracecom project/expiracao-analysis.json"
+  },
+  "expirationAnalysis": {
+    "enabled": true,
+    "trackEveryMs": 5000,
+    "simulate": [30, 60, 120, 180, 300]
+  }
+}

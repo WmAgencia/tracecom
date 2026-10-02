@@ -1,0 +1,12 @@
+{
+  "name": "consecom-bot",
+  "version": "1.0.0",
+  "description": "Bot de operações binárias OTC na IQ Option",
+  "main": "bot-setup.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "node bot-setup.mjs",
+    "bot": "node ws-otc-v15.mjs"
+  },
+  "dependencies": {}
+}

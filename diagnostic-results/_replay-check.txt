@@ -1,0 +1,130 @@
+
+═══ 1. VALOR DA ORDEM ═══
+  ✅ stake é SEMPRE a base (2) — nenhuma op passa disso
+  ✅ valor da ordem cabe no teto por ordem e no teto de exposição (% do saldo)
+
+═══ 2. TENDÊNCIA (norte da direção) ═══
+  ✅ série de alta → CALL
+  ✅ série de baixa → PUT
+  ✅ mercado parado → null (o bot não entra)
+  ✅ histórico curto → source dados (não chuta direção)
+
+═══ 3. PULLBACK / REGIME / RÉGUA DE DISTÂNCIA ═══
+  ✅ fade4: 4 caindo + 1 subindo só vale para CALL
+  ✅ fade4: 4 subindo + 1 caindo só vale para PUT
+  ✅ regime: 10 candles iguais → trending (bloqueia)
+  ✅ tickVolPct mede o candle típico de 5s em %
+
+═══ 3.1 HIDRATAÇÃO (a ordem importa) ═══
+  ✅ histórico hidrata o buffer LIMPO (por isso o boot hidrata antes de assinar o feed)
+  ✅ com candle ao vivo em formação, o lote de histórico NÃO rende ticks (origem do boot sem dados)
+
+═══ 3.2 ADX DO FEED (high/low reais — o bug que bloqueava toda entrada) ═══
+  ✅ barra fechada guarda high/low do payload (`max`/`min`)
+  ✅ regressão: com high/low o ADX passa de 0; só com close ele fica 0 (bug antigo)
+
+═══ 4. ENTRADA (janelas REAIS de 5s) ═══
+  ✅ janela real de ALTA + dip → COMPRA (nunca venda)
+  ✅ janela real de BAIXA + repique → VENDA (espelhado)
+  ✅ com ordem aberta mesma direção → V16 permite pyramid se RSI ok
+
+═══ 5. CICLO DO GALE ═══
+  ✅ loss com ciclo aberto arma o gale no MESMO ativo
+  ✅ win fecha o ciclo (nada de gale pendente)
+  ✅ estourou o teto do ciclo → não arma mais gale
+  ✅ com o ciclo fechado (cycleOps no teto) a entrada nova é bloqueada
+  ✅ ADX=0 (histórico 1m sem range) BLOQUEIA entrada
+  ✅ ADX abaixo do mínimo (fraco) BLOQUEIA entrada
+
+═══ 5.1 GUARDAS ═══
+  ✅ lado oposto aberto é a PRIMEIRA trava (nunca CALL+PUT juntos)
+  ✅ teto de ops do ativo (piramidagem vs maxOps)
+  ✅ circuit breaker REMOVIDO em V16; sessão loss 20% continua
+  ✅ sessão loss ZERA no boot (sessionStartBalance = saldo atual)
+  ✅ cooldown, saldo e exposição
+
+═══ 6. VENDA POR COTAÇÃO (nunca por reversão) ═══
+  ✅ op POSITIVA com +R$0,40 (20% do stake) → vende no lucro
+  ✅ SCALP (takeProfitPctOfStake=-1): sellProfit > 0 vende; sellProfit <= 0 espera
+  ✅ op PERDENDO no fim, LONGE da linha e devolvendo 0,50 → corta
+  ✅ op PERDENDO no fim mas PERTO da linha → ESPERA (pode reverter)
+  ✅ op PERDENDO no fim devolvendo pouco (< 0,50) → espera
+  ✅ op perdendo FORA da janela do fim → espera
+  ✅ faltando menos que o prazo da IQ (20s) → nem tenta
+  ✅ sem cotação fresca → NÃO vende (fail-closed)
+  ✅ a régua da distância acompanha a volatilidade do ativo
+
+═══ 7. COTAÇÃO (semântica LÍQUIDA) ═══
+  ✅ parseQuoteRow lê sell_profit (LÍQUIDO, não é reembolso bruto)
+  ✅ pickCloseProfit devolve o líquido direto (NUNCA "menos stake")
+  ✅ parseSettlement continua correto para o fechamento normal
+
+═══ 8. UNIVERSO DINÂMICO (mínimo de ativos operando) ═══
+  ✅ top 61 disponível → todos entram (universo expandido V16 para 170+)
+  ✅ top parcialmente fechado/suspenso → a reserva entra no lugar, mantendo o mínimo
+  ✅ reserva esgotada → completa com qualquer OTC turbo disponível
+  ✅ nome tolerante: front./-OTC/maiúsculas casam entre si
+
+═══ 9. CONFIG DA V15 ═══
+  ✅ venda: alvo 20% do stake, endgame, minRecover, janela coerentes
+  ✅ universo V16: mínimo de 170 ativos operando e reserva expandida
+  ✅ V16: circuit breaker removido, proteções ativas preservadas
+  ✅ gate de RSI mais apertado em V16 (CALL <= 55, PUT >= 45) e ADX mínimo 20
+  ✅ ADX calculado corretamente (tendência forte vs fraca)
+  ✅ ADX >= adxMin permite entrada; ADX < adxMin bloqueia
+
+═══ 9.1 ESTRUTURA (o que a tela não pode mostrar sem a config permitir) ═══
+  ✅ existe UM único ponto no código capaz de abrir ordem
+  ✅ a ordem só sai depois de canTrade (o portão único)
+  ✅ a V15 NÃO vende por reversão (corte antigo removido)
+  ✅ existe UM único ponto que pede venda, e ele passa pela cotação
+  ✅ a venda usa a mensagem que a IQ aceita (sell-options)
+  ✅ painel odômetro e log enxuto (sem lista por ativo)
+  ✅ o bot se identifica no boot (revisão V16 + hash do próprio arquivo)
+
+═══ 10. CONTABILIDADE DA VENDA (o bug que gravava -2 cheio) ═══
+  ✅ venda confirmada usa o líquido e NÃO subtrai stake de novo
+
+═══ 11. CLIENTE WS (queda de conexão de verdade) ═══
+  ✅ conexão pronta que cai AVISA o bot (resumo final roda, nada de zumbi)
+  ✅ falha ao conectar no boot NÃO é tratada como fim de sessão
+
+✅ offline: 60 passaram, 0 falharam
+
+═══ 12. REPLAY com candles 5s REAIS (sem cooldown/pausa/saldo: é um TETO) ═══
+  RENDERUSD   entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  WIFUSD      entradas   1 | gales   0 | piram   2 | W   3 L   0 (100.0%) | candles 1000
+  DOTUSD      entradas   1 | gales   0 | piram   2 | W   0 L   3 (0.0%) | candles 1000
+  SUIUSD      entradas   2 | gales   0 | piram   4 | W   3 L   3 (50.0%) | candles 1000
+  XPTUSD      entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  ORDIUSD     entradas   3 | gales   0 | piram   8 | W   1 L   7 (12.5%) | candles 1000
+  HYPE        entradas   1 | gales   0 | piram   0 | W   0 L   1 (0.0%) | candles 1000
+  TRON        entradas   1 | gales   0 | piram   2 | W   0 L   3 (0.0%) | candles 1000
+  SHIBUSD     entradas   3 | gales   0 | piram   9 | W   3 L   9 (25.0%) | candles 1000
+  RAYDIUMUSD  entradas   2 | gales   0 | piram   3 | W   0 L   5 (0.0%) | candles 1000
+  ETHUSD      entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  SOLUSD      entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  XRPUSD      entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  NEARUSD     entradas   2 | gales   0 | piram   3 | W   3 L   2 (60.0%) | candles 1000
+  LTCUSD      entradas   1 | gales   0 | piram   2 | W   0 L   3 (0.0%) | candles 1000
+  ATOMUSD     entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  MATICUSD    entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  LINKUSD     entradas   2 | gales   0 | piram   6 | W   2 L   6 (25.0%) | candles 1000
+  DYDXUSD     entradas   2 | gales   0 | piram   5 | W   2 L   5 (28.6%) | candles 1000
+  FARTCOINUSD entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  EOSUSD      entradas   2 | gales   0 | piram   7 | W   7 L   2 (77.8%) | candles 1000
+  HBARUSD     entradas   2 | gales   0 | piram   4 | W   6 L   0 (100.0%) | candles 1000
+  SEIUSD      entradas   1 | gales   0 | piram   2 | W   3 L   0 (100.0%) | candles 1000
+  IMXUSD      entradas   2 | gales   0 | piram   4 | W   3 L   3 (50.0%) | candles 1000
+  PENUSD      entradas   4 | gales   0 | piram  11 | W   4 L  11 (26.7%) | candles 1000
+  TIAUSD      entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  INJUSD      entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  ARBUSD      entradas   2 | gales   0 | piram   4 | W   3 L   3 (50.0%) | candles 1000
+  SANDUSD     entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  MANAUSD     entradas   0 | gales   0 | piram   0 | W   0 L   0 (0%) | candles 1000
+  WLDUSD      entradas   1 | gales   0 | piram   2 | W   0 L   3 (0.0%) | candles 1000
+  JUPUSD      entradas   1 | gales   0 | piram   5 | W   1 L   2 (33.3%) | candles 1000
+
+  TOTAL em ~2664 min de mercado: 36 entradas + 0 gales + 85 piramidagens = 121 ordens em 20 ativos
+  CALL e PUT abertos ao mesmo tempo no mesmo ativo: 0   <-- tem que ser 0 (1 ordem por vez no ativo)
+  bloqueios: adxFraco:15669 lateral:8627 semPullback:3326 ladoOposto:1575 pyramidMax:812 dados40:288 rsi:270

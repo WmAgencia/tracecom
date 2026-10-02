@@ -1,0 +1,10 @@
+[
+  {
+    "active": "front.Magnificent7-op",
+    "direction": "CALL",
+    "strategy": "Fade3",
+    "timestamp": "2026-09-29T21:08:40.202Z",
+    "result": "win",
+    "profit": 100
+  }
+]

@@ -1,0 +1,37 @@
+[LOGIN] OK!
+
+[WS] Ready!
+[💼 CONTA] DEMO | Saldo: R$44.40
+
+======================================================================
+🧠 BOT v8 - MULTI-TIMEFRAME | Regime | RSI | Martingale
+======================================================================
+
+📋 Estado:
+   ✅ USDHKD     dir:CALL  hist:78% obs:78.0% IC:0.0%-100.0% (0/0)
+   ✅ EURUSD     dir:CALL  hist:74% obs:74.0% IC:0.0%-100.0% (0/0)
+   ✅ USDZAR     dir:PUT   hist:70% obs:70.0% IC:0.0%-100.0% (0/0)
+   ❌ LTCUSD     dir:PUT   hist:67% obs:40.0% IC:16.8%-68.7% (4/10)
+   ✅ DOTUSD     dir:PUT   hist:62% obs:50.0% IC:23.7%-76.3% (5/10)
+
+[📋] 5/5 ativos
+[⏳] Warmup 120s (precisa 15 candles 5s + 2 candles 1min)...
+
+[✅] INICIADO!
+
+
+📊 RELATÓRIO v8:
+   Total: 0 ops | WR: 0% | Lucro: R$0.00
+   ⚠️观望 USDHKD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 EURUSD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 USDZAR     dir:PUT   IC:0.0%–100.0% (0/0) +R$0.00
+   ❌ OFF LTCUSD     dir:PUT   IC:16.8%–68.7% (4/10) R$-5.44
+   ⚠️观望 DOTUSD     dir:PUT   IC:23.7%–76.3% (5/10) R$-1.80
+
+📊 RELATÓRIO v8:
+   Total: 0 ops | WR: 0% | Lucro: R$0.00
+   ⚠️观望 USDHKD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 EURUSD     dir:CALL  IC:0.0%–100.0% (0/0) +R$0.00
+   ⚠️观望 USDZAR     dir:PUT   IC:0.0%–100.0% (0/0) +R$0.00
+   ❌ OFF LTCUSD     dir:PUT   IC:16.8%–68.7% (4/10) R$-5.44
+   ⚠️观望 DOTUSD     dir:PUT   IC:23.7%–76.3% (5/10) R$-1.80

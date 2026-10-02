@@ -1,0 +1,186 @@
+{
+  "generatedAt": "2026-09-29T22:29:38.164Z",
+  "totalFiles": 29,
+  "totalCandles": 76000,
+  "bestPUTs": [
+    {
+      "name": "Sei",
+      "trades": 102,
+      "wins": 64,
+      "wr": "62.7",
+      "edge": "12.7"
+    },
+    {
+      "name": "Litecoin",
+      "trades": 438,
+      "wins": 248,
+      "wr": "56.6",
+      "edge": "6.6"
+    },
+    {
+      "name": "Litecoin",
+      "trades": 110,
+      "wins": 62,
+      "wr": "56.4",
+      "edge": "6.4"
+    },
+    {
+      "name": "Polkadot",
+      "trades": 364,
+      "wins": 202,
+      "wr": "55.5",
+      "edge": "5.5"
+    },
+    {
+      "name": "USD-ZAR",
+      "trades": 118,
+      "wins": 65,
+      "wr": "55.1",
+      "edge": "5.1"
+    },
+    {
+      "name": "USD-ZAR",
+      "trades": 581,
+      "wins": 315,
+      "wr": "54.2",
+      "edge": "4.2"
+    },
+    {
+      "name": "Vaulta",
+      "trades": 510,
+      "wins": 275,
+      "wr": "53.9",
+      "edge": "3.9"
+    },
+    {
+      "name": "Jupiter",
+      "trades": 535,
+      "wins": 276,
+      "wr": "51.6",
+      "edge": "1.6"
+    },
+    {
+      "name": "USD-TRY",
+      "trades": 665,
+      "wins": 342,
+      "wr": "51.4",
+      "edge": "1.4"
+    },
+    {
+      "name": "Cosmos",
+      "trades": 121,
+      "wins": 62,
+      "wr": "51.2",
+      "edge": "1.2"
+    }
+  ],
+  "bestCALLs": [
+    {
+      "name": "USD-HKD",
+      "trades": 610,
+      "wins": 350,
+      "wr": "57.4",
+      "edge": "7.4"
+    },
+    {
+      "name": "USD-HKD",
+      "trades": 120,
+      "wins": 68,
+      "wr": "56.7",
+      "edge": "6.7"
+    },
+    {
+      "name": "USD-ZAR",
+      "trades": 622,
+      "wins": 339,
+      "wr": "54.5",
+      "edge": "4.5"
+    },
+    {
+      "name": "Dash",
+      "trades": 104,
+      "wins": 56,
+      "wr": "53.8",
+      "edge": "3.8"
+    },
+    {
+      "name": "USD-ZAR",
+      "trades": 121,
+      "wins": 65,
+      "wr": "53.7",
+      "edge": "3.7"
+    },
+    {
+      "name": "Polkadot",
+      "trades": 324,
+      "wins": 173,
+      "wr": "53.4",
+      "edge": "3.4"
+    },
+    {
+      "name": "Jupiter",
+      "trades": 429,
+      "wins": 228,
+      "wr": "53.1",
+      "edge": "3.1"
+    },
+    {
+      "name": "Pepe",
+      "trades": 267,
+      "wins": 138,
+      "wr": "51.7",
+      "edge": "1.7"
+    },
+    {
+      "name": "Litecoin",
+      "trades": 140,
+      "wins": 72,
+      "wr": "51.4",
+      "edge": "1.4"
+    },
+    {
+      "name": "Litecoin",
+      "trades": 574,
+      "wins": 288,
+      "wr": "50.2",
+      "edge": "0.2"
+    }
+  ],
+  "exploitable": [
+    {
+      "name": "USD-ZAR",
+      "putEdge": "5.1",
+      "callEdge": "3.7"
+    },
+    {
+      "name": "Polkadot",
+      "putEdge": "5.5",
+      "callEdge": "3.4"
+    },
+    {
+      "name": "Litecoin",
+      "putEdge": "6.4",
+      "callEdge": "1.4"
+    },
+    {
+      "name": "Litecoin",
+      "putEdge": "6.6",
+      "callEdge": "0.2"
+    },
+    {
+      "name": "USD-HKD",
+      "putEdge": "-11.8",
+      "callEdge": "6.7"
+    },
+    {
+      "name": "USD-HKD",
+      "putEdge": "-9.8",
+      "callEdge": "7.4"
+    },
+    {
+      "name": "Sei",
+      "putEdge": "12.7",
+      "callEdge": "0.0"
+    }
+  ]
+}

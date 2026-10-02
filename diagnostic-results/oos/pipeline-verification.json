@@ -1,0 +1,97 @@
+{
+  "collectedAtUtc": "2026-09-29T12:08:55.598Z",
+  "read_only": true,
+  "orders_placed": false,
+  "read_only_tools_only": true,
+  "rate_limit": "global 60 leituras/min por token (bucket `read`); respeita retry_after_ms e reset_at",
+  "history_ceiling": "MCP: máx 1000 candles por chamada, sem paginação por intervalo",
+  "mode": "collect",
+  "products": [
+    {
+      "product": "binary-options",
+      "mode": "read-write",
+      "assets": 121
+    }
+  ],
+  "series": [
+    {
+      "asset_id": 2507,
+      "name": "AI Europe",
+      "product": "binary-options",
+      "products_offering": [
+        "binary-options"
+      ],
+      "size": 60,
+      "received": 1000,
+      "added": 6,
+      "duplicatesAvoided": 994,
+      "totalUnique": 1006,
+      "firstFrom": "2026-09-25T12:31:00Z",
+      "lastTo": "2026-09-29T12:13:00Z",
+      "windowHours": 95.7
+    },
+    {
+      "asset_id": 1926,
+      "name": "Alphabet Inc.",
+      "product": "binary-options",
+      "products_offering": [
+        "binary-options"
+      ],
+      "size": 60,
+      "received": 1000,
+      "added": 3,
+      "duplicatesAvoided": 997,
+      "totalUnique": 1003,
+      "firstFrom": "2026-09-28T10:28:00Z",
+      "lastTo": "2026-09-29T12:13:00Z",
+      "windowHours": 25.8
+    }
+  ],
+  "skipped_done": 0,
+  "scheduler": {
+    "startedAtUtc": null,
+    "requests": 8,
+    "throttled": 5,
+    "circuitOpened": 0,
+    "errors": 0,
+    "servers": [
+      {
+        "server": "binary-options",
+        "requests": 4,
+        "breakerOpen": false
+      },
+      {
+        "server": "turbo-options",
+        "requests": 0,
+        "breakerOpen": false
+      },
+      {
+        "server": "blitz-options",
+        "requests": 0,
+        "breakerOpen": false
+      },
+      {
+        "server": "digital-options",
+        "requests": 0,
+        "breakerOpen": false
+      },
+      {
+        "server": "marginal-forex",
+        "requests": 0,
+        "breakerOpen": false
+      },
+      {
+        "server": "marginal-crypto",
+        "requests": 0,
+        "breakerOpen": false
+      },
+      {
+        "server": "marginal-cfd",
+        "requests": 0,
+        "breakerOpen": false
+      }
+    ],
+    "doneTasks": 2,
+    "rpm": 55
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "_version": "13",
+  "_desc": "Bot v13 - top 10 ativos por WR | Fade4 + regime + RSI 25/75 | auto-flip | stake base R$2 + martingale por payout (base + 2)",
+  "login": {
+    "email": "Anaalaura2008@gmail.com",
+    "password": "Eqvpanp.32"
+  },
+  "accounts": {
+    "_nota": "contas identificadas em 2026-10-01 via get-balances (somente leitura). O bot escolhe pelo type: 4 = DEMO (PRACTICE), 1 = REAL. Em 2026-10-01 a REAL estava sem saldo disponivel (o valor de 1,31 e bonus).",
+    "demo": { "type": 4, "balanceName": "PRACTICE", "id": 1250741747, "currency": "USD", "amount": 60 },
+    "real": { "type": 1, "balanceName": "REAL", "id": 1250741746, "currency": "BRL", "amount": 0, "bonusAmount": 1.31 }
+  },
+  "trading": {
+    "baseStake": 2,
+    "expirationMinutes": 2,
+    "maxConcurrentOps": 10
+  },
+  "martingale": {
+    "_nota": "stake(n) = (perdido ate agora + lucro da base) / payoutRate: recupera o prejuizo e ainda fecha o lucro da base",
+    "levels": 2,
+    "payoutRate": 0.86,
+    "pauseAfterLadderMs": 600000
+  },
+  "risk": {
+    "maxStake": 20
+  },
+  "cooldown": {
+    "afterWinMs": 15000,
+    "afterLossMs": 5000
+  },
+  "autoFlip": {
+    "_nota": "inverte a direcao do ativo depois de N losses seguidos; ao acertar, volta para a direcao da whitelist",
+    "enabled": true,
+    "afterLosses": 2,
+    "revertOnWin": true
+  },
+  "strategy": {
+    "candleSizeSeconds": 5,
+    "lookbackRegime": 20,
+    "regimeStreakThreshold": 6,
+    "rsiPeriod": 14,
+    "rsiOversold": 25,
+    "rsiOverbought": 75,
+    "warmupMs": 30000,
+    "min1mCandles": 1,
+    "staleCandleMs": 30000
+  },
+  "whitelist": {
+    "RENDERUSD": { "name": "front.RENDERUSD-OTC", "direction": "CALL", "wr": 100.0 },
+    "WIFUSD":   { "name": "front.WIFUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "DOTUSD":   { "name": "front.DOTUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "SUIUSD":   { "name": "front.SUIUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "XPTUSD":   { "name": "front.XPTUSD-OTC",   "direction": "PUT",  "wr": 100.0 },
+    "ORDIUSD":  { "name": "front.ORDIUSD-OTC",  "direction": "CALL", "wr": 75.0 },
+    "HYPE":     { "name": "front.HYPE-OTC",      "direction": "CALL", "wr": 75.0 },
+    "TRON":     { "name": "front.TRON-OTC",      "direction": "CALL", "wr": 66.7 },
+    "SHIBUSD":  { "name": "front.SHIBUSD-OTC",  "direction": "PUT",  "wr": 66.7 },
+    "RAYDIUMUSD": { "name": "front.RAYDIUMUSD-OTC", "direction": "CALL", "wr": 66.7 }
+  },
+  "paths": {
+    "state": "D:/Tracecom project/bot-state-v13.json",
+    "results": "D:/Tracecom project/resultados-v13.json"
+  }
+}

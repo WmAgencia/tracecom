@@ -1,0 +1,333 @@
+[LOGIN] OK!
+[WS] Ready!
+[💼 CONTA] DEMO | Saldo: R$36.84
+
+======================================================================
+🧠 BOT v10 - WHITELIST 8 ATIVOS + 2MIN + EXPIRY ANALYSIS
+======================================================================
+
+📋 WHITELIST:
+   ✅ front.SHIBUSD-OTC        dir:PUT histWR:66.7%
+   ✅ front.TRON-OTC           dir:CALL histWR:66.7%
+   ✅ front.ORDIUSD-OTC        dir:CALL histWR:75%
+   ✅ front.DYDXUSD-OTC        dir:CALL histWR:60%
+   ✅ front.FARTCOINUSD-OTC    dir:CALL histWR:60%
+   ✅ front.RAYDIUMUSD-OTC     dir:CALL histWR:66.7%
+   ✅ front.RENDERUSD-OTC      dir:CALL histWR:100%
+   ✅ front.HYPE-OTC           dir:CALL histWR:75%
+
+[📋] 8/8 ativos encontrados
+[⏳] Warmup 120s...
+
+[✅] INICIADO! Expiração: 2min | Stake: R$2
+
+[📊 front.HYPE-OTC] CALL RSI:56 regime:ranging IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:56 regime:ranging IC:0.0%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:56 regime:ranging IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:67 regime:ranging IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:51 regime:ranging IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:29 regime:ranging IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:76 regime:ranging IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:66 regime:ranging IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:66 regime:ranging IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:66 regime:ranging IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:46 regime:ranging IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:46 regime:ranging IC:0.0%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:46 regime:ranging IC:0.0%-100.0%
+
+📊 RELATÓRIO | Ops: 0 | WR: 0% | Lucro: R$0.00
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:77 regime:ranging IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:58 regime:ranging IC:0.0%-100.0%
+[✅] front.DYDXUSD-OTC | CALL | R$2 | RSI:51 | +R$1.64
+[📈] Total: 1 | WR: 100.0% | Lucro: R$1.64
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 0.0%WR(1) | 1min: 0.0%WR(1) | 2min: 100.0%WR(1) | 3min: 100.0%WR(1) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=⚪
+
+[✅] front.TRON-OTC | CALL | R$2 | RSI:66 | +R$1.64
+[📈] Total: 2 | WR: 100.0% | Lucro: R$3.28
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 0.0%WR(2) | 1min: 50.0%WR(2) | 2min: 100.0%WR(2) | 3min: 100.0%WR(1) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+
+[MISSED] aid= 1976
+[✅] front.HYPE-OTC | CALL | R$2 | RSI:56 | +R$1.64
+[📈] Total: 3 | WR: 100.0% | Lucro: R$4.92
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 0.0%WR(3) | 1min: 66.7%WR(3) | 2min: 100.0%WR(3) | 3min: 100.0%WR(2) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.HYPE-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+
+[MISSED] aid= 2448
+[MISSED] aid= 2448
+[📊 front.RENDERUSD-OTC] CALL RSI:73 regime:ranging IC:0.0%-100.0%
+[📊 front.RENDERUSD-OTC] CALL RSI:73 regime:ranging IC:0.0%-100.0%
+[⏱ 10:56:34] Ops:3 WR:100% Lucro:R$4.92   [📊 front.ORDIUSD-OTC] CALL RSI:63 regime:ranging IC:0.0%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:36 regime:ranging IC:20.7%-100.0%
+[⏱ 10:57:04] Ops:3 WR:100% Lucro:R$4.92   [📊 front.RAYDIUMUSD-OTC] CALL RSI:57 regime:ranging IC:0.0%-100.0%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:57 regime:ranging IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:60 regime:ranging IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:60 regime:ranging IC:0.0%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:60 regime:ranging IC:0.0%-100.0%
+[MISSED] aid= 1976
+[MISSED] aid= 1976
+[MISSED] aid= 1976
+[❌] front.RAYDIUMUSD-OTC | CALL | R$2 | RSI:57 | R$-2.00
+[📈] Total: 4 | WR: 75.0% | Lucro: R$2.92
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 0.0%WR(4) | 1min: 50.0%WR(4) | 2min: 100.0%WR(3) | 3min: 100.0%WR(2) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.HYPE-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.RAYDIUMUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[⏱ 10:57:34] Ops:4 WR:75% Lucro:R$2.92   [📊 front.TRON-OTC] CALL RSI:45 regime:ranging IC:20.7%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:48 regime:ranging IC:20.7%-100.0%
+[📊 front.HYPE-OTC] CALL RSI:54 regime:ranging IC:20.7%-100.0%
+[⏱ 10:58:04] Ops:4 WR:75% Lucro:R$2.92   [❌] front.RENDERUSD-OTC | CALL | R$2 | RSI:73 | R$-2.00
+[📈] Total: 5 | WR: 60.0% | Lucro: R$0.92
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 0.0%WR(5) | 1min: 40.0%WR(5) | 2min: 75.0%WR(4) | 3min: 66.7%WR(3) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC CALL ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.HYPE-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.RAYDIUMUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.RENDERUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+
+[MISSED] aid= 2290
+[MISSED] aid= 2286
+[❌] front.FARTCOINUSD-OTC | CALL | R$2 | RSI:46 | R$-2.00
+[📈] Total: 6 | WR: 50.0% | Lucro: R$-1.08
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 16.7%WR(6) | 1min: 33.3%WR(6) | 2min: 80.0%WR(5) | 3min: 50.0%WR(4) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.HYPE-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.RAYDIUMUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.RENDERUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=⚪
+
+[MISSED] aid= 2279
+[MISSED] aid= 2279
+[✅] front.SHIBUSD-OTC | PUT | R$2 | RSI:60 | +R$1.64
+[📈] Total: 7 | WR: 57.1% | Lucro: R$0.56
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 14.3%WR(7) | 1min: 28.6%WR(7) | 2min: 83.3%WR(6) | 3min: 50.0%WR(4) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.HYPE-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.RAYDIUMUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.RENDERUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=⚪
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+
+[⏱ 10:58:34] Ops:7 WR:57% Lucro:R$0.56   [📊 front.DYDXUSD-OTC] CALL RSI:63 regime:ranging IC:20.7%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:63 regime:ranging IC:20.7%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:34 regime:ranging IC:0.0%-79.3%
+[📊 front.DYDXUSD-OTC] CALL RSI:55 regime:ranging IC:20.7%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:55 regime:ranging IC:20.7%-100.0%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:38 regime:ranging IC:0.0%-79.3%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:38 regime:ranging IC:0.0%-79.3%
+[📊 front.FARTCOINUSD-OTC] CALL RSI:38 regime:ranging IC:0.0%-79.3%
+[⏱ 10:59:04] Ops:7 WR:57% Lucro:R$0.56   [❌] front.DYDXUSD-OTC | CALL | R$2 | RSI:55 | R$-2.00
+[📈] Total: 8 | WR: 50.0% | Lucro: R$-1.44
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 25.0%WR(8) | 1min: 25.0%WR(8) | 2min: 83.3%WR(6) | 3min: 50.0%WR(4) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.RAYDIUMUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.RENDERUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=⚪
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[MISSED] aid= 2277
+[📊 front.FARTCOINUSD-OTC] CALL RSI:70 regime:ranging IC:0.0%-79.3%
+[✅] front.TRON-OTC | CALL | R$2 | RSI:45 | +R$1.64
+[📈] Total: 9 | WR: 55.6% | Lucro: R$0.20
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 22.2%WR(9) | 1min: 33.3%WR(9) | 2min: 85.7%WR(7) | 3min: 60.0%WR(5) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.RENDERUSD-OTC CALL ❌ | 30s=❌ | 1min=❌ | 2min=❌ | 3min=❌ | 5min=⚪
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=⚪
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+
+[MISSED] aid= 2286
+[❌] front.HYPE-OTC | CALL | R$2 | RSI:54 | R$-2.00
+[📈] Total: 10 | WR: 50.0% | Lucro: R$-1.80
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 30.0%WR(10) | 1min: 30.0%WR(10) | 2min: 87.5%WR(8) | 3min: 50.0%WR(6) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=⚪
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=⚪
+
+[MISSED] aid= 2286
+[MISSED] aid= 1975
+[MISSED] aid= 1975
+[MISSED] aid= 1975
+[📊 front.TRON-OTC] CALL RSI:45 regime:ranging IC:34.2%-100.0%
+[📊 front.TRON-OTC] CALL RSI:45 regime:ranging IC:34.2%-100.0%
+[⏱ 10:59:34] Ops:10 WR:50% Lucro:R$-1.80   [📊 front.TRON-OTC] CALL RSI:38 regime:ranging IC:34.2%-100.0%
+[📊 front.SHIBUSD-OTC] PUT RSI:56 regime:ranging IC:20.7%-100.0%
+[⏱ 11:00:04] Ops:10 WR:50% Lucro:R$-1.80   [📊 front.FARTCOINUSD-OTC] CALL RSI:26 regime:ranging IC:0.0%-79.3%
+[📊 front.ORDIUSD-OTC] CALL RSI:52 regime:ranging IC:0.0%-100.0%
+[📊 front.TRON-OTC] CALL RSI:56 regime:ranging IC:34.2%-100.0%
+[📊 front.TRON-OTC] CALL RSI:56 regime:ranging IC:34.2%-100.0%
+[📊 front.TRON-OTC] CALL RSI:56 regime:ranging IC:34.2%-100.0%
+[MISSED] aid= 2277
+[MISSED] aid= 2277
+[MISSED] aid= 2277
+[❌] front.FARTCOINUSD-OTC | CALL | R$2 | RSI:26 | R$-2.00
+[📈] Total: 11 | WR: 45.5% | Lucro: R$-3.80
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 36.4%WR(11) | 1min: 36.4%WR(11) | 2min: 87.5%WR(8) | 3min: 50.0%WR(6) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=⚪
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+
+[MISSED] aid= 2277
+[⏱ 11:00:34] Ops:11 WR:45% Lucro:R$-3.80   [📊 front.FARTCOINUSD-OTC] CALL RSI:47 regime:ranging IC:0.0%-65.8%
+[📊 front.TRON-OTC] CALL RSI:62 regime:ranging IC:34.2%-100.0%
+[📊 front.TRON-OTC] CALL RSI:62 regime:ranging IC:34.2%-100.0%
+
+📊 RELATÓRIO | Ops: 11 | WR: 45.5% | Lucro: R$-3.80
+   ✅ ativo HYPE           dir:CALL  WR:50.0%(2) R$-0.36
+   ✅ ativo TRON           dir:CALL  WR:100.0%(2) +R$3.28
+   ✅ ativo DYDXUSD        dir:CALL  WR:50.0%(2) R$-0.36
+   ✅ ativo RAYDIUMUSD     dir:CALL  WR:0.0%(1) R$-2.00
+   ✅ ativo FARTCOINUSD    dir:CALL  WR:0.0%(2) R$-4.00
+   ✅ ativo SHIBUSD        dir:PUT   WR:100.0%(1) +R$1.64
+   ✅ ativo RENDERUSD      dir:CALL  WR:0.0%(1) R$-2.00
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 36.4%WR(11) | 1min: 36.4%WR(11) | 2min: 87.5%WR(8) | 3min: 50.0%WR(6) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=⚪
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+[⏱ 11:01:04] Ops:11 WR:45% Lucro:R$-3.80   [📊 front.RAYDIUMUSD-OTC] CALL RSI:34 regime:ranging IC:0.0%-79.3%
+[✅] front.TRON-OTC | CALL | R$2 | RSI:62 | +R$1.64
+[📈] Total: 12 | WR: 50.0% | Lucro: R$-2.16
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 41.7%WR(12) | 1min: 33.3%WR(12) | 2min: 88.9%WR(9) | 3min: 50.0%WR(6) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.DYDXUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=⚪
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+
+[MISSED] aid= 1976
+[✅] front.SHIBUSD-OTC | PUT | R$2 | RSI:56 | +R$1.64
+[📈] Total: 13 | WR: 53.8% | Lucro: R$-0.52
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 38.5%WR(13) | 1min: 38.5%WR(13) | 2min: 90.0%WR(10) | 3min: 42.9%WR(7) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.TRON-OTC CALL ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=✅ | 5min=⚪
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=⚪
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=⚪
+
+[MISSED] aid= 1976
+[❌] front.FARTCOINUSD-OTC | CALL | R$2 | RSI:47 | R$-2.00
+[⏸ PAUSE] FARTCOINUSD: 3 losses → 5min cooldown
+[📈] Total: 14 | WR: 50.0% | Lucro: R$-2.52
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 42.9%WR(14) | 1min: 35.7%WR(14) | 2min: 81.8%WR(11) | 3min: 42.9%WR(7) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.HYPE-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=❌ | 5min=⚪
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=⚪
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+
+[MISSED] aid= 2279
+[MISSED] aid= 2279
+[MISSED] aid= 2279
+[📊 front.ORDIUSD-OTC] CALL RSI:56 regime:ranging IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:56 regime:ranging IC:0.0%-100.0%
+[⏱ 11:01:34] Ops:14 WR:50% Lucro:R$-2.52   [📊 front.ORDIUSD-OTC] CALL RSI:40 regime:ranging IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:40 regime:ranging IC:0.0%-100.0%
+[⏱ 11:02:04] Ops:14 WR:50% Lucro:R$-2.52   [📊 front.RAYDIUMUSD-OTC] CALL RSI:36 regime:ranging IC:0.0%-79.3%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:36 regime:ranging IC:0.0%-79.3%
+[MISSED] aid= 1976
+[MISSED] aid= 2279
+[MISSED] aid= 1976
+[MISSED] aid= 2279
+[MISSED] aid= 1976
+[MISSED] aid= 1976
+[MISSED] aid= 1976
+[⏱ 11:02:34] Ops:14 WR:50% Lucro:R$-2.52   [⏱ 11:03:04] Ops:14 WR:50% Lucro:R$-2.52   [📊 front.RAYDIUMUSD-OTC] CALL RSI:26 regime:ranging IC:0.0%-79.3%
+[📊 front.RAYDIUMUSD-OTC] CALL RSI:26 regime:ranging IC:0.0%-79.3%
+[⏱ 11:03:34] Ops:14 WR:50% Lucro:R$-2.52   [⏱ 11:04:04] Ops:14 WR:50% Lucro:R$-2.52   [📊 front.TRON-OTC] CALL RSI:59 regime:ranging IC:43.8%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:33 regime:ranging IC:0.0%-100.0%
+[📊 front.ORDIUSD-OTC] CALL RSI:33 regime:ranging IC:0.0%-100.0%
+[❌] front.RAYDIUMUSD-OTC | CALL | R$2 | RSI:26 | R$-2.00
+[📈] Total: 15 | WR: 46.7% | Lucro: R$-4.52
+
+📊 ANÁLISE DE EXPIRAÇÃO:
+   30s: 46.7%WR(15) | 1min: 40.0%WR(15) | 2min: 75.0%WR(12) | 3min: 42.9%WR(7) | 5min: ?%WR(0)
+
+   Detalhado (últimas 5):
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=⚪ | 3min=⚪ | 5min=⚪
+   front.TRON-OTC CALL ✅ | 30s=✅ | 1min=❌ | 2min=✅ | 3min=⚪ | 5min=⚪
+   front.SHIBUSD-OTC PUT ✅ | 30s=❌ | 1min=✅ | 2min=✅ | 3min=❌ | 5min=⚪
+   front.FARTCOINUSD-OTC CALL ❌ | 30s=✅ | 1min=❌ | 2min=❌ | 3min=⚪ | 5min=⚪
+   front.RAYDIUMUSD-OTC CALL ❌ | 30s=✅ | 1min=✅ | 2min=❌ | 3min=⚪ | 5min=⚪
+
+[MISSED] aid= 2286
+[⏱ 11:04:34] Ops:15 WR:47% Lucro:R$-4.52   [⏱ 11:05:04] Ops:15 WR:47% Lucro:R$-4.52   [MISSED] aid= 2286
+[MISSED] aid= 2286
+[⏱ 11:05:34] Ops:15 WR:47% Lucro:R$-4.52   [📊 front.DYDXUSD-OTC] CALL RSI:64 regime:ranging IC:9.5%-90.5%
+[📊 front.DYDXUSD-OTC] CALL RSI:64 regime:ranging IC:9.5%-90.5%
+[📊 front.DYDXUSD-OTC] CALL RSI:64 regime:ranging IC:9.5%-90.5%
+[📊 front.TRON-OTC] CALL RSI:74 regime:ranging IC:43.8%-100.0%
+[📊 front.DYDXUSD-OTC] CALL RSI:47 regime:ranging IC:9.5%-90.5%
+[📊 front.DYDXUSD-OTC] CALL RSI:47 regime:ranging IC:9.5%-90.5%
+[📊 front.DYDXUSD-OTC] CALL RSI:47 regime:ranging IC:9.5%-90.5%
+[📊 front.DYDXUSD-OTC] CALL RSI:47 regime:ranging IC:9.5%-90.5%

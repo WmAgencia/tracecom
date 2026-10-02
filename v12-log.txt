@@ -1,0 +1,83 @@
+[LOGIN] OK!
+[WS] Ready!
+[💼 CONTA] DEMO | Saldo: R$60.00
+
+======================================================================
+🧠 BOT v12 - WHITELIST + EARLY SELL HTTP + 2MIN
+======================================================================
+
+📋 WHITELIST (12/12):
+   ✅ TRON               dir:CALL histWR:66.7%
+   ✅ HYPE               dir:CALL histWR:75%
+   ✅ DYDXUSD            dir:PUT histWR:60%
+   ✅ ORDIUSD            dir:CALL histWR:75%
+   ✅ SHIBUSD            dir:PUT histWR:66.7%
+   ✅ FARTCOINUSD        dir:PUT histWR:60%
+   ✅ RAYDIUMUSD         dir:CALL histWR:66.7%
+   ✅ RENDERUSD          dir:CALL histWR:100%
+   ✅ WIFUSD             dir:PUT histWR:100%
+   ✅ DOTUSD             dir:PUT histWR:100%
+   ✅ SUIUSD             dir:PUT histWR:100%
+   ✅ XPTUSD             dir:PUT histWR:100%
+
+[⏳] Warmup 120s...
+[✅] INICIADO! Exp:2min | Stake:R$2 | EarlySell:ON | MaxOps:5
+
+[📊 XPTUSD] PUT RSI:61 IC:0.0%-100.0% | Ops ativas:1/5
+[📊 FARTCOINUSD] PUT RSI:48 IC:0.0%-100.0% | Ops ativas:2/5
+[📊 TRON] CALL RSI:40 IC:0.0%-100.0% | Ops ativas:3/5
+[📊 ORDIUSD] CALL RSI:33 IC:0.0%-100.0% | Ops ativas:4/5
+[📊 WIFUSD] PUT RSI:52 IC:0.0%-100.0% | Ops ativas:5/5
+[✅] FARTCOINUSD | PUT | R$2 | +R$1.64
+[📈] Total: 1 | WR: 100.0% | Lucro: R$1.64
+[❌] XPTUSD | PUT | R$2 | R$-2.00
+[📈] Total: 2 | WR: 50.0% | Lucro: R$-0.36
+[📊 FARTCOINUSD] PUT RSI:46 IC:20.7%-100.0% | Ops ativas:4/5
+[📊 DYDXUSD] PUT RSI:43 IC:0.0%-100.0% | Ops ativas:5/5
+[⏱ 11:49:40] Ops:2 WR:50% Lucro:R$-0.36 Ativas:5   [⏱ 11:50:10] Ops:2 WR:50% Lucro:R$-0.36 Ativas:5   [✅] TRON | CALL | R$2 | +R$1.64
+[📈] Total: 3 | WR: 66.7% | Lucro: R$1.28
+[❌] WIFUSD | PUT | R$2 | R$-2.00
+[📈] Total: 4 | WR: 50.0% | Lucro: R$-0.72
+[⏱ 11:50:40] Ops:4 WR:50% Lucro:R$-0.72 Ativas:3   [📊 TRON] CALL RSI:79 IC:20.7%-100.0% | Ops ativas:4/5
+[📊 HYPE] CALL RSI:31 IC:0.0%-100.0% | Ops ativas:5/5
+[⏱ 11:51:10] Ops:4 WR:50% Lucro:R$-0.72 Ativas:5   [❌] FARTCOINUSD | PUT | R$2 | R$-2.00
+[📈] Total: 5 | WR: 40.0% | Lucro: R$-2.72
+[✅] DYDXUSD | PUT | R$2 | +R$1.64
+[📈] Total: 6 | WR: 50.0% | Lucro: R$-1.08
+[⏱ 11:51:40] Ops:6 WR:50% Lucro:R$-1.08 Ativas:3   [📊 SHIBUSD] PUT RSI:52 IC:0.0%-100.0% | Ops ativas:4/5
+[📊 WIFUSD] PUT RSI:46 IC:0.0%-79.3% | Ops ativas:5/5
+[⏱ 11:52:10] Ops:6 WR:50% Lucro:R$-1.08 Ativas:5   [✅] TRON | CALL | R$2 | +R$1.64
+[📈] Total: 7 | WR: 57.1% | Lucro: R$0.56
+[✅] HYPE | CALL | R$2 | +R$1.64
+[📈] Total: 8 | WR: 62.5% | Lucro: R$2.20
+[📊 DOTUSD] PUT RSI:51 IC:0.0%-100.0% | Ops ativas:4/5
+[📊 FARTCOINUSD] PUT RSI:70 IC:9.5%-90.5% | Ops ativas:5/5
+[⏱ 11:52:40] Ops:8 WR:63% Lucro:R$2.20 Ativas:5   [⏱ 11:53:10] Ops:8 WR:63% Lucro:R$2.20 Ativas:5   [✅] SHIBUSD | PUT | R$2 | +R$1.64
+[📈] Total: 9 | WR: 66.7% | Lucro: R$3.84
+[📊 SUIUSD] PUT RSI:45 IC:0.0%-100.0% | Ops ativas:5/5
+[⏱ 11:53:40] Ops:9 WR:67% Lucro:R$3.84 Ativas:5   [⏱ 11:54:10] Ops:9 WR:67% Lucro:R$3.84 Ativas:5   [❌] DOTUSD | PUT | R$2 | R$-2.00
+[📈] Total: 10 | WR: 60.0% | Lucro: R$1.84
+[❌] WIFUSD | PUT | R$2 | R$-2.00
+[📈] Total: 11 | WR: 54.5% | Lucro: R$-0.16
+[❌] FARTCOINUSD | PUT | R$2 | R$-2.00
+[📈] Total: 12 | WR: 50.0% | Lucro: R$-2.16
+[📊 RAYDIUMUSD] CALL RSI:43 IC:0.0%-100.0% | Ops ativas:3/5
+[⏱ 11:54:40] Ops:12 WR:50% Lucro:R$-2.16 Ativas:3   [📊 WIFUSD] PUT RSI:38 IC:0.0%-65.8% | Ops ativas:4/5
+[📊 HYPE] CALL RSI:31 IC:20.7%-100.0% | Ops ativas:5/5
+[⏱ 11:55:10] Ops:12 WR:50% Lucro:R$-2.16 Ativas:5   [❌] SUIUSD | PUT | R$2 | R$-2.00
+[📈] Total: 13 | WR: 46.2% | Lucro: R$-4.16
+[📊 DYDXUSD] PUT RSI:53 IC:20.7%-100.0% | Ops ativas:5/5
+[⏱ 11:55:40] Ops:13 WR:46% Lucro:R$-4.16 Ativas:5   [⏱ 11:56:10] Ops:13 WR:46% Lucro:R$-4.16 Ativas:5   [✅] RAYDIUMUSD | CALL | R$2 | +R$1.64
+[📈] Total: 14 | WR: 50.0% | Lucro: R$-2.52
+[✅] WIFUSD | PUT | R$2 | +R$1.64
+[📈] Total: 15 | WR: 53.3% | Lucro: R$-0.88
+[⏱ 11:56:40] Ops:15 WR:53% Lucro:R$-0.88 Ativas:3   [📊 WIFUSD] PUT RSI:52 IC:6.1%-79.2% | Ops ativas:4/5
+[⏱ 11:57:10] Ops:15 WR:53% Lucro:R$-0.88 Ativas:4   [❌] HYPE | CALL | R$2 | R$-2.00
+[📈] Total: 16 | WR: 50.0% | Lucro: R$-2.88
+[❌] DYDXUSD | PUT | R$2 | R$-2.00
+[📈] Total: 17 | WR: 47.1% | Lucro: R$-4.88
+[⏱ 11:57:40] Ops:17 WR:47% Lucro:R$-4.88 Ativas:2   [📊 FARTCOINUSD] PUT RSI:47 IC:6.1%-79.2% | Ops ativas:3/5
+[📊 HYPE] CALL RSI:59 IC:9.5%-90.5% | Ops ativas:4/5
+[⏱ 11:58:10] Ops:17 WR:47% Lucro:R$-4.88 Ativas:4   [❌] WIFUSD | PUT | R$2 | R$-2.00
+[📈] Total: 18 | WR: 44.4% | Lucro: R$-6.88
+[📊 WIFUSD] PUT RSI:67 IC:4.6%-69.9% | Ops ativas:4/5

@@ -1,0 +1,1780 @@
+{
+  "product": "blitz-options",
+  "fetchedAtUtc": "2026-09-29T11:47:54.553Z",
+  "count": 121,
+  "capabilities": {
+    "skipped": true
+  },
+  "limits": {
+    "skipped": true
+  },
+  "assets": [
+    {
+      "asset_id": 1380,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/ZAR (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1381,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/SGD (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1382,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/HKD (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1470,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "US 500",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1471,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "US 100",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1472,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "US 30",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1473,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "US 2000",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1475,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "UK 100",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1476,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "JP 225",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1478,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "GER 30",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1479,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "FR 40",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1481,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "AU 200",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1615,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "ASML Holding NV",
+      "precision": 4,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1861,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "EUR/USD",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1862,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "EUR/GBP",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1864,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "EUR/JPY",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1865,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "USD/JPY",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1866,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "GBP/JPY",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1867,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "GBP/USD",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1868,
+      "expiration_sizes_seconds": [
+        30,
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "AUD/CAD",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1869,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        900
+      ],
+      "is_open": true,
+      "name": "AUD/JPY",
+      "precision": 4,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1870,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "AUD/USD",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1871,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "CAD/CHF",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1872,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "CAD/JPY",
+      "precision": 4,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1873,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "CHF/JPY",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1874,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        900
+      ],
+      "is_open": true,
+      "name": "EUR/AUD",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1875,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "EUR/CAD",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1876,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "EUR/CHF",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1877,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "GBP/AUD",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1878,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/CAD",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1879,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/CHF",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1880,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "GBP/NZD",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1881,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "NZD/CAD",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1882,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "NZD/JPY",
+      "precision": 4,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1891,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300,
+        600
+      ],
+      "is_open": true,
+      "name": "USD/THB",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1896,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "NZD/USD",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1897,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        900
+      ],
+      "is_open": true,
+      "name": "GBP/CAD",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1900,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "AUD/NZD",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 1905,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Tesla",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1909,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Amazon",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1912,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Gold",
+      "precision": 5,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1913,
+      "expiration_sizes_seconds": [
+        45,
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Silver",
+      "precision": 5,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1914,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Crude Oil WTI",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1915,
+      "expiration_sizes_seconds": [
+        45,
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Crude Oil Brent",
+      "precision": 4,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 1916,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Bitcoin",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1923,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Microsoft Corporation",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1925,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Meta",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1926,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Alphabet Inc.",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 1941,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "ETH/USD (OTC)",
+      "precision": 4,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1974,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "CARDANO (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1975,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "SHIB/USD (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1976,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "TRON/USD (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1977,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "DOGECOIN (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 1978,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "SOL/USD (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2071,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Gold/Silver",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 2107,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Ripple (OTC)",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 2124,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/TRY (OTC)",
+      "precision": 6,
+      "profit_percent": 87
+    },
+    {
+      "asset_id": 2126,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Litecoin (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2127,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Vaulta (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2128,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/PLN (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2141,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Jupiter (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2144,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Dogwifhat (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2145,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Pepe (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2149,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Polkadot (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2150,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Cosmos (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2152,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Sei (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2155,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Dash (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2156,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Arbitrum (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2157,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Worldcoin (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2159,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "1000Sats (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2183,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "JPY/THB (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2186,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/ARS (OTC)",
+      "precision": 4,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2188,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/DOP (OTC)",
+      "precision": 5,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2265,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "TRUMP Coin (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2276,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Ondo (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2277,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "DYDX (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2279,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Fartcoin (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2280,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Pudgy Penguins (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2286,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Raydium (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2287,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Sui (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2288,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "HBAR (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2289,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "FET (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2290,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Render (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2291,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "TAO (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2299,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/COP (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2300,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/MXN (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2301,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "PEN/USD (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2312,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Formula One Group (OTC)",
+      "precision": 4,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2323,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Uranium (OTC)",
+      "precision": 4,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2325,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Dollar Index",
+      "precision": 6,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2327,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Platinum (OTC)",
+      "precision": 4,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2328,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Palladium (OTC)",
+      "precision": 4,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2332,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Euro Index",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2333,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Pound Index",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2334,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Canadian Dollar Index",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2335,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Australian Dollar Index",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2409,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/IDR (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2414,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Cocoa (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2415,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Coffee (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2416,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Cotton (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2417,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Sugar (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2430,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Terra Classic (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2431,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/SAR (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2432,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/MYR (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2434,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/VND (OTC)",
+      "precision": 5,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2435,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/NGN (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2436,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/PHP (OTC)",
+      "precision": 5,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2437,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/BOB (OTC)",
+      "precision": 7,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2438,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/CLP (OTC)",
+      "precision": 5,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2439,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "USD/BDT (OTC)",
+      "precision": 5,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2444,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "SpaceX",
+      "precision": 4,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2448,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Hyperliquid (OTC)",
+      "precision": 4,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2451,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Anthropic (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2452,
+      "expiration_sizes_seconds": [
+        30,
+        45,
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "OpenAI (OTC)",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2455,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Nvidia",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2456,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Magnificent 7",
+      "precision": 4,
+      "profit_percent": 90
+    },
+    {
+      "asset_id": 2457,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "Bitcoin/Gold",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 2458,
+      "expiration_sizes_seconds": [
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "EUR/THB",
+      "precision": 6,
+      "profit_percent": 91
+    },
+    {
+      "asset_id": 2461,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300,
+        600,
+        900
+      ],
+      "is_open": true,
+      "name": "S&P500/Gold",
+      "precision": 6,
+      "profit_percent": 88
+    },
+    {
+      "asset_id": 2507,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "AI Europe",
+      "precision": 6,
+      "profit_percent": 89
+    },
+    {
+      "asset_id": 2508,
+      "expiration_sizes_seconds": [
+        60,
+        120,
+        180,
+        300
+      ],
+      "is_open": true,
+      "name": "Luxury",
+      "precision": 6,
+      "profit_percent": 89
+    }
+  ]
+}

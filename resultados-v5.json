@@ -1,0 +1,492 @@
+[
+  {
+    "active": "front.USDHKD-OTC",
+    "direction": "CALL",
+    "expected": 57.4,
+    "edge": 7.4,
+    "price": 2,
+    "timestamp": "2026-09-30T00:38:58.599Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "expected": 55.5,
+    "edge": 5.5,
+    "price": 2,
+    "timestamp": "2026-09-30T00:39:00.114Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.USDZAR-OTC",
+    "direction": "PUT",
+    "expected": 55.1,
+    "edge": 5.1,
+    "price": 2,
+    "timestamp": "2026-09-30T00:39:00.155Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "direction": "PUT",
+    "expected": 56.6,
+    "edge": 6.6,
+    "price": 2,
+    "timestamp": "2026-09-30T00:39:00.695Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "expected": 62.7,
+    "edge": 12.7,
+    "price": 2,
+    "timestamp": "2026-09-30T00:39:06.168Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "expected": 55.5,
+    "edge": 5.5,
+    "price": 2,
+    "timestamp": "2026-09-30T00:39:39.712Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.USDZAR-OTC",
+    "direction": "PUT",
+    "expected": 55.1,
+    "edge": 5.1,
+    "price": 2,
+    "timestamp": "2026-09-30T00:39:40.424Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "expected": 62.7,
+    "edge": 12.7,
+    "price": 2,
+    "timestamp": "2026-09-30T00:39:43.293Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "direction": "CALL",
+    "expected": 57.4,
+    "edge": 7.4,
+    "price": 2,
+    "timestamp": "2026-09-30T00:39:43.893Z",
+    "result": "win",
+    "profit": 186
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "direction": "PUT",
+    "expected": 56.6,
+    "edge": 6.6,
+    "price": 2,
+    "timestamp": "2026-09-30T00:39:47.793Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "direction": "PUT",
+    "expected": 56.6,
+    "edge": 6.6,
+    "price": 2,
+    "timestamp": "2026-09-30T00:40:42.142Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "expected": 55.5,
+    "edge": 5.5,
+    "price": 2,
+    "timestamp": "2026-09-30T00:40:42.206Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "expected": 62.7,
+    "edge": 12.7,
+    "price": 2,
+    "timestamp": "2026-09-30T00:40:43.795Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.USDZAR-OTC",
+    "direction": "PUT",
+    "expected": 55.1,
+    "edge": 5.1,
+    "price": 2,
+    "timestamp": "2026-09-30T00:40:44.592Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "direction": "CALL",
+    "expected": 57.4,
+    "edge": 7.4,
+    "price": 2,
+    "timestamp": "2026-09-30T00:40:44.899Z",
+    "result": "win",
+    "profit": 186
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "direction": "CALL",
+    "expected": 57.4,
+    "edge": 7.4,
+    "price": 2,
+    "timestamp": "2026-09-30T00:41:39.698Z",
+    "result": "win",
+    "profit": 186
+  },
+  {
+    "active": "front.USDZAR-OTC",
+    "direction": "PUT",
+    "expected": 55.1,
+    "edge": 5.1,
+    "price": 2,
+    "timestamp": "2026-09-30T00:41:40.400Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "expected": 62.7,
+    "edge": 12.7,
+    "price": 2,
+    "timestamp": "2026-09-30T00:41:42.113Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "expected": 55.5,
+    "edge": 5.5,
+    "price": 2,
+    "timestamp": "2026-09-30T00:41:43.118Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "direction": "PUT",
+    "expected": 56.6,
+    "edge": 6.6,
+    "price": 2,
+    "timestamp": "2026-09-30T00:41:44.132Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "direction": "CALL",
+    "expected": 57.4,
+    "edge": 7.4,
+    "price": 2,
+    "timestamp": "2026-09-30T00:42:39.895Z",
+    "result": "win",
+    "profit": 186
+  },
+  {
+    "active": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "expected": 62.7,
+    "edge": 12.7,
+    "price": 2,
+    "timestamp": "2026-09-30T00:42:41.113Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "direction": "PUT",
+    "expected": 56.6,
+    "edge": 6.6,
+    "price": 2,
+    "timestamp": "2026-09-30T00:42:41.424Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.USDZAR-OTC",
+    "direction": "PUT",
+    "expected": 55.1,
+    "edge": 5.1,
+    "price": 2,
+    "timestamp": "2026-09-30T00:42:43.387Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "expected": 55.5,
+    "edge": 5.5,
+    "price": 2,
+    "timestamp": "2026-09-30T00:42:45.492Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "direction": "PUT",
+    "expected": 56.6,
+    "edge": 6.6,
+    "price": 2,
+    "timestamp": "2026-09-30T00:43:39.240Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "expected": 62.7,
+    "edge": 12.7,
+    "price": 2,
+    "timestamp": "2026-09-30T00:43:39.635Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.USDZAR-OTC",
+    "direction": "PUT",
+    "expected": 55.1,
+    "edge": 5.1,
+    "price": 2,
+    "timestamp": "2026-09-30T00:43:42.428Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "direction": "CALL",
+    "expected": 57.4,
+    "edge": 7.4,
+    "price": 2,
+    "timestamp": "2026-09-30T00:43:42.560Z",
+    "result": "win",
+    "profit": 186
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "expected": 55.5,
+    "edge": 5.5,
+    "price": 2,
+    "timestamp": "2026-09-30T00:43:48.865Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "expected": 62.7,
+    "edge": 12.7,
+    "price": 2,
+    "timestamp": "2026-09-30T00:44:43.745Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "expected": 55.5,
+    "edge": 5.5,
+    "price": 2,
+    "timestamp": "2026-09-30T00:44:45.341Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "direction": "PUT",
+    "expected": 56.6,
+    "edge": 6.6,
+    "price": 2,
+    "timestamp": "2026-09-30T00:44:46.154Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.USDZAR-OTC",
+    "direction": "PUT",
+    "expected": 55.1,
+    "edge": 5.1,
+    "price": 2,
+    "timestamp": "2026-09-30T00:44:46.264Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "direction": "CALL",
+    "expected": 57.4,
+    "edge": 7.4,
+    "price": 2,
+    "timestamp": "2026-09-30T00:44:51.197Z",
+    "result": "win",
+    "profit": 186
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "expected": 55.5,
+    "edge": 5.5,
+    "price": 2,
+    "timestamp": "2026-09-30T00:45:39.294Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.USDZAR-OTC",
+    "direction": "PUT",
+    "expected": 55.1,
+    "edge": 5.1,
+    "price": 2,
+    "timestamp": "2026-09-30T00:45:39.499Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "direction": "CALL",
+    "expected": 57.4,
+    "edge": 7.4,
+    "price": 2,
+    "timestamp": "2026-09-30T00:45:40.795Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "expected": 62.7,
+    "edge": 12.7,
+    "price": 2,
+    "timestamp": "2026-09-30T00:45:40.911Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "direction": "PUT",
+    "expected": 56.6,
+    "edge": 6.6,
+    "price": 2,
+    "timestamp": "2026-09-30T00:45:41.217Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "direction": "PUT",
+    "expected": 56.6,
+    "edge": 6.6,
+    "price": 2,
+    "timestamp": "2026-09-30T00:46:39.597Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "expected": 62.7,
+    "edge": 12.7,
+    "price": 2,
+    "timestamp": "2026-09-30T00:46:40.138Z",
+    "result": "win",
+    "profit": 182
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "direction": "CALL",
+    "expected": 57.4,
+    "edge": 7.4,
+    "price": 2,
+    "timestamp": "2026-09-30T00:46:41.605Z",
+    "result": "win",
+    "profit": 186
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "expected": 55.5,
+    "edge": 5.5,
+    "price": 2,
+    "timestamp": "2026-09-30T00:46:43.122Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.USDZAR-OTC",
+    "direction": "PUT",
+    "expected": 55.1,
+    "edge": 5.1,
+    "price": 2,
+    "timestamp": "2026-09-30T00:46:44.158Z",
+    "result": "loss",
+    "profit": 0
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "direction": "CALL",
+    "expected": 57.4,
+    "edge": 7.4,
+    "price": 2,
+    "timestamp": "2026-09-30T00:47:40.401Z"
+  },
+  {
+    "active": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "expected": 62.7,
+    "edge": 12.7,
+    "price": 2,
+    "timestamp": "2026-09-30T00:47:40.896Z"
+  },
+  {
+    "active": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "expected": 55.5,
+    "edge": 5.5,
+    "price": 2,
+    "timestamp": "2026-09-30T00:47:41.795Z"
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "direction": "PUT",
+    "expected": 56.6,
+    "edge": 6.6,
+    "price": 2,
+    "timestamp": "2026-09-30T00:47:42.535Z"
+  },
+  {
+    "active": "front.USDZAR-OTC",
+    "direction": "PUT",
+    "expected": 55.1,
+    "edge": 5.1,
+    "price": 2,
+    "timestamp": "2026-09-30T00:47:43.695Z"
+  }
+]

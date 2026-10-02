@@ -1,0 +1,122 @@
+[
+  {
+    "active": "front.USDHKD-OTC",
+    "key": "USDHKD",
+    "direction": "CALL",
+    "expected": 57.4,
+    "price": 2,
+    "timestamp": "2026-09-30T02:46:45.357Z",
+    "result": "win",
+    "profit": 1.64
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "key": "LTCUSD",
+    "direction": "PUT",
+    "expected": 56.6,
+    "price": 2,
+    "timestamp": "2026-09-30T02:46:46.180Z",
+    "result": "win",
+    "profit": 1.64
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "key": "LTCUSD",
+    "direction": "PUT",
+    "expected": 73.96000000000001,
+    "price": 2,
+    "timestamp": "2026-09-30T02:47:40.217Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "key": "USDHKD",
+    "direction": "CALL",
+    "expected": 74.44,
+    "price": 2,
+    "timestamp": "2026-09-30T02:47:40.367Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "key": "LTCUSD",
+    "direction": "PUT",
+    "expected": 53.96,
+    "price": 2,
+    "timestamp": "2026-09-30T02:48:40.232Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "key": "LTCUSD",
+    "direction": "PUT",
+    "expected": 47.29333333333334,
+    "price": 2,
+    "timestamp": "2026-09-30T02:48:40.308Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "key": "USDHKD",
+    "direction": "CALL",
+    "expected": 54.44,
+    "price": 2,
+    "timestamp": "2026-09-30T02:48:41.607Z",
+    "result": "win",
+    "profit": 1.64
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "key": "USDHKD",
+    "direction": "CALL",
+    "expected": 61.10666666666666,
+    "price": 2,
+    "timestamp": "2026-09-30T02:49:44.262Z",
+    "result": "win",
+    "profit": 1.64
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "key": "USDHKD",
+    "direction": "CALL",
+    "expected": 64.44,
+    "price": 2,
+    "timestamp": "2026-09-30T02:50:40.202Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.USDHKD-OTC",
+    "key": "USDHKD",
+    "direction": "CALL",
+    "expected": 58.44,
+    "price": 2,
+    "timestamp": "2026-09-30T02:51:41.297Z",
+    "result": "loss",
+    "profit": -2
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "key": "LTCUSD",
+    "direction": "PUT",
+    "expected": 43.96,
+    "price": 2,
+    "timestamp": "2026-09-30T02:54:40.269Z",
+    "result": "win",
+    "profit": 1.64
+  },
+  {
+    "active": "front.LTCUSD-OTC",
+    "key": "LTCUSD",
+    "direction": "PUT",
+    "expected": 49.96,
+    "price": 2,
+    "timestamp": "2026-09-30T02:55:40.768Z",
+    "result": "win",
+    "profit": 1.64
+  }
+]

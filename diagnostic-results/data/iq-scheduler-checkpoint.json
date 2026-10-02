@@ -1,0 +1,80 @@
+{
+  "savedAtUtc": "2026-09-29T12:11:56.085Z",
+  "read_only": true,
+  "servers": [
+    {
+      "server": "binary-options",
+      "id": 5,
+      "used": 4,
+      "breaker": {
+        "fails": 0,
+        "openUntil": 0
+      }
+    },
+    {
+      "server": "turbo-options",
+      "id": 0,
+      "used": 0,
+      "breaker": {
+        "fails": 0,
+        "openUntil": 0
+      }
+    },
+    {
+      "server": "blitz-options",
+      "id": 0,
+      "used": 0,
+      "breaker": {
+        "fails": 0,
+        "openUntil": 0
+      }
+    },
+    {
+      "server": "digital-options",
+      "id": 0,
+      "used": 0,
+      "breaker": {
+        "fails": 0,
+        "openUntil": 0
+      }
+    },
+    {
+      "server": "marginal-forex",
+      "id": 0,
+      "used": 0,
+      "breaker": {
+        "fails": 0,
+        "openUntil": 0
+      }
+    },
+    {
+      "server": "marginal-crypto",
+      "id": 0,
+      "used": 0,
+      "breaker": {
+        "fails": 0,
+        "openUntil": 0
+      }
+    },
+    {
+      "server": "marginal-cfd",
+      "id": 0,
+      "used": 0,
+      "breaker": {
+        "fails": 0,
+        "openUntil": 0
+      }
+    }
+  ],
+  "doneTasks": [
+    "series:2507:60",
+    "series:1926:60"
+  ],
+  "history": {
+    "startedAtUtc": null,
+    "requests": 8,
+    "throttled": 5,
+    "circuitOpened": 0,
+    "errors": 0
+  }
+}

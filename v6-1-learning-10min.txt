@@ -1,0 +1,20 @@
+[LOGIN] OK!
+
+[WS] Ready!
+[💼 CONTA] DEMO | Saldo: R$10022.48
+
+======================================================================
+🧠 BOT v6.1 - USDHKD + LTCUSD | Gate WR ≥ 60%
+======================================================================
+
+📋 Estado aprendido:
+   ✅ ON USDHKD     hist:57.4% obs:57.4% (0/0) est:57.4%
+   ✅ ON LTCUSD     hist:56.6% obs:56.6% (0/0) est:56.6%
+[✅] front.USDHKD-OTC → CALL (size=5s)
+[✅] front.LTCUSD-OTC → PUT (size=5s)
+
+[📋] 2/2 ativos ativos
+[⏳] Warmup 20s...
+
+[✅] INICIADO!
+

@@ -1,0 +1,182 @@
+[
+  {
+    "assetId": 2279,
+    "assetName": "front.FARTCOINUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.182285,
+    "entryTime": 1790779674593,
+    "result": "win",
+    "profit": 1.64,
+    "timestamp": "2026-09-30T14:49:28.343Z"
+  },
+  {
+    "assetId": 2327,
+    "assetName": "front.XPTUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 1787.4075,
+    "entryTime": 1790779667680,
+    "result": "loss",
+    "profit": -2,
+    "timestamp": "2026-09-30T14:49:28.389Z"
+  },
+  {
+    "assetId": 1976,
+    "assetName": "front.TRON-OTC",
+    "direction": "CALL",
+    "entryPrice": 0.913765,
+    "entryTime": 1790779686609,
+    "result": "win",
+    "profit": 1.64,
+    "timestamp": "2026-09-30T14:50:27.651Z"
+  },
+  {
+    "assetId": 2144,
+    "assetName": "front.WIFUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.297135,
+    "entryTime": 1790779733639,
+    "result": "loss",
+    "profit": -2,
+    "timestamp": "2026-09-30T14:50:28.440Z"
+  },
+  {
+    "assetId": 2279,
+    "assetName": "front.FARTCOINUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.179335,
+    "entryTime": 1790779778639,
+    "result": "loss",
+    "profit": -2,
+    "timestamp": "2026-09-30T14:51:27.712Z"
+  },
+  {
+    "assetId": 2277,
+    "assetName": "front.DYDXUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.165115,
+    "entryTime": 1790779780513,
+    "result": "win",
+    "profit": 1.64,
+    "timestamp": "2026-09-30T14:51:27.765Z"
+  },
+  {
+    "assetId": 1976,
+    "assetName": "front.TRON-OTC",
+    "direction": "CALL",
+    "entryPrice": 0.924205,
+    "entryTime": 1790779844590,
+    "result": "win",
+    "profit": 1.64,
+    "timestamp": "2026-09-30T14:52:27.671Z"
+  },
+  {
+    "assetId": 2448,
+    "assetName": "front.HYPE-OTC",
+    "direction": "CALL",
+    "entryPrice": 84.3225,
+    "entryTime": 1790779847589,
+    "result": "win",
+    "profit": 1.64,
+    "timestamp": "2026-09-30T14:52:28.114Z"
+  },
+  {
+    "assetId": 1975,
+    "assetName": "front.SHIBUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.006195,
+    "entryTime": 1790779909843,
+    "result": "win",
+    "profit": 1.64,
+    "timestamp": "2026-09-30T14:53:28.110Z"
+  },
+  {
+    "assetId": 2149,
+    "assetName": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 1.120915,
+    "entryTime": 1790779959778,
+    "result": "loss",
+    "profit": -2,
+    "timestamp": "2026-09-30T14:54:27.859Z"
+  },
+  {
+    "assetId": 2144,
+    "assetName": "front.WIFUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.297145,
+    "entryTime": 1790779925631,
+    "result": "loss",
+    "profit": -2,
+    "timestamp": "2026-09-30T14:54:27.988Z"
+  },
+  {
+    "assetId": 2279,
+    "assetName": "front.FARTCOINUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.182285,
+    "entryTime": 1790779960586,
+    "result": "loss",
+    "profit": -2,
+    "timestamp": "2026-09-30T14:54:28.042Z"
+  },
+  {
+    "assetId": 2287,
+    "assetName": "front.SUIUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.983895,
+    "entryTime": 1790780018656,
+    "result": "loss",
+    "profit": -2,
+    "timestamp": "2026-09-30T14:55:27.722Z"
+  },
+  {
+    "assetId": 2286,
+    "assetName": "front.RAYDIUMUSD-OTC",
+    "direction": "CALL",
+    "entryPrice": 1.725545,
+    "entryTime": 1790780073555,
+    "result": "win",
+    "profit": 1.64,
+    "timestamp": "2026-09-30T14:56:27.843Z"
+  },
+  {
+    "assetId": 2144,
+    "assetName": "front.WIFUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.297295,
+    "entryTime": 1790780094736,
+    "result": "win",
+    "profit": 1.64,
+    "timestamp": "2026-09-30T14:56:27.934Z"
+  },
+  {
+    "assetId": 2448,
+    "assetName": "front.HYPE-OTC",
+    "direction": "CALL",
+    "entryPrice": 84.7075,
+    "entryTime": 1790780101575,
+    "result": "loss",
+    "profit": -2,
+    "timestamp": "2026-09-30T14:57:28.332Z"
+  },
+  {
+    "assetId": 2277,
+    "assetName": "front.DYDXUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.166615,
+    "entryTime": 1790780127735,
+    "result": "loss",
+    "profit": -2,
+    "timestamp": "2026-09-30T14:57:28.344Z"
+  },
+  {
+    "assetId": 2144,
+    "assetName": "front.WIFUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.294775,
+    "entryTime": 1790780204752,
+    "result": "loss",
+    "profit": -2,
+    "timestamp": "2026-09-30T14:58:28.061Z"
+  }
+]

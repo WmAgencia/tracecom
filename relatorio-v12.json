@@ -1,0 +1,84 @@
+{
+  "timestamp": "2026-09-30T14:55:40.577Z",
+  "summary": {
+    "totalOps": 13,
+    "wins": 6,
+    "losses": 7,
+    "wr": "46.2",
+    "profit": "-4.16"
+  },
+  "byAsset": [
+    {
+      "key": "XPTUSD",
+      "direction": "PUT",
+      "wr": "0.0",
+      "sampleSize": 1,
+      "profit": "-2.00",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "FARTCOINUSD",
+      "direction": "PUT",
+      "wr": "33.3",
+      "sampleSize": 3,
+      "profit": "-2.36",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "TRON",
+      "direction": "CALL",
+      "wr": "100.0",
+      "sampleSize": 2,
+      "profit": "3.28",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "WIFUSD",
+      "direction": "PUT",
+      "wr": "0.0",
+      "sampleSize": 2,
+      "profit": "-4.00",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "DYDXUSD",
+      "direction": "PUT",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "HYPE",
+      "direction": "CALL",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "SHIBUSD",
+      "direction": "PUT",
+      "wr": "100.0",
+      "sampleSize": 1,
+      "profit": "1.64",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "DOTUSD",
+      "direction": "PUT",
+      "wr": "0.0",
+      "sampleSize": 1,
+      "profit": "-2.00",
+      "verdict": "✅ ativo"
+    },
+    {
+      "key": "SUIUSD",
+      "direction": "PUT",
+      "wr": "0.0",
+      "sampleSize": 1,
+      "profit": "-2.00",
+      "verdict": "✅ ativo"
+    }
+  ]
+}

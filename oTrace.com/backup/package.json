@@ -1,0 +1,55 @@
+{
+  "name": "tracecon",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TRACECON - Sistema de inteligência e análise de mercado",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "check:relay": "node scripts/check-relay-syntax.mjs",
+    "build": "npm run check:relay && tsc -p tsconfig.json && node scripts/postbuild.mjs",
+    "build:extension": "node scripts/build-extension.mjs",
+    "test:extension": "node scripts/test-extension.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:security": "vitest run tests/security",
+    "secret:scan": "node scripts/secret-scan.mjs",
+    "test:watch": "vitest",
+    "agent:dry": "tsx src/cli/agent.ts",
+    "market": "tsx src/cli/market.ts",
+    "market:ui": "tsx src/cli/market.ts --ui",
+    "market:live": "tsx src/cli/market.ts --live",
+    "quant": "tsx src/cli/quant.ts",
+    "backtest": "tsx src/cli/backtest.ts",
+    "shadow-validation": "tsx src/cli/shadow-validation.ts",
+    "research:multi-horizon": "tsx src/cli/multi-horizon-research.ts",
+    "trace1m:collect": "tsx src/cli/trace1m-collect.ts",
+    "trace1m:status": "tsx src/cli/trace1m-status.ts",
+    "dataset:usdcad": "node scripts/download-usdcad-real-dataset.mjs",
+    "decide": "tsx src/cli/decide.ts",
+    "news": "tsx src/cli/news.ts",
+    "serve": "tsx src/cli/serve.ts",
+    "second-brain:sync": "node scripts/second-brain-sync.mjs",
+    "second-brain:push": "node scripts/second-brain-sync.mjs --push",
+    "audit:g2": "node scripts/g2-loss-audit.mjs",
+    "stress:55": "node scripts/stress-55.mjs",
+    "deploy:prod": "node scripts/deploy-prod.mjs",
+    "research:smoke": "node scripts/research-smoke.mjs",
+    "office:assets": "node scripts/office-assets/generate.mjs",
+    "office:assets:check": "node scripts/office-assets/check.mjs"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.8.0",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@types/node": "^26.6.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}

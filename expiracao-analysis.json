@@ -1,0 +1,461 @@
+[
+  {
+    "assetId": 2145,
+    "assetName": "front.PEPEUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.339905,
+    "entryTime": 1790777942533,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:27.615Z"
+  },
+  {
+    "assetId": 2157,
+    "assetName": "front.WLDUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.522075,
+    "entryTime": 1790777900932,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "loss",
+      "60": "loss",
+      "120": "loss",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:27.620Z"
+  },
+  {
+    "assetId": 2152,
+    "assetName": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.065525,
+    "entryTime": 1790777918729,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "win",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:27.625Z"
+  },
+  {
+    "assetId": 2265,
+    "assetName": "front.TRUMPUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 7.314015,
+    "entryTime": 1790777956138,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "loss",
+      "60": "loss",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:27.649Z"
+  },
+  {
+    "assetId": 2279,
+    "assetName": "front.FARTCOINUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.189725,
+    "entryTime": 1790777958160,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "win",
+      "60": "win",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:27.690Z"
+  },
+  {
+    "assetId": 2127,
+    "assetName": "front.EOSUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.062175,
+    "entryTime": 1790777963458,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "loss",
+      "60": "win",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:27.795Z"
+  },
+  {
+    "assetId": 2277,
+    "assetName": "front.DYDXUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.167525,
+    "entryTime": 1790777947758,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "loss",
+      "60": "loss",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:27.809Z"
+  },
+  {
+    "assetId": 2289,
+    "assetName": "front.FETUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.246075,
+    "entryTime": 1790777866638,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "loss",
+      "60": "loss",
+      "120": "loss",
+      "180": "loss",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:27.871Z"
+  },
+  {
+    "assetId": 2280,
+    "assetName": "front.PENGUUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 7.943575,
+    "entryTime": 1790777929902,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "loss",
+      "60": "win",
+      "120": "win",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:28.023Z"
+  },
+  {
+    "assetId": 2141,
+    "assetName": "front.JUPUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.469605,
+    "entryTime": 1790777966580,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "win",
+      "60": "win",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:28.256Z"
+  },
+  {
+    "assetId": 2312,
+    "assetName": "front.FWONA-OTC",
+    "direction": "CALL",
+    "entryPrice": 68.6745,
+    "entryTime": 1790777966626,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "win",
+      "60": "win",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:28.808Z"
+  },
+  {
+    "assetId": 2417,
+    "assetName": "front.SUGAR-OTC",
+    "direction": "CALL",
+    "entryPrice": 16.513845,
+    "entryTime": 1790777932466,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "loss",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:28.817Z"
+  },
+  {
+    "assetId": 2144,
+    "assetName": "front.WIFUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.311325,
+    "entryTime": 1790777896830,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "win",
+      "60": "win",
+      "120": "win",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:19:28.830Z"
+  },
+  {
+    "assetId": 2323,
+    "assetName": "front.URANIUM-OTC",
+    "direction": "CALL",
+    "entryPrice": 4321.6815,
+    "entryTime": 1790777993934,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "win",
+      "180": "win",
+      "300": "win"
+    },
+    "timestamp": "2026-09-30T14:24:27.711Z"
+  },
+  {
+    "assetId": 2312,
+    "assetName": "front.FWONA-OTC",
+    "direction": "CALL",
+    "entryPrice": 67.4135,
+    "entryTime": 1790778257720,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "loss",
+      "60": "win",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:24:27.719Z"
+  },
+  {
+    "assetId": 2301,
+    "assetName": "front.PENUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.231985,
+    "entryTime": 1790778254667,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:24:27.724Z"
+  },
+  {
+    "assetId": 2287,
+    "assetName": "front.SUIUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.992245,
+    "entryTime": 1790778266844,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "loss",
+      "60": "win",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:24:27.730Z"
+  },
+  {
+    "assetId": 2152,
+    "assetName": "front.SEIUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.066115,
+    "entryTime": 1790778199047,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "win",
+      "120": "win",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:24:27.737Z"
+  },
+  {
+    "assetId": 2289,
+    "assetName": "front.FETUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.241255,
+    "entryTime": 1790778259656,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "win",
+      "60": "win",
+      "120": "nocandle",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:24:27.742Z"
+  },
+  {
+    "assetId": 2288,
+    "assetName": "front.HBARUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.088925,
+    "entryTime": 1790777970591,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "win",
+      "120": "win",
+      "180": "loss",
+      "300": "loss"
+    },
+    "timestamp": "2026-09-30T14:24:27.745Z"
+  },
+  {
+    "assetId": 2280,
+    "assetName": "front.PENGUUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 7.867215,
+    "entryTime": 1790778111557,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "loss",
+      "180": "loss",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:24:27.815Z"
+  },
+  {
+    "assetId": 2145,
+    "assetName": "front.PEPEUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.343175,
+    "entryTime": 1790778071774,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "win",
+      "120": "win",
+      "180": "win",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:24:27.844Z"
+  },
+  {
+    "assetId": 2286,
+    "assetName": "front.RAYDIUMUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 1.644205,
+    "entryTime": 1790778166742,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "loss",
+      "180": "loss",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:24:27.849Z"
+  },
+  {
+    "assetId": 2155,
+    "assetName": "front.DASHUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 52.993815,
+    "entryTime": 1790778019874,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "loss",
+      "60": "win",
+      "120": "loss",
+      "180": "loss",
+      "300": "loss"
+    },
+    "timestamp": "2026-09-30T14:24:27.905Z"
+  },
+  {
+    "assetId": 2327,
+    "assetName": "front.XPTUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 1764.4925,
+    "entryTime": 1790778112642,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "loss",
+      "60": "loss",
+      "120": "loss",
+      "180": "win",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:24:28.496Z"
+  },
+  {
+    "assetId": 2141,
+    "assetName": "front.JUPUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 0.473445,
+    "entryTime": 1790778208731,
+    "result": "loss",
+    "profit": -2,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "loss",
+      "180": "nocandle",
+      "300": "nocandle"
+    },
+    "timestamp": "2026-09-30T14:24:28.504Z"
+  },
+  {
+    "assetId": 2149,
+    "assetName": "front.DOTUSD-OTC",
+    "direction": "PUT",
+    "entryPrice": 1.120645,
+    "entryTime": 1790778010712,
+    "result": "win",
+    "profit": 1.64,
+    "simulated": {
+      "30": "win",
+      "60": "loss",
+      "120": "win",
+      "180": "win",
+      "300": "win"
+    },
+    "timestamp": "2026-09-30T14:24:28.539Z"
+  }
+]
