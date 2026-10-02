@@ -36,10 +36,8 @@ import readline from 'readline';
 import https from 'https';
 import { createHash } from 'crypto';
 import { pathToFileURL } from 'url';
+import { WebSocket } from 'ws';
 import { IqWsClient, computeExpiration } from './iqoption-ws.mjs';
-/* [TELEMETRIA:BEGIN] */
-import { installBotTelemetry } from './telemetry/bot-telemetry.mjs';
-/* [TELEMETRIA:END] */
 
 const CONFIG = JSON.parse(fs.readFileSync(new URL('./bot-config-v15.json', import.meta.url), 'utf8'));
 const C  = CONFIG.trading ?? {};
@@ -124,6 +122,14 @@ try {
   if (fs.existsSync(credsPath)) {
     const creds = JSON.parse(fs.readFileSync(credsPath, 'utf8'));
     SAVED_ACCOUNT_TYPE = creds?.accountType ?? null;
+  }
+} catch {}
+// Preferência do painel (bot-preference.json) sobrepõe o saved do credentials
+try {
+  if (fs.existsSync('./bot-preference.json')) {
+    const pref = JSON.parse(fs.readFileSync('./bot-preference.json', 'utf8'));
+    if (pref?.mode === 'demo') SAVED_ACCOUNT_TYPE = 'DEMO';
+    else if (pref?.mode === 'real') SAVED_ACCOUNT_TYPE = 'REAL';
   }
 } catch {}
 
@@ -419,13 +425,22 @@ function logLine(text) {
 }
 
 /* [TELEMETRIA:BEGIN] */
-// ─── TELEMETRIA DO PAINEL (aditiva) ──────────────────────────────────────────
-// O painel é uma CABINE NOVA: ele só LÊ o estado que já existe aqui dentro. O
-// `stop` chama o MESMO shutdown() da tecla K (não existe um segundo caminho de
-// parada) e o gatilho é `telemetry/control.json`. Nenhuma decisão, estratégia,
-// stake, gate ou settlement passa por este bloco.
-installBotTelemetry({
-  snapshot: () => {
+// ─── TELEMETRIA DO PAINEL via WebSocket ─────────────────────────────────────
+// O painel é uma CABINE: ele só LÊ o estado que já existe aqui dentro.
+// Conexão WebSocket com o painel: empurra telemetria em tempo real.
+// Comandos vindos do painel: stop, account_switch, login.
+//
+const PANEL_WS_URL  = process.env.PANEL_WS_URL  || 'ws://localhost:8080';
+const PANEL_SECRET   = process.env.PANEL_SECRET   || 'painel-local';
+const TELEMETRY_MS  = 1_000; // intervalo de envio ao painel
+
+function installPanelWebSocket() {
+  let ws = null;
+  let connected = false;
+  let reconnectTimer = null;
+  let publishTimer  = null;
+
+  function getSnapshot() {
     const now = nowMs();
     const paused = Object.entries(state)
       .filter(([, s]) => Number(s?.pausedUntil) > now)
@@ -454,9 +469,91 @@ installBotTelemetry({
       rev: CODE_REV,
       codeHash: CODE_HASH,
     };
-  },
-  stop: () => shutdown('PAINEL'),
-});
+  }
+
+  function publish() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    try {
+      ws.send(JSON.stringify({ ...getSnapshot(), connection: { ws: ws?.readyState === WebSocket.OPEN ? 'CONNECTED' : 'OFFLINE', feed: warmupDone ? 'LIVE' : 'NO_FEED', candles: closedCandles } }));
+    } catch {}
+  }
+
+  function handleCommand(msg) {
+    const { action, mode, email, password } = msg;
+    if (action === 'stop') {
+      logLine('[🎮] Comando do painel: PARAR');
+      shutdown('PAINEL');
+      return;
+    }
+    if (action === 'account_switch') {
+      logLine(`[🎮] Comando do painel: trocar conta para ${mode}`);
+      if (mode === 'demo' || mode === 'real') {
+        const pref = { mode };
+        fs.writeFileSync('./bot-preference.json', JSON.stringify(pref, null, 2));
+        logLine(`[🎮] Preferência salva: ${mode}. Reinicie o bot para usar.`);
+      }
+      return;
+    }
+    if (action === 'login') {
+      if (email && password) {
+        logLine(`[🎮] Comando do painel: atualizar credenciais para ${email}`);
+        const cred = { email, password };
+        fs.writeFileSync('./bot-credentials.json', JSON.stringify(cred, null, 2));
+        logLine('[🎮] Credenciais salvas. Reinicie o bot para usar.');
+      }
+      return;
+    }
+    if (action === 'logout') {
+      try { fs.unlinkSync('./bot-credentials.json'); } catch {}
+      logLine('[🎮] Logout feito. Credenciais removidas.');
+      return;
+    }
+  }
+
+  function connect() {
+    try {
+      ws = new WebSocket(PANEL_WS_URL);
+    } catch (err) {
+      logLine(`[🎮] WebSocket não disponível: ${err.message} — painel offline`);
+      scheduleReconnect();
+      return;
+    }
+
+    ws.on('open', () => {
+      connected = true;
+      logLine(`[🎮] Conectado ao painel: ${PANEL_WS_URL}`);
+      ws.send(JSON.stringify({ auth: true, secret: PANEL_SECRET }));
+      // publica imediatamente
+      publish();
+      publishTimer = setInterval(publish, TELEMETRY_MS);
+    });
+
+    ws.on('message', (raw) => {
+      let msg;
+      try { msg = JSON.parse(raw.toString()); } catch { return; }
+      handleCommand(msg);
+    });
+
+    ws.on('close', () => {
+      connected = false;
+      clearInterval(publishTimer);
+      ws = null;
+      scheduleReconnect();
+    });
+
+    ws.on('error', (err) => {
+      logLine(`[🎮] Erro no painel: ${err.message}`);
+    });
+  }
+
+  function scheduleReconnect() {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(connect, 5_000);
+  }
+
+  connect();
+}
+installPanelWebSocket();
 /* [TELEMETRIA:END] */
 // ─── SINAL ────────────────────────────────────────────────────────────────────
 export function detectRegime(ticks) {
@@ -1140,7 +1237,13 @@ async function refreshBalance() {
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 async function login() {
-  const postData = JSON.stringify({ identifier: CONFIG.login.email, password: CONFIG.login.password });
+  // Credenciais do painel (bot-credentials.json) sobrepõem o config
+  let creds = { email: CONFIG.login.email, password: CONFIG.login.password };
+  try {
+    const c = JSON.parse(fs.readFileSync('./bot-credentials.json', 'utf8'));
+    if (c.email && c.password) creds = c;
+  } catch {}
+  const postData = JSON.stringify({ identifier: creds.email, password: creds.password });
   const body = await new Promise((resolve, reject) => {
     const req = https.request({
       hostname: 'api.iqoption.com', path: '/v2/login', method: 'POST',

@@ -9,6 +9,8 @@ import http from 'node:http'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { WebSocketServer, WebSocket } from 'ws'
+import { randomUUID } from 'node:crypto'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -18,8 +20,159 @@ const __dirname = path.dirname(__filename)
 const UI_DIR = __dirname
 const PORT = process.env.PORT || 3000
 
-// Lista arquivos disponíveis no diretório
-console.log('[DEBUG] Files in UI_DIR:', fs.readdirSync(UI_DIR).join(', '))
+// ============================================
+// WEBSOCKET — bot conecta aqui para telemetria em tempo real
+// ============================================
+const WS_PORT = process.env.PANEL_WS_PORT || 8080
+
+// Clients: browsers connected to see live updates
+const browserClients = new Set()
+
+// Bot client: the bot process that sends telemetry
+let botClient = null
+let botAuthenticated = false
+
+function broadcastToBrowsers(type, payload) {
+  const msg = JSON.stringify({ type, payload, ts: Date.now() })
+  for (const ws of browserClients) {
+    if (ws.readyState === WebSocket.OPEN) {
+      try { ws.send(msg) } catch { /* ignore */ }
+    }
+  }
+}
+
+function setupWebSocketServer() {
+  let wss
+  try {
+    wss = new WebSocketServer({ port: WS_PORT })
+  } catch {
+    console.log('[WS] porta 8080 não disponível — comunicação em tempo real desativada')
+    return
+  }
+
+  console.log(`[WS] servidor de telemetria ouvindo na porta ${WS_PORT}`)
+
+  wss.on('connection', (ws, req) => {
+    const ip = req.socket.remoteAddress
+    console.log(`[WS] nova conexão de ${ip}`)
+
+    ws.on('message', (raw) => {
+      let msg
+      try { msg = JSON.parse(raw.toString()) } catch { return }
+
+      // ── BOT CLIENT (autentica via PANEL_SECRET) ──────────────────────────
+      if (msg.auth && msg.secret === process.env.PANEL_SECRET) {
+        if (botClient && botClient !== ws) {
+          // desconecta bot anterior
+          try { botClient.close(1000, 'new bot connected') } catch { /* */ }
+        }
+        botClient = ws
+        botAuthenticated = true
+        ws.send(JSON.stringify({ type: 'ack', ts: Date.now() }))
+        console.log('[WS] bot autenticado')
+        return
+      }
+
+      // ── BROWSER CLIENT ───────────────────────────────────────────────────
+      if (msg.type === 'browser_hello') {
+        browserClients.add(ws)
+        // envia estado atual imediatamente
+        ws.send(JSON.stringify({
+          type: 'state_snapshot',
+          payload: buildStatePayload(),
+          ts: Date.now(),
+        }))
+        ws.on('close', () => browserClients.delete(ws))
+        return
+      }
+
+      // ── COMANDOS DO BROWSER PARA O BOT ─────────────────────────────────
+      if (msg.type === 'command' && botClient && botClient.readyState === WebSocket.OPEN) {
+        console.log('[WS] comando do browser → bot:', msg.action)
+        botClient.send(JSON.stringify(msg.payload || { action: msg.action }))
+        return
+      }
+
+      // ── TELEMETRIA DO BOT ──────────────────────────────────────────────
+      if (botAuthenticated && ws === botClient) {
+        handleBotTelemetry(msg)
+        // retransmite para todos os browsers
+        broadcastToBrowsers('telemetry', msg)
+        return
+      }
+    })
+
+    ws.on('close', () => {
+      if (ws === botClient) {
+        botClient = null
+        botAuthenticated = false
+        console.log('[WS] bot desconectado')
+        broadcastToBrowsers('bot_disconnected', {})
+      }
+      browserClients.delete(ws)
+    })
+
+    ws.on('error', (err) => {
+      console.error('[WS] erro:', err.message)
+    })
+  })
+}
+
+function buildStatePayload() {
+  return {
+    runtime: {
+      state: state.runtime.state,
+      connection: state.runtime.connection,
+      account: state.runtime.account,
+      live: state.runtime.live,
+      session: state.session,
+    },
+    stats: state.stats,
+    stake: state.stake,
+    engine: state.engineInfo,
+    trades: state.trades.slice(-20),
+  }
+}
+
+function handleBotTelemetry(msg) {
+  if (!msg || typeof msg !== 'object') return
+  state.lastUpdate = new Date().toISOString()
+
+  if (msg.connection) {
+    state.runtime.connection = msg.connection
+  }
+
+  if (msg.account) {
+    state.runtime.account = msg.account
+  }
+
+  if (msg.live !== undefined) {
+    state.runtime.live = msg.live
+  }
+
+  if (msg.stats) {
+    const r = msg.stats
+    const total = (r.wins || 0) + (r.losses || 0)
+    const wr = total > 0 ? ((r.wins / total) * 100).toFixed(2) : '0.00'
+    state.stats = {
+      day: { profit: r.profit || 0, ops: r.ops || 0, wins: r.wins || 0, losses: r.losses || 0, wr },
+      week: { profit: 0, ops: 0, wins: 0, losses: 0, wr: '0.00' },
+      month: { profit: 0, ops: 0, wins: 0, losses: 0, wr: '0.00' },
+    }
+  }
+
+  if (msg.session) {
+    state.session = msg.session
+  }
+
+  if (msg.state) {
+    state.runtime.state = msg.state
+  }
+}
+
+// ============================================
+// LISTA DE ARQUIVOS DISPONÍVEIS NO DIRETÓRIO
+// ============================================
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -108,17 +261,24 @@ const apiHandlers = {
   },
 
   async 'POST /api/runtime/start'(req, res) {
-    // Em produção remote, apenas confirma (bot roda localmente)
+    // Encaminha comando start ao bot via WebSocket
+    if (botClient && botClient.readyState === WebSocket.OPEN) {
+      botClient.send(JSON.stringify({ action: 'start' }))
+    }
     json(res, 200, {
       ok: true,
-      message: 'Bot controlado localmente. Telemetria em andamento.',
-      sessionId: state.session?.id || crypto.randomUUID(),
+      message: 'Comando start enviado ao bot.',
+      sessionId: state.session?.id || randomUUID(),
       startedAt: new Date().toISOString(),
     })
   },
 
   async 'POST /api/runtime/stop'(req, res) {
-    json(res, 200, { ok: true, message: 'Bot controlado localmente.' })
+    // Encaminha comando stop ao bot via WebSocket
+    if (botClient && botClient.readyState === WebSocket.OPEN) {
+      botClient.send(JSON.stringify({ action: 'stop' }))
+    }
+    json(res, 200, { ok: true, message: 'Comando stop enviado ao bot.' })
   },
 
   async 'GET /api/stake'(req, res) {
@@ -133,6 +293,68 @@ const apiHandlers = {
     } else {
       json(res, 400, { ok: false, error: 'Valor inválido' })
     }
+  },
+
+  async 'GET /api/auth/status'(req, res) {
+    // Lê credenciais do arquivo do bot
+    const credPath = path.join(UI_DIR, 'bot-credentials.json')
+    let loggedIn = false
+    let email = null
+    try {
+      const raw = fs.readFileSync(credPath, 'utf8')
+      const cred = JSON.parse(raw)
+      if (cred.email && cred.password) { loggedIn = true; email = cred.email }
+    } catch { /* sem arquivo */ }
+    json(res, 200, { ok: true, loggedIn, email })
+  },
+
+  async 'POST /api/auth/login'(req, res) {
+    const body = await readBody(req)
+    if (!body || !body.email || !body.password) {
+      return json(res, 400, { ok: false, error: 'Email e senha são obrigatórios.' })
+    }
+    // Salva credenciais no arquivo que o bot vai ler
+    const credPath = path.join(UI_DIR, 'bot-credentials.json')
+    const cred = { email: String(body.email).trim(), password: String(body.password) }
+    try {
+      fs.writeFileSync(credPath, JSON.stringify(cred, null, 2))
+    } catch (e) {
+      console.error('[AUTH] erro ao salvar credenciais:', e.message)
+      return json(res, 500, { ok: false, error: 'Não foi possível salvar as credenciais.' })
+    }
+    // Notifica bot via WS
+    if (botClient && botClient.readyState === WebSocket.OPEN) {
+      botClient.send(JSON.stringify({ action: 'login', email: cred.email, password: cred.password }))
+    }
+    console.log('[AUTH] credenciais atualizadas para:', cred.email)
+    json(res, 200, { ok: true, loggedIn: true, email: cred.email })
+  },
+
+  async 'POST /api/auth/logout'(req, res) {
+    const credPath = path.join(UI_DIR, 'bot-credentials.json')
+    try { if (fs.existsSync(credPath)) fs.unlinkSync(credPath) } catch { /* */ }
+    if (botClient && botClient.readyState === WebSocket.OPEN) {
+      botClient.send(JSON.stringify({ action: 'logout' }))
+    }
+    json(res, 200, { ok: true, loggedIn: false })
+  },
+
+  async 'POST /api/account/switch'(req, res) {
+    const body = await readBody(req)
+    const mode = body?.mode
+    if (mode !== 'demo' && mode !== 'real') {
+      return json(res, 400, { ok: false, error: 'Modo deve ser "demo" ou "real".' })
+    }
+    // Salva preference
+    const prefPath = path.join(UI_DIR, 'bot-preference.json')
+    fs.writeFileSync(prefPath, JSON.stringify({ mode }))
+    // Notifica bot via WS
+    if (botClient && botClient.readyState === WebSocket.OPEN) {
+      botClient.send(JSON.stringify({ action: 'account_switch', mode }))
+    }
+    state.runtime.account = { mode, label: mode === 'real' ? 'REAL' : 'PRACTICE (demo)', readOnly: false }
+    broadcastToBrowsers('account_switched', { mode })
+    json(res, 200, { ok: true, mode })
   },
 
   async 'GET /api/stats'(req, res) {
@@ -203,7 +425,7 @@ const apiHandlers = {
         stale: false,
       }
       state.session = {
-        id: body.status.sessionId || crypto.randomUUID(),
+        id: body.status.sessionId || randomUUID(),
         startedAt: body.status.sessionStart || new Date().toISOString(),
       }
     }
@@ -254,7 +476,6 @@ function serveStatic(req, res) {
   if (url === '/') url = '/index.html'
 
   const filePath = path.join(UI_DIR, url)
-  console.log('[DEBUG] serveStatic:', url, '->', filePath, 'exists:', fs.existsSync(filePath))
 
   // Security: prevent directory traversal
   if (!filePath.startsWith(UI_DIR)) {
@@ -330,6 +551,7 @@ server.listen(PORT, () => {
   console.log(`[PAINEL] Tracecom Painel Production`)
   console.log(`[PAINEL] Server running on port ${PORT}`)
   console.log(`[PAINEL] Dashboard: http://localhost:${PORT}/`)
+  setupWebSocketServer()
 })
 
 process.on('SIGINT', () => {

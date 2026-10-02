@@ -46,6 +46,10 @@
         <span id="chip-account" class="chip">--</span>
         <span id="chip-feed" class="chip">--</span>
         <span id="chip-engine" class="chip chip-ok" title="prova de não-regressão do motor">--</span>
+        <div class="account-switcher" role="group" aria-label="Trocar conta">
+          <button id="btn-account-demo" class="chip chip-btn chip-active" type="button" title="Conta Practice (demo)">PRACTICE</button>
+          <button id="btn-account-real" class="chip chip-btn" type="button" title="Conta Real">REAL</button>
+        </div>
       </div>
     </div>
   </header>
@@ -150,10 +154,34 @@
           <p class="hint" id="settings-stake-hint">--</p>
         </section>
 
+        <section class="field-group" id="login-section">
+          <h3>Conta IQ Option</h3>
+
+          <!-- logado -->
+          <div class="login-logged-in hidden">
+            <p class="kv"><span>E-mail</span><b class="login-email-display" id="login-email-display">--</b></p>
+            <p class="hint">Credenciais salvas. O bot usa estas credenciais na próxima inicialização.</p>
+            <button id="btn-logout" class="btn btn-ghost" type="button">❌ SAIR DA CONTA</button>
+          </div>
+
+          <!-- não logado -->
+          <div class="login-form-fields">
+            <p class="hint">Salve suas credenciais para o bot usar. Elas ficam no arquivo <code>bot-credentials.json</code>.</p>
+            <div class="row" style="margin-top:8px">
+              <input id="login-email-input" class="input" type="email" placeholder="e-mail da IQ Option" autocomplete="username" />
+            </div>
+            <div class="row" style="margin-top:8px">
+              <input id="login-password-input" class="input" type="password" placeholder="senha da IQ Option" autocomplete="current-password" />
+            </div>
+            <button id="btn-login" class="btn btn-primary" type="button" style="margin-top:10px">🔑 SALVAR CREDENCIAIS</button>
+            <p class="hint danger" style="margin-top:6px">As credenciais são salvas localmente no arquivo <code>bot-credentials.json</code>. Nunca envie para servidores de terceiros.</p>
+          </div>
+        </section>
+
         <section class="field-group">
           <h3>Conta</h3>
           <p class="kv"><span>Modo</span><b id="set-account">--</b></p>
-          <p class="hint">A conta NÃO é trocável pelo painel (proteção: o painel nunca troca de conta sozinho).</p>
+          <p class="hint">Para trocar entre Practice e Real, use os botões PRATICE / REAL na barra de tarefas.</p>
         </section>
 
         <section class="field-group">

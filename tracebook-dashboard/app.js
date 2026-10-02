@@ -5,6 +5,69 @@
 const $ = (id) => document.getElementById(id);
 const THEME_KEY = 'tracecom-panel-theme';
 
+/* ─── WebSocket — atualização em tempo real ──────────────────────────────────── */
+let wsPanel = null;
+let wsReconnectTimer = null;
+
+function wsConnect() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = `${proto}//${location.host}:8080`;
+  try {
+    wsPanel = new WebSocket(url);
+  } catch {
+    scheduleWsReconnect();
+    return;
+  }
+
+  wsPanel.onopen = () => {
+    wsPanel.send(JSON.stringify({ type: 'browser_hello' }));
+    console.log('[WS] conectado ao painel');
+  };
+
+  wsPanel.onmessage = (evt) => {
+    let msg;
+    try { msg = JSON.parse(evt.data); } catch { return; }
+    if (msg.type === 'state_snapshot' || msg.type === 'telemetry') {
+      applyTelemetryUpdate(msg.payload);
+    } else if (msg.type === 'account_switched') {
+      refreshRuntime();
+    } else if (msg.type === 'bot_disconnected') {
+      if (state.runtime) {
+        state.runtime.connection = { ws: 'OFFLINE', feed: 'NO_FEED' };
+        renderTaskbar();
+      }
+    }
+  };
+
+  wsPanel.onclose = () => { wsPanel = null; scheduleWsReconnect(); };
+  wsPanel.onerror = () => { wsPanel?.close(); };
+}
+
+function scheduleWsReconnect() {
+  clearTimeout(wsReconnectTimer);
+  wsReconnectTimer = setTimeout(wsConnect, 5_000);
+}
+
+function wsSendCommand(action, payload = {}) {
+  if (wsPanel?.readyState === WebSocket.OPEN) {
+    wsPanel.send(JSON.stringify({ type: 'command', action, payload }));
+    return true;
+  }
+  return false;
+}
+
+function applyTelemetryUpdate(payload) {
+  if (!payload) return;
+  if (payload.runtime) {
+    state.runtime = { ...state.runtime, ...payload.runtime };
+    if (payload.runtime.account) state.runtime.account = payload.runtime.account;
+  }
+  if (payload.stats) {
+    state.stats = { day: payload.stats, week: payload.stats, month: payload.stats };
+  }
+  render();
+}
+
 const state = {
   runtime: null,
   stats: null,
@@ -109,6 +172,11 @@ function renderTaskbar() {
   const chip = $('chip-account');
   chip.textContent = account;
   chip.className = `chip ${rt?.account?.mode === 'real' ? 'chip-bad' : ''}`;
+
+  // Account switcher: atualiza qual botão está ativo
+  const isReal = rt?.account?.mode === 'real';
+  $('btn-account-demo')?.classList.toggle('chip-active', !isReal);
+  $('btn-account-real')?.classList.toggle('chip-active', isReal);
 
   const conn = rt?.connection ?? { ws: 'OFFLINE', feed: 'NO_FEED', candles: 0 };
   const feedChip = $('chip-feed');
@@ -310,6 +378,74 @@ function askConfirm({ title, text, okLabel = 'Confirmar', danger = true, require
   });
 }
 
+/* ─── conta / login ──────────────────────────────────────────────────────── */
+let accountLoggedIn = false;
+
+async function refreshAuthStatus() {
+  const res = await api('/api/auth/status');
+  if (res.ok) {
+    accountLoggedIn = res.data.loggedIn;
+    renderLoginStatus();
+  }
+}
+
+function renderLoginStatus() {
+  const statusEl = $('login-status');
+  const formEl = $('login-form');
+  const loginSection = $('login-section');
+  if (!loginSection) return;
+  if (accountLoggedIn) {
+    loginSection.querySelector('.login-logged-in')?.classList.remove('hidden');
+    loginSection.querySelector('.login-form-fields')?.classList.add('hidden');
+    const emailEl = loginSection.querySelector('.login-email-display');
+    if (emailEl) api('/api/auth/status').then(r => { if (r.ok && r.data.email) emailEl.textContent = r.data.email; });
+  } else {
+    loginSection.querySelector('.login-logged-in')?.classList.add('hidden');
+    loginSection.querySelector('.login-form-fields')?.classList.remove('hidden');
+  }
+}
+
+async function doLogin() {
+  const email = $('login-email-input')?.value?.trim();
+  const password = $('login-password-input')?.value;
+  if (!email || !password) { banner('Preencha e-mail e senha.', 'error'); return; }
+  banner('Salvando credenciais...', 'ok');
+  const res = await api('/api/auth/login', {
+    method: 'POST',
+    body: { email, password },
+  });
+  if (!res.ok) { banner(res.data?.error ?? 'Erro ao salvar.', 'error'); return; }
+  accountLoggedIn = true;
+  renderLoginStatus();
+  banner('Credenciais salvas. Inicie o bot.', 'ok');
+}
+
+async function doLogout() {
+  const ok = await askConfirm({ title: 'Sair da conta', text: 'Remover as credenciais salvas?', okLabel: 'REMOVER', danger: false });
+  if (!ok) return;
+  const res = await api('/api/auth/logout', { method: 'POST' });
+  accountLoggedIn = false;
+  renderLoginStatus();
+  banner('Credenciais removidas.', 'ok');
+}
+
+async function switchAccount(mode) {
+  const label = mode === 'real' ? 'REAL' : 'PRACTICE (demo)';
+  const ok = await askConfirm({
+    title: `Trocar para conta ${label}`,
+    text: `O bot vai operar na conta ${label} na próxima vez que for ativado. Continuar?`,
+    okLabel: `TROCAR PARA ${label}`,
+    danger: false,
+  });
+  if (!ok) return;
+  banner(`Trocando para ${label}...`, 'ok');
+  const res = await api('/api/account/switch', { method: 'POST', body: { mode } });
+  if (!res.ok) { banner(res.data?.error ?? 'Erro ao trocar conta.', 'error'); return; }
+  await refreshRuntime();
+  renderTaskbar();
+  banner(`Conta trocada para ${label}.`, 'ok');
+}
+
 async function togglePower() {
   const rt = state.runtime;
   if (!rt || state.busy) return;
@@ -447,9 +583,10 @@ async function refreshEvents() {
 async function boot() {
   applyTheme(initialTheme(), { persist: false });
   await refreshRuntime();
-  await Promise.all([refreshStats(), refreshEngine()]);
+  await Promise.all([refreshStats(), refreshEngine(), refreshAuthStatus()]);
   render();
   await refreshEvents();
+  wsConnect(); // conecta WebSocket para atualização em tempo real
 
   setInterval(() => { void refreshRuntime().then(render).catch(() => {}); }, 2_000);
   setInterval(() => { void refreshStats().then(() => { renderHero(); renderStats(); }).catch(() => {}); }, 4_000);
@@ -511,5 +648,11 @@ async function deleteCounters() {
 }
 
 $('btn-delete-counters').addEventListener('click', () => void deleteCounters());
+
+// Login / account switch
+$('btn-login')?.addEventListener('click', () => void doLogin());
+$('btn-logout')?.addEventListener('click', () => void doLogout());
+$('btn-account-demo')?.addEventListener('click', () => void switchAccount('demo'));
+$('btn-account-real')?.addEventListener('click', () => void switchAccount('real'));
 
 void boot();
