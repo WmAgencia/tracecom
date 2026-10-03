@@ -34,7 +34,33 @@ const _ee = (() => {
   };
 })();
 
-import { trendDirection1m, evaluateGuards } from '../ws-otc-v21.mjs';
+// trendDirection1m: implementação local para simulação
+// Detecta direção da EMA8 vs EMA21 no candle de 1 minuto
+function trendDirection1m(ticks) {
+  if (ticks.length < 21) return { direction: 'lateral1m', spreadPct: 0 };
+  const ema8 = ema(ticks.slice(-8).map(t => t.close), 8);
+  const ema21 = ema(ticks.map(t => t.close), 21);
+  const spread = (ema8 - ema21) / ema21;
+  return {
+    direction: spread > 0.0005 ? 'alta1m' : spread < -0.0005 ? 'baixa1m' : 'lateral1m',
+    spreadPct: spread,
+  };
+}
+function ema(data, period) {
+  const k = 2 / (period + 1);
+  let ema = data[0];
+  for (let i = 1; i < data.length; i++) ema = data[i] * k + ema * (1 - k);
+  return ema;
+}
+
+// evaluateGuards: implementação local para simulação
+function evaluateGuards({ pausedUntil, lastResult, stake, balance, exposure, exposureLimit, sessionLoss, sessionLossLimit }) {
+  if (pausedUntil > 0) return 'PAUSED';
+  if (stake > balance * 0.2) return 'STAKE_TOO_HIGH';
+  if (exposure > exposureLimit) return 'EXPOSURE_LIMIT';
+  if (sessionLoss > sessionLossLimit) return 'LOSS_LIMIT';
+  return null;
+}
 const round2 = (v) => Math.round(v * 100) / 100;
 
 /* ─── PRNG determinístico ───────────────────────────────────────────────────── */
@@ -134,6 +160,8 @@ for (let i = 0; i < N_ASSETS; i++) {
     // stats
     cashOps: [], runnerOps: [], recOps: [],
     entries: 0, cycles: 0,
+    // bootstrap: simulação já tem candles suficientes = READY desde o início
+    bootstrapStatus: 'READY', bootstrapReadyAt: 0,
   });
 }
 

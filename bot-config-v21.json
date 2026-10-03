@@ -1,11 +1,12 @@
 {
   "_version": "21",
-  "_desc": "Bot V21 — Cash/Runner/Recovery em cima da entrada V20. Novidade: cada sinal válido abre DUAS posições iguais (Cash + Runner) na mesma direção. CASH: stake igual, vende quando L/P pós-venda >= cashTakeProfit (configurável, default R$1,00) usando valor real da IQ. RUNNER: stake igual, vai até expiração. RECOVERY: opcional, máx 1 por ciclo, só após confirmação técnica nova (suporte/resistência + RSI + ADX/DMI + ATRP + regime válido + tempo), stake = base × recoveryMultiplier. Ciclo: Cash + Runner sempre juntos; Recovery opcional. Tudo na conta DEMO/PRACTICE. A estratégia de ENTRADA (regime 1m, RSI 30/70, ADX>=15, corpo>=0.4xATR) é IDENTICA à V20 e NÃO é alterada.",
+  "_desc": "Bot V21 - Copiado da V15 (base funcional em 2026-10-03). OTC 24/7: CICLO DE 3 ORDENS POR ATIVO = entrada + no maximo 1 piramide + MARTINGALE 2,75x (a unica ordem que passa do stake fixo, uma por ciclo) | expiracao 2 MINUTOS | piramide SO na chance quase perfeita: ADX >= 25 e RSI extremo A FAVOR (CALL <= 35 / PUT >= 65) e reversao nao se formando | direcao pela tendencia (EMA8x21) + pullback 4+1 + RSI guarda-corpo + regime + ADX minima 20 | stake FIXO 2 | VENDA: so com CONFIRMACAO DE REVERSAO contra a posicao (venda A MERCADO: a IQ nao manda cotacao de meio de vida, o valor sai no fechamento) - tendencia virou + RSI contrario + velas 5s contra + preco adverso >= 1x candle tipico; fora dos ultimos 20s | teto de exposicao 50%% do saldo | CIRCUIT BREAKER REMOVIDO | sem cooldown apos win | trava de perda da sessao 20%% | warmup 5s | painel odometro",
   "login": {
     "email": "anaalaura2008@gmail.com",
     "password": "Eqvpanp.32"
   },
   "accounts": {
+    "_nota": "contas identificadas em 2026-10-01 via get-balances (somente leitura). O bot escolhe pelo type: 4 = DEMO (PRACTICE), 1 = REAL. Em 2026-10-01 a REAL estava sem saldo disponivel (o valor de 1,31 e bonus).",
     "demo": {
       "type": 4,
       "balanceName": "PRACTICE",
@@ -26,23 +27,11 @@
     "baseStake": 2,
     "expirationMinutes": 2,
     "maxOpsPerAsset": 3,
-    "_nota": "maxOpsPerAsset = máximo de ordens por ativo: 2 (Cash+Runner) ou 3 (Cash+Runner+Recovery). Cada ciclo gera até 2 ordens simultâneas."
-  },
-  "cash": {
-    "_nota": "Cash: stake igual ao Runner, venda antecipada quando L/P pós-venda >= cashTakeProfit. L/P pós-venda = sell_profit real da IQ − stake. Usa o valor REAL da IQ (não estimativa por distância do preço).",
-    "cashTakeProfit": 1.0,
-    "_nota_takeprofit": "Lucro mínimo líquido para vender a Cash. sell_profit da IQ precisa ser >= stake + cashTakeProfit para vender."
-  },
-  "recovery": {
-    "_nota": "Recovery: máx 1 por ciclo, só após nova confirmação técnica. Não é 'martingale cego': exige zona de suporte/resistência + RSI reagindo + ADX/DMI confirmando + regime válido + tempo disponível. Recovery != 'Runner lossou → aumenta stake automaticamente'.",
-    "multiplier": 2.75,
-    "_nota_multiplier": "Recovery stake = baseStake × multiplier. Default 2.75 cobre 2 losses de baseStake a payout >= 72.73%. Payout atual 86% funciona.",
-    "maxAtrpPercent": 3.0,
-    "_nota_atrp": "Recovery só entra se ATRP (ATR/preço × 100) <= maxAtrpPercent. Evita entrar em volatility explosion. A regra é cumulativa com ADX/DMI.",
-    "closeBeforeMs": 20000,
-    "_nota_closebefore": "Recovery não entra nos últimos closeBeforeMs antes do vencimento. RECOVERY_SKIPPED_TOO_LATE se não houver tempo."
+    "galeWindowMs": 120000,
+    "_nota": "NAO EXISTE limite de ativos operando ao mesmo tempo: o universo garante no minimo universe.minActive ativos vivos. O limite e POR ATIVO e e o CICLO: maxOpsPerAsset = 3 ordens = 1 entrada + no maximo 1 piramide + 1 MARTINGALE (uma ordem por vez; o martingale so entra depois que as anteriores fecharam — nunca CALL e PUT juntos, trava dura ladoOposto). galeWindowMs = prazo para o martingale entrar depois da venda por reversao; passou disso sem ordem, o gatilho morre e o ciclo fecha. A entrada de martingale NAO exige pullback novo (o flip e o gatilho). expirationMinutes = 2 (decisao do dono 2026-10-02: ciclo mais rapido, como no run que subiu a conta demo de 60 para 145)."
   },
   "martingale": {
+    "_nota": "MARTINGALE (regra do dono, 2026-10-02): e a TERCEIRA ordem do ciclo e a UNICA que pode operar acima do stake fixo. Valor = martingaleMultiplier x o que esta sendo recuperado (a soma das posicoes vendidas por reversao): 1 posicao de 2,00 -> 5,50; 2 posicoes de 2,00 -> 11,00. Entra no sentido NOVO (o da reversao), depois de vender a perdedora. UM POR CICLO: perdeu o martingale, a proxima ordem volta ao stake base (nunca compoe, nunca emenda). Isso e o que separa o lucro do V13 (60 -> 145 em 30/09) do travamento de 10-01, quando a escada 2 x 2,75^n chegou a US$1,4 trilhao por ordem e zerou a conta. levels = 0 => stake FIXO na base fora do martingale.",
     "levels": 0,
     "payoutRate": 0.86,
     "martingaleMultiplier": 2.75,
@@ -50,15 +39,17 @@
   },
   "risk": {
     "maxStake": 30,
-    "maxExposurePct": 100,
-    "maxSessionLossPct": 20
+    "maxExposurePct": 50,
+    "maxSessionLossPct": 20,
+    "_nota": "maxStake = teto por ordem. Precisa CABER o martingale: com 2 posicoes abertas ele vale 5,5 x baseStake (base 2 -> 11,00; base 4 -> 22,00) — se maxStake for menor, o bot bloqueia e pausa o ativo (fail-closed). maxExposurePct = teto da SOMA de todas as ordens abertas como PERCENTUAL DO SALDO ATUAL. maxSessionLossPct = trava de perda da sessao."
   },
   "sell": {
-    "_nota_v21": "Venda antecipada da V20 (reversão) foi removida na V19. A única venda antecipada na V21 é a CASH — usa L/P pós-venda real da IQ >= cashTakeProfit. Não há venda por reversão.",
+    "_nota": "VENDA = SO com CONFIRMACAO DE REVERSAO contra a posicao (regra do dono, 2026-10-02): vende antes SOMENTE quando o mercado confirmar reversao contra a operacao (grande chance de dar loss). VENDA A MERCADO: a IQ manda sell_profit (DEVOLUCAO da recompra) SO no abrir/fechar da posicao — nao existe cotacao de meio de vida (medido em 2026-10-02: push so na abertura e get-options estatico) — o valor real da recompra e lido no fechamento. CONFIRMACAO (bloco reversal, tudo junto): tendencia virou contra (EMA8x21), RSI do lado oposto (CALL <= rsiCallMax / PUT >= rsiPutMin), candlesAgainstMin de `candles` velas 5s fechando contra e preco adverso a entrada >= minAdverseFactor x candle tipico de 5s (piso minAdversePct) — o preco adverso garante que nao vende operacao ganhando. Fora dos ultimos closeBeforeMs (a IQ nao aceita venda em cima do vencimento). MARTINGALE (reversalGale): depois da venda por reversao o bot entra no sentido NOVO sem exigir pullback (o flip e o gatilho), dentro da janela do gale (trading.galeWindowMs), valendo martingaleMultiplier x a soma das posicoes vendidas — um por ciclo; reversalGale=false desliga. Piramide (2a posicao no mesmo sentido): so com ADX >= pyramidAdxMin + RSI extremo A FAVOR e sem reversao se formando contra a posicao (ver bloco strategy).",
     "closeBeforeMs": 20000,
     "volLookbackCandles": 12,
-    "reversalGale": false,
+    "reversalGale": true,
     "reversal": {
+      "_nota": "Confirmacao de reversao contra a posicao (todos os fatores precisam concordar). Ajuste fino: candles/candlesAgainstMin = quantas velas 5s precisam fechar contra; rsiCallMax/rsiPutMin = RSI do lado oposto; minAdverseFactor/minAdversePct = movimento adverso minimo a entrada em multiplos do candle tipico de 5s (piso em %).",
       "candles": 3,
       "candlesAgainstMin": 2,
       "rsiCallMax": 45,
@@ -69,51 +60,42 @@
     "retryAfterMs": 8000,
     "maxAttempts": 4,
     "earlyGale": {
-      "enabled": false,
-      "_nota": "Early gale desativado na V21. A lógica de Recovery substitui o early gale."
+      "_nota": "EARLY GALE MONITOR: avalia cada operacao aberta a cada 1 segundo. Se a posicao esta perdendo alem do limiar (lossThreshold) dentro da janela (minMs..maxMs), abre o gale ANTES da operacao original fechar em loss — martingale mais eficiente. enabled=false desativa completamente o monitor.",
+      "enabled": true,
+      "minMs": 15000,
+      "maxMs": 90000,
+      "lossThreshold": 0.80
     }
   },
   "universe": {
-    "minActive": 200,
-    "maxActive": 500,
-    "replaceStaleMs": 60000,
-    "checkEveryMs": 30000,
-    "entryScanEveryMs": 5000
+    "_nota": "TODOS os ativos OTC disponiveis. Top 50 primeiro; algum fechado/suspenso/sem feed => entra a reserva (na ordem da lista); se faltar, o bot completa com qualquer OTC turbo disponivel (source auto). replaceStaleMs = ativo sem candle 5s por esse tempo e substituido. checkEveryMs = revisao do universo.",
+    "minActive": 500,
+    "maxActive": 1000,
+    "replaceStaleMs": 180000,
+    "checkEveryMs": 30000
   },
   "strategy": {
-    "_nota_entrada": "ENTRADA V20 (IDENTICA, não alterar): regime de horas (velas 1m, EMA8x21, spread >= 0.03%) + gatilho RSI(5s) cruzando 30 (CALL) ou 70 (PUT) + preço no fundo/topo + ADX >= 15 + corpo vela 5s >= 0.4xATR. A V21 não muda NADA na lógica de geração de sinais.",
+    "_nota": "direcao = tendencia (EMA8 contra EMA21 nos ultimos trendLookback candles): spread >= trendMinEmaSpreadPct = alta (CALL), <= -limiar = baixa (PUT), entre os dois = lateral (nao entra). RSI e GUARDA-CORPO, nao seletor: nao compra se o RSI ja esta esticado acima de rsiCallMax, nao vende se ja esta esticado abaixo de rsiPutMin. ADX e OBRIGATORIO: adx < adxMin = sem forca suficiente, nao entra. Medido em 9360 janelas de 5s reais (mesma regra de entrada): rsiCallMax 55 / rsiPutMin 45 + adxMin 20 => 1 sinal em 9360 (morto); 60/40 + 15 => 35 sinais; sem gate => 221 sinais. V16: RSI mais apertado (55/45) + ADX 20 minima para evitar entradas contra tendencia forte.",
     "candleSizeSeconds": 5,
     "lookbackRegime": 20,
-    "historicalWarmupMinutes": 15,
-    "_nota_historicalWarmupMinutes": "Mínimo de histórico carregado antes de permitir qualquer entrada. Pisa para MAX(15min, warmup necessário dos indicadores). ADX(14) é o gargalo: 29 velas. 5s: 180 velas | 1m: 29 velas.",
     "regimeStreakThreshold": 12,
     "trendLookback": 50,
     "trendMinEmaSpreadPct": 0.06,
     "adxMin": 20,
     "rsiPeriod": 14,
-    "rsiCallMax": 55,
-    "rsiPutMin": 45,
-    "pyramidMax": 0,
-    "_nota_pyramid": "Pyramidagem desativada na V21. Cash+Runner substituem o conceito de pirâmide.",
+    "rsiCallMax": 45,
+    "rsiPutMin": 65,
+    "pyramidMax": 1,
     "pyramidAdxMin": 25,
     "pyramidRsiCallMax": 35,
     "pyramidRsiPutMin": 65,
+    "pyramid_nota": "PIRAMIDE (2a posicao no mesmo sentido) so sai na chance QUASE PERFEITA de nao reverter: ADX >= pyramidAdxMin (forca de verdade, nao 'sem estar fraca') + RSI no EXTREMO A FAVOR (CALL <= pyramidRsiCallMax / PUT >= pyramidRsiPutMin) + a reversao nao pode estar se formando contra a posicao. pyramidMax = quantas piramides cabem no ciclo (1 => no maximo 2 posicoes simultaneas; a 3a ordem e o martingale). Fora desse quadro o bot faz UMA compra so.",
     "warmupMs": 1500,
     "min1mCandles": 1,
-    "staleCandleMs": 30000,
-    "entryMode": "rsiTouch",
-    "regime1mMinCandles": 120,
-    "regime1mMinEmaSpreadPct": 0.03,
-    "rsiTouchCall": 35,
-    "rsiTouchPut": 65,
-    "supportLookback": 60,
-    "adxMinEntry": 15,
-    "entryBodyRatio": 0.4,
-    "supportAtrFactor": 1.5,
-    "boot1mCandles": 120
+    "staleCandleMs": 30000
   },
   "whitelist": {
-    "_nota": "Top 50 — idêntico à V20. Direção aqui é apenas referência.",
+    "_nota": "TOP 50 (prioridade). direction aqui e apenas REFERENCIA (baseDirection no log/registro). A direcao de entrada vem da tendencia do mercado. Auto-fill completa ate minActive=170 com qualquer OTC turbo disponivel.",
     "RENDERUSD": { "name": "front.RENDERUSD-OTC", "direction": "CALL", "wr": 100 },
     "WIFUSD": { "name": "front.WIFUSD-OTC", "direction": "PUT", "wr": 100 },
     "DOTUSD": { "name": "front.DOTUSD-OTC", "direction": "PUT", "wr": 100 },
@@ -177,14 +159,7 @@
     "PNUTUSD": { "name": "front.PNUTUSD-OTC", "direction": "CALL", "wr": null }
   },
   "reserve": {
-    "EURUSD-OTC": { "name": "front.EURUSD-OTC" },
-    "AUDCHF-OTC": { "name": "front.AUDCHF-OTC" },
-    "AUDJPY-OTC": { "name": "front.AUDJPY-OTC" },
-    "AUDUSD-OTC": { "name": "front.AUDUSD-OTC" },
-    "AUDNZD-OTC": { "name": "front.AUDNZD-OTC" },
-    "CADCHF-OTC": { "name": "front.CADCHF-OTC" },
-    "EURAUD-OTC": { "name": "front.EURAUD-OTC" },
-    "EURCAD-OTC": { "name": "front.EURCAD-OTC" },
+    "_nota": "Reserva expandida. Auto-fill completa ate minActive=170 com qualquer OTC turbo disponivel.",
     "FARTCOINUSD": { "name": "front.FARTCOINUSD-OTC" },
     "LINKUSD": { "name": "front.LINKUSD-OTC" },
     "EOSUSD": { "name": "front.EOSUSD-OTC" },
@@ -213,10 +188,10 @@
     "PNUTUSD": { "name": "front.PNUTUSD-OTC" }
   },
   "paths": {
-    "state": "D:/Tracecom project/bot-state-v21.json",
-    "results": "D:/Tracecom project/resultados-v21.json"
+    "state": "D:/Tracecom project/bot-state-v15.json",
+    "results": "D:/Tracecom project/resultados-v15.json"
   },
   "stop": {
-    "profitTarget": 100
+    "profitTarget": 1000
   }
 }
