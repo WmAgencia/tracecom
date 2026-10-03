@@ -83,6 +83,19 @@ const COOLDOWN_WIN_MS       = 0;
 const COOLDOWN_LOSS_MS      = 5000;
 const TREND_LOOKBACK        = Math.max(21, Math.round(num(S.trendLookback, 40)));
 const TREND_MIN_SPREAD      = num(S.trendMinEmaSpreadPct, 0.05);
+// ─── HISTÓRICO — bootstrap 15 min + warmup de indicadores ──────────────────
+// ADX(14) precisa de 29 velas min; RSI(14) precisa de 15; EMA21 precisa de 21.
+// Piso: 15 min = 180 velas de 5s. Teto: max(piso, warmup_indicadores).
+// Tolerância: a IQ frequentemente retorna 1 candle a menos que o solicitado,
+// ou devolve candles rejeitados pelo ingest() por duplicidade/timing.
+// Uso 170 para 5s e 28 para 1m como piso real — o WS já retorna candles OK
+// para o regime 1m usar só 1m (não precisa de 180 de 5s).
+const HIST_WARMUP_MIN_MINUTES = 15; // minutos mínimos de histórico (piso)
+const HIST_5S_PER_MIN         = 12;  // 60s / 5s
+const HIST_1M_PER_MIN         = 1;
+const HIST_5S_REQUIRED        = Math.max(Math.round(HIST_WARMUP_MIN_MINUTES * HIST_5S_PER_MIN * 0.95), 29); // 170 (5% tolerância)
+const HIST_1M_REQUIRED        = Math.max(Math.round(HIST_WARMUP_MIN_MINUTES * HIST_1M_PER_MIN * 0.95), 28); // 28  (2 min tolerância)
+const BOOTSTRAP_CHUNK        = 20;   // ativos por batch no bootstrap paralelo
 const REV                   = SE.reversal ?? {};
 const REV_CANDLES           = Math.max(2, Math.round(num(REV.candles, 3)));
 const REV_CANDLES_MIN       = Math.min(REV_CANDLES, Math.max(1, Math.round(num(REV.candlesAgainstMin, 2))));
@@ -902,7 +915,14 @@ async function evaluateOpenPositions() {
       // Encontra o ativo correspondente
       const aidEntry = [...running.entries()].find(([, v]) => v.key === key);
       if (!aidEntry) continue;
-      const [aid] = aidEntry;
+      const [aid, row] = aidEntry;
+      // ── Bootstrap: Recovery precisa de contexto histórico para validar reversão ──
+      if (row.bootstrapStatus !== 'READY') {
+        if (!(row._recBootstrapWarned++)) {
+          sessionLog(`RECOVERY_WAIT_BOOTSTRAP | ${shortName(s.name)} | status=${row.bootstrapStatus}`);
+        }
+        continue;
+      }
       const buf = buf5s.get(aid);
       if (!buf) continue;
 
@@ -954,6 +974,15 @@ async function evaluateOpenPositions() {
 // ─── ENTRADA PRINCIPAL (duas posições: Cash + Runner) ─────────────────────────
 function maybeTrade(aid) {
   if (!warmupDone) return;
+  // ── Bootstrap: nenhum trade antes de 15m+ de histórico carregado ──
+  const row = running.get(aid);
+  if (!row || row.bootstrapStatus !== 'READY') {
+    // DATA_NOT_READY: loga uma vez para não spammar
+    if (row && row.bootstrapStatus === 'DATA_NOT_READY' && !(row._bootstrapWarned++)) {
+      sessionLog(`BOOTSTRAP_FAIL | ${shortName(row.name)} | ${row.bootstrapFailReason ?? 'unknown'}`);
+    }
+    return;
+  }
   const plan = planTrade(aid);
   if (!plan) return;
 
@@ -1183,6 +1212,7 @@ function applyUniverse(actives, reason, { subscribe = true } = {}) {
   const usable    = actives.filter((row) => !bannedUntil.has(Number(row.id)) || bannedUntil.get(Number(row.id)) < nowMs());
   const { selected, unavailableTop } = selectUniverse({ whitelist, reserve, actives: usable, minActive: MIN_ACTIVE, maxActive: MAX_ACTIVE });
 
+  const added = [];
   for (const aid of running.keys()) {
     if (!selected.some((e) => e.aid === aid)) {
       if (opsFor(aid).length) continue;
@@ -1194,7 +1224,8 @@ function applyUniverse(actives, reason, { subscribe = true } = {}) {
     buf5s.set(entry.aid, Object.assign(new ClosedCandles(num(S.candleSizeSeconds, 5)), { key: entry.key, name: entry.name, aid: entry.aid }));
     buf1m.set(entry.aid, new ClosedCandles(60));
     ensureState(entry.key, entry.name);
-    running.set(entry.aid, { ...entry, lastCandleAt: 0, since: nowMs() });
+    running.set(entry.aid, { ...entry, lastCandleAt: 0, since: nowMs(), bootstrapStatus: 'LOADING_HISTORICAL' });
+    added.push(entry.aid);
     if (subscribe) { ws.subscribeCandles(entry.aid, num(S.candleSizeSeconds, 5)); ws.subscribeCandles(entry.aid, 60); }
   }
   const names = [...running.values()].map((r) => shortName(r.name)).join(' • ');
@@ -1206,6 +1237,7 @@ function applyUniverse(actives, reason, { subscribe = true } = {}) {
   } else {
     logLine(`[🔁] universo (${reason}): ${running.size} ativos`);
   }
+  return added;
 }
 
 async function rebalanceUniverse() {
@@ -1223,7 +1255,20 @@ async function rebalanceUniverse() {
         running.delete(aid); buf5s.delete(aid); buf1m.delete(aid);
       }
     }
-    applyUniverse(actives, 'revisão');
+    const added = applyUniverse(actives, 'revisão');
+    // Bootstrap dos novos ativos adicionados
+    for (const aid of added) {
+      const result = await bootstrapAsset(aid);
+      const row = running.get(aid);
+      if (row) {
+        if (result.ok) {
+          const regime = trendDirection1m(buf1m.get(aid)?.ticks ?? []);
+          logLine(`  [✅ ${shortName(row.name)}] HIST=${HIST_WARMUP_MIN_MINUTES}m+ | regime=${regime.direction} spread=${regime.spreadPct?.toFixed(3) ?? 'n/a'}`);
+        } else {
+          logLine(`  [⚠️ ${shortName(row.name)}] DATA_NOT_READY | ${row.bootstrapFailReason ?? 'unknown'}`);
+        }
+      }
+    }
   } catch {}
 }
 
@@ -1322,28 +1367,96 @@ async function main() {
     const actives = await fetchActives();
     applyUniverse(actives, 'boot', { subscribe: false });
 
-    const need5 = num(S.lookbackRegime, 20);
-    const need1 = Math.min(REGIME_1M_MIN_CAND, BOOT_1M_CANDLES);
-    const now0 = nowMs();
     const asc = (list) => (Array.isArray(list) ? list.slice().sort((x, y) => (toMs(x?.from ?? x?.at) ?? 0) - (toMs(y?.from ?? y?.at) ?? 0)) : []);
 
-    const CHUNK = 20;
-    const aids = [...running.keys()];
-    let ready = 0, semResposta = 0;
-    const tHist = Date.now();
-    for (let i = 0; i < aids.length; i += CHUNK) {
-      await Promise.all(aids.slice(i, i + CHUNK).map(async (aid) => {
-        try {
-          const h5 = await ws.getCandlesHistory({ activeId: aid, size: num(S.candleSizeSeconds, 5), count: 40 });
-          for (const c of asc(h5?.msg?.candles)) buf5s.get(aid)?.ingest(c, now0);
-          const h1 = await ws.getCandlesHistory({ activeId: aid, size: 60, count: BOOT_1M_CANDLES });
-          for (const c of asc(h1?.msg?.candles)) buf1m.get(aid)?.ingest(c, now0);
-        } catch { semResposta++; }
-        if (buf5s.get(aid)?.ticks.length >= need5 && buf1m.get(aid)?.ticks.length >= need1) ready++;
-        running.get(aid).lastCandleAt = 0;
-      }));
+    /**
+     * Bootstrap de UM ativo: carrega histórico 5s + 1m e transita o estado.
+     * Retorna { ok, received5s, received1m, gapMs }
+     */
+    async function bootstrapAsset(aid) {
+      const row = running.get(aid);
+      if (!row) return { ok: false, reason: 'notRunning' };
+      const now0 = nowMs();
+      let received5s = 0, received1m = 0, gapMs = 0;
+      try {
+        const [h5, h1] = await Promise.all([
+          ws.getCandlesHistory({ activeId: aid, size: num(S.candleSizeSeconds, 5), count: HIST_5S_REQUIRED }),
+          ws.getCandlesHistory({ activeId: aid, size: 60, count: HIST_1M_REQUIRED }),
+        ]);
+        const c5s = asc(h5?.msg?.candles ?? []);
+        const c1m = asc(h1?.msg?.candles ?? []);
+        for (const c of c5s) buf5s.get(aid)?.ingest(c, now0);
+        for (const c of c1m) buf1m.get(aid)?.ingest(c, now0);
+        received5s = c5s.length;
+        received1m = c1m.length;
+
+        // Verificar continuidade/gaps
+        if (c5s.length >= 2) {
+          const lastTs = toMs(c5s[c5s.length - 1]?.from ?? c5s[c5s.length - 1]?.at) ?? 0;
+          const nowTs  = now0;
+          gapMs = nowTs - lastTs;
+        }
+        row.bootstrapStatus = 'WARMING_UP';
+        row.bootstrapAt = now0;
+
+        const has5s = received5s >= HIST_5S_REQUIRED;
+        const has1m = received1m >= HIST_1M_REQUIRED;
+        const continuous = gapMs < 60_000; // gap < 1 min = contínuo
+
+        if (has5s && has1m && continuous) {
+          row.bootstrapStatus = 'READY';
+          row.bootstrapReadyAt = now0;
+          return { ok: true, received5s, received1m, gapMs, name: row.name };
+        } else {
+          row.bootstrapStatus = 'DATA_NOT_READY';
+          row.bootstrapFailReason = [
+            !has5s ? `5s:${received5s}<${HIST_5S_REQUIRED}` : '',
+            !has1m ? `1m:${received1m}<${HIST_1M_REQUIRED}` : '',
+            !continuous ? `gap:${Math.round(gapMs/1000)}s` : '',
+          ].filter(Boolean).join('|');
+          return { ok: false, received5s, received1m, gapMs, name: row.name };
+        }
+      } catch (err) {
+        row.bootstrapStatus = 'DATA_NOT_READY';
+        row.bootstrapFailReason = `exception:${String(err).slice(0,60)}`;
+        return { ok: false, received5s, received1m, gapMs };
+      }
     }
-    logLine(`[🔁] histórico: ${ready}/${running.size} prontos (5s≥${need5}, 1m≥${need1}) | ${((Date.now() - tHist) / 1000).toFixed(1)}s`);
+
+    // ── BOOTSTRAP: carrega histórico para TODOS os ativos antes de assinar live ──
+    const tHist = Date.now();
+    let ready = 0, notReady = 0;
+
+    const bootstrapPromises = [];
+    for (const aid of running.keys()) {
+      bootstrapPromises.push((async () => {
+        const result = await bootstrapAsset(aid);
+        if (result.ok) ready++;
+        else notReady++;
+        const row = running.get(aid);
+        if (row) row.lastCandleAt = 0;
+      })());
+      // processar em chunks para não sobrecarregar a API da IQ
+      if (bootstrapPromises.length >= BOOTSTRAP_CHUNK) {
+        await Promise.all(bootstrapPromises.splice(0, BOOTSTRAP_CHUNK));
+      }
+    }
+    await Promise.all(bootstrapPromises);
+    const elapsed = ((Date.now() - tHist) / 1000).toFixed(1);
+
+    // Log de bootstrap por ativo pronto
+    for (const [aid, row] of running) {
+      if (row.bootstrapStatus === 'READY') {
+        const b5 = buf5s.get(aid)?.ticks.length ?? 0;
+        const b1 = buf1m.get(aid)?.ticks.length ?? 0;
+        const regime = trendDirection1m(buf1m.get(aid)?.ticks ?? []);
+        const diag = `5s=${b5} 1m=${b1} regime=${regime.direction} spread=${regime.spreadPct?.toFixed(3) ?? 'n/a'}`;
+        logLine(`  [✅ ${shortName(row.name)}] HIST=${HIST_WARMUP_MIN_MINUTES}m+ | ${diag}`);
+      } else if (row.bootstrapStatus === 'DATA_NOT_READY') {
+        logLine(`  [⚠️ ${shortName(row.name)}] DATA_NOT_READY | ${row.bootstrapFailReason ?? 'unknown'}`);
+      }
+    }
+    logLine(`[🔁] bootstrap: ${ready}/${running.size} READY | ${notReady} aguardando/dados incompletos | ${elapsed}s`);
 
     for (const aid of running.keys()) {
       ws.subscribeCandles(aid, num(S.candleSizeSeconds, 5));
@@ -1352,10 +1465,87 @@ async function main() {
     await new Promise((r) => setTimeout(r, num(S.warmupMs, 1_500)));
     warmupDone = true;
     startedAt = nowMs();
+    // Diagnóstico inicial
+    setTimeout(() => {
+      const skipCount = {};
+      const samples = [];
+      for (const aid of running.keys()) {
+        const row = running.get(aid);
+        if (row?.bootstrapStatus !== 'READY') continue;
+        const b5 = buf5s.get(aid), b1 = buf1m.get(aid);
+        if (!b5 || !b1) continue;
+        const s = state[b5.key];
+        if (!s?.regime1m) continue;
+        const rsi = calcRSI(b5.ticks);
+        const adx = calcADX(b5.ticks);
+        const regime = s.regime1m.direction;
+        const prevIdx = Math.max(0, b5.ticks.length - 2);
+        const prevRsi = calcRSI(b5.ticks.slice(0, prevIdx + 1));
+        let skip = null;
+        if (regime === 'lateral1m') skip = 'lateral1m';
+        else {
+          const crossing = (regime === 'alta1m' && rsi <= RSI_TOUCH_CALL && prevRsi > RSI_TOUCH_CALL)
+                       || (regime === 'baixa1m' && rsi >= RSI_TOUCH_PUT  && prevRsi < RSI_TOUCH_PUT);
+          if (!crossing) skip = 'semRsiTouch';
+          else if (adx < 15) skip = 'adxFraco';
+        }
+        if (skip) skipCount[skip] = (skipCount[skip] || 0) + 1;
+        if (regime !== 'lateral1m' && samples.length < 10) {
+          samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(0)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
+        }
+      }
+      const topSkips = Object.entries(skipCount).sort((x, y) => y[1] - x[1]).slice(0, 4)
+        .map(([k, v]) => `${k}=${v}`).join(' | ');
+      logLine(`[🔍 INIT] ${running.size} ativos ready | skips: ${topSkips || 'nenhum'}`);
+      if (samples.length) logLine(`[🔍 INIT] amostra: ${samples.join(' | ')}`);
+    }, 2000);
     startSessionLog();
     startAnalyseLog();
     logLine(`[✅] OPERANDO ${CODE_REV} — Cash/Runner/Recovery | painel abaixo`);
     renderDashboard();
+
+    // Diagnóstico de entrada: mostra RSI e skip reasons a cada 60s
+    setInterval(() => {
+      if (!warmupDone || shuttingDown) return;
+      const skipCount = {};
+      const samples = [];
+      for (const aid of running.keys()) {
+        const row = running.get(aid);
+        if (row?.bootstrapStatus !== 'READY') continue;
+        const b5 = buf5s.get(aid), b1 = buf1m.get(aid);
+        if (!b5 || !b1) continue;
+        const s = state[b5.key];
+        if (!s?.regime1m) continue;
+        const rsi = calcRSI(b5.ticks);
+        const adx = calcADX(b5.ticks);
+        const regime = s.regime1m.direction;
+        const open = opsFor(aid);
+        const trend = trendDirection(b5.ticks);
+
+        // Simular evaluateEntry para ver qual skip ocorreria
+        const prevIdx = Math.max(0, b5.ticks.length - 2);
+        const prevRsi = calcRSI(b5.ticks.slice(0, prevIdx + 1));
+        let skip = null;
+        if (regime === 'lateral1m') skip = 'lateral1m';
+        else {
+          const dir1m = regime;
+          const crossing = (dir1m === 'alta1m' && rsi <= RSI_TOUCH_CALL && prevRsi > RSI_TOUCH_CALL)
+                       || (dir1m === 'baixa1m' && rsi >= RSI_TOUCH_PUT  && prevRsi < RSI_TOUCH_PUT);
+          if (!crossing) skip = 'semRsiTouch';
+          else if (adx < 15) skip = 'adxFraco';
+          else if (open.length > 0) skip = 'posicaoAberta';
+        }
+        if (skip) skipCount[skip] = (skipCount[skip] || 0) + 1;
+        // Amostrar alguns com bom regime para ver RSI
+        if (regime !== 'lateral1m' && samples.length < 8) {
+          samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(0)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
+        }
+      }
+      const topSkips = Object.entries(skipCount).sort((x, y) => y[1] - x[1]).slice(0, 4)
+        .map(([k, v]) => `${k}=${v}`).join(' | ');
+      logLine(`[🔍 DIAG] ${running.size} ativos ready | skips: ${topSkips || 'nenhum'}`);
+      if (samples.length) logLine(`[🔍] sampel: ${samples.join(' | ')}`);
+    }, 60_000);
 
     setInterval(() => { if (!shuttingDown) renderDashboard(); }, 1_000);
     // Scan de entradas

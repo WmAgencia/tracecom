@@ -248,6 +248,64 @@ ok('log de ciclo: CICLO_INICIO e CICLO_FIM com cycleId', () => {
 });
 
 console.log('');
-console.log('══════════════════════════════════════════════════════════════');
-console.log(`V21: ${passed} passaram, ${failed} falharam`);
-process.exit(failed > 0 ? 1 : 0);
+console.log('══ V21 — BOOTSTRAP HISTÓRICO (15m+ antes de operar) ══');
+
+ok('bootstrapAsset é definido em onReady', () => {
+  const src = fs.readFileSync(new URL('../ws-otc-v21.mjs', import.meta.url), 'utf8');
+  assert.ok(src.includes('async function bootstrapAsset'), 'bootstrapAsset não encontrada');
+  assert.ok(src.includes('HIST_5S_REQUIRED') && src.includes('HIST_1M_REQUIRED'), 'constantes HIST_* não encontradas');
+});
+
+ok('HIST_5S_REQUIRED = 171 candles (15 min × 12 × 95%)', () => {
+  const src = fs.readFileSync(new URL('../ws-otc-v21.mjs', import.meta.url), 'utf8');
+  // 15 * 12 * 0.95 = 171; max(171, 29) = 171
+  assert.ok(src.match(/HIST_5S_REQUIRED\s*=\s*Math\.max\s*\(\s*Math\.round\s*\(\s*HIST_WARMUP_MIN_MINUTES\s*\*\s*HIST_5S_PER_MIN\s*\*\s*0\.95/), 'HIST_5S_REQUIRED não usa 0.95×');
+});
+
+ok('HIST_1M_REQUIRED = 28 candles (15 min × 95%)', () => {
+  const src = fs.readFileSync(new URL('../ws-otc-v21.mjs', import.meta.url), 'utf8');
+  // 15 * 1 * 0.95 = 14; max(14, 28) = 28
+  assert.ok(src.match(/HIST_1M_REQUIRED\s*=\s*Math\.max/), 'HIST_1M_REQUIRED não usa max');
+});
+
+ok('maybeTrade é bloqueado se bootstrapStatus !== READY', () => {
+  const src = fs.readFileSync(new URL('../ws-otc-v21.mjs', import.meta.url), 'utf8');
+  assert.ok(src.match(/bootstrapStatus\s*!==\s*['"]READY['"]/), 'gate bootstrapStatus em maybeTrade não encontrado');
+  assert.ok(src.match(/BOOTSTRAP_FAIL/), 'log BOOTSTRAP_FAIL não encontrado');
+});
+
+ok('Recovery é bloqueada se bootstrapStatus !== READY', () => {
+  const src = fs.readFileSync(new URL('../ws-otc-v21.mjs', import.meta.url), 'utf8');
+  assert.ok(src.match(/RECOVERY_WAIT_BOOTSTRAP/), 'log RECOVERY_WAIT_BOOTSTRAP não encontrado');
+});
+
+ok('per-asset bootstrapStatus em running map', () => {
+  const src = fs.readFileSync(new URL('../ws-otc-v21.mjs', import.meta.url), 'utf8');
+  assert.ok(src.match(/bootstrapStatus:\s*['"]LOADING_HISTORICAL['"]/), 'bootstrapStatus inicial não definido');
+  assert.ok(src.match(/bootstrapStatus\s*=\s*['"]READY['"]/), 'transição para READY não encontrada');
+  assert.ok(src.match(/bootstrapStatus\s*=\s*['"]DATA_NOT_READY['"]/), 'estado DATA_NOT_READY não encontrado');
+});
+
+ok('applyUniverse retorna lista de ativos adicionados', () => {
+  const src = fs.readFileSync(new URL('../ws-otc-v21.mjs', import.meta.url), 'utf8');
+  assert.ok(src.match(/return added;/), 'applyUniverse não retorna added');
+  assert.ok(src.match(/const added = \[\]/), 'array added não criado');
+});
+
+ok('rebalanceUniverse faz bootstrap de novos ativos', () => {
+  const src = fs.readFileSync(new URL('../ws-otc-v21.mjs', import.meta.url), 'utf8');
+  assert.ok(src.match(/bootstrapAsset\(aid\)/), 'bootstrapAsset não chamado no rebalance');
+});
+
+ok('log de bootstrap: [✅ ATIVO] HIST=15m+ | regime=X | spread=Y', () => {
+  const src = fs.readFileSync(new URL('../ws-otc-v21.mjs', import.meta.url), 'utf8');
+  assert.ok(src.match(/\[✅.*\].*HIST=.*regime=/), 'log de regime por ativo não encontrado');
+  assert.ok(src.match(/bootstrap:\s*\${ready}.*READY/), 'log de bootstrap summary não encontrado');
+});
+
+ok('config: historicalWarmupMinutes = 15', () => {
+  const cfg = JSON.parse(fs.readFileSync(new URL('../bot-config-v21.json', import.meta.url), 'utf8'));
+  assert.equal(cfg.strategy?.historicalWarmupMinutes, 15, `historicalWarmupMinutes: ${cfg.strategy?.historicalWarmupMinutes}`);
+});
+
+console.log('');
