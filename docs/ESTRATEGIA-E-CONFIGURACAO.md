@@ -96,3 +96,12 @@
 - **Relatório final**: operações, wins, losses, winrate, lucro líquido, saldo da conta ativa (PRACTICE ou REAL), duração da sessão, horário de início.
 - **Fluxo**: `gracefulShutdown` → `wsRuntime.setKillSwitch(true)` → consulta DB por operações desde início da sessão → imprime relatório ASCII → `server.close()` → `process.exit(0)` (com timeout de 5s como safety).
 - **Sem alteração** de estratégia, stake, expiração, gates fail-closed ou comportamento de ordens em produção.
+
+## Correção standalone V21 — 2026-10-03
+
+- Buffer de candles preserva `open`/`price_open`/`o`; o filtro de corpo recebia zero em toda vela, impedindo entradas. Limites da estratégia preservados.
+- RSI anterior usa 15 preços (14 variações), removendo o fallback constante 50.
+- Bootstrap compartilhado pelo boot e rebalanceamento; ativos DATA_NOT_READY têm nova tentativa na revisão do universo.
+- Teste offline: `node diagnostic-results/bot-v21-entry-regression.mjs`; reproduz o bloqueio e valida entrada elegível com OHLC preservado. Sintaxe e diff verificados.
+- Nenhuma conexão ou ordem IQ foi executada. Aceite/settlement pelo broker permanecem sem validação ao vivo.
+- Backup de banco tentado via scripts/backup-config.mjs; indisponível neste ambiente (dependência pg e credenciais do banco ausentes). Backups anteriores preservados; cópia do script corrigido em backups/v21-execution-fix/.
