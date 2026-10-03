@@ -568,18 +568,20 @@ export function evaluateEntry({ ticks, open, rsi, adx, mode = 'rsiTouch', regime
   const rsiNow = rsi;
   // prevRsi: RSI das 15 velas anteriores (exclui o candle atual — verifica se estava伸acima do limiar antes do pullback)
   const prevRsi = calcRSI(ticks.slice(-16, -1));
-  // Thresholds alinhados com a intenção do dono: CALL em RSI≤30, PUT em RSI≥70
+  // Thresholds RSI: CALL só quando RSI ≤ touchCall (oversold genuíno),
+  // PUT só quando RSI ≥ touchPut (overbought genuíno).
+  // Defaults: CALL ≤ 30 / PUT ≥ 70 — só entra em pullback real de RSI.
   const touchCall = Math.max(RSI_TOUCH_CALL, 30); // fallback 30
   const touchPut  = Math.min(RSI_TOUCH_PUT,  70); // fallback 70
   // Bloco de crossing: exige RSI cruzando de cima (CALL) ou de baixo (PUT)
   const crossing = (dir15m === 'alta15m' && rsiNow <= touchCall && prevRsi > touchCall)
                 || (dir15m === 'baixa15m' && rsiNow >= touchPut  && prevRsi < touchPut);
   if (!crossing) return { skip: 'semRsiTouch' };
-  // Guarda extra: se RSI ficou profundamente oversold/overbought nas últimas velas,
-  // o rally já comeu o movimento → bloqueia para não entrar tarde
-  // Usa buffer de 5 para permitir que RSI "acabe de tocar" o limiar (crossing recente)
-  if (dir15m === 'alta15m' && prevRsi <= touchCall - 5) return { skip: 'jaEraOversold' };
-  if (dir15m === 'baixa15m' && prevRsi >= touchPut + 5)  return { skip: 'jaEraOverbought' };
+  // Guarda: se RSI JÁ estava oversold/overbought há mais de 15 velas, o rally
+  // já consumiu o movimento → bloqueia para não entrar tarde.
+  // Buffer de 15 velas (75s) é suficiente para um pullback real de RSI.
+  if (dir15m === 'alta15m' && prevRsi <= touchCall - 15) return { skip: 'jaEraOversold' };
+  if (dir15m === 'baixa15m' && prevRsi >= touchPut + 15)  return { skip: 'jaEraOverbought' };
   const lastTick = ticks[ticks.length - 1];
   if (!lastTick) return { skip: 'semVela' };
   const body  = Math.abs(lastTick.close - (lastTick.open ?? lastTick.close));
@@ -972,7 +974,7 @@ function evaluateRecovery({ aid, direction }) {
   // ATRP: volatilidade não pode estar em explosion (simplified ATR = avg high-low dos últimos 14 candles)
   const closes = ticks.map((t) => t.close);
   const recentBars = ticks.slice(-14);
-  const atrAvg = recentBars.reduce((sum, t, idx) => {
+  const atrAvg = recentBars.reduce((sum, t) => {
     return sum + Math.abs((t.high ?? t.close) - (t.low ?? t.close));
   }, 0) / Math.max(1, recentBars.length);
   const lastClose = closes[closes.length - 1];
@@ -1040,17 +1042,9 @@ function sendOrder(aid, direction, stake, expiration, optionTypeId, requestId, r
 // ─── MONITOR DE POSIÇÕES ABERTAS (5s — V21: Cash + Recovery) ───────────────────
 let monitorBusy = false;
 
-// V21: flag transiento para evitar corrida entre evaluateOpenPositions e maybeTrade
-// evaluateOpenPositions seta true quando avalia Recovery armada (skipped ou disparada)
-// maybeTrade verifica antes de abrir novo ciclo
-let _recoveryArmedEvaluated = false;
-
 async function evaluateOpenPositions() {
   if (monitorBusy || !warmupDone) return;
-  if (inFlight.size === 0) {
-    _recoveryArmedEvaluated = false;
-    return;
-  }
+  if (inFlight.size === 0) return;
 
   monitorBusy = true;
   try {
@@ -1137,7 +1131,6 @@ async function evaluateOpenPositions() {
     }
 
     // ── RECOVERY: avaliar se alguma Recovery deve ser disparada ────────────
-    _recoveryArmedEvaluated = false; // será true se encontrar pelo menos uma armada
     for (const [key, s] of Object.entries(state)) {
       if (!s.runnerLossRecoveryArmed || s.recoveryAttempts > 0) continue;
       // Encontra o ativo correspondente
@@ -1161,8 +1154,7 @@ async function evaluateOpenPositions() {
       const openOps = opsFor(aid);
       // Se não há mais Runner aberta, Recovery já deveria ter sido avaliada no settlement
       if (openOps.some((o) => o.role === 'runner' && !o.settled)) continue;
-      // Runner fechou — marca que evaluamos a Recovery armada (mesmo que depois pule)
-      _recoveryArmedEvaluated = true;
+      // Runner fechou — avalia se Recovery deve entrar
       // Runner fechou — avalia se Recovery deve entrar
       const direction = s.direction === 'CALL' ? 'PUT' : 'CALL';
       const stake = round2(BASE_STAKE * REC_MULTIPLIER);
@@ -1172,7 +1164,7 @@ async function evaluateOpenPositions() {
         sessionLog(`RECOVERY_SKIPPED_TOO_LATE | ${shortName(s.name)} | tempo=${Math.round(remainingMs/1000)}s`);
         // Fecha ciclo (Recovery não entrou + não vai entrar mais)
         s.runnerLossRecoveryArmed = false;
-        closeCycle(s, op.okey);
+        closeCycle(s);
         continue;
       }
 
@@ -1181,7 +1173,7 @@ async function evaluateOpenPositions() {
         sessionLog(`RECOVERY_SKIPPED ${recCheck.skip} | ${shortName(s.name)} | reg15m=${s.regime15m?.direction ?? '?'} | rsi=${recCheck.skip.includes('RSI') ? recCheck.skip.match(/RSI(\d+)/)?.[1] ?? '?' : '?'}`);
         // Fecha ciclo (Recovery recusada — market não confirmou)
         s.runnerLossRecoveryArmed = false;
-        closeCycle(s, op.okey);
+        closeCycle(s);
         continue;
       }
 
@@ -1191,7 +1183,7 @@ async function evaluateOpenPositions() {
         sessionLog(`RECOVERY_GUARD_FAILED | ${shortName(s.name)} | direcao=${direction} | stake=${stake}`);
         // Fecha ciclo (guard falhou — sem espaço para Recovery)
         s.runnerLossRecoveryArmed = false;
-        closeCycle(s, op.okey);
+        closeCycle(s);
         continue;
       }
 
@@ -1318,7 +1310,7 @@ function registerOutcome(profit, early = false) {
 }
 
 // ─── FECHAMENTO DE CICLO (extraído para uso em evaluateOpenPositions) ──────────
-function closeCycle(s, settledOkey = null) {
+function closeCycle(s) {
   const cyclePnl = (cycleStats.cash.pnl + cycleStats.runner.pnl + cycleStats.recovery.pnl);
   cycleStats.cycles.pnl = round2(cycleStats.cycles.pnl + cyclePnl);
   if (cyclePnl > 0) cycleStats.cycles.won++;
