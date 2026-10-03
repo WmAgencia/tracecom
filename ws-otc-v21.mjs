@@ -74,8 +74,8 @@ const REC_CLOSE_BEFORE   = num(REC.closeBeforeMs, 20_000);
 const ENTRY_MODE            = String(S.entryMode ?? 'rsiTouch');
 const REGIME_1M_MIN_CAND   = Math.max(30, Math.round(num(S.regime1mMinCandles, 120)));
 const REGIME_1M_MIN_SPREAD = num(S.regime1mMinEmaSpreadPct, 0.002);
-const RSI_TOUCH_CALL        = 45;  // CALL: RSI ≤ 45 (pullback de alta)
-const RSI_TOUCH_PUT         = 65;  // PUT: RSI ≥ 65 (pullback de baixa)
+const RSI_TOUCH_CALL        = num(S.rsiTouchCall, 35); // CALL: RSI ≤ touch (pullback de alta)
+const RSI_TOUCH_PUT         = num(S.rsiTouchPut, 65);  // PUT: RSI ≥ touch (pullback de baixa)
 const SUPPORT_LOOKBACK      = Math.max(10, Math.round(num(S.supportLookback, 60)));
 const SUPPORT_ATR_FACTOR    = num(S.supportAtrFactor, 1.5);
 const BOOT_1M_CANDLES       = Math.max(30, Math.round(num(S.boot1mCandles, 240)));
@@ -725,7 +725,7 @@ function planTrade(aid) {
     s.regime1m = { ...trendDirection1m(b1.ticks), at: b1Last?.atMs ?? null };
   }
 
-  const decision = evaluateEntry({ ticks: b5.ticks, open, trend, regime, regime1m: s.regime1m?.direction, rsi, adx, cycleOps: s.cycleOps, prevRsi });
+  const decision = evaluateEntry({ ticks: b5.ticks, open, trend, regime, regime1m: s.regime1m, rsi, adx, cycleOps: s.cycleOps, prevRsi });
   if (decision.skip) return null;
 
   // Se Runner lossou e Recovery NÃO foi feita → avalia Recovery
