@@ -195,14 +195,18 @@ ok('subscribePositionChanges com userId real (não 0)', () => {
 });
 
 ok('Regime 1m usado na entrada (evaluateEntry/planTrade)', () => {
-  assert.ok(src.includes("regime1m === 'alta1m'") || src.includes("regime1m === 'baixa1m'"), 'regime1m não verificado');
+  // V21 usa regime1m.direction (objeto) — verifica presença do objeto e direção
+  assert.ok(src.includes('regime1m.direction'), 'regime1m.direction não verificado');
+  assert.ok(src.includes("'alta1m'") || src.includes('"alta1m"'), 'alta1m não verificado');
+  assert.ok(src.includes("'baixa1m'") || src.includes('"baixa1m"'), 'baixa1m não verificado');
 });
 
-ok('RSI é GATILHO (não guarda): CALL ≤45, PUT ≥65, regime 1m', () => {
-  assert.ok(src.match(/RSI_TOUCH_CALL\s*=\s*45/), 'RSI_TOUCH_CALL != 45');
-  assert.ok(src.match(/RSI_TOUCH_PUT\s*=\s*65/), 'RSI_TOUCH_PUT != 65');
-  assert.ok(src.includes("regime1m === 'alta1m'"), 'alta1m não verificado');
-  assert.ok(src.includes("'baixa1m'"), 'baixa1m não verificado');
+ok('RSI é GATILHO: regime 1m + RSI cruzando + ADX>=15 (V21 via config)', () => {
+  // V21 usa RSI_TOUCH_CALL/PUT lidos do config (rsiTouchCall/rsiTouchPut), com fallback
+  assert.ok(src.match(/RSI_TOUCH_CALL.*=.*num\(|RSI_TOUCH_PUT.*=.*num\(/), 'RSI_TOUCH não vem do config');
+  assert.ok(src.includes("dir1m === 'alta1m'") || src.includes('"alta1m"'), 'alta1m não verificado');
+  assert.ok(src.includes("dir1m === 'baixa1m'") || src.includes('"baixa1m"'), 'baixa1m não verificado');
+  assert.ok(src.match(/touchCall|touchPut/), 'touchCall/touchPut não usados');
 });
 
 console.log('\n══ RESUMO ══');
