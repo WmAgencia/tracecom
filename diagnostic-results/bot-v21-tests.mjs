@@ -182,6 +182,44 @@ ok('sem updateLearning (função removida)', () => {
   assert.ok(!src.match(/updateLearning\(/), 'updateLearning ainda chamada');
 });
 
+console.log('\n══ V21 — REGIME AGENT (15m) ══');
+
+ok('readRegimeState + getRegimeForAsset exportados', () => {
+  assert.ok(src.includes('export function readRegimeState('), 'readRegimeState não exportada');
+  assert.ok(src.includes('export function getRegimeForAsset('), 'getRegimeForAsset não exportada');
+});
+
+ok('planTrade usa getRegimeForAsset (não trendDirection1m diretamente)', () => {
+  const planBlock = src.match(/function planTrade[\s\S]{0,2000}/)?.[0] ?? '';
+  assert.ok(planBlock.includes('getRegimeForAsset(aid)'), 'planTrade não chama getRegimeForAsset');
+  assert.ok(!planBlock.match(/trendDirection1m\(b1\.ticks\)/), 'planTrade ainda chama trendDirection1m(b1.ticks)');
+});
+
+ok('evaluateEntry recebe regime15m (não regime1m)', () => {
+  const evBlock = src.match(/export function evaluateEntry[\s\S]{0,2000}/)?.[0] ?? '';
+  assert.ok(evBlock.includes('regime15m = null') || evBlock.includes('regime15m=null'), 'regime15m não é parâmetro de evaluateEntry');
+  assert.ok(!evBlock.includes('regime1m = null'), 'regime1m ainda em evaluateEntry');
+});
+
+ok('getRegimeForAsset: prioriza Regime Agent 15m → fallback local 1m → lateral', () => {
+  assert.ok(src.includes('regime-agent-15m'), 'fallback regime-agent-15m não usado');
+  assert.ok(src.includes("direction: 'lateral15m'"), 'lateral15m não retornado como fallback');
+});
+
+ok('evaluateRecovery usa regime15m (não regime1m)', () => {
+  // evaluateRecovery spans ~2936 chars — use next function as boundary
+  const startIdx = src.indexOf('function evaluateRecovery({ aid, direction })');
+  const endIdx = src.indexOf('function ', startIdx + 1);
+  const recBlock = src.slice(startIdx, endIdx);
+  assert.ok(recBlock.includes('regime15m') || recBlock.includes("'lateral15m'"), 'evaluateRecovery não usa regime15m');
+  assert.ok(!/s\.regime1m\b/.test(recBlock), 'evaluateRecovery ainda usa s.regime1m');
+});
+
+ok('logging mostra reg15m com source (regime-agent-15m ou local-1m)', () => {
+  assert.ok(src.includes('reg15m='), 'reg15m não aparece no log');
+  assert.ok(src.includes('[${r15m.source}]') || src.includes('${r15m.source}'), 'source do regime não logado');
+});
+
 console.log('\n══ V21 — LOG E MONITOR ══');
 
 ok('evaluateOpenPositions é o monitor de posições (cash sell)', () => {
@@ -194,19 +232,32 @@ ok('subscribePositionChanges com userId real (não 0)', () => {
   assert.ok(!src.match(/userId:\s*0/), 'userId: 0 ainda presente');
 });
 
-ok('Regime 1m usado na entrada (evaluateEntry/planTrade)', () => {
-  // V21 usa regime1m.direction (objeto) — verifica presença do objeto e direção
-  assert.ok(src.includes('regime1m.direction'), 'regime1m.direction não verificado');
-  assert.ok(src.includes("'alta1m'") || src.includes('"alta1m"'), 'alta1m não verificado');
-  assert.ok(src.includes("'baixa1m'") || src.includes('"baixa1m"'), 'baixa1m não verificado');
+ok('Regime 15m usado na entrada (evaluateEntry/planTrade)', () => {
+  // V21 usa regime15m.direction (Regime Agent 15m ou fallback local) — verifica presença do objeto e direção
+  assert.ok(src.includes('regime15m.direction'), 'regime15m.direction não verificado');
+  assert.ok(src.includes("'alta15m'") || src.includes('"alta15m"'), 'alta15m não verificado');
+  assert.ok(src.includes("'baixa15m'") || src.includes('"baixa15m"'), 'baixa15m não verificado');
 });
 
-ok('RSI é GATILHO: regime 1m + RSI cruzando + ADX>=15 (V21 via config)', () => {
-  // V21 usa RSI_TOUCH_CALL/PUT lidos do config (rsiTouchCall/rsiTouchPut), com fallback
+ok('RSI é GATILHO: regime 15m + RSI cruzando + ADX>=20 (V21 via config)', () => {
+  // V21 usa RSI_TOUCH_CALL/PUT lidos do config (rsiTouchCall/rsiTouchPut), com fallback 30/70
   assert.ok(src.match(/RSI_TOUCH_CALL.*=.*num\(|RSI_TOUCH_PUT.*=.*num\(/), 'RSI_TOUCH não vem do config');
-  assert.ok(src.includes("dir1m === 'alta1m'") || src.includes('"alta1m"'), 'alta1m não verificado');
-  assert.ok(src.includes("dir1m === 'baixa1m'") || src.includes('"baixa1m"'), 'baixa1m não verificado');
+  assert.ok(src.includes("dir15m === 'alta15m'") || src.includes('"alta15m"'), 'alta15m não verificado');
+  assert.ok(src.includes("dir15m === 'baixa15m'") || src.includes('"baixa15m"'), 'baixa15m não verificado');
   assert.ok(src.match(/touchCall|touchPut/), 'touchCall/touchPut não usados');
+  // Fallback explícito 30/70 no evaluateEntry
+  assert.ok(src.match(/Math\.max\(RSI_TOUCH_CALL,\s*30\)/), 'fallback touchCall 30 não encontrado');
+  assert.ok(src.match(/Math\.min\(RSI_TOUCH_PUT,\s*70\)/), 'fallback touchPut 70 não encontrado');
+  // adxMinEntry default 20
+  assert.ok(src.match(/adxMinEntry,\s*20\)/), 'adxV20 default 20 não encontrado');
+});
+
+ok('jaEraOversold/jaEraOverbought bloqueia sinal em evaluateEntry', () => {
+  // O guarda deve estar em evaluateEntry (não só no diagnóstico)
+  const evBlock = src.match(/export\s+function\s+evaluateEntry[\s\S]{0,2000}/)?.[0]
+               ?? src.match(/function\s+evaluateEntry[\s\S]{0,2000}/)?.[0] ?? '';
+  assert.ok(evBlock.length > 0, 'evaluateEntry não encontrada no fonte');
+  assert.ok(evBlock.match(/jaEraOversold|jaEraOverbought/), 'jaEraOversold/jaEraOverbought não em evaluateEntry');
 });
 
 console.log('\n══ RESUMO ══');

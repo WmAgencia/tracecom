@@ -80,7 +80,7 @@ const SUPPORT_LOOKBACK      = Math.max(10, Math.round(num(S.supportLookback, 60)
 const SUPPORT_ATR_FACTOR    = num(S.supportAtrFactor, 1.5);
 const BOOT_1M_CANDLES       = Math.max(30, Math.round(num(S.boot1mCandles, 240)));
 const COOLDOWN_WIN_MS       = 0;
-const COOLDOWN_LOSS_MS      = 5000;
+const COOLDOWN_LOSS_MS      = 0;  // REMOVIDO: não travar por loss
 const TREND_LOOKBACK        = Math.max(21, Math.round(num(S.trendLookback, 40)));
 const TREND_MIN_SPREAD      = num(S.trendMinEmaSpreadPct, 0.05);
 // ─── HISTÓRICO — bootstrap 15 min + warmup de indicadores ──────────────────
@@ -239,6 +239,67 @@ export function trendDirection1m(ticks) {
   return { direction: dir, source: 'ema8x21', spreadPct: round2(spread), candles: ticks.length };
 }
 
+// ─── Regime Agent integration ─────────────────────────────────────────────────
+// O Regime Agent (regime-agent.mjs) calcula o regime de 15m para todos os
+// ativos e escreve em regime-state.json. Esta seção lê esse arquivo.
+//
+// Prioridade: (1) regime-state.json (Regime Agent, 15m) → (2) cálculo local 1m
+// Se o Regime Agent está fora, o bot usa o cálculo local (backwards-compatible).
+const REGIME_STATE_FILE  = P.regimeStateFile ?? './regime-state.json';
+const REGIME_STALE_MS    = 5 * 60 * 1000; // 5 min sem atualização → stale
+
+let cachedRegimeState = null;
+let cachedRegimeAt    = 0;
+
+export function readRegimeState() {
+  const now = Date.now();
+  if (cachedRegimeState && (now - cachedRegimeAt) < 5_000) return cachedRegimeState; // cache 5s
+  try {
+    if (!fs.existsSync(REGIME_STATE_FILE)) return null;
+    const stat = fs.statSync(REGIME_STATE_FILE);
+    if ((now - stat.mtimeMs) > REGIME_STALE_MS) {
+      // Arquivo existe mas está stale — tentar ler mesmo assim (pode ter conteúdo válido)
+    }
+    const raw = fs.readFileSync(REGIME_STATE_FILE, 'utf8');
+    cachedRegimeState = JSON.parse(raw);
+    cachedRegimeAt = now;
+    return cachedRegimeState;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Retorna o regime de 15m para um ativo.
+ * Prioridade: (1) Regime Agent (15m, pronto) → (2) cálculo local 1m (fallback).
+ * NUNCA retorna null — se nenhum dado, retorna lateral15m (fail-safe).
+ */
+export function getRegimeForAsset(assetId) {
+  // 1) Regime Agent (15m) — preferencial, só usa se confirmar alta/baixa
+  const state = readRegimeState();
+  if (state?.assets?.[assetId]) {
+    const a = state.assets[assetId];
+    // Usa Regime Agent APENAS quando ele confirma alta/baixa clara (não 'lateral15m')
+    if (a.regime?.direction && a.regime.direction !== 'lateral15m') {
+      return {
+        direction: a.regime.direction,   // 'alta15m' | 'baixa15m'
+        spreadPct: a.regime.spreadPct ?? 0,
+        source:    'regime-agent-15m',
+        candles:   a.candleCount ?? 0,
+      };
+    }
+    // 'lateral15m' = warming-up OU mercado lateral → tenta fallback local 1m
+  }
+  // 2) Fallback: cálculo local 1m (válido com 8+ velas 1m = 8 minutos)
+  const b1 = buf1m.get(assetId);
+  if (b1?.ticks?.length >= 8) {
+    const local = trendDirection1m(b1.ticks);
+    return { direction: local.direction, spreadPct: local.spreadPct, source: 'local-1m', candles: local.candles };
+  }
+  // 3) Sem nenhum dado → lateral (bloqueia entrada com segurança)
+  return { direction: 'lateral15m', spreadPct: 0, source: 'nenhum', candles: 0 };
+}
+
 export function fade4Signal(ticks, direction) {
   // Pullback V15: 4 velas contra + 1 de volta na direção
   if (!Array.isArray(ticks) || ticks.length < 5) return null;
@@ -393,30 +454,37 @@ export class ClosedCandles {
 
 // ─── ENTRADA — EMA8×21 + ADX + RSI guarda + corpo vela (V15 puro) ──────────────
 // ─── ENTRADA V20 (IDENTICA — NÃO ALTERAR) ────────────────────────────────────
-export function evaluateEntry({ ticks, open, trend, regime, rsi, adx, cycleOps = 0, gale = false, reversalGale = false, mode = 'rsiTouch', regime1m = null }) {
-  const adxV20 = num(S.adxMinEntry, 15);
+export function evaluateEntry({ ticks, open, trend, regime, rsi, adx, cycleOps = 0, gale = false, reversalGale = false, mode = 'rsiTouch', regime15m = null }) {
+  const adxV20 = num(S.adxMinEntry, 20);   // ← 20 (alinhado com strategy.adxMin)
   const bodyRatioMin = num(S.entryBodyRatio ?? 0.4, 0.4);
   if (mode !== 'rsiTouch') return { skip: 'modeInvalido' };
-  if (!regime1m || regime1m.direction === 'lateral1m') return { skip: 'lateral1m' };
-  const dir1m = regime1m.direction;
+  // Regime de 15m (Regime Agent) ou fallback local 1m
+  if (!regime15m || regime15m.direction === 'lateral15m') return { skip: 'lateral15m' };
+  const dir15m = regime15m.direction;
   const rsiNow = rsi;
-  // prevRsi: RSI anterior (últimos 15 candles, excluindo o candle atual)
+  // prevRsi: RSI das 15 velas anteriores (exclui o candle atual — verifica se estava伸acima do limiar antes do pullback)
   const prevRsi = calcRSI(ticks.slice(-16, -1));
-  const touchCall = Math.max(RSI_TOUCH_CALL, 35); // fallback se 30 inalcançável
-  const touchPut  = Math.min(RSI_TOUCH_PUT,  65); // fallback se 70 inalcançável
-  const crossing = (dir1m === 'alta1m' && rsiNow <= touchCall && prevRsi > touchCall)
-                || (dir1m === 'baixa1m' && rsiNow >= touchPut  && prevRsi < touchPut);
+  // Thresholds alinhados com a intenção do dono: CALL em RSI≤30, PUT em RSI≥70
+  const touchCall = Math.max(RSI_TOUCH_CALL, 30); // fallback 30
+  const touchPut  = Math.min(RSI_TOUCH_PUT,  70); // fallback 70
+  // Bloco de crossing: exige RSI cruzando de cima (CALL) ou de baixo (PUT)
+  const crossing = (dir15m === 'alta15m' && rsiNow <= touchCall && prevRsi > touchCall)
+                || (dir15m === 'baixa15m' && rsiNow >= touchPut  && prevRsi < touchPut);
   if (!crossing) {
-    console.log(`[🔍 ENTRY_DEBUG] ${dir1m} rsi=${rsiNow?.toFixed(1)} prevRsi=${prevRsi?.toFixed(1)} skip=semRsiTouch touchCall=${touchCall} touchPut=${touchPut}`);
+    console.log(`[🔍 ENTRY_DEBUG] ${dir15m} rsi=${rsiNow?.toFixed(1)} prevRsi=${prevRsi?.toFixed(1)} skip=semRsiTouch touchCall=${touchCall} touchPut=${touchPut}`);
     return { skip: 'semRsiTouch' };
   }
+  // Guarda extra: se RSI já estava profundamente oversold/overbought, o pullback já aconteceu —
+  // o rally/phantom já comeu o movimento; chance de Continuar é baixa → bloqueia
+  if (dir15m === 'alta15m' && prevRsi <= touchCall) return { skip: 'jaEraOversold' };
+  if (dir15m === 'baixa15m' && prevRsi >= touchPut)  return { skip: 'jaEraOverbought' };
   const lastTick = ticks[ticks.length - 1];
   if (!lastTick) return { skip: 'semVela' };
   const body  = Math.abs(lastTick.close - (lastTick.open ?? lastTick.close));
   const range = Math.max(1e-12, (lastTick.high ?? lastTick.close) - (lastTick.low ?? lastTick.close));
   if (body / range < bodyRatioMin) return { skip: 'corpoFraco' };
   if (adx < adxV20) return { skip: 'adxFraco' };
-  const direction = dir1m === 'alta1m' ? 'CALL' : 'PUT';
+  const direction = dir15m === 'alta15m' ? 'CALL' : 'PUT';
   const sTicks = ticks.slice(-SUPPORT_LOOKBACK);
   if (!sTicks.length) return { skip: 'semSuporte' };
   const atr = sTicks.reduce((mx, t) => Math.max(mx, Math.abs((t.high ?? t.close) - (t.low ?? t.close))), 0) / Math.max(1, sTicks.reduce((a, t) => a + (t.close ?? 0), 0) / sTicks.length) * 100;
@@ -430,7 +498,7 @@ export function evaluateEntry({ ticks, open, trend, regime, rsi, adx, cycleOps =
   }
   const opp = open.filter((o) => o.direction !== direction);
   if (opp.length) return { skip: 'ladoOposto' };
-  return { skip: null, direction, reason: `regime${dir1m}|RSI${rsiNow.toFixed(0)}|ADX${adx.toFixed(1)}|spread${regime1m.spreadPct}%|rsiPrev${prevRsi.toFixed(0)}|bodyRatio${(body/range).toFixed(2)}` };
+  return { skip: null, direction, reason: `regime${dir15m}|RSI${rsiNow.toFixed(0)}|ADX${adx.toFixed(1)}|spread${regime15m.spreadPct}%|rsiPrev${prevRsi.toFixed(0)}|bodyRatio${(body/range).toFixed(2)}` };
 }
 
 // ─── ESTADO ───────────────────────────────────────────────────────────────────
@@ -608,8 +676,7 @@ function startAnalyseLog() {
       const rsi  = ticks.length >= 15 ? calcRSI(ticks) : null;
       const adx  = ticks.length >= 30 ? calcADX(ticks) : null;
       const trend = ticks.length >= 21 ? trendDirection(ticks) : null;
-      const b1   = buf1m.get(op.assetId);
-      const regime1m = b1?.ticks?.length >= 8 ? trendDirection1m(b1.ticks) : null;
+      const regime15m = getRegimeForAsset(op.assetId);
       const s    = state[op.key];
       const recoveryArmed = s?.runnerLossRecoveryArmed ?? false;
       const cycleStatus = recoveryArmed ? 'RECOVERY_ARMADA' : 'CASH/RUNNER_ABERTA';
@@ -620,7 +687,7 @@ function startAnalyseLog() {
         `exp=${remainingSec}s ${lpStr} ` +
         `RSI=${rsi?.toFixed(0) ?? '?'} ADX=${adx?.toFixed(1) ?? '?'} ` +
         `trend=${trend?.direction ?? '?'}(${trend?.spreadPct ?? '?'}%) ` +
-        `reg1m=${regime1m?.direction ?? '?'} ` +
+        `reg15m=${regime15m?.direction ?? '?'}(${regime15m?.spreadPct?.toFixed(2) ?? '?'}%)[${regime15m?.source ?? '?'}] ` +
         `cycle=${cycleStatus} ` +
         `cycleOps=${s?.cycleOps ?? '?'}/${C.maxOpsPerAsset ?? 3}`
       );
@@ -679,9 +746,9 @@ export function evaluateGuards({
   const sameDir = open.filter((o) => o.direction === direction);
   if (sameDir.length >= maxSameDirection) return 'pyramidMax';
   if (open.length >= (C.maxOpsPerAsset ?? 3)) return 'maxOps';
-  if (now < pausedUntil) return 'pausado';
+  if (now < pausedUntil) return 'pausado';  // REMOVIDO: pausedUntil nunca mais é setado
   if (sessionLoss >= sessionLossLimit) return 'perdaSessao';
-  if (!open.length && lastOpAt && now - lastOpAt < (lastResult === 'win' ? COOLDOWN_WIN_MS : COOLDOWN_LOSS_MS)) return 'cooldown';
+  // REMOVIDO: cooldown por loss — sem pausa entre operações
   if (balance > 0 && stake > balance) return 'semSaldo';
   return null;
 }
@@ -720,12 +787,11 @@ function planTrade(aid) {
   const adx     = calcADX(b5.ticks);
   // prevRsi: RSI das 30 velas passadas (lookback maior para detectar "RSI estava伸" antes do pullback)
   const prevRsi = calcRSI(b5.ticks.slice(-31, -1));
-  const b1Last = b1.ticks[b1.ticks.length - 1] ?? null;
-  if (!s.regime1m || s.regime1m.at !== b1Last?.atMs) {
-    s.regime1m = { ...trendDirection1m(b1.ticks), at: b1Last?.atMs ?? null };
-  }
+  // Regime de 15m: do Regime Agent (prioridade) ou fallback local 1m
+  const regime15m = getRegimeForAsset(aid);
+  s.regime15m = regime15m;
 
-  const decision = evaluateEntry({ ticks: b5.ticks, open, trend, regime, regime1m: s.regime1m, rsi, adx, cycleOps: s.cycleOps, prevRsi });
+  const decision = evaluateEntry({ ticks: b5.ticks, open, trend, regime, regime15m: s.regime15m, rsi, adx, cycleOps: s.cycleOps, prevRsi });
   if (decision.skip) return null;
 
   // Se Runner lossou e Recovery NÃO foi feita → avalia Recovery
@@ -782,11 +848,11 @@ function evaluateRecovery({ aid, direction }) {
     if (remainingMs < REC_CLOSE_BEFORE) return { skip: 'RECOVERY_SKIPPED_TOO_LATE' };
   }
 
-  // Regime 1m ainda válido (não virou contra)
+  // Regime 15m (Regime Agent) ainda válido (não virou contra)
   const s = state[buf.key];
-  if (!s?.regime1m || s.regime1m.direction === 'lateral1m') return { skip: 'REGIME_INVALIDADO' };
-  if (direction === 'CALL' && s.regime1m.direction !== 'alta1m') return { skip: 'REGIME_INVALIDADO' };
-  if (direction === 'PUT'  && s.regime1m.direction !== 'baixa1m') return { skip: 'REGIME_INVALIDADO' };
+  if (!s?.regime15m || s.regime15m.direction === 'lateral15m') return { skip: 'REGIME_INVALIDADO' };
+  if (direction === 'CALL' && s.regime15m.direction !== 'alta15m') return { skip: 'REGIME_INVALIDADO' };
+  if (direction === 'PUT'  && s.regime15m.direction !== 'baixa15m') return { skip: 'REGIME_INVALIDADO' };
 
   const rsi  = calcRSI(ticks);
   const adx  = calcADX(ticks);
@@ -1024,8 +1090,8 @@ function maybeTrade(aid) {
   const guard = canTrade(aid, plan.direction, stake * 2);
   if (!guard) return;
 
+  // REMOVIDO: pausedUntil — sem travamento por stake alto
   if (stake > MAX_STAKE || stake * 2 > MAX_STAKE) {
-    guard.pausedUntil = nowMs() + PAUSE_AFTER_MS;
     logLine(`[⛔ BLOQUEADO] ${shortName(s.name)} | stake ${currencySymbol}${stake * 2} acima de ${currencySymbol}${MAX_STAKE}`);
     return;
   }
@@ -1153,13 +1219,8 @@ function applyResult(op, result, profit) {
     }
   }
 
-  // Estado legado (mantido para compatibilidade com evaluateGuards)
-  if (result === 'loss') {
-    s.lossStreak = (s.lossStreak ?? 0) + 1;
-  } else {
-    s.lossStreak = 0;
-    s.lastResult = result;
-  }
+  // lossStreak REMOVIDO: não tracking mais
+  s.lastResult = result;
 
   saveState();
 }
@@ -1335,8 +1396,8 @@ async function rebalanceUniverse() {
       const row = running.get(aid);
       if (row) {
         if (result.ok) {
-          const regime = trendDirection1m(buf1m.get(aid)?.ticks ?? []);
-          logLine(`  [✅ ${shortName(row.name)}] HIST=${HIST_WARMUP_MIN_MINUTES}m+ | regime=${regime.direction} spread=${regime.spreadPct?.toFixed(3) ?? 'n/a'}`);
+          const r15m = getRegimeForAsset(aid);
+          logLine(`  [✅ ${shortName(row.name)}] HIST=${HIST_WARMUP_MIN_MINUTES}m+ | reg15m=${r15m.direction}(${r15m.spreadPct?.toFixed(3) ?? 'n/a'})[${r15m.source}]`);
         } else {
           logLine(`  [⚠️ ${shortName(row.name)}] DATA_NOT_READY | ${row.bootstrapFailReason ?? 'unknown'}`);
         }
@@ -1434,7 +1495,7 @@ async function main() {
     logLine(`[🧬] CÓDIGO ${CODE_REV} | stake ${currencySymbol}${BASE_STAKE.toFixed(2)} | Cash TP=${fmt(CASH_TP)} | Recovery ×${REC_MULTIPLIER} | expiração ${EXPIRATION_MIN}min`);
     logLine(`[📤] CASH + RUNNER: cada sinal abre 2 posições iguais | CASH: vende quando LP>=${fmt(CASH_TP)} (sell_profit real) | RUNNER: vai até expiração`);
     logLine(`[🎲] RECOVERY: máx 1 por ciclo, após Runner loss + confirmação técnica | stake=${fmt(BASE_STAKE * REC_MULTIPLIER)} | REGIME INVALIDADO bloqueia`);
-    logLine(`[🛡️] ENTRADA: regime 1m + RSI pullback (CALL≤${RSI_TOUCH_CALL} / PUT≥${RSI_TOUCH_PUT}) + ADX>=${num(S.adxMin, 20)} + EMA8×21 confirmação + corpo>=${num(S.entryBodyRatio, 0.4)}x`);
+    logLine(`[🛡️] ENTRADA: regime 1m + RSI pullback (CALL≤${Math.max(RSI_TOUCH_CALL, 30)} / PUT≥${Math.min(RSI_TOUCH_PUT, 70)}) + ADX>=${num(S.adxMin, 20)} + EMA8×21 confirmação + corpo>=${num(S.entryBodyRatio, 0.4)}x`);
     logLine(`[⚠️] DEMO/PRACTICE APENAS — nenhuma operação REAL durante os testes`);
 
     const actives = await fetchActives();
@@ -1466,8 +1527,8 @@ async function main() {
       if (row.bootstrapStatus === 'READY') {
         const b5 = buf5s.get(aid)?.ticks.length ?? 0;
         const b1 = buf1m.get(aid)?.ticks.length ?? 0;
-        const regime = trendDirection1m(buf1m.get(aid)?.ticks ?? []);
-        const diag = `5s=${b5} 1m=${b1} regime=${regime.direction} spread=${regime.spreadPct?.toFixed(3) ?? 'n/a'}`;
+        const r15m = getRegimeForAsset(aid);
+        const diag = `5s=${b5} 1m=${b1} reg15m=${r15m.direction}(${r15m.spreadPct?.toFixed(3) ?? 'n/a'})[${r15m.source}]`;
         logLine(`  [✅ ${shortName(row.name)}] HIST=${HIST_WARMUP_MIN_MINUTES}m+ | ${diag}`);
       } else if (row.bootstrapStatus === 'DATA_NOT_READY') {
         logLine(`  [⚠️ ${shortName(row.name)}] DATA_NOT_READY | ${row.bootstrapFailReason ?? 'unknown'}`);
@@ -1492,28 +1553,28 @@ async function main() {
         const b5 = buf5s.get(aid), b1 = buf1m.get(aid);
         if (!b5 || !b1) continue;
         const s = state[b5.key];
-        if (!s?.regime1m) continue;
+        if (!s?.regime15m) continue;
         const rsi = calcRSI(b5.ticks);
         const adx = calcADX(b5.ticks);
-        const regime = s.regime1m.direction;
-        const prevRsi = calcRSI(b5.ticks.slice(-16, -1)); // últimos 14 candles (exclui atual)
-        const touchCall = Math.max(RSI_TOUCH_CALL, 35);
-        const touchPut  = Math.min(RSI_TOUCH_PUT,  65);
+        const regime = s.regime15m.direction;
+        const prevRsi = calcRSI(b5.ticks.slice(-16, -1)); // últimos 15 candles (exclui candle atual)
+        const touchCall = Math.max(RSI_TOUCH_CALL, 30); // 30
+        const touchPut  = Math.min(RSI_TOUCH_PUT,  70); // 70
         let skip = null;
-        if (regime === 'lateral1m') skip = 'lateral1m';
+        if (regime === 'lateral15m') skip = 'lateral15m';
         else if (adx < num(S.adxMin, 20)) skip = 'adxFraco';
-        else if (trend.direction && Math.abs(trend.spreadPct) < 0.001) skip = 'spreadFraco';
+        else if (s.regime15m && Math.abs(s.regime15m.spreadPct) < 0.001) skip = 'spreadFraco';
         else {
-          const crossing = (regime === 'alta1m' && rsi <= touchCall && prevRsi > touchCall)
-                       || (regime === 'baixa1m' && rsi >= touchPut  && prevRsi < touchPut);
+          const crossing = (regime === 'alta15m' && rsi <= touchCall && prevRsi > touchCall)
+                       || (regime === 'baixa15m' && rsi >= touchPut  && prevRsi < touchPut);
           if (!crossing) skip = 'semRsiPullback';
-          else if (regime === 'alta1m' && rsi > touchCall) skip = 'rsiAlto';
-          else if (regime === 'baixa1m' && rsi < touchPut) skip = 'rsiBaixo';
-          else if (regime === 'alta1m' && prevRsi <= touchCall) skip = 'jaEraOversold';
-          else if (regime === 'baixa1m' && prevRsi >= touchPut) skip = 'jaEraOverbought';
+          else if (regime === 'alta15m' && rsi > touchCall) skip = 'rsiAlto';
+          else if (regime === 'baixa15m' && rsi < touchPut) skip = 'rsiBaixo';
+          else if (regime === 'alta15m' && prevRsi <= touchCall) skip = 'jaEraOversold';
+          else if (regime === 'baixa15m' && prevRsi >= touchPut) skip = 'jaEraOverbought';
         }
         if (skip) skipCount[skip] = (skipCount[skip] || 0) + 1;
-        if (regime !== 'lateral1m' && samples.length < 10) {
+        if (regime !== 'lateral15m' && samples.length < 10) {
           samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(1)} prevRsi=${prevRsi.toFixed(1)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
         }
       }
@@ -1538,10 +1599,10 @@ async function main() {
         const b5 = buf5s.get(aid), b1 = buf1m.get(aid);
         if (!b5 || !b1) continue;
         const s = state[b5.key];
-        if (!s?.regime1m) continue;
+        if (!s?.regime15m) continue;
         const rsi = calcRSI(b5.ticks);
         const adx = calcADX(b5.ticks);
-        const regime = s.regime1m.direction;
+        const regime = s.regime15m.direction;
         const open = opsFor(aid);
         const trend = trendDirection(b5.ticks);
 
@@ -1550,22 +1611,22 @@ async function main() {
         const touchCall = Math.max(RSI_TOUCH_CALL, 35);
         const touchPut  = Math.min(RSI_TOUCH_PUT,  65);
         let skip = null;
-        if (regime === 'lateral1m') skip = 'lateral1m';
+        if (regime === 'lateral15m') skip = 'lateral15m';
         else if (adx < num(S.adxMin, 20)) skip = 'adxFraco';
         else if (open.length > 0) skip = 'posicaoAberta';
         else if (trend.direction && Math.abs(trend.spreadPct) < 0.001) skip = 'spreadFraco';
         else {
-          const crossing = (regime === 'alta1m' && rsi <= touchCall && prevRsi > touchCall)
-                       || (regime === 'baixa1m' && rsi >= touchPut  && prevRsi < touchPut);
+          const crossing = (regime === 'alta15m' && rsi <= touchCall && prevRsi > touchCall)
+                       || (regime === 'baixa15m' && rsi >= touchPut  && prevRsi < touchPut);
           if (!crossing) skip = 'semRsiPullback';
-          else if (regime === 'alta1m' && rsi > touchCall) skip = 'rsiAlto';
-          else if (regime === 'baixa1m' && rsi < touchPut) skip = 'rsiBaixo';
-          else if (regime === 'alta1m' && prevRsi <= touchCall) skip = 'jaEraOversold';
-          else if (regime === 'baixa1m' && prevRsi >= touchPut) skip = 'jaEraOverbought';
+          else if (regime === 'alta15m' && rsi > touchCall) skip = 'rsiAlto';
+          else if (regime === 'baixa15m' && rsi < touchPut) skip = 'rsiBaixo';
+          else if (regime === 'alta15m' && prevRsi <= touchCall) skip = 'jaEraOversold';
+          else if (regime === 'baixa15m' && prevRsi >= touchPut) skip = 'jaEraOverbought';
         }
         if (skip) skipCount[skip] = (skipCount[skip] || 0) + 1;
         // Amostrar alguns com bom regime para ver RSI
-        if (regime !== 'lateral1m' && samples.length < 8) {
+        if (regime !== 'lateral15m' && samples.length < 8) {
           samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(1)} prevRsi=${prevRsi.toFixed(1)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
         }
       }
