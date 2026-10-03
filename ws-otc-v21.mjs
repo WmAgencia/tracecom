@@ -82,7 +82,7 @@ const BOOT_1M_CANDLES       = Math.max(30, Math.round(num(S.boot1mCandles, 240))
 const COOLDOWN_WIN_MS       = 0;
 const COOLDOWN_LOSS_MS      = 0;  // REMOVIDO: não travar por loss
 const TREND_LOOKBACK        = Math.max(21, Math.round(num(S.trendLookback, 40)));
-const TREND_MIN_SPREAD      = num(S.trendMinEmaSpreadPct, 0.05);
+const TREND_MIN_SPREAD      = num(S.trendMinEmaSpreadPct, 0.01); // era 0.05: OTC tem spread pequeno
 // ─── HISTÓRICO — bootstrap 15 min + warmup de indicadores ──────────────────
 // ADX(14) precisa de 29 velas min; RSI(14) precisa de 15; EMA21 precisa de 21.
 // Piso: 15 min = 180 velas de 5s. Teto: max(piso, warmup_indicadores).
@@ -228,6 +228,136 @@ function calcEMA(prices, period) {
   return ema;
 }
 
+// ─── Regime 15m LOCAL ───────────────────────────────────────────────────────────
+// Cálculo de regime de 15 minutos feito localmente a partir dos candles 5s.
+// Agrega candles 5s em buckets de 15m e calcula EMA8×21 sobre os closes.
+//
+// AGENDA:
+// - No boot: puxa 15+ min de candles 5s → calcula regime imediatamente (sem espera)
+// - A cada 15 min: recalcula com свежих candles 5s (window deslizante)
+//
+// Parâmetros (alinhar com regime-agent.mjs):
+const REGIME_15M_MIN_CANDLES  = 16;   // candles 15m para EMA8+EMA21 estabilizar
+const REGIME_15M_AGG_MS        = 15 * 60 * 1000;  // 15 minutos em ms
+const REGIME_15M_MIN_SPREAD    = 0.03; // spread mínimo % para classificar alta/baixa
+const REGIME_15M_RECALC_MS    = 15 * 60 * 1000;  // recalcula a cada 15 minutos
+
+// Cache do regime 15m por ativo (recalculado a cada 15 min)
+const regime15mCache = new Map(); // aid → { direction, spreadPct, source, candles, computedAt }
+
+/**
+ * Agrega candles 5s em candles de 15m (window deslizante — usa os últimos 16 buckets).
+ * Cada bucket 15m é o OHLCV agregado dos candles 5s dentro daquele intervalo.
+ */
+function aggregateTo15m(ticks5s) {
+  if (!ticks5s || ticks5s.length < 4) return [];
+  const buckets = new Map();
+  for (const t of ticks5s) {
+    const bucketAt = Math.floor((t.atMs ?? t.at ?? Date.now()) / REGIME_15M_AGG_MS) * REGIME_15M_AGG_MS;
+    if (!buckets.has(bucketAt)) {
+      buckets.set(bucketAt, { at: bucketAt, open: t.open, high: t.high, low: t.low, close: t.close });
+    } else {
+      const b = buckets.get(bucketAt);
+      b.high  = Math.max(b.high, t.high);
+      b.low   = Math.min(b.low, t.low);
+      b.close = t.close; // último close do bucket
+    }
+  }
+  return Array.from(buckets.values()).sort((a, b) => a.at - b.at).slice(-REGIME_15M_MIN_CANDLES);
+}
+
+/**
+ * Calcula regime de 15m para um ativo a partir dos candles 5s.
+ * Usa os últimos 16 candles 15m agregados → EMA8 × EMA21 sobre closes.
+ * Fallback: se não tiver candles suficientes, retorna 'lateral15m' (fail-safe).
+ */
+export function computeRegime15mLocal(ticks5s) {
+  const candles15m = aggregateTo15m(ticks5s);
+  if (candles15m.length < REGIME_15M_MIN_CANDLES) {
+    return {
+      direction: 'lateral15m',
+      spreadPct: 0,
+      source: 'local-15m-warming',
+      candles: candles15m.length,
+    };
+  }
+  const closes = candles15m.map(c => c.close);
+  const ema8  = calcEMA(closes, 8);
+  const ema21 = calcEMA(closes, 21);
+  if (!ema8 || !ema21 || ema21 === 0) {
+    return { direction: 'lateral15m', spreadPct: 0, source: 'local-15m-ema-null', candles: closes.length };
+  }
+  const spread = ((ema8 - ema21) / ema21) * 100;
+  const dir = spread >= REGIME_15M_MIN_SPREAD   ? 'alta15m'
+            : spread <= -REGIME_15M_MIN_SPREAD ? 'baixa15m'
+            : 'lateral15m';
+  return {
+    direction: dir,
+    spreadPct: Math.round(spread * 10000) / 10000,
+    source:   'local-15m',
+    candles:  closes.length,
+  };
+}
+
+/**
+ * Agenda ou executa recálculo de regime 15m para todos os ativos.
+ * Se force=true, recalcula imediatamente; caso contrário agenda.
+ */
+let regimeRecalcTimer = null;
+let lastRegimeRecalcAt = 0;
+
+export function scheduleRegime15mRecalc(force = false) {
+  const now = Date.now();
+  if (!force && regimeRecalcTimer) return; // já agendado
+  regimeRecalcTimer = setTimeout(() => {
+    regimeRecalcTimer = null;
+    lastRegimeRecalcAt = now;
+    for (const [aid, buf] of buf5s) {
+      if (buf?.ticks?.length >= 4) {
+        const regime = computeRegime15mLocal(buf.ticks);
+        regime15mCache.set(aid, regime);
+      }
+    }
+    if (warmupDone) {
+      logLine(`[🔄 REG15M] Recalculado para ${regime15mCache.size} ativos`);
+    }
+    // Agenda próximo recalc em 15 min
+    scheduleRegime15mRecalc(true); // force=true → agenda sem checar timer existente
+  }, force ? 500 : 0); // se force=true, roda em 500ms; se false, agenda imediato
+}
+
+/**
+ * Retorna o regime de 15m para um ativo (prioridade: cache → cálculo local 15m → fallback 1m).
+ * NUNCA retorna null — se nenhum dado, retorna lateral15m (fail-safe).
+ */
+export function getRegimeForAsset(assetId) {
+  // 1) Cache fresco (calculado nos últimos 15 min)
+  const cached = regime15mCache.get(assetId);
+  if (cached && cached.direction !== 'lateral15m') {
+    return cached;
+  }
+  // 2) Cálculo local 15m em tempo real (usa candles 5s corrente)
+  const buf = buf5s.get(assetId);
+  if (buf?.ticks?.length >= 4) {
+    const regime = computeRegime15mLocal(buf.ticks);
+    // Atualiza cache com свежий resultado
+    regime15mCache.set(assetId, regime);
+    if (regime.direction !== 'lateral15m') {
+      return regime;
+    }
+    // Se cálculo local deu lateral, tenta fallback 1m (mais responsivo no warmup)
+  }
+  // 3) Fallback: cálculo local 1m (válido com 8+ velas 1m = 8 minutos) — mapeia para sufixo 15m para compatibilidade com evaluateEntry
+  const b1 = buf1m.get(assetId);
+  if (b1?.ticks?.length >= 8) {
+    const local = trendDirection1m(b1.ticks);
+    const dirMap = { alta1m: 'alta15m', baixa1m: 'baixa15m', lateral1m: 'lateral15m' };
+    return { direction: dirMap[local.direction] ?? 'lateral15m', spreadPct: local.spreadPct, source: 'local-1m', candles: local.candles };
+  }
+  // 4) Sem nenhum dado → lateral (bloqueia entrada com segurança)
+  return { direction: 'lateral15m', spreadPct: 0, source: 'nenhum', candles: 0 };
+}
+
 export function trendDirection1m(ticks) {
   if (!Array.isArray(ticks) || ticks.length < 8) return { direction: 'lateral1m', source: 'insuficiente', spreadPct: 0, candles: 0 };
   const closes = ticks.map((t) => t.close);
@@ -237,67 +367,6 @@ export function trendDirection1m(ticks) {
   const spread = ((ema8 - ema21) / ema21) * 100;
   const dir = spread >= REGIME_1M_MIN_SPREAD ? 'alta1m' : spread <= -REGIME_1M_MIN_SPREAD ? 'baixa1m' : 'lateral1m';
   return { direction: dir, source: 'ema8x21', spreadPct: round2(spread), candles: ticks.length };
-}
-
-// ─── Regime Agent integration ─────────────────────────────────────────────────
-// O Regime Agent (regime-agent.mjs) calcula o regime de 15m para todos os
-// ativos e escreve em regime-state.json. Esta seção lê esse arquivo.
-//
-// Prioridade: (1) regime-state.json (Regime Agent, 15m) → (2) cálculo local 1m
-// Se o Regime Agent está fora, o bot usa o cálculo local (backwards-compatible).
-const REGIME_STATE_FILE  = P.regimeStateFile ?? './regime-state.json';
-const REGIME_STALE_MS    = 5 * 60 * 1000; // 5 min sem atualização → stale
-
-let cachedRegimeState = null;
-let cachedRegimeAt    = 0;
-
-export function readRegimeState() {
-  const now = Date.now();
-  if (cachedRegimeState && (now - cachedRegimeAt) < 5_000) return cachedRegimeState; // cache 5s
-  try {
-    if (!fs.existsSync(REGIME_STATE_FILE)) return null;
-    const stat = fs.statSync(REGIME_STATE_FILE);
-    if ((now - stat.mtimeMs) > REGIME_STALE_MS) {
-      // Arquivo existe mas está stale — tentar ler mesmo assim (pode ter conteúdo válido)
-    }
-    const raw = fs.readFileSync(REGIME_STATE_FILE, 'utf8');
-    cachedRegimeState = JSON.parse(raw);
-    cachedRegimeAt = now;
-    return cachedRegimeState;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Retorna o regime de 15m para um ativo.
- * Prioridade: (1) Regime Agent (15m, pronto) → (2) cálculo local 1m (fallback).
- * NUNCA retorna null — se nenhum dado, retorna lateral15m (fail-safe).
- */
-export function getRegimeForAsset(assetId) {
-  // 1) Regime Agent (15m) — preferencial, só usa se confirmar alta/baixa
-  const state = readRegimeState();
-  if (state?.assets?.[assetId]) {
-    const a = state.assets[assetId];
-    // Usa Regime Agent APENAS quando ele confirma alta/baixa clara (não 'lateral15m')
-    if (a.regime?.direction && a.regime.direction !== 'lateral15m') {
-      return {
-        direction: a.regime.direction,   // 'alta15m' | 'baixa15m'
-        spreadPct: a.regime.spreadPct ?? 0,
-        source:    'regime-agent-15m',
-        candles:   a.candleCount ?? 0,
-      };
-    }
-    // 'lateral15m' = warming-up OU mercado lateral → tenta fallback local 1m
-  }
-  // 2) Fallback: cálculo local 1m (válido com 8+ velas 1m = 8 minutos)
-  const b1 = buf1m.get(assetId);
-  if (b1?.ticks?.length >= 8) {
-    const local = trendDirection1m(b1.ticks);
-    return { direction: local.direction, spreadPct: local.spreadPct, source: 'local-1m', candles: local.candles };
-  }
-  // 3) Sem nenhum dado → lateral (bloqueia entrada com segurança)
-  return { direction: 'lateral15m', spreadPct: 0, source: 'nenhum', candles: 0 };
 }
 
 export function fade4Signal(ticks, direction) {
@@ -352,22 +421,57 @@ export function calcRSI(ticks, period = 14) {
 
 export function calcADX(ticks, period = 14) {
   if (!Array.isArray(ticks) || ticks.length < period * 2 + 1) return 0;
-  const highs = ticks.map((t) => t.high ?? t.close);
-  const lows  = ticks.map((t) => t.low ?? t.close);
+  const highs  = ticks.map((t) => t.high  ?? t.close);
+  const lows   = ticks.map((t) => t.low   ?? t.close);
   const closes = ticks.map((t) => t.close);
-  const trs = [];
-  for (let i = 1; i < ticks.length; i++) {
-    const tr = Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1]));
+  const n = ticks.length;
+
+  // True Range e Directional Movement
+  const trs  = [];
+  const posDMs = [];
+  const negDMs = [];
+  for (let i = 1; i < n; i++) {
+    const tr   = Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1]));
+    const up   = highs[i]  - highs[i-1];
+    const down = lows[i-1] - lows[i];
+    const posDM = (up > down && up > 0) ? up : 0;
+    const negDM = (down > up && down > 0) ? down : 0;
     trs.push(tr);
+    posDMs.push(posDM);
+    negDMs.push(negDM);
   }
-  const adxPeriod = Math.min(period, trs.length);
-  if (adxPeriod < 2) return 0;
-  const avgTR = trs.slice(-adxPeriod).reduce((a, b) => a + b, 0) / adxPeriod;
-  if (avgTR <= 0) return 0;
-  const lastClose = closes[closes.length - 1];
-  const emaClose = calcEMA(closes.slice(-adxPeriod * 2), adxPeriod * 2);
-  const atr = avgTR;
-  return round2((Math.abs(lastClose - emaClose) / atr) * 100);
+
+  // Wilder smoothing com EMA-like (usando period)
+  function wilderSmooth(arr) {
+    const lookback = Math.min(period, arr.length);
+    if (lookback < 2) return 0;
+    let sum = arr.slice(-lookback).reduce((a, b) => a + b, 0);
+    for (let i = arr.length - lookback - 1; i >= 0; i--) {
+      sum = (sum * (lookback - 1) + arr[i]) / lookback;
+    }
+    return sum;
+  }
+
+  const smoothTR  = wilderSmooth(trs);
+  const smoothPos = wilderSmooth(posDMs);
+  const smoothNeg = wilderSmooth(negDMs);
+  if (smoothTR <= 0) return 0;
+
+  const plusDI  = round2((smoothPos / smoothTR) * 100);
+  const minusDI = round2((smoothNeg / smoothTR) * 100);
+  const diSum   = plusDI + minusDI;
+  if (diSum === 0) return 0;
+
+  const dx = Math.abs(plusDI - minusDI) / diSum * 100;
+  if (ticks.length < period * 4) return round2(dx);
+
+  // ADX = EMA suave do DX (usando period)
+  const adxPeriod = Math.min(period, ticks.length);
+  let adx = dx;
+  for (let i = 0; i < adxPeriod; i++) {
+    adx = (adx * (adxPeriod - 1) + dx) / adxPeriod;
+  }
+  return round2(adx);
 }
 
 function tickVolPct(ticks) {
@@ -454,8 +558,8 @@ export class ClosedCandles {
 
 // ─── ENTRADA — EMA8×21 + ADX + RSI guarda + corpo vela (V15 puro) ──────────────
 // ─── ENTRADA V20 (IDENTICA — NÃO ALTERAR) ────────────────────────────────────
-export function evaluateEntry({ ticks, open, trend, regime, rsi, adx, cycleOps = 0, gale = false, reversalGale = false, mode = 'rsiTouch', regime15m = null }) {
-  const adxV20 = num(S.adxMinEntry, 20);   // ← 20 (alinhado com strategy.adxMin)
+export function evaluateEntry({ ticks, open, rsi, adx, mode = 'rsiTouch', regime15m = null }) {
+  const adxV20 = num(S.adxMin, 15);   // lido de strategy.adxMin (config), default 15
   const bodyRatioMin = num(S.entryBodyRatio ?? 0.4, 0.4);
   if (mode !== 'rsiTouch') return { skip: 'modeInvalido' };
   // Regime de 15m (Regime Agent) ou fallback local 1m
@@ -470,14 +574,12 @@ export function evaluateEntry({ ticks, open, trend, regime, rsi, adx, cycleOps =
   // Bloco de crossing: exige RSI cruzando de cima (CALL) ou de baixo (PUT)
   const crossing = (dir15m === 'alta15m' && rsiNow <= touchCall && prevRsi > touchCall)
                 || (dir15m === 'baixa15m' && rsiNow >= touchPut  && prevRsi < touchPut);
-  if (!crossing) {
-    console.log(`[🔍 ENTRY_DEBUG] ${dir15m} rsi=${rsiNow?.toFixed(1)} prevRsi=${prevRsi?.toFixed(1)} skip=semRsiTouch touchCall=${touchCall} touchPut=${touchPut}`);
-    return { skip: 'semRsiTouch' };
-  }
-  // Guarda extra: se RSI já estava profundamente oversold/overbought, o pullback já aconteceu —
-  // o rally/phantom já comeu o movimento; chance de Continuar é baixa → bloqueia
-  if (dir15m === 'alta15m' && prevRsi <= touchCall) return { skip: 'jaEraOversold' };
-  if (dir15m === 'baixa15m' && prevRsi >= touchPut)  return { skip: 'jaEraOverbought' };
+  if (!crossing) return { skip: 'semRsiTouch' };
+  // Guarda extra: se RSI ficou profundamente oversold/overbought nas últimas velas,
+  // o rally já comeu o movimento → bloqueia para não entrar tarde
+  // Usa buffer de 5 para permitir que RSI "acabe de tocar" o limiar (crossing recente)
+  if (dir15m === 'alta15m' && prevRsi <= touchCall - 5) return { skip: 'jaEraOversold' };
+  if (dir15m === 'baixa15m' && prevRsi >= touchPut + 5)  return { skip: 'jaEraOverbought' };
   const lastTick = ticks[ticks.length - 1];
   if (!lastTick) return { skip: 'semVela' };
   const body  = Math.abs(lastTick.close - (lastTick.open ?? lastTick.close));
@@ -559,21 +661,24 @@ const opsFor   = (aid) => [...inFlight.values()].filter((o) => o.assetId === aid
 const openStake = () => [...inFlight.values()].reduce((sum, o) => sum + o.stake, 0);
 const nextCycleId = () => Math.floor(Date.now() / 1000) * 1000 + Math.floor(Math.random() * 999);
 
-function findOp({ aid = null, requestId = null, orderId = null, preferPending = false } = {}) {
+function findOp({ aid = null, requestId = null, orderId = null, expiration = null, preferPending = false } = {}) {
   const list = [...inFlight.values()];
   if (orderId !== null && orderId !== undefined && Number.isFinite(Number(orderId))) {
     const byId = list.find((o) => o.orderId !== undefined && o.orderId !== null && String(o.orderId) === String(orderId));
     if (byId) return byId;
   }
-  if (requestId) {
-    const byReq = list.find((o) => o.requestId === requestId);
+  if (requestId !== null && requestId !== undefined && String(requestId).length > 0) {
+    const byReq = list.find((o) => o.requestId !== null && String(o.requestId) === String(requestId));
     if (byReq) return byReq;
   }
   if (aid === null || !Number.isFinite(aid)) return null;
   const forAsset = opsFor(aid);
   if (!forAsset.length) return null;
-  if (preferPending) return forAsset.find((o) => o.orderId === undefined || o.orderId === null) ?? forAsset[0];
-  return forAsset.find((o) => o.orderId !== undefined && o.orderId !== null) ?? forAsset[0];
+  // Se expiração fornecida, filtra por ela (diferencia CASH vs RUNNER no mesmo aid/expiração)
+  const candidates = expiration ? forAsset.filter((o) => o.expiration === expiration) : forAsset;
+  if (!candidates.length) return forAsset[0];  // fallback se expiração não bate
+  if (preferPending) return candidates.find((o) => o.orderId === undefined || o.orderId === null) ?? candidates[0];
+  return candidates.find((o) => o.orderId !== undefined && o.orderId !== null) ?? candidates[0];
 }
 
 let ws = null, warmupDone = false;
@@ -739,8 +844,8 @@ export function selectUniverse({ whitelist = [], reserve = [], actives = [], min
 
 // ─── TRAVAS PURAS ─────────────────────────────────────────────────────────────
 export function evaluateGuards({
-  open, direction, now, pausedUntil = 0, lastOpAt = 0, lastResult = null,
-  stake, balance = 0, exposure = 0, exposureLimit = Infinity,
+  open, direction, now, pausedUntil = 0,
+  stake, balance = 0,
   sessionLoss = 0, sessionLossLimit = Infinity, maxSameDirection = 3,
 }) {
   const sameDir = open.filter((o) => o.direction === direction);
@@ -782,16 +887,13 @@ function planTrade(aid) {
   if (open.length > 0) return null;
 
   const trend = trendDirection(b5.ticks);
-  const regime = detectRegime(b5.ticks);
   const rsi     = calcRSI(b5.ticks);
   const adx     = calcADX(b5.ticks);
-  // prevRsi: RSI das 30 velas passadas (lookback maior para detectar "RSI estava伸" antes do pullback)
-  const prevRsi = calcRSI(b5.ticks.slice(-31, -1));
   // Regime de 15m: do Regime Agent (prioridade) ou fallback local 1m
   const regime15m = getRegimeForAsset(aid);
   s.regime15m = regime15m;
 
-  const decision = evaluateEntry({ ticks: b5.ticks, open, trend, regime, regime15m: s.regime15m, rsi, adx, cycleOps: s.cycleOps, prevRsi });
+  const decision = evaluateEntry({ ticks: b5.ticks, open, regime15m: s.regime15m, rsi, adx });
   if (decision.skip) return null;
 
   // Se Runner lossou e Recovery NÃO foi feita → avalia Recovery
@@ -862,17 +964,17 @@ function evaluateRecovery({ aid, direction }) {
   // Recovery CALL: RSI subiu (reagiu para cima após queda)
   // Recovery PUT: RSI caiu (reagiu para baixo após alta)
   const rsiReacting = direction === 'CALL' ? rsi >= 35 && rsi <= 55 : direction === 'PUT' ? rsi >= 45 && rsi <= 65 : false;
-  if (!rsiReacting) return { skip: 'RSI_NAO_REAGIU' };
+  if (!rsiReacting) return { skip: `RSI_NAO_REAGIU_RSI${rsi.toFixed(0)}` };
 
   // ADX confirma tendência
   if (adx < 15) return { skip: 'ADX_FRACO' };
 
-  // ATRP: volatilidade não pode estar em explosion
+  // ATRP: volatilidade não pode estar em explosion (simplified ATR = avg high-low dos últimos 14 candles)
   const closes = ticks.map((t) => t.close);
-  const atrAvg = ticks.slice(-14).reduce((sum, t, i, arr) => {
-    if (i === 0) return 0;
+  const recentBars = ticks.slice(-14);
+  const atrAvg = recentBars.reduce((sum, t, idx) => {
     return sum + Math.abs((t.high ?? t.close) - (t.low ?? t.close));
-  }, 0) / Math.max(1, ticks.slice(-14).length);
+  }, 0) / Math.max(1, recentBars.length);
   const lastClose = closes[closes.length - 1];
   const ATRP = atrAvg > 0 ? (atrAvg / lastClose) * 100 : 0;
   if (ATRP > REC_MAX_ATRP_PCT) return { skip: `ATRP_ALTO_${ATRP.toFixed(1)}%` };
@@ -938,13 +1040,50 @@ function sendOrder(aid, direction, stake, expiration, optionTypeId, requestId, r
 // ─── MONITOR DE POSIÇÕES ABERTAS (5s — V21: Cash + Recovery) ───────────────────
 let monitorBusy = false;
 
+// V21: flag transiento para evitar corrida entre evaluateOpenPositions e maybeTrade
+// evaluateOpenPositions seta true quando avalia Recovery armada (skipped ou disparada)
+// maybeTrade verifica antes de abrir novo ciclo
+let _recoveryArmedEvaluated = false;
+
 async function evaluateOpenPositions() {
   if (monitorBusy || !warmupDone) return;
-  if (inFlight.size === 0) return;
+  if (inFlight.size === 0) {
+    _recoveryArmedEvaluated = false;
+    return;
+  }
 
   monitorBusy = true;
   try {
+    // ── STALE-OP GUARD: força remoção de ops que expiraram há >60s sem settlement ──
+    // Causa raiz do freeze: WS cai → socket-option-closed para de fire → inFlight nunca limpa
+    // Solução: se exp * 1000 < now - 60s, força remoção e aplica resultado como loss
+    for (const [okey, op] of [...inFlight.entries()]) {
+      if (op.settled) continue;
+      const expiredMs = nowMs() - op.expiration * 1000;
+      if (expiredMs > 60_000) {
+        // Força close via IQ (pode já ter sido processada server-side)
+        logLine(`[⚠️ STALE-OP] ${shortName(op.name)} ${op.direction} ${(op.role ?? '?').toUpperCase()} expirou há ${Math.round(expiredMs/1000)}s sem settlement — forçando remoção`);
+        sessionLog(`STALE_OP_FORCE_REMOVE | ${shortName(op.name)} | ${op.direction} | ${(op.role ?? '?').toUpperCase()} | expired=${Math.round(expiredMs/1000)}s | cyc=${op.cycleId}`);
+        inFlight.delete(okey);
+        // Notifica settlement como loss (conservador — better than infinite freeze)
+        applyResult({ ...op, settled: false, role: op.role }, 'loss', -op.stake);
+        // Desarma recovery se era runner loss
+        const s = state[op.key];
+        if (s) {
+          if (op.role === 'runner' && !s.recoveryAttempts) {
+            s.runnerLossRecoveryArmed = true;
+          }
+          s.cycleOpenOps = Math.max(0, (s.cycleOpenOps ?? 1) - 1);
+        }
+        cycleStats[op.role ?? 'cash'].settled++;
+        cycleStats[op.role ?? 'cash'].losses++;
+        cycleStats[op.role ?? 'cash'].pnl = round2(cycleStats[op.role ?? 'cash'].pnl - op.stake);
+        registerOutcome(-op.stake, false);
+      }
+    }
+
     for (const op of [...inFlight.values()]) {
+      if (op.settled) continue;
       // ── CASH: avalia venda antecipada por L/P pós-venda real ──────────────
       if (op.role === 'cash') {
         const q = quotes.get(String(op.orderId));
@@ -998,6 +1137,7 @@ async function evaluateOpenPositions() {
     }
 
     // ── RECOVERY: avaliar se alguma Recovery deve ser disparada ────────────
+    _recoveryArmedEvaluated = false; // será true se encontrar pelo menos uma armada
     for (const [key, s] of Object.entries(state)) {
       if (!s.runnerLossRecoveryArmed || s.recoveryAttempts > 0) continue;
       // Encontra o ativo correspondente
@@ -1014,9 +1154,15 @@ async function evaluateOpenPositions() {
       const buf = buf5s.get(aid);
       if (!buf) continue;
 
+      // Atualiza regime 15m fresco para a avaliação de Recovery
+      // (planTrade só atualiza quando abre ciclo novo; aqui o regime pode estar obsoleto)
+      s.regime15m = getRegimeForAsset(aid);
+
       const openOps = opsFor(aid);
       // Se não há mais Runner aberta, Recovery já deveria ter sido avaliada no settlement
       if (openOps.some((o) => o.role === 'runner' && !o.settled)) continue;
+      // Runner fechou — marca que evaluamos a Recovery armada (mesmo que depois pule)
+      _recoveryArmedEvaluated = true;
       // Runner fechou — avalia se Recovery deve entrar
       const direction = s.direction === 'CALL' ? 'PUT' : 'CALL';
       const stake = round2(BASE_STAKE * REC_MULTIPLIER);
@@ -1024,14 +1170,18 @@ async function evaluateOpenPositions() {
 
       if (remainingMs < REC_CLOSE_BEFORE) {
         sessionLog(`RECOVERY_SKIPPED_TOO_LATE | ${shortName(s.name)} | tempo=${Math.round(remainingMs/1000)}s`);
+        // Fecha ciclo (Recovery não entrou + não vai entrar mais)
         s.runnerLossRecoveryArmed = false;
+        closeCycle(s, op.okey);
         continue;
       }
 
       const recCheck = evaluateRecovery({ aid, direction });
       if (recCheck.skip) {
-        sessionLog(`RECOVERY_SKIPPED ${recCheck.skip} | ${shortName(s.name)}`);
+        sessionLog(`RECOVERY_SKIPPED ${recCheck.skip} | ${shortName(s.name)} | reg15m=${s.regime15m?.direction ?? '?'} | rsi=${recCheck.skip.includes('RSI') ? recCheck.skip.match(/RSI(\d+)/)?.[1] ?? '?' : '?'}`);
+        // Fecha ciclo (Recovery recusada — market não confirmou)
         s.runnerLossRecoveryArmed = false;
+        closeCycle(s, op.okey);
         continue;
       }
 
@@ -1039,16 +1189,19 @@ async function evaluateOpenPositions() {
       const guard = canTrade(aid, direction, stake);
       if (!guard) {
         sessionLog(`RECOVERY_GUARD_FAILED | ${shortName(s.name)} | direcao=${direction} | stake=${stake}`);
+        // Fecha ciclo (guard falhou — sem espaço para Recovery)
         s.runnerLossRecoveryArmed = false;
+        closeCycle(s, op.okey);
         continue;
       }
 
+      // Recovery entra — ciclo fica ABERTO até Recovery fechar
       const { expiration, optionTypeId } = computeExpiration(Math.floor(nowMs() / 1000), EXPIRATION_MIN);
       const requestId = ws.uuid().replace(/-/g, '').slice(0, 12);
       sendOrder(aid, direction, stake, expiration, optionTypeId, requestId, 'recovery', s.cycleId);
       s.recoveryAttempts = 1;
-      s.runnerLossRecoveryArmed = false;
       guard.cycleOps = (guard.cycleOps ?? 0) + 1;
+      // cycleOpenOps NÃO decrementa aqui — Recovery adiciona +1 ao ciclo
       const op = inFlight.get(`${aid}|${expiration}|${requestId}`);
       if (op) op.recoveryReason = recCheck.recoveryReason;
       logLine(`[🎲 RECOVERY] ${shortName(s.name)} ${direction} ${fmt(stake)} | ${recCheck.reason} | cyc=${s.cycleId}`);
@@ -1065,16 +1218,20 @@ function maybeTrade(aid) {
   if (!warmupDone) return;
   const row = running.get(aid);
   if (!row || row.bootstrapStatus !== 'READY') return;
-  const plan = planTrade(aid);
-  if (!plan || plan.kind !== 'signal') return;
 
   const s = state[buf5s.get(aid)?.key];
   if (!s) return;
 
-  // Recovery já Skipped — loga e ignora
+  // V21: se Recovery está armada (Runner lossou), NÃO abre novo ciclo
+  // A avaliação de Recovery fica por conta do evaluateOpenPositions (5s)
+  if (s.runnerLossRecoveryArmed) return;
+
+  const plan = planTrade(aid);
+  if (!plan || plan.kind !== 'signal') return;
+
+  // Recovery já Skipped — loga e ignora (flag já foi zerado pelo planTrade)
   if (plan.kind === 'recovery_skipped') {
     sessionLog(`RECOVERY_SKIPPED ${plan.recoverySkipReason} | ${shortName(s.name)}`);
-    s.runnerLossRecoveryArmed = false;
     return;
   }
 
@@ -1125,7 +1282,6 @@ function maybeTrade(aid) {
 
 // ─── COTIZAÇÃO (sell_profit em tempo real) ────────────────────────────────────
 let quoteFirstLogged = false;
-let posDumpCount = 0;
 
 export function parsePositionChanged(raw) {
   const value = raw?.sell_profit;
@@ -1161,6 +1317,24 @@ function registerOutcome(profit, early = false) {
   }
 }
 
+// ─── FECHAMENTO DE CICLO (extraído para uso em evaluateOpenPositions) ──────────
+function closeCycle(s, settledOkey = null) {
+  const cyclePnl = (cycleStats.cash.pnl + cycleStats.runner.pnl + cycleStats.recovery.pnl);
+  cycleStats.cycles.pnl = round2(cycleStats.cycles.pnl + cyclePnl);
+  if (cyclePnl > 0) cycleStats.cycles.won++;
+  else if (cyclePnl < 0) cycleStats.cycles.lost++;
+
+  logLine(`[🏁 CICLO ${s.cycleId} FECHADO] ${shortName(s.name)} | CASH W=${cycleStats.cash.wins} L=${cycleStats.cash.losses} | RUNNER W=${cycleStats.runner.wins} L=${cycleStats.runner.losses} | REC W=${cycleStats.recovery.wins} L=${cycleStats.recovery.losses} | P/L=${fmt(cyclePnl)}`);
+  sessionLog(`CICLO_FIM | ${shortName(s.name)} | cyc=${s.cycleId} | P/L=${fmt(cyclePnl)}`);
+
+  // Reset ciclo completo
+  s.cycleId = 0;
+  s.cycleOpenOps = 0;
+  s.runnerLossRecoveryArmed = false;
+  s.recoveryReason = null;
+  s.recoveryAttempts = 0;
+}
+
 // ─── APLICA RESULTADO E FECHA POSIÇÃO ───────────────────────────────────────
 function applyResult(op, result, profit) {
   const s = state[op.key];
@@ -1181,7 +1355,8 @@ function applyResult(op, result, profit) {
       cycleStats.runner.pnl = round2(cycleStats.runner.pnl + (profit || 0));
       if (profit > 0) cycleStats.runner.wins++;
       else if (profit < 0) cycleStats.runner.losses++;
-      // Runner lossou → arma Recovery
+      // Runner lossou → arma Recovery (flag persiste até Recovery ser avaliada)
+      // BUG-FIX v22: NÃO fecha o ciclo aqui — evaluateOpenPositions fecha após avaliar Recovery
       if (result === 'loss' && s.recoveryAttempts === 0) {
         s.runnerLossRecoveryArmed = true;
         s.recoveryReason = null;
@@ -1195,33 +1370,16 @@ function applyResult(op, result, profit) {
       else if (profit < 0) cycleStats.recovery.losses++;
     }
 
-    // Ciclo fechou (todas as ops fecharam)
-    if (s.cycleOpenOps <= 0) {
-      const cashWon   = cycleStats.cash.settled > 0 ? cycleStats.cash.pnl > 0 : null;
-      const runnerWon = cycleStats.runner.settled > 0 ? cycleStats.runner.pnl > 0 : null;
-      const recWon    = cycleStats.recovery.settled > 0 ? cycleStats.recovery.pnl > 0 : null;
-      // P/L do ciclo
-      const cyclePnl = (cycleStats.cash.pnl + cycleStats.runner.pnl + cycleStats.recovery.pnl);
-      cycleStats.cycles.pnl = round2(cycleStats.cycles.pnl + cyclePnl);
-      if (cyclePnl > 0) cycleStats.cycles.won++;
-      else if (cyclePnl < 0) cycleStats.cycles.lost++;
-
-      logLine(`[🏁 CICLO ${op.cycleId} FECHADO] ${shortName(op.name)} | CASH W=${cycleStats.cash.wins} L=${cycleStats.cash.losses} | RUNNER W=${cycleStats.runner.wins} L=${cycleStats.runner.losses} | REC W=${cycleStats.recovery.wins} L=${cycleStats.recovery.losses} | P/L=${fmt(cyclePnl)}`);
-      sessionLog(`CICLO_FIM | ${shortName(op.name)} | cyc=${op.cycleId} | P/L=${fmt(cyclePnl)}`);
-
-      // Reset ciclo
-      s.cycleId = 0;
-      s.cycleOpenOps = 0;
-      s.runnerLossRecoveryArmed = false;
-      s.recoveryReason = null;
-      s.recoveryAttempts = 0;
+    // Ciclo fecha em evaluateOpenPositions (após avaliar Recovery armada).
+    // Aqui só fecha se Recovery JÁ foi evaluada (recoveryAttempts > 0) ou
+    // se não havia Recovery armada (cash-only, ou Runner ganhou).
+    if (s.cycleOpenOps <= 0 && !s.runnerLossRecoveryArmed) {
+      closeCycle(s);
       s.lastResult = result;
     }
   }
 
-  // lossStreak REMOVIDO: não tracking mais
   s.lastResult = result;
-
   saveState();
 }
 
@@ -1543,6 +1701,26 @@ async function main() {
     await new Promise((r) => setTimeout(r, num(S.warmupMs, 1_500)));
     warmupDone = true;
     startedAt = nowMs();
+
+    // ── Regime 15m: calcula imediatamente com candles do bootstrap ──────────────
+    for (const [aid, buf] of buf5s) {
+      if (buf?.ticks?.length >= 4) {
+        const regime = computeRegime15mLocal(buf.ticks);
+        regime15mCache.set(aid, regime);
+      }
+    }
+    logLine(`[📊 REG15M] ${regime15mCache.size} ativos com regime 15m calculado (local)`);
+
+    // Recalcula regime a cada 15 minutos
+    setInterval(() => {
+      if (shuttingDown) return;
+      for (const [aid, buf] of buf5s) {
+        if (buf?.ticks?.length >= 4) {
+          regime15mCache.set(aid, computeRegime15mLocal(buf.ticks));
+        }
+      }
+    }, REGIME_15M_RECALC_MS);
+
     // Diagnóstico inicial
     setTimeout(() => {
       const skipCount = {};
@@ -1606,10 +1784,10 @@ async function main() {
         const open = opsFor(aid);
         const trend = trendDirection(b5.ticks);
 
-        // Simular evaluateEntry para ver qual skip ocorreria
+        // Simular evaluateEntry com os MESMOS thresholds e lógica
         const prevRsi = calcRSI(b5.ticks.slice(-16, -1));
-        const touchCall = Math.max(RSI_TOUCH_CALL, 35);
-        const touchPut  = Math.min(RSI_TOUCH_PUT,  65);
+        const touchCall = Math.max(RSI_TOUCH_CALL, 30); // igual a evaluateEntry
+        const touchPut  = Math.min(RSI_TOUCH_PUT,  70); // igual a evaluateEntry
         let skip = null;
         if (regime === 'lateral15m') skip = 'lateral15m';
         else if (adx < num(S.adxMin, 20)) skip = 'adxFraco';
@@ -1618,14 +1796,12 @@ async function main() {
         else {
           const crossing = (regime === 'alta15m' && rsi <= touchCall && prevRsi > touchCall)
                        || (regime === 'baixa15m' && rsi >= touchPut  && prevRsi < touchPut);
-          if (!crossing) skip = 'semRsiPullback';
-          else if (regime === 'alta15m' && rsi > touchCall) skip = 'rsiAlto';
-          else if (regime === 'baixa15m' && rsi < touchPut) skip = 'rsiBaixo';
+          if (!crossing) skip = 'semRsiTouch';
           else if (regime === 'alta15m' && prevRsi <= touchCall) skip = 'jaEraOversold';
-          else if (regime === 'baixa15m' && prevRsi >= touchPut) skip = 'jaEraOverbought';
+          else if (regime === 'baixa15m' && prevRsi >= touchPut)  skip = 'jaEraOverbought';
         }
         if (skip) skipCount[skip] = (skipCount[skip] || 0) + 1;
-        // Amostrar alguns com bom regime para ver RSI
+        // Amostrar alguns com bom regime para ver RSI (mesmo formato do evaluateEntry)
         if (regime !== 'lateral15m' && samples.length < 8) {
           samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(1)} prevRsi=${prevRsi.toFixed(1)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
         }
@@ -1682,10 +1858,20 @@ async function main() {
 
   ws.on('socket-option-opened', (msg) => {
     const raw = msg?.msg ?? msg;
-    const op = findOp({ aid: Number(raw?.active_id ?? raw?.activeId), requestId: msg?.request_id ?? raw?.request_id ?? null, orderId: raw?.id ?? null, preferPending: true });
-    if (!op) { logLine(`[⚠️ ABERTURA SEM ORDEM] ${JSON.stringify(raw).slice(0, 160)}`); return; }
-    op.orderId = raw?.id ?? msg?.request_id ?? null;
-    op.record.orderId = op.orderId;
+    const serverReqId = raw?.request_id ?? msg?.request_id ?? null;
+    const orderId = raw?.id ?? null;
+    const serverExp = Number(raw?.expiration ?? raw?.expired ?? null);
+    // Tenta casar por requestId (string/number) + orderId + expiration
+    const op = findOp({
+      aid: Number(raw?.active_id ?? raw?.activeId),
+      requestId: serverReqId,
+      orderId,
+      expiration: serverExp || null,
+      preferPending: true,
+    });
+    if (!op) { logLine(`[⚠️ ABERTURA SEM ORDEM] reqId=${serverReqId} ordId=${orderId} exp=${serverExp}`); return; }
+    op.orderId = orderId;
+    op.record.orderId = orderId;
   });
 
   ws.on('sell-equal', async (msg) => {
@@ -1699,10 +1885,11 @@ async function main() {
   ws.on('socket-option-closed', async (msg) => {
     const raw  = msg?.msg ?? msg;
     const aid  = Number(raw?.active_id ?? raw?.activeId);
-    const op   = findOp({ aid, orderId: raw?.id ?? raw?.position_id ?? raw?.option_id ?? null, requestId: raw?.request_id ?? msg?.request_id ?? null });
+    const serverExp = Number(raw?.expiration ?? raw?.expired ?? null);
+    const op   = findOp({ aid, orderId: raw?.id ?? raw?.position_id ?? raw?.option_id ?? null, requestId: raw?.request_id ?? msg?.request_id ?? null, expiration: serverExp || null });
     if (!op) {
       const recent = [...settledRecently.values()].some((at) => nowMs() - at < 60_000);
-      if (!recent) logLine(`[❓ FECHAMENTO SEM ORDEM] aid=${aid}`);
+      if (!recent) logLine(`[❓ FECHAMENTO SEM ORDEM] aid=${aid} exp=${serverExp}`);
       return;
     }
     const now = nowMs();
@@ -1729,7 +1916,37 @@ async function main() {
     sessionLog(`SETTLEMENT | ${shortName(op.name)} | ${op.direction} | ${(op.role ?? '?').toUpperCase()} | ${result.toUpperCase()} | LP=${fmt(profit)} | cyc=${op.cycleId}`);
   });
 
-  ws.on('close', () => { if (!shuttingDown) { logLine('\n[WS] Conexão fechada.'); shutdown('WS'); } });
+  ws.on('close', () => {
+    if (shuttingDown) return;
+    logLine('\n[WS] Conexão fechada — tentando reconectar...');
+    let attempt = 1;
+    const maxAttempts = 5;
+    const tryReconnect = async () => {
+      if (shuttingDown) return;
+      try {
+        await ws.connect({ ssid });
+        logLine(`[WS] Reconectado (tentativa ${attempt})`);
+        // Não re-aplica universo — o ws já tem o state interno dos ativos
+        // Mas forçamos re-subscribe dos ativos correntes
+        for (const [aid] of running) {
+          ws.subscribeCandles(aid, num(S.candleSizeSeconds, 5));
+          ws.subscribeCandles(aid, 60);
+        }
+      } catch (err) {
+        if (shuttingDown) return;
+        const delay = Math.min(5000 * Math.pow(1.5, attempt - 1), 60_000);
+        logLine(`[WS] Reconexão falhou (${attempt}/${maxAttempts}) em ${delay}ms: ${String(err).slice(0, 80)}`);
+        if (attempt < maxAttempts) {
+          attempt++;
+          setTimeout(tryReconnect, delay);
+        } else {
+          logLine('[WS] Máximo de tentativas de reconexão atingido. Encerrando.');
+          shutdown('WS_RECONNECT_FAILED');
+        }
+      }
+    };
+    setTimeout(tryReconnect, 2000);
+  });
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 
@@ -1738,7 +1955,6 @@ async function main() {
 
 function summary() {
   const cs = cycleStats;
-  const csPnl = cs.cycles.pnl;
   logLine('\n🛑 RESULTADO V21 FINAL:\n');
   logLine(`📊 Ops totais: ${stats.settled} | W: ${stats.wins} | L: ${stats.losses} | Draw: ${stats.draws} | Vendas: ${stats.early} | WR: ${stats.settled ? (stats.wins / stats.settled * 100).toFixed(1) : 0}%`);
   logLine(`💰 Lucro (bot): ${fmt(stats.profit)}`);
