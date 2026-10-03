@@ -386,11 +386,16 @@ export function evaluateEntry({ ticks, open, trend, regime, rsi, adx, cycleOps =
   if (!regime1m || regime1m.direction === 'lateral1m') return { skip: 'lateral1m' };
   const dir1m = regime1m.direction;
   const rsiNow = rsi;
-  const prevIdx = Math.max(0, ticks.length - 2);
-  const prevRsi = calcRSI(ticks.slice(0, prevIdx + 1));
-  const crossing = (dir1m === 'alta1m' && rsiNow <= RSI_TOUCH_CALL && prevRsi > RSI_TOUCH_CALL)
-                || (dir1m === 'baixa1m' && rsiNow >= RSI_TOUCH_PUT  && prevRsi < RSI_TOUCH_PUT);
-  if (!crossing) return { skip: 'semRsiTouch' };
+  // prevRsi: RSI anterior (últimos 15 candles, excluindo o candle atual)
+  const prevRsi = calcRSI(ticks.slice(-15, -1));
+  const touchCall = Math.max(RSI_TOUCH_CALL, 35); // fallback se 30 inalcançável
+  const touchPut  = Math.min(RSI_TOUCH_PUT,  65); // fallback se 70 inalcançável
+  const crossing = (dir1m === 'alta1m' && rsiNow <= touchCall && prevRsi > touchCall)
+                || (dir1m === 'baixa1m' && rsiNow >= touchPut  && prevRsi < touchPut);
+  if (!crossing) {
+    console.log(`[🔍 ENTRY_DEBUG] ${dir1m} rsi=${rsiNow?.toFixed(1)} prevRsi=${prevRsi?.toFixed(1)} skip=semRsiTouch touchCall=${touchCall} touchPut=${touchPut}`);
+    return { skip: 'semRsiTouch' };
+  }
   const lastTick = ticks[ticks.length - 1];
   if (!lastTick) return { skip: 'semVela' };
   const body  = Math.abs(lastTick.close - (lastTick.open ?? lastTick.close));
@@ -1479,19 +1484,20 @@ async function main() {
         const rsi = calcRSI(b5.ticks);
         const adx = calcADX(b5.ticks);
         const regime = s.regime1m.direction;
-        const prevIdx = Math.max(0, b5.ticks.length - 2);
-        const prevRsi = calcRSI(b5.ticks.slice(0, prevIdx + 1));
+        const prevRsi = calcRSI(b5.ticks.slice(-15, -1)); // últimos 14 candles (exclui atual)
+        const touchCall = Math.max(RSI_TOUCH_CALL, 35);
+        const touchPut  = Math.min(RSI_TOUCH_PUT,  65);
         let skip = null;
         if (regime === 'lateral1m') skip = 'lateral1m';
         else {
-          const crossing = (regime === 'alta1m' && rsi <= RSI_TOUCH_CALL && prevRsi > RSI_TOUCH_CALL)
-                       || (regime === 'baixa1m' && rsi >= RSI_TOUCH_PUT  && prevRsi < RSI_TOUCH_PUT);
+          const crossing = (regime === 'alta1m' && rsi <= touchCall && prevRsi > touchCall)
+                       || (regime === 'baixa1m' && rsi >= touchPut  && prevRsi < touchPut);
           if (!crossing) skip = 'semRsiTouch';
           else if (adx < 15) skip = 'adxFraco';
         }
         if (skip) skipCount[skip] = (skipCount[skip] || 0) + 1;
         if (regime !== 'lateral1m' && samples.length < 10) {
-          samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(0)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
+          samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(1)} prevRsi=${prevRsi.toFixed(1)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
         }
       }
       const topSkips = Object.entries(skipCount).sort((x, y) => y[1] - x[1]).slice(0, 4)
@@ -1523,14 +1529,15 @@ async function main() {
         const trend = trendDirection(b5.ticks);
 
         // Simular evaluateEntry para ver qual skip ocorreria
-        const prevIdx = Math.max(0, b5.ticks.length - 2);
-        const prevRsi = calcRSI(b5.ticks.slice(0, prevIdx + 1));
+        const prevRsi = calcRSI(b5.ticks.slice(-15, -1));
+        const touchCall = Math.max(RSI_TOUCH_CALL, 35);
+        const touchPut  = Math.min(RSI_TOUCH_PUT,  65);
         let skip = null;
         if (regime === 'lateral1m') skip = 'lateral1m';
         else {
           const dir1m = regime;
-          const crossing = (dir1m === 'alta1m' && rsi <= RSI_TOUCH_CALL && prevRsi > RSI_TOUCH_CALL)
-                       || (dir1m === 'baixa1m' && rsi >= RSI_TOUCH_PUT  && prevRsi < RSI_TOUCH_PUT);
+          const crossing = (dir1m === 'alta1m' && rsi <= touchCall && prevRsi > touchCall)
+                       || (dir1m === 'baixa1m' && rsi >= touchPut  && prevRsi < touchPut);
           if (!crossing) skip = 'semRsiTouch';
           else if (adx < 15) skip = 'adxFraco';
           else if (open.length > 0) skip = 'posicaoAberta';
@@ -1538,7 +1545,7 @@ async function main() {
         if (skip) skipCount[skip] = (skipCount[skip] || 0) + 1;
         // Amostrar alguns com bom regime para ver RSI
         if (regime !== 'lateral1m' && samples.length < 8) {
-          samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(0)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
+          samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(1)} prevRsi=${prevRsi.toFixed(1)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
         }
       }
       const topSkips = Object.entries(skipCount).sort((x, y) => y[1] - x[1]).slice(0, 4)

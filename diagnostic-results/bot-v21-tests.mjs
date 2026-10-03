@@ -189,12 +189,12 @@ ok('recovery.maxAtrpPercent e closeBeforeMs configurados', () => {
   assert.ok(Number.isFinite(cfg.recovery?.closeBeforeMs), 'closeBeforeMs não é número');
 });
 
-ok('strategy (entrada V20) IDENTICA: adxMinEntry=15, entryBodyRatio=0.4, rsiTouchCall=30, rsiTouchPut=70', () => {
+ok('strategy (adaptada de V20 para 5s OTC): adxMinEntry=15, entryBodyRatio=0.4, rsiTouchCall=35, rsiTouchPut=65', () => {
   const cfg = JSON.parse(fs.readFileSync(new URL('../bot-config-v21.json', import.meta.url), 'utf8'));
   assert.equal(cfg.strategy?.adxMinEntry, 15, `adxMinEntry: ${cfg.strategy?.adxMinEntry}`);
   assert.equal(cfg.strategy?.entryBodyRatio, 0.4, `entryBodyRatio: ${cfg.strategy?.entryBodyRatio}`);
-  assert.equal(cfg.strategy?.rsiTouchCall, 30, `rsiTouchCall: ${cfg.strategy?.rsiTouchCall}`);
-  assert.equal(cfg.strategy?.rsiTouchPut, 70, `rsiTouchPut: ${cfg.strategy?.rsiTouchPut}`);
+  assert.equal(cfg.strategy?.rsiTouchCall, 35, `rsiTouchCall: ${cfg.strategy?.rsiTouchCall}`);
+  assert.equal(cfg.strategy?.rsiTouchPut, 65, `rsiTouchPut: ${cfg.strategy?.rsiTouchPut}`);
 });
 
 ok('accounts.demo: USD e saldo 60 (PRACTICE)', () => {
