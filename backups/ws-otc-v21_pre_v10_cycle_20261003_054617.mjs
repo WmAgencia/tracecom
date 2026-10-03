@@ -55,7 +55,6 @@ const GALE_WINDOW_MS    = num(C.galeWindowMs, 120_000);
 const PAYOUT            = num(M.payoutRate, 0.86);
 const MARTINGALE_MULT   = num(M.martingaleMultiplier, 2.75);
 const MAX_STAKE         = num(R.maxStake, 20);
-const MAX_EXPOSURE_PCT = num(R.maxExposurePct, 100);
 const SESSION_LOSS_PCT  = num(R.maxSessionLossPct, 20);
 const PAUSE_AFTER_MS    = num(M.pauseAfterLadderMs, 600_000);
 
@@ -73,9 +72,9 @@ const REC_CLOSE_BEFORE   = num(REC.closeBeforeMs, 20_000);
 // ENTRADA V20 (IDENTICA — NÃO ALTERAR)
 const ENTRY_MODE            = String(S.entryMode ?? 'rsiTouch');
 const REGIME_1M_MIN_CAND   = Math.max(30, Math.round(num(S.regime1mMinCandles, 120)));
-const REGIME_1M_MIN_SPREAD = num(S.regime1mMinEmaSpreadPct, 0.002);
-const RSI_TOUCH_CALL        = 45;  // CALL: RSI ≤ 45 (pullback de alta)
-const RSI_TOUCH_PUT         = 65;  // PUT: RSI ≥ 65 (pullback de baixa)
+const REGIME_1M_MIN_SPREAD = num(S.regime1mMinEmaSpreadPct, 0.03);
+const RSI_TOUCH_CALL        = num(S.rsiTouchCall, 30);
+const RSI_TOUCH_PUT         = num(S.rsiTouchPut, 70);
 const SUPPORT_LOOKBACK      = Math.max(10, Math.round(num(S.supportLookback, 60)));
 const SUPPORT_ATR_FACTOR    = num(S.supportAtrFactor, 1.5);
 const BOOT_1M_CANDLES       = Math.max(30, Math.round(num(S.boot1mCandles, 240)));
@@ -90,7 +89,7 @@ const TREND_MIN_SPREAD      = num(S.trendMinEmaSpreadPct, 0.05);
 // ou devolve candles rejeitados pelo ingest() por duplicidade/timing.
 // Uso 170 para 5s e 28 para 1m como piso real — o WS já retorna candles OK
 // para o regime 1m usar só 1m (não precisa de 180 de 5s).
-const HIST_WARMUP_MIN_MINUTES = 15; // minutos mínimos de histórico (piso)
+const HIST_WARMUP_MIN_MINUTES = 5; // minutos mínimos de histórico (piso) — V20 não tinha bootstrap; 5min é tolerável
 const HIST_5S_PER_MIN         = 12;  // 60s / 5s
 const HIST_1M_PER_MIN         = 1;
 const HIST_5S_REQUIRED        = Math.max(Math.round(HIST_WARMUP_MIN_MINUTES * HIST_5S_PER_MIN * 0.95), 29); // 170 (5% tolerância)
@@ -239,18 +238,6 @@ export function trendDirection1m(ticks) {
   return { direction: dir, source: 'ema8x21', spreadPct: round2(spread), candles: ticks.length };
 }
 
-export function fade4Signal(ticks, direction) {
-  // Pullback V15: 4 velas contra + 1 de volta na direção
-  if (!Array.isArray(ticks) || ticks.length < 5) return null;
-  const last5 = ticks.slice(-5);
-  const last4 = last5.slice(0, 4);
-  const down4 = last4.every((c, i) => i === 0 || c.close < last4[i - 1].close);
-  const up4   = last4.every((c, i) => i === 0 || c.close > last4[i - 1].close);
-  if (down4 && last5[4].close > last5[3].close && direction === 'CALL') return 'CALL';
-  if (up4   && last5[4].close < last5[3].close && direction === 'PUT')  return 'PUT';
-  return null;
-}
-
 export function trendDirection(ticks) {
   if (!Array.isArray(ticks) || ticks.length < TREND_LOOKBACK) return { direction: null, source: 'insuficiente', spreadPct: 0 };
   const closes = ticks.map((t) => t.close);
@@ -262,17 +249,18 @@ export function trendDirection(ticks) {
   return { direction: dir, source: 'ema8x21', spreadPct: round2(spread) };
 }
 
-// detectRegime V15: streak de velas na mesma direção → ranging vs trending
-export function detectRegime(ticks) {
-  if (ticks.length < num(S.lookbackRegime, 20)) return { state: 'unknown', streak: 0 };
-  let max = 0, cur = 0, last = 0;
-  for (let i = Math.max(1, ticks.length - num(S.lookbackRegime, 20)); i < ticks.length; i++) {
-    const move = ticks[i].close > ticks[i - 1].close ? 1 : ticks[i].close < ticks[i - 1].close ? -1 : 0;
-    if (move === 0) continue;
-    if (move === last) cur++; else { cur = 1; last = move; }
-    if (cur > max) max = cur;
-  }
-  return { state: max >= num(S.regimeStreakThreshold, 12) ? 'trending' : 'ranging', streak: max };
+// Pullback de 4 velas: as últimas 4 velas foram contra a direção, e a 5ª já está revertendo.
+// Pullback de 2 velas: as últimas 2 foram contra a direção, e a 3ª já está revertendo.
+// (4 velas era impossível em 5s OTC — reduzimos para 2, que já confirma o pullback.)
+function fade4Signal(ticks, direction) {
+  if (ticks.length < 3) return false;
+  const last3 = ticks.slice(-3);
+  const last2 = last3.slice(0, 2);
+  const down2 = last2.every((c, i) => i === 0 || c.close < last2[i - 1].close);
+  const up2   = last2.every((c, i) => i === 0 || c.close > last2[i - 1].close);
+  if (down2 && last3[2].close > last3[1].close && direction === 'CALL') return true;
+  if (up2   && last3[2].close < last3[1].close && direction === 'PUT')  return true;
+  return false;
 }
 
 export function calcRSI(ticks, period = 14) {
@@ -307,14 +295,6 @@ export function calcADX(ticks, period = 14) {
   const emaClose = calcEMA(closes.slice(-adxPeriod * 2), adxPeriod * 2);
   const atr = avgTR;
   return round2((Math.abs(lastClose - emaClose) / atr) * 100);
-}
-
-function tickVolPct(ticks) {
-  if (!Array.isArray(ticks) || ticks.length < 2) return 0.02;
-  const closes = ticks.map((t) => t.close);
-  const rets  = [];
-  for (let i = 1; i < closes.length; i++) rets.push(Math.abs(closes[i] - closes[i-1]) / closes[i-1]);
-  return rets.slice(-12).reduce((a, b) => a + b, 0) / Math.max(1, rets.slice(-12).length);
 }
 
 export function parseSettlement(raw, op) {
@@ -352,7 +332,6 @@ export class ClosedCandles {
     this.ticks = [];
     this.formingAt = null;
     this.formingClose = null;
-    this.formingOpen = null;
     this.formingHigh = null;
     this.formingLow = null;
     this.lastClosedAt = 0;
@@ -365,72 +344,58 @@ export class ClosedCandles {
     let closed = null;
     if (this.formingAt !== null && startMs > this.formingAt) closed = this.flushForming();
     if (this.formingAt === null) {
-      this.formingAt = startMs; this.formingOpen = Number(raw.open ?? raw.price_open ?? raw.o ?? close); this.formingClose = close; this.formingHigh = high; this.formingLow = low;
+      this.formingAt = startMs; this.formingClose = close; this.formingHigh = high; this.formingLow = low;
     } else {
       this.formingClose = close;
       this.formingHigh = Math.max(this.formingHigh ?? high, high);
       this.formingLow = Math.min(this.formingLow ?? low, low);
     }
     if (this.formingAt !== null && nowMs >= this.formingAt + this.sizeMs) closed = this.flushForming() ?? closed;
-    // Atualiza lastTickClose para que prevRsi seja calculado corretamente no próximo tick
-    this.lastTickClose = close;
     return closed;
   }
   flushForming() {
     if (this.formingAt === null) return null;
-    const bar = { atMs: this.formingAt, open: this.formingOpen, close: this.formingClose, high: this.formingHigh ?? this.formingClose, low: this.formingLow ?? this.formingClose };
+    const bar = { atMs: this.formingAt, close: this.formingClose, high: this.formingHigh ?? this.formingClose, low: this.formingLow ?? this.formingClose };
     this.ticks.push(bar);
     if (this.ticks.length > 500) this.ticks.shift();
     this.lastClosedAt = this.formingAt;
     this.formingAt = null;
     this.formingClose = null;
-    this.formingOpen = null;
     this.formingHigh = null;
     this.formingLow = null;
     return bar;
   }
 }
 
-// ─── ENTRADA — EMA8×21 + ADX + RSI guarda + corpo vela (V15 puro) ──────────────
-// ─── ENTRADA V20 (IDENTICA — NÃO ALTERAR) ────────────────────────────────────
-export function evaluateEntry({ ticks, open, trend, regime, rsi, adx, cycleOps = 0, gale = false, reversalGale = false, mode = 'rsiTouch', regime1m = null }) {
-  const adxV20 = num(S.adxMinEntry, 15);
-  const bodyRatioMin = num(S.entryBodyRatio ?? 0.4, 0.4);
+// ─── ENTRADA V21 — RSI zona + regime + ADX + corpo ────────────────────────────
+// V10: pullback definia direção + RSI confirmava (não-extremo).
+// V21: regime 1m define direção + pullback removido (raro em 5s).
+// Confirmação: RSI não-extremo + ADX + corpo vela + suporte/preço no fundo/topo.
+export function evaluateEntry({ ticks, open, rsi, adx, mode = 'rsiTouch', regime1m = null }) {
+  const adxMin = num(S.adxMinEntry, 15);
+  const bodyRatioMin = num(S.entryBodyRatio ?? 0.25, 0.25);
+  const rsiCallMax = num(S.rsiTouchCall ?? 35, 35);  // CALL: RSI <= limiar
+  const rsiPutMin  = num(S.rsiTouchPut  ?? 65, 65);  // PUT:  RSI >= limiar
   if (mode !== 'rsiTouch') return { skip: 'modeInvalido' };
   if (!regime1m || regime1m.direction === 'lateral1m') return { skip: 'lateral1m' };
   const dir1m = regime1m.direction;
-  const rsiNow = rsi;
-  // prevRsi: RSI anterior (últimos 15 candles, excluindo o candle atual)
-  const prevRsi = calcRSI(ticks.slice(-16, -1));
-  const touchCall = Math.max(RSI_TOUCH_CALL, 35); // fallback se 30 inalcançável
-  const touchPut  = Math.min(RSI_TOUCH_PUT,  65); // fallback se 70 inalcançável
-  const crossing = (dir1m === 'alta1m' && rsiNow <= touchCall && prevRsi > touchCall)
-                || (dir1m === 'baixa1m' && rsiNow >= touchPut  && prevRsi < touchPut);
-  if (!crossing) {
-    console.log(`[🔍 ENTRY_DEBUG] ${dir1m} rsi=${rsiNow?.toFixed(1)} prevRsi=${prevRsi?.toFixed(1)} skip=semRsiTouch touchCall=${touchCall} touchPut=${touchPut}`);
-    return { skip: 'semRsiTouch' };
-  }
+  const direction = dir1m === 'alta1m' ? 'CALL' : 'PUT';
+
+  // V10 style: RSI no extremo da zona → CALL em alta, PUT em baixa
+  // Sem cruzamento (impossível em 5s) — usa zona ampla
+  const rsiNow = rsi ?? 50;
+  if (direction === 'CALL' && rsiNow > rsiCallMax) return { skip: 'rsiExtremoContra' };
+  if (direction === 'PUT'  && rsiNow < rsiPutMin)  return { skip: 'rsiExtremoContra' };
+
   const lastTick = ticks[ticks.length - 1];
   if (!lastTick) return { skip: 'semVela' };
   const body  = Math.abs(lastTick.close - (lastTick.open ?? lastTick.close));
   const range = Math.max(1e-12, (lastTick.high ?? lastTick.close) - (lastTick.low ?? lastTick.close));
   if (body / range < bodyRatioMin) return { skip: 'corpoFraco' };
-  if (adx < adxV20) return { skip: 'adxFraco' };
-  const direction = dir1m === 'alta1m' ? 'CALL' : 'PUT';
-  const sTicks = ticks.slice(-SUPPORT_LOOKBACK);
-  if (!sTicks.length) return { skip: 'semSuporte' };
-  const atr = sTicks.reduce((mx, t) => Math.max(mx, Math.abs((t.high ?? t.close) - (t.low ?? t.close))), 0) / Math.max(1, sTicks.reduce((a, t) => a + (t.close ?? 0), 0) / sTicks.length) * 100;
-  const lastClose = lastTick.close;
-  if (direction === 'CALL') {
-    const minLow = Math.min(...sTicks.map((t) => t.low ?? t.close));
-    if (lastClose > minLow + SUPPORT_ATR_FACTOR * (atr / 100) * lastClose) return { skip: 'semSuporte' };
-  } else {
-    const maxHigh = Math.max(...sTicks.map((t) => t.high ?? t.close));
-    if (lastClose < maxHigh - SUPPORT_ATR_FACTOR * (atr / 100) * lastClose) return { skip: 'semSuporte' };
-  }
+  if (adx < adxMin) return { skip: 'adxFraco' };
   const opp = open.filter((o) => o.direction !== direction);
   if (opp.length) return { skip: 'ladoOposto' };
-  return { skip: null, direction, reason: `regime${dir1m}|RSI${rsiNow.toFixed(0)}|ADX${adx.toFixed(1)}|spread${regime1m.spreadPct}%|rsiPrev${prevRsi.toFixed(0)}|bodyRatio${(body/range).toFixed(2)}` };
+  return { skip: null, direction, reason: `regime=${dir1m}|rsi=${rsiNow.toFixed(1)} adx=${adx?.toFixed(0)} bodyRatio=${(body/range).toFixed(2)}` };
 }
 
 // ─── ESTADO ───────────────────────────────────────────────────────────────────
@@ -673,7 +638,7 @@ export function selectUniverse({ whitelist = [], reserve = [], actives = [], min
 // ─── TRAVAS PURAS ─────────────────────────────────────────────────────────────
 export function evaluateGuards({
   open, direction, now, pausedUntil = 0, lastOpAt = 0, lastResult = null,
-  stake, balance = 0, exposure = 0, exposureLimit = Infinity,
+  stake, balance = 0,
   sessionLoss = 0, sessionLossLimit = Infinity, maxSameDirection = 3,
 }) {
   const sameDir = open.filter((o) => o.direction === direction);
@@ -686,6 +651,7 @@ export function evaluateGuards({
   return null;
 }
 
+// ─── PLAN/TRADE ────────────────────────────────────────────────────────────────
 function planTrade(aid) {
   const b5 = buf5s.get(aid), b1 = buf1m.get(aid);
   if (!b5 || !b1) return null;
@@ -714,31 +680,33 @@ function planTrade(aid) {
   // V21: bloqueia nova entrada se ciclo ainda tem ops abertas (Cash+Runner simultâneas)
   if (open.length > 0) return null;
 
-  const trend = trendDirection(b5.ticks);
-  const regime = detectRegime(b5.ticks);
-  const rsi     = calcRSI(b5.ticks);
-  const adx     = calcADX(b5.ticks);
-  // prevRsi: RSI das 30 velas passadas (lookback maior para detectar "RSI estava伸" antes do pullback)
-  const prevRsi = calcRSI(b5.ticks.slice(-31, -1));
+  const rsi  = calcRSI(b5.ticks);
+  const adx   = calcADX(b5.ticks);
   const b1Last = b1.ticks[b1.ticks.length - 1] ?? null;
   if (!s.regime1m || s.regime1m.at !== b1Last?.atMs) {
     s.regime1m = { ...trendDirection1m(b1.ticks), at: b1Last?.atMs ?? null };
   }
 
-  const decision = evaluateEntry({ ticks: b5.ticks, open, trend, regime, regime1m: s.regime1m?.direction, rsi, adx, cycleOps: s.cycleOps, prevRsi });
+  const decision = evaluateEntry({ ticks: b5.ticks, open, rsi, adx, mode: ENTRY_MODE, regime1m: s.regime1m });
   if (decision.skip) return null;
+
+  // SINAL! Loga cada sinal válido
+  if (!planTrade._logAt || nowMs() - planTrade._logAt > 10_000) {
+    logLine(`[🎯 SINAL] ${shortName(s.name)} rsi=${rsi?.toFixed(1)} adx=${adx?.toFixed(0)} regime=${s.regime1m?.direction} dir=${decision.direction} reason=${decision.reason}`);
+    planTrade._logAt = nowMs();
+  }
 
   // Se Runner lossou e Recovery NÃO foi feita → avalia Recovery
   if (s.runnerLossRecoveryArmed && s.recoveryAttempts === 0) {
     const recResult = evaluateRecovery({ aid, direction: decision.direction });
     if (recResult.skip) {
       sessionLog(`RECOVERY_SKIPPED ${recResult.skip} | ${shortName(s.name)} | direção=${decision.direction}`);
-      return { direction: decision.direction, trend, rsi, adx, kind: 'recovery_skipped', recoverySkipReason: recResult.skip };
+      return { direction: decision.direction, rsi, adx, kind: 'recovery_skipped', recoverySkipReason: recResult.skip };
     }
-    return { direction: decision.direction, trend, rsi, adx, kind: 'recovery', reason: recResult.reason, recoveryReason: recResult.recoveryReason };
+    return { direction: decision.direction, rsi, adx, kind: 'recovery', reason: recResult.reason, recoveryReason: recResult.recoveryReason };
   }
 
-  return { direction: decision.direction, trend, rsi, adx, kind: 'signal', reason: decision.reason };
+  return { direction: decision.direction, rsi, adx, kind: 'signal', reason: decision.reason };
 }
 
 function canTrade(aid, direction, stake) {
@@ -750,13 +718,10 @@ function canTrade(aid, direction, stake) {
     open: opsFor(aid), direction, now: nowMs(),
     pausedUntil: s.pausedUntil, lastOpAt: s.lastOpAt, lastResult: s.lastResult,
     stake, balance: currentBalance,
-    exposure: openStake(), exposureLimit: exposureLimit(),
     sessionLoss: loss, sessionLossLimit: sessionLossLimit(),
     maxSameDirection: C.maxOpsPerAsset ?? 3,
   });
   if (reason) {
-    const row = running.get(aid);
-    sessionLog(`CAN_TRADE_BLOCKED aid=${aid} ${shortName(row?.name ?? '')} reason=${reason} | stake=${stake} balance=${currentBalance} open=${opsFor(aid).length}`);
     if (reason === 'perdaSessao' && !sessionStopLogged) {
       sessionStopLogged = true;
       logLine(`[🛑 TRAVA DE PERDA] sessão ${fmt(-loss)} de ${currencySymbol}${sessionLossLimit().toFixed(2)} — nenhuma ordem`);
@@ -803,7 +768,7 @@ function evaluateRecovery({ aid, direction }) {
 
   // ATRP: volatilidade não pode estar em explosion
   const closes = ticks.map((t) => t.close);
-  const atrAvg = ticks.slice(-14).reduce((sum, t, i, arr) => {
+  const atrAvg = ticks.slice(-14).reduce((sum, t, i) => {
     if (i === 0) return 0;
     return sum + Math.abs((t.high ?? t.close) - (t.low ?? t.close));
   }, 0) / Math.max(1, ticks.slice(-14).length);
@@ -827,10 +792,6 @@ function evaluateRecovery({ aid, direction }) {
 
 // ─── ENVIAR ORDEM ─────────────────────────────────────────────────────────────
 function nowMs() { return Date.now(); }
-
-function exposureLimit() {
-  return (currentBalance * MAX_EXPOSURE_PCT) / 100;
-}
 
 function sessionLossLimit() {
   return (sessionStartBalance * SESSION_LOSS_PCT) / 100;
@@ -866,6 +827,7 @@ function sendOrder(aid, direction, stake, expiration, optionTypeId, requestId, r
     name: 'binary-options.open-option', version: '1.0',
   }, requestId);
 
+  logLine(`[📤 ENVIADA] ${shortName(b5.name)} ${direction} ${currencySymbol}${stake.toFixed(2)} ${role} cyc=${cycleId} reqId=${requestId}`);
   return op;
 }
 
@@ -993,14 +955,20 @@ async function evaluateOpenPositions() {
   }
 }
 
-
 // ─── ENTRADA PRINCIPAL (duas posições: Cash + Runner) ─────────────────────────
 function maybeTrade(aid) {
   if (!warmupDone) return;
+  // ── Bootstrap: nenhum trade antes de 15m+ de histórico carregado ──
   const row = running.get(aid);
-  if (!row || row.bootstrapStatus !== 'READY') return;
+  if (!row || row.bootstrapStatus !== 'READY') {
+    // DATA_NOT_READY: loga uma vez para não spammar
+    if (row && row.bootstrapStatus === 'DATA_NOT_READY' && !(row._bootstrapWarned++)) {
+      sessionLog(`BOOTSTRAP_FAIL | ${shortName(row.name)} | ${row.bootstrapFailReason ?? 'unknown'}`);
+    }
+    return;
+  }
   const plan = planTrade(aid);
-  if (!plan || plan.kind !== 'signal') return;
+  if (!plan) return;
 
   const s = state[buf5s.get(aid)?.key];
   if (!s) return;
@@ -1014,6 +982,7 @@ function maybeTrade(aid) {
 
   // Se Recovery foi confirmada pelo planTrade
   if (plan.kind === 'recovery') {
+    // Já é tratada no bloco de Recovery acima (planTrade retorna para Recovery)
     return;
   }
 
@@ -1034,13 +1003,14 @@ function maybeTrade(aid) {
   const cycleId = nextCycleId();
 
   // Gera dois requestIds diferentes
-  const reqIdCash   = ws.uuid().replace(/-/g, '').slice(0, 12);
-  const reqIdRunner = ws.uuid().replace(/-/g, '').slice(0, 12);
+  const reqCash   = ws.uuid().replace(/-/g, '').slice(0, 12);
+  const reqRunner = ws.uuid().replace(/-/g, '').slice(0, 12);
 
   // CASH
-  const cashOp = sendOrder(aid, plan.direction, stake, expiration, optionTypeId, reqIdCash, 'cash', cycleId);
+  logLine(`[🎯 ENVIANDO] ${shortName(s.name)} ${plan.direction} stake=${stake} expiration=${expiration} guard=${guard ? 'OK' : 'NULL'}`);
+  const cashOp = sendOrder(aid, plan.direction, stake, expiration, optionTypeId, reqCash, 'cash', cycleId);
   // RUNNER
-  const runnerOp = sendOrder(aid, plan.direction, stake, expiration, optionTypeId, reqIdRunner, 'runner', cycleId);
+  const runnerOp = sendOrder(aid, plan.direction, stake, expiration, optionTypeId, reqRunner, 'runner', cycleId);
 
   if (cashOp && runnerOp) {
     s.cycleId = cycleId;
@@ -1059,7 +1029,6 @@ function maybeTrade(aid) {
 
 // ─── COTIZAÇÃO (sell_profit em tempo real) ────────────────────────────────────
 let quoteFirstLogged = false;
-let posDumpCount = 0;
 
 export function parsePositionChanged(raw) {
   const value = raw?.sell_profit;
@@ -1131,9 +1100,6 @@ function applyResult(op, result, profit) {
 
     // Ciclo fechou (todas as ops fecharam)
     if (s.cycleOpenOps <= 0) {
-      const cashWon   = cycleStats.cash.settled > 0 ? cycleStats.cash.pnl > 0 : null;
-      const runnerWon = cycleStats.runner.settled > 0 ? cycleStats.runner.pnl > 0 : null;
-      const recWon    = cycleStats.recovery.settled > 0 ? cycleStats.recovery.pnl > 0 : null;
       // P/L do ciclo
       const cyclePnl = (cycleStats.cash.pnl + cycleStats.runner.pnl + cycleStats.recovery.pnl);
       cycleStats.cycles.pnl = round2(cycleStats.cycles.pnl + cyclePnl);
@@ -1255,63 +1221,6 @@ function applyUniverse(actives, reason, { subscribe = true } = {}) {
   return added;
 }
 
-const asc = (list) => (Array.isArray(list) ? list.slice().sort((x, y) => (toMs(x?.from ?? x?.at) ?? 0) - (toMs(y?.from ?? y?.at) ?? 0)) : []);
-
-/**
- * Bootstrap de UM ativo: carrega histórico 5s + 1m e transita o estado.
- * Retorna { ok, received5s, received1m, gapMs }
- */
-async function bootstrapAsset(aid) {
-  const row = running.get(aid);
-  if (!row) return { ok: false, reason: 'notRunning' };
-  const now0 = nowMs();
-  let received5s = 0, received1m = 0, gapMs = 0;
-  try {
-    const [h5, h1] = await Promise.all([
-      ws.getCandlesHistory({ activeId: aid, size: num(S.candleSizeSeconds, 5), count: HIST_5S_REQUIRED }),
-      ws.getCandlesHistory({ activeId: aid, size: 60, count: HIST_1M_REQUIRED }),
-    ]);
-    const c5s = asc(h5?.msg?.candles ?? []);
-    const c1m = asc(h1?.msg?.candles ?? []);
-    for (const c of c5s) buf5s.get(aid)?.ingest(c, now0);
-    for (const c of c1m) buf1m.get(aid)?.ingest(c, now0);
-    received5s = c5s.length;
-    received1m = c1m.length;
-
-    // Verificar continuidade/gaps
-    if (c5s.length >= 2) {
-      const lastTs = toMs(c5s[c5s.length - 1]?.from ?? c5s[c5s.length - 1]?.at) ?? 0;
-      const nowTs  = now0;
-      gapMs = nowTs - lastTs;
-    }
-    row.bootstrapStatus = 'WARMING_UP';
-    row.bootstrapAt = now0;
-
-    const has5s = received5s >= HIST_5S_REQUIRED;
-    const has1m = received1m >= HIST_1M_REQUIRED;
-    const continuous = gapMs < 60_000; // gap < 1 min = contínuo
-
-    if (has5s && has1m && continuous) {
-      row.bootstrapStatus = 'READY';
-      row.bootstrapReadyAt = now0;
-      return { ok: true, received5s, received1m, gapMs, name: row.name };
-    } else {
-      row.bootstrapStatus = 'DATA_NOT_READY';
-      row.bootstrapFailReason = [
-        !has5s ? `5s:${received5s}<${HIST_5S_REQUIRED}` : '',
-        !has1m ? `1m:${received1m}<${HIST_1M_REQUIRED}` : '',
-        !continuous ? `gap:${Math.round(gapMs/1000)}s` : '',
-      ].filter(Boolean).join('|');
-      return { ok: false, received5s, received1m, gapMs, name: row.name };
-    }
-  } catch (err) {
-    row.bootstrapStatus = 'DATA_NOT_READY';
-    row.bootstrapFailReason = `exception:${String(err).slice(0,60)}`;
-    return { ok: false, received5s, received1m, gapMs };
-  }
-}
-
-
 async function rebalanceUniverse() {
   if (!ws) return;
   try {
@@ -1328,9 +1237,8 @@ async function rebalanceUniverse() {
       }
     }
     const added = applyUniverse(actives, 'revisão');
-    const pending = [...running].filter(([, row]) => row.bootstrapStatus === 'DATA_NOT_READY').map(([aid]) => aid);
     // Bootstrap dos novos ativos adicionados
-    for (const aid of new Set([...added, ...pending])) {
+    for (const aid of added) {
       const result = await bootstrapAsset(aid);
       const row = running.get(aid);
       if (row) {
@@ -1434,11 +1342,67 @@ async function main() {
     logLine(`[🧬] CÓDIGO ${CODE_REV} | stake ${currencySymbol}${BASE_STAKE.toFixed(2)} | Cash TP=${fmt(CASH_TP)} | Recovery ×${REC_MULTIPLIER} | expiração ${EXPIRATION_MIN}min`);
     logLine(`[📤] CASH + RUNNER: cada sinal abre 2 posições iguais | CASH: vende quando LP>=${fmt(CASH_TP)} (sell_profit real) | RUNNER: vai até expiração`);
     logLine(`[🎲] RECOVERY: máx 1 por ciclo, após Runner loss + confirmação técnica | stake=${fmt(BASE_STAKE * REC_MULTIPLIER)} | REGIME INVALIDADO bloqueia`);
-    logLine(`[🛡️] ENTRADA: regime 1m + RSI pullback (CALL≤${RSI_TOUCH_CALL} / PUT≥${RSI_TOUCH_PUT}) + ADX>=${num(S.adxMin, 20)} + EMA8×21 confirmação + corpo>=${num(S.entryBodyRatio, 0.4)}x`);
+    logLine(`[🛡️] ENTRADA (OTC): regime 1m (EMA8×21), RSI<=30→CALL / RSI>=70→PUT (reversão à média), ADX>=${num(S.adxMinEntry,15)}, corpo>=${num(S.entryBodyRatio,0.4)}xATR`);
     logLine(`[⚠️] DEMO/PRACTICE APENAS — nenhuma operação REAL durante os testes`);
 
     const actives = await fetchActives();
     applyUniverse(actives, 'boot', { subscribe: false });
+
+    const asc = (list) => (Array.isArray(list) ? list.slice().sort((x, y) => (toMs(x?.from ?? x?.at) ?? 0) - (toMs(y?.from ?? y?.at) ?? 0)) : []);
+
+    /**
+     * Bootstrap de UM ativo: carrega histórico 5s + 1m e transita o estado.
+     * Retorna { ok, received5s, received1m, gapMs }
+     */
+    async function bootstrapAsset(aid) {
+      const row = running.get(aid);
+      if (!row) return { ok: false, reason: 'notRunning' };
+      const now0 = nowMs();
+      let received5s = 0, received1m = 0, gapMs = 0;
+      try {
+        const [h5, h1] = await Promise.all([
+          ws.getCandlesHistory({ activeId: aid, size: num(S.candleSizeSeconds, 5), count: HIST_5S_REQUIRED }),
+          ws.getCandlesHistory({ activeId: aid, size: 60, count: HIST_1M_REQUIRED }),
+        ]);
+        const c5s = asc(h5?.msg?.candles ?? []);
+        const c1m = asc(h1?.msg?.candles ?? []);
+        for (const c of c5s) buf5s.get(aid)?.ingest(c, now0);
+        for (const c of c1m) buf1m.get(aid)?.ingest(c, now0);
+        received5s = c5s.length;
+        received1m = c1m.length;
+
+        // Verificar continuidade/gaps
+        if (c5s.length >= 2) {
+          const lastTs = toMs(c5s[c5s.length - 1]?.from ?? c5s[c5s.length - 1]?.at) ?? 0;
+          const nowTs  = now0;
+          gapMs = nowTs - lastTs;
+        }
+        row.bootstrapStatus = 'WARMING_UP';
+        row.bootstrapAt = now0;
+
+        const has5s = received5s >= HIST_5S_REQUIRED;
+        const has1m = received1m >= HIST_1M_REQUIRED;
+        const continuous = gapMs < 60_000; // gap < 1 min = contínuo
+
+        if (has5s && has1m && continuous) {
+          row.bootstrapStatus = 'READY';
+          row.bootstrapReadyAt = now0;
+          return { ok: true, received5s, received1m, gapMs, name: row.name };
+        } else {
+          row.bootstrapStatus = 'DATA_NOT_READY';
+          row.bootstrapFailReason = [
+            !has5s ? `5s:${received5s}<${HIST_5S_REQUIRED}` : '',
+            !has1m ? `1m:${received1m}<${HIST_1M_REQUIRED}` : '',
+            !continuous ? `gap:${Math.round(gapMs/1000)}s` : '',
+          ].filter(Boolean).join('|');
+          return { ok: false, received5s, received1m, gapMs, name: row.name };
+        }
+      } catch (err) {
+        row.bootstrapStatus = 'DATA_NOT_READY';
+        row.bootstrapFailReason = `exception:${String(err).slice(0,60)}`;
+        return { ok: false, received5s, received1m, gapMs };
+      }
+    }
 
     // ── BOOTSTRAP: carrega histórico para TODOS os ativos antes de assinar live ──
     const tHist = Date.now();
@@ -1496,25 +1460,17 @@ async function main() {
         const rsi = calcRSI(b5.ticks);
         const adx = calcADX(b5.ticks);
         const regime = s.regime1m.direction;
-        const prevRsi = calcRSI(b5.ticks.slice(-16, -1)); // últimos 14 candles (exclui atual)
-        const touchCall = Math.max(RSI_TOUCH_CALL, 35);
-        const touchPut  = Math.min(RSI_TOUCH_PUT,  65);
+        const direction = regime === 'alta1m' ? 'CALL' : 'PUT';
         let skip = null;
         if (regime === 'lateral1m') skip = 'lateral1m';
-        else if (adx < num(S.adxMin, 20)) skip = 'adxFraco';
-        else if (trend.direction && Math.abs(trend.spreadPct) < 0.001) skip = 'spreadFraco';
         else {
-          const crossing = (regime === 'alta1m' && rsi <= touchCall && prevRsi > touchCall)
-                       || (regime === 'baixa1m' && rsi >= touchPut  && prevRsi < touchPut);
-          if (!crossing) skip = 'semRsiPullback';
-          else if (regime === 'alta1m' && rsi > touchCall) skip = 'rsiAlto';
-          else if (regime === 'baixa1m' && rsi < touchPut) skip = 'rsiBaixo';
-          else if (regime === 'alta1m' && prevRsi <= touchCall) skip = 'jaEraOversold';
-          else if (regime === 'baixa1m' && prevRsi >= touchPut) skip = 'jaEraOverbought';
+          if (direction === 'CALL' && rsi <= 30) skip = 'rsiExtremoContra';
+          else if (direction === 'PUT' && rsi >= 70) skip = 'rsiExtremoContra';
+          else if (adx < 15) skip = 'adxFraco';
         }
         if (skip) skipCount[skip] = (skipCount[skip] || 0) + 1;
         if (regime !== 'lateral1m' && samples.length < 10) {
-          samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(1)} prevRsi=${prevRsi.toFixed(1)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
+          samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(1)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
         }
       }
       const topSkips = Object.entries(skipCount).sort((x, y) => y[1] - x[1]).slice(0, 4)
@@ -1543,30 +1499,21 @@ async function main() {
         const adx = calcADX(b5.ticks);
         const regime = s.regime1m.direction;
         const open = opsFor(aid);
-        const trend = trendDirection(b5.ticks);
 
-        // Simular evaluateEntry para ver qual skip ocorreria
-        const prevRsi = calcRSI(b5.ticks.slice(-16, -1));
-        const touchCall = Math.max(RSI_TOUCH_CALL, 35);
-        const touchPut  = Math.min(RSI_TOUCH_PUT,  65);
+        // V10 style: RSI no extremo = queda sustentada (não pullback → CALL)
         let skip = null;
+        const direction = regime === 'alta1m' ? 'CALL' : 'PUT';
         if (regime === 'lateral1m') skip = 'lateral1m';
-        else if (adx < num(S.adxMin, 20)) skip = 'adxFraco';
-        else if (open.length > 0) skip = 'posicaoAberta';
-        else if (trend.direction && Math.abs(trend.spreadPct) < 0.001) skip = 'spreadFraco';
         else {
-          const crossing = (regime === 'alta1m' && rsi <= touchCall && prevRsi > touchCall)
-                       || (regime === 'baixa1m' && rsi >= touchPut  && prevRsi < touchPut);
-          if (!crossing) skip = 'semRsiPullback';
-          else if (regime === 'alta1m' && rsi > touchCall) skip = 'rsiAlto';
-          else if (regime === 'baixa1m' && rsi < touchPut) skip = 'rsiBaixo';
-          else if (regime === 'alta1m' && prevRsi <= touchCall) skip = 'jaEraOversold';
-          else if (regime === 'baixa1m' && prevRsi >= touchPut) skip = 'jaEraOverbought';
+          if (direction === 'CALL' && rsi <= 30) skip = 'rsiExtremoContra';
+          else if (direction === 'PUT' && rsi >= 70) skip = 'rsiExtremoContra';
+          else if (adx < 15) skip = 'adxFraco';
+          else if (open.length > 0) skip = 'posicaoAberta';
         }
         if (skip) skipCount[skip] = (skipCount[skip] || 0) + 1;
         // Amostrar alguns com bom regime para ver RSI
         if (regime !== 'lateral1m' && samples.length < 8) {
-          samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(1)} prevRsi=${prevRsi.toFixed(1)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
+          samples.push(`${shortName(row.name)} rsi=${rsi.toFixed(1)} adx=${adx.toFixed(0)} regime=${regime} skip=${skip ?? '✅'}`);
         }
       }
       const topSkips = Object.entries(skipCount).sort((x, y) => y[1] - x[1]).slice(0, 4)
@@ -1677,7 +1624,6 @@ async function main() {
 
 function summary() {
   const cs = cycleStats;
-  const csPnl = cs.cycles.pnl;
   logLine('\n🛑 RESULTADO V21 FINAL:\n');
   logLine(`📊 Ops totais: ${stats.settled} | W: ${stats.wins} | L: ${stats.losses} | Draw: ${stats.draws} | Vendas: ${stats.early} | WR: ${stats.settled ? (stats.wins / stats.settled * 100).toFixed(1) : 0}%`);
   logLine(`💰 Lucro (bot): ${fmt(stats.profit)}`);

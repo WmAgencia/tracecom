@@ -1,0 +1,63 @@
+{
+  "timestamp": "2026-10-03T10:05:48.657Z",
+  "summary": {
+    "totalOps": 0,
+    "wins": 0,
+    "losses": 0,
+    "wr": "0",
+    "profit": "0.00"
+  },
+  "byAsset": [],
+  "expirationSim": [
+    {
+      "expirationSecs": 30,
+      "expirationLabel": "30s",
+      "total": 0,
+      "wins": 0,
+      "wr": "?"
+    },
+    {
+      "expirationSecs": 60,
+      "expirationLabel": "1min",
+      "total": 0,
+      "wins": 0,
+      "wr": "?"
+    },
+    {
+      "expirationSecs": 120,
+      "expirationLabel": "2min",
+      "total": 0,
+      "wins": 0,
+      "wr": "?"
+    },
+    {
+      "expirationSecs": 180,
+      "expirationLabel": "3min",
+      "total": 0,
+      "wins": 0,
+      "wr": "?"
+    },
+    {
+      "expirationSecs": 300,
+      "expirationLabel": "5min",
+      "total": 0,
+      "wins": 0,
+      "wr": "?"
+    }
+  ],
+  "cashStats": {
+    "wins": 0,
+    "losses": 0,
+    "n": 0
+  },
+  "runnerStats": {
+    "wins": 0,
+    "losses": 0,
+    "n": 0
+  },
+  "recStats": {
+    "wins": 0,
+    "losses": 0,
+    "n": 0
+  }
+}

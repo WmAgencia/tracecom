@@ -1,0 +1,11 @@
+══ SIMULAÇÃO V18 — 40 ativos × 3h (funções reais de decisão) ══
+  entradas: 101 (38/40 ativos operaram) | W 39 / L 62 | WR 38.6% | P/L -60.04
+  SIMULTANEIDADE: pico 9 abertas | média 1.1 | 4.3% do tempo com ≥5 abertas
+  pirâmides: 0 (regra intacta)
+  bloqueios: semRsiTouch:76889 lateral1m:5133 ladoOposto:2137 semSuporte:1822 guard:exposicao:132 pyramidAdx:128 pyramidRsi:58
+  regimes 1m: alta1m,baixa1m,baixa1m,alta1m,baixa1m,alta1m,baixa1m,baixa1m,alta1m,alta1m,baixa1m,alta1m,alta1m,baixa1m,alta1m,lateral1m,baixa1m,baixa1m,alta1m,baixa1m,baixa1m,alta1m,baixa1m,alta1m,baixa1m,alta1m,baixa1m,baixa1m,alta1m,baixa1m,baixa1m,alta1m,alta1m,alta1m,baixa1m,baixa1m,alta1m,alta1m,lateral1m,alta1m
+  saldo: 64.00 → 3.96
+
+✅ simultaneidade ≥ 5 provada (pico 9) | 101 entradas | invariantes intactos
+[🎮] Conectado ao painel: ws://localhost:8080
+[⏱00:00] [🕯️0] [📊0] [✅0] [❌0] [WR 0.0%] [💰+R$0.00] [⏳R$0.00]                                                         

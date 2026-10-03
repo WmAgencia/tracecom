@@ -73,9 +73,9 @@ const REC_CLOSE_BEFORE   = num(REC.closeBeforeMs, 20_000);
 // ENTRADA V20 (IDENTICA — NÃO ALTERAR)
 const ENTRY_MODE            = String(S.entryMode ?? 'rsiTouch');
 const REGIME_1M_MIN_CAND   = Math.max(30, Math.round(num(S.regime1mMinCandles, 120)));
-const REGIME_1M_MIN_SPREAD = num(S.regime1mMinEmaSpreadPct, 0.002);
-const RSI_TOUCH_CALL        = 45;  // CALL: RSI ≤ 45 (pullback de alta)
-const RSI_TOUCH_PUT         = 65;  // PUT: RSI ≥ 65 (pullback de baixa)
+const REGIME_1M_MIN_SPREAD = num(S.regime1mMinEmaSpreadPct, 0.03);
+const RSI_TOUCH_CALL        = num(S.rsiTouchCall, 30);
+const RSI_TOUCH_PUT         = num(S.rsiTouchPut, 70);
 const SUPPORT_LOOKBACK      = Math.max(10, Math.round(num(S.supportLookback, 60)));
 const SUPPORT_ATR_FACTOR    = num(S.supportAtrFactor, 1.5);
 const BOOT_1M_CANDLES       = Math.max(30, Math.round(num(S.boot1mCandles, 240)));
@@ -239,18 +239,6 @@ export function trendDirection1m(ticks) {
   return { direction: dir, source: 'ema8x21', spreadPct: round2(spread), candles: ticks.length };
 }
 
-export function fade4Signal(ticks, direction) {
-  // Pullback V15: 4 velas contra + 1 de volta na direção
-  if (!Array.isArray(ticks) || ticks.length < 5) return null;
-  const last5 = ticks.slice(-5);
-  const last4 = last5.slice(0, 4);
-  const down4 = last4.every((c, i) => i === 0 || c.close < last4[i - 1].close);
-  const up4   = last4.every((c, i) => i === 0 || c.close > last4[i - 1].close);
-  if (down4 && last5[4].close > last5[3].close && direction === 'CALL') return 'CALL';
-  if (up4   && last5[4].close < last5[3].close && direction === 'PUT')  return 'PUT';
-  return null;
-}
-
 export function trendDirection(ticks) {
   if (!Array.isArray(ticks) || ticks.length < TREND_LOOKBACK) return { direction: null, source: 'insuficiente', spreadPct: 0 };
   const closes = ticks.map((t) => t.close);
@@ -262,17 +250,20 @@ export function trendDirection(ticks) {
   return { direction: dir, source: 'ema8x21', spreadPct: round2(spread) };
 }
 
-// detectRegime V15: streak de velas na mesma direção → ranging vs trending
 export function detectRegime(ticks) {
-  if (ticks.length < num(S.lookbackRegime, 20)) return { state: 'unknown', streak: 0 };
-  let max = 0, cur = 0, last = 0;
-  for (let i = Math.max(1, ticks.length - num(S.lookbackRegime, 20)); i < ticks.length; i++) {
-    const move = ticks[i].close > ticks[i - 1].close ? 1 : ticks[i].close < ticks[i - 1].close ? -1 : 0;
-    if (move === 0) continue;
-    if (move === last) cur++; else { cur = 1; last = move; }
-    if (cur > max) max = cur;
-  }
-  return { state: max >= num(S.regimeStreakThreshold, 12) ? 'trending' : 'ranging', streak: max };
+  if (!Array.isArray(ticks) || ticks.length < 20) return 'incerto';
+  const recent = ticks.slice(-20);
+  const highs = recent.map((t) => t.high ?? t.close);
+  const lows  = recent.map((t) => t.low ?? t.close);
+  const maxHigh = Math.max(...highs);
+  const minLow  = Math.min(...lows);
+  const range = maxHigh - minLow;
+  if (range <= 0) return 'incerto';
+  const lastClose = ticks[ticks.length - 1].close;
+  const bodyUp   = lastClose >= (maxHigh + minLow) / 2;
+  const touches  = recent.filter((t) => (t.high ?? t.close) >= maxHigh - range * 0.05 || (t.low ?? t.close) <= minLow + range * 0.05).length;
+  if (touches >= 10) return 'lateral';
+  return bodyUp ? 'alta' : 'baixa';
 }
 
 export function calcRSI(ticks, period = 14) {
@@ -372,8 +363,6 @@ export class ClosedCandles {
       this.formingLow = Math.min(this.formingLow ?? low, low);
     }
     if (this.formingAt !== null && nowMs >= this.formingAt + this.sizeMs) closed = this.flushForming() ?? closed;
-    // Atualiza lastTickClose para que prevRsi seja calculado corretamente no próximo tick
-    this.lastTickClose = close;
     return closed;
   }
   flushForming() {
@@ -391,7 +380,6 @@ export class ClosedCandles {
   }
 }
 
-// ─── ENTRADA — EMA8×21 + ADX + RSI guarda + corpo vela (V15 puro) ──────────────
 // ─── ENTRADA V20 (IDENTICA — NÃO ALTERAR) ────────────────────────────────────
 export function evaluateEntry({ ticks, open, trend, regime, rsi, adx, cycleOps = 0, gale = false, reversalGale = false, mode = 'rsiTouch', regime1m = null }) {
   const adxV20 = num(S.adxMinEntry, 15);
@@ -686,6 +674,7 @@ export function evaluateGuards({
   return null;
 }
 
+// ─── PLAN/TRADE ────────────────────────────────────────────────────────────────
 function planTrade(aid) {
   const b5 = buf5s.get(aid), b1 = buf1m.get(aid);
   if (!b5 || !b1) return null;
@@ -716,16 +705,14 @@ function planTrade(aid) {
 
   const trend = trendDirection(b5.ticks);
   const regime = detectRegime(b5.ticks);
-  const rsi     = calcRSI(b5.ticks);
-  const adx     = calcADX(b5.ticks);
-  // prevRsi: RSI das 30 velas passadas (lookback maior para detectar "RSI estava伸" antes do pullback)
-  const prevRsi = calcRSI(b5.ticks.slice(-31, -1));
+  const rsi   = calcRSI(b5.ticks);
+  const adx   = calcADX(b5.ticks);
   const b1Last = b1.ticks[b1.ticks.length - 1] ?? null;
   if (!s.regime1m || s.regime1m.at !== b1Last?.atMs) {
     s.regime1m = { ...trendDirection1m(b1.ticks), at: b1Last?.atMs ?? null };
   }
 
-  const decision = evaluateEntry({ ticks: b5.ticks, open, trend, regime, regime1m: s.regime1m?.direction, rsi, adx, cycleOps: s.cycleOps, prevRsi });
+  const decision = evaluateEntry({ ticks: b5.ticks, open, trend, regime, rsi, adx, cycleOps: s.cycleOps, mode: ENTRY_MODE, regime1m: s.regime1m });
   if (decision.skip) return null;
 
   // Se Runner lossou e Recovery NÃO foi feita → avalia Recovery
@@ -755,8 +742,6 @@ function canTrade(aid, direction, stake) {
     maxSameDirection: C.maxOpsPerAsset ?? 3,
   });
   if (reason) {
-    const row = running.get(aid);
-    sessionLog(`CAN_TRADE_BLOCKED aid=${aid} ${shortName(row?.name ?? '')} reason=${reason} | stake=${stake} balance=${currentBalance} open=${opsFor(aid).length}`);
     if (reason === 'perdaSessao' && !sessionStopLogged) {
       sessionStopLogged = true;
       logLine(`[🛑 TRAVA DE PERDA] sessão ${fmt(-loss)} de ${currencySymbol}${sessionLossLimit().toFixed(2)} — nenhuma ordem`);
@@ -993,14 +978,20 @@ async function evaluateOpenPositions() {
   }
 }
 
-
 // ─── ENTRADA PRINCIPAL (duas posições: Cash + Runner) ─────────────────────────
 function maybeTrade(aid) {
   if (!warmupDone) return;
+  // ── Bootstrap: nenhum trade antes de 15m+ de histórico carregado ──
   const row = running.get(aid);
-  if (!row || row.bootstrapStatus !== 'READY') return;
+  if (!row || row.bootstrapStatus !== 'READY') {
+    // DATA_NOT_READY: loga uma vez para não spammar
+    if (row && row.bootstrapStatus === 'DATA_NOT_READY' && !(row._bootstrapWarned++)) {
+      sessionLog(`BOOTSTRAP_FAIL | ${shortName(row.name)} | ${row.bootstrapFailReason ?? 'unknown'}`);
+    }
+    return;
+  }
   const plan = planTrade(aid);
-  if (!plan || plan.kind !== 'signal') return;
+  if (!plan) return;
 
   const s = state[buf5s.get(aid)?.key];
   if (!s) return;
@@ -1014,6 +1005,7 @@ function maybeTrade(aid) {
 
   // Se Recovery foi confirmada pelo planTrade
   if (plan.kind === 'recovery') {
+    // Já é tratada no bloco de Recovery acima (planTrade retorna para Recovery)
     return;
   }
 
@@ -1034,13 +1026,13 @@ function maybeTrade(aid) {
   const cycleId = nextCycleId();
 
   // Gera dois requestIds diferentes
-  const reqIdCash   = ws.uuid().replace(/-/g, '').slice(0, 12);
-  const reqIdRunner = ws.uuid().replace(/-/g, '').slice(0, 12);
+  const reqCash   = ws.uuid().replace(/-/g, '').slice(0, 12);
+  const reqRunner = ws.uuid().replace(/-/g, '').slice(0, 12);
 
   // CASH
-  const cashOp = sendOrder(aid, plan.direction, stake, expiration, optionTypeId, reqIdCash, 'cash', cycleId);
+  const cashOp = sendOrder(aid, plan.direction, stake, expiration, optionTypeId, reqCash, 'cash', cycleId);
   // RUNNER
-  const runnerOp = sendOrder(aid, plan.direction, stake, expiration, optionTypeId, reqIdRunner, 'runner', cycleId);
+  const runnerOp = sendOrder(aid, plan.direction, stake, expiration, optionTypeId, reqRunner, 'runner', cycleId);
 
   if (cashOp && runnerOp) {
     s.cycleId = cycleId;
@@ -1434,7 +1426,7 @@ async function main() {
     logLine(`[🧬] CÓDIGO ${CODE_REV} | stake ${currencySymbol}${BASE_STAKE.toFixed(2)} | Cash TP=${fmt(CASH_TP)} | Recovery ×${REC_MULTIPLIER} | expiração ${EXPIRATION_MIN}min`);
     logLine(`[📤] CASH + RUNNER: cada sinal abre 2 posições iguais | CASH: vende quando LP>=${fmt(CASH_TP)} (sell_profit real) | RUNNER: vai até expiração`);
     logLine(`[🎲] RECOVERY: máx 1 por ciclo, após Runner loss + confirmação técnica | stake=${fmt(BASE_STAKE * REC_MULTIPLIER)} | REGIME INVALIDADO bloqueia`);
-    logLine(`[🛡️] ENTRADA: regime 1m + RSI pullback (CALL≤${RSI_TOUCH_CALL} / PUT≥${RSI_TOUCH_PUT}) + ADX>=${num(S.adxMin, 20)} + EMA8×21 confirmação + corpo>=${num(S.entryBodyRatio, 0.4)}x`);
+    logLine(`[🛡️] ENTRADA (V20 IDENTICA): regime 1m (EMA8×21), RSI cruzando ${RSI_TOUCH_CALL}/${RSI_TOUCH_PUT}, ADX>=${num(S.adxMinEntry,15)}, corpo>=${num(S.entryBodyRatio,0.4)}xATR`);
     logLine(`[⚠️] DEMO/PRACTICE APENAS — nenhuma operação REAL durante os testes`);
 
     const actives = await fetchActives();
@@ -1501,16 +1493,11 @@ async function main() {
         const touchPut  = Math.min(RSI_TOUCH_PUT,  65);
         let skip = null;
         if (regime === 'lateral1m') skip = 'lateral1m';
-        else if (adx < num(S.adxMin, 20)) skip = 'adxFraco';
-        else if (trend.direction && Math.abs(trend.spreadPct) < 0.001) skip = 'spreadFraco';
         else {
           const crossing = (regime === 'alta1m' && rsi <= touchCall && prevRsi > touchCall)
                        || (regime === 'baixa1m' && rsi >= touchPut  && prevRsi < touchPut);
-          if (!crossing) skip = 'semRsiPullback';
-          else if (regime === 'alta1m' && rsi > touchCall) skip = 'rsiAlto';
-          else if (regime === 'baixa1m' && rsi < touchPut) skip = 'rsiBaixo';
-          else if (regime === 'alta1m' && prevRsi <= touchCall) skip = 'jaEraOversold';
-          else if (regime === 'baixa1m' && prevRsi >= touchPut) skip = 'jaEraOverbought';
+          if (!crossing) skip = 'semRsiTouch';
+          else if (adx < 15) skip = 'adxFraco';
         }
         if (skip) skipCount[skip] = (skipCount[skip] || 0) + 1;
         if (regime !== 'lateral1m' && samples.length < 10) {
@@ -1551,17 +1538,13 @@ async function main() {
         const touchPut  = Math.min(RSI_TOUCH_PUT,  65);
         let skip = null;
         if (regime === 'lateral1m') skip = 'lateral1m';
-        else if (adx < num(S.adxMin, 20)) skip = 'adxFraco';
-        else if (open.length > 0) skip = 'posicaoAberta';
-        else if (trend.direction && Math.abs(trend.spreadPct) < 0.001) skip = 'spreadFraco';
         else {
-          const crossing = (regime === 'alta1m' && rsi <= touchCall && prevRsi > touchCall)
-                       || (regime === 'baixa1m' && rsi >= touchPut  && prevRsi < touchPut);
-          if (!crossing) skip = 'semRsiPullback';
-          else if (regime === 'alta1m' && rsi > touchCall) skip = 'rsiAlto';
-          else if (regime === 'baixa1m' && rsi < touchPut) skip = 'rsiBaixo';
-          else if (regime === 'alta1m' && prevRsi <= touchCall) skip = 'jaEraOversold';
-          else if (regime === 'baixa1m' && prevRsi >= touchPut) skip = 'jaEraOverbought';
+          const dir1m = regime;
+          const crossing = (dir1m === 'alta1m' && rsi <= touchCall && prevRsi > touchCall)
+                       || (dir1m === 'baixa1m' && rsi >= touchPut  && prevRsi < touchPut);
+          if (!crossing) skip = 'semRsiTouch';
+          else if (adx < 15) skip = 'adxFraco';
+          else if (open.length > 0) skip = 'posicaoAberta';
         }
         if (skip) skipCount[skip] = (skipCount[skip] || 0) + 1;
         // Amostrar alguns com bom regime para ver RSI
