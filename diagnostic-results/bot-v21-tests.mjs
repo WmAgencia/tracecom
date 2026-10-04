@@ -256,10 +256,12 @@ ok('jaEraOversold/jaEraOverbought bloqueia sinal em evaluateEntry', () => {
 
 console.log('\n══ V21 — NOVAS CORREÇÕES (freeze + performance) ══');
 
-ok('STALE-OP GUARD: evaluateOpenPositions força remoção de ops expiradas >60s', () => {
+ok('STALE-OP GUARD: expiração ≠ derrota — move para awaitingSettlement, não força loss', () => {
   assert.ok(src.match(/expiredMs\s*>\s*60_000|expiredMs\s*>\s*60000/), 'guard stale-op não encontrado');
-  assert.ok(src.match(/STALE_OP_FORCE_REMOVE|forçando remoção/), 'log stale-op não encontrado');
-  assert.ok(src.match(/applyResult.*loss/), 'aplica loss como fallback para op stale');
+  assert.ok(src.match(/EXPIROU_AWAITING_SETTLEMENT/), 'log EXPIROU_AWAITING_SETTLEMENT não encontrado');
+  assert.ok(src.match(/awaitingSettlement\.set\(okey, op\)/), 'awaitingSettlement.set não encontrado (reconciliação)');
+  assert.ok(!src.match(/applyResult\(op,\s*'loss'/), 'applyResult loss forçado ainda presente');
+  assert.ok(!src.match(/STALE_OP_FORCE_REMOVE/), 'STALE_OP_FORCE_REMOVE ainda presente');
 });
 
 ok('WS RECONNECTION: reconecta automaticamente em vez de shutdown no close', () => {
@@ -313,9 +315,11 @@ ok('Recovery não reseta runnerLossRecoveryArmed ao ser disparada (ciclo fica ab
   assert.ok(!recSendBlock.match(/runnerLossRecoveryArmed\s*=\s*false/), 'runnerLossRecoveryArmed resetado ao disparar Recovery');
 });
 
-ok('findOp suporta parâmetro expiration (discrimina CASH vs RUNNER)', () => {
+ok('findOp: parâmetro expiration presente, mas NÃO retorna ordem por ativo quando IDs não são fornecidos', () => {
   assert.ok(src.match(/function findOp\(\{ aid = null, requestId = null, orderId = null, expiration = null/), 'findOp não tem parâmetro expiration');
-  assert.ok(src.match(/const candidates = expiration \? forAsset\.filter/), 'candidates não filtra por expiration');
+  // findOp NÃO faz fallback para primeira ordem do ativo quando orderId/requestId não são fornecidos
+  assert.ok(!src.match(/return forAsset\[0\]/), 'findOp ainda retorna primeira ordem do ativo como fallback');
+  assert.ok(src.match(/return null;/), 'findOp não retorna null quando IDs não são fornecidos');
 });
 
 ok('findOp compara requestId como string (tolerância string/number)', () => {
@@ -330,6 +334,94 @@ ok('socket-option-opened passa expiration ao findOp', () => {
 
 ok('socket-option-closed passa expiration ao findOp', () => {
   assert.ok(src.match(/socket-option-closed[\s\S]{0,400}expiration:\s*serverExp/), 'expiration não passado ao findOp em socket-option-closed');
+});
+
+console.log('\n══ V21+P0 — CORREÇÕES P0 (reinício + reconciliação) ══');
+
+ok('EXPOSIÇÃO: sendOrder adiciona em pending-set (não em inFlight) — ACK move para inFlight', () => {
+  // sendOrder adiciona okey ao pendingSet
+  assert.ok(src.match(/pendingSet\.add\(okey\)/), 'pendingSet.add não encontrado em sendOrder');
+  // socket-option-opened move de pending para inFlight
+  assert.ok(src.match(/inFlight\.set\(op\.okey,\s*op\)/), 'inFlight.set não encontrado no ACK');
+  assert.ok(src.match(/pendingSet\.delete\(op\.okey\)/), 'pendingSet.delete não encontrado no ACK');
+});
+
+ok('EXPOSIÇÃO: openStake soma APENAS inFlight — pendingSet não conta para exposição', () => {
+  const openStakeBlock = src.match(/const openStake[\s\S]{0,400}/)?.[0] ?? '';
+  assert.ok(openStakeBlock.includes('inFlight.values()'), 'openStake não soma inFlight');
+  // Não soma pending no cálculo de exposição
+  assert.ok(!openStakeBlock.match(/pending\.values\(\)/), 'openStake ainda soma pending (double-count)');
+});
+
+ok('EXPOSIÇÃO: awaitSettlement removido de inFlight após expiração — não conta na exposição', () => {
+  // stale-op guard remove de inFlight quando expira
+  assert.ok(src.match(/inFlight\.delete\(okey\)/), 'inFlight.delete não encontrado no stale-op');
+  // awaitingSettlement é um Map separado
+  assert.ok(src.match(/const awaitingSettlement\s*=\s*new\s+Map\(\)/), 'awaitingSettlement Map não declarado');
+});
+
+ok('CASH: stats NÃO incrementadas no pedido de venda — só no settlement (applyResult)', () => {
+  // Não há mais cycleStats.cash increment no evaluateOpenPositions (cash sell path)
+  const evBlock = src.match(/if \(lpLiquido\s*>=\s*CASH_TP[\s\S]{0,300}/)?.[0] ?? '';
+  assert.ok(!evBlock.match(/cycleStats\.cash\.\w+\+\+/), 'cycleStats.cash incrementada em evaluateOpenPositions (prematura)');
+  // applyResult agora incrementa stats
+  const applyBlock = src.match(/function applyResult[\s\S]{0,2000}/)?.[0] ?? '';
+  assert.ok(applyBlock.match(/cycleStats\.cash\.settled\+\+/), 'cycleStats.cash não incrementada em applyResult');
+});
+
+ok('CASH: registerOutcome chamada no settlement, não no pedido de venda', () => {
+  // finalizeEarly chama registerOutcome (no settlement confirmado)
+  const finBlock = src.match(/function finalizeEarly[\s\S]{0,1000}/)?.[0] ?? '';
+  assert.ok(finBlock.match(/registerOutcome\(/), 'registerOutcome não chamada em finalizeEarly');
+  // evaluateOpenPositions NÃO chama registerOutcome para cash
+  const evBlock = src.match(/if \(lpLiquido\s*>=\s*CASH_TP[\s\S]{0,300}/)?.[0] ?? '';
+  assert.ok(!evBlock.match(/registerOutcome\(/), 'registerOutcome chamada prematuramente em evaluateOpenPositions');
+});
+
+ok('RECONCILIAÇÃO: reconcileWithBroker consulta getOptions e casa com awaitingSettlement', () => {
+  assert.ok(src.match(/async function reconcileWithBroker\(/), 'reconcileWithBroker não existe');
+  assert.ok(src.match(/ws\.getOptions\(/), 'getOptions não chamado em reconcileWithBroker');
+  assert.ok(src.match(/normalizeBrokerResult\(/), 'normalizeBrokerResult não existe');
+  assert.ok(src.match(/normalizeBrokerProfit\(/), 'normalizeBrokerProfit não existe');
+  // Reconciled ops usam applyResult
+  assert.ok(src.match(/applyResult\(op,\s*result,\s*profit\)/), 'applyResult não chamado após reconciliação');
+});
+
+ok('RECONCILIAÇÃO: startup chama reconcileWithBroker ao restaurar awaitSettlement', () => {
+  // reconcileWithBroker chamado após restaurar awaitingSettlement
+  assert.ok(src.match(/await reconcileWithBroker\(\)/), 'reconcileWithBroker não chamado no startup');
+});
+
+ok('PERSISTÊNCIA: savePending atomic (write+rename) + inclui awaitingSettlement', () => {
+  assert.ok(src.match(/fs\.writeFileSync\s*\(\s*tmp/), 'atomic write não implementado');
+  assert.ok(src.match(/fs\.renameSync\s*\(\s*tmp/), 'atomic rename não implementado');
+  assert.ok(src.match(/awaitingSettlement:.*\.values\(\)/), 'awaitingSettlement não persistido');
+  assert.ok(src.match(/pendingSet:.*pendingSet/), 'pendingSet não persistido');
+});
+
+ok('PERSISTÊNCIA: saveState atomic + inclui ciclo V21 (galeArmedAt, cycleId, recoveryAttempts)', () => {
+  assert.ok(src.match(/fs\.writeFileSync\s*\(\s*tmp/), 'atomic write em saveState não implementado');
+  assert.ok(src.match(/galeArmedAt: s\.galeArmedAt/), 'galeArmedAt não persistido');
+  assert.ok(src.match(/cycleId: s\.cycleId/), 'cycleId não persistido');
+  assert.ok(src.match(/recoveryAttempts: s\.recoveryAttempts/), 'recoveryAttempts não persistido');
+});
+
+ok('RECOVERY TIMEOUT: galeArmedAt marcado ao armar + timeout fecha ciclo em evaluateOpenPositions', () => {
+  // galeArmedAt marcado quando Runner loss arma Recovery
+  assert.ok(src.includes('s.galeArmedAt = nowMs()'), 'galeArmedAt não marcado ao armar');
+  // Timeout no Recovery loop
+  assert.ok(src.match(/galeElapsed\s*>\s*GALE_WINDOW_MS/), 'timeout da Recovery armada não implementado');
+  assert.ok(src.match(/RECOVERY_TIMEOUT/), 'RECOVERY_TIMEOUT log não encontrado');
+});
+
+ok('APPLIED FLAG: finalizeEarly seta applied=true antes de applyResult para evitar double-call', () => {
+  const finBlock = src.match(/function finalizeEarly[\s\S]{0,200}/)?.[0] ?? '';
+  assert.ok(finBlock.match(/op\.applied\s*=\s*true/), 'applied=true não setado em finalizeEarly antes de applyResult');
+});
+
+ok('APPLIED FLAG: applyResult early-return se applied=true (previne double-applyResult)', () => {
+  const applyBlock = src.match(/function applyResult[\s\S]{0,200}/)?.[0] ?? '';
+  assert.ok(applyBlock.match(/if\s*\(\s*op\.applied\s*\)\s*return/), 'early-return se applied=true não implementado');
 });
 
 console.log('\n══ RESUMO ══');

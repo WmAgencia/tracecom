@@ -10,7 +10,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790983365116,
-    "lastResult": "win"
+    "lastResult": "win",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "WIFUSD": {
     "key": "WIFUSD",
@@ -23,7 +26,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790983365074,
-    "lastResult": "win"
+    "lastResult": "win",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "DOTUSD": {
     "key": "DOTUSD",
@@ -36,7 +42,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SUIUSD": {
     "key": "SUIUSD",
@@ -49,7 +58,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "XPTUSD": {
     "key": "XPTUSD",
@@ -62,7 +74,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "ORDIUSD": {
     "key": "ORDIUSD",
@@ -75,7 +90,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "HYPE": {
     "key": "HYPE",
@@ -85,10 +103,13 @@
     "ladder": 0,
     "cycleOps": 0,
     "galeArmedAt": 0,
-    "lossStreak": 1,
+    "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790983365100,
-    "lastResult": "loss"
+    "lastResult": "loss",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "TRON": {
     "key": "TRON",
@@ -101,7 +122,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SHIBUSD": {
     "key": "SHIBUSD",
@@ -111,10 +135,13 @@
     "ladder": 0,
     "cycleOps": 0,
     "galeArmedAt": 0,
-    "lossStreak": 3,
+    "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790983515023,
-    "lastResult": "loss"
+    "lastResult": "loss",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "RAYDIUMUSD": {
     "key": "RAYDIUMUSD",
@@ -127,7 +154,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "BTCUSD": {
     "key": "BTCUSD",
@@ -140,7 +170,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "ETHUSD": {
     "key": "ETHUSD",
@@ -153,7 +186,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "BNBUSD": {
     "key": "BNBUSD",
@@ -166,7 +202,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SOLUSD": {
     "key": "SOLUSD",
@@ -179,7 +218,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790971430176,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "XRPUSD": {
     "key": "XRPUSD",
@@ -192,7 +234,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790983520083,
-    "lastResult": "win"
+    "lastResult": "win",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "DOGEUSD": {
     "key": "DOGEUSD",
@@ -205,7 +250,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "ADAUSD": {
     "key": "ADAUSD",
@@ -218,7 +266,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AVAXUSD": {
     "key": "AVAXUSD",
@@ -231,7 +282,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "FILUSD": {
     "key": "FILUSD",
@@ -244,7 +298,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "NEARUSD": {
     "key": "NEARUSD",
@@ -257,7 +314,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AAVEUSD": {
     "key": "AAVEUSD",
@@ -270,7 +330,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "UNIUSD": {
     "key": "UNIUSD",
@@ -283,7 +346,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "LTCUSD": {
     "key": "LTCUSD",
@@ -296,7 +362,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790982735027,
-    "lastResult": "win"
+    "lastResult": "win",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "ATOMUSD": {
     "key": "ATOMUSD",
@@ -306,10 +375,13 @@
     "ladder": 0,
     "cycleOps": 0,
     "galeArmedAt": 0,
-    "lossStreak": 1,
+    "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790983622700,
-    "lastResult": "loss"
+    "lastResult": "loss",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "MATICUSD": {
     "key": "MATICUSD",
@@ -322,7 +394,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "LINKUSD": {
     "key": "LINKUSD",
@@ -335,7 +410,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "DYDXUSD": {
     "key": "DYDXUSD",
@@ -348,7 +426,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790983360068,
-    "lastResult": "win"
+    "lastResult": "win",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "FARTCOINUSD": {
     "key": "FARTCOINUSD",
@@ -361,7 +442,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790970980608,
-    "lastResult": "win"
+    "lastResult": "win",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "EOSUSD": {
     "key": "EOSUSD",
@@ -371,10 +455,13 @@
     "ladder": 0,
     "cycleOps": 0,
     "galeArmedAt": 0,
-    "lossStreak": 2,
+    "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790982840056,
-    "lastResult": "loss"
+    "lastResult": "loss",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "HBARUSD": {
     "key": "HBARUSD",
@@ -384,10 +471,13 @@
     "ladder": 0,
     "cycleOps": 0,
     "galeArmedAt": 0,
-    "lossStreak": 1,
+    "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790983285073,
-    "lastResult": "loss"
+    "lastResult": "loss",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SEIUSD": {
     "key": "SEIUSD",
@@ -400,7 +490,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790972875112,
-    "lastResult": "win"
+    "lastResult": "win",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "IMXUSD": {
     "key": "IMXUSD",
@@ -413,7 +506,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "PENUSD": {
     "key": "PENUSD",
@@ -426,7 +522,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790982535070,
-    "lastResult": "win"
+    "lastResult": "win",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "TIAUSD": {
     "key": "TIAUSD",
@@ -439,7 +538,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "INJUSD": {
     "key": "INJUSD",
@@ -452,7 +554,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "OPUSD": {
     "key": "OPUSD",
@@ -465,7 +570,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "ARBUSD": {
     "key": "ARBUSD",
@@ -475,10 +583,13 @@
     "ladder": 0,
     "cycleOps": 0,
     "galeArmedAt": 0,
-    "lossStreak": 4,
+    "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790977235045,
-    "lastResult": "loss"
+    "lastResult": "loss",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SANDUSD": {
     "key": "SANDUSD",
@@ -491,7 +602,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "MANAUSD": {
     "key": "MANAUSD",
@@ -504,7 +618,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AXSUSD": {
     "key": "AXSUSD",
@@ -517,7 +634,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "FTMUSDD": {
     "key": "FTMUSDD",
@@ -530,7 +650,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "ALGOUSD": {
     "key": "ALGOUSD",
@@ -543,7 +666,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "XLMUSD": {
     "key": "XLMUSD",
@@ -556,7 +682,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "VETUSD": {
     "key": "VETUSD",
@@ -569,7 +698,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "THETAUSD": {
     "key": "THETAUSD",
@@ -582,7 +714,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "XTZUSD": {
     "key": "XTZUSD",
@@ -595,7 +730,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "MKRUSD": {
     "key": "MKRUSD",
@@ -608,7 +746,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SNXUSD": {
     "key": "SNXUSD",
@@ -621,7 +762,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "CRVUSD": {
     "key": "CRVUSD",
@@ -634,7 +778,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "LDOUSD": {
     "key": "LDOUSD",
@@ -647,7 +794,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "RUNEUSD": {
     "key": "RUNEUSD",
@@ -660,7 +810,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "APTUSD": {
     "key": "APTUSD",
@@ -673,7 +826,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SAGAUSD": {
     "key": "SAGAUSD",
@@ -686,7 +842,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "WLDUSD": {
     "key": "WLDUSD",
@@ -696,10 +855,13 @@
     "ladder": 0,
     "cycleOps": 0,
     "galeArmedAt": 0,
-    "lossStreak": 2,
+    "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790955660050,
-    "lastResult": "loss"
+    "lastResult": "loss",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "PENDLEUSD": {
     "key": "PENDLEUSD",
@@ -712,7 +874,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "JUPUSD": {
     "key": "JUPUSD",
@@ -725,7 +890,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1790982565054,
-    "lastResult": "win"
+    "lastResult": "win",
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "NOTUSD": {
     "key": "NOTUSD",
@@ -738,7 +906,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GOATUSD": {
     "key": "GOATUSD",
@@ -751,7 +922,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "POPCATUSD": {
     "key": "POPCATUSD",
@@ -764,7 +938,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "CHILLGUYUSD": {
     "key": "CHILLGUYUSD",
@@ -777,7 +954,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "PNUTUSD": {
     "key": "PNUTUSD",
@@ -790,7 +970,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "EURUSD": {
     "key": "EURUSD",
@@ -803,7 +986,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "EURGBP": {
     "key": "EURGBP",
@@ -816,7 +1002,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDCHF": {
     "key": "USDCHF",
@@ -829,7 +1018,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "EURJPY": {
     "key": "EURJPY",
@@ -842,7 +1034,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "NZDUSD": {
     "key": "NZDUSD",
@@ -855,7 +1050,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GBPUSD": {
     "key": "GBPUSD",
@@ -868,7 +1066,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GBPJPY": {
     "key": "GBPJPY",
@@ -881,7 +1082,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AUDCAD": {
     "key": "AUDCAD",
@@ -894,7 +1098,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDZAR": {
     "key": "USDZAR",
@@ -907,7 +1114,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDSGD": {
     "key": "USDSGD",
@@ -920,7 +1130,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDHKD": {
     "key": "USDHKD",
@@ -933,7 +1146,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDINR": {
     "key": "USDINR",
@@ -946,7 +1162,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "XAUUSD": {
     "key": "XAUUSD",
@@ -959,7 +1178,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "XAGUSD": {
     "key": "XAGUSD",
@@ -972,7 +1194,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USOUSD": {
     "key": "USOUSD",
@@ -985,7 +1210,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "XNGUSD": {
     "key": "XNGUSD",
@@ -998,7 +1226,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "UKOUSD": {
     "key": "UKOUSD",
@@ -1011,7 +1242,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GOOGLE": {
     "key": "GOOGLE",
@@ -1024,7 +1258,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AMAZON": {
     "key": "AMAZON",
@@ -1037,7 +1274,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "TESLA": {
     "key": "TESLA",
@@ -1050,7 +1290,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "FB": {
     "key": "FB",
@@ -1063,7 +1306,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "APPLE": {
     "key": "APPLE",
@@ -1076,7 +1322,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SP500": {
     "key": "SP500",
@@ -1089,7 +1338,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USNDAQ100": {
     "key": "USNDAQ100",
@@ -1102,7 +1354,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "US30": {
     "key": "US30",
@@ -1115,7 +1370,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "CARDANO": {
     "key": "CARDANO",
@@ -1128,7 +1386,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "FR40": {
     "key": "FR40",
@@ -1141,7 +1402,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GER30": {
     "key": "GER30",
@@ -1154,7 +1418,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "UK100": {
     "key": "UK100",
@@ -1167,7 +1434,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AUS200": {
     "key": "AUS200",
@@ -1180,7 +1450,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "HK33": {
     "key": "HK33",
@@ -1193,7 +1466,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "EU50": {
     "key": "EU50",
@@ -1201,17 +1477,15 @@
     "baseDirection": null,
     "direction": "PUT",
     "ladder": 0,
-    "cycleOps": 1,
-    "galeArmedAt": 1791022076492,
-    "lossStreak": 1,
+    "cycleOps": 0,
+    "galeArmedAt": 0,
+    "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1791022005060,
     "lastResult": "loss",
-    "reversalGale": {
-      "direction": "CALL",
-      "at": 1791022076493,
-      "stakeBase": 2
-    }
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "JP225": {
     "key": "JP225",
@@ -1224,7 +1498,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "US30JP225": {
     "key": "US30JP225",
@@ -1237,7 +1514,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "US100JP225": {
     "key": "US100JP225",
@@ -1250,7 +1530,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "US500JP225": {
     "key": "US500JP225",
@@ -1263,7 +1546,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AMZNALIBABA": {
     "key": "AMZNALIBABA",
@@ -1276,7 +1562,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AMZNEBAY": {
     "key": "AMZNEBAY",
@@ -1289,7 +1578,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "NVDAAMD": {
     "key": "NVDAAMD",
@@ -1302,7 +1594,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GOOGLEMSFT": {
     "key": "GOOGLEMSFT",
@@ -1315,7 +1610,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "XAUXAG": {
     "key": "XAUXAG",
@@ -1328,7 +1626,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "TESLAFORD": {
     "key": "TESLAFORD",
@@ -1341,7 +1642,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "MSFTAAPL": {
     "key": "MSFTAAPL",
@@ -1354,7 +1658,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "INTELIBM": {
     "key": "INTELIBM",
@@ -1367,7 +1674,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "NFLXAMZN": {
     "key": "NFLXAMZN",
@@ -1380,7 +1690,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GER30UK100": {
     "key": "GER30UK100",
@@ -1393,7 +1706,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "METAGOOGLE": {
     "key": "METAGOOGLE",
@@ -1406,7 +1722,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "BIDU": {
     "key": "BIDU",
@@ -1419,7 +1738,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "INTEL": {
     "key": "INTEL",
@@ -1432,7 +1754,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "MSFT": {
     "key": "MSFT",
@@ -1445,7 +1770,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "CITI": {
     "key": "CITI",
@@ -1458,7 +1786,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "COKE": {
     "key": "COKE",
@@ -1471,7 +1802,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "JPM": {
     "key": "JPM",
@@ -1484,7 +1818,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "MCDON": {
     "key": "MCDON",
@@ -1497,7 +1834,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "MORSTAN": {
     "key": "MORSTAN",
@@ -1510,7 +1850,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "NIKE": {
     "key": "NIKE",
@@ -1518,13 +1861,16 @@
     "baseDirection": null,
     "direction": "PUT",
     "ladder": 0,
-    "cycleOps": 2,
-    "galeArmedAt": 1791022036590,
-    "lossStreak": 1,
+    "cycleOps": 0,
+    "galeArmedAt": 0,
+    "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1791022040157,
     "lastResult": "loss",
-    "reversalGale": null
+    "reversalGale": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "ALIBABA": {
     "key": "ALIBABA",
@@ -1537,7 +1883,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "US2000": {
     "key": "US2000",
@@ -1550,7 +1899,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AIG": {
     "key": "AIG",
@@ -1563,7 +1915,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GS": {
     "key": "GS",
@@ -1576,7 +1931,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AUDUSD": {
     "key": "AUDUSD",
@@ -1589,7 +1947,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDCAD": {
     "key": "USDCAD",
@@ -1602,7 +1963,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AUDJPY": {
     "key": "AUDJPY",
@@ -1615,7 +1979,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GBPCAD": {
     "key": "GBPCAD",
@@ -1628,7 +1995,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GBPCHF": {
     "key": "GBPCHF",
@@ -1641,7 +2011,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GBPAUD": {
     "key": "GBPAUD",
@@ -1654,7 +2027,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "EURCAD": {
     "key": "EURCAD",
@@ -1667,7 +2043,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "CHFJPY": {
     "key": "CHFJPY",
@@ -1680,7 +2059,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "CADCHF": {
     "key": "CADCHF",
@@ -1693,7 +2075,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "EURAUD": {
     "key": "EURAUD",
@@ -1706,7 +2091,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "EURNZD": {
     "key": "EURNZD",
@@ -1719,7 +2107,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDTRY": {
     "key": "USDTRY",
@@ -1732,7 +2123,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SNAP": {
     "key": "SNAP",
@@ -1745,7 +2139,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDPLN": {
     "key": "USDPLN",
@@ -1758,7 +2155,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AUDCHF": {
     "key": "AUDCHF",
@@ -1771,7 +2171,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AUDNZD": {
     "key": "AUDNZD",
@@ -1784,7 +2187,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "EURCHF": {
     "key": "EURCHF",
@@ -1797,7 +2203,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GBPNZD": {
     "key": "GBPNZD",
@@ -1810,7 +2219,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "CADJPY": {
     "key": "CADJPY",
@@ -1823,7 +2235,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "NZDCAD": {
     "key": "NZDCAD",
@@ -1836,7 +2251,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "NZDJPY": {
     "key": "NZDJPY",
@@ -1849,7 +2267,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "ICPUSD": {
     "key": "ICPUSD",
@@ -1862,7 +2283,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "PEPEUSD": {
     "key": "PEPEUSD",
@@ -1870,17 +2294,15 @@
     "baseDirection": null,
     "direction": "CALL",
     "ladder": 0,
-    "cycleOps": 1,
-    "galeArmedAt": 1791022071984,
-    "lossStreak": 1,
+    "cycleOps": 0,
+    "galeArmedAt": 0,
+    "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1791022060096,
     "lastResult": "loss",
-    "reversalGale": {
-      "direction": "PUT",
-      "at": 1791022071986,
-      "stakeBase": 2
-    }
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "FLOKIUSD": {
     "key": "FLOKIUSD",
@@ -1893,7 +2315,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "BCHUSD": {
     "key": "BCHUSD",
@@ -1906,7 +2331,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "IOTAUSD": {
     "key": "IOTAUSD",
@@ -1919,7 +2347,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "DASHUSD": {
     "key": "DASHUSD",
@@ -1932,7 +2363,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SATSUSD": {
     "key": "SATSUSD",
@@ -1942,11 +2376,14 @@
     "ladder": 0,
     "cycleOps": 0,
     "galeArmedAt": 0,
-    "lossStreak": 2,
+    "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 1791022025054,
     "lastResult": "loss",
-    "reversalGale": null
+    "reversalGale": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "PYTHUSD": {
     "key": "PYTHUSD",
@@ -1959,7 +2396,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "RONINUSD": {
     "key": "RONINUSD",
@@ -1972,7 +2412,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GRTUSD": {
     "key": "GRTUSD",
@@ -1985,7 +2428,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "STXUSD": {
     "key": "STXUSD",
@@ -1998,7 +2444,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "EURTHB": {
     "key": "EURTHB",
@@ -2011,7 +2460,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDTHB": {
     "key": "USDTHB",
@@ -2024,7 +2476,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "JPYTHB": {
     "key": "JPYTHB",
@@ -2037,7 +2492,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDARS": {
     "key": "USDARS",
@@ -2050,7 +2508,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDDOP": {
     "key": "USDDOP",
@@ -2063,7 +2524,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "CHFNOK": {
     "key": "CHFNOK",
@@ -2076,7 +2540,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "NOKJPY": {
     "key": "NOKJPY",
@@ -2089,7 +2556,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "NZDCHF": {
     "key": "NZDCHF",
@@ -2102,7 +2572,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "TRUMPUSD": {
     "key": "TRUMPUSD",
@@ -2115,7 +2588,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "MELANIAUSD": {
     "key": "MELANIAUSD",
@@ -2128,7 +2604,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "ONDOUSD": {
     "key": "ONDOUSD",
@@ -2141,7 +2620,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "PENGUUSD": {
     "key": "PENGUUSD",
@@ -2154,7 +2636,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "TAOUSD": {
     "key": "TAOUSD",
@@ -2167,7 +2652,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDBRL": {
     "key": "USDBRL",
@@ -2180,7 +2668,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDCOP": {
     "key": "USDCOP",
@@ -2193,7 +2684,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDMXN": {
     "key": "USDMXN",
@@ -2206,7 +2700,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "LABUBUUSD": {
     "key": "LABUBUUSD",
@@ -2219,7 +2716,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "KLARNA": {
     "key": "KLARNA",
@@ -2232,7 +2732,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "FWONA": {
     "key": "FWONA",
@@ -2245,7 +2748,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "PLTR": {
     "key": "PLTR",
@@ -2258,7 +2764,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "MAGNIFICENT7": {
     "key": "MAGNIFICENT7",
@@ -2271,7 +2780,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "AIRLINES": {
     "key": "AIRLINES",
@@ -2284,7 +2796,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "CASINOS": {
     "key": "CASINOS",
@@ -2297,7 +2812,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "CANNABIS": {
     "key": "CANNABIS",
@@ -2310,7 +2828,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "URANIUM": {
     "key": "URANIUM",
@@ -2323,7 +2844,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "XPDUSD": {
     "key": "XPDUSD",
@@ -2336,7 +2860,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "MU": {
     "key": "MU",
@@ -2349,7 +2876,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "NVDA": {
     "key": "NVDA",
@@ -2362,7 +2892,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "GEV": {
     "key": "GEV",
@@ -2375,7 +2908,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "WDC": {
     "key": "WDC",
@@ -2388,7 +2924,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDIDR": {
     "key": "USDIDR",
@@ -2401,7 +2940,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "COCOA": {
     "key": "COCOA",
@@ -2414,7 +2956,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "COFFEE": {
     "key": "COFFEE",
@@ -2427,7 +2972,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "COTTON": {
     "key": "COTTON",
@@ -2440,7 +2988,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SUGAR": {
     "key": "SUGAR",
@@ -2453,7 +3004,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "LUNA": {
     "key": "LUNA",
@@ -2466,7 +3020,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDSAR": {
     "key": "USDSAR",
@@ -2479,7 +3036,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDMYR": {
     "key": "USDMYR",
@@ -2492,7 +3052,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDAED": {
     "key": "USDAED",
@@ -2505,7 +3068,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDVND": {
     "key": "USDVND",
@@ -2518,7 +3084,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDNGN": {
     "key": "USDNGN",
@@ -2531,7 +3100,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDPHP": {
     "key": "USDPHP",
@@ -2544,7 +3116,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDBOB": {
     "key": "USDBOB",
@@ -2557,7 +3132,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDCLP": {
     "key": "USDCLP",
@@ -2570,7 +3148,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "USDBDT": {
     "key": "USDBDT",
@@ -2583,7 +3164,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "SPACEX": {
     "key": "SPACEX",
@@ -2596,7 +3180,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "ANTHROPIC": {
     "key": "ANTHROPIC",
@@ -2609,7 +3196,10 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   },
   "OPENAI": {
     "key": "OPENAI",
@@ -2622,6 +3212,9 @@
     "lossStreak": 0,
     "pausedUntil": 0,
     "lastOpAt": 0,
-    "lastResult": null
+    "lastResult": null,
+    "runnerLossRecoveryArmed": false,
+    "recoveryAttempts": 0,
+    "recoveryReason": null
   }
 }

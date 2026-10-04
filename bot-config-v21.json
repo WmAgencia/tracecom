@@ -192,8 +192,8 @@
     "PNUTUSD": { "name": "front.PNUTUSD-OTC" }
   },
   "paths": {
-    "state": "D:/Tracecom project/bot-state-v15.json",
-    "results": "D:/Tracecom project/resultados-v15.json"
+    "state": "D:/Tracecom project/bot-state-v21.json",
+    "results": "D:/Tracecom project/resultados-v21.json"
   },
   "stop": {
     "profitTarget": 1000
