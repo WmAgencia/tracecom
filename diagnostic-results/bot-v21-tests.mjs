@@ -71,11 +71,14 @@ ok('quotes.get usado (sell_profit real da IQ)', () => {
   assert.ok(src.includes('sellProfit'), 'sellProfit não usado');
 });
 
-console.log('\n══ V21 — RECOVERY ══');
+console.log('\n══ V22 — RECOVERY ══');
 
-ok('REC_MULTIPLIER = baseStake × 2.77 (lido do config)', () => {
+ok('REC_MULTIPLIER lido do config (recovery.multiplier)', () => {
   assert.ok(src.match(/REC_MULTIPLIER.*=.*num\(REC\.multiplier/), 'REC_MULTIPLIER não vem do config');
-  assert.ok(src.match(/BASE_STAKE\s*\*\s*REC_MULTIPLIER/), 'BASE_STAKE × REC_MULTIPLIER não usado');
+});
+
+ok('Recovery stake = (cash+runner) × REC_MULTIPLIER = BASE_STAKE × 2 × REC_MULTIPLIER', () => {
+  assert.ok(src.match(/BASE_STAKE\s*\*\s*2\s*\*\s*REC_MULTIPLIER/), 'stake não calcula (cash+runner)×REC_MULTIPLIER');
 });
 
 ok('máximo 1 Recovery por ciclo (recoveryAttempts > 0 bloqueia)', () => {
@@ -99,7 +102,7 @@ ok('Recovery bloqueada se ATRP máximo', () => {
   assert.ok(src.match(/REC_MAX_ATRP|REC.*ATRP|ATRP.*REC/), 'ATRP max não verificado');
 });
 
-console.log('\n══ V21 — CICLO ══');
+console.log('\n══ V22 — CICLO ══');
 
 ok('lastClosedAt usado para cooldown (não activeOps)', () => {
   assert.ok(src.includes('lastClosedAt'), 'lastClosedAt não encontrado');
@@ -122,9 +125,9 @@ ok('resultados configurado no paths do config', () => {
 
 console.log('\n══ V21 — CONFIG ══');
 
-ok('bot-config-v21.json existe e _version 21', () => {
+ok('bot-config-v21.json existe e _version 22', () => {
   const cfg = JSON.parse(fs.readFileSync(new URL('../bot-config-v21.json', import.meta.url), 'utf8'));
-  assert.equal(cfg._version, '21');
+  assert.equal(cfg._version, '22');
 });
 
 ok('CASH_TP default 1.0 (CONFIG.cash não existe, usa default)', () => {
@@ -181,7 +184,7 @@ console.log('\n══ V21 — REGIME AGENT (15m) ══');
 ok('computeRegime15mLocal + getRegimeForAsset exportados (regime local)', () => {
   assert.ok(src.includes('export function computeRegime15mLocal('), 'computeRegime15mLocal não exportada');
   assert.ok(src.includes('export function getRegimeForAsset('), 'getRegimeForAsset não exportada');
-  assert.ok(src.includes('export function scheduleRegime15mRecalc('), 'scheduleRegime15mRecalc não exportada');
+  assert.ok(!src.includes('scheduleRegime15mRecalc'), 'scheduleRegime15mRecalc (dead code) ainda presente');
 });
 
 ok('planTrade usa getRegimeForAsset (não trendDirection1m diretamente)', () => {
@@ -196,21 +199,22 @@ ok('evaluateEntry recebe regime15m (não regime1m)', () => {
   assert.ok(!evBlock.includes('regime1m = null'), 'regime1m ainda em evaluateEntry');
 });
 
-ok('getRegimeForAsset: usa cálculo local 15m → fallback 1m → lateral', () => {
+ok('getRegimeForAsset: usa cálculo local 15m (fonte 1m) → fallback 1m → lateral', () => {
   assert.ok(src.includes('function computeRegime15mLocal('), 'computeRegime15mLocal não existe');
-  assert.ok(src.includes('aggregateTo15m('), 'aggregateTo15m (agregação 5s→15m) não existe');
+  assert.ok(src.includes('aggregateTo15m('), 'aggregateTo15m (agregação 1m→15m) não existe');
   assert.ok(src.includes('trendDirection1m('), 'fallback 1m não existe');
   assert.ok(src.includes("direction: 'lateral15m'"), 'lateral15m não retornado como fallback');
   assert.ok(!src.includes('REGIME_STATE_FILE'), 'REGIME_STATE_FILE ainda presente');
   assert.ok(!src.includes('regime-state.json'), 'regime-state.json ainda referenciado');
 });
 
-ok('evaluateRecovery usa regime15m (não regime1m)', () => {
-  const startIdx = src.indexOf('function evaluateRecovery({ aid, direction })');
+ok('evaluateRecoveryAnticipada usa regime15m (mesma direção do ciclo)', () => {
+  const startIdx = src.indexOf('function evaluateRecoveryAnticipada({ aid, stateEntry: s })');
   const endIdx = src.indexOf('function ', startIdx + 1);
   const recBlock = src.slice(startIdx, endIdx);
-  assert.ok(recBlock.includes('regime15m') || recBlock.includes("'lateral15m'"), 'evaluateRecovery não usa regime15m');
-  assert.ok(!/s\.regime1m\b/.test(recBlock), 'evaluateRecovery ainda usa s.regime1m');
+  assert.ok(recBlock.includes('regime15m') || recBlock.includes("'lateral15m'"), 'evaluateRecoveryAnticipada não usa regime15m');
+  // V22: mesma direção do ciclo (não inverte)
+  assert.ok(recBlock.includes("s.direction") || recBlock.includes('direction !== s.direction'), 'não verifica direção vs ciclo');
 });
 
 ok('logging mostra reg15m com source (local-15m, local-1m, nenhum)', () => {
@@ -219,7 +223,7 @@ ok('logging mostra reg15m com source (local-15m, local-1m, nenhum)', () => {
   assert.ok(src.includes("source: 'local-15m'") || src.includes("source: 'local-1m'"), 'sources do regime local não encontrados');
 });
 
-console.log('\n══ V21 — LOG E MONITOR ══');
+console.log('\n══ V22 — LOG E MONITOR ══');
 
 ok('evaluateOpenPositions é o monitor de posições (cash sell)', () => {
   assert.ok(src.includes('function evaluateOpenPositions('), 'evaluateOpenPositions não encontrada');
@@ -294,18 +298,17 @@ ok('closeCycle extraída como função helper', () => {
   assert.ok(src.match(/function applyResult\(/), 'applyResult não existe');
 });
 
-ok('applyResult NÃO fecha ciclo quando Recovery armada (fecha em evaluateOpenPositions)', () => {
-  // O ciclo só fecha em evaluateOpenPositions quando Recovery armada
-  assert.ok(src.match(/if \(s\.cycleOpenOps <= 0 && !s\.runnerLossRecoveryArmed\) \{/), 'guard cicloOpenOps+!RecoveryArmed não encontrado em applyResult');
+ok('applyResult NÃO fecha ciclo com Recovery armada, mas fecha após Recovery já avaliada', () => {
+  assert.ok(src.match(/if \(s\.cycleOpenOps <= 0 && \(!s\.runnerLossRecoveryArmed \|\| s\.recoveryAttempts > 0\)\) \{/), 'guard de fechamento corrigido não encontrado em applyResult');
   assert.ok(src.match(/closeCycle\(s\);[\s\S]{0,200}s\.lastResult = result;/), 'closeCycle(s) não chamado após o guard em applyResult');
 });
 
-ok('evaluateOpenPositions fecha ciclo quando Recovery é pulada (closeCycle chamado)', () => {
-  // closeCycle(s) está em evaluateOpenPositions (função de ~44KB)
-  // Usa busca direta no fonte ao invés de captura limitada por regex
+ok('evaluateOpenPositions fecha ciclo no timeout da janela e na fase 2 (Recovery já disparada)', () => {
   const start = src.indexOf('function evaluateOpenPositions(');
   const end = src.indexOf('\n\n\n// ───', start + 1000);
   const evBlock = src.slice(start, end > 0 ? end : start + 50000);
+  assert.ok(evBlock.includes('RECOVERY_TIMEOUT'), 'timeout da janela não encontrado');
+  assert.ok(evBlock.includes('if (s.recoveryAttempts > 0) {'), 'fase 2 (Recovery já disparada) não encontrada');
   assert.ok(evBlock.includes('closeCycle(s)'), 'closeCycle(s) não encontrado em evaluateOpenPositions');
 });
 
@@ -323,27 +326,27 @@ ok('findOp: parâmetro expiration presente, mas NÃO retorna ordem por ativo qua
 });
 
 ok('findOp compara requestId como string (tolerância string/number)', () => {
-  assert.ok(src.match(/String\(o\.requestId\) === String\(requestId\)/), 'findOp não compara requestId como string');
+  // P0-fix: findOp usa ordersByRequestId Map para busca por requestId (string-safe)
+  assert.ok(src.match(/ordersByRequestId\.get\(String\(requestId\)\)/), 'findOp não usa ordersByRequestId para buscar por requestId');
   assert.ok(!src.match(/o\.requestId\s*===\s*requestId/), 'findOp ainda usa === estrito no requestId');
 });
 
-ok('socket-option-opened passa expiration ao findOp', () => {
+ok('socket-option-opened usa expiration no fallback de correlação (attachOrderId)', () => {
   assert.ok(src.match(/serverExp\s*=\s*Number\(raw\?\.expiration/), 'serverExp não extraído do raw');
-  assert.ok(src.match(/expiration:\s*serverExp/), 'expiration não passado ao findOp em socket-option-opened');
+  assert.ok(src.match(/socket-option-opened[\s\S]{0,1600}attachOrderId\(/), 'ACK não usa attachOrderId');
 });
 
-ok('socket-option-closed passa expiration ao findOp', () => {
-  assert.ok(src.match(/socket-option-closed[\s\S]{0,400}expiration:\s*serverExp/), 'expiration não passado ao findOp em socket-option-closed');
+ok('socket-option-closed usa expiration/direção no fallback de correlação', () => {
+  assert.ok(src.match(/socket-option-closed[\s\S]{0,600}serverExp/), 'serverExp não extraído no closed');
+  assert.ok(src.match(/socket-option-closed[\s\S]{0,1000}candidateOps\(/), 'fallback candidateOps não usado no closed');
 });
 
 console.log('\n══ V21+P0 — CORREÇÕES P0 (reinício + reconciliação) ══');
 
-ok('EXPOSIÇÃO: sendOrder adiciona em pending-set (não em inFlight) — ACK move para inFlight', () => {
-  // sendOrder adiciona okey ao pendingSet
+ok('EXPOSIÇÃO: sendOrder registra inFlight+pending (stake única); ACK só vincula orderId/limpa reserva', () => {
   assert.ok(src.match(/pendingSet\.add\(okey\)/), 'pendingSet.add não encontrado em sendOrder');
-  // socket-option-opened move de pending para inFlight
-  assert.ok(src.match(/inFlight\.set\(op\.okey,\s*op\)/), 'inFlight.set não encontrado no ACK');
-  assert.ok(src.match(/pendingSet\.delete\(op\.okey\)/), 'pendingSet.delete não encontrado no ACK');
+  assert.ok(src.match(/inFlight\.set\(okey,\s*op\)/), 'inFlight.set não encontrado em sendOrder');
+  assert.ok(src.match(/pendingSet\.delete\(op\.okey\)/), 'pendingSet.delete não encontrado em attachOrderId');
 });
 
 ok('EXPOSIÇÃO: openStake soma APENAS inFlight — pendingSet não conta para exposição', () => {
@@ -369,10 +372,13 @@ ok('CASH: stats NÃO incrementadas no pedido de venda — só no settlement (app
   assert.ok(applyBlock.match(/cycleStats\.cash\.settled\+\+/), 'cycleStats.cash não incrementada em applyResult');
 });
 
-ok('CASH: registerOutcome chamada no settlement, não no pedido de venda', () => {
-  // finalizeEarly chama registerOutcome (no settlement confirmado)
+ok('CASH: registerOutcome chamada no settlement via applyResult (não diretamente no pedido de venda)', () => {
+  // P0-fix: finalizeEarly chama applyResult, que chama registerOutcome —记账 centralizada
   const finBlock = src.match(/function finalizeEarly[\s\S]{0,1000}/)?.[0] ?? '';
-  assert.ok(finBlock.match(/registerOutcome\(/), 'registerOutcome não chamada em finalizeEarly');
+  assert.ok(finBlock.match(/applyResult\(op, 'early', profit\)/), 'finalizeEarly não chama applyResult');
+  // applyResult chama registerOutcome
+  const applyBlock = src.match(/function applyResult[\s\S]{0,800}/)?.[0] ?? '';
+  assert.ok(applyBlock.match(/registerOutcome\(profit, false\)/), 'applyResult não chama registerOutcome');
   // evaluateOpenPositions NÃO chama registerOutcome para cash
   const evBlock = src.match(/if \(lpLiquido\s*>=\s*CASH_TP[\s\S]{0,300}/)?.[0] ?? '';
   assert.ok(!evBlock.match(/registerOutcome\(/), 'registerOutcome chamada prematuramente em evaluateOpenPositions');
@@ -406,12 +412,12 @@ ok('PERSISTÊNCIA: saveState atomic + inclui ciclo V21 (galeArmedAt, cycleId, re
   assert.ok(src.match(/recoveryAttempts: s\.recoveryAttempts/), 'recoveryAttempts não persistido');
 });
 
-ok('RECOVERY TIMEOUT: galeArmedAt marcado ao armar + timeout fecha ciclo em evaluateOpenPositions', () => {
-  // galeArmedAt marcado quando Runner loss arma Recovery
-  assert.ok(src.includes('s.galeArmedAt = nowMs()'), 'galeArmedAt não marcado ao armar');
-  // Timeout no Recovery loop
-  assert.ok(src.match(/galeElapsed\s*>\s*GALE_WINDOW_MS/), 'timeout da Recovery armada não implementado');
+ok('RECOVERY TIMEOUT: timeout fecha ciclo se antecipada não disparou dentro da janela', () => {
+  // Timeout no Recovery loop: galeElapsed > GALE_WINDOW_MS fecha ciclo
+  assert.ok(src.match(/galeElapsed2?\s*>\s*GALE_WINDOW_MS/), 'timeout da Recovery armada não implementado');
   assert.ok(src.match(/RECOVERY_TIMEOUT/), 'RECOVERY_TIMEOUT log não encontrado');
+  // Ciclo fecha se Recovery já disparou mas settleou (fase 2)
+  assert.ok(src.match(/recoveryAttempts\s*>\s*0/), 'fase 2 (Recovery já disparou) não verificada');
 });
 
 ok('APPLIED FLAG: finalizeEarly seta applied=true antes de applyResult para evitar double-call', () => {
@@ -422,6 +428,70 @@ ok('APPLIED FLAG: finalizeEarly seta applied=true antes de applyResult para evit
 ok('APPLIED FLAG: applyResult early-return se applied=true (previne double-applyResult)', () => {
   const applyBlock = src.match(/function applyResult[\s\S]{0,200}/)?.[0] ?? '';
   assert.ok(applyBlock.match(/if\s*\(\s*op\.applied\s*\)\s*return/), 'early-return se applied=true não implementado');
+});
+
+console.log('\n══ V22 — AUDITORIA 2026-10-03 (correções) ══');
+
+ok('ACK: correlação por posição (IQ não ecoa request_id) — helpers presentes', () => {
+  assert.ok(src.includes('function attachOrderId('), 'attachOrderId não existe');
+  assert.ok(src.includes('function candidateOps('), 'candidateOps não existe');
+  assert.ok(src.includes('function opByOrderId('), 'opByOrderId não existe');
+  const posBlock = src.match(/function onPositionChanged[\s\S]{0,3000}/)?.[0] ?? '';
+  assert.ok(posBlock.includes('binary_options_option_changed1'), 'onPositionChanged não lê raw_event');
+  assert.ok(posBlock.includes('attachOrderId('), 'onPositionChanged não vincula orderId');
+  const openedBlock = src.match(/['"]socket-option-opened['"], \(msg\) => \{[\s\S]{0,1600}?\n  \}\);/)?.[0] ?? '';
+  assert.ok(openedBlock.includes('attachOrderId('), 'socket-option-opened não usa attachOrderId');
+  assert.ok(!openedBlock.includes('op.applied = true'), 'ACK ainda marca applied=true (settlement seria perdido)');
+});
+
+ok('Exposição: reservas não contam em dobro + prune de reservas vencidas', () => {
+  assert.ok(src.includes('export function pendingCommitment('), 'pendingCommitment não existe');
+  assert.ok(src.includes('export function pendingStaleKeys('), 'pendingStaleKeys não existe');
+  assert.ok(src.includes('function prunePendingStale('), 'prunePendingStale não existe');
+  assert.ok(src.match(/pendingCommitment\(pending, \(okey\) => inFlight\.has\(okey\)\)/), 'canTrade não usa pendingCommitment');
+  assert.ok(src.match(/prunePendingStale\(\); void reconcileWithBroker/), 'prune não agendado junto da reconciliação');
+});
+
+ok('Ciclo: fecha após Recovery settleiada + cyclePnl não contamina o próximo ciclo', () => {
+  assert.ok(src.match(/op\.cycleId === s\.cycleId/), 'applyResult não filtra por cycleId ativo');
+  assert.ok(src.match(/!s\.runnerLossRecoveryArmed \|\| s\.recoveryAttempts > 0/), 'condição de fechamento sem recoveryAttempts');
+  assert.ok(src.includes('if (s.recoveryAttempts > 0) {'), 'loop sem fase 2 (Recovery já disparada)');
+});
+
+ok('Recovery: usa a JANELA (120s) — skip NÃO fecha o ciclo', () => {
+  // V22: skip é `if (recCheck.skip) continue;` (sem log extra)
+  const skipIdx = src.indexOf('if (recCheck.skip)');
+  assert.ok(skipIdx > 0, 'bloco recCheck.skip não encontrado');
+  const skipBlock = src.slice(skipIdx, skipIdx + 700);
+  assert.ok(!skipBlock.match(/closeCycle\(s\)/), 'skip ainda fecha o ciclo');
+  assert.ok(skipBlock.includes('continue;'), 'skip não usa continue');
+});
+
+ok('Regime 15m real: fonte é o buffer 1m (16 buckets = 4h) + HIST_1M_FETCH', () => {
+  assert.ok(src.includes('HIST_1M_FETCH'), 'HIST_1M_FETCH não existe');
+  assert.ok(src.match(/const buf = buf1m\.get\(assetId\)/), 'getRegimeForAsset não lê o buffer 1m');
+  assert.ok(src.match(/for \(const \[aid, buf\] of buf1m\)/), 'boot/interval não iteram o buffer 1m');
+  assert.ok(src.match(/size: 60, count: HIST_1M_FETCH/), 'bootstrap não busca 4h de 1m');
+  assert.ok(!src.includes('for (const [aid, buf] of buf5s) {\n      if (buf?.ticks?.length >= 4) {\n        const regime'), 'regime 15m ainda usa buffer 5s');
+});
+
+ok('Log de sessão: nome de arquivo válido no Windows (sem ":" e sem "/")', () => {
+  const block = src.match(/const dateStr[^\n]*\n[^\n]*const timeStr[^\n]*/)?.[0] ?? '';
+  assert.ok(block.length > 0, 'bloco dateStr/timeStr não encontrado');
+  assert.ok(!block.includes('/'), 'dateStr/timeStr ainda usam "/"');
+  assert.ok(!block.includes(':'), 'dateStr/timeStr ainda usam ":"');
+  assert.ok(block.includes('}-${String'), 'separador "-" ausente no nome do log');
+});
+
+ok('Performance: calcADX O(n) (sem wilderSmooth O(n²) sobre fatias)', () => {
+  assert.ok(!src.includes('wilderSmooth(trs.slice('), 'calcADX ainda é O(n²)');
+});
+
+ok('Resíduo removido: detectRegime/tickVolPct/planTrade recovery morto', () => {
+  assert.ok(!src.includes('detectRegime'), 'detectRegime ainda presente');
+  assert.ok(!src.includes('tickVolPct'), 'tickVolPct ainda presente');
+  assert.ok(!src.includes("kind: 'recovery_skipped'"), 'branch recovery_skipped ainda presente');
+  assert.ok(!src.includes("kind: 'recovery',"), 'branch recovery morto ainda presente no planTrade');
 });
 
 console.log('\n══ RESUMO ══');

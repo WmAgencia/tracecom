@@ -1,6 +1,6 @@
 {
-  "_version": "21",
-  "_desc": "Bot V21 — Cash/Runner/Recovery em cima da entrada V20. Novidade: cada sinal válido abre DUAS posições iguais (Cash + Runner) na mesma direção. CASH: stake igual, vende quando L/P pós-venda >= cashTakeProfit (configurável, default R$1,00) usando valor real da IQ. RUNNER: stake igual, vai até expiração. RECOVERY: opcional, máx 1 por ciclo, só após confirmação técnica nova (suporte/resistência + RSI + ADX/DMI + ATRP + regime válido + tempo), stake = base × recoveryMultiplier. Ciclo: Cash + Runner sempre juntos; Recovery opcional. Tudo na conta DEMO/PRACTICE. A estratégia de ENTRADA (regime 1m, RSI 30/70, ADX>=15, corpo>=0.4xATR) é IDENTICA à V20 e NÃO é alterada.",
+  "_version": "22",
+  "_desc": "Bot V22 — Cash/Runner/Recovery ANTECIPADA: cada sinal válido abre DUAS posições iguais (Cash + Runner) na mesma direção. CASH: stake igual, vende quando L/P pós-venda >= cashTakeProfit usando valor real da IQ. RUNNER: stake igual, vai até expiração. RECOVERY ANTECIPADA: máx 1 por ciclo, DISPARA ENQUANTO Cash+Runner abertas quando RSI revertendo do extremo + zona suporte/resistência + ADX>=20 + regime válido — mesma direção do ciclo. Stake = (cash+runner) × 2.77 = 4 × 2.77 ≈ $11.08. Ciclo fecha quando todas pernas settlearem.",
   "login": {
     "email": "SEU_EMAIL_AQUI",
     "password": "SUA_SENHA_AQUI",
@@ -67,6 +67,11 @@
       "maxMs": 90000,
       "lossThreshold": 0.80
     }
+  },
+  "recovery": {
+    "_nota": "RECOVERY ANTECIPADA V22: dispara enquanto Cash+Runner abertas, na MESMA direção. Stake = (cash+runner) x multiplier = 4 x 2.77 = 11.08. Sinal: RSI revertendo do extremo (CALL: prev<40 -> rsi>=45; PUT: prev>60 -> rsi<=55) + zona suporte/resistência + ADX>=20 + regime válido.",
+    "multiplier": 2.77,
+    "maxAtrpPercent": 3.0
   },
   "universe": {
     "_nota": "TODOS os ativos OTC disponiveis. Top 50 primeiro; algum fechado/suspenso/sem feed => entra a reserva (na ordem da lista); se faltar, o bot completa com qualquer OTC turbo disponivel (source auto). replaceStaleMs = ativo sem candle 5s por esse tempo e substituido. checkEveryMs = revisao do universo.",

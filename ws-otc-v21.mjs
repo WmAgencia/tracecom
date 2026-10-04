@@ -22,8 +22,8 @@
  *  CICLO: sinal válido → Cash+Runner (mesmo cycleId).
  *    Recovery adiciona ao ciclo se confirmada. Ciclo fecha quando Runner settleia.
  *
- *  A ESTRATÉGIA DE ENTRADA (regime 1m, RSI 30/70, ADX>=15, corpo>=0.4xATR)
- *  é IDENTICA à V20 — NADA foi alterado nos filtros de sinal.
+ *  A ESTRATÉGIA DE ENTRADA (regime 15m — fonte 1m, fallback 1m, RSI 30/70, ADX>=15,
+ *  corpo>=0.4xATR) é IDENTICA à V20 — NADA foi alterado nos filtros de sinal.
  *  ─────────────────────────────────────────────────────────────────────────────
  *  PRÁTICA/DEMO APENAS. Nenhuma operação REAL durante os testes.
  */
@@ -68,7 +68,6 @@ const CLOSE_BEFORE_MS    = num(SE.closeBeforeMs, 20_000);
 // RECOVERY
 const REC_MULTIPLIER    = num(REC.multiplier, 2.75);
 const REC_MAX_ATRP_PCT  = num(REC.maxAtrpPercent, 3.0);
-const REC_CLOSE_BEFORE   = num(REC.closeBeforeMs, 20_000);
 
 // ENTRADA V20 (IDENTICA — NÃO ALTERAR)
 const REGIME_1M_MIN_CAND   = Math.max(30, Math.round(num(S.regime1mMinCandles, 120)));
@@ -126,7 +125,7 @@ const WANT_DEMO =
 const LIST_ASSETS = process.argv.includes('--ativos');
 
 // ─── CODE ID ─────────────────────────────────────────────────────────────────
-const CODE_REV = 'V21';
+const CODE_REV = 'V22';
 const CODE_HASH = (() => {
   try { return createHash('sha256').update(fs.readFileSync(new URL(import.meta.url), 'utf8')).digest('hex').slice(0, 8); }
   catch { return '????????'; }
@@ -215,10 +214,12 @@ const REGIME_15M_MIN_CANDLES = 16;
 const REGIME_15M_AGG_MS      = 15 * 60 * 1000;
 const REGIME_15M_MIN_SPREAD  = 0.03;
 const REGIME_15M_RECALC_MS  = 15 * 60 * 1000;
+// Fonte do regime 15m: 16 buckets × 15m = 4h de candles 1m (busca com margem no boot)
+const HIST_1M_FETCH = Math.max(260, Math.round(num(S.boot1mCandles, 240)));
 const regime15mCache = new Map(); // aid → { direction, spreadPct, source, candles, computedAt }
 
 /**
- * Agrega candles 5s em buckets de 15m para análise de regime.
+ * Agrega candles 1m em buckets de 15m para análise de regime.
  */
 function aggregateTo15m(ticks5s) {
   if (!ticks5s || ticks5s.length < 4) return [];
@@ -271,32 +272,6 @@ export function computeRegime15mLocal(ticks5s) {
 }
 
 /**
- * Agenda ou executa recálculo de regime 15m para todos os ativos.
- * Se force=true, recalcula imediatamente; caso contrário agenda.
- */
-let regimeRecalcTimer = null;
-
-export function scheduleRegime15mRecalc(force = false) {
-
-  if (!force && regimeRecalcTimer) return; // já agendado
-  regimeRecalcTimer = setTimeout(() => {
-    regimeRecalcTimer = null;
-
-    for (const [aid, buf] of buf5s) {
-      if (buf?.ticks?.length >= 4) {
-        const regime = computeRegime15mLocal(buf.ticks);
-        regime15mCache.set(aid, regime);
-      }
-    }
-    if (warmupDone) {
-      logLine(`[🔄 REG15M] Recalculado para ${regime15mCache.size} ativos`);
-    }
-    // Agenda próximo recalc em 15 min
-    scheduleRegime15mRecalc(true); // force=true → agenda sem checar timer existente
-  }, force ? 500 : 0); // se force=true, roda em 500ms; se false, agenda imediato
-}
-
-/**
  * Retorna o regime de 15m para um ativo (prioridade: cache → cálculo local 15m → fallback 1m).
  * NUNCA retorna null — se nenhum dado, retorna lateral15m (fail-safe).
  */
@@ -306,11 +281,11 @@ export function getRegimeForAsset(assetId) {
   if (cached && cached.direction !== 'lateral15m') {
     return cached;
   }
-  // 2) Cálculo local 15m em tempo real (usa candles 5s corrente)
-  const buf = buf5s.get(assetId);
+  // 2) Cálculo local 15m em tempo real — FONTE: buffer 1m (o buffer 5s não cobre os 16 buckets de 15m)
+  const buf = buf1m.get(assetId);
   if (buf?.ticks?.length >= 4) {
     const regime = computeRegime15mLocal(buf.ticks);
-    // Atualiza cache com свежий resultado
+    // Atualiza cache com resultado fresco
     regime15mCache.set(assetId, regime);
     if (regime.direction !== 'lateral15m') {
       return regime;
@@ -350,19 +325,6 @@ export function trendDirection(ticks) {
   return { direction: dir, source: 'ema8x21', spreadPct: round2(spread) };
 }
 
-// detectRegime V15: streak de velas na mesma direção → ranging vs trending
-export function detectRegime(ticks) {
-  if (ticks.length < num(S.lookbackRegime, 20)) return { state: 'unknown', streak: 0 };
-  let max = 0, cur = 0, last = 0;
-  for (let i = Math.max(1, ticks.length - num(S.lookbackRegime, 20)); i < ticks.length; i++) {
-    const move = ticks[i].close > ticks[i - 1].close ? 1 : ticks[i].close < ticks[i - 1].close ? -1 : 0;
-    if (move === 0) continue;
-    if (move === last) cur++; else { cur = 1; last = move; }
-    if (cur > max) max = cur;
-  }
-  return { state: max >= num(S.regimeStreakThreshold, 12) ? 'trending' : 'ranging', streak: max };
-}
-
 export function calcRSI(ticks, period = 14) {
   if (!Array.isArray(ticks) || ticks.length < period + 1) return 50;
   const closes = ticks.map((t) => t.close);
@@ -385,65 +347,67 @@ export function calcADX(ticks, period = 14) {
   const n = ticks.length;
 
   // True Range e Directional Movement
-  const trs  = [];
-  const posDMs = [];
-  const negDMs = [];
+  const trs = [], posDMs = [], negDMs = [];
   for (let i = 1; i < n; i++) {
     const tr   = Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1]));
     const up   = highs[i]  - highs[i-1];
     const down = lows[i-1] - lows[i];
-    const posDM = (up > down && up > 0) ? up : 0;
-    const negDM = (down > up && down > 0) ? down : 0;
     trs.push(tr);
-    posDMs.push(posDM);
-    negDMs.push(negDM);
+    posDMs.push(up > down && up > 0 ? up : 0);
+    negDMs.push(down > up && down > 0 ? down : 0);
   }
 
-  // Wilder smoothing com EMA-like (usando period)
-  function wilderSmooth(arr) {
-    const lookback = Math.min(period, arr.length);
-    if (lookback < 2) return 0;
-    let sum = arr.slice(-lookback).reduce((a, b) => a + b, 0);
-    for (let i = arr.length - lookback - 1; i >= 0; i--) {
-      sum = (sum * (lookback - 1) + arr[i]) / lookback;
+  // Audit fix: Wilder smoothing O(n) (antes era O(n²) — travava com 169+ ativos).
+  // Primeira janela = soma; depois s = s - s/period + valor.
+  const smooth = (series) => {
+    const out = new Array(series.length).fill(0);
+    if (series.length < period) return out;
+    let sum = 0;
+    for (let i = 0; i < period; i++) sum += series[i];
+    out[period - 1] = sum;
+    for (let i = period; i < series.length; i++) {
+      sum = sum - sum / period + series[i];
+      out[i] = sum;
     }
-    return sum;
+    return out;
+  };
+
+  const sTR = smooth(trs), sPos = smooth(posDMs), sNeg = smooth(negDMs);
+  const dxs = [];
+  for (let i = period - 1; i < trs.length; i++) {
+    const st = sTR[i];
+    if (st <= 0) { dxs.push(0); continue; }
+    const pDI = (sPos[i] / st) * 100;
+    const nDI = (sNeg[i] / st) * 100;
+    const dSum = pDI + nDI;
+    dxs.push(dSum > 0 ? Math.abs(pDI - nDI) / dSum * 100 : 0);
   }
+  if (dxs.length === 0) return 0;
 
-  const smoothTR  = wilderSmooth(trs);
-  const smoothPos = wilderSmooth(posDMs);
-  const smoothNeg = wilderSmooth(negDMs);
-  if (smoothTR <= 0) return 0;
-
-  const plusDI  = round2((smoothPos / smoothTR) * 100);
-  const minusDI = round2((smoothNeg / smoothTR) * 100);
-  const diSum   = plusDI + minusDI;
-  if (diSum === 0) return 0;
-
-  const dx = Math.abs(plusDI - minusDI) / diSum * 100;
-  if (ticks.length < period * 4) return round2(dx);
-
-  // ADX = EMA suave do DX (usando period)
-  const adxPeriod = Math.min(period, ticks.length);
-  let adx = dx;
-  for (let i = 0; i < adxPeriod; i++) {
-    adx = (adx * (adxPeriod - 1) + dx) / adxPeriod;
-  }
-  return round2(adx);
-}
-
-function tickVolPct(ticks) {
-  if (!Array.isArray(ticks) || ticks.length < 2) return 0.02;
-  const closes = ticks.map((t) => t.close);
-  const rets  = [];
-  for (let i = 1; i < closes.length; i++) rets.push(Math.abs(closes[i] - closes[i-1]) / closes[i-1]);
-  return rets.slice(-12).reduce((a, b) => a + b, 0) / Math.max(1, rets.slice(-12).length);
+  // ADX = média de Wilder dos DXs (primeiro valor = média simples dos `period` primeiros)
+  if (dxs.length < period) return round2(Math.min(100, Math.max(0, dxs[dxs.length - 1])));
+  let sum = 0;
+  for (let i = 0; i < period; i++) sum += dxs[i];
+  let adx = sum / period;
+  for (let i = period; i < dxs.length; i++) adx = (adx * (period - 1) + dxs[i]) / period;
+  return round2(Math.min(100, Math.max(0, adx)));
 }
 
 export function parseSettlement(raw, op) {
   const win = String(raw?.win ?? raw?.status ?? raw?.result ?? '').toLowerCase();
-  // Status ausente ou não reconhecível = UNKNOWN (não é loss inventado)
+  // Statusausente ou intermediário = UNKNOWN (não é loss inventado)
+  // Reconhece: win, equal, draw, closed, settled, expired — todos FINAIS.
+  // Não reconhece (UNKNOWN): pending, open, active, rejected, null, vazio, indefinido.
+  const FINAL_STATUSES = ['win', 'equal', 'draw', 'closed', 'settled', 'expired'];
+  const INTERMEDIATE_STATUSES = ['pending', 'open', 'active', 'rejected', 'cancelled', 'null', 'undefined', ''];
+
   if (!win || win === 'null' || win === 'undefined' || win === '') {
+    return { result: 'unknown', profit: null, invested: op.stake ?? 0 };
+  }
+  if (INTERMEDIATE_STATUSES.includes(win)) {
+    return { result: 'unknown', profit: null, invested: op.stake ?? 0 };
+  }
+  if (!FINAL_STATUSES.includes(win)) {
     return { result: 'unknown', profit: null, invested: op.stake ?? 0 };
   }
   const draw = win === 'equal' || win === 'draw';
@@ -642,19 +606,71 @@ const openStake = () => {
 const nextCycleId = () => Math.floor(Date.now() / 1000) * 1000 + Math.floor(Math.random() * 999);
 
 function findOp({ aid = null, requestId = null, orderId = null, expiration = null, preferPending = false } = {}) {
-  const list = [...inFlight.values()];
-  if (orderId !== null && orderId !== undefined && Number.isFinite(Number(orderId))) {
-    const byId = list.find((o) => o.orderId !== undefined && o.orderId !== null && String(o.orderId) === String(orderId));
-    if (byId) return byId;
-  }
+  // P0-fix: busca em ordersByRequestId (ordens SENT) + inFlight (ordens ACCEPTED).
+  // Nunca retorna ordem arbitrária por ativo — exige ID exato.
   if (requestId !== null && requestId !== undefined && String(requestId).length > 0) {
-    const byReq = list.find((o) => o.requestId !== null && String(o.requestId) === String(requestId));
-    if (byReq) return byReq;
+    const fromIndex = ordersByRequestId.get(String(requestId));
+    if (fromIndex) return fromIndex;
   }
-  // Se nenhum ID foi fornecido, não retornar ordem arbitrária — caller precisa fornecer ID
-  if (orderId === null && requestId === null) return null;
-  // ID fornecido mas não encontrado: não liquidar ordem errada — reconciliar externamente
+  if (orderId !== null && orderId !== undefined && Number.isFinite(Number(orderId))) {
+    const strId = String(orderId);
+    // inFlight pode ter orderId definido (após ACK)
+    const byId = [...inFlight.values()].find((o) => o.orderId !== undefined && o.orderId !== null && String(o.orderId) === strId);
+    if (byId) return byId;
+    // Também busca em ordersByRequestId ( ACK ainda não chegou mas orderId veio no payload )
+    for (const op of ordersByRequestId.values()) {
+      if (op.orderId !== undefined && op.orderId !== null && String(op.orderId) === strId) return op;
+    }
+  }
+  if (requestId === null && orderId === null) return null;
   return null;
+}
+
+// ─── CORRELAÇÃO DE ACK (auditoria 2026-10-03) ────────────────────────────────
+// A IQ NÃO ecoa o request_id nos eventos de posição. Os eventos úteis são:
+//  - `socket-option-opened`: id/active_id/amount (amount = stake × 1e6);
+//  - push `position-changed` (raw_event.binary_options_option_changed1, result=opened):
+//    option_id + active_id + direction + amount + expiration_time.
+// As duas pernas do ciclo (cash/runner) são idênticas em stake/direção/vencimento;
+// o ACK mais antigo vincula a primeira perna ainda sem orderId (instrumentos fungíveis).
+function stakeFromAmount(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n > 100_000 ? round2(n / 1_000_000) : round2(n);
+}
+
+function opByOrderId(orderId) {
+  const idNum = Number(orderId);
+  if (!Number.isFinite(idNum)) return null;
+  return [...inFlight.values()].find((o) => o.orderId !== null && o.orderId !== undefined && Number(o.orderId) === idNum) ?? null;
+}
+
+function candidateOps({ aid, direction = null, stake = null, expirationSec = null, freshMs = null }) {
+  const now = nowMs();
+  return [...inFlight.values()].filter((o) => {
+    if (o.settled || o.applied || o.awaitingSettlement) return false;
+    if (o.orderId !== null && o.orderId !== undefined) return false;
+    if (freshMs !== null && now - (o.sentAtMs ?? 0) > freshMs) return false;
+    if (Number.isFinite(Number(aid)) && Number(o.assetId) !== Number(aid)) return false;
+    if (direction !== null && String(o.direction).toLowerCase() !== String(direction).toLowerCase()) return false;
+    if (Number.isFinite(expirationSec) && Number(o.expiration) !== Number(expirationSec)) return false;
+    if (Number.isFinite(stake) && Math.abs(Number(o.stake) - Number(stake)) > 0.011) return false;
+    return true;
+  }).sort((a, b) => (a.sentAtMs ?? 0) - (b.sentAtMs ?? 0));
+}
+
+function attachOrderId(op, orderId, source) {
+  const idNum = Number(orderId);
+  if (!op || !Number.isFinite(idNum)) return false;
+  if (op.orderId !== null && op.orderId !== undefined) return Number(op.orderId) === idNum;
+  op.orderId = idNum;
+  if (op.record) op.record.orderId = idNum;
+  pendingSet.delete(op.okey);
+  pending.delete(op.okey);
+  if (op.requestId) ordersByRequestId.delete(String(op.requestId));
+  savePending();
+  logLine(`[✅ ACK] ${shortName(op.name)} ${op.direction} ${(op.role ?? '?').toUpperCase()} | orderId=${idNum} | cyc=${op.cycleId} | ${source}`);
+  return true;
 }
 
 let ws = null, warmupDone = false;
@@ -662,6 +678,13 @@ let balanceId = null, initialBalance = 0, currentBalance = 0;
 let accountType = 'DEMO', currencySymbol = 'US$';
 let startedAt = 0, closedCandles = 0, sessionStopLogged = false;
 let sessionStartBalance = 0;
+
+// P0-fix: índice completo de ordens por requestId (corrige correlação de ACK)
+// sendOrder guarda op aqui ANTES de enviar ao broker; socket-option-opened encontra por requestId.
+// P0-fix: ordersByRequestId — índice de ordens SENT para correlação de ACK
+// Exportado para testes; em produção é usado apenas internamente.
+export const ordersByRequestId = new Map();
+
 const stats = { settled: 0, wins: 0, losses: 0, draws: 0, early: 0, earlyPos: 0, earlyNeg: 0, profit: 0 };
 
 // ─── LOG DE SESSÃO ────────────────────────────────────────────────────────────
@@ -675,19 +698,20 @@ function ensureHistoricoDir() {
 function startSessionLog() {
   ensureHistoricoDir();
   const now = new Date();
-  const dateStr = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getFullYear()).slice(-2)}`;
-  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const fileName = `OP_V21_${dateStr}_${timeStr}.log`;
+  // Audit fix: ':' e '/' viram fluxo alternado NTFS no Windows (log 0 bytes). Usa '-'.
+  const dateStr = `${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getFullYear()).slice(-2)}`;
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}`;
+  const fileName = `OP_V22_${dateStr}_${timeStr}.log`;
   sessionLogFile = path.join(HISTORICO_DIR, fileName);
   try {
     const header = `═══════════════════════════════════════════════════════════════\n`;
-    const title  = `  SESSÃO V21 INICIADA: ${dateStr} às ${timeStr}\n`;
+    const title  = `  SESSÃO V22 INICIADA: ${dateStr} às ${timeStr}\n`;
     const info   = `  Bot: ${CODE_REV} | Conta: ${accountType} | Saldo: ${currencySymbol}${initialBalance.toFixed(2)}\n`;
     const cfg    = `  Cash TP: ${currencySymbol}${CASH_TP.toFixed(2)} | Recovery ×${REC_MULTIPLIER} | Expiração: ${EXPIRATION_MIN}min\n`;
     const end    = `═══════════════════════════════════════════════════════════════\n\n`;
     fs.writeFileSync(sessionLogFile, header + title + info + cfg + end);
     sessionLogStream = fs.createWriteStream(sessionLogFile, { flags: 'a' });
-    console.log(`[📁] Log V21: ${sessionLogFile}`);
+    console.log(`[📁] Log V22: ${sessionLogFile}`);
   } catch (e) {
     console.error(`[📁] Erro ao criar log:`, e.message);
     sessionLogStream = null;
@@ -709,7 +733,7 @@ function endSessionLog(final = false) {
       const cs = cycleStats;
       const csLines = [
         `═══════════════════════════════════════════════════════════════`,
-        `  RESULTADO V21 POR PAPEL`,
+        `  RESULTADO V22 POR PAPEL`,
         `  CASH:     N=${cs.cash.settled} W=${cs.cash.wins} L=${cs.cash.losses} P/L=${fmt(cs.cash.pnl)}`,
         `  RUNNER:   N=${cs.runner.settled} W=${cs.runner.wins} L=${cs.runner.losses} P/L=${fmt(cs.runner.pnl)}`,
         `  RECOVERY: N=${cs.recovery.settled} W=${cs.recovery.wins} L=${cs.recovery.losses} P/L=${fmt(cs.recovery.pnl)}`,
@@ -822,7 +846,7 @@ export function selectUniverse({ whitelist = [], reserve = [], actives = [], min
 export function evaluateGuards({
   open, direction, now, pausedUntil = 0,
   stake, balance = 0,
-  exposure = 0, exposureLimit = Infinity,
+  exposure = 0, committed = 0, exposureLimit = Infinity,
   sessionLoss = 0, sessionLossLimit = Infinity, maxSameDirection = 3,
 }) {
   const sameDir = open.filter((o) => o.direction === direction);
@@ -832,8 +856,11 @@ export function evaluateGuards({
   if (sessionLoss >= sessionLossLimit) return 'perdaSessao';
   // Saldo: rejeita zero, negativo, NaN e stake maior que disponível
   if (!Number.isFinite(balance) || balance <= 0 || stake > balance) return 'semSaldo';
-  // Exposição total (aberta + nova) não pode ultrapassar o limite
+  // Exposição total (aberta + nova) não pode ultrapassar o limite de exposição
   if (exposure + stake > exposureLimit) return 'exposureLimit';
+  // P0-fix: compromisso financeiro = exposição real + reservas pendentes (ACK não chegou).
+  // O broker já debitou a stake; se o ACK chegar depois, a conta pode ficar negativa.
+  if (committed + stake > exposureLimit) return 'exposureLimit';
   return null;
 }
 
@@ -875,17 +902,45 @@ function planTrade(aid) {
   const decision = evaluateEntry({ ticks: b5.ticks, open, regime15m: s.regime15m, rsi, adx });
   if (decision.skip) return null;
 
-  // Se Runner lossou e Recovery NÃO foi feita → avalia Recovery
-  if (s.runnerLossRecoveryArmed && s.recoveryAttempts === 0) {
-    const recResult = evaluateRecovery({ aid, direction: decision.direction });
-    if (recResult.skip) {
-      sessionLog(`RECOVERY_SKIPPED ${recResult.skip} | ${shortName(s.name)} | direção=${decision.direction}`);
-      return { direction: decision.direction, trend, rsi, adx, kind: 'recovery_skipped', recoverySkipReason: recResult.skip };
-    }
-    return { direction: decision.direction, trend, rsi, adx, kind: 'recovery', reason: recResult.reason, recoveryReason: recResult.recoveryReason };
-  }
-
+  // (A Recovery é avaliada em evaluateOpenPositions, dentro da janela do gale)
   return { direction: decision.direction, trend, rsi, adx, kind: 'signal', reason: decision.reason };
+}
+
+// ─── RESERVAS DE ACK (auditoria 2026-10-03) ──────────────────────────────────
+// sendOrder já coloca a ordem em inFlight; a reserva `pending` só existe para saber
+// qual ordem ainda não recebeu orderId. Contá-la de novo na exposição travava o bot
+// após a primeira entrada (reservas antigas nunca expiravam).
+const PENDING_TTL_MS = 10 * 60_000;
+
+/** Soma das reservas pendentes que NÃO estão em inFlight (cada stake conta uma única vez). */
+export function pendingCommitment(pendingEntries, hasInFlight) {
+  let sum = 0;
+  for (const [okey, info] of pendingEntries) {
+    if (typeof hasInFlight === 'function' && hasInFlight(okey)) continue;
+    sum += Number(info?.stake) || 0;
+  }
+  return round2(sum);
+}
+
+/** Chaves de reservas vencidas (ordem enviada há mais de ttlMs). */
+export function pendingStaleKeys(pendingEntries, now, ttlMs = PENDING_TTL_MS) {
+  const stale = [];
+  for (const [okey, info] of pendingEntries) {
+    if (Number(now) - Number(info?.sentAtMs ?? 0) > ttlMs) stale.push(okey);
+  }
+  return stale;
+}
+
+function prunePendingStale() {
+  let dropped = 0;
+  for (const okey of pendingStaleKeys(pending, nowMs())) {
+    pending.delete(okey); pendingSet.delete(okey); dropped++;
+  }
+  if (dropped > 0) {
+    logLine(`[🧹] pending prune: ${dropped} reserva(s) de ACK vencida(s) descartada(s)`);
+    savePending();
+  }
+  return dropped;
 }
 
 function canTrade(aid, direction, stake) {
@@ -893,11 +948,14 @@ function canTrade(aid, direction, stake) {
   const s   = buf ? state[buf.key] : null;
   if (!s) return null;
   const loss = sessionStartBalance > 0 ? sessionStartBalance - currentBalance : 0;
+  // Audit fix: committed = exposição real (inFlight) + reservas pendentes que não estão em inFlight
+  const committed = round2(openStake() + pendingCommitment(pending, (okey) => inFlight.has(okey)));
   const reason = evaluateGuards({
     open: opsFor(aid), direction, now: nowMs(),
     pausedUntil: s.pausedUntil, lastOpAt: s.lastOpAt, lastResult: s.lastResult,
     stake, balance: currentBalance,
-    exposure: openStake(), exposureLimit: exposureLimit(),
+    exposure: openStake(), committed,
+    exposureLimit: exposureLimit(),
     sessionLoss: loss, sessionLossLimit: sessionLossLimit(),
     maxSameDirection: C.maxOpsPerAsset ?? 3,
   });
@@ -913,23 +971,68 @@ function canTrade(aid, direction, stake) {
   return s;
 }
 
-// ─── RECOVERY: avaliação técnica (nova confirmação) ───────────────────────────
-function evaluateRecovery({ aid, direction }) {
+// ─── // ─── RECOVERY ANTECIPADA V22 ───────────────────────────────────────────────────
+// Dispara enquanto Cash+Runner estão abertas, na mesma direção.
+// Stake = soma cash+runner × REC_MULTIPLIER = 4 × 2.75 = 11.
+// Sinal: RSI revertendo do extremo + ADX confirmando + zona de suporte/resistência.
+function evaluateRecoveryAnticipada({ aid, stateEntry: s }) {
+  const buf = buf5s.get(aid);
+  if (!buf) return { skip: 'SEM_BUF5S' };
+  const ticks = buf.ticks;
+  if (!Array.isArray(ticks) || ticks.length < 20) return { skip: 'DADOS_INSUFICIENTES' };
+
+  const regime15m = s?.regime15m ?? getRegimeForAsset(aid);
+  if (!regime15m || regime15m.direction === 'lateral15m') return { skip: 'REGIME_INVALIDADO' };
+
+  const direction = regime15m.direction === 'alta15m' ? 'CALL' : 'PUT';
+  if (direction !== s.direction) return { skip: 'REGIME CONTRA dir=' + s.direction };
+
+  const rsi  = calcRSI(ticks);
+  const adx  = calcADX(ticks);
+  const trend = trendDirection(ticks);
+  const closes = ticks.map((t) => t.close);
+  const lastClose = closes[closes.length - 1];
+  const prevRsi = ticks.length >= 2 ? calcRSI(ticks.slice(0, -1)) : null;
+
+  if (adx < 20) return { skip: 'ADX_FRACO_' + adx.toFixed(1) };
+  if (trend.direction !== direction) return { skip: 'SEM_TREND_FAVOR rsi=' + rsi.toFixed(0) };
+
+  const recentBars = ticks.slice(-14);
+  const atrAvg = recentBars.reduce((sum, t) => sum + Math.abs((t.high ?? t.close) - (t.low ?? t.close)), 0) / Math.max(1, recentBars.length);
+  const ATRP = atrAvg > 0 ? (atrAvg / lastClose) * 100 : 0;
+  if (ATRP > REC_MAX_ATRP_PCT) return { skip: 'ATRP_ALTO_' + ATRP.toFixed(1) + '%' };
+
+  // Pullback: RSI revertendo do extremo
+  let pullbackOk = false;
+  if (direction === 'CALL') pullbackOk = prevRsi !== null && prevRsi < 40 && rsi >= 45;
+  else pullbackOk = prevRsi !== null && prevRsi > 60 && rsi <= 55;
+  if (!pullbackOk) return { skip: 'SEM_PULLBACK rsi=' + rsi.toFixed(0) + ' prevRsi=' + (prevRsi ?? '?') };
+
+  // Zona de suporte/resistência
+  const recentLows  = ticks.slice(-20).map((t) => t.low ?? t.close);
+  const recentHighs = ticks.slice(-20).map((t) => t.high ?? t.close);
+  const support  = Math.min(...recentLows);
+  const resist   = Math.max(...recentHighs);
+  const range    = resist - support;
+  const nearZone = direction === 'CALL' ? (lastClose - support) / range < 0.15 : (resist - lastClose) / range < 0.15;
+  if (!nearZone) return { skip: 'FORA_DA_ZONA last=' + lastClose.toFixed(5) + ' range=' + range.toFixed(5) };
+
+  const recStake = round2(BASE_STAKE * 2 * REC_MULTIPLIER);
+  const reason = 'Pullback: RSI=' + rsi.toFixed(0) + ' prevRsi=' + (prevRsi ?? '?') + ' ADX=' + adx.toFixed(1) + ' ATRP=' + ATRP.toFixed(2) + '% zone=' + (direction === 'CALL' ? 'suporte' : 'resist');
+  return { skip: null, direction, recStake, reason, recoveryReason: reason };
+}
+
+// Compat: fluxo antigo (pós-settlement, inverte direção) — renomeado
+function evaluateRecoveryClassic({ aid, direction }) {
   const buf = buf5s.get(aid), b1 = buf1m.get(aid);
   if (!buf || !b1) return { skip: 'SEM_DADOS' };
   const ticks = buf.ticks;
   if (!Array.isArray(ticks) || ticks.length < 20) return { skip: 'DADOS_INSUFICIENTES' };
 
-  // Tempo: não entra nos últimos REC_CLOSE_BEFORE ms antes do vencimento
-  // (precisamos de pelo menos closeBeforeMs de vida útil)
-  const openOps = opsFor(aid);
-  const runnerOp = openOps.find((o) => o.role === 'runner');
-  if (runnerOp) {
-    const remainingMs = runnerOp.expiration * 1000 - nowMs();
-    if (remainingMs < REC_CLOSE_BEFORE) return { skip: 'RECOVERY_SKIPPED_TOO_LATE' };
-  }
+  // Audit fix: sem checagem de tempo da perna antiga — a Recovery compra uma opção NOVA
+  // (2min inteiros); o limite real é a janela do gale (GALE_WINDOW_MS), no monitor.
 
-  // Regime 15m (Regime Agent) ainda válido (não virou contra)
+  // Regime 15m ainda válido (não virou contra)
   const s = state[buf.key];
   if (!s?.regime15m || s.regime15m.direction === 'lateral15m') return { skip: 'REGIME_INVALIDADO' };
   if (direction === 'CALL' && s.regime15m.direction !== 'alta15m') return { skip: 'REGIME_INVALIDADO' };
@@ -1007,10 +1110,19 @@ function sendOrder(aid, direction, stake, expiration, optionTypeId, requestId, r
   // pendingSet rastreia quais okeys aguardam ACK para evitar double-count.
   pendingSet.add(okey);
   pending.set(okey, { stake, sentAtMs: record.sentAtMs });
+  // P0-fix: guarda op COMPLETA em ordersByRequestId para que o ACK a encontre por requestId
+  ordersByRequestId.set(requestId, op);
   savePending();
 
   s.lastOpAt = record.sentAtMs;
   s.direction = direction;
+
+  // Coloca em inFlight IMEDIATAMENTE — o ACK do broker não ecoa requestId,
+  // então a correlação por requestId não funciona. O applied-flag do applyResult
+  // garante que a primeira chamada (ACK ou settlement) marca applied=true e a
+  // segunda é ignorada. Pending continua rastreando exposição até o ACK.
+  inFlight.set(okey, op);
+  savePending();
 
   ws.send('sendMessage', {
     body: {
@@ -1029,7 +1141,8 @@ let monitorBusy = false;
 
 async function evaluateOpenPositions() {
   if (monitorBusy || !warmupDone) return;
-  if (inFlight.size === 0) return;
+  // P0-fix: NÃO retorna aqui se inFlight.size === 0 — Recovery timeout precisa
+  // avaliar ciclos órfãos (Cash+Runner fecharam mas Recovery ficou armada).
 
   monitorBusy = true;
   try {
@@ -1087,102 +1200,51 @@ async function evaluateOpenPositions() {
         }
       }
 
-      // ── RUNNER: detecta loss para armar Recovery ───────────────────────────
-      if (op.role === 'runner' && !op.settled) {
-        const q = quotes.get(String(op.orderId));
-        if (!q) continue;
-        const sellProfit = q.sellProfit;
-        if (sellProfit === null || sellProfit === undefined) continue;
-
-        const s = state[op.key];
-        if (!s) continue;
-        // Se Runner está perdendo (sell_profit < stake) E ainda não armamos Recovery
-        if (sellProfit < op.stake && !s.runnerLossRecoveryArmed) {
-          // Recovery é armada no settlement do Runner, não aqui
-        }
-      }
     }
 
     // ── RECOVERY: avaliar se alguma Recovery deve ser disparada ────────────
     for (const [key, s] of Object.entries(state)) {
-      if (!s.runnerLossRecoveryArmed || s.recoveryAttempts > 0) continue;
-
-      // P0-fix: timeout da Recovery armada — se nenhuma Recovery executou dentro
-      // da janela, o mercado não deu oportunidade. Fecha ciclo para não prender
-      // o ciclo indefinidamente.
-      const galeElapsed = s.galeArmedAt ? nowMs() - s.galeArmedAt : Infinity;
-      if (galeElapsed > GALE_WINDOW_MS) {
-        sessionLog(`RECOVERY_TIMEOUT | ${shortName(s.name)} | elapsed=${Math.round(galeElapsed/1000)}s > GALE_WINDOW=${GALE_WINDOW_MS/1000}s | fecha ciclo`);
-        s.runnerLossRecoveryArmed = false;
-        closeCycle(s);
-        continue;
-      }
+      if (!s.runnerLossRecoveryArmed) continue;
 
       // Encontra o ativo correspondente
       const aidEntry = [...running.entries()].find(([, v]) => v.key === key);
       if (!aidEntry) continue;
       const [aid, row] = aidEntry;
-      // ── Bootstrap: Recovery precisa de contexto histórico para validar reversão ──
-      if (row.bootstrapStatus !== 'READY') {
-        if (!(row._recBootstrapWarned++)) {
-          sessionLog(`RECOVERY_WAIT_BOOTSTRAP | ${shortName(s.name)} | status=${row.bootstrapStatus}`);
-        }
+
+      // Fase 2: Recovery já disparada
+      if (s.recoveryAttempts > 0) {
+        if (opsFor(aid).length === 0) closeCycle(s);
         continue;
       }
-      const buf = buf5s.get(aid);
-      if (!buf) continue;
 
-      // Atualiza regime 15m fresco para a avaliação de Recovery
-      // (planTrade só atualiza quando abre ciclo novo; aqui o regime pode estar obsoleto)
-      s.regime15m = getRegimeForAsset(aid);
-
-      const openOps = opsFor(aid);
-      // Se não há mais Runner aberta, Recovery já deveria ter sido avaliada no settlement
-      if (openOps.some((o) => o.role === 'runner' && !o.settled)) continue;
-      // Runner fechou — avalia se Recovery deve entrar
-      // Runner fechou — avalia se Recovery deve entrar
-      const direction = s.direction === 'CALL' ? 'PUT' : 'CALL';
-      const stake = round2(BASE_STAKE * REC_MULTIPLIER);
-      const remainingMs = openOps.length > 0 ? (openOps.reduce((mx, o) => Math.max(mx, o.expiration * 1000 - nowMs()), 0)) : Infinity;
-
-      if (remainingMs < REC_CLOSE_BEFORE) {
-        sessionLog(`RECOVERY_SKIPPED_TOO_LATE | ${shortName(s.name)} | tempo=${Math.round(remainingMs/1000)}s`);
-        // Fecha ciclo (Recovery não entrou + não vai entrar mais)
+      // Timeout da Recovery armada
+      const galeElapsed2 = s.galeArmedAt ? nowMs() - s.galeArmedAt : Infinity;
+      if (galeElapsed2 > GALE_WINDOW_MS) {
+        sessionLog(`RECOVERY_TIMEOUT | ${shortName(s.name)} | elapsed=${Math.round(galeElapsed2/1000)}s > GALE_WINDOW=${GALE_WINDOW_MS/1000}s | fecha ciclo`);
         s.runnerLossRecoveryArmed = false;
         closeCycle(s);
         continue;
       }
 
-      const recCheck = evaluateRecovery({ aid, direction });
-      if (recCheck.skip) {
-        sessionLog(`RECOVERY_SKIPPED ${recCheck.skip} | ${shortName(s.name)} | reg15m=${s.regime15m?.direction ?? '?'} | rsi=${recCheck.skip.includes('RSI') ? recCheck.skip.match(/RSI(\d+)/)?.[1] ?? '?' : '?'}`);
-        // Fecha ciclo (Recovery recusada — market não confirmou)
-        s.runnerLossRecoveryArmed = false;
-        closeCycle(s);
-        continue;
-      }
-
-      // Recovery confirmada — avalia guards e envia
-      const guard = canTrade(aid, direction, stake);
-      if (!guard) {
-        sessionLog(`RECOVERY_GUARD_FAILED | ${shortName(s.name)} | direcao=${direction} | stake=${stake}`);
-        // Fecha ciclo (guard falhou — sem espaço para Recovery)
-        s.runnerLossRecoveryArmed = false;
-        closeCycle(s);
-        continue;
-      }
-
-      // Recovery entra — ciclo fica ABERTO até Recovery fechar
+      // ── RECOVERY ANTECIPADA V22 ──────────────────────────────────────────────
+      // Dispara enquanto Cash+Runner abertas, na mesma direção.
+      // Stake = (cash+runner) × REC_MULTIPLIER = 4 × 2.77 ≈ 11.08.
+      const buf2 = buf5s.get(aid);
+      if (!buf2) continue;
+      s.regime15m = s.regime15m ?? getRegimeForAsset(aid);
+      const recCheck = evaluateRecoveryAnticipada({ aid, stateEntry: s });
+      if (recCheck.skip) continue;
+      const guard2 = canTrade(aid, recCheck.direction, recCheck.recStake);
+      if (!guard2) continue;
       const { expiration, optionTypeId } = computeExpiration(Math.floor(nowMs() / 1000), EXPIRATION_MIN);
       const requestId = ws.uuid().replace(/-/g, '').slice(0, 12);
-      sendOrder(aid, direction, stake, expiration, optionTypeId, requestId, 'recovery', s.cycleId);
+      sendOrder(aid, recCheck.direction, recCheck.recStake, expiration, optionTypeId, requestId, 'recovery', s.cycleId);
       s.recoveryAttempts = 1;
-      guard.cycleOps = (guard.cycleOps ?? 0) + 1;
-      // cycleOpenOps NÃO decrementa aqui — Recovery adiciona +1 ao ciclo
+      guard2.cycleOps = (guard2.cycleOps ?? 0) + 1;
       const op = inFlight.get(`${aid}|${expiration}|${requestId}`);
       if (op) op.recoveryReason = recCheck.recoveryReason;
-      logLine(`[🎲 RECOVERY] ${shortName(s.name)} ${direction} ${fmt(stake)} | ${recCheck.reason} | cyc=${s.cycleId}`);
-      sessionLog(`RECOVERY_DISPARADA | ${shortName(s.name)} | ${direction} | stake=${fmt(stake)} | ${recCheck.recoveryReason} | cyc=${s.cycleId}`);
+      logLine(`[🎲 RECOVERY] ${shortName(s.name)} ${recCheck.direction} $${recCheck.recStake.toFixed(2)} | ${recCheck.reason} | cyc=${s.cycleId}`);
+      sessionLog(`RECOVERY_DISPARADA | ${shortName(s.name)} | ${recCheck.direction} | stake=$${recCheck.recStake.toFixed(2)} | ${recCheck.recoveryReason} | cyc=${s.cycleId}`);
     }
   } finally {
     monitorBusy = false;
@@ -1205,20 +1267,6 @@ function maybeTrade(aid) {
 
   const plan = planTrade(aid);
   if (!plan || plan.kind !== 'signal') return;
-
-  // Recovery já Skipped — loga e ignora (flag já foi zerado pelo planTrade)
-  if (plan.kind === 'recovery_skipped') {
-    sessionLog(`RECOVERY_SKIPPED ${plan.recoverySkipReason} | ${shortName(s.name)}`);
-    return;
-  }
-
-  // Se Recovery foi confirmada pelo planTrade
-  if (plan.kind === 'recovery') {
-    return;
-  }
-
-  // Entrada normal: Cash + Runner
-  if (plan.kind !== 'signal') return;
 
   const stake = BASE_STAKE;
   const guard = canTrade(aid, plan.direction, stake * 2);
@@ -1271,6 +1319,21 @@ export function parsePositionChanged(raw) {
 }
 
 function onPositionChanged(raw) {
+  // ── ACK da abertura: o push traz raw_event.binary_options_option_changed1 (result=opened)
+  //    com option_id + active_id + direction + amount + expiration_time. É a fonte que
+  //    realmente existe — a IQ não ecoa o request_id. (audit fix)
+  const opt = raw?.raw_event?.binary_options_option_changed1 ?? null;
+  if (opt && String(opt.result ?? '').toLowerCase() === 'opened') {
+    const orderId = opt.option_id ?? raw?.external_id ?? raw?.id ?? null;
+    const aid = Number(opt.active_id ?? raw?.active_id);
+    const direction = opt.direction ?? null;
+    const stake = stakeFromAmount(opt.amount ?? raw?.invest);
+    const expirationSec = Number(opt.expiration_time ?? raw?.expiration_time ?? NaN);
+    let op = opByOrderId(orderId);
+    if (!op) op = candidateOps({ aid, direction, stake, expirationSec: Number.isFinite(expirationSec) ? expirationSec : null, freshMs: 60_000 })[0] ?? null;
+    if (op) attachOrderId(op, orderId, 'position-changed');
+  }
+  // ── cotação (sell_profit real da IQ) ──
   const parsed = parsePositionChanged(raw);
   if (!parsed) return;
   quotes.set(String(parsed.id), { sellProfit: parsed.sellProfit, at: nowMs() });
@@ -1318,53 +1381,52 @@ function closeCycle(s) {
 
 // ─── APLICA RESULTADO E FECHA POSIÇÃO ───────────────────────────────────────
 function applyResult(op, result, profit) {
-  // P0-fix: se applied=true, a op já foi contabilizada (ex: finalizeEarly + socket-option-closed)
   if (op.applied) return;
+  if (profit === null || profit === undefined) {
+    if (result === 'loss') profit = -op.stake;
+    else if (result === 'win') profit = round2(op.stake * PAYOUT);
+    else profit = 0;
+  }
   op.applied = true;
-  registerOutcome(profit, false);  // P0-fix: stats globais no settlement, não no pedido
+  registerOutcome(profit, false);  // stats globais no settlement (nunca no pedido)
 
   const s = state[op.key];
   if (!s) return;
 
-  // Atualiza ciclo
-  if (op.cycleId) {
+  // Estatísticas por papel (sessão) — contam mesmo se o ciclo já fechou
+  if (op.role === 'cash') {
+    cycleStats.cash.settled++;
+    cycleStats.cash.pnl = round2(cycleStats.cash.pnl + (profit || 0));
+    if (profit > 0) cycleStats.cash.wins++;
+    else if (profit < 0) cycleStats.cash.losses++;
+  } else if (op.role === 'runner') {
+    cycleStats.runner.settled++;
+    cycleStats.runner.pnl = round2(cycleStats.runner.pnl + (profit || 0));
+    if (profit > 0) cycleStats.runner.wins++;
+    else if (profit < 0) cycleStats.runner.losses++;
+  } else if (op.role === 'recovery') {
+    cycleStats.recovery.settled++;
+    cycleStats.recovery.pnl = round2(cycleStats.recovery.pnl + (profit || 0));
+    if (profit > 0) cycleStats.recovery.wins++;
+    else if (profit < 0) cycleStats.recovery.losses++;
+  }
+
+  // Estado do ciclo: só mexe se ESTE ciclo ainda está ativo — settlement atrasado de um
+  // ciclo já fechado não pode contaminar o próximo (audit fix).
+  if (op.cycleId && op.cycleId === s.cycleId) {
     s.cycleOpenOps = Math.max(0, (s.cycleOpenOps ?? 1) - 1);
-
-    // Estatísticas por papel
-    if (op.role === 'cash') {
-      cycleStats.cash.settled++;
-      cycleStats.cash.pnl = round2(cycleStats.cash.pnl + (profit || 0));
-      if (profit > 0) cycleStats.cash.wins++;
-      else if (profit < 0) cycleStats.cash.losses++;
-    } else if (op.role === 'runner') {
-      cycleStats.runner.settled++;
-      cycleStats.runner.pnl = round2(cycleStats.runner.pnl + (profit || 0));
-      if (profit > 0) cycleStats.runner.wins++;
-      else if (profit < 0) cycleStats.runner.losses++;
-      // Runner lossou → arma Recovery (flag persiste até Recovery ser avaliada)
-      // BUG-FIX v22: NÃO fecha o ciclo aqui — evaluateOpenPositions fecha após avaliar Recovery
-      if (result === 'loss' && s.recoveryAttempts === 0) {
-        s.runnerLossRecoveryArmed = true;
-        s.galeArmedAt = nowMs();  // P0-fix: marca timestamp para timeout da Recovery
-        s.recoveryReason = null;
-        logLine(`[🎲 ARMADA] ${shortName(op.name)} Runner lossou → Recovery armada | cyc=${op.cycleId}`);
-        sessionLog(`RECOVERY_ARMADA | ${shortName(op.name)} | loss=${fmt(profit)} | cyc=${op.cycleId}`);
-      }
-    } else if (op.role === 'recovery') {
-      cycleStats.recovery.settled++;
-      cycleStats.recovery.pnl = round2(cycleStats.recovery.pnl + (profit || 0));
-      if (profit > 0) cycleStats.recovery.wins++;
-      else if (profit < 0) cycleStats.recovery.losses++;
+    if (op.role === 'runner' && result === 'loss' && s.recoveryAttempts === 0) {
+      s.runnerLossRecoveryArmed = true;
+      s.galeArmedAt = nowMs();  // marca timestamp para o timeout da janela da Recovery
+      s.recoveryReason = null;
+      logLine(`[🎲 ARMADA] ${shortName(op.name)} Runner lossou → Recovery armada | cyc=${op.cycleId}`);
+      sessionLog(`RECOVERY_ARMADA | ${shortName(op.name)} | loss=${fmt(profit)} | cyc=${op.cycleId}`);
     }
-    // Acumula P/L no ciclo específico (evita double-count em closeCycle)
     s.cyclePnl = round2((s.cyclePnl ?? 0) + (profit || 0));
-
-    // Ciclo fecha em evaluateOpenPositions (após avaliar Recovery armada).
-    // Aqui só fecha se Recovery JÁ foi evaluada (recoveryAttempts > 0) ou
-    // se não havia Recovery armada (cash-only, ou Runner ganhou).
-    if (s.cycleOpenOps <= 0 && !s.runnerLossRecoveryArmed) {
+    // Fecha quando TODAS as pernas settlearam. Com Recovery já avaliada (attempts > 0)
+    // pode fechar mesmo com a flag armada — audit fix do deadlock pós-Recovery.
+    if (s.cycleOpenOps <= 0 && (!s.runnerLossRecoveryArmed || s.recoveryAttempts > 0)) {
       closeCycle(s);
-      s.lastResult = result;
     }
   }
 
@@ -1373,8 +1435,8 @@ function applyResult(op, result, profit) {
 }
 
 function finalizeEarly(op, returnedValue, source) {
-  // P0-fix: seta applied ANTES de applyResult para evitar double-call
-  // (se socket-option-closed fire depois, applied=true bloqueia).
+  // P0-fix: dedup — applied=true → idempotente
+  if (op.applied) return;
   op.applied = true;
   settledRecently.set(op.okey, nowMs());
   pendingSet.delete(op.okey);
@@ -1383,13 +1445,13 @@ function finalizeEarly(op, returnedValue, source) {
   savePending();
   const devolve = round2(Number.isFinite(returnedValue) ? returnedValue : 0);
   const profit = saleNet(devolve, op.stake);
-  Object.assign(op.record, {
+  Object.assign(op.record ?? (op.record = {}), {
     result: 'early', profit, earlySell: true, sellReturn: devolve, profitSource: source,
     sellKind: op.sellKind ?? null, settledAt: new Date().toISOString(),
   });
   saveResults();
-  registerOutcome(profit, true);  // P0-fix: stats no settlement, não no pedido de venda
-  applyResult(op, 'early', profit);  // applied=true → não duplica cycleOpenOps nem stats
+  // P0-fix: applyResult chama registerOutcome — uma única记账 global por settlement.
+  applyResult(op, 'early', profit);  // applied=true → idempotente
   void refreshBalance().then(() => { saveState(); renderDashboard(); });
   const emoji = profit >= 0 ? '✂️✅' : '✂️❌';
   logLine(`[${emoji} ${op.role?.toUpperCase()}] ${shortName(op.name)} ${op.direction} | venda: devolve ${fmt(devolve)} (líquido ${fmt(profit)}) | cyc=${op.cycleId}`);
@@ -1484,7 +1546,8 @@ async function bootstrapAsset(aid) {
   try {
     const [h5, h1] = await Promise.all([
       ws.getCandlesHistory({ activeId: aid, size: num(S.candleSizeSeconds, 5), count: HIST_5S_REQUIRED }),
-      ws.getCandlesHistory({ activeId: aid, size: 60, count: HIST_1M_REQUIRED }),
+      // Histórico 1m maior: é a fonte do regime 15m (16 buckets = 4h)
+      ws.getCandlesHistory({ activeId: aid, size: 60, count: HIST_1M_FETCH }),
     ]);
     const c5s = asc(h5?.msg?.candles ?? []);
     const c1m = asc(h1?.msg?.candles ?? []);
@@ -1609,15 +1672,36 @@ function saveState() {
 
 // P0-fix: persiste pending+inFlight para reconciliação após restart
 // Salvamos: (a) inFlight (operações confirmadas), (b) pending (enviadas sem ACK),
-// (c) awaitingSettlement (expiradas sem settlement — reconciliar com broker)
+// (c) awaitingSettlement (expiradas sem settlement — reconciliar com broker),
+// (d) settledLedger (IDs de settlements já processados — dedup idempotente).
 function savePending() {
   const pendingFile = (P.state ?? './bot-state-v21.json').replace('.json', '-pending.json');
   const data = {
     ts: Date.now(),
-    inFlight: [...inFlight.values()].map((o) => ({ okey: o.okey, aid: o.assetId, name: o.name, direction: o.direction, role: o.role, cycleId: o.cycleId, stake: o.stake, expiration: o.expiration, requestId: o.requestId, sentAtMs: o.sentAtMs, applied: o.applied, awaitingSettlement: o.awaitingSettlement, orderId: o.orderId })),
+    // P0-fix: schema completo — inclui key, record, assetId para startup restaurar
+    inFlight: [...inFlight.values()].map((o) => ({
+      okey: o.okey, key: o.key, assetId: o.assetId, name: o.name,
+      direction: o.direction, role: o.role, cycleId: o.cycleId,
+      stake: o.stake, expiration: o.expiration, requestId: o.requestId,
+      sentAtMs: o.sentAtMs, applied: o.applied ?? false,
+      awaitingSettlement: o.awaitingSettlement ?? false,
+      unknownSettlement: o.unknownSettlement ?? false,
+      orderId: o.orderId ?? null,
+      record: o.record ?? null,
+    })),
     pending: [...pending.entries()],
     pendingSet: [...pendingSet],
-    awaitingSettlement: [...awaitingSettlement.values()].map((o) => ({ okey: o.okey, aid: o.assetId, name: o.name, direction: o.direction, role: o.role, cycleId: o.cycleId, stake: o.stake, expiration: o.expiration, requestId: o.requestId, sentAtMs: o.sentAtMs, orderId: o.orderId })),
+    awaitingSettlement: [...awaitingSettlement.values()].map((o) => ({
+      okey: o.okey, key: o.key, assetId: o.assetId, name: o.name,
+      direction: o.direction, role: o.role, cycleId: o.cycleId,
+      stake: o.stake, expiration: o.expiration, requestId: o.requestId,
+      sentAtMs: o.sentAtMs, orderId: o.orderId ?? null,
+      applied: o.applied ?? false,
+      unknownSettlement: o.unknownSettlement ?? false,
+      record: o.record ?? null,
+    })),
+    // P0-fix: settledLedger — IDs de settlements já processados (dedup persistente)
+    settledLedger: [...settledLedger.entries()],
   };
   // P0-fix: atomic write — tudo de uma vez, sem inconsistência entre inFlight e pending
   try {
@@ -1627,18 +1711,56 @@ function savePending() {
   } catch (e) { logLine(`[⚠️ savePending] ${e.message}`); }
 }
 
+// P0-fix: settledLedger — índice persistente de settlements já processados por brokerOrderId
+// Evita que o mesmo settlement seja aplicado duas vezes após restart.
+const settledLedger = new Map();
+
+// P0-fix: carrega estado pendente do disco após restart
+export function loadPending() {
+  const pendingFile = (P.state ?? './bot-state-v21.json').replace('.json', '-pending.json');
+  try {
+    if (!fs.existsSync(pendingFile)) return { inFlight: [], pending: [], awaitingSettlement: [], settledLedger: [] };
+    const raw = JSON.parse(fs.readFileSync(pendingFile, 'utf8'));
+    return {
+      inFlight: Array.isArray(raw.inFlight) ? raw.inFlight : [],
+      pending: Array.isArray(raw.pending) ? raw.pending : [],
+      awaitingSettlement: Array.isArray(raw.awaitingSettlement) ? raw.awaitingSettlement : [],
+      settledLedger: Array.isArray(raw.settledLedger) ? raw.settledLedger : [],
+    };
+  } catch (e) {
+    logLine(`[⚠️ loadPending] Falha ao carregar ${pendingFile}: ${e.message}`);
+    return { inFlight: [], pending: [], awaitingSettlement: [], settledLedger: [] };
+  }
+}
+
 // ─── RECONCILIAÇÃO COM BROKER ──────────────────────────────────────────────────
 async function reconcileWithBroker() {
   if (awaitingSettlement.size === 0) return;
 
   logLine(`[🔍 RECONCILIAÇÃO] ${awaitingSettlement.size} posição(s) expirada(s) sem settlement — consultando histórico do broker...`);
 
-  let options;
+  let rawOptions;
   try {
-    options = (await ws.getOptions({ limit: 100, balanceId, instrumentType: "turbo,binary" }))?.msg ?? [];
+    rawOptions = await ws.getOptions({ limit: 100, balanceId, instrumentType: "turbo,binary" });
   } catch (e) {
     logLine(`[⚠️ RECONCILIAÇÃO] Falha ao consultar broker: ${e.message}`);
     sessionLog(`RECONCILE_FAIL | ${e.message}`);
+    return;
+  }
+
+  // P0-fix: adapta envelope — IQ pode retornar {open_options, closed_options} ou {msg: []}
+  let options = [];
+  if (Array.isArray(rawOptions)) {
+    options = rawOptions;
+  } else if (Array.isArray(rawOptions?.msg)) {
+    options = rawOptions.msg;
+  } else if (rawOptions?.msg && typeof rawOptions.msg === 'object') {
+    // {open_options: [...], closed_options: [...]} ou similar
+    const openOpts = rawOptions.msg.open_options ?? rawOptions.msg.open ?? [];
+    const closedOpts = rawOptions.msg.closed_options ?? rawOptions.msg.closed ?? [];
+    options = [...(Array.isArray(openOpts) ? openOpts : []), ...(Array.isArray(closedOpts) ? closedOpts : [])];
+  } else {
+    logLine(`[⚠️ RECONCILIAÇÃO] Resposta inválida do broker (tipo: ${typeof rawOptions})`);
     return;
   }
 
@@ -1649,6 +1771,13 @@ async function reconcileWithBroker() {
 
   let reconciled = 0;
   for (const [okey, op] of awaitingSettlement) {
+    // P0-fix: dedup — se já processou esse settlement, pula
+    const dedupKey = `${op.orderId ?? ''}|${op.requestId ?? ''}`;
+    if (dedupKey && settledLedger.has(dedupKey)) {
+      logLine(`[⚠️ RECONCILIAR] ${shortName(op.name)} okey=${okey} já processada (dedup ledger)`);
+      continue;
+    }
+
     // Casa pelo orderId (do broker) ou requestId (do bot)
     const brokerOpt = options.find((b) => {
       if (op.orderId && String(b.id) === String(op.orderId)) return true;
@@ -1657,35 +1786,45 @@ async function reconcileWithBroker() {
     });
 
     if (!brokerOpt) {
-      // Não encontrou no histórico — pode ainda estar processando; mantém para próxima reconciliação
       logLine(`[⚠️ RECONCILIAR] ${shortName(op.name)} okey=${okey} não encontrada no histórico do broker`);
       sessionLog(`RECONCILE_NOT_FOUND | ${shortName(op.name)} | okey=${okey} | orderId=${op.orderId}`);
       continue;
     }
 
-    // Remove de awaitingSettlement
-    awaitingSettlement.delete(okey);
-
+    // P0-fix: normaliza ANTES de remover de awaitingSettlement
     const result = normalizeBrokerResult(brokerOpt);
     const profit = normalizeBrokerProfit(brokerOpt, op.stake);
 
     logLine(`[🔍 RECONCILIADO] ${shortName(op.name)} ${op.direction} → ${result.toUpperCase()} LP=${fmt(profit)} | okey=${okey}`);
     sessionLog(`RECONCILED | ${shortName(op.name)} | ${result.toUpperCase()} | LP=${fmt(profit)} | okey=${okey} | brokerId=${brokerOpt.id}`);
 
-    // Usa applyResult se ainda tem ciclo (não settled, não applied)
+    // P0-fix: unknown mantém na fila — resultado final confirmado prossegue
+    if (result === 'unknown') {
+      // Mantém em awaitingSettlement para próxima reconciliação
+      logLine(`[⚠️ RECONCILIAR] ${shortName(op.name)} okey=${okey} result=unknown — mantém na fila`);
+      sessionLog(`RECONCILE_UNKNOWN | ${shortName(op.name)} | okey=${okey}`);
+      continue;
+    }
+
+    // P0-fix: resultado FINAL confirmado — processa sem recolocar em inFlight
+    // Registra no ledger para dedup
+    if (dedupKey) settledLedger.set(dedupKey, nowMs());
+    // Remove de awaitingSettlement (após normalização)
+    awaitingSettlement.delete(okey);
+    savePending();
+
+    if (op.record) op.record.orderId = op.orderId;
+    Object.assign(op.record ?? (op.record = {}), { result, profit, reconciled: true, settledAt: new Date().toISOString() });
+    saveResults();
+
     const s = state[op.key];
     if (!op.applied && s) {
-      // Restaura op em inFlight para que applyResult funcione
-      inFlight.set(okey, op);
-      savePending();
+      // Ciclo ainda aberto — usa applyResult para accounting completo
       applyResult(op, result, profit);
       reconciled++;
     } else {
       // Ciclo já fechou (ex: Recovery entrou) — só registra resultado
       registerOutcome(profit, false);
-      const rec = op.record ?? {};
-      Object.assign(rec, { orderId: op.orderId, result, profit, reconciled: true, settledAt: new Date().toISOString() });
-      saveResults();
       reconciled++;
     }
   }
@@ -1697,22 +1836,43 @@ async function reconcileWithBroker() {
   logLine(`[🔍 RECONCILIAÇÃO] ${reconciled}/${awaitingSettlement.size + reconciled} posições reconciliadas`);
 }
 
-function normalizeBrokerResult(opt) {
-  // win / loss / draw / early / unknown
+export function normalizeBrokerResult(opt) {
+  // win / loss / draw / unknown
+  // P0-fix: só aceita resultado FINAL confirmado. Intermediários = unknown.
   if (!opt) return 'unknown';
-  if (opt.status === 'closed' || opt.status === 'settled') {
-    const p = Number(opt.profit ?? opt.expected_profit ?? 0);
-    if (p > 0) return 'win';
-    if (p < 0) return 'loss';
+  const status = String(opt.status ?? '').toLowerCase();
+  const win = String(opt.win ?? '').toLowerCase();
+  // Fonte principal no histórico real da IQ (closed_options não traz `status`)
+  if (win === 'win') return 'win';
+  if (win === 'loose' || win === 'loss') return 'loss';
+  if (win === 'equal' || win === 'draw') return 'draw';
+  const FINAL_STATUSES = ['closed', 'settled', 'expired'];
+  const INTERMEDIATE_STATUSES = ['open', 'pending', 'active', 'sell_open', 'rejected', 'cancelled'];
+  if (FINAL_STATUSES.includes(status)) {
+    // P0-fix: usa SOMENTE profit (realizado) — NUNCA expected_profit como lucro realizado
+    const p = Number(opt.profit ?? 0);
+    if (Number.isFinite(p) && p !== 0) return p > 0 ? 'win' : 'loss';
     return 'draw';
   }
-  if (opt.status === 'sell_open') return 'early';
+  if (INTERMEDIATE_STATUSES.includes(status)) return 'unknown';
   return 'unknown';
 }
 
-function normalizeBrokerProfit(opt, stake) {
-  const p = Number(opt.profit ?? opt.expected_profit ?? 0);
-  return round2(p);
+export function normalizeBrokerProfit(opt, stake) {
+  // P0-fix: usa SOMENTE valor realizado. expected_profit é projeção, não realized.
+  const p = Number(opt.profit ?? NaN);
+  if (Number.isFinite(p) && p !== 0) return round2(p);
+  // Histórico da IQ: win_amount − sum (win) / −sum (loss) / 0 (equal)
+  const win = String(opt.win ?? '').toLowerCase();
+  const invested = Number(opt.sum ?? opt.amount ?? stake ?? NaN);
+  if (win === 'win' || win === 'loose' || win === 'loss') {
+    const payout = Number(opt.win_amount ?? NaN);
+    if (win === 'win' && Number.isFinite(payout) && Number.isFinite(invested)) return round2(payout - invested);
+    return Number.isFinite(invested) ? round2(-invested) : null;
+  }
+  if (win === 'equal' || win === 'draw') return 0;
+  if (Number.isFinite(p)) return round2(p); // profit === 0 explícito
+  return null;
 }
 
 
@@ -1769,10 +1929,10 @@ async function main() {
     logLine(`[💼] CONTA ${accountType} (${chosen.currency}) | saldo ${currencySymbol}${initialBalance.toFixed(2)}`);
     ws.subscribePositionChanges({ userId: chosen.user_id, balanceId, instrumentType: 'turbo-option' });
     ws.subscribePositionChanges({ userId: chosen.user_id, balanceId, instrumentType: 'binary-option' });
-    logLine(`[🧬] CÓDIGO ${CODE_REV} | stake ${currencySymbol}${BASE_STAKE.toFixed(2)} | Cash TP=${fmt(CASH_TP)} | Recovery ×${REC_MULTIPLIER} | expiração ${EXPIRATION_MIN}min`);
+    logLine(`[🧬] CÓDIGO ${CODE_REV} | stake ${currencySymbol}${BASE_STAKE.toFixed(2)} | Cash TP=${fmt(CASH_TP)} | Recovery ×${REC_MULTIPLIER} (≈$${(BASE_STAKE * 2 * REC_MULTIPLIER).toFixed(2)}) | expiração ${EXPIRATION_MIN}min`);
     logLine(`[📤] CASH + RUNNER: cada sinal abre 2 posições iguais | CASH: vende quando LP>=${fmt(CASH_TP)} (sell_profit real) | RUNNER: vai até expiração`);
-    logLine(`[🎲] RECOVERY: máx 1 por ciclo, após Runner loss + confirmação técnica | stake=${fmt(BASE_STAKE * REC_MULTIPLIER)} | REGIME INVALIDADO bloqueia`);
-    logLine(`[🛡️] ENTRADA: regime 1m + RSI pullback (CALL≤${Math.max(RSI_TOUCH_CALL, 30)} / PUT≥${Math.min(RSI_TOUCH_PUT, 70)}) + ADX>=${num(S.adxMin, 20)} + EMA8×21 confirmação + corpo>=${num(S.entryBodyRatio, 0.4)}x`);
+    logLine(`[🎲] RECOVERY ANTECIPADA V22: máx 1 por ciclo, DURANTE Cash+Runner abertas | direção=mesma | stake=(cash+runner)×${REC_MULTIPLIER}=≈$${(BASE_STAKE * 2 * REC_MULTIPLIER).toFixed(2)} | RSI pullback + zona SR + ADX>=20`);
+    logLine(`[🛡️] ENTRADA: regime 15m (fonte 1m) + RSI pullback (CALL≤${Math.max(RSI_TOUCH_CALL, 30)} / PUT≥${Math.min(RSI_TOUCH_PUT, 70)}) + ADX>=${num(S.adxMin, 20)} + corpo>=${num(S.entryBodyRatio, 0.4)}x`);
     logLine(`[⚠️] DEMO/PRACTICE APENAS — nenhuma operação REAL durante os testes`);
 
     const actives = await fetchActives();
@@ -1813,30 +1973,75 @@ async function main() {
     }
     logLine(`[🔁] bootstrap: ${ready}/${running.size} READY | ${notReady} aguardando/dados incompletos | ${elapsed}s`);
 
-    // ── P0-FIX 9: Restauração de estado após reinício ────────────────────────────
+    // ── P0-FIX: Restauração de estado após reinício ──────────────────────────────
     const recovered = loadPending();
+    // P0-fix: restoreds ledger de settlements já processados (dedup)
+    if (recovered.settledLedger && recovered.settledLedger.length > 0) {
+      for (const [key, ts] of recovered.settledLedger) {
+        settledLedger.set(key, ts);
+      }
+    }
     if (recovered.inFlight && recovered.inFlight.length > 0) {
       logLine(`[🔄] RESTAURANDO ${recovered.inFlight.length} posição(s) aberta(s) do arquivo pending...`);
-      for (const op of recovered.inFlight) {
-        // Não recria key/aid — usa o que está no op
-        if (!op.key || !op.okey) continue;
+      for (const opData of recovered.inFlight) {
+        if (!opData.key || !opData.okey) continue;
+        // P0-fix: reconstrói op com todos os campos restaurados
+        const op = {
+          okey: opData.okey,
+          key: opData.key,
+          assetId: opData.assetId,
+          name: opData.name,
+          direction: opData.direction,
+          role: opData.role,
+          cycleId: opData.cycleId,
+          stake: opData.stake,
+          expiration: opData.expiration,
+          requestId: opData.requestId,
+          sentAtMs: opData.sentAtMs,
+          applied: opData.applied ?? false,
+          awaitingSettlement: opData.awaitingSettlement ?? false,
+          unknownSettlement: opData.unknownSettlement ?? false,
+          orderId: opData.orderId ?? null,
+          record: opData.record ?? null,
+        };
         inFlight.set(op.okey, op);
         // Se a op já expirou, o stale-op guard vai tratá-la abaixo
       }
     }
     // Ops que estavam pendentes (enviadas mas não-ACkadas) são recarregadas como pending
+    // P0-fix: também restaura ordersByRequestId para que o ACK futuro ainda possa encontrar
     if (recovered.pending && recovered.pending.length > 0) {
       logLine(`[⏳] RESTAURANDO ${recovered.pending.length} ordem(ns) pendente(s) de ACK...`);
       for (const [okey, info] of recovered.pending) {
         pending.set(okey, info);
         pendingSet.add(okey);
       }
+      // Audit fix: reservas antigas (processo morto antes do ACK) não podem travar a exposição
+      prunePendingStale();
     }
     // Ops que expiraram sem settlement — restaurar para reconciliação com broker
     if (recovered.awaitingSettlement && recovered.awaitingSettlement.length > 0) {
       logLine(`[🔍] RESTAURANDO ${recovered.awaitingSettlement.length} posição(s) expirada(s) sem settlement...`);
-      for (const op of recovered.awaitingSettlement) {
-        if (!op.okey) continue;
+      for (const opData of recovered.awaitingSettlement) {
+        if (!opData.okey) continue;
+        // P0-fix: reconstrói op com record
+        const op = {
+          okey: opData.okey,
+          key: opData.key,
+          assetId: opData.assetId,
+          name: opData.name,
+          direction: opData.direction,
+          role: opData.role,
+          cycleId: opData.cycleId,
+          stake: opData.stake,
+          expiration: opData.expiration,
+          requestId: opData.requestId,
+          sentAtMs: opData.sentAtMs,
+          orderId: opData.orderId ?? null,
+          applied: opData.applied ?? false,
+          unknownSettlement: opData.unknownSettlement ?? false,
+          record: opData.record ?? null,
+        };
         awaitingSettlement.set(op.okey, op);
       }
     }
@@ -1851,19 +2056,19 @@ async function main() {
     warmupDone = true;
     startedAt = nowMs();
 
-    // ── Regime 15m: calcula imediatamente com candles do bootstrap ──────────────
-    for (const [aid, buf] of buf5s) {
+    // ── Regime 15m: calcula imediatamente com o histórico 1m do bootstrap ────────
+    for (const [aid, buf] of buf1m) {
       if (buf?.ticks?.length >= 4) {
         const regime = computeRegime15mLocal(buf.ticks);
         regime15mCache.set(aid, regime);
       }
     }
-    logLine(`[📊 REG15M] ${regime15mCache.size} ativos com regime 15m calculado (local)`);
+    logLine(`[📊 REG15M] ${regime15mCache.size} ativos com regime 15m calculado (fonte 1m)`);
 
-    // Recalcula regime a cada 15 minutos
+    // Recalcula regime a cada 15 minutos (fonte 1m acumulada)
     setInterval(() => {
       if (shuttingDown) return;
-      for (const [aid, buf] of buf5s) {
+      for (const [aid, buf] of buf1m) {
         if (buf?.ticks?.length >= 4) {
           regime15mCache.set(aid, computeRegime15mLocal(buf.ticks));
         }
@@ -1912,7 +2117,7 @@ async function main() {
     }, 2000);
     startSessionLog();
     startAnalyseLog();
-    logLine(`[✅] OPERANDO ${CODE_REV} — Cash/Runner/Recovery | painel abaixo`);
+    logLine(`[✅] OPERANDO ${CODE_REV} — Cash/Runner/Recovery ANTECIPADA | painel abaixo`);
     renderDashboard();
 
     // Diagnóstico: mostra RSI e skip reasons a cada 60s
@@ -1960,6 +2165,10 @@ async function main() {
     setInterval(() => { void evaluateOpenPositions(); }, 5_000);
     // Rebalanceamento de universo
     setInterval(() => { void rebalanceUniverse(); }, UNIVERSE_CHECK_MS);
+    // P0-fix: reconciliação periódica — tenta resolver ops pendentes a cada 60s
+    // Não conflita com reconciliação do startup (a do boot é imediata).
+    // Audit fix: junto, descarta reservas de ACK vencidas (não podem travar exposição).
+    setInterval(() => { if (shuttingDown || !warmupDone) return; prunePendingStale(); void reconcileWithBroker(); }, 60_000);
     // Verificação de ACK
     setInterval(() => {
       for (const op of inFlight.values()) {
@@ -1999,26 +2208,19 @@ async function main() {
 
   ws.on('socket-option-opened', (msg) => {
     const raw = msg?.msg ?? msg;
+    const orderId = raw?.id ?? raw?.option_id ?? null;
+    const aid = Number(raw?.active_id ?? raw?.activeId);
     const serverReqId = raw?.request_id ?? msg?.request_id ?? null;
-    const orderId = raw?.id ?? null;
-    const serverExp = Number(raw?.expiration ?? raw?.expired ?? null);
-    // Tenta casar por requestId (string/number) + orderId + expiration
-    const op = findOp({
-      aid: Number(raw?.active_id ?? raw?.activeId),
-      requestId: serverReqId,
-      orderId,
-      expiration: serverExp || null,
-      preferPending: true,
-    });
-    if (!op) { logLine(`[⚠️ ABERTURA SEM ORDEM] reqId=${serverReqId} ordId=${orderId} exp=${serverExp}`); return; }
-    op.orderId = orderId;
-    op.record.orderId = orderId;
-    // P0-fix: ACK recebido — remove da reserva pending e move para inFlight
-    pendingSet.delete(op.okey);
-    pending.delete(op.okey);
-    inFlight.set(op.okey, op);  // confirma a ordem no mapa de exposição
-    savePending();
-    logLine(`[✅ ACK] ${shortName(op.name)} ${op.direction} | okey=${op.okey} | cyc=${op.cycleId}`);
+    const serverExp = Number(raw?.expiration ?? raw?.expired ?? raw?.expiration_time ?? raw?.exp_time ?? null);
+    const stake = stakeFromAmount(raw?.amount ?? raw?.invest);
+    // (a) eco exato do request_id — quando a IQ mandar
+    let op = opByOrderId(orderId) ?? (serverReqId ? findOp({ requestId: serverReqId }) : null);
+    // (b) correlação por posição — o caminho real (a IQ não ecoa request_id)
+    if (!op) op = candidateOps({ aid, stake, expirationSec: Number.isFinite(serverExp) && serverExp > 0 ? serverExp : null, freshMs: 60_000 })[0] ?? null;
+    if (!op) { logLine(`[⚠️ ABERTURA SEM ORDEM] reqId=${serverReqId} ordId=${orderId} exp=${serverExp} aid=${aid}`); return; }
+    // O ACK NÃO contabiliza nada — só vincula o orderId. O settlement chega em
+    // socket-option-closed e é ele que chama applyResult (audit fix).
+    attachOrderId(op, orderId, 'socket-option-opened');
   });
 
   ws.on('sell-equal', async (msg) => {
@@ -2040,20 +2242,26 @@ async function main() {
   ws.on('socket-option-closed', async (msg) => {
     const raw  = msg?.msg ?? msg;
     const aid  = Number(raw?.active_id ?? raw?.activeId);
-    const serverExp = Number(raw?.expiration ?? raw?.expired ?? null);
-    const op   = findOp({ aid, orderId: raw?.id ?? raw?.position_id ?? raw?.option_id ?? null, requestId: raw?.request_id ?? msg?.request_id ?? null, expiration: serverExp || null });
+    const orderId = raw?.id ?? raw?.position_id ?? raw?.option_id ?? null;
+    const serverExp = Number(raw?.expiration ?? raw?.expired ?? raw?.exp_time ?? null);
+    const dirRaw = raw?.dir ?? raw?.direction ?? null;
+    let op = findOp({ aid, orderId, requestId: raw?.request_id ?? msg?.request_id ?? null });
+    // Audit fix: ACK perdido? casa pelo ativo + vencimento + direção (as pernas do ciclo
+    // são fungíveis) para o settlement nunca ser descartado.
+    if (!op) op = candidateOps({ aid, direction: dirRaw, expirationSec: Number.isFinite(serverExp) && serverExp > 0 ? serverExp : null })[0] ?? null;
     if (!op) {
       const recent = [...settledRecently.values()].some((at) => nowMs() - at < 60_000);
       if (!recent) {
-        // P0-fix: log detalhado para reconciliação manual
         const reqId = raw?.request_id ?? msg?.request_id ?? null;
-        const ordId = raw?.id ?? raw?.position_id ?? raw?.option_id ?? null;
         const win   = raw?.win ?? raw?.status ?? raw?.result ?? '?';
-        logLine(`[❓ RECONCILIAR] aid=${aid} exp=${serverExp} reqId=${reqId} ordId=${ordId} win=${win} — nenhuma op em inFlight`);
-        sessionLog(`RECONCILE_NO_OP | aid=${aid} | exp=${serverExp} | reqId=${reqId} | ordId=${ordId} | win=${win}`);
+        logLine(`[❓ RECONCILIAR] aid=${aid} exp=${serverExp} reqId=${reqId} ordId=${orderId} win=${win} — nenhuma op em inFlight`);
+        sessionLog(`RECONCILE_NO_OP | aid=${aid} | exp=${serverExp} | reqId=${reqId} | ordId=${orderId} | win=${win}`);
       }
       return;
     }
+    // P0-fix: se já processada, ignora
+    if (op.applied) return;
+
     const now = nowMs();
     const earlyByUs = op.sellRequestedAt && (op.expiration * 1000 - now) > 5_000;
     if (earlyByUs) {
@@ -2063,25 +2271,34 @@ async function main() {
       return;
     }
 
+    const { result, profit } = parseSettlement(raw, op);
+
+    // Remove de todas as estruturas de exposição
     inFlight.delete(op.okey);
     pendingSet.delete(op.okey);
-    pending.delete(op.okey);  // P0-fix: remove da reserva de exposição
-    savePending();
+    pending.delete(op.okey);
     settledRecently.set(op.okey, now);
     op.settled = true;
-    const { result, profit } = parseSettlement(raw, op);
-    Object.assign(op.record, { orderId: op.orderId, result, profit, settledAt: new Date().toISOString() });
-    saveResults();
-    // P0-fix: unknown = broker não confirmou, não altera stats nem cyclePnl
+    if (op.record) op.record.orderId = op.orderId;
+
+    // P0-fix: unknown = broker não confirmou resultado FINAL.
+    // Mantém em awaitingSettlement para reconciliação posterior — não descarta.
     if (result === 'unknown') {
-      // Mantém a op fora de inFlight (já deletada acima) para reconciliação manual
       op.unknownSettlement = true;
+      awaitingSettlement.set(op.okey, op);   // P0-fix: restaura na fila de reconciliação
+      savePending();                          // P0-fix: persiste antes de sair
+      Object.assign(op.record ?? (op.record = {}), { result, settledAt: new Date().toISOString() });
+      saveResults();
       logLine(`[⚠️ RECONCILIAR] ${shortName(op.name)} ${op.direction} settlement=unknown — aguardando confirmação | cyc=${op.cycleId} okey=${op.okey}`);
-      sessionLog(`SETTLEMENT_UNKNOWN | ${shortName(op.name)} | ${op.direction} | ${(op.role ?? '?').toUpperCase()} | LP=${fmt(profit)} | cyc=${op.cycleId} | okey=${op.okey}`);
+      sessionLog(`SETTLEMENT_UNKNOWN | ${shortName(op.name)} | ${op.direction} | ${(op.role ?? '?').toUpperCase()} | cyc=${op.cycleId} | okey=${op.okey}`);
       renderDashboard();
       return;
     }
-    registerOutcome(profit, false);
+
+    // P0-fix: resultado FINAL confirmado — atualiza ledger e stats UMA vez via applyResult.
+    // Removida chamada redundante de registerOutcome aqui (applyResult já chama).
+    Object.assign(op.record ?? (op.record = {}), { result, profit, settledAt: new Date().toISOString() });
+    saveResults();
     applyResult(op, result, profit);
     await refreshBalance();
     renderDashboard();
@@ -2129,7 +2346,7 @@ async function main() {
 
 function summary() {
   const cs = cycleStats;
-  logLine('\n🛑 RESULTADO V21 FINAL:\n');
+  logLine('\n🛑 RESULTADO V22 FINAL:\n');
   logLine(`📊 Ops totais: ${stats.settled} | W: ${stats.wins} | L: ${stats.losses} | Draw: ${stats.draws} | Vendas: ${stats.early} | WR: ${stats.settled ? (stats.wins / stats.settled * 100).toFixed(1) : 0}%`);
   logLine(`💰 Lucro (bot): ${fmt(stats.profit)}`);
   logLine(`💰 Lucro (real): ${fmt(currentBalance - initialBalance)} ← incl. ${currencySymbol}${openStake().toFixed(2)} em ${inFlight.size} pos. aberta(s)`);
