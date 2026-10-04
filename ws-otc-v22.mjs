@@ -2183,7 +2183,7 @@ async function main() {
     const sid = startSessionLogger(() => {
       const openOps = [...inFlight.values()].length;
       const totalCandles = [...buf5s.values()].reduce((a, b) => a + (b?.ticks?.length ?? 0), 0);
-      const skipSample = Object.keys(skipCount).length;
+      const skipSample = Object.keys(skipCountGlobal).length;
       // Regime sample: primeiro ativo com regime válido
       let regimeSample = null;
       let rsiSample = null;
@@ -2208,7 +2208,7 @@ async function main() {
         regimeSample,
         rsiSample,
         adxSample,
-        skipCount,
+        skipCount: skipCountGlobal,
         entrySignals,
       };
     });
@@ -2283,6 +2283,7 @@ async function main() {
       if (!warmupDone || shuttingDown) return;
       const skipCount = {};
       const samples = [];
+      skipCountGlobal = skipCount; // expõe para session logger
       for (const aid of running.keys()) {
         const row = running.get(aid);
         if (row?.bootstrapStatus !== 'READY') continue;
@@ -2522,6 +2523,7 @@ function summary() {
 }
 
 let shuttingDown = false;
+let skipCountGlobal = {};
 function shutdown(reason = 'K') {
   if (shuttingDown) return;
   shuttingDown = true;
