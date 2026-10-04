@@ -69,9 +69,9 @@
     }
   },
   "recovery": {
-    "_nota": "RECOVERY ANTECIPADA V22: dispara enquanto Cash+Runner abertas, na MESMA direção. Stake = (cash+runner) x multiplier = 4 x 2.77 = 11.08. Sinal: RSI revertendo do extremo (CALL: prev<40 -> rsi>=45; PUT: prev>60 -> rsi<=55) + zona suporte/resistência + ADX>=20 + regime válido.",
+    "_nota": "WR#4: maxAtrpPercent 2.0% (era 3.0%) — volatilidade menor = 2min de expiração mais seguro. WR#5: entryBodyRatio 0.6x (era 0.4x) — candle maior = sinal mais decisivo. WR#3: BBperiod 20 / BBstdDev 2.0 — zona de suporte/resistência na banda.",
     "multiplier": 2.77,
-    "maxAtrpPercent": 3.0
+    "maxAtrpPercent": 2.0
   },
   "universe": {
     "_nota": "TODOS os ativos OTC disponiveis. Top 50 primeiro; algum fechado/suspenso/sem feed => entra a reserva (na ordem da lista); se faltar, o bot completa com qualquer OTC turbo disponivel (source auto). replaceStaleMs = ativo sem candle 5s por esse tempo e substituido. checkEveryMs = revisao do universo.",
@@ -81,18 +81,21 @@
     "checkEveryMs": 30000
   },
   "strategy": {
-    "_nota": "direcao = tendencia (EMA8 contra EMA21 nos ultimos trendLookback candles): spread >= trendMinEmaSpreadPct = alta (CALL), <= -limiar = baixa (PUT), entre os dois = lateral (nao entra). RSI e GUARDA-CORPO, nao seletor: nao compra se o RSI ja esta esticado acima de rsiCallMax, nao vende se ja esta esticado abaixo de rsiPutMin. ADX e OBRIGATORIO: adx < adxMin = sem forca suficiente, nao entra. Medido em 9360 janelas de 5s reais (mesma regra de entrada): rsiCallMax 55 / rsiPutMin 45 + adxMin 20 => 1 sinal em 9360 (morto); 60/40 + 15 => 35 sinais; sem gate => 221 sinais. V16: RSI mais apertado (55/45) + ADX 20 minima para evitar entradas contra tendencia forte.",
+    "_nota": "WR#2: adxMin 20 (era 15) — tendencia com forca real. WR#1: rsiTouchCall 35 (era 30) / rsiTouchPut 65 (era 70) — RSI viaja mais ate confirmar pullback, corta sinais fracos. WR#5: entryBodyRatio 0.6x (era 0.4x) — candle precisa ser mais decisivo. WR#3: bbPeriod 20 / bbStdDev 2.0 — Bollinger Bands confirmam zona de suporte/resistencia. WR#6: Regime 1m nao pode estar contra o 15m (avaliado no evaluateEntry).",
     "candleSizeSeconds": 5,
     "lookbackRegime": 20,
     "regimeStreakThreshold": 12,
     "trendLookback": 50,
     "trendMinEmaSpreadPct": 0.01,
-    "adxMin": 15,
+    "adxMin": 20,
     "rsiPeriod": 14,
     "rsiCallMax": 45,
     "rsiPutMin": 65,
-    "rsiTouchCall": 30,
-    "rsiTouchPut": 70,
+    "rsiTouchCall": 35,
+    "rsiTouchPut": 65,
+    "entryBodyRatio": 0.6,
+    "bbPeriod": 20,
+    "bbStdDev": 2.0,
     "pyramidMax": 1,
     "pyramidAdxMin": 25,
     "pyramidRsiCallMax": 35,

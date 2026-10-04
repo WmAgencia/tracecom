@@ -145,9 +145,9 @@ ok('sell.closeBeforeMs = 20000', () => {
   assert.equal(cfg.sell?.closeBeforeMs, 20000);
 });
 
-ok('strategy.adxMin = 15', () => {
+ok('strategy.adxMin = 20 (era 15 — WR#2: tendencia com forca real)', () => {
   const cfg = JSON.parse(fs.readFileSync(new URL('../bot-config-v21.json', import.meta.url), 'utf8'));
-  assert.equal(cfg.strategy?.adxMin, 15);
+  assert.equal(cfg.strategy?.adxMin, 20);
 });
 
 ok('learning removido do config', () => {
@@ -241,21 +241,79 @@ ok('Regime 15m usado na entrada (evaluateEntry/planTrade)', () => {
   assert.ok(src.includes("'baixa15m'") || src.includes('"baixa15m"'), 'baixa15m não verificado');
 });
 
-ok('RSI é GATILHO: regime 15m + RSI cruzando + ADX>=15 (V21 via config)', () => {
+ok('RSI é GATILHO: regime 15m + RSI cruzando + ADX>=20 (V22 WR#1+2)', () => {
   assert.ok(src.match(/RSI_TOUCH_CALL.*=.*num\(|RSI_TOUCH_PUT.*=.*num\(/), 'RSI_TOUCH não vem do config');
   assert.ok(src.includes("dir15m === 'alta15m'") || src.includes('"alta15m"'), 'alta15m não verificado');
   assert.ok(src.includes("dir15m === 'baixa15m'") || src.includes('"baixa15m"'), 'baixa15m não verificado');
   assert.ok(src.match(/touchCall|touchPut/), 'touchCall/touchPut não usados');
-  assert.ok(src.match(/Math\.max\(RSI_TOUCH_CALL,\s*30\)/), 'fallback touchCall 30 não encontrado');
-  assert.ok(src.match(/Math\.min\(RSI_TOUCH_PUT,\s*70\)/), 'fallback touchPut 70 não encontrado');
-  assert.ok(src.match(/adxMin,\s*15\)/), 'adxMin default 15 não encontrado');
+  assert.ok(src.match(/Math\.max\(RSI_TOUCH_CALL,\s*35\)/), 'fallback touchCall 35 não encontrado');
+  assert.ok(src.match(/Math\.min\(RSI_TOUCH_PUT,\s*65\)/), 'fallback touchPut 65 não encontrado');
+  assert.ok(src.match(/adxMin,\s*20\)/), 'adxMin default 20 não encontrado');
 });
 
 ok('jaEraOversold/jaEraOverbought bloqueia sinal em evaluateEntry', () => {
-  const evBlock = src.match(/export\s+function\s+evaluateEntry[\s\S]{0,2000}/)?.[0]
-               ?? src.match(/function\s+evaluateEntry[\s\S]{0,2000}/)?.[0] ?? '';
+  const evBlock = src.match(/export\s+function\s+evaluateEntry[\s\S]{0,12000}/)?.[0]
+               ?? src.match(/function\s+evaluateEntry[\s\S]{0,12000}/)?.[0] ?? '';
   assert.ok(evBlock.length > 0, 'evaluateEntry não encontrada no fonte');
   assert.ok(evBlock.match(/jaEraOversold|jaEraOverbought/), 'jaEraOversold/jaEraOverbought não em evaluateEntry');
+});
+
+// ── V22 WR IMPROVEMENTS ──────────────────────────────────────────────────────
+console.log('\n══ V22 — WR IMPROVEMENTS (2026-10-04) ══');
+
+ok('WR#2: calcBB exportada', () => {
+  assert.ok(src.includes('export function calcBB('), 'calcBB não está exportada');
+  assert.ok(src.includes('export function calcBB('), 'calcBB função não encontrada');
+  // BB constants no source
+  assert.ok(src.includes('BB_PERIOD') || src.includes('bbPeriod'), 'BB_PERIOD não usado');
+  assert.ok(src.includes('BB_STDDEV') || src.includes('bbStdDev'), 'BB_STDDEV não usado');
+});
+
+ok('WR#3: BB zona no evaluateEntry (CALL=bande inferior, PUT=bande superior)', () => {
+  const evBlock = src.match(/export\s+function\s+evaluateEntry[\s\S]{0,12000}/)?.[0]
+               ?? src.match(/function\s+evaluateEntry[\s\S]{0,12000}/)?.[0] ?? '';
+  assert.ok(src.includes('calcBB('), 'calcBB não chamado');
+  assert.ok(evBlock.includes('bb.lastClose <= bb.lower'), 'CALL BB lower check ausente');
+  assert.ok(evBlock.includes('bb.lastClose >= bb.upper'), 'PUT BB upper check ausente');
+  assert.ok(evBlock.includes('isBBZone'), 'isBBZone não usado');
+  assert.ok(evBlock.includes('semBBZona'), 'semBBZona skip não usado');
+});
+
+ok('WR#1: RSI pullback mais estricto — touchCall fallback 35, touchPut fallback 65', () => {
+  assert.ok(src.match(/Math\.max\(RSI_TOUCH_CALL,\s*35\)/), 'fallback touchCall 35 não encontrado');
+  assert.ok(src.match(/Math\.min\(RSI_TOUCH_PUT,\s*65\)/), 'fallback touchPut 65 não encontrado');
+});
+
+ok('WR#5: bodyRatioMin default 0.6 (era 0.4)', () => {
+  assert.ok(src.match(/entryBodyRatio\s*\?\?\s*0\.6/), 'bodyRatioMin default 0.6 não encontrado');
+});
+
+ok('WR#2: adxV20 default 20 (era 15)', () => {
+  assert.ok(src.match(/adxMin,\s*20\)/), 'adxV20 default 20 não encontrado');
+});
+
+ok('WR#6: Regime 1m não contra 15m em evaluateEntry', () => {
+  const evBlock = src.match(/export\s+function\s+evaluateEntry[\s\S]{0,12000}/)?.[0]
+               ?? src.match(/function\s+evaluateEntry[\s\S]{0,12000}/)?.[0] ?? '';
+  assert.ok(evBlock.includes('regime1mContra15m'), 'regime1mContra15m skip não existe');
+  assert.ok(evBlock.includes("source === 'local-1m'"), 'source check não existe');
+  assert.ok(evBlock.includes('dir1m !== dir15m'), 'comparação 1m vs 15m não existe');
+});
+
+ok('WR#4: maxAtrpPercent 2.0% (era 3.0%)', () => {
+  const cfg = JSON.parse(fs.readFileSync(new URL('../bot-config-v21.json', import.meta.url), 'utf8'));
+  assert.equal(cfg.recovery?.maxAtrpPercent, 2.0, 'maxAtrpPercent não é 2.0');
+});
+
+ok('WR#5: entryBodyRatio 0.6x no config', () => {
+  const cfg = JSON.parse(fs.readFileSync(new URL('../bot-config-v21.json', import.meta.url), 'utf8'));
+  assert.equal(cfg.strategy?.entryBodyRatio, 0.6, 'entryBodyRatio não é 0.6');
+});
+
+ok('WR#3: BB config keys (bbPeriod, bbStdDev)', () => {
+  const cfg = JSON.parse(fs.readFileSync(new URL('../bot-config-v21.json', import.meta.url), 'utf8'));
+  assert.equal(cfg.strategy?.bbPeriod, 20, 'bbPeriod não é 20');
+  assert.equal(cfg.strategy?.bbStdDev, 2.0, 'bbStdDev não é 2.0');
 });
 
 console.log('\n══ V21 — NOVAS CORREÇÕES (freeze + performance) ══');

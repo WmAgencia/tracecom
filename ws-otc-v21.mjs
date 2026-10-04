@@ -393,6 +393,30 @@ export function calcADX(ticks, period = 14) {
   return round2(Math.min(100, Math.max(0, adx)));
 }
 
+// ─── BOLLINGER BANDS (WR filter #3) ──────────────────────────────────────────
+// BBzona: CALL = preço na banda inferior (suporte), PUT = preço na banda superior (resistência).
+// BBzoneStrength: 0=preço longe; 1=price na banda; <0=entre bandas.
+const BB_PERIOD  = Math.max(10, Math.round(num(S.bbPeriod  ?? 20, 20)));
+const BB_STDDEV  = num(S.bbStdDev ?? 2.0, 2.0);
+
+export function calcBB(ticks, period = BB_PERIOD, stdDev = BB_STDDEV) {
+  if (!Array.isArray(ticks) || ticks.length < period + 1) return null;
+  const closes = ticks.map(t => t.close).slice(-period);
+  const lastClose = closes[closes.length - 1];
+  // SMA
+  const mid = closes.reduce((a, b) => a + b, 0) / closes.length;
+  // StdDev
+  const variance = closes.reduce((s, v) => s + (v - mid) ** 2, 0) / closes.length;
+  const sd = Math.sqrt(variance);
+  const lower = mid - stdDev * sd;
+  const upper = mid + stdDev * sd;
+  // strength: 0 = no band, >0 = perto de banda relevante (0.05 = zona)
+  const bandDist = Math.min(Math.abs(lastClose - lower), Math.abs(lastClose - upper));
+  const bandWidth = upper - lower;
+  const strength = bandWidth > 0 ? 1 - bandDist / bandWidth : 0;
+  return { mid, lower, upper, lastClose, strength };
+}
+
 export function parseSettlement(raw, op) {
   const win = String(raw?.win ?? raw?.status ?? raw?.result ?? '').toLowerCase();
   // Statusausente ou intermediário = UNKNOWN (não é loss inventado)
@@ -485,8 +509,8 @@ export class ClosedCandles {
 // ─── ENTRADA — EMA8×21 + ADX + RSI guarda + corpo vela (V15 puro) ──────────────
 // ─── ENTRADA V20 (IDENTICA — NÃO ALTERAR) ────────────────────────────────────
 export function evaluateEntry({ ticks, open, rsi, adx, mode = 'rsiTouch', regime15m = null }) {
-  const adxV20 = num(S.adxMin, 15);   // lido de strategy.adxMin (config), default 15
-  const bodyRatioMin = num(S.entryBodyRatio ?? 0.4, 0.4);
+  const adxV20 = num(S.adxMin, 20);   // WR#2: ADX >= 20 (default subiu de 15)
+  const bodyRatioMin = num(S.entryBodyRatio ?? 0.6, 0.6); // WR#5: corpo >= 0.6xATR (default subiu de 0.4)
   if (mode !== 'rsiTouch') return { skip: 'modeInvalido' };
   // Regime de 15m (Regime Agent) ou fallback local 1m
   if (!regime15m || regime15m.direction === 'lateral15m') return { skip: 'lateral15m' };
@@ -496,9 +520,9 @@ export function evaluateEntry({ ticks, open, rsi, adx, mode = 'rsiTouch', regime
   const prevRsi = calcRSI(ticks.slice(-16, -1));
   // Thresholds RSI: CALL só quando RSI ≤ touchCall (oversold genuíno),
   // PUT só quando RSI ≥ touchPut (overbought genuíno).
-  // Defaults: CALL ≤ 30 / PUT ≥ 70 — só entra em pullback real de RSI.
-  const touchCall = Math.max(RSI_TOUCH_CALL, 30); // fallback 30
-  const touchPut  = Math.min(RSI_TOUCH_PUT,  70); // fallback 70
+  // Defaults: CALL ≤ 35 / PUT ≥ 65 — RSI precisa viajar mais = pullback mais limpo.
+  const touchCall = Math.max(RSI_TOUCH_CALL, 35); // WR#1: fallback sobe de 30→35
+  const touchPut  = Math.min(RSI_TOUCH_PUT,  65); // WR#1: fallback desce de 70→65
   // Bloco de crossing: exige RSI cruzando de cima (CALL) ou de baixo (PUT)
   const crossing = (dir15m === 'alta15m' && rsiNow <= touchCall && prevRsi > touchCall)
                 || (dir15m === 'baixa15m' && rsiNow >= touchPut  && prevRsi < touchPut);
@@ -515,6 +539,21 @@ export function evaluateEntry({ ticks, open, rsi, adx, mode = 'rsiTouch', regime
   if (body / range < bodyRatioMin) return { skip: 'corpoFraco' };
   if (adx < adxV20) return { skip: 'adxFraco' };
   const direction = dir15m === 'alta15m' ? 'CALL' : 'PUT';
+  // WR#6: Regime 1m não pode estar CONTRA o 15m.
+  // getRegimeForAsset populou s.regime15m com source (local-15m, local-1m, etc).
+  // Se source é 'local-1m', verifica se direção do 1m não contradiz o 15m.
+  if (regime15m.source === 'local-1m') {
+    const dir1m = regime15m.direction; // já vem mapeado como alta15m/baixa15m
+    if (dir1m !== dir15m) return { skip: 'regime1mContra15m' };
+  }
+  // WR#3: Bollinger Bands — zona de suporte/resistência.
+  const bb = calcBB(ticks);
+  if (bb && bb.strength > 0) {
+    const isBBZone = direction === 'CALL'
+      ? bb.lastClose <= bb.lower * 1.05   // perto da banda inferior
+      : bb.lastClose >= bb.upper * 0.95; // perto da banda superior
+    if (!isBBZone) return { skip: 'semBBZona' };
+  }
   const sTicks = ticks.slice(-SUPPORT_LOOKBACK);
   if (!sTicks.length) return { skip: 'semSuporte' };
   const atr = sTicks.reduce((mx, t) => Math.max(mx, Math.abs((t.high ?? t.close) - (t.low ?? t.close))), 0) / Math.max(1, sTicks.reduce((a, t) => a + (t.close ?? 0), 0) / sTicks.length) * 100;
@@ -1932,7 +1971,7 @@ async function main() {
     logLine(`[🧬] CÓDIGO ${CODE_REV} | stake ${currencySymbol}${BASE_STAKE.toFixed(2)} | Cash TP=${fmt(CASH_TP)} | Recovery ×${REC_MULTIPLIER} (≈$${(BASE_STAKE * 2 * REC_MULTIPLIER).toFixed(2)}) | expiração ${EXPIRATION_MIN}min`);
     logLine(`[📤] CASH + RUNNER: cada sinal abre 2 posições iguais | CASH: vende quando LP>=${fmt(CASH_TP)} (sell_profit real) | RUNNER: vai até expiração`);
     logLine(`[🎲] RECOVERY ANTECIPADA V22: máx 1 por ciclo, DURANTE Cash+Runner abertas | direção=mesma | stake=(cash+runner)×${REC_MULTIPLIER}=≈$${(BASE_STAKE * 2 * REC_MULTIPLIER).toFixed(2)} | RSI pullback + zona SR + ADX>=20`);
-    logLine(`[🛡️] ENTRADA: regime 15m (fonte 1m) + RSI pullback (CALL≤${Math.max(RSI_TOUCH_CALL, 30)} / PUT≥${Math.min(RSI_TOUCH_PUT, 70)}) + ADX>=${num(S.adxMin, 20)} + corpo>=${num(S.entryBodyRatio, 0.4)}x`);
+    logLine(`[🛡️] ENTRADA: regime 15m + RSI pullback (CALL≤${Math.max(RSI_TOUCH_CALL, 35)} / PUT≥${Math.min(RSI_TOUCH_PUT, 65)}) + ADX>=${num(S.adxMin, 20)} + corpo>=${num(S.entryBodyRatio, 0.6)}x + BBzona + regime1mNaoContra`);
     logLine(`[⚠️] DEMO/PRACTICE APENAS — nenhuma operação REAL durante os testes`);
 
     const actives = await fetchActives();
