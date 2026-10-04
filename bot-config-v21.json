@@ -81,7 +81,7 @@
     "checkEveryMs": 30000
   },
   "strategy": {
-    "_nota": "WR#2: adxMin 20 (era 15) — tendencia com forca real. WR#1: rsiTouchCall 35 (era 30) / rsiTouchPut 65 (era 70) — RSI viaja mais ate confirmar pullback, corta sinais fracos. WR#5: entryBodyRatio 0.6x (era 0.4x) — candle precisa ser mais decisivo. WR#3: bbPeriod 20 / bbStdDev 2.0 — Bollinger Bands confirmam zona de suporte/resistencia. WR#6: Regime 1m nao pode estar contra o 15m (avaliado no evaluateEntry).",
+    "_nota": "WR#2: adxMin 20 (era 15). WR#1: rsiTouchCall 35/rsiTouchPut 65. WR#5: entryBodyRatio 0.6x. WR#3: BB 20/2.0. WR#6: Regime 1m contra 15m bloqueia. WR novo #1: regime spread >=0.01% (tendência forte). WR#2: candle padrão (martelo/engolfo CALL, estrela cadente/engolfo PUT). WR#3: suporte ATR 0.8x (era 1.5x). WR#4: ADX em alta (momentum confirmando).",
     "candleSizeSeconds": 5,
     "lookbackRegime": 20,
     "regimeStreakThreshold": 12,
@@ -104,7 +104,8 @@
     "warmupMs": 1500,
     "min1mCandles": 1,
     "staleCandleMs": 30000,
-    "boot1mCandles": 120
+    "boot1mCandles": 120,
+    "supportAtrFactor": 0.8
   },
   "whitelist": {
     "_nota": "TOP 50 (prioridade). direction aqui e apenas REFERENCIA (baseDirection no log/registro). A direcao de entrada vem da tendencia do mercado. Auto-fill completa ate minActive=170 com qualquer OTC turbo disponivel.",

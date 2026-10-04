@@ -75,7 +75,7 @@ const REGIME_1M_MIN_SPREAD = num(S.regime1mMinEmaSpreadPct, 0.002);
 const RSI_TOUCH_CALL        = num(S.rsiTouchCall, 35); // CALL: RSI ≤ touch (pullback de alta)
 const RSI_TOUCH_PUT         = num(S.rsiTouchPut, 65);  // PUT: RSI ≥ touch (pullback de baixa)
 const SUPPORT_LOOKBACK      = Math.max(10, Math.round(num(S.supportLookback, 60)));
-const SUPPORT_ATR_FACTOR    = num(S.supportAtrFactor, 1.5);
+const SUPPORT_ATR_FACTOR    = num(S.supportAtrFactor, 0.8); // WR#4: desceu de 1.5→0.8 ATR (suporte mais próximo = mais limpo)
 const TREND_LOOKBACK        = Math.max(21, Math.round(num(S.trendLookback, 40)));
 const TREND_MIN_SPREAD      = num(S.trendMinEmaSpreadPct, 0.01); // era 0.05: OTC tem spread pequeno
 // Histórico — velas mínimas para bootstrapping (5s e 1m)
@@ -394,8 +394,6 @@ export function calcADX(ticks, period = 14) {
 }
 
 // ─── BOLLINGER BANDS (WR filter #3) ──────────────────────────────────────────
-// BBzona: CALL = preço na banda inferior (suporte), PUT = preço na banda superior (resistência).
-// BBzoneStrength: 0=preço longe; 1=price na banda; <0=entre bandas.
 const BB_PERIOD  = Math.max(10, Math.round(num(S.bbPeriod  ?? 20, 20)));
 const BB_STDDEV  = num(S.bbStdDev ?? 2.0, 2.0);
 
@@ -415,6 +413,58 @@ export function calcBB(ticks, period = BB_PERIOD, stdDev = BB_STDDEV) {
   const bandWidth = upper - lower;
   const strength = bandWidth > 0 ? 1 - bandDist / bandWidth : 0;
   return { mid, lower, upper, lastClose, strength };
+}
+
+// ─── CANDLESTICK PATTERNS (WR filter #2) ─────────────────────────────────────
+// Detecta padrões confirmatórios de reversão.
+// Retorna: 'hammer' | 'bullish' | 'shootingStar' | 'bearish' | null
+export function detectCandlePattern(tick, prevTick = null) {
+  if (!tick || tick.close == null) return null;
+  const open   = tick.open  ?? tick.close;
+  const close  = tick.close;
+  const high   = tick.high ?? tick.close;
+  const low    = tick.low  ?? tick.close;
+  const body   = Math.abs(close - open);
+  const range  = Math.max(1e-12, high - low);
+  const upperWick = high - Math.max(open, close);
+  const lowerWick = Math.min(open, close) - low;
+  const bodyRatio = body / range;
+  const isBullish = close > open;
+  const isBearish = close < open;
+
+  // Martelo (CALL): corpo pequeno no terço superior, pavio inferior >= 2x corpo, pavio superior curto.
+  const hammerLike = isBullish
+    && lowerWick >= body * 2.0
+    && upperWick < body * 0.4
+    && bodyRatio < 0.4; // corpo pequeno
+  if (hammerLike) return 'hammer';
+
+  // Engolfo de alta (CALL): vela de alta que engole o corpo da anterior (bearish → bullish).
+  if (prevTick && isBullish) {
+    const pOpen  = prevTick.open  ?? prevTick.close;
+    const pClose = prevTick.close;
+    const pBody  = Math.abs(pClose - pOpen);
+    const currFullBody = Math.max(open, close) - Math.min(open, close);
+    if (pClose < pOpen && currFullBody > pBody) return 'bullish'; // engole a anterior
+  }
+
+  // Estrela cadente (PUT): corpo pequeno no terço inferior, pavio superior >= 2x corpo, pavio inferior curto.
+  const shootingLike = isBearish
+    && upperWick >= body * 2.0
+    && lowerWick < body * 0.4
+    && bodyRatio < 0.4; // corpo pequeno
+  if (shootingLike) return 'shootingStar';
+
+  // Engolfo de baixa (PUT): vela de baixa com corpo que engole a anterior (bullish → bearish).
+  if (prevTick && isBearish) {
+    const pOpen  = prevTick.open  ?? prevTick.close;
+    const pClose = prevTick.close;
+    const pBody  = Math.abs(pClose - pOpen);
+    const currFullBody = Math.max(open, close) - Math.min(open, close);
+    if (pClose > pOpen && currFullBody > pBody) return 'bearish'; // engole a anterior
+  }
+
+  return null;
 }
 
 export function parseSettlement(raw, op) {
@@ -538,6 +588,10 @@ export function evaluateEntry({ ticks, open, rsi, adx, mode = 'rsiTouch', regime
   const range = Math.max(1e-12, (lastTick.high ?? lastTick.close) - (lastTick.low ?? lastTick.close));
   if (body / range < bodyRatioMin) return { skip: 'corpoFraco' };
   if (adx < adxV20) return { skip: 'adxFraco' };
+  // ADX momentum (WR novo #4): ADX subindo = tendência ganhando força, não só acima do limiar.
+  // Compara ADX das últimas 5 velas com as 5 anteriores — exige alta relativa.
+  const adxPrev = calcADX(ticks.slice(0, -5));
+  if (adx <= adxPrev) return { skip: 'adxSemMomentum' };
   const direction = dir15m === 'alta15m' ? 'CALL' : 'PUT';
   // WR#6: Regime 1m não pode estar CONTRA o 15m.
   // getRegimeForAsset populou s.regime15m com source (local-15m, local-1m, etc).
@@ -546,6 +600,9 @@ export function evaluateEntry({ ticks, open, rsi, adx, mode = 'rsiTouch', regime
     const dir1m = regime15m.direction; // já vem mapeado como alta15m/baixa15m
     if (dir1m !== dir15m) return { skip: 'regime1mContra15m' };
   }
+  // Regime spread mínimo (WR novo #1): exige spread significativo entre EMA8×21 no 15m.
+  // 0.01% é o piso — ativos com spread menor indicam tendência fraca demais.
+  if (Math.abs(regime15m.spreadPct) < 0.01) return { skip: 'spreadFraco' };
   // WR#3: Bollinger Bands — zona de suporte/resistência.
   const bb = calcBB(ticks);
   if (bb && bb.strength > 0) {
@@ -554,6 +611,14 @@ export function evaluateEntry({ ticks, open, rsi, adx, mode = 'rsiTouch', regime
       : bb.lastClose >= bb.upper * 0.95; // perto da banda superior
     if (!isBBZone) return { skip: 'semBBZona' };
   }
+  // Filtro candlestick (WR novo #2): padrão confirmatório de reversão.
+  // CALL = martelo: corpo no terço superior, pavio inferior >= 2x corpo, pavio superior curto.
+  // PUT = estrela cadente: corpo no terço inferior, pavio superior >= 2x corpo, pavio inferior curto.
+  // Engolfo: precisa de candle anterior (ticks[-2]) para comparar.
+  const prevTick = ticks.length >= 2 ? ticks[ticks.length - 2] : null;
+  const pat = detectCandlePattern(lastTick, prevTick);
+  if (direction === 'CALL' && pat !== 'hammer' && pat !== 'bullish') return { skip: 'semPadraoBullish' };
+  if (direction === 'PUT'  && pat !== 'shootingStar' && pat !== 'bearish') return { skip: 'semPadraoBearish' };
   const sTicks = ticks.slice(-SUPPORT_LOOKBACK);
   if (!sTicks.length) return { skip: 'semSuporte' };
   const atr = sTicks.reduce((mx, t) => Math.max(mx, Math.abs((t.high ?? t.close) - (t.low ?? t.close))), 0) / Math.max(1, sTicks.reduce((a, t) => a + (t.close ?? 0), 0) / sTicks.length) * 100;
@@ -2152,7 +2217,7 @@ async function main() {
         let skip = null;
         if (regime === 'lateral15m') skip = 'lateral15m';
         else if (adx < num(S.adxMin, 20)) skip = 'adxFraco';
-        else if (s.regime15m && Math.abs(s.regime15m.spreadPct) < 0.001) skip = 'spreadFraco';
+        else if (s.regime15m && Math.abs(s.regime15m.spreadPct) < 0.01) skip = 'spreadFraco';
         else {
           const crossing = (regime === 'alta15m' && rsi <= touchCall && prevRsi > touchCall)
                        || (regime === 'baixa15m' && rsi >= touchPut  && prevRsi < touchPut);
