@@ -1,11 +1,6 @@
 {
   "_version": "22",
   "_desc": "Bot V22 — Cash/Runner/Recovery ANTECIPADA: cada sinal válido abre DUAS posições iguais (Cash + Runner) na mesma direção. CASH: stake igual, vende quando L/P pós-venda >= cashTakeProfit usando valor real da IQ. RUNNER: stake igual, vai até expiração. RECOVERY ANTECIPADA: máx 1 por ciclo, DISPARA ENQUANTO Cash+Runner abertas quando RSI revertendo do extremo + zona suporte/resistência + ADX>=20 + regime válido — mesma direção do ciclo. Stake = (cash+runner) × 2.77 = 4 × 2.77 ≈ $11.08. Ciclo fecha quando todas pernas settlearem.",
-  "login": {
-    "email": "SEU_EMAIL_AQUI",
-    "password": "SUA_SENHA_AQUI",
-    "_nota": "As credenciais reais devem ficar em bot-credentials.json (não commitadas). Este bloco tem placeholders."
-  },
   "accounts": {
     "_nota": "contas identificadas em 2026-10-01 via get-balances (somente leitura). O bot escolhe pelo type: 4 = DEMO (PRACTICE), 1 = REAL. Em 2026-10-01 a REAL estava sem saldo disponivel (o valor de 1,31 e bonus).",
     "demo": {
@@ -26,10 +21,10 @@
   },
   "trading": {
     "baseStake": 2,
-    "expirationMinutes": 2,
+    "expirationMinutes": 5,
     "maxOpsPerAsset": 3,
     "galeWindowMs": 120000,
-    "_nota": "NAO EXISTE limite de ativos operando ao mesmo tempo: o universo garante no minimo universe.minActive ativos vivos. O limite e POR ATIVO e e o CICLO: maxOpsPerAsset = 3 ordens = 1 entrada + no maximo 1 piramide + 1 MARTINGALE (uma ordem por vez; o martingale so entra depois que as anteriores fecharam — nunca CALL e PUT juntos, trava dura ladoOposto). galeWindowMs = prazo para o martingale entrar depois da venda por reversao; passou disso sem ordem, o gatilho morre e o ciclo fecha. A entrada de martingale NAO exige pullback novo (o flip e o gatilho). expirationMinutes = 2. boot1mCandles=120: 2h de historico 1m sao suficientes para EMA8x21 estabilizar. replaceStaleMs=60s: ativo sem candle fresco e substituido em 1 min."
+    "_nota": "V22 contexto30: Cash + Runner de stake fixa, expiração alinhada de 5min com mínimo 240s restantes. Recovery desativada. maxOpsPerAsset é teto, não meta de entradas."
   },
   "martingale": {
     "_nota": "MARTINGALE (regra do dono, 2026-10-02): e a TERCEIRA ordem do ciclo e a UNICA que pode operar acima do stake fixo. Valor = martingaleMultiplier x o que esta sendo recuperado (a soma das posicoes vendidas por reversao): 1 posicao de 2,00 -> 5,50; 2 posicoes de 2,00 -> 11,00. Entra no sentido NOVO (o da reversao), depois de vender a perdedora. UM POR CICLO: perdeu o martingale, a proxima ordem volta ao stake base (nunca compoe, nunca emenda). Isso e o que separa o lucro do V13 (60 -> 145 em 30/09) do travamento de 10-01, quando a escada 2 x 2,75^n chegou a US$1,4 trilhao por ordem e zerou a conta. levels = 0 => stake FIXO na base fora do martingale.",
@@ -69,9 +64,10 @@
     }
   },
   "recovery": {
-    "_nota": "WR#4: maxAtrpPercent 2.0% (era 3.0%) — volatilidade menor = 2min de expiração mais seguro. WR#5: entryBodyRatio 0.6x (era 0.4x) — candle maior = sinal mais decisivo. WR#3: BBperiod 20 / BBstdDev 2.0 — zona de suporte/resistência na banda.",
+    "_nota": "Desativada na estratégia V22_CONTEXT30_PULLBACK_5M. Os parâmetros legados não reativam recovery; enabled=true é recusado no boot.",
     "multiplier": 2.77,
-    "maxAtrpPercent": 2.0
+    "maxAtrpPercent": 2.0,
+    "enabled": false
   },
   "universe": {
     "_nota": "TODOS os ativos OTC disponiveis. Top 50 primeiro; algum fechado/suspenso/sem feed => entra a reserva (na ordem da lista); se faltar, o bot completa com qualquer OTC turbo disponivel (source auto). replaceStaleMs = ativo sem candle 5s por esse tempo e substituido. checkEveryMs = revisao do universo.",
@@ -81,7 +77,7 @@
     "checkEveryMs": 30000
   },
   "strategy": {
-    "_nota": "WR#2: adxMin 20 (era 15). WR#1: rsiTouchCall 35/rsiTouchPut 65. WR#5: entryBodyRatio 0.6x. WR#3: BB 20/2.0. WR#6: Regime 1m contra 15m bloqueia. WR novo #1: regime spread >=0.01% (tendência forte). WR#2: candle padrão (martelo/engolfo CALL, estrela cadente/engolfo PUT). WR#3: suporte ATR 0.8x (era 1.5x). WR#4: ADX em alta (momentum confirmando).",
+    "_nota": "V22_CONTEXT30_PULLBACK_5M: 30m contexto, 1m/5s alinhados, reação após pullback; recovery OFF",
     "candleSizeSeconds": 5,
     "lookbackRegime": 20,
     "regimeStreakThreshold": 12,
@@ -91,21 +87,19 @@
     "rsiPeriod": 14,
     "rsiCallMax": 45,
     "rsiPutMin": 65,
-    "rsiTouchCall": 35,
-    "rsiTouchPut": 65,
-    "entryBodyRatio": 0.6,
-    "bbPeriod": 20,
-    "bbStdDev": 2.0,
     "pyramidMax": 1,
     "pyramidAdxMin": 25,
     "pyramidRsiCallMax": 35,
     "pyramidRsiPutMin": 65,
     "pyramid_nota": "PIRAMIDE (2a posicao no mesmo sentido) so sai na chance QUASE PERFEITA de nao reverter: ADX >= pyramidAdxMin (forca de verdade, nao 'sem estar fraca') + RSI no EXTREMO A FAVOR (CALL <= pyramidRsiCallMax / PUT >= pyramidRsiPutMin) + a reversao nao pode estar se formando contra a posicao. pyramidMax = quantas piramides cabem no ciclo (1 => no maximo 2 posicoes simultaneas; a 3a ordem e o martingale). Fora desse quadro o bot faz UMA compra so.",
     "warmupMs": 1500,
-    "min1mCandles": 1,
+    "min1mCandles": 60,
     "staleCandleMs": 30000,
-    "boot1mCandles": 120,
-    "supportAtrFactor": 0.8
+    "boot1mCandles": 62,
+    "contextMinSpreadPct": 0.01,
+    "recentMinSpreadPct": 0.005,
+    "pullbackRsiCall": 45,
+    "pullbackRsiPut": 55
   },
   "whitelist": {
     "_nota": "TOP 50 (prioridade). direction aqui e apenas REFERENCIA (baseDirection no log/registro). A direcao de entrada vem da tendencia do mercado. Auto-fill completa ate minActive=170 com qualquer OTC turbo disponivel.",

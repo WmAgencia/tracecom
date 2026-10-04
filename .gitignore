@@ -92,3 +92,6 @@ relay/gauntlet-*.json
 /relay/relay-build-logs.txt
 /relay/relay-logs.err.txt
 /relay/relay-logs.txt
+
+# Credenciais locais do bot standalone
+/bot-credentials.json

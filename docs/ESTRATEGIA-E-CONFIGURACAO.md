@@ -105,3 +105,9 @@
 - Teste offline: `node diagnostic-results/bot-v21-entry-regression.mjs`; reproduz o bloqueio e valida entrada elegível com OHLC preservado. Sintaxe e diff verificados.
 - Nenhuma conexão ou ordem IQ foi executada. Aceite/settlement pelo broker permanecem sem validação ao vivo.
 - Backup de banco tentado via scripts/backup-config.mjs; indisponível neste ambiente (dependência pg e credenciais do banco ausentes). Backups anteriores preservados; cópia do script corrigido em backups/v21-execution-fix/.
+
+## Standalone V22 — contexto 30m / pullback / 5m (2026-10-04)
+
+Mudança autorizada pelo dono, independente do relay congelado. Relatório e execução: `docs/V22-CONTEXTO-30M.md`.
+`ws-otc-v21.mjs` agora identifica `V22_CONTEXT30_PULLBACK_5M`: histórico fechado 30m, contexto 1m atualizado, alinhamento 1m/5s, zonas causais e reação confirmada. Cash/Runner preservados; recovery desativada. Contrato alinhado de cinco minutos com veto se restarem menos de 240s. Sem promessa de WR e sem teste de broker real.
+Backup: `node scripts/backup-config.mjs --standalone-v22` → `backups/v22-context30/`, sem credenciais. Testes: `node --test diagnostic-results/v22-context-tests.mjs` e `node diagnostic-results/bot-v21-tests.mjs`.

@@ -1,0 +1,11 @@
+{
+  "strategy": "V22_CONTEXT30_PULLBACK_5M",
+  "credentials": "excluded",
+  "sha256": {
+    "ws-otc-v21.mjs": "f24e7b399f9a13effdd0a798f0e52f8410029a343a336481217badb823223133",
+    "v22-context.mjs": "d932b26ca9a6ac1d1f5785e0d7436814d13af05ba1f2a5be3e1afa01c0ab8bcd",
+    "bot-config-v21.json": "d5743cfdbce998fd359c0e5292ac22d652a9b409185405c164a7fd4667ece4fa",
+    "V22-CONTEXTO-30M.md": "19bfd6c54bbd0deb1c904dd4e329b86e7df8485c67de805f64e0b96d5a852f9b",
+    "v22-context-tests.mjs": "9d90caca010e00f32c848211df31d401fe6724600f64c500515c84dbec9e9ae9"
+  }
+}

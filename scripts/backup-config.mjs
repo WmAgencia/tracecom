@@ -16,6 +16,25 @@ import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+// Standalone V22: backup local, não requer banco do motor relay.
+if (process.argv.includes('--standalone-v22')) {
+  const {createHash} = await import('node:crypto');
+  const base = fileURLToPath(new URL('../', import.meta.url));
+  const out = path.join(base,'backups/v22-context30');
+  fs.mkdirSync(out,{recursive:true});
+  const files = ['ws-otc-v21.mjs','v22-context.mjs','bot-config-v21.json','docs/V22-CONTEXTO-30M.md','diagnostic-results/v22-context-tests.mjs'];
+  const hashes = {};
+  for (const file of files) {
+    let content = fs.readFileSync(path.join(base,file),'utf8');
+    if (file.endsWith('.json')) {const cfg=JSON.parse(content); delete cfg.login; content=JSON.stringify(cfg,null,2)+'\n';}
+    const name=path.basename(file); fs.writeFileSync(path.join(out,name),content);
+    hashes[name]=createHash('sha256').update(content).digest('hex');
+  }
+  fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify({strategy:'V22_CONTEXT30_PULLBACK_5M',credentials:'excluded',sha256:hashes},null,2)+'\n');
+  console.log('BACKUP_OK backups/v22-context30 (sem credenciais)');
+  process.exit(0);
+}
+
 const require = createRequire(new URL("../relay/package.json", import.meta.url));
 const pg = require("pg");
 
