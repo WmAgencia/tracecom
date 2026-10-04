@@ -189,7 +189,7 @@ check('loadPending: função exportada', () => {
 // ── P0 #11+12: reconcile envelope adaptativo (via source) ─────────────────────
 check('reconcile: código adapta {open_options, closed_options}', () => {
   const src = fs.readFileSync(new URL('../ws-otc-v21.mjs', import.meta.url), 'utf8');
-  const reconBlock = src.match(/async function reconcileWithBroker[\s\S]{0,3000}/)?.[0] ?? '';
+  const reconBlock = src.match(/async function reconcileWithBroker[\s\S]{0,5000}/)?.[0] ?? '';
   assert(reconBlock.includes('open_options'), 'reconcile não adapta open_options');
   assert(reconBlock.includes('closed_options'), 'reconcile não adapta closed_options');
   assert(reconBlock.includes('open ?? []'), 'reconcile não fallback open');
@@ -200,7 +200,7 @@ check('reconcile: código adapta {open_options, closed_options}', () => {
 // ── P0 #12: reconcile unknown mantém fila ────────────────────────────────────
 check('reconcile: unknown mantém awaitSettlement (via source)', () => {
   const src = fs.readFileSync(new URL('../ws-otc-v21.mjs', import.meta.url), 'utf8');
-  const reconBlock = src.match(/async function reconcileWithBroker[\s\S]{0,3000}/)?.[0] ?? '';
+  const reconBlock = src.match(/async function reconcileWithBroker[\s\S]{0,5000}/)?.[0] ?? '';
   assert(reconBlock.includes("result === 'unknown'"), 'reconcile não trata unknown');
   assert(reconBlock.includes('continue;'), 'reconcile não usa continue para unknown');
   return 'unknown mantém fila';

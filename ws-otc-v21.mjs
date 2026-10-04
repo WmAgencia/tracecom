@@ -1825,7 +1825,25 @@ async function reconcileWithBroker() {
     });
 
     if (!brokerOpt) {
-      logLine(`[⚠️ RECONCILIAR] ${shortName(op.name)} okey=${okey} não encontrada no histórico do broker`);
+      const expiredMs = nowMs() - (op.expiration ?? op.createdAt ?? 0);
+      const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 min após expiração = confirmado fechado no broker
+      if (expiredMs > STALE_THRESHOLD_MS) {
+        // Ordem expirou há tempo suficiente mas não está no histórico do broker
+        // (ex: bot ficou offline, ordem liquidou durante o downtime).
+        // Fecha como unknown (conservador — não conta como loss) e remove da fila.
+        logLine(`[⚠️ RECONCILIAR] ${shortName(op.name)} okey=${okey} expirou há ${Math.round(expiredMs/60000)}min — fechada como unknown (offline-stale)`);
+        sessionLog(`RECONCILE_STALE | ${shortName(op.name)} | okey=${okey} | expired=${Math.round(expiredMs/60000)}min | orderId=${op.orderId}`);
+        awaitingSettlement.delete(okey);
+        if (dedupKey) settledLedger.set(dedupKey, nowMs());
+        savePending();
+        // applyResult com unknown/profit=null é seguro: não conta loss, não corrompe streak
+        const s = state[op.key];
+        if (!op.applied && s) applyResult(op, 'unknown', null);
+        reconciled++;
+        continue;
+      }
+      // Ainda dentro da janela — mantém para próxima reconciliação
+      logLine(`[⚠️ RECONCILIAR] ${shortName(op.name)} okey=${okey} ainda em janela (${Math.round(expiredMs/60000)}min) — mantém na fila`);
       sessionLog(`RECONCILE_NOT_FOUND | ${shortName(op.name)} | okey=${okey} | orderId=${op.orderId}`);
       continue;
     }
