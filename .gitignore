@@ -92,3 +92,7 @@ relay/gauntlet-*.json
 /relay/relay-build-logs.txt
 /relay/relay-logs.err.txt
 /relay/relay-logs.txt
+# HF56 shadow — prospective local logs and read-only scheduler state
+/research/hf56/hf56-prospective.jsonl
+/research/hf56/hf56-scheduler-checkpoint.json
+/research/hf56/*.local.json
