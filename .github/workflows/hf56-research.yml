@@ -1,0 +1,30 @@
+name: HF56 research (shadow-only)
+
+on:
+  push:
+    paths:
+      - 'research/hf56/**'
+      - '.github/workflows/hf56-research.yml'
+  pull_request:
+    paths:
+      - 'research/hf56/**'
+      - '.github/workflows/hf56-research.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  hf56-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check HF56 syntax
+        run: node --check research/hf56/hf56.mjs
+      - name: Run deterministic HF56 tests (no credentials)
+        run: node --test research/hf56/hf56.test.mjs
+      - name: Replay broker-collected OHLC history (no orders)
+        run: node research/hf56/hf56.mjs backtest
